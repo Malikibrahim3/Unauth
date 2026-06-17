@@ -197,7 +197,7 @@ async function phase3_evaluation(client: SupabaseClient, merchantId: string, rul
     days_since_last_claim: 14,
     has_cross_merchant_identity: true,
     network_merchant_count: 3,
-    claim_types: ['INR', 'refund'],
+    claim_types: ['item_not_received', 'refund_request'],
     order_value_usd: 249.99,
     account_age_days: 90,
     is_network_flagged: false,
@@ -321,7 +321,7 @@ async function phase4_errors(client: SupabaseClient, merchantId: string): Promis
   try {
     const result = await runRuleEvaluation({
       client, merchantId: emptyMerchantId, claimId: null, identityId: null,
-      signals: { confidence_grade: 'definite', network_claim_count: 10, merchant_claim_count: 3, days_since_last_claim: 5, has_cross_merchant_identity: true, network_merchant_count: 5, claim_types: ['INR'], order_value_usd: 100, account_age_days: 30, is_network_flagged: true },
+      signals: { confidence_grade: 'definite', network_claim_count: 10, merchant_claim_count: 3, days_since_last_claim: 5, has_cross_merchant_identity: true, network_merchant_count: 5, claim_types: ['item_not_received'], order_value_usd: 100, account_age_days: 30, is_network_flagged: true },
     });
     check('No-rules merchant returns no_match without throw', result.recommendation === 'no_match');
   } catch (err) {
@@ -404,7 +404,7 @@ function phase5_manualSteps(): void {
       days_since_last_claim: 14,
       has_cross_merchant_identity: true,
       network_merchant_count: 3,
-      claim_types: ['INR'],
+      claim_types: ['item_not_received'],
       order_value_usd: 249.99,
       account_age_days: 90,
       is_network_flagged: false,

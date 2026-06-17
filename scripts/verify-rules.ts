@@ -174,12 +174,12 @@ eq('in true', opResult(cond('confidence_grade', 'in', ['definite', 'probable']),
 eq('in false', opResult(cond('confidence_grade', 'in', ['definite']), { confidence_grade: 'weak' }), 'no_match');
 eq('not_in true', opResult(cond('confidence_grade', 'not_in', ['weak']), { confidence_grade: 'definite' }), 'deny');
 eq('not_in false', opResult(cond('confidence_grade', 'not_in', ['weak']), { confidence_grade: 'weak' }), 'no_match');
-eq('contains true', opResult(cond('claim_types', 'contains', 'chargeback'), { claim_types: ['refund', 'chargeback'] }), 'deny');
-eq('contains false', opResult(cond('claim_types', 'contains', 'chargeback'), { claim_types: ['refund'] }), 'no_match');
-eq('not_contains true', opResult(cond('claim_types', 'not_contains', 'chargeback'), { claim_types: ['refund'] }), 'deny');
+eq('contains true', opResult(cond('claim_types', 'contains', 'chargeback'), { claim_types: ['refund_request', 'chargeback'] }), 'deny');
+eq('contains false', opResult(cond('claim_types', 'contains', 'chargeback'), { claim_types: ['refund_request'] }), 'no_match');
+eq('not_contains true', opResult(cond('claim_types', 'not_contains', 'chargeback'), { claim_types: ['refund_request'] }), 'deny');
 eq('not_contains false', opResult(cond('claim_types', 'not_contains', 'chargeback'), { claim_types: ['chargeback'] }), 'no_match');
-eq('contains_any true', opResult(cond('claim_types', 'contains_any', ['INR', 'chargeback']), { claim_types: ['refund', 'INR'] }), 'deny');
-eq('contains_any false', opResult(cond('claim_types', 'contains_any', ['INR', 'chargeback']), { claim_types: ['refund'] }), 'no_match');
+eq('contains_any true', opResult(cond('claim_types', 'contains_any', ['item_not_received', 'chargeback']), { claim_types: ['refund_request', 'item_not_received'] }), 'deny');
+eq('contains_any false', opResult(cond('claim_types', 'contains_any', ['item_not_received', 'chargeback']), { claim_types: ['refund_request'] }), 'no_match');
 
 // numeric comparisons against null actuals never match
 eq('gte vs null actual', opResult(cond('days_since_last_claim', 'gte', 0), { days_since_last_claim: null }), 'no_match');

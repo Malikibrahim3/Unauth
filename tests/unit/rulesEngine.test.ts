@@ -101,10 +101,10 @@ describe('evaluateRules', () => {
   it('handles string[] contains_any on claim_types', () => {
     const r = rule({
       action: 'manual_review',
-      conditions: [{ id: 'a', field: 'claim_types', operator: 'contains_any', value: ['chargeback', 'INR'] }],
+      conditions: [{ id: 'a', field: 'claim_types', operator: 'contains_any', value: ['chargeback', 'item_not_received'] }],
     });
-    expect(evaluateRules(signals({ claim_types: ['refund', 'INR'] }), [r]).recommendation).toBe('manual_review');
-    expect(evaluateRules(signals({ claim_types: ['refund'] }), [r]).recommendation).toBe('no_match');
+    expect(evaluateRules(signals({ claim_types: ['refund_request', 'item_not_received'] }), [r]).recommendation).toBe('manual_review');
+    expect(evaluateRules(signals({ claim_types: ['refund_request'] }), [r]).recommendation).toBe('no_match');
   });
 
   it('does not match numeric comparisons against null actuals', () => {

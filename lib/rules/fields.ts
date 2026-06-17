@@ -19,6 +19,7 @@ import {
   type RuleAction,
   type RuleCondition,
 } from '@/lib/rules-engine';
+import { CANONICAL_CLAIM_TYPES, CLAIM_TYPE_LABELS } from '@/lib/claims/claimTypes';
 
 export { FIELD_LABELS, OPERATOR_LABELS };
 
@@ -51,13 +52,12 @@ export const CONFIDENCE_GRADE_OPTIONS: EnumOption[] = [
   { value: 'weak', label: 'Weak' },
 ];
 
-export const CLAIM_TYPE_OPTIONS: EnumOption[] = [
-  { value: 'INR', label: 'INR' },
-  { value: 'refund', label: 'Refund' },
-  { value: 'chargeback', label: 'Chargeback' },
-  { value: 'damaged', label: 'Damaged' },
-  { value: 'wrong_item', label: 'Wrong Item' },
-];
+// Canonical = the DB `claim_type` enum (single source of truth for stored/evaluated
+// values). Friendly labels are display-only. Legacy shorthand (INR/refund) is gone.
+export const CLAIM_TYPE_OPTIONS: EnumOption[] = CANONICAL_CLAIM_TYPES.map((value) => ({
+  value,
+  label: CLAIM_TYPE_LABELS[value],
+}));
 
 export const RULE_FIELDS: RuleFieldDef[] = [
   // Identity
