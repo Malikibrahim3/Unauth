@@ -5,14 +5,23 @@
  * IdentitySignals shape the rules engine consumes.
  *
  * Some signals are not available in the widget context (order value, account
- * age, manual network flags). These map to neutral defaults (null / 0 / false)
- * so a condition referencing them simply does not match rather than throwing.
+ * age). These map to neutral defaults (null / 0 / false) so a condition
+ * referencing them simply does not match rather than throwing.
+ *
+ * Evidence fields use safe neutral values when network disclosure is withheld
+ * (k-anonymity). Rules must not treat withheld evidence as a real zero score.
  */
 
 import type { ClaimWidgetData } from '@/lib/gorgias/widgetData';
-import type { ConfidenceGrade, IdentitySignals } from '@/lib/rules-engine';
+import type { ConfidenceGrade, EvidenceLevel, IdentitySignals } from '@/lib/rules-engine';
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
+const WITHHELD_EVIDENCE: Pick<IdentitySignals, 'evidence_score' | 'evidence_level' | 'has_sufficient_data'> = {
+  evidence_score: 0,
+  evidence_level: 'minimal',
+  has_sufficient_data: false,
+};
 
 function daysSince(iso: string | null, nowMs: number): number | null {
   if (!iso) return null;
@@ -25,6 +34,17 @@ function mostRecent(a: string | null, b: string | null): string | null {
   if (!a) return b;
   if (!b) return a;
   return Date.parse(a) >= Date.parse(b) ? a : b;
+}
+
+function evidenceSignalsFromWidget(
+  data: ClaimWidgetData,
+): Pick<IdentitySignals, 'evidence_score' | 'evidence_level' | 'has_sufficient_data'> {
+  if (!data.evidenceDisclosed) return WITHHELD_EVIDENCE;
+  return {
+    evidence_score: data.evidenceScore,
+    evidence_level: data.evidenceLevel as EvidenceLevel,
+    has_sufficient_data: data.hasSufficientData,
+  };
 }
 
 export function widgetDataToSignals(
@@ -41,16 +61,10 @@ export function widgetDataToSignals(
     days_since_last_claim: daysSince(lastClaimAt, nowMs),
     has_cross_merchant_identity: network ? network.merchantCount > 1 : false,
     network_merchant_count: network?.merchantCount ?? 0,
-    // Canonical claim_type taxonomy is not surfaced in the widget context yet.
-    claim_types: [],
-    // Order value + account age are not resolved in the widget path.
+    claim_types: data.claimTypes,
     order_value_usd: null,
     account_age_days: null,
-    // No manual network-flag source in the widget context.
-    is_network_flagged: false,
-    // Evidence scoring is not resolved in the widget path yet (Iteration 7).
-    evidence_score: 0,
-    evidence_level: 'minimal',
-    has_sufficient_data: false,
+    is_network_flagged: data.isNetworkFlagged,
+    ...evidenceSignalsFromWidget(data),
   };
 }

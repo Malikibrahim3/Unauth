@@ -300,44 +300,91 @@ console.log('8. IdentitySignals contract');
 console.log('9. Widget -> IdentitySignals mapping');
 
 {
-  const widgetData = {
+  const widgetBase = {
     confidenceGrade: 'definite',
     matchedOn: ['email address'],
     ce3EvidenceAvailable: true,
-    thisStore: { claimCount: 2, claimRate: 0.1, lastClaimAt: '2026-05-01T00:00:00.000Z', ordersCountSource: 'network' },
-    network: { claimCount: 9, merchantCount: 4, lastClaimAt: '2026-06-01T00:00:00.000Z' },
+    thisStore: {
+      orderCount: 2,
+      claimCount: 2,
+      claimRate: 0.1,
+      lastClaimAt: '2026-05-01T00:00:00.000Z',
+      ordersCountSource: 'merchant_profile_totals' as const,
+    },
+    network: {
+      merchantCount: 4,
+      orderCount: 20,
+      claimCount: 9,
+      claimRate: 0.45,
+      lastClaimAt: '2026-06-01T00:00:00.000Z',
+      primaryReason: null,
+      recentClaimCount: 0,
+      recentWindowDays: 90 as const,
+    },
     storeClaimValue: null,
+    storePrimaryReason: null,
     storeRecentClaimCount: 1,
     profileUrl: '',
     dataFreshAt: '2026-06-10T00:00:00.000Z',
     watchlisted: false,
-  } as unknown as ClaimWidgetData;
+    evidenceDisclosed: false,
+    evidenceScore: 0,
+    evidenceLevel: 'minimal' as const,
+    hasSufficientData: false,
+    scoreBreakdown: [],
+    scoringConfigVersion: null,
+    claimTypes: [] as string[],
+    isNetworkFlagged: false,
+  } satisfies ClaimWidgetData;
 
   const nowMs = Date.parse('2026-06-17T00:00:00.000Z');
-  const s = widgetDataToSignals(widgetData, nowMs);
+  const s = widgetDataToSignals(widgetBase, nowMs);
   eq('maps confidence_grade', s.confidence_grade, 'definite');
   eq('maps network_claim_count', s.network_claim_count, 9);
   eq('maps merchant_claim_count', s.merchant_claim_count, 2);
   eq('derives has_cross_merchant_identity from merchantCount>1', s.has_cross_merchant_identity, true);
   eq('maps network_merchant_count', s.network_merchant_count, 4);
-  // days_since_last_claim uses the most-recent of store/network last claim (network = 2026-06-01)
   eq('days_since_last_claim from most-recent claim', s.days_since_last_claim, 16);
-  // Fields not available in widget context fall back to neutral defaults
   eq('order_value_usd neutral default', s.order_value_usd, null);
   eq('account_age_days neutral default', s.account_age_days, null);
-  eq('is_network_flagged neutral default', s.is_network_flagged, false);
-  eq('evidence_score neutral default', s.evidence_score, 0);
-  eq('evidence_level neutral default', s.evidence_level, 'minimal');
-  eq('has_sufficient_data neutral default', s.has_sufficient_data, false);
-  check('claim_types neutral default', Array.isArray(s.claim_types) && s.claim_types.length === 0);
+  eq('withheld evidence_score neutral', s.evidence_score, 0);
+  eq('withheld evidence_level neutral', s.evidence_level, 'minimal');
+  eq('withheld has_sufficient_data neutral', s.has_sufficient_data, false);
+  check('withheld claim_types empty', s.claim_types.length === 0);
+  eq('withheld is_network_flagged false', s.is_network_flagged, false);
 
-  // No network -> safe defaults, no throw
-  const noNet = widgetDataToSignals({ ...widgetData, network: null } as ClaimWidgetData, nowMs);
+  const disclosed = widgetDataToSignals(
+    {
+      ...widgetBase,
+      evidenceDisclosed: true,
+      evidenceScore: 62,
+      evidenceLevel: 'substantial',
+      hasSufficientData: true,
+      claimTypes: ['chargeback', 'item_not_received'],
+      isNetworkFlagged: true,
+    },
+    nowMs,
+  );
+  eq('disclosed evidence_score', disclosed.evidence_score, 62);
+  eq('disclosed evidence_level', disclosed.evidence_level, 'substantial');
+  eq('disclosed has_sufficient_data', disclosed.has_sufficient_data, true);
+  check('disclosed claim_types canonical', disclosed.claim_types.join(',') === 'chargeback,item_not_received');
+  check('disclosed claim_types no legacy INR', !disclosed.claim_types.includes('INR'));
+  check('disclosed claim_types no legacy refund', !disclosed.claim_types.includes('refund'));
+  eq('disclosed is_network_flagged', disclosed.is_network_flagged, true);
+
+  // Withheld even when widget payload carries non-neutral placeholders.
+  const fakeScore = widgetDataToSignals(
+    { ...widgetBase, evidenceDisclosed: false, evidenceScore: 99, evidenceLevel: 'extensive', hasSufficientData: true },
+    nowMs,
+  );
+  eq('withheld ignores placeholder score', fakeScore.evidence_score, 0);
+
+  const noNet = widgetDataToSignals({ ...widgetBase, network: null }, nowMs);
   eq('no-network network_claim_count', noNet.network_claim_count, 0);
   eq('no-network has_cross_merchant_identity', noNet.has_cross_merchant_identity, false);
 
-  // A null confidence grade degrades to 'weak' rather than throwing.
-  const noGrade = widgetDataToSignals({ ...widgetData, confidenceGrade: null } as ClaimWidgetData, nowMs);
+  const noGrade = widgetDataToSignals({ ...widgetBase, confidenceGrade: null }, nowMs);
   eq('null grade -> weak', noGrade.confidence_grade, 'weak');
 }
 

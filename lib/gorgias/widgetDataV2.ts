@@ -9,14 +9,19 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { hashIdentifier } from '@/lib/identity/hash';
 import { normaliseEmail, emailRoot } from '@/lib/identity/normalise';
+import { TABLES } from '@/lib/supabase/tables';
+import type { ScoreFactor } from '@/lib/engine/evidence/score';
+import type { EvidenceLevel } from '@/lib/rules-engine';
 import { env } from '@/lib/utils/env';
 import type { MerchantCustomerLookupDiagnostics } from '@/lib/gorgias/findMerchantCustomerByEmail';
-import type {
-  ClaimWidgetData,
-  GorgiasClaimWidgetResult,
-  NetworkStats,
-  PrimaryReason,
-  ThisStoreStats,
+import {
+  canonicalClaimTypesFromCounts,
+  WITHHELD_EVIDENCE_SIGNALS,
+  type ClaimWidgetData,
+  type GorgiasClaimWidgetResult,
+  type NetworkStats,
+  type PrimaryReason,
+  type ThisStoreStats,
 } from '@/lib/gorgias/widgetData';
 
 const CLAIM_TYPE_LABELS_V2: Record<string, string> = {
@@ -46,6 +51,77 @@ function primaryReasonFromCounts(counts: Record<string, number>): PrimaryReason 
 }
 
 type LookupAuth = { merchantId: string; apiKeyId: string; requestIp: string | null };
+
+type RpcIdentityRow = {
+  identity_id: string;
+  confidence_grade: string;
+  merchant_count: number | null;
+  total_orders: number | null;
+  total_claims: number | null;
+  claim_rate: number | string | null;
+  last_seen_at: string | null;
+  claim_type_counts: Record<string, number> | null;
+};
+
+type EvidenceScoreRow = {
+  evidence_score: number;
+  evidence_level: string;
+  has_sufficient_data: boolean;
+  score_breakdown: unknown;
+  scoring_config_version: string;
+};
+
+async function loadDisclosedWidgetSignals(
+  service: SupabaseClient,
+  identityId: string,
+  networkTypeCounts: Record<string, number>,
+): Promise<Pick<
+  ClaimWidgetData,
+  | 'evidenceDisclosed'
+  | 'evidenceScore'
+  | 'evidenceLevel'
+  | 'hasSufficientData'
+  | 'scoreBreakdown'
+  | 'scoringConfigVersion'
+  | 'claimTypes'
+  | 'isNetworkFlagged'
+>> {
+  const [evidenceRes, flagRes] = await Promise.all([
+    service
+      .from(TABLES.IDENTITY_EVIDENCE_SCORES)
+      .select('evidence_score, evidence_level, has_sufficient_data, score_breakdown, scoring_config_version')
+      .eq('identity_id', identityId)
+      .maybeSingle(),
+    service
+      .from(TABLES.WATCHLIST_ENTRIES)
+      .select('identity_id')
+      .eq('identity_id', identityId)
+      .eq('on_watchlist', true)
+      .limit(1),
+  ]);
+
+  const signals = {
+    evidenceDisclosed: true,
+    evidenceScore: 0,
+    evidenceLevel: 'minimal' as EvidenceLevel,
+    hasSufficientData: false,
+    scoreBreakdown: [] as ScoreFactor[],
+    scoringConfigVersion: null as string | null,
+    claimTypes: canonicalClaimTypesFromCounts(networkTypeCounts),
+    isNetworkFlagged: !flagRes.error && Array.isArray(flagRes.data) && flagRes.data.length > 0,
+  };
+
+  if (!evidenceRes.error && evidenceRes.data) {
+    const row = evidenceRes.data as EvidenceScoreRow;
+    signals.evidenceScore = Number(row.evidence_score);
+    signals.evidenceLevel = row.evidence_level as EvidenceLevel;
+    signals.hasSufficientData = Boolean(row.has_sufficient_data);
+    signals.scoreBreakdown = Array.isArray(row.score_breakdown) ? (row.score_breakdown as ScoreFactor[]) : [];
+    signals.scoringConfigVersion = row.scoring_config_version ?? null;
+  }
+
+  return signals;
+}
 
 export async function buildGorgiasClaimWidgetDataV2(
   service: SupabaseClient,
@@ -119,9 +195,24 @@ export async function buildGorgiasClaimWidgetDataV2(
   if (ne) {
     return { result: { ok: false, kind: 'error', message: 'Network lookup failed.' }, lookupDiagnostics: null };
   }
-  const identity = Array.isArray(netRows) && netRows.length > 0 ? netRows[0] : null;
+  const identity = Array.isArray(netRows) && netRows.length > 0 ? (netRows[0] as RpcIdentityRow) : null;
 
   let network: NetworkStats | null = null;
+  let widgetSignals: Pick<
+    ClaimWidgetData,
+    | 'evidenceDisclosed'
+    | 'evidenceScore'
+    | 'evidenceLevel'
+    | 'hasSufficientData'
+    | 'scoreBreakdown'
+    | 'scoringConfigVersion'
+    | 'claimTypes'
+    | 'isNetworkFlagged'
+  > = {
+    ...WITHHELD_EVIDENCE_SIGNALS,
+    claimTypes: canonicalClaimTypesFromCounts(storeTypeCounts),
+  };
+
   if (identity) {
     const typeCounts = (identity.claim_type_counts ?? {}) as Record<string, number>;
     network = {
@@ -134,11 +225,13 @@ export async function buildGorgiasClaimWidgetDataV2(
       recentClaimCount: 0, // not exposed by the k-anon RPC; omitted rather than estimated
       recentWindowDays: 90,
     };
+    // k-anonymity is enforced by lookup_network_identity; a returned row means disclosure is allowed.
+    widgetSignals = await loadDisclosedWidgetSignals(service, identity.identity_id, typeCounts);
   }
 
   const appUrl = (env.NEXT_PUBLIC_APP_URL ?? '').replace(/\/$/, '');
   const data: ClaimWidgetData = {
-    confidenceGrade: identity ? identity.confidence_grade : null,
+    confidenceGrade: identity ? (identity.confidence_grade as ClaimWidgetData['confidenceGrade']) : null,
     matchedOn: identity ? ['email address'] : [],
     ce3EvidenceAvailable: Boolean(identity && Number(identity.merchant_count) >= 2 && Number(identity.total_claims) > 0),
     thisStore,
@@ -149,6 +242,7 @@ export async function buildGorgiasClaimWidgetDataV2(
     profileUrl: `${appUrl}/customers`,
     dataFreshAt: new Date().toISOString(),
     watchlisted: false,
+    ...widgetSignals,
   };
 
   return { result: { ok: true, data }, lookupDiagnostics: null };
