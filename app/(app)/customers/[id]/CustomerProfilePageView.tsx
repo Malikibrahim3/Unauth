@@ -68,6 +68,7 @@ export function CustomerProfilePageView(props: CustomerProfilePageViewProps) {
     openClaimCount,
     latestClaim,
     merchantRefundRate,
+    evidenceDisplay,
   } = props;
 
   return (
@@ -97,6 +98,7 @@ export function CustomerProfilePageView(props: CustomerProfilePageViewProps) {
         identitySignalRows={identitySignalRows}
         gorgiasSource={gorgiasSource}
         gorgiasTicketId={gorgiasTicketId}
+        evidenceDisplay={evidenceDisplay}
       />
 
       {/*

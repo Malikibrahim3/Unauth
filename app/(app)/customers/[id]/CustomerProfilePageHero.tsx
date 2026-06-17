@@ -9,11 +9,13 @@ import { NetworkFootprint } from '@/components/ui/NetworkFootprint';
 import InvestigationStatusSelect from '@/components/customers/InvestigationStatusSelect';
 import CaseSummaryStrip from '@/components/customers/CaseSummaryStrip';
 import { CustomerProfileEvidenceTrigger } from '@/components/evidence/CustomerProfileEvidenceTrigger';
+import { EvidenceScoreBadge } from '@/components/identity/EvidenceScoreBadge';
 import { letterGradeTone } from '@/lib/utils/confidenceStyles';
 import { formatCurrencyNullable, formatDateMode } from '@/lib/utils/format';
 import { FLAG_EXPERIENCE_POLISH_V1 } from '@/lib/flags';
 import { ConfidencePill } from '@/app/(app)/customers/[id]/CustomerProfilePageParts';
 import type {
+  CustomerEvidenceDisplay,
   CustomerProfileDisplay,
   IdentitySignalRow,
 } from '@/app/(app)/customers/[id]/customerProfilePageLoad';
@@ -48,6 +50,7 @@ export type CustomerProfilePageHeroProps = {
   identitySignalRows: IdentitySignalRow[];
   gorgiasSource?: string | null;
   gorgiasTicketId?: string | null;
+  evidenceDisplay?: CustomerEvidenceDisplay | null;
 };
 
 export function CustomerProfilePageHero({
@@ -74,6 +77,7 @@ export function CustomerProfilePageHero({
   identitySignalRows,
   gorgiasSource,
   gorgiasTicketId,
+  evidenceDisplay,
 }: CustomerProfilePageHeroProps) {
   const maxDensity = Math.max(...density, 1);
   const refundPct = totalOrderValue > 0 ? Math.min((totalRefundedValue / totalOrderValue) * 100, 100) : 0;
@@ -160,6 +164,18 @@ export function CustomerProfilePageHero({
               grade={profileGrade === 'F' ? null : profileGrade}
               kSatisfied={merchantsSeen >= 3}
             />
+            {evidenceDisplay && (
+              <div className="mt-4">
+                <EvidenceScoreBadge
+                  evidence_score={evidenceDisplay.evidence_score}
+                  evidence_level={evidenceDisplay.evidence_level}
+                  has_sufficient_data={evidenceDisplay.has_sufficient_data}
+                  score_breakdown={evidenceDisplay.score_breakdown}
+                  confidence_grade={evidenceDisplay.confidence_grade}
+                  evidence_disclosed={evidenceDisplay.evidence_disclosed}
+                />
+              </div>
+            )}
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <InvestigationStatusSelect profileId={profile.id} initialStatus={profile.investigation_status ?? 'new'} />
               <WatchlistStarButton />
