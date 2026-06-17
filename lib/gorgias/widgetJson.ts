@@ -1,10 +1,13 @@
 import { gradeHeadline } from '@/lib/gorgias/widgetData';
 import type {
+  ClaimWidgetData,
   GorgiasClaimWidgetResult,
   NetworkStats,
   PrimaryReason,
   ThisStoreOrdersSource,
 } from '@/lib/gorgias/widgetData';
+import type { ConfidenceGrade } from '@/lib/engine/weights';
+import type { ScoreFactor } from '@/lib/engine/evidence/score';
 import { env } from '@/lib/utils/env';
 import { buildGorgiasWidgetUnlockUrlSet } from '@/lib/gorgias/widgetUnlockUrls';
 import { GORGIAS_SETTINGS_INTEGRATIONS_PATH } from '@/lib/support/gorgias/supportConnectionShared';
@@ -27,6 +30,10 @@ export type GorgiasWidgetJsonPayload = {
   recent_activity: string;
   /** CE 3.0 evidence indicator, or '—'. */
   ce3_evidence: string;
+  /** Cached evidence score headline, or a neutral withheld/insufficient message. */
+  evidence_summary: string;
+  /** Plain-text factor breakdown, or a short neutral message when unavailable. */
+  evidence_breakdown: string;
   /**
    * @deprecated Legacy Gorgias template field path `watchlisted`. Always data-safety copy,
    * never merchant watchlist state. Do not use for new product logic.
@@ -86,6 +93,67 @@ const UNLOCK_LABELS = {
 const NO_NETWORK_LABEL = 'No network history found';
 const NO_CROSS_STORE_LABEL = 'No cross-store history found';
 const NO_CLAIMS_LABEL = 'No prior claims on record';
+
+const EVIDENCE_LEVEL_LABELS: Record<string, string> = {
+  minimal: 'Minimal',
+  some: 'Some',
+  substantial: 'Substantial',
+  extensive: 'Extensive',
+};
+
+const WEAK_CONFIDENCE_CAVEAT = 'Identity match confidence is weak — treat with extra caution.';
+
+const EVIDENCE_DISPLAY_UNAVAILABLE = {
+  evidence_summary: '—',
+  evidence_breakdown: '—',
+} as const;
+
+const EVIDENCE_WITHHELD_DISPLAY = {
+  evidence_summary: 'Not enough network coverage to share',
+  evidence_breakdown: 'Network evidence is not shared below the coverage threshold.',
+} as const;
+
+/** Evidence score headline for the native Gorgias sidebar (display-only). */
+export function formatEvidenceSummary(
+  data: Pick<ClaimWidgetData, 'evidenceDisclosed' | 'evidenceScore' | 'evidenceLevel' | 'hasSufficientData'>,
+  confidenceGrade: ConfidenceGrade | null,
+): string {
+  let summary: string;
+  if (!data.evidenceDisclosed) {
+    summary = EVIDENCE_WITHHELD_DISPLAY.evidence_summary;
+  } else if (!data.hasSufficientData) {
+    summary = 'Not enough evidence yet';
+  } else {
+    const level = EVIDENCE_LEVEL_LABELS[data.evidenceLevel] ?? data.evidenceLevel;
+    summary = `Evidence: ${data.evidenceScore} · ${level}`;
+  }
+  if (confidenceGrade === 'weak') {
+    return `${summary} ${WEAK_CONFIDENCE_CAVEAT}`;
+  }
+  return summary;
+}
+
+/** Flattened score breakdown for the native Gorgias sidebar (display-only). */
+export function formatEvidenceBreakdown(
+  data: Pick<ClaimWidgetData, 'evidenceDisclosed' | 'hasSufficientData' | 'scoreBreakdown'>,
+): string {
+  if (!data.evidenceDisclosed) {
+    return EVIDENCE_WITHHELD_DISPLAY.evidence_breakdown;
+  }
+  if (!data.hasSufficientData || data.scoreBreakdown.length === 0) {
+    return 'Not enough evidence for a score breakdown.';
+  }
+  return data.scoreBreakdown.map((f: ScoreFactor) => `${f.label} ${f.points}/${f.max_points}`).join(' · ');
+}
+
+function evidenceDisplayFields(
+  data: ClaimWidgetData,
+): Pick<GorgiasWidgetJsonPayload, 'evidence_summary' | 'evidence_breakdown'> {
+  return {
+    evidence_summary: formatEvidenceSummary(data, data.confidenceGrade),
+    evidence_breakdown: formatEvidenceBreakdown(data),
+  };
+}
 
 type WidgetCorePayload = Omit<
   GorgiasWidgetJsonPayload,
@@ -384,6 +452,7 @@ export function claimWidgetToJson(
           primary_reason: '—',
           recent_activity: '—',
           ce3_evidence: '—',
+          ...EVIDENCE_WITHHELD_DISPLAY,
           watchlisted: 'Standard handling · no prior history found',
           order_context: buildOrderContext(link),
           context_summary: buildContextSummary(result, link, showNetworkIntelligence),
@@ -402,6 +471,7 @@ export function claimWidgetToJson(
           primary_reason: '—',
           recent_activity: '—',
           ce3_evidence: '—',
+          ...EVIDENCE_DISPLAY_UNAVAILABLE,
           watchlisted: '—',
           order_context: buildOrderContext(link),
           context_summary: buildContextSummary(result, link, showNetworkIntelligence),
@@ -420,6 +490,7 @@ export function claimWidgetToJson(
           primary_reason: '—',
           recent_activity: 'Reconnect in Unauth',
           ce3_evidence: '—',
+          ...EVIDENCE_DISPLAY_UNAVAILABLE,
           watchlisted: '—',
           order_context: buildOrderContext(link),
           context_summary: buildContextSummary(result, link, showNetworkIntelligence),
@@ -437,6 +508,7 @@ export function claimWidgetToJson(
         primary_reason: '—',
         recent_activity: '—',
         ce3_evidence: '—',
+        ...EVIDENCE_DISPLAY_UNAVAILABLE,
         watchlisted: '—',
         order_context: buildOrderContext(link),
         context_summary: buildContextSummary(result, link, showNetworkIntelligence),
@@ -474,6 +546,7 @@ export function claimWidgetToJson(
         primary_reason: '—',
         recent_activity: '—',
         ce3_evidence: '—',
+        ...evidenceDisplayFields(result.data),
         watchlisted: computeWidgetTrustSummary({
           orderCount: 0,
           claimCount: 0,
@@ -515,6 +588,7 @@ export function claimWidgetToJson(
       primary_reason: primaryReason,
       recent_activity: recentActivity,
       ce3_evidence: buildNetworkEvidenceField(ce3EvidenceAvailable, network, showNetworkIntelligence),
+      ...evidenceDisplayFields(result.data),
       watchlisted: computeWidgetTrustSummary({
         orderCount: thisStore.orderCount,
         claimCount: thisStore.claimCount,

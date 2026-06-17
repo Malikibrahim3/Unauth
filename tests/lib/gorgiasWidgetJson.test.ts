@@ -1,4 +1,5 @@
-import { claimWidgetToJson } from '@/lib/gorgias/widgetJson';
+import { claimWidgetToJson, formatEvidenceBreakdown, formatEvidenceSummary } from '@/lib/gorgias/widgetJson';
+import { WITHHELD_EVIDENCE_SIGNALS } from '@/lib/gorgias/widgetData';
 
 const OK_RESULT = {
   ok: true as const,
@@ -24,7 +25,11 @@ const OK_RESULT = {
     storeClaimValue: 120,
     storePrimaryReason: { type: 'dominant' as const, label: 'Item not received', percentage: 75 },
     storeRecentClaimCount: 1,
-    profileUrl: null,
+    profileUrl: 'https://app.unauth.test/customers',
+    dataFreshAt: '2026-06-17T00:00:00.000Z',
+    watchlisted: false,
+    ...WITHHELD_EVIDENCE_SIGNALS,
+    claimTypes: [],
   },
 };
 
@@ -91,5 +96,52 @@ describe('claimWidgetToJson', () => {
   it('never returns null fields for current widget payloads', () => {
     const payload = claimWidgetToJson({ ok: false, kind: 'not_found' });
     expect(Object.values(payload).every((v) => typeof v === 'string')).toBe(true);
+  });
+
+  it('includes evidence display fields on successful payloads', () => {
+    const data = {
+      ...OK_RESULT.data,
+      evidenceDisclosed: true,
+      evidenceScore: 62,
+      evidenceLevel: 'substantial' as const,
+      hasSufficientData: true,
+      scoreBreakdown: [
+        { factor: 'network_claim_frequency', label: 'Claims across the network', points: 18, max_points: 35, reason: 'x' },
+      ],
+      scoringConfigVersion: 'evidence-v1',
+      claimTypes: ['chargeback'],
+      isNetworkFlagged: false,
+    };
+    const payload = claimWidgetToJson({ ok: true, data });
+    expect(payload.evidence_summary).toBe('Evidence: 62 · Substantial');
+    expect(payload.evidence_breakdown).toBe('Claims across the network 18/35');
+  });
+});
+
+describe('formatEvidenceSummary', () => {
+  it('renders withheld, insufficient, and weak-confidence states', () => {
+    const base = {
+      evidenceDisclosed: true,
+      evidenceScore: 62,
+      evidenceLevel: 'substantial' as const,
+      hasSufficientData: true,
+    };
+    expect(formatEvidenceSummary({ ...base, evidenceDisclosed: false }, 'probable')).toBe(
+      'Not enough network coverage to share',
+    );
+    expect(formatEvidenceSummary({ ...base, hasSufficientData: false }, 'probable')).toBe('Not enough evidence yet');
+    expect(formatEvidenceSummary(base, 'weak')).toContain('Identity match confidence is weak');
+  });
+});
+
+describe('formatEvidenceBreakdown', () => {
+  it('renders a neutral message when evidence is withheld', () => {
+    expect(
+      formatEvidenceBreakdown({
+        evidenceDisclosed: false,
+        hasSufficientData: true,
+        scoreBreakdown: [],
+      }),
+    ).toContain('coverage threshold');
   });
 });

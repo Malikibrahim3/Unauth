@@ -133,6 +133,8 @@ export const GORGIAS_SIDEBAR_ROW_LABELS = {
   primary_reason: 'Primary reason',
   recent_activity: 'Recent activity',
   ce3_evidence: 'Network & evidence',
+  evidence_summary: 'Evidence',
+  evidence_breakdown: 'Evidence breakdown',
   watchlisted: 'Review context',
 } as const;
 
@@ -174,6 +176,8 @@ export function buildGorgiasSidebarWidgetTemplate(appBaseUrl: string) {
           { path: 'recent_activity', title: labels.recent_activity, type: 'text' },
           { path: 'ce3_evidence', title: labels.ce3_evidence, type: 'text' },
           { path: 'watchlisted', title: labels.watchlisted, type: 'text' },
+          { path: 'evidence_summary', title: labels.evidence_summary, type: 'text' },
+          { path: 'evidence_breakdown', title: labels.evidence_breakdown, type: 'text' },
           { path: 'recommendation', title: labels.recommendation, type: 'text' },
           { path: 'recommendation_detail', title: labels.recommendation_detail, type: 'text' },
         ],

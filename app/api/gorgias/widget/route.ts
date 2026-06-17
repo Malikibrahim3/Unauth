@@ -51,6 +51,8 @@ const GORGIAS_WIDGET_JSON_FALLBACK: GorgiasWidgetJsonPayload = {
   primary_reason: '—',
   recent_activity: '—',
   ce3_evidence: '—',
+  evidence_summary: '—',
+  evidence_breakdown: '—',
   watchlisted: '—',
   order_context: '—',
   context_summary: 'Context unavailable — check your Gorgias connection in Unauth settings',

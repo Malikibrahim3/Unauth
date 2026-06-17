@@ -28,7 +28,7 @@ import {
 } from '@/lib/rules-engine';
 import { validateConditions, RULE_FIELDS, operatorsForField, CATEGORY_LABELS, type RuleFieldCategory } from '@/lib/rules/fields';
 import { widgetDataToSignals } from '@/lib/rules/widgetSignals';
-import { formatRecommendationFields } from '@/lib/gorgias/widgetJson';
+import { claimWidgetToJson, formatEvidenceBreakdown, formatEvidenceSummary, formatRecommendationFields } from '@/lib/gorgias/widgetJson';
 import { buildGorgiasSidebarWidgetTemplate } from '@/lib/support/gorgias/registerSidebarWidget';
 import type { ClaimWidgetData } from '@/lib/gorgias/widgetData';
 
@@ -426,13 +426,103 @@ console.log('10b. Gorgias sidebar widget field order');
     .widgets[0].widgets.map((w: { path: string }) => w.path);
   const identityIdx = paths.indexOf('identity');
   const claimsIdx = paths.indexOf('claims');
+  const ce3Idx = paths.indexOf('ce3_evidence');
+  const evidenceSummaryIdx = paths.indexOf('evidence_summary');
+  const evidenceBreakdownIdx = paths.indexOf('evidence_breakdown');
   const recommendationIdx = paths.indexOf('recommendation');
   const recommendationDetailIdx = paths.indexOf('recommendation_detail');
   check('identity field present', identityIdx >= 0);
+  check('evidence_summary field present', evidenceSummaryIdx >= 0);
+  check('evidence_breakdown field present', evidenceBreakdownIdx >= 0);
   check('recommendation below identity', recommendationIdx > identityIdx);
   check('recommendation below claim history', recommendationIdx > claimsIdx);
+  check('evidence_summary below network evidence', evidenceSummaryIdx > ce3Idx);
+  check('evidence_breakdown follows evidence_summary', evidenceBreakdownIdx === evidenceSummaryIdx + 1);
+  check('recommendation below evidence breakdown', recommendationIdx > evidenceBreakdownIdx);
   check('recommendation_detail follows recommendation', recommendationDetailIdx === recommendationIdx + 1);
   check('recommendation fields are last rows', recommendationDetailIdx === paths.length - 1);
+}
+
+// ---------------------------------------------------------------------------
+// 10c. Gorgias evidence display fields
+// ---------------------------------------------------------------------------
+
+console.log('10c. Gorgias evidence display fields');
+
+{
+  const disclosedBase: ClaimWidgetData = {
+    confidenceGrade: 'probable',
+    matchedOn: ['email address'],
+    ce3EvidenceAvailable: true,
+    thisStore: {
+      orderCount: 2,
+      claimCount: 1,
+      claimRate: 0.5,
+      lastClaimAt: null,
+      ordersCountSource: 'merchant_profile_totals',
+    },
+    network: {
+      merchantCount: 4,
+      orderCount: 10,
+      claimCount: 5,
+      claimRate: 0.5,
+      lastClaimAt: null,
+      primaryReason: null,
+      recentClaimCount: 0,
+      recentWindowDays: 90,
+    },
+    storeClaimValue: null,
+    storePrimaryReason: null,
+    storeRecentClaimCount: 0,
+    profileUrl: 'https://app.unauth.test/customers',
+    dataFreshAt: '2026-06-17T00:00:00.000Z',
+    watchlisted: false,
+    evidenceDisclosed: true,
+    evidenceScore: 62,
+    evidenceLevel: 'substantial',
+    hasSufficientData: true,
+    scoreBreakdown: [
+      { factor: 'network_claim_frequency', label: 'Claims across the network', points: 18, max_points: 35, reason: 'x' },
+      { factor: 'network_breadth', label: 'Distinct merchants claimed at', points: 12, max_points: 25, reason: 'x' },
+    ],
+    scoringConfigVersion: 'evidence-v1',
+    claimTypes: ['chargeback'],
+    isNetworkFlagged: false,
+  };
+
+  const summary = formatEvidenceSummary(disclosedBase, 'probable');
+  check('disclosed sufficient evidence_summary has score + level', summary === 'Evidence: 62 · Substantial');
+  const breakdown = formatEvidenceBreakdown(disclosedBase);
+  check(
+    'disclosed sufficient evidence_breakdown flattens factors',
+    breakdown === 'Claims across the network 18/35 · Distinct merchants claimed at 12/25',
+  );
+
+  const insufficient = formatEvidenceSummary(
+    { ...disclosedBase, hasSufficientData: false },
+    'probable',
+  );
+  check('insufficient evidence_summary', insufficient === 'Not enough evidence yet');
+
+  const withheld = formatEvidenceSummary(
+    { ...disclosedBase, evidenceDisclosed: false },
+    'probable',
+  );
+  check('withheld evidence_summary', withheld === 'Not enough network coverage to share');
+
+  const weakCaveat = formatEvidenceSummary(disclosedBase, 'weak');
+  check('weak confidence appends caveat', weakCaveat.includes('Identity match confidence is weak'));
+
+  const withheldBreakdown = formatEvidenceBreakdown({ ...disclosedBase, evidenceDisclosed: false });
+  check('withheld evidence_breakdown neutral', withheldBreakdown.includes('coverage threshold'));
+
+  const payload = claimWidgetToJson({ ok: true, data: disclosedBase });
+  check('claimWidgetToJson includes evidence_summary', typeof payload.evidence_summary === 'string' && payload.evidence_summary.length > 0);
+  check('claimWidgetToJson includes evidence_breakdown', typeof payload.evidence_breakdown === 'string' && payload.evidence_breakdown.length > 0);
+
+  const forbidden = [/\brisk\b/i, /\bfraud\b/i, /\bfraudster\b/i, /unauth recommends/i, /unauth decided/i];
+  const evidenceCopy = [payload.evidence_summary, payload.evidence_breakdown, summary, breakdown, insufficient, withheld, weakCaveat];
+  check('evidence copy has no forbidden wording', !evidenceCopy.some((t) => forbidden.some((re) => re.test(t))));
 }
 
 // ---------------------------------------------------------------------------
