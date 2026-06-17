@@ -142,6 +142,17 @@ create policy "service role manage templates"
   using (auth.role() = 'service_role')
   with check (auth.role() = 'service_role');
 
+-- ---------------------------------------------------------------------------
+-- Grants (required for PostgREST access via service_role and authenticated)
+-- ---------------------------------------------------------------------------
+GRANT ALL ON public.merchant_rules TO service_role;
+GRANT ALL ON public.rule_evaluations TO service_role;
+GRANT ALL ON public.default_rule_templates TO service_role;
+GRANT SELECT ON public.merchant_rules TO authenticated;
+GRANT SELECT ON public.rule_evaluations TO authenticated;
+GRANT SELECT ON public.default_rule_templates TO authenticated;
+GRANT SELECT ON public.default_rule_templates TO anon;
+
 insert into public.default_rule_templates
   (name, description, conditions, action, condition_operator, sort_order)
 values
