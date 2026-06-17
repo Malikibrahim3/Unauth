@@ -35,6 +35,8 @@ export interface MerchantRule {
   condition_operator: ConditionOperator;
 }
 
+export type EvidenceLevel = 'minimal' | 'some' | 'substantial' | 'extensive';
+
 /** The resolved identity signals passed into the engine. */
 export interface IdentitySignals {
   confidence_grade: ConfidenceGrade;
@@ -47,6 +49,9 @@ export interface IdentitySignals {
   order_value_usd: number | null;
   account_age_days: number | null;
   is_network_flagged: boolean;
+  evidence_score: number;
+  evidence_level: EvidenceLevel;
+  has_sufficient_data: boolean;
 }
 
 export interface MatchedCondition extends RuleCondition {
@@ -78,6 +83,9 @@ export const FIELD_LABELS: Record<string, string> = {
   order_value_usd: 'order value',
   account_age_days: 'account age (days)',
   is_network_flagged: 'network flag status',
+  evidence_score: 'evidence score',
+  evidence_level: 'evidence level',
+  has_sufficient_data: 'sufficient data available',
 };
 
 export const OPERATOR_LABELS: Record<string, string> = {

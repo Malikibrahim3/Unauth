@@ -24,7 +24,7 @@ import { CANONICAL_CLAIM_TYPES, CLAIM_TYPE_LABELS } from '@/lib/claims/claimType
 export { FIELD_LABELS, OPERATOR_LABELS };
 
 export type RuleFieldType = 'integer' | 'decimal' | 'boolean' | 'enum' | 'string_array';
-export type RuleFieldCategory = 'identity' | 'claim_history' | 'order';
+export type RuleFieldCategory = 'evidence' | 'identity' | 'claim_history' | 'order';
 
 export interface EnumOption {
   value: string;
@@ -59,7 +59,18 @@ export const CLAIM_TYPE_OPTIONS: EnumOption[] = CANONICAL_CLAIM_TYPES.map((value
   label: CLAIM_TYPE_LABELS[value],
 }));
 
+export const EVIDENCE_LEVEL_OPTIONS: EnumOption[] = [
+  { value: 'minimal', label: 'Minimal' },
+  { value: 'some', label: 'Some' },
+  { value: 'substantial', label: 'Substantial' },
+  { value: 'extensive', label: 'Extensive' },
+];
+
 export const RULE_FIELDS: RuleFieldDef[] = [
+  // Evidence
+  { field: 'evidence_score', type: 'integer', category: 'evidence', operators: NUMERIC_OPERATORS },
+  { field: 'evidence_level', type: 'enum', category: 'evidence', operators: ENUM_OPERATORS, options: EVIDENCE_LEVEL_OPTIONS },
+  { field: 'has_sufficient_data', type: 'boolean', category: 'evidence', operators: BOOLEAN_OPERATORS },
   // Identity
   { field: 'confidence_grade', type: 'enum', category: 'identity', operators: ENUM_OPERATORS, options: CONFIDENCE_GRADE_OPTIONS },
   { field: 'has_cross_merchant_identity', type: 'boolean', category: 'identity', operators: BOOLEAN_OPERATORS },
@@ -82,6 +93,7 @@ export const FIELD_DEFS_BY_NAME: Record<string, RuleFieldDef> = Object.fromEntri
 export const RULE_ACTIONS: RuleAction[] = ['approve', 'manual_review', 'deny'];
 
 export const CATEGORY_LABELS: Record<RuleFieldCategory, string> = {
+  evidence: 'Evidence',
   identity: 'Identity',
   claim_history: 'Claim history',
   order: 'Order',

@@ -48,5 +48,9 @@ export function widgetDataToSignals(
     account_age_days: null,
     // No manual network-flag source in the widget context.
     is_network_flagged: false,
+    // Evidence scoring is not resolved in the widget path yet (Iteration 7).
+    evidence_score: 0,
+    evidence_level: 'minimal',
+    has_sufficient_data: false,
   };
 }

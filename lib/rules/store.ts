@@ -80,6 +80,9 @@ export const evaluateSchema = z.object({
     order_value_usd: z.number().nullable(),
     account_age_days: z.number().nullable(),
     is_network_flagged: z.boolean(),
+    evidence_score: z.number(),
+    evidence_level: z.enum(['minimal', 'some', 'substantial', 'extensive']),
+    has_sufficient_data: z.boolean(),
   }),
 });
 

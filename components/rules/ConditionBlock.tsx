@@ -19,7 +19,7 @@ interface ConditionBlockProps {
   disabled?: boolean;
 }
 
-const CATEGORY_ORDER: RuleFieldCategory[] = ['identity', 'claim_history', 'order'];
+const CATEGORY_ORDER: RuleFieldCategory[] = ['evidence', 'identity', 'claim_history', 'order'];
 
 /** A sensible default value for a freshly-selected field + operator pairing. */
 function defaultValueFor(def: RuleFieldDef, operator: string): unknown {

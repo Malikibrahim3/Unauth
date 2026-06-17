@@ -26,7 +26,7 @@ import {
   type MerchantRule,
   type RuleCondition,
 } from '@/lib/rules-engine';
-import { validateConditions, RULE_FIELDS, operatorsForField } from '@/lib/rules/fields';
+import { validateConditions, RULE_FIELDS, operatorsForField, CATEGORY_LABELS, type RuleFieldCategory } from '@/lib/rules/fields';
 import { widgetDataToSignals } from '@/lib/rules/widgetSignals';
 import { formatRecommendationFields } from '@/lib/gorgias/widgetJson';
 import { buildGorgiasSidebarWidgetTemplate } from '@/lib/support/gorgias/registerSidebarWidget';
@@ -64,6 +64,9 @@ function signals(overrides: Partial<IdentitySignals> = {}): IdentitySignals {
     order_value_usd: null,
     account_age_days: null,
     is_network_flagged: false,
+    evidence_score: 0,
+    evidence_level: 'minimal',
+    has_sufficient_data: false,
     ...overrides,
   };
 }
@@ -222,6 +225,37 @@ check('invalid enum option rejected', validateConditions([cond('confidence_grade
 check('invalid claim type rejected', validateConditions([cond('claim_types', 'contains', 'nonsense')]).length === 1);
 check('empty conditions array allowed', validateConditions([]).length === 0);
 check('missing value rejected', validateConditions([{ id: 'x', field: 'network_claim_count', operator: 'gte', value: null }]).length === 1);
+check('valid evidence_score >= 45 accepted', validateConditions([cond('evidence_score', 'gte', 45)]).length === 0);
+check('invalid operator on evidence_score rejected', validateConditions([cond('evidence_score', 'contains', 45)]).length === 1);
+check('invalid evidence_level option rejected', validateConditions([cond('evidence_level', 'eq', 'amazing')]).length === 1);
+check('has_sufficient_data rejects non-equality operator', validateConditions([cond('has_sufficient_data', 'gt', true)]).length === 1);
+
+// Evidence category appears before other categories in the UI catalogue.
+{
+  const CATEGORY_ORDER: RuleFieldCategory[] = ['evidence', 'identity', 'claim_history', 'order'];
+  const firstFieldByCategory = CATEGORY_ORDER.map((cat) => RULE_FIELDS.find((f) => f.category === cat)?.field);
+  check('evidence category is first in UI order', firstFieldByCategory[0] === 'evidence_score');
+  check('evidence category label present', CATEGORY_LABELS.evidence === 'Evidence');
+}
+
+// evaluateRules can match on evidence fields.
+{
+  eq(
+    'evidence_score gte matches',
+    evaluateRules(signals({ evidence_score: 50 }), [rule({ action: 'manual_review', conditions: [cond('evidence_score', 'gte', 45)] })]).recommendation,
+    'manual_review',
+  );
+  eq(
+    'evidence_level eq matches',
+    evaluateRules(signals({ evidence_level: 'extensive' }), [rule({ action: 'deny', conditions: [cond('evidence_level', 'eq', 'extensive')] })]).recommendation,
+    'deny',
+  );
+  eq(
+    'has_sufficient_data eq matches',
+    evaluateRules(signals({ has_sufficient_data: true }), [rule({ action: 'approve', conditions: [cond('has_sufficient_data', 'eq', true)] })]).recommendation,
+    'approve',
+  );
+}
 
 // Every field declares operators; every declared operator is one the engine handles.
 {
@@ -249,6 +283,9 @@ console.log('8. IdentitySignals contract');
     'order_value_usd',
     'account_age_days',
     'is_network_flagged',
+    'evidence_score',
+    'evidence_level',
+    'has_sufficient_data',
   ];
   const s = signals();
   for (const key of REQUIRED) {
@@ -289,6 +326,9 @@ console.log('9. Widget -> IdentitySignals mapping');
   eq('order_value_usd neutral default', s.order_value_usd, null);
   eq('account_age_days neutral default', s.account_age_days, null);
   eq('is_network_flagged neutral default', s.is_network_flagged, false);
+  eq('evidence_score neutral default', s.evidence_score, 0);
+  eq('evidence_level neutral default', s.evidence_level, 'minimal');
+  eq('has_sufficient_data neutral default', s.has_sufficient_data, false);
   check('claim_types neutral default', Array.isArray(s.claim_types) && s.claim_types.length === 0);
 
   // No network -> safe defaults, no throw
