@@ -51,6 +51,7 @@ export const TABLES = {
   MERCHANT_RULES: 'merchant_rules',
   RULE_EVALUATIONS: 'rule_evaluations',
   DEFAULT_RULE_TEMPLATES: 'default_rule_templates',
+  IDENTITY_EVIDENCE_SCORES: 'identity_evidence_scores',
 } as const;
 
 /** Step 3 compatibility / derived views — see PHASE_2_IMPLEMENTATION_SPEC.md */
