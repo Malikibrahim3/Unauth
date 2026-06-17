@@ -15,6 +15,7 @@ export const TABLES = {
   AUDIT_TRANSACTIONS: 'source_orders',
   MERCHANT_CLAIMS: 'claims',
   CUSTOMER_PROFILES: 'identities',
+  IDENTITY_PROFILES: 'identity_profiles',
   CUSTOMER_PROFILE_IDENTITIES: 'customer_profile_identities',
   PUBLIC_AUDITS: 'public_audits',
   MERCHANTS: 'merchants',
