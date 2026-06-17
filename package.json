@@ -9,6 +9,8 @@
     "start": "NODE_OPTIONS=--max-old-space-size=8192 next start",
     "lint": "next lint",
     "test": "jest --passWithNoTests",
+    "verify:rules": "jest tests/unit/rulesEngine.test.ts --runInBand && DOTENV_CONFIG_PATH=.env.local ts-node --project tsconfig.scripts.json --transpile-only -r dotenv/config -r tsconfig-paths/register scripts/verify-rules.ts",
+    "typecheck": "tsc --noEmit",
     "package:zendesk": "node scripts/package-zendesk-app.mjs",
     "eval": "ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/eval.ts",
     "eval:audit": "ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/eval/auditCsvAgainstAnswer.ts",
