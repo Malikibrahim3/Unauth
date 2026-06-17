@@ -359,4 +359,20 @@ export async function refreshIdentityProfile(
     refreshed_at: new Date().toISOString(),
   });
   if (pe) throw new Error(`resolver profile upsert failed: ${pe.message}`);
+
+  // Refresh the cached evidence score alongside the behavioural rollup, so the
+  // two stay consistent without a separate DB webhook. Strictly non-fatal: a
+  // scoring failure must never break identity resolution. Dynamic import keeps
+  // the evidence module out of the resolver's static graph.
+  try {
+    const { recomputeIdentityEvidenceScore } = await import('@/lib/engine/evidence/recompute');
+    const result = await recomputeIdentityEvidenceScore(identityId, { client });
+    if (!result.ok) {
+      console.error(`[resolver] evidence recompute failed for ${identityId}: ${result.error}`);
+    }
+  } catch (err) {
+    console.error(
+      `[resolver] evidence recompute threw for ${identityId}: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
 }
