@@ -526,6 +526,60 @@ console.log('10c. Gorgias evidence display fields');
 }
 
 // ---------------------------------------------------------------------------
+// 10d. Evidence default rule templates (migration 20260617170000)
+// ---------------------------------------------------------------------------
+
+console.log('10d. Evidence default rule templates');
+
+{
+  const EVIDENCE_DEFAULT_TEMPLATES = [
+    {
+      name: 'Standard Review Threshold',
+      description: 'Flags identities with substantial accumulated evidence for manual review',
+      sort_order: 4,
+      action: 'manual_review',
+      condition_operator: 'and',
+      conditions: [{ id: 't5-c1', field: 'evidence_score', operator: 'gte', value: 45 }],
+    },
+    {
+      name: 'High Confidence Deny',
+      description: 'Denies only when evidence is extensive AND the identity match itself is reliable',
+      sort_order: 5,
+      action: 'deny',
+      condition_operator: 'and',
+      conditions: [
+        { id: 't6-c1', field: 'evidence_score', operator: 'gte', value: 75 },
+        { id: 't6-c2', field: 'confidence_grade', operator: 'in', value: ['definite', 'probable'] },
+      ],
+    },
+    {
+      name: 'Clean Identity Fast-Track',
+      description: 'Approves identities with minimal evidence where enough data exists to be confident',
+      sort_order: 6,
+      action: 'approve',
+      condition_operator: 'and',
+      conditions: [
+        { id: 't7-c1', field: 'evidence_score', operator: 'lte', value: 19 },
+        { id: 't7-c2', field: 'has_sufficient_data', operator: 'eq', value: true },
+      ],
+    },
+  ] as const;
+
+  const FORBIDDEN = [/\brisk\b/i, /\bfraud\b/i, /\bfraudster\b/i, /unauth recommends/i, /unauth decided/i];
+
+  for (const tmpl of EVIDENCE_DEFAULT_TEMPLATES) {
+    check(`template "${tmpl.name}" sort_order ${tmpl.sort_order}`, tmpl.sort_order >= 4 && tmpl.sort_order <= 6);
+    check(`template "${tmpl.name}" conditions valid`, validateConditions([...tmpl.conditions]).length === 0);
+    check(
+      `template "${tmpl.name}" copy has no forbidden wording`,
+      !FORBIDDEN.some((re) => re.test(tmpl.name) || re.test(tmpl.description)),
+    );
+  }
+
+  eq('evidence templates sort_order 4–6', EVIDENCE_DEFAULT_TEMPLATES.map((t) => t.sort_order).join(','), '4,5,6');
+}
+
+// ---------------------------------------------------------------------------
 // 11. Copy guarantee — output never implies Unauth makes the decision
 // ---------------------------------------------------------------------------
 
