@@ -146,6 +146,7 @@ export function identityEvidencePoints(
 
 export function defaultRailOpen(): Record<string, boolean> {
   return {
+    recommendation: true,
     ownership: false,
     status: false,
     snooze: false,
@@ -168,6 +169,7 @@ export function railOpenForClaim(selectedClaim: ClaimRecord | null): Record<stri
   const awaitingInfo = selectedClaim.status === 'pending' || selectedClaim.status === 'evidence_requested';
 
   return {
+    recommendation: true,
     ownership: false,
     status: awaitingInfo,
     snooze: awaitingInfo,

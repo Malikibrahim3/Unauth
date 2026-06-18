@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
+import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import type { IdentityCatchEvent } from '@/lib/catches/types';
 import type { ConfidenceGrade } from '@/lib/engine/weights';
 
@@ -49,15 +50,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { data: membership } = await serviceClient
-    .from(TABLES.MERCHANT_MEMBERS)
-    .select('merchant_id')
-    .eq('user_id', user.id)
-    .single();
-
-  if (!membership) {
-    return NextResponse.json({ error: 'No merchant context' }, { status: 403 });
-  }
+  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_CUSTOMERS);
+  if (denied) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const { searchParams } = new URL(request.url);
   const claimId = searchParams.get('claimId');
@@ -67,7 +61,7 @@ export async function GET(request: Request) {
   let query = serviceClient
     .from(TABLES.IDENTITY_CATCH_EVENTS)
     .select('*')
-    .eq('merchant_id', membership.merchant_id)
+    .eq('merchant_id', ctx.merchantId)
     .is('dismissed_at', null)
     .order('created_at', { ascending: false })
     .limit(limit);

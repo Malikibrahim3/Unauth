@@ -1,8 +1,6 @@
 export type Entitlement =
   | 'EVIDENCE_PACKS'
   | 'STORE_SYNC'
-  | 'CSV_IMPORT_LIMITED'
-  | 'CSV_IMPORT_FULL'
   | 'CE3_READINESS_CHECK'
   | 'CUSTOMER_SEARCH'
   | 'CUSTOMER_DOSSIER'
@@ -12,9 +10,7 @@ export type Entitlement =
   | 'REPORTS_ADVANCED'
   | 'LIVE_LOOKUP_API'
   | 'QUICK_SCORE'
-  | 'NETWORK_GRAPH'
-  | 'CHECKOUT_CONTROLS'
-  | 'SIGNAL_API';
+  | 'NETWORK_GRAPH';
 
 export interface EntitlementMeta {
   label: string;

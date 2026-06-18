@@ -183,7 +183,7 @@ async function findExistingMerchantClaim(
     claimReason: string | null;
   }
 ): Promise<{ claimId: string | null; ambiguous: boolean }> {
-  const { data, error } = await (supabase.from('merchant_claims') as {
+  const { data, error } = await (supabase.from(TABLES.MERCHANT_CLAIMS) as {
     select: (columns: string) => {
       eq: (col: string, val: string) => {
         in: (col: string, values: string[]) => Promise<{
@@ -193,7 +193,7 @@ async function findExistingMerchantClaim(
       };
     };
   })
-    .select('id, claim_type, status, shopify_order_id, shop_domain')
+    .select('id, claim_type, status, shopify_order_id, shop_domain, order_ref, source_order_id')
     .eq('merchant_id', input.merchantId)
     .in('status', LINKABLE_CLAIM_STATUSES);
 
@@ -202,12 +202,15 @@ async function findExistingMerchantClaim(
   const matches = (data ?? []).filter((claim) => {
     const claimShopifyOrderId = asString(claim.shopify_order_id);
     const claimShopDomain = asString(claim.shop_domain);
+    const claimOrderRef = asString(claim.order_ref);
+    const claimSourceOrderId = asString(claim.source_order_id);
     const shopifyMatch = input.shopifyOrderId && claimShopifyOrderId === input.shopifyOrderId;
     const orderRefMatch =
       input.orderRef &&
-      claimShopifyOrderId === input.orderRef &&
+      (claimShopifyOrderId === input.orderRef || claimOrderRef === input.orderRef) &&
       !input.shopifyOrderId;
-    if (!shopifyMatch && !orderRefMatch) return false;
+    const sourceOrderMatch = input.shopifyOrderId && claimSourceOrderId === input.shopifyOrderId;
+    if (!shopifyMatch && !orderRefMatch && !sourceOrderMatch) return false;
     if (input.shopDomain && claimShopDomain && claimShopDomain !== input.shopDomain) return false;
     return true;
   });

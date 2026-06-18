@@ -4,6 +4,13 @@ import {
   type MerchantRule,
 } from '@/lib/rules-engine';
 import { validateConditions } from '@/lib/rules/fields';
+import {
+  activeRiskScoreRanges,
+  findOverlappingRiskControl,
+  makeRiskScoreRangeConditions,
+  parseRiskScoreRange,
+  riskScorePolicyCoverageError,
+} from '@/lib/rules/riskBands';
 
 function signals(overrides: Partial<IdentitySignals> = {}): IdentitySignals {
   return {
@@ -39,10 +46,23 @@ function rule(partial: Partial<MerchantRule>): MerchantRule {
 }
 
 describe('evaluateRules', () => {
-  it('returns no_match when no rules are configured', () => {
-    const result = evaluateRules(signals(), []);
-    expect(result.recommendation).toBe('no_match');
+  it('uses default risk controls when no active custom rules are configured', () => {
+    const low = evaluateRules(signals({ evidence_score: 20 }), []);
+    expect(low.recommendation).toBe('approve');
+    expect(low.rule_id).toBeNull();
+    expect(low.rule_name).toBe('Default low-risk control');
+
+    const review = evaluateRules(signals({ evidence_score: 50 }), []);
+    expect(review.recommendation).toBe('manual_review');
+
+    const high = evaluateRules(signals({ evidence_score: 80 }), []);
+    expect(high.recommendation).toBe('deny');
+  });
+
+  it('keeps default recommendations virtual so no fake rule id is audited', () => {
+    const result = evaluateRules(signals({ evidence_score: 80 }), []);
     expect(result.rule_id).toBeNull();
+    expect(result.matched_conditions).toHaveLength(2);
   });
 
   it('fires the first matching rule by priority', () => {
@@ -98,7 +118,7 @@ describe('evaluateRules', () => {
 
   it('skips inactive rules', () => {
     const r = rule({ is_active: false, action: 'deny', conditions: [] });
-    expect(evaluateRules(signals(), [r]).recommendation).toBe('no_match');
+    expect(evaluateRules(signals({ evidence_score: 10 }), [r]).recommendation).toBe('approve');
   });
 
   it('handles string[] contains_any on claim_types', () => {
@@ -127,6 +147,45 @@ describe('evaluateRules', () => {
     const result = evaluateRules(signals({ network_claim_count: 5 }), [r]);
     expect(result.justification_lines[0]).toContain('Serial Network Abuser');
     expect(result.justification_lines.some((l) => l.includes('actual: 5'))).toBe(true);
+  });
+});
+
+describe('risk score bands', () => {
+  it('parses inclusive risk score ranges', () => {
+    expect(
+      parseRiskScoreRange({
+        conditions: makeRiskScoreRangeConditions({ lower: 40, upper: 74 }),
+        condition_operator: 'and',
+      }),
+    ).toEqual({ lower: 40, upper: 74 });
+  });
+
+  it('detects overlapping active risk controls', () => {
+    const existing = rule({
+      id: 'existing',
+      conditions: makeRiskScoreRangeConditions({ lower: 40, upper: 74 }),
+      action: 'manual_review',
+    });
+    const overlap = findOverlappingRiskControl([existing], { lower: 70, upper: 90 });
+    expect(overlap?.id).toBe('existing');
+    expect(findOverlappingRiskControl([existing], { lower: 75, upper: 100 })).toBeNull();
+  });
+
+  it('detects gaps in risk score coverage', () => {
+    const rules = [
+      rule({ id: 'low', conditions: makeRiskScoreRangeConditions({ lower: 0, upper: 20 }), action: 'approve' }),
+      rule({ id: 'high', conditions: makeRiskScoreRangeConditions({ lower: 75, upper: 100 }), action: 'deny' }),
+    ];
+    expect(riskScorePolicyCoverageError(activeRiskScoreRanges(rules))).toContain('scores 21-74');
+  });
+
+  it('accepts complete adjacent risk score coverage', () => {
+    const rules = [
+      rule({ id: 'low', conditions: makeRiskScoreRangeConditions({ lower: 0, upper: 39 }), action: 'approve' }),
+      rule({ id: 'review', conditions: makeRiskScoreRangeConditions({ lower: 40, upper: 74 }), action: 'manual_review' }),
+      rule({ id: 'high', conditions: makeRiskScoreRangeConditions({ lower: 75, upper: 100 }), action: 'deny' }),
+    ];
+    expect(riskScorePolicyCoverageError(activeRiskScoreRanges(rules))).toBeNull();
   });
 });
 

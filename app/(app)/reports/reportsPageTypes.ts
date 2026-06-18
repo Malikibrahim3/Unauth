@@ -1,4 +1,4 @@
-export const REPORTS_TABS = ['overview', 'csv', 'integration'] as const;
+export const REPORTS_TABS = ['overview', 'integration'] as const;
 export type ReportsTab = (typeof REPORTS_TABS)[number];
 
 export type ClaimRow = {

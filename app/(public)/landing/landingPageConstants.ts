@@ -64,7 +64,7 @@ const FAQ_FEATURED = [
   },
   {
     q: "Can you see my customers' data?",
-    a: "Your raw upload is processed inside your merchant workspace and is not exposed to other merchants. Network comparison uses HMAC-SHA256 identifiers, k-anonymity gates, and masked outputs so reports show relevant pseudonymous patterns without revealing another merchant's customer records.",
+    a: "Your raw store and helpdesk data is processed inside your merchant workspace and is not exposed to other merchants. Network comparison uses HMAC-SHA256 identifiers, k-anonymity gates, and masked outputs so reports show relevant pseudonymous patterns without revealing another merchant's customer records.",
   },
   {
     q: 'Is this GDPR compliant?',
@@ -72,11 +72,11 @@ const FAQ_FEATURED = [
   },
   {
     q: 'Do I need to integrate anything?',
-    a: 'For live monitoring, yes: connect one order source and one helpdesk. CSV import is available for historical backfill or evaluation if you are not ready to connect yet.',
+    a: 'Yes: connect one order source and one helpdesk. Unauth backfills available order, ticket, claim, and outcome context from those connected systems.',
   },
   {
-    q: 'How long does an audit take?',
-    a: "Around 20 minutes for most datasets. Files with 50,000+ orders may take slightly longer. You don't need to stay on the page — results will be ready when you return.",
+    q: 'How long does setup take?',
+    a: "Most teams can connect a store and helpdesk in about fifteen minutes. Historical context depends on what those systems expose through their APIs.",
   },
 ] as const;
 
@@ -111,7 +111,7 @@ const FAQ_MORE = [
   },
   {
     q: 'How do I get started?',
-    a: 'Connect your store or upload a CSV. No credit card required.',
+    a: 'Connect your store and helpdesk. No credit card required.',
   },
 ] as const;
 
@@ -125,7 +125,7 @@ export const HERO_SUBJECT_FIELDS = [
   { label: 'phone', rows: [['+44 7*** ***1184', 'primary'], ['+44 7*** ***2209', 'variant · 2 merchants']] },
   { label: 'ip / geo', rows: [['82.***.***.114', 'LDN · AS15169'], ['81.***.***.203', 'MAN · AS15169'], ['91.***.***.77', 'LDN · AS15169']] },
   { label: 'browser', rows: [['Safari 17 · iPhone', 'primary'], ['Chrome 124 · iPhone', 'observed once']] },
-  { label: 'delivery', rows: [['DPD · photo proof requested x3', ''], ['Royal Mail · no proof · 1 dispute']] },
+  { label: 'delivery', rows: [['Courier proof requested x3', ''], ['Order tracking unavailable · 1 dispute']] },
 ] as const;
 
 export function heroSubjectRowDelay(rowIndex: number): string {
@@ -144,7 +144,7 @@ export const COMPARISON_ROWS = [
   { cap: 'Surfaces cross-merchant identity patterns', a: 'partial' as const, b: 'no' as const, c: 'yes' as const, note: 'thresholded network signals (k≥3 merchants)' },
   { cap: 'Explainable signals (no black box)', a: 'partial' as const, b: 'no' as const, c: 'yes' as const, note: 'every flag documented' },
   { cap: 'Generates representment-ready case file', a: 'no' as const, b: 'no' as const, c: 'yes' as const, note: 'chargeback evidence packet' },
-  { cap: 'CSV backfill available when integrations are not connected', a: 'no' as const, b: 'no' as const, c: 'yes' as const, note: 'historical import, optional' },
+  { cap: 'Backfills available context from connected systems', a: 'no' as const, b: 'no' as const, c: 'yes' as const, note: 'store + helpdesk history' },
   { cap: 'You keep the decline decision - no black box blocks', a: 'no' as const, b: 'no' as const, c: 'yes' as const, note: 'advises, never auto-blocks' },
   { cap: 'Context unlocks are case-scoped, not reusable customer surveillance', a: 'no' as const, b: 'no' as const, c: 'yes' as const, note: 'credits unlock review context for a case' },
   { cap: 'PII stays encrypted - never exposed in transit', a: 'no' as const, b: 'no' as const, c: 'yes' as const, note: 'client-side HMAC-SHA256' },
@@ -152,7 +152,7 @@ export const COMPARISON_ROWS = [
 
 export const COMPARISON_COLUMNS = [
   { name: 'Blocklists', sub: 'Flags repeat emails, IPs, or devices you have already seen', highlight: false, logo: false },
-  { name: 'Checkout scoring', sub: 'Scores orders at checkout to catch payment fraud before approval', highlight: false, logo: false },
+  { name: 'Checkout scoring', sub: 'Assesses payment risk before the claim exists', highlight: false, logo: false },
   { name: 'Unauth', sub: 'Claim confidence, evidence strength, and privacy-preserving network signals after checkout', highlight: true, logo: true },
 ] as const;
 

@@ -4,6 +4,14 @@ import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { TABLES } from '@/lib/supabase/tables';
 import { mapRuleRow, RULE_COLUMNS, updateRuleSchema } from '@/lib/rules/store';
 import { validateConditions } from '@/lib/rules/fields';
+import {
+  activeRiskScoreRanges,
+  findOverlappingRiskControl,
+  formatRiskScoreRange,
+  parseRiskScoreRange,
+  riskScorePolicyCoverageError,
+} from '@/lib/rules/riskBands';
+import type { MerchantRule, RuleCondition } from '@/lib/rules-engine';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -33,10 +41,64 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     );
   }
 
-  if (parsed.data.conditions !== undefined) {
-    const conditionErrors = validateConditions(parsed.data.conditions);
+  const parsedConditions = parsed.data.conditions as RuleCondition[] | undefined;
+  if (parsedConditions !== undefined) {
+    const conditionErrors = validateConditions(parsedConditions);
     if (conditionErrors.length > 0) {
       return NextResponse.json({ error: conditionErrors[0]!.message }, { status: 422 });
+    }
+  }
+
+  const { data: currentRow, error: currentError } = await serviceClient
+    .from(TABLES.MERCHANT_RULES)
+    .select(RULE_COLUMNS)
+    .eq('id', id)
+    .eq('merchant_id', ctx.merchantId)
+    .maybeSingle();
+  if (currentError) {
+    return NextResponse.json({ error: 'Failed to load rule' }, { status: 500 });
+  }
+  if (!currentRow) {
+    return NextResponse.json({ error: 'Rule not found' }, { status: 404 });
+  }
+
+  const currentRule = mapRuleRow(currentRow as never);
+  const nextRule: MerchantRule = {
+    ...currentRule,
+    ...parsed.data,
+    description: parsed.data.description === undefined ? currentRule.description : parsed.data.description,
+    conditions: parsedConditions ?? currentRule.conditions,
+    action: parsed.data.action ?? currentRule.action,
+    condition_operator: parsed.data.condition_operator ?? currentRule.condition_operator,
+    is_active: parsed.data.is_active ?? currentRule.is_active,
+    priority: parsed.data.priority ?? currentRule.priority,
+  };
+  const candidateRange = nextRule.is_active ? parseRiskScoreRange(nextRule) : null;
+  if (candidateRange) {
+    const { data: existingRows, error: existingError } = await serviceClient
+      .from(TABLES.MERCHANT_RULES)
+      .select(RULE_COLUMNS)
+      .eq('merchant_id', ctx.merchantId)
+      .eq('is_active', true);
+    if (existingError) {
+      return NextResponse.json({ error: 'Failed to validate risk score range' }, { status: 500 });
+    }
+    const overlap = findOverlappingRiskControl(
+      (existingRows ?? []).map((row: unknown) => mapRuleRow(row as never)),
+      candidateRange,
+      id,
+    );
+    if (overlap) {
+      return NextResponse.json(
+        { error: `${formatRiskScoreRange(candidateRange)} overlaps "${overlap.name}". Risk score bands cannot overlap.` },
+        { status: 422 },
+      );
+    }
+    const existingRules = (existingRows ?? []).map((row: unknown) => mapRuleRow(row as never));
+    const ranges = activeRiskScoreRanges(existingRules, { range: candidateRange, excludeRuleId: id });
+    const coverageError = riskScorePolicyCoverageError(ranges);
+    if (coverageError) {
+      return NextResponse.json({ error: coverageError }, { status: 422 });
     }
   }
 
@@ -59,7 +121,6 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   if (!data) {
     return NextResponse.json({ error: 'Rule not found' }, { status: 404 });
   }
-
   return NextResponse.json({ rule: mapRuleRow(data as never) });
 }
 
@@ -73,6 +134,26 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
   const serviceClient = createServiceClient();
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.MANAGE_SETTINGS);
   if (denied) return denied;
+
+  const { data: existingRows, error: existingError } = await serviceClient
+    .from(TABLES.MERCHANT_RULES)
+    .select(RULE_COLUMNS)
+    .eq('merchant_id', ctx.merchantId)
+    .eq('is_active', true);
+  if (existingError) {
+    return NextResponse.json({ error: 'Failed to validate risk score policy' }, { status: 500 });
+  }
+  const activeRules = (existingRows ?? []).map((row: unknown) => mapRuleRow(row as never));
+  const remainingRanges = activeRiskScoreRanges(activeRules.filter((rule: MerchantRule) => rule.id !== id));
+  const deletingRiskControl = activeRules.some(
+    (rule: MerchantRule) => rule.id === id && parseRiskScoreRange(rule) !== null,
+  );
+  if (deletingRiskControl) {
+    const coverageError = riskScorePolicyCoverageError(remainingRanges);
+    if (coverageError) {
+      return NextResponse.json({ error: coverageError }, { status: 422 });
+    }
+  }
 
   const { data, error } = await serviceClient
     .from(TABLES.MERCHANT_RULES)

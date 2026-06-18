@@ -59,7 +59,7 @@ export function checkPlanFeatureAccess(
   if (can(tier, feature)) return { allowed: true };
 
   const upgradePlan: PlanId =
-    feature === 'lookup_api' || feature === 'signal_licensing_api' ? 'scale' : 'pro';
+    feature === 'lookup_api' || feature === 'quick_score_api' ? 'scale' : 'pro';
 
   return {
     allowed: false,

@@ -13,9 +13,9 @@
     --brand-rust:       #7B2D26;
     --brand-rust-hover: #5E2018;
     --brand-rust-soft:  #F4E6E0;
-    --action-ink:       #1C1008;
-    --action-ink-hover: #140B05;
-    --action-ink-soft:  #ECE5DC;
+    --action-ink:       #7B2D26;
+    --action-ink-hover: #5E2018;
+    --action-ink-soft:  #F4E6E0;
     --data-neutral:     #6B6560;
     --data-neutral-soft:#E7E0D8;
     --brand-paper:      #F6F5F3;
@@ -166,12 +166,12 @@
     --icon:             #4A3F38;
     --icon-muted:       #9A8F87;
 
-    /* ── Brand accent (single) — primary action blue ── */
-    --accent:           var(--action-ink);
-    --accent-hover:     var(--action-ink-hover);
-    --accent-soft:      var(--action-ink-soft);
-    --accent-subtle:    var(--action-ink-soft);
-    --accent-soft-hover: color-mix(in srgb, var(--action-ink) 12%, transparent);
+    /* ── Brand accent (single) — primary rust accent ── */
+    --accent:           var(--brand-rust);
+    --accent-hover:     var(--brand-rust-hover);
+    --accent-soft:      var(--brand-rust-soft);
+    --accent-subtle:    var(--accent-50);
+    --accent-soft-hover: color-mix(in srgb, var(--brand-rust) 12%, transparent);
 
     /* ── Risk tiers (only valid semantic use of red/amber/green) ── */
     --risk-critical:    #9F1D1D;
@@ -541,34 +541,34 @@
      * ═════════════════════════════════════════════════════════════════════ */
 
     /* Surfaces */
-    --bg:               #F4F3F1;
+    --bg:               #FFFFFF;
     --surface:          #FFFFFF;
-    --surface-sunken:   #EFEDEB;
+    --surface-sunken:   #F7F7F7;
     --surface-overlay:  #FFFFFF;
-    --surface-hover:    #EDECEA;
+    --surface-hover:    #F6F6F6;
 
     /* Canonical surface aliases (backward compat) */
-    --surface-base:     #F4F3F1;
+    --surface-base:     #FFFFFF;
     --surface-raised:   #FFFFFF;
-    --surface-muted:    #EFEDEB;
+    --surface-muted:    #F7F7F7;
     --surface-input:    #FFFFFF;
-    --surface-border:   #E3DED8;
+    --surface-border:   #E8E8E8;
 
-    --bg-canvas:        #F4F3F1;
+    --bg-canvas:        #FFFFFF;
     --bg-surface:       #FFFFFF;
-    --bg-surface-alt:   #EFEDEB;
-    --bg-surface-sunk:  #ECEAE7;
-    --bg-hover:         #EDECEA;
+    --bg-surface-alt:   #FAFAFA;
+    --bg-surface-sunk:  #F7F7F7;
+    --bg-hover:         #F6F6F6;
     --bg-selected:      #F4E6E0;
-    --bg-subtle:        #EFEDEB;
-    --bg-muted:         #EFEDEB;
-    --bg-inset:         #F4F3F1;
+    --bg-subtle:        #FAFAFA;
+    --bg-muted:         #F7F7F7;
+    --bg-inset:         #FFFFFF;
 
     /* Borders */
-    --border:           #E3DED8;
-    --border-muted:     #EAE7E3;
-    --border-subtle:    #EAE7E3;
-    --border-default:   #E3DED8;
+    --border:           #E8E8E8;
+    --border-muted:     #EEEEEE;
+    --border-subtle:    #F1F1F1;
+    --border-default:   #E8E8E8;
     --border-strong:    #1A1814;
 
     /* Text — neutral warm-grey ink */

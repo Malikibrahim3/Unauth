@@ -316,10 +316,49 @@ export function formatRecommendationFields(
   const justification = result.justification_lines.length > 0
     ? result.justification_lines.join(' · ')
     : null;
+  const sourceLabel = ruleCount === 0 ? 'default risk controls' : 'your configured rules';
   const detail = justification
-    ? `${justification} · Based on your configured rules`
-    : 'Based on your configured rules';
+    ? `${justification} · Based on ${sourceLabel}`
+    : `Based on ${sourceLabel}`;
   return { recommendation: heading, recommendation_detail: detail };
+}
+
+export type ClaimRecommendationUnavailableReason = 'not_found' | 'ambiguous' | 'eval_failed';
+
+/**
+ * Shown when a claim-like ticket cannot produce a claim-scoped recommendation.
+ * Never implies Approve / Manual review / Deny — identity context may still render.
+ */
+export function formatClaimRecommendationUnavailable(
+  reason: ClaimRecommendationUnavailableReason,
+  options?: { ruleCount?: number },
+): Pick<GorgiasWidgetJsonPayload, 'recommendation' | 'recommendation_detail'> {
+  if (reason === 'ambiguous') {
+    return {
+      recommendation: 'Claim recommendation unavailable',
+      recommendation_detail:
+        'Multiple possible claims were found for this ticket. Open Unauth to select the correct claim.',
+    };
+  }
+  if (reason === 'eval_failed') {
+    const ruleCount = options?.ruleCount;
+    if (ruleCount === 0) {
+      return {
+        recommendation: 'Recommendation could not be generated',
+        recommendation_detail:
+          'Claim context was found, but rule evaluation failed. Set up fraud rules in Unauth to get recommendations.',
+      };
+    }
+    return {
+      recommendation: 'Recommendation could not be generated',
+      recommendation_detail: 'Claim context was found, but rule evaluation failed.',
+    };
+  }
+  return {
+    recommendation: 'Claim recommendation unavailable',
+    recommendation_detail:
+      'Unauth could not resolve this ticket to a claim yet. Showing identity context only.',
+  };
 }
 
 /** Case-scoped Gorgias tickets get credit unlock links; preview must not leak stats before unlock. */

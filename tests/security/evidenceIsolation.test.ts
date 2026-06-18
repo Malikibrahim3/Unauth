@@ -8,6 +8,7 @@
  */
 
 import { buildEvidencePackage } from '@/lib/evidence/buildPackage';
+import { TABLES } from '@/lib/supabase/tables';
 import {
   fetchMerchantScopedCustomerProfile,
   fetchMerchantScopedCustomerTransactions,
@@ -20,14 +21,14 @@ const rowsByTable: Record<string, Row[]> = {
     { id: 'merchant-a', user_id: 'legacy-user-a', business_name: 'Merchant A' },
     { id: 'merchant-b', user_id: 'legacy-user-b', business_name: 'Merchant B' },
   ],
-  processing_jobs: [
+  [TABLES.PROCESSING_JOBS]: [
     { id: 'job-a', merchant_id: 'merchant-a', hidden_by_merchant: false },
     { id: 'job-b', merchant_id: 'merchant-b', hidden_by_merchant: false },
   ],
-  customer_profiles: [
+  [TABLES.CUSTOMER_PROFILES]: [
     {
       id: 'profile-shared',
-      merchant_ids: ['legacy-user-a', 'merchant-b'],
+      merchant_ids: ['merchant-a', 'legacy-user-a', 'merchant-b'],
       emails: ['shared@example.com'],
       names: ['Shared Customer'],
       phones: [],
@@ -53,7 +54,7 @@ const rowsByTable: Record<string, Row[]> = {
     { profile_id: 'profile-shared', audit_id: 'job-a', transaction_id: 'tx-a' },
     { profile_id: 'profile-shared', audit_id: 'job-b', transaction_id: 'tx-b' },
   ],
-  audit_transactions: [
+  [TABLES.AUDIT_TRANSACTIONS]: [
     {
       id: 'tx-a',
       job_id: 'job-a',
@@ -157,7 +158,7 @@ class QueryBuilder {
       rows = rows.filter((row) => values.includes(row[column]));
     }
 
-    if (this.table === 'customer_profiles' && this.orFilter) {
+    if (this.table === TABLES.CUSTOMER_PROFILES && this.orFilter) {
       const allowedMerchantIds = [...this.orFilter.matchAll(/merchant_ids\.cs\.\["([^"]+)"\]/g)]
         .map((match) => match[1]);
       rows = rows.filter((row) =>

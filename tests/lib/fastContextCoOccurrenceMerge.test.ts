@@ -8,6 +8,7 @@ import {
 import { hashIdentifier } from '@/lib/identity/hash';
 import { normaliseEmail, normaliseAddress, normaliseIP } from '@/lib/identity/normalise';
 import type { NormalisedOrder } from '@/lib/engine/types';
+import { TABLES } from '@/lib/supabase/tables';
 
 const EMAIL = 'user@example.com';
 const ADDRESS = '1 main street london';
@@ -172,7 +173,7 @@ describe('buildFastContext — dual-read integration', () => {
           select: () => chain,
           eq: () => chain,
           in: () => {
-            if (table === 'identifier_co_occurrence_edges') {
+            if (table === TABLES.IDENTIFIER_CO_OCCURRENCE_EDGES) {
               return Promise.resolve({ data: [newRow], error: null });
             }
             return Promise.resolve({ data: [], error: null });
@@ -191,7 +192,7 @@ describe('buildFastContext — dual-read integration', () => {
     const ctx = await buildFastContext([order], client as never);
 
     expect(tablesQueried).toContain('fraud_entity_co_occurrences');
-    expect(tablesQueried).toContain('identifier_co_occurrence_edges');
+    expect(tablesQueried).toContain(TABLES.IDENTIFIER_CO_OCCURRENCE_EDGES);
 
     const expected = identifierEdgeToCoOccurrence(newRow, hashToLegacy);
     const indexed = ctx.historicalCoOccurrenceMap.get(

@@ -20,6 +20,7 @@ import {
   fetchMerchantReviewQueueRows,
   fetchReviewQueueProfileIds,
 } from '../../lib/supabase/merchantHelpers';
+import { TABLES } from '@/lib/supabase/tables';
 
 // ---------------------------------------------------------------------------
 // Helper: minimal Supabase mock
@@ -69,6 +70,12 @@ describe('Static security guard: service-role routes must be auth-gated', () => 
       'app/api/founding-merchant-applications/route.ts',
       'app/api/cron/purge-expired-audits/route.ts',
       'app/api/account/setup/route.ts',
+      // Intentionally public bootstrap script: returns merchant-scoped collector JS
+      // for a validated Shopify shop domain and no customer PII.
+      'app/api/shopify/collector-init/route.ts',
+      // Intentionally public browser ingestion endpoint. It accepts only hashed
+      // checkout/session signals, validates merchant/platform, and rate-limits by IP.
+      'app/api/checkout-signals/ingest/route.ts',
     ];
 
     for (const relPath of routeFiles) {
@@ -246,7 +253,7 @@ describe('fetchMerchantReviewQueueRows — review queue definition', () => {
 
     const mock = {
       from: jest.fn((table: string) => {
-        if (table === 'processing_jobs') {
+        if (table === TABLES.PROCESSING_JOBS) {
           const c: any = { select: jest.fn().mockReturnThis(), eq: jest.fn().mockReturnThis(), range: jest.fn().mockResolvedValue({ data: [{ id: 'job-1' }], error: null }) };
           return c;
         }
@@ -296,7 +303,7 @@ describe('fetchMerchantReviewQueueRows — review queue definition', () => {
 
     const mock = {
       from: jest.fn((table: string) => {
-        if (table === 'processing_jobs') {
+        if (table === TABLES.PROCESSING_JOBS) {
           const c: any = { select: jest.fn().mockReturnThis(), eq: jest.fn().mockReturnThis(), range: jest.fn().mockResolvedValue({ data: [{ id: 'job-1' }], error: null }) };
           return c;
         }
@@ -324,7 +331,7 @@ describe('fetchMerchantReviewQueueRows — review queue definition', () => {
 
     const mock = {
       from: jest.fn((table: string) => {
-        if (table === 'processing_jobs') {
+        if (table === TABLES.PROCESSING_JOBS) {
           const c: any = { select: jest.fn().mockReturnThis(), eq: jest.fn().mockReturnThis(), range: jest.fn().mockResolvedValue({ data: [{ id: 'job-1' }], error: null }) };
           return c;
         }
@@ -384,17 +391,6 @@ describe('/api/inbox/export — review population semantics', () => {
 // ---------------------------------------------------------------------------
 // Inbox page — correct population semantics
 // ---------------------------------------------------------------------------
-describe('Inbox page — review population semantics', () => {
-  it('inbox page is a thin alias redirect to the canonical claims route', () => {
-    const content = fs.readFileSync(
-      path.join(process.cwd(), 'app/(app)/inbox/page.tsx'),
-      'utf-8'
-    );
-    expect(content).toContain("redirect('/claims')");
-    expect(content).not.toContain('fetchMerchantReviewQueueRows');
-  });
-});
-
 // ---------------------------------------------------------------------------
 // /api/inbox — query-backed inbox semantics
 // ---------------------------------------------------------------------------
@@ -448,15 +444,17 @@ describe('Customer detail page — linked identity privacy', () => {
     expect(content).not.toMatch(/\.from\s*\(\s*['"]fraud_identity_clusters['"]/);
   });
 
-  it('derives linked identity from merchant-owned transactions only', () => {
+  it('derives linked identity from merchant-owned source data only', () => {
     const content = fs.readFileSync(
       path.join(process.cwd(), 'app/(app)/customers/[id]/customerProfilePageLoad.ts'),
       'utf-8'
     );
-    // Must use fetchMerchantScopedCustomerTransactions (not raw cluster table)
-    expect(content).toContain('fetchMerchantScopedCustomerTransactions');
-    expect(content).toContain('if (transactionRows.length === 0');
-    expect(content).toContain("in('job_id', ownedJobIds)");
+    expect(content).toContain("from('source_customers')");
+    expect(content).toContain("from('source_orders')");
+    expect(content).toContain('.eq(\'merchant_id\', merchantId)');
+    expect(content).toContain('.in(\'source_customer_id\', identityCustomerIds)');
+    expect(content).not.toContain('fraud_identity_clusters');
+    expect(content).not.toContain('audit_transactions');
   });
 });
 
@@ -557,7 +555,7 @@ describe('fetchMerchantReviewQueueRows — null match_status regression', () => 
     const orCalls: string[] = [];
     const mock = {
       from: jest.fn((table: string) => {
-        if (table === 'processing_jobs') {
+        if (table === TABLES.PROCESSING_JOBS) {
           const c: any = { select: jest.fn().mockReturnThis(), eq: jest.fn().mockReturnThis(), range: jest.fn().mockResolvedValue({ data: [{ id: 'job-1' }], error: null }) };
           return c;
         }
@@ -618,15 +616,7 @@ describe('fetchMerchantReviewQueueRows — null match_status regression', () => 
 // ---------------------------------------------------------------------------
 // Inbox page auth and permission guards
 // ---------------------------------------------------------------------------
-describe('Inbox page — auth and permission guards', () => {
-  it('inbox page redirects to the canonical claims route', () => {
-    const content = fs.readFileSync(
-      path.join(process.cwd(), 'app/(app)/inbox/page.tsx'),
-      'utf-8'
-    );
-    expect(content).toContain("redirect('/claims')");
-  });
-
+describe('Claims page — auth and permission guards', () => {
   it('claims page owns auth and VIEW_INBOX permission enforcement', () => {
     const content = fs.readFileSync(
       path.join(process.cwd(), 'app/(app)/claims/page.tsx'),
@@ -853,7 +843,7 @@ function makeCountMock({
 
   const mock = {
     from: jest.fn((table: string) => {
-      if (table === 'processing_jobs') {
+      if (table === TABLES.PROCESSING_JOBS) {
         // Ownership-check chain: .select().eq('id', ...).eq('merchant_id', ...) resolves at second .eq()
         const chain: any = {
           select: jest.fn().mockReturnThis(),
@@ -904,7 +894,7 @@ describe('countReviewWorthyTransactions — behavioral tests', () => {
     const mock = makeCountMock({ jobsData: [{ id: 'job-1' }], gradedCount: 0, statusCount: 0 });
     await countReviewWorthyTransactions(mock as any, 'job-1', 'merchant-a');
     const fromCalls = (mock.from as jest.Mock).mock.calls.map(([t]: [string]) => t);
-    expect(fromCalls[0]).toBe('processing_jobs');
+    expect(fromCalls[0]).toBe(TABLES.PROCESSING_JOBS);
   });
 
   it('never calls .eq("merchant_id") on audit_transactions', async () => {
@@ -997,40 +987,6 @@ describe('countReviewWorthyTransactions — behavioral tests', () => {
     expect(src).toContain('true');
   });
 
-  it('process-csv-finalize route uses countReviewWorthyTransactions, not risk_level', () => {
-    const content = fs.readFileSync(
-      path.join(process.cwd(), 'app/api/process-csv-finalize/route.ts'),
-      'utf-8'
-    );
-    expect(content).toContain('countReviewWorthyTransactions');
-    expect(content).not.toContain(".in('risk_level'");
-    expect(content).not.toContain('.in("risk_level"');
-  });
-});
-
-// ---------------------------------------------------------------------------
-// CSV ingest — no invalid audit_transactions.merchant_id ownership queries
-// ---------------------------------------------------------------------------
-describe('CSV ingest — schema-safe transaction scoping', () => {
-  it('process-csv-job route does NOT query audit_transactions.merchant_id', () => {
-    const content = fs.readFileSync(
-      path.join(process.cwd(), 'app/api/process-csv-job/route.ts'),
-      'utf-8'
-    );
-    expect(content).not.toMatch(
-      /from\s*\(\s*['"]audit_transactions['"]\s*\)[\s\S]*?\.eq\s*\(\s*['"]merchant_id['"]\s*,\s*merchantId\s*\)/
-    );
-  });
-
-  it('process-csv-chunk route does NOT query audit_transactions.merchant_id', () => {
-    const content = fs.readFileSync(
-      path.join(process.cwd(), 'app/api/process-csv-chunk/route.ts'),
-      'utf-8'
-    );
-    expect(content).not.toMatch(
-      /from\s*\(\s*['"]audit_transactions['"]\s*\)[\s\S]*?\.eq\s*\(\s*['"]merchant_id['"]\s*,\s*merchantId\s*\)/
-    );
-  });
 });
 
 // ---------------------------------------------------------------------------
@@ -1116,7 +1072,7 @@ function makeQueueProfilesMock({
 
   return {
     from: jest.fn((table: string) => {
-      if (table === 'processing_jobs') {
+      if (table === TABLES.PROCESSING_JOBS) {
         const callIdx = jobsCallIdx++;
         const chain: any = {
           select: jest.fn().mockReturnThis(),
@@ -1129,7 +1085,7 @@ function makeQueueProfilesMock({
         return chain;
       }
 
-      if (table === 'audit_transactions') {
+      if (table === TABLES.AUDIT_TRANSACTIONS) {
         // Determine whether this query is the graded clause or status clause.
         let mode: 'graded' | 'status' = 'graded';
         const chain: any = {
@@ -1245,7 +1201,7 @@ describe('countMerchantReviewQueueProfiles — behavioral tests', () => {
     const eqCalls: string[] = [];
     const mock = {
       from: jest.fn((table: string) => {
-        if (table === 'processing_jobs') {
+        if (table === TABLES.PROCESSING_JOBS) {
           // getMerchantOwnedJobIds now paginates via .eq().range()
           const chain: any = {
             select: jest.fn().mockReturnThis(),
@@ -1273,7 +1229,7 @@ describe('countMerchantReviewQueueProfiles — behavioral tests', () => {
 // ---------------------------------------------------------------------------
 // app/api/customers/[id]/route.ts — no .limit(1000) regression
 // ---------------------------------------------------------------------------
-describe('app/api/customers/[id]/route.ts — no fixed .limit(1000)', () => {
+describe('customer profile surfaces — no fixed .limit(1000)', () => {
   it('does NOT contain .limit(1000) in fetchDirectIdentityRows', () => {
     const content = fs.readFileSync(
       path.join(process.cwd(), 'app/api/customers/[id]/route.ts'),
@@ -1283,13 +1239,14 @@ describe('app/api/customers/[id]/route.ts — no fixed .limit(1000)', () => {
     expect(content).not.toContain('.limit(1000)');
   });
 
-  it('fetchDirectIdentityRows uses .range() pagination instead of .limit()', () => {
+  it('customer profile page uses bounded source-order reads instead of legacy audit pagination', () => {
     const content = fs.readFileSync(
-      path.join(process.cwd(), 'app/api/customers/[id]/route.ts'),
+      path.join(process.cwd(), 'app/(app)/customers/[id]/customerProfilePageLoad.ts'),
       'utf-8'
     );
-    // Paginated fetches use .range() — verify it is present in the fallback section.
-    expect(content).toContain('.range(offset');
+    expect(content).toContain("from('source_orders')");
+    expect(content).toContain('.limit(2000)');
+    expect(content).not.toContain('audit_transactions');
   });
 });
 

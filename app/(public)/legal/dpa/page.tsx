@@ -35,8 +35,8 @@ export default function DpaPage() {
             This Data Processing Agreement (&ldquo;DPA&rdquo;) is entered into between the merchant
             entity that has accepted the Unauth Terms of Service (&ldquo;Data Controller&rdquo;) and
             Unauth Ltd, a company incorporated in England and Wales (&ldquo;Processor&rdquo; or
-            &ldquo;Unauth&rdquo;). The Controller uploads order data to the Unauth platform; Unauth
-            processes that data solely as directed by the Controller.
+            &ldquo;Unauth&rdquo;). The Controller provides order, support, claim, and related commerce
+            data to the Unauth platform; Unauth processes that data solely as directed by the Controller.
           </p>
         </section>
 
@@ -44,7 +44,7 @@ export default function DpaPage() {
           <h2 className="mb-2 text-xl font-semibold text-[var(--text)]">2. Subject matter and duration of processing</h2>
           <p>
             Unauth processes personal data provided by the Controller for the purposes set out in
-            section 3 below. Processing commences on the date the Controller first uploads data to the
+            section 3 below. Processing commences on the date the Controller first provides data to the
             platform and continues for the duration of the active subscription, plus any retention
             period specified in section 7. Either party may terminate processing by providing 30 days
             written notice.
@@ -54,12 +54,12 @@ export default function DpaPage() {
         <section>
           <h2 className="mb-2 text-xl font-semibold text-[var(--text)]">3. Nature and purpose of processing</h2>
           <p>
-            Unauth processes order and transaction data to provide identity-matching and refund-abuse
-            detection services. Processing activities include normalisation of customer identifiers,
-            generation of pseudonymous identity hashes, scoring of transactions against the Unauth
-            risk model, and contribution of aggregate identity signals to the Unauth cross-merchant
-            network. No plaintext customer identifiers are stored beyond the Controller&rsquo;s own
-            data silo.
+            Unauth processes order, support, claim, outcome, and transaction data to provide claim
+            review, identity context, evidence packaging, and merchant-owned rule recommendations.
+            Processing activities include normalisation of customer identifiers, generation of
+            pseudonymous identity hashes, and contribution of aggregate identity signals to the Unauth
+            cross-merchant network. No plaintext customer identifiers are stored beyond the
+            Controller&rsquo;s own data silo.
           </p>
         </section>
 
@@ -67,8 +67,8 @@ export default function DpaPage() {
           <h2 className="mb-2 text-xl font-semibold text-[var(--text)]">4. Type of personal data</h2>
           <p>
             The following categories of personal data may be processed: order identifiers and values;
-            customer name, email address, delivery address, and phone number (as uploaded by the
-            Controller); device identifiers and IP addresses (where present in the uploaded data);
+            customer name, email address, delivery address, and phone number (as provided by the
+            Controller); device identifiers and IP addresses (where present in the provided data);
             refund and chargeback history. No special-category data within the meaning of Article 9
             UK GDPR is knowingly processed.
           </p>

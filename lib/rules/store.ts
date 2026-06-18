@@ -17,12 +17,19 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { TABLES } from '@/lib/supabase/tables';
 import {
+  AUDIT_DEDUPE_WINDOW_MS,
+  buildDedupeKey,
+  hashRules,
+  hashSignals,
+} from '@/lib/claims/decision/auditHashes';
+import {
   evaluateRules,
   type IdentitySignals,
   type MerchantRule,
   type RuleAction,
   type RuleCondition,
   type RuleEvaluationResult,
+  type RuleSignals,
 } from '@/lib/rules-engine';
 
 // ---------------------------------------------------------------------------
@@ -151,7 +158,7 @@ export interface RunEvaluationInput {
   merchantId: string;
   claimId?: string | null;
   identityId?: string | null;
-  signals: IdentitySignals;
+  signals: RuleSignals;
 }
 
 /**
@@ -167,7 +174,7 @@ interface RuleTraceEntry {
 }
 
 function buildRulesTrace(
-  signals: IdentitySignals,
+  signals: RuleSignals,
   rules: MerchantRule[],
   winnerRuleId: string | null,
 ): RuleTraceEntry[] {
@@ -198,7 +205,7 @@ export async function writeRuleEvaluationAudit(
     merchantId: string;
     claimId?: string | null;
     identityId?: string | null;
-    signals: IdentitySignals;
+    signals: RuleSignals;
     rules: MerchantRule[];
     result: RuleEvaluationResult;
   },
@@ -216,6 +223,103 @@ export async function writeRuleEvaluationAudit(
   if (error) {
     console.error('[rules-engine] failed to write rule_evaluations audit row', error.message);
   }
+}
+
+export type RuleAuditStatus = 'written' | 'deduped' | 'failed';
+
+export interface ClaimRuleEvaluationAuditInput {
+  merchantId: string;
+  claimId: string;
+  identityId?: string | null;
+  sourceTicketId?: string | null;
+  signals: RuleSignals;
+  rules: MerchantRule[];
+  result: RuleEvaluationResult;
+  evaluationSource: string;
+  actorId?: string | null;
+  evaluatedAt?: string;
+}
+
+/**
+ * Writes a claim-bound audit row with full traceability metadata embedded in
+ * all_rules_evaluated (preserves array shape for existing verify scripts).
+ */
+export async function writeClaimRuleEvaluationAudit(
+  client: SupabaseClient,
+  input: ClaimRuleEvaluationAuditInput,
+): Promise<RuleAuditStatus> {
+  const evaluatedAt = input.evaluatedAt ?? new Date().toISOString();
+  const signalsHash = hashSignals(input.signals);
+  const rulesHash = hashRules(input.rules);
+  const dedupeKey = buildDedupeKey({
+    claimId: input.claimId,
+    evaluationSource: input.evaluationSource,
+    signalsHash,
+    rulesHash,
+  });
+
+  const since = new Date(Date.now() - AUDIT_DEDUPE_WINDOW_MS).toISOString();
+  const { data: recent } = await client
+    .from(TABLES.RULE_EVALUATIONS)
+    .select('id')
+    .eq('merchant_id', input.merchantId)
+    .eq('dedupe_key', dedupeKey)
+    .gte('evaluated_at', since)
+    .limit(1)
+    .maybeSingle();
+
+  if (recent?.id) {
+    return 'deduped';
+  }
+
+  const trace = buildRulesTrace(input.signals, input.rules, input.result.rule_id);
+  const justificationSummary =
+    input.result.justification_lines.length > 0
+      ? input.result.justification_lines.join(' · ')
+      : input.result.justification;
+
+  const auditPayload = [
+    ...trace,
+    {
+      _kind: 'claim_evaluation_metadata',
+      evaluation_source: input.evaluationSource,
+      source_ticket_id: input.sourceTicketId ?? null,
+      actor_id: input.actorId ?? null,
+      evaluated_at: evaluatedAt,
+      signals_snapshot: input.signals,
+      signals_hash: signalsHash,
+      rules_hash: rulesHash,
+      dedupe_key: dedupeKey,
+      justification_lines: input.result.justification_lines,
+    },
+  ];
+
+  const { error } = await client.from(TABLES.RULE_EVALUATIONS).insert({
+    merchant_id: input.merchantId,
+    claim_id: input.claimId,
+    identity_id: input.identityId ?? null,
+    source_ticket_id: input.sourceTicketId ?? null,
+    evaluation_source: input.evaluationSource,
+    signals_hash: signalsHash,
+    context_hash: signalsHash,
+    rules_hash: rulesHash,
+    justification_summary: justificationSummary,
+    dedupe_key: dedupeKey,
+    rule_id: input.result.rule_id,
+    recommendation: input.result.recommendation,
+    matched_conditions: input.result.matched_conditions,
+    all_rules_evaluated: auditPayload,
+    evaluated_at: evaluatedAt,
+  });
+  if (error) {
+    console.error('[rules-engine] failed to write claim rule_evaluations audit row', {
+      message: error.message,
+      claimId: input.claimId,
+      evaluationSource: input.evaluationSource,
+    });
+    return 'failed';
+  }
+  return 'written';
 }
 
 /**

@@ -11,6 +11,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/supabase/types';
+import { TABLES } from '@/lib/supabase/tables';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -91,7 +92,7 @@ describe('incrementJobProgress fallback', () => {
     expect(rpcCall).toBeDefined();
     expect(rpcCall?.args[0]).toBe('increment_job_progress');
 
-    const updateCall = client._calls.find((c) => c.method === 'processing_jobs.update');
+    const updateCall = client._calls.find((c) => c.method === `${TABLES.PROCESSING_JOBS}.update`);
     expect(updateCall).toBeDefined();
     expect((updateCall?.args[0] as any).processed_rows).toBe(60); // 10 + 50
   });
@@ -101,7 +102,7 @@ describe('incrementJobProgress fallback', () => {
     const client = makeMockClient({ rpcShouldFail: false });
     await incrementJobProgress(client, 'job-456', 5, 0);
 
-    const updateCall = client._calls.find((c) => c.method === 'processing_jobs.update');
+    const updateCall = client._calls.find((c) => c.method === `${TABLES.PROCESSING_JOBS}.update`);
     expect(updateCall).toBeUndefined();
   });
 });

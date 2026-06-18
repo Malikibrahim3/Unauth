@@ -17,7 +17,6 @@ import {
   Users,
   ShieldCheck,
   Activity,
-  Upload,
   ArrowRight,
   CheckCircle2,
   AlertTriangle,
@@ -27,8 +26,7 @@ import {
 /**
  * /store — real Shopify-centric store overview. Reads canonical connection +
  * data-presence state (same as the dashboard) and renders the store picture
- * from data presence rather than redirecting to a single audit job. A link to
- * the latest Shopify audit detail is offered as a secondary action only.
+ * from connected store/helpdesk context rather than legacy batch audits.
  */
 
 type Tone = 'incomplete' | 'stale' | 'normal';
@@ -73,12 +71,12 @@ function buildConfig(state: MerchantSetupState, connection: ConnectionState): St
       };
     case 'csv_only':
       return {
-        subtitle: 'Showing store intelligence from your imported history.',
+        subtitle: 'Showing legacy imported history. Connect live sources to complete claim context.',
         primaryCta: { label: 'Connect Shopify & helpdesk', href: integrations },
         banner: {
           tone: 'incomplete',
           title: 'Connect Shopify and your helpdesk for live store monitoring.',
-          body: 'This workspace is built from imported CSV history. Connect your live sources to monitor new orders and claims as they happen.',
+          body: 'This workspace has legacy imported history. Connect your store and helpdesk so Unauth can backfill available claim context from live systems.',
         },
       };
     case 'stale_existing_data':
@@ -118,11 +116,11 @@ function buildKpis(
   const orders: Kpi = {
     label: 'Orders synced',
     value: fmt(s.shopifyOrderSignals || s.auditTransactions),
-    hint: s.shopifyOrderSignals > 0 ? 'From Shopify' : s.auditTransactions > 0 ? 'From imports' : 'Appears once Shopify syncs',
+    hint: s.shopifyOrderSignals > 0 ? 'From Shopify' : s.auditTransactions > 0 ? 'Legacy imported history' : 'Appears once Shopify syncs',
     icon: <ShoppingBag className="h-4 w-4" />,
   };
   const customers: Kpi = {
-    label: state === 'csv_only' ? 'Imported customers' : 'Customers',
+    label: state === 'csv_only' ? 'Legacy customers' : 'Customers',
     value: fmt(s.customerProfiles),
     hint: s.customerProfiles > 0 ? 'Profiles across all sources' : 'Appears once data syncs',
     icon: <Users className="h-4 w-4" />,
@@ -253,7 +251,7 @@ export default async function StorePage() {
     getMerchantDataPresence(serviceClient, ctx.merchantId, user.id),
     serviceClient
       .from(TABLES.PROCESSING_JOBS)
-      .select('id, created_at')
+      .select('created_at')
       .eq('merchant_id', ctx.merchantId)
       .eq('upload_type', 'shopify')
       .eq('hidden_by_merchant', false)
@@ -329,7 +327,7 @@ export default async function StorePage() {
       actions={
         <div className="flex flex-wrap items-center gap-2">
           {config.secondaryCta ? (
-            <ButtonLink href={config.secondaryCta.href} variant="secondary" leadingIcon={<Upload className="h-3.5 w-3.5" />}>
+            <ButtonLink href={config.secondaryCta.href} variant="secondary">
               {config.secondaryCta.label}
             </ButtonLink>
           ) : null}
@@ -393,10 +391,10 @@ export default async function StorePage() {
                       icon={ShoppingBag}
                     />
                     <DataPresenceRow
-                      label="Imported orders"
+                      label="Legacy imported orders"
                       present={dataPresence.sources.auditTransactions > 0}
-                      detail={dataPresence.sources.auditTransactions > 0 ? `${dataPresence.sources.auditTransactions.toLocaleString()} matched transactions` : 'No CSV imports'}
-                      icon={Upload}
+                      detail={dataPresence.sources.auditTransactions > 0 ? `${dataPresence.sources.auditTransactions.toLocaleString()} historical records` : 'No legacy imported history'}
+                      icon={ShoppingBag}
                     />
                     <DataPresenceRow
                       label="Customer profiles"
@@ -484,19 +482,6 @@ export default async function StorePage() {
                     <Badge tone="warning" size="sm" className="mt-3">Setup incomplete</Badge>
                   )}
                 </SectionCard>
-
-                {latestShopifyJob ? (
-                  <SectionCard title="Shopify audit detail" description="Latest synced batch">
-                    <Link
-                      href={`/audit/${latestShopifyJob.id}?source=shopify`}
-                      className="inline-flex items-center gap-1.5 text-caption font-semibold hover:underline"
-                      style={{ color: 'var(--accent)' }}
-                    >
-                      Open audit detail
-                      <ArrowRight className="h-3.5 w-3.5" />
-                    </Link>
-                  </SectionCard>
-                ) : null}
               </aside>
             </div>
           </div>

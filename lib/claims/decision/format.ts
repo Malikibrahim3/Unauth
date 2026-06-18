@@ -1,0 +1,152 @@
+import type { MatchedCondition, RuleEvaluationResult } from '@/lib/rules-engine';
+import { OPERATOR_LABELS } from '@/lib/rules-engine';
+import { ACTION_LABELS } from '@/lib/rules/summary';
+import { summarizeCondition } from '@/lib/rules/summary';
+import { FIELD_DEFS_BY_NAME } from '@/lib/rules/fields';
+import { CLAIM_TYPE_LABELS } from '@/lib/claims/claimTypes';
+
+export type FormattedClaimDecision = {
+  recommendationLabel: string;
+  ruleName: string | null;
+  summary: string;
+  matchedConditions: Array<{ label: string; actual: string }>;
+  isNoMatch: boolean;
+  isNoRules: boolean;
+  tone: 'success' | 'warning' | 'danger' | 'neutral';
+};
+
+const DELIVERY_STATUS_LABELS: Record<string, string> = {
+  delivered: 'Delivered',
+  in_transit: 'In transit',
+  pending: 'Pending',
+  unknown: 'Unknown',
+};
+
+function plainFieldLabel(field: string): string {
+  const labels: Record<string, string> = {
+    claim_type: 'Claim type',
+    amount_at_risk: 'Amount at risk',
+    delivery_status: 'Delivery status',
+    days_since_delivery: 'Days since delivery',
+    has_tracking: 'Has tracking',
+    has_proof_of_delivery: 'Has proof of delivery',
+    has_customer_evidence: 'Customer evidence attached',
+    evidence_items_count: 'Evidence items on claim',
+    merchant_claim_count: 'Claims at this store',
+    merchant_prior_claim_count: 'Prior claims at this store',
+    merchant_same_type_claim_count: 'Same-type claims at this store',
+    merchant_prior_same_type_claim_count: 'Prior same-type claims',
+    prior_approved_claims: 'Prior approved claims',
+    prior_denied_claims: 'Prior denied claims',
+    prior_escalated_claims: 'Prior escalated claims',
+    confidence_grade: 'Identity confidence',
+    evidence_score: 'Risk score',
+    network_claim_count: 'Cross-network claims',
+  };
+  return labels[field] ?? field.replace(/_/g, ' ');
+}
+
+function formatPlainValue(field: string, value: unknown): string {
+  if (typeof value === 'boolean') {
+    if (field === 'has_customer_evidence') return value ? 'Yes' : 'No';
+    if (field === 'has_tracking') return value ? 'Yes' : 'No';
+    if (field === 'has_proof_of_delivery') return value ? 'Yes' : 'No';
+    return value ? 'Yes' : 'No';
+  }
+  if (field === 'claim_type' && typeof value === 'string') {
+    return CLAIM_TYPE_LABELS[value as keyof typeof CLAIM_TYPE_LABELS] ?? value;
+  }
+  if (field === 'delivery_status' && typeof value === 'string') {
+    return DELIVERY_STATUS_LABELS[value] ?? value;
+  }
+  if (field === 'amount_at_risk' && typeof value === 'number') {
+    return `£${value.toLocaleString()}`;
+  }
+  if (field === 'order_value_usd' && typeof value === 'number') {
+    return `$${value.toLocaleString()}`;
+  }
+  if (Array.isArray(value)) return value.join(', ');
+  return String(value ?? '—');
+}
+
+function formatMatchedConditionPlain(c: MatchedCondition): { label: string; actual: string } {
+  const def = FIELD_DEFS_BY_NAME[c.field];
+  if (def?.type === 'boolean' && c.operator === 'eq') {
+    const label = plainFieldLabel(c.field);
+    if (c.value === true) {
+      if (c.field === 'has_customer_evidence' && c.actual_value === false) {
+        return { label: 'No customer evidence has been attached', actual: '' };
+      }
+      return { label: `${label} is present`, actual: '' };
+    }
+    if (c.value === false) {
+      return { label: `No ${label.toLowerCase()}`, actual: '' };
+    }
+  }
+
+  if (def?.type === 'enum' && c.operator === 'eq') {
+    return {
+      label: `${plainFieldLabel(c.field)} is ${formatPlainValue(c.field, c.value)}`,
+      actual: '',
+    };
+  }
+
+  if (typeof c.value === 'number' && ['gte', 'gt', 'lte', 'lt', 'eq'].includes(c.operator)) {
+    const op = OPERATOR_LABELS[c.operator] ?? c.operator;
+    const actual = formatPlainValue(c.field, c.actual_value);
+    return {
+      label: `${plainFieldLabel(c.field)} ${op} ${formatPlainValue(c.field, c.value)}`,
+      actual: actual !== formatPlainValue(c.field, c.value) ? `(actual: ${actual})` : '',
+    };
+  }
+
+  return {
+    label: summarizeCondition(c),
+    actual: formatPlainValue(c.field, c.actual_value),
+  };
+}
+
+export function formatClaimDecisionRecommendation(
+  evaluation: RuleEvaluationResult,
+  ruleCount: number,
+): FormattedClaimDecision {
+  if (evaluation.recommendation === 'no_match') {
+    if (ruleCount === 0) {
+      return {
+        recommendationLabel: 'No active rules',
+        ruleName: null,
+        summary: 'Add rules to generate claim recommendations.',
+        matchedConditions: [],
+        isNoMatch: false,
+        isNoRules: true,
+        tone: 'neutral',
+      };
+    }
+    return {
+      recommendationLabel: 'No rule matched',
+      ruleName: null,
+      summary: 'No merchant rule matched. Continue with standard review.',
+      matchedConditions: [],
+      isNoMatch: true,
+      isNoRules: false,
+      tone: 'neutral',
+    };
+  }
+
+  const tone =
+    evaluation.recommendation === 'approve'
+      ? 'success'
+      : evaluation.recommendation === 'deny'
+        ? 'danger'
+        : 'warning';
+
+  return {
+    recommendationLabel: ACTION_LABELS[evaluation.recommendation] ?? evaluation.recommendation,
+    ruleName: evaluation.rule_name,
+    summary: evaluation.justification_lines.slice(1).join('. ') || evaluation.justification,
+    matchedConditions: evaluation.matched_conditions.map(formatMatchedConditionPlain),
+    isNoMatch: false,
+    isNoRules: false,
+    tone,
+  };
+}

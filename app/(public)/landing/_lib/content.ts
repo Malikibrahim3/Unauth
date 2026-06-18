@@ -27,10 +27,10 @@ export const NAV_LINKS = [
 /* ── Hero ──────────────────────────────────────────────────────────────── */
 
 export const HERO = {
-  eyebrow: 'Post-checkout fraud intelligence',
-  headline: 'The fraud your payment processor never sees.',
+  eyebrow: 'Helpdesk-native claim decisions',
+  headline: 'Every claim deserves the full context.',
   subhead:
-    'Friendly fraud lives in the helpdesk — after checkout, after fulfilment, outside the card network. Unauth reads claims across merchants, so your team knows which ones the evidence supports before anyone replies.',
+    'Unauth connects your store and helpdesk, assembles order, delivery, identity, evidence, and prior claim history, then applies your merchant-owned rules before anyone replies.',
   primaryCta: 'Create a workspace',
   secondaryCta: 'See how the network works',
   factRow: ['38ms median lookup', 'k-anonymity ≥ 3 merchants', '0 automated decisions'],
@@ -104,8 +104,8 @@ export const INTEGRATIONS_LINE =
 
 export const BLIND_SPOT = {
   eyebrow: 'The blind spot',
-  headline: 'A customer can defraud ten merchants in a row — and the card network sees nothing.',
-  body: 'Checkout fraud is a solved problem. Friendly fraud begins after it: refund requests, “item not received” tickets, chargebacks on orders that were honestly fulfilled. None of it touches the payment rails, so none of it reaches your processor’s risk models.',
+  headline: 'A claim can look isolated when the evidence is scattered.',
+  body: 'Refund requests, “item not received” tickets, replacements, and chargeback pressure usually live across orders, fulfilment records, and helpdesk conversations. Unauth brings that context into one claim review trail.',
   railOneLabel: 'card network · what your processor sees',
   railOneEvents: ['AUTH ✓', 'CAPTURE ✓', 'SETTLE ✓'],
   railOneEnd: 'no further events',
@@ -117,7 +117,7 @@ export const BLIND_SPOT = {
     { merchant: 'M-512', text: '“wrong item” · refund demanded' },
     { merchant: 'you', text: 'ticket #4821 · just opened' },
   ],
-  footnote: 'Unauth is the layer that reads across the second rail.',
+  footnote: 'Unauth is the layer that links the helpdesk claim to the evidence trail.',
 } as const;
 
 /* ── Network section ───────────────────────────────────────────────────── */
@@ -146,12 +146,12 @@ export const NETWORK = {
 
 export const HOW_IT_WORKS = {
   eyebrow: 'How it works',
-  headline: 'Three steps. No SDK, no checkout changes, no payment integration.',
+  headline: 'Three steps. No order blocking. No automated decisions.',
   steps: [
     {
       id: '01',
       title: 'Connect your store and helpdesk',
-      body: 'OAuth into your commerce platform and helpdesk. Unauth ingests orders, fulfilments, refund history, and ticket content. CSV backfill is available for historical data.',
+      body: 'OAuth into your commerce platform and helpdesk. Unauth ingests orders, fulfilments, refund history, ticket content, and available historical context from those connected systems.',
     },
     {
       id: '02',
@@ -184,7 +184,7 @@ export const HOW_IT_WORKS = {
 export const EVIDENCE = {
   eyebrow: 'Evidence, not verdicts',
   headline: 'Unauth has never declined an order. It can’t.',
-  body: 'There is no auto-block, no auto-refund, no auto-close — no code path for any of them. Unauth surfaces the identity record and assembles the evidence; your team decides how to respond. That separation is what keeps good customers safe and keeps the decision, and the liability, where it belongs: with you.',
+  body: 'There is no auto-block, no auto-refund, no auto-close — no code path for any of them. Unauth surfaces the identity record, applies your rules, and assembles the evidence; your team decides how to respond.',
   counters: [
     { v: '0', k: 'auto-declines issued' },
     { v: '0', k: 'tickets auto-closed' },
@@ -194,8 +194,8 @@ export const EVIDENCE = {
     title: 'Evidence package · CB-2291',
     files: [
       { name: 'claim_timeline.json', meta: '11 events · 4 merchants' },
-      { name: 'identity_signals.csv', meta: '12 signals · graded' },
-      { name: 'delivery_confirmation.pdf', meta: 'carrier GPS + photo' },
+      { name: 'identity_signals.json', meta: '12 signals · graded' },
+      { name: 'delivery_confirmation.pdf', meta: 'commerce fulfilment proof' },
       { name: 'cross_merchant_history.txt', meta: 'k-gated · pseudonymous' },
       { name: 'order_record.json', meta: '#UA-10482 · £162.40' },
     ],
@@ -269,7 +269,7 @@ export const PRICING = {
 
 export const FAQ = {
   eyebrow: 'Questions',
-  headline: 'Asked by every fraud lead we talk to.',
+  headline: 'Asked by every support and operations lead we talk to.',
   items: [
     {
       q: 'Will this block or decline any of my customers?',
@@ -289,7 +289,7 @@ export const FAQ = {
     },
     {
       q: 'What do I need to integrate?',
-      a: 'One order source (Shopify, WooCommerce, or BigCommerce) and one helpdesk (Gorgias, Zendesk, or Freshdesk). Both are OAuth connections that take about fifteen minutes. CSV import covers historical backfill or evaluation without connecting anything.',
+      a: 'One order source (Shopify, WooCommerce, or BigCommerce) and one helpdesk (Gorgias, Zendesk, or Freshdesk). Connected sources let Unauth backfill available order, ticket, claim, and outcome context without a manual batch flow.',
     },
     {
       q: 'Where does this stand with GDPR?',
@@ -308,7 +308,7 @@ export const FINAL_CTA = {
 } as const;
 
 export const FOOTER = {
-  tagline: 'Cross-merchant fraud intelligence for ecommerce claims.',
+  tagline: 'Claim decision infrastructure for ecommerce helpdesk teams.',
   columns: [
     {
       heading: 'Product',

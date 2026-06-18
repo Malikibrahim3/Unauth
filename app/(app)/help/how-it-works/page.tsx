@@ -17,23 +17,21 @@ export default function HowItWorksPage() {
 
       <section className="space-y-4">
         <h1 className="text-heading-lg" style={{ color: 'var(--text)' }}>
-          How Unauth analyses your orders
+          How Unauth assembles claim context
         </h1>
         <div className="space-y-3 text-body-sm leading-relaxed" style={{ color: 'var(--text)' }}>
           <p>
-            When you upload an export of your orders, Unauth reads every order and looks for customers who appear
-            to be using multiple identities. We compare details like email addresses, shipping addresses, IP
-            addresses, and card information across orders to identify accounts that share the same underlying
-            customer - even when names and emails are different.
+            When your store and helpdesk are connected, Unauth links claims to the relevant order, ticket,
+            customer profile, delivery details, evidence, prior claim history, and merchant rules.
           </p>
           <p>
-            Each customer is given a confidence grade rather than a score. A Definite match means we are highly
-            confident two or more accounts belong to the same person. A Probable match means we have strong
-            evidence but not certainty. A Possible match means there are overlapping signals worth reviewing. A
-            Weak match means a single signal was found - treat this as informational only.
+            Customer identity context is shown as confidence grades rather than a final verdict. A Definite match
+            means the strongest available signals overlap. Probable and Possible matches mean there is useful
+            context, but the team should review it alongside the rest of the claim record.
           </p>
           <p>
-            We never tell you what to do. We show you the pattern and you decide.
+            Unauth does not approve, deny, refund, or close claims automatically. It shows the context and your
+            team decides.
           </p>
         </div>
       </section>
@@ -42,21 +40,21 @@ export default function HowItWorksPage() {
 
       <section className="space-y-4">
         <h2 className="text-heading-md" style={{ color: 'var(--text)' }}>
-          How uploads work together
+          How connected sources work together
         </h2>
         <div className="space-y-3 text-body-sm leading-relaxed" style={{ color: 'var(--text)' }}>
           <p>
-            Each time you upload an export, Unauth adds to what it already knows about your customers. A customer
-            who appeared in your January upload will be recognised when they appear in your February upload - even
-            if they use a slightly different email or name.
+            Each connected source adds a different part of the story. Shopify contributes orders and fulfillment
+            details. Helpdesks contribute tickets, tags, claim language, and support history. Claim outcomes add
+            what your team decided previously.
           </p>
           <p>
-            This means the product gets more useful the more regularly you upload. A weekly or monthly export
-            routine gives you a continuously updated picture of your customer base.
+            The product gets more useful as these sources stay connected because new tickets, orders, evidence,
+            and outcomes can be linked back to existing customer and claim history.
           </p>
           <p>
-            You can also run a one-off customer lookup upload - export every order associated with their email from
-            your platform and upload it. Unauth will focus entirely on building that customer&apos;s profile.
+            Legacy imported records may still appear where a merchant already has them, but the current app flow is
+            built around connected store and helpdesk data.
           </p>
         </div>
       </section>
@@ -73,9 +71,9 @@ export default function HowItWorksPage() {
             respond with evidence. Without evidence, banks almost always side with the customer.
           </p>
           <p>
-            Unauth organises signal data from your order history into a structured report you can share with your
-            payment processor or acquirer. The report shows the customer&apos;s order pattern and the identity
-            signals observed across their records.
+            Unauth organises claim, order, identity, and evidence context into a structured view your team can use
+            when preparing a dispute response. The report shows the customer&apos;s order pattern and the identity
+            signals observed across available records.
           </p>
           <p>
             Unauth surfaces prior matching transactions and identity signals from your records, plus cross-merchant

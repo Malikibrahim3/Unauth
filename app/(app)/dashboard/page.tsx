@@ -142,7 +142,7 @@ export default async function DashboardPage() {
       type: 'Queue',
       detail: `${row.customer_name ?? row.customer_email ?? 'Unidentified'} · ${row.match_status ?? 'candidate'}`,
       time: formatDateMode(row.processed_at, 'recent'),
-      href: profileIdByTx.get(row.id) ? `/customers/${profileIdByTx.get(row.id)}` : `/audit/${row.job_id}`,
+      href: profileIdByTx.get(row.id) ? `/customers/${profileIdByTx.get(row.id)}` : '/customers',
     });
   }
   if (claimsNeedingAction > 0) {
@@ -163,10 +163,10 @@ export default async function DashboardPage() {
   }
   if (latestRun) {
     activity.push({
-      type: 'Import',
-      detail: `${latestRun.filename} · ${(latestRun.flagged_count ?? 0).toLocaleString()} flagged`,
+      type: 'Legacy context',
+      detail: `${latestRun.filename} · ${(latestRun.flagged_count ?? 0).toLocaleString()} records with signals`,
       time: formatDateMode(latestRun.created_at, 'recent'),
-      href: `/audit/${latestRun.id}`,
+      href: '/reports',
     });
   }
 

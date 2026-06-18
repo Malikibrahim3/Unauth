@@ -85,9 +85,9 @@ export default function IdentityMatchingPage() {
         </h2>
         <div className="space-y-3 text-body-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
           <p>
-            When an order export is uploaded, each order is parsed into a set of identity tokens - structured
-            representations of the identity signals it contains. These tokens are compared against all existing
-            orders in your account to find overlapping signals.
+            When connected order, claim, or support data is processed, each record is parsed into a set of identity
+            tokens - structured representations of the identity signals it contains. These tokens are compared
+            against existing records in your account to find overlapping signals.
           </p>
           <p>
             Overlaps are grouped into candidate identities: sets of accounts that share at least one signal.

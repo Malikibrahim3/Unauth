@@ -14,7 +14,6 @@ export type ReportsPageViewProps = {
   hasAnyData: boolean;
   activeTab: ReportsTab;
   range: string;
-  csvCount: number;
   tabPanel: ReportsPageTabPanelProps;
 };
 
@@ -24,7 +23,6 @@ export function ReportsPageView({
   hasAnyData,
   activeTab,
   range,
-  csvCount,
   tabPanel,
 }: ReportsPageViewProps) {
   return (
@@ -57,7 +55,7 @@ export function ReportsPageView({
       }
       main={
         <>
-          <ReportsTabBar active={activeTab} range={range} csvCount={csvCount} />
+          <ReportsTabBar active={activeTab} range={range} />
           <ReportsPageTabPanel {...tabPanel} activeTab={activeTab} />
         </>
       }

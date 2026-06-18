@@ -252,7 +252,7 @@ export function DashboardPageCockpit(props: DashboardPageCockpitProps) {
             <div>
               {dedupeQueueByCustomer(reviewRows, profileIdByTx).map(({ row, profileId, extraOrders }) => {
                 const score = row.identity_score === null ? null : Math.round(row.identity_score);
-                const href = profileId ? `/customers/${profileId}` : `/audit/${row.job_id}/transaction/${row.id}`;
+                const href = profileId ? `/customers/${profileId}` : '/customers';
                 const signalCount = signalList(row).length;
                 const networkLinked = signalList(row).some((s) => s.toLowerCase().includes('crossmerchant'));
                 const grade = gradeFromQueueRow(row);

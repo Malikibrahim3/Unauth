@@ -62,7 +62,7 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
     ? resolvedSearchParams.range
     : '30d';
   const rawTab = resolvedSearchParams.tab;
-  const activeTab: ReportsTab = rawTab === 'csv' || rawTab === 'integration' ? rawTab : 'overview';
+  const activeTab: ReportsTab = rawTab === 'integration' ? rawTab : 'overview';
 
   const cutoff = range === 'all'
     ? null
@@ -201,7 +201,6 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
       hasAnyData={hasAnyData}
       activeTab={activeTab}
       range={range}
-      csvCount={rows.length}
       tabPanel={{
         activeTab,
         overview: {
@@ -212,12 +211,6 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
           rows,
           totalFlagged,
           range,
-          ...chartProps,
-        },
-        csv: {
-          rows,
-          totalRows,
-          totalFlagged,
           ...chartProps,
         },
         live: {

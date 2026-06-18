@@ -1,6 +1,7 @@
 'use client';
 
 import { isFinalClaimStatus } from '@/lib/claims/sla';
+import { ClaimDecisionRecommendationCard, type ClaimDecisionPayload } from '@/components/claims/ClaimDecisionRecommendationCard';
 import { ClaimLifecycleStatusBar, RailSection } from '@/components/claims/claimReviewPrimitives';
 import { ClaimReviewEvidenceRail } from '@/components/claims/ClaimReviewEvidenceRail';
 import { ClaimReviewNextStepCard } from '@/components/claims/ClaimReviewNextStepCard';
@@ -17,6 +18,11 @@ export function ClaimReviewActionRail({ wb }: { wb: ClaimReviewWorkbench }) {
     dispatch,
     onStatusChange,
     onReopen,
+    decisionLoading,
+    decisionError,
+    decisionData,
+    decisionStale,
+    refreshRecommendation,
   } = wb;
 
   return (
@@ -29,6 +35,17 @@ export function ClaimReviewActionRail({ wb }: { wb: ClaimReviewWorkbench }) {
       </p>
 
       <ClaimReviewNextStepCard wb={wb} />
+
+      <ClaimDecisionRecommendationCard
+        claimId={claimId || null}
+        loading={decisionLoading}
+        error={decisionError}
+        data={decisionData as ClaimDecisionPayload | null}
+        stale={decisionStale}
+        onRefresh={refreshRecommendation}
+        open={state.railOpen.recommendation ?? true}
+        onToggle={(id) => dispatch({ type: 'toggleRail', id })}
+      />
 
       <ClaimReviewEvidenceRail wb={wb} />
 

@@ -12,6 +12,8 @@
  * lib/rules/fields.ts and re-uses the labels exported here.
  */
 
+import { DEFAULT_RISK_CONTROLS, makeRiskScoreRangeConditions } from '@/lib/rules/riskBands';
+
 export type ConfidenceGrade = 'definite' | 'probable' | 'possible' | 'weak';
 export type RuleAction = 'approve' | 'manual_review' | 'deny';
 export type ConditionOperator = 'and' | 'or';
@@ -54,6 +56,9 @@ export interface IdentitySignals {
   has_sufficient_data: boolean;
 }
 
+/** Signals may include claim-specific extensions; engine reads by field name. */
+export type RuleSignals = IdentitySignals;
+
 export interface MatchedCondition extends RuleCondition {
   actual_value: unknown;
 }
@@ -75,7 +80,8 @@ export interface RuleEvaluationResult {
 export const FIELD_LABELS: Record<string, string> = {
   confidence_grade: 'identity confidence',
   network_claim_count: 'cross-network claim count',
-  merchant_claim_count: 'claim count at this store',
+  merchant_claim_count: 'claim count at this store (includes current claim)',
+  merchant_prior_claim_count: 'prior claims at this store (excludes current)',
   days_since_last_claim: 'days since last claim',
   has_cross_merchant_identity: 'cross-merchant identity match',
   network_merchant_count: 'number of merchants claimed at',
@@ -83,9 +89,31 @@ export const FIELD_LABELS: Record<string, string> = {
   order_value_usd: 'order value',
   account_age_days: 'account age (days)',
   is_network_flagged: 'network flag status',
-  evidence_score: 'evidence score',
+  evidence_score: 'risk score',
   evidence_level: 'evidence level',
   has_sufficient_data: 'sufficient data available',
+  // Current claim
+  claim_type: 'claim type',
+  amount_at_risk: 'amount at risk',
+  ticket_claim_type_confidence: 'ticket claim-type confidence',
+  // Delivery
+  delivery_status: 'delivery status',
+  days_since_delivery: 'days since delivery',
+  has_tracking: 'has tracking',
+  has_proof_of_delivery: 'has proof of delivery',
+  // Evidence on this claim
+  has_customer_evidence: 'has customer evidence',
+  evidence_items_count: 'evidence items on claim',
+  // Outcome history
+  merchant_same_type_claim_count: 'same-type claims at this store (includes current)',
+  merchant_prior_same_type_claim_count: 'prior same-type claims (excludes current)',
+  network_same_type_claim_count: 'prior claims of same type across network',
+  prior_approved_claims: 'prior approved claims',
+  prior_denied_claims: 'prior denied claims',
+  prior_escalated_claims: 'prior escalated claims',
+  prior_chargebacks_after_claims: 'prior chargebacks',
+  prior_loss_outcomes: 'prior loss outcomes',
+  prior_recovered_outcomes: 'prior recovered outcomes',
 };
 
 export const OPERATOR_LABELS: Record<string, string> = {
@@ -107,13 +135,17 @@ export const OPERATOR_LABELS: Record<string, string> = {
 // ---------------------------------------------------------------------------
 
 export function evaluateRules(
-  signals: IdentitySignals,
+  signals: RuleSignals,
   rules: MerchantRule[],
 ): RuleEvaluationResult {
   // Sort by priority ascending (lower number = higher priority).
   const sorted = [...rules]
     .filter((r) => r.is_active)
     .sort((a, b) => a.priority - b.priority);
+
+  if (sorted.length === 0) {
+    return evaluateDefaultRiskControls(signals);
+  }
 
   for (const rule of sorted) {
     const matched = evaluateRule(signals, rule);
@@ -141,7 +173,36 @@ export function evaluateRules(
   };
 }
 
-function evaluateRule(signals: IdentitySignals, rule: MerchantRule): MatchedCondition[] {
+function evaluateDefaultRiskControls(signals: RuleSignals): RuleEvaluationResult {
+  const score = typeof signals.evidence_score === 'number' && Number.isFinite(signals.evidence_score)
+    ? signals.evidence_score
+    : 0;
+  const control = DEFAULT_RISK_CONTROLS.find((band) => score >= band.lower && score <= band.upper)
+    ?? DEFAULT_RISK_CONTROLS[DEFAULT_RISK_CONTROLS.length - 1]!;
+  const rule: MerchantRule = {
+    id: '',
+    merchant_id: '',
+    name: control.name,
+    description: control.description,
+    is_active: true,
+    priority: 0,
+    conditions: makeRiskScoreRangeConditions(control),
+    action: control.action,
+    condition_operator: 'and',
+  };
+  const matched = evaluateRule(signals, rule);
+  const justification_lines = buildJustificationLines(rule, matched);
+  return {
+    recommendation: control.action,
+    rule_id: null,
+    rule_name: control.name,
+    matched_conditions: matched,
+    justification: justification_lines.join('. '),
+    justification_lines,
+  };
+}
+
+function evaluateRule(signals: RuleSignals, rule: MerchantRule): MatchedCondition[] {
   const results: Array<MatchedCondition | null> = rule.conditions.map((condition) => {
     const actual = getSignalValue(signals, condition.field);
     const passes = evaluateCondition(condition, actual);
@@ -157,9 +218,10 @@ function evaluateRule(signals: IdentitySignals, rule: MerchantRule): MatchedCond
   return passed.length > 0 ? passed : [];
 }
 
-function getSignalValue(signals: IdentitySignals, field: string): unknown {
-  if (!Object.prototype.hasOwnProperty.call(signals, field)) return null;
-  return signals[field as keyof IdentitySignals] ?? null;
+function getSignalValue(signals: RuleSignals, field: string): unknown {
+  const bag = signals as IdentitySignals & Record<string, unknown>;
+  if (!Object.prototype.hasOwnProperty.call(bag, field)) return null;
+  return bag[field];
 }
 
 function isNumber(value: unknown): value is number {

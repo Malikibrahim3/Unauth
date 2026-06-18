@@ -5,26 +5,6 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 describe('watchlist deprecation — ingest must not write legacy tables', () => {
-  it('process-csv-finalize does not upsert watchlist_appearances', () => {
-    const content = fs.readFileSync(
-      path.join(process.cwd(), 'app/api/process-csv-finalize/route.ts'),
-      'utf-8',
-    );
-    expect(content).not.toContain('watchlist_appearances');
-    expect(content).not.toContain('WATCHLIST_ENTRIES');
-    expect(content).toContain("watchlist_sync_status: 'skipped'");
-  });
-
-  it('process-csv-job does not sync watchlist appearances', () => {
-    const content = fs.readFileSync(
-      path.join(process.cwd(), 'app/api/process-csv-job/route.ts'),
-      'utf-8',
-    );
-    expect(content).not.toContain('watchlist_appearances');
-    expect(content).not.toContain('WATCHLIST_ENTRIES');
-    expect(content).not.toContain('checkWatchlistAppearances');
-  });
-
   it('customers page ignores legacy watchlisted query param', () => {
     const content = fs.readFileSync(
       path.join(process.cwd(), 'app/(app)/customers/page.tsx'),

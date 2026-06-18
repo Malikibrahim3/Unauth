@@ -14,7 +14,7 @@ export function SignupFlowMarketingPanel() {
 
       <div className="mt-16 max-w-xl">
         <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: '#78889C' }}>
-          Start with your own data
+          Start with connected context
         </p>
         <h1
           className="mt-4"
@@ -26,7 +26,7 @@ export function SignupFlowMarketingPanel() {
             letterSpacing: '-0.03em',
           }}
         >
-          Find out who&apos;s been hitting you.
+          Review claims with the full story.
         </h1>
         <p
           className="mt-5 max-w-[34rem]"
@@ -37,15 +37,15 @@ export function SignupFlowMarketingPanel() {
             color: 'var(--text-secondary)',
           }}
         >
-          Create your account, upload your last 90 days of orders and refunds, and we&apos;ll resolve repeat
-          identities and surface their claims history from your store data - then grow into the network.
+          Create your account, connect your store and helpdesk, and Unauth will assemble order, ticket,
+          evidence, customer, and prior-claim context for your team to review.
         </p>
 
         <div className="mt-10 space-y-4">
           {[
             'Free, instant access. No approval gate.',
-            'Audit runs on your data only. No cross-merchant signals at this stage.',
-            'Results land in your inbox in around 20 minutes.',
+            'Recommendations are explainable and rule-based.',
+            'Your team remains responsible for the final claim decision.',
           ].map((item) => (
             <div key={item} className="flex items-start gap-3">
               <span className="mt-2 h-1.5 w-1.5 rounded-full" style={{ background: 'var(--accent)' }} />

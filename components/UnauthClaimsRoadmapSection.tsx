@@ -257,11 +257,11 @@ export default function UnauthClaimsRoadmapSection() {
             </p>
           </div>
           <Link
-            href="/audit"
+            href="/signup"
             prefetch={false}
             className="inline-flex h-11 w-max items-center gap-2 rounded-full border border-black/[0.14] bg-white px-5 text-[14px] font-semibold tracking-[-0.02em] text-black/72 shadow-[0_10px_28px_rgba(0,0,0,0.06)] transition hover:border-black/28 hover:text-black"
           >
-            Explore claim patterns
+            Connect store and helpdesk
             <ArrowUpRight size={15} />
           </Link>
         </div>
@@ -306,11 +306,11 @@ export default function UnauthClaimsRoadmapSection() {
                 merchant rules, and shows exactly why a recommendation appeared.
               </p>
               <Link
-                href="/audit"
+                href="/signup"
                 prefetch={false}
                 className="mt-6 inline-flex h-11 w-full items-center justify-center gap-2 rounded-full border border-black/[0.14] bg-white px-5 text-[14px] font-semibold tracking-[-0.02em] text-black/72 shadow-[0_10px_28px_rgba(0,0,0,0.06)]"
               >
-                Explore claim patterns
+                Connect store and helpdesk
                 <ArrowUpRight size={15} />
               </Link>
               <BottomLabels />

@@ -298,6 +298,9 @@ export async function ingestSupportCase(
     triggerTags: normalized.trigger_tags ?? [],
     requiresReview: normalized.requires_merchant_review ?? false,
     submittedAt: normalized.created_at_provider,
+    claimTypeConfidence: normalized.claim_type_confidence,
+    classifierClaimType: normalized.claim_type,
+    keywordMatched: normalized.keyword_matched,
   });
 
   return {

@@ -12,7 +12,6 @@ export { can, limit, type FeatureKey, type Tier } from '@/lib/billing/tiers';
 export const ENTITLEMENT_META: Record<Entitlement, EntitlementMeta> = {
   EVIDENCE_PACKS: { label: 'Evidence & Defence', availability: 'live' },
   STORE_SYNC: { label: 'Store sync', availability: 'live' },
-  CSV_IMPORT_LIMITED: { label: 'CSV import (limited)', availability: 'live' },
   CE3_READINESS_CHECK: { label: 'Chargeback evidence readiness', availability: 'live' },
   CUSTOMER_SEARCH: { label: 'Customer search', availability: 'live' },
   CUSTOMER_DOSSIER: { label: 'Customer dossiers', availability: 'live' },
@@ -20,15 +19,9 @@ export const ENTITLEMENT_META: Record<Entitlement, EntitlementMeta> = {
   HELPDESK_WIDGET: { label: 'Helpdesk widgets', availability: 'live' },
   WATCHLIST: { label: 'Watchlist', availability: 'live' },
   REPORTS_ADVANCED: { label: 'Advanced reports', availability: 'live' },
-  CSV_IMPORT_FULL: { label: 'CSV import (full)', availability: 'live' },
   LIVE_LOOKUP_API: { label: 'Live lookup API', availability: 'live' },
   QUICK_SCORE: { label: 'Quick score', availability: 'live' },
   NETWORK_GRAPH: { label: 'Network Intelligence', availability: 'live' },
-  CHECKOUT_CONTROLS: {
-    label: 'Checkout controls',
-    availability: 'future',
-  },
-  SIGNAL_API: { label: 'Signal API', availability: 'live' },
 };
 
 const ALL_ENTITLEMENTS = Object.keys(ENTITLEMENT_META) as Entitlement[];

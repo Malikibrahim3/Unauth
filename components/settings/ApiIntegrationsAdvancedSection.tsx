@@ -149,7 +149,7 @@ export default function ApiIntegrationsAdvancedSection() {
         </p>
       ) : null}
 
-      <FeatureGate entitlement="SIGNAL_API" plan="enterprise">
+      <FeatureGate entitlement="LIVE_LOOKUP_API" plan="scale">
         <ApiKeysListSection
           keys={keys}
           loading={loading}

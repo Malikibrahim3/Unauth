@@ -22,8 +22,8 @@ describe('product gates env', () => {
 });
 
 describe('entitlement metadata', () => {
-  it('CHECKOUT_CONTROLS metadata is future-facing', () => {
-    expect(ENTITLEMENT_META.CHECKOUT_CONTROLS.availability).toBe('future');
-    expect(getFeatureAccessLabel('CHECKOUT_CONTROLS')).toContain('Future');
+  it('LIVE_LOOKUP_API metadata resolves to a paid access label', () => {
+    expect(ENTITLEMENT_META.LIVE_LOOKUP_API.availability).toBe('live');
+    expect(getFeatureAccessLabel('LIVE_LOOKUP_API')).not.toContain('Future');
   });
 });

@@ -60,10 +60,12 @@ describe('app route registry', () => {
     expect(labels).toMatchInlineSnapshot(`
 [
   "Dashboard",
-  "Store overview",
-  "Customers",
   "Claims",
-  "Reports",
+  "Customers",
+  "Evidence",
+  "Network",
+  "Claim Rules",
+  "Analytics",
 ]
 `);
   });

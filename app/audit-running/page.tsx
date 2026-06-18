@@ -3,8 +3,8 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = {
-  title: 'Audit running | Unauth',
-  description: 'Your identity audit is in progress.',
+  title: 'Context backfill running | Unauth',
+  description: 'Your claim context backfill is in progress.',
 };
 
 interface AuditRunningPageProps {
@@ -39,7 +39,7 @@ export default async function AuditRunningPage({ searchParams }: AuditRunningPag
             marginBottom: '14px',
           }}
         >
-          Audit queued
+          Context backfill queued
         </p>
         <h1
           style={{
@@ -51,7 +51,7 @@ export default async function AuditRunningPage({ searchParams }: AuditRunningPag
             marginBottom: '16px',
           }}
         >
-          Your audit is running.
+          Your claim context backfill is running.
         </h1>
         <p
           style={{
@@ -73,7 +73,7 @@ export default async function AuditRunningPage({ searchParams }: AuditRunningPag
             margin: 0,
           }}
         >
-          We&apos;re analyzing order patterns, refund behavior, and repeat shopper signals across your data.
+          We&apos;re linking available order, helpdesk, claim, and outcome context from your connected systems.
         </p>
       </div>
     </div>

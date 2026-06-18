@@ -27,7 +27,7 @@ export function ConnectionPromptStrip({ connection, hasExistingProfiles }: Conne
       'Showing existing Shopify data. Reconnect Shopify and your helpdesk to keep this analysis current and add claim context.';
   } else {
     message =
-      'Connect Shopify and your helpdesk to see complete data. What\'s shown here is based on CSV imports only and may be incomplete.';
+      'Connect Shopify and your helpdesk to see complete claim context. Without connected sources, this view may be incomplete.';
   }
 
   return (

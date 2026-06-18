@@ -7,14 +7,13 @@
  *   6 identity signals        → IDENTITY_SIGNAL_WEIGHTS (lib/engine/weights.ts)
  *   A–D grades                → gradeToLetter (lib/engine/weights.ts)
  *   98.5% precision           → us_benchmark_v1 calibration at FLAG_THRESHOLD 44
- *   ~20 min audits            → FAQ copy (landingPageConstants.ts)
  *   120-day window            → CE3_PRIOR_ORDER_WINDOW_DAYS (lib/engine/weights.ts)
  *   HMAC-SHA256 / per-tenant  → privacy architecture (content.ts)
  */
 
 export const FL_ROUTES = {
   signup: '/signup',
-  audit: '/audit',
+  audit: '/signup',
   login: '/login',
   landing: '/landing',
   demo: '/demo',
@@ -27,99 +26,184 @@ export const FL_ROUTES = {
 
 export const FL_NAV = {
   links: [
-    { label: 'Platform', href: '/landing#network' },
-    { label: 'How it works', href: '/landing#how-it-works' },
+    { label: 'Platform', href: '/landing#claim-decision' },
+    { label: 'How it works', href: '/landing#claim-decision' },
     { label: 'Evidence', href: '/landing#evidence' },
     { label: 'Pricing', href: FL_ROUTES.pricing },
     { label: 'FAQ', href: '/landing#faq' },
   ],
   signIn: 'Sign in',
-  cta: 'Get a Demo',
+  cta: 'Connect store and helpdesk',
 } as const;
 
 /* ── Hero ──────────────────────────────────────────────────────────────── */
 
 export const FL_HERO = {
-  eyebrow: 'Post-checkout evidence layer',
-  headlineLines: ['One claim.', 'The context behind it.'],
+  eyebrow: 'Claim decision infrastructure',
+  headlineLines: ['Every claim.', 'Full context.', 'One decision trail.'],
   subcopy:
-    'Before the chargeback comes the decision. Unauth surfaces the context support teams need while the claim is still being reviewed.',
-  primaryCta: 'Get a Demo',
-  secondaryCta: 'See How It Works',
-  pinnedCta: 'Get a Demo',
-  contactCta: 'Get a Demo',
+    'Unauth assembles order, delivery, identity, evidence, claim history, and your merchant rules inside the helpdesk — so support teams can review refunds, replacements, and chargeback-risk claims before they escalate.',
+  primaryCta: 'Connect store and helpdesk',
+  secondaryCta: 'See claim decision demo',
+  pinnedCta: 'Connect store and helpdesk',
+  contactCta: 'Connect store and helpdesk',
   orderHistoryCard: {
-    title: '01 Zero automated decisions',
-    status: 'Unauth does not approve, deny, or refund.',
-    meta: 'Evidence only',
-    pattern: 'Every final decision stays with your team.',
+    title: '01 Merchant-owned rules',
+    status: 'Your policy logic — not Unauth’s verdict.',
+    meta: 'Approve · Manual review · Deny',
+    pattern: 'Recommendations are explainable and auditable.',
   },
   claimTimingCard: {
-    title: '02 Before you reply',
-    status: 'Claim, order, delivery, and ticket history attached.',
-    meta: 'Before your team opens the ticket',
+    title: '02 Context before escalation',
+    status: 'Order, delivery, ticket, and claim history assembled.',
+    meta: 'Inside Gorgias, Zendesk, or Freshdesk',
   },
   crossMerchantCard: {
-    title: '03 Cross-merchant matching',
-    status: 'Repeated claim patterns across stores.',
-    meta: 'Privacy-safe signal context',
+    title: '03 Evidence, not verdicts',
+    status: 'Unauth never approves, denies, or refunds automatically.',
+    meta: 'Your team makes every final decision',
   },
   chargebackCard: {
-    title: '04 One-click evidence packs',
-    status: 'Open the pack, review the context, decide.',
-    meta: 'Merchant-ready evidence',
+    title: '04 Decision audit trail',
+    status: 'Rule match, signals snapshot, and outcome recorded.',
+    meta: 'Works before chargeback',
   },
 } as const;
 
 export const FL_HERO_FLOATING_CARDS = {
   orderHistory: {
-    label: '01 ZERO AUTOMATED DECISIONS',
-    title: 'Evidence only',
-    details: ['No approve, deny, or refund action', 'Every final decision stays with your team'],
+    label: '01 MERCHANT-OWNED RULES',
+    title: 'Your rules, your policy',
+    details: ['Approve, manual review, or deny', 'Matched conditions in plain English'],
   },
   claimTiming: {
-    label: '02 BEFORE YOU REPLY',
-    title: 'Context arrives first',
-    details: ['Claim, order, delivery, and ticket history', 'Attached before review'],
+    label: '02 CONTEXT FIRST',
+    title: 'Claim context assembled',
+    details: ['Order, delivery, and ticket linked', 'Prior claims and outcomes attached'],
   },
   crossMerchant: {
-    label: '03 CROSS-MERCHANT MATCHING',
-    title: 'Repeated patterns across stores',
-    details: ['Privacy-safe signal context', 'Isolated claim or wider behaviour'],
+    label: '03 EVIDENCE, NOT VERDICTS',
+    title: 'No automated decisions',
+    details: ['Unauth explains — you decide', 'Final action stays with your team'],
   },
   priorClaims: {
-    label: '04 ONE-CLICK EVIDENCE PACKS',
-    title: 'Merchant-ready evidence',
-    details: ['Open the pack', 'Review the context', 'Decide with confidence'],
+    label: '04 AUDIT TRAIL',
+    title: 'Every recommendation recorded',
+    details: ['Claim-bound audit row', 'Queryable before disputes escalate'],
   },
 } as const;
 
 /* ── Network hero (canvas section) ─────────────────────────────────────── */
 
 export const FL_NETWORK_HERO = {
-  title: 'Claims repeat across stores. Most merchants only see their own.',
+  title: 'Stronger at your store today. Stronger still as the network grows.',
   lead:
-    'A customer can look new to you while carrying the same refund or chargeback pattern across the market. Unauth gives every participating merchant privacy-safe visibility into repeated claim behaviour, then lets each merchant apply their own rules before money leaves the business.',
+    'Unauth turns helpdesk claims into explainable, merchant-owned decisions — starting with your own order, delivery, identity, and claim history. Privacy-safe cross-merchant patterns layer on when available, without changing who approves the refund.',
   stats: [
     {
-      value: '$4.61',
-      label: 'Cost for every $1 of fraud',
-      source: 'LexisNexis 2025',
+      value: 'Post-checkout',
+      label: 'Where refund and INR claims are decided',
+      source: 'Helpdesk workflow',
     },
     {
-      value: '$103B',
-      label: 'Lost to fraudulent returns and claims in 2024',
-      source: 'Appriss Retail + Deloitte',
+      value: 'Before CB',
+      label: 'Decision context while the ticket is still open',
+      source: 'Claim review moment',
     },
     {
-      value: 'Up to 75%',
-      label: 'Of chargebacks may be friendly fraud',
-      source: 'Visa',
+      value: 'k ≥ 3',
+      label: 'Network signals only when privacy threshold is met',
+      source: 'K_ANONYMITY_MIN',
     },
   ],
 } as const;
 
-/* Floating identity record — mirrors the real product panel. */
+export const FL_CLAIM_DECISION_LOOP = {
+  eyebrow: 'Claim decision workflow',
+  headline: 'From helpdesk ticket to explainable recommendation.',
+  subhead:
+    'When a customer claims an order never arrived, Unauth assembles order, delivery, identity, evidence, prior claim history, merchant rules, and outcome history — then shows the next step with full traceability. Your team still decides.',
+  steps: [
+    {
+      number: '01',
+      title: 'Claim arrives',
+      body: 'Customer says an order never arrived, arrived damaged, or needs refund review.',
+    },
+    {
+      number: '02',
+      title: 'Context assembled',
+      body: 'Unauth pulls order, delivery, identity, evidence, prior claims, and outcome history.',
+    },
+    {
+      number: '03',
+      title: 'Rules applied',
+      body: 'Merchant-owned rules recommend approve, manual review, or deny.',
+    },
+    {
+      number: '04',
+      title: 'Decision explained',
+      body: 'The exact matched rule and conditions are shown in plain English.',
+    },
+    {
+      number: '05',
+      title: 'Outcome audited',
+      body: 'The recommendation, context snapshot, and final action are recorded for future claims and disputes.',
+    },
+  ],
+} as const;
+
+export const FL_CATEGORY_COMPARISON = {
+  eyebrow: 'Why claim decision infrastructure',
+  traditional: {
+    title: 'Traditional tools',
+    items: [
+      'Focus on checkout or chargeback recovery',
+      'Show risk after context is scattered',
+      'Often separate from support workflows',
+      'Can hide reasoning behind scores',
+    ],
+  },
+  unauth: {
+    title: 'Unauth',
+    items: [
+      'Starts at the claim decision moment',
+      'Works inside helpdesk workflows',
+      'Applies merchant-owned rules',
+      'Shows the evidence and exact matched conditions',
+      'Records a decision trail before escalation',
+    ],
+  },
+} as const;
+
+export const FL_DEMO_PRODUCT_CARDS = {
+  recommendation: {
+    label: 'Manual review',
+    rule: 'INR delivered — request evidence',
+    conditions: [
+      'Claim type is item not received',
+      'Order was marked delivered',
+      'Customer has 2 prior INR claims',
+      'No customer evidence has been attached',
+    ],
+  },
+  evidence: {
+    items: [
+      'Order delivery proof',
+      'Order AU-DEMO-008842',
+      'Amount at risk: £84.20',
+      'Ticket: GOR-DEMO-INR-9001',
+    ],
+  },
+  audit: {
+    items: [
+      'Claim-bound recommendation',
+      'Ticket + order linked',
+      'Rule + signals snapshot stored',
+      'Duplicate refreshes deduped',
+    ],
+  },
+} as const;
+
 export const FL_PHONE = {
   title: 'Identity record',
   subtitle: 'hash 9f3b…12c8 · 4 merchants',
@@ -165,8 +249,8 @@ export const FL_MANIFEST = {
   caseId: 'CB-2291',
   files: [
     { name: 'claim_timeline.json', meta: '11 events · 4 merchants' },
-    { name: 'identity_signals.csv', meta: '12 signals · graded' },
-    { name: 'delivery_confirmation.pdf', meta: 'carrier GPS + photo' },
+    { name: 'identity_signals.json', meta: '12 signals · graded' },
+    { name: 'delivery_confirmation.pdf', meta: 'commerce fulfilment proof' },
     { name: 'cross_merchant_history.txt', meta: 'k-gated · pseudonymous' },
     { name: 'order_record.json', meta: '#UA-10482 · $162.40' },
   ],
@@ -243,11 +327,11 @@ export const FL_SIGNALS_EVIDENCE = {
       gradeLetter: 'A',
       gradeTier: 'Definite match',
       mainLine:
-        'Carrier GPS puts the parcel at the door — the claim arrived four days after the scan.',
+        'The connected order shows delivery evidence — the claim arrived four days after the scan.',
       details: [
         { k: 'Signals matched', v: '5 of 6' },
         { k: 'Matched across', v: '5 merchants · 3+ independent merchants' },
-        { k: 'Delivery proof', v: 'carrier GPS + photo' },
+        { k: 'Delivery proof', v: 'from connected order' },
         { k: 'Claim opened', v: '+4 days post-scan' },
       ],
       assembledIn: '41ms',
@@ -298,7 +382,7 @@ export const FL_HOW_IT_WORKS = {
     {
       id: '01',
       title: 'Delivery and fulfilment timeline',
-      body: 'Import order, carrier, fulfilment, refund, and reshipment events from your commerce stack.',
+      body: 'Import order, fulfilment, refund, and reshipment events from your connected commerce stack.',
       note: 'The delivery record becomes review context, not an automatic outcome.',
     },
     {
@@ -329,14 +413,14 @@ export const FL_HOW_IT_WORKS = {
 /* ── Giant figures (§ numbers) ─────────────────────────────────────────── */
 
 export const FL_FIGURES = {
-  label: 'See your own numbers, not ours',
-  body: 'Run a historical audit and see exactly how many repeated post-checkout patterns exist in your own claim history — before committing to anything. The 98.5% precision benchmark tells you what to expect when matches are found.',
+  label: 'See your own claim patterns first',
+  body: 'Connect your store and helpdesk so Unauth can backfill available order, ticket, claim, and outcome context. See repeated claim patterns, evidence gaps, and decision inconsistency from the data you already own.',
   figures: [
     {
       value: '~20',
       unit: 'min',
-      label: 'Historical audit',
-      note: 'Typical pilot dataset · run on your own order history',
+      label: 'Context backfill',
+      note: 'Available store and helpdesk history',
     },
     {
       value: '98.5',
@@ -346,8 +430,8 @@ export const FL_FIGURES = {
     },
   ],
   disclaimer:
-    'Benchmark results depend on dataset quality, import size, and configured thresholds.',
-  cta: 'Run a free claim audit',
+    'Results depend on connected-source coverage, claim history, and configured rules.',
+  cta: 'Connect store and helpdesk',
 } as const;
 
 /* ── Programs (§ programs) ─────────────────────────────────────────────── */
@@ -357,24 +441,11 @@ export const FL_PROGRAMS = {
   breadcrumb: ['Store Context', 'Network Signals', 'Evidence Packs'],
   tabs: [
     {
-      key: 'csv',
-      tab: 'CSV Audit',
-      title: 'CSV AUDIT',
-      kicker: 'Historical backfill / Evaluation',
-      index: '01',
-      details: [
-        { k: 'Input', v: 'One order-history CSV export' },
-        { k: 'Turnaround', v: '≈ 20 minutes' },
-        { k: 'Signals', v: '6 identity + behavioral patterns' },
-        { k: 'Output', v: 'Graded clusters & flagged orders' },
-      ],
-    },
-    {
       key: 'live',
-      tab: 'Live Monitoring',
-      title: 'LIVE MONITORING',
-      kicker: 'Store + Helpdesk / OAuth',
-      index: '02',
+      tab: 'Connected context',
+      title: 'CONNECTED CONTEXT',
+      kicker: 'Store + Helpdesk',
+      index: '01',
       details: [
         { k: 'Sources', v: 'Shopify · Woo · BigCommerce' },
         { k: 'Helpdesks', v: 'Gorgias · Zendesk · Freshdesk' },
@@ -384,15 +455,15 @@ export const FL_PROGRAMS = {
     },
     {
       key: 'evidence',
-      tab: 'Chargeback Evidence',
+      tab: 'Evidence Records',
       title: 'EVIDENCE PACKS',
-      kicker: 'Representment-ready files',
-      index: '03',
+      kicker: 'Claim and dispute support',
+      index: '02',
       details: [
         { k: 'Trigger', v: 'Linked claim or chargeback' },
         { k: 'Window', v: '120-day prior-order history' },
         { k: 'Contents', v: 'Timeline · signals · delivery proof' },
-        { k: 'Format', v: 'One click, representment-ready' },
+        { k: 'Format', v: 'One click, support-ready' },
       ],
     },
     {
@@ -400,7 +471,7 @@ export const FL_PROGRAMS = {
       tab: 'Network Context',
       title: 'NETWORK CONTEXT',
       kicker: 'Pseudonymous cross-merchant graph',
-      index: '04',
+      index: '03',
       details: [
         { k: 'Hashing', v: 'HMAC-SHA256 · per-tenant salt' },
         { k: 'Gate', v: 'k-anonymity · ≥ 3 merchants' },
@@ -438,7 +509,7 @@ export const FL_PRICING = {
   integration: {
     prefix: 'Using Gorgias or Zendesk?',
     linkLabel: 'See how Unauth attaches to your helpdesk',
-    href: '/landing#how-it-works',
+    href: '/landing#claim-decision',
   },
 } as const;
 
@@ -459,7 +530,7 @@ export const FL_PRICING_FAQ = {
     },
     {
       q: 'Do I need a card to start?',
-      a: 'No card is required for Free or the Pro trial. Connect your store or upload a CSV to see context on real claims before committing to a paid plan.',
+      a: 'No card is required for Free or the Pro trial. Connect your store and helpdesk to see context on real claims before committing to a paid plan.',
     },
     {
       q: 'Can I change plans later?',
@@ -471,9 +542,9 @@ export const FL_PRICING_FAQ = {
 /* ── Final CTA + footer ────────────────────────────────────────────────── */
 
 export const FL_FINAL = {
-  headlineLines: ['THE NEXT CLAIM', 'SHOULD NOT', 'ARRIVE BLIND'],
-  body: 'Run a free claim audit and see whether repeated post-checkout patterns already exist in your order history. Then turn those patterns into merchant-defined rules your team can review before every refund decision.',
-  cta: 'Run a free claim audit',
+  headlineLines: ['THE NEXT CLAIM', 'DESERVES A', 'DECISION TRAIL'],
+  body: 'Connect your store and helpdesk so Unauth can backfill available claim context, show repeated patterns, highlight evidence gaps, and apply merchant-owned rules to live helpdesk claims with zero automated decisions.',
+  cta: 'Connect store and helpdesk',
 } as const;
 
 export const FL_FAQ = {
@@ -485,11 +556,11 @@ export const FL_FAQ = {
     },
     {
       q: 'How do you distinguish a genuine customer complaint from abuse?',
-      a: 'Unauth does not make that decision. Your team does. We show the evidence around the claim: order history, delivery status, previous refund behaviour, identity consistency, and matched cross-merchant patterns. Your configured rules can then return a recommendation based on your own policy logic. The agent still owns the final decision.',
+      a: 'Unauth does not make that decision. Your team does. We assemble claim context — order history, delivery status, prior claims, identity consistency, and matched cross-merchant patterns when available. Your configured rules return a traceable recommendation. The agent still owns the final decision.',
     },
     {
-      q: 'How does Unauth reduce friendly fraud and chargeback losses?',
-      a: 'Unauth gives your team evidence before they respond. It shows whether the claim matches previous refund behaviour, whether similar claims appeared across the network, and whether the identity signals are consistent. Merchant-defined rules can then route the ticket toward approval, review, or escalation with a clear explanation of which rule fired.',
+      q: 'How does Unauth help before a chargeback?',
+      a: 'Unauth works at the helpdesk claim moment — while the ticket is still open. It shows delivery proof, prior claim behaviour, and merchant-rule recommendations with matched conditions in plain language, so your team can request evidence or escalate consistently before a dispute is filed.',
     },
     {
       q: 'Will this flag or block legitimate customers?',
@@ -515,16 +586,16 @@ export const FL_FAQ = {
 } as const;
 
 export const FL_FOOTER = {
-  tagline: 'Claim evidence and merchant-defined rules for refund and chargeback reviews.',
+  tagline: 'Claim decision infrastructure for helpdesk refund and chargeback-risk reviews.',
   columns: [
     {
       heading: 'Product',
       links: [
-        { label: 'Platform', href: '/landing#network' },
-        { label: 'How it works', href: '/landing#how-it-works' },
+        { label: 'Platform', href: '/landing#claim-decision' },
+        { label: 'How it works', href: '/landing#claim-decision' },
         { label: 'Evidence', href: '/landing#evidence' },
         { label: 'Pricing', href: FL_ROUTES.pricing },
-        { label: 'Live demo', href: FL_ROUTES.demo },
+        { label: 'Claim decision demo', href: '/landing#claim-decision' },
       ],
     },
     {
@@ -539,7 +610,7 @@ export const FL_FOOTER = {
       heading: 'Company',
       links: [
         { label: 'Sign in', href: FL_ROUTES.login },
-        { label: 'Run free audit', href: FL_ROUTES.audit },
+        { label: 'Connect store and helpdesk', href: FL_ROUTES.audit },
         { label: 'Pilot terms', href: FL_ROUTES.pilotTerms },
       ],
     },

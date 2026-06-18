@@ -45,13 +45,11 @@ export type FeatureKey =
   | 'lookup_api'
   | 'quick_score_api'
   | 'multi_store'
-  | 'csv_backfill_full'
   | 'advanced_reports'
   // --- Scale / Enterprise ---
   | 'custom_limits'
   | 'sla'
-  | 'security_review'
-  | 'signal_licensing_api';
+  | 'security_review';
 
 export interface TierLimits {
   contextCreditsPerMonth: number | 'custom';
@@ -155,7 +153,6 @@ export const TIER_CONFIG: Record<Tier, TierEntitlements> = {
       network_signal_enrichment: true,
       identity_graph: true,
       multi_store: true,
-      csv_backfill_full: true,
       advanced_reports: true,
     },
     limits: {
@@ -189,7 +186,6 @@ export const TIER_CONFIG: Record<Tier, TierEntitlements> = {
       lookup_api: true,
       quick_score_api: true,
       multi_store: true,
-      csv_backfill_full: true,
       advanced_reports: true,
       custom_limits: true,
       sla: true,
@@ -205,11 +201,10 @@ export const TIER_CONFIG: Record<Tier, TierEntitlements> = {
   },
   enterprise: {
     tier: 'enterprise',
-    label: 'Enterprise / API',
-    tagline: 'License the cross-rail signal',
+    label: 'Enterprise',
+    tagline: 'Embedded claim context for high-volume support teams',
     priceMonthlyUsd: 'custom',
     features: {
-      signal_licensing_api: true,
       lookup_api: true,
       quick_score_api: true,
       custom_limits: true,

@@ -54,8 +54,9 @@ describe('billing tiers (canonical SSOT)', () => {
     expect(TIER_CONFIG.pro.features.network_signal_enrichment).toBe(true);
   });
 
-  it('enterprise tier config is API-focused per spec', () => {
-    expect(TIER_CONFIG.enterprise.features.signal_licensing_api).toBe(true);
+  it('enterprise tier config is API-focused for embedded claim context', () => {
+    expect(TIER_CONFIG.enterprise.features.lookup_api).toBe(true);
+    expect(TIER_CONFIG.enterprise.features.quick_score_api).toBe(true);
     expect(TIER_CONFIG.enterprise.features.customer_dossier).toBeUndefined();
   });
 
@@ -86,7 +87,7 @@ describe('entitlement bridge (legacy UI → FeatureKey)', () => {
 
   it('maps each configured tier to entitlements in TIER_CONFIG', () => {
     expect(configuredEntitlements('free').sort()).toEqual(
-      ['CE3_READINESS_CHECK', 'CSV_IMPORT_LIMITED', 'STORE_SYNC', 'CUSTOMER_SEARCH', 'CUSTOMER_DOSSIER', 'CLAIM_REVIEW_QUEUE', 'HELPDESK_WIDGET', 'CHECKOUT_CONTROLS'].sort(),
+      ['CE3_READINESS_CHECK', 'STORE_SYNC', 'CUSTOMER_SEARCH', 'CUSTOMER_DOSSIER', 'CLAIM_REVIEW_QUEUE', 'HELPDESK_WIDGET'].sort(),
     );
     expect(TIER_CONFIG.free.features.evidence_export_raw).toBeUndefined();
     expect(TIER_CONFIG.pro.features.evidence_export_raw).toBe(true);
@@ -100,7 +101,6 @@ describe('entitlement bridge (legacy UI → FeatureKey)', () => {
     );
     expect(configuredEntitlements('growth')).toEqual(
       expect.arrayContaining([
-        'CSV_IMPORT_FULL',
         'NETWORK_GRAPH',
         'REPORTS_ADVANCED',
       ]),
@@ -120,6 +120,6 @@ describe('entitlement bridge (legacy UI → FeatureKey)', () => {
       return;
     }
     expect(hasEntitlement('growth', 'LIVE_LOOKUP_API')).toBe(false);
-    expect(hasEntitlement('enterprise', 'SIGNAL_API')).toBe(true);
+    expect(hasEntitlement('enterprise', 'LIVE_LOOKUP_API')).toBe(true);
   });
 });

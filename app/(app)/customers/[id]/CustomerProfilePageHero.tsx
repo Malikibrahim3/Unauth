@@ -105,7 +105,7 @@ export function CustomerProfilePageHero({
       )}
       <div className="flex items-center gap-3 mb-6">
         <Link
-          href={auditRunId ? `/audit/${auditRunId}?tab=customers` : '/customers'}
+          href="/customers"
           className="inline-flex items-center gap-1.5 text-sm transition-colors hover:opacity-80"
           style={{ color: 'var(--text-secondary)' }}
         >

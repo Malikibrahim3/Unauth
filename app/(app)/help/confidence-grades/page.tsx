@@ -128,9 +128,9 @@ export default function ConfidenceGradesPage() {
             a higher grade than depth on a single type.
           </p>
           <p>
-            Grades are recalculated on every upload. If a customer appears in a new audit with stronger signal
-            evidence, their grade will rise. If you dismiss a customer and they reappear with new overlapping
-            accounts, they will reappear in your review queue with the updated grade.
+            Grades are recalculated as new connected records and outcomes arrive. If a customer appears with
+            stronger signal evidence, their grade can rise. If a dismissed customer later appears with new
+            overlapping accounts, they can reappear in your review queue with the updated grade.
           </p>
           <p>
             Unauth does not use machine learning to assign grades. The logic is deterministic and auditable - you

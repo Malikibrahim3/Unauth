@@ -27,7 +27,7 @@ export function claimNextAction(
       };
     case 'pending':
       return {
-        evidenceStatus: 'Waiting on carrier or customer source data',
+        evidenceStatus: 'Waiting on delivery or customer source data',
         reviewState: 'Evidence state: Waiting on source data',
       };
     case 'escalated':

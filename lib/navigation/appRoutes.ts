@@ -65,7 +65,7 @@ export const APP_ROUTES = {
     sidebar: true,
     workbench: true,
     commandPalette: true,
-    commandDescription: 'Matched customers, evidence, and audit activity',
+    commandDescription: 'Claim context, evidence, and decision activity',
   },
   store: {
     key: 'store',
@@ -103,7 +103,7 @@ export const APP_ROUTES = {
     sidebar: true,
     workbench: true,
     commandPalette: true,
-    commandDescription: 'Review and action open customer claims',
+    commandDescription: 'Review open customer claims with context',
     badgeKey: 'claims',
   },
   watchlist: {
@@ -179,8 +179,8 @@ export const APP_ROUTES = {
   rules: {
     key: 'rules',
     href: '/rules',
-    label: 'Fraud Rules',
-    pageTitle: 'Fraud Rules',
+    label: 'Risk Controls',
+    pageTitle: 'Risk Controls',
     permission: PERMISSIONS.VIEW_SETTINGS,
     tier: 'pro',
     tierLabel: 'Rules',
@@ -188,7 +188,7 @@ export const APP_ROUTES = {
     sidebar: true,
     workbench: true,
     commandPalette: true,
-    commandDescription: 'Configure rules that drive widget recommendations',
+    commandDescription: 'Configure merchant-owned rules for recommendations',
   },
   lookup: {
     key: 'lookup',

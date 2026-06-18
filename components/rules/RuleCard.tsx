@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ChevronDown, ChevronUp, Pencil, Trash2 } from 'lucide-react';
 import { Badge, Button, Card } from '@/components/ui';
 import type { MerchantRule } from '@/lib/rules-engine';
+import { formatRiskScoreRange, parseRiskScoreRange } from '@/lib/rules/riskBands';
 import { ACTION_LABELS, ACTION_TONES, summarizeConditions } from '@/lib/rules/summary';
 
 interface RuleCardProps {
@@ -30,7 +31,7 @@ export function RuleCard({
   onMove,
 }: RuleCardProps) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const summary = summarizeConditions(rule.conditions, rule.condition_operator);
+  const summary = summarizeRuleTrigger(rule);
 
   return (
     <Card variant="raised" density="compact">
@@ -88,7 +89,7 @@ export function RuleCard({
               overflow: 'hidden',
             }}
           >
-            <span style={{ color: 'var(--text-tertiary)' }}>If </span>
+            <span style={{ color: 'var(--text-tertiary)' }}>When </span>
             {summary}
           </p>
         </div>
@@ -147,6 +148,13 @@ export function RuleCard({
       )}
     </Card>
   );
+}
+
+function summarizeRuleTrigger(rule: MerchantRule): string {
+  const range = parseRiskScoreRange(rule);
+  if (range) return formatRiskScoreRange(range);
+
+  return summarizeConditions(rule.conditions, rule.condition_operator);
 }
 
 function ActiveToggle({

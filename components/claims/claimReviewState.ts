@@ -1,9 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import {
   recordCustomerResponseCopied,
   assignClaim,
+  fetchClaimDecision,
   markClaimViewed,
   reopenClaim,
   reverseClaimDecision,
@@ -152,6 +153,71 @@ export function useClaimReviewWorkbench(profileId: string, initialClaimId?: stri
     [effectiveClaimId, history],
   );
   const resolvedActiveClaimId = selectedClaim?.id ?? effectiveClaimId;
+
+  const [decisionLoading, setDecisionLoading] = useState(false);
+  const [decisionError, setDecisionError] = useState<string | null>(null);
+  const [decisionData, setDecisionData] = useState<Record<string, unknown> | null>(null);
+  const [decisionStale, setDecisionStale] = useState(false);
+  const decisionDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const reloadDecision = useCallback(async (targetClaimId: string | null) => {
+    if (!targetClaimId) {
+      setDecisionData(null);
+      setDecisionError(null);
+      setDecisionLoading(false);
+      setDecisionStale(false);
+      return;
+    }
+    setDecisionLoading(true);
+    setDecisionError(null);
+    const result = await fetchClaimDecision(targetClaimId);
+    setDecisionLoading(false);
+    if (!result.ok) {
+      setDecisionError(result.message);
+      setDecisionData(null);
+      setDecisionStale(false);
+      return;
+    }
+    setDecisionData(result.data as Record<string, unknown>);
+    setDecisionStale(false);
+  }, []);
+
+  const scheduleReloadDecision = useCallback(
+    (targetClaimId: string) => {
+      if (decisionDebounceRef.current) clearTimeout(decisionDebounceRef.current);
+      setDecisionStale(true);
+      decisionDebounceRef.current = setTimeout(() => {
+        void reloadDecision(targetClaimId);
+      }, 400);
+    },
+    [reloadDecision],
+  );
+
+  const refreshRecommendation = useCallback(() => {
+    if (!resolvedActiveClaimId) return;
+    if (decisionDebounceRef.current) clearTimeout(decisionDebounceRef.current);
+    setDecisionStale(true);
+    void reloadDecision(resolvedActiveClaimId);
+  }, [resolvedActiveClaimId, reloadDecision]);
+
+  useEffect(() => {
+    return () => {
+      if (decisionDebounceRef.current) clearTimeout(decisionDebounceRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    void reloadDecision(resolvedActiveClaimId || null);
+  }, [resolvedActiveClaimId, reloadDecision]);
+
+  useEffect(() => {
+    if (!selectedClaim || !decisionData?.evaluatedAt || decisionLoading) return;
+    const claimUpdated = selectedClaim.updated_at ? Date.parse(selectedClaim.updated_at) : 0;
+    const evaluatedAt = Date.parse(String(decisionData.evaluatedAt));
+    if (Number.isFinite(claimUpdated) && Number.isFinite(evaluatedAt) && claimUpdated > evaluatedAt) {
+      setDecisionStale(true);
+    }
+  }, [decisionData, decisionLoading, selectedClaim]);
 
   const supportUrl = resolvedActiveClaimId
     ? `/api/claims/${encodeURIComponent(resolvedActiveClaimId)}/support-context`
@@ -357,6 +423,7 @@ export function useClaimReviewWorkbench(profileId: string, initialClaimId?: stri
     if (r.claimId) {
       setClaimId(r.claimId);
       saveClaimDraft(profileId, pickDraftFields(state, r.claimId));
+      scheduleReloadDecision(r.claimId);
     } else if (r.duplicateClaimId) {
       setClaimId(r.duplicateClaimId);
     }
@@ -398,6 +465,7 @@ export function useClaimReviewWorkbench(profileId: string, initialClaimId?: stri
       showMsg(r.message, 'error');
     }
     await refreshHistory();
+    scheduleReloadDecision(resolvedActiveClaimId);
   }
 
   async function onEvidence() {
@@ -419,6 +487,7 @@ export function useClaimReviewWorkbench(profileId: string, initialClaimId?: stri
       saveClaimDraft(profileId, pickDraftFields(state, resolvedActiveClaimId));
     }
     await refreshHistory();
+    scheduleReloadDecision(resolvedActiveClaimId);
   }
 
   async function onStatusChange() {
@@ -436,6 +505,7 @@ export function useClaimReviewWorkbench(profileId: string, initialClaimId?: stri
     showMsg(r.message, r.message.toLowerCase().includes('updated') ? 'success' : 'error');
     if (r.message.toLowerCase().includes('updated')) patch({ statusNote: '' });
     await refreshHistory();
+    scheduleReloadDecision(resolvedActiveClaimId);
   }
 
   async function onReopen() {
@@ -453,6 +523,7 @@ export function useClaimReviewWorkbench(profileId: string, initialClaimId?: stri
     showMsg(r.message, r.message.toLowerCase().includes('reopened') ? 'success' : 'error');
     if (r.message.toLowerCase().includes('reopened')) patch({ reopenNote: '' });
     await refreshHistory();
+    scheduleReloadDecision(resolvedActiveClaimId);
   }
 
   async function onReverse() {
@@ -474,6 +545,7 @@ export function useClaimReviewWorkbench(profileId: string, initialClaimId?: stri
     showMsg(r.message, r.message.toLowerCase().includes('reversed') ? 'success' : 'error');
     if (r.message.toLowerCase().includes('reversed')) patch({ reverseNote: '' });
     await refreshHistory();
+    scheduleReloadDecision(resolvedActiveClaimId);
   }
 
   async function onCopyCustomerResponse() {
@@ -581,5 +653,11 @@ export function useClaimReviewWorkbench(profileId: string, initialClaimId?: stri
     onClearSnooze,
     refreshHistory,
     reloadCustomer,
+    decisionLoading,
+    decisionError,
+    decisionData,
+    decisionStale,
+    reloadDecision,
+    refreshRecommendation,
   };
 }

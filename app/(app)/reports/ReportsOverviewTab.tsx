@@ -136,9 +136,9 @@ export function OverviewTab({
             </div>
           )}
           {rows.length > 0 && (
-            <Link href="?tab=csv" className="t-caption mt-3 inline-block font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
-              View all audits <ArrowRight className="inline h-3 w-3 align-[-2px]" aria-hidden="true" />
-            </Link>
+            <p className="t-caption mt-3" style={{ color: 'var(--text-tertiary)' }}>
+              Legacy import details are retained for historical context.
+            </p>
           )}
         </div>
 

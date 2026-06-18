@@ -2,80 +2,97 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 import {
   ArrowRight,
+  CheckCircle2,
+  ClipboardList,
   ExternalLink,
-  FolderOpen,
   PackageCheck,
-  ShieldCheck,
-  Store,
-  UsersRound,
-  Workflow,
 } from 'lucide-react';
-import { FL_ROUTES } from '@/app/(public)/landing/_lib/foundationContent';
+import {
+  FL_CATEGORY_COMPARISON,
+  FL_CLAIM_DECISION_LOOP,
+  FL_DEMO_PRODUCT_CARDS,
+  FL_ROUTES,
+} from '@/app/(public)/landing/_lib/foundationContent';
 import MobileCollapse from '@/app/(public)/landing/_components/foundation/MobileCollapse';
 import foundationStyles from '@/app/(public)/landing/_components/foundation/foundation.module.css';
+
+const demo = FL_DEMO_PRODUCT_CARDS;
 
 export default function EvidenceNotVerdictsRampSection() {
   return (
     <section
-      id="how-it-works"
+      id="claim-decision"
       className="relative min-h-screen scroll-mt-24 overflow-hidden bg-white text-[#111111] border-t border-black/[0.07]"
       data-nav-theme="light"
     >
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_24%,rgba(0,0,0,0.055),transparent_58%)]" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-white to-transparent" />
 
-      {/* Desktop / tablet-landscape (≥769px) — original layout, untouched */}
       <main className="relative mx-auto hidden max-w-[1180px] px-6 pb-24 pt-20 md:pt-24 min-[769px]:block">
-        <div className="mb-10 max-w-[720px]">
-          <p className={foundationStyles.landingSectionEyebrow}>
-            How it works
-          </p>
-          <h2 className={foundationStyles.landingSectionTitle}>
-            Evidence attached. Rules evaluated. Decision kept with your team.
-          </h2>
-          <p className={`${foundationStyles.landingSectionLead} max-w-[660px]`}>
-            Unauth connects to your store and helpdesk, checks each claim against order history and
-            network patterns, then evaluates your configured rules against those signals. The ticket
-            opens with evidence, a traceable recommendation, and the exact rule that fired.
-          </p>
+        <SectionIntro />
+        <ClaimDecisionLoopStrip />
+        <div className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-[24px]">
+          <RecommendationCard />
+          <EvidenceCard />
+          <AuditCard />
         </div>
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-[24px]">
-          <FeatureCardOne />
-          <FeatureCardTwo />
-          <FeatureCardThree />
-        </div>
-        <BottomStrip />
+        <CategoryComparison />
       </main>
 
-      {/* Mobile (≤768px) — Stripe-style collapse */}
       <main className="relative px-4 pb-20 pt-16 min-[769px]:hidden">
-        <MobileCollapse collapsedLabel="See how evidence and rules are attached">
-          <p className={foundationStyles.landingSectionEyebrow}>How it works</p>
-          <h2 className={`${foundationStyles.landingSectionTitle} mt-3 pr-14`}>
-            Evidence attached. Rules evaluated. Decision kept with your team.
-          </h2>
-
-          <div className="mt-8 grid grid-cols-1 gap-5">
-            <FeatureCardOne />
-            <FeatureCardTwo />
-            <FeatureCardThree />
+        <MobileCollapse collapsedLabel="See the claim decision workflow">
+          <SectionIntro />
+          <div className="mt-8">
+            <ClaimDecisionLoopStrip />
           </div>
-
+          <div className="mt-8 grid grid-cols-1 gap-5">
+            <RecommendationCard />
+            <EvidenceCard />
+            <AuditCard />
+          </div>
           <div className={foundationStyles.collapseDetails}>
             <div className={foundationStyles.collapseDetailsInner}>
-              <p className={foundationStyles.landingSectionLead}>
-                Unauth connects to your store and helpdesk, checks each claim against order history and
-                network patterns, then evaluates your configured rules against those signals. The ticket
-                opens with evidence, a traceable recommendation, and the exact rule that fired.
-              </p>
-              <div className="mt-6">
-                <BottomStrip />
-              </div>
+              <CategoryComparison />
             </div>
           </div>
         </MobileCollapse>
       </main>
     </section>
+  );
+}
+
+function SectionIntro() {
+  return (
+    <div className="mb-10 max-w-[760px]">
+      <p className={foundationStyles.landingSectionEyebrow}>{FL_CLAIM_DECISION_LOOP.eyebrow}</p>
+      <h2 className={foundationStyles.landingSectionTitle}>{FL_CLAIM_DECISION_LOOP.headline}</h2>
+      <p className={`${foundationStyles.landingSectionLead} max-w-[700px]`}>
+        {FL_CLAIM_DECISION_LOOP.subhead}
+      </p>
+    </div>
+  );
+}
+
+function ClaimDecisionLoopStrip() {
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      {FL_CLAIM_DECISION_LOOP.steps.map((step) => (
+        <article
+          key={step.number}
+          className="rounded-xl border border-[#e5e5e5] bg-[#fafaf9] px-4 py-4"
+        >
+          <div className="font-mono text-[12px] font-semibold tracking-[-0.02em] text-black/40">
+            {step.number}
+          </div>
+          <h3 className="mt-2 text-[15px] font-semibold tracking-[-0.04em] text-[#111111]">
+            {step.title}
+          </h3>
+          <p className="mt-2 text-[13px] leading-[1.45] tracking-[-0.015em] text-[#555555]">
+            {step.body}
+          </p>
+        </article>
+      ))}
+    </div>
   );
 }
 
@@ -94,15 +111,134 @@ function FeatureCard({
         <NumberBadge>{number}</NumberBadge>
         <OpenButton />
       </div>
-
       <h2 className="mt-5 max-w-[280px] text-[26px] font-semibold leading-[1.08] tracking-[-0.06em] text-[#111111]">
         {title}
       </h2>
-
       <div className="mt-auto flex justify-center pt-14">
         <MockPanel>{children}</MockPanel>
       </div>
     </article>
+  );
+}
+
+function RecommendationCard() {
+  return (
+    <FeatureCard number="03" title="Explainable recommendation">
+      <div className="mb-3 inline-flex rounded-full bg-[#fff4d6] px-2.5 py-1 text-[12px] font-semibold tracking-[-0.03em] text-[#8a6a00]">
+        {demo.recommendation.label}
+      </div>
+      <p className="mb-3 text-[13px] font-semibold tracking-[-0.03em]">
+        Rule: {demo.recommendation.rule}
+      </p>
+      <p className="mb-2 text-[12px] font-semibold text-[#666666]">Why this matched:</p>
+      <ul className="space-y-2">
+        {demo.recommendation.conditions.map((line) => (
+          <li key={line} className="flex gap-2 text-[12px] leading-[1.35] text-[#444444]">
+            <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-[#4d8d3d]" />
+            <span>{line}</span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-4 text-[11px] leading-[1.4] text-[#777777]">
+        Unauth applies your rules. Your team makes the final decision.
+      </p>
+    </FeatureCard>
+  );
+}
+
+function EvidenceCard() {
+  return (
+    <FeatureCard number="02" title="Claim context assembled">
+      <h3 className="mb-4 text-[16px] font-semibold tracking-[-0.04em]">Delivery &amp; order evidence</h3>
+      <div className="space-y-2">
+        {demo.evidence.items.map((item) => (
+          <ContextRow key={item} icon={<PackageCheck size={14} />} label={item} />
+        ))}
+      </div>
+      <div className="mt-3.5 rounded-lg border border-[#e9e5dd] bg-[#fbfaf5] px-3.5 py-3 text-[12px] font-semibold tracking-[-0.025em]">
+        Example: item-not-received with connected delivery proof.
+      </div>
+    </FeatureCard>
+  );
+}
+
+function AuditCard() {
+  return (
+    <FeatureCard number="05" title="Decision audit trail">
+      <h3 className="mb-4 text-[16px] font-semibold tracking-[-0.04em]">Queryable recommendation record</h3>
+      <div className="space-y-2">
+        {demo.audit.items.map((item) => (
+          <ContextRow key={item} icon={<ClipboardList size={14} />} label={item} />
+        ))}
+      </div>
+      <div className="mt-3.5 rounded-lg border border-[#ececec] bg-white px-3.5 py-3 text-[12px] leading-[1.35] text-[#555555]">
+        Every meaningful evaluation is stored with claim id, ticket id, rule match, and signal snapshot.
+      </div>
+    </FeatureCard>
+  );
+}
+
+function CategoryComparison() {
+  return (
+    <section className="mt-10 rounded-xl border border-[#dedede] bg-[#f5f4f1] px-6 py-8">
+      <p className={foundationStyles.landingSectionEyebrow}>{FL_CATEGORY_COMPARISON.eyebrow}</p>
+      <div className="mt-6 grid grid-cols-1 gap-8 md:grid-cols-2">
+        <ComparisonColumn
+          title={FL_CATEGORY_COMPARISON.traditional.title}
+          items={FL_CATEGORY_COMPARISON.traditional.items}
+          muted
+        />
+        <ComparisonColumn title={FL_CATEGORY_COMPARISON.unauth.title} items={FL_CATEGORY_COMPARISON.unauth.items} />
+      </div>
+      <div className="mt-8 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+        <Link
+          href={FL_ROUTES.audit}
+          prefetch={false}
+          className="inline-flex h-11 items-center gap-2 rounded-full bg-[#111111] px-5 text-[14px] font-semibold text-white"
+        >
+          Connect store and helpdesk
+          <ArrowRight size={15} />
+        </Link>
+        <p className="text-[13px] leading-[1.45] text-[#555555]">
+          Single-store value starts with your own claim history — network intelligence is an expansion layer.
+        </p>
+      </div>
+    </section>
+  );
+}
+
+function ComparisonColumn({
+  title,
+  items,
+  muted = false,
+}: {
+  title: string;
+  items: readonly string[];
+  muted?: boolean;
+}) {
+  return (
+    <div>
+      <h3
+        className={`text-[18px] font-semibold tracking-[-0.04em] ${
+          muted ? 'text-black/45' : 'text-[#111111]'
+        }`}
+      >
+        {title}
+      </h3>
+      <ul className="mt-4 space-y-2.5">
+        {items.map((item) => (
+          <li
+            key={item}
+            className={`flex gap-2.5 text-[14px] leading-[1.45] ${
+              muted ? 'text-black/50' : 'text-[#333333]'
+            }`}
+          >
+            <span className="mt-2 h-px w-3 shrink-0 bg-current opacity-40" aria-hidden />
+            {item}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -112,118 +248,6 @@ function MockPanel({ children }: { children: ReactNode }) {
       <BrowserDots />
       <div className="px-4 pb-5 pt-4">{children}</div>
     </div>
-  );
-}
-
-function FeatureCardOne() {
-  return (
-    <FeatureCard number="01" title="Zero automated decisions, by design">
-      <div className="mb-5 flex items-center gap-2.5">
-        <IconBox small>
-          <ShieldCheck size={15} />
-        </IconBox>
-        <div className="text-[16px] font-semibold leading-[1.1] tracking-[-0.04em]">
-          Decisions stay with your team
-        </div>
-      </div>
-
-      <div className="space-y-3.5 text-[13px] leading-[1.2] text-[#555555]">
-        <DecisionLine>No automated approvals</DecisionLine>
-        <DecisionLine>No automated denials</DecisionLine>
-        <DecisionLine>No refund automation</DecisionLine>
-        <DecisionLine>No black-box verdicts</DecisionLine>
-      </div>
-
-      <div className="mt-5 rounded-lg border border-[#e4e4e4] bg-[#fafafa] p-3.5">
-        <div className="flex items-center gap-3">
-          <IconBox small>
-            <UsersRound size={15} />
-          </IconBox>
-          <div className="text-[13px] font-semibold leading-[1.25] tracking-[-0.03em]">
-            Unauth runs your rules.
-            <br />
-            Your team owns the decision.
-          </div>
-        </div>
-      </div>
-    </FeatureCard>
-  );
-}
-
-function FeatureCardTwo() {
-  return (
-    <FeatureCard number="02" title="Every claim arrives with evidence">
-      <h3 className="mb-4 text-[16px] font-semibold tracking-[-0.04em]">Claim context attached</h3>
-      <div className="space-y-2">
-        <ContextRow icon={<PackageCheck size={14} />} label="Customer claim" value="“Never arrived”" />
-        <ContextRow icon={<Store size={14} />} label="Order & delivery" value="Delivered · 7/21/25" />
-        <ContextRow icon={<UsersRound size={14} />} label="Customer history" value="4 orders · 2 refunds" />
-        <ContextRow icon={<Workflow size={14} />} label="Network patterns" badge="3 matched signals" />
-        <ContextRow icon={<ShieldCheck size={14} />} label="Evidence strength" badge="High" green />
-      </div>
-      <div className="mt-3.5 rounded-lg border border-[#e9e5dd] bg-[#fbfaf5] px-3.5 py-3 text-[12px] font-semibold tracking-[-0.025em]">
-        The ticket opens with context already attached.
-      </div>
-    </FeatureCard>
-  );
-}
-
-function FeatureCardThree() {
-  return (
-    <FeatureCard number="03" title="Merchant rules turn signals into recommendations">
-      <h3 className="mb-4 text-[16px] font-semibold tracking-[-0.04em]">Rule match</h3>
-      <div className="space-y-2">
-        <RuleMatch rule="Serial claim review" condition="Network claims ≥ 3" status="Matched" />
-        <RuleMatch rule="Serial claim review" condition="Confidence is probable or definite" status="Matched" />
-        <RuleMatch rule="High-value review" condition="Order value ≥ $500" status="Not matched" />
-        <div className="rounded-lg border border-[#ececec] bg-white px-3.5 py-3">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex min-w-0 gap-2.5">
-              <IconBox small>
-                <Workflow size={13} />
-              </IconBox>
-              <div>
-                <div className="text-[13px] font-semibold tracking-[-0.03em]">Recommendation</div>
-                <div className="mt-0.5 text-[12px] leading-[1.2] text-[#555555]">
-                  Manual Review — based on your configured rules
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </FeatureCard>
-  );
-}
-
-function BottomStrip() {
-  return (
-    <section className="mt-6 grid min-h-[128px] grid-cols-1 items-center gap-6 rounded-xl border border-[#dedede] bg-[#f5f4f1] px-7 py-6 text-[#111111] md:grid-cols-[260px_1fr_280px]">
-      <div className="flex gap-5">
-        <NumberBadge>04</NumberBadge>
-        <h2 className="max-w-[230px] text-[25px] font-semibold leading-[1.08] tracking-[-0.06em]">
-          Evidence packs, one click from every ticket
-        </h2>
-      </div>
-      <p className="max-w-[520px] text-[14px] leading-[1.45] tracking-[-0.02em] text-[#333333]">
-        Open the evidence pack from the claim review flow, review the matched signals, see which
-        merchant rule fired, then decide with confidence.
-      </p>
-      <Link
-        href={FL_ROUTES.demo}
-        prefetch={false}
-        className="flex h-[58px] items-center justify-between rounded-lg border border-[#dddddd] bg-white px-5 shadow-[0_12px_30px_rgba(0,0,0,0.06)] transition hover:border-black/28"
-      >
-        <div className="flex items-center gap-4">
-          <FolderOpen size={24} />
-          <div>
-            <div className="text-[15px] font-semibold tracking-[-0.03em]">Open evidence pack</div>
-            <div className="mt-1 text-[13px] text-[#666666]">One click from the ticket</div>
-          </div>
-        </div>
-        <ArrowRight size={17} />
-      </Link>
-    </section>
   );
 }
 
@@ -257,89 +281,12 @@ function BrowserDots() {
   );
 }
 
-function IconBox({ children, small = false }: { children: ReactNode; small?: boolean }) {
+function ContextRow({ icon, label }: { icon: ReactNode; label: string }) {
   return (
-    <div
-      className={`flex shrink-0 items-center justify-center rounded-lg border border-[#e5e5e5] bg-[#fafafa] ${
-        small ? 'h-7 w-7' : 'h-9 w-9'
-      }`}
-    >
-      {children}
-    </div>
-  );
-}
-
-function DecisionLine({ children }: { children: ReactNode }) {
-  return (
-    <div className="flex items-center gap-3">
-      <ShieldCheck size={14} className="shrink-0 text-[#555555]" />
-      <span>{children}</span>
-    </div>
-  );
-}
-
-function ContextRow({
-  icon,
-  label,
-  value,
-  badge,
-  green = false,
-}: {
-  icon: ReactNode;
-  label: string;
-  value?: string;
-  badge?: string;
-  green?: boolean;
-}) {
-  return (
-    <div className="flex min-h-[36px] items-center justify-between gap-2 rounded-lg border border-[#e8e8e8] bg-white px-3">
-      <div className="flex min-w-0 items-center gap-2">
-        <span className="shrink-0 text-[#666666]">{icon}</span>
-        <span className="text-[12px] font-semibold leading-[1.1] tracking-[-0.025em]">{label}</span>
-      </div>
-      {value && (
-        <span className="shrink-0 text-right text-[11px] leading-[1.15] text-[#555555]">{value}</span>
-      )}
-      {badge && (
-        <span
-          className={`shrink-0 rounded-md px-2 py-0.5 text-[11px] font-semibold ${
-            green ? 'bg-[#dff5d7] text-[#4d8d3d]' : 'bg-[#e4d7ff] text-[#6b43c9]'
-          }`}
-        >
-          {badge}
-        </span>
-      )}
-    </div>
-  );
-}
-
-function RuleMatch({
-  rule,
-  condition,
-  status,
-}: {
-  rule: string;
-  condition: string;
-  status: string;
-}) {
-  const matched = status === 'Matched';
-  return (
-    <div className="flex min-h-[48px] items-center justify-between rounded-lg border border-[#ececec] bg-white px-3">
-      <div className="flex min-w-0 items-center gap-2.5">
-        <IconBox small>
-          <Workflow size={13} />
-        </IconBox>
-        <div className="min-w-0">
-          <div className="text-[12px] font-semibold tracking-[-0.03em]">{rule}</div>
-          <div className="mt-0.5 text-[11px] leading-[1.1] text-[#555555]">{condition}</div>
-        </div>
-      </div>
-      <span
-        className={`shrink-0 rounded-md px-2 py-0.5 text-[11px] font-semibold ${
-          matched ? 'bg-[#dff5d7] text-[#4d8d3d]' : 'bg-black/[0.06] text-[#555555]'
-        }`}
-      >
-        {status}
+    <div className="flex min-h-[36px] items-center gap-2 rounded-lg border border-[#e8e8e8] bg-white px-3 py-2">
+      <span className="shrink-0 text-[#666666]">{icon}</span>
+      <span className="text-[12px] font-medium leading-[1.2] tracking-[-0.025em] text-[#333333]">
+        {label}
       </span>
     </div>
   );

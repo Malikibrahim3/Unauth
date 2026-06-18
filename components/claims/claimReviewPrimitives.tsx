@@ -185,7 +185,7 @@ export function ClaimLifecycleStatusBar({
           type="text"
           className="w-full px-2 py-1.5 rounded-md text-xs"
           style={inputStyle()}
-          placeholder="e.g. Awaiting carrier POD"
+          placeholder="e.g. Awaiting delivery proof or customer evidence"
           value={statusNote}
           onChange={(e) => setStatusNote(e.target.value)}
         />

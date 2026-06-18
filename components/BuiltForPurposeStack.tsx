@@ -38,7 +38,7 @@ function FourPartLinearSection() {
           number="4.0"
           label="Review"
           heading="See the recommendation"
-          body="The ticket opens with evidence, the matched rule, and a traceable recommendation. Your team decides."
+          body="The ticket opens with evidence, the matched rule, plain-language conditions, and a traceable audit row. Your team decides."
         />
       </div>
     </div>
@@ -86,12 +86,12 @@ export default function BuiltForPurposeStack() {
           <div className="max-w-[620px] pt-2 lg:max-w-none">
             <p className={foundationStyles.landingSectionEyebrow}>Integrations</p>
             <h2 className={`${foundationStyles.landingSectionTitle} max-w-[440px]`}>
-              Connect your stack. Apply your policy.
+              Connect your stack. Review every claim with context.
             </h2>
             <p className={`${foundationStyles.landingSectionLead} max-w-[620px] lg:max-w-[390px]`}>
-              Link your store and helpdesk once. Unauth pulls in order, refund, delivery, and claim
-              data automatically, evaluates your merchant rules, and displays the result beside the
-              ticket before your team replies.
+              Link your store and helpdesk once. Unauth assembles claim context, evaluates your
+              merchant rules, and shows an explainable recommendation beside the ticket — before
+              your team approves, denies, or escalates.
             </p>
           </div>
 

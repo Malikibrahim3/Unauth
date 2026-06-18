@@ -715,7 +715,9 @@ describe('buildGorgiasSidebarWidgetTemplate', () => {
     expect(template.widgets[0].title).toBe('Unauth claim context');
     const rowTitles = template.widgets[0].widgets.map((w: { title: string }) => w.title);
     expect(rowTitles).toEqual([
-      'Case context',
+      'Order',
+      'Context',
+      'Identity',
       'Claim history',
       'Orders',
       'Claim rate',
@@ -723,6 +725,10 @@ describe('buildGorgiasSidebarWidgetTemplate', () => {
       'Recent activity',
       'Network & evidence',
       'Review context',
+      'Evidence',
+      'Evidence breakdown',
+      'Recommendation',
+      'Why this recommendation',
     ]);
     expect(json).not.toContain('Claims on record');
     expect(json).not.toContain('Identity Intelligence');

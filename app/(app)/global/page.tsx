@@ -228,15 +228,15 @@ export default async function GlobalGraphPage() {
           )}
         </SectionCard>
 
-        <SectionCard title="CSV runs processed">
+        <SectionCard title="Legacy context runs">
           <div className="space-y-3">
             {runRows.map((run) => (
-              <Link key={run.id} href={`/audit/${run.id}`} className="block rounded-md border p-3 hover:bg-[var(--surface-hover)]" style={{ borderColor: 'var(--border-muted)' }}>
+              <div key={run.id} className="block rounded-md border p-3" style={{ borderColor: 'var(--border-muted)' }}>
                 <p className="truncate text-caption font-semibold" style={{ color: 'var(--text)' }}>{run.filename}</p>
                 <p className="text-caption mt-1" style={{ color: 'var(--text-secondary)' }}>
                   {formatDateMode(run.created_at, 'table')} · {run.total_rows.toLocaleString()} rows · {(run.flagged_count ?? 0).toLocaleString()} matches
                 </p>
-              </Link>
+              </div>
             ))}
           </div>
         </SectionCard>

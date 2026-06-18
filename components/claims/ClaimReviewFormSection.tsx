@@ -68,9 +68,7 @@ export function ClaimReviewFormSection({ wb }: { wb: ClaimReviewWorkbench }) {
                   <input id="claim-order" aria-label="Order reference" className="w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()} placeholder="Order reference" value={state.manualOrderRef} onChange={(e) => patch({ manualOrderRef: e.target.value })} />
                   <select aria-label="Order source" className="w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()} value={state.manualOrderSource} onChange={(e) => patch({ manualOrderSource: e.target.value })}>
                     <option value="manual">Manual entry</option>
-                    <option value="csv">CSV import</option>
                     <option value="shopify">Shopify</option>
-                    <option value="audit">Audit</option>
                   </select>
                   {orderOptions.length > 0 && (
                     <button type="button" onClick={() => patch({ manualModeExplicit: false })} className="text-xs hover:underline" style={{ color: 'var(--text-secondary)' }}>← Back to order list</button>

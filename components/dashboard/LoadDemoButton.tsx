@@ -28,7 +28,7 @@ export function LoadDemoButton() {
         throw new Error(`Server error (${res.status}): ${text.slice(0, 100)}`);
       }
       if (!res.ok) throw new Error(json.error ?? `Server error (${res.status})`);
-      router.push(`/audit/${json.runId}`);
+      router.push('/reports');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
       setLoading(false);
@@ -46,10 +46,10 @@ type="button"         onClick={loadDemoAccount}
         {loading ? (
           <>
             <Loader2 className="animate-spin h-3.5 w-3.5" aria-hidden="true" />
-            Scoring 3,000 transactions…
+            Loading demo context…
           </>
         ) : (
-          'See a sample audit →'
+          'See sample context'
         )}
       </button>
       {error && <p className="mt-2 text-caption" style={{ color: 'var(--risk-critical)' }}>{error}</p>}

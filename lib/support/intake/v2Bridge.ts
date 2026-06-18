@@ -8,6 +8,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { emitIdentityObservations, type ObservationEntity } from '@/lib/identity/observations';
 import { resolveIdentitiesForKeys } from '@/lib/identity/resolver';
 import { normaliseAddress } from '@/lib/identity/normalise';
+import { ensureClaimDecisionEvidence } from '@/lib/claims/decision/ensureEvidence';
 
 type Client = SupabaseClient<any>;
 
@@ -191,11 +192,29 @@ export async function ensureClaimForTicketV2(
     triggerTags: string[];
     requiresReview: boolean;
     submittedAt: string | null;
+    claimTypeConfidence?: number | null;
+    classifierClaimType?: string | null;
+    keywordMatched?: string | null;
   }
 ): Promise<string | null> {
   if (!input.isClaim) return null;
   const claimType = TICKET_CLAIM_TYPE_MAP[input.claimType ?? 'other'] ?? 'other';
   const detectionMethod = DETECTION_METHOD_MAP[input.detectionMethod] ?? 'keyword';
+
+  const detectionDetail: Record<string, unknown> = {
+    trigger_tags: input.triggerTags,
+    source: 'helpdesk_intake',
+    classification_source: input.detectionMethod,
+  };
+  if (input.claimTypeConfidence != null && Number.isFinite(input.claimTypeConfidence)) {
+    detectionDetail.claim_type_confidence = input.claimTypeConfidence;
+  }
+  if (input.classifierClaimType) {
+    detectionDetail.classifier_claim_type = input.classifierClaimType;
+  }
+  if (input.keywordMatched) {
+    detectionDetail.keyword_matched = input.keywordMatched;
+  }
 
   const { data: existing, error: le } = await supabase.from('claims')
     .select('id')
@@ -214,7 +233,7 @@ export async function ensureClaimForTicketV2(
     claim_type: claimType,
     status: 'open',
     detection_method: detectionMethod,
-    detection_detail: { trigger_tags: input.triggerTags, source: 'helpdesk_intake' },
+    detection_detail: detectionDetail,
     reason_raw: input.claimReason,
     requires_review: input.requiresReview,
     submitted_at: input.submittedAt ?? new Date().toISOString(),
@@ -229,6 +248,15 @@ export async function ensureClaimForTicketV2(
     metadata: { source: 'helpdesk_intake', detection_method: detectionMethod, trigger_tags: input.triggerTags },
   });
   if (ee) throw new Error(`ticket_claim_event_failed: ${ee.message}`);
+
+  await ensureClaimDecisionEvidence({
+    client: supabase,
+    merchantId: input.merchantId,
+    claimId: claim.id as string,
+    claimType,
+    sourceOrderId: input.sourceOrderId,
+    source: 'claim_created',
+  });
 
   return claim.id;
 }

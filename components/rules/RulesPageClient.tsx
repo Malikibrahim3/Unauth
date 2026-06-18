@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { LayoutTemplate, Plus } from 'lucide-react';
 import { Button, PageHeader } from '@/components/ui';
 import type { MerchantRule } from '@/lib/rules-engine';
+import { DEFAULT_RISK_CONTROLS } from '@/lib/rules/riskBands';
+import { ACTION_LABELS } from '@/lib/rules/summary';
 import { RuleCard } from './RuleCard';
 import { RuleBuilderDrawer, type RuleDraftPayload } from './RuleBuilderDrawer';
 import { RuleTemplatesDrawer, type RuleTemplate } from './RuleTemplatesDrawer';
@@ -20,6 +22,7 @@ export function RulesPageClient({ canManage }: RulesPageClientProps) {
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [toast, setToast] = useState<Toast | null>(null);
+  const [creatingDefaults, setCreatingDefaults] = useState(false);
 
   const [builderOpen, setBuilderOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<MerchantRule | null>(null);
@@ -78,6 +81,24 @@ export function RulesPageClient({ canManage }: RulesPageClientProps) {
   const openEdit = (rule: MerchantRule) => {
     setEditingRule(rule);
     setBuilderOpen(true);
+  };
+
+  const handleUseDefaults = async () => {
+    setCreatingDefaults(true);
+    try {
+      const res = await fetch('/api/rules/defaults', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.error ?? 'Failed to create default controls', 'error');
+        return;
+      }
+      showToast('Default risk controls created');
+      await loadRules();
+    } catch {
+      showToast('Failed to create default controls', 'error');
+    } finally {
+      setCreatingDefaults(false);
+    }
   };
 
   const handleSubmit = async (payload: RuleDraftPayload, id?: string): Promise<boolean> => {
@@ -219,12 +240,17 @@ export function RulesPageClient({ canManage }: RulesPageClientProps) {
   return (
     <div className="flex flex-col gap-5">
       <PageHeader
-        title="Fraud Rules"
-        subtitle="Your rules applied to Unauth's signals. Unauth runs the math — you own the decision."
+        title="Risk Controls"
+        subtitle="Unauth scores behaviour from 0-100. Every score must map to exactly one control."
         primaryAction={
           canManage ? (
-            <Button variant="primary" leadingIcon={<Plus className="h-4 w-4" />} onClick={openCreate}>
-              New Rule
+            <Button
+              variant="primary"
+              leadingIcon={<Plus className="h-4 w-4" />}
+              onClick={rules.length === 0 ? handleUseDefaults : openCreate}
+              loading={creatingDefaults}
+            >
+              {rules.length === 0 ? 'Use Default Policy' : 'New Control'}
             </Button>
           ) : undefined
         }
@@ -244,6 +270,33 @@ export function RulesPageClient({ canManage }: RulesPageClientProps) {
         }
       />
 
+      <section
+        className="rounded-[var(--radius-lg)] border p-4"
+        style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+      >
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-body font-semibold" style={{ color: 'var(--text-primary)' }}>
+              How the score works
+            </h2>
+            <p className="mt-1 max-w-3xl text-body-sm" style={{ color: 'var(--text-secondary)' }}>
+              Higher scores mean stronger behavioural risk: repeat claims, network signals, weak evidence, and claim context all push the score up. Score bands must cover 0-100 with no overlaps or gaps.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {DEFAULT_RISK_CONTROLS.map((control) => (
+              <span
+                key={control.name}
+                className="rounded-[var(--radius-md)] border px-2.5 py-1 text-caption"
+                style={{ borderColor: 'var(--border-muted)', color: 'var(--text-secondary)' }}
+              >
+                {control.lower}-{control.upper}: {ACTION_LABELS[control.action]}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {loading ? (
         <div className="flex flex-col gap-3">
           {[0, 1, 2].map((i) => (
@@ -255,7 +308,11 @@ export function RulesPageClient({ canManage }: RulesPageClientProps) {
           ))}
         </div>
       ) : rules.length === 0 ? (
-        <RulesEmptyState canManage={canManage} onCreate={openCreate} onBrowseTemplates={openTemplates} />
+        <RulesEmptyState
+          canManage={canManage}
+          onUseDefaults={handleUseDefaults}
+          onBrowseTemplates={openTemplates}
+        />
       ) : (
         <div className="flex flex-col gap-3">
           {rules.map((rule, index) => (
@@ -280,6 +337,7 @@ export function RulesPageClient({ canManage }: RulesPageClientProps) {
         open={builderOpen}
         mode={editingRule ? 'edit' : 'create'}
         initialRule={editingRule}
+        existingRules={rules}
         onClose={() => setBuilderOpen(false)}
         onSubmit={handleSubmit}
       />

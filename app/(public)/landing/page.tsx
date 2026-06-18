@@ -21,18 +21,18 @@ const BuiltForPurposeStack = dynamic(() => import('@/components/BuiltForPurposeS
 const UnauthClaimsRoadmapSection = dynamic(() => import('@/components/UnauthClaimsRoadmapSection'));
 
 export const metadata: Metadata = {
-  title: 'Unauth — Claim Evidence and Merchant Rules for Refund Reviews',
+  title: 'Unauth — Claim Decision Infrastructure for Helpdesk Reviews',
   description:
-    'Unauth attaches claim evidence to refund and chargeback reviews, then applies your configured rules to show a traceable recommendation before your team replies.',
+    'Unauth turns helpdesk claims into explainable, merchant-owned decisions — order, delivery, identity, evidence, rules, and audit trail inside Gorgias, Zendesk, and Freshdesk.',
   openGraph: {
-    title: 'Unauth — Claim Evidence and Merchant Rules for Refund Reviews',
+    title: 'Unauth — Claim Decision Infrastructure for Helpdesk Reviews',
     description:
-      'Unauth attaches claim evidence to refund and chargeback reviews, then applies your configured rules to show a traceable recommendation before your team replies.',
+      'Unauth turns helpdesk claims into explainable, merchant-owned decisions — order, delivery, identity, evidence, rules, and audit trail inside Gorgias, Zendesk, and Freshdesk.',
   },
   twitter: {
-    title: 'Unauth — Claim Evidence and Merchant Rules for Refund Reviews',
+    title: 'Unauth — Claim Decision Infrastructure for Helpdesk Reviews',
     description:
-      'Unauth attaches claim evidence to refund and chargeback reviews, then applies your configured rules to show a traceable recommendation before your team replies.',
+      'Unauth turns helpdesk claims into explainable, merchant-owned decisions — order, delivery, identity, evidence, rules, and audit trail inside Gorgias, Zendesk, and Freshdesk.',
   },
 };
 

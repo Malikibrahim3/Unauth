@@ -30,15 +30,15 @@ export default function UnauthLinearClaimHero() {
         <div className="mb-[42px] grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_auto] lg:items-end">
           <div className="max-w-[690px]">
             <p className={foundationStyles.landingSectionEyebrow}>
-              Claim patterns
+              Claim decision moment
             </p>
             <h2 className={foundationStyles.landingSectionTitle}>
               The complaint is only the start of the review.
             </h2>
             <p className={`${foundationStyles.landingSectionLead} max-w-[620px]`}>
-              “Never arrived”, missing items, damaged orders, late delivery, refund pressure —
-              Unauth turns isolated claims into structured evidence, then your rules decide whether
-              the ticket should be approved, reviewed, or escalated.
+              When a customer says an order never arrived, Unauth links the ticket to order,
+              delivery proof, prior claims, and your merchant rules — then shows a traceable
+              recommendation before your team replies.
             </p>
           </div>
           <div className="flex items-center gap-4 justify-self-start font-mono text-[15px] tracking-[-0.02em] text-black/42 lg:justify-self-end">
@@ -60,7 +60,7 @@ export default function UnauthLinearClaimHero() {
       {/* Mobile (≤768px) — Stripe-style collapse: title + artifact, tap to reveal copy */}
       <main className="relative z-10 px-4 pb-16 pt-14 min-[769px]:hidden">
         <MobileCollapse collapsedLabel="See the claim flow">
-          <p className={foundationStyles.landingSectionEyebrow}>Claim patterns</p>
+          <p className={foundationStyles.landingSectionEyebrow}>Claim decision moment</p>
           <h2 className={`${foundationStyles.landingSectionTitle} mt-3 pr-14`}>
             The complaint is only the start of the review.
           </h2>
@@ -77,9 +77,9 @@ export default function UnauthLinearClaimHero() {
           <div className={foundationStyles.collapseDetails}>
             <div className={foundationStyles.collapseDetailsInner}>
               <p className={foundationStyles.landingSectionLead}>
-                “Never arrived”, missing items, damaged orders, late delivery, refund pressure —
-                Unauth turns isolated claims into structured evidence, then your rules decide whether
-                the ticket should be approved, reviewed, or escalated.
+                When a customer says an order never arrived, Unauth links the ticket to order,
+                delivery proof, prior claims, and your merchant rules — then shows a traceable
+                recommendation before your team replies.
               </p>
               <div className="mt-5 flex items-center gap-3 font-mono text-[14px] tracking-[-0.02em] text-black/42">
                 <span>1.0</span>
@@ -130,24 +130,24 @@ function ClaimThread() {
         <div className="space-y-7">
           <ThreadMessage
             avatar="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop&crop=face"
-            name="lena"
-            time="6:03 PM"
+            name="maya"
+            time="2:14 PM"
           >
-            Customer says “never arrived” again. Third delivery claim in two months.
+            Customer says the package never arrived — tracking shows delivered for order AU-DEMO-008842.
           </ThreadMessage>
           <ThreadMessage
             avatar="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&h=80&fit=crop&crop=face"
-            name="didier"
-            time="6:03 PM"
+            name="support"
+            time="2:15 PM"
           >
-            Unauth shows matching claim patterns across other merchants. Same address cluster too.
+            Unauth linked the Gorgias ticket to the claim. Delivery proof from the connected order and two prior INR claims are on file.
           </ThreadMessage>
           <ThreadMessage
             avatar="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=80&h=80&fit=crop&crop=face"
-            name="andreas"
-            time="6:03 PM"
+            name="lead"
+            time="2:16 PM"
           >
-            Merchant rule returned Manual Review. Open the evidence pack before we reply.
+            Merchant rule returned Manual review — no customer evidence attached yet. Request proof before refund.
           </ThreadMessage>
         </div>
 
@@ -205,7 +205,7 @@ function Composer() {
     <div className="mt-10 rounded-[14px] border border-black/[0.10] bg-[#f8f8f6] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_16px_36px_rgba(0,0,0,0.08)]">
       <div className="min-h-[95px] text-[19px] leading-[1.45] tracking-[-0.035em] text-[#111111]">
         <span className="rounded-md px-1.5 py-0.5 font-medium" style={mentionStyle}>@Unauth</span>{' '}
-        open evidence pack and rule match for CB-2291
+        show recommendation for GOR-DEMO-INR-9001
         <motion.span
           animate={{ opacity: [0, 1, 0] }}
           transition={{ duration: 1.2, repeat: Infinity }}
@@ -264,8 +264,8 @@ function ClaimsBoard() {
           type="todo"
           cards={[
             {
-              id: 'CB-2291',
-              title: 'Never arrived — rule review',
+              id: 'GOR-DEMO-INR-9001',
+              title: 'INR — manual review',
               tags: ['INR', 'Rules'],
               avatar:
                 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=60&h=60&fit=crop&crop=face',

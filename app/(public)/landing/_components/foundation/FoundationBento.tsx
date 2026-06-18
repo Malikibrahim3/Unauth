@@ -14,7 +14,7 @@ export default function FoundationBento() {
       className={styles.metricBridgeWhite}
     >
       <h2 id="fl-bento-heading" className="sr-only">
-        Post-checkout fraud by the numbers
+        Claim pressure by the numbers
       </h2>
       <div className="relative z-10 mx-auto w-full max-w-[100rem] px-5 pb-20 pt-16 sm:px-10 sm:pb-28 lg:pb-40 lg:pt-24">
         <div className={styles.metricCardGridSix}>

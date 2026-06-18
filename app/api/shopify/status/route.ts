@@ -21,7 +21,7 @@ export async function GET() {
       linkState: connection.linkState,
       shopDomain: connection.shopDomain,
       scopes: [...SHOPIFY_SCOPES],
-      dataSources: ['CSV upload', 'Shopify orders (when connected)'],
+      dataSources: ['Shopify orders (when connected)', 'Helpdesk claims (when connected)'],
     });
   }
 
@@ -71,7 +71,7 @@ export async function GET() {
     auditTransactionCount: orderCount,
     lastError: connection.lastError,
     scopes: [...SHOPIFY_SCOPES],
-    dataSources: ['Shopify live sync', 'CSV historical import'],
+    dataSources: ['Shopify live sync', 'Legacy historical context'],
     webhookFailures: 0,
     recentWebhooks: [],
   });

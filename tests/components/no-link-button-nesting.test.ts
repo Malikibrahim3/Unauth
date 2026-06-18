@@ -3,10 +3,8 @@ import path from 'path';
 
 const TARGET_FILES = [
   'app/(app)/claims/page.tsx',
-  'app/(app)/upload/page.tsx',
   'app/(app)/customers/page.tsx',
   'app/(app)/watchlist/page.tsx',
-  'app/(app)/history/page.tsx',
   'app/(app)/chargebacks/page.tsx',
 ];
 

@@ -134,7 +134,7 @@ export function buildKpis(
 ): Kpi[] {
   const s = presence.sources;
   const customers: Kpi = {
-    label: state === 'csv_only' ? 'Imported customers' : 'Customers monitored',
+    label: state === 'csv_only' ? 'Legacy customers' : 'Customers monitored',
     value: fmt(s.customerProfiles),
     hint: s.customerProfiles > 0 ? 'Profiles across all sources' : 'Appears once data syncs',
     icon: Users,
@@ -142,7 +142,7 @@ export function buildKpis(
   const orders: Kpi = {
     label: 'Orders synced',
     value: fmt(s.shopifyOrderSignals || s.auditTransactions),
-    hint: s.shopifyOrderSignals > 0 ? 'From Shopify' : s.auditTransactions > 0 ? 'From imports' : undefined,
+    hint: s.shopifyOrderSignals > 0 ? 'From Shopify' : s.auditTransactions > 0 ? 'From legacy history' : undefined,
     icon: ShoppingBag,
   };
   const identityMatches: Kpi = {
@@ -193,7 +193,7 @@ export function buildKpis(
       return [
         customers,
         reviewQueue,
-        { label: 'Matched orders', value: fmt(s.auditTransactions), hint: 'From imports', icon: ShoppingBag },
+        { label: 'Matched orders', value: fmt(s.auditTransactions), hint: 'From legacy history', icon: ShoppingBag },
         evidence,
         { label: 'Live monitoring', value: 'Off', hint: 'Connect Shopify & helpdesk', incomplete: true, icon: Activity },
       ];

@@ -24,7 +24,15 @@ import { CANONICAL_CLAIM_TYPES, CLAIM_TYPE_LABELS } from '@/lib/claims/claimType
 export { FIELD_LABELS, OPERATOR_LABELS };
 
 export type RuleFieldType = 'integer' | 'decimal' | 'boolean' | 'enum' | 'string_array';
-export type RuleFieldCategory = 'evidence' | 'identity' | 'claim_history' | 'order';
+export type RuleFieldCategory =
+  | 'evidence'
+  | 'identity'
+  | 'claim_history'
+  | 'order'
+  | 'current_claim'
+  | 'delivery'
+  | 'claim_evidence'
+  | 'outcome_history';
 
 export interface EnumOption {
   value: string;
@@ -66,6 +74,13 @@ export const EVIDENCE_LEVEL_OPTIONS: EnumOption[] = [
   { value: 'extensive', label: 'Extensive' },
 ];
 
+export const DELIVERY_STATUS_OPTIONS: EnumOption[] = [
+  { value: 'delivered', label: 'Delivered' },
+  { value: 'in_transit', label: 'In transit' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'unknown', label: 'Unknown' },
+];
+
 export const RULE_FIELDS: RuleFieldDef[] = [
   // Evidence
   { field: 'evidence_score', type: 'integer', category: 'evidence', operators: NUMERIC_OPERATORS },
@@ -78,12 +93,35 @@ export const RULE_FIELDS: RuleFieldDef[] = [
   // Claim history
   { field: 'network_claim_count', type: 'integer', category: 'claim_history', operators: NUMERIC_OPERATORS },
   { field: 'merchant_claim_count', type: 'integer', category: 'claim_history', operators: NUMERIC_OPERATORS },
+  { field: 'merchant_prior_claim_count', type: 'integer', category: 'claim_history', operators: NUMERIC_OPERATORS },
   { field: 'days_since_last_claim', type: 'integer', category: 'claim_history', operators: NUMERIC_OPERATORS },
   { field: 'network_merchant_count', type: 'integer', category: 'claim_history', operators: NUMERIC_OPERATORS },
   { field: 'claim_types', type: 'string_array', category: 'claim_history', operators: STRING_ARRAY_OPERATORS, options: CLAIM_TYPE_OPTIONS },
   // Order
   { field: 'order_value_usd', type: 'decimal', category: 'order', operators: NUMERIC_OPERATORS },
   { field: 'account_age_days', type: 'integer', category: 'order', operators: NUMERIC_OPERATORS },
+  // Current claim
+  { field: 'claim_type', type: 'enum', category: 'current_claim', operators: ENUM_OPERATORS, options: CLAIM_TYPE_OPTIONS },
+  { field: 'amount_at_risk', type: 'decimal', category: 'current_claim', operators: NUMERIC_OPERATORS },
+  { field: 'ticket_claim_type_confidence', type: 'decimal', category: 'current_claim', operators: NUMERIC_OPERATORS },
+  // Delivery
+  { field: 'delivery_status', type: 'enum', category: 'delivery', operators: ENUM_OPERATORS, options: DELIVERY_STATUS_OPTIONS },
+  { field: 'days_since_delivery', type: 'integer', category: 'delivery', operators: NUMERIC_OPERATORS },
+  { field: 'has_tracking', type: 'boolean', category: 'delivery', operators: BOOLEAN_OPERATORS },
+  { field: 'has_proof_of_delivery', type: 'boolean', category: 'delivery', operators: BOOLEAN_OPERATORS },
+  // Evidence on this claim
+  { field: 'has_customer_evidence', type: 'boolean', category: 'claim_evidence', operators: BOOLEAN_OPERATORS },
+  { field: 'evidence_items_count', type: 'integer', category: 'claim_evidence', operators: NUMERIC_OPERATORS },
+  // Outcome history
+  { field: 'merchant_same_type_claim_count', type: 'integer', category: 'claim_history', operators: NUMERIC_OPERATORS },
+  { field: 'merchant_prior_same_type_claim_count', type: 'integer', category: 'claim_history', operators: NUMERIC_OPERATORS },
+  { field: 'network_same_type_claim_count', type: 'integer', category: 'outcome_history', operators: NUMERIC_OPERATORS },
+  { field: 'prior_approved_claims', type: 'integer', category: 'outcome_history', operators: NUMERIC_OPERATORS },
+  { field: 'prior_denied_claims', type: 'integer', category: 'outcome_history', operators: NUMERIC_OPERATORS },
+  { field: 'prior_escalated_claims', type: 'integer', category: 'outcome_history', operators: NUMERIC_OPERATORS },
+  { field: 'prior_chargebacks_after_claims', type: 'integer', category: 'outcome_history', operators: NUMERIC_OPERATORS },
+  { field: 'prior_loss_outcomes', type: 'integer', category: 'outcome_history', operators: NUMERIC_OPERATORS },
+  { field: 'prior_recovered_outcomes', type: 'integer', category: 'outcome_history', operators: NUMERIC_OPERATORS },
 ];
 
 export const FIELD_DEFS_BY_NAME: Record<string, RuleFieldDef> = Object.fromEntries(
@@ -97,6 +135,10 @@ export const CATEGORY_LABELS: Record<RuleFieldCategory, string> = {
   identity: 'Identity',
   claim_history: 'Claim history',
   order: 'Order',
+  current_claim: 'Current claim',
+  delivery: 'Delivery',
+  claim_evidence: 'Evidence on this claim',
+  outcome_history: 'Outcome history',
 };
 
 export function operatorsForField(field: string): string[] {

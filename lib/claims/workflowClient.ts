@@ -74,6 +74,15 @@ export async function markClaimViewed(claimId: string) {
   return { message: result.ok ? 'Claim viewed' : result.message };
 }
 
+export async function fetchClaimDecision(claimId: string) {
+  const res = await fetch(`/api/claims/${claimId}/decision`, { method: 'POST' });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    return { ok: false as const, message: (data as { error?: string }).error ?? 'Failed to load recommendation', data: null };
+  }
+  return { ok: true as const, data };
+}
+
 export async function assignClaim(claimId: string, action: 'assign_to_me' | 'unassign') {
   const result = await safePost(`/api/claims/${claimId}/assignment`, { action });
   return { message: result.ok ? 'Assignment updated' : result.message };

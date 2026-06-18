@@ -61,7 +61,7 @@ describe('renderGorgiasWidgetHtml', () => {
 
     expect(html).toContain('Unauth claim context');
     expect(html).toContain('Claim history');
-    expect(html).not.toMatch(/\b9\b.*orders/i);
+    expect(html).toContain('9 orders at your store');
     expect(html).not.toContain('DEFINITE');
     expect(html).not.toContain('Item not received');
     expect(html).not.toContain('CE 3.0 evidence available');

@@ -55,14 +55,14 @@ export const EVIDENCE_TYPE_LABELS: Record<EvidenceType, string> = {
 };
 
 export const EVIDENCE_SOURCE_LABELS: Record<EvidenceSource, string> = {
-  manual: 'Manual upload',
-  csv_import: 'CSV import',
+  manual: 'Manual record',
+  csv_import: 'Legacy import',
   zendesk: 'Zendesk',
   gorgias: 'Gorgias',
   shopify: 'Shopify',
   stripe: 'Stripe',
   paypal: 'PayPal',
-  carrier: 'Carrier',
+  carrier: 'Order delivery data',
 };
 
 export const STATUS_LABELS: Record<string, string> = {

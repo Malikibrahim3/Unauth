@@ -68,7 +68,7 @@ export default function FoundationHero() {
                 {FL_HERO.primaryCta}
                 <ChevronRight size={16} aria-hidden />
               </Link>
-              <Link href="/landing#how-it-works" className={styles.heroCtaSecondary}>
+              <Link href="/landing#claim-decision" className={styles.heroCtaSecondary}>
                 {FL_HERO.secondaryCta}
                 <ChevronRight size={16} aria-hidden />
               </Link>

@@ -40,7 +40,7 @@ describe('Gorgias widget unlock links', () => {
     expect(payload.basic_unlock_url).toContain('basic_context');
     expect(payload.full_unlock_url).toContain('full_context');
     expect(payload.evidence_unlock_url).toContain('evidence_summary');
-    expect(payload.basic_unlock_label).toContain('1 credit');
+    expect(payload.basic_unlock_label).toBe('View full context →');
     expect(payload.basic_unlock_url).toContain('basic_context');
   });
 
@@ -105,8 +105,23 @@ describe('Gorgias widget unlock links', () => {
   it('sidebar template uses safe card title and context row labels', () => {
     const template = buildGorgiasSidebarWidgetTemplate('https://app.unauth.test');
     expect(template.widgets[0].title).toBe(GORGIAS_SIDEBAR_CARD_TITLE);
-    expect(template.widgets[0].widgets[1].title).toBe(GORGIAS_SIDEBAR_ROW_LABELS.claims);
-    expect(template.widgets[0].widgets[3].title).toBe(GORGIAS_SIDEBAR_ROW_LABELS.claim_rate);
+    const rowTitles = template.widgets[0].widgets.map((w: { title: string }) => w.title);
+    expect(rowTitles).toEqual([
+      GORGIAS_SIDEBAR_ROW_LABELS.order_context,
+      GORGIAS_SIDEBAR_ROW_LABELS.context_summary,
+      GORGIAS_SIDEBAR_ROW_LABELS.identity,
+      GORGIAS_SIDEBAR_ROW_LABELS.claims,
+      GORGIAS_SIDEBAR_ROW_LABELS.orders,
+      GORGIAS_SIDEBAR_ROW_LABELS.claim_rate,
+      GORGIAS_SIDEBAR_ROW_LABELS.primary_reason,
+      GORGIAS_SIDEBAR_ROW_LABELS.recent_activity,
+      GORGIAS_SIDEBAR_ROW_LABELS.ce3_evidence,
+      GORGIAS_SIDEBAR_ROW_LABELS.watchlisted,
+      GORGIAS_SIDEBAR_ROW_LABELS.evidence_summary,
+      GORGIAS_SIDEBAR_ROW_LABELS.evidence_breakdown,
+      GORGIAS_SIDEBAR_ROW_LABELS.recommendation,
+      GORGIAS_SIDEBAR_ROW_LABELS.recommendation_detail,
+    ]);
     const blob = JSON.stringify(template);
     expect(blob).not.toMatch(/Claims on record|Identity Intelligence/i);
   });

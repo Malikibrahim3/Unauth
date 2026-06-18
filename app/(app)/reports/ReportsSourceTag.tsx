@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui';
 export function ReportsSourceTag({ source }: { source: 'csv' | 'live' }) {
   return source === 'csv' ? (
     <Badge tone="neutral" size="sm" className="gap-1">
-      <FileSpreadsheet className="h-3 w-3" /> CSV import
+      <FileSpreadsheet className="h-3 w-3" /> Legacy import
     </Badge>
   ) : (
     <Badge tone="accent" size="sm" className="gap-1">
