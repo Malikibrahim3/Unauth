@@ -87,6 +87,108 @@ const ACCOUNT_DELETE_TABLES: string[] = [
   'normalisation_learning',
 ];
 
+const CURRENT_V2_MERCHANT_DELETE_TABLES: string[] = [
+  'webhook_logs',
+  'unmatched_correspondence',
+  'external_clarification_requests',
+  'external_correspondence',
+  'loss_case_evidence',
+  'loss_case_events',
+  'loss_cases',
+  'recovery_case_events',
+  'recovery_cases',
+  'case_clarification_requests',
+  'integration_evidence_items',
+  'claim_evidence',
+  'claim_events',
+  'rule_evaluations',
+  'identity_catch_events',
+  'source_ticket_events',
+  'source_refunds',
+  'source_fulfillments',
+  'source_disputes',
+  'checkout_signal_order_links',
+  'identity_signals',
+  'identity_edges',
+  'identity_notes',
+  'merchant_identity_state',
+  'support_payout_cases',
+  'partner_recovery_rules',
+  'partners',
+  'merchant_rules',
+  'checkout_signals',
+  'source_orders',
+  'source_addresses',
+  'source_tickets',
+  'source_customers',
+  'store_connections',
+  'helpdesk_connections',
+  'extracted_partner_terms',
+  'integration_documents',
+  'integration_credentials',
+  'merchant_integrations',
+  'correspondence_automation_settings',
+  'sync_jobs',
+  'merchant_widget_tokens',
+  'merchant_api_keys',
+  'access_audit_log',
+  'user_action_log',
+  'user_permission_grants',
+  'merchant_users',
+  'merchant_credits',
+  'merchant_subscriptions',
+  'context_credit_events',
+  'credit_topup_log',
+  'billing_events_log',
+];
+
+async function fetchMerchantIds(
+  service: ReturnType<typeof createServiceClient>,
+  table: string,
+  merchantId: string,
+): Promise<string[]> {
+  const { data, error } = await service
+    .from(table)
+    .select('id')
+    .eq('merchant_id', merchantId);
+  if (error) throw new Error(`${table} id lookup failed: ${error.message}`);
+  return ((data as Array<{ id: string }> | null) ?? []).map((row) => row.id);
+}
+
+async function deleteInChunks(
+  service: ReturnType<typeof createServiceClient>,
+  table: string,
+  column: string,
+  values: string[],
+) {
+  if (values.length === 0) return;
+  const chunks = Array.from({ length: Math.ceil(values.length / 500) }, (_, i) =>
+    values.slice(i * 500, i * 500 + 500)
+  );
+  for (const chunk of chunks) {
+    const { error } = await service.from(table).delete().in(column, chunk);
+    if (error) throw new Error(`${table} delete failed: ${error.message}`);
+  }
+}
+
+async function deleteMerchantRows(
+  service: ReturnType<typeof createServiceClient>,
+  table: string,
+  merchantId: string,
+) {
+  const { error } = await service.from(table).delete().eq('merchant_id', merchantId);
+  if (error) throw new Error(`${table} delete failed: ${error.message}`);
+}
+
+async function deleteOptionalMerchantRows(
+  service: ReturnType<typeof createServiceClient>,
+  table: string,
+  merchantId: string,
+) {
+  const { error } = await service.from(table).delete().eq('merchant_id', merchantId);
+  if (error) console.warn(`[account-delete] non-fatal legacy cleanup: ${table}:`, error.message);
+}
+
 export async function POST(request: NextRequest) {
   const limited = await enforceRateLimit(
     rateLimitKey('account-delete', getClientIp(request.headers)),
@@ -122,16 +224,32 @@ export async function POST(request: NextRequest) {
       .from(TABLES.PUBLIC_AUDITS)
       .select('csv_path')
       .eq('linked_merchant_id', merchantId);
-    const fetchEvidencePaths = service
-      .from('evidence_packages' as any)
+    const fetchLegacyEvidencePaths = service
+      .from(TABLES.EVIDENCE_PACKAGES)
       .select('pdf_storage_path')
+      .eq('merchant_id', merchantId);
+    const fetchClaimEvidencePaths = service
+      .from('claim_evidence')
+      .select('storage_path')
+      .eq('merchant_id', merchantId);
+    const fetchIntegrationDocumentPaths = service
+      .from(TABLES.INTEGRATION_DOCUMENTS)
+      .select('file_path')
       .eq('merchant_id', merchantId);
 
     const [
       { data: queuePaths },
       { data: publicAuditPaths },
-      { data: evidencePaths },
-    ] = await Promise.all([fetchQueuePaths, fetchPublicAuditPaths, fetchEvidencePaths]);
+      { data: legacyEvidencePaths },
+      { data: claimEvidencePaths },
+      { data: integrationDocumentPaths },
+    ] = await Promise.all([
+      fetchQueuePaths,
+      fetchPublicAuditPaths,
+      fetchLegacyEvidencePaths,
+      fetchClaimEvidencePaths,
+      fetchIntegrationDocumentPaths,
+    ]);
 
     // Remove raw uploaded CSVs and generated PDFs for this account. Database
     // deletes alone leave source files in Storage, which is unacceptable for
@@ -151,33 +269,53 @@ export async function POST(request: NextRequest) {
       removeStorageObjects(
         service,
         STORAGE_BUCKETS.EVIDENCE_PACKAGES,
-        ((evidencePaths as Array<{ pdf_storage_path: string | null }> | null) ?? []).map((row) => row.pdf_storage_path ?? ''),
+        [
+          ...((legacyEvidencePaths as Array<{ pdf_storage_path: string | null }> | null) ?? []).map((row) => row.pdf_storage_path ?? ''),
+          ...((claimEvidencePaths as Array<{ storage_path: string | null }> | null) ?? []).map((row) => row.storage_path ?? ''),
+        ],
+      ),
+      removeStorageObjects(
+        service,
+        STORAGE_BUCKETS.INTEGRATION_DOCUMENTS,
+        ((integrationDocumentPaths as Array<{ file_path: string | null }> | null) ?? []).map((row) => row.file_path ?? ''),
       ),
     ]);
 
-    // Delete merchant data in dependency order.
-    // Non-fatal failures are logged but don't block account deletion.
-    const tables = ACCOUNT_DELETE_TABLES;
-    const deleteMerchantTables = async (index: number): Promise<void> => {
-      if (index >= tables.length) return;
-      const table = tables[index]!;
-      // All merchant-owned tables (incl. watchlist_entries after the tenancy
-      // alignment migration) key off merchants.id — order matters for FK constraints.
-      const { error } = await service
-        .from(table as any)
-        .delete()
-        .eq('merchant_id', merchantId);
-      if (error) console.warn(`[account-delete] non-fatal: ${table}:`, error.message);
-      return deleteMerchantTables(index + 1);
-    };
-    await deleteMerchantTables(0);
+    try {
+      const supportPayoutCaseIds = await fetchMerchantIds(service, TABLES.MERCHANT_CLAIMS, merchantId);
+      const syncJobIds = await fetchMerchantIds(service, TABLES.PROCESSING_JOBS, merchantId);
 
-    // Delete customer profiles where this is the only merchant.
-    await Promise.all([
-      service.rpc('delete_orphan_customer_profiles' as any, { p_merchant_id: merchantId }).maybeSingle(),
-      service.from(TABLES.PUBLIC_AUDITS).delete().eq('linked_merchant_id', merchantId),
-      service.from(TABLES.MERCHANTS).delete().eq('id', merchantId),
-    ]);
+      await deleteInChunks(service, 'claim_outcomes', 'claim_id', supportPayoutCaseIds);
+      await deleteInChunks(service, 'sync_job_chunks', 'job_id', syncJobIds);
+
+      for (const table of CURRENT_V2_MERCHANT_DELETE_TABLES) {
+        await deleteMerchantRows(service, table, merchantId);
+      }
+
+      for (const table of ACCOUNT_DELETE_TABLES) {
+        await deleteOptionalMerchantRows(service, table, merchantId);
+      }
+
+      await Promise.all([
+        service.rpc('delete_orphan_customer_profiles', { p_merchant_id: merchantId }).maybeSingle(),
+        service.from(TABLES.PUBLIC_AUDITS).delete().eq('linked_merchant_id', merchantId),
+      ]);
+
+      const { error: merchantDeleteError } = await service
+        .from(TABLES.MERCHANTS)
+        .delete()
+        .eq('id', merchantId);
+      if (merchantDeleteError) {
+        throw new Error(`merchants delete failed: ${merchantDeleteError.message}`);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error('[account-delete] merchant purge failed:', message);
+      return NextResponse.json(
+        { error: 'Failed to delete all merchant data. Contact support@unauth.co.' },
+        { status: 500 },
+      );
+    }
   }
 
   // Delete the auth user last — this invalidates all sessions.
