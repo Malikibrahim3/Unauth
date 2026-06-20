@@ -2,6 +2,8 @@ import type { TrendDataPoint } from '@/components/charts/WeeklyTrendChart';
 import type { GradeDistEntry } from '@/components/charts/GradeDistBar';
 import type { Database } from '@/lib/supabase/types';
 import { createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
+import { ACTIVE_CLAIM_STATUSES } from '@/lib/claims/sla';
 import { riskLevelToNewGrade } from '@/lib/confidence';
 import type { ConnectionState } from '@/lib/connections/getConnectionState';
 import type { MerchantDataPresence } from '@/lib/supabase/getMerchantDataPresence';
@@ -149,11 +151,15 @@ export function buildKpis(
     hint: metrics.payoutExposureOpen > 0 ? 'On open support payout cases' : 'No open exposure',
     icon: Headphones,
   };
+  // Show the real open-case count whenever payout cases exist — even on a demo /
+  // disconnected account (Option A). Only fall back to "Missing" when there is
+  // genuinely no case data AND no helpdesk connection to produce it.
+  const hasClaimData = metrics.claimsNeedingAction > 0;
   const openClaims: Kpi = {
     label: 'Open payout cases',
-    value: connection.helpdesk ? fmt(metrics.claimsNeedingAction) : 'Missing',
-    hint: connection.helpdesk ? 'Awaiting decision or evidence' : 'Connect helpdesk',
-    incomplete: !connection.helpdesk,
+    value: connection.helpdesk || hasClaimData ? fmt(metrics.claimsNeedingAction) : 'Missing',
+    hint: connection.helpdesk || hasClaimData ? 'Awaiting decision or evidence' : 'Connect helpdesk',
+    incomplete: !connection.helpdesk && !hasClaimData,
     icon: ShieldCheck,
   };
   const recoveryOpen: Kpi = {
@@ -242,11 +248,11 @@ export async function countEvidence(
 ): Promise<{ total: number; ce3Eligible: number }> {
   const [{ count: total }, { count: ce3Eligible }] = await Promise.all([
     serviceClient
-      .from('evidence_packages' as never)
+      .from(TABLES.EVIDENCE_PACKAGES)
       .select('id', { count: 'exact', head: true })
       .eq('merchant_id', merchantId),
     serviceClient
-      .from('evidence_packages' as never)
+      .from(TABLES.EVIDENCE_PACKAGES)
       .select('id', { count: 'exact', head: true })
       .eq('merchant_id', merchantId)
       .eq('ce3_eligible', true),
@@ -259,9 +265,9 @@ export async function countClaimsNeedingAction(
   merchantId: string,
 ): Promise<number> {
   const { count } = await serviceClient
-    .from('merchant_claims' as never)
+    .from(TABLES.MERCHANT_CLAIMS)
     .select('id', { count: 'exact', head: true })
     .eq('merchant_id', merchantId)
-    .in('status', ['open', 'under_review', 'evidence_requested', 'pending', 'escalated']);
+    .in('status', [...ACTIVE_CLAIM_STATUSES]);
   return count ?? 0;
 }

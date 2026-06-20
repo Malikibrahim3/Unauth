@@ -3,6 +3,7 @@
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/lib/supabase/tables';
+import { ACTIVE_CLAIM_STATUSES } from '@/lib/claims/sla';
 import { listRecoveryCases } from '@/lib/recoveries/store';
 import type { RecoveryCaseStatus } from '@/lib/recoveries/types';
 import { LOSS_ATTRIBUTION_DISPLAY, type LossAttributionLabel } from '@/lib/payouts/types';
@@ -39,7 +40,10 @@ export async function loadPayoutDashboardMetrics(
         'id,amount_at_risk,recoverability,loss_attribution,recommended_payout_action,status',
       )
       .eq('merchant_id', merchantId)
-      .in('status', ['open', 'pending', 'escalated', 'under_review', 'evidence_requested']),
+      // Must use only valid claim_status enum values — an invalid value (e.g. the
+      // legacy 'under_review'/'evidence_requested') errors the whole query and
+      // silently zeroes every payout-exposure metric on the dashboard.
+      .in('status', [...ACTIVE_CLAIM_STATUSES]),
     client.from(TABLES.MERCHANT_CLAIMS).select('id').eq('merchant_id', merchantId),
     listRecoveryCases(client, merchantId).catch(() => []),
   ]);
