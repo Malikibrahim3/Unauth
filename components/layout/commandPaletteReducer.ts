@@ -9,7 +9,7 @@ export interface CustomerResult {
 }
 
 export interface UnifiedResult {
-  type: 'customer' | 'order' | 'evidence';
+  type: 'customer' | 'order' | 'case';
   id: string;
   label: string;
   sublabel?: string;

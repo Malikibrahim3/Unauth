@@ -108,10 +108,10 @@ export function CommandPaletteResultsList({
 
       {FLAG_COMMAND_CENTER && state.unifiedResults.some((r) => r.type !== 'customer') ? (
         <>
-          {(['order', 'evidence'] as const).map((type) => {
+          {(['order', 'case'] as const).map((type) => {
             const group = state.unifiedResults.filter((r) => r.type === type);
             if (!group.length) return null;
-            const groupLabel = type === 'order' ? 'Orders' : 'Evidence packages';
+            const groupLabel = type === 'order' ? 'Orders' : 'Payout cases';
             const baseIdx =
               customerStartIdx +
               state.customerResults.length +

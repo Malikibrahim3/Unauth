@@ -1,17 +1,17 @@
 /**
- * Phase E-5 — Analyst Command Center: Unified Search Endpoint
- * GET /api/search?q=<query>&types=customers,orders,evidence&limit=5&page=1
+ * Analyst Command Center — Unified Search Endpoint (v2 data model)
+ * GET /api/search?q=<query>&types=customers,orders,cases&limit=5&page=1
  *
  * Feature-flagged: endpoint always available to authorised merchants, but
  * only called by CommandPalette when FLAG_COMMAND_CENTER=true.
  *
- * Returns paginated, merchant-scoped results across:
- *   - customers    → customer_profiles (name, email)
- *   - orders       → audit_transactions (order_id)
- *   - evidence     → evidence_packages (customer name, order_id)
+ * Returns paginated, merchant-scoped results across the v2 read model:
+ *   - customers → source_customers (email, name)
+ *   - orders    → source_orders (order_number, email)
+ *   - cases     → support_payout_cases (matched via their source order)
  *
- * Multi-tenancy: all queries scope through processing_jobs.merchant_id.
- * Input validated with Zod per program principle §9.
+ * Multi-tenancy: every query is scoped directly by merchant_id. No cross-merchant
+ * data is returned. Input validated with Zod per program principle §9.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -22,28 +22,20 @@ import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 
-const searchCurrencyFormatter = new Intl.NumberFormat('en-US', {
+const searchCurrencyFormatter = new Intl.NumberFormat('en-GB', {
   style: 'currency',
-  currency: 'USD',
+  currency: 'GBP',
   maximumFractionDigits: 0,
 });
 
-// ---------------------------------------------------------------------------
-// Input schema
-// ---------------------------------------------------------------------------
-
 const SearchQuerySchema = z.object({
   q:     z.string().min(1).max(200),
-  types: z.string().optional(), // comma-separated: customers,orders,evidence
+  types: z.string().optional(), // comma-separated: customers,orders,cases
   limit: z.coerce.number().int().min(1).max(20).default(5),
   page:  z.coerce.number().int().min(1).default(1),
 });
 
-// ---------------------------------------------------------------------------
-// Result types
-// ---------------------------------------------------------------------------
-
-type ResultType = 'customer' | 'order' | 'evidence';
+type ResultType = 'customer' | 'order' | 'case';
 
 interface SearchResult {
   type: ResultType;
@@ -54,9 +46,10 @@ interface SearchResult {
   riskLevel?: string;
 }
 
-// ---------------------------------------------------------------------------
-// Handler
-// ---------------------------------------------------------------------------
+/** Strip characters that would break a PostgREST `or(...)` ilike filter. */
+function sanitizeIlike(value: string): string {
+  return value.replace(/[%,()*]/g, ' ').trim();
+}
 
 export async function GET(req: NextRequest) {
   const userClient = createClient();
@@ -72,6 +65,7 @@ export async function GET(req: NextRequest) {
   if (denied || !ctx?.merchantId) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
+  const merchantId = ctx.merchantId;
 
   const parsed = SearchQuerySchema.safeParse(
     Object.fromEntries(req.nextUrl.searchParams),
@@ -81,113 +75,92 @@ export async function GET(req: NextRequest) {
   }
 
   const { q, limit, page } = parsed.data;
-  const types = parsed.data.types
-    ? parsed.data.types.split(',').map((s) => s.trim())
-    : ['customers', 'orders', 'evidence'];
+  // Accept the legacy 'evidence' type as an alias for 'cases'.
+  const requested = parsed.data.types
+    ? parsed.data.types.split(',').map((s) => s.trim()).map((t) => (t === 'evidence' ? 'cases' : t))
+    : ['customers', 'orders', 'cases'];
 
+  const term = sanitizeIlike(q);
+  if (!term) {
+    return NextResponse.json({ results: [], query: q, page, limit, total: 0 });
+  }
+  const pattern = `%${term}%`;
   const offset = (page - 1) * limit;
   const results: SearchResult[] = [];
 
-  // Resolve merchant job IDs once — used for transaction/evidence scoping
-  let merchantJobIds: string[] = [];
-  try {
-    const { data: jobs } = await serviceClient
-      .from(TABLES.PROCESSING_JOBS)
-      .select('id')
-      .eq('merchant_id', ctx.merchantId)
-      .eq('hidden_by_merchant', false)
-      .limit(500);
-    merchantJobIds = (jobs ?? []).map((j: { id: string }) => j.id);
-  } catch {
-    // fall through — scoped results will be empty
-  }
-
-  // ── 1. Customers ──────────────────────────────────────────────────────────
-  if (types.includes('customers')) {
+  // ── 1. Customers ── source_customers, merchant-scoped ──────────────────────
+  if (requested.includes('customers')) {
     try {
-      let merchantProfileIds: string[] = [];
-      if (merchantJobIds.length > 0) {
-        const { data: appearances } = await serviceClient
-          .from('customer_profile_audit_appearances' as any)
-          .select('profile_id')
-          .in('audit_id', merchantJobIds.slice(0, 100))
-          .limit(500);
-        const profileIdsFromAppearances: string[] = (appearances ?? []).flatMap(
-          (row: { profile_id: string | null }) => (row.profile_id ? [row.profile_id] : []),
-        );
-        merchantProfileIds = [...new Set(profileIdsFromAppearances)];
-      }
-
-      const customersQuery = serviceClient
-        .from('customer_profiles' as any)
-        .select('id, name, email, risk_level')
-        .or(`name.ilike.%${q}%,email.ilike.%${q}%`);
-
-      const { data: customers } = await (
-        merchantProfileIds.length > 0
-          ? customersQuery.in('id', merchantProfileIds)
-          : customersQuery.eq('id', '00000000-0000-0000-0000-000000000000')
-      )
+      const { data: customers } = await serviceClient
+        .from('source_customers')
+        .select('id, email, first_name, last_name')
+        .eq('merchant_id', merchantId)
+        .or(`email.ilike.${pattern},first_name.ilike.${pattern},last_name.ilike.${pattern}`)
         .limit(limit)
         .range(offset, offset + limit - 1);
 
-      for (const c of (customers as Array<{ id: string; name: string | null; email: string | null; risk_level: string | null }> ?? [])) {
+      for (const c of (customers as Array<{ id: string; email: string | null; first_name: string | null; last_name: string | null }> ?? [])) {
+        const name = [c.first_name, c.last_name].filter(Boolean).join(' ').trim();
         results.push({
           type: 'customer',
           id: c.id,
-          label: c.name ?? c.email ?? c.id,
-          sublabel: c.name ? c.email ?? undefined : undefined,
+          label: name || c.email || c.id,
+          sublabel: name ? c.email ?? undefined : undefined,
           href: `/customers/${c.id}`,
-          riskLevel: c.risk_level ?? undefined,
         });
       }
     } catch { /* non-fatal */ }
   }
 
-  // ── 2. Orders ─────────────────────────────────────────────────────────────
-  if (types.includes('orders') && merchantJobIds.length > 0) {
+  // ── 2. Orders ── source_orders, merchant-scoped ────────────────────────────
+  const matchedOrderIds: string[] = [];
+  if (requested.includes('orders') || requested.includes('cases')) {
     try {
       const { data: orders } = await serviceClient
-        .from('audit_transactions' as any)
-        .select('id, order_id, order_value, risk_level')
-        .ilike('order_id', `%${q}%`)
-        .in('job_id', merchantJobIds.slice(0, 100))
+        .from('source_orders')
+        .select('id, order_number, email, total_price, currency, source_customer_id')
+        .eq('merchant_id', merchantId)
+        .or(`order_number.ilike.${pattern},email.ilike.${pattern}`)
         .limit(limit)
         .range(offset, offset + limit - 1);
 
-      for (const o of (orders as Array<{ id: string; order_id: string; order_value: number | null; risk_level: string | null }> ?? [])) {
-        results.push({
-          type: 'order',
-          id: o.id,
-          label: `Order ${o.order_id}`,
-          sublabel: o.order_value
-            ? searchCurrencyFormatter.format(o.order_value)
-            : undefined,
-          href: `/claims`,
-          riskLevel: o.risk_level ?? undefined,
-        });
+      for (const o of (orders as Array<{ id: string; order_number: string | null; email: string | null; total_price: number | null; currency: string | null; source_customer_id: string | null }> ?? [])) {
+        matchedOrderIds.push(o.id);
+        if (requested.includes('orders')) {
+          results.push({
+            type: 'order',
+            id: o.id,
+            label: o.order_number ? `Order ${o.order_number}` : `Order ${o.id.slice(0, 8)}`,
+            sublabel: o.total_price != null ? searchCurrencyFormatter.format(o.total_price) : o.email ?? undefined,
+            href: o.source_customer_id ? `/customers/${o.source_customer_id}` : '/claims',
+          });
+        }
       }
     } catch { /* non-fatal */ }
   }
 
-  // ── 3. Evidence packages ──────────────────────────────────────────────────
-  if (types.includes('evidence') && merchantJobIds.length > 0) {
+  // ── 3. Payout cases ── support_payout_cases for matched orders or by id ─────
+  if (requested.includes('cases')) {
     try {
-      const { data: evidence } = await serviceClient
-        .from('evidence_packages' as any)
-        .select('id, customer_name, order_id, ce3_eligible')
-        .or(`customer_name.ilike.%${q}%,order_id.ilike.%${q}%`)
-        .in('job_id', merchantJobIds.slice(0, 100))
+      const orFilters: string[] = [`id.ilike.${pattern}`];
+      if (matchedOrderIds.length > 0) {
+        orFilters.push(`source_order_id.in.(${matchedOrderIds.join(',')})`);
+      }
+      const { data: cases } = await serviceClient
+        .from(TABLES.MERCHANT_CLAIMS)
+        .select('id, claim_type, status, amount_at_risk, currency')
+        .eq('merchant_id', merchantId)
+        .or(orFilters.join(','))
         .limit(limit)
         .range(offset, offset + limit - 1);
 
-      for (const e of (evidence as Array<{ id: string; customer_name: string | null; order_id: string | null; ce3_eligible: boolean }> ?? [])) {
+      for (const c of (cases as Array<{ id: string; claim_type: string | null; status: string | null; amount_at_risk: number | null; currency: string | null }> ?? [])) {
         results.push({
-          type: 'evidence',
-          id: e.id,
-          label: e.customer_name ?? `Evidence ${e.id.slice(0, 8)}`,
-          sublabel: e.ce3_eligible ? 'Evidence available' : undefined,
-          href: `/claims`,
+          type: 'case',
+          id: c.id,
+          label: `Payout case · ${(c.claim_type ?? 'claim').replace(/_/g, ' ')}`,
+          sublabel: c.amount_at_risk != null ? searchCurrencyFormatter.format(c.amount_at_risk) : c.status ?? undefined,
+          href: `/claims/${c.id}`,
         });
       }
     } catch { /* non-fatal */ }
