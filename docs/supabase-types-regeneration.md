@@ -15,10 +15,20 @@ export SUPABASE_PROJECT_ID="<your-project-ref>"
 npm run gen:supabase-types
 ```
 
-Equivalent manual command:
+`npm run gen:supabase-types` runs `scripts/gen-supabase-types.sh`, which generates
+into a temp file and only moves it into place once the command succeeds **and**
+produced non-empty output. This avoids the previous footgun where a direct
+`> lib/supabase/types.ts` redirect truncated the canonical types file to empty
+before generation ran — so an auth/login failure left everyone with a blank
+types file and a broken typecheck/build. A failed run now leaves `types.ts`
+untouched and exits non-zero.
+
+Equivalent manual command (note the temp-then-move, not a direct `>` redirect):
 
 ```bash
-npx supabase gen types typescript --project-id "$SUPABASE_PROJECT_ID" > lib/supabase/types.ts
+npx supabase gen types typescript --project-id "$SUPABASE_PROJECT_ID" > lib/supabase/types.tmp.ts \
+  && test -s lib/supabase/types.tmp.ts \
+  && mv lib/supabase/types.tmp.ts lib/supabase/types.ts
 ```
 
 ## When not to run in CI

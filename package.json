@@ -71,7 +71,7 @@
     "create:gorgias-support-connection": "ts-node --project tsconfig.scripts.json --transpile-only -r tsconfig-paths/register scripts/create-gorgias-support-connection.ts",
     "build:extension": "cd extensions/chrome && npm install && npm run build",
     "doctor": "react-doctor . --json",
-    "gen:supabase-types": "sh -c 'test -n \"$SUPABASE_PROJECT_ID\" || (echo \"Set SUPABASE_PROJECT_ID (see docs/supabase-types-regeneration.md)\" >&2; exit 1); npx supabase gen types typescript --project-id \"$SUPABASE_PROJECT_ID\" > lib/supabase/types.ts'"
+    "gen:supabase-types": "bash scripts/gen-supabase-types.sh"
   },
   "dependencies": {
     "@amplitude/analytics-browser": "^2.42.0",
