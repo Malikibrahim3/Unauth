@@ -1,9 +1,14 @@
 import type { ReactNode } from 'react';
 import type { DataQualityReport } from '@/lib/types/dataQuality';
-import type { Database } from '@/lib/supabase/types';
+import type {
+  LegacyProcessingJobRow,
+  LegacyAuditTransactionRow,
+} from '@/lib/supabase/legacyV1Types';
 
-type RunRow = Database['public']['Tables']['processing_jobs']['Row'];
-type TxRow = Database['public']['Tables']['audit_transactions']['Row'];
+// `processing_jobs` / `audit_transactions` were dropped in the v2 cutover; this
+// audit-run view is legacy (its page now redirects). See legacyV1Types.ts.
+type RunRow = LegacyProcessingJobRow;
+type TxRow = LegacyAuditTransactionRow;
 
 export type CustomerRollup = [string, { maxScore: number; orderCount: number; totalSpend: number }];
 

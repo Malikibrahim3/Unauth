@@ -1,6 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../supabase/types';
 import { TABLES } from '../supabase/tables';
+// Legacy v1 `processing_jobs` was dropped in the v2 cutover (retained until
+// cutover, no live callers). See legacyV1Types.ts.
+import { asLegacyV1Client } from '../supabase/legacyV1Types';
 import { isUpstreamDown } from '../engine/dbSemaphore';
 
 export type ServiceClient = SupabaseClient<Database>;
@@ -91,12 +94,13 @@ export async function incrementJobProgress(
   // Read-then-write is not perfectly atomic but is safe for progress tracking
   // where slight inaccuracies are acceptable.
   if (error.code === 'PGRST202' || error.code === '42883') {
-    const { data: job } = await serviceClient
+    const legacyClient = asLegacyV1Client(serviceClient);
+    const { data: job } = await legacyClient
       .from(TABLES.PROCESSING_JOBS)
       .select('processed_rows, failed_rows, total_rows')
       .eq('id', jobId)
       .single();
-    const { error: updateError } = await serviceClient
+    const { error: updateError } = await legacyClient
       .from(TABLES.PROCESSING_JOBS)
       .update({
         processed_rows: (job?.processed_rows ?? 0) + processedDelta,
@@ -110,7 +114,9 @@ export async function incrementJobProgress(
             ? `Processed ${(((job?.processed_rows ?? 0) + processedDelta + (job?.failed_rows ?? 0) + failedDelta)).toLocaleString('en-US')} of ${(job?.total_rows ?? 0).toLocaleString('en-US')} rows`
             : 'Processing…',
         updated_at: new Date().toISOString(),
-      })
+        // `processing_jobs` was dropped in v2; this dead fallback is retained for
+        // the cutover window. Cast satisfies the typed builder. See legacyV1Types.ts.
+      } as unknown as never)
       .eq('id', jobId);
     if (updateError) {
       console.error('Failed to update job progress (fallback):', updateError);

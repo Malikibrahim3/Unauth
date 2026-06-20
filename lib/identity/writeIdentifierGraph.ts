@@ -1,5 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/supabase/types';
+// Legacy v1 dual-write: these RPCs were dropped in the v2 cutover and this path
+// has no live callers (retained until cutover). See legacyV1Types.ts.
+import { asLegacyV1Client } from '@/lib/supabase/legacyV1Types';
 import type { ScoredOrder } from '@/lib/engine/types';
 import {
   accumulateV1IdentifierGraphFromScoredBatch,
@@ -58,7 +61,7 @@ export async function writeIdentifierGraphFromScoredBatch(
         raw_vs_hashed_storage: id.rawVsHashedStorage ?? 'hashed',
       }));
     for (const chunk of splitIntoBatches(identifierPayload, 2000)) {
-      const { error } = await serviceClient.rpc('bulk_upsert_identity_identifiers', {
+      const { error } = await asLegacyV1Client(serviceClient).rpc('bulk_upsert_identity_identifiers', {
         p_identifiers: chunk,
         p_source_provider: provider,
       });
@@ -82,7 +85,7 @@ export async function writeIdentifierGraphFromScoredBatch(
       count_delta: edge.count,
     }));
     for (const chunk of splitIntoBatches(edgePayload, 2000)) {
-      const { error } = await serviceClient.rpc('bulk_upsert_identifier_co_occurrence_edges', {
+      const { error } = await asLegacyV1Client(serviceClient).rpc('bulk_upsert_identifier_co_occurrence_edges', {
         p_merchant_id: input.merchantId,
         p_edges: chunk,
         p_source_provider: provider,
@@ -190,7 +193,7 @@ export async function writeIdentifierGraphFromSupportTicket(
   if (identifiers.length === 0 && pairs.length === 0) return;
 
   if (identifiers.length > 0) {
-    const { error } = await serviceClient.rpc('bulk_upsert_identity_identifiers', {
+    const { error } = await asLegacyV1Client(serviceClient).rpc('bulk_upsert_identity_identifiers', {
       p_identifiers: identifiers.map((id) => ({
         identifier_type: id.type,
         identifier_hash: id.hash,
@@ -204,7 +207,7 @@ export async function writeIdentifierGraphFromSupportTicket(
   }
 
   if (pairs.length > 0) {
-    const { error } = await serviceClient.rpc('bulk_upsert_identifier_co_occurrence_edges', {
+    const { error } = await asLegacyV1Client(serviceClient).rpc('bulk_upsert_identifier_co_occurrence_edges', {
       p_merchant_id: input.merchantId,
       p_edges: pairs.map((pair) => ({
         left_type: pair.left.type,

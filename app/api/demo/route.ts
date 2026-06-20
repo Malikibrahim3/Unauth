@@ -8,7 +8,7 @@ import { computeMetrics } from '@/lib/eval/metrics';
 import { createJob, completeJob } from '@/lib/processing/job';
 import { createHash } from 'crypto';
 import type { NormalisedOrder } from '@/lib/engine/types';
-import type { Database } from '@/lib/supabase/types';
+import type { LegacyAuditTransactionInsert } from '@/lib/supabase/legacyV1Types';
 import { createRequestLogger, withRequestLogging } from '@/lib/log';
 import { captureServerException } from '@/lib/sentry';
 
@@ -290,7 +290,7 @@ async function POSTHandler(_request: NextRequest) {
       refund_claimed: s.order.refundStatus !== 'none',
       refund_reason: s.order.refundReason,
       match_score: s.totalScore,
-      fraud_flags: s.signals.filter((sig) => sig.fired).map((sig) => sig.name) as unknown as Database['public']['Tables']['audit_transactions']['Insert']['fraud_flags'],
+      fraud_flags: s.signals.filter((sig) => sig.fired).map((sig) => sig.name) as unknown as LegacyAuditTransactionInsert['fraud_flags'],
       source: 'demo',
     }));
 

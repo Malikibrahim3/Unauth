@@ -1,6 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../supabase/types';
 import { TABLES } from '../supabase/tables';
+// Legacy v1 `audit_transactions` dropped in v2 cutover (retained until cutover). See legacyV1Types.ts.
+import { asLegacyV1Client } from '../supabase/legacyV1Types';
 import { cleanRow } from '../csv/clean';
 import { csvRowSchema } from '../csv/schema';
 import type { NormalisedOrder } from '../engine/types';
@@ -283,13 +285,15 @@ async function fetchExistingAuditRows(
 
   const fetchPage = async (from: number): Promise<void> => {
     const read = await withReadRetry(async () => {
-      const { data, error } = await serviceClient
+      // Legacy v1 `audit_transactions` dropped in v2 cutover; view via legacy
+      // bridge so this retained restitch path typechecks. See legacyV1Types.ts.
+      const { data, error } = await asLegacyV1Client(serviceClient)
         .from(TABLES.AUDIT_TRANSACTIONS)
         .select('id, job_id, order_id, identity_confidence_grade, match_status, cluster_id, candidate_cluster_id, identity_match_grade, behavioural_flags')
         .eq('job_id', jobId)
         .range(from, from + pageSize - 1);
       if (error) throw error;
-      return (data ?? []) as ExistingAuditRow[];
+      return (data ?? []) as unknown as ExistingAuditRow[];
     }, 5, 750);
 
     if (read.failed || !read.value) {

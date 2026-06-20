@@ -25,6 +25,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../supabase/types';
 import { TABLES } from '../supabase/tables';
+// Legacy v1 audit tables dropped in v2 cutover (retained until cutover). See legacyV1Types.ts.
+import { asLegacyV1Client } from '../supabase/legacyV1Types';
 import type { ParsedCsvRow, FraudTransactionInsert, ProcessCsvJobIngestion } from './types';
 import { shopifyAuditError } from '@/lib/shopify/auditLog';
 import { buildFastContext } from '../engine/fastContext';
@@ -1391,13 +1393,15 @@ function startBackgroundIntelligenceWrites(args: {
                 txChunks.map((slice) =>
                   withTransportRetry(() =>
                     withRetry(async () => {
-                      const { data, error } = await serviceClient
+                      // Legacy v1 `audit_transactions` dropped in v2 cutover; view
+                      // via legacy bridge so this retained path typechecks.
+                      const { data, error } = await asLegacyV1Client(serviceClient)
                         .from(TABLES.AUDIT_TRANSACTIONS)
                         .select('id, order_id')
                         .eq('job_id', jobId)
                         .in('order_id', slice);
                       if (error) throw error;
-                      return data ?? [];
+                      return (data ?? []) as unknown as Array<{ id: string; order_id: string | null }>;
                     })
                   )
                 )

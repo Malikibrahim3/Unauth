@@ -12,8 +12,203 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
+      access_audit_log: {
+        Row: {
+          created_at: string
+          id: string
+          identity_id: string | null
+          k_anonymity_satisfied: boolean
+          lookup_type: string | null
+          matched_merchant_count: number | null
+          merchant_id: string
+          queried_hashes: string[] | null
+          query_type: string
+          request_ip: string | null
+          result_returned: boolean
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          identity_id?: string | null
+          k_anonymity_satisfied: boolean
+          lookup_type?: string | null
+          matched_merchant_count?: number | null
+          merchant_id: string
+          queried_hashes?: string[] | null
+          query_type: string
+          request_ip?: string | null
+          result_returned: boolean
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          identity_id?: string | null
+          k_anonymity_satisfied?: boolean
+          lookup_type?: string | null
+          matched_merchant_count?: number | null
+          merchant_id?: string
+          queried_hashes?: string[] | null
+          query_type?: string
+          request_ip?: string | null
+          result_returned?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "access_audit_log_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      audit_customer_summaries: {
+        Row: {
+          audit_id: string
+          customer_email: string | null
+          customer_key: string
+          customer_name: string | null
+          first_seen: string | null
+          highest_grade: string | null
+          last_seen: string | null
+          max_score: number
+          merchant_id: string
+          order_count: number
+          total_spend: number
+          updated_at: string
+        }
+        Insert: {
+          audit_id: string
+          customer_email?: string | null
+          customer_key: string
+          customer_name?: string | null
+          first_seen?: string | null
+          highest_grade?: string | null
+          last_seen?: string | null
+          max_score?: number
+          merchant_id: string
+          order_count?: number
+          total_spend?: number
+          updated_at?: string
+        }
+        Update: {
+          audit_id?: string
+          customer_email?: string | null
+          customer_key?: string
+          customer_name?: string | null
+          first_seen?: string | null
+          highest_grade?: string | null
+          last_seen?: string | null
+          max_score?: number
+          merchant_id?: string
+          order_count?: number
+          total_spend?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_customer_summaries_audit_id_fkey"
+            columns: ["audit_id"]
+            isOneToOne: false
+            referencedRelation: "sync_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audit_customer_summaries_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      audit_result_summaries: {
+        Row: {
+          audit_id: string
+          customer_count: number
+          definite_count: number
+          estimated_exposure: number
+          flagged_transactions: number
+          linked_cluster_count: number
+          merchant_id: string
+          possible_count: number
+          probable_count: number
+          updated_at: string
+          value_at_risk: number
+          weak_count: number
+        }
+        Insert: {
+          audit_id: string
+          customer_count?: number
+          definite_count?: number
+          estimated_exposure?: number
+          flagged_transactions?: number
+          linked_cluster_count?: number
+          merchant_id: string
+          possible_count?: number
+          probable_count?: number
+          updated_at?: string
+          value_at_risk?: number
+          weak_count?: number
+        }
+        Update: {
+          audit_id?: string
+          customer_count?: number
+          definite_count?: number
+          estimated_exposure?: number
+          flagged_transactions?: number
+          linked_cluster_count?: number
+          merchant_id?: string
+          possible_count?: number
+          probable_count?: number
+          updated_at?: string
+          value_at_risk?: number
+          weak_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_result_summaries_audit_id_fkey"
+            columns: ["audit_id"]
+            isOneToOne: true
+            referencedRelation: "sync_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audit_result_summaries_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       billing_events_log: {
         Row: {
           created_at: string
@@ -49,199 +244,182 @@ export type Database = {
           },
         ]
       }
-      processing_jobs: {
+      case_clarification_requests: {
         Row: {
-          completed_at: string | null
           created_at: string
-          data_quality: Json | null
-          data_quality_warning: string | null
-          date_range_end: string | null
-          date_range_start: string | null
-          engine_version_id: string | null
-          error_log: Json
-          error_message: string | null
-          failed_at: string | null
-          failed_rows: number
-          filename: string
-          flagged_count: number
-          finalize_claimed_at: string | null
-          has_ground_truth: boolean | null
-          hidden_by_merchant: boolean
+          due_at: string | null
           id: string
-          is_demo: boolean | null
-          label: string | null
           merchant_id: string
-          processed_rows: number
-          progress_message: string | null
-          progress_pct: number | null
-          public_audit_id: string | null
-          results_email_error: string | null
-          results_email_sent_at: string | null
-          started_at: string | null
+          request_summary: string
+          requested_evidence: string[]
+          response_received_at: string | null
+          response_summary: string | null
+          sent_at: string | null
+          source_channel: string | null
           status: string
-          total_rows: number
+          support_payout_case_id: string
+          target_name: string | null
+          target_type: string
           updated_at: string
-          upload_type: string | null
-          watchlist_sync_status: string | null
         }
         Insert: {
-          completed_at?: string | null
           created_at?: string
-          data_quality?: Json | null
-          data_quality_warning?: string | null
-          date_range_end?: string | null
-          date_range_start?: string | null
-          engine_version_id?: string | null
-          error_log?: Json
-          error_message?: string | null
-          failed_at?: string | null
-          failed_rows?: number
-          filename?: string
-          flagged_count?: number
-          finalize_claimed_at?: string | null
-          has_ground_truth?: boolean | null
-          hidden_by_merchant?: boolean
+          due_at?: string | null
           id?: string
-          is_demo?: boolean | null
-          label?: string | null
           merchant_id: string
-          processed_rows?: number
-          progress_message?: string | null
-          progress_pct?: number | null
-          public_audit_id?: string | null
-          results_email_error?: string | null
-          results_email_sent_at?: string | null
-          started_at?: string | null
-          status: string
-          total_rows?: number
+          request_summary: string
+          requested_evidence?: string[]
+          response_received_at?: string | null
+          response_summary?: string | null
+          sent_at?: string | null
+          source_channel?: string | null
+          status?: string
+          support_payout_case_id: string
+          target_name?: string | null
+          target_type: string
           updated_at?: string
-          upload_type?: string | null
-          watchlist_sync_status?: string | null
         }
         Update: {
-          completed_at?: string | null
           created_at?: string
-          data_quality?: Json | null
-          data_quality_warning?: string | null
-          date_range_end?: string | null
-          date_range_start?: string | null
-          engine_version_id?: string | null
-          error_log?: Json
-          error_message?: string | null
-          failed_at?: string | null
-          failed_rows?: number
-          filename?: string
-          flagged_count?: number
-          finalize_claimed_at?: string | null
-          has_ground_truth?: boolean | null
-          hidden_by_merchant?: boolean
+          due_at?: string | null
           id?: string
-          is_demo?: boolean | null
-          label?: string | null
           merchant_id?: string
-          processed_rows?: number
-          progress_message?: string | null
-          progress_pct?: number | null
-          public_audit_id?: string | null
-          results_email_error?: string | null
-          results_email_sent_at?: string | null
-          started_at?: string | null
+          request_summary?: string
+          requested_evidence?: string[]
+          response_received_at?: string | null
+          response_summary?: string | null
+          sent_at?: string | null
+          source_channel?: string | null
           status?: string
-          total_rows?: number
+          support_payout_case_id?: string
+          target_name?: string | null
+          target_type?: string
           updated_at?: string
-          upload_type?: string | null
-          watchlist_sync_status?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "processing_jobs_engine_version_id_fkey"
-            columns: ["engine_version_id"]
-            isOneToOne: false
-            referencedRelation: "engine_versions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "processing_jobs_merchant_id_fkey"
+            foreignKeyName: "case_clarification_requests_merchant_id_fkey"
             columns: ["merchant_id"]
             isOneToOne: false
             referencedRelation: "merchants"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "case_clarification_requests_support_payout_case_id_fkey"
+            columns: ["support_payout_case_id"]
+            isOneToOne: false
+            referencedRelation: "support_payout_cases"
+            referencedColumns: ["id"]
+          },
         ]
       }
-      audit_transactions: {
+      checkout_signal_order_links: {
         Row: {
-          amount: number | null
-          cluster_id: string | null
-          created_at: string
-          currency: string | null
-          customer_email: string | null
-          customer_name: string | null
-          dismissed_by_merchant: boolean | null
-          fraud_flags: Json | null
+          checkout_signal_id: string
           id: string
-          identity_confidence_grade: string | null
-          identity_score: number | null
-          identity_signals: Json | null
-          job_id: string
-          match_score: number | null
-          merchant_id: string | null
-          order_id: string | null
-          order_value: number | string | null
-          processed_at: string | null
-          refund_reason: string | null
-          signals_matched: string[] | null
+          linked_at: string
+          merchant_id: string
+          order_id: string
         }
         Insert: {
-          amount?: number | null
-          cluster_id?: string | null
-          created_at?: string
-          currency?: string | null
-          customer_email?: string | null
-          customer_name?: string | null
-          dismissed_by_merchant?: boolean | null
-          fraud_flags?: Json | null
+          checkout_signal_id: string
           id?: string
-          identity_confidence_grade?: string | null
-          identity_score?: number | null
-          identity_signals?: Json | null
-          job_id: string
-          match_score?: number | null
-          merchant_id?: string | null
-          order_id?: string | null
-          order_value?: number | string | null
-          processed_at?: string | null
-          refund_reason?: string | null
-          signals_matched?: string[] | null
+          linked_at?: string
+          merchant_id: string
+          order_id: string
         }
         Update: {
-          amount?: number | null
-          cluster_id?: string | null
-          created_at?: string
-          currency?: string | null
-          customer_email?: string | null
-          customer_name?: string | null
-          dismissed_by_merchant?: boolean | null
-          fraud_flags?: Json | null
+          checkout_signal_id?: string
           id?: string
-          identity_confidence_grade?: string | null
-          identity_score?: number | null
-          identity_signals?: Json | null
-          job_id?: string
-          match_score?: number | null
-          merchant_id?: string | null
-          order_id?: string | null
-          order_value?: number | string | null
-          processed_at?: string | null
-          refund_reason?: string | null
-          signals_matched?: string[] | null
+          linked_at?: string
+          merchant_id?: string
+          order_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "audit_transactions_job_id_fkey"
-            columns: ["job_id"]
+            foreignKeyName: "checkout_signal_order_links_checkout_signal_id_fkey"
+            columns: ["checkout_signal_id"]
             isOneToOne: false
-            referencedRelation: "processing_jobs"
+            referencedRelation: "checkout_signals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkout_signal_order_links_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkout_signal_order_links_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "source_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      checkout_signals: {
+        Row: {
+          account_type: string | null
+          cart_count: number | null
+          checkout_reached: boolean
+          created_at: string
+          device_fp: string | null
+          email_hash: string | null
+          event_type: string
+          id: string
+          ip_hash: string | null
+          merchant_id: string
+          page: string | null
+          platform: string
+          raw_payload: Json | null
+          referrer: string | null
+          session_id: string
+          visitor_id: string
+        }
+        Insert: {
+          account_type?: string | null
+          cart_count?: number | null
+          checkout_reached?: boolean
+          created_at?: string
+          device_fp?: string | null
+          email_hash?: string | null
+          event_type: string
+          id?: string
+          ip_hash?: string | null
+          merchant_id: string
+          page?: string | null
+          platform: string
+          raw_payload?: Json | null
+          referrer?: string | null
+          session_id: string
+          visitor_id: string
+        }
+        Update: {
+          account_type?: string | null
+          cart_count?: number | null
+          checkout_reached?: boolean
+          created_at?: string
+          device_fp?: string | null
+          email_hash?: string | null
+          event_type?: string
+          id?: string
+          ip_hash?: string | null
+          merchant_id?: string
+          page?: string | null
+          platform?: string
+          raw_payload?: Json | null
+          referrer?: string | null
+          session_id?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkout_signals_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
             referencedColumns: ["id"]
           },
         ]
@@ -359,11 +537,11 @@ export type Database = {
           decided_at: string
           decided_by: string | null
           decision: Database["public"]["Enums"]["claim_decision"]
+          followed_recommendation: boolean | null
           id: string
           notes: string | null
           outcome: Database["public"]["Enums"]["claim_outcome"]
           recommended_payout_action: string | null
-          followed_recommendation: boolean | null
           updated_at: string
         }
         Insert: {
@@ -373,11 +551,11 @@ export type Database = {
           decided_at?: string
           decided_by?: string | null
           decision: Database["public"]["Enums"]["claim_decision"]
+          followed_recommendation?: boolean | null
           id?: string
           notes?: string | null
           outcome?: Database["public"]["Enums"]["claim_outcome"]
           recommended_payout_action?: string | null
-          followed_recommendation?: boolean | null
           updated_at?: string
         }
         Update: {
@@ -387,11 +565,11 @@ export type Database = {
           decided_at?: string
           decided_by?: string | null
           decision?: Database["public"]["Enums"]["claim_decision"]
+          followed_recommendation?: boolean | null
           id?: string
           notes?: string | null
           outcome?: Database["public"]["Enums"]["claim_outcome"]
           recommended_payout_action?: string | null
-          followed_recommendation?: boolean | null
           updated_at?: string
         }
         Relationships: [
@@ -400,239 +578,6 @@ export type Database = {
             columns: ["claim_id"]
             isOneToOne: true
             referencedRelation: "support_payout_cases"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      case_clarification_requests: {
-        Row: {
-          id: string
-          merchant_id: string
-          support_payout_case_id: string
-          target_type: string
-          target_name: string | null
-          status: string
-          requested_evidence: string[]
-          request_summary: string
-          response_summary: string | null
-          source_channel: string | null
-          due_at: string | null
-          sent_at: string | null
-          response_received_at: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          merchant_id: string
-          support_payout_case_id: string
-          target_type: string
-          target_name?: string | null
-          status?: string
-          requested_evidence?: string[]
-          request_summary: string
-          response_summary?: string | null
-          source_channel?: string | null
-          due_at?: string | null
-          sent_at?: string | null
-          response_received_at?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          merchant_id?: string
-          support_payout_case_id?: string
-          target_type?: string
-          target_name?: string | null
-          status?: string
-          requested_evidence?: string[]
-          request_summary?: string
-          response_summary?: string | null
-          source_channel?: string | null
-          due_at?: string | null
-          sent_at?: string | null
-          response_received_at?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "case_clarification_requests_merchant_id_fkey"
-            columns: ["merchant_id"]
-            isOneToOne: false
-            referencedRelation: "merchants"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "case_clarification_requests_support_payout_case_id_fkey"
-            columns: ["support_payout_case_id"]
-            isOneToOne: false
-            referencedRelation: "support_payout_cases"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      support_payout_cases: {
-        Row: {
-          amount_at_risk: number | null
-          assigned_at: string | null
-          assigned_to: string | null
-          attribution_confidence: Database["public"]["Enums"]["attribution_confidence"] | null
-          claim_type: Database["public"]["Enums"]["claim_type"]
-          created_at: string
-          currency: string | null
-          detection_detail: Json
-          detection_method: Database["public"]["Enums"]["claim_detection_method"]
-          discount_amount: number | null
-          estimated_support_cost: number | null
-          first_viewed_at: string | null
-          id: string
-          identity_id: string | null
-          loss_attribution: Database["public"]["Enums"]["loss_attribution"] | null
-          merchant_id: string
-          next_action: string | null
-          next_action_reason: string | null
-          payout_decision_state: string
-          reason_normalized: string | null
-          reason_raw: string | null
-          recoverability: Database["public"]["Enums"]["recoverability"] | null
-          recovery_state: string
-          recommended_payout_action: string | null
-          recommended_rule_name: string | null
-          recommended_rule_id: string | null
-          recovery_next_action: string | null
-          recovery_owner: Database["public"]["Enums"]["recovery_owner"] | null
-          recovery_required_evidence: string[]
-          refund_amount: number | null
-          replacement_item_value: number | null
-          replacement_shipping_cost: number | null
-          requested_action: Database["public"]["Enums"]["requested_action"]
-          requires_review: boolean
-          snoozed_until: string | null
-          source_order_id: string | null
-          source_ticket_id: string | null
-          status: Database["public"]["Enums"]["claim_status"]
-          store_credit_amount: number | null
-          submitted_at: string
-          total_estimated_loss: number | null
-          updated_at: string
-        }
-        Insert: {
-          amount_at_risk?: number | null
-          assigned_at?: string | null
-          assigned_to?: string | null
-          attribution_confidence?: Database["public"]["Enums"]["attribution_confidence"] | null
-          claim_type: Database["public"]["Enums"]["claim_type"]
-          created_at?: string
-          currency?: string | null
-          detection_detail?: Json
-          detection_method?: Database["public"]["Enums"]["claim_detection_method"]
-          discount_amount?: number | null
-          estimated_support_cost?: number | null
-          first_viewed_at?: string | null
-          id?: string
-          identity_id?: string | null
-          loss_attribution?: Database["public"]["Enums"]["loss_attribution"] | null
-          merchant_id: string
-          next_action?: string | null
-          next_action_reason?: string | null
-          payout_decision_state?: string
-          reason_normalized?: string | null
-          reason_raw?: string | null
-          recoverability?: Database["public"]["Enums"]["recoverability"] | null
-          recovery_state?: string
-          recommended_payout_action?: string | null
-          recommended_rule_name?: string | null
-          recommended_rule_id?: string | null
-          recovery_next_action?: string | null
-          recovery_owner?: Database["public"]["Enums"]["recovery_owner"] | null
-          recovery_required_evidence?: string[]
-          refund_amount?: number | null
-          replacement_item_value?: number | null
-          replacement_shipping_cost?: number | null
-          requested_action?: Database["public"]["Enums"]["requested_action"]
-          requires_review?: boolean
-          snoozed_until?: string | null
-          source_order_id?: string | null
-          source_ticket_id?: string | null
-          status?: Database["public"]["Enums"]["claim_status"]
-          store_credit_amount?: number | null
-          submitted_at?: string
-          total_estimated_loss?: number | null
-          updated_at?: string
-        }
-        Update: {
-          amount_at_risk?: number | null
-          assigned_at?: string | null
-          assigned_to?: string | null
-          attribution_confidence?: Database["public"]["Enums"]["attribution_confidence"] | null
-          claim_type?: Database["public"]["Enums"]["claim_type"]
-          created_at?: string
-          currency?: string | null
-          detection_detail?: Json
-          detection_method?: Database["public"]["Enums"]["claim_detection_method"]
-          discount_amount?: number | null
-          estimated_support_cost?: number | null
-          first_viewed_at?: string | null
-          id?: string
-          identity_id?: string | null
-          loss_attribution?: Database["public"]["Enums"]["loss_attribution"] | null
-          merchant_id?: string
-          next_action?: string | null
-          next_action_reason?: string | null
-          payout_decision_state?: string
-          reason_normalized?: string | null
-          reason_raw?: string | null
-          recoverability?: Database["public"]["Enums"]["recoverability"] | null
-          recovery_state?: string
-          recommended_payout_action?: string | null
-          recommended_rule_name?: string | null
-          recommended_rule_id?: string | null
-          recovery_next_action?: string | null
-          recovery_owner?: Database["public"]["Enums"]["recovery_owner"] | null
-          recovery_required_evidence?: string[]
-          refund_amount?: number | null
-          replacement_item_value?: number | null
-          replacement_shipping_cost?: number | null
-          requested_action?: Database["public"]["Enums"]["requested_action"]
-          requires_review?: boolean
-          snoozed_until?: string | null
-          source_order_id?: string | null
-          source_ticket_id?: string | null
-          status?: Database["public"]["Enums"]["claim_status"]
-          store_credit_amount?: number | null
-          submitted_at?: string
-          total_estimated_loss?: number | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "claims_identity_id_fkey"
-            columns: ["identity_id"]
-            isOneToOne: false
-            referencedRelation: "identities"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "claims_merchant_id_fkey"
-            columns: ["merchant_id"]
-            isOneToOne: false
-            referencedRelation: "merchants"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "claims_source_order_id_fkey"
-            columns: ["source_order_id"]
-            isOneToOne: false
-            referencedRelation: "source_orders"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "claims_source_ticket_id_fkey"
-            columns: ["source_ticket_id"]
-            isOneToOne: false
-            referencedRelation: "source_tickets"
             referencedColumns: ["id"]
           },
         ]
@@ -693,6 +638,53 @@ export type Database = {
           },
         ]
       }
+      correspondence_automation_settings: {
+        Row: {
+          allowed_counterparty_types: string[]
+          allowed_outbound_channels: string[]
+          auto_extract_facts_from_correspondence: boolean
+          auto_generate_clarification_requests: boolean
+          auto_ingest_external_correspondence: boolean
+          auto_send_clarification_requests: boolean
+          created_at: string
+          max_auto_request_value_minor: number | null
+          merchant_id: string
+          updated_at: string
+        }
+        Insert: {
+          allowed_counterparty_types?: string[]
+          allowed_outbound_channels?: string[]
+          auto_extract_facts_from_correspondence?: boolean
+          auto_generate_clarification_requests?: boolean
+          auto_ingest_external_correspondence?: boolean
+          auto_send_clarification_requests?: boolean
+          created_at?: string
+          max_auto_request_value_minor?: number | null
+          merchant_id: string
+          updated_at?: string
+        }
+        Update: {
+          allowed_counterparty_types?: string[]
+          allowed_outbound_channels?: string[]
+          auto_extract_facts_from_correspondence?: boolean
+          auto_generate_clarification_requests?: boolean
+          auto_ingest_external_correspondence?: boolean
+          auto_send_clarification_requests?: boolean
+          created_at?: string
+          max_auto_request_value_minor?: number | null
+          merchant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "correspondence_automation_settings_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: true
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       credit_topup_log: {
         Row: {
           amount_gbp: number
@@ -728,6 +720,379 @@ export type Database = {
           },
         ]
       }
+      customer_claim_summary: {
+        Row: {
+          claim_rate: number
+          customer_email_hash: string
+          id: string
+          last_claim_at: string | null
+          merchant_id: string
+          primary_reason: string | null
+          total_claims: number
+          total_orders: number
+          updated_at: string
+        }
+        Insert: {
+          claim_rate?: number
+          customer_email_hash: string
+          id?: string
+          last_claim_at?: string | null
+          merchant_id: string
+          primary_reason?: string | null
+          total_claims?: number
+          total_orders?: number
+          updated_at?: string
+        }
+        Update: {
+          claim_rate?: number
+          customer_email_hash?: string
+          id?: string
+          last_claim_at?: string | null
+          merchant_id?: string
+          primary_reason?: string | null
+          total_claims?: number
+          total_orders?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_claim_summary_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_identity_signals: {
+        Row: {
+          account_created_at: string | null
+          billing_address_hash: string | null
+          created_at: string
+          customer_account_type: string | null
+          customer_email_hash: string
+          days_between_account_creation_and_first_claim: number | null
+          device_fingerprint: string | null
+          first_seen_at: string | null
+          id: string
+          ip_hash: string | null
+          last_seen_at: string | null
+          merchant_id: string
+          phone_hash: string | null
+          shipping_address_hash: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_created_at?: string | null
+          billing_address_hash?: string | null
+          created_at?: string
+          customer_account_type?: string | null
+          customer_email_hash: string
+          days_between_account_creation_and_first_claim?: number | null
+          device_fingerprint?: string | null
+          first_seen_at?: string | null
+          id?: string
+          ip_hash?: string | null
+          last_seen_at?: string | null
+          merchant_id: string
+          phone_hash?: string | null
+          shipping_address_hash?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_created_at?: string | null
+          billing_address_hash?: string | null
+          created_at?: string
+          customer_account_type?: string | null
+          customer_email_hash?: string
+          days_between_account_creation_and_first_claim?: number | null
+          device_fingerprint?: string | null
+          first_seen_at?: string | null
+          id?: string
+          ip_hash?: string | null
+          last_seen_at?: string | null
+          merchant_id?: string
+          phone_hash?: string | null
+          shipping_address_hash?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_identity_signals_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      default_rule_templates: {
+        Row: {
+          action: string
+          condition_operator: string
+          conditions: Json
+          description: string
+          id: string
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          action: string
+          condition_operator?: string
+          conditions: Json
+          description: string
+          id?: string
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          action?: string
+          condition_operator?: string
+          conditions?: Json
+          description?: string
+          id?: string
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      external_clarification_requests: {
+        Row: {
+          body_hash: string | null
+          counterparty_name: string | null
+          counterparty_type: Database["public"]["Enums"]["loss_counterparty_type"]
+          created_at: string
+          hidden_threading_token: string
+          id: string
+          loss_case_id: string
+          merchant_id: string
+          outbound_channel: Database["public"]["Enums"]["external_correspondence_channel"]
+          recipient_or_endpoint: string | null
+          reply_received_at: string | null
+          requested_evidence_types: string[]
+          sent_at: string | null
+          source_message_id: string | null
+          source_thread_id: string | null
+          status: Database["public"]["Enums"]["external_clarification_request_status"]
+          subject: string | null
+        }
+        Insert: {
+          body_hash?: string | null
+          counterparty_name?: string | null
+          counterparty_type: Database["public"]["Enums"]["loss_counterparty_type"]
+          created_at?: string
+          hidden_threading_token: string
+          id?: string
+          loss_case_id: string
+          merchant_id: string
+          outbound_channel: Database["public"]["Enums"]["external_correspondence_channel"]
+          recipient_or_endpoint?: string | null
+          reply_received_at?: string | null
+          requested_evidence_types?: string[]
+          sent_at?: string | null
+          source_message_id?: string | null
+          source_thread_id?: string | null
+          status?: Database["public"]["Enums"]["external_clarification_request_status"]
+          subject?: string | null
+        }
+        Update: {
+          body_hash?: string | null
+          counterparty_name?: string | null
+          counterparty_type?: Database["public"]["Enums"]["loss_counterparty_type"]
+          created_at?: string
+          hidden_threading_token?: string
+          id?: string
+          loss_case_id?: string
+          merchant_id?: string
+          outbound_channel?: Database["public"]["Enums"]["external_correspondence_channel"]
+          recipient_or_endpoint?: string | null
+          reply_received_at?: string | null
+          requested_evidence_types?: string[]
+          sent_at?: string | null
+          source_message_id?: string | null
+          source_thread_id?: string | null
+          status?: Database["public"]["Enums"]["external_clarification_request_status"]
+          subject?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_clarification_requests_loss_case_id_fkey"
+            columns: ["loss_case_id"]
+            isOneToOne: false
+            referencedRelation: "loss_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_clarification_requests_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      external_correspondence: {
+        Row: {
+          attachment_hashes: string[]
+          body_hash: string | null
+          channel: Database["public"]["Enums"]["external_correspondence_channel"]
+          counterparty_name: string | null
+          counterparty_type: Database["public"]["Enums"]["loss_counterparty_type"]
+          created_at: string
+          direction: Database["public"]["Enums"]["external_correspondence_direction"]
+          extracted_facts_json: Json | null
+          extraction_status: Database["public"]["Enums"]["correspondence_extraction_status"]
+          id: string
+          loss_case_id: string | null
+          matched_confidence: number
+          merchant_id: string
+          pulled_at: string
+          received_at: string | null
+          sent_at: string | null
+          source_provider: string
+          source_record_id: string
+          source_thread_id: string | null
+          source_url: string | null
+          subject: string | null
+        }
+        Insert: {
+          attachment_hashes?: string[]
+          body_hash?: string | null
+          channel: Database["public"]["Enums"]["external_correspondence_channel"]
+          counterparty_name?: string | null
+          counterparty_type?: Database["public"]["Enums"]["loss_counterparty_type"]
+          created_at?: string
+          direction: Database["public"]["Enums"]["external_correspondence_direction"]
+          extracted_facts_json?: Json | null
+          extraction_status?: Database["public"]["Enums"]["correspondence_extraction_status"]
+          id?: string
+          loss_case_id?: string | null
+          matched_confidence?: number
+          merchant_id: string
+          pulled_at?: string
+          received_at?: string | null
+          sent_at?: string | null
+          source_provider: string
+          source_record_id: string
+          source_thread_id?: string | null
+          source_url?: string | null
+          subject?: string | null
+        }
+        Update: {
+          attachment_hashes?: string[]
+          body_hash?: string | null
+          channel?: Database["public"]["Enums"]["external_correspondence_channel"]
+          counterparty_name?: string | null
+          counterparty_type?: Database["public"]["Enums"]["loss_counterparty_type"]
+          created_at?: string
+          direction?: Database["public"]["Enums"]["external_correspondence_direction"]
+          extracted_facts_json?: Json | null
+          extraction_status?: Database["public"]["Enums"]["correspondence_extraction_status"]
+          id?: string
+          loss_case_id?: string | null
+          matched_confidence?: number
+          merchant_id?: string
+          pulled_at?: string
+          received_at?: string | null
+          sent_at?: string | null
+          source_provider?: string
+          source_record_id?: string
+          source_thread_id?: string | null
+          source_url?: string | null
+          subject?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_correspondence_loss_case_id_fkey"
+            columns: ["loss_case_id"]
+            isOneToOne: false
+            referencedRelation: "loss_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_correspondence_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      extracted_partner_terms: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          claim_deadline_days: number | null
+          claim_submission_method: string | null
+          confidence: string
+          covered_loss_types: string[]
+          created_at: string
+          deductible_amount: number | null
+          document_id: string
+          escalation_contact: string | null
+          exclusions: string[]
+          id: string
+          max_recoverable_amount: number | null
+          merchant_id: string
+          partner_type: string
+          required_evidence: string[]
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          claim_deadline_days?: number | null
+          claim_submission_method?: string | null
+          confidence?: string
+          covered_loss_types?: string[]
+          created_at?: string
+          deductible_amount?: number | null
+          document_id: string
+          escalation_contact?: string | null
+          exclusions?: string[]
+          id?: string
+          max_recoverable_amount?: number | null
+          merchant_id: string
+          partner_type: string
+          required_evidence?: string[]
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          claim_deadline_days?: number | null
+          claim_submission_method?: string | null
+          confidence?: string
+          covered_loss_types?: string[]
+          created_at?: string
+          deductible_amount?: number | null
+          document_id?: string
+          escalation_contact?: string | null
+          exclusions?: string[]
+          id?: string
+          max_recoverable_amount?: number | null
+          merchant_id?: string
+          partner_type?: string
+          required_evidence?: string[]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "extracted_partner_terms_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "integration_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "extracted_partner_terms_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       helpdesk_connections: {
         Row: {
           access_token_encrypted: string | null
@@ -745,6 +1110,7 @@ export type Database = {
           status: Database["public"]["Enums"]["connection_status"]
           token_expires_at: string | null
           updated_at: string
+          webhook_secret_created_at: string | null
           webhook_secret_hash: string | null
           webhook_secret_rotated_at: string | null
         }
@@ -764,6 +1130,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["connection_status"]
           token_expires_at?: string | null
           updated_at?: string
+          webhook_secret_created_at?: string | null
           webhook_secret_hash?: string | null
           webhook_secret_rotated_at?: string | null
         }
@@ -783,6 +1150,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["connection_status"]
           token_expires_at?: string | null
           updated_at?: string
+          webhook_secret_created_at?: string | null
           webhook_secret_hash?: string | null
           webhook_secret_rotated_at?: string | null
         }
@@ -843,6 +1211,95 @@ export type Database = {
           },
         ]
       }
+      identity_catch_events: {
+        Row: {
+          claim_id: string | null
+          confidence_grade: string
+          confidence_score: number
+          created_at: string
+          dismissed_at: string | null
+          estimated_exposure_amount: number | null
+          estimated_exposure_currency: string
+          evidence_pack_id: string | null
+          id: string
+          linked_identifier_display: string | null
+          linked_identifier_hash: string
+          matched_signal_types: string[]
+          merchant_id: string
+          order_id: string | null
+          profile_id: string | null
+          submitted_identifier_display: string | null
+          submitted_identifier_hash: string
+        }
+        Insert: {
+          claim_id?: string | null
+          confidence_grade: string
+          confidence_score?: number
+          created_at?: string
+          dismissed_at?: string | null
+          estimated_exposure_amount?: number | null
+          estimated_exposure_currency?: string
+          evidence_pack_id?: string | null
+          id?: string
+          linked_identifier_display?: string | null
+          linked_identifier_hash: string
+          matched_signal_types?: string[]
+          merchant_id: string
+          order_id?: string | null
+          profile_id?: string | null
+          submitted_identifier_display?: string | null
+          submitted_identifier_hash: string
+        }
+        Update: {
+          claim_id?: string | null
+          confidence_grade?: string
+          confidence_score?: number
+          created_at?: string
+          dismissed_at?: string | null
+          estimated_exposure_amount?: number | null
+          estimated_exposure_currency?: string
+          evidence_pack_id?: string | null
+          id?: string
+          linked_identifier_display?: string | null
+          linked_identifier_hash?: string
+          matched_signal_types?: string[]
+          merchant_id?: string
+          order_id?: string | null
+          profile_id?: string | null
+          submitted_identifier_display?: string | null
+          submitted_identifier_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "identity_catch_events_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "support_payout_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "identity_catch_events_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "identity_catch_events_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "source_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "identity_catch_events_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "identities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       identity_edges: {
         Row: {
           first_seen_at: string
@@ -889,6 +1346,77 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      identity_evidence_scores: {
+        Row: {
+          computed_at: string
+          evidence_level: string
+          evidence_score: number
+          has_sufficient_data: boolean
+          identity_id: string
+          score_breakdown: Json
+          scoring_config_version: string
+        }
+        Insert: {
+          computed_at?: string
+          evidence_level?: string
+          evidence_score?: number
+          has_sufficient_data?: boolean
+          identity_id: string
+          score_breakdown?: Json
+          scoring_config_version: string
+        }
+        Update: {
+          computed_at?: string
+          evidence_level?: string
+          evidence_score?: number
+          has_sufficient_data?: boolean
+          identity_id?: string
+          score_breakdown?: Json
+          scoring_config_version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "identity_evidence_scores_identity_id_fkey"
+            columns: ["identity_id"]
+            isOneToOne: true
+            referencedRelation: "identities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      identity_link_candidates: {
+        Row: {
+          detected_at: string
+          id: string
+          link_confidence: number
+          link_type: string
+          linked_customer_email_hash: string
+          merchant_id_a: string
+          merchant_id_b: string
+          primary_customer_email_hash: string
+        }
+        Insert: {
+          detected_at?: string
+          id?: string
+          link_confidence: number
+          link_type: string
+          linked_customer_email_hash: string
+          merchant_id_a: string
+          merchant_id_b: string
+          primary_customer_email_hash: string
+        }
+        Update: {
+          detected_at?: string
+          id?: string
+          link_confidence?: number
+          link_type?: string
+          linked_customer_email_hash?: string
+          merchant_id_a?: string
+          merchant_id_b?: string
+          primary_customer_email_hash?: string
+        }
+        Relationships: []
       }
       identity_members: {
         Row: {
@@ -1135,6 +1663,403 @@ export type Database = {
           },
         ]
       }
+      ingest_rate_limits: {
+        Row: {
+          ip_hash: string
+          request_count: number
+          window_start: string
+        }
+        Insert: {
+          ip_hash: string
+          request_count?: number
+          window_start: string
+        }
+        Update: {
+          ip_hash?: string
+          request_count?: number
+          window_start?: string
+        }
+        Relationships: []
+      }
+      integration_credentials: {
+        Row: {
+          created_at: string
+          encrypted_payload: string
+          expires_at: string | null
+          id: string
+          merchant_id: string
+          provider_id: string
+          scopes: string[]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          encrypted_payload: string
+          expires_at?: string | null
+          id?: string
+          merchant_id: string
+          provider_id: string
+          scopes?: string[]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          encrypted_payload?: string
+          expires_at?: string | null
+          id?: string
+          merchant_id?: string
+          provider_id?: string
+          scopes?: string[]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_credentials_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      integration_documents: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          document_type: string
+          extraction_status: string
+          file_path: string
+          id: string
+          merchant_id: string
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          document_type: string
+          extraction_status?: string
+          file_path: string
+          id?: string
+          merchant_id: string
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          document_type?: string
+          extraction_status?: string
+          file_path?: string
+          id?: string
+          merchant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_documents_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      integration_evidence_items: {
+        Row: {
+          confidence: string
+          created_at: string
+          evidence_type: string
+          id: string
+          merchant_id: string
+          occurred_at: string | null
+          raw_reference: string | null
+          source_category: string
+          source_provider: string
+          summary: string
+          support_payout_case_id: string | null
+          title: string
+          value: Json | null
+        }
+        Insert: {
+          confidence: string
+          created_at?: string
+          evidence_type: string
+          id?: string
+          merchant_id: string
+          occurred_at?: string | null
+          raw_reference?: string | null
+          source_category: string
+          source_provider: string
+          summary: string
+          support_payout_case_id?: string | null
+          title: string
+          value?: Json | null
+        }
+        Update: {
+          confidence?: string
+          created_at?: string
+          evidence_type?: string
+          id?: string
+          merchant_id?: string
+          occurred_at?: string | null
+          raw_reference?: string | null
+          source_category?: string
+          source_provider?: string
+          summary?: string
+          support_payout_case_id?: string | null
+          title?: string
+          value?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_evidence_items_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integration_evidence_items_support_payout_case_id_fkey"
+            columns: ["support_payout_case_id"]
+            isOneToOne: false
+            referencedRelation: "support_payout_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loss_case_events: {
+        Row: {
+          created_at: string
+          event_type: Database["public"]["Enums"]["loss_case_event_type"]
+          id: string
+          loss_case_id: string
+          merchant_id: string
+          metadata_json: Json
+          source_provider: string | null
+          source_record_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: Database["public"]["Enums"]["loss_case_event_type"]
+          id?: string
+          loss_case_id: string
+          merchant_id: string
+          metadata_json?: Json
+          source_provider?: string | null
+          source_record_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: Database["public"]["Enums"]["loss_case_event_type"]
+          id?: string
+          loss_case_id?: string
+          merchant_id?: string
+          metadata_json?: Json
+          source_provider?: string | null
+          source_record_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loss_case_events_loss_case_id_fkey"
+            columns: ["loss_case_id"]
+            isOneToOne: false
+            referencedRelation: "loss_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loss_case_events_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loss_case_evidence: {
+        Row: {
+          created_at: string
+          evidence_type: string
+          extracted_by: Database["public"]["Enums"]["evidence_extraction_method"]
+          extraction_confidence: number | null
+          id: string
+          loss_case_id: string
+          merchant_id: string
+          pulled_at: string
+          raw_payload_hash: string
+          source_provider: Database["public"]["Enums"]["loss_case_evidence_source_provider"]
+          source_record_id: string
+          source_thread_id: string | null
+          source_url: string | null
+          source_verified: boolean
+          value_json: Json
+        }
+        Insert: {
+          created_at?: string
+          evidence_type: string
+          extracted_by: Database["public"]["Enums"]["evidence_extraction_method"]
+          extraction_confidence?: number | null
+          id?: string
+          loss_case_id: string
+          merchant_id: string
+          pulled_at: string
+          raw_payload_hash: string
+          source_provider: Database["public"]["Enums"]["loss_case_evidence_source_provider"]
+          source_record_id: string
+          source_thread_id?: string | null
+          source_url?: string | null
+          source_verified?: boolean
+          value_json: Json
+        }
+        Update: {
+          created_at?: string
+          evidence_type?: string
+          extracted_by?: Database["public"]["Enums"]["evidence_extraction_method"]
+          extraction_confidence?: number | null
+          id?: string
+          loss_case_id?: string
+          merchant_id?: string
+          pulled_at?: string
+          raw_payload_hash?: string
+          source_provider?: Database["public"]["Enums"]["loss_case_evidence_source_provider"]
+          source_record_id?: string
+          source_thread_id?: string | null
+          source_url?: string | null
+          source_verified?: boolean
+          value_json?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loss_case_evidence_loss_case_id_fkey"
+            columns: ["loss_case_id"]
+            isOneToOne: false
+            referencedRelation: "loss_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loss_case_evidence_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loss_cases: {
+        Row: {
+          approved_recovery_minor: number | null
+          case_category: Database["public"]["Enums"]["loss_case_category"]
+          case_type: string
+          chargeback_value_minor: number | null
+          claim_deadline_at: string | null
+          counterparty_name: string | null
+          counterparty_type: Database["public"]["Enums"]["loss_counterparty_type"]
+          created_at: string
+          currency: string | null
+          customer_identity_id: string | null
+          dispute_id: string | null
+          estimated_recovery_minor: number | null
+          evidence_completion_score: number
+          fulfilment_id: string | null
+          helpdesk_ticket_id: string | null
+          id: string
+          merchant_id: string
+          missing_evidence_count: number
+          order_id: string | null
+          order_value_minor: number | null
+          payment_id: string | null
+          recovery_route: Database["public"]["Enums"]["loss_recovery_route"]
+          refund_value_minor: number | null
+          return_id: string | null
+          shipment_id: string | null
+          source_confidence: Database["public"]["Enums"]["loss_source_confidence"]
+          source_fingerprint: string | null
+          status: Database["public"]["Enums"]["loss_case_status"]
+          support_payout_case_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          approved_recovery_minor?: number | null
+          case_category: Database["public"]["Enums"]["loss_case_category"]
+          case_type: string
+          chargeback_value_minor?: number | null
+          claim_deadline_at?: string | null
+          counterparty_name?: string | null
+          counterparty_type?: Database["public"]["Enums"]["loss_counterparty_type"]
+          created_at?: string
+          currency?: string | null
+          customer_identity_id?: string | null
+          dispute_id?: string | null
+          estimated_recovery_minor?: number | null
+          evidence_completion_score?: number
+          fulfilment_id?: string | null
+          helpdesk_ticket_id?: string | null
+          id?: string
+          merchant_id: string
+          missing_evidence_count?: number
+          order_id?: string | null
+          order_value_minor?: number | null
+          payment_id?: string | null
+          recovery_route: Database["public"]["Enums"]["loss_recovery_route"]
+          refund_value_minor?: number | null
+          return_id?: string | null
+          shipment_id?: string | null
+          source_confidence?: Database["public"]["Enums"]["loss_source_confidence"]
+          source_fingerprint?: string | null
+          status?: Database["public"]["Enums"]["loss_case_status"]
+          support_payout_case_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          approved_recovery_minor?: number | null
+          case_category?: Database["public"]["Enums"]["loss_case_category"]
+          case_type?: string
+          chargeback_value_minor?: number | null
+          claim_deadline_at?: string | null
+          counterparty_name?: string | null
+          counterparty_type?: Database["public"]["Enums"]["loss_counterparty_type"]
+          created_at?: string
+          currency?: string | null
+          customer_identity_id?: string | null
+          dispute_id?: string | null
+          estimated_recovery_minor?: number | null
+          evidence_completion_score?: number
+          fulfilment_id?: string | null
+          helpdesk_ticket_id?: string | null
+          id?: string
+          merchant_id?: string
+          missing_evidence_count?: number
+          order_id?: string | null
+          order_value_minor?: number | null
+          payment_id?: string | null
+          recovery_route?: Database["public"]["Enums"]["loss_recovery_route"]
+          refund_value_minor?: number | null
+          return_id?: string | null
+          shipment_id?: string | null
+          source_confidence?: Database["public"]["Enums"]["loss_source_confidence"]
+          source_fingerprint?: string | null
+          status?: Database["public"]["Enums"]["loss_case_status"]
+          support_payout_case_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loss_cases_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loss_cases_support_payout_case_id_fkey"
+            columns: ["support_payout_case_id"]
+            isOneToOne: false
+            referencedRelation: "support_payout_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       merchant_api_keys: {
         Row: {
           created_at: string
@@ -1268,6 +2193,106 @@ export type Database = {
           },
         ]
       }
+      merchant_integrations: {
+        Row: {
+          auth_mode: string
+          category: string
+          created_at: string
+          id: string
+          last_error: string | null
+          last_sync_at: string | null
+          merchant_id: string
+          provider_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          auth_mode: string
+          category: string
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          last_sync_at?: string | null
+          merchant_id: string
+          provider_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          auth_mode?: string
+          category?: string
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          last_sync_at?: string | null
+          merchant_id?: string
+          provider_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "merchant_integrations_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      merchant_rules: {
+        Row: {
+          action: string
+          condition_operator: string
+          conditions: Json
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          is_default_template: boolean
+          merchant_id: string
+          name: string
+          priority: number
+          updated_at: string
+        }
+        Insert: {
+          action: string
+          condition_operator?: string
+          conditions?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_default_template?: boolean
+          merchant_id: string
+          name: string
+          priority?: number
+          updated_at?: string
+        }
+        Update: {
+          action?: string
+          condition_operator?: string
+          conditions?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_default_template?: boolean
+          merchant_id?: string
+          name?: string
+          priority?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "merchant_rules_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       merchant_subscriptions: {
         Row: {
           cancel_at_period_end: boolean
@@ -1378,53 +2403,86 @@ export type Database = {
           },
         ]
       }
+      merchant_widget_tokens: {
+        Row: {
+          api_key_id: string | null
+          created_at: string
+          id: string
+          merchant_id: string
+          revoked_at: string | null
+          token_hash: string
+          token_prefix: string
+        }
+        Insert: {
+          api_key_id?: string | null
+          created_at?: string
+          id?: string
+          merchant_id: string
+          revoked_at?: string | null
+          token_hash: string
+          token_prefix: string
+        }
+        Update: {
+          api_key_id?: string | null
+          created_at?: string
+          id?: string
+          merchant_id?: string
+          revoked_at?: string | null
+          token_hash?: string
+          token_prefix?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "merchant_widget_tokens_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "merchant_api_keys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "merchant_widget_tokens_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       merchants: {
         Row: {
+          bigcommerce_script_uuid: string | null
           created_at: string
-          business_name: string | null
           id: string
           is_demo: boolean
           is_internal: boolean
-          monthly_order_volume: string | null
           name: string
-          platform: string | null
-          primary_fraud_concern: string | null
-          setup_complete: boolean | null
-          user_id: string | null
           settings: Json
-          invite_status: string | null
+          shopify_collector_init_script_tag_id: string | null
+          shopify_collector_script_tag_id: string | null
           updated_at: string
         }
         Insert: {
+          bigcommerce_script_uuid?: string | null
           created_at?: string
-          business_name?: string | null
           id?: string
           is_demo?: boolean
           is_internal?: boolean
-          monthly_order_volume?: string | null
           name: string
-          platform?: string | null
-          primary_fraud_concern?: string | null
-          setup_complete?: boolean | null
-          user_id?: string | null
           settings?: Json
-          invite_status?: string | null
+          shopify_collector_init_script_tag_id?: string | null
+          shopify_collector_script_tag_id?: string | null
           updated_at?: string
         }
         Update: {
+          bigcommerce_script_uuid?: string | null
           created_at?: string
-          business_name?: string | null
           id?: string
           is_demo?: boolean
           is_internal?: boolean
-          monthly_order_volume?: string | null
           name?: string
-          platform?: string | null
-          primary_fraud_concern?: string | null
-          setup_complete?: boolean | null
-          user_id?: string | null
           settings?: Json
-          invite_status?: string | null
+          shopify_collector_init_script_tag_id?: string | null
+          shopify_collector_script_tag_id?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -1497,6 +2555,245 @@ export type Database = {
           },
         ]
       }
+      order_claim_context: {
+        Row: {
+          created_at: string
+          days_since_delivery_at_claim: number | null
+          days_since_order_at_claim: number | null
+          delivery_status_at_claim: string | null
+          discount_amount: number | null
+          discount_code_used: boolean | null
+          fulfillment_status_at_claim: string | null
+          id: string
+          is_first_order: boolean | null
+          merchant_id: string
+          order_created_at: string | null
+          order_ref: string | null
+          order_value: number | null
+          partial_refund: boolean | null
+          payment_method: string | null
+          refund_amount_approved: number | null
+          refund_amount_requested: number | null
+          shipping_carrier: string | null
+          shipping_equals_billing: boolean | null
+          support_case_id: string
+          tracking_number: string | null
+          was_refunded_previously: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          days_since_delivery_at_claim?: number | null
+          days_since_order_at_claim?: number | null
+          delivery_status_at_claim?: string | null
+          discount_amount?: number | null
+          discount_code_used?: boolean | null
+          fulfillment_status_at_claim?: string | null
+          id?: string
+          is_first_order?: boolean | null
+          merchant_id: string
+          order_created_at?: string | null
+          order_ref?: string | null
+          order_value?: number | null
+          partial_refund?: boolean | null
+          payment_method?: string | null
+          refund_amount_approved?: number | null
+          refund_amount_requested?: number | null
+          shipping_carrier?: string | null
+          shipping_equals_billing?: boolean | null
+          support_case_id: string
+          tracking_number?: string | null
+          was_refunded_previously?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          days_since_delivery_at_claim?: number | null
+          days_since_order_at_claim?: number | null
+          delivery_status_at_claim?: string | null
+          discount_amount?: number | null
+          discount_code_used?: boolean | null
+          fulfillment_status_at_claim?: string | null
+          id?: string
+          is_first_order?: boolean | null
+          merchant_id?: string
+          order_created_at?: string | null
+          order_ref?: string | null
+          order_value?: number | null
+          partial_refund?: boolean | null
+          payment_method?: string | null
+          refund_amount_approved?: number | null
+          refund_amount_requested?: number | null
+          shipping_carrier?: string | null
+          shipping_equals_billing?: boolean | null
+          support_case_id?: string
+          tracking_number?: string | null
+          was_refunded_previously?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_claim_context_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_claim_context_support_case_id_fkey"
+            columns: ["support_case_id"]
+            isOneToOne: true
+            referencedRelation: "support_case_intake"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_recovery_rules: {
+        Row: {
+          active: boolean
+          applies_to_claim_type: Database["public"]["Enums"]["recovery_rule_claim_type"]
+          claimable_costs: string[]
+          confidence: Database["public"]["Enums"]["recovery_confidence"]
+          created_at: string
+          deadline_days: number | null
+          excluded_costs: string[]
+          id: string
+          liability_cap_amount: number | null
+          liability_cap_basis:
+            | Database["public"]["Enums"]["recovery_liability_cap_basis"]
+            | null
+          liability_cap_currency: string | null
+          merchant_id: string
+          partner_id: string | null
+          recovery_type: Database["public"]["Enums"]["recovery_case_type"]
+          required_evidence: string[]
+          rule_name: string
+          source_type: Database["public"]["Enums"]["recovery_rule_source_type"]
+          submission_email: string | null
+          submission_method:
+            | Database["public"]["Enums"]["recovery_submission_method"]
+            | null
+          submission_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          applies_to_claim_type: Database["public"]["Enums"]["recovery_rule_claim_type"]
+          claimable_costs?: string[]
+          confidence?: Database["public"]["Enums"]["recovery_confidence"]
+          created_at?: string
+          deadline_days?: number | null
+          excluded_costs?: string[]
+          id?: string
+          liability_cap_amount?: number | null
+          liability_cap_basis?:
+            | Database["public"]["Enums"]["recovery_liability_cap_basis"]
+            | null
+          liability_cap_currency?: string | null
+          merchant_id: string
+          partner_id?: string | null
+          recovery_type: Database["public"]["Enums"]["recovery_case_type"]
+          required_evidence?: string[]
+          rule_name: string
+          source_type?: Database["public"]["Enums"]["recovery_rule_source_type"]
+          submission_email?: string | null
+          submission_method?:
+            | Database["public"]["Enums"]["recovery_submission_method"]
+            | null
+          submission_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          applies_to_claim_type?: Database["public"]["Enums"]["recovery_rule_claim_type"]
+          claimable_costs?: string[]
+          confidence?: Database["public"]["Enums"]["recovery_confidence"]
+          created_at?: string
+          deadline_days?: number | null
+          excluded_costs?: string[]
+          id?: string
+          liability_cap_amount?: number | null
+          liability_cap_basis?:
+            | Database["public"]["Enums"]["recovery_liability_cap_basis"]
+            | null
+          liability_cap_currency?: string | null
+          merchant_id?: string
+          partner_id?: string | null
+          recovery_type?: Database["public"]["Enums"]["recovery_case_type"]
+          required_evidence?: string[]
+          rule_name?: string
+          source_type?: Database["public"]["Enums"]["recovery_rule_source_type"]
+          submission_email?: string | null
+          submission_method?:
+            | Database["public"]["Enums"]["recovery_submission_method"]
+            | null
+          submission_url?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_recovery_rules_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_recovery_rules_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partners: {
+        Row: {
+          contact_email: string | null
+          contact_url: string | null
+          created_at: string
+          external_reference: string | null
+          id: string
+          merchant_id: string
+          name: string
+          notes: string | null
+          partner_type: Database["public"]["Enums"]["partner_type"]
+          status: Database["public"]["Enums"]["partner_status"]
+          updated_at: string
+        }
+        Insert: {
+          contact_email?: string | null
+          contact_url?: string | null
+          created_at?: string
+          external_reference?: string | null
+          id?: string
+          merchant_id: string
+          name: string
+          notes?: string | null
+          partner_type: Database["public"]["Enums"]["partner_type"]
+          status?: Database["public"]["Enums"]["partner_status"]
+          updated_at?: string
+        }
+        Update: {
+          contact_email?: string | null
+          contact_url?: string | null
+          created_at?: string
+          external_reference?: string | null
+          id?: string
+          merchant_id?: string
+          name?: string
+          notes?: string | null
+          partner_type?: Database["public"]["Enums"]["partner_type"]
+          status?: Database["public"]["Enums"]["partner_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partners_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plans: {
         Row: {
           created_at: string
@@ -1559,6 +2856,262 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      recovery_case_events: {
+        Row: {
+          created_at: string
+          event_type: Database["public"]["Enums"]["recovery_case_event_type"]
+          from_status:
+            | Database["public"]["Enums"]["recovery_case_status"]
+            | null
+          id: string
+          merchant_id: string
+          metadata: Json
+          note: string | null
+          recovery_case_id: string
+          to_status: Database["public"]["Enums"]["recovery_case_status"] | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: Database["public"]["Enums"]["recovery_case_event_type"]
+          from_status?:
+            | Database["public"]["Enums"]["recovery_case_status"]
+            | null
+          id?: string
+          merchant_id: string
+          metadata?: Json
+          note?: string | null
+          recovery_case_id: string
+          to_status?: Database["public"]["Enums"]["recovery_case_status"] | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: Database["public"]["Enums"]["recovery_case_event_type"]
+          from_status?:
+            | Database["public"]["Enums"]["recovery_case_status"]
+            | null
+          id?: string
+          merchant_id?: string
+          metadata?: Json
+          note?: string | null
+          recovery_case_id?: string
+          to_status?: Database["public"]["Enums"]["recovery_case_status"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recovery_case_events_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recovery_case_events_recovery_case_id_fkey"
+            columns: ["recovery_case_id"]
+            isOneToOne: false
+            referencedRelation: "recovery_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recovery_cases: {
+        Row: {
+          amount_recovered: number | null
+          calculation_reason: string[]
+          created_at: string
+          currency: string
+          deadline_at: string | null
+          eligible_loss_amount: number | null
+          estimated_recoverable_max: number | null
+          estimated_recoverable_min: number | null
+          evidence_complete: boolean
+          evidence_missing: string[]
+          evidence_required: string[]
+          excluded_costs: Json
+          id: string
+          internal_owner_user_id: string | null
+          last_chased_at: string | null
+          merchant_id: string
+          merchant_loss_amount: number
+          next_chase_at: string | null
+          owner_type: Database["public"]["Enums"]["recovery_case_owner_type"]
+          partner_id: string | null
+          recovery_type: Database["public"]["Enums"]["recovery_case_type"]
+          rejection_reason: string | null
+          status: Database["public"]["Enums"]["recovery_case_status"]
+          support_payout_case_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount_recovered?: number | null
+          calculation_reason?: string[]
+          created_at?: string
+          currency?: string
+          deadline_at?: string | null
+          eligible_loss_amount?: number | null
+          estimated_recoverable_max?: number | null
+          estimated_recoverable_min?: number | null
+          evidence_complete?: boolean
+          evidence_missing?: string[]
+          evidence_required?: string[]
+          excluded_costs?: Json
+          id?: string
+          internal_owner_user_id?: string | null
+          last_chased_at?: string | null
+          merchant_id: string
+          merchant_loss_amount?: number
+          next_chase_at?: string | null
+          owner_type?: Database["public"]["Enums"]["recovery_case_owner_type"]
+          partner_id?: string | null
+          recovery_type: Database["public"]["Enums"]["recovery_case_type"]
+          rejection_reason?: string | null
+          status?: Database["public"]["Enums"]["recovery_case_status"]
+          support_payout_case_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount_recovered?: number | null
+          calculation_reason?: string[]
+          created_at?: string
+          currency?: string
+          deadline_at?: string | null
+          eligible_loss_amount?: number | null
+          estimated_recoverable_max?: number | null
+          estimated_recoverable_min?: number | null
+          evidence_complete?: boolean
+          evidence_missing?: string[]
+          evidence_required?: string[]
+          excluded_costs?: Json
+          id?: string
+          internal_owner_user_id?: string | null
+          last_chased_at?: string | null
+          merchant_id?: string
+          merchant_loss_amount?: number
+          next_chase_at?: string | null
+          owner_type?: Database["public"]["Enums"]["recovery_case_owner_type"]
+          partner_id?: string | null
+          recovery_type?: Database["public"]["Enums"]["recovery_case_type"]
+          rejection_reason?: string | null
+          status?: Database["public"]["Enums"]["recovery_case_status"]
+          support_payout_case_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recovery_cases_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recovery_cases_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recovery_cases_support_payout_case_id_fkey"
+            columns: ["support_payout_case_id"]
+            isOneToOne: false
+            referencedRelation: "support_payout_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rule_evaluations: {
+        Row: {
+          all_rules_evaluated: Json | null
+          claim_id: string | null
+          context_hash: string | null
+          dedupe_key: string | null
+          evaluated_at: string
+          evaluation_source: string | null
+          id: string
+          identity_id: string | null
+          justification_summary: string | null
+          matched_conditions: Json | null
+          merchant_id: string
+          recommendation: string | null
+          rule_id: string | null
+          rules_hash: string | null
+          signals_hash: string | null
+          source_ticket_id: string | null
+        }
+        Insert: {
+          all_rules_evaluated?: Json | null
+          claim_id?: string | null
+          context_hash?: string | null
+          dedupe_key?: string | null
+          evaluated_at?: string
+          evaluation_source?: string | null
+          id?: string
+          identity_id?: string | null
+          justification_summary?: string | null
+          matched_conditions?: Json | null
+          merchant_id: string
+          recommendation?: string | null
+          rule_id?: string | null
+          rules_hash?: string | null
+          signals_hash?: string | null
+          source_ticket_id?: string | null
+        }
+        Update: {
+          all_rules_evaluated?: Json | null
+          claim_id?: string | null
+          context_hash?: string | null
+          dedupe_key?: string | null
+          evaluated_at?: string
+          evaluation_source?: string | null
+          id?: string
+          identity_id?: string | null
+          justification_summary?: string | null
+          matched_conditions?: Json | null
+          merchant_id?: string
+          recommendation?: string | null
+          rule_id?: string | null
+          rules_hash?: string | null
+          signals_hash?: string | null
+          source_ticket_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rule_evaluations_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "support_payout_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rule_evaluations_identity_id_fkey"
+            columns: ["identity_id"]
+            isOneToOne: false
+            referencedRelation: "identities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rule_evaluations_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rule_evaluations_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "merchant_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rule_evaluations_source_ticket_id_fkey"
+            columns: ["source_ticket_id"]
+            isOneToOne: false
+            referencedRelation: "source_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       source_addresses: {
         Row: {
@@ -1824,46 +3377,37 @@ export type Database = {
           browser_ip: unknown
           cancel_reason: string | null
           cancelled_at: string | null
-          candidate_cluster_id: string | null
           card_last4: string | null
           cluster_id: string | null
           connection_id: string | null
           currency: string | null
           customer_email: string | null
           customer_name: string | null
-          dismissed_by_merchant: boolean | null
           discount_codes: Json
+          dismissed_by_merchant: boolean
           email: string | null
           external_id: string
-          fraud_flags: Json | null
           financial_status: Database["public"]["Enums"]["order_financial_status"]
           fulfillment_state: Database["public"]["Enums"]["fulfillment_state"]
           id: string
           identity_confidence_grade: string | null
-          identity_match_grade: string | null
           identity_score: number | null
-          identity_signals: Json | null
           ingested_at: string
           job_id: string | null
           landing_site: string | null
           line_items_count: number | null
-          match_score: number | null
           match_status: string | null
           merchant_id: string
           note: string | null
-          order_id: string | null
-          order_value: number | string | null
           order_number: string | null
+          order_value: number | null
           payment_gateway: string | null
           phone: string | null
           placed_at: string | null
           processed_at: string | null
           raw_payload_hash: string | null
           referring_site: string | null
-          refund_reason: string | null
           shipping_address_id: string | null
-          signals_matched: string[] | null
-          behavioural_flags: string[] | null
           source: Database["public"]["Enums"]["signal_source"]
           source_customer_id: string | null
           source_name: string | null
@@ -1880,46 +3424,37 @@ export type Database = {
           browser_ip?: unknown
           cancel_reason?: string | null
           cancelled_at?: string | null
-          candidate_cluster_id?: string | null
           card_last4?: string | null
           cluster_id?: string | null
           connection_id?: string | null
           currency?: string | null
           customer_email?: string | null
           customer_name?: string | null
-          dismissed_by_merchant?: boolean | null
           discount_codes?: Json
+          dismissed_by_merchant?: boolean
           email?: string | null
           external_id: string
-          fraud_flags?: Json | null
           financial_status?: Database["public"]["Enums"]["order_financial_status"]
           fulfillment_state?: Database["public"]["Enums"]["fulfillment_state"]
           id?: string
           identity_confidence_grade?: string | null
-          identity_match_grade?: string | null
           identity_score?: number | null
-          identity_signals?: Json | null
           ingested_at?: string
           job_id?: string | null
           landing_site?: string | null
           line_items_count?: number | null
-          match_score?: number | null
           match_status?: string | null
           merchant_id: string
           note?: string | null
-          order_id?: string | null
-          order_value?: number | string | null
           order_number?: string | null
+          order_value?: number | null
           payment_gateway?: string | null
           phone?: string | null
           placed_at?: string | null
           processed_at?: string | null
           raw_payload_hash?: string | null
           referring_site?: string | null
-          refund_reason?: string | null
           shipping_address_id?: string | null
-          signals_matched?: string[] | null
-          behavioural_flags?: string[] | null
           source: Database["public"]["Enums"]["signal_source"]
           source_customer_id?: string | null
           source_name?: string | null
@@ -1936,46 +3471,37 @@ export type Database = {
           browser_ip?: unknown
           cancel_reason?: string | null
           cancelled_at?: string | null
-          candidate_cluster_id?: string | null
           card_last4?: string | null
           cluster_id?: string | null
           connection_id?: string | null
           currency?: string | null
           customer_email?: string | null
           customer_name?: string | null
-          dismissed_by_merchant?: boolean | null
           discount_codes?: Json
+          dismissed_by_merchant?: boolean
           email?: string | null
           external_id?: string
-          fraud_flags?: Json | null
           financial_status?: Database["public"]["Enums"]["order_financial_status"]
           fulfillment_state?: Database["public"]["Enums"]["fulfillment_state"]
           id?: string
           identity_confidence_grade?: string | null
-          identity_match_grade?: string | null
           identity_score?: number | null
-          identity_signals?: Json | null
           ingested_at?: string
           job_id?: string | null
           landing_site?: string | null
           line_items_count?: number | null
-          match_score?: number | null
           match_status?: string | null
           merchant_id?: string
           note?: string | null
-          order_id?: string | null
-          order_value?: number | string | null
           order_number?: string | null
+          order_value?: number | null
           payment_gateway?: string | null
           phone?: string | null
           placed_at?: string | null
           processed_at?: string | null
           raw_payload_hash?: string | null
           referring_site?: string | null
-          refund_reason?: string | null
           shipping_address_id?: string | null
-          signals_matched?: string[] | null
-          behavioural_flags?: string[] | null
           source?: Database["public"]["Enums"]["signal_source"]
           source_customer_id?: string | null
           source_name?: string | null
@@ -1998,7 +3524,21 @@ export type Database = {
             foreignKeyName: "source_orders_connection_id_fkey"
             columns: ["connection_id"]
             isOneToOne: false
+            referencedRelation: "commerce_store_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_orders_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
             referencedRelation: "store_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_orders_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "sync_jobs"
             referencedColumns: ["id"]
           },
           {
@@ -2243,6 +3783,7 @@ export type Database = {
       }
       store_connections: {
         Row: {
+          collector_metadata: Json
           created_at: string
           credentials_encrypted: string
           id: string
@@ -2259,6 +3800,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          collector_metadata?: Json
           created_at?: string
           credentials_encrypted: string
           id?: string
@@ -2275,6 +3817,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          collector_metadata?: Json
           created_at?: string
           credentials_encrypted?: string
           id?: string
@@ -2293,6 +3836,483 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "store_connections_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_case_events: {
+        Row: {
+          actor_identifier_hash: string | null
+          actor_type: string | null
+          created_at: string
+          event_summary: string | null
+          event_type: string
+          id: string
+          merchant_id: string
+          metadata: Json
+          occurred_at_provider: string | null
+          provider: string
+          raw_payload_hash: string | null
+          support_case_id: string
+        }
+        Insert: {
+          actor_identifier_hash?: string | null
+          actor_type?: string | null
+          created_at?: string
+          event_summary?: string | null
+          event_type: string
+          id?: string
+          merchant_id: string
+          metadata?: Json
+          occurred_at_provider?: string | null
+          provider: string
+          raw_payload_hash?: string | null
+          support_case_id: string
+        }
+        Update: {
+          actor_identifier_hash?: string | null
+          actor_type?: string | null
+          created_at?: string
+          event_summary?: string | null
+          event_type?: string
+          id?: string
+          merchant_id?: string
+          metadata?: Json
+          occurred_at_provider?: string | null
+          provider?: string
+          raw_payload_hash?: string | null
+          support_case_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_case_events_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_case_events_support_case_id_fkey"
+            columns: ["support_case_id"]
+            isOneToOne: false
+            referencedRelation: "support_case_intake"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_case_intake: {
+        Row: {
+          accepted_first_resolution: boolean | null
+          agent_notes_summary: string | null
+          attachments_metadata: Json
+          case_status: string | null
+          channel: string | null
+          chargeback_threatened: boolean
+          claim_reason: string | null
+          claim_type: string | null
+          claim_type_confidence: number | null
+          created_at_provider: string | null
+          customer_email_hash: string | null
+          customer_identifier: string | null
+          customer_message_summary: string | null
+          customer_profile_id: string | null
+          customer_reply_count: number | null
+          decision: string | null
+          escalation_count: number | null
+          external_case_id: string
+          external_url: string | null
+          id: string
+          ingested_at: string
+          is_claim: boolean
+          link_metadata: Json
+          link_status: string
+          linked_at: string | null
+          macros_used: Json
+          merchant_claim_id: string | null
+          merchant_id: string
+          message_count: number | null
+          order_ref: string | null
+          outcome: string | null
+          provided_evidence: boolean | null
+          provider: string
+          provider_connection_id: string | null
+          raw_payload_hash: string
+          resolution_type: string | null
+          sentiment_score: number | null
+          shop_domain: string | null
+          shopify_order_id: string | null
+          tags: Json
+          time_to_first_claim_message_seconds: number | null
+          updated_at: string
+          updated_at_provider: string | null
+          was_reopened: boolean | null
+        }
+        Insert: {
+          accepted_first_resolution?: boolean | null
+          agent_notes_summary?: string | null
+          attachments_metadata?: Json
+          case_status?: string | null
+          channel?: string | null
+          chargeback_threatened?: boolean
+          claim_reason?: string | null
+          claim_type?: string | null
+          claim_type_confidence?: number | null
+          created_at_provider?: string | null
+          customer_email_hash?: string | null
+          customer_identifier?: string | null
+          customer_message_summary?: string | null
+          customer_profile_id?: string | null
+          customer_reply_count?: number | null
+          decision?: string | null
+          escalation_count?: number | null
+          external_case_id: string
+          external_url?: string | null
+          id?: string
+          ingested_at?: string
+          is_claim?: boolean
+          link_metadata?: Json
+          link_status?: string
+          linked_at?: string | null
+          macros_used?: Json
+          merchant_claim_id?: string | null
+          merchant_id: string
+          message_count?: number | null
+          order_ref?: string | null
+          outcome?: string | null
+          provided_evidence?: boolean | null
+          provider: string
+          provider_connection_id?: string | null
+          raw_payload_hash: string
+          resolution_type?: string | null
+          sentiment_score?: number | null
+          shop_domain?: string | null
+          shopify_order_id?: string | null
+          tags?: Json
+          time_to_first_claim_message_seconds?: number | null
+          updated_at?: string
+          updated_at_provider?: string | null
+          was_reopened?: boolean | null
+        }
+        Update: {
+          accepted_first_resolution?: boolean | null
+          agent_notes_summary?: string | null
+          attachments_metadata?: Json
+          case_status?: string | null
+          channel?: string | null
+          chargeback_threatened?: boolean
+          claim_reason?: string | null
+          claim_type?: string | null
+          claim_type_confidence?: number | null
+          created_at_provider?: string | null
+          customer_email_hash?: string | null
+          customer_identifier?: string | null
+          customer_message_summary?: string | null
+          customer_profile_id?: string | null
+          customer_reply_count?: number | null
+          decision?: string | null
+          escalation_count?: number | null
+          external_case_id?: string
+          external_url?: string | null
+          id?: string
+          ingested_at?: string
+          is_claim?: boolean
+          link_metadata?: Json
+          link_status?: string
+          linked_at?: string | null
+          macros_used?: Json
+          merchant_claim_id?: string | null
+          merchant_id?: string
+          message_count?: number | null
+          order_ref?: string | null
+          outcome?: string | null
+          provided_evidence?: boolean | null
+          provider?: string
+          provider_connection_id?: string | null
+          raw_payload_hash?: string
+          resolution_type?: string | null
+          sentiment_score?: number | null
+          shop_domain?: string | null
+          shopify_order_id?: string | null
+          tags?: Json
+          time_to_first_claim_message_seconds?: number | null
+          updated_at?: string
+          updated_at_provider?: string | null
+          was_reopened?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_case_intake_customer_profile_id_fkey"
+            columns: ["customer_profile_id"]
+            isOneToOne: false
+            referencedRelation: "identities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_case_intake_merchant_claim_id_fkey"
+            columns: ["merchant_claim_id"]
+            isOneToOne: false
+            referencedRelation: "support_payout_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_case_intake_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_case_intake_provider_connection_id_fkey"
+            columns: ["provider_connection_id"]
+            isOneToOne: false
+            referencedRelation: "support_provider_connections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_payout_cases: {
+        Row: {
+          amount_at_risk: number | null
+          assigned_at: string | null
+          assigned_to: string | null
+          attribution_confidence:
+            | Database["public"]["Enums"]["attribution_confidence"]
+            | null
+          claim_type: Database["public"]["Enums"]["claim_type"]
+          created_at: string
+          currency: string | null
+          detection_detail: Json
+          detection_method: Database["public"]["Enums"]["claim_detection_method"]
+          discount_amount: number | null
+          estimated_support_cost: number | null
+          first_viewed_at: string | null
+          id: string
+          identity_id: string | null
+          loss_attribution:
+            | Database["public"]["Enums"]["loss_attribution"]
+            | null
+          merchant_id: string
+          next_action: string | null
+          next_action_reason: string | null
+          payout_decision_state: string
+          reason_normalized: string | null
+          reason_raw: string | null
+          recommended_payout_action: string | null
+          recommended_rule_id: string | null
+          recommended_rule_name: string | null
+          recoverability: Database["public"]["Enums"]["recoverability"] | null
+          recovery_next_action: string | null
+          recovery_owner: Database["public"]["Enums"]["recovery_owner"] | null
+          recovery_required_evidence: string[]
+          recovery_state: string
+          refund_amount: number | null
+          replacement_item_value: number | null
+          replacement_shipping_cost: number | null
+          requested_action: Database["public"]["Enums"]["requested_action"]
+          requires_review: boolean
+          snoozed_until: string | null
+          source_order_id: string | null
+          source_ticket_id: string | null
+          status: Database["public"]["Enums"]["claim_status"]
+          store_credit_amount: number | null
+          submitted_at: string
+          total_estimated_loss: number | null
+          updated_at: string
+        }
+        Insert: {
+          amount_at_risk?: number | null
+          assigned_at?: string | null
+          assigned_to?: string | null
+          attribution_confidence?:
+            | Database["public"]["Enums"]["attribution_confidence"]
+            | null
+          claim_type: Database["public"]["Enums"]["claim_type"]
+          created_at?: string
+          currency?: string | null
+          detection_detail?: Json
+          detection_method?: Database["public"]["Enums"]["claim_detection_method"]
+          discount_amount?: number | null
+          estimated_support_cost?: number | null
+          first_viewed_at?: string | null
+          id?: string
+          identity_id?: string | null
+          loss_attribution?:
+            | Database["public"]["Enums"]["loss_attribution"]
+            | null
+          merchant_id: string
+          next_action?: string | null
+          next_action_reason?: string | null
+          payout_decision_state?: string
+          reason_normalized?: string | null
+          reason_raw?: string | null
+          recommended_payout_action?: string | null
+          recommended_rule_id?: string | null
+          recommended_rule_name?: string | null
+          recoverability?: Database["public"]["Enums"]["recoverability"] | null
+          recovery_next_action?: string | null
+          recovery_owner?: Database["public"]["Enums"]["recovery_owner"] | null
+          recovery_required_evidence?: string[]
+          recovery_state?: string
+          refund_amount?: number | null
+          replacement_item_value?: number | null
+          replacement_shipping_cost?: number | null
+          requested_action?: Database["public"]["Enums"]["requested_action"]
+          requires_review?: boolean
+          snoozed_until?: string | null
+          source_order_id?: string | null
+          source_ticket_id?: string | null
+          status?: Database["public"]["Enums"]["claim_status"]
+          store_credit_amount?: number | null
+          submitted_at?: string
+          total_estimated_loss?: number | null
+          updated_at?: string
+        }
+        Update: {
+          amount_at_risk?: number | null
+          assigned_at?: string | null
+          assigned_to?: string | null
+          attribution_confidence?:
+            | Database["public"]["Enums"]["attribution_confidence"]
+            | null
+          claim_type?: Database["public"]["Enums"]["claim_type"]
+          created_at?: string
+          currency?: string | null
+          detection_detail?: Json
+          detection_method?: Database["public"]["Enums"]["claim_detection_method"]
+          discount_amount?: number | null
+          estimated_support_cost?: number | null
+          first_viewed_at?: string | null
+          id?: string
+          identity_id?: string | null
+          loss_attribution?:
+            | Database["public"]["Enums"]["loss_attribution"]
+            | null
+          merchant_id?: string
+          next_action?: string | null
+          next_action_reason?: string | null
+          payout_decision_state?: string
+          reason_normalized?: string | null
+          reason_raw?: string | null
+          recommended_payout_action?: string | null
+          recommended_rule_id?: string | null
+          recommended_rule_name?: string | null
+          recoverability?: Database["public"]["Enums"]["recoverability"] | null
+          recovery_next_action?: string | null
+          recovery_owner?: Database["public"]["Enums"]["recovery_owner"] | null
+          recovery_required_evidence?: string[]
+          recovery_state?: string
+          refund_amount?: number | null
+          replacement_item_value?: number | null
+          replacement_shipping_cost?: number | null
+          requested_action?: Database["public"]["Enums"]["requested_action"]
+          requires_review?: boolean
+          snoozed_until?: string | null
+          source_order_id?: string | null
+          source_ticket_id?: string | null
+          status?: Database["public"]["Enums"]["claim_status"]
+          store_credit_amount?: number | null
+          submitted_at?: string
+          total_estimated_loss?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claims_identity_id_fkey"
+            columns: ["identity_id"]
+            isOneToOne: false
+            referencedRelation: "identities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claims_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claims_source_order_id_fkey"
+            columns: ["source_order_id"]
+            isOneToOne: false
+            referencedRelation: "source_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claims_source_ticket_id_fkey"
+            columns: ["source_ticket_id"]
+            isOneToOne: false
+            referencedRelation: "source_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_provider_connections: {
+        Row: {
+          access_token_encrypted: string | null
+          created_at: string
+          id: string
+          last_error: string | null
+          last_sync_at: string | null
+          merchant_id: string
+          provider: string
+          provider_account_id: string | null
+          provider_account_name: string | null
+          provider_base_url: string | null
+          refresh_token_encrypted: string | null
+          scopes: Json
+          status: string
+          token_expires_at: string | null
+          updated_at: string
+          webhook_secret_created_at: string | null
+          webhook_secret_hash: string | null
+          webhook_secret_rotated_at: string | null
+        }
+        Insert: {
+          access_token_encrypted?: string | null
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          last_sync_at?: string | null
+          merchant_id: string
+          provider: string
+          provider_account_id?: string | null
+          provider_account_name?: string | null
+          provider_base_url?: string | null
+          refresh_token_encrypted?: string | null
+          scopes?: Json
+          status?: string
+          token_expires_at?: string | null
+          updated_at?: string
+          webhook_secret_created_at?: string | null
+          webhook_secret_hash?: string | null
+          webhook_secret_rotated_at?: string | null
+        }
+        Update: {
+          access_token_encrypted?: string | null
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          last_sync_at?: string | null
+          merchant_id?: string
+          provider?: string
+          provider_account_id?: string | null
+          provider_account_name?: string | null
+          provider_base_url?: string | null
+          refresh_token_encrypted?: string | null
+          scopes?: Json
+          status?: string
+          token_expires_at?: string | null
+          updated_at?: string
+          webhook_secret_created_at?: string | null
+          webhook_secret_hash?: string | null
+          webhook_secret_rotated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_provider_connections_merchant_id_fkey"
             columns: ["merchant_id"]
             isOneToOne: false
             referencedRelation: "merchants"
@@ -2353,8 +4373,6 @@ export type Database = {
           label: string | null
           merchant_id: string
           processed_rows: number
-          progress_message: string | null
-          progress_pct: number | null
           source: Database["public"]["Enums"]["signal_source"] | null
           status: Database["public"]["Enums"]["sync_job_status"]
           storage_path: string | null
@@ -2375,8 +4393,6 @@ export type Database = {
           label?: string | null
           merchant_id: string
           processed_rows?: number
-          progress_message?: string | null
-          progress_pct?: number | null
           source?: Database["public"]["Enums"]["signal_source"] | null
           status?: Database["public"]["Enums"]["sync_job_status"]
           storage_path?: string | null
@@ -2397,8 +4413,6 @@ export type Database = {
           label?: string | null
           merchant_id?: string
           processed_rows?: number
-          progress_message?: string | null
-          progress_pct?: number | null
           source?: Database["public"]["Enums"]["signal_source"] | null
           status?: Database["public"]["Enums"]["sync_job_status"]
           storage_path?: string | null
@@ -2415,11 +4429,257 @@ export type Database = {
           },
         ]
       }
+      unmatched_correspondence: {
+        Row: {
+          candidate_json: Json
+          created_at: string
+          id: string
+          merchant_id: string
+          reason: string
+          source_provider: string
+          source_record_id: string
+          source_thread_id: string | null
+          source_url: string | null
+        }
+        Insert: {
+          candidate_json?: Json
+          created_at?: string
+          id: string
+          merchant_id: string
+          reason: string
+          source_provider: string
+          source_record_id: string
+          source_thread_id?: string | null
+          source_url?: string | null
+        }
+        Update: {
+          candidate_json?: Json
+          created_at?: string
+          id?: string
+          merchant_id?: string
+          reason?: string
+          source_provider?: string
+          source_record_id?: string
+          source_thread_id?: string | null
+          source_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unmatched_correspondence_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "external_correspondence"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "unmatched_correspondence_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_action_log: {
+        Row: {
+          action: string
+          actor_role: string
+          actor_user_id: string
+          created_at: string
+          id: string
+          merchant_id: string
+          metadata: Json
+          request_ip: string | null
+          resource_id: string | null
+          resource_type: string | null
+        }
+        Insert: {
+          action: string
+          actor_role: string
+          actor_user_id: string
+          created_at?: string
+          id?: string
+          merchant_id: string
+          metadata?: Json
+          request_ip?: string | null
+          resource_id?: string | null
+          resource_type?: string | null
+        }
+        Update: {
+          action?: string
+          actor_role?: string
+          actor_user_id?: string
+          created_at?: string
+          id?: string
+          merchant_id?: string
+          metadata?: Json
+          request_ip?: string | null
+          resource_id?: string | null
+          resource_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_action_log_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_permission_grants: {
+        Row: {
+          created_at: string
+          granted_by: string | null
+          grantee_user_id: string
+          id: string
+          merchant_id: string
+          permission: string
+          revoked: boolean
+          revoked_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          granted_by?: string | null
+          grantee_user_id: string
+          id?: string
+          merchant_id: string
+          permission: string
+          revoked?: boolean
+          revoked_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          granted_by?: string | null
+          grantee_user_id?: string
+          id?: string
+          merchant_id?: string
+          permission?: string
+          revoked?: boolean
+          revoked_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_permission_grants_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webhook_logs: {
+        Row: {
+          claim_type: string | null
+          created_at: string
+          error: string | null
+          external_case_id: string | null
+          http_status: number | null
+          id: string
+          is_claim: boolean | null
+          merchant_id: string | null
+          provider: string
+          status: string
+        }
+        Insert: {
+          claim_type?: string | null
+          created_at?: string
+          error?: string | null
+          external_case_id?: string | null
+          http_status?: number | null
+          id?: string
+          is_claim?: boolean | null
+          merchant_id?: string | null
+          provider: string
+          status: string
+        }
+        Update: {
+          claim_type?: string | null
+          created_at?: string
+          error?: string | null
+          external_case_id?: string | null
+          http_status?: number | null
+          id?: string
+          is_claim?: boolean | null
+          merchant_id?: string | null
+          provider?: string
+          status?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
-      [_ in never]: never
+      commerce_store_connections: {
+        Row: {
+          created_at: string | null
+          credentials_encrypted: string | null
+          id: string | null
+          last_error: string | null
+          last_sync_at: string | null
+          merchant_id: string | null
+          platform: string | null
+          status: string | null
+          store_key: string | null
+          store_url: string | null
+          uninstalled_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          credentials_encrypted?: string | null
+          id?: string | null
+          last_error?: string | null
+          last_sync_at?: string | null
+          merchant_id?: string | null
+          platform?: never
+          status?: never
+          store_key?: string | null
+          store_url?: never
+          uninstalled_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          credentials_encrypted?: string | null
+          id?: string | null
+          last_error?: string | null
+          last_sync_at?: string | null
+          merchant_id?: string | null
+          platform?: never
+          status?: never
+          store_key?: string | null
+          store_url?: never
+          uninstalled_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_connections_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
+      all_processing_job_chunks_complete: {
+        Args: { p_job_id: string }
+        Returns: boolean
+      }
+      begin_processing_job_chunk: {
+        Args: { p_chunk_index: number; p_job_id: string }
+        Returns: string
+      }
+      complete_processing_job_chunk: {
+        Args: { p_chunk_index: number; p_job_id: string }
+        Returns: undefined
+      }
+      fail_processing_job_chunk: {
+        Args: { p_chunk_index: number; p_error: string; p_job_id: string }
+        Returns: undefined
+      }
       increment_job_progress: {
         Args: {
           p_failed_delta?: number
@@ -2428,23 +4688,12 @@ export type Database = {
         }
         Returns: undefined
       }
+      increment_rate_limit: {
+        Args: { p_ip_hash: string; p_window_start: string }
+        Returns: number
+      }
       ingest_identity_observations: {
         Args: { p_edges: Json; p_merchant_id: string; p_signals: Json }
-        Returns: undefined
-      }
-      bulk_upsert_identity_identifiers: {
-        Args: {
-          p_identifiers: Json
-          p_source_provider: string
-        }
-        Returns: undefined
-      }
-      bulk_upsert_identifier_co_occurrence_edges: {
-        Args: {
-          p_edges: Json
-          p_merchant_id: string
-          p_source_provider: string
-        }
         Returns: undefined
       }
       is_merchant_member: { Args: { p_merchant_id: string }; Returns: boolean }
@@ -2469,8 +4718,33 @@ export type Database = {
           total_orders: number
         }[]
       }
+      merchant_role: { Args: { p_merchant_id: string }; Returns: string }
+      next_pending_processing_chunk_index: {
+        Args: { p_job_id: string }
+        Returns: number
+      }
+      refresh_audit_customer_summaries: {
+        Args: { p_audit_id: string; p_merchant_id: string }
+        Returns: number
+      }
+      register_processing_job_chunks: {
+        Args: {
+          p_column_map?: Json
+          p_job_id: string
+          p_merchant_id: string
+          p_storage_path: string
+          p_total_chunks: number
+        }
+        Returns: undefined
+      }
+      set_checkout_signal_cross_merchant_hits: {
+        Args: { p_hit_count: number; p_signal_id: string }
+        Returns: undefined
+      }
+      try_claim_job_finalize: { Args: { p_job_id: string }; Returns: boolean }
     }
     Enums: {
+      attribution_confidence: "high" | "medium" | "low" | "needs_more_evidence"
       claim_decision:
         | "approved"
         | "denied"
@@ -2496,6 +4770,16 @@ export type Database = {
         | "suspected_fraud"
         | "legitimate"
       claim_status:
+        | "pending"
+        | "open"
+        | "escalated"
+        | "resolved_refunded"
+        | "resolved_won"
+        | "resolved_lost"
+        | "resolved_denied"
+        | "resolved_exchanged"
+        | "voided"
+        | "stale"
         | "new"
         | "evidence_needed"
         | "awaiting_customer_evidence"
@@ -2507,16 +4791,6 @@ export type Database = {
         | "decision_recorded"
         | "recovery_opened"
         | "closed"
-        | "pending"
-        | "open"
-        | "escalated"
-        | "resolved_refunded"
-        | "resolved_won"
-        | "resolved_lost"
-        | "resolved_denied"
-        | "resolved_exchanged"
-        | "voided"
-        | "stale"
       claim_type:
         | "item_not_received"
         | "damaged"
@@ -2526,42 +4800,41 @@ export type Database = {
         | "chargeback"
         | "return_abuse"
         | "other"
-      attribution_confidence: "high" | "medium" | "low" | "needs_more_evidence"
-      loss_attribution:
-        | "customer_claim"
-        | "carrier_loss"
-        | "carrier_damage"
-        | "failed_delivery_evidence"
-        | "warehouse_mispick"
-        | "warehouse_missing_item"
-        | "three_pl_late_dispatch"
-        | "supplier_defect"
-        | "packaging_failure"
-        | "merchant_policy"
-        | "unknown"
-      recoverability:
-        | "recoverable"
-        | "possibly_recoverable"
-        | "not_recoverable"
-        | "needs_more_evidence"
-        | "unknown"
-      recovery_owner:
-        | "carrier"
-        | "three_pl"
-        | "warehouse"
-        | "supplier"
-        | "merchant"
-        | "unknown"
-      requested_action:
-        | "refund"
-        | "reship"
-        | "replacement"
-        | "discount"
-        | "store_credit"
-        | "escalation"
-        | "unknown"
       confidence_grade: "weak" | "possible" | "probable" | "definite"
       connection_status: "active" | "disabled" | "revoked" | "error"
+      correspondence_extraction_status:
+        | "not_required"
+        | "pending"
+        | "extracted"
+        | "failed"
+        | "low_confidence"
+      evidence_extraction_method:
+        | "direct_api"
+        | "webhook"
+        | "email_parser"
+        | "helpdesk_parser"
+        | "llm_extractor"
+        | "deterministic_rule"
+      external_clarification_request_status:
+        | "generated"
+        | "blocked_by_settings"
+        | "sent"
+        | "failed"
+        | "reply_received"
+        | "expired"
+      external_correspondence_channel:
+        | "provider_api"
+        | "gmail"
+        | "outlook"
+        | "gorgias"
+        | "zendesk"
+        | "intercom"
+        | "slack"
+        | "erp"
+        | "wms"
+        | "marketplace_portal_api"
+        | "payment_processor_api"
+      external_correspondence_direction: "inbound" | "outbound"
       fulfillment_state:
         | "unfulfilled"
         | "partial"
@@ -2585,6 +4858,118 @@ export type Database = {
         | "platform_customer_id"
         | "helpdesk_contact_id"
       invite_status: "pending" | "active" | "revoked"
+      loss_attribution:
+        | "customer_claim"
+        | "carrier_loss"
+        | "carrier_damage"
+        | "failed_delivery_evidence"
+        | "warehouse_mispick"
+        | "warehouse_missing_item"
+        | "three_pl_late_dispatch"
+        | "supplier_defect"
+        | "packaging_failure"
+        | "merchant_policy"
+        | "unknown"
+      loss_case_category:
+        | "delivery_loss"
+        | "chargeback_or_payment_dispute"
+        | "refund_dispute"
+        | "returns_abuse_or_exception"
+        | "damaged_goods"
+        | "wrong_item_or_missing_item"
+        | "fulfilment_or_warehouse_error"
+        | "3pl_accountability"
+        | "shipping_protection_claim"
+        | "marketplace_dispute"
+        | "supplier_or_vendor_issue"
+        | "tax_duty_or_customs_issue"
+        | "subscription_or_digital_fulfilment_issue"
+        | "unknown_post_purchase_loss"
+      loss_case_event_type:
+        | "case_detected"
+        | "evidence_pulled"
+        | "missing_evidence_identified"
+        | "correspondence_ingested"
+        | "correspondence_matched"
+        | "correspondence_unmatched"
+        | "facts_extracted"
+        | "clarification_request_generated"
+        | "clarification_request_sent"
+        | "external_response_received"
+        | "evidence_pack_generated"
+        | "claim_submitted"
+        | "status_synced"
+        | "case_closed"
+        | "sync_failed"
+      loss_case_evidence_source_provider:
+        | "shopify"
+        | "gorgias"
+        | "zendesk"
+        | "intercom"
+        | "aftership"
+        | "carrier_api"
+        | "gmail"
+        | "outlook"
+        | "stripe"
+        | "paypal"
+        | "adyen"
+        | "shopify_payments"
+        | "returns_provider"
+        | "3pl"
+        | "wms"
+        | "erp"
+        | "marketplace"
+        | "shipping_protection_provider"
+        | "supplier_portal"
+        | "slack"
+      loss_case_status:
+        | "detected"
+        | "collecting_evidence"
+        | "missing_source_data"
+        | "needs_external_correspondence"
+        | "external_correspondence_requested"
+        | "external_response_received"
+        | "evidence_pack_ready"
+        | "submitted"
+        | "approved"
+        | "partially_approved"
+        | "denied"
+        | "expired"
+        | "closed_unrecoverable"
+      loss_counterparty_type:
+        | "carrier"
+        | "3pl"
+        | "warehouse"
+        | "payment_processor"
+        | "bank"
+        | "card_network"
+        | "marketplace"
+        | "returns_provider"
+        | "shipping_protection_provider"
+        | "supplier"
+        | "customs_broker"
+        | "customer"
+        | "internal_team"
+        | "unknown"
+      loss_recovery_route:
+        | "carrier_claim"
+        | "carrier_service_refund"
+        | "3pl_claim"
+        | "shipping_protection_claim"
+        | "payment_processor_dispute"
+        | "chargeback_evidence_pack"
+        | "bank_or_card_network_response"
+        | "returns_platform_claim"
+        | "marketplace_claim"
+        | "supplier_vendor_claim"
+        | "internal_fulfilment_issue"
+        | "customer_evidence_review"
+        | "not_recoverable"
+        | "needs_more_evidence"
+      loss_source_confidence:
+        | "source_verified"
+        | "partial_source_verified"
+        | "insufficient_source_data"
       member_role: "owner" | "admin" | "analyst" | "viewer"
       order_financial_status:
         | "pending"
@@ -2596,7 +4981,116 @@ export type Database = {
         | "voided"
         | "cancelled"
         | "unknown"
+      partner_status: "active" | "inactive"
+      partner_type:
+        | "carrier"
+        | "three_pl"
+        | "warehouse"
+        | "supplier"
+        | "returns_provider"
+        | "payment_dispute_provider"
+        | "internal_team"
+        | "other"
       platform_kind: "shopify" | "woocommerce" | "bigcommerce"
+      recoverability:
+        | "recoverable"
+        | "possibly_recoverable"
+        | "not_recoverable"
+        | "needs_more_evidence"
+        | "unknown"
+      recovery_case_event_type:
+        | "created"
+        | "status_changed"
+        | "evidence_added"
+        | "submitted"
+        | "chased"
+        | "approved"
+        | "partially_approved"
+        | "rejected"
+        | "appealed"
+        | "paid"
+        | "closed"
+      recovery_case_owner_type:
+        | "carrier"
+        | "three_pl"
+        | "warehouse"
+        | "supplier"
+        | "returns_provider"
+        | "payment_dispute_provider"
+        | "merchant_support"
+        | "merchant_ops"
+        | "merchant_finance"
+        | "unknown"
+      recovery_case_status:
+        | "draft"
+        | "evidence_needed"
+        | "ready_to_submit"
+        | "submitted"
+        | "waiting_response"
+        | "chase_due"
+        | "approved"
+        | "partially_approved"
+        | "rejected"
+        | "appealed"
+        | "paid"
+        | "closed_unrecoverable"
+      recovery_case_type:
+        | "carrier_claim"
+        | "three_pl_claim"
+        | "warehouse_error"
+        | "supplier_defect"
+        | "packaging_issue"
+        | "returns_provider_claim"
+        | "chargeback_evidence"
+        | "internal_policy_fix"
+        | "other"
+      recovery_confidence: "high" | "medium" | "low"
+      recovery_liability_cap_basis:
+        | "fixed"
+        | "declared_value"
+        | "insured_value"
+        | "contractual"
+        | "unknown"
+      recovery_owner:
+        | "carrier"
+        | "three_pl"
+        | "warehouse"
+        | "supplier"
+        | "merchant"
+        | "unknown"
+      recovery_rule_claim_type:
+        | "item_not_received"
+        | "damaged_item"
+        | "wrong_item"
+        | "missing_item"
+        | "late_delivery"
+        | "returnless_refund"
+        | "discount_request"
+        | "store_credit_request"
+        | "chargeback_related"
+        | "replacement_request"
+        | "other"
+      recovery_rule_source_type:
+        | "unauth_default"
+        | "merchant_configured"
+        | "contract_extracted"
+        | "manual"
+      recovery_submission_method:
+        | "portal"
+        | "email"
+        | "api"
+        | "manual"
+        | "unknown"
+      requested_action:
+        | "refund"
+        | "reship"
+        | "replacement"
+        | "discount"
+        | "store_credit"
+        | "escalation"
+        | "unknown"
+        | "return_label"
+        | "investigation"
       signal_source:
         | "shopify"
         | "woocommerce"
@@ -2742,8 +5236,12 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
+      attribution_confidence: ["high", "medium", "low", "needs_more_evidence"],
       claim_decision: [
         "approved",
         "denied",
@@ -2772,6 +5270,16 @@ export const Constants = {
         "legitimate",
       ],
       claim_status: [
+        "pending",
+        "open",
+        "escalated",
+        "resolved_refunded",
+        "resolved_won",
+        "resolved_lost",
+        "resolved_denied",
+        "resolved_exchanged",
+        "voided",
+        "stale",
         "new",
         "evidence_needed",
         "awaiting_customer_evidence",
@@ -2783,16 +5291,6 @@ export const Constants = {
         "decision_recorded",
         "recovery_opened",
         "closed",
-        "pending",
-        "open",
-        "escalated",
-        "resolved_refunded",
-        "resolved_won",
-        "resolved_lost",
-        "resolved_denied",
-        "resolved_exchanged",
-        "voided",
-        "stale",
       ],
       claim_type: [
         "item_not_received",
@@ -2804,48 +5302,45 @@ export const Constants = {
         "return_abuse",
         "other",
       ],
-      attribution_confidence: ["high", "medium", "low", "needs_more_evidence"],
-      loss_attribution: [
-        "customer_claim",
-        "carrier_loss",
-        "carrier_damage",
-        "failed_delivery_evidence",
-        "warehouse_mispick",
-        "warehouse_missing_item",
-        "three_pl_late_dispatch",
-        "supplier_defect",
-        "packaging_failure",
-        "merchant_policy",
-        "unknown",
-      ],
-      recoverability: [
-        "recoverable",
-        "possibly_recoverable",
-        "not_recoverable",
-        "needs_more_evidence",
-        "unknown",
-      ],
-      recovery_owner: [
-        "carrier",
-        "three_pl",
-        "warehouse",
-        "supplier",
-        "merchant",
-        "unknown",
-      ],
-      requested_action: [
-        "refund",
-        "reship",
-        "replacement",
-        "discount",
-        "store_credit",
-        "return_label",
-        "investigation",
-        "escalation",
-        "unknown",
-      ],
       confidence_grade: ["weak", "possible", "probable", "definite"],
       connection_status: ["active", "disabled", "revoked", "error"],
+      correspondence_extraction_status: [
+        "not_required",
+        "pending",
+        "extracted",
+        "failed",
+        "low_confidence",
+      ],
+      evidence_extraction_method: [
+        "direct_api",
+        "webhook",
+        "email_parser",
+        "helpdesk_parser",
+        "llm_extractor",
+        "deterministic_rule",
+      ],
+      external_clarification_request_status: [
+        "generated",
+        "blocked_by_settings",
+        "sent",
+        "failed",
+        "reply_received",
+        "expired",
+      ],
+      external_correspondence_channel: [
+        "provider_api",
+        "gmail",
+        "outlook",
+        "gorgias",
+        "zendesk",
+        "intercom",
+        "slack",
+        "erp",
+        "wms",
+        "marketplace_portal_api",
+        "payment_processor_api",
+      ],
+      external_correspondence_direction: ["inbound", "outbound"],
       fulfillment_state: [
         "unfulfilled",
         "partial",
@@ -2871,6 +5366,126 @@ export const Constants = {
         "helpdesk_contact_id",
       ],
       invite_status: ["pending", "active", "revoked"],
+      loss_attribution: [
+        "customer_claim",
+        "carrier_loss",
+        "carrier_damage",
+        "failed_delivery_evidence",
+        "warehouse_mispick",
+        "warehouse_missing_item",
+        "three_pl_late_dispatch",
+        "supplier_defect",
+        "packaging_failure",
+        "merchant_policy",
+        "unknown",
+      ],
+      loss_case_category: [
+        "delivery_loss",
+        "chargeback_or_payment_dispute",
+        "refund_dispute",
+        "returns_abuse_or_exception",
+        "damaged_goods",
+        "wrong_item_or_missing_item",
+        "fulfilment_or_warehouse_error",
+        "3pl_accountability",
+        "shipping_protection_claim",
+        "marketplace_dispute",
+        "supplier_or_vendor_issue",
+        "tax_duty_or_customs_issue",
+        "subscription_or_digital_fulfilment_issue",
+        "unknown_post_purchase_loss",
+      ],
+      loss_case_event_type: [
+        "case_detected",
+        "evidence_pulled",
+        "missing_evidence_identified",
+        "correspondence_ingested",
+        "correspondence_matched",
+        "correspondence_unmatched",
+        "facts_extracted",
+        "clarification_request_generated",
+        "clarification_request_sent",
+        "external_response_received",
+        "evidence_pack_generated",
+        "claim_submitted",
+        "status_synced",
+        "case_closed",
+        "sync_failed",
+      ],
+      loss_case_evidence_source_provider: [
+        "shopify",
+        "gorgias",
+        "zendesk",
+        "intercom",
+        "aftership",
+        "carrier_api",
+        "gmail",
+        "outlook",
+        "stripe",
+        "paypal",
+        "adyen",
+        "shopify_payments",
+        "returns_provider",
+        "3pl",
+        "wms",
+        "erp",
+        "marketplace",
+        "shipping_protection_provider",
+        "supplier_portal",
+        "slack",
+      ],
+      loss_case_status: [
+        "detected",
+        "collecting_evidence",
+        "missing_source_data",
+        "needs_external_correspondence",
+        "external_correspondence_requested",
+        "external_response_received",
+        "evidence_pack_ready",
+        "submitted",
+        "approved",
+        "partially_approved",
+        "denied",
+        "expired",
+        "closed_unrecoverable",
+      ],
+      loss_counterparty_type: [
+        "carrier",
+        "3pl",
+        "warehouse",
+        "payment_processor",
+        "bank",
+        "card_network",
+        "marketplace",
+        "returns_provider",
+        "shipping_protection_provider",
+        "supplier",
+        "customs_broker",
+        "customer",
+        "internal_team",
+        "unknown",
+      ],
+      loss_recovery_route: [
+        "carrier_claim",
+        "carrier_service_refund",
+        "3pl_claim",
+        "shipping_protection_claim",
+        "payment_processor_dispute",
+        "chargeback_evidence_pack",
+        "bank_or_card_network_response",
+        "returns_platform_claim",
+        "marketplace_claim",
+        "supplier_vendor_claim",
+        "internal_fulfilment_issue",
+        "customer_evidence_review",
+        "not_recoverable",
+        "needs_more_evidence",
+      ],
+      loss_source_confidence: [
+        "source_verified",
+        "partial_source_verified",
+        "insufficient_source_data",
+      ],
       member_role: ["owner", "admin", "analyst", "viewer"],
       order_financial_status: [
         "pending",
@@ -2883,7 +5498,128 @@ export const Constants = {
         "cancelled",
         "unknown",
       ],
+      partner_status: ["active", "inactive"],
+      partner_type: [
+        "carrier",
+        "three_pl",
+        "warehouse",
+        "supplier",
+        "returns_provider",
+        "payment_dispute_provider",
+        "internal_team",
+        "other",
+      ],
       platform_kind: ["shopify", "woocommerce", "bigcommerce"],
+      recoverability: [
+        "recoverable",
+        "possibly_recoverable",
+        "not_recoverable",
+        "needs_more_evidence",
+        "unknown",
+      ],
+      recovery_case_event_type: [
+        "created",
+        "status_changed",
+        "evidence_added",
+        "submitted",
+        "chased",
+        "approved",
+        "partially_approved",
+        "rejected",
+        "appealed",
+        "paid",
+        "closed",
+      ],
+      recovery_case_owner_type: [
+        "carrier",
+        "three_pl",
+        "warehouse",
+        "supplier",
+        "returns_provider",
+        "payment_dispute_provider",
+        "merchant_support",
+        "merchant_ops",
+        "merchant_finance",
+        "unknown",
+      ],
+      recovery_case_status: [
+        "draft",
+        "evidence_needed",
+        "ready_to_submit",
+        "submitted",
+        "waiting_response",
+        "chase_due",
+        "approved",
+        "partially_approved",
+        "rejected",
+        "appealed",
+        "paid",
+        "closed_unrecoverable",
+      ],
+      recovery_case_type: [
+        "carrier_claim",
+        "three_pl_claim",
+        "warehouse_error",
+        "supplier_defect",
+        "packaging_issue",
+        "returns_provider_claim",
+        "chargeback_evidence",
+        "internal_policy_fix",
+        "other",
+      ],
+      recovery_confidence: ["high", "medium", "low"],
+      recovery_liability_cap_basis: [
+        "fixed",
+        "declared_value",
+        "insured_value",
+        "contractual",
+        "unknown",
+      ],
+      recovery_owner: [
+        "carrier",
+        "three_pl",
+        "warehouse",
+        "supplier",
+        "merchant",
+        "unknown",
+      ],
+      recovery_rule_claim_type: [
+        "item_not_received",
+        "damaged_item",
+        "wrong_item",
+        "missing_item",
+        "late_delivery",
+        "returnless_refund",
+        "discount_request",
+        "store_credit_request",
+        "chargeback_related",
+        "replacement_request",
+        "other",
+      ],
+      recovery_rule_source_type: [
+        "unauth_default",
+        "merchant_configured",
+        "contract_extracted",
+        "manual",
+      ],
+      recovery_submission_method: [
+        "portal",
+        "email",
+        "api",
+        "manual",
+        "unknown",
+      ],
+      requested_action: [
+        "refund",
+        "reship",
+        "replacement",
+        "discount",
+        "store_credit",
+        "escalation",
+        "unknown",
+        "return_label",
+        "investigation",
+      ],
       signal_source: [
         "shopify",
         "woocommerce",

@@ -1,6 +1,8 @@
-import type { Database } from '@/lib/supabase/types';
+import type { LegacyProcessingJobRow } from '@/lib/supabase/legacyV1Types';
 
-export type RunRow = Database['public']['Tables']['processing_jobs']['Row'];
+// `processing_jobs` was dropped in the v2 cutover; this dashboard type is part of
+// the legacy v1 audit surface retained until the cutover. See legacyV1Types.ts.
+export type RunRow = LegacyProcessingJobRow;
 
 export type QueueRow = {
   id: string;
