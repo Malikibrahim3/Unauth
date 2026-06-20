@@ -6,6 +6,6 @@ export const narvarProvider: IntegrationProvider = {
   category: 'returns',
   authMode: 'oauth',
   buildStatus: 'slot_only',
-  evidenceCapabilities: ['return_request_status', 'return_inspection_outcome', 'return_authorisation', 'return_status', 'returns_provider_case_update'],
+  evidenceCapabilities: ['return_request_status', 'return_inspection_outcome'],
   capabilities: { readReturns: true, readClaimStatus: true, readCorrespondence: true },
 };

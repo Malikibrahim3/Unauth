@@ -21,6 +21,7 @@ class MockQuery {
   eq(column: string, value: unknown) { this.filters.push({ column, value, op: 'eq' }); return this; }
   neq(column: string, value: unknown) { this.filters.push({ column, value, op: 'neq' }); return this; }
   not(column: string) { this.filters.push({ column, value: null, op: 'not_null' }); return this; }
+  in(column: string, value: unknown[]) { this.filters.push({ column, value, op: 'in' } as any); return this; }
   order() { return this; }
   limit(count: number) { this.limitCount = count; return this; }
   or(filter: string) { this.orFilter = filter; return this; }
@@ -43,6 +44,7 @@ class MockQuery {
       if (filter.op === 'eq') rows = rows.filter((row) => row[filter.column] === filter.value);
       if (filter.op === 'neq') rows = rows.filter((row) => row[filter.column] !== filter.value);
       if (filter.op === 'not_null') rows = rows.filter((row) => row[filter.column] != null);
+      if ((filter as any).op === 'in') rows = rows.filter((row) => ((filter as any).value as unknown[]).includes(row[filter.column]));
     }
     if (this.orFilter) {
       const clauses = this.orFilter.split(',').map((clause) => clause.split('.'));
@@ -69,16 +71,16 @@ describe('integration registry', () => {
     expect(byId.aftership.buildStatus).toBe('live');
     expect(byId.ups.buildStatus).toBe('live');
     expect(byId.fedex.buildStatus).toBe('live');
-    expect(byId.source_documents.buildStatus).toBe('slot_only');
+    expect(byId.document_upload.buildStatus).toBe('live');
+    expect(byId.self_fulfillment_pack.buildStatus).toBe('live');
     expect(byId.shipbob.buildStatus).toBe('slot_only');
     expect(byId.loop.buildStatus).toBe('slot_only');
     expect(byId.stripe.buildStatus).toBe('slot_only');
-    expect(byId.gmail.buildStatus).toBe('slot_only');
-    expect(byId.amazon_marketplace.buildStatus).toBe('slot_only');
-    expect(byId.slack.buildStatus).toBe('slot_only');
+    expect(byId.gmail).toBeUndefined();
+    expect(byId.amazon_marketplace).toBeUndefined();
+    expect(byId.slack).toBeUndefined();
     expect(byId.carrier_claims.buildStatus).toBe('slot_only');
     expect(byId.carrier_claims.evidenceCapabilities).toEqual(expect.arrayContaining([
-      'carrier_lost_confirmation',
       'carrier_claim_submission_status',
       'carrier_claim_outcome',
       'recovery_amount_approved',
@@ -87,7 +89,27 @@ describe('integration registry', () => {
     expect(byId.shipbob.evidenceCapabilities).toEqual(
       expect.arrayContaining(['warehouse_pick_pack', 'warehouse_exception', 'three_pl_sla_claim_status']),
     );
-    expect(byId.loop.evidenceCapabilities).toEqual(expect.arrayContaining(['return_request_status', 'return_inspection_outcome', 'return_authorisation']));
+    expect(byId.loop.evidenceCapabilities).toEqual(expect.arrayContaining(['return_request_status', 'return_inspection_outcome']));
+    expect(new Set(INTEGRATION_PROVIDERS.map((provider) => provider.id))).toEqual(new Set([
+      'shopify',
+      'gorgias',
+      'aftership',
+      'ups',
+      'fedex',
+      'document_upload',
+      'self_fulfillment_pack',
+      'shipbob',
+      'shiphero',
+      'extensiv',
+      'shipmonk',
+      'loop',
+      'returngo',
+      'narvar',
+      'stripe',
+      'paypal',
+      'adyen',
+      'carrier_claims',
+    ]));
   });
 
   it('does not expose a location coordinate capability', () => {
@@ -161,6 +183,7 @@ describe('evidence assembly', () => {
         source_orders: [],
         source_refunds: [],
         source_fulfillments: [],
+        category_applicability: [],
         integration_evidence_items: [
           {
             id: 'e1',
@@ -181,7 +204,7 @@ describe('evidence assembly', () => {
             merchant_id: 'm1',
             support_payout_case_id: 'c1',
             source_provider: 'shipbob',
-            source_category: '3pl',
+            source_category: 'warehouse_3pl',
             evidence_type: 'contract_terms',
             title: 'Should not surface',
             summary: 'Slot-only row should be ignored',
@@ -231,6 +254,8 @@ describe('integration security migration', () => {
       'integration_evidence_items',
       'integration_documents',
       'extracted_partner_terms',
+      'category_applicability',
+      'pack_confirmations',
     ]) {
       expect(migration).toContain(`alter table public.${table} enable row level security`);
     }

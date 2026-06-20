@@ -138,13 +138,28 @@ async function resolveSourceTicketId(
   ticketExternalId: string | null,
   ticketId: string | null,
 ): Promise<string | null> {
-  if (ticketId?.trim()) return ticketId.trim();
-  if (!ticketExternalId?.trim()) return null;
+  const externalCandidate = ticketExternalId?.trim() || ticketId?.trim() || null;
+  if (!externalCandidate) return null;
+
+  const isUuid =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      externalCandidate,
+    );
+  if (isUuid) {
+    const { data: byId } = await client
+      .from('source_tickets')
+      .select('id')
+      .eq('merchant_id', merchantId)
+      .eq('id', externalCandidate)
+      .maybeSingle();
+    if (byId?.id) return String(byId.id);
+  }
+
   const { data } = await client
     .from('source_tickets')
     .select('id')
     .eq('merchant_id', merchantId)
-    .eq('external_id', ticketExternalId.trim())
+    .eq('external_id', externalCandidate)
     .maybeSingle();
   return data?.id ? String(data.id) : null;
 }

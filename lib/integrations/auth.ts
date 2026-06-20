@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { decryptBigCommerceOAuthCredentials } from '@/lib/commerce/credentialCrypto';
+import { getCategoryApplicabilityMap, providerAppliesToMerchant } from '@/lib/integrations/applicability';
 import { getIntegrationProvider, INTEGRATION_PROVIDERS } from '@/lib/integrations/registry';
 import { decryptIntegrationCredentials, encryptIntegrationCredentials } from '@/lib/integrations/secrets';
 import type {
@@ -45,6 +46,7 @@ export async function getStoredIntegrationViews(
       .eq('provider', 'gorgias')
       .limit(1),
   ]);
+  const applicability = await getCategoryApplicabilityMap(client, merchantId);
 
   const integrationByProvider = new Map(
     ((integrationRows ?? []) as IntegrationRow[]).map((row) => [row.provider_id, row]),
@@ -52,7 +54,7 @@ export async function getStoredIntegrationViews(
   const shopify = shopifyRows?.[0] as any;
   const gorgias = gorgiasRows?.[0] as any;
 
-  return INTEGRATION_PROVIDERS.map((provider) => {
+  return INTEGRATION_PROVIDERS.filter((provider) => providerAppliesToMerchant(provider, applicability)).map((provider) => {
     if (provider.id === 'shopify') {
       return {
         ...provider,

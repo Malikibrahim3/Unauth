@@ -57,6 +57,8 @@ const envSchema = z.object({
   STRIPE_PRICE_TOPUP: z.string().min(1).optional(),
   /** Internal notification for Scale "Contact us" requests. */
   BILLING_CONTACT_EMAIL: z.string().email().optional(),
+  /** Local/test-only secret for /api/test/e2e-auth — never set in production. */
+  E2E_AUTH_SECRET: z.string().min(16).optional(),
 }).superRefine((env, ctx) => {
   if (!env.NEXT_PUBLIC_SUPABASE_ANON_KEY && !env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) {
     ctx.addIssue({

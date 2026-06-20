@@ -9,7 +9,7 @@ export const aftershipProvider: IntegrationProvider = {
   authMode: 'api_key',
   buildStatus: 'live',
   description: 'Tracking status, carrier, scan history, exceptions, and delivery dates.',
-  evidenceCapabilities: ['tracking_number', 'tracking_events', 'delivery_status', 'tracking_timeline', 'return_tracking'],
+  evidenceCapabilities: ['tracking_number', 'tracking_events', 'delivery_status'],
   capabilities: { readTracking: true },
 };
 

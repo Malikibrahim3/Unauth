@@ -28,14 +28,14 @@ describe('evaluateMissingLossCaseEvidence', () => {
           id: 'shopify',
           name: 'Shopify',
           status: 'connected',
-          evidenceCapabilities: ['order_details', 'payment_record', 'refund_record'],
+          evidenceCapabilities: ['order_value', 'refund_history', 'dispute_status'],
         }),
         provider({
           id: 'gorgias',
           name: 'Gorgias',
           category: 'helpdesk',
           status: 'connected',
-          evidenceCapabilities: ['customer_correspondence'],
+          evidenceCapabilities: ['ticket_messages', 'customer_claim_reason'],
         }),
       ],
     });
@@ -52,23 +52,33 @@ describe('evaluateMissingLossCaseEvidence', () => {
 
   it('keeps unconnected slot-only providers unavailable instead of collectible', () => {
     const missing = evaluateMissingLossCaseEvidence({
-      caseCategory: 'supplier_or_vendor_issue',
-      presentEvidenceTypes: ['purchase_order'],
+      caseCategory: 'chargeback_or_payment_dispute',
+      presentEvidenceTypes: [
+        'order_details',
+        'payment_record',
+        'dispute_reason',
+        'customer_correspondence',
+        'refund_record',
+        'tracking_timeline',
+        'delivery_confirmation',
+        'terms_or_policy_snapshot',
+        'processor_case_update',
+      ],
       providerViews: [
         provider({
-          id: 'netsuite',
-          name: 'NetSuite',
-          category: 'erp',
+          id: 'loop',
+          name: 'Loop',
+          category: 'returns',
           buildStatus: 'slot_only',
-          evidenceCapabilities: ['supplier_invoice', 'vendor_credit_note'],
+          evidenceCapabilities: ['return_request_status', 'return_inspection_outcome'],
         }),
       ],
     });
 
-    expect(missing.find((item) => item.evidenceType === 'supplier_invoice')).toMatchObject({
+    expect(missing.find((item) => item.evidenceType === 'return_status')).toMatchObject({
       currentlyCollectibleAutomatically: false,
       unavailableBecause: 'unsupported_provider_capability',
-      blockedWithoutIt: true,
+      blockedWithoutIt: false,
     });
   });
 
@@ -83,7 +93,7 @@ describe('evaluateMissingLossCaseEvidence', () => {
           name: 'Carrier Claims API',
           category: 'carrier',
           status: 'connected',
-          evidenceCapabilities: ['carrier_lost_confirmation'],
+          evidenceCapabilities: ['delivery_photo', 'signature'],
         }),
       ],
     });

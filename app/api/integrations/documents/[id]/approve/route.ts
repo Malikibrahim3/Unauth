@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
+import {
+  evidenceRowsFromNormalized,
+  mapApprovedPartnerTermsToEvidence,
+} from '@/lib/integrations/evidenceMapper';
 
 const approveSchema = z.object({
   partner_type: z.enum(['carrier', 'three_pl', 'supplier', 'insurer']).default('carrier'),
@@ -63,5 +67,14 @@ export async function POST(
     .eq('merchant_id', ctx.merchantId);
   if (docError) return NextResponse.json({ error: docError.message }, { status: 500 });
 
-  return NextResponse.json({ terms });
+  const evidence = mapApprovedPartnerTermsToEvidence(terms, {
+    merchantId: ctx.merchantId,
+    now,
+  });
+  const { error: evidenceError } = await serviceClient
+    .from('integration_evidence_items')
+    .upsert(evidenceRowsFromNormalized(evidence), { onConflict: 'id' });
+  if (evidenceError) return NextResponse.json({ error: evidenceError.message }, { status: 500 });
+
+  return NextResponse.json({ terms, evidence_items: evidence.length });
 }

@@ -3,19 +3,12 @@ export type IntegrationCategory =
   | 'helpdesk'
   | 'tracking'
   | 'carrier'
-  | 'email'
-  | '3pl'
-  | 'wms'
+  | 'warehouse_3pl'
   | 'returns'
-  | 'payments'
-  | 'chargebacks'
-  | 'marketplace'
-  | 'shipping_protection'
-  | 'erp'
-  | 'supplier'
-  | 'internal_comms';
+  | 'payments_disputes'
+  | 'documents';
 
-export type IntegrationAuthMode = 'oauth' | 'api_key' | 'webhook' | 'custom';
+export type IntegrationAuthMode = 'oauth' | 'api_key' | 'manual_upload';
 export type IntegrationBuildStatus = 'live' | 'slot_only';
 export type IntegrationConnectionStatus =
   | 'connected'
@@ -27,9 +20,6 @@ export type IntegrationConnectionStatus =
   | 'error';
 
 export type EvidenceCapability =
-  | 'read_correspondence'
-  | 'send_correspondence'
-  | 'read_attachments'
   | 'ticket_messages'
   | 'ticket_attachments'
   | 'customer_claim_reason'
@@ -38,7 +28,6 @@ export type EvidenceCapability =
   | 'line_items'
   | 'customer_history'
   | 'refund_history'
-  | 'refund_record'
   | 'reship_history'
   | 'tracking_number'
   | 'tracking_events'
@@ -49,64 +38,17 @@ export type EvidenceCapability =
   | 'chargeback_evidence'
   | 'contract_terms'
   | 'recovery_deadline'
-  | 'order_details'
-  | 'proof_of_value'
-  | 'proof_of_delivery_photo'
-  | 'delivery_gps'
-  | 'carrier_exception_reason'
-  | 'carrier_lost_confirmation'
-  | 'payment_record'
-  | 'payment_transaction'
-  | 'dispute_reason'
-  | 'customer_correspondence'
-  | 'customer_claim_message'
-  | 'tracking_timeline'
-  | 'delivery_confirmation'
-  | 'return_status'
-  | 'processor_case_update'
-  | 'processor_settlement_status'
-  | 'bank_trace_reference'
-  | 'refund_failure_reason'
-  | 'return_authorisation'
-  | 'return_tracking'
   | 'return_request_status'
   | 'return_inspection_outcome'
-  | 'warehouse_receiving_scan'
-  | 'returned_item_condition'
-  | 'returned_sku'
-  | 'package_weight'
-  | 'returns_provider_case_update'
-  | 'fulfilment_record'
-  | 'pick_pack_log'
-  | 'packed_sku'
-  | 'expected_sku'
-  | 'warehouse_confirmation'
-  | 'three_pl_confirmation'
-  | 'purchase_order'
-  | 'supplier_invoice'
-  | 'receiving_record'
-  | 'supplier_correspondence'
-  | 'vendor_credit_note'
-  | 'warehouse_discrepancy_report'
-  | 'marketplace_case_status'
-  | 'marketplace_correspondence'
-  | 'protection_claim_status'
-  | 'handover_scan'
-  | 'warehouse_exception'
-  | 'damage_photo'
-  | 'carrier_damage_report'
-  | 'customs_charge_record'
-  | 'customs_broker_correspondence'
-  | 'duty_tax_invoice'
-  | 'shipment_manifest'
-  | 'subscription_status'
-  | 'digital_fulfilment_log'
   | 'warehouse_pick_pack'
+  | 'warehouse_exception'
   | 'three_pl_sla_claim_status'
   | 'carrier_claim_submission_status'
   | 'carrier_claim_outcome'
   | 'recovery_amount_approved'
-  | 'recovery_amount_paid';
+  | 'recovery_amount_paid'
+  | 'self_reported_pack_confirmation'
+  | 'self_reported_pack_photo';
 
 export type ConnectorCapabilityMap = {
   readOrders?: boolean;
@@ -162,6 +104,16 @@ export const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
   insurance_policy: 'Insurance Policy',
 };
 
+export type ApplicableIntegrationCategory = 'warehouse_3pl' | 'returns';
+export type CategoryApplicabilityStatus = 'applicable' | 'not_applicable';
+
+export type CategoryApplicabilityView = {
+  category: ApplicableIntegrationCategory;
+  status: CategoryApplicabilityStatus;
+  setBy: string | null;
+  setAt: string | null;
+};
+
 export type NormalizedEvidenceItem = {
   id: string;
   merchantId: string;
@@ -200,7 +152,6 @@ export type ProviderConnectionView = IntegrationProvider & {
 
 export type MissingEvidenceReason =
   | 'not_connected'
-  | 'available_on_request'
   | 'not_found'
   | 'attempted_unavailable';
 
@@ -226,6 +177,7 @@ export type EvidencePack = {
     deliveryProof: NormalizedEvidenceItem[];
     dispute: NormalizedEvidenceItem[];
     contractTerms: NormalizedEvidenceItem[];
+    selfFulfillment: NormalizedEvidenceItem[];
   };
   missingEvidence: MissingEvidenceItem[];
   connectedSources: Array<{

@@ -326,7 +326,7 @@ export function mapApprovedPartnerTermsToEvidence(
   const items: NormalizedEvidenceItem[] = [
     createEvidence({
       ...input,
-      sourceProvider: 'source_documents',
+      sourceProvider: 'document_upload',
       evidenceType: 'contract_terms',
       title: 'Approved partner terms',
       summary: `${terms.partner_type ?? 'Partner'} terms approved`,
@@ -339,7 +339,7 @@ export function mapApprovedPartnerTermsToEvidence(
   if (terms.claim_deadline_days != null) {
     items.push(createEvidence({
       ...input,
-      sourceProvider: 'source_documents',
+      sourceProvider: 'document_upload',
       evidenceType: 'recovery_deadline',
       title: 'Recovery claim deadline',
       summary: `${terms.claim_deadline_days} day claim deadline`,
@@ -348,6 +348,45 @@ export function mapApprovedPartnerTermsToEvidence(
       rawReference: terms.document_id ?? terms.id ?? null,
     }));
   }
+  return items;
+}
+
+export function mapSelfFulfillmentPackConfirmationToEvidence(
+  confirmation: Record<string, any>,
+  input: BaseMapInput,
+): NormalizedEvidenceItem[] {
+  const reference = firstString(confirmation.order_id, confirmation.fulfillment_id, confirmation.id);
+  const confirmedAt = firstDate(confirmation.confirmed_at, confirmation.created_at);
+  const items: NormalizedEvidenceItem[] = [
+    createEvidence({
+      ...input,
+      sourceProvider: 'self_fulfillment_pack',
+      evidenceType: 'self_reported_pack_confirmation',
+      title: 'Self-reported pack confirmation',
+      summary: confirmation.item_match_confirmed === true
+        ? 'Self-reported by merchant: item, SKU, and quantity confirmed at pack time'
+        : 'Self-reported by merchant: pack confirmation recorded without item match confirmation',
+      confidence: 'low',
+      value: confirmation.item_match_confirmed === true,
+      occurredAt: confirmedAt,
+      rawReference: reference,
+    }),
+  ];
+
+  if (confirmation.photo_url) {
+    items.push(createEvidence({
+      ...input,
+      sourceProvider: 'self_fulfillment_pack',
+      evidenceType: 'self_reported_pack_photo',
+      title: 'Self-reported pack photo',
+      summary: 'Self-reported by merchant: optional pack-time photo attached',
+      confidence: 'low',
+      value: String(confirmation.photo_url),
+      occurredAt: confirmedAt,
+      rawReference: reference,
+    }));
+  }
+
   return items;
 }
 

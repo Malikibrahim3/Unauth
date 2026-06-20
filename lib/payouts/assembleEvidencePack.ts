@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   mapGorgiasTicketToEvidence,
+  mapApprovedPartnerTermsToEvidence,
   mapShopifyFulfillmentToEvidence,
   mapShopifyOrderToEvidence,
   mapShopifyRefundToEvidence,
@@ -75,6 +76,7 @@ export async function assembleEvidencePack(input: AssembleEvidencePackInput): Pr
   const evidenceFilters = [
     input.supportPayoutCaseId ? `support_payout_case_id.eq.${input.supportPayoutCaseId}` : '',
     input.trackingNumber ? `raw_reference.eq.${input.trackingNumber}` : '',
+    input.orderId ? `raw_reference.eq.${input.orderId}` : '',
   ].filter(Boolean);
   let integrationEvidenceQuery = input.client
     .from('integration_evidence_items')
@@ -90,6 +92,7 @@ export async function assembleEvidencePack(input: AssembleEvidencePackInput): Pr
     refundRes,
     fulfillmentRes,
     integrationEvidenceRes,
+    partnerTermsRes,
   ] = await Promise.all([
     input.ticketId
       ? input.client
@@ -122,6 +125,13 @@ export async function assembleEvidencePack(input: AssembleEvidencePackInput): Pr
           .eq('source_order_id', input.orderId)
       : Promise.resolve({ data: [], error: null }),
     integrationEvidenceQuery,
+    input.orderId || input.supportPayoutCaseId
+      ? input.client
+          .from('extracted_partner_terms')
+          .select('*')
+          .eq('merchant_id', input.merchantId)
+          .not('approved_at', 'is', null)
+      : Promise.resolve({ data: [], error: null }),
   ]);
 
   if (hasConnected(views, 'gorgias')) {
@@ -187,13 +197,35 @@ export async function assembleEvidencePack(input: AssembleEvidencePackInput): Pr
     }
   }
 
-  for (const provider of INTEGRATION_PROVIDERS.filter((candidate) => candidate.buildStatus === 'slot_only')) {
+  for (const terms of (partnerTermsRes.data ?? []) as any[]) {
+    items.push(...mapApprovedPartnerTermsToEvidence(terms, {
+      merchantId: input.merchantId,
+      supportPayoutCaseId: input.supportPayoutCaseId,
+      now: generatedAt,
+    }));
+  }
+
+  if (!hasConnected(views, 'document_upload')) {
+    missingEvidence.push(missing(views, 'document_upload', 'contract_terms', 'not_connected', 'No approved contract documents are connected yet.'));
+  }
+
+  if (views.some((view) => view.id === 'self_fulfillment_pack') && !hasConnected(views, 'self_fulfillment_pack')) {
+    missingEvidence.push(missing(
+      views,
+      'self_fulfillment_pack',
+      'self_reported_pack_confirmation',
+      'not_connected',
+      'Self-fulfillment pack confirmation is not enabled.',
+    ));
+  }
+
+  for (const provider of views.filter((candidate) => candidate.buildStatus === 'slot_only')) {
     missingEvidence.push(missing(
       views,
       provider.id,
       provider.evidenceCapabilities[0] ?? 'contract_terms',
-      'available_on_request',
-      `${provider.name} is not connected. Available on request when a merchant needs this provider.`,
+      'not_connected',
+      `${provider.name} is not connected. This slot shows the evidence it would add once a live connector is implemented for this merchant.`,
     ));
   }
 
@@ -238,6 +270,7 @@ export async function assembleEvidencePack(input: AssembleEvidencePackInput): Pr
       deliveryProof,
       dispute: normalized.filter((item) => item.evidenceType === 'dispute_status' || item.evidenceType === 'chargeback_evidence'),
       contractTerms: normalized.filter((item) => item.evidenceType === 'contract_terms' || item.evidenceType === 'recovery_deadline'),
+      selfFulfillment: normalized.filter((item) => item.evidenceType === 'self_reported_pack_confirmation' || item.evidenceType === 'self_reported_pack_photo'),
     },
     missingEvidence,
     connectedSources,

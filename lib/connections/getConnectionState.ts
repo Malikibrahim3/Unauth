@@ -3,6 +3,7 @@ import { getOrderSourceConnectionStatus } from '@/lib/commerce/connectionStatus'
 import type { OrderSourcePlatform } from '@/lib/commerce/types';
 import { resolveMerchantHelpdeskLink } from '@/lib/support/helpdesk/resolveMerchantHelpdeskLink';
 import { getShopifyConnectionStatus, type ShopifyLinkState } from '@/lib/shopify/connectionStatus';
+import { getTrackingConnectionStatus } from '@/lib/integrations/trackingStatus';
 
 export type HelpdeskProvider = 'gorgias' | 'zendesk' | 'freshdesk';
 
@@ -20,16 +21,19 @@ export type ConnectionState = {
   helpdeskOnlyConnected: boolean;
   shopDomain: string | null;
   linkState: ShopifyLinkState;
+  /** True when at least one tracking/carrier provider (AfterShip, UPS, FedEx) is connected. */
+  trackingConnected: boolean;
 };
 
 export async function getConnectionState(
   serviceClient: SupabaseClient,
   merchantId: string,
 ): Promise<ConnectionState> {
-  const [orderSource, shopifyStatus, helpdeskLink] = await Promise.all([
+  const [orderSource, shopifyStatus, helpdeskLink, trackingConnected] = await Promise.all([
     getOrderSourceConnectionStatus(serviceClient, merchantId),
     getShopifyConnectionStatus(serviceClient, merchantId),
     resolveMerchantHelpdeskLink(serviceClient, merchantId),
+    getTrackingConnectionStatus(serviceClient, merchantId),
   ]);
 
   const orderSourceConnected = orderSource.connected;
@@ -53,5 +57,6 @@ export async function getConnectionState(
     helpdeskOnlyConnected: !orderSourceConnected && helpdesk,
     shopDomain: shopify ? orderSourceStoreKey : shopifyStatus.shopDomain,
     linkState: shopifyStatus.linkState,
+    trackingConnected,
   };
 }

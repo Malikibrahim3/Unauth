@@ -18,6 +18,8 @@ interface OnboardingClientProps {
   initialPlatform?: string;
   initialAnnualVolume?: string;
   initialPrimaryConcern?: string;
+  initialUsesWms3pl?: string;
+  initialUsesReturnsPlatform?: string;
   shopifyConnected?: boolean;
   shopifyShopDomain?: string;
 }
@@ -55,6 +57,8 @@ export default function OnboardingClient({
   initialPlatform = '',
   initialAnnualVolume = '',
   initialPrimaryConcern = '',
+  initialUsesWms3pl = '',
+  initialUsesReturnsPlatform = '',
   shopifyConnected = false,
   shopifyShopDomain = '',
 }: OnboardingClientProps) {
@@ -66,6 +70,8 @@ export default function OnboardingClient({
       initialPlatform,
       initialAnnualVolume,
       initialPrimaryConcern,
+      initialUsesWms3pl,
+      initialUsesReturnsPlatform,
       shopifyShopDomain,
     },
     (input) => createInitialOnboardingState(input),
@@ -76,6 +82,8 @@ export default function OnboardingClient({
     platform,
     annualVolume,
     primaryConcern,
+    usesWms3pl,
+    usesReturnsPlatform,
     loading,
     skipLoading,
     error,
@@ -97,6 +105,8 @@ export default function OnboardingClient({
         platform,
         monthlyOrderVolume: annualVolume,
         primaryFraudConcern: primaryConcern,
+        usesWms3pl: usesWms3pl ? usesWms3pl === 'yes' : undefined,
+        usesReturnsPlatform: usesReturnsPlatform ? usesReturnsPlatform === 'yes' : undefined,
         setupComplete: true,
       }),
     });
@@ -119,6 +129,8 @@ export default function OnboardingClient({
         platform: platform || undefined,
         monthlyOrderVolume: annualVolume || undefined,
         primaryFraudConcern: primaryConcern || undefined,
+        usesWms3pl: usesWms3pl ? usesWms3pl === 'yes' : undefined,
+        usesReturnsPlatform: usesReturnsPlatform ? usesReturnsPlatform === 'yes' : undefined,
         setupComplete: true,
       }),
     });
@@ -244,6 +256,20 @@ export default function OnboardingClient({
                   {FRAUD_CONCERN_OPTIONS.map((o) => (
                     <option key={o.value} value={o.value}>{o.label}</option>
                   ))}
+                </select>
+              </Field>
+              <Field label="Do you use a WMS or 3PL?">
+                <select aria-label="Do you use a WMS or 3PL?" value={usesWms3pl} onChange={(e) => dispatch({ type: 'patch', patch: { usesWms3pl: e.target.value } })}>
+                  <option value="">Select…</option>
+                  <option value="yes">Yes, we use warehouse software or a 3PL</option>
+                  <option value="no">No, we handle this ourselves</option>
+                </select>
+              </Field>
+              <Field label="Do you use a dedicated returns platform?">
+                <select aria-label="Do you use a dedicated returns platform?" value={usesReturnsPlatform} onChange={(e) => dispatch({ type: 'patch', patch: { usesReturnsPlatform: e.target.value } })}>
+                  <option value="">Select…</option>
+                  <option value="yes">Yes, we use a returns platform</option>
+                  <option value="no">No, we handle returns ourselves</option>
                 </select>
               </Field>
               {error && <p className="md:col-span-2 t-caption" style={{ color: 'var(--risk-critical-fg)' }}>{error}</p>}

@@ -77,7 +77,9 @@ create table if not exists public.integration_evidence_items (
     'carrier_claim_submission_status',
     'carrier_claim_outcome',
     'recovery_amount_approved',
-    'recovery_amount_paid'
+    'recovery_amount_paid',
+    'self_reported_pack_confirmation',
+    'self_reported_pack_photo'
   )),
   title text not null,
   summary text not null,
@@ -132,6 +134,28 @@ create table if not exists public.extracted_partner_terms (
   unique (merchant_id, document_id)
 );
 
+create table if not exists public.category_applicability (
+  merchant_id uuid not null references public.merchants(id) on delete cascade,
+  category text not null check (category in ('warehouse_3pl', 'returns')),
+  status text not null check (status in ('applicable', 'not_applicable')),
+  set_by uuid references auth.users(id) on delete set null,
+  set_at timestamptz not null default now(),
+  primary key (merchant_id, category)
+);
+
+create table if not exists public.pack_confirmations (
+  id uuid primary key default gen_random_uuid(),
+  merchant_id uuid not null references public.merchants(id) on delete cascade,
+  order_id text not null,
+  fulfillment_id text not null,
+  confirmed_by text,
+  item_match_confirmed boolean not null default false,
+  photo_url text,
+  confirmed_at timestamptz not null default now(),
+  created_at timestamptz not null default now(),
+  unique (merchant_id, order_id, fulfillment_id)
+);
+
 create index if not exists merchant_integrations_merchant_idx
   on public.merchant_integrations(merchant_id, provider_id);
 create index if not exists integration_credentials_merchant_idx
@@ -144,6 +168,10 @@ create index if not exists integration_documents_merchant_idx
   on public.integration_documents(merchant_id, document_type);
 create index if not exists extracted_partner_terms_merchant_idx
   on public.extracted_partner_terms(merchant_id, partner_type);
+create index if not exists category_applicability_merchant_idx
+  on public.category_applicability(merchant_id, category);
+create index if not exists pack_confirmations_order_idx
+  on public.pack_confirmations(merchant_id, order_id, fulfillment_id);
 
 drop trigger if exists trg_merchant_integrations_updated on public.merchant_integrations;
 create trigger trg_merchant_integrations_updated before update on public.merchant_integrations
@@ -166,6 +194,8 @@ alter table public.integration_credentials enable row level security;
 alter table public.integration_evidence_items enable row level security;
 alter table public.integration_documents enable row level security;
 alter table public.extracted_partner_terms enable row level security;
+alter table public.category_applicability enable row level security;
+alter table public.pack_confirmations enable row level security;
 
 drop policy if exists merchant_integrations_member_select on public.merchant_integrations;
 create policy merchant_integrations_member_select on public.merchant_integrations
@@ -217,18 +247,46 @@ create policy extracted_partner_terms_admin_write on public.extracted_partner_te
   using (merchant_role(merchant_id) in ('owner', 'admin'))
   with check (merchant_role(merchant_id) in ('owner', 'admin'));
 
+drop policy if exists category_applicability_member_select on public.category_applicability;
+create policy category_applicability_member_select on public.category_applicability
+  for select to authenticated using (is_merchant_member(merchant_id));
+
+drop policy if exists category_applicability_admin_write on public.category_applicability;
+create policy category_applicability_admin_write on public.category_applicability
+  for all to authenticated
+  using (merchant_role(merchant_id) in ('owner', 'admin'))
+  with check (merchant_role(merchant_id) in ('owner', 'admin'));
+
+drop policy if exists pack_confirmations_member_select on public.pack_confirmations;
+create policy pack_confirmations_member_select on public.pack_confirmations
+  for select to authenticated using (is_merchant_member(merchant_id));
+
+drop policy if exists pack_confirmations_admin_write on public.pack_confirmations;
+create policy pack_confirmations_admin_write on public.pack_confirmations
+  for all to authenticated
+  using (merchant_role(merchant_id) in ('owner', 'admin'))
+  with check (merchant_role(merchant_id) in ('owner', 'admin'));
+
 grant all on public.merchant_integrations to service_role;
 grant all on public.integration_credentials to service_role;
 grant all on public.integration_evidence_items to service_role;
 grant all on public.integration_documents to service_role;
 grant all on public.extracted_partner_terms to service_role;
+grant all on public.category_applicability to service_role;
+grant all on public.pack_confirmations to service_role;
 grant select, insert, update, delete on public.merchant_integrations to authenticated;
 grant select on public.integration_evidence_items to authenticated;
 grant select, insert, update, delete on public.integration_documents to authenticated;
 grant select, insert, update, delete on public.extracted_partner_terms to authenticated;
+grant select, insert, update, delete on public.category_applicability to authenticated;
+grant select on public.pack_confirmations to authenticated;
 
 insert into storage.buckets (id, name, public)
 values ('integration-documents', 'integration-documents', false)
+on conflict (id) do nothing;
+
+insert into storage.buckets (id, name, public)
+values ('pack-confirmation-photos', 'pack-confirmation-photos', false)
 on conflict (id) do nothing;
 
 alter table public.claim_evidence

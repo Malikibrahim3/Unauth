@@ -41,12 +41,23 @@ export default async function OnboardingPage() {
       .eq('platform', 'shopify')
       .maybeSingle()
     : Promise.resolve({ data: null });
+  const applicabilityPromise = ctx
+    ? serviceClient
+      .from(TABLES.CATEGORY_APPLICABILITY)
+      .select('category,status')
+      .eq('merchant_id', ctx.merchantId)
+      .in('category', ['warehouse_3pl', 'returns'])
+    : Promise.resolve({ data: [] });
 
-  const [merchant, { data: jobs }, { data: shopifyConnection }] = await Promise.all([
+  const [merchant, { data: jobs }, { data: shopifyConnection }, { data: applicabilityRows }] = await Promise.all([
     merchantPromise,
     jobsPromise,
     shopifyPromise,
+    applicabilityPromise,
   ]);
+  const applicability = new Map(
+    ((applicabilityRows ?? []) as Array<{ category: string; status: string }>).map((row) => [row.category, row.status]),
+  );
 
   const setupComplete =
     merchant?.setup_complete === true || user.user_metadata?.setup_complete === true;
@@ -73,6 +84,20 @@ export default async function OnboardingPage() {
         merchant?.primary_fraud_concern ??
         (user.user_metadata?.primary_fraud_concern as string | undefined) ??
         ''
+      }
+      initialUsesWms3pl={
+        applicability.get('warehouse_3pl') === 'not_applicable'
+          ? 'no'
+          : applicability.has('warehouse_3pl')
+            ? 'yes'
+            : ''
+      }
+      initialUsesReturnsPlatform={
+        applicability.get('returns') === 'not_applicable'
+          ? 'no'
+          : applicability.has('returns')
+            ? 'yes'
+            : ''
       }
       shopifyConnected={!!(shopifyConnection as StoreConnectionRow | null)?.store_key}
       shopifyShopDomain={(shopifyConnection as StoreConnectionRow | null)?.store_key ?? ''}

@@ -1,12 +1,12 @@
 import type { DocumentType, IntegrationProvider } from '@/lib/integrations/types';
 
 export const documentUploadProvider: IntegrationProvider = {
-  id: 'source_documents',
-  name: 'Source document connectors',
-  category: 'erp',
-  authMode: 'custom',
-  buildStatus: 'slot_only',
-  description: 'Source-backed contract, policy, supplier, and carrier terms from connected systems.',
+  id: 'document_upload',
+  name: 'Document Upload',
+  category: 'documents',
+  authMode: 'manual_upload',
+  buildStatus: 'live',
+  description: 'Merchant-approved carrier, 3PL, supplier, and insurance terms.',
   evidenceCapabilities: ['contract_terms', 'recovery_deadline'],
   capabilities: { readAttachments: true },
 };

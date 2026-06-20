@@ -7,7 +7,7 @@ export const upsProvider: IntegrationProvider = {
   authMode: 'oauth',
   buildStatus: 'live',
   description: 'Attempts to retrieve UPS signature or delivery photo when captured for the shipment.',
-  evidenceCapabilities: ['delivery_photo', 'proof_of_delivery_photo', 'signature'],
+  evidenceCapabilities: ['delivery_photo', 'signature'],
   capabilities: { readTracking: true, readAttachments: true },
 };
 

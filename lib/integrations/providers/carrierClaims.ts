@@ -8,8 +8,6 @@ export const carrierClaimsProvider: IntegrationProvider = {
   buildStatus: 'slot_only',
   description: 'Carrier claim submission, claim outcome, and recovery payment status.',
   evidenceCapabilities: [
-    'carrier_exception_reason',
-    'carrier_lost_confirmation',
     'carrier_claim_submission_status',
     'carrier_claim_outcome',
     'recovery_amount_approved',

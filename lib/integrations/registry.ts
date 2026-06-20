@@ -9,11 +9,11 @@ import { loopReturnsProvider } from '@/lib/integrations/providers/loopReturns';
 import { narvarProvider } from '@/lib/integrations/providers/narvar';
 import { paypalProvider } from '@/lib/integrations/providers/paypal';
 import { returngoProvider } from '@/lib/integrations/providers/returngo';
+import { selfFulfillmentProvider } from '@/lib/integrations/providers/selfFulfillment';
 import { shipbobProvider } from '@/lib/integrations/providers/shipbob';
 import { shipheroProvider } from '@/lib/integrations/providers/shiphero';
 import { shipmonkProvider } from '@/lib/integrations/providers/shipmonk';
 import { shopifyProvider } from '@/lib/integrations/providers/shopify';
-import { sourceBackedSlotProviders } from '@/lib/integrations/providers/sourceBackedSlots';
 import { stripeProvider } from '@/lib/integrations/providers/stripe';
 import { upsProvider } from '@/lib/integrations/providers/ups';
 import type { IntegrationBuildStatus, IntegrationCategory, IntegrationProvider } from '@/lib/integrations/types';
@@ -25,6 +25,7 @@ export const INTEGRATION_PROVIDERS: IntegrationProvider[] = [
   upsProvider,
   fedexProvider,
   documentUploadProvider,
+  selfFulfillmentProvider,
   shipbobProvider,
   shipheroProvider,
   extensivProvider,
@@ -36,7 +37,6 @@ export const INTEGRATION_PROVIDERS: IntegrationProvider[] = [
   paypalProvider,
   adyenProvider,
   carrierClaimsProvider,
-  ...sourceBackedSlotProviders,
 ];
 
 const providerById = new Map(INTEGRATION_PROVIDERS.map((provider) => [provider.id, provider]));
@@ -60,17 +60,10 @@ export function integrationProvidersByCategory(): Record<IntegrationCategory, In
     helpdesk: [],
     tracking: [],
     carrier: [],
-    email: [],
-    '3pl': [],
-    wms: [],
+    warehouse_3pl: [],
     returns: [],
-    payments: [],
-    chargebacks: [],
-    marketplace: [],
-    shipping_protection: [],
-    erp: [],
-    supplier: [],
-    internal_comms: [],
+    payments_disputes: [],
+    documents: [],
   } as Record<IntegrationCategory, IntegrationProvider[]>);
 }
 

@@ -4,6 +4,7 @@ import { createServiceClient } from '@/lib/supabase/server';
 import { linkCheckoutSignalsToOrder } from '@/lib/checkoutSignals/linkOrder';
 import { normaliseAddress, normaliseCard } from '@/lib/identity/normalise';
 import { emitIdentityObservations, type ObservationEntity } from '@/lib/identity/observations';
+import { maybeTriggerPackConfirmation } from '@/lib/fulfillment/packConfirmation';
 import { linkClaimToIdentity, resolveIdentitiesForKeys } from '@/lib/identity/resolver';
 import { TABLES } from '@/lib/supabase/tables';
 
@@ -396,6 +397,31 @@ async function processFulfillmentTopic(
       { onConflict: 'merchant_id,source_order_id,external_id' },
     );
   if (error) throw new Error(`source_fulfillment_upsert_failed: ${error.message}`);
+
+  try {
+    const { data: fulfillment } = await supabase
+      .from('source_fulfillments')
+      .select('id')
+      .eq('merchant_id', merchantId)
+      .eq('source_order_id', order.id)
+      .eq('external_id', String(payload.id))
+      .maybeSingle();
+    if (!fulfillment?.id) return;
+    await maybeTriggerPackConfirmation({
+      client: supabase,
+      merchantId,
+      orderId: order.id,
+      fulfillmentId: fulfillment.id,
+      recipient: typeof payload.receipt?.email === 'string' ? payload.receipt.email : null,
+    });
+  } catch (triggerError) {
+    console.error('Self-fulfillment pack confirmation trigger failed', {
+      merchantId,
+      orderId: order.id,
+      fulfillmentExternalId: payload.id != null ? String(payload.id) : null,
+      message: triggerError instanceof Error ? triggerError.message : 'unknown',
+    });
+  }
 }
 
 function mapDisputeStatusToClaimStatus(status: unknown): 'escalated' | 'resolved_won' | 'resolved_lost' {

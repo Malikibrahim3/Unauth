@@ -174,8 +174,13 @@ describe('ingestSupportCase — v2 support payout intake', () => {
     expect(result.is_claim).toBe(false);
     expect(result.claim_type).toBeNull();
     expect(result.claim_type_confidence).toBeNull();
-    expect(result.merchant_claim_id).toBeNull();
-    expect(rowsOf(client, TABLES.MERCHANT_CLAIMS)).toHaveLength(0);
+    expect(result.merchant_claim_id).not.toBeNull();
+    expect(rowsOf(client, TABLES.MERCHANT_CLAIMS)).toHaveLength(1);
+    expect(rowsOf(client, TABLES.MERCHANT_CLAIMS)[0]).toMatchObject({
+      status: 'new',
+      claim_type: 'other',
+      requires_review: true,
+    });
   });
 
   it('upserts a duplicate ticket id instead of duplicating', async () => {
@@ -188,7 +193,7 @@ describe('ingestSupportCase — v2 support payout intake', () => {
     expect(intake).toHaveLength(1);
   });
 
-  it('writes a non-claim ticket to intake but not to support payout cases', async () => {
+  it('writes a non-claim ticket to intake and creates a needs-classification payout case', async () => {
     const client = createMemoryClient();
     const result = await ingestSupportCase(
       client,
@@ -200,7 +205,13 @@ describe('ingestSupportCase — v2 support payout intake', () => {
 
     expect(result.is_claim).toBe(false);
     expect(caseRows(client)).toHaveLength(1);
-    expect(rowsOf(client, TABLES.MERCHANT_CLAIMS)).toHaveLength(0);
+    expect(caseRows(client)[0]).toMatchObject({ subject: 'Sizing question' });
+    expect(rowsOf(client, TABLES.MERCHANT_CLAIMS)).toHaveLength(1);
+    expect(rowsOf(client, TABLES.MERCHANT_CLAIMS)[0]).toMatchObject({
+      status: 'new',
+      claim_type: 'other',
+      requires_review: true,
+    });
   });
 
   it('links a payout case to a source order when order context is available', async () => {

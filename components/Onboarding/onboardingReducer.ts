@@ -4,6 +4,8 @@ export type OnboardingState = {
   platform: string;
   annualVolume: string;
   primaryConcern: string;
+  usesWms3pl: string;
+  usesReturnsPlatform: string;
   loading: boolean;
   skipLoading: boolean;
   error: string;
@@ -18,6 +20,8 @@ export function createInitialOnboardingState(input: {
   initialPlatform: string;
   initialAnnualVolume: string;
   initialPrimaryConcern: string;
+  initialUsesWms3pl: string;
+  initialUsesReturnsPlatform: string;
   shopifyShopDomain: string;
 }): OnboardingState {
   return {
@@ -26,6 +30,8 @@ export function createInitialOnboardingState(input: {
     platform: input.initialPlatform,
     annualVolume: input.initialAnnualVolume,
     primaryConcern: input.initialPrimaryConcern,
+    usesWms3pl: input.initialUsesWms3pl,
+    usesReturnsPlatform: input.initialUsesReturnsPlatform,
     loading: false,
     skipLoading: false,
     error: '',

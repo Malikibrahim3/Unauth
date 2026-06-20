@@ -36,6 +36,10 @@ export async function POST(
   if (provider.id === 'gorgias') {
     return NextResponse.json({ ok: true, redirect: '/settings/integrations/gorgias' });
   }
+  if (provider.id === 'self_fulfillment_pack') {
+    await upsertMerchantIntegration(serviceClient, ctx.merchantId, provider, 'connected', { lastError: null });
+    return NextResponse.json({ ok: true, provider: provider.id, status: 'connected' });
+  }
   if (provider.id !== 'ups' && provider.id !== 'fedex') {
     return NextResponse.json({ error: 'Connect is not supported for this provider.' }, { status: 400 });
   }

@@ -93,10 +93,13 @@ export type NormalizedSupportCaseIntake = ClaimSignalFields & {
   provider_connection_id: string | null;
   external_case_id: string;
   external_url: string | null;
+  customer_email?: string | null;
+  customer_name?: string | null;
   customer_email_hash: string | null;
   customer_identifier: string | null;
   order_ref: string | null;
   shop_domain: string | null;
+  ticket_subject?: string | null;
   claim_reason: string | null;
   customer_message_summary: string | null;
   agent_notes_summary: string | null;
@@ -108,6 +111,8 @@ export type NormalizedSupportCaseIntake = ClaimSignalFields & {
   raw_payload_hash: string;
   created_at_provider: string | null;
   updated_at_provider: string | null;
+  opened_at_provider?: string | null;
+  closed_at_provider?: string | null;
 };
 
 const RESOLUTION_TYPES = ['refund', 'replacement', 'store_credit', 'denied', 'partial_refund'] as const;
@@ -573,16 +578,39 @@ function buildNormalizedBase(
   rawTicket: unknown,
   fields: Omit<
     NormalizedSupportCaseIntake,
-    'merchant_id' | 'provider' | 'provider_connection_id' | 'shop_domain' | 'raw_payload_hash'
-  >
+    | 'merchant_id'
+    | 'provider'
+    | 'provider_connection_id'
+    | 'shop_domain'
+    | 'raw_payload_hash'
+    | 'customer_email'
+    | 'customer_name'
+    | 'ticket_subject'
+    | 'opened_at_provider'
+    | 'closed_at_provider'
+  > &
+    Partial<
+      Pick<
+        NormalizedSupportCaseIntake,
+        'customer_email' | 'customer_name' | 'ticket_subject' | 'opened_at_provider' | 'closed_at_provider'
+      >
+    >
 ): NormalizedSupportCaseIntake {
-  return {
+  const merged = {
     merchant_id: context.merchant_id,
     provider,
     provider_connection_id: context.provider_connection_id ?? null,
     shop_domain: context.shop_domain ?? null,
     raw_payload_hash: hashRawPayload(rawTicket),
     ...fields,
+  };
+  return {
+    ...merged,
+    customer_email: merged.customer_email ?? null,
+    customer_name: merged.customer_name ?? null,
+    ticket_subject: merged.ticket_subject ?? null,
+    opened_at_provider: merged.opened_at_provider ?? null,
+    closed_at_provider: merged.closed_at_provider ?? null,
   };
 }
 
@@ -745,12 +773,23 @@ export function normalizeGorgiasTicket(
     explicitOutcome: outcome,
   });
 
+  const customerName = [
+    asString(readPath(ticket, ['customer', 'firstname'])),
+    asString(readPath(ticket, ['customer', 'lastname'])),
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .trim() || null;
+
   return buildNormalizedBase(context, 'gorgias', rawTicket, {
     external_case_id: id,
     external_url: buildGorgiasTicketUrl(ticket, id, context),
+    customer_email: customerEmail,
+    customer_name: customerName,
     customer_email_hash: customerEmail ? hashEmailForContext(context, customerEmail) : null,
     customer_identifier: customerEmail ? hashSupportIdentifier(customerEmail) : null,
     order_ref: orderRef,
+    ticket_subject: subject || null,
     claim_reason: claimReason,
     customer_message_summary: customer ?? (subject ? truncateSupportSummary(subject) : null),
     agent_notes_summary: agent,
@@ -761,6 +800,8 @@ export function normalizeGorgiasTicket(
     tags,
     created_at_provider: asString(ticket.created_datetime ?? ticket.created_at),
     updated_at_provider: asString(ticket.updated_datetime ?? ticket.updated_at),
+    opened_at_provider: asString(ticket.opened_datetime ?? ticket.created_datetime ?? ticket.created_at),
+    closed_at_provider: asString(ticket.closed_datetime),
     ...signals,
   });
 }
@@ -929,6 +970,11 @@ export function toSupportCaseIntakeUpsertInput(
     provider_connection_id: normalized.provider_connection_id,
     external_case_id: normalized.external_case_id,
     external_url: normalized.external_url,
+    customer_email: normalized.customer_email,
+    customer_name: normalized.customer_name,
+    ticket_subject: normalized.ticket_subject,
+    opened_at_provider: normalized.opened_at_provider,
+    closed_at_provider: normalized.closed_at_provider,
     customer_email_hash: normalized.customer_email_hash,
     customer_identifier: normalized.customer_identifier,
     order_ref: normalized.order_ref,

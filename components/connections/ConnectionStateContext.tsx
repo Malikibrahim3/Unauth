@@ -16,6 +16,7 @@ const ConnectionStateContext = createContext<ConnectionState>({
   helpdeskOnlyConnected: false,
   shopDomain: null,
   linkState: 'not_connected',
+  trackingConnected: false,
 });
 
 export function ConnectionStateProvider({
@@ -32,6 +33,6 @@ export function ConnectionStateProvider({
   );
 }
 
-function useConnectionState(): ConnectionState {
+export function useConnectionState(): ConnectionState {
   return useContext(ConnectionStateContext);
 }

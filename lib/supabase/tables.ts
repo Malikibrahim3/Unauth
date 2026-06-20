@@ -63,6 +63,8 @@ export const TABLES = {
   INTEGRATION_EVIDENCE_ITEMS: 'integration_evidence_items',
   INTEGRATION_DOCUMENTS: 'integration_documents',
   EXTRACTED_PARTNER_TERMS: 'extracted_partner_terms',
+  CATEGORY_APPLICABILITY: 'category_applicability',
+  PACK_CONFIRMATIONS: 'pack_confirmations',
   LOSS_CASES: 'loss_cases',
   LOSS_CASE_EVIDENCE: 'loss_case_evidence',
   EXTERNAL_CORRESPONDENCE: 'external_correspondence',
@@ -85,6 +87,7 @@ export const STORAGE_BUCKETS = {
   MERCHANT_CSV_UPLOADS: 'merchant-csv-uploads-2',
   EVIDENCE_PACKAGES: 'evidence-packages',
   INTEGRATION_DOCUMENTS: 'integration-documents',
+  PACK_CONFIRMATION_PHOTOS: 'pack-confirmation-photos',
 } as const;
 
 export const COLUMNS = {

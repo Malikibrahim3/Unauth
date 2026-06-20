@@ -1,14 +1,32 @@
 'use client';
 
+import Link from 'next/link';
 import {
   EVIDENCE_STRENGTH_LABELS,
   type EvidenceChecklistResult,
 } from '@/lib/payouts/types';
 import { TONE_STYLE, strengthTone } from '@/components/claims/payout/payoutCopy';
+import { useConnectionState } from '@/components/connections/ConnectionStateContext';
+
+// Claim types for which delivery / tracking evidence is a meaningful gap.
+const TRACKING_RELEVANT_CLAIM_TYPES = new Set([
+  'item_not_received',
+  'missing_item',
+  'delivery_issue',
+]);
 
 export function EvidenceChecklistCard({ evidence }: { evidence: EvidenceChecklistResult }) {
+  const { trackingConnected } = useConnectionState();
   const tone = TONE_STYLE[strengthTone(evidence.strength)];
   const hasMissing = evidence.items.some((i) => i.state === 'missing');
+
+  // Show a named delivery-evidence gap when claim type is INR-relevant and no
+  // tracking source is connected. This is distinct from a missing checklist item —
+  // it tells the agent WHY the gap exists and what to do about it.
+  const showDeliveryGap =
+    !trackingConnected &&
+    evidence.claimType != null &&
+    TRACKING_RELEVANT_CLAIM_TYPES.has(evidence.claimType);
 
   return (
     <section
@@ -58,7 +76,31 @@ export function EvidenceChecklistCard({ evidence }: { evidence: EvidenceChecklis
         </ul>
       )}
 
-      {hasMissing && (
+      {/* Delivery evidence gap — shown when tracking is not connected on INR-type cases */}
+      {showDeliveryGap ? (
+        <div
+          className="mt-3 flex items-start gap-2 rounded-md border px-3 py-2.5 text-xs"
+          style={{
+            borderColor: 'color-mix(in srgb, var(--warning) 25%, var(--border))',
+            background: 'color-mix(in srgb, var(--warning) 6%, var(--surface))',
+          }}
+        >
+          <span aria-hidden style={{ color: 'var(--warning)', lineHeight: '1.5' }}>!</span>
+          <span style={{ color: 'var(--text-secondary)' }}>
+            <span className="font-semibold" style={{ color: 'var(--text)' }}>Delivery evidence: not connected.</span>{' '}
+            Tracking data is unavailable for this case.{' '}
+            <Link
+              href="/settings/integrations"
+              className="font-medium underline underline-offset-2"
+              style={{ color: 'var(--warning)' }}
+            >
+              Connect a tracking source →
+            </Link>
+          </span>
+        </div>
+      ) : null}
+
+      {hasMissing && !showDeliveryGap && (
         <p className="mt-3 text-xs" style={{ color: 'var(--text-secondary)' }}>
           Missing items weaken the case — request evidence from the customer or carrier before paying out.
         </p>

@@ -16,7 +16,6 @@ export const evidenceRequirements: Record<LossCaseCategory, EvidenceRequirementS
     ],
     recommended: [
       'proof_of_delivery_photo',
-      'delivery_gps',
       'signature',
       'carrier_exception_reason',
       'carrier_lost_confirmation',
@@ -251,14 +250,6 @@ const SOURCE_PLAN: Record<string, EvidenceSourcePlan> = {
   },
   proof_of_delivery_photo: {
     whyItMatters: 'Can clarify delivered-but-not-received disputes without relying on screenshots.',
-    likelySourceProvider: 'carrier_api',
-    connectorRequired: 'carrier',
-    counterpartyType: 'carrier',
-    clarificationShouldBeRequested: true,
-    blockedWithoutIt: false,
-  },
-  delivery_gps: {
-    whyItMatters: 'May confirm location evidence where a carrier exposes it.',
     likelySourceProvider: 'carrier_api',
     connectorRequired: 'carrier',
     counterpartyType: 'carrier',

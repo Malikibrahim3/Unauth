@@ -1,284 +1,429 @@
 'use client';
 
-import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
-import { CheckCircle2, Plug, RefreshCw, ShieldCheck, Unplug } from 'lucide-react';
-import { useFetchJson } from '@/lib/react/useFetchJson';
-import {
-  type EvidenceCapability,
-  type IntegrationCategory,
-  type ProviderConnectionView,
-} from '@/lib/integrations/types';
+import Image from 'next/image';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { AlertTriangle, ArrowRight, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, ShieldCheck, Upload, X } from 'lucide-react';
+import { useFetchJson, useAsyncResource } from '@/lib/react/useFetchJson';
+import { fetchIntegrationConnectionStatus } from '@/components/settings/fetchIntegrationConnectionStatus';
+import type { EvidenceCapability, ProviderConnectionView } from '@/lib/integrations/types';
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 
 type IntegrationsResponse = {
   providers: ProviderConnectionView[];
+  categoryApplicability?: Array<{ category: string; status: string; setAt: string | null }>;
+  paymentSetup?: {
+    shopifyPaymentsCovered: boolean | null;
+    inferredProcessor: 'stripe' | 'paypal' | 'adyen' | 'other' | null;
+    processorSelection: 'stripe' | 'paypal' | 'adyen' | 'other' | null;
+  };
 };
 
-type ConnectTarget = ProviderConnectionView | null;
-type SyncTarget = ProviderConnectionView | null;
+type ApplicabilityCategory = 'warehouse_3pl' | 'returns';
+type ApplicabilityState = 'pending' | 'applicable' | 'not_applicable';
+type PaymentProcessorChoice = 'stripe' | 'paypal' | 'adyen' | 'other';
 
-const CAPABILITY_LABELS: Partial<Record<EvidenceCapability, string>> = {
-  read_correspondence: 'read correspondence',
-  send_correspondence: 'send correspondence',
-  read_attachments: 'read attachments',
-  ticket_messages: 'ticket messages',
-  ticket_attachments: 'ticket attachments',
-  customer_claim_reason: 'claim reason',
-  requested_action: 'requested action',
-  order_value: 'order value',
-  line_items: 'line items',
-  customer_history: 'customer history',
-  refund_history: 'refund history',
-  reship_history: 'reship history',
-  tracking_number: 'tracking number',
-  tracking_events: 'tracking events',
-  delivery_status: 'delivery status',
-  delivery_photo: 'delivery photo',
-  signature: 'signature',
-  dispute_status: 'dispute status',
-  chargeback_evidence: 'chargeback evidence',
-  contract_terms: 'contract terms',
-  recovery_deadline: 'recovery deadline',
-  order_details: 'order details',
-  proof_of_value: 'proof of value',
-  payment_record: 'payment record',
-  payment_transaction: 'payment transaction',
-  dispute_reason: 'dispute reason',
-  customer_correspondence: 'customer correspondence',
-  customer_claim_message: 'customer claim message',
-  tracking_timeline: 'tracking timeline',
-  delivery_confirmation: 'delivery confirmation',
-  proof_of_delivery_photo: 'delivery photo proof',
-  delivery_gps: 'delivery GPS',
-  carrier_exception_reason: 'carrier exception reason',
-  carrier_lost_confirmation: 'carrier lost confirmation',
-  processor_case_update: 'processor case update',
-  processor_settlement_status: 'processor settlement status',
-  bank_trace_reference: 'bank trace reference',
-  refund_failure_reason: 'refund failure reason',
-  return_authorisation: 'return authorisation',
-  return_tracking: 'return tracking',
-  return_status: 'return status',
-  return_request_status: 'return request status',
-  return_inspection_outcome: 'return inspection outcome',
-  warehouse_receiving_scan: 'warehouse receiving scan',
-  returned_item_condition: 'returned item condition',
-  returned_sku: 'returned SKU',
-  package_weight: 'package weight',
-  returns_provider_case_update: 'returns provider case update',
-  fulfilment_record: 'fulfilment record',
-  pick_pack_log: 'pick/pack log',
-  packed_sku: 'packed SKU',
-  expected_sku: 'expected SKU',
-  warehouse_confirmation: 'warehouse confirmation',
-  three_pl_confirmation: '3PL confirmation',
-  purchase_order: 'purchase order',
-  supplier_invoice: 'supplier invoice',
-  receiving_record: 'receiving record',
-  supplier_correspondence: 'supplier correspondence',
-  vendor_credit_note: 'vendor credit note',
-  warehouse_discrepancy_report: 'warehouse discrepancy report',
-  marketplace_case_status: 'marketplace case status',
-  marketplace_correspondence: 'marketplace correspondence',
-  protection_claim_status: 'protection claim status',
-  handover_scan: 'handover scan',
-  warehouse_exception: 'warehouse exception',
-  damage_photo: 'damage photo',
-  carrier_damage_report: 'carrier damage report',
-  customs_charge_record: 'customs charge record',
-  customs_broker_correspondence: 'customs broker correspondence',
-  duty_tax_invoice: 'duty/tax invoice',
-  shipment_manifest: 'shipment manifest',
-  subscription_status: 'subscription status',
-  digital_fulfilment_log: 'digital fulfilment log',
-  warehouse_pick_pack: 'pick/pack record',
-  three_pl_sla_claim_status: '3PL SLA claim status',
-  carrier_claim_submission_status: 'carrier claim submission status',
-  carrier_claim_outcome: 'carrier claim outcome',
-  recovery_amount_approved: 'recovery amount approved',
-  recovery_amount_paid: 'recovery amount paid',
+type StaticPlatform = {
+  id: string;
+  name: string;
+  description: string;
+  logo: string;
+  href: string;
+  comingSoon?: boolean;
 };
 
-function capabilityLabel(capability: EvidenceCapability) {
-  return CAPABILITY_LABELS[capability] ?? capability.replaceAll('_', ' ');
+type UnifiedProvider = {
+  id: string;
+  name: string;
+  description: string;
+  logo: string;
+  connected: boolean;
+  connectionIssue: boolean;
+  detail: string | null;
+  comingSoon?: boolean;
+  // For dynamic providers
+  dynamic?: ProviderConnectionView;
+  // For static platforms
+  href?: string;
+  isShopify?: boolean;
+};
+
+// ---------------------------------------------------------------------------
+// Logo map
+// ---------------------------------------------------------------------------
+
+const PROVIDER_LOGOS: Record<string, string> = {
+  shopify: '/integrations/shopify.svg',
+  gorgias: '/integrations/gorgias.png',
+  aftership: '/integrations/aftership.svg',
+  ups: '/integrations/ups.svg',
+  fedex: '/integrations/fedex.svg',
+  document_upload: '/integrations/document-upload.svg',
+  self_fulfillment_pack: '/integrations/self-fulfillment.svg',
+  shipbob: '/integrations/shipbob.svg',
+  shiphero: '/integrations/shiphero.svg',
+  extensiv: '/integrations/extensiv.png',
+  shipmonk: '/integrations/shipmonk.png',
+  loop_returns: '/integrations/loop-returns.png',
+  returngo: '/integrations/returngo.png',
+  narvar: '/integrations/narvar.png',
+  stripe: '/integrations/stripe.svg',
+  paypal: '/integrations/paypal.svg',
+  adyen: '/integrations/adyen.svg',
+  carrier_claims: '/integrations/carrier-claims.svg',
+  woocommerce: '/integrations/woocommerce.svg',
+  bigcommerce: '/integrations/bigcommerce.svg',
+  magento: '/integrations/magento.svg',
+  freshdesk: '/integrations/freshdesk.png',
+  zendesk: '/integrations/zendesk.svg',
+};
+
+// ---------------------------------------------------------------------------
+// Status badge
+// ---------------------------------------------------------------------------
+
+function StatusBadge({
+  connected,
+  connectionIssue,
+  comingSoon,
+}: {
+  connected: boolean;
+  connectionIssue: boolean;
+  comingSoon?: boolean;
+}) {
+  if (comingSoon) {
+    return (
+      <span
+        className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+        style={{ background: 'var(--bg-inset)', color: 'var(--text-secondary)' }}
+      >
+        Soon
+      </span>
+    );
+  }
+  if (connected) {
+    return (
+      <span
+        className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-semibold"
+        style={{
+          background: 'color-mix(in srgb, var(--success) 12%, transparent)',
+          color: 'var(--success)',
+        }}
+      >
+        <span className="h-1.5 w-1.5 rounded-full bg-current" />
+        Connected
+      </span>
+    );
+  }
+  if (connectionIssue) {
+    return (
+      <span
+        className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-semibold"
+        style={{
+          background: 'color-mix(in srgb, var(--warning) 12%, transparent)',
+          color: 'var(--warning)',
+        }}
+      >
+        <AlertTriangle className="h-3 w-3" />
+        Issue
+      </span>
+    );
+  }
+  return null;
 }
 
-function statusLabel(provider: ProviderConnectionView) {
-  if (provider.buildStatus === 'slot_only') return 'Not connected';
-  if (provider.status === 'connected') return 'Connected';
-  if (provider.status === 'connection_error' || provider.status === 'error') return 'Connection error';
-  if (provider.status === 'syncing') return 'Syncing';
-  if (provider.status === 'disabled') return 'Disabled';
-  return 'Not connected';
-}
+// ---------------------------------------------------------------------------
+// Provider card
+// ---------------------------------------------------------------------------
 
 function ProviderCard({
   provider,
   onConnect,
   onDisconnect,
   onSync,
-  busyProvider,
+  onUpload,
+  busyId,
 }: {
-  provider: ProviderConnectionView;
-  onConnect: (provider: ProviderConnectionView) => void;
-  onDisconnect: (provider: ProviderConnectionView) => void;
-  onSync: (provider: ProviderConnectionView) => void;
-  busyProvider: string | null;
+  provider: UnifiedProvider;
+  onConnect: (p: UnifiedProvider) => void;
+  onDisconnect: (p: UnifiedProvider) => void;
+  onSync: (p: ProviderConnectionView) => void;
+  onUpload: (p: ProviderConnectionView) => void;
+  busyId: string | null;
 }) {
-  const connected = provider.status === 'connected';
-  const slotOnly = provider.buildStatus === 'slot_only';
-  const busy = busyProvider === provider.id;
+  const busy = busyId === provider.id;
+  const dyn = provider.dynamic;
+  const isDocument = provider.id === 'document_upload';
+  const canSync = dyn && !isDocument && provider.id !== 'self_fulfillment_pack';
+
+  const borderColor = provider.connected
+    ? 'color-mix(in srgb, var(--success) 30%, var(--border-muted))'
+    : provider.connectionIssue
+    ? 'color-mix(in srgb, var(--warning) 30%, var(--border-muted))'
+    : 'var(--border-muted)';
+
+  const bgColor = provider.connected
+    ? 'color-mix(in srgb, var(--success) 3%, var(--surface))'
+    : provider.connectionIssue
+    ? 'color-mix(in srgb, var(--warning) 3%, var(--surface))'
+    : 'var(--surface)';
+
   return (
     <div
-      className="rounded-md border p-4"
-      style={{
-        borderColor: connected ? 'color-mix(in srgb, var(--success) 35%, var(--border-muted))' : 'var(--border-muted)',
-        background: 'var(--surface)',
-      }}
+      className="flex flex-col rounded-xl border p-4 transition-shadow"
+      style={{ borderColor, background: bgColor, minHeight: 160 }}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{provider.name}</p>
-          <p className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-            {provider.description ?? provider.evidenceCapabilities.join(' · ')}
-          </p>
-        </div>
-        <span
-          className="shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold"
-          style={{
-            color: connected ? 'var(--success)' : slotOnly ? 'var(--text-secondary)' : 'var(--text)',
-            background: connected ? 'var(--success-bg)' : 'var(--bg-inset)',
-          }}
+      {/* Header row: logo + badge */}
+      <div className="flex items-start justify-between gap-2 mb-3">
+        <div
+          className="h-11 w-11 shrink-0 rounded-xl overflow-hidden flex items-center justify-center p-1.5"
+          style={{ background: 'white', border: '1px solid var(--border-muted)' }}
         >
-          {statusLabel(provider)}
-        </span>
+          <Image
+            src={provider.logo}
+            alt={provider.name}
+            width={44}
+            height={44}
+            className="h-full w-full object-contain"
+          />
+        </div>
+        <StatusBadge
+          connected={provider.connected}
+          connectionIssue={provider.connectionIssue}
+          comingSoon={provider.comingSoon}
+        />
       </div>
-      {provider.detail || provider.lastError ? (
-        <p className="mt-3 text-xs" style={{ color: provider.lastError ? 'var(--warning)' : 'var(--text-secondary)' }}>
-          {provider.lastError ?? provider.detail}
+
+      {/* Name + detail */}
+      <p className="text-sm font-semibold leading-tight" style={{ color: 'var(--text)' }}>
+        {provider.name}
+      </p>
+      {provider.connected && provider.detail ? (
+        <p className="mt-0.5 text-xs truncate" style={{ color: 'var(--text-secondary)' }}>
+          {provider.detail}
         </p>
       ) : null}
-      <p className="mt-3 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-        {slotOnly ? 'Adds' : 'Collects'}: {provider.evidenceCapabilities.map(capabilityLabel).join(', ')}
-      </p>
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        {slotOnly ? (
-          <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-            Slot only. Connectors must be implemented before source data can be collected.
-          </span>
-        ) : connected ? (
-          <>
+      {provider.connectionIssue && !provider.connected ? (
+        <p className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--warning)' }}>
+          Connection lost. Reconnect to restore.
+        </p>
+      ) : (
+        <p className="mt-1 text-xs leading-relaxed flex-1" style={{ color: 'var(--text-secondary)' }}>
+          {provider.description}
+        </p>
+      )}
+
+      {/* Error from dynamic provider */}
+      {dyn?.lastError ? (
+        <p className="mt-1 text-xs" style={{ color: 'var(--warning)' }}>{dyn.lastError}</p>
+      ) : null}
+
+      {/* Actions */}
+      {!provider.comingSoon ? (
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          {isDocument ? (
+            <>
+              <button
+                type="button"
+                onClick={() => dyn && onUpload(dyn)}
+                disabled={busy}
+                className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium disabled:opacity-50"
+                style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
+              >
+                <Upload className="h-3.5 w-3.5" />
+                Upload
+              </button>
+              {provider.connected && (
+                <button
+                  type="button"
+                  onClick={() => onDisconnect(provider)}
+                  disabled={busy}
+                  className="text-xs disabled:opacity-50"
+                  style={{ color: 'var(--text-secondary)' }}
+                >
+                  Remove
+                </button>
+              )}
+            </>
+          ) : provider.connected ? (
+            <>
+              <button
+                type="button"
+                onClick={() => provider.href ? (window.location.href = provider.href) : onDisconnect(provider)}
+                className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium"
+                style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+              >
+                Manage
+              </button>
+              {canSync && dyn ? (
+                <button
+                  type="button"
+                  onClick={() => onSync(dyn)}
+                  disabled={busy}
+                  className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium disabled:opacity-50"
+                  style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  Sync
+                </button>
+              ) : null}
+            </>
+          ) : provider.connectionIssue ? (
             <button
               type="button"
-              onClick={() => onSync(provider)}
+              onClick={() => onConnect(provider)}
               disabled={busy}
-              className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-semibold disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium disabled:opacity-50"
+              style={{
+                borderColor: 'color-mix(in srgb, var(--warning) 40%, var(--border))',
+                color: 'var(--warning)',
+              }}
+            >
+              Reconnect
+              <ArrowRight className="h-3.5 w-3.5" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => onConnect(provider)}
+              disabled={busy}
+              className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium disabled:opacity-50"
               style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
             >
-              <RefreshCw className="h-3.5 w-3.5" />
-              Sync
+              Connect
+              <ArrowRight className="h-3.5 w-3.5" />
             </button>
-            <button
-              type="button"
-              onClick={() => onDisconnect(provider)}
-              disabled={busy}
-              className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-semibold disabled:opacity-60"
-              style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
-            >
-              <Unplug className="h-3.5 w-3.5" />
-              Disconnect
-            </button>
-          </>
-        ) : (
-          <button
-            type="button"
-            onClick={() => onConnect(provider)}
-            disabled={busy}
-            className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-semibold disabled:opacity-60"
-            style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
-          >
-            <Plug className="h-3.5 w-3.5" />
-            Connect
+          )}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Section wrapper
+// ---------------------------------------------------------------------------
+
+function Section({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="space-y-3">
+      <div>
+        <h2 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{title}</h2>
+        {description ? (
+          <p className="mt-0.5 text-xs" style={{ color: 'var(--text-secondary)' }}>{description}</p>
+        ) : null}
+      </div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        {children}
+      </div>
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Shopify connect modal
+// ---------------------------------------------------------------------------
+
+function ShopifyModal({
+  open,
+  onClose,
+  onOpen,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onOpen: (shop: string) => void;
+}) {
+  const [value, setValue] = useState('');
+  const [err, setErr] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (open) { setValue(''); setErr(null); setTimeout(() => inputRef.current?.focus(), 50); }
+  }, [open]);
+
+  if (!open) return null;
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    const raw = value.trim();
+    if (!raw) { setErr('Enter your Shopify store domain.'); return; }
+    onOpen(raw);
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.5)' }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div
+        className="w-full max-w-sm rounded-2xl border p-6 shadow-2xl"
+        style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+      >
+        <div className="flex items-start justify-between mb-5">
+          <div className="flex items-center gap-3">
+            <Image src="/integrations/shopify.svg" alt="Shopify" width={40} height={40} className="h-10 w-10 rounded-xl" />
+            <div>
+              <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Connect Shopify</p>
+              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Opens Shopify to authorise</p>
+            </div>
+          </div>
+          <button type="button" onClick={onClose} style={{ color: 'var(--text-secondary)' }}>
+            <X className="h-4 w-4" />
           </button>
-        )}
+        </div>
+        <form onSubmit={submit} className="space-y-4">
+          <div>
+            <label htmlFor="shopify-domain" className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text)' }}>
+              Store domain
+            </label>
+            <input
+              id="shopify-domain"
+              ref={inputRef}
+              value={value}
+              onChange={(e) => { setValue(e.target.value); setErr(null); }}
+              placeholder="yourstore or yourstore.myshopify.com"
+              className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
+              style={{
+                background: 'var(--bg-inset)',
+                border: `1px solid ${err ? 'var(--risk-critical)' : 'var(--border)'}`,
+                color: 'var(--text)',
+              }}
+            />
+            {err ? (
+              <p className="mt-1.5 text-xs" style={{ color: 'var(--risk-critical)' }}>{err}</p>
+            ) : (
+              <p className="mt-1.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                Shopify opens in a new window so you don&apos;t lose your place.
+              </p>
+            )}
+          </div>
+          <button
+            type="submit"
+            className="w-full rounded-xl px-4 py-2.5 text-sm font-semibold"
+            style={{ background: 'var(--accent)', color: 'white' }}
+          >
+            Continue with Shopify →
+          </button>
+        </form>
       </div>
     </div>
   );
 }
 
-function EvidenceCoverageSummary({
-  providers,
-}: {
-  providers: ProviderConnectionView[];
-}) {
-  const connectedLiveCapabilities = Array.from(new Set(
-    providers
-      .filter((provider) => provider.buildStatus === 'live' && provider.status === 'connected')
-      .flatMap((provider) => provider.evidenceCapabilities),
-  ));
-  const slotCapabilities = Array.from(new Set(
-    providers
-      .filter((provider) => provider.buildStatus === 'slot_only')
-      .flatMap((provider) => provider.evidenceCapabilities),
-  ));
-
-  return (
-    <section className="rounded-md border p-4" style={{ borderColor: 'var(--border-muted)', background: 'var(--surface)' }}>
-      <div className="mb-3">
-        <h2 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Evidence coverage</h2>
-        <p className="mt-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
-          Connected live sources vs. capabilities that only exist on visible slots.
-        </p>
-      </div>
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.08em]" style={{ color: 'var(--text-secondary)' }}>
-            Connected live evidence
-          </p>
-          {connectedLiveCapabilities.length > 0 ? (
-            <ul className="space-y-1.5">
-              {connectedLiveCapabilities.map((capability) => (
-                <li key={capability} className="flex items-center gap-2 text-xs" style={{ color: 'var(--text)' }}>
-                  <CheckCircle2 className="h-3.5 w-3.5" style={{ color: 'var(--success)' }} />
-                  {capabilityLabel(capability)}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>No live evidence source is connected yet.</p>
-          )}
-        </div>
-        <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.08em]" style={{ color: 'var(--text-secondary)' }}>
-            Slot-only coverage
-          </p>
-          <ul className="space-y-1.5">
-            {slotCapabilities.map((capability) => (
-              <li key={capability} className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                <span className="h-3.5 w-3.5 rounded-sm border" style={{ borderColor: 'var(--border)' }} />
-                {capabilityLabel(capability)}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function Section({
-  title,
-  children,
-}: {
-  title: string;
-  children: ReactNode;
-}) {
-  return (
-    <section className="space-y-3">
-      <h2 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{title}</h2>
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">{children}</div>
-    </section>
-  );
-}
+// ---------------------------------------------------------------------------
+// API-key / OAuth connect modal
+// ---------------------------------------------------------------------------
 
 function ConnectModal({
   target,
@@ -286,7 +431,7 @@ function ConnectModal({
   onClose,
   onSubmit,
 }: {
-  target: ConnectTarget;
+  target: UnifiedProvider | null;
   busy: boolean;
   onClose: () => void;
   onSubmit: (payload: Record<string, string>) => Promise<void>;
@@ -299,56 +444,109 @@ function ConnectModal({
   const [environment, setEnvironment] = useState('production');
 
   if (!target) return null;
-  const apiKeyMode = target.id === 'aftership';
-  const oauthMode = target.id === 'ups' || target.id === 'fedex';
 
-  async function submit(event: FormEvent) {
-    event.preventDefault();
-    await onSubmit(apiKeyMode
+  const isApiKey = target.id === 'aftership';
+  const isOAuth = target.id === 'ups' || target.id === 'fedex';
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    await onSubmit(isApiKey
       ? { apiKey, webhookSecret }
       : { clientId, clientSecret, accountNumber, environment });
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,.45)' }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
       <form
         onSubmit={submit}
-        className="w-full max-w-md rounded-md border p-5 shadow-xl"
+        className="w-full max-w-md rounded-2xl border p-6 shadow-2xl"
         style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
       >
-        <div className="mb-4 flex items-start justify-between gap-3">
-          <div>
-            <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Connect {target.name}</p>
-            <p className="mt-1 text-xs" style={{ color: 'var(--text-secondary)' }}>Credentials are encrypted before storage.</p>
+        <div className="flex items-start justify-between mb-5">
+          <div className="flex items-center gap-3">
+            <Image src={target.logo} alt={target.name} width={40} height={40} className="h-10 w-10 rounded-xl" />
+            <div>
+              <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Connect {target.name}</p>
+              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Credentials are encrypted at rest.</p>
+            </div>
           </div>
-          <button type="button" onClick={onClose} className="text-xs" style={{ color: 'var(--text-secondary)' }}>Close</button>
+          <button type="button" onClick={onClose} style={{ color: 'var(--text-secondary)' }}>
+            <X className="h-4 w-4" />
+          </button>
         </div>
 
-        {apiKeyMode ? (
-          <div className="space-y-3">
-            <input value={apiKey} onChange={(e) => setApiKey(e.target.value)} className="w-full rounded-md border px-3 py-2 text-sm" style={{ borderColor: 'var(--border)', background: 'var(--bg-inset)' }} placeholder="AfterShip API key" />
-            <input value={webhookSecret} onChange={(e) => setWebhookSecret(e.target.value)} className="w-full rounded-md border px-3 py-2 text-sm" style={{ borderColor: 'var(--border)', background: 'var(--bg-inset)' }} placeholder="Webhook signing secret (optional)" />
-          </div>
-        ) : oauthMode ? (
-          <div className="space-y-3">
-            <input value={clientId} onChange={(e) => setClientId(e.target.value)} className="w-full rounded-md border px-3 py-2 text-sm" style={{ borderColor: 'var(--border)', background: 'var(--bg-inset)' }} placeholder="OAuth client ID" />
-            <input value={clientSecret} onChange={(e) => setClientSecret(e.target.value)} type="password" className="w-full rounded-md border px-3 py-2 text-sm" style={{ borderColor: 'var(--border)', background: 'var(--bg-inset)' }} placeholder="OAuth client secret" />
-            <input value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} className="w-full rounded-md border px-3 py-2 text-sm" style={{ borderColor: 'var(--border)', background: 'var(--bg-inset)' }} placeholder="Carrier account number" />
-            <select value={environment} onChange={(e) => setEnvironment(e.target.value)} className="w-full rounded-md border px-3 py-2 text-sm" style={{ borderColor: 'var(--border)', background: 'var(--bg-inset)' }}>
-              <option value="production">Production</option>
-              <option value="sandbox">Sandbox</option>
-            </select>
-          </div>
-        ) : null}
+        <div className="space-y-3">
+          {isApiKey ? (
+            <>
+              <input
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
+                style={{ borderColor: 'var(--border)', background: 'var(--bg-inset)', color: 'var(--text)' }}
+                placeholder="AfterShip API key"
+              />
+              <input
+                value={webhookSecret}
+                onChange={(e) => setWebhookSecret(e.target.value)}
+                className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
+                style={{ borderColor: 'var(--border)', background: 'var(--bg-inset)', color: 'var(--text)' }}
+                placeholder="Webhook signing secret (optional)"
+              />
+            </>
+          ) : isOAuth ? (
+            <>
+              <input
+                value={clientId}
+                onChange={(e) => setClientId(e.target.value)}
+                className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
+                style={{ borderColor: 'var(--border)', background: 'var(--bg-inset)', color: 'var(--text)' }}
+                placeholder="OAuth client ID"
+              />
+              <input
+                type="password"
+                value={clientSecret}
+                onChange={(e) => setClientSecret(e.target.value)}
+                className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
+                style={{ borderColor: 'var(--border)', background: 'var(--bg-inset)', color: 'var(--text)' }}
+                placeholder="OAuth client secret"
+              />
+              <input
+                value={accountNumber}
+                onChange={(e) => setAccountNumber(e.target.value)}
+                className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
+                style={{ borderColor: 'var(--border)', background: 'var(--bg-inset)', color: 'var(--text)' }}
+                placeholder="Carrier account number"
+              />
+              <select
+                value={environment}
+                onChange={(e) => setEnvironment(e.target.value)}
+                className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
+                style={{ borderColor: 'var(--border)', background: 'var(--bg-inset)', color: 'var(--text)' }}
+              >
+                <option value="production">Production</option>
+                <option value="sandbox">Sandbox</option>
+              </select>
+            </>
+          ) : null}
+        </div>
 
-        <button type="submit" disabled={busy} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-semibold disabled:opacity-60" style={{ background: 'var(--accent)', color: 'white' }}>
+        <button
+          type="submit"
+          disabled={busy}
+          className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
+          style={{ background: 'var(--accent)', color: 'white' }}
+        >
           <ShieldCheck className="h-4 w-4" />
-          {busy ? 'Connecting...' : 'Connect'}
+          {busy ? 'Connecting…' : 'Connect'}
         </button>
       </form>
     </div>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Sync modal
+// ---------------------------------------------------------------------------
 
 function SyncModal({
   target,
@@ -356,79 +554,999 @@ function SyncModal({
   onClose,
   onSubmit,
 }: {
-  target: SyncTarget;
+  target: ProviderConnectionView | null;
   busy: boolean;
   onClose: () => void;
   onSubmit: (payload: Record<string, string>) => Promise<void>;
 }) {
   const [trackingNumber, setTrackingNumber] = useState('');
-  const [supportPayoutCaseId, setSupportPayoutCaseId] = useState('');
+  const [caseId, setCaseId] = useState('');
 
   if (!target) return null;
-  const needsTracking = target.id === 'aftership' || target.id === 'ups' || target.id === 'fedex';
+  const needsTracking = ['aftership', 'ups', 'fedex'].includes(target.id);
 
-  async function submit(event: FormEvent) {
-    event.preventDefault();
-    await onSubmit({ trackingNumber, supportPayoutCaseId });
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    await onSubmit({ trackingNumber, supportPayoutCaseId: caseId });
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,.45)' }}>
-      <form className="w-full max-w-md rounded-md border p-5 shadow-xl" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }} onSubmit={submit}>
-        <div className="mb-4 flex items-start justify-between gap-3">
-          <div>
-            <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Sync {target.name}</p>
-            <p className="mt-1 text-xs" style={{ color: 'var(--text-secondary)' }}>Fetched data is normalized into case evidence.</p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
+      <form
+        onSubmit={submit}
+        className="w-full max-w-md rounded-2xl border p-6 shadow-2xl"
+        style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+      >
+        <div className="flex items-start justify-between mb-5">
+          <div className="flex items-center gap-3">
+            <Image src={PROVIDER_LOGOS[target.id] ?? '/integrations/carrier-claims.svg'} alt={target.name} width={40} height={40} className="h-10 w-10 rounded-xl" />
+            <div>
+              <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Sync {target.name}</p>
+              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Fetched data is mapped to case evidence.</p>
+            </div>
           </div>
-          <button type="button" onClick={onClose} className="text-xs" style={{ color: 'var(--text-secondary)' }}>Close</button>
+          <button type="button" onClick={onClose} style={{ color: 'var(--text-secondary)' }}>
+            <X className="h-4 w-4" />
+          </button>
         </div>
         <div className="space-y-3">
           {needsTracking ? (
-            <input value={trackingNumber} onChange={(e) => setTrackingNumber(e.target.value)} className="w-full rounded-md border px-3 py-2 text-sm" style={{ borderColor: 'var(--border)', background: 'var(--bg-inset)' }} placeholder="Tracking number" />
+            <input
+              value={trackingNumber}
+              onChange={(e) => setTrackingNumber(e.target.value)}
+              className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
+              style={{ borderColor: 'var(--border)', background: 'var(--bg-inset)', color: 'var(--text)' }}
+              placeholder="Tracking number"
+            />
           ) : null}
-          <input value={supportPayoutCaseId} onChange={(e) => setSupportPayoutCaseId(e.target.value)} className="w-full rounded-md border px-3 py-2 text-sm" style={{ borderColor: 'var(--border)', background: 'var(--bg-inset)' }} placeholder="Support payout case ID (optional)" />
+          <input
+            value={caseId}
+            onChange={(e) => setCaseId(e.target.value)}
+            className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
+            style={{ borderColor: 'var(--border)', background: 'var(--bg-inset)', color: 'var(--text)' }}
+            placeholder="Support payout case ID (optional)"
+          />
         </div>
-        <button type="submit" disabled={busy} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-semibold disabled:opacity-60" style={{ background: 'var(--accent)', color: 'white' }}>
+        <button
+          type="submit"
+          disabled={busy}
+          className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
+          style={{ background: 'var(--accent)', color: 'white' }}
+        >
           <RefreshCw className="h-4 w-4" />
-          {busy ? 'Syncing...' : 'Sync'}
+          {busy ? 'Syncing…' : 'Sync'}
         </button>
       </form>
     </div>
   );
 }
 
-export default function IntegrationHubClient() {
-  const { data, loading, error, reload } = useFetchJson<IntegrationsResponse>('/api/integrations');
-  const [busyProvider, setBusyProvider] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
-  const [connectTarget, setConnectTarget] = useState<ConnectTarget>(null);
-  const [syncTarget, setSyncTarget] = useState<SyncTarget>(null);
-  const providers = data?.providers ?? [];
-  const core = useMemo(() => providers.filter((p) => p.id === 'shopify' || p.id === 'gorgias'), [providers]);
-  const trackingProof = useMemo(
-    () => providers.filter((p) => p.buildStatus === 'live' && (p.category === 'tracking' || p.category === 'carrier')),
-    [providers],
+// ---------------------------------------------------------------------------
+// Document upload modal
+// ---------------------------------------------------------------------------
+
+function DocumentUploadModal({
+  target,
+  busy,
+  onClose,
+  onSubmit,
+}: {
+  target: ProviderConnectionView | null;
+  busy: boolean;
+  onClose: () => void;
+  onSubmit: (payload: FormData) => Promise<void>;
+}) {
+  const [documentType, setDocumentType] = useState('carrier_agreement');
+  const [file, setFile] = useState<File | null>(null);
+
+  if (!target) return null;
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    if (!file) return;
+    const fd = new FormData();
+    fd.set('document_type', documentType);
+    fd.set('file', file);
+    await onSubmit(fd);
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
+      <form
+        onSubmit={submit}
+        className="w-full max-w-md rounded-2xl border p-6 shadow-2xl"
+        style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+      >
+        <div className="flex items-start justify-between mb-5">
+          <div className="flex items-center gap-3">
+            <Image src="/integrations/document-upload.svg" alt="Documents" width={40} height={40} className="h-10 w-10 rounded-xl" />
+            <div>
+              <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Upload contract document</p>
+              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Terms stay inactive until approved.</p>
+            </div>
+          </div>
+          <button type="button" onClick={onClose} style={{ color: 'var(--text-secondary)' }}>
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="space-y-3">
+          <select
+            value={documentType}
+            onChange={(e) => setDocumentType(e.target.value)}
+            className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
+            style={{ borderColor: 'var(--border)', background: 'var(--bg-inset)', color: 'var(--text)' }}
+          >
+            <option value="carrier_agreement">Carrier Agreement</option>
+            <option value="three_pl_sla">3PL SLA</option>
+            <option value="supplier_terms">Supplier Terms</option>
+            <option value="insurance_policy">Insurance Policy</option>
+          </select>
+          <input
+            type="file"
+            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            className="w-full rounded-xl border px-3 py-2.5 text-sm"
+            style={{ borderColor: 'var(--border)', background: 'var(--bg-inset)', color: 'var(--text)' }}
+          />
+        </div>
+        <button
+          type="submit"
+          disabled={busy || !file}
+          className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
+          style={{ background: 'var(--accent)', color: 'white' }}
+        >
+          <Upload className="h-4 w-4" />
+          {busy ? 'Uploading…' : 'Upload document'}
+        </button>
+      </form>
+    </div>
   );
-  const sourceSlotSections = useMemo(() => {
-    const sections: Array<{ title: string; categories: IntegrationCategory[]; providers: ProviderConnectionView[] }> = [
-      { title: 'Email & correspondence', categories: ['email', 'helpdesk', 'internal_comms'], providers: [] },
-      { title: 'Payments & chargebacks', categories: ['payments', 'chargebacks'], providers: [] },
-      { title: 'Carriers & tracking', categories: ['carrier', 'tracking'], providers: [] },
-      { title: '3PL, WMS & returns', categories: ['3pl', 'wms', 'returns'], providers: [] },
-      { title: 'Marketplaces & protection', categories: ['marketplace', 'shipping_protection'], providers: [] },
-      { title: 'ERP & suppliers', categories: ['erp', 'supplier'], providers: [] },
-    ];
-    return sections
-      .map((section) => ({
-        ...section,
-        providers: providers.filter(
-          (provider) =>
-            provider.buildStatus === 'slot_only' &&
-            section.categories.includes(provider.category),
-        ),
-      }))
-      .filter((section) => section.providers.length > 0);
-  }, [providers]);
+}
+
+// ---------------------------------------------------------------------------
+// Summary banner
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Category header with done-state indicator
+// ---------------------------------------------------------------------------
+
+function CategoryHeader({
+  number,
+  title,
+  description,
+  satisfied,
+}: {
+  number?: number;
+  title: string;
+  description: string;
+  satisfied: boolean;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4 mb-3">
+      <div className="flex items-start gap-3 min-w-0">
+        {number != null ? (
+          <div
+            className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+            style={{
+              background: satisfied ? 'var(--success)' : 'var(--bg-inset)',
+              color: satisfied ? 'white' : 'var(--text-secondary)',
+              border: satisfied ? 'none' : '1.5px solid var(--border)',
+            }}
+          >
+            {satisfied ? <CheckCircle2 className="h-3.5 w-3.5" /> : number}
+          </div>
+        ) : null}
+        <div className="min-w-0">
+          <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{title}</p>
+          <p className="mt-0.5 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{description}</p>
+        </div>
+      </div>
+      {satisfied ? (
+        <span
+          className="shrink-0 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"
+          style={{
+            background: 'color-mix(in srgb, var(--success) 12%, transparent)',
+            color: 'var(--success)',
+          }}
+        >
+          <CheckCircle2 className="h-3 w-3" />
+          Connected
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Provider grid wrapper
+// ---------------------------------------------------------------------------
+
+function ProviderGrid({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+      {children}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Fix 1: Setup progress checklist
+// ---------------------------------------------------------------------------
+
+function SetupProgressChecklist({
+  storeConnected,
+  storeName,
+  storeDetail,
+  helpdeskConnected,
+  helpdeskName,
+  helpdeskDetail,
+  trackingConnected,
+  trackingName,
+}: {
+  storeConnected: boolean;
+  storeName: string | null;
+  storeDetail: string | null;
+  helpdeskConnected: boolean;
+  helpdeskName: string | null;
+  helpdeskDetail: string | null;
+  trackingConnected: boolean;
+  trackingName: string | null;
+}) {
+  function storeLine() {
+    if (storeConnected && storeName) {
+      const detail = storeDetail ? ` · ${storeDetail}` : '';
+      return `✓ Order source — ${storeName} connected${detail}`;
+    }
+    return '○ Order source — not connected yet';
+  }
+
+  function helpdeskLine() {
+    if (helpdeskConnected && helpdeskName) {
+      const detail = helpdeskDetail ? ` · ${helpdeskDetail}` : '';
+      return `✓ Helpdesk — ${helpdeskName} connected${detail}`;
+    }
+    return '○ Helpdesk — not connected yet';
+  }
+
+  function trackingLine() {
+    if (trackingConnected && trackingName) {
+      return `✓ Tracking & proof — ${trackingName} connected`;
+    }
+    return '○ Tracking & proof — recommended, not connected yet';
+  }
+
+  return (
+    <div>
+      <div
+        className="rounded-xl border px-4 py-3"
+        style={{ borderColor: 'var(--border-muted)', background: 'var(--surface)' }}
+      >
+        <ul className="space-y-2">
+          <ChecklistRow done={storeConnected} text={storeLine()} />
+          <ChecklistRow done={helpdeskConnected} text={helpdeskLine()} />
+          <ChecklistRow
+            done={trackingConnected}
+            text={trackingLine()}
+            action={!trackingConnected ? (
+              <a
+                href="#tracking-proof"
+                className="shrink-0 text-xs font-medium underline underline-offset-2"
+                style={{ color: 'var(--warning)' }}
+              >
+                Connect →
+              </a>
+            ) : null}
+          />
+        </ul>
+      </div>
+      <p className="mt-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
+        Plus:{' '}
+        <a
+          href="#payments-disputes"
+          className="font-medium underline underline-offset-2"
+          style={{ color: 'var(--text-secondary)' }}
+        >
+          confirm your warehouse, returns, and payment setup below
+        </a>
+        .
+      </p>
+    </div>
+  );
+}
+
+function ChecklistRow({
+  done,
+  text,
+  action,
+}: {
+  done: boolean;
+  text: string;
+  action?: React.ReactNode;
+}) {
+  return (
+    <li className="flex items-center justify-between gap-3 text-sm">
+      <span style={{ color: done ? 'var(--text)' : 'var(--text-secondary)' }}>
+        {text}
+      </span>
+      {action}
+    </li>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Fix 2: Connected category summary (collapsed when satisfied)
+// ---------------------------------------------------------------------------
+
+function ConnectedCategorySummary({
+  title,
+  provider,
+  expanded,
+  onToggleExpand,
+  children,
+}: {
+  title: string;
+  provider: UnifiedProvider;
+  expanded: boolean;
+  onToggleExpand: () => void;
+  children: React.ReactNode;
+}) {
+  if (expanded) {
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{title}</p>
+          <button
+            type="button"
+            onClick={onToggleExpand}
+            className="text-xs font-medium"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            Cancel
+          </button>
+        </div>
+        {children}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="flex flex-wrap items-center gap-3 rounded-lg border px-3 py-2.5"
+      style={{ borderColor: 'var(--border-muted)', background: 'var(--bg-inset)' }}
+    >
+      <div
+        className="h-8 w-8 shrink-0 rounded-lg overflow-hidden flex items-center justify-center p-1"
+        style={{ background: 'white', border: '1px solid var(--border-muted)' }}
+      >
+        <Image src={provider.logo} alt={provider.name} width={32} height={32} className="h-full w-full object-contain" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>
+          {title}
+        </p>
+        <p className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>
+          {provider.name}
+          {provider.detail ? (
+            <span className="font-normal" style={{ color: 'var(--text-secondary)' }}> · {provider.detail}</span>
+          ) : null}
+        </p>
+      </div>
+      {provider.href ? (
+        <a
+          href={provider.href}
+          className="text-xs font-medium"
+          style={{ color: 'var(--text-secondary)' }}
+        >
+          Manage
+        </a>
+      ) : null}
+      <button
+        type="button"
+        onClick={onToggleExpand}
+        className="text-xs font-medium"
+        style={{ color: 'var(--text)' }}
+      >
+        Change provider
+      </button>
+    </div>
+  );
+}
+
+function RequiredCategorySection({
+  title,
+  description,
+  satisfied,
+  connectedProvider,
+  expanded,
+  onToggleExpand,
+  children,
+}: {
+  title: string;
+  description: string;
+  satisfied: boolean;
+  connectedProvider: UnifiedProvider | null;
+  expanded: boolean;
+  onToggleExpand: () => void;
+  children: React.ReactNode;
+}) {
+  if (satisfied && connectedProvider && !expanded) {
+    return (
+      <ConnectedCategorySummary
+        title={title}
+        provider={connectedProvider}
+        expanded={false}
+        onToggleExpand={onToggleExpand}
+      >
+        {children}
+      </ConnectedCategorySummary>
+    );
+  }
+
+  if (satisfied && connectedProvider && expanded) {
+    return (
+      <ConnectedCategorySummary
+        title={title}
+        provider={connectedProvider}
+        expanded
+        onToggleExpand={onToggleExpand}
+      >
+        {children}
+      </ConnectedCategorySummary>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{title}</p>
+        <p className="mt-0.5 text-xs" style={{ color: 'var(--text-secondary)' }}>{description}</p>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Compact slot-only provider line (not yet connectable)
+// ---------------------------------------------------------------------------
+
+function SlotProviderLine({ provider }: { provider: UnifiedProvider }) {
+  return (
+    <div className="flex items-center gap-3 py-2">
+      <div
+        className="h-7 w-7 shrink-0 rounded-md overflow-hidden flex items-center justify-center p-0.5"
+        style={{ background: 'white', border: '1px solid var(--border-muted)' }}
+      >
+        <Image src={provider.logo} alt={provider.name} width={28} height={28} className="h-full w-full object-contain" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>{provider.name}</p>
+        <p className="text-xs truncate" style={{ color: 'var(--text-secondary)' }}>
+          {provider.description}
+        </p>
+      </div>
+      <span
+        className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+        style={{ background: 'var(--bg-inset)', color: 'var(--text-secondary)' }}
+      >
+        Soon
+      </span>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Category applicability question (WMS / Returns)
+// ---------------------------------------------------------------------------
+
+function ApplicabilityChoiceButton({
+  children,
+  onClick,
+  disabled,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="rounded-lg border px-3 py-2 text-xs font-medium transition-colors disabled:opacity-50"
+      style={{
+        borderColor: 'var(--border-muted)',
+        background: 'var(--surface)',
+        color: 'var(--text)',
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function CategoryApplicabilityQuestion({
+  question,
+  yesLabel,
+  noLabel,
+  notApplicableMessage,
+  applicableAnswerLabel,
+  state,
+  busy,
+  editing,
+  onUseOne,
+  onNotApplicable,
+  onChangeDecision,
+  children,
+}: {
+  question: string;
+  yesLabel: string;
+  noLabel: string;
+  notApplicableMessage: string;
+  applicableAnswerLabel: string;
+  state: ApplicabilityState;
+  busy: boolean;
+  editing: boolean;
+  onUseOne: () => void;
+  onNotApplicable: () => void;
+  onChangeDecision: () => void;
+  children: React.ReactNode;
+}) {
+  if (state === 'not_applicable' && !editing) {
+    return (
+      <div
+        className="flex flex-wrap items-center justify-between gap-3 rounded-lg border px-3 py-2.5"
+        style={{ borderColor: 'var(--border-muted)', background: 'var(--bg-inset)' }}
+      >
+        <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{notApplicableMessage}</p>
+        <button
+          type="button"
+          onClick={onChangeDecision}
+          className="text-xs font-medium shrink-0"
+          style={{ color: 'var(--text)' }}
+        >
+          Change
+        </button>
+      </div>
+    );
+  }
+
+  if (state === 'applicable' && !editing) {
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+            {applicableAnswerLabel}
+          </p>
+          <button
+            type="button"
+            onClick={onChangeDecision}
+            className="text-xs font-medium shrink-0"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            Change
+          </button>
+        </div>
+        {children}
+      </div>
+    );
+  }
+
+  // pending or editing: show the question
+  return (
+    <div className="space-y-3">
+      <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>{question}</p>
+      <div className="flex flex-wrap gap-2">
+        <ApplicabilityChoiceButton onClick={onUseOne} disabled={busy}>
+          {yesLabel}
+        </ApplicabilityChoiceButton>
+        <ApplicabilityChoiceButton onClick={onNotApplicable} disabled={busy}>
+          {noLabel}
+        </ApplicabilityChoiceButton>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Payments & disputes section
+// ---------------------------------------------------------------------------
+
+const PAYMENT_PROCESSOR_OPTIONS: Array<{ id: PaymentProcessorChoice; label: string }> = [
+  { id: 'stripe', label: 'Stripe' },
+  { id: 'paypal', label: 'PayPal' },
+  { id: 'adyen', label: 'Adyen' },
+  { id: 'other', label: 'Other' },
+];
+
+function PaymentsDisputesSection({
+  shopifyPaymentsCovered,
+  inferredProcessor,
+  selectedProcessor,
+  onSelectProcessor,
+  payments,
+  cardProps,
+}: {
+  shopifyPaymentsCovered: boolean | null;
+  inferredProcessor: PaymentProcessorChoice | null;
+  selectedProcessor: PaymentProcessorChoice | null;
+  onSelectProcessor: (processor: PaymentProcessorChoice) => void;
+  payments: UnifiedProvider[];
+  cardProps: {
+    onConnect: (p: UnifiedProvider) => void;
+    onDisconnect: (p: UnifiedProvider) => void;
+    onSync: (p: ProviderConnectionView) => void;
+    onUpload: (p: ProviderConnectionView) => void;
+    busyId: string | null;
+  };
+}) {
+  const processorProviderId: Record<PaymentProcessorChoice, string | null> = {
+    stripe: 'stripe',
+    paypal: 'paypal',
+    adyen: 'adyen',
+    other: null,
+  };
+
+  const activeProcessor = selectedProcessor ?? inferredProcessor;
+  const highlightedProviderId = activeProcessor ? processorProviderId[activeProcessor] : null;
+  const highlightedProviders = highlightedProviderId
+    ? payments.filter((provider) => provider.id === highlightedProviderId)
+    : [];
+
+  return (
+    <section
+      id="payments-disputes"
+      className="scroll-mt-6 rounded-xl border px-5 py-5"
+      style={{ borderColor: 'var(--border-muted)', background: 'var(--surface)' }}
+    >
+      <div className="mb-4">
+        <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Payments & disputes</p>
+        <p className="mt-0.5 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+          Dispute and chargeback evidence depends on your payment processor. Every merchant has exactly one — this is not optional enrichment.
+        </p>
+      </div>
+
+      {shopifyPaymentsCovered === true ? (
+        <div
+          className="flex items-start gap-2 rounded-lg border px-3 py-2.5 text-xs"
+          style={{
+            borderColor: 'color-mix(in srgb, var(--success) 25%, var(--border))',
+            background: 'color-mix(in srgb, var(--success) 6%, var(--surface))',
+            color: 'var(--text-secondary)',
+          }}
+        >
+          <CheckCircle2 className="h-3.5 w-3.5 mt-0.5 shrink-0" style={{ color: 'var(--success)' }} />
+          <span>You&apos;re on Shopify Payments — dispute and chargeback evidence is already covered. No action needed.</span>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div>
+            <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>
+              Which payment processor do you use?
+            </p>
+            {shopifyPaymentsCovered === false ? (
+              <p className="mt-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                Shopify Payments is not active on your store — connect the processor you actually settle through.
+              </p>
+            ) : (
+              <p className="mt-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                Confirm your processor so dispute evidence can be routed correctly when connectors go live.
+              </p>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {PAYMENT_PROCESSOR_OPTIONS.map((option) => {
+              const active = activeProcessor === option.id;
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => onSelectProcessor(option.id)}
+                  className="rounded-lg border px-3 py-2 text-xs font-semibold transition-colors"
+                  style={{
+                    borderColor: active ? 'var(--text)' : 'var(--border-muted)',
+                    background: active ? 'var(--text)' : 'var(--surface)',
+                    color: active ? 'var(--surface)' : 'var(--text)',
+                    boxShadow: active ? '0 1px 3px rgba(0,0,0,.15)' : 'none',
+                  }}
+                >
+                  {option.label}
+                  {inferredProcessor === option.id && !selectedProcessor ? ' (detected)' : ''}
+                  {active && selectedProcessor ? ' ✓' : ''}
+                </button>
+              );
+            })}
+          </div>
+          {activeProcessor ? (
+            <div className="space-y-2">
+              {activeProcessor ? (
+                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                  Your processor is recorded. Dispute and chargeback evidence will populate automatically once a connector for your processor is live.
+                </p>
+              ) : null}
+              {highlightedProviders.length > 0 ? (
+                <ProviderGrid>
+                  {highlightedProviders.map((provider) => (
+                    <ProviderCard key={provider.id} provider={provider} {...cardProps} />
+                  ))}
+                </ProviderGrid>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      )}
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
+
+function resolveApplicabilityState(
+  rows: Array<{ category: string; status: string; setAt: string | null }>,
+  category: ApplicabilityCategory,
+): ApplicabilityState {
+  const row = rows.find((entry) => entry.category === category);
+  // A row with null setAt is synthesised by the server as a default — the merchant
+  // has never actually answered. Treat that the same as a missing row.
+  if (!row || !row.setAt) return 'pending';
+  return row.status === 'not_applicable' ? 'not_applicable' : 'applicable';
+}
+
+export default function IntegrationHubClient() {
+  const { data: hubData, loading: hubLoading, error: hubError, reload: reloadHub } = useFetchJson<IntegrationsResponse>('/api/integrations');
+  const { data: setupStatus, reload: reloadSetup } = useAsyncResource('integrations-setup-status', fetchIntegrationConnectionStatus);
+
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const [shopifyModalOpen, setShopifyModalOpen] = useState(false);
+  const [popupError, setPopupError] = useState<string | null>(null);
+  const [connectTarget, setConnectTarget] = useState<UnifiedProvider | null>(null);
+  const [syncTarget, setSyncTarget] = useState<ProviderConnectionView | null>(null);
+  const [uploadTarget, setUploadTarget] = useState<ProviderConnectionView | null>(null);
+  const [expandOrderSource, setExpandOrderSource] = useState(false);
+  const [expandHelpdesk, setExpandHelpdesk] = useState(false);
+  const [stackOpen, setStackOpen] = useState(false);
+  const [warehouseEditing, setWarehouseEditing] = useState(false);
+  const [returnsEditing, setReturnsEditing] = useState(false);
+  const [applicabilityBusy, setApplicabilityBusy] = useState<ApplicabilityCategory | null>(null);
+  const [selectedPaymentProcessor, setSelectedPaymentProcessor] = useState<PaymentProcessorChoice | null>(
+    (hubData?.paymentSetup?.processorSelection ?? null),
+  );
+  const popupRef = useRef<Window | null>(null);
+
+  const providers: ProviderConnectionView[] = hubData?.providers ?? [];
+  const categoryApplicability = hubData?.categoryApplicability ?? [];
+  const paymentSetup = hubData?.paymentSetup;
+
+  const warehouseApplicability = useMemo(
+    () => resolveApplicabilityState(categoryApplicability, 'warehouse_3pl'),
+    [categoryApplicability],
+  );
+  const returnsApplicability = useMemo(
+    () => resolveApplicabilityState(categoryApplicability, 'returns'),
+    [categoryApplicability],
+  );
+
+  const warehouseNotApplicable = warehouseApplicability === 'not_applicable';
+
+  // Map dynamic providers by id
+  const byId = useMemo(() => new Map(providers.map((p) => [p.id, p])), [providers]);
+
+  function dynamicToUnified(id: string): UnifiedProvider | null {
+    const p = byId.get(id);
+    if (!p) return null;
+    return {
+      id: p.id,
+      name: p.name,
+      description: p.description ?? p.evidenceCapabilities.map((c) => c.replaceAll('_', ' ')).join(', '),
+      logo: PROVIDER_LOGOS[p.id] ?? '/integrations/carrier-claims.svg',
+      connected: p.buildStatus === 'live' && p.status === 'connected',
+      connectionIssue: p.status === 'connection_error' || p.status === 'error',
+      detail: p.detail,
+      comingSoon: p.buildStatus === 'slot_only',
+      dynamic: p,
+    };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Build section groups
+  // ---------------------------------------------------------------------------
+
+  // Order source
+  const orderSource: UnifiedProvider[] = [
+    {
+      id: 'shopify',
+      name: 'Shopify',
+      description: 'Sync orders, customers, refunds and fulfilment in real time.',
+      logo: '/integrations/shopify.svg',
+      connected: setupStatus?.shopify.connected ?? false,
+      connectionIssue: setupStatus?.shopify.connectionIssue ?? false,
+      detail: setupStatus?.shopify.detail ?? null,
+      href: '/settings/integrations/shopify',
+      isShopify: true,
+    },
+    {
+      id: 'woocommerce',
+      name: 'WooCommerce',
+      description: 'Pull order and customer data from your WordPress store.',
+      logo: '/integrations/woocommerce.svg',
+      connected: setupStatus?.woocommerce.connected ?? false,
+      connectionIssue: false,
+      detail: setupStatus?.woocommerce.detail ?? null,
+      href: '/settings/integrations/woocommerce',
+    },
+    {
+      id: 'bigcommerce',
+      name: 'BigCommerce',
+      description: 'Sync orders and customers from your BigCommerce storefront.',
+      logo: '/integrations/bigcommerce.svg',
+      connected: setupStatus?.bigcommerce.connected ?? false,
+      connectionIssue: false,
+      detail: setupStatus?.bigcommerce.detail ?? null,
+      href: '/settings/integrations/bigcommerce',
+    },
+    {
+      id: 'magento',
+      name: 'Magento',
+      description: 'Connect Adobe Commerce to monitor orders and customer identity.',
+      logo: '/integrations/magento.svg',
+      connected: false,
+      connectionIssue: false,
+      detail: null,
+      comingSoon: true,
+    },
+  ];
+
+  // Helpdesk
+  const helpdesk: UnifiedProvider[] = [
+    {
+      id: 'gorgias',
+      name: 'Gorgias',
+      description: 'Show payout exposure, evidence, and recovery routes inside your ticket sidebar.',
+      logo: '/integrations/gorgias.png',
+      connected: setupStatus?.gorgias.connected ?? false,
+      connectionIssue: setupStatus?.gorgias.connectionIssue ?? false,
+      detail: setupStatus?.gorgias.detail ?? null,
+      href: '/settings/integrations/gorgias',
+    },
+    {
+      id: 'freshdesk',
+      name: 'Freshdesk',
+      description: 'Surface order history and trust signals inside Freshdesk tickets.',
+      logo: '/integrations/freshdesk.png',
+      connected: setupStatus?.freshdesk.connected ?? false,
+      connectionIssue: setupStatus?.freshdesk.connectionIssue ?? false,
+      detail: setupStatus?.freshdesk.detail ?? null,
+      href: '/settings/integrations/freshdesk',
+    },
+    {
+      id: 'zendesk',
+      name: 'Zendesk',
+      description: 'Install the Zendesk sidebar app for in-ticket payout context.',
+      logo: '/integrations/zendesk.svg',
+      connected: setupStatus?.zendesk.connected ?? false,
+      connectionIssue: setupStatus?.zendesk.connectionIssue ?? false,
+      detail: setupStatus?.zendesk.detail ?? null,
+      href: '/settings/integrations/zendesk',
+    },
+  ];
+
+  // Tracking & proof
+  const trackingProof = useMemo(() => {
+    return ['aftership', 'ups', 'fedex'].flatMap((id) => {
+      const u = dynamicToUnified(id);
+      return u ? [u] : [];
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [byId]);
+
+  // Logistics
+  const logistics = useMemo(() => {
+    return ['shipbob', 'shiphero', 'extensiv', 'shipmonk'].flatMap((id) => {
+      const u = dynamicToUnified(id);
+      return u ? [u] : [];
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [byId]);
+
+  // Returns
+  const returns = useMemo(() => {
+    return ['loop_returns', 'returngo', 'narvar'].flatMap((id) => {
+      const u = dynamicToUnified(id);
+      return u ? [u] : [];
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [byId]);
+
+  // Payments & disputes
+  const carrierClaims = dynamicToUnified('carrier_claims');
+
+  const payments = useMemo(() => {
+    return ['stripe', 'paypal', 'adyen'].flatMap((id) => {
+      const u = dynamicToUnified(id);
+      return u ? [u] : [];
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [byId]);
+
+  // Documents
+  const documentUpload = dynamicToUnified('document_upload');
+
+  // Self-fulfillment (only when warehouse 3PL is not applicable)
+  const selfFulfillment = warehouseNotApplicable ? dynamicToUnified('self_fulfillment_pack') : null;
+
+  // Connected store / helpdesk names for banner
+  const connectedStoreName = setupStatus?.shopify.connected ? 'Shopify'
+    : setupStatus?.woocommerce.connected ? 'WooCommerce'
+    : setupStatus?.bigcommerce.connected ? 'BigCommerce'
+    : null;
+
+  const connectedHelpdeskName = setupStatus?.gorgias.connected ? 'Gorgias'
+    : setupStatus?.freshdesk.connected ? 'Freshdesk'
+    : setupStatus?.zendesk.connected ? 'Zendesk'
+    : null;
+
+  const storeConnected = Boolean(connectedStoreName);
+  const helpdeskConnected = Boolean(connectedHelpdeskName);
+
+  // ---------------------------------------------------------------------------
+  // Shopify OAuth
+  // ---------------------------------------------------------------------------
+
+  const openShopifyPopup = useCallback((shop: string) => {
+    setShopifyModalOpen(false);
+    setPopupError(null);
+    const w = 600, h = 700;
+    const left = Math.max(0, (window.screen.width - w) / 2);
+    const top = Math.max(0, (window.screen.height - h) / 2);
+    const popup = window.open(
+      `/api/shopify/install?shop=${encodeURIComponent(shop)}`,
+      'shopify_oauth',
+      `width=${w},height=${h},left=${left},top=${top},toolbar=no,menubar=no,scrollbars=yes`,
+    );
+    if (!popup) {
+      setPopupError('Pop-up blocked. Allow pop-ups for this site and try again.');
+      setShopifyModalOpen(true);
+      return;
+    }
+    popupRef.current = popup;
+  }, []);
+
+  useEffect(() => {
+    function handleMessage(event: MessageEvent) {
+      if (event.origin !== window.location.origin) return;
+      const data = event.data as { type?: string; success?: boolean; error?: string | null };
+      if (data?.type !== 'shopify_oauth_complete') return;
+      popupRef.current = null;
+      if (data.success) {
+        reloadSetup();
+      } else {
+        setPopupError(
+          data.error === 'invalid_shop' ? 'Invalid store domain. Check the URL and try again.'
+            : data.error === 'public_domain' ? 'Enter your .myshopify.com store domain, not a custom domain.'
+            : 'Shopify authorisation failed. Please try again.',
+        );
+        setShopifyModalOpen(true);
+      }
+    }
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [reloadSetup]);
+
+  // Sync processor selection from API once data loads (useState initial value is null before fetch)
+  useEffect(() => {
+    const saved = hubData?.paymentSetup?.processorSelection ?? null;
+    if (saved && !selectedPaymentProcessor) {
+      setSelectedPaymentProcessor(saved);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hubData?.paymentSetup?.processorSelection]);
+
+  // ---------------------------------------------------------------------------
+  // Actions
+  // ---------------------------------------------------------------------------
 
   async function postJson(path: string, body: Record<string, unknown> = {}) {
     const res = await fetch(path, {
@@ -437,106 +1555,443 @@ export default function IntegrationHubClient() {
       body: JSON.stringify(body),
     });
     const payload = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(payload.error ?? 'Request failed');
+    if (!res.ok) throw new Error((payload as { error?: string }).error ?? 'Request failed');
     return payload;
   }
 
-  async function handleConnect(provider: ProviderConnectionView) {
-    if (provider.id === 'shopify' || provider.id === 'gorgias') {
-      window.location.href = provider.id === 'shopify' ? '/settings/integrations/shopify' : '/settings/integrations/gorgias';
-      return;
+  async function submitProcessorSelection(processor: PaymentProcessorChoice) {
+    setSelectedPaymentProcessor(processor);
+    try {
+      await postJson('/api/integrations', { processorSelection: processor });
+    } catch {
+      // Non-critical — UI already updated; silent failure is acceptable here.
     }
+  }
+
+  async function submitApplicability(
+    category: ApplicabilityCategory,
+    status: 'applicable' | 'not_applicable',
+  ) {
+    setApplicabilityBusy(category);
+    try {
+      await postJson('/api/integrations/applicability', { category, status });
+      if (category === 'warehouse_3pl') setWarehouseEditing(false);
+      if (category === 'returns') setReturnsEditing(false);
+      setToast(status === 'not_applicable' ? 'Saved — this category is marked as not applicable.' : 'Saved — choose a provider below.');
+      reloadHub();
+    } catch (err) {
+      setToast(err instanceof Error ? err.message : 'Could not save your answer.');
+    } finally {
+      setApplicabilityBusy(null);
+    }
+  }
+
+  function handleConnect(provider: UnifiedProvider) {
+    if (provider.isShopify) { setShopifyModalOpen(true); return; }
+    if (provider.href) { window.location.href = provider.href; return; }
     setConnectTarget(provider);
+  }
+
+  function handleDisconnect(provider: UnifiedProvider) {
+    void (async () => {
+      setBusyId(provider.id);
+      try {
+        await postJson(`/api/integrations/${provider.id}/disconnect`);
+        setToast(`${provider.name} disconnected.`);
+        reloadHub();
+        reloadSetup();
+      } catch (err) {
+        setToast(err instanceof Error ? err.message : 'Disconnect failed.');
+      } finally {
+        setBusyId(null);
+      }
+    })();
   }
 
   async function submitConnect(payload: Record<string, string>) {
     if (!connectTarget) return;
-    setBusyProvider(connectTarget.id);
+    setBusyId(connectTarget.id);
     try {
       const path = connectTarget.id === 'aftership'
         ? `/api/integrations/${connectTarget.id}/api-key`
         : `/api/integrations/${connectTarget.id}/connect`;
       await postJson(path, payload);
-      setMessage(`${connectTarget.name} connected.`);
+      setToast(`${connectTarget.name} connected.`);
       setConnectTarget(null);
-      reload();
+      reloadHub();
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Connection failed.');
+      setToast(err instanceof Error ? err.message : 'Connection failed.');
     } finally {
-      setBusyProvider(null);
-    }
-  }
-
-  async function handleDisconnect(provider: ProviderConnectionView) {
-    setBusyProvider(provider.id);
-    try {
-      await postJson(`/api/integrations/${provider.id}/disconnect`);
-      setMessage(`${provider.name} disconnected.`);
-      reload();
-    } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Disconnect failed.');
-    } finally {
-      setBusyProvider(null);
+      setBusyId(null);
     }
   }
 
   async function submitSync(payload: Record<string, string>) {
     if (!syncTarget) return;
-    setBusyProvider(syncTarget.id);
+    setBusyId(syncTarget.id);
     try {
       await postJson(`/api/integrations/${syncTarget.id}/sync`, Object.fromEntries(
-        Object.entries(payload).filter(([, value]) => value.trim()),
+        Object.entries(payload).filter(([, v]) => v.trim()),
       ));
-      setMessage(`${syncTarget.name} sync completed.`);
+      setToast(`${syncTarget.name} sync complete.`);
       setSyncTarget(null);
-      reload();
+      reloadHub();
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Sync failed.');
+      setToast(err instanceof Error ? err.message : 'Sync failed.');
     } finally {
-      setBusyProvider(null);
+      setBusyId(null);
     }
   }
 
-  if (loading && providers.length === 0) {
-    return <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading integrations...</p>;
+  async function submitUpload(fd: FormData) {
+    if (!uploadTarget) return;
+    setBusyId(uploadTarget.id);
+    try {
+      const res = await fetch('/api/integrations/documents/upload', { method: 'POST', body: fd });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((payload as { error?: string }).error ?? 'Upload failed');
+      setToast('Document uploaded. Approve extracted terms before applying to rules.');
+      setUploadTarget(null);
+      reloadHub();
+    } catch (err) {
+      setToast(err instanceof Error ? err.message : 'Upload failed.');
+    } finally {
+      setBusyId(null);
+    }
   }
 
-  if (error) {
-    return <p className="text-sm" style={{ color: 'var(--warning)' }}>{error}</p>;
+  // ---------------------------------------------------------------------------
+  // Render helpers
+  // ---------------------------------------------------------------------------
+
+  const cardProps = {
+    onConnect: handleConnect,
+    onDisconnect: handleDisconnect,
+    onSync: setSyncTarget,
+    onUpload: setUploadTarget,
+    busyId,
+  };
+
+  const trackingConnected = trackingProof.some((p) => p.connected);
+  const connectedStore = orderSource.find((p) => p.connected && !p.comingSoon) ?? null;
+  const connectedHelpdesk = helpdesk.find((p) => p.connected) ?? null;
+  const connectedTracking = trackingProof.find((p) => p.connected) ?? null;
+
+  if (hubLoading && providers.length === 0 && !setupStatus) {
+    return (
+      <div className="space-y-8">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="space-y-3">
+            <div className="h-4 w-28 rounded animate-pulse" style={{ background: 'var(--border)' }} />
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+              {[0, 1, 2, 3].map((j) => (
+                <div key={j} className="h-44 rounded-xl animate-pulse" style={{ background: 'var(--border)' }} />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
   }
 
   return (
     <div className="space-y-8">
-      {message ? (
-        <div className="rounded-md border px-4 py-3 text-sm" style={{ borderColor: 'var(--border-muted)', background: 'var(--surface)', color: 'var(--text)' }}>
-          {message}
+      {/* Toast */}
+      {toast ? (
+        <div
+          className="flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm"
+          style={{ borderColor: 'var(--border-muted)', background: 'var(--surface)', color: 'var(--text)' }}
+        >
+          <span>{toast}</span>
+          <button type="button" onClick={() => setToast(null)} style={{ color: 'var(--text-secondary)' }}>
+            <X className="h-4 w-4" />
+          </button>
         </div>
       ) : null}
 
-      <EvidenceCoverageSummary providers={providers} />
+      {/* Popup error */}
+      {popupError ? (
+        <div
+          className="flex items-start gap-3 rounded-xl border px-4 py-3"
+          style={{
+            borderColor: 'color-mix(in srgb, var(--risk-critical) 30%, var(--border))',
+            background: 'color-mix(in srgb, var(--risk-critical) 6%, var(--surface))',
+          }}
+        >
+          <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" style={{ color: 'var(--risk-critical)' }} />
+          <p className="text-sm flex-1" style={{ color: 'var(--text)' }}>{popupError}</p>
+          <button type="button" onClick={() => setPopupError(null)} style={{ color: 'var(--text-secondary)' }}>
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      ) : null}
 
-      <Section title="Core">
-        {core.map((provider) => (
-          <ProviderCard key={provider.id} provider={provider} onConnect={handleConnect} onDisconnect={handleDisconnect} onSync={setSyncTarget} busyProvider={busyProvider} />
-        ))}
-      </Section>
+      {/* Hub error */}
+      {hubError ? (
+        <div
+          className="rounded-xl border px-4 py-3 text-sm"
+          style={{
+            borderColor: 'color-mix(in srgb, var(--warning) 30%, var(--border))',
+            background: 'color-mix(in srgb, var(--warning) 6%, var(--surface))',
+            color: 'var(--warning)',
+          }}
+        >
+          Could not load integration status: {hubError}
+        </div>
+      ) : null}
 
-      <Section title="Tracking & Proof">
-        {trackingProof.map((provider) => (
-          <ProviderCard key={provider.id} provider={provider} onConnect={handleConnect} onDisconnect={handleDisconnect} onSync={setSyncTarget} busyProvider={busyProvider} />
-        ))}
-      </Section>
+      {/* Fix 1: Progress checklist */}
+      <SetupProgressChecklist
+        storeConnected={storeConnected}
+        storeName={connectedStoreName}
+        storeDetail={connectedStore?.detail ?? null}
+        helpdeskConnected={helpdeskConnected}
+        helpdeskName={connectedHelpdeskName}
+        helpdeskDetail={connectedHelpdesk?.detail ?? null}
+        trackingConnected={trackingConnected}
+        trackingName={connectedTracking?.name ?? null}
+      />
 
-      {sourceSlotSections.map((section) => (
-        <Section key={section.title} title={section.title}>
-          {section.providers.map((provider) => (
-            <ProviderCard key={provider.id} provider={provider} onConnect={handleConnect} onDisconnect={handleDisconnect} onSync={setSyncTarget} busyProvider={busyProvider} />
-          ))}
-        </Section>
-      ))}
+      {/* Required: Order source + Helpdesk */}
+      <div
+        className="rounded-xl border px-5 py-4 space-y-4"
+        style={{ borderColor: 'var(--border-muted)', background: 'var(--surface)' }}
+      >
+        <RequiredCategorySection
+          title="Order source"
+          description="Sync orders, customers, refunds and fulfilment. Pick one — the others stay available."
+          satisfied={storeConnected}
+          connectedProvider={connectedStore}
+          expanded={expandOrderSource}
+          onToggleExpand={() => setExpandOrderSource((v) => !v)}
+        >
+          <ProviderGrid>
+            {orderSource.map((p) => <ProviderCard key={p.id} provider={p} {...cardProps} />)}
+          </ProviderGrid>
+        </RequiredCategorySection>
 
-      <ConnectModal target={connectTarget} busy={busyProvider === connectTarget?.id} onClose={() => setConnectTarget(null)} onSubmit={submitConnect} />
-      <SyncModal target={syncTarget} busy={busyProvider === syncTarget?.id} onClose={() => setSyncTarget(null)} onSubmit={submitSync} />
+        <RequiredCategorySection
+          title="Helpdesk"
+          description="Surface payout exposure, evidence, and recommended actions inside every support ticket. Pick one."
+          satisfied={helpdeskConnected}
+          connectedProvider={connectedHelpdesk}
+          expanded={expandHelpdesk}
+          onToggleExpand={() => setExpandHelpdesk((v) => !v)}
+        >
+          <ProviderGrid>
+            {helpdesk.map((p) => <ProviderCard key={p.id} provider={p} {...cardProps} />)}
+          </ProviderGrid>
+        </RequiredCategorySection>
+      </div>
+
+      {/* Fix 4: Tracking & proof — visually prominent, connectable now */}
+      {trackingProof.length > 0 ? (
+        <section
+          id="tracking-proof"
+          className="scroll-mt-6 rounded-xl border px-5 py-5"
+          style={{
+            borderColor: trackingConnected
+              ? 'color-mix(in srgb, var(--success) 30%, var(--border))'
+              : 'color-mix(in srgb, var(--warning) 35%, var(--border))',
+            background: trackingConnected
+              ? 'color-mix(in srgb, var(--success) 4%, var(--surface))'
+              : 'color-mix(in srgb, var(--warning) 5%, var(--surface))',
+            boxShadow: trackingConnected
+              ? 'none'
+              : '0 0 0 1px color-mix(in srgb, var(--warning) 12%, transparent)',
+          }}
+        >
+          <div className="mb-4">
+            <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+              Tracking & proof
+              {!trackingConnected ? (
+                <span className="ml-2 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--warning)' }}>
+                  Recommended next
+                </span>
+              ) : null}
+            </p>
+            <p className="mt-0.5 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+              Pull delivery status, photo proof, and signature from carriers. Without this, INR claims show delivery evidence as incomplete.
+            </p>
+          </div>
+          {!trackingConnected ? (
+            <div
+              className="mb-4 flex items-start gap-2 rounded-lg border px-3 py-2.5 text-xs"
+              style={{
+                borderColor: 'color-mix(in srgb, var(--warning) 25%, var(--border))',
+                background: 'color-mix(in srgb, var(--warning) 8%, var(--surface))',
+                color: 'var(--text-secondary)',
+              }}
+            >
+              <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" style={{ color: 'var(--warning)' }} />
+              <span>Connect AfterShip, UPS, or FedEx to strengthen delivery evidence on item-not-received cases.</span>
+            </div>
+          ) : null}
+          <ProviderGrid>
+            {trackingProof.map((p) => <ProviderCard key={p.id} provider={p} {...cardProps} />)}
+          </ProviderGrid>
+        </section>
+      ) : null}
+
+      {/* Payments & disputes — own section, not bundled with WMS/Returns */}
+      {payments.length > 0 ? (
+        <PaymentsDisputesSection
+          shopifyPaymentsCovered={paymentSetup?.shopifyPaymentsCovered ?? null}
+          inferredProcessor={paymentSetup?.inferredProcessor ?? null}
+          selectedProcessor={selectedPaymentProcessor}
+          onSelectProcessor={(p) => void submitProcessorSelection(p)}
+          payments={payments}
+          cardProps={cardProps}
+        />
+      ) : null}
+
+      {/* Contract documents — connectable, lower emphasis than tracking */}
+      {documentUpload ? (
+        <section
+          className="rounded-xl border px-5 py-5"
+          style={{ borderColor: 'var(--border-muted)', background: 'var(--surface)' }}
+        >
+          <CategoryHeader
+            title="Contract documents"
+            description="Upload carrier agreements, 3PL SLAs, and supplier terms. Extracted terms stay inactive until approved."
+            satisfied={documentUpload.connected}
+          />
+          <ProviderGrid>
+            <ProviderCard provider={documentUpload} {...cardProps} />
+          </ProviderGrid>
+        </section>
+      ) : null}
+
+      {/* Self-fulfilment (conditional) */}
+      {selfFulfillment ? (
+        <section
+          className="rounded-xl border px-5 py-5"
+          style={{ borderColor: 'var(--border-muted)', background: 'var(--surface)' }}
+        >
+          <CategoryHeader
+            title="Self-fulfilment"
+            description="Request low-confidence pack confirmation from your team via a signed link."
+            satisfied={selfFulfillment.connected}
+          />
+          <ProviderGrid>
+            <ProviderCard provider={selfFulfillment} {...cardProps} />
+          </ProviderGrid>
+        </section>
+      ) : null}
+
+      {/* Warehouse, Returns, carrier claims — collapsed by default */}
+      {(logistics.length > 0 || returns.length > 0 || carrierClaims) ? (
+        <section
+          id="stack-setup"
+          className="scroll-mt-6 rounded-xl border"
+          style={{ borderColor: 'var(--border-muted)', background: 'var(--surface)' }}
+        >
+          <button
+            type="button"
+            onClick={() => setStackOpen((v) => !v)}
+            className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left"
+            style={{
+              borderBottom: stackOpen ? '1px solid var(--border-muted)' : 'none',
+            }}
+          >
+            <div>
+              <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+                More sources, as your stack supports them
+              </p>
+              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                Warehouse, returns, and carrier claims — confirm whether these apply to your operation
+              </p>
+            </div>
+            {stackOpen
+              ? <ChevronUp className="h-4 w-4 shrink-0" style={{ color: 'var(--text-secondary)' }} />
+              : <ChevronDown className="h-4 w-4 shrink-0" style={{ color: 'var(--text-secondary)' }} />}
+          </button>
+          {stackOpen ? (
+            <div className="space-y-6 px-5 py-5">
+              {logistics.length > 0 ? (
+                <CategoryApplicabilityQuestion
+                  question="Do you use a warehouse or 3PL?"
+                  yesLabel="I use one — show me providers"
+                  noLabel="No, we self-fulfil"
+                  notApplicableMessage="Marked as not applicable — pick/pack evidence won't appear on your cases."
+                  applicableAnswerLabel="Using a 3PL"
+                  state={warehouseApplicability}
+                  busy={applicabilityBusy === 'warehouse_3pl'}
+                  editing={warehouseEditing}
+                  onUseOne={() => void submitApplicability('warehouse_3pl', 'applicable')}
+                  onNotApplicable={() => void submitApplicability('warehouse_3pl', 'not_applicable')}
+                  onChangeDecision={() => setWarehouseEditing(true)}
+                >
+                  <ProviderGrid>
+                    {logistics.map((provider) => (
+                      <ProviderCard key={provider.id} provider={provider} {...cardProps} />
+                    ))}
+                  </ProviderGrid>
+                </CategoryApplicabilityQuestion>
+              ) : null}
+
+              {returns.length > 0 ? (
+                <CategoryApplicabilityQuestion
+                  question="Do you use a dedicated returns platform?"
+                  yesLabel="I use one — show me providers"
+                  noLabel="No, we handle returns manually"
+                  notApplicableMessage="Marked as not applicable — return inspection evidence won't appear on your cases."
+                  applicableAnswerLabel="Using a returns platform"
+                  state={returnsApplicability}
+                  busy={applicabilityBusy === 'returns'}
+                  editing={returnsEditing}
+                  onUseOne={() => void submitApplicability('returns', 'applicable')}
+                  onNotApplicable={() => void submitApplicability('returns', 'not_applicable')}
+                  onChangeDecision={() => setReturnsEditing(true)}
+                >
+                  <ProviderGrid>
+                    {returns.map((provider) => (
+                      <ProviderCard key={provider.id} provider={provider} {...cardProps} />
+                    ))}
+                  </ProviderGrid>
+                </CategoryApplicabilityQuestion>
+              ) : null}
+
+              {carrierClaims ? (
+                <div
+                  className="border-t pt-4"
+                  style={{ borderColor: 'var(--border-muted)' }}
+                >
+                  <p className="mb-2 text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+                    Carrier claims
+                  </p>
+                  <SlotProviderLine provider={carrierClaims} />
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
+      {/* Modals */}
+      <ShopifyModal
+        open={shopifyModalOpen}
+        onClose={() => { setShopifyModalOpen(false); setPopupError(null); }}
+        onOpen={openShopifyPopup}
+      />
+      <ConnectModal
+        target={connectTarget}
+        busy={busyId === connectTarget?.id}
+        onClose={() => setConnectTarget(null)}
+        onSubmit={submitConnect}
+      />
+      <SyncModal
+        target={syncTarget}
+        busy={busyId === syncTarget?.id}
+        onClose={() => setSyncTarget(null)}
+        onSubmit={submitSync}
+      />
+      <DocumentUploadModal
+        target={uploadTarget}
+        busy={busyId === uploadTarget?.id}
+        onClose={() => setUploadTarget(null)}
+        onSubmit={submitUpload}
+      />
     </div>
   );
 }
