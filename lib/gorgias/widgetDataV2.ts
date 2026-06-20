@@ -167,7 +167,7 @@ export async function buildGorgiasClaimWidgetDataV2(
   let storeClaims: Array<{ claim_type: string; submitted_at: string; amount_at_risk: number | null }> = [];
   if (orderIds.length > 0) {
     const { data: claims, error: ce } = await service
-      .from('claims')
+      .from(TABLES.MERCHANT_CLAIMS)
       .select('claim_type, submitted_at, amount_at_risk')
       .eq('merchant_id', auth.merchantId)
       .in('source_order_id', orderIds.slice(0, 200));

@@ -6,7 +6,7 @@ jest.mock('@/lib/supabase/server', () => ({
 }));
 
 jest.mock('@/lib/permissions', () => ({
-  PERMISSIONS: { SUBMIT_FRAUD_FEEDBACK: 'submit_fraud_feedback' },
+  PERMISSIONS: { SUBMIT_FRAUD_FEEDBACK: 'submit_fraud_feedback', SUBMIT_PAYOUT_DECISIONS: 'submit_payout_decisions' },
   requirePermission: jest.fn(),
 }));
 
@@ -19,10 +19,6 @@ jest.mock('@/lib/claims/store', () => {
     upsertClaimEvidenceItem: jest.fn(),
   };
 });
-
-jest.mock('@/lib/supabase/merchantHelpers', () => ({
-  fetchMerchantScopedCustomerProfile: jest.fn(),
-}));
 
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission } from '@/lib/permissions';
@@ -37,18 +33,23 @@ import { POST as assignmentPost } from '@/app/api/claims/[claimId]/assignment/ro
 import { POST as snoozePost } from '@/app/api/claims/[claimId]/snooze/route';
 import { POST as responseCopiedPost } from '@/app/api/claims/[claimId]/customer-response-copied/route';
 import { upsertMerchantClaim, upsertMerchantCaseOutcome, upsertClaimEvidenceItem } from '@/lib/claims/store';
-import { fetchMerchantScopedCustomerProfile } from '@/lib/supabase/merchantHelpers';
+import { TABLES } from '@/lib/supabase/tables';
+
+const TEST_USER_ID = '11111111-1111-4111-8111-111111111111';
+const TEST_MERCHANT_ID = '22222222-2222-4222-8222-222222222222';
+const OTHER_MERCHANT_ID = '33333333-3333-4333-8333-333333333333';
+const TEST_SOURCE_ORDER_ID = '44444444-4444-4444-8444-444444444444';
 
 function mkReq(url: string, body: any) {
   return new NextRequest(url, { method: 'POST', body: JSON.stringify(body), headers: { 'content-type': 'application/json' } } as any);
 }
 
 function setupAuth(ok: boolean) {
-  (createClient as jest.Mock).mockReturnValue({ auth: { getUser: jest.fn().mockResolvedValue({ data: { user: ok ? { id: 'user-1' } : null } }) } });
+  (createClient as jest.Mock).mockReturnValue({ auth: { getUser: jest.fn().mockResolvedValue({ data: { user: ok ? { id: TEST_USER_ID } : null } }) } });
 }
 
 function setupPermission() {
-  (requirePermission as jest.Mock).mockResolvedValue({ denied: null, ctx: { merchantId: 'm-1', userId: 'user-1' } });
+  (requirePermission as jest.Mock).mockResolvedValue({ denied: null, ctx: { merchantId: TEST_MERCHANT_ID, userId: TEST_USER_ID } });
 }
 
 function setupServiceClient(opts: {
@@ -63,15 +64,18 @@ function setupServiceClient(opts: {
 } = {}) {
   const ownsShop = opts.ownsShop ?? true;
   const claimShopDomain = Object.prototype.hasOwnProperty.call(opts, 'claimShopDomain') ? opts.claimShopDomain : 'unit-test.myshopify.com';
-  const claimMerchantId = Object.prototype.hasOwnProperty.call(opts, 'claimMerchantId') ? opts.claimMerchantId : 'm-1';
+  const claimMerchantId = Object.prototype.hasOwnProperty.call(opts, 'claimMerchantId') ? opts.claimMerchantId : TEST_MERCHANT_ID;
   const claimStatus = opts.claimStatus ?? 'open';
   let firstViewedAt = opts.firstViewedAt ?? null;
   const assignedTo = opts.assignedTo ?? null;
   const claimEvents: any[] = [];
   const claimUpdates: any[] = [];
+  const claimTables = new Set([TABLES.MERCHANT_CLAIMS, 'merchant_claims']);
+  const storeConnectionTables = new Set([TABLES.MERCHANT_SHOPIFY_CONNECTIONS, 'merchant_shopify_connections']);
 
   function makeSelectChain(table: string) {
     const filters: Array<{ op: string; column: string; value: any }> = [];
+    const filterValue = (column: string) => filters.find((f) => f.column === column)?.value;
     const chain: any = {
       eq: (column: string, value: any) => { filters.push({ op: 'eq', column, value }); return chain; },
       neq: (column: string, value: any) => { filters.push({ op: 'neq', column, value }); return chain; },
@@ -79,10 +83,10 @@ function setupServiceClient(opts: {
       order: () => chain,
       limit: () => chain,
       maybeSingle: async () => {
-        if (table === 'merchant_shopify_connections') {
-          return { data: ownsShop ? { merchant_id: 'm-1' } : null, error: null };
+        if (storeConnectionTables.has(table)) {
+          return { data: ownsShop ? { merchant_id: TEST_MERCHANT_ID } : null, error: null };
         }
-        if (table === 'merchant_claims') {
+        if (claimTables.has(table)) {
           return {
             data: {
               id: '550e8400-e29b-41d4-a716-446655440000',
@@ -94,7 +98,7 @@ function setupServiceClient(opts: {
               submitted_at: new Date(Date.now() - 86400000).toISOString(),
               updated_at: new Date().toISOString(),
               first_viewed_at: firstViewedAt,
-              first_viewed_by: firstViewedAt ? 'user-1' : null,
+              first_viewed_by: firstViewedAt ? TEST_USER_ID : null,
               assigned_to: assignedTo,
               assigned_at: assignedTo ? new Date().toISOString() : null,
               snoozed_until: null,
@@ -103,18 +107,31 @@ function setupServiceClient(opts: {
             error: null,
           };
         }
-        if (table === 'merchant_case_outcomes') {
+        if (table === 'merchant_case_outcomes' || table === 'claim_outcomes') {
           return { data: opts.latestOutcome ?? { id: 'old-o1', decision: 'denied', outcome: 'suspected_fraud', updated_at: new Date().toISOString() }, error: null };
+        }
+        if (table === 'source_orders') {
+          const merchantMatches = filterValue('merchant_id') === TEST_MERCHANT_ID;
+          const ref = filterValue('external_id') ?? filterValue('order_number');
+          return {
+            data: ownsShop && merchantMatches && ref
+              ? { id: TEST_SOURCE_ORDER_ID, external_id: String(ref), order_number: String(ref) }
+              : null,
+            error: null,
+          };
         }
         return { data: null, error: null };
       },
       then: async (resolve: any) => {
-        if (table === 'merchant_shopify_connections') {
-          return resolve({ data: ownsShop ? [{ merchant_id: 'm-1', shop_domain: 'unit-test.myshopify.com', active: true }] : [], error: null });
+        if (storeConnectionTables.has(table)) {
+          return resolve({ data: ownsShop ? [{ merchant_id: TEST_MERCHANT_ID, shop_domain: 'unit-test.myshopify.com', active: true }] : [], error: null });
         }
-        if (table === 'merchant_claims') {
-          const isDuplicateProbe = filters.some((f) => f.column === 'shopify_order_id' || f.column === 'order_ref');
+        if (claimTables.has(table)) {
+          const isDuplicateProbe = filters.some((f) => f.column === 'source_order_id' || f.column === 'shopify_order_id' || f.column === 'order_ref');
           return resolve({ data: isDuplicateProbe ? (opts.duplicateClaims ?? []) : [], error: null });
+        }
+        if (table === 'source_orders') {
+          return resolve({ data: ownsShop ? [{ id: TEST_SOURCE_ORDER_ID, external_id: '1001', order_number: '1001' }] : [], error: null });
         }
         return resolve({ data: [], error: null });
       },
@@ -124,12 +141,17 @@ function setupServiceClient(opts: {
 
   const service = {
     from: (table: string) => {
-      if (table === 'merchant_shopify_connections') {
+      if (storeConnectionTables.has(table)) {
         return {
           select: () => makeSelectChain(table),
         };
       }
-      if (table === 'merchant_claims') {
+      if (table === 'source_orders') {
+        return {
+          select: () => makeSelectChain(table),
+        };
+      }
+      if (claimTables.has(table)) {
         const updateChain: any = {
           eq: () => updateChain,
           is: () => updateChain,
@@ -139,7 +161,7 @@ function setupServiceClient(opts: {
                 id: '550e8400-e29b-41d4-a716-446655440000',
                 status: updateChain.status ?? claimStatus,
                 first_viewed_at: updateChain.payload?.first_viewed_at ?? firstViewedAt,
-                first_viewed_by: updateChain.payload?.first_viewed_by ?? (firstViewedAt ? 'user-1' : null),
+                first_viewed_by: updateChain.payload?.first_viewed_by ?? (firstViewedAt ? TEST_USER_ID : null),
                 assigned_to: Object.prototype.hasOwnProperty.call(updateChain.payload ?? {}, 'assigned_to') ? updateChain.payload.assigned_to : assignedTo,
                 assigned_at: updateChain.payload?.assigned_at ?? null,
                 snoozed_until: updateChain.payload?.snoozed_until ?? null,
@@ -178,7 +200,7 @@ function setupServiceClient(opts: {
           }),
         };
       }
-      if (table === 'merchant_case_outcomes') {
+      if (table === 'merchant_case_outcomes' || table === 'claim_outcomes') {
         return {
           select: () => makeSelectChain(table),
         };
@@ -212,7 +234,7 @@ describe('claims routes', () => {
     expect(res.status).toBe(401);
   });
 
-  it('user from wrong merchant rejected', async () => {
+  it('unknown merchant order is rejected', async () => {
     setupAuth(true);
     setupPermission();
     setupServiceClient({ ownsShop: false });
@@ -221,7 +243,7 @@ describe('claims routes', () => {
       shopify_order_id: '1001',
       claim_type: 'other',
     }));
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(422);
   });
 
   it('invalid enum rejected', async () => {
@@ -240,7 +262,7 @@ describe('claims routes', () => {
     const res = await claimsPost(mkReq('http://localhost/api/claims', { shop_domain: 'unit-test.myshopify.com', shopify_order_id: '1001', claim_type: 'missing_parcel', status: 'open' }));
     expect(res.status).toBe(200);
     expect(upsertMerchantClaim).toHaveBeenCalled();
-    expect(claimEvents).toEqual(expect.arrayContaining([expect.objectContaining({ event_type: 'claim_created', claim_id: 'c1', merchant_id: 'm-1' })]));
+    expect(claimEvents).toEqual(expect.arrayContaining([expect.objectContaining({ event_type: 'claim_created', claim_id: 'c1', merchant_id: TEST_MERCHANT_ID })]));
   });
 
   it('duplicate active claim is rejected by API', async () => {
@@ -269,17 +291,14 @@ describe('claims routes', () => {
     expect(body.code).toBe('duplicate_resolved_claim');
   });
 
-  it('valid CSV/manual profile claim uses merchant-scoped profile ownership', async () => {
+  it('valid CSV/manual order claim uses merchant-scoped source order ownership', async () => {
     setupAuth(true);
     setupPermission();
     setupServiceClient();
-    (fetchMerchantScopedCustomerProfile as jest.Mock).mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440001' });
     (upsertMerchantClaim as jest.Mock).mockResolvedValue({
       id: 'c1',
       shop_domain: null,
-      shopify_order_id: null,
-      order_ref: 'ORD-2025-00501',
-      order_source: 'csv',
+      source_order_id: TEST_SOURCE_ORDER_ID,
       claim_type: 'missing_parcel',
       status: 'open',
     });
@@ -293,20 +312,16 @@ describe('claims routes', () => {
     }));
 
     expect(res.status).toBe(200);
-    expect(fetchMerchantScopedCustomerProfile).toHaveBeenCalledWith(
-      expect.anything(),
-      'm-1',
-      '550e8400-e29b-41d4-a716-446655440001',
-      'user-1'
-    );
-    expect(upsertMerchantClaim).toHaveBeenCalled();
+    expect(upsertMerchantClaim).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      merchant_id: TEST_MERCHANT_ID,
+      source_order_id: TEST_SOURCE_ORDER_ID,
+    }));
   });
 
-  it('falls back to legacy shopify_order_id storage when claim order_ref columns are absent', async () => {
+  it('returns a server error when claim upsert fails', async () => {
     setupAuth(true);
     setupPermission();
     setupServiceClient();
-    (fetchMerchantScopedCustomerProfile as jest.Mock).mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440001' });
     (upsertMerchantClaim as jest.Mock).mockRejectedValue(new Error('upsert merchant_claims failed: column order_ref does not exist'));
 
     const res = await claimsPost(mkReq('http://localhost/api/claims', {
@@ -318,8 +333,8 @@ describe('claims routes', () => {
     }));
     const body = await res.json();
 
-    expect(res.status).toBe(200);
-    expect(body.claim.shopify_order_id).toBe('ORD-2025-00501');
+    expect(res.status).toBe(500);
+    expect(body.error).toBe('Failed to upsert claim');
   });
 
   it('valid outcome add succeeds', async () => {
@@ -340,19 +355,38 @@ describe('claims routes', () => {
     setupAuth(true);
     setupPermission();
     setupServiceClient({ claimShopDomain: null as any });
-    (upsertMerchantCaseOutcome as jest.Mock).mockResolvedValue({ id: 'o1', claim_id: 'c1', decision: 'denied', outcome: 'suspected_fraud', amount_refunded: null, amount_recovered: null });
+    (upsertMerchantCaseOutcome as jest.Mock).mockResolvedValue({ id: 'o1', claim_id: 'c1', decision: 'denied', outcome: 'loss', amount_refunded: null, amount_recovered: null });
 
     const res = await outcomePost(
-      mkReq('http://localhost/api/claims/c1/outcome', { decision: 'denied', outcome: 'suspected_fraud' }),
+      mkReq('http://localhost/api/claims/c1/outcome', { decision: 'denied', outcome: 'loss' }),
       { params: Promise.resolve({ claimId: '550e8400-e29b-41d4-a716-446655440000' }) }
     );
 
     expect(res.status).toBe(200);
     expect(upsertMerchantCaseOutcome).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
-      shop_domain: null,
       decision: 'denied',
-      outcome: 'suspected_fraud',
+      outcome: 'loss',
     }));
+  });
+
+  it('rejects prohibited accusation vocabulary on the live outcome path (CR-4)', async () => {
+    setupAuth(true);
+    setupPermission();
+    setupServiceClient();
+
+    const blacklisted = await outcomePost(
+      mkReq('http://localhost/api/claims/c1/outcome', { decision: 'blacklist', outcome: 'loss' }),
+      { params: Promise.resolve({ claimId: '550e8400-e29b-41d4-a716-446655440000' }) }
+    );
+    expect(blacklisted.status).toBe(400);
+
+    const suspectedFraud = await outcomePost(
+      mkReq('http://localhost/api/claims/c1/outcome', { decision: 'denied', outcome: 'suspected_fraud' }),
+      { params: Promise.resolve({ claimId: '550e8400-e29b-41d4-a716-446655440000' }) }
+    );
+    expect(suspectedFraud.status).toBe(400);
+
+    expect(upsertMerchantCaseOutcome).not.toHaveBeenCalled();
   });
 
   it('valid evidence add succeeds', async () => {
@@ -378,7 +412,7 @@ describe('claims routes', () => {
       { params: Promise.resolve({ claimId: '550e8400-e29b-41d4-a716-446655440000' }) }
     );
     expect(res.status).toBe(200);
-    expect(claimEvents).toEqual(expect.arrayContaining([expect.objectContaining({ event_type: 'claim_reopened', previous_status: 'resolved_refunded', new_status: 'open' })]));
+    expect(claimEvents).toEqual(expect.arrayContaining([expect.objectContaining({ event_type: 'claim_reopened', from_status: 'resolved_refunded', to_status: 'open' })]));
   });
 
   it('decision reversal preserves previous outcome in event', async () => {
@@ -393,10 +427,12 @@ describe('claims routes', () => {
     expect(res.status).toBe(200);
     expect(claimEvents).toEqual(expect.arrayContaining([expect.objectContaining({
       event_type: 'decision_reversed',
-      previous_decision: 'denied',
-      new_decision: 'approved',
-      previous_outcome: 'suspected_fraud',
-      new_outcome: 'legitimate',
+      metadata: expect.objectContaining({
+        previous_decision: 'denied',
+        new_decision: 'approved',
+        previous_outcome: 'suspected_fraud',
+        new_outcome: 'legitimate',
+      }),
     })]));
   });
 
@@ -415,7 +451,7 @@ describe('claims routes', () => {
   it('wrong merchant cannot mutate claim', async () => {
     setupAuth(true);
     setupPermission();
-    setupServiceClient({ claimMerchantId: 'm-2', claimShopDomain: null });
+    setupServiceClient({ claimMerchantId: OTHER_MERCHANT_ID, claimShopDomain: null });
     const res = await reopenPost(
       mkReq('http://localhost/api/claims/c1/reopen', { note: 'Trying wrong merchant' }),
       { params: Promise.resolve({ claimId: '550e8400-e29b-41d4-a716-446655440000' }) }
@@ -434,7 +470,7 @@ describe('claims routes', () => {
     const body = await res.json();
     expect(res.status).toBe(200);
     expect(body.claim.first_viewed_at).toBeTruthy();
-    expect(claimUpdates).toEqual(expect.arrayContaining([expect.objectContaining({ first_viewed_by: 'user-1' })]));
+    expect(claimUpdates).toEqual(expect.arrayContaining([expect.objectContaining({ first_viewed_at: expect.any(String) })]));
     expect(claimEvents).toEqual(expect.arrayContaining([expect.objectContaining({ event_type: 'claim_viewed' })]));
   });
 
@@ -479,7 +515,7 @@ describe('claims routes', () => {
   it('wrong merchant cannot mark another merchant claim viewed', async () => {
     setupAuth(true);
     setupPermission();
-    setupServiceClient({ claimMerchantId: 'm-2', claimShopDomain: null });
+    setupServiceClient({ claimMerchantId: OTHER_MERCHANT_ID, claimShopDomain: null });
     const res = await viewPost(
       mkReq('http://localhost/api/claims/c1/view', {}),
       { params: Promise.resolve({ claimId: '550e8400-e29b-41d4-a716-446655440000' }) }
@@ -502,7 +538,7 @@ describe('claims routes', () => {
     expect(assignRes.status).toBe(200);
     expect(unassignRes.status).toBe(200);
     expect(claimUpdates).toEqual(expect.arrayContaining([
-      expect.objectContaining({ assigned_to: 'user-1' }),
+      expect.objectContaining({ assigned_to: TEST_USER_ID }),
       expect.objectContaining({ assigned_to: null }),
     ]));
     expect(claimEvents.map((event) => event.event_type)).toEqual(expect.arrayContaining(['claim_assigned', 'claim_unassigned']));
@@ -511,7 +547,7 @@ describe('claims routes', () => {
   it('wrong merchant cannot assign claim', async () => {
     setupAuth(true);
     setupPermission();
-    setupServiceClient({ claimMerchantId: 'm-2', claimShopDomain: null });
+    setupServiceClient({ claimMerchantId: OTHER_MERCHANT_ID, claimShopDomain: null });
     const res = await assignmentPost(
       mkReq('http://localhost/api/claims/c1/assignment', { action: 'assign_to_me' }),
       { params: Promise.resolve({ claimId: '550e8400-e29b-41d4-a716-446655440000' }) }
@@ -542,14 +578,19 @@ describe('claims routes', () => {
       { params: Promise.resolve({ claimId: '550e8400-e29b-41d4-a716-446655440000' }) }
     );
     expect(res.status).toBe(200);
-    expect(claimUpdates[0].last_customer_response_text).toContain('no further action');
-    expect(claimEvents.map((event) => event.event_type)).toEqual(expect.arrayContaining(['customer_response_saved', 'customer_response_copied']));
+    expect(claimEvents).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        event_type: 'customer_response_saved',
+        metadata: expect.objectContaining({ response_text: expect.stringContaining('no further action') }),
+      }),
+      expect.objectContaining({ event_type: 'customer_response_copied' }),
+    ]));
   });
 
   it('wrong merchant cannot write customer response record', async () => {
     setupAuth(true);
     setupPermission();
-    setupServiceClient({ claimMerchantId: 'm-2', claimShopDomain: null });
+    setupServiceClient({ claimMerchantId: OTHER_MERCHANT_ID, claimShopDomain: null });
     const res = await responseCopiedPost(
       mkReq('http://localhost/api/claims/c1/customer-response-copied', { decision: 'no_action', outcome: 'legitimate' }),
       { params: Promise.resolve({ claimId: '550e8400-e29b-41d4-a716-446655440000' }) }

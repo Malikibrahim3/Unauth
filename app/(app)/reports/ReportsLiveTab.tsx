@@ -7,56 +7,39 @@ import { AnalyticsKpiCard } from '@/components/analytics/AnalyticsKpiCard';
 import { AnalyticsHBarChart } from '@/components/analytics/AnalyticsHBarChart';
 import { AnalyticsGaugeCard } from '@/components/analytics/AnalyticsGaugeCard';
 import { formatCurrencyCompact } from '@/components/charts/chartFormatters';
-import { formatCurrencyNullable } from '@/lib/utils/format';
 import type { ConnectionState } from '@/lib/connections/getConnectionState';
-import type { ClaimOpsMetrics } from '@/lib/claims/reporting';
-import type { ClaimTypeBreakdown, OutcomeBreakdown, SourcesCoverage } from '@/app/(app)/reports/reportsPageTypes';
+import type {
+  PartnerPerformanceRow,
+  RecoveryMetrics,
+  RecoveryStatusBreakdown,
+  SourcesCoverage,
+} from '@/app/(app)/reports/reportsPageTypes';
 import { ReportsSourceTag as SourceTag } from '@/app/(app)/reports/ReportsSourceTag';
 
 type LiveSetupCta = { title: string; body: string; label: string };
-export type LiveTabProps = {
+export type RecoveryTabProps = {
   connectionState: ConnectionState;
   liveCta: LiveSetupCta | null;
   range: string;
-  claimMetrics: ClaimOpsMetrics;
-  priorMetrics: ClaimOpsMetrics | null;
-  exposureAtRisk: number | null;
-  claimTypeBreakdown: ClaimTypeBreakdown;
-  outcomeBreakdown: OutcomeBreakdown;
+  recoveryMetrics: RecoveryMetrics;
+  recoveryStatusBreakdown: RecoveryStatusBreakdown;
+  partnerPerformance: PartnerPerformanceRow[];
   sourcesCoverage: SourcesCoverage;
 };
 
-export function LiveTab({
+export function RecoveryTab({
   connectionState,
   liveCta,
   range,
-  claimMetrics,
-  exposureAtRisk,
-  claimTypeBreakdown,
-  outcomeBreakdown,
+  recoveryMetrics,
+  recoveryStatusBreakdown,
+  partnerPerformance,
   sourcesCoverage,
-}: LiveTabProps) {
+}: RecoveryTabProps) {
   const rangeLabel = range === 'all' ? 'all time' : `last ${range.replace('d', ' days')}`;
-  const resolutionRate = claimMetrics.totalClaims > 0
-    ? (claimMetrics.resolvedClaims / claimMetrics.totalClaims) * 100
-    : 0;
-  const overdueRate = claimMetrics.totalClaims > 0
-    ? (claimMetrics.overdueClaims / claimMetrics.totalClaims) * 100
-    : 0;
-
-  /* ── Colour helpers ─────────────────────────────────────────────────── */
-  const OUTCOME_COLOR: Record<string, string> = {
-    approved: 'var(--neutral)',
-    denied: 'var(--accent)',
-    partial: 'var(--warning)',
-    chargeback: 'var(--sev-neutral)',
-    withdrawn: 'var(--text-tertiary)',
-  };
 
   return (
     <div className="p-4 space-y-4">
-
-      {/* ── Setup CTA banner ─────────────────────────────────────────────── */}
       {liveCta && (
         <div
           className="rounded border px-4 py-3 flex flex-wrap items-center justify-between gap-3"
@@ -87,110 +70,92 @@ export function LiveTab({
         </div>
       )}
 
-      {/* ── 4-KPI top strip ──────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <AnalyticsKpiCard label="Claims filed" value={claimMetrics.totalClaims} hint={rangeLabel} />
-        <AnalyticsKpiCard label="Open claims" value={claimMetrics.openClaims} />
-        <AnalyticsKpiCard
-          label="Open claim value"
-          value={claimMetrics.valueAtRisk ? formatCurrencyCompact(claimMetrics.valueAtRisk) : '—'}
-        />
-        <AnalyticsKpiCard label="Evidence packages" value={sourcesCoverage.evidencePackages} />
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        <AnalyticsKpiCard label="Recovered amount" value={recoveryMetrics.recoveredAmount ? formatCurrencyCompact(recoveryMetrics.recoveredAmount) : '—'} hint={rangeLabel} />
+        <AnalyticsKpiCard label="Unrecovered amount" value={recoveryMetrics.unrecoveredAmount ? formatCurrencyCompact(recoveryMetrics.unrecoveredAmount) : '—'} />
+        <AnalyticsKpiCard label="Open recovery value" value={recoveryMetrics.openRecoveryValue ? formatCurrencyCompact(recoveryMetrics.openRecoveryValue) : '—'} />
+        <AnalyticsKpiCard label="Recovery cases" value={recoveryMetrics.totalCases} />
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        <AnalyticsKpiCard label="Evidence needed" value={recoveryMetrics.evidenceNeeded} compact />
+        <AnalyticsKpiCard label="Chase due" value={recoveryMetrics.chaseDue} compact />
+        <AnalyticsKpiCard label="Submitted" value={recoveryMetrics.submittedCases} compact />
+        <AnalyticsKpiCard label="Approved / paid" value={recoveryMetrics.approvedCases} compact />
       </div>
 
       <div className="grid gap-3 md:grid-cols-3">
         <AnalyticsGaugeCard
-          label="Resolution rate"
-          value={resolutionRate}
-          hint={`Resolved claims · ${rangeLabel}`}
-          color="var(--neutral)"
+          label="Recovery win rate"
+          value={recoveryMetrics.winRate * 100}
+          hint="Approved, partially approved, or paid recoveries"
+          color="var(--accent)"
         />
         <AnalyticsGaugeCard
-          label="Ageing claims"
-          value={overdueRate}
-          hint="Claims open longer than 72h"
+          label="Open recovery load"
+          value={recoveryMetrics.totalCases > 0 ? (recoveryMetrics.openCases / recoveryMetrics.totalCases) * 100 : 0}
+          hint={`${recoveryMetrics.openCases.toLocaleString()} open of ${recoveryMetrics.totalCases.toLocaleString()} total`}
           color="var(--warning)"
         />
         <AnalyticsGaugeCard
-          label="Source coverage"
-          value={(connectionState.shopify ? 50 : 0) + (connectionState.helpdesk ? 50 : 0)}
-          hint="Connected live data sources"
+          label="Partner rule coverage"
+          value={sourcesCoverage.partners > 0 ? Math.min((sourcesCoverage.partnerRules / sourcesCoverage.partners) * 100, 100) : 0}
+          hint={`${sourcesCoverage.partnerRules.toLocaleString()} active or configured rules`}
           color="var(--lime)"
         />
       </div>
 
-      {/* ── Status + Claim reason charts ─────────────────────────────────── */}
       <div className="grid gap-4 xl:grid-cols-2">
-        <SectionCard title="Claim status" description={`Breakdown · ${rangeLabel}`} actions={<SourceTag source="live" />}>
+        <SectionCard title="Recovery status" description={`Recovery case board · ${rangeLabel}`} actions={<SourceTag source="live" />}>
           <AnalyticsHBarChart
-            data={[
-              { label: 'Open', value: claimMetrics.openClaims, color: 'var(--text-tertiary)' },
-              { label: 'In review / pending', value: claimMetrics.inReviewOrPendingClaims, color: 'var(--warning)' },
-              { label: 'Resolved', value: claimMetrics.resolvedClaims, color: 'var(--neutral)' },
-              { label: 'Ageing (>72h)', value: claimMetrics.overdueClaims, color: 'var(--accent)' },
-            ]}
-            emptyLabel="No claim data"
-          />
-        </SectionCard>
-
-        <SectionCard title="Claim reason" description={`By claim type · ${rangeLabel}`} actions={<SourceTag source="live" />}>
-          <AnalyticsHBarChart
-            data={claimTypeBreakdown.slice(0, 6).map((item) => ({
+            data={recoveryStatusBreakdown.slice(0, 8).map((item) => ({
               label: item.label,
               value: item.count,
-              color: 'var(--accent)',
+              color: item.status === 'chase_due' || item.status === 'evidence_needed' ? 'var(--warning)' : 'var(--accent)',
             }))}
-            yAxisWidth={140}
-            emptyLabel="No claim type data"
+            yAxisWidth={160}
+            emptyLabel="No recovery cases"
+          />
+        </SectionCard>
+
+        <SectionCard title="Partner performance" description="Recovered and open recovery value by owner" actions={<SourceTag source="live" />}>
+          <AnalyticsHBarChart
+            data={partnerPerformance.slice(0, 8).map((item) => ({
+              label: item.partnerName,
+              value: item.recoveredAmount + item.openRecoveryValue,
+              color: item.recoveredAmount > 0 ? 'var(--neutral)' : 'var(--accent)',
+            }))}
+            yAxisWidth={160}
+            valueFormatter={(value) => formatCurrencyCompact(value)}
+            emptyLabel="No partner recovery data"
           />
         </SectionCard>
       </div>
 
-      {/* ── Outcomes + Source coverage ────────────────────────────────────── */}
       <div className="grid gap-4 xl:grid-cols-2">
-        <SectionCard title="Outcome decisions" description={`Decision breakdown · ${rangeLabel}`} actions={<SourceTag source="live" />}>
-          {outcomeBreakdown.length === 0 ? (
-            <div className="py-8 text-center">
-              <p className="t-caption" style={{ color: 'var(--text-tertiary)' }}>No recorded outcomes yet.</p>
-            </div>
-          ) : (
-            <AnalyticsHBarChart
-              data={outcomeBreakdown.slice(0, 6).map((item) => ({
-                label: item.label,
-                value: item.count,
-                color: OUTCOME_COLOR[item.decision] ?? 'var(--sev-neutral)',
-              }))}
-              yAxisWidth={110}
-            />
-          )}
+        <SectionCard title="Recovery value" description="Open, recovered, and unrecovered totals">
+          <AnalyticsHBarChart
+            data={[
+              { label: 'Recovered amount', value: recoveryMetrics.recoveredAmount, color: 'var(--neutral)' },
+              { label: 'Open recovery value', value: recoveryMetrics.openRecoveryValue, color: 'var(--accent)' },
+              { label: 'Estimated recoverable max', value: recoveryMetrics.estimatedRecoverableMax, color: 'var(--warning)' },
+              { label: 'Unrecovered amount', value: recoveryMetrics.unrecoveredAmount, color: 'var(--text-tertiary)' },
+            ]}
+            yAxisWidth={180}
+            valueFormatter={(value) => formatCurrencyCompact(value)}
+            emptyLabel="No recovery value yet"
+          />
         </SectionCard>
 
-        <SectionCard title="Source coverage" description="Records across connected sources">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 mt-1">
-            {[
-              { label: 'Customer profiles', value: sourcesCoverage.customerProfiles },
-              { label: 'Order records', value: sourcesCoverage.auditTransactions },
-              { label: 'Claim records', value: sourcesCoverage.merchantClaims },
-              { label: 'Source cases', value: sourcesCoverage.supportCases },
-              { label: 'Evidence packages', value: sourcesCoverage.evidencePackages },
-            ].map(({ label, value }) => (
-              <AnalyticsKpiCard key={label} label={label} value={value} compact />
-            ))}
+        <SectionCard title="Partner rulebook coverage" description="Configured recovery operating model">
+          <div className="grid grid-cols-2 gap-3">
+            <AnalyticsKpiCard label="Partners" value={sourcesCoverage.partners} compact />
+            <AnalyticsKpiCard label="Partner rules" value={sourcesCoverage.partnerRules} compact />
+            <AnalyticsKpiCard label="Recovery cases" value={sourcesCoverage.recoveryCases} compact />
+            <AnalyticsKpiCard label="Evidence files" value={sourcesCoverage.evidencePackages} compact />
           </div>
         </SectionCard>
       </div>
-
-      {/* ── Exposure panel ───────────────────────────────────────────────── */}
-      {exposureAtRisk !== null && (
-        <SectionCard title="Exposure on open claims" description="Order value linked to open claims · Shopify source" actions={<SourceTag source="live" />}>
-          <div className="py-1">
-            <p className="num text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>
-              {formatCurrencyNullable(exposureAtRisk)}
-            </p>
-            <p className="t-caption mt-1" style={{ color: 'var(--text-tertiary)' }}>Matched orders on open claims</p>
-          </div>
-        </SectionCard>
-      )}
     </div>
   );
 }

@@ -331,7 +331,7 @@ async function ensureMerchant(userId) {
 }
 
 async function deleteMerchantData(merchantId) {
-  const { data: claims } = await supabase.from('claims').select('id').eq('merchant_id', merchantId);
+  const { data: claims } = await supabase.from('support_payout_cases').select('id').eq('merchant_id', merchantId);
   const claimIds = (claims ?? []).map((c) => c.id);
   if (claimIds.length) {
     for (let i = 0; i < claimIds.length; i += 200) {
@@ -339,7 +339,7 @@ async function deleteMerchantData(merchantId) {
       await supabase.from('claim_evidence').delete().in('claim_id', slice);
       await supabase.from('claim_outcomes').delete().in('claim_id', slice);
     }
-    await supabase.from('claims').delete().eq('merchant_id', merchantId);
+    await supabase.from('support_payout_cases').delete().eq('merchant_id', merchantId);
   }
   await supabase.from('source_tickets').delete().eq('merchant_id', merchantId);
   await supabase.from('identity_notes').delete().eq('merchant_id', merchantId);
@@ -800,7 +800,7 @@ function buildClaimsForProfile(profile, orders, identityId, userId, claimCounter
 async function seedClaimsAndState(merchantId, userId, orderByProfileKey) {
   await supabase.from('merchant_identity_state').delete().eq('merchant_id', merchantId);
   await supabase.from('identity_notes').delete().eq('merchant_id', merchantId);
-  const { data: existingClaims } = await supabase.from('claims').select('id').eq('merchant_id', merchantId);
+  const { data: existingClaims } = await supabase.from('support_payout_cases').select('id').eq('merchant_id', merchantId);
   const existingClaimIds = (existingClaims ?? []).map((c) => c.id);
   if (existingClaimIds.length) {
     for (let i = 0; i < existingClaimIds.length; i += 200) {
@@ -808,7 +808,7 @@ async function seedClaimsAndState(merchantId, userId, orderByProfileKey) {
       await supabase.from('claim_evidence').delete().in('claim_id', slice);
       await supabase.from('claim_outcomes').delete().in('claim_id', slice);
     }
-    await supabase.from('claims').delete().eq('merchant_id', merchantId);
+    await supabase.from('support_payout_cases').delete().eq('merchant_id', merchantId);
   }
   await supabase.from('source_tickets').delete().eq('merchant_id', merchantId);
 

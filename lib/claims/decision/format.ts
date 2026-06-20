@@ -1,9 +1,19 @@
 import type { MatchedCondition, RuleEvaluationResult } from '@/lib/rules-engine';
 import { OPERATOR_LABELS } from '@/lib/rules-engine';
+import { PAYOUT_RECOMMENDATION_LABELS, payoutRecommendationLabel, resolvePayoutRecommendation } from '@/lib/payouts/recommendation';
 import { ACTION_LABELS } from '@/lib/rules/summary';
+import type { SupportPayoutCase } from '@/lib/payouts/types';
 import { summarizeCondition } from '@/lib/rules/summary';
 import { FIELD_DEFS_BY_NAME } from '@/lib/rules/fields';
 import { CLAIM_TYPE_LABELS } from '@/lib/claims/claimTypes';
+import {
+  ATTRIBUTION_CONFIDENCE_LABELS,
+  EVIDENCE_STRENGTH_LABELS,
+  LIKELY_OWNER_LABELS,
+  LOSS_ATTRIBUTION_DISPLAY,
+  RECOVERABILITY_LABELS,
+  REQUESTED_ACTION_LABELS,
+} from '@/lib/payouts/types';
 
 export type FormattedClaimDecision = {
   recommendationLabel: string;
@@ -40,8 +50,16 @@ function plainFieldLabel(field: string): string {
     prior_denied_claims: 'Prior denied claims',
     prior_escalated_claims: 'Prior escalated claims',
     confidence_grade: 'Identity confidence',
-    evidence_score: 'Risk score',
+    evidence_score: 'Evidence score',
     network_claim_count: 'Cross-network claims',
+    total_estimated_loss: 'Total estimated loss',
+    above_review_threshold: 'Above review threshold',
+    requested_action: 'Requested action',
+    loss_attribution: 'Loss attribution',
+    loss_attribution_confidence: 'Loss attribution confidence',
+    recoverability: 'Recoverability',
+    likely_owner: 'Likely loss owner',
+    evidence_strength: 'Evidence strength',
   };
   return labels[field] ?? field.replace(/_/g, ' ');
 }
@@ -62,8 +80,29 @@ function formatPlainValue(field: string, value: unknown): string {
   if (field === 'amount_at_risk' && typeof value === 'number') {
     return `£${value.toLocaleString()}`;
   }
+  if (field === 'total_estimated_loss' && typeof value === 'number') {
+    return `£${value.toLocaleString()}`;
+  }
   if (field === 'order_value_usd' && typeof value === 'number') {
     return `$${value.toLocaleString()}`;
+  }
+  if (field === 'requested_action' && typeof value === 'string') {
+    return REQUESTED_ACTION_LABELS[value as keyof typeof REQUESTED_ACTION_LABELS] ?? value;
+  }
+  if (field === 'loss_attribution' && typeof value === 'string') {
+    return LOSS_ATTRIBUTION_DISPLAY[value as keyof typeof LOSS_ATTRIBUTION_DISPLAY] ?? value;
+  }
+  if (field === 'loss_attribution_confidence' && typeof value === 'string') {
+    return ATTRIBUTION_CONFIDENCE_LABELS[value as keyof typeof ATTRIBUTION_CONFIDENCE_LABELS] ?? value;
+  }
+  if (field === 'recoverability' && typeof value === 'string') {
+    return RECOVERABILITY_LABELS[value as keyof typeof RECOVERABILITY_LABELS] ?? value;
+  }
+  if (field === 'likely_owner' && typeof value === 'string') {
+    return LIKELY_OWNER_LABELS[value as keyof typeof LIKELY_OWNER_LABELS] ?? value;
+  }
+  if (field === 'evidence_strength' && typeof value === 'string') {
+    return EVIDENCE_STRENGTH_LABELS[value as keyof typeof EVIDENCE_STRENGTH_LABELS] ?? value;
   }
   if (Array.isArray(value)) return value.join(', ');
   return String(value ?? '—');
@@ -109,6 +148,7 @@ function formatMatchedConditionPlain(c: MatchedCondition): { label: string; actu
 export function formatClaimDecisionRecommendation(
   evaluation: RuleEvaluationResult,
   ruleCount: number,
+  payoutCase?: SupportPayoutCase,
 ): FormattedClaimDecision {
   if (evaluation.recommendation === 'no_match') {
     if (ruleCount === 0) {
@@ -133,6 +173,10 @@ export function formatClaimDecisionRecommendation(
     };
   }
 
+  const resolved = payoutCase
+    ? (payoutCase.recommendation ?? resolvePayoutRecommendation(evaluation, payoutCase))
+    : null;
+
   const tone =
     evaluation.recommendation === 'approve'
       ? 'success'
@@ -141,9 +185,11 @@ export function formatClaimDecisionRecommendation(
         : 'warning';
 
   return {
-    recommendationLabel: ACTION_LABELS[evaluation.recommendation] ?? evaluation.recommendation,
+    recommendationLabel: resolved
+      ? payoutRecommendationLabel(resolved.action)
+      : (ACTION_LABELS[evaluation.recommendation] ?? evaluation.recommendation),
     ruleName: evaluation.rule_name,
-    summary: evaluation.justification_lines.slice(1).join('. ') || evaluation.justification,
+    summary: resolved?.explanation ?? (evaluation.justification_lines.slice(1).join('. ') || evaluation.justification),
     matchedConditions: evaluation.matched_conditions.map(formatMatchedConditionPlain),
     isNoMatch: false,
     isNoRules: false,

@@ -26,10 +26,10 @@ export function ReportsPageView({
   tabPanel,
 }: ReportsPageViewProps) {
   return (
-    <PageConnectionGate requires="both" connection={connectionState} pageName="Analytics" pageDescription="Analytics combines Shopify order data with helpdesk claim records. Without both connected, claim counts, dispute rates, and outcome summaries will be incomplete or zero." setupState={setupState} hasData={hasAnyData}>
+    <PageConnectionGate requires="both" connection={connectionState} pageName="Payout reports" pageDescription="Reports combine Shopify order data, helpdesk payout cases, evidence, decisions, and recoveries. Without both connected, exposure, recovery, and outcome summaries may be incomplete or zero." setupState={setupState} hasData={hasAnyData}>
     <WorkbenchPage
-      title="Analytics"
-      subtitle="Store and network intelligence from customer, order, claim, and source-case records."
+      title="Payout reports"
+      subtitle="Payout exposure, evidence gaps, agent decisions, recovery value, partner performance, and outcomes."
       navItems={WORKBENCH_NAV_ITEMS}
       activeNavKey="reports"
       actions={

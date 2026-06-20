@@ -19,7 +19,30 @@ interface ConditionBlockProps {
   disabled?: boolean;
 }
 
-const CATEGORY_ORDER: RuleFieldCategory[] = ['evidence', 'identity', 'claim_history', 'order'];
+// Merchant-facing payout-policy builder leads with payout-case facts. Identity,
+// cross-merchant network, and the raw risk score are deliberately excluded from
+// the picker — payout recommendations are driven by case policy, not behaviour
+// scoring. (These fields still exist for internal/advanced evaluation.)
+const CATEGORY_ORDER: RuleFieldCategory[] = [
+  'current_claim',
+  'payout',
+  'claim_evidence',
+  'delivery',
+  'claim_history',
+  'order',
+  'outcome_history',
+  'evidence',
+];
+
+const MERCHANT_HIDDEN_FIELDS = new Set<string>([
+  'evidence_score',
+  'confidence_grade',
+  'has_cross_merchant_identity',
+  'is_network_flagged',
+  'network_claim_count',
+  'network_merchant_count',
+  'network_same_type_claim_count',
+]);
 
 /** A sensible default value for a freshly-selected field + operator pairing. */
 function defaultValueFor(def: RuleFieldDef, operator: string): unknown {
@@ -79,15 +102,30 @@ export function ConditionBlock({ condition, onChange, onRemove, disabled }: Cond
             disabled={disabled}
             onChange={(e) => handleFieldChange(e.target.value)}
           >
-            {CATEGORY_ORDER.map((category) => (
-              <optgroup key={category} label={CATEGORY_LABELS[category]}>
-                {RULE_FIELDS.filter((f) => f.category === category).map((f) => (
-                  <option key={f.field} value={f.field}>
-                    {FIELD_LABELS[f.field] ?? f.field}
-                  </option>
-                ))}
+            {CATEGORY_ORDER.map((category) => {
+              const fields = RULE_FIELDS.filter(
+                (f) =>
+                  f.category === category &&
+                  (!MERCHANT_HIDDEN_FIELDS.has(f.field) || f.field === condition.field),
+              );
+              if (fields.length === 0) return null;
+              return (
+                <optgroup key={category} label={CATEGORY_LABELS[category]}>
+                  {fields.map((f) => (
+                    <option key={f.field} value={f.field}>
+                      {FIELD_LABELS[f.field] ?? f.field}
+                    </option>
+                  ))}
+                </optgroup>
+              );
+            })}
+            {/* Keep an existing (e.g. legacy/advanced) selection editable even if
+                it is no longer part of the payout-policy field set. */}
+            {def && !CATEGORY_ORDER.includes(def.category) && (
+              <optgroup label="Advanced">
+                <option value={condition.field}>{FIELD_LABELS[condition.field] ?? condition.field}</option>
               </optgroup>
-            ))}
+            )}
           </Select>
 
           {/* Operator */}

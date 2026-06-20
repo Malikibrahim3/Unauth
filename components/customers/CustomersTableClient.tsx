@@ -6,7 +6,6 @@ import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
 import { riskLevelToNewGrade } from '@/lib/confidence';
 import CustomerIntelligenceDrawer from '@/components/customers/CustomerIntelligenceDrawer';
 import { DataTable } from '@/components/ui/DataTable';
-import { Tooltip } from '@/components/ui/Tooltip';
 
 
 interface CustomerRow {
@@ -27,10 +26,6 @@ interface CustomerRow {
   linked_emails?: string[] | null;
 }
 
-function linkedAliasEmails(p: CustomerRow): string[] {
-  return (p.linked_emails ?? []).filter((email) => email !== p.primary_email);
-}
-
 interface CustomersTableClientProps {
   rows: CustomerRow[];
 }
@@ -46,7 +41,6 @@ export default function CustomersTableClient({ rows }: CustomersTableClientProps
       key: 'customer',
       header: 'Customer',
       render: (p: CustomerRow) => {
-        const aliases = linkedAliasEmails(p);
         return (
           <div>
             <div className="flex items-center gap-1.5">
@@ -56,22 +50,6 @@ export default function CustomersTableClient({ rows }: CustomersTableClientProps
             </div>
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-mono" style={{ color: 'var(--text-secondary)' }}>{p.primary_email ?? '-'}</span>
-              {(p.linked_customer_count ?? 1) > 1 && (
-                <Tooltip
-                  content={
-                    aliases.length > 0
-                      ? `Same identity as: ${aliases.join(', ')}`
-                      : `${p.linked_customer_count} linked customer records resolve to this identity`
-                  }
-                >
-                  <span
-                    className="rounded-[3px] px-1 py-0.5 text-[10px] font-semibold leading-none"
-                    style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
-                  >
-                    +{(p.linked_customer_count ?? 1) - 1} linked
-                  </span>
-                </Tooltip>
-              )}
             </div>
           </div>
         );
@@ -79,27 +57,8 @@ export default function CustomersTableClient({ rows }: CustomersTableClientProps
     },
     {
       key: 'risk',
-      header: 'Identity confidence',
+      header: 'Evidence match',
       render: (p: CustomerRow) => <ConfidenceBadge grade={riskLevelToNewGrade(p.risk_level)} size="sm" />,
-    },
-    {
-      key: 'network',
-      header: 'Stores seen',
-      align: 'right' as const,
-      render: (p: CustomerRow) => (
-        <Tooltip content="Distinct stores this identity has been seen at. 2+ means a cross-store linked identity.">
-          <span
-            className="num"
-            style={{
-              fontFamily: 'var(--font-mono)',
-              color: p.total_merchants_seen_at > 1 ? 'var(--accent)' : 'var(--text-secondary)',
-              fontWeight: p.total_merchants_seen_at > 1 ? 700 : 500,
-            }}
-          >
-            {p.total_merchants_seen_at}
-          </span>
-        </Tooltip>
-      ),
     },
     {
       key: 'orders',
@@ -164,24 +123,12 @@ export default function CustomersTableClient({ rows }: CustomersTableClientProps
           >
             <div className="flex items-start justify-between gap-2 mb-2">
               <div className="min-w-0">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{p.names?.[0] ?? '-'}</span>
-                  {(p.linked_customer_count ?? 1) > 1 && (
-                    <span
-                      className="rounded-[3px] px-1 py-0.5 text-[10px] font-semibold leading-none"
-                      style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
-                    >
-                      +{(p.linked_customer_count ?? 1) - 1} linked
-                    </span>
-                  )}
-                </div>
+                <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{p.names?.[0] ?? '-'}</span>
                 <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-secondary)' }}>{p.primary_email ?? '-'}</p>
               </div>
               <ConfidenceBadge grade={riskLevelToNewGrade(p.risk_level)} size="sm" />
             </div>
             <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-secondary)' }}>
-              <span><span className="font-semibold font-mono" style={{ color: p.total_merchants_seen_at > 1 ? 'var(--accent)' : 'var(--text)' }}>{p.total_merchants_seen_at}</span> stores seen</span>
-              <span style={{ color: 'var(--border)' }}>·</span>
               <span><span className="font-semibold font-mono" style={{ color: 'var(--text)' }}>{p.total_orders}</span> orders</span>
               <span style={{ color: 'var(--border)' }}>·</span>
               <span><span className="font-semibold font-mono" style={{ color: 'var(--text)' }}>{p.total_refund_claims}</span> refunds</span>

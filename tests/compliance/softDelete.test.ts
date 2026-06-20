@@ -26,6 +26,7 @@ jest.mock('@/lib/permissions/audit', () => ({
 
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { createScopedClient } from '@/lib/supabase/scoped';
+import { TABLES } from '@/lib/supabase/tables';
 import { requirePermission } from '@/lib/permissions';
 import { GET as getTeam } from '@/app/api/team/route';
 import { DELETE as deleteTeamMember } from '@/app/api/team/[memberId]/route';
@@ -34,19 +35,17 @@ type Row = Record<string, unknown>;
 
 type QueryState = {
   hardDeleteTables: string[];
-  rows: {
-    merchant_members: Row[];
-    merchants: Row[];
-  };
+  rows: Record<string, Row[]>;
   updatePayloads: Array<{ table: string; payload: Row }>;
 };
 
-function makeQuery(state: QueryState, table: keyof QueryState['rows']) {
+function makeQuery(state: QueryState, table: string) {
   let operation: 'select' | 'update' | 'delete' = 'select';
   let updatePayload: Row | null = null;
   const filters: Array<(row: Row) => boolean> = [];
 
-  const matchingRows = () => state.rows[table].filter((row) => filters.every((filter) => filter(row)));
+  const tableRows = () => (state.rows[table] ??= []);
+  const matchingRows = () => tableRows().filter((row) => filters.every((filter) => filter(row)));
 
   const resolve = () => {
     const rows = matchingRows();
@@ -58,8 +57,7 @@ function makeQuery(state: QueryState, table: keyof QueryState['rows']) {
 
     if (operation === 'delete') {
       state.hardDeleteTables.push(table);
-      const remaining = state.rows[table].filter((row) => !filters.every((filter) => filter(row)));
-      state.rows[table] = remaining as typeof state.rows[typeof table];
+      state.rows[table] = tableRows().filter((row) => !filters.every((filter) => filter(row)));
       return { data: rows, error: null };
     }
 
@@ -93,6 +91,11 @@ function makeQuery(state: QueryState, table: keyof QueryState['rows']) {
       filters.push((row) => (value === null ? row[column] == null : row[column] === value));
       return chain;
     }),
+    in: jest.fn((column: string, values: unknown[]) => {
+      filters.push((row) => Array.isArray(values) && values.includes(row[column]));
+      return chain;
+    }),
+    limit: jest.fn(() => chain),
     order: jest.fn(() => chain),
     single: jest.fn(async () => {
       const result = resolve();
@@ -111,12 +114,7 @@ function makeQuery(state: QueryState, table: keyof QueryState['rows']) {
 
 function makeSupabaseClient(state: QueryState) {
   return {
-    from: jest.fn((table: string) => {
-      if (table !== 'merchant_members' && table !== 'merchants') {
-        throw new Error(`Unexpected table in soft-delete test: ${table}`);
-      }
-      return makeQuery(state, table);
-    }),
+    from: jest.fn((table: string) => makeQuery(state, table)),
   };
 }
 
@@ -130,7 +128,7 @@ describe('soft-delete compliance', () => {
       hardDeleteTables: [],
       updatePayloads: [],
       rows: {
-        merchant_members: [
+        [TABLES.MERCHANT_MEMBERS]: [
           {
             id: 'member-1',
             merchant_id: 'merchant-1',
@@ -141,7 +139,7 @@ describe('soft-delete compliance', () => {
             deleted_at: null,
           },
         ],
-        merchants: [{ id: 'merchant-1', name: 'Demo Merchant', user_id: 'user-1' }],
+        [TABLES.MERCHANTS]: [{ id: 'merchant-1', name: 'Demo Merchant', user_id: 'user-1' }],
       },
     };
 
@@ -173,10 +171,14 @@ describe('soft-delete compliance', () => {
     //     token insert fails (the row should never have existed).
     //   • account/delete: full account erasure (GDPR right-to-be-forgotten).
     //   • cron/purge-expired-audits: retention purge of expired audit data.
+    //   • rules/[id]: deletes a merchant-authored rule config row (not PII or an
+    //     audit record); rule removal is a hard delete by design, gated by
+    //     risk-score policy coverage checks before the delete runs.
     const INTENTIONAL_HARD_DELETE = new Set([
       'app/api/settings/api-keys/route.ts',
       'app/api/account/delete/route.ts',
       'app/api/cron/purge-expired-audits/route.ts',
+      'app/api/rules/[id]/route.ts',
     ]);
     const routeFiles = globSync('app/api/**/route.ts', { cwd: process.cwd() });
     const violations = routeFiles.filter((routeFile) => {
@@ -204,14 +206,14 @@ describe('soft-delete compliance', () => {
     // (GET /api/team filters .neq('invite_status', 'revoked')); the removal
     // timestamp is captured in the audit log, not on the row.
     expect(state.hardDeleteTables).toEqual([]);
-    expect(state.rows.merchant_members).toHaveLength(1);
+    expect(state.rows[TABLES.MERCHANT_MEMBERS]).toHaveLength(1);
     expect(state.updatePayloads).toEqual([
       {
-        table: 'merchant_members',
+        table: TABLES.MERCHANT_MEMBERS,
         payload: { invite_status: 'revoked' },
       },
     ]);
-    expect(state.rows.merchant_members[0].invite_status).toBe('revoked');
+    expect(state.rows[TABLES.MERCHANT_MEMBERS][0].invite_status).toBe('revoked');
 
     const getResponse = await getTeam();
     expect(getResponse.status).toBe(200);

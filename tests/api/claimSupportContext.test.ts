@@ -8,6 +8,7 @@ jest.mock('@/lib/supabase/server', () => ({
 jest.mock('@/lib/permissions', () => ({
   PERMISSIONS: {
     SUBMIT_FRAUD_FEEDBACK: 'submit_fraud_feedback',
+    SUBMIT_PAYOUT_DECISIONS: 'submit_payout_decisions',
     VIEW_CUSTOMERS: 'view_customers',
   },
   requirePermission: jest.fn(),
@@ -57,20 +58,28 @@ function setupPermission(merchantId: string) {
   });
 }
 
-function setupServiceClient(claim: Record<string, unknown> | null) {
+function setupServiceClient(
+  claim: Record<string, unknown> | null,
+  order?: Record<string, unknown> | null
+) {
   (createServiceClient as jest.Mock).mockReturnValue({
     from: (table: string) => ({
       select: () => ({
         eq: (_column: string, value: string) => ({
           eq: (_column2: string, merchantId: string) => ({
             maybeSingle: async () => {
-              if (table !== 'merchant_claims' || !claim) {
-                return { data: null, error: null };
+              if (table === 'support_payout_cases') {
+                if (!claim) return { data: null, error: null };
+                if (claim.merchant_id !== merchantId || claim.id !== value) {
+                  return { data: null, error: null };
+                }
+                return { data: claim, error: null };
               }
-              if (claim.merchant_id !== merchantId || claim.id !== value) {
-                return { data: null, error: null };
+              if (table === 'source_orders') {
+                if (!order) return { data: null, error: null };
+                return { data: order, error: null };
               }
-              return { data: claim, error: null };
+              return { data: null, error: null };
             },
           }),
         }),
@@ -88,12 +97,17 @@ describe('GET /api/claims/[claimId]/support-context', () => {
   it('returns linked support cases for the same Shopify order context', async () => {
     setupAuth(true);
     setupPermission(MERCHANT_ID);
-    setupServiceClient({
-      id: CLAIM_ID,
-      merchant_id: MERCHANT_ID,
-      shopify_order_id: '16848379281777',
-      shop_domain: 'unauth-test.myshopify.com',
-    });
+    setupServiceClient(
+      {
+        id: CLAIM_ID,
+        merchant_id: MERCHANT_ID,
+        source_order_id: 'order-row-1',
+      },
+      {
+        external_id: '16848379281777',
+        order_number: '1007',
+      }
+    );
     (listSupportCasesForClaimContext as jest.Mock).mockResolvedValue([linkedCase]);
 
     const response = await GET(
@@ -111,7 +125,7 @@ describe('GET /api/claims/[claimId]/support-context', () => {
       expect.objectContaining({
         merchantClaimId: CLAIM_ID,
         shopifyOrderId: '16848379281777',
-        shopDomain: 'unauth-test.myshopify.com',
+        shopDomain: null,
       })
     );
   });
@@ -119,12 +133,14 @@ describe('GET /api/claims/[claimId]/support-context', () => {
   it('does not expose raw email or raw payload fields', async () => {
     setupAuth(true);
     setupPermission(MERCHANT_ID);
-    setupServiceClient({
-      id: CLAIM_ID,
-      merchant_id: MERCHANT_ID,
-      shopify_order_id: '16848379281777',
-      shop_domain: 'unauth-test.myshopify.com',
-    });
+    setupServiceClient(
+      {
+        id: CLAIM_ID,
+        merchant_id: MERCHANT_ID,
+        source_order_id: 'order-row-1',
+      },
+      { external_id: '16848379281777', order_number: '1007' }
+    );
     (listSupportCasesForClaimContext as jest.Mock).mockResolvedValue([linkedCase]);
 
     const response = await GET(
@@ -160,12 +176,14 @@ describe('GET /api/claims/[claimId]/support-context', () => {
   it('returns an empty safe list when no support cases exist', async () => {
     setupAuth(true);
     setupPermission(MERCHANT_ID);
-    setupServiceClient({
-      id: CLAIM_ID,
-      merchant_id: MERCHANT_ID,
-      shopify_order_id: '16848379281777',
-      shop_domain: 'unauth-test.myshopify.com',
-    });
+    setupServiceClient(
+      {
+        id: CLAIM_ID,
+        merchant_id: MERCHANT_ID,
+        source_order_id: 'order-row-1',
+      },
+      { external_id: '16848379281777', order_number: '1007' }
+    );
     (listSupportCasesForClaimContext as jest.Mock).mockResolvedValue([]);
 
     const response = await GET(

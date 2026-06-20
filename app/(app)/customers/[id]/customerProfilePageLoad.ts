@@ -346,7 +346,7 @@ export async function loadCustomerProfilePage(
   let claimRows: ClaimRow[] = [];
   if (orderIds.length > 0) {
     const { data } = await svc
-      .from('claims')
+      .from(TABLES.MERCHANT_CLAIMS)
       .select('id, claim_type, status, source_order_id, reason_normalized, reason_raw, submitted_at, created_at, updated_at')
       .eq('merchant_id', merchantId)
       .in('source_order_id', orderIds)

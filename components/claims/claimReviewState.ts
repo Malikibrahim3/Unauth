@@ -456,8 +456,8 @@ export function useClaimReviewWorkbench(profileId: string, initialClaimId?: stri
         .then((res) => (res.ok ? res.json() : null))
         .catch(() => null);
       const nextClaim = next?.claims?.[0];
-      if (nextClaim?.customer_id) {
-        patch({ nextClaimHref: `/customers/${nextClaim.customer_id}/claims?claimId=${nextClaim.id}`, noMoreClaims: false });
+      if (nextClaim?.id) {
+        patch({ nextClaimHref: `/claims/${nextClaim.id}`, noMoreClaims: false });
       } else {
         patch({ nextClaimHref: null, noMoreClaims: true });
       }

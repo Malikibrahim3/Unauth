@@ -42,7 +42,7 @@ function makeSupabase(
         };
       }
 
-      if (table !== 'customer_profiles') throw new Error(`unexpected table ${table}`);
+      if (table !== 'identities') throw new Error(`unexpected table ${table}`);
       return {
         select: () => ({
           eq: async (_col: string, email: string) => ({

@@ -3,12 +3,10 @@
  *
  * Every figure is real and traceable:
  *   38ms median lookup        → existing hero telemetry (content.ts)
- *   k ≥ 3                     → K_ANONYMITY_MIN (lib/engine/weights.ts)
- *   6 identity signals        → IDENTITY_SIGNAL_WEIGHTS (lib/engine/weights.ts)
- *   A–D grades                → gradeToLetter (lib/engine/weights.ts)
- *   98.5% precision           → us_benchmark_v1 calibration at FLAG_THRESHOLD 44
- *   120-day window            → CE3_PRIOR_ORDER_WINDOW_DAYS (lib/engine/weights.ts)
- *   HMAC-SHA256 / per-tenant  → privacy architecture (content.ts)
+ *   4-line widget             → MVP_STEERING Gorgias agent card
+ *   14-day deadline           → partner recovery-rule defaults
+ *   payout exposure           → support payout case exposure model
+ *   evidence checklist        → payout evidence checklist model
  */
 
 export const FL_ROUTES = {
@@ -39,17 +37,17 @@ export const FL_NAV = {
 /* ── Hero ──────────────────────────────────────────────────────────────── */
 
 export const FL_HERO = {
-  eyebrow: 'Claim decision infrastructure',
-  headlineLines: ['Every claim.', 'Full context.', 'One decision trail.'],
+  eyebrow: 'Post-purchase payout control',
+  headlineLines: ['Control payouts.', 'Recover losses.', 'Prevent leakage.'],
   subcopy:
-    'Unauth assembles order, delivery, identity, evidence, claim history, and your merchant rules inside the helpdesk — so support teams can review refunds, replacements, and chargeback-risk claims before they escalate.',
+    'Unauth turns refunds, reships, damaged-item claims, and INR tickets into support payout cases with evidence checklists, merchant rules, attribution, recoverability, and recovery tracking — inside Gorgias and Shopify.',
   primaryCta: 'Connect store and helpdesk',
   secondaryCta: 'See claim decision demo',
   pinnedCta: 'Connect store and helpdesk',
   contactCta: 'Connect store and helpdesk',
   orderHistoryCard: {
     title: '01 Merchant-owned rules',
-    status: 'Your policy logic — not Unauth’s verdict.',
+    status: 'Your policy logic — not an automated decision.',
     meta: 'Approve · Manual review · Deny',
     pattern: 'Recommendations are explainable and auditable.',
   },
@@ -59,7 +57,7 @@ export const FL_HERO = {
     meta: 'Inside Gorgias, Zendesk, or Freshdesk',
   },
   crossMerchantCard: {
-    title: '03 Evidence, not verdicts',
+    title: '03 Evidence, not automation',
     status: 'Unauth never approves, denies, or refunds automatically.',
     meta: 'Your team makes every final decision',
   },
@@ -82,7 +80,7 @@ export const FL_HERO_FLOATING_CARDS = {
     details: ['Order, delivery, and ticket linked', 'Prior claims and outcomes attached'],
   },
   crossMerchant: {
-    label: '03 EVIDENCE, NOT VERDICTS',
+    label: '03 EVIDENCE, NOT AUTOMATION',
     title: 'No automated decisions',
     details: ['Unauth explains — you decide', 'Final action stays with your team'],
   },
@@ -96,9 +94,9 @@ export const FL_HERO_FLOATING_CARDS = {
 /* ── Network hero (canvas section) ─────────────────────────────────────── */
 
 export const FL_NETWORK_HERO = {
-  title: 'Stronger at your store today. Stronger still as the network grows.',
+  title: 'Useful at your store today. Stronger as your operations mature.',
   lead:
-    'Unauth turns helpdesk claims into explainable, merchant-owned decisions — starting with your own order, delivery, identity, and claim history. Privacy-safe cross-merchant patterns layer on when available, without changing who approves the refund.',
+    'Unauth turns helpdesk claims into explainable, merchant-owned decisions — starting with your own order, delivery, evidence, policy, recovery, and outcome history. Your team still approves or denies every payout.',
   stats: [
     {
       value: 'Post-checkout',
@@ -111,9 +109,9 @@ export const FL_NETWORK_HERO = {
       source: 'Claim review moment',
     },
     {
-      value: 'k ≥ 3',
-      label: 'Network signals only when privacy threshold is met',
-      source: 'K_ANONYMITY_MIN',
+      value: '4 lines',
+      label: 'Agent card for case, evidence, rule, and recovery',
+      source: 'Gorgias widget MVP',
     },
   ],
 } as const;
@@ -122,7 +120,7 @@ export const FL_CLAIM_DECISION_LOOP = {
   eyebrow: 'Claim decision workflow',
   headline: 'From helpdesk ticket to explainable recommendation.',
   subhead:
-    'When a customer claims an order never arrived, Unauth assembles order, delivery, identity, evidence, prior claim history, merchant rules, and outcome history — then shows the next step with full traceability. Your team still decides.',
+    'When a customer claims an order never arrived, Unauth assembles order, delivery, evidence, payout exposure, prior case history, merchant rules, recovery context, and outcome history — then shows the next step with full traceability. Your team still decides.',
   steps: [
     {
       number: '01',
@@ -132,7 +130,7 @@ export const FL_CLAIM_DECISION_LOOP = {
     {
       number: '02',
       title: 'Context assembled',
-      body: 'Unauth pulls order, delivery, identity, evidence, prior claims, and outcome history.',
+      body: 'Unauth pulls order, delivery, evidence, payout exposure, prior claims, and outcome history.',
     },
     {
       number: '03',
@@ -205,18 +203,18 @@ export const FL_DEMO_PRODUCT_CARDS = {
 } as const;
 
 export const FL_PHONE = {
-  title: 'Identity record',
-  subtitle: 'hash 9f3b…12c8 · 4 merchants',
-  valueLabel: 'Linked Exposure',
-  value: '$1,210',
-  compareA: { label: 'Claims / Orders', value: '6 / 9', delta: '67% claim rate', up: false },
-  compareB: { label: 'Merchants', value: '4', delta: '3+ independent merchants · gate open', up: true },
+  title: 'Payout case',
+  subtitle: 'Gorgias #4821 · Shopify #UA-10482',
+  valueLabel: 'Payout Exposure',
+  value: '$162',
+  compareA: { label: 'Requested action', value: 'Refund', delta: 'Agent review required', up: false },
+  compareB: { label: 'Recovery', value: '$84', delta: 'Carrier claim possible', up: true },
   status: { label: 'Status', value: 'Evidence Ready' },
   rows: [
-    { k: 'Match Grade', v: 'B · Probable' },
-    { k: 'Signals Matched', v: '4 of 6' },
-    { k: 'Strongest Signal', v: 'device_hmac' },
-    { k: 'Addr. Overlap', v: '0.94' },
+    { k: 'Evidence', v: 'Photo present · signature unavailable' },
+    { k: 'Rule', v: 'Manual review' },
+    { k: 'Reason', v: 'Repeat INR' },
+    { k: 'Owner', v: 'Carrier review' },
     { k: 'Lookup', v: '38ms' },
     { k: 'Auto-Actions', v: 'None' },
   ],
@@ -226,20 +224,18 @@ export const FL_PHONE = {
 /* ── Statement (§ about) ───────────────────────────────────────────────── */
 
 export const FL_STATEMENT = {
-  // Promoted display headline — the wedge claim, now the section's dominant line.
-  displayLines: ['EVIDENCE,', 'NOT VERDICTS.'],
-  // Secondary editorial sentence — supports the headline as context.
-  pre: 'Whether the ticket says "never arrived" or the chargeback lands weeks later,',
+  displayLines: ['EVIDENCE,', 'NOT AUTOMATION.'],
+  pre: 'Before money leaves the business on a refund or reship,',
   brand: 'Unauth',
-  post: 'attaches cross-merchant claim context to the review —',
-  postContinuation: 'graded evidence, assembled automatically,',
-  postTail: 'decided by your team.',
-  body: 'Unauth connects to your store and helpdesk, surfaces cross-merchant claim history, and attaches graded evidence to every ticket — automatically. No workflow changes. No automated decisions.',
+  post: 'shows payout exposure, evidence on file, the merchant rule that fired, and the recommended next action —',
+  postContinuation: 'with recovery and prevention when the loss is recoverable or repeatable.',
+  postTail: 'Your team still decides.',
+  body: 'Unauth connects Shopify and Gorgias, structures support payout cases, tracks evidence, applies merchant rules, and opens recovery cases where carrier, 3PL, or supplier accountability may apply. No automated payouts.',
   features: [
-    { id: '01', title: 'Zero automated decisions, by design' },
-    { id: '02', title: 'Every claim arrives with context' },
-    { id: '03', title: 'Repeated patterns, matched across every merchant' },
-    { id: '04', title: 'Evidence packs, one click from every ticket' },
+    { id: '01', title: 'Merchant rules recommend — your team decides' },
+    { id: '02', title: 'Every payout case has evidence and exposure' },
+    { id: '03', title: 'Recoverable losses stay on the recovery board' },
+    { id: '04', title: 'Outcomes recorded for prevention insights' },
   ],
 } as const;
 
@@ -248,10 +244,10 @@ export const FL_MANIFEST = {
   title: 'Evidence package',
   caseId: 'CB-2291',
   files: [
-    { name: 'claim_timeline.json', meta: '11 events · 4 merchants' },
-    { name: 'identity_signals.json', meta: '12 signals · graded' },
+    { name: 'claim_timeline.json', meta: '11 events · ticket + order' },
+    { name: 'evidence_checklist.json', meta: 'delivery proof · signature unavailable' },
     { name: 'delivery_confirmation.pdf', meta: 'commerce fulfilment proof' },
-    { name: 'cross_merchant_history.txt', meta: 'k-gated · pseudonymous' },
+    { name: 'recovery_route.txt', meta: 'carrier claim · evidence needed' },
     { name: 'order_record.json', meta: '#UA-10482 · $162.40' },
   ],
   footer: 'assembled in 38ms · formatted for representment',
@@ -261,34 +257,34 @@ export const FL_MANIFEST = {
 
 export const FL_BENTO = [
   {
-    value: '$4.61',
-    label: 'Cost for every $1 of fraud — US ecommerce & retail',
-    source: 'LexisNexis 2025 True Cost of Fraud Study',
+    value: '£86',
+    label: 'Typical payout exposure on a single INR reship decision',
+    source: 'Merchant support workflow',
   },
   {
-    value: '$46.1B',
-    label: 'Global chargeback losses forecast by 2029',
-    source: 'Mastercard / Datos Insights 2026',
+    value: '4 lines',
+    label: 'Compressed Gorgias decision card before agents issue money',
+    source: 'Unauth widget MVP',
   },
   {
-    value: '$103B',
-    label: 'Lost to fraudulent returns in 2024',
-    source: 'Appriss Retail + Deloitte + NRF',
+    value: '14 days',
+    label: 'Common carrier claim deadline when recovery is possible',
+    source: 'Partner rulebook defaults',
   },
   {
-    value: '75%',
-    label: 'Of chargebacks are friendly fraud, not criminal attacks',
-    source: 'Visa',
+    value: '5',
+    label: 'Core payout scenarios the MVP must handle end to end',
+    source: 'MVP steering',
   },
   {
-    value: '16%',
-    label: 'Of consumers admit filing false claims — even when satisfied',
-    source: 'Sift Q4 2025 Digital Trust Index',
+    value: '0',
+    label: 'Automated refunds or reships — merchant rules recommend only',
+    source: 'Product constraint',
   },
   {
-    value: '18%',
-    label: 'Net chargeback recovery rate for merchants who fight back',
-    source: 'Chargebacks911 2024 Chargeback Field Report',
+    value: '9',
+    label: 'Recovery board columns from evidence needed to paid or closed',
+    source: 'Recovery workflow',
   },
 ] as const;
 
@@ -301,7 +297,7 @@ export const FL_SIGNALS_EVIDENCE = {
   cta: { label: 'Review a claim example', href: FL_ROUTES.audit },
   image: {
     src: '/statement-facility-v3.png',
-    alt: 'Architectural illustration of Unauth’s cross-merchant evidence hub',
+    alt: 'Architectural illustration of Unauth’s payout-control evidence workflow',
   },
   tabs: [
     {
@@ -309,13 +305,13 @@ export const FL_SIGNALS_EVIDENCE = {
       tab: 'Claim timing',
       caseLine: ['CB-2291', 'Never arrived', '$162.40'],
       gradeLetter: 'B',
-      gradeTier: 'Probable match',
+      gradeTier: 'Evidence review',
       mainLine:
         '"Never arrived" for the third time — each claim opened after a confirmed delivery window.',
       details: [
         { k: 'Signals matched', v: '4 of 6' },
-        { k: 'Matched across', v: '4 merchants · 3+ independent merchants' },
-        { k: 'Strongest signal', v: 'device_hmac' },
+        { k: 'Payout exposure', v: '$162.40' },
+        { k: 'Recovery path', v: 'carrier claim' },
         { k: 'Prior claims', v: '3 in 120 days' },
       ],
       assembledIn: '38ms',
@@ -325,12 +321,12 @@ export const FL_SIGNALS_EVIDENCE = {
       tab: 'Delivery context',
       caseLine: ['CB-2104', 'Item not received', '$89.00'],
       gradeLetter: 'A',
-      gradeTier: 'Definite match',
+      gradeTier: 'Strong evidence',
       mainLine:
         'The connected order shows delivery evidence — the claim arrived four days after the scan.',
       details: [
         { k: 'Signals matched', v: '5 of 6' },
-        { k: 'Matched across', v: '5 merchants · 3+ independent merchants' },
+        { k: 'Payout exposure', v: '$89.00' },
         { k: 'Delivery proof', v: 'from connected order' },
         { k: 'Claim opened', v: '+4 days post-scan' },
       ],
@@ -341,14 +337,14 @@ export const FL_SIGNALS_EVIDENCE = {
       tab: 'Address pattern',
       caseLine: ['CB-1887', 'Wrong item received', '$214.50'],
       gradeLetter: 'C',
-      gradeTier: 'Possible match',
+      gradeTier: 'Evidence gap',
       mainLine:
         'One fulfilment address, six prior claims, three different names.',
       details: [
         { k: 'Signals matched', v: '2 of 6' },
-        { k: 'Matched across', v: '3 merchants · 3+ independent merchants' },
-        { k: 'Address overlap', v: '0.94' },
-        { k: 'Strongest signal', v: 'address_tokens' },
+        { k: 'Payout exposure', v: '$214.50' },
+        { k: 'Evidence missing', v: 'warehouse photo' },
+        { k: 'Recovery path', v: 'supplier review' },
       ],
       assembledIn: '29ms',
     },
@@ -357,13 +353,13 @@ export const FL_SIGNALS_EVIDENCE = {
       tab: 'Chargeback trail',
       caseLine: ['CB-3310', 'Unauthorised charge', '$340.00'],
       gradeLetter: 'B',
-      gradeTier: 'Probable match',
+      gradeTier: 'Dispute evidence',
       mainLine:
         'Three chargebacks in ninety days, tied together by a single device hash.',
       details: [
         { k: 'Signals matched', v: '4 of 6' },
-        { k: 'Matched across', v: '4 merchants · 3+ independent merchants' },
-        { k: 'Strongest signal', v: 'card_hmac' },
+        { k: 'Payout exposure', v: '$340.00' },
+        { k: 'Evidence', v: 'delivery + support timeline' },
         { k: 'Prior disputes', v: '3 in 90 days' },
       ],
       assembledIn: '44ms',
@@ -376,8 +372,8 @@ export const FL_SIGNALS_EVIDENCE = {
 export const FL_HOW_IT_WORKS = {
   displayLines: ['THE CLAIM STARTS', 'WITH A PARCEL.'],
   subhead:
-    'Unauth connects the delivery event, customer history, helpdesk conversation, and cross-merchant claim patterns before your team decides how to respond.',
-  privacyNote: 'Identifiers are hashed before they leave your store. Raw customer data never enters the network.',
+    'Unauth connects the delivery event, customer history, helpdesk conversation, evidence checklist, merchant policy, and recovery path before your team decides how to respond.',
+  privacyNote: 'Raw customer data stays merchant-scoped. The workflow is case-scoped, not a customer denial list.',
   steps: [
     {
       id: '01',
@@ -399,8 +395,8 @@ export const FL_HOW_IT_WORKS = {
     },
     {
       id: '04',
-      title: 'Cross-merchant pattern context',
-      body: 'Show whether the claim is isolated or matches repeated behaviour across participating merchants.',
+      title: 'Recovery and outcome context',
+      body: 'Show whether the loss is preventable, recoverable from a partner, or ready to close with an outcome.',
       note: null,
     },
   ],
@@ -438,7 +434,7 @@ export const FL_FIGURES = {
 
 export const FL_PROGRAMS = {
   displayLines: ['CLAIM', 'PROGRAMS'],
-  breadcrumb: ['Store Context', 'Network Signals', 'Evidence Packs'],
+  breadcrumb: ['Store Context', 'Evidence Checklist', 'Recovery Workflow'],
   tabs: [
     {
       key: 'live',
@@ -468,14 +464,14 @@ export const FL_PROGRAMS = {
     },
     {
       key: 'network',
-      tab: 'Network Context',
-      title: 'NETWORK CONTEXT',
-      kicker: 'Pseudonymous cross-merchant graph',
+      tab: 'Recovery Context',
+      title: 'RECOVERY CONTEXT',
+      kicker: 'Partner rulebook',
       index: '03',
       details: [
-        { k: 'Hashing', v: 'HMAC-SHA256 · per-tenant salt' },
-        { k: 'Gate', v: 'k-anonymity · ≥ 3 merchants' },
-        { k: 'Exposure', v: 'Patterns only, never records' },
+        { k: 'Partners', v: 'Carrier · 3PL · supplier' },
+        { k: 'Evidence', v: 'Rulebook requirements' },
+        { k: 'Exposure', v: 'Recoverable amount' },
         { k: 'Decisions', v: 'Yours — always' },
       ],
     },
@@ -488,19 +484,19 @@ export const FL_PRICING = {
   eyebrow: 'Pricing',
   headline: 'Pay for context, not seats.',
   lead:
-    'Every plan includes the widget, store context, and pseudonymous network context. Usage is controlled by monthly context credits — raw cross-merchant customer data is never exposed.',
+    'Every plan includes the widget, store context, evidence checklist, merchant rules, and recovery workflow. Usage is controlled by monthly context credits — raw customer data stays merchant-scoped.',
   featuredTierKey: 'pro' as const,
   ctaDefault: 'Start free',
   ctaTrial: 'Start free trial',
   ctaCustom: 'Talk to us',
   trialNote: '7-day trial on Pro · no card required',
   credits: {
-    heading: 'How credits work',
+      heading: 'How credits work',
     intro:
-      'Each time you run an identity check on a ticket, it costs credits depending on the depth of context requested:',
+      'Each time you load payout context on a ticket, it costs credits depending on the depth of context requested:',
     rows: [
-      ['Own-store context only', '1 credit'],
-      ['Full network context', '2 credits'],
+      ['Own-store payout context', '1 credit'],
+      ['Rules, evidence, and recovery context', '2 credits'],
       ['Evidence summary + deeper review', '3 credits'],
     ] as const,
     footer:
@@ -518,11 +514,11 @@ export const FL_PRICING_FAQ = {
   items: [
     {
       q: 'How does pricing work?',
-      a: 'Every plan includes the widget, store context, and pseudonymous network context. Free includes 100 monthly context credits, Pro includes 1,000, Growth includes 5,000, and Scale uses dedicated monthly volume agreed at onboarding.',
+      a: 'Every plan includes the widget, store context, evidence checklist, merchant rules, and recovery workflow. Free includes 100 monthly context credits, Pro includes 1,000, Growth includes 5,000, and Scale uses dedicated monthly volume agreed at onboarding.',
     },
     {
       q: 'Will it always be free?',
-      a: 'Free remains a real entry point for occasional claim review and network participation, but higher-volume teams will need more monthly context credits, history, controls, and support.',
+      a: 'Free remains a real entry point for occasional payout-case review, but higher-volume teams will need more monthly context credits, history, controls, and support.',
     },
     {
       q: 'What happens if I run out of credits?',
@@ -556,7 +552,7 @@ export const FL_FAQ = {
     },
     {
       q: 'How do you distinguish a genuine customer complaint from abuse?',
-      a: 'Unauth does not make that decision. Your team does. We assemble claim context — order history, delivery status, prior claims, identity consistency, and matched cross-merchant patterns when available. Your configured rules return a traceable recommendation. The agent still owns the final decision.',
+      a: 'Unauth does not make that decision. Your team does. We assemble claim context — order history, delivery status, prior claims, evidence status, payout exposure, and recovery options. Your configured rules return a traceable recommendation. The agent still owns the final decision.',
     },
     {
       q: 'How does Unauth help before a chargeback?',
@@ -568,11 +564,11 @@ export const FL_FAQ = {
     },
     {
       q: 'What data actually leaves my store?',
-      a: 'Raw customer data does not enter the network. Identifiers such as email, phone, and device fingerprint are HMAC-SHA256 hashed with a per-tenant salt before they leave your environment. The network uses privacy-safe signals and threshold controls to identify repeated patterns without exposing customer records between merchants. Your rules remain scoped to your merchant account.',
+      a: 'Raw customer data stays merchant-scoped. Unauth uses the data from your connected store and helpdesk to build case-scoped payout records, evidence checklists, and recovery workflows. Your rules remain scoped to your merchant account.',
     },
     {
       q: 'We\'re a single merchant — does this work without network data?',
-      a: 'Yes. Unauth still helps you structure your own claim history, spot repeat behaviour, connect identity signals, and apply your own rules to each review. The network makes the evidence stronger over time, but single-merchant value starts from your own order, refund, support, and policy history.',
+      a: 'Yes. Unauth helps you structure your own claim history, spot repeat payout patterns, attach evidence, open recovery work, and apply your own rules to each review. Single-merchant value starts from your own order, refund, support, and policy history.',
     },
     {
       q: 'Does it change my refund or dispute workflow?',

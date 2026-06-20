@@ -1,77 +1,132 @@
-import { GRADE_COLOURS, GRADE_LABELS } from '@/lib/utils/confidenceStyles';
 import { formatCurrencyNullable } from '@/lib/utils/format';
 import type { ConnectionState } from '@/lib/connections/getConnectionState';
 import type { ClaimOpsMetrics } from '@/lib/claims/reporting';
-import type { ClaimRow, ClaimTypeBreakdown, GradeBucket, GradeBucketDisplay, OutcomeBreakdown, OutcomeRow, RunSummary, TxGradeRow } from '@/app/(app)/reports/reportsPageTypes';
-
-export const GRADE_SAMPLE_LIMIT = 2000;
-
-const GRADE_META: Record<GradeBucket, { label: string; color: string }> = {
-  definite: { label: `A · ${GRADE_LABELS.definite}`, color: GRADE_COLOURS.definite },
-  probable: { label: `B · ${GRADE_LABELS.probable}`, color: GRADE_COLOURS.probable },
-  possible: { label: `C · ${GRADE_LABELS.possible}`, color: GRADE_COLOURS.possible },
-  weak: { label: `D · ${GRADE_LABELS.weak}`, color: GRADE_COLOURS.weak },
-};
+import type { RecoveryCase } from '@/lib/recoveries/types';
+import { RECOVERY_OWNER_LABELS, RECOVERY_STATUS_LABELS } from '@/lib/recoveries/types';
+import type {
+  ClaimRow,
+  ClaimTypeBreakdown,
+  OutcomeBreakdown,
+  OutcomeRow,
+  PartnerPerformanceRow,
+  RecoveryMetrics,
+  RecoveryStatusBreakdown,
+} from '@/app/(app)/reports/reportsPageTypes';
 
 /**
- * State-aware "finish setup" copy for the Live reports surface. Mirrors the
- * canonical CTA logic used on the dashboard so a data-present merchant always
- * sees existing context plus the right next step — never a dead empty gate.
+ * State-aware "finish setup" copy for payout-control reports. Mirrors the
+ * dashboard CTA so a data-present merchant sees existing context plus the
+ * right next step, never a dead empty gate.
  */
 export function liveSetupCta(connection: ConnectionState): { title: string; body: string; label: string } | null {
   if (connection.bothConnected) return null;
   if (connection.shopifyOnlyConnected) {
     return {
-      title: 'Connect your helpdesk to complete live intelligence',
-      body: 'Shopify order data is flowing. Add your helpdesk to layer in claim history and dispute outcomes — claim metrics stay incomplete until then.',
+      title: 'Connect your helpdesk to complete payout reporting',
+      body: 'Shopify order data is flowing. Add your helpdesk to report on support payout cases, evidence gaps, decisions, and outcomes.',
       label: 'Connect helpdesk',
     };
   }
   if (connection.helpdeskOnlyConnected) {
     return {
-      title: 'Connect Shopify to complete live intelligence',
-      body: 'Claim history is flowing from your helpdesk. Add Shopify to tie claims to real orders and customer purchase context.',
+      title: 'Connect Shopify to complete payout reporting',
+      body: 'Support cases are flowing from your helpdesk. Add Shopify to attach order value, exposure, fulfillment evidence, and recovery context.',
       label: 'Connect Shopify',
     };
   }
   return {
-    title: 'Connect Shopify and your helpdesk for live intelligence',
-    body: 'Live analytics combines Shopify order data with helpdesk claim history. Reconnect your live sources to monitor new orders, claims, and outcomes as they happen.',
+    title: 'Connect Shopify and your helpdesk for payout reporting',
+    body: 'Reports combine store orders, support cases, evidence, decisions, and recoveries. Connect both sources to monitor new payout work as it happens.',
     label: 'Connect Shopify and your helpdesk',
   };
 }
 
-const CLAIM_TYPE_UI_LABELS: Record<string, string> = {
+const CASE_REASON_LABELS: Record<string, string> = {
   missing_parcel: 'Missing parcel',
+  item_not_received: 'Item not received',
   inr: 'Item not received',
+  missing_item: 'Missing item',
   damaged: 'Damaged item',
+  damaged_item: 'Damaged item',
   wrong_item: 'Wrong item',
+  late_delivery: 'Late delivery',
   refund_request: 'Refund request',
+  reship_request: 'Reship request',
+  replacement_request: 'Replacement request',
+  returnless_refund: 'Returnless refund',
+  store_credit_request: 'Store credit request',
   chargeback: 'Chargeback',
-  return_abuse: 'Return abuse',
-  snad: 'Not as described',
+  chargeback_related: 'Chargeback-related',
+  policy_exception: 'Policy exception',
+  supplier_defect: 'Supplier defect',
+  warehouse_error: 'Warehouse error',
+  carrier_issue: 'Carrier issue',
   other: 'Other',
 };
 
+const REQUESTED_ACTION_LABELS: Record<string, string> = {
+  refund: 'Refund',
+  partial_refund: 'Partial refund',
+  reship: 'Reship',
+  replacement: 'Replacement',
+  store_credit: 'Store credit',
+  discount: 'Discount',
+  return_label: 'Return label',
+  investigation: 'Investigation',
+  deny: 'Deny',
+  manual_review: 'Manual review',
+  unknown: 'Unknown',
+};
+
 const OUTCOME_DECISION_LABELS: Record<string, string> = {
-  approved: 'Approved',
-  denied: 'Denied',
-  partial: 'Partial refund',
-  chargeback: 'Chargeback',
-  withdrawn: 'Withdrawn',
+  approved: 'Approved payout',
+  denied: 'Denied under policy',
+  partial_refund: 'Partial refund',
+  full_refund: 'Full refund',
+  chargeback_disputed: 'Chargeback disputed',
   escalated: 'Escalated',
+  no_action: 'No payout',
   other: 'Other',
 };
+
+function labelFor(map: Record<string, string>, key: string | null | undefined, fallback = 'Other'): string {
+  if (!key) return fallback;
+  return map[key] ?? key.replace(/_/g, ' ');
+}
+
+export function payoutExposureForClaim(claim: ClaimRow): number {
+  const explicit = Number(claim.total_estimated_loss ?? claim.amount_at_risk ?? 0);
+  if (explicit > 0) return explicit;
+  return [
+    claim.refund_amount,
+    claim.replacement_item_value,
+    claim.replacement_shipping_cost,
+    claim.discount_amount,
+    claim.store_credit_amount,
+  ].reduce<number>((sum, value) => sum + (Number(value) || 0), 0);
+}
 
 export function buildClaimTypeBreakdown(claims: ClaimRow[]): ClaimTypeBreakdown {
   const map = new Map<string, { count: number; value: number }>();
   for (const claim of claims) {
     const type = claim.claim_type ?? 'other';
     const existing = map.get(type) ?? { count: 0, value: 0 };
-    map.set(type, { count: existing.count + 1, value: existing.value + (claim.amount_at_risk ?? 0) });
+    map.set(type, { count: existing.count + 1, value: existing.value + payoutExposureForClaim(claim) });
   }
   return Array.from(map.entries())
-    .map(([type, data]) => ({ type, label: CLAIM_TYPE_UI_LABELS[type] ?? type, ...data }))
+    .map(([type, data]) => ({ type, label: labelFor(CASE_REASON_LABELS, type), ...data }))
+    .sort((a, b) => b.count - a.count);
+}
+
+export function buildRequestedActionBreakdown(claims: ClaimRow[]): ClaimTypeBreakdown {
+  const map = new Map<string, { count: number; value: number }>();
+  for (const claim of claims) {
+    const type = claim.requested_action ?? 'unknown';
+    const existing = map.get(type) ?? { count: 0, value: 0 };
+    map.set(type, { count: existing.count + 1, value: existing.value + payoutExposureForClaim(claim) });
+  }
+  return Array.from(map.entries())
+    .map(([type, data]) => ({ type, label: labelFor(REQUESTED_ACTION_LABELS, type, 'Unknown'), ...data }))
     .sort((a, b) => b.count - a.count);
 }
 
@@ -80,38 +135,87 @@ export function buildOutcomeBreakdown(outcomes: OutcomeRow[]): OutcomeBreakdown 
   for (const outcome of outcomes) {
     const decision = outcome.decision ?? 'other';
     const existing = map.get(decision) ?? { count: 0, value: 0 };
-    map.set(decision, { count: existing.count + 1, value: existing.value + (outcome.amount_refunded ?? 0) });
+    map.set(decision, { count: existing.count + 1, value: existing.value + (Number(outcome.amount_refunded) || 0) });
   }
   return Array.from(map.entries())
-    .map(([decision, data]) => ({ decision, label: OUTCOME_DECISION_LABELS[decision] ?? decision, ...data }))
+    .map(([decision, data]) => ({ decision, label: labelFor(OUTCOME_DECISION_LABELS, decision), ...data }))
     .sort((a, b) => b.count - a.count);
 }
 
-export function gradeFromTransaction(row: TxGradeRow): GradeBucket {
-  const grade = row.identity_confidence_grade?.toLowerCase();
-  if (grade === 'definite' || grade === 'probable' || grade === 'possible' || grade === 'weak') return grade;
-  const status = row.match_status?.toLowerCase();
-  if (status === 'definite') return 'definite';
-  if (status === 'probable') return 'probable';
-  if (status === 'candidate' || status === 'possible') return 'possible';
-  return 'weak';
+function isRecoveryOpen(status: RecoveryCase['status']): boolean {
+  return !['approved', 'partially_approved', 'rejected', 'paid', 'closed_unrecoverable'].includes(status);
 }
 
-export function buildMatchRateTrend(trend: RunSummary[]): Array<{ label: string; value: number }> {
-  return trend.map((run) => ({
-    label: new Date(run.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    value: run.total_rows > 0 ? Math.round(((run.flagged_count ?? 0) / run.total_rows) * 1000) / 10 : 0,
-  }));
+function recoveryOpenValue(recoveryCase: RecoveryCase): number {
+  if (!isRecoveryOpen(recoveryCase.status)) return 0;
+  return Number(recoveryCase.eligible_loss_amount ?? recoveryCase.estimated_recoverable_max ?? recoveryCase.merchant_loss_amount ?? 0) || 0;
 }
 
-export function buildGradeBuckets(gradeCounts: Record<GradeBucket, number>): GradeBucketDisplay[] {
-  const gradeTotal = Math.max(1, Object.values(gradeCounts).reduce((sum, count) => sum + count, 0));
-  return (Object.keys(GRADE_META) as GradeBucket[]).map((key) => ({
-    key,
-    ...GRADE_META[key],
-    count: gradeCounts[key],
-    pct: (gradeCounts[key] / gradeTotal) * 100,
-  }));
+export function buildRecoveryMetrics(recoveryCases: RecoveryCase[]): RecoveryMetrics {
+  const terminal = recoveryCases.filter((recoveryCase) =>
+    ['approved', 'partially_approved', 'rejected', 'paid', 'closed_unrecoverable'].includes(recoveryCase.status),
+  );
+  const wins = terminal.filter((recoveryCase) => ['approved', 'partially_approved', 'paid'].includes(recoveryCase.status)).length;
+  return {
+    totalCases: recoveryCases.length,
+    openCases: recoveryCases.filter((recoveryCase) => isRecoveryOpen(recoveryCase.status)).length,
+    evidenceNeeded: recoveryCases.filter((recoveryCase) => recoveryCase.status === 'evidence_needed' || recoveryCase.evidence_missing.length > 0).length,
+    chaseDue: recoveryCases.filter((recoveryCase) => recoveryCase.status === 'chase_due').length,
+    submittedCases: recoveryCases.filter((recoveryCase) => ['submitted', 'waiting_response', 'chase_due'].includes(recoveryCase.status)).length,
+    approvedCases: recoveryCases.filter((recoveryCase) => ['approved', 'partially_approved', 'paid'].includes(recoveryCase.status)).length,
+    rejectedCases: recoveryCases.filter((recoveryCase) => ['rejected', 'closed_unrecoverable'].includes(recoveryCase.status)).length,
+    recoveredAmount: recoveryCases.reduce((sum, recoveryCase) => sum + (Number(recoveryCase.amount_recovered) || 0), 0),
+    unrecoveredAmount: recoveryCases.reduce((sum, recoveryCase) => {
+      const loss = Number(recoveryCase.merchant_loss_amount) || 0;
+      const recovered = Number(recoveryCase.amount_recovered) || 0;
+      return sum + Math.max(loss - recovered, 0);
+    }, 0),
+    openRecoveryValue: recoveryCases.reduce((sum, recoveryCase) => sum + recoveryOpenValue(recoveryCase), 0),
+    estimatedRecoverableMax: recoveryCases.reduce((sum, recoveryCase) => sum + (Number(recoveryCase.estimated_recoverable_max) || 0), 0),
+    winRate: terminal.length > 0 ? wins / terminal.length : 0,
+  };
+}
+
+export function buildRecoveryStatusBreakdown(recoveryCases: RecoveryCase[]): RecoveryStatusBreakdown {
+  const map = new Map<string, { count: number; value: number }>();
+  for (const recoveryCase of recoveryCases) {
+    const existing = map.get(recoveryCase.status) ?? { count: 0, value: 0 };
+    map.set(recoveryCase.status, {
+      count: existing.count + 1,
+      value: existing.value + recoveryOpenValue(recoveryCase),
+    });
+  }
+  return Array.from(map.entries())
+    .map(([status, data]) => ({
+      status,
+      label: RECOVERY_STATUS_LABELS[status as RecoveryCase['status']] ?? status,
+      ...data,
+    }))
+    .sort((a, b) => b.count - a.count);
+}
+
+export function buildPartnerPerformance(recoveryCases: RecoveryCase[]): PartnerPerformanceRow[] {
+  const map = new Map<string, PartnerPerformanceRow>();
+  for (const recoveryCase of recoveryCases) {
+    const partnerId = recoveryCase.partner_id ?? `owner:${recoveryCase.owner_type}`;
+    const partnerName = recoveryCase.partner?.name
+      ?? RECOVERY_OWNER_LABELS[recoveryCase.owner_type]
+      ?? recoveryCase.owner_type;
+    const existing = map.get(partnerId) ?? {
+      partnerId,
+      partnerName,
+      ownerType: recoveryCase.owner_type,
+      cases: 0,
+      recoveredAmount: 0,
+      openRecoveryValue: 0,
+    };
+    existing.cases += 1;
+    existing.recoveredAmount += Number(recoveryCase.amount_recovered) || 0;
+    existing.openRecoveryValue += recoveryOpenValue(recoveryCase);
+    map.set(partnerId, existing);
+  }
+  return Array.from(map.values())
+    .sort((a, b) => (b.recoveredAmount + b.openRecoveryValue) - (a.recoveredAmount + a.openRecoveryValue));
 }
 
 type NumericClaimMetricKey = {
@@ -123,7 +227,7 @@ export function delta(current: number, prior: number | null | undefined): string
   if (prior === 0) return current > 0 ? 'new vs prior period' : null;
   const pct = Math.round(((current - prior) / prior) * 100);
   if (pct === 0) return null;
-  return pct > 0 ? `↑ ${pct}%` : `↓ ${Math.abs(pct)}%`;
+  return pct > 0 ? `up ${pct}%` : `down ${Math.abs(pct)}%`;
 }
 
 function deltaCurrency(current: number, prior: number | null | undefined): string | null {
@@ -132,7 +236,7 @@ function deltaCurrency(current: number, prior: number | null | undefined): strin
   const diff = Math.round(current - prior);
   if (diff === 0) return null;
   const amount = formatCurrencyNullable(Math.abs(diff));
-  return diff > 0 ? `+${amount} vs prior` : `−${amount} vs prior`;
+  return diff > 0 ? `+${amount} vs prior` : `-${amount} vs prior`;
 }
 
 export function metricHint(

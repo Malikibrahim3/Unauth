@@ -3,6 +3,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
 import { buildClaimOpsMetrics } from '@/lib/claims/reporting';
+import { TABLES } from '@/lib/supabase/tables';
 
 function csvCell(value: unknown) {
   const text = String(value ?? '');
@@ -23,6 +24,9 @@ type OutcomeExportRow = {
   decision: string | null;
   outcome: string | null;
   amount_refunded: number | null;
+  amount_recovered: number | null;
+  recommended_payout_action: string | null;
+  followed_recommendation: boolean | null;
   decided_at: string | null;
   updated_at: string | null;
 };
@@ -46,7 +50,7 @@ export async function GET(request: NextRequest) {
     : new Date(Date.now() - (range === '7d' ? 7 : range === '90d' ? 90 : 30) * 86400000).toISOString();
 
   let claimsQuery = serviceClient
-    .from('claims')
+    .from(TABLES.MERCHANT_CLAIMS)
     .select('id,status,amount_at_risk,submitted_at,created_at,updated_at')
     .eq('merchant_id', ctx.merchantId);
   if (cutoff) claimsQuery = claimsQuery.gte('submitted_at', cutoff);
@@ -56,20 +60,23 @@ export async function GET(request: NextRequest) {
   const { data: outcomes } = claimRows.length > 0
     ? await serviceClient
       .from('claim_outcomes')
-      .select('claim_id,decision,outcome,amount_refunded,decided_at,updated_at')
+      .select('claim_id,decision,outcome,amount_refunded,amount_recovered,recommended_payout_action,followed_recommendation,decided_at,updated_at')
       .in('claim_id', claimRows.map((claim) => claim.id))
     : { data: [] as OutcomeExportRow[] };
 
   if (view === 'outcomes') {
     const claimStatusById = new Map(claimRows.map((claim) => [claim.id, claim.status]));
     const csv = [
-      ['claim_id', 'status', 'decision', 'outcome', 'amount_refunded', 'decided_at'].join(','),
+      ['claim_id', 'status', 'decision', 'outcome', 'amount_refunded', 'amount_recovered', 'recommended_payout_action', 'followed_recommendation', 'decided_at'].join(','),
       ...(outcomes ?? []).map((row: OutcomeExportRow) => [
         row.claim_id,
         claimStatusById.get(row.claim_id) ?? '',
         row.decision ?? '',
         row.outcome ?? '',
         row.amount_refunded ?? '',
+        row.amount_recovered ?? '',
+        row.recommended_payout_action ?? '',
+        row.followed_recommendation ?? '',
         row.decided_at ?? row.updated_at ?? '',
       ].map(csvCell).join(',')),
     ].join('\n');

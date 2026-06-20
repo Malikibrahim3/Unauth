@@ -1,13 +1,6 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import { redirect } from 'next/navigation';
-import { formatDateMode } from '@/lib/utils/format';
-import type { TrendDataPoint } from '@/components/charts/WeeklyTrendChart';
-import {
-  countMerchantReviewQueueProfiles,
-  fetchMerchantReviewQueueRows,
-  fetchReviewQueueProfileIds,
-} from '@/lib/supabase/merchantHelpers';
 import { requirePermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/permissions';
 import TrackPageView from '@/components/common/TrackPageView';
 import EmptyDashboardHero from '@/components/EmptyDashboardHero';
@@ -19,13 +12,13 @@ import { DashboardPageCockpit } from '@/app/(app)/dashboard/DashboardPageCockpit
 import { DashboardSyncWaitingHero } from '@/app/(app)/dashboard/DashboardSyncWaitingHero';
 import {
   buildConfig,
-  buildGradeDist,
   buildKpis,
   buildWeeklyTrend,
   countClaimsNeedingAction,
   countEvidence,
 } from '@/app/(app)/dashboard/dashboardPageUtils';
-import type { ActivityItem, QueueRow, RunRow } from '@/app/(app)/dashboard/dashboardPageTypes';
+import type { ActivityItem } from '@/app/(app)/dashboard/dashboardPageTypes';
+import { loadPayoutDashboardMetrics } from '@/lib/dashboard/payoutDashboardMetrics';
 
 export default async function DashboardPage() {
   const supabase = createClient();
@@ -77,107 +70,60 @@ export default async function DashboardPage() {
 
   const config = buildConfig(setupState, connectionState);
 
-  const [{ data: runs }, evidenceCounts, claimsNeedingAction, claimTrendRaw, exposureRaw] = await Promise.all([
-    serviceClient
-      .from(TABLES.PROCESSING_JOBS)
-      .select('*')
-      .eq('merchant_id', ctx.merchantId)
-      .eq('hidden_by_merchant', false)
-      .order('created_at', { ascending: false })
-      .limit(20),
+  const [evidenceCounts, claimsNeedingAction, claimTrendRaw, payoutMetrics] = await Promise.all([
     countEvidence(serviceClient, ctx.merchantId),
     countClaimsNeedingAction(serviceClient, ctx.merchantId),
     serviceClient
-      .from('claims')
+      .from(TABLES.MERCHANT_CLAIMS)
       .select('submitted_at,created_at,amount_at_risk')
       .eq('merchant_id', ctx.merchantId)
       .gte('submitted_at', new Date(Date.now() - 56 * 24 * 3600 * 1000).toISOString())
-      .then((r: { error: unknown; data: Array<{ submitted_at: string | null; created_at: string; amount_at_risk: number | null }> | null }) =>
+      .then((r: { error: unknown; data: Array<{ submitted_at: string | null; created_at: string }> | null }) =>
         r.error ? [] : (r.data ?? [])),
-    serviceClient
-      .from('claims')
-      .select('amount_at_risk')
-      .eq('merchant_id', ctx.merchantId)
-      .in('status', ['open', 'pending', 'escalated'])
-      .then((r: { error: unknown; data: Array<{ amount_at_risk: number | null }> | null }) =>
-        r.error ? [] : (r.data ?? [])),
+    loadPayoutDashboardMetrics(serviceClient, ctx.merchantId),
   ]);
 
-  const claimTrend: TrendDataPoint[] = buildWeeklyTrend(
+  const claimTrend = buildWeeklyTrend(
     claimTrendRaw as Array<{ submitted_at: string | null; created_at: string }>,
   );
-  const exposureAtRisk = (exposureRaw as Array<{ amount_at_risk: number | null }>).reduce(
-    (sum, r) => sum + (r.amount_at_risk ?? 0),
-    0,
-  );
 
-  const typedRuns = (runs ?? []) as unknown as RunRow[];
-  const latestRun = typedRuns[0] ?? null;
-  const recentRuns = typedRuns.slice(0, 4);
-  const { total: totalPackages, ce3Eligible: priorMatchPackages } = evidenceCounts;
-
-  let reviewQueue: number | null = null;
-  try {
-    reviewQueue = await countMerchantReviewQueueProfiles(serviceClient, ctx.merchantId);
-  } catch {
-    reviewQueue = null;
-  }
-
-  let reviewRows: QueueRow[] = [];
-  let profileIdByTx = new Map<string, string>();
-  try {
-    const queue = await fetchMerchantReviewQueueRows(serviceClient, ctx.merchantId, { from: 0, to: 5 });
-    reviewRows = (queue.rows as QueueRow[]) ?? [];
-    const txIds = reviewRows.flatMap((r) => (typeof r.id === 'string' ? [r.id] : []));
-    profileIdByTx = await fetchReviewQueueProfileIds(serviceClient, queue.ownedJobIds, txIds);
-  } catch {
-    reviewRows = [];
-    profileIdByTx = new Map<string, string>();
-  }
+  const { total: totalPackages } = evidenceCounts;
 
   const activity: ActivityItem[] = [];
-  if (reviewRows[0]) {
-    const row = reviewRows[0];
-    activity.push({
-      type: 'Queue',
-      detail: `${row.customer_name ?? row.customer_email ?? 'Unidentified'} · ${row.match_status ?? 'candidate'}`,
-      time: formatDateMode(row.processed_at, 'recent'),
-      href: profileIdByTx.get(row.id) ? `/customers/${profileIdByTx.get(row.id)}` : '/customers',
-    });
-  }
   if (claimsNeedingAction > 0) {
     activity.push({
-      type: 'Claims',
-      detail: `${claimsNeedingAction} claim${claimsNeedingAction === 1 ? '' : 's'} awaiting a decision`,
+      type: 'Payout',
+      detail: `${claimsNeedingAction} open payout case${claimsNeedingAction === 1 ? '' : 's'} need action`,
       time: 'current',
       href: '/claims',
     });
   }
-  if (priorMatchPackages > 0) {
+  if (payoutMetrics.chaseDue > 0) {
     activity.push({
-      type: 'Evidence',
-      detail: `${priorMatchPackages} dispute-ready package${priorMatchPackages === 1 ? '' : 's'}`,
+      type: 'Recovery',
+      detail: `${payoutMetrics.chaseDue} recovery case${payoutMetrics.chaseDue === 1 ? '' : 's'} chase due`,
       time: 'current',
-      href: '/chargebacks',
+      href: '/recoveries',
     });
   }
-  if (latestRun) {
+  if (payoutMetrics.casesMissingEvidence > 0) {
     activity.push({
-      type: 'Legacy context',
-      detail: `${latestRun.filename} · ${(latestRun.flagged_count ?? 0).toLocaleString()} records with signals`,
-      time: formatDateMode(latestRun.created_at, 'recent'),
-      href: '/reports',
+      type: 'Evidence',
+      detail: `${payoutMetrics.casesMissingEvidence} case${payoutMetrics.casesMissingEvidence === 1 ? '' : 's'} missing evidence`,
+      time: 'current',
+      href: '/claims?queue=evidence',
     });
   }
 
   const kpis = buildKpis(setupState, connectionState, dataPresence, {
-    reviewQueue,
+    reviewQueue: null,
     claimsNeedingAction,
     totalPackages,
+    recoveryOpen: payoutMetrics.recoveryCasesOpen,
+    chaseDue: payoutMetrics.chaseDue,
+    amountRecovered: payoutMetrics.amountRecovered,
+    payoutExposureOpen: payoutMetrics.payoutExposureOpen,
   });
-
-  const customerCount = dataPresence.sources.customerProfiles;
-  const gradeDist = buildGradeDist(reviewRows);
 
   return (
     <DashboardPageCockpit
@@ -186,16 +132,9 @@ export default async function DashboardPage() {
       setupState={setupState}
       kpis={kpis}
       claimTrend={claimTrend}
-      exposureAtRisk={exposureAtRisk}
-      gradeDist={gradeDist}
-      reviewRows={reviewRows}
-      profileIdByTx={profileIdByTx}
-      customerCount={customerCount}
+      metrics={payoutMetrics}
       claimsNeedingAction={claimsNeedingAction}
-      totalPackages={totalPackages}
-      priorMatchPackages={priorMatchPackages}
       activity={activity}
-      recentRuns={recentRuns}
     />
   );
 }

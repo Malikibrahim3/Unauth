@@ -26,10 +26,22 @@ export type ClaimRow = {
   shop_domain: string | null;
   shopify_order_id: string | null;
   order_ref?: string | null;
+  source_ticket_ref?: string | null;
   claim_type: string;
   status: string;
   amount_at_risk: number | null;
+  total_estimated_loss?: number | null;
   currency: string | null;
+  loss_attribution?: string | null;
+  attribution_confidence?: string | null;
+  recoverability?: string | null;
+  recovery_owner?: string | null;
+  recovery_required_evidence?: string[] | null;
+  recovery_next_action?: string | null;
+  payout_decision_state?: string | null;
+  recovery_state?: string | null;
+  next_action?: string | null;
+  next_action_reason?: string | null;
   submitted_at?: string | null;
   created_at?: string | null;
   updated_at: string;
@@ -57,6 +69,17 @@ export type EvidencePackageRow = {
 };
 
 export const STATUS_META: Record<string, { label: string; bg: string; text: string }> = {
+  new: { label: 'New', bg: 'var(--surface)', text: 'var(--text-secondary)' },
+  evidence_needed: { label: 'Needs evidence', bg: 'var(--warning-bg)', text: 'var(--warning)' },
+  awaiting_customer_evidence: { label: 'Awaiting customer', bg: 'var(--warning-bg)', text: 'var(--warning)' },
+  awaiting_carrier_response: { label: 'Awaiting carrier', bg: 'var(--info-bg)', text: 'var(--info)' },
+  awaiting_3pl_response: { label: 'Awaiting 3PL', bg: 'var(--info-bg)', text: 'var(--info)' },
+  awaiting_supplier_response: { label: 'Awaiting supplier', bg: 'var(--info-bg)', text: 'var(--info)' },
+  ready_for_decision: { label: 'Ready for decision', bg: 'var(--success-bg)', text: 'var(--success)' },
+  manual_review: { label: 'Manual review', bg: 'var(--warning-bg)', text: 'var(--warning)' },
+  decision_recorded: { label: 'Decision recorded', bg: 'var(--surface)', text: 'var(--text-secondary)' },
+  recovery_opened: { label: 'Recovery opened', bg: 'var(--surface)', text: 'var(--text-secondary)' },
+  closed: { label: 'Closed', bg: 'var(--surface)', text: 'var(--text-secondary)' },
   open: { label: 'Active', bg: 'var(--surface)', text: 'var(--text-secondary)' },
   pending: { label: 'Waiting on source data', bg: 'var(--warning-bg)', text: 'var(--warning)' },
   escalated: { label: 'High evidence', bg: 'var(--sev-probable-fill)', text: 'var(--sev-probable)' },

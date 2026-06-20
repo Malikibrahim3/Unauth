@@ -10,6 +10,7 @@
  */
 
 import { getExposureAtRisk } from '@/lib/supabase/merchantHelpers';
+import { TABLES } from '@/lib/supabase/tables';
 
 // ---------------------------------------------------------------------------
 // Minimal SupabaseClient mock builder
@@ -64,7 +65,7 @@ function buildMockClient(
   let statusIdx = 0;
 
   const fromMock = jest.fn().mockImplementation((table: string) => {
-    if (table === 'processing_jobs') {
+    if (table === TABLES.PROCESSING_JOBS) {
       return makeQueryStub(() => jobsPages[jobsPageIdx++] ?? { data: [], error: null });
     }
     // audit_transactions: graded clause vs status-only clause, by filter.
@@ -105,7 +106,7 @@ describe('getExposureAtRisk', () => {
     );
     await getExposureAtRisk(client, MERCHANT_A);
     // Verify `.eq('merchant_id', MERCHANT_A)` was called
-    expect(client.from).toHaveBeenCalledWith('processing_jobs');
+    expect(client.from).toHaveBeenCalledWith(TABLES.PROCESSING_JOBS);
     const jobQuery = (client.from as jest.Mock).mock.results[0].value;
     expect(jobQuery.eq).toHaveBeenCalledWith('merchant_id', MERCHANT_A);
     // Ensure MERCHANT_B was never passed as merchant_id
@@ -200,7 +201,7 @@ describe('getExposureAtRisk', () => {
     // Find audit_transactions calls and assert `.in('job_id', ...)` only includes owned IDs
     const allFromCalls: string[] = (client.from as jest.Mock).mock.calls.map(([t]: [string]) => t);
     const txCallIndices = allFromCalls
-      .map((t, i) => (t === 'audit_transactions' ? i : -1))
+      .map((t, i) => (t === TABLES.AUDIT_TRANSACTIONS ? i : -1))
       .filter((i) => i >= 0);
     for (const idx of txCallIndices) {
       const txQuery = (client.from as jest.Mock).mock.results[idx].value;

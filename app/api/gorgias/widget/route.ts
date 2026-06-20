@@ -11,6 +11,8 @@ import { TIER_ORDER } from '@/lib/billing/tiers';
 import {
   claimWidgetToJson,
   formatClaimRecommendationUnavailable,
+  formatNoPayoutCaseFields,
+  formatPayoutWidgetDecision,
   formatRecommendationFields,
   type GorgiasWidgetJsonPayload,
   type GorgiasWidgetLinkContext,
@@ -19,9 +21,7 @@ import {
 import { evaluateClaimDecision } from '@/lib/claims/decision/evaluate';
 import { inferWidgetTicketClaimLike } from '@/lib/claims/decision/claimLikeness';
 import { resolveClaimForTicketDecision } from '@/lib/claims/decision/resolveClaim';
-import { evaluateRules } from '@/lib/rules-engine';
-import { fetchActiveMerchantRules, writeRuleEvaluationAudit } from '@/lib/rules/store';
-import { widgetDataToSignals } from '@/lib/rules/widgetSignals';
+import { fetchActiveMerchantRules } from '@/lib/rules/store';
 import { env } from '@/lib/utils/env';
 import { gorgiasWidgetLog, gorgiasWidgetLogError } from '@/lib/gorgias/widgetLog';
 import { computeWidgetReviewLevel } from '@/lib/gorgias/widgetTrustSignals';
@@ -62,14 +62,18 @@ const GORGIAS_WIDGET_JSON_FALLBACK: GorgiasWidgetJsonPayload = {
   context_summary: 'Context unavailable — check your Gorgias connection in Unauth settings',
   recommendation: '—',
   recommendation_detail: '—',
+  payout_exposure: '—',
+  evidence_checklist: '—',
+  loss_attribution: '—',
+  recovery_path: '—',
   cta_label: 'Open Unauth settings →',
   cta_url: `${process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') ?? ''}/settings/integrations/gorgias`,
   basic_unlock_url: '',
   full_unlock_url: '',
   evidence_unlock_url: '',
-  basic_unlock_label: 'View full context →',
-  full_unlock_label: 'View network context →',
-  evidence_unlock_label: 'View claim summary →',
+  basic_unlock_label: 'Open full case →',
+  full_unlock_label: 'Open full case →',
+  evidence_unlock_label: 'Open full case →',
 };
 
 type WidgetReturnContext = {
@@ -193,10 +197,15 @@ function returnJsonForResult(input: {
   linkContext?: GorgiasWidgetLinkContext;
   widgetJsonOptions?: GorgiasWidgetJsonOptions;
   recommendationFields?: Pick<GorgiasWidgetJsonPayload, 'recommendation' | 'recommendation_detail'>;
+  payoutFields?: Pick<
+    GorgiasWidgetJsonPayload,
+    'payout_exposure' | 'evidence_checklist' | 'recommendation' | 'recovery_path'
+  >;
 }): NextResponse {
   const body = {
     ...claimWidgetToJson(input.result, input.linkContext, input.widgetJsonOptions),
     ...(input.recommendationFields ?? {}),
+    ...(input.payoutFields ?? {}),
   };
   const status = input.status ?? 200;
   const state = input.result.ok ? 'ok' : input.result.kind;
@@ -422,6 +431,9 @@ export async function GET(request: NextRequest) {
     let recommendationFields:
       | Pick<GorgiasWidgetJsonPayload, 'recommendation' | 'recommendation_detail'>
       | undefined;
+    let payoutFields:
+      | Pick<GorgiasWidgetJsonPayload, 'payout_exposure' | 'evidence_checklist' | 'recommendation' | 'recovery_path'>
+      | undefined;
     if (result.ok) {
       try {
         const resolution = await resolveClaimForTicketDecision(service, {
@@ -457,6 +469,12 @@ export async function GET(request: NextRequest) {
             recommendationFields = formatRecommendationFields(
               claimEval.evaluation,
               claimEval.ruleCount,
+              claimEval.payoutCase,
+            );
+            payoutFields = formatPayoutWidgetDecision(
+              claimEval.evaluation,
+              claimEval.payoutCase,
+              claimEval.ruleCount,
             );
             gorgiasWidgetLog('rules_evaluated', {
               recommendation: claimEval.evaluation.recommendation,
@@ -474,27 +492,19 @@ export async function GET(request: NextRequest) {
           }
         } else if (resolution.status === 'ambiguous') {
           recommendationFields = formatClaimRecommendationUnavailable('ambiguous');
+          payoutFields = formatNoPayoutCaseFields();
         } else if (claimLike) {
           recommendationFields = formatClaimRecommendationUnavailable('not_found');
+          payoutFields = formatNoPayoutCaseFields();
         } else {
-          const rules = await fetchActiveMerchantRules(service, authResult.merchantId);
-          const signals = widgetDataToSignals(result.data);
-          const evaluation = evaluateRules(signals, rules);
-          await writeRuleEvaluationAudit(service, {
-            merchantId: authResult.merchantId,
-            claimId: null,
-            identityId: null,
-            signals,
-            rules,
-            result: evaluation,
-          });
-          recommendationFields = formatRecommendationFields(evaluation, rules.length);
+          recommendationFields = formatClaimRecommendationUnavailable('not_found');
+          payoutFields = formatNoPayoutCaseFields();
           gorgiasWidgetLog('rules_evaluated', {
-            recommendation: evaluation.recommendation,
-            ruleCount: rules.length,
-            ruleMatched: Boolean(evaluation.rule_id),
+            recommendation: 'no_case',
+            ruleCount: 0,
+            ruleMatched: false,
             claimId: null,
-            path: 'identity_fallback',
+            path: 'no_payout_case',
           });
         }
       } catch (evalErr) {
@@ -511,6 +521,7 @@ export async function GET(request: NextRequest) {
       linkContext,
       widgetJsonOptions: enrichedJsonOptions,
       recommendationFields,
+      payoutFields,
     });
   } catch (err) {
     gorgiasWidgetLogError('fatal_error', err);

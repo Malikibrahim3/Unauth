@@ -23,7 +23,7 @@ export default async function GorgiasIntegrationPage() {
     <SettingsPageShell
       eyebrow="Integrations"
       title="Gorgias"
-      subtitle="Show identity confidence and claims history on every support ticket."
+      subtitle="Show payout case context, evidence gaps, and recommendations on support tickets."
       breadcrumbs={[
         { label: 'Settings', href: '/settings/account' },
         { label: 'Integrations', href: '/settings/integrations' },

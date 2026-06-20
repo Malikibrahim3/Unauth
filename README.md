@@ -1,16 +1,26 @@
 # Unauth
 
-Unauth is claim decision infrastructure for ecommerce merchants. It links helpdesk claims with order, delivery, customer, prior-claim, evidence, and merchant-rule context so support teams can make explainable decisions. Unauth can recommend approve, manual review, or deny based on available context and configured rules, but the merchant remains responsible for the final outcome.
+Unauth is a post-purchase loss accountability platform for ecommerce merchants.
+
+> Control payouts. Recover where possible. Prevent where not.
+
+The MVP is a Shopify/Gorgias payout-control workflow: support payout cases, a compressed Gorgias decision card, evidence checklist, merchant rules, attribution/recoverability, manual recovery cases, recovery board, and operational dashboards.
+
+**Product source of truth:** [`docs/product/MVP_STEERING.md`](docs/product/MVP_STEERING.md)
+
+Merchant rules make recommendations. Unauth surfaces evidence, payout exposure, attribution, recoverability, and next actions — the merchant remains responsible for the final outcome.
 
 ## Current product surface
 
-- Claim review queue for active and historical customer claims.
-- Gorgias and Shopify connection paths for ticket, order, and fulfillment context.
-- Merchant-owned claim rules with approve, manual review, and deny recommendation actions.
-- Evidence records and evidence package support for claim and dispute review.
-- Customer profiles with same-store identity context and pseudonymous cross-merchant network context.
-- Outcome recording and audit trail records for decision history.
-- Analytics for connected claim operations and legacy imported context where it already exists.
+- Support payout case queue (claims) for active and historical post-purchase loss cases.
+- Gorgias 4-line decision widget and Shopify connection paths for ticket, order, and fulfillment context.
+- Merchant-owned rules with operational recommendations (approve, ask for evidence, manual review, deny under policy, open recovery).
+- Evidence checklist and evidence records for payout and recovery review.
+- Loss attribution, recoverability classification, and recovery cases with recovery board.
+- Partner rulebook for carrier/3PL/supplier recoverability rules.
+- Outcome recording and audit trail for support decisions.
+- Dashboard metrics for payout exposure, recovery, prevention, and policy leakage.
+- Legacy customer profiles and pattern context where already integrated (not the primary product story).
 
 ## What Unauth does not do today
 
@@ -73,9 +83,9 @@ Visit `http://localhost:3000` and sign in with magic link.
 npm test
 ```
 
-## Privacy and network context
+## Privacy and legacy context
 
-Unauth keeps merchant-scoped raw records inside the merchant's own workspace. Cross-merchant context is based on pseudonymous identity signals and aggregate history, not shared plaintext customer identities. Network context is useful only when enough participating merchants and records exist to produce a meaningful signal.
+Unauth keeps merchant-scoped raw records inside the merchant's own workspace. Legacy identity/pattern context may exist in the codebase but is not the primary MVP product story. See [`docs/product/TERMINOLOGY.md`](docs/product/TERMINOLOGY.md) for preferred language.
 
 ## Legacy and internal assets
 

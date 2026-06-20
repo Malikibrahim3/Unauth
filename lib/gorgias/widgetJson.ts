@@ -12,6 +12,27 @@ import { env } from '@/lib/utils/env';
 import { buildGorgiasWidgetUnlockUrlSet } from '@/lib/gorgias/widgetUnlockUrls';
 import { GORGIAS_SETTINGS_INTEGRATIONS_PATH } from '@/lib/support/gorgias/supportConnectionShared';
 import { computeWidgetTrustSummary } from '@/lib/gorgias/widgetTrustSignals';
+import { CLAIM_TYPE_LABELS, type ClaimTypeValue } from '@/lib/claims/claimTypes';
+import type { RuleEvaluationResult } from '@/lib/rules-engine';
+import {
+  formatPayoutRecommendationRuleLine,
+  payoutRecommendationLabel,
+  resolvePayoutRecommendation,
+} from '@/lib/payouts/recommendation';
+import {
+  EVIDENCE_STRENGTH_LABELS,
+  LIKELY_OWNER_LABELS,
+  LOSS_ATTRIBUTION_DISPLAY,
+  RECOVERABILITY_LABELS,
+  REQUESTED_ACTION_LABELS,
+  type EvidenceChecklistResult,
+  type LossAttributionResult,
+  type Money,
+  type PayoutClaimType,
+  type PayoutExposure,
+  type RecoveryPath,
+  type SupportPayoutCase,
+} from '@/lib/payouts/types';
 
 /**
  * Flat root object — field paths must match buildGorgiasSidebarWidgetTemplate() exactly.
@@ -50,6 +71,14 @@ export type GorgiasWidgetJsonPayload = {
   recommendation: string;
   /** Which rule fired + matched conditions, or a neutral prompt/state. */
   recommendation_detail: string;
+  /** Money-first payout exposure summary, or '—'. Own-store data; not network-gated. */
+  payout_exposure: string;
+  /** Documentary evidence completeness (present/missing/strength), or '—'. */
+  evidence_checklist: string;
+  /** Advisory loss attribution + confidence + reasons, or '—'. Never a verdict. */
+  loss_attribution: string;
+  /** Lightweight recovery route (recoverability, owner, next step), or '—'. */
+  recovery_path: string;
   cta_label: string;
   cta_url: string;
   /** Browser-openable GET unlock links (Gorgias custom.links). */
@@ -85,9 +114,9 @@ export function useCreditGatedWidgetPreview(options?: GorgiasWidgetJsonOptions):
 }
 
 const UNLOCK_LABELS = {
-  basic_unlock_label: 'View full context →',
-  full_unlock_label: 'View network context →',
-  evidence_unlock_label: 'View claim summary →',
+  basic_unlock_label: 'Open full case →',
+  full_unlock_label: 'Open full case →',
+  evidence_unlock_label: 'Open full case →',
 } as const;
 
 const NO_NETWORK_LABEL = 'No network history found';
@@ -165,6 +194,10 @@ type WidgetCorePayload = Omit<
   | 'evidence_unlock_label'
   | 'recommendation'
   | 'recommendation_detail'
+  | 'payout_exposure'
+  | 'evidence_checklist'
+  | 'loss_attribution'
+  | 'recovery_path'
 >;
 
 /**
@@ -173,9 +206,33 @@ type WidgetCorePayload = Omit<
  * recommendation is never Unauth's own judgment.
  */
 const RECOMMENDATION_DEFAULTS = {
-  recommendation: '—',
-  recommendation_detail: 'Set up fraud rules to get recommendations',
+  recommendation: 'Rule: —',
+  recommendation_detail: 'No payout case detected for this ticket yet.',
 } as const;
+
+/**
+ * Payout fields default to neutral here. The widget route overrides them from the
+ * resolved SupportPayoutCase when a claim is found. They are derived from
+ * own-store claim context only (no network signals), so they are not k-anon gated.
+ */
+const PAYOUT_DEFAULTS = {
+  payout_exposure: 'Case: No payout case detected for this ticket yet',
+  evidence_checklist: 'Evidence: —',
+  loss_attribution: '—',
+  recovery_path: 'Recovery: —',
+} as const;
+
+export function formatNoPayoutCaseFields(): Pick<
+  GorgiasWidgetJsonPayload,
+  'payout_exposure' | 'evidence_checklist' | 'recommendation' | 'recovery_path'
+> {
+  return {
+    payout_exposure: PAYOUT_DEFAULTS.payout_exposure,
+    evidence_checklist: PAYOUT_DEFAULTS.evidence_checklist,
+    recommendation: RECOMMENDATION_DEFAULTS.recommendation,
+    recovery_path: PAYOUT_DEFAULTS.recovery_path,
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Context helpers — order reference and neutral summary
@@ -270,9 +327,134 @@ function withUnlockFields(
 ): GorgiasWidgetJsonPayload {
   return {
     ...RECOMMENDATION_DEFAULTS,
+    ...PAYOUT_DEFAULTS,
     ...payload,
     ...UNLOCK_LABELS,
     ...unlockUrls(link),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Payout case — own-store payout exposure, evidence, attribution, recovery.
+// All factual/advisory; never a verdict. Plain ·-joined strings for native rows.
+// ---------------------------------------------------------------------------
+
+const CURRENCY_SYMBOLS: Record<string, string> = { USD: '$', GBP: '£', EUR: '€' };
+
+function formatMoney(m: Money): string {
+  const amt = m.amount.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  if (!m.currency) return amt;
+  const symbol = CURRENCY_SYMBOLS[m.currency.toUpperCase()];
+  return symbol ? `${symbol}${amt}` : `${m.currency} ${amt}`;
+}
+
+function humanizeKey(key: string): string {
+  return key.replace(/_/g, ' ');
+}
+
+function truncateList(items: string[], max = 3): string {
+  if (items.length <= max) return items.join(', ');
+  return `${items.slice(0, max).join(', ')} +${items.length - max} more`;
+}
+
+export function formatPayoutExposure(exposure: PayoutExposure): string {
+  if (exposure.total.amount <= 0 || exposure.components.length === 0) {
+    return 'Amount not available yet · open case in Unauth';
+  }
+  const parts = [`${formatMoney(exposure.total)} estimated payout exposure`];
+  if (exposure.reviewThreshold != null) {
+    parts.push(exposure.aboveReviewThreshold ? 'requires review' : 'within standard handling');
+  }
+  return parts.join(' · ');
+}
+
+function claimTypeLabel(claimType: PayoutClaimType | null): string {
+  if (!claimType) return 'Support payout case';
+  if (claimType in CLAIM_TYPE_LABELS) {
+    return CLAIM_TYPE_LABELS[claimType as ClaimTypeValue];
+  }
+  return humanizeKey(claimType);
+}
+
+/** Line 1 of the 4-line Gorgias decision card: claim type · requested action · amount at risk. */
+export function formatDecisionLine1(payoutCase: SupportPayoutCase): string {
+  const claimLabel = claimTypeLabel(payoutCase.claimType);
+  const action = REQUESTED_ACTION_LABELS[payoutCase.requestedAction.primary].toLowerCase();
+  if (payoutCase.exposure.total.amount <= 0) {
+    return `${claimLabel} · ${action} requested · amount TBD`;
+  }
+  return `${claimLabel} · ${action} requested · ${formatMoney(payoutCase.exposure.total)} at risk`;
+}
+
+export function formatEvidenceChecklist(evidence: EvidenceChecklistResult): string {
+  if (evidence.strength === 'missing') {
+    return 'Evidence: missing · no supporting evidence on file yet · request evidence';
+  }
+  const strengthLabel = EVIDENCE_STRENGTH_LABELS[evidence.strength].toLowerCase();
+  const present = evidence.items.filter((i) => i.state === 'present').map((i) => humanizeKey(i.key));
+  const missing = evidence.items.filter((i) => i.state === 'missing').map((i) => humanizeKey(i.key));
+  const parts = [`Evidence: ${strengthLabel}`];
+  if (present.length > 0) parts.push(`present: ${truncateList(present)}`);
+  if (missing.length > 0) parts.push(`missing: ${truncateList(missing)}`);
+  return parts.join(' · ');
+}
+
+export function formatLossAttribution(attribution: LossAttributionResult): string {
+  const label = LOSS_ATTRIBUTION_DISPLAY[attribution.label];
+  const conf =
+    attribution.confidence === 'needs_more_evidence'
+      ? 'needs more evidence'
+      : `confidence: ${attribution.confidence}`;
+  const reasonText = attribution.reasons.slice(0, 2).map((r) => r.text).join('; ');
+  const parts = [label, conf];
+  if (reasonText) parts.push(reasonText);
+  return parts.join(' · ');
+}
+
+export function formatRecoveryPath(recovery: RecoveryPath): string {
+  const rec = RECOVERABILITY_LABELS[recovery.recoverability].toLowerCase();
+  const owner = LIKELY_OWNER_LABELS[recovery.likelyOwner].toLowerCase();
+  return `Recovery: ${rec} · ${recovery.suggestedNextAction} · owner ${owner} · Open case →`;
+}
+
+/** Builds the four native payout widget fields from a resolved SupportPayoutCase. */
+export function formatPayoutFields(
+  payoutCase: SupportPayoutCase,
+): Pick<GorgiasWidgetJsonPayload, 'payout_exposure' | 'evidence_checklist' | 'loss_attribution' | 'recovery_path'> {
+  return {
+    payout_exposure: formatDecisionLine1(payoutCase),
+    evidence_checklist: formatEvidenceChecklist(payoutCase.evidence),
+    loss_attribution: formatLossAttribution(payoutCase.attribution),
+    recovery_path: formatRecoveryPath(payoutCase.recovery),
+  };
+}
+
+/**
+ * Full 4-line Gorgias decision card when rule evaluation + payout case are both available.
+ */
+export function formatPayoutWidgetDecision(
+  evaluation: RuleEvaluationResult,
+  payoutCase: SupportPayoutCase,
+  ruleCount: number,
+): Pick<GorgiasWidgetJsonPayload, 'payout_exposure' | 'evidence_checklist' | 'recommendation' | 'recovery_path'> {
+  const recommendation = payoutCase.recommendation ?? resolvePayoutRecommendation(evaluation, payoutCase);
+  const fields = formatPayoutFields(payoutCase);
+  if (!recommendation) {
+    return {
+      payout_exposure: fields.payout_exposure,
+      evidence_checklist: fields.evidence_checklist,
+      recommendation: ruleCount === 0 ? 'Rule: —' : 'Rule: no merchant rule matched',
+      recovery_path: fields.recovery_path,
+    };
+  }
+  return {
+    payout_exposure: fields.payout_exposure,
+    evidence_checklist: fields.evidence_checklist,
+    recommendation: formatPayoutRecommendationRuleLine(recommendation),
+    recovery_path: fields.recovery_path,
   };
 }
 
@@ -281,46 +463,65 @@ function withUnlockFields(
 // ---------------------------------------------------------------------------
 
 const RECOMMENDATION_LABELS: Record<string, string> = {
-  approve: 'Approve',
+  approve: 'Approve payout',
   manual_review: 'Manual review',
-  deny: 'Deny',
+  deny: 'Deny under policy',
 };
 
 /**
- * Formats a rules-engine result into the two native widget fields.
- *
- * @param ruleCount number of active rules the merchant has configured. Used to
- *        distinguish "no rules configured" from "rules exist, none matched".
+ * Formats a rules-engine result into the Rule line of the 4-line decision card.
+ * When payoutCase is provided, uses steering-aligned recommendation vocabulary.
  */
 export function formatRecommendationFields(
   result: { recommendation: string; rule_name: string | null; justification_lines: string[] },
   ruleCount: number,
+  payoutCase?: SupportPayoutCase,
 ): Pick<GorgiasWidgetJsonPayload, 'recommendation' | 'recommendation_detail'> {
+  if (payoutCase) {
+    const resolved = payoutCase.recommendation ?? resolvePayoutRecommendation(
+      {
+        recommendation: result.recommendation as RuleEvaluationResult['recommendation'],
+        rule_id: null,
+        rule_name: result.rule_name,
+        matched_conditions: [],
+        justification: result.justification_lines.join(' · '),
+        justification_lines: result.justification_lines,
+      },
+      payoutCase,
+    );
+    if (resolved) {
+      return {
+        recommendation: formatPayoutRecommendationRuleLine(resolved),
+        recommendation_detail: `${resolved.explanation} · ${payoutRecommendationLabel(resolved.action)}`,
+      };
+    }
+  }
+
   if (result.recommendation === 'no_match') {
     if (ruleCount === 0) {
       return {
-        recommendation: 'No rules configured',
-        recommendation_detail: 'Set up fraud rules in Unauth to get recommendations',
+        recommendation: 'Rule: —',
+        recommendation_detail: 'Set up merchant rules in Unauth to get recommendations',
       };
     }
     return {
-      recommendation: 'No rule matched',
-      recommendation_detail: 'None of your configured rules matched this identity',
+      recommendation: 'Rule: no merchant rule matched',
+      recommendation_detail: 'None of your configured rules matched this case',
     };
   }
 
   const label = RECOMMENDATION_LABELS[result.recommendation] ?? result.recommendation;
-  const heading = result.rule_name ? `${label} · ${result.rule_name}` : label;
-  // justification_lines[0] is the "Rule … triggered" line; the rest are the
-  // matched conditions. Join with " · " for the single-line native text widget.
+  const ruleName = result.rule_name ?? 'default policy';
   const justification = result.justification_lines.length > 0
-    ? result.justification_lines.join(' · ')
-    : null;
-  const sourceLabel = ruleCount === 0 ? 'default risk controls' : 'your configured rules';
-  const detail = justification
-    ? `${justification} · Based on ${sourceLabel}`
-    : `Based on ${sourceLabel}`;
-  return { recommendation: heading, recommendation_detail: detail };
+    ? result.justification_lines[0]
+  : null;
+  const ruleLine = justification
+    ? `Rule: ${ruleName} → ${label} · ${justification}`
+    : `Rule: ${ruleName} → ${label}`;
+  return {
+    recommendation: ruleLine,
+    recommendation_detail: 'Merchant rule recommendation — your team decides',
+  };
 }
 
 export type ClaimRecommendationUnavailableReason = 'not_found' | 'ambiguous' | 'eval_failed';
@@ -344,9 +545,9 @@ export function formatClaimRecommendationUnavailable(
     const ruleCount = options?.ruleCount;
     if (ruleCount === 0) {
       return {
-        recommendation: 'Recommendation could not be generated',
+        recommendation: 'Rule: —',
         recommendation_detail:
-          'Claim context was found, but rule evaluation failed. Set up fraud rules in Unauth to get recommendations.',
+          'Claim context was found, but rule evaluation failed. Set up merchant rules in Unauth to get recommendations.',
       };
     }
     return {
@@ -355,9 +556,9 @@ export function formatClaimRecommendationUnavailable(
     };
   }
   return {
-    recommendation: 'Claim recommendation unavailable',
+    recommendation: 'Rule: —',
     recommendation_detail:
-      'Unauth could not resolve this ticket to a claim yet. Showing identity context only.',
+      'No payout case detected for this ticket yet. Open or create a payout case before applying a merchant rule.',
   };
 }
 
@@ -430,20 +631,24 @@ function appUrl(path: string): string {
 }
 
 function baseCta(
-  profileUrl?: string | null,
+  _profileUrl?: string | null,
   link?: GorgiasWidgetLinkContext,
 ): Pick<GorgiasWidgetJsonPayload, 'cta_label' | 'cta_url'> {
-  const base = profileUrl?.trim() || appUrl('/customers');
+  const claimId = link?.claimId?.trim();
+  const base = appUrl('/claims');
   if (!link) {
-    return { cta_label: 'Open in Unauth →', cta_url: base };
+    return { cta_label: 'Open case →', cta_url: base };
   }
   const extras = ['source=gorgias'];
   if (link.ticketRef?.trim()) {
     extras.push(`ticket_id=${encodeURIComponent(link.ticketRef.trim())}`);
   }
-  const sep = base.includes('?') ? '&' : '?';
+  if (claimId) {
+    extras.push(`focus=${encodeURIComponent(claimId)}`);
+  }
+  const sep = '?';
   return {
-    cta_label: 'Open in Unauth →',
+    cta_label: 'Open case →',
     cta_url: `${base}${sep}${extras.join('&')}`,
   };
 }

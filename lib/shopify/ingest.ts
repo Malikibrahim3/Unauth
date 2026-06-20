@@ -5,6 +5,7 @@ import { linkCheckoutSignalsToOrder } from '@/lib/checkoutSignals/linkOrder';
 import { normaliseAddress, normaliseCard } from '@/lib/identity/normalise';
 import { emitIdentityObservations, type ObservationEntity } from '@/lib/identity/observations';
 import { linkClaimToIdentity, resolveIdentitiesForKeys } from '@/lib/identity/resolver';
+import { TABLES } from '@/lib/supabase/tables';
 
 type ServiceClient = SupabaseClient;
 
@@ -443,7 +444,7 @@ async function processDisputeTopic(
 
   const claimStatus = mapDisputeStatusToClaimStatus(payload.status);
   const { data: existingClaim, error: ce } = await supabase
-    .from('claims')
+    .from(TABLES.MERCHANT_CLAIMS)
     .select('id')
     .eq('merchant_id', merchantId)
     .eq('source_order_id', order.id)
@@ -455,7 +456,7 @@ async function processDisputeTopic(
   if (existingClaim) {
     if (topic === 'disputes/update' || topic === 'disputes/updated') {
       const { error } = await supabase
-        .from('claims')
+        .from(TABLES.MERCHANT_CLAIMS)
         .update({ status: claimStatus, updated_at: now })
         .eq('id', existingClaim.id);
       if (error) throw new Error(`claim_update_failed: ${error.message}`);
@@ -464,7 +465,7 @@ async function processDisputeTopic(
   }
 
   const { data: claim, error: ci } = await supabase
-    .from('claims')
+    .from(TABLES.MERCHANT_CLAIMS)
     .insert({
       merchant_id: merchantId,
       source_order_id: order.id,
@@ -515,7 +516,7 @@ async function processCancellationTopic(
     .eq('id', order.id);
   if (error) throw new Error(`order_cancel_update_failed: ${error.message}`);
   const { error: ve } = await supabase
-    .from('claims')
+    .from(TABLES.MERCHANT_CLAIMS)
     .update({ status: 'voided', updated_at: now })
     .eq('merchant_id', merchantId)
     .eq('source_order_id', order.id)

@@ -1002,15 +1002,15 @@ describe('dashboard/page.tsx — review queue correctness', () => {
     expect(content).not.toContain('.neq("dismissed_by_merchant", true)');
   });
 
-  it('delegates review queue to countMerchantReviewQueueProfiles shared helper', () => {
+  it('delegates dashboard metrics to the payout dashboard helper', () => {
     const content = fs.readFileSync(
       path.join(process.cwd(), 'app/(app)/dashboard/page.tsx'),
       'utf-8'
     );
-    // Dashboard must use the shared helper rather than one-off inline query logic.
-    expect(content).toContain('countMerchantReviewQueueProfiles');
-    // The helper import must come from merchantHelpers.
-    expect(content).toContain('merchantHelpers');
+    // Dashboard must use the shared payout metrics helper rather than one-off inline query logic.
+    expect(content).toContain('loadPayoutDashboardMetrics');
+    expect(content).toContain('payoutDashboardMetrics');
+    expect(content).not.toContain('countMerchantReviewQueueProfiles');
   });
 
   it('shared helper uses .not("dismissed_by_merchant", "is", true) null-safe filter', () => {
@@ -1374,12 +1374,13 @@ describe('dashboard/page.tsx — fail-closed and no silent zero', () => {
     expect(content).toMatch(/reviewQueue.*null/);
   });
 
-  it('renders "Unavailable" state when review queue count failed', () => {
+  it('renders an incomplete state when helpdesk-backed payout metrics are unavailable', () => {
     const content = fs.readFileSync(
       path.join(process.cwd(), 'app/(app)/dashboard/dashboardPageUtils.ts'),
       'utf-8'
     );
-    expect(content).toContain('Unavailable');
+    expect(content).toContain('Missing');
+    expect(content).toContain('Connect helpdesk');
   });
 
   it('handles permission denied — does NOT ignore denied return value', () => {

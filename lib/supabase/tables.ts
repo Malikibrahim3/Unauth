@@ -13,7 +13,7 @@ export const TABLES = {
   // their call sites are being migrated incrementally post-cutover. ──
   PROCESSING_JOBS: 'sync_jobs',
   AUDIT_TRANSACTIONS: 'source_orders',
-  MERCHANT_CLAIMS: 'claims',
+  MERCHANT_CLAIMS: 'support_payout_cases',
   CUSTOMER_PROFILES: 'identities',
   IDENTITY_PROFILES: 'identity_profiles',
   CUSTOMER_PROFILE_IDENTITIES: 'customer_profile_identities',
@@ -53,6 +53,23 @@ export const TABLES = {
   RULE_EVALUATIONS: 'rule_evaluations',
   DEFAULT_RULE_TEMPLATES: 'default_rule_templates',
   IDENTITY_EVIDENCE_SCORES: 'identity_evidence_scores',
+  PARTNERS: 'partners',
+  PARTNER_RECOVERY_RULES: 'partner_recovery_rules',
+  RECOVERY_CASES: 'recovery_cases',
+  RECOVERY_CASE_EVENTS: 'recovery_case_events',
+  CASE_CLARIFICATION_REQUESTS: 'case_clarification_requests',
+  MERCHANT_INTEGRATIONS: 'merchant_integrations',
+  INTEGRATION_CREDENTIALS: 'integration_credentials',
+  INTEGRATION_EVIDENCE_ITEMS: 'integration_evidence_items',
+  INTEGRATION_DOCUMENTS: 'integration_documents',
+  EXTRACTED_PARTNER_TERMS: 'extracted_partner_terms',
+  LOSS_CASES: 'loss_cases',
+  LOSS_CASE_EVIDENCE: 'loss_case_evidence',
+  EXTERNAL_CORRESPONDENCE: 'external_correspondence',
+  UNMATCHED_CORRESPONDENCE: 'unmatched_correspondence',
+  EXTERNAL_CLARIFICATION_REQUESTS: 'external_clarification_requests',
+  CORRESPONDENCE_AUTOMATION_SETTINGS: 'correspondence_automation_settings',
+  LOSS_CASE_EVENTS: 'loss_case_events',
 } as const;
 
 /** Step 3 compatibility / derived views — see PHASE_2_IMPLEMENTATION_SPEC.md */
@@ -67,6 +84,7 @@ export type TableName = typeof TABLES[keyof typeof TABLES];
 export const STORAGE_BUCKETS = {
   MERCHANT_CSV_UPLOADS: 'merchant-csv-uploads-2',
   EVIDENCE_PACKAGES: 'evidence-packages',
+  INTEGRATION_DOCUMENTS: 'integration-documents',
 } as const;
 
 export const COLUMNS = {

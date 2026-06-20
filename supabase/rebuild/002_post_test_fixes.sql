@@ -21,14 +21,14 @@ begin
   return new;
 end $$;
 
-drop trigger if exists trg_claims_status_audit on claims;
-create trigger trg_claims_status_audit
-  after update of status on claims
+drop trigger if exists trg_support_payout_cases_status_audit on support_payout_cases;
+create trigger trg_support_payout_cases_status_audit
+  after update of status on support_payout_cases
   for each row execute function audit_claim_status_change();
 
--- ── C2: claims listing query index (was Seq Scan)
-create index if not exists idx_claims_merchant_submitted
-  on claims (merchant_id, submitted_at desc);
+-- ── C2: payout-case listing query index (was Seq Scan)
+create index if not exists idx_support_payout_cases_merchant_submitted
+  on support_payout_cases (merchant_id, submitted_at desc);
 
 -- ── C3: widget token table (same shape as legacy_v1.merchant_widget_tokens)
 create table if not exists merchant_widget_tokens (

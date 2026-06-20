@@ -6,6 +6,16 @@ export const CLAIM_REVIEW_PANEL_ROOT_STYLE: CSSProperties = {
 };
 
 export const STATUS_COLOUR_MAP: Record<string, { bg: string; text: string }> = {
+  new: { bg: 'var(--bg-subtle)', text: 'var(--text-secondary)' },
+  evidence_needed: { bg: 'var(--warning-bg)', text: 'var(--warning)' },
+  awaiting_customer_evidence: { bg: 'var(--warning-bg)', text: 'var(--warning)' },
+  awaiting_carrier_response: { bg: 'var(--info-bg)', text: 'var(--info)' },
+  awaiting_3pl_response: { bg: 'var(--info-bg)', text: 'var(--info)' },
+  awaiting_supplier_response: { bg: 'var(--info-bg)', text: 'var(--info)' },
+  ready_for_decision: { bg: 'var(--success-bg)', text: 'var(--success)' },
+  manual_review: { bg: 'var(--warning-bg)', text: 'var(--warning)' },
+  decision_recorded: { bg: 'var(--bg-subtle)', text: 'var(--text-secondary)' },
+  recovery_opened: { bg: 'var(--bg-subtle)', text: 'var(--text-secondary)' },
   open: { bg: 'var(--bg-subtle)', text: 'var(--text-secondary)' },
   under_review: { bg: 'var(--warning-bg)', text: 'var(--warning)' },
   evidence_requested: { bg: 'var(--sev-probable-fill)', text: 'var(--warning)' },

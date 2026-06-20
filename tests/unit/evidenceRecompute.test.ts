@@ -61,7 +61,7 @@ describe('getIdentityEvidenceSignals', () => {
         identity_profiles: {
           single: { data: { total_claims: 3, merchant_count: 2, claim_type_counts: { chargeback: 1, damaged: 2 } }, error: null },
         },
-        claims: { single: { data: { submitted_at: daysAgo(10) }, error: null } },
+        support_payout_cases: { single: { data: { submitted_at: daysAgo(10) }, error: null } },
         merchant_identity_state: { list: { data: [{ identity_id: 'x' }], error: null } },
       }),
       [],
@@ -79,7 +79,7 @@ describe('getIdentityEvidenceSignals', () => {
       withDefaults({
         // last_seen_at is intentionally "today"; it must be ignored.
         identity_profiles: { single: { data: { total_claims: 1, merchant_count: 1, claim_type_counts: {}, last_seen_at: iso(NOW) }, error: null } },
-        claims: { single: { data: { submitted_at: daysAgo(40) }, error: null } },
+        support_payout_cases: { single: { data: { submitted_at: daysAgo(40) }, error: null } },
       }),
       [],
     );
@@ -91,7 +91,7 @@ describe('getIdentityEvidenceSignals', () => {
     const client = makeClient(
       withDefaults({
         identity_profiles: { single: { data: null, error: null } },
-        claims: {
+        support_payout_cases: {
           list: {
             data: [
               { claim_type: 'chargeback', merchant_id: 'm1', submitted_at: daysAgo(3) },
@@ -115,7 +115,7 @@ describe('getIdentityEvidenceSignals', () => {
     const client = makeClient(
       withDefaults({
         identity_profiles: { single: { data: { total_claims: 2, merchant_count: 1, claim_type_counts: { weird_value: 1, '': 5, chargeback: 1 } }, error: null } },
-        claims: { single: { data: { submitted_at: daysAgo(2) }, error: null } },
+        support_payout_cases: { single: { data: { submitted_at: daysAgo(2) }, error: null } },
       }),
       [],
     );
@@ -138,7 +138,7 @@ describe('recomputeIdentityEvidenceScore', () => {
   const fullConfig = () =>
     withDefaults({
       identity_profiles: { single: { data: { total_claims: 3, merchant_count: 2, claim_type_counts: { chargeback: 1, damaged: 2 } }, error: null } },
-      claims: { single: { data: { submitted_at: daysAgo(10) }, error: null } },
+      support_payout_cases: { single: { data: { submitted_at: daysAgo(10) }, error: null } },
       merchant_identity_state: { list: { data: [{ identity_id: 'x' }], error: null } },
     });
 
@@ -193,7 +193,7 @@ describe('recomputeIdentityEvidenceScore', () => {
     const client = makeClient(
       withDefaults({
         identity_profiles: { single: { data: { total_claims: 0, merchant_count: 0, claim_type_counts: {} }, error: null } },
-        claims: { single: { data: null, error: null } },
+        support_payout_cases: { single: { data: null, error: null } },
       }),
       capture,
     );
@@ -219,7 +219,7 @@ describe('recomputeEvidenceScoresForIdentities', () => {
     const client = makeClient(
       withDefaults({
         identity_profiles: { single: { data: { total_claims: 1, merchant_count: 1, claim_type_counts: {} }, error: null } },
-        claims: { single: { data: { submitted_at: daysAgo(5) }, error: null } },
+        support_payout_cases: { single: { data: { submitted_at: daysAgo(5) }, error: null } },
       }),
       capture,
     );

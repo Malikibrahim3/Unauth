@@ -50,7 +50,7 @@ describe('evaluateRules', () => {
     const low = evaluateRules(signals({ evidence_score: 20 }), []);
     expect(low.recommendation).toBe('approve');
     expect(low.rule_id).toBeNull();
-    expect(low.rule_name).toBe('Default low-risk control');
+    expect(low.rule_name).toBe('Default low-exposure control');
 
     const review = evaluateRules(signals({ evidence_score: 50 }), []);
     expect(review.recommendation).toBe('manual_review');
@@ -150,8 +150,8 @@ describe('evaluateRules', () => {
   });
 });
 
-describe('risk score bands', () => {
-  it('parses inclusive risk score ranges', () => {
+describe('legacy evidence-strength bands', () => {
+  it('parses inclusive evidence-strength ranges', () => {
     expect(
       parseRiskScoreRange({
         conditions: makeRiskScoreRangeConditions({ lower: 40, upper: 74 }),
@@ -160,7 +160,7 @@ describe('risk score bands', () => {
     ).toEqual({ lower: 40, upper: 74 });
   });
 
-  it('detects overlapping active risk controls', () => {
+  it('detects overlapping active compatibility controls', () => {
     const existing = rule({
       id: 'existing',
       conditions: makeRiskScoreRangeConditions({ lower: 40, upper: 74 }),
@@ -171,15 +171,15 @@ describe('risk score bands', () => {
     expect(findOverlappingRiskControl([existing], { lower: 75, upper: 100 })).toBeNull();
   });
 
-  it('detects gaps in risk score coverage', () => {
+  it('detects gaps in compatibility coverage', () => {
     const rules = [
       rule({ id: 'low', conditions: makeRiskScoreRangeConditions({ lower: 0, upper: 20 }), action: 'approve' }),
       rule({ id: 'high', conditions: makeRiskScoreRangeConditions({ lower: 75, upper: 100 }), action: 'deny' }),
     ];
-    expect(riskScorePolicyCoverageError(activeRiskScoreRanges(rules))).toContain('scores 21-74');
+    expect(riskScorePolicyCoverageError(activeRiskScoreRanges(rules))).toContain('band values 21-74');
   });
 
-  it('accepts complete adjacent risk score coverage', () => {
+  it('accepts complete adjacent compatibility coverage', () => {
     const rules = [
       rule({ id: 'low', conditions: makeRiskScoreRangeConditions({ lower: 0, upper: 39 }), action: 'approve' }),
       rule({ id: 'review', conditions: makeRiskScoreRangeConditions({ lower: 40, upper: 74 }), action: 'manual_review' }),

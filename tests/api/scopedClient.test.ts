@@ -37,16 +37,16 @@ describe('createScopedClient', () => {
 
     scoped.from(TABLES.PROCESSING_JOBS).select('id');
 
-    expect(base.from).toHaveBeenCalledWith('processing_jobs');
+    expect(base.from).toHaveBeenCalledWith(TABLES.PROCESSING_JOBS);
     expect(builder.eq).toHaveBeenCalledWith('merchant_id', 'merchant-1');
   });
 
-  it('injects merchant_ids containment for customer_profiles', () => {
+  it('injects merchant_ids containment for legacy customer_profiles', () => {
     const builder = makeBuilder();
     const base = { from: jest.fn(() => builder) };
     const scoped = createScopedClient('merchant-1', base as any);
 
-    scoped.from(TABLES.CUSTOMER_PROFILES).select('id');
+    scoped.from('customer_profiles').select('id');
 
     // customer_profiles is a JSONB-array tenant table (merchant_ids). Production
     // applies containment via the PostgREST `.or(col.cs.[...])` JSON form, which

@@ -81,7 +81,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       .eq('merchant_id', ctx.merchantId)
       .eq('is_active', true);
     if (existingError) {
-      return NextResponse.json({ error: 'Failed to validate risk score range' }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to validate payout policy band' }, { status: 500 });
     }
     const overlap = findOverlappingRiskControl(
       (existingRows ?? []).map((row: unknown) => mapRuleRow(row as never)),
@@ -90,7 +90,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     );
     if (overlap) {
       return NextResponse.json(
-        { error: `${formatRiskScoreRange(candidateRange)} overlaps "${overlap.name}". Risk score bands cannot overlap.` },
+        { error: `${formatRiskScoreRange(candidateRange)} overlaps "${overlap.name}". Payout policy bands cannot overlap.` },
         { status: 422 },
       );
     }
@@ -141,7 +141,7 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     .eq('merchant_id', ctx.merchantId)
     .eq('is_active', true);
   if (existingError) {
-    return NextResponse.json({ error: 'Failed to validate risk score policy' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to validate payout policy bands' }, { status: 500 });
   }
   const activeRules = (existingRows ?? []).map((row: unknown) => mapRuleRow(row as never));
   const remainingRanges = activeRiskScoreRanges(activeRules.filter((rule: MerchantRule) => rule.id !== id));

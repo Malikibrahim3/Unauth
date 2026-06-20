@@ -98,8 +98,8 @@ console.log('1. Engine outcomes');
 eq('approve outcome', evaluateRules(signals(), [rule({ action: 'approve' })]).recommendation, 'approve');
 eq('manual_review outcome', evaluateRules(signals(), [rule({ action: 'manual_review' })]).recommendation, 'manual_review');
 eq('deny outcome', evaluateRules(signals(), [rule({ action: 'deny' })]).recommendation, 'deny');
-eq('no_match when no rules', evaluateRules(signals(), []).recommendation, 'no_match');
-eq('no_match rule_id null', evaluateRules(signals(), []).rule_id, null);
+eq('default approve when no rules', evaluateRules(signals(), []).recommendation, 'approve');
+eq('default control rule_id null', evaluateRules(signals(), []).rule_id, null);
 
 // no_match when a rule exists but does not match
 eq(
@@ -416,7 +416,7 @@ console.log('10. Recommendation formatting');
 }
 
 // ---------------------------------------------------------------------------
-// 10b. Gorgias sidebar widget field order (identity before recommendation)
+// 10b. Gorgias sidebar widget field order (payout decision context before supporting context)
 // ---------------------------------------------------------------------------
 
 console.log('10b. Gorgias sidebar widget field order');
@@ -424,9 +424,12 @@ console.log('10b. Gorgias sidebar widget field order');
 {
   const paths = buildGorgiasSidebarWidgetTemplate('https://app.unauth.test')
     .widgets[0].widgets.map((w: { path: string }) => w.path);
+  const payoutExposureIdx = paths.indexOf('payout_exposure');
   const identityIdx = paths.indexOf('identity');
   const claimsIdx = paths.indexOf('claims');
   const ce3Idx = paths.indexOf('ce3_evidence');
+  const lossAttributionIdx = paths.indexOf('loss_attribution');
+  const recoveryPathIdx = paths.indexOf('recovery_path');
   const evidenceSummaryIdx = paths.indexOf('evidence_summary');
   const evidenceBreakdownIdx = paths.indexOf('evidence_breakdown');
   const recommendationIdx = paths.indexOf('recommendation');
@@ -434,13 +437,13 @@ console.log('10b. Gorgias sidebar widget field order');
   check('identity field present', identityIdx >= 0);
   check('evidence_summary field present', evidenceSummaryIdx >= 0);
   check('evidence_breakdown field present', evidenceBreakdownIdx >= 0);
-  check('recommendation below identity', recommendationIdx > identityIdx);
-  check('recommendation below claim history', recommendationIdx > claimsIdx);
+  check('recommendation below payout exposure', recommendationIdx > payoutExposureIdx);
   check('evidence_summary below network evidence', evidenceSummaryIdx > ce3Idx);
   check('evidence_breakdown follows evidence_summary', evidenceBreakdownIdx === evidenceSummaryIdx + 1);
-  check('recommendation below evidence breakdown', recommendationIdx > evidenceBreakdownIdx);
+  check('recovery path follows attribution', recoveryPathIdx > lossAttributionIdx);
   check('recommendation_detail follows recommendation', recommendationDetailIdx === recommendationIdx + 1);
-  check('recommendation fields are last rows', recommendationDetailIdx === paths.length - 1);
+  check('identity and claim history below recovery context', identityIdx > recoveryPathIdx && claimsIdx > identityIdx);
+  check('evidence display fields are last rows', evidenceBreakdownIdx === paths.length - 1);
 }
 
 // ---------------------------------------------------------------------------

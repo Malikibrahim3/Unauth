@@ -8,8 +8,9 @@ import { appendClaimEvent } from '@/lib/claims/events';
 import { claimStatusForOutcome } from '@/lib/claims/statusMachine';
 
 const reverseBodySchema = z.object({
-  decision: z.enum(['approved', 'denied', 'escalated', 'partial_refund', 'full_refund', 'chargeback_disputed', 'blacklist', 'internal_watch', 'no_action']),
-  outcome: z.enum(['loss', 'recovered', 'pending', 'chargeback_won', 'chargeback_lost', 'customer_verified', 'suspected_fraud', 'legitimate']),
+  // Accusation vocabulary ('blacklist', 'suspected_fraud') is not accepted; see lib/claims/store.ts.
+  decision: z.enum(['approved', 'denied', 'escalated', 'partial_refund', 'full_refund', 'chargeback_disputed', 'internal_watch', 'no_action']),
+  outcome: z.enum(['loss', 'recovered', 'pending', 'chargeback_won', 'chargeback_lost', 'customer_verified', 'legitimate']),
   note: z.string().trim().min(3),
   amount_refunded: z.number().finite().nullable().optional(),
   amount_recovered: z.number().finite().nullable().optional(),
@@ -32,7 +33,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const serviceClient = createServiceClient();
-  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.SUBMIT_FRAUD_FEEDBACK);
+  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.SUBMIT_PAYOUT_DECISIONS);
   if (denied) return denied;
 
   const { claimId } = await params;

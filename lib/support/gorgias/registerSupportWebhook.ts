@@ -26,7 +26,7 @@ export async function registerGorgiasSupportWebhook(input: {
       method: 'POST',
       body: JSON.stringify({
         name: 'Unauth Support Webhook',
-        description: 'Pushes Gorgias ticket events to Unauth for fraud/claim intelligence',
+        description: 'Pushes Gorgias ticket events to Unauth for support payout control',
         type: 'http',
         http: {
           url: input.webhookUrl,

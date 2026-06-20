@@ -12,6 +12,7 @@ import { emitIdentityObservations, type ObservationEntity } from '@/lib/identity
 import { resolveIdentitiesForKeys, linkClaimToIdentity } from '@/lib/identity/resolver';
 import { linkCheckoutSignalsToOrder } from '@/lib/checkoutSignals/linkOrder';
 import { processShopifyWebhook } from '@/lib/shopify/ingest';
+import { TABLES } from '@/lib/supabase/tables';
 
 /**
  * Shopify ingestion → v2 schema. Writes platform-agnostic layer-1 rows
@@ -368,7 +369,7 @@ async function processDisputeTopic(
   if (!order) return; // cannot anchor a claim without the order
 
   const claimStatus = mapDisputeStatusToClaimStatus(payload.status);
-  const { data: existingClaim, error: ce } = await supabase.from('claims')
+  const { data: existingClaim, error: ce } = await supabase.from(TABLES.MERCHANT_CLAIMS)
     .select('id')
     .eq('merchant_id', merchantId)
     .eq('source_order_id', order.id)
@@ -379,7 +380,7 @@ async function processDisputeTopic(
 
   if (existingClaim) {
     if (topic === 'disputes/updated') {
-      const { error } = await supabase.from('claims')
+      const { error } = await supabase.from(TABLES.MERCHANT_CLAIMS)
         .update({ status: claimStatus, updated_at: now }).eq('id', existingClaim.id);
       if (error) throw new Error(`claim_update_failed: ${error.message}`);
       // status transition audited by trg_claims_status_audit
@@ -387,7 +388,7 @@ async function processDisputeTopic(
     return;
   }
 
-  const { data: claim, error: ci } = await supabase.from('claims').insert({
+  const { data: claim, error: ci } = await supabase.from(TABLES.MERCHANT_CLAIMS).insert({
     merchant_id: merchantId,
     source_order_id: order.id,
     claim_type: 'chargeback',
@@ -427,7 +428,7 @@ async function processCancellationTopic(supabase: ServiceClient, merchantId: str
   }).eq('id', order.id);
   if (error) throw new Error(`order_cancel_update_failed: ${error.message}`);
   // void open claims on the cancelled order; trg_claims_status_audit logs each
-  const { error: ve } = await supabase.from('claims')
+  const { error: ve } = await supabase.from(TABLES.MERCHANT_CLAIMS)
     .update({ status: 'voided', updated_at: now })
     .eq('merchant_id', merchantId)
     .eq('source_order_id', order.id)

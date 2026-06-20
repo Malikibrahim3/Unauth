@@ -1,4 +1,10 @@
-import { claimWidgetToJson, formatEvidenceBreakdown, formatEvidenceSummary } from '@/lib/gorgias/widgetJson';
+import {
+  claimWidgetToJson,
+  formatClaimRecommendationUnavailable,
+  formatEvidenceBreakdown,
+  formatEvidenceSummary,
+  formatNoPayoutCaseFields,
+} from '@/lib/gorgias/widgetJson';
 import { WITHHELD_EVIDENCE_SIGNALS } from '@/lib/gorgias/widgetData';
 
 const OK_RESULT = {
@@ -96,6 +102,21 @@ describe('claimWidgetToJson', () => {
   it('never returns null fields for current widget payloads', () => {
     const payload = claimWidgetToJson({ ok: false, kind: 'not_found' });
     expect(Object.values(payload).every((v) => typeof v === 'string')).toBe(true);
+  });
+
+  it('uses a neutral no-case payout card instead of identity fallback recommendations', () => {
+    expect(formatNoPayoutCaseFields()).toEqual({
+      payout_exposure: 'Case: No payout case detected for this ticket yet',
+      evidence_checklist: 'Evidence: —',
+      recommendation: 'Rule: —',
+      recovery_path: 'Recovery: —',
+    });
+    expect(formatClaimRecommendationUnavailable('not_found').recommendation_detail).toContain(
+      'No payout case detected',
+    );
+    expect(formatClaimRecommendationUnavailable('not_found').recommendation_detail).not.toContain(
+      'identity context',
+    );
   });
 
   it('includes evidence display fields on successful payloads', () => {

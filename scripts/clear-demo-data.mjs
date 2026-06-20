@@ -70,7 +70,7 @@ async function run() {
   console.log(`Customer profiles: ${profileCount}`);
 
   const { count: claimCount } = await supabase
-    .from('claims')
+    .from('support_payout_cases')
     .select('*', { count: 'exact', head: true })
     .eq('merchant_id', merchantId);
   console.log(`Claims: ${claimCount}`);
@@ -190,7 +190,7 @@ async function run() {
   if ((claimCount ?? 0) > 0) {
     console.log(`\nDeleting ${claimCount} claims (derived from demo processing)...`);
     const { error } = await supabase
-      .from('claims')
+      .from('support_payout_cases')
       .delete()
       .eq('merchant_id', merchantId);
     if (error) console.error('  Error:', error.message);
@@ -217,7 +217,7 @@ async function run() {
   console.log(`Remaining customer profiles: ${remainingProfiles}`);
 
   const { count: remainingClaims } = await supabase
-    .from('claims')
+    .from('support_payout_cases')
     .select('*', { count: 'exact', head: true })
     .eq('merchant_id', merchantId);
   console.log(`Remaining claims: ${remainingClaims}`);

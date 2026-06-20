@@ -4,7 +4,7 @@ import { REPORTS_TABS, type ReportsTab } from '@/app/(app)/reports/reportsPageTy
 
 const TAB_META: Record<ReportsTab, { label: string; icon: typeof Radio | null }> = {
   overview: { label: 'Overview', icon: null },
-  integration: { label: 'Live intelligence', icon: Radio },
+  recovery: { label: 'Recovery & partners', icon: Radio },
 };
 
 export function ReportsTabBar({

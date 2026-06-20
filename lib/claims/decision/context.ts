@@ -78,7 +78,7 @@ export async function buildClaimDecisionContext(
   claimId: string,
 ): Promise<ClaimDecisionContext | null> {
   const { data: claimRow, error: claimError } = await client
-    .from('claims')
+    .from(TABLES.MERCHANT_CLAIMS)
     .select(
       'id, merchant_id, claim_type, status, amount_at_risk, currency, reason_raw, reason_normalized, source_order_id, source_ticket_id, identity_id, created_at, submitted_at, detection_detail',
     )
@@ -168,7 +168,7 @@ export async function buildClaimDecisionContext(
       : Promise.resolve({ data: null, error: null }),
     identityId
       ? client
-          .from('claims')
+          .from(TABLES.MERCHANT_CLAIMS)
           .select('id, claim_type, submitted_at')
           .eq('merchant_id', merchantId)
           .eq('identity_id', identityId)

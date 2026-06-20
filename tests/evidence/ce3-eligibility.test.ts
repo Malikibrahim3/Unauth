@@ -1,5 +1,6 @@
 import { assessCE3Eligibility } from '@/lib/evidence/ce3';
 import type { Ce3SignalHashes } from '@/lib/identity/ce3SignalHashes';
+import { TABLES } from '@/lib/supabase/tables';
 
 const DISPUTED_DATE = new Date('2025-06-01T12:00:00.000Z');
 const DISPUTED_ID = 'disputed-tx';
@@ -145,9 +146,9 @@ describe('buildEvidencePackage CE3 path', () => {
     };
 
     const rowsByTable: Record<string, Record<string, unknown>[]> = {
-      merchants: [{ id: 'merchant-a', user_id: 'user-a', business_name: 'Merchant A' }],
-      processing_jobs: [{ id: 'job-a', merchant_id: 'merchant-a', hidden_by_merchant: false }],
-      customer_profiles: [
+      [TABLES.MERCHANTS]: [{ id: 'merchant-a', user_id: 'user-a', business_name: 'Merchant A' }],
+      [TABLES.PROCESSING_JOBS]: [{ id: 'job-a', merchant_id: 'merchant-a', hidden_by_merchant: false }],
+      [TABLES.CUSTOMER_PROFILES]: [
         {
           id: 'profile-1',
           merchant_ids: ['merchant-a'],
@@ -173,7 +174,7 @@ describe('buildEvidencePackage CE3 path', () => {
         { profile_id: 'profile-1', audit_id: 'job-a', transaction_id: 'tx-2' },
         { profile_id: 'profile-1', audit_id: 'job-a', transaction_id: 'tx-disputed' },
       ],
-      audit_transactions: [
+      [TABLES.AUDIT_TRANSACTIONS]: [
         {
           id: 'tx-1',
           job_id: 'job-a',
@@ -259,7 +260,7 @@ describe('buildEvidencePackage CE3 path', () => {
         for (const [column, values] of this.inFilters) {
           rows = rows.filter((row) => values.includes(row[column]));
         }
-        if (this.table === 'customer_profiles' && this.orFilter) {
+        if (this.table === TABLES.CUSTOMER_PROFILES && this.orFilter) {
           const allowed = [...this.orFilter.matchAll(/merchant_ids\.cs\.\["([^"]+)"\]/g)].map((m) => m[1]);
           rows = rows.filter((row) =>
             allowed.some((id) => Array.isArray(row.merchant_ids) && (row.merchant_ids as string[]).includes(id))

@@ -1,5 +1,21 @@
 import { NextRequest } from 'next/server';
 
+// `after()` schedules post-response work; outside a request scope it throws,
+// so run the callback inline (the backfill is mocked to a no-op below).
+jest.mock('next/server', () => {
+  const actual = jest.requireActual('next/server');
+  return {
+    ...actual,
+    after: (task: () => void | Promise<void>) => {
+      void Promise.resolve().then(() => task());
+    },
+  };
+});
+
+jest.mock('@/lib/commerce/woocommerce/backfill', () => ({
+  backfillWooCommerceOrders: jest.fn(async () => ({})),
+}));
+
 jest.mock('@/lib/supabase/server', () => ({
   createClient: jest.fn(),
   createServiceClient: jest.fn(),

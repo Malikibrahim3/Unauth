@@ -20,6 +20,20 @@ import {
   type RuleCondition,
 } from '@/lib/rules-engine';
 import { CANONICAL_CLAIM_TYPES, CLAIM_TYPE_LABELS } from '@/lib/claims/claimTypes';
+import {
+  ATTRIBUTION_CONFIDENCES,
+  ATTRIBUTION_CONFIDENCE_LABELS,
+  EVIDENCE_STRENGTHS,
+  EVIDENCE_STRENGTH_LABELS,
+  LIKELY_OWNERS,
+  LIKELY_OWNER_LABELS,
+  LOSS_ATTRIBUTION_DISPLAY,
+  LOSS_ATTRIBUTION_LABELS,
+  RECOVERABILITIES,
+  RECOVERABILITY_LABELS,
+  REQUESTED_ACTIONS,
+  REQUESTED_ACTION_LABELS,
+} from '@/lib/payouts/types';
 
 export { FIELD_LABELS, OPERATOR_LABELS };
 
@@ -32,7 +46,8 @@ export type RuleFieldCategory =
   | 'current_claim'
   | 'delivery'
   | 'claim_evidence'
-  | 'outcome_history';
+  | 'outcome_history'
+  | 'payout';
 
 export interface EnumOption {
   value: string;
@@ -81,6 +96,32 @@ export const DELIVERY_STATUS_OPTIONS: EnumOption[] = [
   { value: 'unknown', label: 'Unknown' },
 ];
 
+// Payout & recovery option sets — built from the SSOT enum arrays in lib/payouts.
+export const REQUESTED_ACTION_OPTIONS: EnumOption[] = REQUESTED_ACTIONS.map((value) => ({
+  value,
+  label: REQUESTED_ACTION_LABELS[value],
+}));
+export const LOSS_ATTRIBUTION_OPTIONS: EnumOption[] = LOSS_ATTRIBUTION_LABELS.map((value) => ({
+  value,
+  label: LOSS_ATTRIBUTION_DISPLAY[value],
+}));
+export const ATTRIBUTION_CONFIDENCE_OPTIONS: EnumOption[] = ATTRIBUTION_CONFIDENCES.map((value) => ({
+  value,
+  label: ATTRIBUTION_CONFIDENCE_LABELS[value],
+}));
+export const RECOVERABILITY_OPTIONS: EnumOption[] = RECOVERABILITIES.map((value) => ({
+  value,
+  label: RECOVERABILITY_LABELS[value],
+}));
+export const LIKELY_OWNER_OPTIONS: EnumOption[] = LIKELY_OWNERS.map((value) => ({
+  value,
+  label: LIKELY_OWNER_LABELS[value],
+}));
+export const EVIDENCE_STRENGTH_OPTIONS: EnumOption[] = EVIDENCE_STRENGTHS.map((value) => ({
+  value,
+  label: EVIDENCE_STRENGTH_LABELS[value],
+}));
+
 export const RULE_FIELDS: RuleFieldDef[] = [
   // Evidence
   { field: 'evidence_score', type: 'integer', category: 'evidence', operators: NUMERIC_OPERATORS },
@@ -122,6 +163,15 @@ export const RULE_FIELDS: RuleFieldDef[] = [
   { field: 'prior_chargebacks_after_claims', type: 'integer', category: 'outcome_history', operators: NUMERIC_OPERATORS },
   { field: 'prior_loss_outcomes', type: 'integer', category: 'outcome_history', operators: NUMERIC_OPERATORS },
   { field: 'prior_recovered_outcomes', type: 'integer', category: 'outcome_history', operators: NUMERIC_OPERATORS },
+  // Payout & recovery
+  { field: 'total_estimated_loss', type: 'decimal', category: 'payout', operators: NUMERIC_OPERATORS },
+  { field: 'above_review_threshold', type: 'boolean', category: 'payout', operators: BOOLEAN_OPERATORS },
+  { field: 'requested_action', type: 'enum', category: 'payout', operators: ENUM_OPERATORS, options: REQUESTED_ACTION_OPTIONS },
+  { field: 'loss_attribution', type: 'enum', category: 'payout', operators: ENUM_OPERATORS, options: LOSS_ATTRIBUTION_OPTIONS },
+  { field: 'loss_attribution_confidence', type: 'enum', category: 'payout', operators: ENUM_OPERATORS, options: ATTRIBUTION_CONFIDENCE_OPTIONS },
+  { field: 'recoverability', type: 'enum', category: 'payout', operators: ENUM_OPERATORS, options: RECOVERABILITY_OPTIONS },
+  { field: 'likely_owner', type: 'enum', category: 'payout', operators: ENUM_OPERATORS, options: LIKELY_OWNER_OPTIONS },
+  { field: 'evidence_strength', type: 'enum', category: 'payout', operators: ENUM_OPERATORS, options: EVIDENCE_STRENGTH_OPTIONS },
 ];
 
 export const FIELD_DEFS_BY_NAME: Record<string, RuleFieldDef> = Object.fromEntries(
@@ -139,6 +189,7 @@ export const CATEGORY_LABELS: Record<RuleFieldCategory, string> = {
   delivery: 'Delivery',
   claim_evidence: 'Evidence on this claim',
   outcome_history: 'Outcome history',
+  payout: 'Payout & recovery',
 };
 
 export function operatorsForField(field: string): string[] {

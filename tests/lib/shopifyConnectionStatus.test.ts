@@ -1,34 +1,29 @@
 import { getShopifyConnectionStatus } from '@/lib/shopify/connectionStatus';
 
 function makeSupabase(input: {
-  connection?: { shop_domain: string; active: boolean; uninstalled_at?: string | null } | null;
-  shop?: { access_token?: string | null; uninstalled_at?: string | null } | null;
+  connection?: {
+    store_key: string;
+    status: string;
+    uninstalled_at?: string | null;
+    credentials_encrypted?: string | null;
+    last_error?: string | null;
+  } | null;
   connectionError?: string;
 }) {
   return {
     from: (table: string) => {
-      if (table === 'merchant_shopify_connections') {
-        return {
-          select: () => ({
-            eq: () => ({
-              maybeSingle: async () => {
-                if (input.connectionError) {
-                  return { data: null, error: { message: input.connectionError } };
-                }
-                return { data: input.connection ?? null, error: null };
-              },
-            }),
-          }),
+      if (table === 'store_connections') {
+        const result = input.connectionError
+          ? { data: null, error: { message: input.connectionError } }
+          : { data: input.connection ?? null, error: null };
+        const chain: any = {
+          select: () => chain,
+          eq: () => chain,
+          order: () => chain,
+          limit: () => chain,
+          maybeSingle: async () => result,
         };
-      }
-      if (table === 'shopify_merchants') {
-        return {
-          select: () => ({
-            eq: () => ({
-              maybeSingle: async () => ({ data: input.shop ?? null, error: null }),
-            }),
-          }),
-        };
+        return chain;
       }
       return {};
     },
@@ -39,8 +34,12 @@ describe('getShopifyConnectionStatus', () => {
   it('returns connected when active connection row and live token exist', async () => {
     const status = await getShopifyConnectionStatus(
       makeSupabase({
-        connection: { shop_domain: 'unauth-test.myshopify.com', active: true },
-        shop: { access_token: 'token', uninstalled_at: null },
+        connection: {
+          store_key: 'unauth-test.myshopify.com',
+          status: 'active',
+          uninstalled_at: null,
+          credentials_encrypted: 'token',
+        },
       }) as never,
       'merchant-1',
     );
@@ -65,11 +64,11 @@ describe('getShopifyConnectionStatus', () => {
     const status = await getShopifyConnectionStatus(
       makeSupabase({
         connection: {
-          shop_domain: 'unauth-test.myshopify.com',
-          active: false,
+          store_key: 'unauth-test.myshopify.com',
+          status: 'inactive',
           uninstalled_at: '2026-05-27T00:00:00Z',
+          credentials_encrypted: 'token',
         },
-        shop: { access_token: null, uninstalled_at: '2026-05-27T00:00:00Z' },
       }) as never,
       'merchant-1',
     );
@@ -81,11 +80,11 @@ describe('getShopifyConnectionStatus', () => {
     const status = await getShopifyConnectionStatus(
       makeSupabase({
         connection: {
-          shop_domain: 'unauth-test.myshopify.com',
-          active: false,
+          store_key: 'unauth-test.myshopify.com',
+          status: 'inactive',
           uninstalled_at: null,
+          credentials_encrypted: 'token',
         },
-        shop: { access_token: 'token', uninstalled_at: null },
       }) as never,
       'merchant-1',
     );
@@ -104,8 +103,12 @@ describe('getShopifyConnectionStatus', () => {
   it('returns not_connected when active row exists but token is missing', async () => {
     const status = await getShopifyConnectionStatus(
       makeSupabase({
-        connection: { shop_domain: 'unauth-test.myshopify.com', active: true },
-        shop: { access_token: null, uninstalled_at: null },
+        connection: {
+          store_key: 'unauth-test.myshopify.com',
+          status: 'active',
+          uninstalled_at: null,
+          credentials_encrypted: null,
+        },
       }) as never,
       'merchant-1',
     );

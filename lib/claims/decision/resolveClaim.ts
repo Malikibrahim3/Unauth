@@ -3,6 +3,7 @@
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { ACTIVE_CLAIM_STATUSES } from '@/lib/claims/sla';
+import { TABLES } from '@/lib/supabase/tables';
 
 export type ClaimResolutionCandidate = {
   claimId: string;
@@ -108,7 +109,7 @@ async function loadClaimsByTicketId(
   sourceTicketId: string,
 ): Promise<ClaimResolutionCandidate[]> {
   const { data, error } = await client
-    .from('claims')
+    .from(TABLES.MERCHANT_CLAIMS)
     .select('id, status, claim_type, source_ticket_id, source_order_id, created_at, submitted_at')
     .eq('merchant_id', merchantId)
     .eq('source_ticket_id', sourceTicketId);
@@ -122,7 +123,7 @@ async function loadOpenClaimsByOrderId(
   sourceOrderId: string,
 ): Promise<ClaimResolutionCandidate[]> {
   const { data, error } = await client
-    .from('claims')
+    .from(TABLES.MERCHANT_CLAIMS)
     .select('id, status, claim_type, source_ticket_id, source_order_id, created_at, submitted_at')
     .eq('merchant_id', merchantId)
     .eq('source_order_id', sourceOrderId)

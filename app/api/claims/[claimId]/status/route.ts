@@ -4,20 +4,10 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { loadClaimForMerchant, updateClaimStatus } from '@/lib/claims/access';
 import { appendClaimEvent } from '@/lib/claims/events';
+import { CANONICAL_CLAIM_STATUSES } from '@/lib/claims/statusMachine';
 
 const statusBodySchema = z.object({
-  status: z.enum([
-    'pending',
-    'open',
-    'escalated',
-    'resolved_refunded',
-    'resolved_won',
-    'resolved_lost',
-    'resolved_denied',
-    'resolved_exchanged',
-    'voided',
-    'stale',
-  ]),
+  status: z.enum(CANONICAL_CLAIM_STATUSES),
   note: z.string().trim().min(3),
 });
 
@@ -27,7 +17,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const serviceClient = createServiceClient();
-  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.SUBMIT_FRAUD_FEEDBACK);
+  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.SUBMIT_PAYOUT_DECISIONS);
   if (denied) return denied;
 
   const { claimId } = await params;

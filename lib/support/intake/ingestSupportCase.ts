@@ -53,6 +53,13 @@ export type SupportIngestSuccess = {
   link_status: 'linked' | 'unlinked';
   shopify_order_id: string | null;
   customer_profile_id: string | null;
+  // Payout-case-first fields (the canonical shape going forward).
+  support_payout_case_id: string | null;
+  case_reason: string | null;
+  is_payout_case: boolean;
+  requested_action: string | null;
+  payout_exposure: { amount: number; currency: string | null } | null;
+  // Legacy aliases retained during the staged rename.
   merchant_claim_id: string | null;
   is_claim: boolean;
   claim_type: ClaimType | null;
@@ -152,6 +159,23 @@ function applyClaimDetection(
 
 function buildEventSummary(eventType: string, externalCaseId: string): string {
   return truncateSafeText(`${eventType} (${externalCaseId})`, 200);
+}
+
+function inferRequestedActionFromReason(reason: string | null): string | null {
+  switch (reason) {
+    case 'refund_request':
+    case 'return_request':
+    case 'dispute':
+      return 'refund';
+    case 'missing_parcel':
+      return 'reship';
+    case 'wrong_item':
+      return 'replacement';
+    case 'damaged_item':
+      return 'replacement';
+    default:
+      return null;
+  }
 }
 
 function truncateSafeText(text: string, maxLength: number): string {
@@ -286,6 +310,9 @@ export async function ingestSupportCase(
     ip: commerce.identity.ip_address,
   });
 
+  const requestedAction = inferRequestedActionFromReason(normalized.claim_reason);
+  const payoutExposureAmount = commerce.order.refund_amount_requested ?? commerce.order.order_value;
+
   const claimId = await ensureClaimForTicketV2(supabase as SupabaseClient<Database>, {
     merchantId: parsed.merchant_id,
     ticketId: supportCaseId,
@@ -301,6 +328,9 @@ export async function ingestSupportCase(
     claimTypeConfidence: normalized.claim_type_confidence,
     classifierClaimType: normalized.claim_type,
     keywordMatched: normalized.keyword_matched,
+    requestedAction,
+    payoutExposureAmount,
+    payoutExposureCurrency: null,
   });
 
   return {
@@ -316,6 +346,14 @@ export async function ingestSupportCase(
     link_status: linkResult.link_status,
     shopify_order_id: linkResult.shopify_order_id,
     customer_profile_id: null,
+    support_payout_case_id: claimId,
+    case_reason: normalized.claim_reason,
+    is_payout_case: normalized.is_claim,
+    requested_action: requestedAction,
+    payout_exposure:
+      payoutExposureAmount != null
+        ? { amount: payoutExposureAmount, currency: null }
+          : null,
     merchant_claim_id: claimId,
     is_claim: normalized.is_claim,
     claim_type: normalized.claim_type,

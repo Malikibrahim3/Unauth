@@ -55,7 +55,7 @@ export function ClaimDecisionRecommendationCard({
     >
       {!claimId && (
         <p className="text-caption" style={{ color: 'var(--text-tertiary)' }}>
-          Save the claim to generate a merchant-rule recommendation.
+          Save the support payout case to generate a merchant-rule recommendation.
         </p>
       )}
 
@@ -63,7 +63,7 @@ export function ClaimDecisionRecommendationCard({
         <div className="flex items-center justify-between gap-2 mb-1">
           {stale && !loading && (
             <p className="text-caption" style={{ color: 'var(--warning)' }}>
-              Claim context changed — recommendation may be outdated.
+              Case context changed - recommendation may be outdated.
             </p>
           )}
           {onRefresh && (

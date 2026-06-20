@@ -1,5 +1,7 @@
 # REFERENCE.md — Unauth Landing Page Rebuild
 
+> **SUPERSEDED.** Product direction is now in [`docs/product/MVP_STEERING.md`](../../product/MVP_STEERING.md). Do not use this file for landing or product decisions.
+
 **Master prompt for landing page rebuilds. Read this entire document before writing code.**
 
 ---

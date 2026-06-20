@@ -53,7 +53,7 @@ export default function ScenarioSection() {
                     <td className="whitespace-nowrap px-5 py-3.5">
                       <span
                         className={`rounded-full px-2.5 py-1 font-mono text-[0.6875rem] ${
-                          row.outcome === 'chargeback'
+                          row.outcome === 'manual review' || row.outcome === 'evidence needed'
                             ? 'bg-[var(--sev-definite-fill)] text-[var(--sev-definite)]'
                             : 'bg-[var(--sev-probable-fill)] text-[var(--sev-probable)]'
                         }`}

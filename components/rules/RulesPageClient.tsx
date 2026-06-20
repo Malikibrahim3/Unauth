@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { LayoutTemplate, Plus } from 'lucide-react';
 import { Button, PageHeader } from '@/components/ui';
 import type { MerchantRule } from '@/lib/rules-engine';
-import { DEFAULT_RISK_CONTROLS } from '@/lib/rules/riskBands';
+import { DEFAULT_PAYOUT_RULES } from '@/lib/rules/payoutDefaults';
 import { ACTION_LABELS } from '@/lib/rules/summary';
 import { RuleCard } from './RuleCard';
 import { RuleBuilderDrawer, type RuleDraftPayload } from './RuleBuilderDrawer';
@@ -89,13 +89,13 @@ export function RulesPageClient({ canManage }: RulesPageClientProps) {
       const res = await fetch('/api/rules/defaults', { method: 'POST' });
       const data = await res.json();
       if (!res.ok) {
-        showToast(data.error ?? 'Failed to create default controls', 'error');
+        showToast(data.error ?? 'Failed to create default payout rules', 'error');
         return;
       }
-      showToast('Default risk controls created');
+      showToast('Default payout rules created');
       await loadRules();
     } catch {
-      showToast('Failed to create default controls', 'error');
+      showToast('Failed to create default payout rules', 'error');
     } finally {
       setCreatingDefaults(false);
     }
@@ -240,8 +240,8 @@ export function RulesPageClient({ canManage }: RulesPageClientProps) {
   return (
     <div className="flex flex-col gap-5">
       <PageHeader
-        title="Risk Controls"
-        subtitle="Unauth scores behaviour from 0-100. Every score must map to exactly one control."
+        title="Payout Rules"
+        subtitle="Merchant policy decides the recommended action on each support payout case — from the claim type, requested action, payout exposure, and evidence on file."
         primaryAction={
           canManage ? (
             <Button
@@ -250,7 +250,7 @@ export function RulesPageClient({ canManage }: RulesPageClientProps) {
               onClick={rules.length === 0 ? handleUseDefaults : openCreate}
               loading={creatingDefaults}
             >
-              {rules.length === 0 ? 'Use Default Policy' : 'New Control'}
+              {rules.length === 0 ? 'Use default payout rules' : 'New rule'}
             </Button>
           ) : undefined
         }
@@ -277,20 +277,20 @@ export function RulesPageClient({ canManage }: RulesPageClientProps) {
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <h2 className="text-body font-semibold" style={{ color: 'var(--text-primary)' }}>
-              How the score works
+              How payout rules work
             </h2>
             <p className="mt-1 max-w-3xl text-body-sm" style={{ color: 'var(--text-secondary)' }}>
-              Higher scores mean stronger behavioural risk: repeat claims, network signals, weak evidence, and claim context all push the score up. Score bands must cover 0-100 with no overlaps or gaps.
+              Rules are evaluated top to bottom; the first matching rule sets the recommended action for the case. Unauth never decides — it surfaces the matched rule, payout exposure, evidence, and recoverability so the agent can act.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            {DEFAULT_RISK_CONTROLS.map((control) => (
+            {DEFAULT_PAYOUT_RULES.map((rule) => (
               <span
-                key={control.name}
+                key={rule.name}
                 className="rounded-[var(--radius-md)] border px-2.5 py-1 text-caption"
                 style={{ borderColor: 'var(--border-muted)', color: 'var(--text-secondary)' }}
               >
-                {control.lower}-{control.upper}: {ACTION_LABELS[control.action]}
+                {rule.name}: {ACTION_LABELS[rule.action]}
               </span>
             ))}
           </div>

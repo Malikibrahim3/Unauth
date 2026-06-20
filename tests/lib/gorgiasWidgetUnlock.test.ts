@@ -40,7 +40,7 @@ describe('Gorgias widget unlock links', () => {
     expect(payload.basic_unlock_url).toContain('basic_context');
     expect(payload.full_unlock_url).toContain('full_context');
     expect(payload.evidence_unlock_url).toContain('evidence_summary');
-    expect(payload.basic_unlock_label).toBe('View full context →');
+    expect(payload.basic_unlock_label).toBe('Open full case →');
     expect(payload.basic_unlock_url).toContain('basic_context');
   });
 
@@ -107,20 +107,10 @@ describe('Gorgias widget unlock links', () => {
     expect(template.widgets[0].title).toBe(GORGIAS_SIDEBAR_CARD_TITLE);
     const rowTitles = template.widgets[0].widgets.map((w: { title: string }) => w.title);
     expect(rowTitles).toEqual([
-      GORGIAS_SIDEBAR_ROW_LABELS.order_context,
-      GORGIAS_SIDEBAR_ROW_LABELS.context_summary,
-      GORGIAS_SIDEBAR_ROW_LABELS.identity,
-      GORGIAS_SIDEBAR_ROW_LABELS.claims,
-      GORGIAS_SIDEBAR_ROW_LABELS.orders,
-      GORGIAS_SIDEBAR_ROW_LABELS.claim_rate,
-      GORGIAS_SIDEBAR_ROW_LABELS.primary_reason,
-      GORGIAS_SIDEBAR_ROW_LABELS.recent_activity,
-      GORGIAS_SIDEBAR_ROW_LABELS.ce3_evidence,
-      GORGIAS_SIDEBAR_ROW_LABELS.watchlisted,
-      GORGIAS_SIDEBAR_ROW_LABELS.evidence_summary,
-      GORGIAS_SIDEBAR_ROW_LABELS.evidence_breakdown,
+      GORGIAS_SIDEBAR_ROW_LABELS.payout_exposure,
+      GORGIAS_SIDEBAR_ROW_LABELS.evidence_checklist,
       GORGIAS_SIDEBAR_ROW_LABELS.recommendation,
-      GORGIAS_SIDEBAR_ROW_LABELS.recommendation_detail,
+      GORGIAS_SIDEBAR_ROW_LABELS.recovery_path,
     ]);
     const blob = JSON.stringify(template);
     expect(blob).not.toMatch(/Claims on record|Identity Intelligence/i);

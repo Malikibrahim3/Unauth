@@ -51,6 +51,27 @@ export const EVIDENCE_TYPE_LABELS: Record<EvidenceType, string> = {
   warehouse_scan: 'Warehouse scan',
   payment_dispute: 'Payment dispute',
   note: 'Internal note',
+  damage_photo: 'Damage photo',
+  packaging_photo: 'Packaging photo',
+  label_photo: 'Label photo',
+  wrong_item_photo: 'Wrong-item photo',
+  proof_of_value: 'Proof of value',
+  proof_of_dispatch: 'Proof of dispatch',
+  delivery_photo: 'Delivery photo',
+  customer_non_receipt_statement: 'Customer non-receipt statement',
+  carrier_investigation: 'Carrier investigation',
+  warehouse_pick_pack_record: 'Pick/pack record',
+  packing_slip: 'Packing slip',
+  weight_scan: 'Weight scan',
+  refund_proof: 'Refund proof',
+  reship_proof: 'Reship proof',
+  supplier_batch_lot: 'Supplier batch / lot',
+  purchase_order: 'Purchase order',
+  return_inspection: 'Return inspection',
+  chargeback_notice: 'Chargeback notice',
+  carrier_claim_correspondence: 'Carrier claim correspondence',
+  three_pl_dispute_correspondence: '3PL dispute correspondence',
+  supplier_credit_note: 'Supplier credit note',
   other: 'Other',
 };
 
@@ -66,6 +87,16 @@ export const EVIDENCE_SOURCE_LABELS: Record<EvidenceSource, string> = {
 };
 
 export const STATUS_LABELS: Record<string, string> = {
+  new: 'New',
+  evidence_needed: 'Needs evidence',
+  awaiting_customer_evidence: 'Awaiting customer evidence',
+  awaiting_carrier_response: 'Awaiting carrier response',
+  awaiting_3pl_response: 'Awaiting 3PL response',
+  awaiting_supplier_response: 'Awaiting supplier response',
+  ready_for_decision: 'Ready for decision',
+  manual_review: 'Manual review',
+  decision_recorded: 'Decision recorded',
+  recovery_opened: 'Recovery opened',
   open: 'Active',
   under_review: 'Under review',
   evidence_requested: 'Evidence requested',
@@ -76,8 +107,11 @@ export const STATUS_LABELS: Record<string, string> = {
 };
 
 export const QUICK_LIFECYCLE_STATUSES: Array<{ value: ClaimStatus; label: string }> = [
-  { value: 'under_review', label: 'Under review' },
-  { value: 'evidence_requested', label: 'Awaiting evidence' },
-  { value: 'pending', label: 'Waiting on source data' },
-  { value: 'escalated', label: 'High evidence' },
+  { value: 'evidence_needed', label: 'Needs evidence' },
+  { value: 'awaiting_customer_evidence', label: 'Awaiting customer' },
+  { value: 'awaiting_carrier_response', label: 'Awaiting carrier' },
+  { value: 'awaiting_3pl_response', label: 'Awaiting 3PL' },
+  { value: 'awaiting_supplier_response', label: 'Awaiting supplier' },
+  { value: 'ready_for_decision', label: 'Ready for decision' },
+  { value: 'manual_review', label: 'Manual review' },
 ];

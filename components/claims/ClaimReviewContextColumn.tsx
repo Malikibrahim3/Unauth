@@ -14,8 +14,14 @@ import { actorLabel } from '@/components/claims/claimReviewLogic';
 import { CaseIntelTile, StatusPill, SlaBadge } from '@/components/claims/claimReviewPrimitives';
 import { ClaimReviewHistoryTable } from '@/components/claims/ClaimReviewHistoryTable';
 import { IdentityCatchSection } from '@/components/catches/IdentityCatchSection';
+import { PayoutCaseLeadBlock } from '@/components/claims/payout/PayoutCaseLeadBlock';
+import { RecoveryCaseCard } from '@/components/claims/payout/RecoveryCaseCard';
+import { IntegrationEvidenceSourcePanel } from '@/components/claims/payout/IntegrationEvidenceSourcePanel';
 import type { ClaimReviewWorkbench } from '@/components/claims/claimReviewWorkbench';
 import type { ClaimType, Decision, Outcome } from '@/components/claims/claimReviewTypes';
+import type { EvidencePack } from '@/lib/integrations/types';
+import type { SupportPayoutCase } from '@/lib/payouts/types';
+import type { RecoveryCase } from '@/lib/recoveries/types';
 
 export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
   const {
@@ -36,10 +42,33 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
     state,
     patch,
     setClaimId,
+    decisionData,
+    decisionLoading,
+    decisionStale,
+    refreshRecommendation,
   } = wb;
+
+  const payoutCase = (decisionData?.payoutCase as SupportPayoutCase | undefined) ?? null;
+  const recoveryCase = (decisionData?.recoveryCase as RecoveryCase | null | undefined) ?? null;
+  const evidencePack = (decisionData?.evidencePack as EvidencePack | null | undefined) ?? null;
 
   return (
     <div className="space-y-4 min-w-0 order-1 min-[1100px]:col-start-1 min-[1100px]:row-start-1">
+      <PayoutCaseLeadBlock
+        payoutCase={payoutCase}
+        recoveryCase={recoveryCase}
+        loading={decisionLoading}
+        stale={decisionStale}
+      />
+      <IntegrationEvidenceSourcePanel evidencePack={evidencePack} />
+      {selectedClaim ? (
+        <RecoveryCaseCard
+          recoveryCase={recoveryCase}
+          payoutCase={payoutCase}
+          loading={decisionLoading}
+          onRefresh={refreshRecommendation}
+        />
+      ) : null}
       <section className="rounded-md p-4 border" style={{ borderColor: 'var(--border-muted)', background: 'var(--surface)' }}>
         <p className="text-caption font-semibold mb-3" style={{ color: 'var(--text-secondary)' }}>Claim evidence context</p>
         {selectedClaim ? (
@@ -49,8 +78,11 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
                 <p className="font-semibold">{CLAIM_TYPE_LABELS[selectedClaim.claim_type as ClaimType] ?? selectedClaim.claim_type}</p>
                 <p className="text-xs mt-1 line-clamp-2" style={{ color: 'var(--text-secondary)' }}>{selectedClaim.customer_claim_reason || 'No customer reason recorded'}</p>
               </CaseIntelTile>
-              <CaseIntelTile label="Order">
+              <CaseIntelTile label="Source">
                 <p className="font-mono text-xs">{selectedClaim.shopify_order_id ?? selectedClaim.order_ref ?? '-'}</p>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
+                  Ticket {selectedClaim.source_ticket_ref ? `#${selectedClaim.source_ticket_ref}` : 'not linked'}
+                </p>
                 <p className="font-semibold mt-1">{selectedClaim.amount_at_risk != null ? formatClaimMoney(selectedClaim.amount_at_risk, selectedClaim.currency) : '-'}</p>
               </CaseIntelTile>
               <CaseIntelTile label="Status">
@@ -59,7 +91,7 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
               </CaseIntelTile>
               <CaseIntelTile label="Evidence">
                 <p className="font-semibold" style={{ color: evidenceRecorded ? 'var(--success)' : 'var(--text)' }}>{evidenceRecorded ? 'On record' : 'Missing'}</p>
-                <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{evidenceRecorded ? 'Ready for merchant outcome' : 'Add evidence in the panel on the right'}</p>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{evidenceRecorded ? 'Source-backed evidence available' : 'Waiting on connected source data'}</p>
               </CaseIntelTile>
               <CaseIntelTile label="Review state">
                 <p className="font-semibold">{selectedClaim.first_viewed_at ? 'Needs review' : 'New evidence'}</p>
@@ -95,19 +127,19 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
       <div className="rounded-md p-4 border" style={{ borderColor: 'var(--border-muted)', background: 'var(--surface)' }}>
         <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>Linked identity confidence</p>
+            <p className="text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>Customer payout context</p>
             <p className="mt-1 text-xs max-w-2xl" style={{ color: 'var(--text-secondary)' }}>
-              Evidence suggests these records belong to the same identity based on matching data points. Unauth shows context; the merchant owns the action.
+              Prior merchant-owned records can help the agent understand payout history. Unauth shows context; the merchant owns the action.
             </p>
           </div>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div>
-            <p className="text-xs mb-0.5" style={{ color: 'var(--text-secondary)' }}>Identity confidence</p>
+            <p className="text-xs mb-0.5" style={{ color: 'var(--text-secondary)' }}>Context strength</p>
             <p className="font-semibold text-lg" style={{ color: 'var(--text)' }}>{confidenceLabel}</p>
           </div>
           <div>
-            <p className="text-xs mb-0.5" style={{ color: 'var(--text-secondary)' }}>Linked accounts</p>
+            <p className="text-xs mb-0.5" style={{ color: 'var(--text-secondary)' }}>Related records</p>
             <p className="font-semibold text-base" style={{ color: 'var(--text)' }}>{data?.linkedAccounts?.length ?? '-'}</p>
           </div>
           <div>
@@ -147,12 +179,12 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
 
       <section className="rounded-md p-4 border" style={{ borderColor: 'var(--border-muted)', background: 'var(--surface)' }}>
         <div className="flex items-center justify-between mb-3">
-          <p className="text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>Cross-merchant and identity-link context</p>
+          <p className="text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>Claim-history and pattern context</p>
           <span className="text-xs font-semibold" style={{ color: 'var(--text)' }}>{crossMerchantCount > 1 ? `Aggregate signal across ${crossMerchantCount} merchants` : 'Store-scoped signal'}</span>
         </div>
         <div className="mb-3 rounded-md border p-3 text-sm" style={{ borderColor: 'var(--border-muted)', background: 'var(--bg-inset)' }}>
           <p className="font-semibold" style={{ color: 'var(--text)' }}>
-            {crossMerchantCount > 1 ? 'Cross-merchant signal detected' : 'No cross-merchant aggregate signal yet'}
+            {crossMerchantCount > 1 ? 'Pattern context available' : 'No aggregate pattern context yet'}
           </p>
           <p className="mt-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
             {crossMerchantCount > 1

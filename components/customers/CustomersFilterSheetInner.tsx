@@ -98,19 +98,18 @@ export function CustomersFilterSheetInner({
         />
 
         <select
-          aria-label="Sort customers"
+          aria-label="Sort customer history"
           value={searchParams.get('sort') ?? 'risk'}
           onChange={(e) => updateParam('sort', e.target.value)}
           className="h-9 rounded-md px-3 text-[13px] focus:outline-none"
           style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}
         >
-          <option value="risk">Sort: Highest confidence</option>
+          <option value="risk">Sort: Strongest evidence match</option>
           <option value="recent">Sort: Most recent</option>
           <option value="oldest">Sort: Oldest first</option>
           <option value="orders">Sort: Most orders</option>
           <option value="refundRate">Sort: Most refund claims</option>
           <option value="chargebacks">Sort: Most chargebacks</option>
-          <option value="merchants">Sort: Most merchants</option>
           <option value="fastestClaim">Sort: Fastest claims</option>
         </select>
 

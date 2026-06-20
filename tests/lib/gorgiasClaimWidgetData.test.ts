@@ -712,23 +712,13 @@ describe('buildGorgiasSidebarWidgetTemplate', () => {
   it('uses context-unlock card title and row labels without legacy risk wording', () => {
     const template = buildGorgiasSidebarWidgetTemplate('https://app.unauth.test');
     const json = JSON.stringify(template);
-    expect(template.widgets[0].title).toBe('Unauth claim context');
+    expect(template.widgets[0].title).toBe('Unauth payout decision');
     const rowTitles = template.widgets[0].widgets.map((w: { title: string }) => w.title);
     expect(rowTitles).toEqual([
-      'Order',
-      'Context',
-      'Identity',
-      'Claim history',
-      'Orders',
-      'Claim rate',
-      'Primary reason',
-      'Recent activity',
-      'Network & evidence',
-      'Review context',
+      'Case',
       'Evidence',
-      'Evidence breakdown',
-      'Recommendation',
-      'Why this recommendation',
+      'Rule',
+      'Recovery',
     ]);
     expect(json).not.toContain('Claims on record');
     expect(json).not.toContain('Identity Intelligence');

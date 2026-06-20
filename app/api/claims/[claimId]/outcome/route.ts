@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { createOutcomeSchema, upsertMerchantCaseOutcome } from '@/lib/claims/store';
+import { computeFollowedRecommendation } from '@/lib/payouts/recommendation';
+import type { PayoutRecommendation } from '@/lib/payouts/types';
+import { TABLES } from '@/lib/supabase/tables';
 import { appendClaimEvent } from '@/lib/claims/events';
 import { loadClaimForMerchant, updateClaimStatus } from '@/lib/claims/access';
 import { claimStatusForOutcome } from '@/lib/claims/statusMachine';
@@ -23,7 +26,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const serviceClient = createServiceClient();
-  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.SUBMIT_FRAUD_FEEDBACK);
+  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.SUBMIT_PAYOUT_DECISIONS);
   if (denied) return denied;
 
   const { claimId } = await params;
@@ -42,12 +45,29 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const parsed = createOutcomeSchema.safeParse({ ...body as object, claim_id: claimId });
   if (!parsed.success) return NextResponse.json({ error: 'Invalid outcome payload' }, { status: 400 });
 
+  const { data: claimRecommendationRow } = await serviceClient
+    .from(TABLES.MERCHANT_CLAIMS)
+    .select('recommended_payout_action')
+    .eq('id', claimId)
+    .eq('merchant_id', ctx.merchantId)
+    .maybeSingle();
+
+  const recommendedAtDecision =
+    (claimRecommendationRow?.recommended_payout_action as PayoutRecommendation | null) ?? null;
+  const followedRecommendation = computeFollowedRecommendation({
+    recommendedAction: recommendedAtDecision,
+    decision: parsed.data.decision,
+    outcome: parsed.data.outcome,
+  });
+
   try {
     const [previous, outcome] = await Promise.all([
       latestOutcome(serviceClient, claimId),
       upsertMerchantCaseOutcome(serviceClient, {
         ...parsed.data,
         actor_user_id: parsed.data.actor_user_id ?? user.id,
+        recommended_payout_action: recommendedAtDecision,
+        followed_recommendation: followedRecommendation,
       }),
     ]);
     const newStatus = claimStatusForOutcome(parsed.data);
@@ -71,6 +91,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         outcome_id: outcome.id,
         amount_refunded: outcome.amount_refunded ?? null,
         amount_recovered: outcome.amount_recovered ?? null,
+        recommended_payout_action: recommendedAtDecision,
+        followed_recommendation: followedRecommendation,
       },
     }),
     ]);

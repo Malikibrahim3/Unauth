@@ -186,8 +186,8 @@ export async function GET(req: NextRequest) {
           type: 'evidence',
           id: e.id,
           label: e.customer_name ?? `Evidence ${e.id.slice(0, 8)}`,
-          sublabel: e.ce3_eligible ? 'Prior identity match' : undefined,
-          href: `/chargebacks`,
+          sublabel: e.ce3_eligible ? 'Evidence available' : undefined,
+          href: `/claims`,
         });
       }
     } catch { /* non-fatal */ }

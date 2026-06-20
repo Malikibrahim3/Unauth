@@ -18,6 +18,7 @@
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { SIGNAL_WEIGHTS, V2_IDENTIFIER_TYPE_WEIGHTS, scoreToGrade } from '@/lib/engine/weights';
+import { TABLES } from '@/lib/supabase/tables';
 import { STRONG_IDENTIFIER_TYPES, type IdentitySignal } from '@/lib/identity/observations';
 
 type Client = SupabaseClient<any>;
@@ -221,7 +222,7 @@ export async function resolveIdentitiesForKeys(
 
     // claims on this component's orders that are not yet linked
     if (orderIds.size > 0) {
-      const { error: cl } = await client.from('claims')
+      const { error: cl } = await client.from(TABLES.MERCHANT_CLAIMS)
         .update({ identity_id: identityId })
         .in('source_order_id', [...orderIds]).is('identity_id', null);
       if (cl) throw new Error(`resolver claim link failed: ${cl.message}`);
@@ -276,7 +277,7 @@ export async function linkClaimToIdentity(
     if (m?.identity_id) { identityId = m.identity_id; break; }
   }
   if (!identityId) return null;
-  const { error: ue } = await client.from('claims')
+  const { error: ue } = await client.from(TABLES.MERCHANT_CLAIMS)
     .update({ identity_id: identityId }).eq('id', claimId).is('identity_id', null);
   if (ue) throw new Error(`claim link update failed: ${ue.message}`);
   // recompute the profile with the identity's full order set
@@ -309,7 +310,7 @@ export async function refreshIdentityProfile(
   client: Client, identityId: string,
   ctx: { orderIds: string[]; merchantCount: number; fs: string | null; ls: string | null }
 ) {
-  const { data: claimRows, error } = await client.from('claims')
+  const { data: claimRows, error } = await client.from(TABLES.MERCHANT_CLAIMS)
     .select('claim_type, source_order_id, submitted_at').eq('identity_id', identityId);
   if (error) throw new Error(`resolver profile claims fetch failed: ${error.message}`);
 

@@ -139,7 +139,7 @@ export default function OnboardingClient({
           Get set up
         </h1>
         <p className={foundation.landingSectionLead} style={{ marginTop: '0.75rem', maxWidth: '52ch' }}>
-          A few quick steps to bring claim intelligence into every support ticket.
+          A few quick steps to bring payout control into every support ticket.
         </p>
       </div>
       <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-[360px_minmax(0,1fr)]">
@@ -152,7 +152,7 @@ export default function OnboardingClient({
             <div>
               <p className={foundation.landingSectionEyebrow}>Checklist</p>
               <p className="t-caption mt-1.5" style={{ color: 'var(--text-tertiary)' }}>
-                Add claim intelligence to your Gorgias tickets
+                Add payout control to your Gorgias tickets
               </p>
             </div>
             <button
@@ -238,7 +238,7 @@ export default function OnboardingClient({
                   ))}
                 </select>
               </Field>
-              <Field label="Primary concern">
+              <Field label="Primary post-purchase loss concern">
                 <select aria-label="Primary concern" value={primaryConcern} onChange={(e) => dispatch({ type: 'patch', patch: { primaryConcern: e.target.value } })}>
                   <option value="">Select concern…</option>
                   {FRAUD_CONCERN_OPTIONS.map((o) => (

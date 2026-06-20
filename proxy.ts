@@ -28,6 +28,55 @@ function isPhoneUserAgent(userAgent: string): boolean {
   return isPhone && !isTablet;
 }
 
+function legacyMvpRedirectTarget(pathname: string): string | null {
+  if (
+    pathname === '/lookup' ||
+    pathname.startsWith('/lookup/') ||
+    pathname === '/global' ||
+    pathname.startsWith('/global/') ||
+    pathname === '/watchlist' ||
+    pathname.startsWith('/watchlist/')
+  ) {
+    return '/customers';
+  }
+
+  if (
+    pathname === '/catches' ||
+    pathname.startsWith('/catches/') ||
+    pathname === '/chargebacks' ||
+    pathname.startsWith('/chargebacks/')
+  ) {
+    return '/claims';
+  }
+
+  if (pathname === '/store' || pathname.startsWith('/store/')) {
+    return '/dashboard';
+  }
+
+  if (pathname === '/audit' || pathname.startsWith('/audit/')) {
+    return '/dashboard';
+  }
+
+  if (
+    pathname === '/eval' ||
+    pathname.startsWith('/eval/') ||
+    pathname === '/network-metrics' ||
+    pathname.startsWith('/network-metrics/')
+  ) {
+    return '/dashboard';
+  }
+
+  if (
+    pathname === '/help/identity-matching' ||
+    pathname === '/help/confidence-grades' ||
+    pathname === '/help/how-it-works'
+  ) {
+    return '/help';
+  }
+
+  return null;
+}
+
 export async function proxy(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set(requestIdHeader, request.headers.get(requestIdHeader) ?? createRequestId());
@@ -154,10 +203,22 @@ export async function proxy(request: NextRequest) {
 
   if (user && pathname === '/login') {
     const url = request.nextUrl.clone();
-    url.pathname = '/upload';
+    url.pathname = '/dashboard';
     const response = NextResponse.redirect(url);
     response.headers.set(requestIdHeader, requestHeaders.get(requestIdHeader)!);
     return response;
+  }
+
+  if (user && !isApiRoute) {
+    const redirectTarget = legacyMvpRedirectTarget(pathname);
+    if (redirectTarget) {
+      const url = request.nextUrl.clone();
+      url.pathname = redirectTarget;
+      url.search = '';
+      const response = NextResponse.redirect(url);
+      response.headers.set(requestIdHeader, requestHeaders.get(requestIdHeader)!);
+      return response;
+    }
   }
 
   if (user && isApiRoute) {

@@ -26,7 +26,7 @@ export default function AccountDangerSection({ state, dispatch, onDelete }: Prop
         <div>
           <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>Delete your account</p>
           <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-            This permanently deletes all your audits, customer profiles, watchlist, and notes. This action cannot be undone.
+            This permanently deletes your imported history, customer context, legacy saved-case entries, and notes. This action cannot be undone.
           </p>
         </div>
 

@@ -97,7 +97,7 @@ describe('getMerchantOwnedJobIds', () => {
 
     await getMerchantOwnedJobIds(mock as any, 'merchant-abc');
 
-    expect(mock.from).toHaveBeenCalledWith('processing_jobs');
+    expect(mock.from).toHaveBeenCalledWith('sync_jobs');
     expect(eqCalls).toContainEqual(['merchant_id', 'merchant-abc']);
   });
 
@@ -137,7 +137,7 @@ describe('fetchMerchantScopedCustomerProfile', () => {
 
     await fetchMerchantScopedCustomerProfile(mock as any, 'merchant-xyz', 'profile-123', 'user-legacy');
 
-    expect(mock.from).toHaveBeenCalledWith('customer_profiles');
+    expect(mock.from).toHaveBeenCalledWith('identities');
     expect(selectCalls).toEqual(['*']);
     expect(orCalls).toHaveLength(1);
     expect(orCalls[0]).toContain('merchant_ids.cs.["merchant-xyz"]');
@@ -214,7 +214,7 @@ describe('fetchMerchantScopedCustomerTransactions', () => {
 
     const mock = {
       from: jest.fn((table: string) => {
-        if (table === 'processing_jobs') {
+        if (table === 'sync_jobs') {
           const c: any = { select: jest.fn().mockReturnThis(), eq: jest.fn().mockReturnThis(), range: jest.fn().mockResolvedValue({ data: [{ id: 'job-1' }], error: null }) };
           return c;
         }
@@ -281,7 +281,7 @@ describe('fetchMerchantScopedTransaction', () => {
         return chain;
       });
       chain.maybeSingle = jest.fn(() => {
-        if (table === 'processing_jobs') {
+        if (table === 'sync_jobs') {
           jobLookupDone = true;
           return Promise.resolve({ data: { id: 'job-1' }, error: null });
         }
@@ -332,7 +332,7 @@ describe('paginateAll', () => {
 // Watchlist isolation — merchantId vs userId
 // ---------------------------------------------------------------------------
 describe('Watchlist uses merchantId not userId', () => {
-  it('watchlist routes scope merchant_id by merchantId, and the page stays a retired informational surface', async () => {
+  it('watchlist routes scope merchant_id by merchantId, and the page redirects out of the merchant MVP', async () => {
     const fs = await import('fs');
     const path = await import('path');
     const read = (rel: string) => fs.readFileSync(path.join(process.cwd(), rel), 'utf-8');
@@ -353,8 +353,7 @@ describe('Watchlist uses merchantId not userId', () => {
     }
 
     const page = read('app/(app)/watchlist/page.tsx');
-    expect(page).toContain('Customer watchlists are retired');
-    expect(page).toContain('Open claims');
+    expect(page).toContain("redirect('/customers')");
   });
 });
 

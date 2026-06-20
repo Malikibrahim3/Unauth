@@ -90,7 +90,7 @@ export function claimEventLabel(eventType: string): string {
     claim_snoozed: 'Review deferred',
     claim_unsnoozed: 'Review resumed',
     note_added: 'Internal note added',
-    evidence_added: 'Evidence added',
+    evidence_added: 'Evidence pulled',
     outcome_added: 'Outcome recorded',
     status_changed: 'Status changed',
     claim_resolved: 'Outcome recorded',
@@ -134,7 +134,8 @@ const DECISION_LABELS: Record<string, string> = {
   partial_refund: 'Partial refund',
   full_refund: 'Full refund',
   chargeback_disputed: 'Chargeback disputed',
-  blacklist: 'Blacklisted',
+  // Read-compat: historical 'blacklist' decisions display as a neutral policy denial.
+  blacklist: 'Denied under policy',
   no_action: 'No action',
 };
 
@@ -145,7 +146,8 @@ const OUTCOME_LABELS: Record<string, string> = {
   chargeback_won: 'Chargeback won',
   chargeback_lost: 'Chargeback lost',
   customer_verified: 'Customer verified',
-  suspected_fraud: 'Suspected fraud',
+  // Read-compat: historical 'suspected_fraud' outcomes display as a neutral policy denial.
+  suspected_fraud: 'Denied under policy',
   legitimate: 'Legitimate',
 };
 

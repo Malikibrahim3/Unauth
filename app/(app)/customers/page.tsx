@@ -1,5 +1,6 @@
 // TODO(product-gating): require CUSTOMER_SEARCH entitlement when ENFORCE_PRODUCT_GATES is enabled.
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import { getConnectionState } from '@/lib/connections/getConnectionState';
 import { getMerchantDataPresence } from '@/lib/supabase/getMerchantDataPresence';
 import { resolveMerchantSetupState } from '@/lib/connections/getMerchantSetupState';
@@ -74,7 +75,7 @@ const IDENTITY_GROUP_SCAN_CAP = 4000;
 export default async function CustomersOverviewPage({
   searchParams,
 }: {
-  searchParams?: Promise<Record<string, string | undefined>> | Record<string, string | undefined>;
+  searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -141,7 +142,7 @@ export default async function CustomersOverviewPage({
   const claimFiltersActive = hasRefunds || hasChargebacks || openClaimsOnly;
   if (claimFiltersActive) {
     let claimQuery = svc
-      .from('claims')
+      .from(TABLES.MERCHANT_CLAIMS)
       .select('source_order_id, claim_type, status, source_orders!inner(source_customer_id)')
       .eq('merchant_id', ctx.merchantId)
       .not('source_order_id', 'is', null);
@@ -349,7 +350,7 @@ export default async function CustomersOverviewPage({
     const orderIds = Array.from(orderCustomer.keys());
     if (orderIds.length > 0) {
       const { data: claimRows } = await svc
-        .from('claims')
+        .from(TABLES.MERCHANT_CLAIMS)
         .select('id, claim_type, status, source_order_id')
         .eq('merchant_id', ctx.merchantId)
         .in('source_order_id', orderIds)

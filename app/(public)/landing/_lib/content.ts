@@ -3,8 +3,8 @@
  *
  * Every number on the landing page is specific and plausible on purpose:
  * vague claims read as marketing; precise ones read as telemetry. Amounts
- * are GBP. Merchant identifiers are pseudonymous (M-204 style) to mirror
- * how the real product displays cross-merchant context.
+ * are GBP. Merchant identifiers are pseudonymous (M-204 style) only in
+ * historical sample data; live product copy leads with payout control.
  */
 
 export const ROUTES = {
@@ -18,7 +18,7 @@ export const ROUTES = {
 } as const;
 
 export const NAV_LINKS = [
-  { label: 'Network', href: '#network' },
+  { label: 'Payout Control', href: '#network' },
   { label: 'How it works', href: '#how-it-works' },
   { label: 'Privacy', href: '#privacy' },
   { label: 'Pricing', href: '#pricing' },
@@ -28,12 +28,12 @@ export const NAV_LINKS = [
 
 export const HERO = {
   eyebrow: 'Helpdesk-native claim decisions',
-  headline: 'Every claim deserves the full context.',
+  headline: 'Every payout case deserves the full context.',
   subhead:
-    'Unauth connects your store and helpdesk, assembles order, delivery, identity, evidence, and prior claim history, then applies your merchant-owned rules before anyone replies.',
+    'Unauth connects your store and helpdesk, assembles order, delivery, evidence, payout exposure, and prior case history, then applies your merchant-owned rules before anyone replies.',
   primaryCta: 'Create a workspace',
-  secondaryCta: 'See how the network works',
-  factRow: ['38ms median lookup', 'k-anonymity ≥ 3 merchants', '0 automated decisions'],
+  secondaryCta: 'See payout workflow',
+  factRow: ['38ms median lookup', 'Evidence checklist', '0 automated decisions'],
 } as const;
 
 export const HERO_TICKET = {
@@ -47,25 +47,25 @@ export const HERO_TICKET = {
 } as const;
 
 export const HERO_PANEL = {
-  title: 'Unauth · identity context',
+  title: 'Unauth · payout context',
   latency: '38ms',
   grade: 'B',
-  gradeLabel: 'Probable match',
+  gradeLabel: 'Evidence context',
   stats: [
-    { k: 'merchants', v: '4' },
-    { k: 'claims / orders', v: '6 / 9' },
-    { k: 'claim rate', v: '67%' },
+    { k: 'prior cases', v: '4' },
+    { k: 'payout exposure', v: '£162.40' },
+    { k: 'evidence gaps', v: '2' },
   ],
   signals: [
-    { name: 'email_hash', detail: '9f3b…12c8 · 4 merchants' },
-    { name: 'device_hmac', detail: '71c2…0aa8 · 3 merchants' },
-    { name: 'ship_addr', detail: 'token overlap 0.94' },
-    { name: 'card_fingerprint', detail: 'bin + last4 · 2 merchants' },
+    { name: 'delivery_status', detail: 'Delivered · proof requested' },
+    { name: 'requested_action', detail: 'Refund to original payment method' },
+    { name: 'merchant_rule', detail: 'Manual review · repeat INR' },
+    { name: 'recovery_path', detail: 'Carrier claim evidence missing' },
   ],
   history: [
-    { merchant: 'M-204', vertical: 'apparel', claim: 'INR claim', amount: '£89.00', outcome: 'refunded' },
-    { merchant: 'M-117', vertical: 'beauty', claim: 'INR claim', amount: '£54.20', outcome: 'refunded' },
-    { merchant: 'M-339', vertical: 'home', claim: 'chargeback', amount: '£212.00', outcome: 'evidence filed' },
+    { merchant: 'Own store', vertical: 'apparel', claim: 'INR claim', amount: '£89.00', outcome: 'refunded' },
+    { merchant: 'Own store', vertical: 'beauty', claim: 'damaged item', amount: '£54.20', outcome: 'reshipped' },
+    { merchant: 'Own store', vertical: 'home', claim: 'chargeback', amount: '£212.00', outcome: 'evidence filed' },
   ],
   footer: 'Evidence only — your team makes the call.',
   action: 'Open case file',
@@ -74,16 +74,16 @@ export const HERO_PANEL = {
 /* ── Network tape ──────────────────────────────────────────────────────── */
 
 export const TAPE_ITEMS = [
-  { k: 'SIGNAL', v: 'email_hash matched · 4 merchants' },
+  { k: 'CASE', v: 'refund requested · £84.20 exposure' },
   { k: 'LOOKUP', v: '41ms · gorgias ticket #4821' },
-  { k: 'CLAIM', v: 'linked · INR · £74.20' },
+  { k: 'CLAIM', v: 'INR · £74.20' },
   { k: 'EVIDENCE', v: 'package assembled · CB-2291' },
-  { k: 'K-ANON', v: 'gate held · 2 merchants < 3 · signal withheld' },
-  { k: 'GRAPH', v: '+1 merchant · 11,406 new edges' },
+  { k: 'RULE', v: 'manual review · evidence missing' },
+  { k: 'RECOVERY', v: 'carrier claim · evidence needed' },
   { k: 'AUTO-ACTIONS', v: '0 · by design' },
-  { k: 'SIGNAL', v: 'device_hmac matched · 3 merchants' },
+  { k: 'SIGNAL', v: 'delivery photo present · signature unavailable' },
   { k: 'LOOKUP', v: '36ms · zendesk ticket #18250' },
-  { k: 'CLAIM', v: 'linked · item-not-as-described · £39.99' },
+  { k: 'CLAIM', v: 'item-not-as-described · £39.99' },
 ] as const;
 
 /* ── Integrations ──────────────────────────────────────────────────────── */
@@ -123,21 +123,21 @@ export const BLIND_SPOT = {
 /* ── Network section ───────────────────────────────────────────────────── */
 
 export const NETWORK = {
-  eyebrow: 'The network',
-  headline: 'One identity. Four merchants. A pattern no single store can see.',
-  body: 'Each merchant sees one polite refund request. The graph sees the same hashed identity filing the same claim, store after store. Every merchant that joins adds edges — which is why the intelligence compounds and why it cannot be replicated by any tool that watches one store at a time.',
+  eyebrow: 'Payout workflow',
+  headline: 'One ticket. One order. One decision trail.',
+  body: 'A refund or reship request should not depend on scattered screenshots and memory. Unauth links the ticket to order history, delivery evidence, payout exposure, merchant policy, and recoverability before the agent replies.',
   points: [
     {
-      title: 'Signals are gated, not pooled',
-      body: 'A cross-merchant signal only surfaces once at least three independent merchants share it. Below the threshold, the network stays silent.',
+      title: 'Cases are structured',
+      body: 'Every support payout case carries requested action, case reason, evidence status, payout exposure, and outcome.',
     },
     {
-      title: 'Density compounds',
-      body: 'A new merchant doesn’t just protect itself — it adds edges that sharpen every existing match in the graph.',
+      title: 'Rules are explainable',
+      body: 'Merchant-owned policy returns a recommendation and matched conditions; Unauth does not make the final decision.',
     },
     {
       title: 'Store context works from day one',
-      body: 'Your own order, refund, and ticket history is useful immediately. Network signals layer on top as density crosses the threshold.',
+      body: 'Your own order, refund, ticket, delivery, and recovery history powers the workflow immediately.',
     },
   ],
 } as const;
@@ -155,13 +155,13 @@ export const HOW_IT_WORKS = {
     },
     {
       id: '02',
-      title: 'Identifiers are hashed before they leave',
-      body: 'Emails, addresses, devices, and card fingerprints are hashed with HMAC-SHA256 and a salt unique to your tenant. The cross-merchant graph is built on digests — raw PII never enters it.',
+      title: 'Payout exposure and evidence are assembled',
+      body: 'Unauth links the ticket to the order, delivery proof, requested action, missing evidence, and potential recovery route.',
     },
     {
       id: '03',
-      title: 'Every claim arrives with its history',
-      body: 'When a ticket opens, the identity record is already there: merchants matched, claim patterns, refund rate, and an A–D confidence grade for the match itself. If a chargeback follows, the evidence package is one click.',
+      title: 'Every claim arrives with policy context',
+      body: 'When a ticket opens, the payout case shows prior store history, evidence status, the matched rule, and the recommended next action. If a chargeback follows, the evidence package is one click.',
     },
   ],
   hashDemo: {
@@ -179,10 +179,10 @@ export const HOW_IT_WORKS = {
   activeGrade: 'B',
 } as const;
 
-/* ── Evidence, not verdicts ────────────────────────────────────────────── */
+/* ── Evidence, not automated decisions ─────────────────────────────────── */
 
 export const EVIDENCE = {
-  eyebrow: 'Evidence, not verdicts',
+  eyebrow: 'Evidence, not automated decisions',
   headline: 'Unauth has never declined an order. It can’t.',
   body: 'There is no auto-block, no auto-refund, no auto-close — no code path for any of them. Unauth surfaces the identity record, applies your rules, and assembles the evidence; your team decides how to respond.',
   counters: [
@@ -193,10 +193,10 @@ export const EVIDENCE = {
   manifest: {
     title: 'Evidence package · CB-2291',
     files: [
-      { name: 'claim_timeline.json', meta: '11 events · 4 merchants' },
-      { name: 'identity_signals.json', meta: '12 signals · graded' },
+      { name: 'claim_timeline.json', meta: '11 events · order + ticket' },
+      { name: 'evidence_checklist.json', meta: 'delivery proof · signature unavailable' },
       { name: 'delivery_confirmation.pdf', meta: 'commerce fulfilment proof' },
-      { name: 'cross_merchant_history.txt', meta: 'k-gated · pseudonymous' },
+      { name: 'recovery_route.txt', meta: 'carrier claim · evidence needed' },
       { name: 'order_record.json', meta: '#UA-10482 · £162.40' },
     ],
     footer: 'assembled in 38ms · formatted for representment',
@@ -223,12 +223,12 @@ export const PRIVACY = {
       body: 'Identifiers are hashed inside your workspace with a salt no other tenant shares. A digest leaked from one tenant is useless against another.',
     },
     {
-      title: 'k-anonymity, k ≥ 3',
-      body: 'No cross-merchant signal surfaces unless at least three independent merchants share it. Two stores comparing notes is a privacy problem; a thresholded graph is not.',
+      title: 'Case-scoped context',
+      body: 'Unauth surfaces context for the payout case under review, not reusable customer lists or automatic denial workflows.',
     },
     {
       title: 'No raw PII in the graph',
-      body: 'The network stores digests, claim outcomes, and timestamps. Names, emails, and addresses stay merchant-scoped, where they already live.',
+      body: 'Operational records store the evidence, rule match, outcome, and recovery status. Names, emails, and addresses stay merchant-scoped, where they already live.',
     },
     {
       title: 'Merchant-scoped processing',
@@ -241,25 +241,24 @@ export const PRIVACY = {
 
 export const SCENARIO = {
   eyebrow: 'Case file',
-  headline: 'Four merchants. Eleven weeks. £1,210.',
-  body: 'A reconstruction from network data — the kind of pattern that is invisible to each merchant alone and obvious to the graph.',
+  headline: 'One helpdesk case. £162.40 exposure. A recovery route.',
+  body: 'A reconstruction from store, delivery, and support data — the kind of payout decision that becomes expensive when the evidence trail is scattered.',
   rows: [
-    { date: 'Mar 04', merchant: 'M-204', vertical: 'apparel', event: '“Package never arrived” · refund requested', amount: '£89.00', outcome: 'refunded' },
-    { date: 'Mar 22', merchant: 'M-117', vertical: 'beauty', event: 'Same claim · same address tokens', amount: '£54.20', outcome: 'refunded' },
-    { date: 'Apr 10', merchant: 'M-339', vertical: 'home', event: 'Photo proof requested · customer refused', amount: '£212.00', outcome: 'chargeback' },
-    { date: 'Apr 29', merchant: 'M-512', vertical: 'footwear', event: '“Wrong item received” · device_hmac match', amount: '£148.50', outcome: 'refunded' },
-    { date: 'May 18', merchant: 'M-512', vertical: 'footwear', event: 'Second claim in 19 days', amount: '£706.30', outcome: 'chargeback' },
+    { date: '09:14', merchant: 'Ticket', vertical: 'Gorgias', event: '“Package never arrived” · refund requested', amount: '£162.40', outcome: 'open' },
+    { date: '09:15', merchant: 'Order', vertical: 'Shopify', event: 'Marked delivered · delivery photo present', amount: '£162.40', outcome: 'evidence attached' },
+    { date: '09:16', merchant: 'Rule', vertical: 'Policy', event: 'Repeat INR within 60 days · delivery photo unavailable', amount: '£162.40', outcome: 'manual review' },
+    { date: '09:17', merchant: 'Recovery', vertical: 'Carrier', event: 'Carrier claim potentially available', amount: '£84.20', outcome: 'evidence needed' },
   ],
-  total: '£1,210.00 refunded across the first four claims',
-  punchline: 'Merchant #5 saw this file the moment the next ticket opened — and replied with the evidence already attached.',
+  total: '£162.40 payout exposure reviewed before the reply',
+  punchline: 'The agent saw the rule, evidence gaps, and recovery path before money left the business.',
 } as const;
 
 /* ── Pricing ───────────────────────────────────────────────────────────── */
 
 export const PRICING = {
   eyebrow: 'Pricing',
-  headline: 'Join the network free. Pay when the volume does.',
-  note: 'Every plan includes store context, network participation, and hashed-signal contribution. No card required to start. No auto-actions on any plan.',
+  headline: 'Start payout control free. Pay when the volume does.',
+  note: 'Every plan includes store context, evidence checklists, merchant rules, and payout workflow. No card required to start. No auto-actions on any plan.',
   featuredKey: 'pro',
   cta: 'Create a workspace',
   ctaCustom: 'Talk to us',
@@ -277,15 +276,15 @@ export const FAQ = {
     },
     {
       q: 'Can other merchants see my customers’ data?',
-      a: 'No. Identifiers are hashed with HMAC-SHA256 and a per-tenant salt before anything enters the graph, and cross-merchant signals only surface when at least three independent merchants share them. Other merchants see thresholded, pseudonymous patterns — never your customer records.',
+      a: 'No. Your raw store and helpdesk records stay merchant-scoped. Other merchants do not receive your customer records, and Unauth is not a reusable customer denial list.',
     },
     {
       q: 'What does a confidence grade actually mean?',
-      a: 'It grades the identity match, not the customer. An “A” means the data points are almost certainly the same person across records; a “D” means the link is weak. It is never a verdict on whether a claim is honest — that judgment stays with your team.',
+      a: 'It describes evidence completeness or match confidence for the case record, not the customer. It is never an automated decision on whether a claim is honest — that judgment stays with your team.',
     },
     {
       q: 'Is there enough network density to be useful for me?',
-      a: 'Store-level context — your own claim rates, refund history, and ticket patterns — works from day one with no network at all. Cross-merchant signals appear as density crosses the k≥3 threshold around your customer base. We will tell you honestly what coverage looks like for your vertical before you commit.',
+      a: 'Store-level context — your own claim rates, refund history, ticket patterns, evidence, and recovery rules — works from day one. You do not need a network dataset to run payout control.',
     },
     {
       q: 'What do I need to integrate?',
@@ -293,7 +292,7 @@ export const FAQ = {
     },
     {
       q: 'Where does this stand with GDPR?',
-      a: 'The architecture is built on data minimisation: merchant-scoped processing, hashed pseudonymous network signals, and no raw PII in the graph. We provide a DPA and data-handling documentation for your counsel to review before you process live EU customer data.',
+      a: 'The architecture is built on data minimisation, merchant-scoped processing, and case-level operational records. We provide a DPA and data-handling documentation for your counsel to review before you process live EU customer data.',
     },
   ],
 } as const;
@@ -301,8 +300,8 @@ export const FAQ = {
 /* ── Final CTA + footer ────────────────────────────────────────────────── */
 
 export const FINAL_CTA = {
-  headline: 'The next claim is already in someone else’s graph.',
-  body: 'Create a workspace, connect your store and helpdesk, and see your own claim patterns within the hour.',
+  headline: 'The next claim deserves a decision trail.',
+  body: 'Create a workspace, connect your store and helpdesk, and see payout exposure, evidence gaps, matched rules, and recovery context within the hour.',
   cta: 'Create a workspace',
   subline: 'Free plan · no card · 100 context credits monthly · 0 auto-actions, ever',
 } as const;

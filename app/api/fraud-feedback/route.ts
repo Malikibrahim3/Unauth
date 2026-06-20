@@ -16,7 +16,7 @@ async function POSTHandler(_request: NextRequest) {
   return NextResponse.json(
     {
       error:
-        'Fraud feedback is retired pending the v2 feedback loop. Signal-level feedback is no longer recorded.',
+        'Legacy signal feedback is retired pending the v2 payout-case feedback loop. Signal-level feedback is no longer recorded.',
     },
     { status: 410 },
   );

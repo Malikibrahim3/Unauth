@@ -49,14 +49,22 @@ export const DEFAULT_TAG_CONFIGS: Record<SupportProvider, MerchantClaimTagConfig
   gorgias: {
     claim_trigger_tags: [
       'RETURN/EXCHANGE',
+      'return_request',
       'return/exchange',
       'refund-request',
       'refund_request',
       'refund-requested',
       'refund_requested',
+      'reship_request',
+      'replacement_request',
+      'item_not_received',
+      'missing_item',
+      'damaged_item',
+      'wrong_item',
+      'delivery_issue',
+      'chargeback_related',
       'chargeback',
       'dispute',
-      'fraud',
     ],
     outcome_tags: {
       'refund-issued': 'resolved_refunded',
@@ -73,10 +81,18 @@ export const DEFAULT_TAG_CONFIGS: Record<SupportProvider, MerchantClaimTagConfig
   zendesk: {
     claim_trigger_tags: [
       'refund_requested',
+      'refund_request',
       'return_requested',
+      'reship_request',
+      'replacement_request',
+      'item_not_received',
+      'missing_item',
+      'damaged_item',
+      'wrong_item',
+      'delivery_issue',
+      'chargeback_related',
       'chargeback_filed',
       'dispute',
-      'fraud_suspected',
     ],
     outcome_tags: {
       refund_issued: 'resolved_refunded',
@@ -89,7 +105,22 @@ export const DEFAULT_TAG_CONFIGS: Record<SupportProvider, MerchantClaimTagConfig
     keyword_fallback_enabled: true,
   },
   freshdesk: {
-    claim_trigger_tags: ['refund-request', 'return-request', 'chargeback', 'dispute'],
+    claim_trigger_tags: [
+      'refund-request',
+      'refund_request',
+      'return-request',
+      'return_request',
+      'reship_request',
+      'replacement_request',
+      'item_not_received',
+      'missing_item',
+      'damaged_item',
+      'wrong_item',
+      'delivery_issue',
+      'chargeback_related',
+      'chargeback',
+      'dispute',
+    ],
     outcome_tags: {
       'refund-issued': 'resolved_refunded',
       resolved: 'resolved_refunded',
@@ -99,7 +130,22 @@ export const DEFAULT_TAG_CONFIGS: Record<SupportProvider, MerchantClaimTagConfig
     keyword_fallback_enabled: true,
   },
   intercom: {
-    claim_trigger_tags: ['refund-request', 'return-request', 'chargeback', 'dispute', 'fraud'],
+    claim_trigger_tags: [
+      'refund-request',
+      'refund_request',
+      'return-request',
+      'return_request',
+      'reship_request',
+      'replacement_request',
+      'item_not_received',
+      'missing_item',
+      'damaged_item',
+      'wrong_item',
+      'delivery_issue',
+      'chargeback_related',
+      'chargeback',
+      'dispute',
+    ],
     outcome_tags: {
       'refund-issued': 'resolved_refunded',
       'claim-denied': 'resolved_denied',
@@ -114,13 +160,18 @@ export const DEFAULT_TAG_CONFIGS: Record<SupportProvider, MerchantClaimTagConfig
 const FALLBACK_KEYWORDS = [
   'chargeback',
   'dispute',
-  'fraud',
-  'not authorized',
   'not received',
   "didn't receive",
   'did not receive',
   'never arrived',
   'package never came',
+  'refund',
+  'reship',
+  'replacement',
+  'wrong item',
+  'damaged item',
+  'missing item',
+  'delivery issue',
 ];
 
 const FALLBACK_KEYWORD_PATTERN = new RegExp(
@@ -229,9 +280,9 @@ export async function getMerchantClaimTagConfig(
 ): Promise<{ config: MerchantClaimTagConfig; isDefault: boolean }> {
   // v2 SCHEMA NOTE: the `merchant_claim_tag_configs` table was dropped in the
   // v2 cutover with no replacement. Per-merchant tag overrides are therefore
-  // unavailable; every merchant uses the built-in default config for their
-  // platform. Detection already treats `isDefault: true` as "use default", and
-  // sets requiresMerchantReview on default-config tag detections, so this is a
-  // safe, honest degradation rather than fabricating per-merchant config.
+  // temporarily unavailable; every merchant uses the built-in neutral
+  // payout-control defaults for their platform. Detection treats
+  // `isDefault: true` as "use default" and requires merchant review on default
+  // tag detections, which is a safe degradation until settings are restored.
   return { config: getDefaultTagConfig(platform), isDefault: true };
 }

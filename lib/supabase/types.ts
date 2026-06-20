@@ -288,7 +288,7 @@ export type Database = {
             foreignKeyName: "claim_events_claim_id_fkey"
             columns: ["claim_id"]
             isOneToOne: false
-            referencedRelation: "claims"
+            referencedRelation: "support_payout_cases"
             referencedColumns: ["id"]
           },
           {
@@ -339,7 +339,7 @@ export type Database = {
             foreignKeyName: "claim_evidence_claim_id_fkey"
             columns: ["claim_id"]
             isOneToOne: false
-            referencedRelation: "claims"
+            referencedRelation: "support_payout_cases"
             referencedColumns: ["id"]
           },
           {
@@ -362,6 +362,8 @@ export type Database = {
           id: string
           notes: string | null
           outcome: Database["public"]["Enums"]["claim_outcome"]
+          recommended_payout_action: string | null
+          followed_recommendation: boolean | null
           updated_at: string
         }
         Insert: {
@@ -374,6 +376,8 @@ export type Database = {
           id?: string
           notes?: string | null
           outcome?: Database["public"]["Enums"]["claim_outcome"]
+          recommended_payout_action?: string | null
+          followed_recommendation?: boolean | null
           updated_at?: string
         }
         Update: {
@@ -386,6 +390,8 @@ export type Database = {
           id?: string
           notes?: string | null
           outcome?: Database["public"]["Enums"]["claim_outcome"]
+          recommended_payout_action?: string | null
+          followed_recommendation?: boolean | null
           updated_at?: string
         }
         Relationships: [
@@ -393,79 +399,211 @@ export type Database = {
             foreignKeyName: "claim_outcomes_claim_id_fkey"
             columns: ["claim_id"]
             isOneToOne: true
-            referencedRelation: "claims"
+            referencedRelation: "support_payout_cases"
             referencedColumns: ["id"]
           },
         ]
       }
-      claims: {
+      case_clarification_requests: {
+        Row: {
+          id: string
+          merchant_id: string
+          support_payout_case_id: string
+          target_type: string
+          target_name: string | null
+          status: string
+          requested_evidence: string[]
+          request_summary: string
+          response_summary: string | null
+          source_channel: string | null
+          due_at: string | null
+          sent_at: string | null
+          response_received_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          merchant_id: string
+          support_payout_case_id: string
+          target_type: string
+          target_name?: string | null
+          status?: string
+          requested_evidence?: string[]
+          request_summary: string
+          response_summary?: string | null
+          source_channel?: string | null
+          due_at?: string | null
+          sent_at?: string | null
+          response_received_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          merchant_id?: string
+          support_payout_case_id?: string
+          target_type?: string
+          target_name?: string | null
+          status?: string
+          requested_evidence?: string[]
+          request_summary?: string
+          response_summary?: string | null
+          source_channel?: string | null
+          due_at?: string | null
+          sent_at?: string | null
+          response_received_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_clarification_requests_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_clarification_requests_support_payout_case_id_fkey"
+            columns: ["support_payout_case_id"]
+            isOneToOne: false
+            referencedRelation: "support_payout_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_payout_cases: {
         Row: {
           amount_at_risk: number | null
           assigned_at: string | null
           assigned_to: string | null
+          attribution_confidence: Database["public"]["Enums"]["attribution_confidence"] | null
           claim_type: Database["public"]["Enums"]["claim_type"]
           created_at: string
           currency: string | null
           detection_detail: Json
           detection_method: Database["public"]["Enums"]["claim_detection_method"]
+          discount_amount: number | null
+          estimated_support_cost: number | null
           first_viewed_at: string | null
           id: string
           identity_id: string | null
+          loss_attribution: Database["public"]["Enums"]["loss_attribution"] | null
           merchant_id: string
+          next_action: string | null
+          next_action_reason: string | null
+          payout_decision_state: string
           reason_normalized: string | null
           reason_raw: string | null
+          recoverability: Database["public"]["Enums"]["recoverability"] | null
+          recovery_state: string
+          recommended_payout_action: string | null
+          recommended_rule_name: string | null
+          recommended_rule_id: string | null
+          recovery_next_action: string | null
+          recovery_owner: Database["public"]["Enums"]["recovery_owner"] | null
+          recovery_required_evidence: string[]
+          refund_amount: number | null
+          replacement_item_value: number | null
+          replacement_shipping_cost: number | null
+          requested_action: Database["public"]["Enums"]["requested_action"]
           requires_review: boolean
           snoozed_until: string | null
           source_order_id: string | null
           source_ticket_id: string | null
           status: Database["public"]["Enums"]["claim_status"]
+          store_credit_amount: number | null
           submitted_at: string
+          total_estimated_loss: number | null
           updated_at: string
         }
         Insert: {
           amount_at_risk?: number | null
           assigned_at?: string | null
           assigned_to?: string | null
+          attribution_confidence?: Database["public"]["Enums"]["attribution_confidence"] | null
           claim_type: Database["public"]["Enums"]["claim_type"]
           created_at?: string
           currency?: string | null
           detection_detail?: Json
           detection_method?: Database["public"]["Enums"]["claim_detection_method"]
+          discount_amount?: number | null
+          estimated_support_cost?: number | null
           first_viewed_at?: string | null
           id?: string
           identity_id?: string | null
+          loss_attribution?: Database["public"]["Enums"]["loss_attribution"] | null
           merchant_id: string
+          next_action?: string | null
+          next_action_reason?: string | null
+          payout_decision_state?: string
           reason_normalized?: string | null
           reason_raw?: string | null
+          recoverability?: Database["public"]["Enums"]["recoverability"] | null
+          recovery_state?: string
+          recommended_payout_action?: string | null
+          recommended_rule_name?: string | null
+          recommended_rule_id?: string | null
+          recovery_next_action?: string | null
+          recovery_owner?: Database["public"]["Enums"]["recovery_owner"] | null
+          recovery_required_evidence?: string[]
+          refund_amount?: number | null
+          replacement_item_value?: number | null
+          replacement_shipping_cost?: number | null
+          requested_action?: Database["public"]["Enums"]["requested_action"]
           requires_review?: boolean
           snoozed_until?: string | null
           source_order_id?: string | null
           source_ticket_id?: string | null
           status?: Database["public"]["Enums"]["claim_status"]
+          store_credit_amount?: number | null
           submitted_at?: string
+          total_estimated_loss?: number | null
           updated_at?: string
         }
         Update: {
           amount_at_risk?: number | null
           assigned_at?: string | null
           assigned_to?: string | null
+          attribution_confidence?: Database["public"]["Enums"]["attribution_confidence"] | null
           claim_type?: Database["public"]["Enums"]["claim_type"]
           created_at?: string
           currency?: string | null
           detection_detail?: Json
           detection_method?: Database["public"]["Enums"]["claim_detection_method"]
+          discount_amount?: number | null
+          estimated_support_cost?: number | null
           first_viewed_at?: string | null
           id?: string
           identity_id?: string | null
+          loss_attribution?: Database["public"]["Enums"]["loss_attribution"] | null
           merchant_id?: string
+          next_action?: string | null
+          next_action_reason?: string | null
+          payout_decision_state?: string
           reason_normalized?: string | null
           reason_raw?: string | null
+          recoverability?: Database["public"]["Enums"]["recoverability"] | null
+          recovery_state?: string
+          recommended_payout_action?: string | null
+          recommended_rule_name?: string | null
+          recommended_rule_id?: string | null
+          recovery_next_action?: string | null
+          recovery_owner?: Database["public"]["Enums"]["recovery_owner"] | null
+          recovery_required_evidence?: string[]
+          refund_amount?: number | null
+          replacement_item_value?: number | null
+          replacement_shipping_cost?: number | null
+          requested_action?: Database["public"]["Enums"]["requested_action"]
           requires_review?: boolean
           snoozed_until?: string | null
           source_order_id?: string | null
           source_ticket_id?: string | null
           status?: Database["public"]["Enums"]["claim_status"]
+          store_credit_amount?: number | null
           submitted_at?: string
+          total_estimated_loss?: number | null
           updated_at?: string
         }
         Relationships: [
@@ -2358,6 +2496,17 @@ export type Database = {
         | "suspected_fraud"
         | "legitimate"
       claim_status:
+        | "new"
+        | "evidence_needed"
+        | "awaiting_customer_evidence"
+        | "awaiting_carrier_response"
+        | "awaiting_3pl_response"
+        | "awaiting_supplier_response"
+        | "ready_for_decision"
+        | "manual_review"
+        | "decision_recorded"
+        | "recovery_opened"
+        | "closed"
         | "pending"
         | "open"
         | "escalated"
@@ -2377,6 +2526,40 @@ export type Database = {
         | "chargeback"
         | "return_abuse"
         | "other"
+      attribution_confidence: "high" | "medium" | "low" | "needs_more_evidence"
+      loss_attribution:
+        | "customer_claim"
+        | "carrier_loss"
+        | "carrier_damage"
+        | "failed_delivery_evidence"
+        | "warehouse_mispick"
+        | "warehouse_missing_item"
+        | "three_pl_late_dispatch"
+        | "supplier_defect"
+        | "packaging_failure"
+        | "merchant_policy"
+        | "unknown"
+      recoverability:
+        | "recoverable"
+        | "possibly_recoverable"
+        | "not_recoverable"
+        | "needs_more_evidence"
+        | "unknown"
+      recovery_owner:
+        | "carrier"
+        | "three_pl"
+        | "warehouse"
+        | "supplier"
+        | "merchant"
+        | "unknown"
+      requested_action:
+        | "refund"
+        | "reship"
+        | "replacement"
+        | "discount"
+        | "store_credit"
+        | "escalation"
+        | "unknown"
       confidence_grade: "weak" | "possible" | "probable" | "definite"
       connection_status: "active" | "disabled" | "revoked" | "error"
       fulfillment_state:
@@ -2589,6 +2772,17 @@ export const Constants = {
         "legitimate",
       ],
       claim_status: [
+        "new",
+        "evidence_needed",
+        "awaiting_customer_evidence",
+        "awaiting_carrier_response",
+        "awaiting_3pl_response",
+        "awaiting_supplier_response",
+        "ready_for_decision",
+        "manual_review",
+        "decision_recorded",
+        "recovery_opened",
+        "closed",
         "pending",
         "open",
         "escalated",
@@ -2609,6 +2803,46 @@ export const Constants = {
         "chargeback",
         "return_abuse",
         "other",
+      ],
+      attribution_confidence: ["high", "medium", "low", "needs_more_evidence"],
+      loss_attribution: [
+        "customer_claim",
+        "carrier_loss",
+        "carrier_damage",
+        "failed_delivery_evidence",
+        "warehouse_mispick",
+        "warehouse_missing_item",
+        "three_pl_late_dispatch",
+        "supplier_defect",
+        "packaging_failure",
+        "merchant_policy",
+        "unknown",
+      ],
+      recoverability: [
+        "recoverable",
+        "possibly_recoverable",
+        "not_recoverable",
+        "needs_more_evidence",
+        "unknown",
+      ],
+      recovery_owner: [
+        "carrier",
+        "three_pl",
+        "warehouse",
+        "supplier",
+        "merchant",
+        "unknown",
+      ],
+      requested_action: [
+        "refund",
+        "reship",
+        "replacement",
+        "discount",
+        "store_credit",
+        "return_label",
+        "investigation",
+        "escalation",
+        "unknown",
       ],
       confidence_grade: ["weak", "possible", "probable", "definite"],
       connection_status: ["active", "disabled", "revoked", "error"],

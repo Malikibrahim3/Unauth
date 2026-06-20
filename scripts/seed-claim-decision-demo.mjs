@@ -118,6 +118,13 @@ const IDS = {
   claimPrior1: uuid('claim:maya-prior-inr-1'),
   claimPrior2: uuid('claim:maya-prior-inr-2'),
   rule: uuid('rule:inr-delivered-prior'),
+  // Additional contrasting payout scenarios (same merchant/identity/order scaffold).
+  claimDamaged: uuid('claim:maya-damaged'),
+  claimWrong: uuid('claim:maya-wrong-item'),
+  claimWeak: uuid('claim:maya-weak-evidence'),
+  ruleDamaged: uuid('rule:damaged-approve'),
+  ruleWrong: uuid('rule:wrong-item-review'),
+  ruleWeak: uuid('rule:weak-evidence-review'),
 };
 
 const WIDGET_TOKEN_PLAINTEXT = `unauth_wt_${sha('widget-plaintext').slice(0, 32)}`;
@@ -181,12 +188,19 @@ async function ensureMerchant(userId) {
 }
 
 async function resetDemoMerchantData(merchantId) {
-  const claimIds = [IDS.claimCurrent, IDS.claimPrior1, IDS.claimPrior2];
+  const claimIds = [
+    IDS.claimCurrent,
+    IDS.claimPrior1,
+    IDS.claimPrior2,
+    IDS.claimDamaged,
+    IDS.claimWrong,
+    IDS.claimWeak,
+  ];
   await supabase.from('rule_evaluations').delete().eq('merchant_id', merchantId);
   await supabase.from('claim_evidence').delete().in('claim_id', claimIds);
   await supabase.from('claim_outcomes').delete().in('claim_id', claimIds);
   await supabase.from('claim_events').delete().in('claim_id', claimIds);
-  await supabase.from('claims').delete().in('id', claimIds);
+  await supabase.from('support_payout_cases').delete().in('id', claimIds);
   await supabase.from('source_tickets').delete().eq('id', IDS.ticket);
   await supabase.from('source_fulfillments').delete().eq('id', IDS.fulfillment);
   await supabase.from('source_orders').delete().eq('id', IDS.order);
@@ -413,7 +427,7 @@ async function seedCoreEntities(merchantId) {
   ];
 
   for (const prior of priorClaims) {
-    await supabase.from('claims').upsert({
+    await supabase.from('support_payout_cases').upsert({
       id: prior.id,
       merchant_id: merchantId,
       identity_id: IDS.identity,
@@ -448,7 +462,7 @@ async function seedCoreEntities(merchantId) {
     }, { onConflict: 'id' });
   }
 
-  await supabase.from('claims').upsert({
+  await supabase.from('support_payout_cases').upsert({
     id: IDS.claimCurrent,
     merchant_id: merchantId,
     identity_id: IDS.identity,
@@ -468,6 +482,9 @@ async function seedCoreEntities(merchantId) {
     amount_at_risk: 84.2,
     currency: 'GBP',
     requires_review: true,
+    requested_action: 'reship',
+    refund_amount: 84.2,
+    total_estimated_loss: 84.2,
     submitted_at: currentSubmitted,
     created_at: currentSubmitted,
     updated_at: currentSubmitted,
@@ -504,6 +521,121 @@ async function seedCoreEntities(merchantId) {
     ],
     updated_at: new Date().toISOString(),
   }, { onConflict: 'id' });
+
+  await seedContrastingPayoutCases(merchantId, currentSubmitted);
+}
+
+/**
+ * Three additional payout scenarios on the same merchant/identity/order scaffold,
+ * each driving a different recommendation, loss attribution, and recovery route in
+ * the payout case view + widget. Rules are claim-type scoped so they stay disjoint.
+ */
+async function seedContrastingPayoutCases(merchantId, submittedAt) {
+  const cases = [
+    {
+      id: IDS.claimDamaged,
+      claim_type: 'damaged',
+      requested_action: 'replacement',
+      amount: 64.0,
+      reason: 'Item arrived cracked; customer sent clear photos and we inspected the return.',
+      normalized: 'Damaged item',
+      evidence: [
+        { type: 'customer_message', source: 'customer' },
+        { type: 'note', source: 'merchant' },
+      ],
+      rule: {
+        id: IDS.ruleDamaged,
+        name: 'Damaged with strong evidence — approve',
+        description: 'Damaged claims with documented evidence are approved and a carrier recovery is opened.',
+        priority: 1,
+        action: 'approve',
+        conditions: [{ id: 'd1', field: 'claim_type', operator: 'eq', value: 'damaged' }],
+      },
+    },
+    {
+      id: IDS.claimWrong,
+      claim_type: 'wrong_item',
+      requested_action: 'replacement',
+      amount: 72.0,
+      reason: 'Customer received the wrong SKU; return inspected against the pick record.',
+      normalized: 'Wrong item',
+      evidence: [{ type: 'note', source: 'merchant' }],
+      rule: {
+        id: IDS.ruleWrong,
+        name: 'Wrong item — review for fulfilment recovery',
+        description: 'Wrong-item claims are reviewed and routed to fulfilment recovery where applicable.',
+        priority: 2,
+        action: 'manual_review',
+        conditions: [{ id: 'w1', field: 'claim_type', operator: 'eq', value: 'wrong_item' }],
+      },
+    },
+    {
+      id: IDS.claimWeak,
+      claim_type: 'refund_request',
+      requested_action: 'refund',
+      amount: 240.0,
+      reason: 'High-value refund request with no supporting evidence on file.',
+      normalized: 'Refund request',
+      evidence: [],
+      rule: {
+        id: IDS.ruleWeak,
+        name: 'High-value weak-evidence payout — review',
+        description: 'High-value refund requests are reviewed before any payout.',
+        priority: 3,
+        action: 'manual_review',
+        conditions: [{ id: 'k1', field: 'claim_type', operator: 'eq', value: 'refund_request' }],
+      },
+    },
+  ];
+
+  for (const c of cases) {
+    await supabase.from('support_payout_cases').upsert({
+      id: c.id,
+      merchant_id: merchantId,
+      identity_id: IDS.identity,
+      source_order_id: IDS.order,
+      source_ticket_id: null,
+      claim_type: c.claim_type,
+      status: 'open',
+      detection_method: 'manual',
+      detection_detail: { classification_source: 'demo_seed', classifier_claim_type: c.claim_type },
+      reason_raw: c.reason,
+      reason_normalized: c.normalized,
+      amount_at_risk: c.amount,
+      currency: 'GBP',
+      requires_review: true,
+      requested_action: c.requested_action,
+      refund_amount: c.amount,
+      total_estimated_loss: c.amount,
+      submitted_at: submittedAt,
+      created_at: submittedAt,
+      updated_at: submittedAt,
+    }, { onConflict: 'id' });
+
+    for (const [i, ev] of c.evidence.entries()) {
+      await supabase.from('claim_evidence').upsert({
+        id: uuid(`evidence:${c.id}:${i}`),
+        claim_id: c.id,
+        merchant_id: merchantId,
+        evidence_type: ev.type,
+        metadata: { seed: 'claim_decision_demo', evidence_source: ev.source },
+        created_at: submittedAt,
+      }, { onConflict: 'id' });
+    }
+
+    await supabase.from('merchant_rules').upsert({
+      id: c.rule.id,
+      merchant_id: merchantId,
+      name: c.rule.name,
+      description: c.rule.description,
+      is_active: true,
+      priority: c.rule.priority,
+      condition_operator: 'and',
+      action: c.rule.action,
+      conditions: c.rule.conditions,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'id' });
+  }
 }
 
 async function runVerification(merchantId) {

@@ -16,22 +16,22 @@ export const SCORE_MAX = 100;
 
 export const DEFAULT_RISK_CONTROLS: DefaultRiskControl[] = [
   {
-    name: 'Default low-risk control',
-    description: 'Low behaviour risk. Recommend approval.',
+    name: 'Default low-exposure control',
+    description: 'Lower payout exposure and strong evidence. Recommend approve payout.',
     lower: 0,
     upper: 39,
     action: 'approve',
   },
   {
     name: 'Default review control',
-    description: 'Moderate behaviour risk. Recommend manual review.',
+    description: 'Moderate payout exposure or mixed evidence. Recommend manual review.',
     lower: 40,
     upper: 74,
     action: 'manual_review',
   },
   {
-    name: 'Default high-risk control',
-    description: 'High behaviour risk. Recommend denial.',
+    name: 'Default policy hold control',
+    description: 'High payout exposure or weak evidence. Recommend deny under policy.',
     lower: 75,
     upper: 100,
     action: 'deny',
@@ -58,7 +58,7 @@ export function makeRiskScoreRangeConditions(range: RiskScoreRange): RuleConditi
 }
 
 export function formatRiskScoreRange(range: RiskScoreRange): string {
-  return `risk score is between ${range.lower} and ${range.upper}`;
+  return `legacy evidence-strength band is between ${range.lower} and ${range.upper}`;
 }
 
 export function rangesOverlap(a: RiskScoreRange, b: RiskScoreRange): boolean {
@@ -144,11 +144,11 @@ export function findRiskScoreCoverageGap(ranges: RiskScoreRange[]): RiskScoreRan
 
 export function formatRiskScoreGap(gap: RiskScoreRange): string {
   return gap.lower === gap.upper
-    ? `score ${gap.lower}`
-    : `scores ${gap.lower}-${gap.upper}`;
+    ? `band value ${gap.lower}`
+    : `band values ${gap.lower}-${gap.upper}`;
 }
 
 export function riskScorePolicyCoverageError(ranges: RiskScoreRange[]): string | null {
   const gap = findRiskScoreCoverageGap(ranges);
-  return gap ? `Risk score policy must cover every score from 0-100. Missing ${formatRiskScoreGap(gap)}.` : null;
+  return gap ? `Legacy evidence-strength policy must cover every band value from 0-100. Missing ${formatRiskScoreGap(gap)}.` : null;
 }

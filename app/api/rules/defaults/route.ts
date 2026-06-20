@@ -3,7 +3,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { TABLES } from '@/lib/supabase/tables';
 import { mapRuleRow, RULE_COLUMNS } from '@/lib/rules/store';
-import { DEFAULT_RISK_CONTROLS, makeRiskScoreRangeConditions } from '@/lib/rules/riskBands';
+import { DEFAULT_PAYOUT_RULES } from '@/lib/rules/payoutDefaults';
 
 export async function POST() {
   const userClient = createClient();
@@ -25,17 +25,17 @@ export async function POST() {
   }
   if ((existingRows ?? []).length > 0) {
     return NextResponse.json(
-      { error: 'Default controls can only be created before custom active controls exist.' },
+      { error: 'Default payout rules can only be created before custom active rules exist.' },
       { status: 409 },
     );
   }
 
-  const rows = DEFAULT_RISK_CONTROLS.map((control, index) => ({
+  const rows = DEFAULT_PAYOUT_RULES.map((rule, index) => ({
     merchant_id: ctx.merchantId,
-    name: control.name,
-    description: control.description,
-    conditions: makeRiskScoreRangeConditions(control),
-    action: control.action,
+    name: rule.name,
+    description: rule.description,
+    conditions: rule.conditions,
+    action: rule.action,
     condition_operator: 'and',
     priority: index,
   }));
@@ -45,7 +45,7 @@ export async function POST() {
     .insert(rows)
     .select(RULE_COLUMNS);
   if (error || !data) {
-    return NextResponse.json({ error: 'Failed to create default controls' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to create default payout rules' }, { status: 500 });
   }
 
   return NextResponse.json({ rules: data.map((row: unknown) => mapRuleRow(row as never)) }, { status: 201 });

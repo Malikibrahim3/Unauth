@@ -9,6 +9,7 @@ import { emitIdentityObservations, type ObservationEntity } from '@/lib/identity
 import { resolveIdentitiesForKeys } from '@/lib/identity/resolver';
 import { normaliseAddress } from '@/lib/identity/normalise';
 import { ensureClaimDecisionEvidence } from '@/lib/claims/decision/ensureEvidence';
+import { TABLES } from '@/lib/supabase/tables';
 
 type Client = SupabaseClient<any>;
 
@@ -195,6 +196,9 @@ export async function ensureClaimForTicketV2(
     claimTypeConfidence?: number | null;
     classifierClaimType?: string | null;
     keywordMatched?: string | null;
+    requestedAction?: string | null;
+    payoutExposureAmount?: number | null;
+    payoutExposureCurrency?: string | null;
   }
 ): Promise<string | null> {
   if (!input.isClaim) return null;
@@ -215,8 +219,11 @@ export async function ensureClaimForTicketV2(
   if (input.keywordMatched) {
     detectionDetail.keyword_matched = input.keywordMatched;
   }
+  if (input.claimReason) {
+    detectionDetail.case_reason = input.claimReason;
+  }
 
-  const { data: existing, error: le } = await supabase.from('claims')
+  const { data: existing, error: le } = await supabase.from(TABLES.MERCHANT_CLAIMS)
     .select('id')
     .eq('merchant_id', input.merchantId)
     .eq('source_ticket_id', input.ticketId)
@@ -225,7 +232,7 @@ export async function ensureClaimForTicketV2(
   if (le) throw new Error(`ticket_claim_lookup_failed: ${le.message}`);
   if (existing) return existing.id;
 
-  const { data: claim, error } = await supabase.from('claims').insert({
+  const { data: claim, error } = await supabase.from(TABLES.MERCHANT_CLAIMS).insert({
     merchant_id: input.merchantId,
     source_ticket_id: input.ticketId,
     source_order_id: input.sourceOrderId,
@@ -235,6 +242,11 @@ export async function ensureClaimForTicketV2(
     detection_method: detectionMethod,
     detection_detail: detectionDetail,
     reason_raw: input.claimReason,
+    reason_normalized: input.claimReason,
+    requested_action: input.requestedAction ?? 'unknown',
+    amount_at_risk: input.payoutExposureAmount ?? null,
+    total_estimated_loss: input.payoutExposureAmount ?? null,
+    currency: input.payoutExposureCurrency ?? null,
     requires_review: input.requiresReview,
     submitted_at: input.submittedAt ?? new Date().toISOString(),
   }).select('id').single();

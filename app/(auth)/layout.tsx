@@ -2,24 +2,23 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { UnauthLogo } from '@/components/ui/UnauthLogo';
 import { PrivacyBadge } from '@/components/ui/PrivacyBadge';
-import { GradeBadge } from '@/components/ui/GradeBadge';
 import foundation from '@/app/(public)/landing/_components/foundation/foundation.module.css';
 
 interface AuthLayoutProps {
   children: ReactNode;
 }
 
-const NETWORK_STATS = [
-  { value: '4 merchants', label: 'corroborated this identity', source: 'Network · k≥3 anonymity' },
-  { value: '7 signals', label: 'matched across the cohort', source: 'Device · card · address' },
-  { value: 'Grade B', label: 'confidence, not a verdict', source: 'You decide the outcome' },
+const PAYOUT_STATS = [
+  { value: '$428', label: 'payout exposure', source: 'Order · refund · reship' },
+  { value: '3 gaps', label: 'evidence still needed', source: 'Tracking · photos · ticket' },
+  { value: '1 route', label: 'recovery opportunity', source: 'Carrier claim review' },
 ] as const;
 
 const TIMELINE_MOMENTS = [
-  { label: 'CLAIM OPENED', detail: 'INR claim · ticket #4821', aside: null },
-  { label: 'IDENTITY MATCHED', detail: 'Match grade B · 4 merchants · k≥3', aside: 'B' as const },
-  { label: 'EVIDENCE READY', detail: '7 signals · 3 corroborating orders', aside: null },
-] satisfies Array<{ label: string; detail: string; aside: 'B' | null }>;
+  { label: 'CASE OPENED', detail: 'INR ticket #4821 · refund requested' },
+  { label: 'POLICY CHECKED', detail: 'Merchant rule matched · evidence missing' },
+  { label: 'RECOVERY ROUTED', detail: 'Carrier claim review · agent decides' },
+] as const;
 
 export default function AuthLayout({ children }: AuthLayoutProps) {
   return (
@@ -33,18 +32,17 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
           <UnauthLogo variant="light" size="nav" />
 
           <div className="max-w-[440px]">
-            <p className={foundation.landingSectionEyebrow}>Claim intelligence</p>
+            <p className={foundation.landingSectionEyebrow}>Payout control</p>
             <h2 className={foundation.networkHeroHeading} style={{ marginTop: '1rem' }}>
               One ticket, the whole picture.
             </h2>
             <p className={foundation.landingSectionLead} style={{ maxWidth: '38ch' }}>
-              The same network signals that power Unauth, the moment you sign in — evidence your
-              support and disputes team can act on.
+              Payout exposure, evidence gaps, merchant rules, and recovery routes for the support
+              cases your team is already handling.
             </p>
 
-            {/* Network stat artifact — reused from the landing network hero */}
             <div className="mt-9">
-              {NETWORK_STATS.map((stat) => (
+              {PAYOUT_STATS.map((stat) => (
                 <div key={stat.value} className={foundation.networkStatRow}>
                   <div className={foundation.networkStatValue}>{stat.value}</div>
                   <div className={foundation.networkStatLabel}>{stat.label}</div>
@@ -86,7 +84,6 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
                     style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', fontSize: '12px' }}
                   >
                     {moment.detail}
-                    {moment.aside !== null && <GradeBadge grade={moment.aside} size="sm" compact />}
                   </div>
                 </div>
               ))}

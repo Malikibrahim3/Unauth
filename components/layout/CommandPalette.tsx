@@ -6,7 +6,6 @@ import type { NavItem } from '@/components/layout/commandPaletteReducer';
 import {
   AlertCircle,
   Clipboard,
-  Download,
   LayoutGrid,
   Settings,
   Star,
@@ -18,8 +17,6 @@ const PALETTE_ICONS: Record<string, React.ReactNode> = {
   '/dashboard': <LayoutGrid size={14} aria-hidden="true" />,
   '/customers': <Users size={14} aria-hidden="true" />,
   '/claims': <Clipboard size={14} aria-hidden="true" />,
-  '/chargebacks': <Download size={14} aria-hidden="true" />,
-  '/watchlist': <Star size={14} aria-hidden="true" />,
   '/settings': <Settings size={14} aria-hidden="true" />,
   filter_high_risk: <Star size={14} aria-hidden="true" />,
   filter_new: <AlertCircle size={14} aria-hidden="true" />,

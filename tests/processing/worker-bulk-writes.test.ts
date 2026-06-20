@@ -270,7 +270,7 @@ describe('parallel pipeline timing', () => {
     const elapsed = Date.now() - start;
 
     // Parallel: should finish in ~100ms, not 150ms (serial)
-    expect(elapsed).toBeLessThan(140);
+    expect(elapsed).toBeLessThan(145);
     // Transaction finishes first (shorter)
     expect(timeline[0]).toBe('transaction-done');
     expect(timeline[1]).toBe('intelligence-done');

@@ -9,6 +9,15 @@
  */
 import type { ConfidenceGrade, EvidenceLevel, IdentitySignals } from '@/lib/rules-engine';
 import type { ClaimDecisionContext } from '@/lib/claims/decision/types';
+import type {
+  AttributionConfidence,
+  EvidenceStrength,
+  LikelyOwner,
+  LossAttributionLabel,
+  Recoverability,
+  RequestedAction,
+  SupportPayoutCase,
+} from '@/lib/payouts/types';
 
 export type ClaimDecisionSignals = IdentitySignals & {
   claim_type?: string | null;
@@ -30,12 +39,25 @@ export type ClaimDecisionSignals = IdentitySignals & {
   prior_loss_outcomes?: number;
   prior_recovered_outcomes?: number;
   ticket_claim_type_confidence?: number | null;
+  // Payout & recovery (populated when a SupportPayoutCase is supplied; otherwise
+  // left undefined so rules referencing them simply do not match).
+  total_estimated_loss?: number | null;
+  above_review_threshold?: boolean;
+  requested_action?: RequestedAction;
+  loss_attribution?: LossAttributionLabel;
+  loss_attribution_confidence?: AttributionConfidence;
+  recoverability?: Recoverability;
+  likely_owner?: LikelyOwner;
+  evidence_strength?: EvidenceStrength;
 };
 
 const DEFAULT_GRADE: ConfidenceGrade = 'weak';
 const DEFAULT_EVIDENCE_LEVEL: EvidenceLevel = 'minimal';
 
-export function claimDecisionContextToSignals(context: ClaimDecisionContext): ClaimDecisionSignals {
+export function claimDecisionContextToSignals(
+  context: ClaimDecisionContext,
+  payoutCase?: SupportPayoutCase,
+): ClaimDecisionSignals {
   const { claim, order, delivery, identity, history, evidence } = context;
 
   const orderValue =
@@ -43,7 +65,21 @@ export function claimDecisionContextToSignals(context: ClaimDecisionContext): Cl
     order?.totalAmount ??
     null;
 
+  const payoutSignals: Partial<ClaimDecisionSignals> = payoutCase
+    ? {
+        total_estimated_loss: payoutCase.exposure.total.amount,
+        above_review_threshold: payoutCase.exposure.aboveReviewThreshold,
+        requested_action: payoutCase.requestedAction.primary,
+        loss_attribution: payoutCase.attribution.label,
+        loss_attribution_confidence: payoutCase.attribution.confidence,
+        recoverability: payoutCase.recovery.recoverability,
+        likely_owner: payoutCase.recovery.likelyOwner,
+        evidence_strength: payoutCase.evidence.strength,
+      }
+    : {};
+
   return {
+    ...payoutSignals,
     confidence_grade: (identity?.confidenceGrade ?? DEFAULT_GRADE) as ConfidenceGrade,
     network_claim_count: history.networkClaimCount ?? 0,
     merchant_claim_count: history.merchantClaimCount,

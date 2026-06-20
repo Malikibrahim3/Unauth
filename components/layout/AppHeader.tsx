@@ -197,22 +197,25 @@ function deriveFromPathname(pathname: string): BreadcrumbSegment[] {
   const segmentMap: Record<string, string> = {
     dashboard:   'Dashboard',
     customers:   'Customers',
-    claims:      'Claims',
-    watchlist:   'Watchlist',
-    inbox:       'Claims',
-    store:       'Store overview',
-    reports:     'Analytics',
-    chargebacks: 'Evidence packages',
+    claims:      'Payout Control',
+    watchlist:   'Customer context',
+    inbox:       'Payout Control',
+    store:       'Dashboard',
+    reports:     'Reports',
+    recoveries:  'Loss Cases',
+    partners:    'Partners',
+    rules:       'Rules',
+    chargebacks: 'Payout Control',
     onboarding:  'Onboarding',
     help:        'Help',
     settings:    'Settings',
-    audit:       'Audit results',
+    audit:       'Dashboard',
   };
   const pathMap: Record<string, string> = {
     'settings/audit-trail': 'Audit trail',
     'settings/data-privacy': 'Data & privacy',
-    chargebacks: 'Evidence packages',
-    'evidence-packages': 'Evidence packages',
+    chargebacks: 'Payout Control',
+    'evidence-packages': 'Payout Control',
   };
 
   const parts = pathname.split('/').filter(Boolean);

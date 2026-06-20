@@ -48,7 +48,7 @@ describe('resolver evidence-score hook (refreshIdentityProfile)', () => {
     const client = makeClient(
       {
         // refreshIdentityProfile reads claims (awaited list) then upserts identity_profiles.
-        claims: {
+        support_payout_cases: {
           list: { data: [{ claim_type: 'chargeback', source_order_id: null, submitted_at: daysAgo(5) }], error: null },
           single: { data: { submitted_at: daysAgo(5) }, error: null }, // recompute recency read
         },
@@ -77,7 +77,7 @@ describe('resolver evidence-score hook (refreshIdentityProfile)', () => {
     const capture: Capture[] = [];
     const client = makeClient(
       {
-        claims: { list: { data: [], error: null } },
+        support_payout_cases: { list: { data: [], error: null } },
         identity_profiles: {
           upsert: { error: null },
           single: { data: null, error: { message: 'recompute read boom' } }, // forces recompute to throw

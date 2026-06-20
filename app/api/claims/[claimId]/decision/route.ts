@@ -4,6 +4,9 @@ import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { loadClaimForMerchant } from '@/lib/claims/access';
 import { evaluateClaimDecision } from '@/lib/claims/decision/evaluate';
 import { formatClaimDecisionRecommendation } from '@/lib/claims/decision/format';
+import { getRecoveryCaseForSupportPayoutCase } from '@/lib/recoveries/store';
+import { assembleEvidencePack } from '@/lib/payouts/assembleEvidencePack';
+import { listCaseClarificationRequests } from '@/lib/payouts/clarifications';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,13 +42,48 @@ export async function POST(_request: Request, { params }: { params: Promise<{ cl
       return NextResponse.json({ error: 'Claim not found' }, { status: 404 });
     }
 
-    const formatted = formatClaimDecisionRecommendation(result.evaluation, result.ruleCount);
+    const formatted = formatClaimDecisionRecommendation(result.evaluation, result.ruleCount, result.payoutCase);
+
+    const recoveryCase = await getRecoveryCaseForSupportPayoutCase(serviceClient, ctx.merchantId, claimId);
+    const recovery = result.payoutCase?.recovery;
+    const recoverable =
+      recovery?.recoverability === 'recoverable' || recovery?.recoverability === 'possibly_recoverable';
+    const recovery_opportunity = {
+      available: !recoveryCase && !!recoverable,
+      already_open: !!recoveryCase,
+      reason:
+        recovery?.suggestedNextAction ??
+        (recoverable ? 'A recovery route may be available.' : 'No external recovery route identified.'),
+      recoverable_amount: result.payoutCase?.exposure?.total?.amount ?? null,
+    };
+    const claim = loaded.claim!;
+    const evidencePack = await assembleEvidencePack({
+      client: serviceClient,
+      merchantId: ctx.merchantId,
+      supportPayoutCaseId: claimId,
+      orderId: claim.source_order_id ?? null,
+      customerId: claim.identity_id ?? null,
+      ticketId: claim.source_ticket_id ?? null,
+    });
+    const clarificationRequests = await listCaseClarificationRequests(
+      serviceClient,
+      ctx.merchantId,
+      claimId,
+    );
+    const payoutCase = {
+      ...result.payoutCase,
+      clarificationRequests,
+    };
 
     return NextResponse.json({
       evaluation: result.evaluation,
       ruleCount: result.ruleCount,
       evaluatedAt: result.evaluatedAt,
       formatted,
+      payoutCase,
+      evidencePack,
+      recoveryCase,
+      recovery_opportunity,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';

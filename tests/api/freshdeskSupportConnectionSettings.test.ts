@@ -1,4 +1,14 @@
 import { NextRequest } from 'next/server';
+
+// The route schedules a fire-and-forget Freshdesk backfill via Next's `after()`,
+// which throws "called outside a request scope" under Jest. Stub it to a no-op
+// so the synchronous create/response path under test runs cleanly; the backfill
+// itself is exercised elsewhere and is not asserted here.
+jest.mock('next/server', () => {
+  const actual = jest.requireActual('next/server');
+  return { ...actual, after: jest.fn() };
+});
+
 import { TABLES } from '@/lib/supabase/tables';
 import { buildFreshdeskSupportWebhookUrl } from '@/lib/support/freshdesk/settingsConnection';
 import {

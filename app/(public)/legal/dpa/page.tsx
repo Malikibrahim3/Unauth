@@ -54,12 +54,12 @@ export default function DpaPage() {
         <section>
           <h2 className="mb-2 text-xl font-semibold text-[var(--text)]">3. Nature and purpose of processing</h2>
           <p>
-            Unauth processes order, support, claim, outcome, and transaction data to provide claim
-            review, identity context, evidence packaging, and merchant-owned rule recommendations.
-            Processing activities include normalisation of customer identifiers, generation of
-            pseudonymous identity hashes, and contribution of aggregate identity signals to the Unauth
-            cross-merchant network. No plaintext customer identifiers are stored beyond the
-            Controller&rsquo;s own data silo.
+            Unauth processes order, support, claim, outcome, and transaction data to provide
+            support payout case review, evidence packaging, merchant-owned rule recommendations,
+            recovery workflow, and payout/recovery reporting. Processing activities include
+            normalisation of case records, linking tickets to orders, compiling evidence checklists,
+            recording agent decisions, and tracking recovery outcomes. Plaintext customer
+            identifiers remain within the Controller&rsquo;s own data silo.
           </p>
         </section>
 

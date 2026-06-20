@@ -59,7 +59,7 @@ const HELPDESK_PLATFORMS: (Platform & { id: HelpdeskPlatformId })[] = [
   {
     id: 'gorgias',
     name: 'Gorgias',
-    description: 'Show claim intelligence inside your Gorgias ticket sidebar',
+    description: 'Show payout exposure, evidence, and recovery routes inside your Gorgias ticket sidebar',
     href: '/settings/integrations/gorgias',
     logo: '/integrations/gorgias.png',
     available: true,
@@ -580,7 +580,7 @@ export default function IntegrationsSetupClient() {
         <StepSection
           number={2}
           title="Connect your helpdesk"
-          subtitle="Surface claim intelligence — order history, trust indicators and prior claims — inside support tickets."
+          subtitle="Surface payout exposure, evidence, merchant rules, and recovery routes inside support tickets."
           complete={helpdeskConnected}
         >
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">

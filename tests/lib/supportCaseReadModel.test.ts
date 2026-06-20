@@ -9,7 +9,7 @@ function makeListClient(
       select: () => ({
         // Connection base-url lookup: from(connections).select().eq() resolves directly.
         eq:
-          table === 'support_provider_connections'
+          table === 'helpdesk_connections'
             ? async () => ({ data: connections, error: null })
             : () => ({
                 eq: () => ({

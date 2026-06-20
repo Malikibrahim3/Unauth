@@ -101,12 +101,7 @@ async function GETHandler(request: NextRequest) {
       .eq('merchant_id', ctx.merchantId)
       .in('id', claimIds);
     for (const claim of (claimRows ?? []) as Array<{ id: string; customer_id: string | null }>) {
-      claimHrefById.set(
-        claim.id,
-        claim.customer_id
-          ? `/customers/${claim.customer_id}/claims?claimId=${claim.id}`
-          : `/claims?claimId=${claim.id}`,
-      );
+      claimHrefById.set(claim.id, `/claims/${claim.id}`);
     }
   }
 

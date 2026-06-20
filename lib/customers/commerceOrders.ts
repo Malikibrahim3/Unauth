@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { TABLES } from '@/lib/supabase/tables';
 
 export type CanonicalCommerceOrderStats = {
   orderCount: number;
@@ -73,7 +74,7 @@ export async function countShopifyCommerceOrdersForProfile(
   profileId: string
 ): Promise<{ orderCount: number; totalValue: number }> {
   const { data: claimRows } = await service
-    .from('claims')
+    .from(TABLES.MERCHANT_CLAIMS)
     .select('source_order_id')
     .eq('merchant_id', merchantId)
     .eq('identity_id', profileId)

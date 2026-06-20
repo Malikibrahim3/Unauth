@@ -16,7 +16,7 @@ export default function DataHandlingPage() {
       <h1 className="mb-2 text-3xl font-bold text-[var(--text)]">How Unauth handles your data</h1>
       <p className="mb-10 text-sm text-[var(--text-muted)]">
         Plain-English explanation of what we do with your data, what stays private, and what
-        contributes to the shared network.
+        powers payout-case review.
       </p>
 
       <div className="space-y-10 text-[var(--text-secondary)]">
@@ -47,12 +47,12 @@ export default function DataHandlingPage() {
         {/* Section 2 */}
         <section className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-inset)] p-6">
           <h2 className="mb-4 text-xl font-semibold text-[var(--text)]">
-            2. What contributes to the shared network
+            2. What powers payout-case review
           </h2>
           <ul className="space-y-2">
             {[
-              'Pseudonymous identity hashes (not raw emails or addresses)',
-              'Aggregate statistics per identity (order counts, refund rates - no order details)',
+              'Support payout case records (ticket, order, requested action, evidence status)',
+              'Aggregate operational statistics (payout exposure, outcomes, recovery status)',
             ].map((item) => (
               <li key={item} className="flex items-start gap-2">
                 <span className="mt-1 h-2 w-2 flex-shrink-0 rounded-full bg-[var(--success)]" aria-hidden="true" />
@@ -61,24 +61,25 @@ export default function DataHandlingPage() {
             ))}
           </ul>
           <p className="mt-4 text-sm text-[var(--text-secondary)]">
-            Raw identifiers are hashed using HMAC-SHA256 with a secret salt before they ever leave
-            your audit results. The hash is irreversible without the salt, which is never exposed.
+            Raw customer records stay merchant-scoped. Unauth uses connected store and helpdesk
+            data to assemble case-level context, evidence checklists, rule outcomes, and recovery
+            reporting for your workspace.
           </p>
         </section>
 
         {/* Section 3 */}
         <section className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-inset)] p-6">
           <h2 className="mb-4 text-xl font-semibold text-[var(--text)]">
-            3. How cross-merchant signals are protected
+            3. How customer records are protected
           </h2>
           <p>
-            A cross-merchant signal only surfaces when an identity has been observed at{' '}
-            <strong>3 or more distinct merchants</strong> (k-anonymity threshold). Below this
-            threshold, no signal fires and no information about other merchants is shared.
+            Unauth is designed around merchant-scoped processing. Other merchants cannot access
+            your raw order data, customer identifiers, support tickets, notes, evidence, or payout
+            outcomes.
           </p>
           <p className="mt-3">
-            When a signal does fire, you see only aggregate statistics - never the names of other
-            merchants, and never any details from their customers&rsquo; orders.
+            Product analytics are aggregated for operations and billing. They do not expose another
+            merchant&rsquo;s customer records, and Unauth does not provide reusable customer denial lists.
           </p>
         </section>
 

@@ -121,7 +121,7 @@ function mockSupabase(handlers: {
 
   return {
     from(table: string) {
-      if (table === 'claims') {
+      if (table === 'support_payout_cases') {
         return claimsChain([]);
       }
 

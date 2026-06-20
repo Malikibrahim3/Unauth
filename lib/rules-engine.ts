@@ -78,18 +78,18 @@ export interface RuleEvaluationResult {
 // ---------------------------------------------------------------------------
 
 export const FIELD_LABELS: Record<string, string> = {
-  confidence_grade: 'identity confidence',
-  network_claim_count: 'cross-network claim count',
+  confidence_grade: 'match confidence',
+  network_claim_count: 'external case-history count',
   merchant_claim_count: 'claim count at this store (includes current claim)',
   merchant_prior_claim_count: 'prior claims at this store (excludes current)',
   days_since_last_claim: 'days since last claim',
-  has_cross_merchant_identity: 'cross-merchant identity match',
-  network_merchant_count: 'number of merchants claimed at',
+  has_cross_merchant_identity: 'external pattern context',
+  network_merchant_count: 'external context count',
   claim_types: 'claim types',
   order_value_usd: 'order value',
   account_age_days: 'account age (days)',
-  is_network_flagged: 'network flag status',
-  evidence_score: 'risk score',
+  is_network_flagged: 'legacy context flag',
+  evidence_score: 'evidence strength score',
   evidence_level: 'evidence level',
   has_sufficient_data: 'sufficient data available',
   // Current claim
@@ -114,6 +114,15 @@ export const FIELD_LABELS: Record<string, string> = {
   prior_chargebacks_after_claims: 'prior chargebacks',
   prior_loss_outcomes: 'prior loss outcomes',
   prior_recovered_outcomes: 'prior recovered outcomes',
+  // Payout & recovery
+  total_estimated_loss: 'total estimated loss',
+  above_review_threshold: 'above merchant review threshold',
+  requested_action: 'requested action',
+  loss_attribution: 'loss attribution (advisory)',
+  loss_attribution_confidence: 'loss attribution confidence',
+  recoverability: 'recoverability',
+  likely_owner: 'likely loss owner',
+  evidence_strength: 'evidence strength',
 };
 
 export const OPERATOR_LABELS: Record<string, string> = {

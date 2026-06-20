@@ -37,9 +37,9 @@ export default function PrivacyPage() {
           <p>
             Merchant-provided data is used to operate Unauth claim review workflows: normalising
             customer identifiers, linking claims to orders and support cases, generating evidence
-            packages, applying merchant-owned rules, and contributing pseudonymous identity signals
-            to the Unauth cross-merchant network. Data is never used for advertising, sold to third
-            parties, or processed for any purpose unrelated to the Unauth service.
+            packages, applying merchant-owned rules, tracking recovery work, and reporting payout
+            outcomes. Data is never used for advertising, sold to third parties, or processed for
+            any purpose unrelated to the Unauth service.
           </p>
         </section>
 
@@ -51,10 +51,10 @@ export default function PrivacyPage() {
             protected by row-level security that cannot be overridden by application code.
           </p>
           <p className="mt-2">
-            <strong>What is shared with the network:</strong> pseudonymous identity hashes derived
-            from customer identifiers using HMAC-SHA256 (irreversible without the secret salt), and
-            aggregate per-identity statistics (order counts, refund rates - never order details or
-            customer names). This is described in detail in our{' '}
+            <strong>What is processed for reporting:</strong> aggregate payout-control statistics
+            such as case counts, payout exposure, evidence status, recovery value, and outcomes.
+            These aggregates do not reveal customer names or another merchant&rsquo;s order details.
+            This is described in detail in our{' '}
             <Link href="/legal/data-handling" className="underline text-[var(--accent)]">
               data handling guide
             </Link>
@@ -66,9 +66,10 @@ export default function PrivacyPage() {
           <h2 className="mb-2 text-xl font-semibold text-[var(--text)]">Retention</h2>
           <p>
             Personal data in your merchant silo is retained for 24 months from the date it is provided,
-            or until you request deletion, whichever comes first. Pseudonymous network-graph
-            contributions are retained for 24 months from last contribution. All data is deleted
-            within 30 days of account closure.
+            or until you request deletion, whichever comes first. Operational payout-case and
+            recovery records are retained according to the same account policy unless a longer legal
+            retention requirement applies. All deletable data is deleted within 30 days of account
+            closure.
           </p>
         </section>
 

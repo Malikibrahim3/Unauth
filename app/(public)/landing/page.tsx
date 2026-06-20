@@ -7,12 +7,6 @@ import FoundationFinalCta from './_components/foundation/FoundationFinalCta';
 import FoundationFooter from './_components/foundation/FoundationFooter';
 import foundationStyles from './_components/foundation/foundation.module.css';
 
-const UnauthNetworkHero = dynamic(
-  () => import('@/components/UnauthNetworkHero').then((mod) => mod.UnauthNetworkHero),
-);
-const UnauthGlobeHero = dynamic(
-  () => import('@/components/UnauthGlobeHero').then((mod) => mod.UnauthGlobeHero),
-);
 const UnauthLinearClaimHero = dynamic(() => import('@/components/UnauthLinearClaimHero'));
 const EvidenceNotVerdictsRampSection = dynamic(
   () => import('@/components/EvidenceNotVerdictsRampSection'),
@@ -21,18 +15,18 @@ const BuiltForPurposeStack = dynamic(() => import('@/components/BuiltForPurposeS
 const UnauthClaimsRoadmapSection = dynamic(() => import('@/components/UnauthClaimsRoadmapSection'));
 
 export const metadata: Metadata = {
-  title: 'Unauth — Claim Decision Infrastructure for Helpdesk Reviews',
+  title: 'Unauth — Post-Purchase Payout Control for Shopify & Gorgias',
   description:
-    'Unauth turns helpdesk claims into explainable, merchant-owned decisions — order, delivery, identity, evidence, rules, and audit trail inside Gorgias, Zendesk, and Freshdesk.',
+    'Control payouts. Recover where possible. Prevent where not. Unauth turns support refunds, reships, and claims into evidenced, rule-based payout cases with recovery tracking.',
   openGraph: {
-    title: 'Unauth — Claim Decision Infrastructure for Helpdesk Reviews',
+    title: 'Unauth — Post-Purchase Payout Control',
     description:
-      'Unauth turns helpdesk claims into explainable, merchant-owned decisions — order, delivery, identity, evidence, rules, and audit trail inside Gorgias, Zendesk, and Freshdesk.',
+      'Control payouts. Recover where possible. Prevent where not. Evidence, merchant rules, and recovery workflow inside Gorgias.',
   },
   twitter: {
-    title: 'Unauth — Claim Decision Infrastructure for Helpdesk Reviews',
+    title: 'Unauth — Post-Purchase Payout Control',
     description:
-      'Unauth turns helpdesk claims into explainable, merchant-owned decisions — order, delivery, identity, evidence, rules, and audit trail inside Gorgias, Zendesk, and Freshdesk.',
+      'Control payouts. Recover where possible. Prevent where not.',
   },
 };
 
@@ -50,8 +44,6 @@ export default function LandingPage() {
           <FoundationHero />
         </HeroPin>
         <div className="relative z-10 bg-white">
-          <UnauthNetworkHero />
-          <UnauthGlobeHero />
           <UnauthLinearClaimHero />
           <EvidenceNotVerdictsRampSection />
           <BuiltForPurposeStack />

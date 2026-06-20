@@ -1,5 +1,7 @@
 # Landing Conversion Brief — Messaging, Framing, Hierarchy
 
+> **SUPERSEDED.** Product direction is now in [`docs/product/MVP_STEERING.md`](../../product/MVP_STEERING.md). Do not use this file for landing or product decisions.
+
 Implementation doc only. No code has been changed. Reviewed live at 1440×900 and mobile width on 2026-06-11.
 
 Current section order (from `app/(public)/landing/page.tsx`):
