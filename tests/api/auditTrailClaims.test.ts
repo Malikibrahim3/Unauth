@@ -55,11 +55,10 @@ function setupAuditService() {
               error: null,
             });
           }
-          if (table === 'merchant_claims') {
+          if (table === 'support_payout_cases') {
             return resolve({
               data: [{
                 id: 'claim-1',
-                customer_id: 'customer-1',
               }],
               error: null,
             });
