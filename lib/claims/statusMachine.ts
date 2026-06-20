@@ -86,14 +86,25 @@ export function canTransitionClaimStatus(
 
   if (isCanonicalFinalClaimStatus(from)) return false;
 
-  if (!isCanonicalFinalClaimStatus(from) && !isCanonicalFinalClaimStatus(to)) return true;
-  if (!isCanonicalFinalClaimStatus(from) && isCanonicalFinalClaimStatus(to)) return true;
+  // `from` is now a non-final status. Block the specific invalid / backward
+  // transitions the canonical diagram forbids, then allow forward progress.
+  // Forward progress covers the v2 payout pipeline (new → evidence_needed →
+  // awaiting_* → ready_for_decision → manual_review → decision_recorded →
+  // recovery_opened → closed) and legacy open → escalated/resolve.
+  //
+  // NOTE: these guards are deliberately ordered BEFORE the permissive
+  // `return true`. A previous version placed broad "non-final → anything"
+  // rules first, which made these guards unreachable and wrongly allowed
+  // backward transitions such as open → pending and open → stale.
 
-  if (from === 'pending') return to === 'open' || to === 'stale';
-  if (from === 'open') return to === 'escalated' || (isCanonicalFinalClaimStatus(to) && to !== 'stale');
+  // `stale` is a terminal state only reachable from a snoozed `pending` claim.
+  if (to === 'stale') return from === 'pending';
+  // `pending` is an entry/snooze state, never a forward transition target.
+  if (to === 'pending') return false;
+  // `escalated` (chargeback dispute) resolves only to won/lost outcomes.
   if (from === 'escalated') return to === 'resolved_won' || to === 'resolved_lost';
 
-  return false;
+  return true;
 }
 
 export function assertClaimStatusTransition(
