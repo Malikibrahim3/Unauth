@@ -171,13 +171,18 @@ after proves my edits are clean. Diagnosis of each (per task Phase 7 — bug vs 
 | `appRoutes › sidebar labels snapshot` ("Recoveries"→"Loss Cases") | stale snapshot OR premature label change | "Loss Cases" **conflicts** with steering doc's "Recoveries"/"Recovery board" → product decision; don't blindly update snapshot |
 | `resolverEvidenceHook › evidence score after rollup` (61 not 65) | stale expectation from scoring refinement | scoring is frozen by CLAUDE.md Ground Rule 1; recalibration is the team's |
 
-**Status-machine regression (root cause of 3 of the 5 failures):** in `lib/claims/statusMachine.ts`,
-`canTransitionClaimStatus` returns `true` at lines **89-90** for any non-final `from` (after line 87 guarantees
-`from` is non-final, lines 89-90 cover both final/non-final `to`), making the specific per-state guards at lines
-**92-94** unreachable. Result: illegal backward transitions (`open→pending`, `open→stale`) are wrongly allowed. The
-tests correctly encode the canonical diagram. **Fix is NOT mechanical** — lines 89-90 were added to permit the new
-status flow (`new→evidence_needed→ready_for_decision…`); removing them would break the new workflow. Reconciling the
-merged old+new transition graph is a migration-design decision → DEFER to the migration author (high priority).
+**Status-machine regression — FIXED 2026-06-20 (commit `6f43ddf6`).** In `lib/claims/statusMachine.ts`,
+`canTransitionClaimStatus` returned `true` at the former lines **89-90** for any non-final `from` (after line 87
+guarantees `from` is non-final, those two lines cover both final/non-final `to`), making the specific per-state guards
+unreachable. Result: illegal backward transitions (`open→pending`, `open→stale`, `escalated→resolved_refunded`) were
+wrongly allowed (the status route returned 200 instead of 409). The tests correctly encode the canonical diagram.
+
+The fix was **not** a reorder (that would have blocked `open → <new v2 status>` and broken the payout workflow —
+claims are created as `open` and advance into the new statuses). Instead the bypassing permissive rules were replaced
+with explicit guards for the forbidden transitions, leaving forward progress open: `stale` only from `pending`,
+`pending` never a forward target, `escalated` resolves only to won/lost, finals terminal except void/reopen. Added
+v2-pipeline / backward-block / terminal tests; existing assertions unchanged. Test failures 5 → 2 (the remaining 2 are
+unrelated — see table above). typecheck/build green.
 
 ### Phase 8 — Browser smoke (HTTP, against running dev server :3000)
 
