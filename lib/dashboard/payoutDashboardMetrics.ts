@@ -40,7 +40,7 @@ export async function loadPayoutDashboardMetrics(
         'id,amount_at_risk,recoverability,loss_attribution,recommended_payout_action,status',
       )
       .eq('merchant_id', merchantId)
-      // Must use only valid claim_status enum values — an invalid value (e.g. the
+      // Must use only valid claim_status enum values; an invalid value (e.g. the
       // legacy 'under_review'/'evidence_requested') errors the whole query and
       // silently zeroes every payout-exposure metric on the dashboard.
       .in('status', [...ACTIVE_CLAIM_STATUSES]),

@@ -36,7 +36,9 @@ function missingFor(requires: Requires, connection: ConnectionState): 'helpdesk'
     if (connection.shopifyOnlyConnected) return 'helpdesk';
     return 'both';
   }
-  if (requires === 'helpdesk' && !connection.helpdesk) return 'both';
+  if (requires === 'helpdesk' && !connection.helpdesk) {
+    return connection.orderSourceConnected ? 'helpdesk' : 'both';
+  }
   return null;
 }
 

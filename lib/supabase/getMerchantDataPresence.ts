@@ -58,7 +58,6 @@ export async function getMerchantDataPresence(
     { count: merchantClaims },
     { count: supportCases },
     { count: evidencePackages },
-    { count: customerActivity },
     { count: shopifyOrderSignals },
   ] = await Promise.all([
     serviceClient
@@ -94,10 +93,6 @@ export async function getMerchantDataPresence(
       .select('id', { count: 'exact', head: true })
       .eq('merchant_id', merchantId),
     serviceClient
-      .from('customer_activity_log' as never)
-      .select('id', { count: 'exact', head: true })
-      .eq('merchant_id', merchantId),
-    serviceClient
       .from(TABLES.AUDIT_TRANSACTIONS)
       .select('id', { count: 'exact', head: true })
       .eq('merchant_id', merchantId)
@@ -114,7 +109,7 @@ export async function getMerchantDataPresence(
     supportCases: supportCases ?? 0,
     evidencePackages: evidencePackages ?? 0,
     watchlistEntries: 0,
-    customerActivity: customerActivity ?? 0,
+    customerActivity: 0,
   };
 
   const hasCustomerProfiles = sources.customerProfiles > 0;
