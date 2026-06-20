@@ -15,7 +15,9 @@ export const DECISION_LABELS: Record<string, string> = {
   partial_refund: 'Partial resolution',
   full_refund: 'Full resolution',
   chargeback_disputed: 'Chargeback disputed',
-  blacklist: 'Escalated hold',
+  // Read-compat: historical 'blacklist' decisions display as a neutral policy denial,
+  // matching the canonical map in lib/claims/events.ts.
+  blacklist: 'Denied under policy',
   internal_watch: 'Internal watch',
   no_action: 'No further action',
 };

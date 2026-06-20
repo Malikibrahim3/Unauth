@@ -96,7 +96,7 @@ export async function proxy(request: NextRequest) {
   const isMobileUnsupportedRoute = pathname === '/mobile-unsupported';
 
   // Public/marketing routes — always accessible on mobile.
-  // App routes (dashboard, upload, inbox, etc.) remain blocked.
+  // App routes (dashboard, claims, recoveries, etc.) remain blocked.
   const isMobileAllowedRoute =
     pathname === '/' ||
     pathname === '/landing' ||
