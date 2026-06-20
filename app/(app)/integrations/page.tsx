@@ -1,13 +1,11 @@
-import IntegrationHubClient from '@/components/integrations/IntegrationHubClient';
-import { WorkbenchPage } from '@/components/workbench/WorkbenchPage';
+import { redirect } from 'next/navigation';
 
-export default function IntegrationsHubPage() {
-  return (
-    <WorkbenchPage
-      eyebrow="Settings"
-      title="Integrations"
-      subtitle="Connect evidence sources for payout cases and see provider slots available on request."
-      main={<IntegrationHubClient />}
-    />
-  );
+/**
+ * Legacy top-level Integrations Hub. The canonical integration surface is
+ * /settings/integrations (linked from the sidebar and every "connect" CTA).
+ * This route is retained as a redirect so existing bookmarks / Gorgias widget
+ * deep-links keep working without showing a duplicate hub.
+ */
+export default function IntegrationsHubRedirect() {
+  redirect('/settings/integrations');
 }
