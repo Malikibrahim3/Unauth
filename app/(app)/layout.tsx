@@ -127,6 +127,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <div className="flex flex-1 flex-col overflow-hidden">
           <AppHeader
             merchantName={displayMerchantName ?? null}
+            environment={process.env.VERCEL_ENV ?? 'development'}
+            isDemo={allDemo}
             userEmail={user.email ?? null}
           />
 

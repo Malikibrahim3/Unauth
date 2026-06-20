@@ -23,8 +23,10 @@ interface AppHeaderProps {
   sidebarCollapsed?: boolean;
   /** Merchant name shown in the env chip left of search */
   merchantName?: string | null;
-  /** Deployment environment, e.g. 'production' | 'sandbox' */
+  /** Deployment environment, e.g. 'production' | 'preview' | 'development' */
   environment?: string;
+  /** Demo/sample tenant — surfaces a "Demo" pill instead of an env badge */
+  isDemo?: boolean;
   /** Authenticated user email for the avatar menu */
   userEmail?: string | null;
 }
@@ -40,6 +42,7 @@ export default function AppHeader({
   sidebarCollapsed,
   merchantName,
   environment,
+  isDemo,
   userEmail,
 }: AppHeaderProps) {
   const pathname = usePathname();
@@ -159,7 +162,7 @@ export default function AppHeader({
       <ContextCreditsBadge />
 
       {/* MerchantEnvChip - left of search */}
-      <MerchantEnvChip merchantName={merchantName ?? null} environment={environment} />
+      <MerchantEnvChip merchantName={merchantName ?? null} environment={environment} isDemo={isDemo} />
 
       {/* ⌘K trigger */}
       <button
