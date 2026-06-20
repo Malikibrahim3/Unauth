@@ -43,6 +43,19 @@ function makeClient(config: Record<string, TableConfig>, capture: Capture[]): an
 const ctx = { orderIds: [] as string[], merchantCount: 2, fs: null, ls: null };
 
 describe('resolver evidence-score hook (refreshIdentityProfile)', () => {
+  // The recency factor is wall-clock relative: the resolver hook calls
+  // recomputeIdentityEvidenceScore without a nowMs override, so it would
+  // otherwise read the real Date.now(). Pin "now" to the same NOW the fixtures
+  // are built from, so daysAgo(5) is deterministically 5 days — keeping the
+  // recency tier at the full 20 points regardless of the real date the suite runs.
+  let nowSpy: jest.SpyInstance;
+  beforeAll(() => {
+    nowSpy = jest.spyOn(Date, 'now').mockReturnValue(NOW);
+  });
+  afterAll(() => {
+    nowSpy.mockRestore();
+  });
+
   it('refreshes the cached evidence score after the rollup upsert', async () => {
     const capture: Capture[] = [];
     const client = makeClient(

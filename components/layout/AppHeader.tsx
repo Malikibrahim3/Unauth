@@ -202,7 +202,7 @@ function deriveFromPathname(pathname: string): BreadcrumbSegment[] {
     inbox:       'Payout Control',
     store:       'Dashboard',
     reports:     'Reports',
-    recoveries:  'Loss Cases',
+    recoveries:  'Recoveries',
     partners:    'Partners',
     rules:       'Rules',
     chargebacks: 'Payout Control',

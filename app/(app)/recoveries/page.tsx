@@ -100,12 +100,12 @@ export default async function RecoveriesPage() {
   return (
     <WorkbenchPage
       eyebrow="Automation-first recovery"
-      title="Loss Cases"
+      title="Recovery board"
       subtitle="Track source-backed post-purchase losses, missing evidence, correspondence needs, claim-pack readiness, and synced recovery outcomes."
       navItems={WORKBENCH_NAV_ITEMS}
       activeNavKey="recoveries"
       kpiItems={[
-        { label: 'Open loss cases', value: openRecoveries.length.toLocaleString(), hint: 'Source-backed active cases' },
+        { label: 'Open recovery cases', value: openRecoveries.length.toLocaleString(), hint: 'Source-backed active cases' },
         { label: 'Missing source data', value: missingSourceData.toLocaleString(), hint: 'Automatically calculated' },
         { label: 'Needs correspondence', value: needsCorrespondence.toLocaleString(), hint: 'Generated requests only' },
         { label: 'Estimated recovery', value: formatCurrencyNullable(estimatedRecoverable || null, currency) ?? '-', hint: 'Source-derived upper estimate' },
@@ -114,7 +114,7 @@ export default async function RecoveriesPage() {
       main={<RecoveryBoardClient recoveries={recoveries} />}
       footer={
         <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-          Loss cases are created and updated by connected source data, matched correspondence, and provider status sync. Unavailable evidence is tracked as unavailable, not manually filled.
+          Recovery cases are created and updated by connected source data, matched correspondence, and provider status sync. Unavailable evidence is tracked as unavailable, not manually filled.
         </p>
       }
     />

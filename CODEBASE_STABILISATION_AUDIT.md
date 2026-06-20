@@ -171,6 +171,31 @@ after proves my edits are clean. Diagnosis of each (per task Phase 7 — bug vs 
 | `appRoutes › sidebar labels snapshot` ("Recoveries"→"Loss Cases") | stale snapshot OR premature label change | "Loss Cases" **conflicts** with steering doc's "Recoveries"/"Recovery board" → product decision; don't blindly update snapshot |
 | `resolverEvidenceHook › evidence score after rollup` (61 not 65) | stale expectation from scoring refinement | scoring is frozen by CLAUDE.md Ground Rule 1; recalibration is the team's |
 
+**Both remaining failures RESOLVED 2026-06-20 (final stabilisation pass).**
+
+*Sidebar label* — the product decision came out as **"Recoveries"** (not "Loss Cases"). Every product
+source — `MVP_STEERING.md` §14 "Recovery Board MVP", `PRODUCT_PRINCIPLES.md` surface table ("Recovery board"),
+and CLAUDE.md build priority #6 ("Recovery board") + approved vocabulary ("recovery cases", "recovery owner") —
+names this surface around *Recovery*. "Loss Cases" appears nowhere in product vocabulary; it was introduced by the
+bulk vocab pass in checkpoint `81d70de3` and is the regression. Reverted the UI to `label: 'Recoveries'` /
+`pageTitle: 'Recovery board'` in `lib/navigation/appRoutes.ts`, `AppHeader.tsx`, and `recoveries/page.tsx` (title +
+KPI + footer copy), plus the workbench item "Recovery cases needing correspondence". Snapshot kept as-is (it was
+correct). The route key/path stays `recoveries`.
+
+*Evidence score (61 vs 65)* — **stale/flaky test, not a logic bug.** `computeEvidenceScore` correctly returns 65 for
+a claim **5 days** old (18 freq + 12 breadth + 20 recency + 15 severity). The test built fixtures with `daysAgo(5)`
+from a hardcoded `NOW = 2026-06-17` but never pinned the clock, while the resolver hook calls
+`recomputeIdentityEvidenceScore` with no `nowMs` override → real `Date.now()` (today 2026-06-20) made the fixture
+8 days old, dropping recency 20→16 = 61. Fixed by pinning `Date.now()` to the test's own `NOW` (jest spy in
+`beforeAll`/`afterAll`); expectation stays 65, no scoring weights touched.
+
+**Supabase typegen footgun FIXED.** `gen:supabase-types` used `... > lib/supabase/types.ts`, which truncates the
+canonical types file to empty *before* generation runs — an auth/login failure left everyone with a blank types file
+and broken typecheck/build. Replaced with `scripts/gen-supabase-types.sh`: generates to a temp file, refuses to move
+it unless the command succeeded and produced non-empty output, cleans up the temp on any exit. A failed run now
+leaves `types.ts` untouched and exits non-zero. Verified the missing-`SUPABASE_PROJECT_ID` and failing-generator
+paths preserve the file; not re-run against the live project (no need — output unchanged).
+
 **Status-machine regression — FIXED 2026-06-20 (commit `6f43ddf6`).** In `lib/claims/statusMachine.ts`,
 `canTransitionClaimStatus` returned `true` at the former lines **89-90** for any non-final `from` (after line 87
 guarantees `from` is non-final, those two lines cover both final/non-final `to`), making the specific per-state guards

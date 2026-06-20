@@ -113,11 +113,11 @@ export const APP_ROUTES = {
   recoveries: {
     key: 'recoveries',
     href: '/recoveries',
-    label: 'Loss Cases',
-    pageTitle: 'Loss Cases',
+    label: 'Recoveries',
+    pageTitle: 'Recovery board',
     permission: PERMISSIONS.VIEW_INBOX,
     tier: 'pro',
-    tierLabel: 'Loss recovery',
+    tierLabel: 'Recovery',
     icon: Repeat2,
     sidebar: true,
     workbench: true,
@@ -244,7 +244,7 @@ export const COMMAND_PALETTE_FILTERS = [
     href: '/claims?queue=evidence',
   },
   {
-    label: 'Loss cases needing correspondence',
+    label: 'Recovery cases needing correspondence',
     description: 'Source-backed cases waiting on generated external clarification',
     href: '/recoveries',
   },
