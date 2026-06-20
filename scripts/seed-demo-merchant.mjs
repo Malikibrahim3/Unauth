@@ -1,3 +1,12 @@
+/**
+ * DEPRECATED (v1) — DO NOT USE FOR THE CURRENT DEMO.
+ *
+ * This seeder writes to legacy/dropped v1 tables (audit_transactions,
+ * customer_profiles, processing_jobs) that the v2 app no longer reads, so the
+ * seeded data is invisible in the product. The canonical demo seeder is
+ * scripts/seed-demo-v2.mjs (npm run seed:demo). This file is retained only as
+ * `npm run seed:demo:v1-legacy` for historical/forensic reference.
+ */
 import { createHash, randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
