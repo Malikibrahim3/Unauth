@@ -13,7 +13,6 @@ import { formatClaimMoney } from '@/components/claims/claimReviewStyles';
 import { actorLabel } from '@/components/claims/claimReviewLogic';
 import { CaseIntelTile, StatusPill, SlaBadge } from '@/components/claims/claimReviewPrimitives';
 import { ClaimReviewHistoryTable } from '@/components/claims/ClaimReviewHistoryTable';
-import { IdentityCatchSection } from '@/components/catches/IdentityCatchSection';
 import { PayoutCaseLeadBlock } from '@/components/claims/payout/PayoutCaseLeadBlock';
 import { RecoveryCaseCard } from '@/components/claims/payout/RecoveryCaseCard';
 import { IntegrationEvidenceSourcePanel } from '@/components/claims/payout/IntegrationEvidenceSourcePanel';
@@ -173,9 +172,6 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
           </div>
         )}
       </div>
-
-      {/* Identity resolution catch — renders only when a catch event exists for this claim */}
-      {selectedClaim?.id ? <IdentityCatchSection claimId={selectedClaim.id} /> : null}
 
       <section className="rounded-md p-4 border" style={{ borderColor: 'var(--border-muted)', background: 'var(--surface)' }}>
         <div className="flex items-center justify-between mb-3">

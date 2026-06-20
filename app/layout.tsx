@@ -34,9 +34,9 @@ const dmMono = DM_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'),
-  title: 'Unauth — Order Identity Review',
+  title: 'Unauth — Post-Purchase Payout Control',
   description:
-    'Cross-merchant identity evidence for post-checkout claim reviews. Unauth attaches graded context to claims — decided by your team.',
+    'Post-purchase payout control for Shopify & Gorgias. Unauth surfaces payout exposure, evidence, the matched merchant rule, and recovery — your team makes the decision.',
   icons: {
     icon: [
       { url: '/favicon.svg', type: 'image/svg+xml' },
@@ -46,15 +46,15 @@ export const metadata: Metadata = {
   },
   manifest: '/manifest.json',
   openGraph: {
-    title: 'Unauth — Order Identity Review',
+    title: 'Unauth — Post-Purchase Payout Control',
     description:
-      'Cross-merchant identity evidence for post-checkout claim reviews. Unauth attaches graded context to claims — decided by your team.',
+      'Post-purchase payout control for Shopify & Gorgias. Unauth surfaces payout exposure, evidence, the matched merchant rule, and recovery — your team makes the decision.',
     images: [{ url: '/logo-wordmark.png', width: 980, height: 212, alt: 'Unauth wordmark' }],
   },
   twitter: {
-    title: 'Unauth — Order Identity Review',
+    title: 'Unauth — Post-Purchase Payout Control',
     description:
-      'Cross-merchant identity evidence for post-checkout claim reviews. Unauth attaches graded context to claims — decided by your team.',
+      'Post-purchase payout control for Shopify & Gorgias. Unauth surfaces payout exposure, evidence, the matched merchant rule, and recovery — your team makes the decision.',
   },
 };
 
