@@ -49,6 +49,10 @@ export function OverviewTab({
   range,
 }: OverviewTabProps) {
   const rangeLabel = range === 'all' ? 'all time' : `last ${range.replace('d', ' days')}`;
+  // Only claim "Live source" when a real integration is connected; otherwise the
+  // data is existing/sample data and must not be badged as live.
+  const sourceMode: 'live' | 'sample' =
+    connectionState.orderSourceConnected || connectionState.helpdesk ? 'live' : 'sample';
   const hasCases = claims.length > 0 || connectionState.helpdesk;
   const sourceCoverage = (connectionState.shopify ? 50 : 0) + (connectionState.helpdesk ? 50 : 0);
   const followThroughPct = claimMetrics.recommendationFollowThroughRate * 100;
@@ -147,7 +151,7 @@ export function OverviewTab({
       </div>
 
       <div className="grid gap-4 xl:grid-cols-2">
-        <SectionCard title="Requested payout actions" description={`Case intake mix · ${rangeLabel}`} actions={<SourceTag source="live" />}>
+        <SectionCard title="Requested payout actions" description={`Case intake mix · ${rangeLabel}`} actions={<SourceTag source={sourceMode} />}>
           <AnalyticsHBarChart
             data={requestedActionBreakdown.slice(0, 7).map((item) => ({
               label: item.label,
@@ -159,7 +163,7 @@ export function OverviewTab({
           />
         </SectionCard>
 
-        <SectionCard title="Evidence gap trends" description={`Cases waiting on evidence · ${rangeLabel}`} actions={<SourceTag source="live" />}>
+        <SectionCard title="Evidence gap trends" description={`Cases waiting on evidence · ${rangeLabel}`} actions={<SourceTag source={sourceMode} />}>
           <AnalyticsHBarChart
             data={[
               { label: 'Evidence requested', value: claimMetrics.evidenceRequestedClaims, color: 'var(--warning)' },
@@ -174,7 +178,7 @@ export function OverviewTab({
       </div>
 
       <div className="grid gap-4 xl:grid-cols-2">
-        <SectionCard title="Case reasons by exposure" description={`Support payout case mix · ${rangeLabel}`} actions={<SourceTag source="live" />}>
+        <SectionCard title="Case reasons by exposure" description={`Support payout case mix · ${rangeLabel}`} actions={<SourceTag source={sourceMode} />}>
           <AnalyticsHBarChart
             data={claimTypeBreakdown.slice(0, 7).map((item) => ({
               label: item.label,
@@ -187,7 +191,7 @@ export function OverviewTab({
           />
         </SectionCard>
 
-        <SectionCard title="Final outcome trends" description={`Agent decision outcomes · ${rangeLabel}`} actions={<SourceTag source="live" />}>
+        <SectionCard title="Final outcome trends" description={`Agent decision outcomes · ${rangeLabel}`} actions={<SourceTag source={sourceMode} />}>
           <AnalyticsHBarChart
             data={outcomeBreakdown.slice(0, 7).map((item) => ({
               label: item.label,

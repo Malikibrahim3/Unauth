@@ -37,6 +37,9 @@ export function RecoveryTab({
   sourcesCoverage,
 }: RecoveryTabProps) {
   const rangeLabel = range === 'all' ? 'all time' : `last ${range.replace('d', ' days')}`;
+  // Only badge "Live source" when a real integration is connected.
+  const sourceMode: 'live' | 'sample' =
+    connectionState.orderSourceConnected || connectionState.helpdesk ? 'live' : 'sample';
 
   return (
     <div className="p-4 space-y-4">
@@ -106,7 +109,7 @@ export function RecoveryTab({
       </div>
 
       <div className="grid gap-4 xl:grid-cols-2">
-        <SectionCard title="Recovery status" description={`Recovery case board · ${rangeLabel}`} actions={<SourceTag source="live" />}>
+        <SectionCard title="Recovery status" description={`Recovery case board · ${rangeLabel}`} actions={<SourceTag source={sourceMode} />}>
           <AnalyticsHBarChart
             data={recoveryStatusBreakdown.slice(0, 8).map((item) => ({
               label: item.label,
@@ -118,7 +121,7 @@ export function RecoveryTab({
           />
         </SectionCard>
 
-        <SectionCard title="Partner performance" description="Recovered and open recovery value by owner" actions={<SourceTag source="live" />}>
+        <SectionCard title="Partner performance" description="Recovered and open recovery value by owner" actions={<SourceTag source={sourceMode} />}>
           <AnalyticsHBarChart
             data={partnerPerformance.slice(0, 8).map((item) => ({
               label: item.partnerName,
