@@ -56,7 +56,7 @@ async function POSTHandler(req: NextRequest) {
       const field = SOFT_DELETE_FIELD[table];
       if (!field) return softDeleteAllTables(index + 1);
       const query = table === 'watchlist_entries'
-        ? serviceClient.from(table).update({ [field]: true } as any).eq('merchant_id', user.id)
+        ? serviceClient.from(table).update({ [field]: true } as any).eq('merchant_id', ctx.merchantId)
         : scopedClient.from(table).update({ [field]: true } as any);
       const { error } = await query;
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -77,11 +77,11 @@ async function POSTHandler(req: NextRequest) {
   let res;
   if (ids && Array.isArray(ids) && ids.length > 0) {
     res = table === 'watchlist_entries'
-      ? await serviceClient.from(table).update({ [softField]: true } as any).eq('merchant_id', user.id).in('id', ids)
+      ? await serviceClient.from(table).update({ [softField]: true } as any).eq('merchant_id', ctx.merchantId).in('id', ids)
       : await scopedClient.from(table).update({ [softField]: true } as any).in('id', ids);
   } else {
     res = table === 'watchlist_entries'
-      ? await serviceClient.from(table).update({ [softField]: true } as any).eq('merchant_id', user.id)
+      ? await serviceClient.from(table).update({ [softField]: true } as any).eq('merchant_id', ctx.merchantId)
       : await scopedClient.from(table).update({ [softField]: true } as any);
   }
 
