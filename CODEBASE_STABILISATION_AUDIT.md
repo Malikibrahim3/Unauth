@@ -55,13 +55,15 @@ Remote linked project: **`lquvbikyvmbjbfffrlky` ("Unauth New")** — treated as 
 | `20260620143000_automation_first_loss_recovery` | new tables (loss_cases, loss_case_evidence, external_correspondence, …) + RLS | ✓ | no | safe-additive |
 | `20260620170000_pre_payout_investigation_workflow` | new table (case_clarification_requests) + RLS | ✓ | no | safe-additive |
 
-**Decision: do NOT auto-apply to production.** Reasons: (1) target is the live remote; (2) no local dev DB exists to
-follow the task's required local→verify→remote order; (3) `150000` has a data-dependent constraint-revalidation risk.
-→ Requires explicit user authorization (see Manual Review). Note runtime consequence below.
+**RESOLVED — applied to production 2026-06-20 with explicit user authorization** via `supabase db push --linked`
+(dry-run first). All 6 now recorded in the remote `schema_migrations` (verified via `migration list`). Notable:
+- `…150000` (constraint re-validation risk) **applied cleanly** — no existing `claim_evidence` row violated the expanded CHECK.
+- `…140000` columns already existed → idempotent "skipping" NOTICEs (no harm).
+- `…143000` relabel UPDATEs (`auth_mode 'manual_upload'→'custom'`; `partner_recovery_rules` `'manual'→'unknown'/'merchant_configured'`) ran without error.
+- All other NOTICEs were idempotent `drop … if exists` guards firing before first-time creation. Push exit 0.
 
-**Runtime consequence:** in-progress integration / loss-recovery / pre-payout-investigation features reference tables that
-do **not** exist on the remote yet, so those specific features will fail at runtime against the live DB until the 6
-migrations are applied. Build/tests pass because they don't hit the live schema.
+**Runtime consequence — now resolved:** the integration / loss-recovery / pre-payout-investigation features that
+referenced not-yet-created tables now have their backing tables on the remote and will function.
 
 **Schema artifact drift:** `supabase/full_schema.sql` is a HAND-CURATED "REBUILT SCHEMA v2" target (not a live dump). It
 includes some pending objects (recommended_payout_action columns) but NOT others (merchant_integrations, loss_cases) →
@@ -193,8 +195,8 @@ No 500s. Recommend a manual visual browser pass (logged-in dashboard/claims/reco
 
 ## DEFER / MANUAL-REVIEW (not done in this pass — see final report for rationale)
 
-1. **Apply the 6 pending migrations to the live remote** — requires explicit user authorization; no local DB to test first; `20260620143000` runs data-rewriting UPDATEs.
-2. **Regenerate `full_schema.sql` + `lib/supabase/types.ts`** — needs live DB read access AFTER migrations applied.
+1. ~~Apply the 6 pending migrations to the live remote~~ — **DONE 2026-06-20** (user-authorized `supabase db push`).
+2. **Regenerate `full_schema.sql` + `lib/supabase/types.ts`** — now the immediate next step (migrations applied; live DB has the integration/loss/recommendation objects that the artifacts + generated types still lack). Run `npm run gen:supabase-types` against the remote, then `npm run typecheck`. Not done here to avoid a large type-diff that could surface typecheck churn right after a clean stabilisation.
 3. `ClaimsQueueClient.tsx` raw-enum render leak (behavioral copy).
 4. `/api/v1/customers` external accusation prose (external contract).
 5. `/eval` + `/network-metrics` redirect-order bug.
