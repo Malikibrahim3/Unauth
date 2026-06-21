@@ -304,9 +304,8 @@ export async function ensurePayoutCaseForTicketV2(
   );
 
   if (existing?.id) {
-    const { error: updateError } = await supabase.from(TABLES.MERCHANT_CLAIMS).update({
+    const updatePatch: Record<string, unknown> = {
       source_order_id: input.sourceOrderId,
-      identity_id: input.identityId,
       claim_type: claimType,
       status: caseStatus,
       detection_method: detectionMethod,
@@ -319,7 +318,11 @@ export async function ensurePayoutCaseForTicketV2(
       requires_review: input.requiresReview || !input.isClaim,
       detection_detail: detectionDetail,
       updated_at: new Date().toISOString(),
-    }).eq('id', existing.id);
+    };
+    if (input.identityId) {
+      updatePatch.identity_id = input.identityId;
+    }
+    const { error: updateError } = await supabase.from(TABLES.MERCHANT_CLAIMS).update(updatePatch).eq('id', existing.id);
     if (updateError) throw new Error(`ticket_claim_update_failed: ${updateError.message}`);
     return existing.id as string;
   }

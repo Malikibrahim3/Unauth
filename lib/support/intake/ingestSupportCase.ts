@@ -13,11 +13,14 @@ import {
 } from '@/lib/support/intake/store';
 import { extractCommerceSignals } from '@/lib/support/intake/commerceSignals';
 import {
-  captureTicketIdentitySignalsV2,
   ensurePayoutCaseForTicketV2,
   linkTicketToCommerceV2,
   linkTicketToSourceCustomerFromIntake,
 } from '@/lib/support/intake/v2Bridge';
+import {
+  attachIdentityToPayoutCase,
+  resolvePayoutCaseIdentity,
+} from '@/lib/support/intake/resolvePayoutCaseIdentity';
 import { SOURCE_DELETED_TICKET_STATUS } from '@/lib/support/gorgias/reconcileDeletedTickets';
 import type { ClaimType } from '@/lib/support/intake/classifyClaim';
 import { classifyClaimType, detectIsClaim } from '@/lib/support/intake/classifyClaim';
@@ -368,12 +371,15 @@ export async function ingestSupportCase(
   });
 
   const commerce = extractCommerceSignals(parsed.raw);
-  const identityIds = await captureTicketIdentitySignalsV2(supabase as SupabaseClient<Database>, {
+  const identityResolution = await resolvePayoutCaseIdentity(supabase as SupabaseClient<Database>, {
     merchantId: parsed.merchant_id,
     ticketId: supportCaseId,
-    provider: parsed.provider,
+    sourceOrderId: linkResult.source_order_id,
+    sourceCustomerId: linkResult.source_customer_id,
+    ticketEmail: normalized.customer_email ?? null,
     rawTicket: parsed.raw,
     observedAt: normalized.created_at_provider,
+    provider: parsed.provider,
     phone: commerce.identity.phone,
     shippingAddressRaw: commerce.identity.shipping_address,
     billingAddressRaw: commerce.identity.billing_address,
@@ -387,7 +393,7 @@ export async function ingestSupportCase(
     merchantId: parsed.merchant_id,
     ticketId: supportCaseId,
     sourceOrderId: linkResult.source_order_id,
-    identityId: identityIds[0] ?? null,
+    identityId: identityResolution.identityId,
     isClaim: normalized.is_claim ?? false,
     claimType: normalized.claim_type ?? null,
     claimReason: normalized.claim_reason,
@@ -404,6 +410,14 @@ export async function ingestSupportCase(
     ticketSubject: normalized.ticket_subject ?? null,
     ticketStatus: normalized.case_status,
   });
+
+  if (claimId && identityResolution.identityId) {
+    await attachIdentityToPayoutCase(supabase as SupabaseClient<Database>, {
+      merchantId: parsed.merchant_id,
+      claimId,
+      identityId: identityResolution.identityId,
+    });
+  }
 
   return {
     ok: true,

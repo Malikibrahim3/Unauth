@@ -10,6 +10,10 @@ import { classifyClaimType } from '@/lib/support/intake/classifyClaim';
 import { normalizeClaimReasonFromText } from '@/lib/support/intake/normalizeTicket';
 import { resolveTicketOrderLink } from '@/lib/support/intake/resolveTicketOrderLink';
 import { ensurePayoutCaseForTicketV2 } from '@/lib/support/intake/v2Bridge';
+import {
+  attachIdentityToPayoutCase,
+  resolvePayoutCaseIdentity,
+} from '@/lib/support/intake/resolvePayoutCaseIdentity';
 
 type TicketRow = {
   id: string;
@@ -123,11 +127,21 @@ export async function reconcilePayoutCasesFromTickets(input: {
         (classification.claimType === 'INR' ||
           (row.subject?.toLowerCase().includes('refund') ?? false)));
 
+    const identityResolution = await resolvePayoutCaseIdentity(input.supabase, {
+      merchantId: input.merchantId,
+      ticketId: row.id,
+      sourceOrderId,
+      sourceCustomerId: row.source_customer_id,
+      ticketEmail: customerEmail,
+      provider,
+      observedAt: row.created_at_provider,
+    });
+
     const claimId = await ensurePayoutCaseForTicketV2(input.supabase, {
       merchantId: input.merchantId,
       ticketId: row.id,
       sourceOrderId,
-      identityId: null,
+      identityId: identityResolution.identityId,
       isClaim: treatAsClaim,
       claimType: classification.claimType,
       claimReason,
@@ -144,6 +158,14 @@ export async function reconcilePayoutCasesFromTickets(input: {
       ticketSubject: row.subject,
       ticketStatus: row.status,
     });
+
+    if (claimId && identityResolution.identityId) {
+      await attachIdentityToPayoutCase(input.supabase, {
+        merchantId: input.merchantId,
+        claimId,
+        identityId: identityResolution.identityId,
+      });
+    }
 
     if (claimId) casesCreatedOrUpdated += 1;
   }

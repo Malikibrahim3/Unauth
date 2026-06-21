@@ -32,6 +32,7 @@ import { GORGIAS_WIDGET_TOKEN_HEADER } from '@/lib/support/gorgias/registerSideb
 import { isUsableWidgetEmailParam } from '@/lib/support/gorgias/ticketCustomerEmail';
 import { getMerchantGorgiasSupportConnection } from '@/lib/support/gorgias/settingsConnection';
 import { isGorgiasHelpdeskLinkedForWidget } from '@/lib/support/gorgias/helpdeskLinkStatus';
+import { TABLES } from '@/lib/supabase/tables';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -380,6 +381,28 @@ export async function GET(request: NextRequest) {
       orderRef: orderRef || null,
     };
 
+    let linkedIdentityId: string | null = null;
+    if (ticketRef) {
+      const { data: ticket } = await service
+        .from(TABLES.SUPPORT_CASE_INTAKE)
+        .select('id')
+        .eq('merchant_id', authResult.merchantId)
+        .eq('external_id', ticketRef)
+        .maybeSingle();
+      if (ticket?.id) {
+        const { data: claim } = await service
+          .from(TABLES.MERCHANT_CLAIMS)
+          .select('identity_id')
+          .eq('merchant_id', authResult.merchantId)
+          .eq('source_ticket_id', ticket.id)
+          .not('identity_id', 'is', null)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        linkedIdentityId = (claim?.identity_id as string | null) ?? null;
+      }
+    }
+
     const { result, lookupDiagnostics } = await buildGorgiasClaimWidgetData(
       service,
       {
@@ -391,6 +414,7 @@ export async function GET(request: NextRequest) {
         rawEmail: email,
         rawName: isUnresolvedGorgiasVar(name) ? '' : name,
         orderId: orderRef,
+        linkedIdentityId,
       }
     );
 

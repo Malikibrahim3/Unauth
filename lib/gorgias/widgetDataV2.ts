@@ -126,7 +126,7 @@ async function loadDisclosedWidgetSignals(
 export async function buildGorgiasClaimWidgetDataV2(
   service: SupabaseClient,
   auth: LookupAuth,
-  params: { rawEmail: string; rawName: string; orderId: string }
+  params: { rawEmail: string; rawName: string; orderId: string; linkedIdentityId?: string | null }
 ): Promise<{ result: GorgiasClaimWidgetResult; lookupDiagnostics: MerchantCustomerLookupDiagnostics | null }> {
   const normEmail = normaliseEmail(params.rawEmail.trim());
   if (!normEmail) {
@@ -197,6 +197,54 @@ export async function buildGorgiasClaimWidgetDataV2(
   }
   const identity = Array.isArray(netRows) && netRows.length > 0 ? (netRows[0] as RpcIdentityRow) : null;
 
+  let linkedIdentity: RpcIdentityRow | null = null;
+  if (params.linkedIdentityId) {
+    const emailHash = hashIdentifier(normEmail);
+    const { data: ownSignals } = await service
+      .from('identity_signals')
+      .select('identifier_hash')
+      .eq('merchant_id', auth.merchantId)
+      .eq('identifier_type', 'email')
+      .eq('identifier_hash', emailHash)
+      .limit(1);
+    const { data: member } = await service
+      .from('identity_members')
+      .select('identity_id')
+      .eq('identity_id', params.linkedIdentityId)
+      .eq('identifier_type', 'email')
+      .eq('identifier_hash', emailHash)
+      .maybeSingle();
+    if ((ownSignals?.length ?? 0) > 0 && member?.identity_id) {
+      const { data: idRow } = await service
+        .from('identities')
+        .select('id, confidence_grade, merchant_count, total_orders, total_claims, claim_rate, last_seen_at')
+        .eq('id', params.linkedIdentityId)
+        .is('superseded_by', null)
+        .maybeSingle();
+      if (!idRow) {
+        linkedIdentity = null;
+      } else {
+        const { data: profile } = await service
+          .from('identity_profiles')
+          .select('total_orders, total_claims, claim_rate, last_seen_at, claim_type_counts, merchant_count')
+          .eq('identity_id', params.linkedIdentityId)
+          .maybeSingle();
+        linkedIdentity = {
+          identity_id: idRow.id as string,
+          confidence_grade: idRow.confidence_grade as string,
+          merchant_count: profile?.merchant_count ?? idRow.merchant_count,
+          total_orders: profile?.total_orders ?? idRow.total_orders,
+          total_claims: profile?.total_claims ?? idRow.total_claims,
+          claim_rate: profile?.claim_rate ?? idRow.claim_rate,
+          last_seen_at: profile?.last_seen_at ?? idRow.last_seen_at,
+          claim_type_counts: (profile?.claim_type_counts as Record<string, number> | null) ?? null,
+        };
+      }
+    }
+  }
+
+  const resolvedIdentity = linkedIdentity ?? identity;
+
   let network: NetworkStats | null = null;
   let widgetSignals: Pick<
     ClaimWidgetData,
@@ -213,27 +261,27 @@ export async function buildGorgiasClaimWidgetDataV2(
     claimTypes: canonicalClaimTypesFromCounts(storeTypeCounts),
   };
 
-  if (identity) {
-    const typeCounts = (identity.claim_type_counts ?? {}) as Record<string, number>;
+  if (resolvedIdentity) {
+    const typeCounts = (resolvedIdentity.claim_type_counts ?? {}) as Record<string, number>;
     network = {
-      merchantCount: Number(identity.merchant_count ?? 0),
-      orderCount: Number(identity.total_orders ?? 0),
-      claimCount: Number(identity.total_claims ?? 0),
-      claimRate: identity.claim_rate != null ? round2(Number(identity.claim_rate)) : 0,
-      lastClaimAt: identity.last_seen_at ?? null,
+      merchantCount: Number(resolvedIdentity.merchant_count ?? 0),
+      orderCount: Number(resolvedIdentity.total_orders ?? 0),
+      claimCount: Number(resolvedIdentity.total_claims ?? 0),
+      claimRate: resolvedIdentity.claim_rate != null ? round2(Number(resolvedIdentity.claim_rate)) : 0,
+      lastClaimAt: resolvedIdentity.last_seen_at ?? null,
       primaryReason: primaryReasonFromCounts(typeCounts),
       recentClaimCount: 0, // not exposed by the k-anon RPC; omitted rather than estimated
       recentWindowDays: 90,
     };
     // k-anonymity is enforced by lookup_network_identity; a returned row means disclosure is allowed.
-    widgetSignals = await loadDisclosedWidgetSignals(service, identity.identity_id, typeCounts);
+    widgetSignals = await loadDisclosedWidgetSignals(service, resolvedIdentity.identity_id, typeCounts);
   }
 
   const appUrl = (env.NEXT_PUBLIC_APP_URL ?? '').replace(/\/$/, '');
   const data: ClaimWidgetData = {
-    confidenceGrade: identity ? (identity.confidence_grade as ClaimWidgetData['confidenceGrade']) : null,
-    matchedOn: identity ? ['email address'] : [],
-    ce3EvidenceAvailable: Boolean(identity && Number(identity.merchant_count) >= 2 && Number(identity.total_claims) > 0),
+    confidenceGrade: resolvedIdentity ? (resolvedIdentity.confidence_grade as ClaimWidgetData['confidenceGrade']) : null,
+    matchedOn: resolvedIdentity ? ['email address'] : [],
+    ce3EvidenceAvailable: Boolean(resolvedIdentity && Number(resolvedIdentity.merchant_count) >= 2 && Number(resolvedIdentity.total_claims) > 0),
     thisStore,
     network,
     storeClaimValue: storeClaimValueRaw > 0 ? round2(storeClaimValueRaw) : null,
