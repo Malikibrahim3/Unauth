@@ -67,6 +67,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         helpdeskOnlyConnected: false,
         shopDomain: null,
         linkState: 'not_connected' as const,
+        trackingConnected: false,
       });
 
   const [merchantProfile, { data: jobs }, { data: merchantFlags }, connectionState] =
