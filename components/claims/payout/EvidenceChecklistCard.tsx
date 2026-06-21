@@ -15,7 +15,13 @@ const TRACKING_RELEVANT_CLAIM_TYPES = new Set([
   'delivery_issue',
 ]);
 
-export function EvidenceChecklistCard({ evidence }: { evidence: EvidenceChecklistResult }) {
+export function EvidenceChecklistCard({
+  evidence,
+  delivery,
+}: {
+  evidence: EvidenceChecklistResult;
+  delivery?: import('@/lib/claims/decision/types').ClaimDecisionContext['delivery'];
+}) {
   const { trackingConnected } = useConnectionState();
   const tone = TONE_STYLE[strengthTone(evidence.strength)];
   const hasMissing = evidence.items.some((i) => i.state === 'missing');
@@ -27,6 +33,12 @@ export function EvidenceChecklistCard({ evidence }: { evidence: EvidenceChecklis
     !trackingConnected &&
     evidence.claimType != null &&
     TRACKING_RELEVANT_CLAIM_TYPES.has(evidence.claimType);
+
+  const gapMessage = delivery?.trackingGap === 'no_tracking_number'
+    ? 'No tracking number on Shopify order.'
+    : delivery?.trackingGap === 'tracking_not_found'
+      ? 'Tracking not found in AfterShip.'
+      : 'Tracking data is unavailable for this case.';
 
   return (
     <section
@@ -54,7 +66,8 @@ export function EvidenceChecklistCard({ evidence }: { evidence: EvidenceChecklis
           {evidence.items.map((item) => {
             const isPresent = item.state === 'present';
             const isMissing = item.state === 'missing';
-            const mark = isPresent ? '✓' : isMissing ? '○' : '–';
+            const isUnavailable = item.state === 'unavailable';
+            const mark = isPresent ? '✓' : isMissing ? '○' : isUnavailable ? '–' : '–';
             const markColor = isPresent ? 'var(--success)' : 'var(--text-tertiary)';
             return (
               <li key={item.key} className="flex items-start gap-2 text-sm">
@@ -67,6 +80,18 @@ export function EvidenceChecklistCard({ evidence }: { evidence: EvidenceChecklis
                     <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
                       {' '}
                       · not tracked
+                    </span>
+                  )}
+                  {item.state === 'unavailable' && (
+                    <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                      {' '}
+                      · unavailable from provider
+                    </span>
+                  )}
+                  {item.state === 'missing' && item.reason !== 'Not on file' && (
+                    <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                      {' '}
+                      · {item.reason}
                     </span>
                   )}
                 </span>
@@ -87,8 +112,12 @@ export function EvidenceChecklistCard({ evidence }: { evidence: EvidenceChecklis
         >
           <span aria-hidden style={{ color: 'var(--warning)', lineHeight: '1.5' }}>!</span>
           <span style={{ color: 'var(--text-secondary)' }}>
-            <span className="font-semibold" style={{ color: 'var(--text)' }}>Delivery evidence: not connected.</span>{' '}
-            Tracking data is unavailable for this case.{' '}
+            <span className="font-semibold" style={{ color: 'var(--text)' }}>
+              {delivery?.trackingGap === 'no_tracking_number'
+                ? 'Delivery evidence: no tracking number on Shopify order.'
+                : 'Delivery evidence: not connected.'}
+            </span>{' '}
+            {gapMessage}{' '}
             <Link
               href="/settings/integrations"
               className="font-medium underline underline-offset-2"

@@ -40,6 +40,22 @@ export type ClaimDecisionContext = {
     hasTracking: boolean;
     hasProofOfDelivery: boolean;
     daysSinceDelivery: number | null;
+    trackingProvider: 'aftership' | 'ups' | 'fedex' | null;
+    trackingProviderConnected: boolean;
+    afterShipConnected: boolean;
+    scanCount: number;
+    lastScanAt: string | null;
+    exceptionCount: number;
+    estimatedDeliveryAt: string | null;
+    trackingGap:
+      | 'no_tracking_number'
+      | 'provider_not_connected'
+      | 'tracking_not_found'
+      | 'carrier_unsupported'
+      | null;
+    deliveryPhotoAvailable: boolean;
+    signatureAvailable: boolean;
+    gpsSupported: boolean;
   } | null;
   identity: {
     id: string | null;

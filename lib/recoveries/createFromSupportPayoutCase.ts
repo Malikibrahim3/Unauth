@@ -127,6 +127,7 @@ function supportPayoutCaseFromRow(row: SupportPayoutCaseRow): SupportPayoutCase 
       reasons: ['Persisted requested action'],
     },
     evidence,
+    deliveryEvidenceLine: '—',
     attribution: {
       label: row.loss_attribution ?? 'unknown',
       confidence: (row.attribution_confidence ?? 'needs_more_evidence') as SupportPayoutCase['attribution']['confidence'],

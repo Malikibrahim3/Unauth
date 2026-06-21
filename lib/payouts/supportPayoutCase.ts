@@ -7,6 +7,7 @@
  */
 import { toCanonicalClaimType } from '@/lib/claims/claimTypes';
 import type { ClaimDecisionContext } from '@/lib/claims/decision/types';
+import { formatDeliveryEvidenceLine } from '@/lib/integrations/trackingEvidenceSlice';
 import { deriveLossAttribution } from '@/lib/payouts/attribution';
 import { buildEvidenceChecklist } from '@/lib/payouts/evidenceChecklist';
 import { computePayoutExposure } from '@/lib/payouts/exposure';
@@ -57,6 +58,7 @@ export function buildSupportPayoutCase(
   });
 
   const evidence = buildEvidenceChecklist(context, claimType);
+  const deliveryEvidenceLine = formatDeliveryEvidenceLine(context.delivery);
   const attribution = deriveLossAttribution(context, claimType);
   const recovery = deriveRecoveryPath(attribution, evidence);
   const workflow = derivePayoutWorkflow({
@@ -76,6 +78,7 @@ export function buildSupportPayoutCase(
     exposure,
     requestedAction,
     evidence,
+    deliveryEvidenceLine,
     attribution,
     recovery,
     matchedRule: input.matchedRule ?? null,

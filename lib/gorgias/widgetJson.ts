@@ -389,14 +389,24 @@ export function formatDecisionLine1(payoutCase: SupportPayoutCase): string {
   return `${claimLabel} · ${action} requested · ${formatMoney(payoutCase.exposure.total)} at risk`;
 }
 
-export function formatEvidenceChecklist(evidence: EvidenceChecklistResult): string {
+const TRACKING_RELEVANT_CLAIM_TYPES = new Set(['item_not_received', 'missing_item', 'missing_parcel']);
+
+export function formatEvidenceChecklist(
+  evidence: EvidenceChecklistResult,
+  deliveryEvidenceLine?: string | null,
+): string {
+  const deliveryLine = deliveryEvidenceLine?.trim();
+  const includeDelivery = deliveryLine && evidence.claimType && TRACKING_RELEVANT_CLAIM_TYPES.has(evidence.claimType);
+
   if (evidence.strength === 'missing') {
-    return 'Evidence: missing · no supporting evidence on file yet · request evidence';
+    const base = 'Evidence: missing · no supporting evidence on file yet · request evidence';
+    return includeDelivery ? `${base} · ${deliveryLine}` : base;
   }
   const strengthLabel = EVIDENCE_STRENGTH_LABELS[evidence.strength].toLowerCase();
   const present = evidence.items.filter((i) => i.state === 'present').map((i) => humanizeKey(i.key));
   const missing = evidence.items.filter((i) => i.state === 'missing').map((i) => humanizeKey(i.key));
   const parts = [`Evidence: ${strengthLabel}`];
+  if (includeDelivery) parts.push(deliveryLine!);
   if (present.length > 0) parts.push(`present: ${truncateList(present)}`);
   if (missing.length > 0) parts.push(`missing: ${truncateList(missing)}`);
   return parts.join(' · ');
@@ -426,7 +436,7 @@ export function formatPayoutFields(
 ): Pick<GorgiasWidgetJsonPayload, 'payout_exposure' | 'evidence_checklist' | 'loss_attribution' | 'recovery_path'> {
   return {
     payout_exposure: formatDecisionLine1(payoutCase),
-    evidence_checklist: formatEvidenceChecklist(payoutCase.evidence),
+    evidence_checklist: formatEvidenceChecklist(payoutCase.evidence, payoutCase.deliveryEvidenceLine),
     loss_attribution: formatLossAttribution(payoutCase.attribution),
     recovery_path: formatRecoveryPath(payoutCase.recovery),
   };

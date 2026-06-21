@@ -6,6 +6,12 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/lib/supabase/tables';
 import type { ClaimDecisionContext } from '@/lib/claims/decision/types';
 import { buildDeliveryFromFulfillment } from '@/lib/claims/decision/deliveryEvidence';
+import {
+  mergeDeliveryWithTrackingEvidence,
+  parseAfterShipEvidenceRows,
+  type TrackingEvidenceRow,
+} from '@/lib/integrations/trackingEvidenceSlice';
+import { getStoredIntegrationViews } from '@/lib/integrations/auth';
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
@@ -97,6 +103,8 @@ export async function buildClaimDecisionContext(
     ticketRes,
     orderRes,
     fulfillmentRes,
+    integrationEvidenceRes,
+    integrationViewsRes,
     identityRes,
     evidenceRes,
     profileRes,
@@ -132,6 +140,13 @@ export async function buildClaimDecisionContext(
           .limit(1)
           .maybeSingle()
       : Promise.resolve({ data: null, error: null }),
+    client
+      .from('integration_evidence_items')
+      .select('evidence_type, summary, value, occurred_at, raw_reference, source_provider')
+      .eq('merchant_id', merchantId)
+      .eq('source_provider', 'aftership')
+      .eq('support_payout_case_id', claimId),
+    getStoredIntegrationViews(client, merchantId).then((views) => ({ data: views, error: null })),
     identityId
       ? client
           .from('identities')
@@ -176,9 +191,26 @@ export async function buildClaimDecisionContext(
   ]);
 
   let delivery: ClaimDecisionContext['delivery'] = null;
-  if (fulfillmentRes.data) {
-    delivery = buildDeliveryFromFulfillment(fulfillmentRes.data);
+  const integrationViews = integrationViewsRes.data ?? [];
+  const afterShipConnected = integrationViews.some(
+    (view) => view.id === 'aftership' && view.status === 'connected',
+  );
+  const shopifyTrackingNumber = fulfillmentRes.data?.tracking_number?.trim() ?? null;
+  let afterShipRows = (integrationEvidenceRes.data ?? []) as TrackingEvidenceRow[];
+  if (afterShipRows.length === 0 && shopifyTrackingNumber) {
+    const { data: byTracking } = await client
+      .from('integration_evidence_items')
+      .select('evidence_type, summary, value, occurred_at, raw_reference, source_provider')
+      .eq('merchant_id', merchantId)
+      .eq('source_provider', 'aftership')
+      .eq('raw_reference', shopifyTrackingNumber);
+    afterShipRows = (byTracking ?? []) as TrackingEvidenceRow[];
   }
+  const trackingSlice = parseAfterShipEvidenceRows(afterShipRows, {
+    afterShipConnected,
+    shopifyTrackingNumber,
+  });
+  delivery = mergeDeliveryWithTrackingEvidence(fulfillmentRes.data, trackingSlice);
 
   const evidenceItems = evidenceRes.error ? [] : (evidenceRes.data ?? []);
   let customerEvidenceItems = 0;

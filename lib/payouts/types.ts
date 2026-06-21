@@ -264,7 +264,7 @@ export type PayoutExposureInput = {
 // network behavioural evidence_score in lib/engine/evidence)
 // ---------------------------------------------------------------------------
 
-export type EvidenceItemState = 'present' | 'missing' | 'not_tracked';
+export type EvidenceItemState = 'present' | 'missing' | 'not_tracked' | 'unavailable';
 export type EvidenceStrength = 'strong' | 'moderate' | 'weak' | 'missing';
 
 export const EVIDENCE_STRENGTHS = ['strong', 'moderate', 'weak', 'missing'] as const;
@@ -443,6 +443,8 @@ export type SupportPayoutCase = {
   nextAction: PayoutCaseNextAction;
   nextActionReason: string;
   evidence: EvidenceChecklistResult;
+  /** Concise AfterShip / Shopify delivery evidence summary for INR widget and case UI. */
+  deliveryEvidenceLine: string;
   attribution: LossAttributionResult;
   clarificationRequests: CaseClarificationRequest[];
   recoveryState: RecoveryState;

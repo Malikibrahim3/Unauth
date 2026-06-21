@@ -143,6 +143,8 @@ describe('live connector auth and normalization', () => {
       'tracking_number',
       'delivery_status',
       'tracking_events',
+      'delivery_photo',
+      'signature',
     ]);
     expect(items.find((item) => item.evidenceType === 'tracking_events')?.value).toBe(2);
   });

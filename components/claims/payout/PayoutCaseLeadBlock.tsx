@@ -13,6 +13,7 @@ import { PAYOUT_DISCLAIMER } from '@/components/claims/payout/payoutCopy';
 import { humanizeEvidenceKey } from '@/components/claims/payout/payoutCopy';
 import { PayoutExposureCard } from '@/components/claims/payout/PayoutExposureCard';
 import { EvidenceChecklistCard } from '@/components/claims/payout/EvidenceChecklistCard';
+import { DeliveryEvidenceCard } from '@/components/claims/payout/DeliveryEvidenceCard';
 import { LossAttributionCard } from '@/components/claims/payout/LossAttributionCard';
 import { RecoveryPathCard } from '@/components/claims/payout/RecoveryPathCard';
 import type { RecoveryCase } from '@/lib/recoveries/types';
@@ -26,11 +27,13 @@ import { RECOVERY_STATUS_LABELS } from '@/lib/recoveries/types';
 export function PayoutCaseLeadBlock({
   payoutCase,
   recoveryCase,
+  delivery,
   loading,
   stale,
 }: {
   payoutCase: SupportPayoutCase | null | undefined;
   recoveryCase?: RecoveryCase | null;
+  delivery?: import('@/lib/claims/decision/types').ClaimDecisionContext['delivery'];
   loading?: boolean;
   stale?: boolean;
 }) {
@@ -59,7 +62,10 @@ export function PayoutCaseLeadBlock({
       )}
       <PayoutWorkflowSummary payoutCase={payoutCase} recoveryCase={recoveryCase ?? null} />
       <PayoutExposureCard exposure={payoutCase.exposure} requestedActionLabel={requestedActionLabel} />
-      <EvidenceChecklistCard evidence={payoutCase.evidence} />
+      <EvidenceChecklistCard evidence={payoutCase.evidence} delivery={delivery ?? null} />
+      {payoutCase.claimType === 'item_not_received' || payoutCase.claimType === 'missing_item' ? (
+        <DeliveryEvidenceCard delivery={delivery ?? null} />
+      ) : null}
       <LossAttributionCard attribution={payoutCase.attribution} />
       <RecoveryPathCard recovery={payoutCase.recovery} />
       <p className="text-xs leading-relaxed" style={{ color: 'var(--text-tertiary)' }}>

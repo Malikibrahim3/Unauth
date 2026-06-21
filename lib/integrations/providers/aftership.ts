@@ -8,7 +8,7 @@ export const aftershipProvider: IntegrationProvider = {
   category: 'tracking',
   authMode: 'api_key',
   buildStatus: 'live',
-  description: 'Tracking status, carrier, scan history, exceptions, and delivery dates.',
+  description: 'Tracking status, scan history, exceptions, and delivery dates. Does not provide delivery photos, signatures, or GPS.',
   evidenceCapabilities: ['tracking_number', 'tracking_events', 'delivery_status'],
   capabilities: { readTracking: true },
 };

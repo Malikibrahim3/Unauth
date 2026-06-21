@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { ShopifyDisputeNode } from '@/lib/integrations/providers/shopify';
 import { getIntegrationProvider, requireIntegrationProvider } from '@/lib/integrations/registry';
+import { stableEvidenceId } from '@/lib/integrations/stableEvidenceId';
 import type {
   EvidenceCapability,
   IntegrationCategory,
@@ -23,10 +24,17 @@ function createEvidence(input: BaseMapInput & {
   value?: string | number | boolean | null;
   occurredAt?: string | null;
   rawReference?: string | null;
+  id?: string;
 }): NormalizedEvidenceItem {
   const provider = requireIntegrationProvider(input.sourceProvider);
+  const rawReference = input.rawReference ?? undefined;
+  const id = input.id ?? (
+    rawReference
+      ? stableEvidenceId(input.merchantId, input.sourceProvider, input.evidenceType, rawReference)
+      : randomUUID()
+  );
   return {
-    id: randomUUID(),
+    id,
     merchantId: input.merchantId,
     supportPayoutCaseId: input.supportPayoutCaseId ?? undefined,
     sourceProvider: input.sourceProvider,
@@ -268,6 +276,26 @@ export function mapAfterShipTrackingToEvidence(
     value: checkpoints.length,
     confidence: checkpoints.length > 0 ? 'high' : 'medium',
     occurredAt: firstDate(tracking.shipment_delivery_date, tracking.delivered_at, tracking.expected_delivery, tracking.updated_at),
+    rawReference: firstString(tracking.id, trackingNumber),
+  }));
+  items.push(createEvidence({
+    ...input,
+    sourceProvider: 'aftership',
+    evidenceType: 'delivery_photo',
+    title: 'Delivery photo',
+    summary: 'Not provided by AfterShip for this shipment',
+    value: null,
+    confidence: 'medium',
+    rawReference: firstString(tracking.id, trackingNumber),
+  }));
+  items.push(createEvidence({
+    ...input,
+    sourceProvider: 'aftership',
+    evidenceType: 'signature',
+    title: 'Signature on delivery',
+    summary: 'Not provided by AfterShip for this shipment',
+    value: null,
+    confidence: 'medium',
     rawReference: firstString(tracking.id, trackingNumber),
   }));
   return items;

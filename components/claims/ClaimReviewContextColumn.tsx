@@ -56,6 +56,7 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
       <PayoutCaseLeadBlock
         payoutCase={payoutCase}
         recoveryCase={recoveryCase}
+        delivery={(decisionData?.context as { delivery?: import('@/lib/claims/decision/types').ClaimDecisionContext['delivery'] } | undefined)?.delivery ?? null}
         loading={decisionLoading}
         stale={decisionStale}
       />

@@ -72,13 +72,20 @@ describe('reconcileRequestedActions', () => {
 });
 
 describe('buildEvidenceChecklist', () => {
-  it('marks tracking/POD present and untracked items not_tracked for INR', () => {
-    const res = buildEvidenceChecklist(makeContext(), 'item_not_received');
+  it('marks tracking/POD present and unavailable photo/signature when AfterShip is active for INR', () => {
+    const res = buildEvidenceChecklist(makeContext({
+      delivery: {
+        ...makeContext().delivery!,
+        afterShipConnected: true,
+        trackingProviderConnected: true,
+        trackingProvider: 'aftership',
+      },
+    }), 'item_not_received');
     const byKey = Object.fromEntries(res.items.map((i) => [i.key, i.state]));
     expect(byKey.tracking).toBe('present');
     expect(byKey.proof_of_delivery).toBe('present');
-    expect(byKey.delivery_photo).toBe('not_tracked');
-    expect(byKey.signature).toBe('not_tracked');
+    expect(byKey.delivery_photo).toBe('unavailable');
+    expect(byKey.signature).toBe('unavailable');
     expect(res.expectedCount).toBeGreaterThan(0);
   });
 

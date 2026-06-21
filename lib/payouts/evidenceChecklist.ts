@@ -14,33 +14,86 @@ import { checklistTemplateFor } from '@/lib/payouts/config';
 import type {
   EvidenceChecklistItem,
   EvidenceChecklistResult,
+  EvidenceItemState,
   EvidenceStrength,
   PayoutClaimType,
 } from '@/lib/payouts/types';
 
-/** Booleans for the probe keys we can actually resolve from context. */
-function buildProbeSnapshot(context: ClaimDecisionContext): Record<string, boolean> {
+type ProbeSnapshot = Record<string, EvidenceItemState>;
+
+/** Resolve documentary evidence probes from delivery + integration context. */
+function buildProbeSnapshot(context: ClaimDecisionContext): ProbeSnapshot {
   const { delivery, evidence, order } = context;
   const delivered =
     delivery?.status === 'delivered' || delivery?.hasProofOfDelivery === true;
+  const afterShipActive = delivery?.afterShipConnected === true;
+  const trackingProviderConnected = delivery?.trackingProviderConnected === true;
+
+  const deliveryPhotoState: EvidenceItemState = afterShipActive
+    ? 'unavailable'
+    : delivery?.deliveryPhotoAvailable
+      ? 'present'
+      : 'not_tracked';
+  const signatureState: EvidenceItemState = afterShipActive
+    ? 'unavailable'
+    : delivery?.signatureAvailable
+      ? 'present'
+      : 'not_tracked';
+  const gpsState: EvidenceItemState = trackingProviderConnected && delivery?.gpsSupported === false
+    ? 'unavailable'
+    : 'not_tracked';
+
   return {
-    tracking: delivery?.hasTracking === true,
-    proof_of_delivery: delivery?.hasProofOfDelivery === true,
-    carrier_identified: !!delivery?.carrier,
-    delivery_confirmed: delivered,
+    tracking: delivery?.hasTracking === true ? 'present' : 'missing',
+    proof_of_delivery: delivery?.hasProofOfDelivery === true ? 'present' : 'missing',
+    carrier_identified: delivery?.carrier ? 'present' : 'missing',
+    delivery_confirmed: delivered ? 'present' : 'missing',
     delivery_scan_timeline:
-      !!delivery?.deliveredAt || (delivery?.daysSinceDelivery ?? null) !== null,
-    customer_statement: evidence.hasCustomerEvidence === true,
-    customer_evidence: evidence.hasCustomerEvidence === true,
-    merchant_inspection: evidence.merchantEvidenceItems > 0,
-    order_contents: order != null,
-    order_on_file: order != null,
-    delivery_status_known: delivery != null,
+      delivery?.deliveredAt || (delivery?.scanCount ?? 0) > 0 || (delivery?.daysSinceDelivery ?? null) !== null
+        ? 'present'
+        : 'missing',
+    customer_statement: evidence.hasCustomerEvidence === true ? 'present' : 'missing',
+    customer_evidence: evidence.hasCustomerEvidence === true ? 'present' : 'missing',
+    merchant_inspection: evidence.merchantEvidenceItems > 0 ? 'present' : 'missing',
+    order_contents: order != null ? 'present' : 'missing',
+    order_on_file: order != null ? 'present' : 'missing',
+    delivery_status_known: delivery != null && (
+      delivery.trackingGap === 'provider_not_connected'
+        ? true
+        : delivery.status != null ||
+          delivery.trackingGap === 'no_tracking_number' ||
+          delivery.trackingGap === 'tracking_not_found' ||
+          (delivery.scanCount ?? 0) > 0
+    ) ? 'present' : 'missing',
+    delivery_photo: deliveryPhotoState,
+    signature: signatureState,
+    gps: gpsState,
   };
 }
 
+function probeReason(key: string, state: EvidenceItemState, delivery: ClaimDecisionContext['delivery']): string {
+  if (state === 'present') return 'On file';
+  if (state === 'unavailable') {
+    if (key === 'delivery_photo') return 'Not provided by AfterShip for this provider';
+    if (key === 'signature') return 'Not provided by AfterShip for this provider';
+    if (key === 'gps') return 'Unsupported by connected tracking providers';
+    return 'Not collectible from this provider';
+  }
+  if (state === 'not_tracked') return 'Not currently captured by your connected sources';
+  if (key === 'tracking' && delivery?.trackingGap === 'no_tracking_number') {
+    return 'No tracking number on Shopify order';
+  }
+  if (key === 'delivery_status_known' && delivery?.trackingGap === 'provider_not_connected') {
+    return 'Tracking provider not connected';
+  }
+  if (key === 'tracking' && delivery?.trackingGap === 'tracking_not_found') {
+    return 'Tracking not found in AfterShip';
+  }
+  return 'Not on file';
+}
+
 function scoreStrength(items: EvidenceChecklistItem[]): EvidenceStrength {
-  const assessed = items.filter((i) => i.state !== 'not_tracked');
+  const assessed = items.filter((i) => i.state === 'present' || i.state === 'missing');
   const present = assessed.filter((i) => i.state === 'present');
   if (present.length === 0 || assessed.length === 0) return 'missing';
 
@@ -75,19 +128,19 @@ export function buildEvidenceChecklist(
         reason: 'Not currently captured by your connected sources',
       };
     }
-    const present = snapshot[t.key] === true;
+    const state = snapshot[t.key];
     return {
       key: t.key,
       label: t.label,
-      state: present ? 'present' : 'missing',
+      state,
       contextField: t.key,
       weight: t.weight,
-      reason: present ? 'On file' : 'Not on file',
+      reason: probeReason(t.key, state, context.delivery),
     };
   });
 
   const presentCount = items.filter((i) => i.state === 'present').length;
-  const expectedCount = items.filter((i) => i.state !== 'not_tracked').length;
+  const expectedCount = items.filter((i) => i.state === 'present' || i.state === 'missing').length;
   const strength = scoreStrength(items);
 
   const reasons: string[] = [];

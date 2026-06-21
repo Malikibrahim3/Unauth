@@ -66,5 +66,16 @@ export function buildDeliveryFromFulfillment(row: {
     hasTracking: Boolean(trackingNumber),
     hasProofOfDelivery,
     daysSinceDelivery,
+    trackingProvider: null,
+    trackingProviderConnected: false,
+    afterShipConnected: false,
+    scanCount: 0,
+    lastScanAt: null,
+    exceptionCount: 0,
+    estimatedDeliveryAt: null,
+    trackingGap: trackingNumber ? null : 'no_tracking_number',
+    deliveryPhotoAvailable: false,
+    signatureAvailable: false,
+    gpsSupported: false,
   };
 }

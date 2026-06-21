@@ -37,6 +37,9 @@ export const TRACKED_PROBE_KEYS = [
   'order_contents',
   'order_on_file',
   'delivery_status_known',
+  'delivery_photo',
+  'signature',
+  'gps',
 ] as const;
 export type TrackedProbeKey = (typeof TRACKED_PROBE_KEYS)[number];
 
@@ -55,6 +58,7 @@ export const CHECKLIST_TEMPLATES: Record<PayoutClaimType, ChecklistTemplateItem[
     { key: 'delivery_scan_timeline', label: 'Delivery scan timeline', weight: NORMAL },
     { key: 'delivery_photo', label: 'Delivery photo proof attempted', weight: NORMAL },
     { key: 'signature', label: 'Signature on delivery', weight: NORMAL },
+    { key: 'gps', label: 'GPS coordinates', weight: NORMAL },
   ],
   missing_item: [
     { key: 'delivery_confirmed', label: 'Parcel delivered', weight: HIGH },

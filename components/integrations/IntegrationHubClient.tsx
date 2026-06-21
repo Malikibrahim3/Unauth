@@ -1811,7 +1811,7 @@ export default function IntegrationHubClient() {
               ) : null}
             </p>
             <p className="mt-0.5 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-              Pull delivery status, photo proof, and signature from carriers. Without this, INR claims show delivery evidence as incomplete.
+              Connect AfterShip to add delivery scans, shipment status, exceptions, and delivery dates to INR cases. Photo, signature, and GPS proof require UPS or FedEx.
             </p>
           </div>
           {!trackingConnected ? (
@@ -1824,7 +1824,7 @@ export default function IntegrationHubClient() {
               }}
             >
               <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" style={{ color: 'var(--warning)' }} />
-              <span>Connect AfterShip, UPS, or FedEx to strengthen delivery evidence on item-not-received cases.</span>
+              <span>Connect AfterShip to add delivery scans, shipment status, exceptions, and delivery dates to INR cases.</span>
             </div>
           ) : null}
           <ProviderGrid>
