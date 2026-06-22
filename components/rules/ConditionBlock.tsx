@@ -19,10 +19,8 @@ interface ConditionBlockProps {
   disabled?: boolean;
 }
 
-// Merchant-facing payout-policy builder leads with payout-case facts. Identity,
-// cross-merchant network, and the raw risk score are deliberately excluded from
-// the picker — payout recommendations are driven by case policy, not behaviour
-// scoring. (These fields still exist for internal/advanced evaluation.)
+// Merchant-facing claim review rules lead with payout-case facts and merchant
+// history. Network identity fields and raw scores are not selectable.
 const CATEGORY_ORDER: RuleFieldCategory[] = [
   'current_claim',
   'payout',
@@ -31,18 +29,7 @@ const CATEGORY_ORDER: RuleFieldCategory[] = [
   'claim_history',
   'order',
   'outcome_history',
-  'evidence',
 ];
-
-const MERCHANT_HIDDEN_FIELDS = new Set<string>([
-  'evidence_score',
-  'confidence_grade',
-  'has_cross_merchant_identity',
-  'is_network_flagged',
-  'network_claim_count',
-  'network_merchant_count',
-  'network_same_type_claim_count',
-]);
 
 /** A sensible default value for a freshly-selected field + operator pairing. */
 function defaultValueFor(def: RuleFieldDef, operator: string): unknown {
@@ -105,8 +92,7 @@ export function ConditionBlock({ condition, onChange, onRemove, disabled }: Cond
             {CATEGORY_ORDER.map((category) => {
               const fields = RULE_FIELDS.filter(
                 (f) =>
-                  f.category === category &&
-                  (!MERCHANT_HIDDEN_FIELDS.has(f.field) || f.field === condition.field),
+                  f.category === category,
               );
               if (fields.length === 0) return null;
               return (

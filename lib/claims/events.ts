@@ -146,8 +146,8 @@ const OUTCOME_LABELS: Record<string, string> = {
   chargeback_won: 'Chargeback won',
   chargeback_lost: 'Chargeback lost',
   customer_verified: 'Customer verified',
-  // Read-compat: historical 'suspected_fraud' outcomes display as a neutral policy denial.
-  suspected_fraud: 'Denied under policy',
+  // Read-compat: historical outcome value displays as a neutral review label.
+  suspected_fraud: 'Review required',
   legitimate: 'Legitimate',
 };
 

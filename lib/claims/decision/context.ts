@@ -1,6 +1,6 @@
 /**
- * Unified claim decision context — assembles order, ticket, delivery, identity,
- * evidence, and outcome history for a single claim review.
+ * Unified claim decision context — assembles order, ticket, delivery, evidence,
+ * and merchant-local outcome history for a single claim review.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/lib/supabase/tables';
@@ -31,14 +31,12 @@ function num(v: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-function claimTypeCountsFromJson(counts: unknown): Record<string, number> {
-  if (!counts || typeof counts !== 'object' || Array.isArray(counts)) return {};
-  const out: Record<string, number> = {};
-  for (const [k, v] of Object.entries(counts as Record<string, unknown>)) {
-    const n = Number(v);
-    if (Number.isFinite(n) && n > 0) out[k] = n;
-  }
-  return out;
+function gateRecommendationFrom(detectionDetail: unknown): ClaimDecisionContext['claim']['gateRecommendation'] {
+  if (!detectionDetail || typeof detectionDetail !== 'object') return null;
+  const candidate = (detectionDetail as Record<string, unknown>).gate_recommendation;
+  if (!candidate || typeof candidate !== 'object') return null;
+  // Persisted verbatim by the decision engine; trust its shape.
+  return candidate as ClaimDecisionContext['claim']['gateRecommendation'];
 }
 
 function ticketClaimTypeConfidence(detectionDetail: unknown): number | null {
@@ -105,11 +103,7 @@ export async function buildClaimDecisionContext(
     fulfillmentRes,
     integrationEvidenceRes,
     integrationViewsRes,
-    identityRes,
     evidenceRes,
-    profileRes,
-    evidenceScoreRes,
-    watchlistRes,
     merchantClaimsRes,
   ] = await Promise.all([
     sourceTicketId
@@ -147,40 +141,11 @@ export async function buildClaimDecisionContext(
       .eq('source_provider', 'aftership')
       .eq('support_payout_case_id', claimId),
     getStoredIntegrationViews(client, merchantId).then((views) => ({ data: views, error: null })),
-    identityId
-      ? client
-          .from('identities')
-          .select('id, confidence_grade, confidence_score, first_seen_at, merchant_count')
-          .eq('id', identityId)
-          .maybeSingle()
-      : Promise.resolve({ data: null, error: null }),
     client
       .from('claim_evidence')
       .select('evidence_type')
       .eq('claim_id', claimId)
       .eq('merchant_id', merchantId),
-    identityId
-      ? client
-          .from(TABLES.IDENTITY_PROFILES)
-          .select('total_claims, claim_type_counts, merchant_count, first_seen_at, last_seen_at')
-          .eq('identity_id', identityId)
-          .maybeSingle()
-      : Promise.resolve({ data: null, error: null }),
-    identityId
-      ? client
-          .from(TABLES.IDENTITY_EVIDENCE_SCORES)
-          .select('evidence_score, evidence_level, has_sufficient_data, score_breakdown')
-          .eq('identity_id', identityId)
-          .maybeSingle()
-      : Promise.resolve({ data: null, error: null }),
-    identityId
-      ? client
-          .from(TABLES.WATCHLIST_ENTRIES)
-          .select('identity_id')
-          .eq('identity_id', identityId)
-          .eq('on_watchlist', true)
-          .limit(1)
-      : Promise.resolve({ data: null, error: null }),
     identityId
       ? client
           .from(TABLES.MERCHANT_CLAIMS)
@@ -261,24 +226,18 @@ export async function buildClaimDecisionContext(
       }
     : null;
 
-  const identityRow = identityRes.data;
-  const evidenceScoreRow = evidenceScoreRes.data;
-  const identity = identityRow
+  const identity = identityId
     ? {
-        id: identityRow.id as string,
-        confidenceGrade: (identityRow.confidence_grade as string) ?? null,
-        confidenceScore: num(identityRow.confidence_score),
-        evidenceScore: evidenceScoreRow ? num(evidenceScoreRow.evidence_score) : null,
-        evidenceLevel: evidenceScoreRow ? (evidenceScoreRow.evidence_level as string) : null,
-        hasSufficientData: evidenceScoreRow ? Boolean(evidenceScoreRow.has_sufficient_data) : false,
-        evidenceBreakdown: evidenceScoreRow?.score_breakdown ?? null,
-        isNetworkFlagged:
-          !watchlistRes.error && Array.isArray(watchlistRes.data) && watchlistRes.data.length > 0,
+        id: identityId,
+        confidenceGrade: null,
+        confidenceScore: null,
+        evidenceScore: null,
+        evidenceLevel: null,
+        hasSufficientData: false,
+        evidenceBreakdown: null,
+        isNetworkFlagged: false,
       }
     : null;
-
-  const profile = profileRes.data;
-  const networkTypeCounts = claimTypeCountsFromJson(profile?.claim_type_counts);
   const merchantClaims = merchantClaimsRes.error ? [] : (merchantClaimsRes.data ?? []);
   const otherMerchantClaims = merchantClaims.filter((c) => c.id !== claimId);
   const sameTypeAll = merchantClaims.filter((c) => c.claim_type === claimType);
@@ -301,13 +260,13 @@ export async function buildClaimDecisionContext(
       merchantPriorClaimCount: otherMerchantClaims.length,
       merchantSameTypeClaimCount: sameTypeAll.length,
       merchantPriorSameTypeClaimCount: sameTypePrior.length,
-      networkClaimCount: profile ? num(profile.total_claims) : null,
-      networkSameTypeClaimCount: claimType ? (networkTypeCounts[claimType] ?? null) : null,
+      networkClaimCount: null,
+      networkSameTypeClaimCount: null,
       daysSinceLastClaim: daysSince(lastClaimAt),
       claimTypes,
-      hasCrossMerchantIdentity: (identityRow?.merchant_count ?? 0) > 1,
-      networkMerchantCount: profile ? Number(profile.merchant_count ?? 0) : 0,
-      accountAgeDays: daysSince(profile?.first_seen_at as string | null),
+      hasCrossMerchantIdentity: false,
+      networkMerchantCount: 0,
+      accountAgeDays: null,
     };
 
     const otherClaimIds = otherMerchantClaims.map((c) => c.id as string);
@@ -349,6 +308,7 @@ export async function buildClaimDecisionContext(
       sourceTicketId,
       identityId,
       createdAt: (claimRow.created_at as string) ?? (claimRow.submitted_at as string) ?? null,
+      gateRecommendation: gateRecommendationFrom(claimRow.detection_detail),
     },
     ticket,
     order,

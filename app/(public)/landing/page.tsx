@@ -15,18 +15,18 @@ const BuiltForPurposeStack = dynamic(() => import('@/components/BuiltForPurposeS
 const UnauthClaimsRoadmapSection = dynamic(() => import('@/components/UnauthClaimsRoadmapSection'));
 
 export const metadata: Metadata = {
-  title: 'Unauth — Post-Purchase Payout Control for Shopify & Gorgias',
+  title: 'Unauth — Post-Purchase Claim Control',
   description:
-    'Control payouts. Recover where possible. Prevent where not. Unauth turns support refunds, reships, and claims into evidenced, rule-based payout cases with recovery tracking.',
+    'Unauth holds risky post-purchase claims before anyone acts, assembles the evidence, applies your rules, and records what happened and who owned the loss.',
   openGraph: {
-    title: 'Unauth — Post-Purchase Payout Control',
+    title: 'Unauth — Post-Purchase Claim Control',
     description:
-      'Control payouts. Recover where possible. Prevent where not. Evidence, merchant rules, and recovery workflow inside Gorgias.',
+      'Unauth holds risky post-purchase claims before anyone acts, assembles the evidence, applies your rules, and records what happened and who owned the loss.',
   },
   twitter: {
-    title: 'Unauth — Post-Purchase Payout Control',
+    title: 'Unauth — Post-Purchase Claim Control',
     description:
-      'Control payouts. Recover where possible. Prevent where not.',
+      'Unauth holds risky post-purchase claims before anyone acts, assembles the evidence, applies your rules, and records what happened and who owned the loss.',
   },
 };
 

@@ -15,7 +15,6 @@
 import {
   FIELD_LABELS,
   OPERATOR_LABELS,
-  type ConfidenceGrade,
   type RuleAction,
   type RuleCondition,
 } from '@/lib/rules-engine';
@@ -39,8 +38,6 @@ export { FIELD_LABELS, OPERATOR_LABELS };
 
 export type RuleFieldType = 'integer' | 'decimal' | 'boolean' | 'enum' | 'string_array';
 export type RuleFieldCategory =
-  | 'evidence'
-  | 'identity'
   | 'claim_history'
   | 'order'
   | 'current_claim'
@@ -67,13 +64,6 @@ const NUMERIC_OPERATORS = ['eq', 'neq', 'gt', 'gte', 'lt', 'lte'];
 const BOOLEAN_OPERATORS = ['eq'];
 const ENUM_OPERATORS = ['eq', 'neq', 'in', 'not_in'];
 const STRING_ARRAY_OPERATORS = ['contains', 'not_contains', 'contains_any'];
-
-export const CONFIDENCE_GRADE_OPTIONS: EnumOption[] = [
-  { value: 'definite', label: 'Definite' },
-  { value: 'probable', label: 'Probable' },
-  { value: 'possible', label: 'Possible' },
-  { value: 'weak', label: 'Weak' },
-];
 
 // Canonical = the DB `claim_type` enum (single source of truth for stored/evaluated
 // values). Friendly labels are display-only. Legacy shorthand (INR/refund) is gone.
@@ -123,20 +113,10 @@ export const EVIDENCE_STRENGTH_OPTIONS: EnumOption[] = EVIDENCE_STRENGTHS.map((v
 }));
 
 export const RULE_FIELDS: RuleFieldDef[] = [
-  // Evidence
-  { field: 'evidence_score', type: 'integer', category: 'evidence', operators: NUMERIC_OPERATORS },
-  { field: 'evidence_level', type: 'enum', category: 'evidence', operators: ENUM_OPERATORS, options: EVIDENCE_LEVEL_OPTIONS },
-  { field: 'has_sufficient_data', type: 'boolean', category: 'evidence', operators: BOOLEAN_OPERATORS },
-  // Identity
-  { field: 'confidence_grade', type: 'enum', category: 'identity', operators: ENUM_OPERATORS, options: CONFIDENCE_GRADE_OPTIONS },
-  { field: 'has_cross_merchant_identity', type: 'boolean', category: 'identity', operators: BOOLEAN_OPERATORS },
-  { field: 'is_network_flagged', type: 'boolean', category: 'identity', operators: BOOLEAN_OPERATORS },
   // Claim history
-  { field: 'network_claim_count', type: 'integer', category: 'claim_history', operators: NUMERIC_OPERATORS },
   { field: 'merchant_claim_count', type: 'integer', category: 'claim_history', operators: NUMERIC_OPERATORS },
   { field: 'merchant_prior_claim_count', type: 'integer', category: 'claim_history', operators: NUMERIC_OPERATORS },
   { field: 'days_since_last_claim', type: 'integer', category: 'claim_history', operators: NUMERIC_OPERATORS },
-  { field: 'network_merchant_count', type: 'integer', category: 'claim_history', operators: NUMERIC_OPERATORS },
   { field: 'claim_types', type: 'string_array', category: 'claim_history', operators: STRING_ARRAY_OPERATORS, options: CLAIM_TYPE_OPTIONS },
   // Order
   { field: 'order_value_usd', type: 'decimal', category: 'order', operators: NUMERIC_OPERATORS },
@@ -156,7 +136,6 @@ export const RULE_FIELDS: RuleFieldDef[] = [
   // Outcome history
   { field: 'merchant_same_type_claim_count', type: 'integer', category: 'claim_history', operators: NUMERIC_OPERATORS },
   { field: 'merchant_prior_same_type_claim_count', type: 'integer', category: 'claim_history', operators: NUMERIC_OPERATORS },
-  { field: 'network_same_type_claim_count', type: 'integer', category: 'outcome_history', operators: NUMERIC_OPERATORS },
   { field: 'prior_approved_claims', type: 'integer', category: 'outcome_history', operators: NUMERIC_OPERATORS },
   { field: 'prior_denied_claims', type: 'integer', category: 'outcome_history', operators: NUMERIC_OPERATORS },
   { field: 'prior_escalated_claims', type: 'integer', category: 'outcome_history', operators: NUMERIC_OPERATORS },
@@ -181,8 +160,6 @@ export const FIELD_DEFS_BY_NAME: Record<string, RuleFieldDef> = Object.fromEntri
 export const RULE_ACTIONS: RuleAction[] = ['approve', 'manual_review', 'deny'];
 
 export const CATEGORY_LABELS: Record<RuleFieldCategory, string> = {
-  evidence: 'Evidence',
-  identity: 'Identity',
   claim_history: 'Claim history',
   order: 'Order',
   current_claim: 'Current claim',
@@ -205,7 +182,6 @@ export interface ConditionValidationError {
   message: string;
 }
 
-const VALID_GRADES: ConfidenceGrade[] = ['definite', 'probable', 'possible', 'weak'];
 const VALID_CLAIM_TYPES = CLAIM_TYPE_OPTIONS.map((o) => o.value);
 
 function valueMatchesType(def: RuleFieldDef, operator: string, value: unknown): string | null {
@@ -229,14 +205,14 @@ function valueMatchesType(def: RuleFieldDef, operator: string, value: unknown): 
         if (!Array.isArray(value) || value.length === 0) {
           return `${def.field} requires a non-empty list of values`;
         }
-        const allowed = def.field === 'confidence_grade' ? VALID_GRADES : (def.options ?? []).map((o) => o.value);
-        if (!value.every((v) => allowed.includes(v as ConfidenceGrade))) {
+        const allowed = (def.options ?? []).map((o) => o.value);
+        if (!value.every((v) => allowed.includes(v as string))) {
           return `${def.field} contains an invalid option`;
         }
         return null;
       }
-      const allowed = def.field === 'confidence_grade' ? VALID_GRADES : (def.options ?? []).map((o) => o.value);
-      if (!allowed.includes(value as ConfidenceGrade)) {
+      const allowed = (def.options ?? []).map((o) => o.value);
+      if (!allowed.includes(value as string)) {
         return `${def.field} requires a valid option`;
       }
       return null;

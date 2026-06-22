@@ -8,6 +8,7 @@ import { TABLES } from '@/lib/supabase/tables';
 import { appendClaimEvent } from '@/lib/claims/events';
 import { loadClaimForMerchant, updateClaimStatus } from '@/lib/claims/access';
 import { claimStatusForOutcome } from '@/lib/claims/statusMachine';
+import { resolveHoldTag } from '@/lib/gorgias/applyHoldTag';
 
 async function latestOutcome(serviceClient: any, claimId: string) {
   const { data } = await serviceClient
@@ -109,6 +110,28 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       triggered_by: 'merchant_manual',
       metadata: { triggered_by: 'merchant_manual', outcome_id: outcome.id },
     });
+    if (claim.source_ticket_id) {
+      const { data: ticket } = await serviceClient
+        .from('source_tickets')
+        .select('provider,external_id')
+        .eq('id', claim.source_ticket_id)
+        .eq('merchant_id', ctx.merchantId)
+        .maybeSingle();
+      if (ticket?.provider === 'gorgias') {
+        resolveHoldTag({
+          client: serviceClient,
+          merchantId: ctx.merchantId,
+          ticketId: ticket.external_id,
+          decision: outcome.decision,
+          caseUrl: `${process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/claims?focus=${encodeURIComponent(claimId)}`,
+        }).catch((error) => {
+          console.warn('gorgias_hold_tag_resolution_failed', {
+            claim_id: claimId,
+            message: error instanceof Error ? error.message : String(error),
+          });
+        });
+      }
+    }
     return NextResponse.json({ outcome: { id: outcome.id, claim_id: outcome.claim_id, decision: outcome.decision, outcome: outcome.outcome } });
   } catch (err) {
     if (err instanceof Error && err.message.startsWith('illegal_claim_status_transition:')) {

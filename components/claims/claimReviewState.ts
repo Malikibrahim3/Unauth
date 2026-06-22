@@ -18,8 +18,6 @@ import { buildCustomerResponse } from '@/lib/claims/customerResponses';
 import { claimHasEvidence } from '@/lib/claims/events';
 import { pickPriorityClaim } from '@/lib/claims/priority';
 import { ACTIVE_CLAIM_STATUSES, isFinalClaimStatus } from '@/lib/claims/sla';
-import { GRADE_LABELS } from '@/lib/utils/confidenceStyles';
-import { scoreToGrade } from '@/lib/engine/weights';
 import { saveClaimDraft, shouldAttemptClaimViewed } from '@/components/claims/claimReviewDraft';
 import { CLAIM_TYPE_LABELS } from '@/components/claims/claimReviewLabels';
 import {
@@ -289,22 +287,19 @@ export function useClaimReviewWorkbench(profileId: string, initialClaimId?: stri
       : null;
   const resolvedDuplicateClaim = duplicateClaim && isFinalClaimStatus(duplicateClaim.status) ? duplicateClaim : null;
 
-  const riskScore = order?.fraudScore ?? data?.profile?.risk_score;
   const customerName =
     (data?.profile?.names as string[] | undefined)?.[0] ??
     (data?.profile?.customerName as string | undefined) ??
     (data?.profile?.name as string | undefined) ??
     'Customer';
-  const fraudFlags: string[] = (order?.fraudFlags as string[] | undefined) ?? (data?.profile?.fraud_flags as string[] | undefined) ?? [];
+  const behaviorSignals: string[] = (order?.fraudFlags as string[] | undefined) ?? (data?.profile?.fraud_flags as string[] | undefined) ?? [];
   const nextClaimAction = statusNextAction(selectedClaim, !!latestOutcome, responseRecorded);
   const primaryAction = useMemo(
     () => resolvePrimaryAction(selectedClaim, evidenceRecorded, !!latestOutcome, responseRecorded, claimIsClosed, effectiveClaimId),
     [selectedClaim, evidenceRecorded, latestOutcome, responseRecorded, claimIsClosed, effectiveClaimId],
   );
-  const identityPoints = identityEvidencePoints(data ?? null, order, fraudFlags);
+  const identityPoints = identityEvidencePoints(data ?? null, order, behaviorSignals);
   const busy = state.busy;
-  const riskNumeric = riskScore != null ? Math.max(0, Math.min(100, Math.round(Number(riskScore)))) : null;
-  const confidenceLabel = riskNumeric == null ? '—' : GRADE_LABELS[scoreToGrade(riskNumeric)];
   const withinStoreSignals = useMemo(() => {
     const linked = Array.isArray(data?.linkedAccounts) ? data.linkedAccounts : [];
     return linked.slice(0, 8).map((row, i) => ({
@@ -316,7 +311,6 @@ export function useClaimReviewWorkbench(profileId: string, initialClaimId?: stri
       key: `${row.entityType ?? 'signal'}-${i}`,
     }));
   }, [data?.linkedAccounts]);
-  const crossMerchantCount = Number(data?.profile?.total_merchants_seen_at ?? 1);
   const customerProfileHref = `/customers/${profileId}`;
 
   function showMsg(msg: string, tone: 'success' | 'error') {
@@ -630,14 +624,12 @@ export function useClaimReviewWorkbench(profileId: string, initialClaimId?: stri
     activeDuplicateClaim,
     resolvedDuplicateClaim,
     customerName,
-    fraudFlags,
+    behaviorSignals,
     nextClaimAction,
     primaryAction,
     identityPoints,
     busy,
-    confidenceLabel,
     withinStoreSignals,
-    crossMerchantCount,
     customerProfileHref,
     showMsg,
     handlePrimaryCta,

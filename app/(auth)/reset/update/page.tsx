@@ -1,112 +1,112 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
-import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
-import foundation from '@/app/(public)/landing/_components/foundation/foundation.module.css';
+import { Input } from '@/components/ui/Input';
+import { createClient } from '@/lib/supabase/client';
+import { AuthError, authButtonStyle, authInputClassName } from '../../AuthShell';
+
+function mapUpdateError(message: string): string {
+  const lower = message.toLowerCase();
+  if (lower.includes('password should be at least') || lower.includes('weak password')) {
+    return 'Password must be at least 8 characters';
+  }
+  return 'We could not update your password. Please try the reset link again.';
+}
 
 export default function UpdatePasswordPage() {
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<'password' | 'confirm', string>>>({});
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
 
-    if (password !== confirm) {
-      setError('Passwords do not match.');
+    if (password.length < 8) {
+      setFieldErrors({ password: 'Password must be at least 8 characters' });
       return;
     }
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters.');
+
+    if (password !== confirm) {
+      setFieldErrors({ confirm: 'Passwords do not match' });
       return;
     }
 
     setLoading(true);
-    setError('');
+    setFieldErrors({});
 
-    const { error: updateError } = await supabase.auth.updateUser({ password });
+    const { error } = await supabase.auth.updateUser({ password });
 
-    setLoading(false);
-
-    if (updateError) {
-      setError(updateError.message);
-    } else {
-      router.push('/dashboard');
+    if (error) {
+      setLoading(false);
+      setFieldErrors({ password: mapUpdateError(error.message) });
+      return;
     }
+
+    router.push('/dashboard');
+    router.refresh();
   }
 
   return (
-    <div className="w-full max-w-[420px]">
-      <div className="mb-7">
-        <p className={foundation.landingSectionEyebrow}>Account recovery</p>
-        <h1 className={foundation.landingSectionTitle} style={{ marginTop: '0.75rem' }}>
-          Choose a new password
-        </h1>
-      </div>
-      <Card variant="raised" density="relaxed">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label
-              htmlFor="reset-update-password"
-              className="text-meta mb-1.5 block"
-              style={{ color: 'var(--ink-secondary)' }}
-            >
-              New password
-            </label>
-            <Input
-              id="reset-update-password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              placeholder="At least 8 characters"
-            />
-          </div>
+    <section>
+      <h1 className="text-3xl font-semibold tracking-normal text-[#17151F]">Set new password</h1>
 
-          <div>
-            <label
-              htmlFor="reset-update-confirm-password"
-              className="text-meta mb-1.5 block"
-              style={{ color: 'var(--ink-secondary)' }}
-            >
-              Confirm password
-            </label>
-            <Input
-              id="reset-update-confirm-password"
-              type="password"
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-              required
-              placeholder="••••••••"
-            />
-          </div>
+      <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
+        <div>
+          <label htmlFor="reset-update-password" className="mb-2 block text-sm font-medium text-[#3D394B]">
+            New password
+          </label>
+          <Input
+            id="reset-update-password"
+            name="password"
+            type="password"
+            autoComplete="new-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            required
+            minLength={8}
+            aria-describedby={fieldErrors.password ? 'reset-update-password-error' : undefined}
+            className={authInputClassName}
+            placeholder="At least 8 characters"
+          />
+          <AuthError id="reset-update-password-error">{fieldErrors.password}</AuthError>
+        </div>
 
-          {error ? (
-            <p className="text-meta" style={{ color: 'var(--sev-definite)' }}>
-              {error}
-            </p>
-          ) : null}
+        <div>
+          <label htmlFor="reset-update-confirm" className="mb-2 block text-sm font-medium text-[#3D394B]">
+            Confirm password
+          </label>
+          <Input
+            id="reset-update-confirm"
+            name="confirm-password"
+            type="password"
+            autoComplete="new-password"
+            value={confirm}
+            onChange={(event) => setConfirm(event.target.value)}
+            required
+            minLength={8}
+            aria-describedby={fieldErrors.confirm ? 'reset-update-confirm-error' : undefined}
+            className={authInputClassName}
+            placeholder="Confirm password"
+          />
+          <AuthError id="reset-update-confirm-error">{fieldErrors.confirm}</AuthError>
+        </div>
 
-          <Button
-            type="submit"
-            variant="primary"
-            size="lg"
-            loading={loading}
-            disabled={loading || !password || !confirm}
-            className="w-full"
-          >
-            {loading ? 'Updating…' : 'Update password'}
-          </Button>
-        </form>
-      </Card>
-    </div>
+        <Button
+          type="submit"
+          size="lg"
+          loading={loading}
+          disabled={loading}
+          className="w-full justify-center"
+          style={authButtonStyle}
+        >
+          {loading ? 'Updating password' : 'Update password'}
+        </Button>
+      </form>
+    </section>
   );
 }

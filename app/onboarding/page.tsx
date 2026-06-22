@@ -82,6 +82,7 @@ export default async function OnboardingPage() {
       }
       initialPrimaryConcern={
         merchant?.primary_fraud_concern ??
+        (user.user_metadata?.primary_loss_concern as string | undefined) ??
         (user.user_metadata?.primary_fraud_concern as string | undefined) ??
         ''
       }

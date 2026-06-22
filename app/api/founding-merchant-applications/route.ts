@@ -22,10 +22,15 @@ export async function POST(request: NextRequest) {
     typeof body?.monthlyRefundChargebackVolume === 'string' && body.monthlyRefundChargebackVolume.trim()
       ? body.monthlyRefundChargebackVolume.trim()
       : null;
-  const fraudProblem = typeof body?.fraudProblem === 'string' ? body.fraudProblem.trim() : '';
+  const postPurchaseLossProblem =
+    typeof body?.postPurchaseLossProblem === 'string'
+      ? body.postPurchaseLossProblem.trim()
+      : typeof body?.fraudProblem === 'string'
+        ? body.fraudProblem.trim()
+        : '';
   const agreedToTerms = body?.agreedToTerms === true;
 
-  if (!storeName || !monthlyOrderVolume || !fraudProblem || !agreedToTerms) {
+  if (!storeName || !monthlyOrderVolume || !postPurchaseLossProblem || !agreedToTerms) {
     return NextResponse.json({ error: 'Missing required application fields.' }, { status: 400 });
   }
 
@@ -61,7 +66,7 @@ export async function POST(request: NextRequest) {
       store_name: storeName,
       monthly_order_volume: monthlyOrderVolume,
       monthly_refund_chargeback_volume: monthlyRefundChargebackVolume,
-      fraud_problem: fraudProblem,
+      fraud_problem: postPurchaseLossProblem,
       agreed_to_terms_at: timestamp,
       updated_at: timestamp,
     } as never, { onConflict: 'merchant_id' })
@@ -76,7 +81,7 @@ export async function POST(request: NextRequest) {
     storeName,
     monthlyOrderVolume,
     monthlyRefundChargebackVolume,
-    fraudProblem,
+    fraudProblem: postPurchaseLossProblem,
     applicantEmail: user.email ?? 'Unknown',
   });
 

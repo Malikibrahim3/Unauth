@@ -4,13 +4,6 @@ import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { TABLES } from '@/lib/supabase/tables';
 import { createRuleSchema, mapRuleRow, RULE_COLUMNS } from '@/lib/rules/store';
 import { validateConditions } from '@/lib/rules/fields';
-import {
-  activeRiskScoreRanges,
-  findOverlappingRiskControl,
-  formatRiskScoreRange,
-  parseRiskScoreRange,
-  riskScorePolicyCoverageError,
-} from '@/lib/rules/riskBands';
 import type { RuleCondition } from '@/lib/rules-engine';
 
 export async function GET() {
@@ -63,37 +56,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: conditionErrors[0]!.message }, { status: 422 });
   }
   const parsedConditions = parsed.data.conditions as RuleCondition[];
-
-  const candidateRange = parseRiskScoreRange({
-    conditions: parsedConditions,
-    condition_operator: parsed.data.condition_operator,
-  });
-  if (candidateRange) {
-    const { data: existingRows, error: existingError } = await serviceClient
-      .from(TABLES.MERCHANT_RULES)
-      .select(RULE_COLUMNS)
-      .eq('merchant_id', ctx.merchantId)
-      .eq('is_active', true);
-    if (existingError) {
-      return NextResponse.json({ error: 'Failed to validate payout policy band' }, { status: 500 });
-    }
-    const overlap = findOverlappingRiskControl(
-      (existingRows ?? []).map((row: unknown) => mapRuleRow(row as never)),
-      candidateRange,
-    );
-    if (overlap) {
-      return NextResponse.json(
-        { error: `${formatRiskScoreRange(candidateRange)} overlaps "${overlap.name}". Payout policy bands cannot overlap.` },
-        { status: 422 },
-      );
-    }
-    const existingRules = (existingRows ?? []).map((row: unknown) => mapRuleRow(row as never));
-    const ranges = activeRiskScoreRanges(existingRules, { range: candidateRange });
-    const coverageError = riskScorePolicyCoverageError(ranges);
-    if (coverageError) {
-      return NextResponse.json({ error: coverageError }, { status: 422 });
-    }
-  }
 
   // Default priority = end of the merchant's list.
   let priority = parsed.data.priority;

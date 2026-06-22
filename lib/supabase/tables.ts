@@ -72,6 +72,15 @@ export const TABLES = {
   EXTERNAL_CLARIFICATION_REQUESTS: 'external_clarification_requests',
   CORRESPONDENCE_AUTOMATION_SETTINGS: 'correspondence_automation_settings',
   LOSS_CASE_EVENTS: 'loss_case_events',
+  EVIDENCE_ITEMS: 'evidence_items',
+  LOSS_SOURCES: 'loss_sources',
+  RECOVERY_TASKS: 'recovery_tasks',
+  ACCOUNTABILITY_EVENTS: 'accountability_events',
+  AGREEMENTS: 'agreements',
+  AGREEMENT_CLAUSES: 'agreement_clauses',
+  AGREEMENT_RULES: 'agreement_rules',
+  AGREEMENT_RULE_EVALUATIONS: 'agreement_rule_evaluations',
+  DOCUMENT_UPLOAD_JOBS: 'document_upload_jobs',
 } as const;
 
 /** Step 3 compatibility / derived views — see PHASE_2_IMPLEMENTATION_SPEC.md */

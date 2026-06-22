@@ -16,7 +16,9 @@ import { ClaimReviewHistoryTable } from '@/components/claims/ClaimReviewHistoryT
 import { PayoutCaseLeadBlock } from '@/components/claims/payout/PayoutCaseLeadBlock';
 import { RecoveryCaseCard } from '@/components/claims/payout/RecoveryCaseCard';
 import { IntegrationEvidenceSourcePanel } from '@/components/claims/payout/IntegrationEvidenceSourcePanel';
+import { GateRecommendationPanel } from '@/components/claims/payout/GateRecommendationPanel';
 import type { ClaimReviewWorkbench } from '@/components/claims/claimReviewWorkbench';
+import type { ClaimDecisionContext } from '@/lib/claims/decision/types';
 import type { ClaimType, Decision, Outcome } from '@/components/claims/claimReviewTypes';
 import type { EvidencePack } from '@/lib/integrations/types';
 import type { SupportPayoutCase } from '@/lib/payouts/types';
@@ -32,11 +34,9 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
     history,
     data,
     order,
-    fraudFlags,
+    behaviorSignals,
     identityPoints,
-    confidenceLabel,
     withinStoreSignals,
-    crossMerchantCount,
     supportCases,
     state,
     patch,
@@ -50,6 +50,9 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
   const payoutCase = (decisionData?.payoutCase as SupportPayoutCase | undefined) ?? null;
   const recoveryCase = (decisionData?.recoveryCase as RecoveryCase | null | undefined) ?? null;
   const evidencePack = (decisionData?.evidencePack as EvidencePack | null | undefined) ?? null;
+  const formattedDecision = decisionData?.formatted as { ruleName?: string | null } | undefined;
+  const gateRecommendation =
+    (decisionData?.context as ClaimDecisionContext | undefined)?.claim.gateRecommendation ?? null;
 
   return (
     <div className="space-y-4 min-w-0 order-1 min-[1100px]:col-start-1 min-[1100px]:row-start-1">
@@ -60,6 +63,7 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
         loading={decisionLoading}
         stale={decisionStale}
       />
+      <GateRecommendationPanel recommendation={gateRecommendation} />
       <IntegrationEvidenceSourcePanel evidencePack={evidencePack} />
       {selectedClaim ? (
         <RecoveryCaseCard
@@ -135,8 +139,8 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div>
-            <p className="text-xs mb-0.5" style={{ color: 'var(--text-secondary)' }}>Context strength</p>
-            <p className="font-semibold text-lg" style={{ color: 'var(--text)' }}>{confidenceLabel}</p>
+            <p className="text-xs mb-0.5" style={{ color: 'var(--text-secondary)' }}>Triggered rules</p>
+            <p className="font-semibold text-lg" style={{ color: 'var(--text)' }}>{formattedDecision?.ruleName ? 1 : 0}</p>
           </div>
           <div>
             <p className="text-xs mb-0.5" style={{ color: 'var(--text-secondary)' }}>Related records</p>
@@ -151,9 +155,9 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
             <p className="font-semibold text-base" style={{ color: 'var(--text)' }}>{history.length}</p>
           </div>
         </div>
-        {fraudFlags.length > 0 && (
+        {behaviorSignals.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-1.5">
-            {fraudFlags.slice(0, 5).map((f) => (
+            {behaviorSignals.slice(0, 5).map((f) => (
               <span key={f} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs" style={{ background: 'var(--warning-bg)', color: 'var(--warning)' }}>
                 {signalLabel(f).short}
               </span>
@@ -176,18 +180,8 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
 
       <section className="rounded-md p-4 border" style={{ borderColor: 'var(--border-muted)', background: 'var(--surface)' }}>
         <div className="flex items-center justify-between mb-3">
-          <p className="text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>Claim-history and pattern context</p>
-          <span className="text-xs font-semibold" style={{ color: 'var(--text)' }}>{crossMerchantCount > 1 ? `Aggregate signal across ${crossMerchantCount} merchants` : 'Store-scoped signal'}</span>
-        </div>
-        <div className="mb-3 rounded-md border p-3 text-sm" style={{ borderColor: 'var(--border-muted)', background: 'var(--bg-inset)' }}>
-          <p className="font-semibold" style={{ color: 'var(--text)' }}>
-            {crossMerchantCount > 1 ? 'Pattern context available' : 'No aggregate pattern context yet'}
-          </p>
-          <p className="mt-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
-            {crossMerchantCount > 1
-              ? 'Unauth has an anonymised aggregate signal that this identity appears in multiple merchant datasets. Merchant-specific details are not exposed here.'
-              : 'No network-level merchant recurrence is available for this identity. Continue with store-owned evidence.'}
-          </p>
+          <p className="text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>Store-owned claim history</p>
+          <span className="text-xs font-semibold" style={{ color: 'var(--text)' }}>Store-scoped</span>
         </div>
         {withinStoreSignals.length === 0 ? (
           <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>No additional store-scoped identity variants found yet.</p>

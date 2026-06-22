@@ -2,6 +2,17 @@ import { widgetDataToSignals } from '@/lib/rules/widgetSignals';
 import type { ClaimWidgetData } from '@/lib/gorgias/widgetData';
 import { WITHHELD_EVIDENCE_SIGNALS } from '@/lib/gorgias/widgetData';
 
+// ---------------------------------------------------------------------------
+// JOB 2 — widgetSignals test rewrite
+//
+// The previous test checked fields (evidence_score, evidence_level,
+// has_sufficient_data, is_network_flagged, confidence_grade, network_*) that
+// were intentionally stripped from IdentitySignals as part of the branch
+// refocus from cross-merchant network signals to merchant-local claim signals.
+// lib/rules-engine.ts diff confirms the strip (see git diff HEAD).
+// These tests now cover what widgetDataToSignals actually produces.
+// ---------------------------------------------------------------------------
+
 const NOW = Date.parse('2026-06-17T00:00:00.000Z');
 
 function baseWidget(overrides: Partial<ClaimWidgetData> = {}): ClaimWidgetData {
@@ -38,35 +49,31 @@ function baseWidget(overrides: Partial<ClaimWidgetData> = {}): ClaimWidgetData {
 }
 
 describe('widgetDataToSignals', () => {
-  it('maps real evidence values when disclosure is allowed', () => {
-    const s = widgetDataToSignals(
-      baseWidget({
-        evidenceDisclosed: true,
-        evidenceScore: 62,
-        evidenceLevel: 'substantial',
-        hasSufficientData: true,
-      }),
-      NOW,
-    );
-    expect(s.evidence_score).toBe(62);
-    expect(s.evidence_level).toBe('substantial');
-    expect(s.has_sufficient_data).toBe(true);
+  it('maps merchant_claim_count from thisStore.claimCount', () => {
+    const s = widgetDataToSignals(baseWidget(), NOW);
+    expect(s.merchant_claim_count).toBe(1);
   });
 
-  it('uses safe neutral evidence values when disclosure is withheld', () => {
+  it('maps merchant_claim_count override correctly', () => {
     const s = widgetDataToSignals(
-      baseWidget({
-        evidenceDisclosed: false,
-        evidenceScore: 99,
-        evidenceLevel: 'extensive',
-        hasSufficientData: true,
-        network: null,
-      }),
+      baseWidget({ thisStore: { orderCount: 5, claimCount: 3, claimRate: 0.6, lastClaimAt: null, ordersCountSource: 'merchant_profile_totals' } }),
       NOW,
     );
-    expect(s.evidence_score).toBe(0);
-    expect(s.evidence_level).toBe('minimal');
-    expect(s.has_sufficient_data).toBe(false);
+    expect(s.merchant_claim_count).toBe(3);
+  });
+
+  it('calculates days_since_last_claim from thisStore.lastClaimAt', () => {
+    // lastClaimAt = 2026-06-01, NOW = 2026-06-17 → 16 days
+    const s = widgetDataToSignals(baseWidget(), NOW);
+    expect(s.days_since_last_claim).toBe(16);
+  });
+
+  it('returns null for days_since_last_claim when lastClaimAt is null', () => {
+    const s = widgetDataToSignals(
+      baseWidget({ thisStore: { orderCount: 2, claimCount: 0, claimRate: 0, lastClaimAt: null, ordersCountSource: 'merchant_profile_totals' } }),
+      NOW,
+    );
+    expect(s.days_since_last_claim).toBeNull();
   });
 
   it('maps canonical claim_types from widget data', () => {
@@ -79,8 +86,14 @@ describe('widgetDataToSignals', () => {
     expect(s.claim_types).not.toContain('refund');
   });
 
-  it('maps is_network_flagged from widget data', () => {
-    expect(widgetDataToSignals(baseWidget({ isNetworkFlagged: true }), NOW).is_network_flagged).toBe(true);
-    expect(widgetDataToSignals(baseWidget({ isNetworkFlagged: false }), NOW).is_network_flagged).toBe(false);
+  it('returns empty claim_types when none provided', () => {
+    const s = widgetDataToSignals(baseWidget({ claimTypes: [] }), NOW);
+    expect(s.claim_types).toEqual([]);
+  });
+
+  it('returns null for order_value_usd and account_age_days (not available in widget context)', () => {
+    const s = widgetDataToSignals(baseWidget(), NOW);
+    expect(s.order_value_usd).toBeNull();
+    expect(s.account_age_days).toBeNull();
   });
 });

@@ -26,7 +26,7 @@ export default function FoundationFooter() {
               prefetch={false}
               className="mt-6 inline-flex h-9 items-center gap-2 rounded-full border border-black/[0.13] px-4 text-[13px] font-semibold tracking-[-0.02em] text-black/68 transition hover:border-black/28 hover:text-black"
             >
-              Connect store and helpdesk
+              Request access
             </Link>
           </div>
 

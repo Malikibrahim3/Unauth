@@ -4,13 +4,6 @@ import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { TABLES } from '@/lib/supabase/tables';
 import { mapRuleRow, RULE_COLUMNS, updateRuleSchema } from '@/lib/rules/store';
 import { validateConditions } from '@/lib/rules/fields';
-import {
-  activeRiskScoreRanges,
-  findOverlappingRiskControl,
-  formatRiskScoreRange,
-  parseRiskScoreRange,
-  riskScorePolicyCoverageError,
-} from '@/lib/rules/riskBands';
 import type { MerchantRule, RuleCondition } from '@/lib/rules-engine';
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -73,35 +66,6 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     is_active: parsed.data.is_active ?? currentRule.is_active,
     priority: parsed.data.priority ?? currentRule.priority,
   };
-  const candidateRange = nextRule.is_active ? parseRiskScoreRange(nextRule) : null;
-  if (candidateRange) {
-    const { data: existingRows, error: existingError } = await serviceClient
-      .from(TABLES.MERCHANT_RULES)
-      .select(RULE_COLUMNS)
-      .eq('merchant_id', ctx.merchantId)
-      .eq('is_active', true);
-    if (existingError) {
-      return NextResponse.json({ error: 'Failed to validate payout policy band' }, { status: 500 });
-    }
-    const overlap = findOverlappingRiskControl(
-      (existingRows ?? []).map((row: unknown) => mapRuleRow(row as never)),
-      candidateRange,
-      id,
-    );
-    if (overlap) {
-      return NextResponse.json(
-        { error: `${formatRiskScoreRange(candidateRange)} overlaps "${overlap.name}". Payout policy bands cannot overlap.` },
-        { status: 422 },
-      );
-    }
-    const existingRules = (existingRows ?? []).map((row: unknown) => mapRuleRow(row as never));
-    const ranges = activeRiskScoreRanges(existingRules, { range: candidateRange, excludeRuleId: id });
-    const coverageError = riskScorePolicyCoverageError(ranges);
-    if (coverageError) {
-      return NextResponse.json({ error: coverageError }, { status: 422 });
-    }
-  }
-
   const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
   for (const key of ['name', 'description', 'conditions', 'action', 'condition_operator', 'is_active', 'priority'] as const) {
     if (parsed.data[key] !== undefined) update[key] = parsed.data[key];
@@ -134,26 +98,6 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
   const serviceClient = createServiceClient();
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.MANAGE_SETTINGS);
   if (denied) return denied;
-
-  const { data: existingRows, error: existingError } = await serviceClient
-    .from(TABLES.MERCHANT_RULES)
-    .select(RULE_COLUMNS)
-    .eq('merchant_id', ctx.merchantId)
-    .eq('is_active', true);
-  if (existingError) {
-    return NextResponse.json({ error: 'Failed to validate payout policy bands' }, { status: 500 });
-  }
-  const activeRules = (existingRows ?? []).map((row: unknown) => mapRuleRow(row as never));
-  const remainingRanges = activeRiskScoreRanges(activeRules.filter((rule: MerchantRule) => rule.id !== id));
-  const deletingRiskControl = activeRules.some(
-    (rule: MerchantRule) => rule.id === id && parseRiskScoreRange(rule) !== null,
-  );
-  if (deletingRiskControl) {
-    const coverageError = riskScorePolicyCoverageError(remainingRanges);
-    if (coverageError) {
-      return NextResponse.json({ error: coverageError }, { status: 422 });
-    }
-  }
 
   const { data, error } = await serviceClient
     .from(TABLES.MERCHANT_RULES)

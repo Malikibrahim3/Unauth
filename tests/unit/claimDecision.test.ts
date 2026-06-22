@@ -115,14 +115,13 @@ describe('buildDeliveryFromFulfillment', () => {
 });
 
 describe('claimDecisionContextToSignals', () => {
-  it('maps claim-specific fields while preserving identity signals', () => {
+  it('maps claim-specific fields and merchant-local history', () => {
     const signals = claimDecisionContextToSignals(baseContext());
     expect(signals.claim_type).toBe('item_not_received');
     expect(signals.delivery_status).toBe('delivered');
     expect(signals.has_tracking).toBe(true);
     expect(signals.has_customer_evidence).toBe(false);
     expect(signals.prior_approved_claims).toBe(1);
-    expect(signals.confidence_grade).toBe('probable');
     expect(signals.merchant_claim_count).toBe(2);
     expect(signals.merchant_prior_claim_count).toBe(1);
     expect(signals.merchant_same_type_claim_count).toBe(1);
@@ -140,8 +139,7 @@ describe('claimDecisionContextToSignals', () => {
     );
     expect(signals.delivery_status).toBeNull();
     expect(signals.has_tracking).toBe(false);
-    expect(signals.confidence_grade).toBe('weak');
-    expect(signals.evidence_score).toBe(0);
+    expect(signals.merchant_claim_count).toBe(2);
   });
 });
 

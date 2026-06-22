@@ -229,23 +229,7 @@ export default async function ClaimsPage({
     }
   }
 
-  // Identity grade comes from the network identities table (service-role only).
-  // k-anonymity: only surface a cross-merchant identity when merchant_count >= 3.
-  // The merchant always sees its own claim/order data regardless.
   const identityIds = Array.from(new Set(claimRows.flatMap((c) => (c.identity_id ? [c.identity_id] : []))));
-  const gradeByIdentityId = new Map<string, string>();
-  if (identityIds.length > 0) {
-    const { data: identityRows } = await serviceClient
-      .from('identities')
-      .select('id,confidence_grade,merchant_count')
-      .in('id', identityIds);
-    for (const row of identityRows ?? []) {
-      if ((row.merchant_count ?? 0) >= 3) {
-        gradeByIdentityId.set(row.id, row.confidence_grade);
-      }
-    }
-  }
-
   // Merchant-scoped display name for each identity (its own labelling, not network data).
   const displayNameByIdentityId = new Map<string, string>();
   if (identityIds.length > 0) {
@@ -304,7 +288,7 @@ export default async function ClaimsPage({
       id: c.identity_id,
       names: displayName ? [displayName] : null,
       primary_email: order?.email ?? null,
-      risk_level: gradeByIdentityId.get(c.identity_id) ?? 'none',
+      risk_level: 'none',
     });
   }
 

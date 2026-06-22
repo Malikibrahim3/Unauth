@@ -126,6 +126,8 @@ export async function proxy(request: NextRequest) {
 
   const isAuthRoute =
     pathname.startsWith('/login') ||
+    pathname.startsWith('/signup') ||
+    pathname.startsWith('/reset') ||
     pathname.startsWith('/auth') ||
     pathname.startsWith('/callback');
 
@@ -179,6 +181,8 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith('/audit-demo/') ||
     pathname === '/demo' ||
     pathname === '/pricing' ||
+    pathname === '/signup' ||
+    pathname.startsWith('/reset') ||
     pathname === '/mobile-unsupported' ||
     pathname === '/legal' ||
     pathname.startsWith('/legal/');
@@ -191,11 +195,6 @@ export async function proxy(request: NextRequest) {
   if (!user && !isAuthRoute && !isApiRoute && !isPublicRoute) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
-    // Preserve signup intent: /signup → /login?signup=1 so the create-account
-    // toggle pre-opens on the login page.
-    if (pathname === '/signup') {
-      url.searchParams.set('signup', '1');
-    }
     const response = NextResponse.redirect(url);
     response.headers.set(requestIdHeader, requestHeaders.get(requestIdHeader)!);
     return response;

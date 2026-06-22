@@ -24,27 +24,27 @@ export const FL_ROUTES = {
 
 export const FL_NAV = {
   links: [
-    { label: 'Platform', href: '/landing#claim-decision' },
     { label: 'How it works', href: '/landing#claim-decision' },
-    { label: 'Evidence', href: '/landing#evidence' },
-    { label: 'Pricing', href: FL_ROUTES.pricing },
+    { label: 'The gate', href: '/landing#claim-decision' },
+    { label: 'Integrations', href: '/landing#evidence' },
     { label: 'FAQ', href: '/landing#faq' },
+    { label: 'Request access', href: FL_ROUTES.audit },
   ],
   signIn: 'Sign in',
-  cta: 'Connect store and helpdesk',
+  cta: 'Request access',
 } as const;
 
 /* ── Hero ──────────────────────────────────────────────────────────────── */
 
 export const FL_HERO = {
-  eyebrow: 'Post-purchase payout control',
-  headlineLines: ['Control payouts.', 'Recover losses.', 'Prevent leakage.'],
+  eyebrow: 'Post-purchase claim control',
+  headlineLines: ["Your support team gives money away every day.", "You can't see where."],
   subcopy:
-    'Unauth turns refunds, reships, damaged-item claims, and INR tickets into support payout cases with evidence checklists, merchant rules, attribution, recoverability, and recovery tracking — inside Gorgias and Shopify.',
-  primaryCta: 'Connect store and helpdesk',
-  secondaryCta: 'See claim decision demo',
-  pinnedCta: 'Connect store and helpdesk',
-  contactCta: 'Connect store and helpdesk',
+    'Refunds, reships, and "I never got it" claims get resolved from memory, under time pressure, by whoever picks up the ticket — or increasingly, by an AI agent. Unauth holds the risky ones before anyone acts, assembles the evidence, applies your rules, and records what happened and who owned the loss.',
+  primaryCta: 'Request access',
+  secondaryCta: 'See how it works',
+  pinnedCta: 'Request access',
+  contactCta: 'Request access',
   orderHistoryCard: {
     title: '01 Merchant-owned rules',
     status: 'Your policy logic — not an automated decision.',
@@ -224,13 +224,13 @@ export const FL_PHONE = {
 /* ── Statement (§ about) ───────────────────────────────────────────────── */
 
 export const FL_STATEMENT = {
-  displayLines: ['EVIDENCE,', 'NOT AUTOMATION.'],
-  pre: 'Before money leaves the business on a refund or reship,',
+  displayLines: ['YOUR RULES,', 'NOT OUR MODEL.'],
+  pre: 'Before money leaves the business,',
   brand: 'Unauth',
-  post: 'shows payout exposure, evidence on file, the merchant rule that fired, and the recommended next action —',
-  postContinuation: 'with recovery and prevention when the loss is recoverable or repeatable.',
+  post: 'shows payout exposure, evidence on file, the merchant rule that fired, and the recommended next action.',
+  postContinuation: 'There is no risk score, no black box, and no judgment Unauth makes on your behalf.',
   postTail: 'Your team still decides.',
-  body: 'Unauth connects Shopify and Gorgias, structures support payout cases, tracks evidence, applies merchant rules, and opens recovery cases where carrier, 3PL, or supplier accountability may apply. No automated payouts.',
+  body: 'Unauth connects your store and helpdesk, structures support payout cases, tracks evidence, applies merchant rules, and opens recovery cases where carrier, 3PL, or supplier accountability may apply. No automated payouts.',
   features: [
     { id: '01', title: 'Merchant rules recommend — your team decides' },
     { id: '02', title: 'Every payout case has evidence and exposure' },
@@ -257,34 +257,24 @@ export const FL_MANIFEST = {
 
 export const FL_BENTO = [
   {
-    value: '£86',
-    label: 'Typical payout exposure on a single INR reship decision',
-    source: 'Merchant support workflow',
+    value: 'Rules',
+    label: 'Your rules, not our model',
+    source: 'Every hold traces to a rule you set',
   },
   {
-    value: '4 lines',
-    label: 'Compressed Gorgias decision card before agents issue money',
-    source: 'Unauth widget MVP',
+    value: 'Evidence',
+    label: 'Evidence, never a verdict',
+    source: "What's known, missing, or unclear",
   },
   {
-    value: '14 days',
-    label: 'Common carrier claim deadline when recovery is possible',
-    source: 'Partner rulebook defaults',
+    value: 'Blindly',
+    label: 'Nothing resolved blindly',
+    source: 'No claim closes on a held case without review',
   },
   {
-    value: '5',
-    label: 'Core payout scenarios the MVP must handle end to end',
-    source: 'MVP steering',
-  },
-  {
-    value: '0',
-    label: 'Automated refunds or reships — merchant rules recommend only',
-    source: 'Product constraint',
-  },
-  {
-    value: '9',
-    label: 'Recovery board columns from evidence needed to paid or closed',
-    source: 'Recovery workflow',
+    value: 'Owner',
+    label: 'Every loss has an owner',
+    source: 'Carrier, warehouse, customer, or policy override',
   },
 ] as const;
 
@@ -427,7 +417,7 @@ export const FL_FIGURES = {
   ],
   disclaimer:
     'Results depend on connected-source coverage, claim history, and configured rules.',
-  cta: 'Connect store and helpdesk',
+  cta: 'Request access',
 } as const;
 
 /* ── Programs (§ programs) ─────────────────────────────────────────────── */
@@ -539,8 +529,8 @@ export const FL_PRICING_FAQ = {
 
 export const FL_FINAL = {
   headlineLines: ['THE NEXT CLAIM', 'DESERVES A', 'DECISION TRAIL'],
-  body: 'Connect your store and helpdesk so Unauth can backfill available claim context, show repeated patterns, highlight evidence gaps, and apply merchant-owned rules to live helpdesk claims with zero automated decisions.',
-  cta: 'Connect store and helpdesk',
+  body: 'Connect your store and helpdesk. Unauth backfills your claim history and starts holding risky claims on live tickets.',
+  cta: 'Request access',
 } as const;
 
 export const FL_FAQ = {
@@ -548,50 +538,40 @@ export const FL_FAQ = {
   items: [
     {
       q: 'How is this different from Shopify Protect or Stripe Radar?',
-      a: 'Shopify Protect and Stripe Radar work at the transaction layer. They help assess payment risk before or during checkout. Unauth works after the transaction, at the claim layer, where refund requests, INR claims, return misuse, and chargeback pressure usually appear. When a claim reaches your support team, Unauth adds evidence and can apply your configured rules to show a traceable recommendation.',
+      a: 'They work at checkout, scoring transaction risk before a purchase completes. Unauth works after delivery, when a customer files a claim. A transaction approved cleanly at checkout can still become a fraudulent "item not received" claim three weeks later — that\'s the moment Unauth covers.',
     },
     {
-      q: 'How do you distinguish a genuine customer complaint from abuse?',
-      a: 'Unauth does not make that decision. Your team does. We assemble claim context — order history, delivery status, prior claims, evidence status, payout exposure, and recovery options. Your configured rules return a traceable recommendation. The agent still owns the final decision.',
+      q: 'We already use Yuma or Gorgias AI. Why add this?',
+      a: 'Those tools are built to close tickets quickly. Unauth is what decides which claims they\'re allowed to close without a human. They turn resolution up; Unauth makes sure the risky ones still stop. They work together — Unauth is the control layer, not a competing inbox.',
     },
     {
-      q: 'How does Unauth help before a chargeback?',
-      a: 'Unauth works at the helpdesk claim moment — while the ticket is still open. It shows delivery proof, prior claim behaviour, and merchant-rule recommendations with matched conditions in plain language, so your team can request evidence or escalate consistently before a dispute is filed.',
+      q: 'How do you tell a genuine claim from abuse?',
+      a: 'You do — through your rules. Unauth surfaces the facts (delivery state, order value, how many times this customer has claimed with you before) and applies the thresholds you configure. The decision reflects your policy, not our guess about a customer.',
     },
     {
-      q: 'Will this flag or block legitimate customers?',
-      a: 'No. Unauth never blocks orders, denies refunds, or takes automated action against customers. Even when a merchant rule returns a recommendation, it is only shown as context inside the claim review. Your team decides what action to take.',
+      q: 'Will this block legitimate customers?',
+      a: 'No. Unauth holds claims for review; it never blocks a customer or denies a refund on its own. A first-time customer with a genuine missing-parcel claim clears the gate, because that\'s what your rules and the evidence support.',
     },
     {
-      q: 'What data actually leaves my store?',
-      a: 'Raw customer data stays merchant-scoped. Unauth uses the data from your connected store and helpdesk to build case-scoped payout records, evidence checklists, and recovery workflows. Your rules remain scoped to your merchant account.',
+      q: 'How does this help before a chargeback?',
+      a: 'By the time a chargeback lands, the decision is already documented — the evidence that existed, the rule that applied, what your team saw and chose. That record is your dispute response, ready instead of reconstructed under deadline.',
     },
     {
-      q: 'We\'re a single merchant — does this work without network data?',
-      a: 'Yes. Unauth helps you structure your own claim history, spot repeat payout patterns, attach evidence, open recovery work, and apply your own rules to each review. Single-merchant value starts from your own order, refund, support, and policy history.',
-    },
-    {
-      q: 'Does it change my refund or dispute workflow?',
-      a: 'No. Unauth sits beside your existing support and dispute process. It adds an evidence pack and, if configured, a rule-based recommendation to the ticket. Your team keeps using the tools and policies they already use.',
-    },
-    {
-      q: 'Who controls the recommendation rules?',
-      a: 'The merchant does. Rules are configured in your dashboard using your own policy logic. Unauth evaluates those rules against the evidence signals and shows which rule matched, which conditions passed, and why the recommendation appeared.',
+      q: 'Does it work for a single store, with no network data?',
+      a: 'Yes, entirely. Unauth runs on your own store\'s orders, delivery data, and the claim history you build with your own customers. There is no cross-merchant profiling and no external customer scoring — everything the gate does runs on your data alone.',
     },
   ],
 } as const;
 
 export const FL_FOOTER = {
-  tagline: 'Claim decision infrastructure for helpdesk refund and chargeback-risk reviews.',
+  tagline: 'Claim decision infrastructure for ecommerce helpdesk teams.',
   columns: [
     {
       heading: 'Product',
       links: [
-        { label: 'Platform', href: '/landing#claim-decision' },
         { label: 'How it works', href: '/landing#claim-decision' },
         { label: 'Evidence', href: '/landing#evidence' },
-        { label: 'Pricing', href: FL_ROUTES.pricing },
-        { label: 'Claim decision demo', href: '/landing#claim-decision' },
+        { label: 'Request access', href: FL_ROUTES.audit },
       ],
     },
     {
@@ -606,7 +586,7 @@ export const FL_FOOTER = {
       heading: 'Company',
       links: [
         { label: 'Sign in', href: FL_ROUTES.login },
-        { label: 'Connect store and helpdesk', href: FL_ROUTES.audit },
+        { label: 'Request access', href: FL_ROUTES.audit },
         { label: 'Pilot terms', href: FL_ROUTES.pilotTerms },
       ],
     },

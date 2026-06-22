@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { INTEGRATION_PROVIDERS } from '@/lib/integrations/registry';
-import { verifyAfterShipApiKey } from '@/lib/integrations/providers/aftership';
+import { getTracking, verifyAfterShipApiKey } from '@/lib/integrations/providers/aftership';
+import { buildEvidence } from '@/lib/claim-gate/buildEvidence';
 import { exchangeFedExClientCredentials } from '@/lib/integrations/providers/fedex';
 import { exchangeUpsClientCredentials } from '@/lib/integrations/providers/ups';
 import {
@@ -11,7 +12,7 @@ import {
 import { assembleEvidencePack } from '@/lib/payouts/assembleEvidencePack';
 
 class MockQuery {
-  private filters: Array<{ column: string; value: unknown; op: 'eq' | 'neq' | 'not_null' }> = [];
+  private filters: Array<{ column: string; value: unknown; op: 'eq' | 'neq' | 'not_null' | 'in' | 'gte' | 'ilike' }> = [];
   private limitCount: number | null = null;
   private orFilter: string | null = null;
 
@@ -19,12 +20,25 @@ class MockQuery {
 
   select() { return this; }
   eq(column: string, value: unknown) { this.filters.push({ column, value, op: 'eq' }); return this; }
+  ilike(column: string, value: unknown) { this.filters.push({ column, value, op: 'ilike' }); return this; }
   neq(column: string, value: unknown) { this.filters.push({ column, value, op: 'neq' }); return this; }
   not(column: string) { this.filters.push({ column, value: null, op: 'not_null' }); return this; }
-  in(column: string, value: unknown[]) { this.filters.push({ column, value, op: 'in' } as any); return this; }
+  in(column: string, value: unknown[]) { this.filters.push({ column, value, op: 'in' }); return this; }
+  gte(column: string, value: unknown) { this.filters.push({ column, value, op: 'gte' }); return this; }
   order() { return this; }
   limit(count: number) { this.limitCount = count; return this; }
   or(filter: string) { this.orFilter = filter; return this; }
+
+  async upsert(payload: any) {
+    const rows = Array.isArray(payload) ? payload : [payload];
+    this.tables[this.table] = this.tables[this.table] ?? [];
+    for (const row of rows) {
+      const idx = this.tables[this.table].findIndex((existing) => existing.id && existing.id === row.id);
+      if (idx >= 0) this.tables[this.table][idx] = { ...this.tables[this.table][idx], ...row };
+      else this.tables[this.table].push(row);
+    }
+    return { data: rows, error: null };
+  }
 
   async maybeSingle() {
     const rows = this.rows();
@@ -44,7 +58,9 @@ class MockQuery {
       if (filter.op === 'eq') rows = rows.filter((row) => row[filter.column] === filter.value);
       if (filter.op === 'neq') rows = rows.filter((row) => row[filter.column] !== filter.value);
       if (filter.op === 'not_null') rows = rows.filter((row) => row[filter.column] != null);
-      if ((filter as any).op === 'in') rows = rows.filter((row) => ((filter as any).value as unknown[]).includes(row[filter.column]));
+      if (filter.op === 'in') rows = rows.filter((row) => (filter.value as unknown[]).includes(row[filter.column]));
+      if (filter.op === 'gte') rows = rows.filter((row) => String(row[filter.column] ?? '') >= String(filter.value ?? ''));
+      if (filter.op === 'ilike') rows = rows.filter((row) => String(row[filter.column] ?? '').toLowerCase() === String(filter.value ?? '').toLowerCase());
     }
     if (this.orFilter) {
       const clauses = this.orFilter.split(',').map((clause) => clause.split('.'));
@@ -73,7 +89,7 @@ describe('integration registry', () => {
     expect(byId.fedex.buildStatus).toBe('live');
     expect(byId.document_upload.buildStatus).toBe('live');
     expect(byId.self_fulfillment_pack.buildStatus).toBe('live');
-    expect(byId.shipbob.buildStatus).toBe('slot_only');
+    expect(byId.shipbob.buildStatus).toBe('live');
     expect(byId.loop.buildStatus).toBe('slot_only');
     expect(byId.stripe.buildStatus).toBe('slot_only');
     expect(byId.gmail).toBeUndefined();
@@ -149,6 +165,44 @@ describe('live connector auth and normalization', () => {
     expect(items.find((item) => item.evidenceType === 'tracking_events')?.value).toBe(2);
   });
 
+  it('fetches AfterShip tracking through the v4 endpoint and normalizes POD', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        data: {
+          tracking: {
+            tracking_number: '1ZA2207X0444990706',
+            slug: 'ups',
+            tag: 'Delivered',
+            shipment_delivery_date: '2026-06-18T10:00:00.000Z',
+            last_checkpoint: {
+              message: 'Delivered',
+              location: 'London',
+              checkpoint_time: '2026-06-18T10:00:00.000Z',
+            },
+            checkpoints: [{ tag: 'Delivered', message: 'Delivered', checkpoint_time: '2026-06-18T10:00:00.000Z' }],
+            proof_of_delivery: { url: 'https://example.test/pod.jpg', type: 'photo' },
+          },
+        },
+      }),
+      headers: new Headers(),
+    }) as any;
+
+    const tracking = await getTracking('1ZA2207X0444990706', 'UPS', 'as_test');
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/tracking/2026-01/trackings?'),
+      expect.any(Object),
+    );
+    expect(tracking).toMatchObject({
+      tracking_number: '1ZA2207X0444990706',
+      slug: 'ups',
+      current_status: 'Delivered',
+      proof_of_delivery: { url: 'https://example.test/pod.jpg', type: 'photo' },
+      tracking_source: 'aftership',
+    });
+  });
+
   it('exchanges UPS and FedEx OAuth credentials', async () => {
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
@@ -173,6 +227,129 @@ describe('live connector auth and normalization', () => {
 });
 
 describe('evidence assembly', () => {
+  it('enriches claim-gate evidence with AfterShip and ShipBob evidence rows', async () => {
+    const originalAfterShip = process.env.AFTERSHIP_API_KEY;
+    const originalShipBobPat = process.env.SHIPBOB_PAT;
+    const originalShipBobSandbox = process.env.SHIPBOB_SANDBOX;
+    const originalFetch = global.fetch;
+    process.env.AFTERSHIP_API_KEY = 'as_test';
+    process.env.SHIPBOB_PAT = 'sb_test';
+    process.env.SHIPBOB_SANDBOX = 'true';
+    global.fetch = jest.fn(async (url: string) => {
+      if (url.includes('api.aftership.com')) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            data: {
+              tracking: {
+                tracking_number: '1ZA2207X0444990706',
+                slug: 'ups',
+                tag: 'Delivered',
+                shipment_delivery_date: '2026-06-18T10:00:00.000Z',
+                last_checkpoint: { message: 'Delivered at door', checkpoint_time: '2026-06-18T10:00:00.000Z' },
+                checkpoints: [{ tag: 'Delivered', message: 'Delivered at door', checkpoint_time: '2026-06-18T10:00:00.000Z' }],
+                proof_of_delivery: { url: 'https://example.test/pod.jpg', type: 'signature' },
+              },
+            },
+          }),
+          headers: new Headers(),
+        } as any;
+      }
+      if (url.includes('/order?')) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            orders: [{
+              id: 'shipbob-order-1',
+              reference_id: '1001',
+              status: 'Fulfilled',
+              shipments: [{ id: 'shipment-1', status: 'Delivered', tracking_number: '1ZA2207X0444990706', carrier: 'UPS', products: [] }],
+              products: [{ reference_id: 'SKU-1', name: 'Tee', quantity: 1 }],
+            }],
+          }),
+          headers: new Headers(),
+        } as any;
+      }
+      if (url.includes('/timeline')) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ events: [{ description: 'Picked and packed', event_date: '2026-06-17T10:00:00.000Z' }] }),
+          headers: new Headers(),
+        } as any;
+      }
+      if (url.includes('/return?')) {
+        return { ok: true, status: 200, json: async () => ({ returns: [] }), headers: new Headers() } as any;
+      }
+      throw new Error(`unexpected fetch ${url}`);
+    }) as any;
+
+    const tables = {
+      source_orders: [{
+        id: 'order-1',
+        merchant_id: 'm1',
+        external_id: 'gid://shopify/Order/1001',
+        order_number: '1001',
+        email: 'customer@example.com',
+        currency: 'GBP',
+        total_price: 118,
+        fulfillment_state: 'fulfilled',
+        placed_at: '2026-06-16T00:00:00.000Z',
+      }],
+      source_tickets: [],
+      source_fulfillments: [{
+        id: 'fulfillment-1',
+        merchant_id: 'm1',
+        source_order_id: 'order-1',
+        status: 'success',
+        shipment_status: 'delivered',
+        tracking_company: 'UPS',
+        tracking_number: '1ZA2207X0444990706',
+        occurred_at: '2026-06-18T10:00:00.000Z',
+      }],
+      support_payout_cases: [],
+      source_refunds: [],
+      claim_outcomes: [],
+      integration_evidence_items: [],
+    };
+
+    try {
+      const evidence = await buildEvidence({
+        client: mockClient(tables),
+        merchantId: 'm1',
+        customerEmail: 'customer@example.com',
+        externalOrderId: '#1001',
+        externalTicketId: null,
+        platform: 'gorgias',
+        claimText: 'Tracking says delivered but I never received it',
+        claimType: 'DELIVERED_NOT_RECEIVED',
+      });
+
+      expect(evidence.summary.proof_of_delivery).toBe('PRESENT');
+      expect(evidence.fulfillmentEvidence[0]).toMatchObject({
+        tracking_number: '1ZA2207X0444990706',
+        delivery_scan_present: true,
+        pod_present: true,
+        evidence_strength: 'strong',
+      });
+      expect(evidence.shipbobEvidence).toMatchObject({
+        order_found: true,
+        shipment_count: 1,
+        pick_pack_events: 1,
+      });
+      expect(tables.integration_evidence_items.map((row) => row.source_provider).sort()).toEqual(['aftership', 'shipbob']);
+      expect(tables.integration_evidence_items.find((row) => row.source_provider === 'aftership')?.value)
+        .toMatchObject({ tracking_source: 'aftership', evidence_strength: 'strong' });
+    } finally {
+      process.env.AFTERSHIP_API_KEY = originalAfterShip;
+      process.env.SHIPBOB_PAT = originalShipBobPat;
+      process.env.SHIPBOB_SANDBOX = originalShipBobSandbox;
+      global.fetch = originalFetch;
+    }
+  });
+
   it('keeps slot-only providers out of case evidence and reports attempted unavailable proof', async () => {
     const pack = await assembleEvidencePack({
       client: mockClient({
@@ -205,8 +382,8 @@ describe('evidence assembly', () => {
             id: 'slot-evidence',
             merchant_id: 'm1',
             support_payout_case_id: 'c1',
-            source_provider: 'shipbob',
-            source_category: 'warehouse_3pl',
+            source_provider: 'loop',
+            source_category: 'returns',
             evidence_type: 'contract_terms',
             title: 'Should not surface',
             summary: 'Slot-only row should be ignored',
@@ -223,7 +400,7 @@ describe('evidence assembly', () => {
     });
 
     expect(pack.items.map((item) => item.sourceProvider)).toContain('ups');
-    expect(pack.items.map((item) => item.sourceProvider)).not.toContain('shipbob');
+    expect(pack.items.map((item) => item.sourceProvider)).not.toContain('loop');
     expect(pack.missingEvidence).toEqual(
       expect.arrayContaining([
         expect.objectContaining({

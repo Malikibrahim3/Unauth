@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { ChevronDown, ChevronUp, Pencil, Trash2 } from 'lucide-react';
 import { Badge, Button, Card } from '@/components/ui';
 import type { MerchantRule } from '@/lib/rules-engine';
-import { formatRiskScoreRange, parseRiskScoreRange } from '@/lib/rules/riskBands';
 import { ACTION_LABELS, ACTION_TONES, summarizeConditions } from '@/lib/rules/summary';
 
 interface RuleCardProps {
@@ -151,9 +150,6 @@ export function RuleCard({
 }
 
 function summarizeRuleTrigger(rule: MerchantRule): string {
-  const range = parseRiskScoreRange(rule);
-  if (range) return formatRiskScoreRange(range);
-
   return summarizeConditions(rule.conditions, rule.condition_operator);
 }
 

@@ -18,22 +18,23 @@ export const ROUTES = {
 } as const;
 
 export const NAV_LINKS = [
-  { label: 'Payout Control', href: '#network' },
   { label: 'How it works', href: '#how-it-works' },
-  { label: 'Privacy', href: '#privacy' },
-  { label: 'Pricing', href: '#pricing' },
+  { label: 'The gate', href: '#how-it-works' },
+  { label: 'Integrations', href: '#network' },
+  { label: 'FAQ', href: '#faq' },
+  { label: 'Request access', href: '/signup' },
 ] as const;
 
 /* ── Hero ──────────────────────────────────────────────────────────────── */
 
 export const HERO = {
-  eyebrow: 'Helpdesk-native claim decisions',
-  headline: 'Every payout case deserves the full context.',
+  eyebrow: 'Post-purchase claim control',
+  headline: "Your support team gives money away every day. You can't see where.",
   subhead:
-    'Unauth connects your store and helpdesk, assembles order, delivery, evidence, payout exposure, and prior case history, then applies your merchant-owned rules before anyone replies.',
-  primaryCta: 'Create a workspace',
-  secondaryCta: 'See payout workflow',
-  factRow: ['38ms median lookup', 'Evidence checklist', '0 automated decisions'],
+    'Refunds, reships, and "I never got it" claims get resolved from memory, under time pressure, by whoever picks up the ticket — or increasingly, by an AI agent. Unauth holds the risky ones before anyone acts, assembles the evidence, applies your rules, and records what happened and who owned the loss.',
+  primaryCta: 'Request access',
+  secondaryCta: 'See how it works',
+  factRow: ['Gate framing', 'No fabricated stats', 'Your rules decide'],
 } as const;
 
 export const HERO_TICKET = {
@@ -260,39 +261,39 @@ export const PRICING = {
   headline: 'Start payout control free. Pay when the volume does.',
   note: 'Every plan includes store context, evidence checklists, merchant rules, and payout workflow. No card required to start. No auto-actions on any plan.',
   featuredKey: 'pro',
-  cta: 'Create a workspace',
+  cta: 'Request access',
   ctaCustom: 'Talk to us',
 } as const;
 
 /* ── FAQ ───────────────────────────────────────────────────────────────── */
 
 export const FAQ = {
-  eyebrow: 'Questions',
-  headline: 'Asked by every support and operations lead we talk to.',
+  eyebrow: 'Common questions',
+  headline: 'Common questions',
   items: [
     {
-      q: 'Will this block or decline any of my customers?',
-      a: 'No. Unauth has no enforcement path — it cannot decline an order, close a ticket, or decide a refund. It surfaces an identity record and evidence; your team decides how to respond. This is a deliberate product boundary, not a missing feature.',
+      q: 'How is this different from Shopify Protect or Stripe Radar?',
+      a: 'They work at checkout, scoring transaction risk before a purchase completes. Unauth works after delivery, when a customer files a claim. A transaction approved cleanly at checkout can still become a fraudulent "item not received" claim three weeks later — that\'s the moment Unauth covers.',
     },
     {
-      q: 'Can other merchants see my customers’ data?',
-      a: 'No. Your raw store and helpdesk records stay merchant-scoped. Other merchants do not receive your customer records, and Unauth is not a reusable customer denial list.',
+      q: 'We already use Yuma or Gorgias AI. Why add this?',
+      a: 'Those tools are built to close tickets quickly. Unauth is what decides which claims they\'re allowed to close without a human. They turn resolution up; Unauth makes sure the risky ones still stop. They work together — Unauth is the control layer, not a competing inbox.',
     },
     {
-      q: 'What does a confidence grade actually mean?',
-      a: 'It describes evidence completeness or match confidence for the case record, not the customer. It is never an automated decision on whether a claim is honest — that judgment stays with your team.',
+      q: 'How do you tell a genuine claim from abuse?',
+      a: 'You do — through your rules. Unauth surfaces the facts (delivery state, order value, how many times this customer has claimed with you before) and applies the thresholds you configure. The decision reflects your policy, not our guess about a customer.',
     },
     {
-      q: 'Is there enough network density to be useful for me?',
-      a: 'Store-level context — your own claim rates, refund history, ticket patterns, evidence, and recovery rules — works from day one. You do not need a network dataset to run payout control.',
+      q: 'Will this block legitimate customers?',
+      a: 'No. Unauth holds claims for review; it never blocks a customer or denies a refund on its own. A first-time customer with a genuine missing-parcel claim clears the gate, because that\'s what your rules and the evidence support.',
     },
     {
-      q: 'What do I need to integrate?',
-      a: 'One order source (Shopify, WooCommerce, or BigCommerce) and one helpdesk (Gorgias, Zendesk, or Freshdesk). Connected sources let Unauth backfill available order, ticket, claim, and outcome context without a manual batch flow.',
+      q: 'How does this help before a chargeback?',
+      a: 'By the time a chargeback lands, the decision is already documented — the evidence that existed, the rule that applied, what your team saw and chose. That record is your dispute response, ready instead of reconstructed under deadline.',
     },
     {
-      q: 'Where does this stand with GDPR?',
-      a: 'The architecture is built on data minimisation, merchant-scoped processing, and case-level operational records. We provide a DPA and data-handling documentation for your counsel to review before you process live EU customer data.',
+      q: 'Does it work for a single store, with no network data?',
+      a: 'Yes, entirely. Unauth runs on your own store\'s orders, delivery data, and the claim history you build with your own customers. There is no cross-merchant profiling and no external customer scoring — everything the gate does runs on your data alone.',
     },
   ],
 } as const;
@@ -301,9 +302,9 @@ export const FAQ = {
 
 export const FINAL_CTA = {
   headline: 'The next claim deserves a decision trail.',
-  body: 'Create a workspace, connect your store and helpdesk, and see payout exposure, evidence gaps, matched rules, and recovery context within the hour.',
-  cta: 'Create a workspace',
-  subline: 'Free plan · no card · 100 context credits monthly · 0 auto-actions, ever',
+  body: 'Connect your store and helpdesk. Unauth backfills your claim history and starts holding risky claims on live tickets.',
+  cta: 'Request access',
+  subline: 'Onboarding a small group of design partners now.',
 } as const;
 
 export const FOOTER = {
@@ -330,7 +331,7 @@ export const FOOTER = {
       heading: 'Company',
       links: [
         { label: 'Sign in', href: ROUTES.login },
-        { label: 'Create a workspace', href: ROUTES.signup },
+        { label: 'Request access', href: ROUTES.signup },
         { label: 'Pilot terms', href: ROUTES.pilotTerms },
       ],
     },

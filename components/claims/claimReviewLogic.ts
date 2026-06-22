@@ -138,7 +138,7 @@ export function statusNextAction(claim: ClaimRecord | null, hasDecision: boolean
 export function identityEvidencePoints(
   data: { profile?: { emails?: unknown[]; addresses?: unknown[]; ips?: unknown[]; card_last4s?: unknown[] } } | null,
   order: { ip?: unknown } | null | undefined,
-  fraudFlags: string[],
+  behaviorSignals: string[],
 ) {
   const points: string[] = [];
   const emails = Array.isArray(data?.profile?.emails) ? data.profile.emails.length : 0;
@@ -149,7 +149,7 @@ export function identityEvidencePoints(
   if (addresses > 1) points.push(`${addresses} address variants`);
   if (ips > 1 || order?.ip) points.push('IP/device overlap');
   if (cards > 0) points.push('Payment card signal');
-  if (fraudFlags.length > 0) points.push(`${Math.min(fraudFlags.length, 5)} behaviour signals`);
+  if (behaviorSignals.length > 0) points.push(`${Math.min(behaviorSignals.length, 5)} behaviour signals`);
   return points.slice(0, 5);
 }
 

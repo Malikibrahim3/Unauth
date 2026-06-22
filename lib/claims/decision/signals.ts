@@ -7,7 +7,7 @@
  * - merchant_same_type_claim_count: same-type claims including current
  * - merchant_prior_same_type_claim_count: same-type prior claims excluding current
  */
-import type { ConfidenceGrade, EvidenceLevel, IdentitySignals } from '@/lib/rules-engine';
+import type { IdentitySignals } from '@/lib/rules-engine';
 import type { ClaimDecisionContext } from '@/lib/claims/decision/types';
 import type {
   AttributionConfidence,
@@ -31,7 +31,6 @@ export type ClaimDecisionSignals = IdentitySignals & {
   merchant_prior_claim_count?: number;
   merchant_same_type_claim_count?: number;
   merchant_prior_same_type_claim_count?: number;
-  network_same_type_claim_count?: number | null;
   prior_approved_claims?: number;
   prior_denied_claims?: number;
   prior_escalated_claims?: number;
@@ -51,14 +50,11 @@ export type ClaimDecisionSignals = IdentitySignals & {
   evidence_strength?: EvidenceStrength;
 };
 
-const DEFAULT_GRADE: ConfidenceGrade = 'weak';
-const DEFAULT_EVIDENCE_LEVEL: EvidenceLevel = 'minimal';
-
 export function claimDecisionContextToSignals(
   context: ClaimDecisionContext,
   payoutCase?: SupportPayoutCase,
 ): ClaimDecisionSignals {
-  const { claim, order, delivery, identity, history, evidence } = context;
+  const { claim, order, delivery, history, evidence } = context;
 
   const orderValue =
     claim.amountAtRisk ??
@@ -80,19 +76,11 @@ export function claimDecisionContextToSignals(
 
   return {
     ...payoutSignals,
-    confidence_grade: (identity?.confidenceGrade ?? DEFAULT_GRADE) as ConfidenceGrade,
-    network_claim_count: history.networkClaimCount ?? 0,
     merchant_claim_count: history.merchantClaimCount,
     days_since_last_claim: history.daysSinceLastClaim,
-    has_cross_merchant_identity: history.hasCrossMerchantIdentity,
-    network_merchant_count: history.networkMerchantCount,
     claim_types: history.claimTypes,
     order_value_usd: orderValue,
     account_age_days: history.accountAgeDays,
-    is_network_flagged: identity?.isNetworkFlagged ?? false,
-    evidence_score: identity?.evidenceScore ?? 0,
-    evidence_level: (identity?.evidenceLevel ?? DEFAULT_EVIDENCE_LEVEL) as EvidenceLevel,
-    has_sufficient_data: identity?.hasSufficientData ?? false,
 
     claim_type: claim.type,
     amount_at_risk: claim.amountAtRisk,
@@ -105,7 +93,6 @@ export function claimDecisionContextToSignals(
     merchant_prior_claim_count: history.merchantPriorClaimCount,
     merchant_same_type_claim_count: history.merchantSameTypeClaimCount,
     merchant_prior_same_type_claim_count: history.merchantPriorSameTypeClaimCount,
-    network_same_type_claim_count: history.networkSameTypeClaimCount,
     prior_approved_claims: history.priorApprovedClaims,
     prior_denied_claims: history.priorDeniedClaims,
     prior_escalated_claims: history.priorEscalatedClaims,

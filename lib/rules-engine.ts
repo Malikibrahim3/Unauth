@@ -1,18 +1,16 @@
 /**
  * lib/rules-engine.ts
  *
- * Merchant-configurable fraud rules engine.
+ * Merchant-configurable claim review rules engine.
  *
  * Unauth never makes its own judgment. The recommendation returned here is
- * purely the output of the merchant's own rules applied to Unauth's identity
- * signals. The merchant owns the decision. Unauth runs the math.
+ * purely the output of the merchant's own rules applied to the claim evidence
+ * and the merchant's own history. The merchant owns the decision.
  *
  * This module is pure (no IO). Persistence + auth live in lib/rules/store.ts;
  * the field/operator catalogue used for validation + UI lives in
  * lib/rules/fields.ts and re-uses the labels exported here.
  */
-
-import { DEFAULT_RISK_CONTROLS, makeRiskScoreRangeConditions } from '@/lib/rules/riskBands';
 
 export type ConfidenceGrade = 'definite' | 'probable' | 'possible' | 'weak';
 export type RuleAction = 'approve' | 'manual_review' | 'deny';
@@ -39,21 +37,13 @@ export interface MerchantRule {
 
 export type EvidenceLevel = 'minimal' | 'some' | 'substantial' | 'extensive';
 
-/** The resolved identity signals passed into the engine. */
+/** Merchant-local claim review signals passed into the engine. */
 export interface IdentitySignals {
-  confidence_grade: ConfidenceGrade;
-  network_claim_count: number;
   merchant_claim_count: number;
   days_since_last_claim: number | null;
-  has_cross_merchant_identity: boolean;
-  network_merchant_count: number;
   claim_types: string[];
   order_value_usd: number | null;
   account_age_days: number | null;
-  is_network_flagged: boolean;
-  evidence_score: number;
-  evidence_level: EvidenceLevel;
-  has_sufficient_data: boolean;
 }
 
 /** Signals may include claim-specific extensions; engine reads by field name. */
@@ -78,20 +68,12 @@ export interface RuleEvaluationResult {
 // ---------------------------------------------------------------------------
 
 export const FIELD_LABELS: Record<string, string> = {
-  confidence_grade: 'match confidence',
-  network_claim_count: 'external case-history count',
   merchant_claim_count: 'claim count at this store (includes current claim)',
   merchant_prior_claim_count: 'prior claims at this store (excludes current)',
   days_since_last_claim: 'days since last claim',
-  has_cross_merchant_identity: 'external pattern context',
-  network_merchant_count: 'external context count',
   claim_types: 'claim types',
   order_value_usd: 'order value',
   account_age_days: 'account age (days)',
-  is_network_flagged: 'legacy context flag',
-  evidence_score: 'evidence strength score',
-  evidence_level: 'evidence level',
-  has_sufficient_data: 'sufficient data available',
   // Current claim
   claim_type: 'claim type',
   amount_at_risk: 'amount at risk',
@@ -107,7 +89,6 @@ export const FIELD_LABELS: Record<string, string> = {
   // Outcome history
   merchant_same_type_claim_count: 'same-type claims at this store (includes current)',
   merchant_prior_same_type_claim_count: 'prior same-type claims (excludes current)',
-  network_same_type_claim_count: 'prior claims of same type across network',
   prior_approved_claims: 'prior approved claims',
   prior_denied_claims: 'prior denied claims',
   prior_escalated_claims: 'prior escalated claims',
@@ -153,7 +134,14 @@ export function evaluateRules(
     .sort((a, b) => a.priority - b.priority);
 
   if (sorted.length === 0) {
-    return evaluateDefaultRiskControls(signals);
+    return {
+      recommendation: 'no_match',
+      rule_id: null,
+      rule_name: null,
+      matched_conditions: [],
+      justification: 'No active claim review rules are configured.',
+      justification_lines: [],
+    };
   }
 
   for (const rule of sorted) {
@@ -177,37 +165,8 @@ export function evaluateRules(
     rule_id: null,
     rule_name: null,
     matched_conditions: [],
-    justification: 'No rules matched for this identity.',
+    justification: 'No claim review rules matched.',
     justification_lines: [],
-  };
-}
-
-function evaluateDefaultRiskControls(signals: RuleSignals): RuleEvaluationResult {
-  const score = typeof signals.evidence_score === 'number' && Number.isFinite(signals.evidence_score)
-    ? signals.evidence_score
-    : 0;
-  const control = DEFAULT_RISK_CONTROLS.find((band) => score >= band.lower && score <= band.upper)
-    ?? DEFAULT_RISK_CONTROLS[DEFAULT_RISK_CONTROLS.length - 1]!;
-  const rule: MerchantRule = {
-    id: '',
-    merchant_id: '',
-    name: control.name,
-    description: control.description,
-    is_active: true,
-    priority: 0,
-    conditions: makeRiskScoreRangeConditions(control),
-    action: control.action,
-    condition_operator: 'and',
-  };
-  const matched = evaluateRule(signals, rule);
-  const justification_lines = buildJustificationLines(rule, matched);
-  return {
-    recommendation: control.action,
-    rule_id: null,
-    rule_name: control.name,
-    matched_conditions: matched,
-    justification: justification_lines.join('. '),
-    justification_lines,
   };
 }
 

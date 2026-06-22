@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import ApiIntegrationsClient from '@/components/settings/ApiIntegrationsClient';
+import GateActivationChecklist from '@/components/settings/GateActivationChecklist';
 import IntegrationHubClient from '@/components/integrations/IntegrationHubClient';
 import { WorkbenchPage } from '@/components/workbench/WorkbenchPage';
 import { ShopifyOAuthPopupCloser } from '@/components/settings/ShopifyOAuthPopupCloser';
@@ -15,6 +16,7 @@ export default function IntegrationsPage() {
           <Suspense fallback={null}>
             <ShopifyOAuthPopupCloser />
           </Suspense>
+          <GateActivationChecklist />
           <IntegrationHubClient />
           <ApiIntegrationsClient section="advanced" />
         </div>

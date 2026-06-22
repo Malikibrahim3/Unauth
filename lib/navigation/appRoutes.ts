@@ -89,7 +89,7 @@ export const APP_ROUTES = {
     tier: 'pro',
     tierLabel: 'Context',
     icon: Users,
-    sidebar: true,
+    sidebar: false,
     workbench: true,
     commandPalette: true,
     commandDescription: 'Customer context for support payout decisions',

@@ -12,6 +12,8 @@ export type ClaimDecisionContext = {
     sourceTicketId: string | null;
     identityId: string | null;
     createdAt: string | null;
+    /** Deterministic gate recommendation persisted by the decision engine, if any. */
+    gateRecommendation?: import('@/lib/claim-gate/buildRecommendation').GateRecommendation | null;
   };
   ticket: {
     id: string | null;

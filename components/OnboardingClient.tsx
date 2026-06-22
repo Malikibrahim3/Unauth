@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Check, ShoppingBag, Headphones, Store, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import foundation from '@/app/(public)/landing/_components/foundation/foundation.module.css';
-import { ORDER_VOLUME_OPTIONS, FRAUD_CONCERN_OPTIONS } from '@/lib/constants/merchantProfile';
+import { ORDER_VOLUME_OPTIONS, LOSS_CONCERN_OPTIONS } from '@/lib/constants/merchantProfile';
 import {
   createInitialOnboardingState,
   onboardingReducer,
@@ -104,7 +104,7 @@ export default function OnboardingClient({
         storeName: storeName.trim(),
         platform,
         monthlyOrderVolume: annualVolume,
-        primaryFraudConcern: primaryConcern,
+        primaryLossConcern: primaryConcern,
         usesWms3pl: usesWms3pl ? usesWms3pl === 'yes' : undefined,
         usesReturnsPlatform: usesReturnsPlatform ? usesReturnsPlatform === 'yes' : undefined,
         setupComplete: true,
@@ -128,7 +128,7 @@ export default function OnboardingClient({
         storeName: storeName.trim() || undefined,
         platform: platform || undefined,
         monthlyOrderVolume: annualVolume || undefined,
-        primaryFraudConcern: primaryConcern || undefined,
+        primaryLossConcern: primaryConcern || undefined,
         usesWms3pl: usesWms3pl ? usesWms3pl === 'yes' : undefined,
         usesReturnsPlatform: usesReturnsPlatform ? usesReturnsPlatform === 'yes' : undefined,
         setupComplete: true,
@@ -253,7 +253,7 @@ export default function OnboardingClient({
               <Field label="Primary post-purchase loss concern">
                 <select aria-label="Primary concern" value={primaryConcern} onChange={(e) => dispatch({ type: 'patch', patch: { primaryConcern: e.target.value } })}>
                   <option value="">Select concern…</option>
-                  {FRAUD_CONCERN_OPTIONS.map((o) => (
+                  {LOSS_CONCERN_OPTIONS.map((o) => (
                     <option key={o.value} value={o.value}>{o.label}</option>
                   ))}
                 </select>

@@ -77,19 +77,11 @@ export const evaluateSchema = z.object({
   claim_id: z.string().uuid().nullish(),
   identity_id: z.string().uuid().nullish(),
   signals: z.object({
-    confidence_grade: z.enum(['definite', 'probable', 'possible', 'weak']),
-    network_claim_count: z.number(),
     merchant_claim_count: z.number(),
     days_since_last_claim: z.number().nullable(),
-    has_cross_merchant_identity: z.boolean(),
-    network_merchant_count: z.number(),
     claim_types: z.array(z.string()),
     order_value_usd: z.number().nullable(),
     account_age_days: z.number().nullable(),
-    is_network_flagged: z.boolean(),
-    evidence_score: z.number(),
-    evidence_level: z.enum(['minimal', 'some', 'substantial', 'extensive']),
-    has_sufficient_data: z.boolean(),
   }),
 });
 

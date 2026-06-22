@@ -137,7 +137,7 @@ export function RuleBuilderDrawer({
         </Field>
 
         {/* Description */}
-        <Field label="Description" hint="Optional — explains the payout policy this rule encodes.">
+        <Field label="Description" hint="Optional — explains when this claim review rule should hold a case.">
           <textarea
             value={description}
             placeholder="e.g. Item-not-received over £75 with no proof of delivery should go to manual review before a reship."

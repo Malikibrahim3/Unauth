@@ -57,7 +57,7 @@ export default function LandingNav() {
             href={ROUTES.signup}
             className="rounded-[var(--radius-md)] bg-[var(--action-primary)] px-4 py-2 text-sm font-medium text-[var(--ink-inverse)] transition-colors hover:bg-[var(--action-primary-hover)]"
           >
-            Create a workspace
+            Request access
           </Link>
         </div>
 
@@ -89,7 +89,7 @@ export default function LandingNav() {
               href={ROUTES.signup}
               className="rounded-[var(--radius-md)] bg-[var(--action-primary)] px-4 py-3 text-center text-sm font-medium text-[var(--ink-inverse)]"
             >
-              Create a workspace
+              Request access
             </Link>
             <Link
               href={ROUTES.login}

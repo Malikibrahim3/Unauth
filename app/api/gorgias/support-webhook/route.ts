@@ -15,6 +15,22 @@ import { nudgeGorgiasTicketWidgetRefreshBestEffort } from '@/lib/support/gorgias
 import { logGorgiasWebhookResult } from '@/lib/support/intake/webhookLog';
 import { enforceRateLimit, getClientIp, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
 import { createServiceClient } from '@/lib/supabase/server';
+import { evaluatePublicGate } from '@/lib/claim-gate/publicGate';
+
+function gateClaimTypeFromSupport(value: string | null): string {
+  switch (value) {
+    case 'INR':
+      return 'item_not_received';
+    case 'damaged':
+      return 'damaged_item';
+    case 'wrong_item':
+      return 'wrong_item';
+    case 'not_as_described':
+      return 'missing_item';
+    default:
+      return 'item_not_received';
+  }
+}
 
 function safeWebhookRejectionContext(request: NextRequest, body: unknown): Record<string, unknown> {
   let ticket: Record<string, unknown> | null = null;
@@ -112,6 +128,33 @@ export async function POST(request: NextRequest) {
       is_claim: result.is_claim,
       claim_type: result.claim_type,
     });
+    if (result.is_claim && (result.order_ref || result.shopify_order_id)) {
+      try {
+        await evaluatePublicGate({
+          client: createServiceClient(),
+          payload: {
+            merchantId: result.merchant_id,
+            platform: 'gorgias',
+            ticket_id: result.external_case_id,
+            order_id: result.shopify_order_id,
+            order_name: result.order_ref,
+            claim_type: gateClaimTypeFromSupport(result.claim_type),
+            customer_message: result.claim_reason ?? 'Gorgias ticket matched a post-purchase claim pattern.',
+            requested_action: result.requested_action ?? 'unknown',
+            idempotency_key: `gorgias:${result.external_case_id}`,
+            source: 'gorgias_webhook',
+            apply_gorgias_hold: true,
+            force_existing_evaluation: true,
+          },
+        });
+      } catch (gateError) {
+        console.warn('Gorgias gate auto-evaluation skipped', {
+          merchant_id: result.merchant_id,
+          external_case_id: result.external_case_id,
+          message: gateError instanceof Error ? gateError.message : String(gateError),
+        });
+      }
+    }
     // Widget refresh nudge is best-effort: credential or API failures here
     // must never fail a webhook that already ingested successfully.
     try {
