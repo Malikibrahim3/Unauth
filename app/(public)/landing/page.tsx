@@ -5,10 +5,8 @@ import FoundationHero2 from './_components/foundation/FoundationHero2';
 import {
   AhaStrip,
   ClaimGateHero,
-  ComparisonSection,
   CustomerHistorySection,
   MonthlyViewSection,
-  PrinciplesSection,
   ProblemSection,
 } from './_components/OutcomeLandingBody';
 import FoundationFinalCta from './_components/foundation/FoundationFinalCta';
@@ -17,10 +15,6 @@ import dynamic from 'next/dynamic';
 import foundationStyles from './_components/foundation/foundation.module.css';
 
 const UnauthLinearClaimHero = dynamic(() => import('@/components/UnauthLinearClaimHero'));
-const EvidenceNotVerdictsRampSection = dynamic(
-  () => import('@/components/EvidenceNotVerdictsRampSection'),
-);
-const BuiltForPurposeStack = dynamic(() => import('@/components/BuiltForPurposeStack'));
 const UnauthClaimsRoadmapSection = dynamic(() => import('@/components/UnauthClaimsRoadmapSection'));
 const UnauthClaimIntelligenceHero = dynamic(
   () => import('@/components/UnauthClaimIntelligenceHero'),
@@ -52,9 +46,6 @@ export default function LandingPage() {
         <div className="relative z-10 bg-white">
           <ClaimGateHero />
           <UnauthLinearClaimHero />
-          <BuiltForPurposeStack />
-          <PrinciplesSection />
-          <ComparisonSection />
           <FoundationFinalCta />
           <FoundationFooter />
         </div>
