@@ -1,10 +1,19 @@
 import type { Metadata } from 'next';
-import dynamic from 'next/dynamic';
 import FoundationNav from './_components/foundation/FoundationNav';
 import FoundationHero from './_components/foundation/FoundationHero';
-import HeroPin from './_components/foundation/HeroPin';
+import FoundationHero2 from './_components/foundation/FoundationHero2';
+import {
+  AhaStrip,
+  ClaimGateHero,
+  ComparisonSection,
+  CustomerHistorySection,
+  MonthlyViewSection,
+  PrinciplesSection,
+  ProblemSection,
+} from './_components/OutcomeLandingBody';
 import FoundationFinalCta from './_components/foundation/FoundationFinalCta';
 import FoundationFooter from './_components/foundation/FoundationFooter';
+import dynamic from 'next/dynamic';
 import foundationStyles from './_components/foundation/foundation.module.css';
 
 const UnauthLinearClaimHero = dynamic(() => import('@/components/UnauthLinearClaimHero'));
@@ -13,41 +22,46 @@ const EvidenceNotVerdictsRampSection = dynamic(
 );
 const BuiltForPurposeStack = dynamic(() => import('@/components/BuiltForPurposeStack'));
 const UnauthClaimsRoadmapSection = dynamic(() => import('@/components/UnauthClaimsRoadmapSection'));
+const UnauthClaimIntelligenceHero = dynamic(
+  () => import('@/components/UnauthClaimIntelligenceHero'),
+);
 
 export const metadata: Metadata = {
-  title: 'Unauth — Post-Purchase Claim Control',
+  title: 'Unauth — Post-Purchase Loss Recovery',
   description:
-    'Unauth holds risky post-purchase claims before anyone acts, assembles the evidence, applies your rules, and records what happened and who owned the loss.',
+    'Unauth catches every claim before it is paid, attributes the loss to whoever owns it, and hands your team the recovery case ready to file.',
   openGraph: {
-    title: 'Unauth — Post-Purchase Claim Control',
+    title: 'Unauth — Post-Purchase Loss Recovery',
     description:
-      'Unauth holds risky post-purchase claims before anyone acts, assembles the evidence, applies your rules, and records what happened and who owned the loss.',
+      'Unauth catches every claim before it is paid, attributes the loss to whoever owns it, and hands your team the recovery case ready to file.',
   },
   twitter: {
-    title: 'Unauth — Post-Purchase Claim Control',
+    title: 'Unauth — Post-Purchase Loss Recovery',
     description:
-      'Unauth holds risky post-purchase claims before anyone acts, assembles the evidence, applies your rules, and records what happened and who owned the loss.',
+      'Unauth catches every claim before it is paid, attributes the loss to whoever owns it, and hands your team the recovery case ready to file.',
   },
 };
 
-/**
- * Editorial display landing. The hero is pinned (sticky) under the page:
- * everything after it scrolls over it like a curtain while the hero layers
- * drift and dim at their own depths — the reference's signature move.
- */
 export default function LandingPage() {
   return (
     <div className={`overflow-x-clip bg-[var(--fl-bg)] text-[var(--fl-ink)] ${foundationStyles.landingHeadings}`}>
       <FoundationNav />
       <main>
-        <HeroPin>
-          <FoundationHero />
-        </HeroPin>
+        <FoundationHero />
+        <FoundationHero2 />
         <div className="relative z-10 bg-white">
-          <UnauthLinearClaimHero />
-          <EvidenceNotVerdictsRampSection />
-          <BuiltForPurposeStack />
+          <ClaimGateHero />
+          <AhaStrip />
           <UnauthClaimsRoadmapSection />
+          <MonthlyViewSection />
+          <ProblemSection />
+          <CustomerHistorySection />
+          <UnauthClaimIntelligenceHero />
+          <EvidenceNotVerdictsRampSection />
+          <UnauthLinearClaimHero />
+          <BuiltForPurposeStack />
+          <PrinciplesSection />
+          <ComparisonSection />
           <FoundationFinalCta />
           <FoundationFooter />
         </div>
