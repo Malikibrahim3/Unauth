@@ -51,13 +51,6 @@ export default function LandingPage() {
         <FoundationHero2 />
         <div className="relative z-10 bg-white">
           <ClaimGateHero />
-          <AhaStrip />
-          <UnauthClaimsRoadmapSection />
-          <MonthlyViewSection />
-          <ProblemSection />
-          <CustomerHistorySection />
-          <UnauthClaimIntelligenceHero />
-          <EvidenceNotVerdictsRampSection />
           <UnauthLinearClaimHero />
           <BuiltForPurposeStack />
           <PrinciplesSection />
