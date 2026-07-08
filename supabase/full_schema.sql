@@ -101,9 +101,10 @@ create type requested_action as enum (
   'return_label','investigation','escalation','unknown'
 );
 create type loss_attribution as enum (
-  'customer_claim','carrier_loss','carrier_damage','failed_delivery_evidence',
+  'customer_claim','carrier_loss','carrier_damage','delivery_confirmed_evidence',
   'warehouse_mispick','warehouse_missing_item','three_pl_late_dispatch',
-  'supplier_defect','packaging_failure','merchant_policy','unknown'
+  'supplier_defect','packaging_failure','merchant_policy','unknown',
+  'repeat_claimant','policy_override'
 );
 create type attribution_confidence as enum (
   'high','medium','low','needs_more_evidence'
