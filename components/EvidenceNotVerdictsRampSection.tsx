@@ -1,27 +1,39 @@
+'use client';
+
 import type { ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   ArrowRight,
   CheckCircle2,
+  Circle,
+  CircleDot,
   ClipboardList,
   ExternalLink,
   PackageCheck,
 } from 'lucide-react';
 import {
-  FL_CATEGORY_COMPARISON,
-  FL_CLAIM_DECISION_LOOP,
   FL_DEMO_PRODUCT_CARDS,
   FL_ROUTES,
 } from '@/app/(public)/landing/_lib/foundationContent';
 import MobileCollapse from '@/app/(public)/landing/_components/foundation/MobileCollapse';
 import foundationStyles from '@/app/(public)/landing/_components/foundation/foundation.module.css';
+import {
+  MockBrowserFrame,
+  SectionBody,
+  SectionEyebrow,
+  SectionHeadline,
+  StepBadge,
+  type StepBadgeVariant,
+  uiTokens,
+} from '@/components/ui';
 
 const demo = FL_DEMO_PRODUCT_CARDS;
 
 export default function EvidenceNotVerdictsRampSection() {
   return (
     <section
-      id="claim-decision"
+      id="how-it-works"
       className="relative min-h-screen scroll-mt-24 overflow-hidden bg-white text-[#111111] border-t border-black/[0.07]"
       data-nav-theme="light"
     >
@@ -29,27 +41,13 @@ export default function EvidenceNotVerdictsRampSection() {
       <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-white to-transparent" />
 
       <main className="relative mx-auto hidden max-w-[1180px] px-6 pb-24 pt-20 md:pt-24 min-[769px]:block">
-        <SectionIntro />
-        <ClaimDecisionLoopStrip />
-        <div className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-[24px]">
-          <RecommendationCard />
-          <EvidenceCard />
-          <AuditCard />
-        </div>
+        <ClaimGateWrapper />
         <CategoryComparison />
       </main>
 
       <main className="relative px-4 pb-20 pt-16 min-[769px]:hidden">
-        <MobileCollapse collapsedLabel="See the claim decision workflow">
-          <SectionIntro />
-          <div className="mt-8">
-            <ClaimDecisionLoopStrip />
-          </div>
-          <div className="mt-8 grid grid-cols-1 gap-5">
-            <RecommendationCard />
-            <EvidenceCard />
-            <AuditCard />
-          </div>
+        <MobileCollapse collapsedLabel="See how the gate works">
+          <ClaimGateWrapper />
           <div className={foundationStyles.collapseDetails}>
             <div className={foundationStyles.collapseDetailsInner}>
               <CategoryComparison />
@@ -61,37 +59,164 @@ export default function EvidenceNotVerdictsRampSection() {
   );
 }
 
-function SectionIntro() {
+function ClaimGateWrapper() {
   return (
-    <div className="mb-10 max-w-[760px]">
-      <p className={foundationStyles.landingSectionEyebrow}>{FL_CLAIM_DECISION_LOOP.eyebrow}</p>
-      <h2 className={foundationStyles.landingSectionTitle}>{FL_CLAIM_DECISION_LOOP.headline}</h2>
-      <p className={`${foundationStyles.landingSectionLead} max-w-[700px]`}>
-        {FL_CLAIM_DECISION_LOOP.subhead}
-      </p>
+    <div className="mb-10">
+      <SectionIntro />
+      <GateArtifactsRow />
     </div>
   );
 }
 
-function ClaimDecisionLoopStrip() {
+export function GateArtifactsRow({
+  scale = 1,
+  align = 'viewport',
+}: {
+  scale?: number;
+  align?: 'viewport' | 'content';
+}) {
+  const pinRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [scrollDistance, setScrollDistance] = useState(0);
+  // Width from the aligned content line out to the right viewport edge. The
+  // track is clipped to this so cards crop exactly at the left margin and
+  // reveal out to the right edge — nothing spills into the left gutter.
+  const [clipWidth, setClipWidth] = useState<number | null>(null);
+  // Viewport height drives the pin so the sticky region always covers the
+  // screen while the horizontal scroll runs — the next section can't peek up.
+  const [viewportHeight, setViewportHeight] = useState(0);
+  const stickyPinTop = 120;
+
+  useEffect(() => {
+    if (align !== 'content') return;
+
+    const updateMeasurements = () => {
+      const pin = pinRef.current;
+      const track = trackRef.current;
+      if (!pin || !track) return;
+
+      const viewportWidth = document.documentElement.clientWidth || window.innerWidth;
+      const visibleWidth = Math.max(1, viewportWidth - pin.getBoundingClientRect().left);
+      const nextDistance = Math.max(0, track.offsetWidth - visibleWidth);
+
+      setScrollDistance(nextDistance);
+      setClipWidth(visibleWidth);
+      setViewportHeight(window.innerHeight);
+    };
+
+    updateMeasurements();
+
+    const resizeObserver =
+      typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(updateMeasurements);
+    if (trackRef.current) {
+      resizeObserver?.observe(trackRef.current);
+    }
+
+    window.addEventListener('resize', updateMeasurements);
+
+    return () => {
+      resizeObserver?.disconnect();
+      window.removeEventListener('resize', updateMeasurements);
+    };
+  }, [align, scale]);
+
+  useEffect(() => {
+    if (align !== 'content') return;
+
+    let animationFrame = 0;
+
+    const updateTransform = () => {
+      animationFrame = 0;
+      const pin = pinRef.current;
+      const track = trackRef.current;
+      if (!pin || !track) return;
+
+      const progress = Math.min(
+        Math.max(stickyPinTop - pin.getBoundingClientRect().top, 0),
+        scrollDistance,
+      );
+      track.style.transform = `translate3d(${-progress}px, 0, 0)`;
+    };
+
+    const onScroll = () => {
+      if (animationFrame === 0) {
+        animationFrame = window.requestAnimationFrame(updateTransform);
+      }
+    };
+
+    updateTransform();
+    window.addEventListener('scroll', onScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (animationFrame !== 0) {
+        window.cancelAnimationFrame(animationFrame);
+      }
+    };
+  }, [align, scrollDistance, stickyPinTop]);
+
+  const row = (
+    <div className="flex w-max gap-6">
+      <ArrivalCard scale={scale} />
+      <EvidenceCard scale={scale} />
+      <RulesRunCard scale={scale} />
+      <LossAttributionCard scale={scale} />
+      <AuditCard scale={scale} />
+    </div>
+  );
+
+  if (align === 'viewport') {
+    return (
+      <div className="relative left-1/2 mt-10 w-screen -translate-x-1/2 overflow-x-auto px-6 pb-4 [scrollbar-width:thin]">
+        {row}
+      </div>
+    );
+  }
+
+  const pinActive = scrollDistance > 0 && viewportHeight > 0;
+  // Sticky region fills from the nav offset to the viewport bottom; the pin
+  // reserves that plus the horizontal-scroll runway. Container bottom never
+  // enters the viewport until the cards finish, so nothing below peeks up.
+  const stickyHeight = Math.max(0, viewportHeight - stickyPinTop);
+
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-      {FL_CLAIM_DECISION_LOOP.steps.map((step) => (
-        <article
-          key={step.number}
-          className="rounded-xl border border-[#e5e5e5] bg-[#fafaf9] px-4 py-4"
-        >
-          <div className="font-mono text-[12px] font-semibold tracking-[-0.02em] text-black/40">
-            {step.number}
-          </div>
-          <h3 className="mt-2 text-[15px] font-semibold tracking-[-0.04em] text-[#111111]">
-            {step.title}
-          </h3>
-          <p className="mt-2 text-[13px] leading-[1.45] tracking-[-0.015em] text-[#555555]">
-            {step.body}
-          </p>
-        </article>
-      ))}
+    <div
+      ref={pinRef}
+      className="mt-10 -translate-x-[15px]"
+      style={{ height: pinActive ? `${stickyHeight + scrollDistance}px` : undefined }}
+    >
+      <div
+        className="sticky top-[120px] flex items-center overflow-x-clip"
+        style={{
+          height: pinActive ? `${stickyHeight}px` : undefined,
+          width: clipWidth ?? undefined,
+        }}
+      >
+        <div ref={trackRef} className="flex w-max gap-6 will-change-transform">
+          <ArrivalCard scale={scale} />
+          <EvidenceCard scale={scale} />
+          <RulesRunCard scale={scale} />
+          <LossAttributionCard scale={scale} />
+          <AuditCard scale={scale} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SectionIntro() {
+  return (
+    <div className="mb-10 max-w-[760px]">
+      <SectionEyebrow className={foundationStyles.landingSectionEyebrow}>
+        THE CLAIM GATE
+      </SectionEyebrow>
+      <SectionHeadline className={foundationStyles.landingSectionTitle}>
+        Sits between the AI decision and the payout. Every time.
+      </SectionHeadline>
+      <SectionBody className={`${foundationStyles.landingSectionLead} max-w-[700px]`}>
+        Gorgias AI queues the refund. Unauth intercepts it, assembles the evidence, and assigns the
+        recovery route — before your team sees a single claim.
+      </SectionBody>
     </div>
   );
 }
@@ -100,80 +225,136 @@ function FeatureCard({
   number,
   title,
   children,
+  scale = 1,
 }: {
-  number: string;
+  number: StepBadgeVariant;
   title: string;
   children: ReactNode;
+  scale?: number;
 }) {
+  const stepStyle = uiTokens.stepBadges[number];
+  const scaleStyle: React.CSSProperties =
+    scale === 1
+      ? {}
+      : {
+          transform: `scale(${scale})`,
+          transformOrigin: 'top left',
+          marginRight: `${362 * (scale - 1)}px`,
+          marginBottom: `${620 * (scale - 1)}px`,
+        };
+
   return (
-    <article className="flex min-h-[620px] flex-col rounded-[16px] border border-[#dedede] bg-[#f4f3f1] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+    <article
+      className={`flex min-h-[620px] w-[362px] shrink-0 flex-col rounded-[10px] border border-[rgba(20,24,31,0.10)] bg-[#f6f5f2] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] ${stepStyle.text}`}
+      style={scaleStyle}
+    >
       <div className="flex items-start justify-between gap-3">
-        <NumberBadge>{number}</NumberBadge>
+        <StepBadge variant={number} />
         <OpenButton />
       </div>
-      <h2 className="mt-5 max-w-[280px] text-[26px] font-semibold leading-[1.08] tracking-[-0.06em] text-[#111111]">
+      <h2 className="mt-5 max-w-[280px] text-[26px] font-semibold leading-[1.08] tracking-[-0.06em] text-[#1d2027]">
         {title}
       </h2>
       <div className="mt-auto flex justify-center pt-14">
-        <MockPanel>{children}</MockPanel>
+        <MockBrowserFrame topBorderClassName={stepStyle.topBorder}>{children}</MockBrowserFrame>
       </div>
     </article>
   );
 }
 
-function RecommendationCard() {
+function ArrivalCard({ scale }: { scale?: number }) {
   return (
-    <FeatureCard number="03" title="Explainable recommendation">
-      <div className="mb-3 inline-flex rounded-full bg-[#fff4d6] px-2.5 py-1 text-[12px] font-semibold tracking-[-0.03em] text-[#8a6a00]">
-        {demo.recommendation.label}
+    <FeatureCard number="01" title="A claim arrives" scale={scale}>
+      <h3 className="mb-4 text-[16px] font-semibold tracking-[-0.04em]">Helpdesk claim</h3>
+      <div className="space-y-2">
+        <ContextRow icon={<PackageCheck size={14} />} label="Gorgias ticket received" />
+        <ContextRow icon={<PackageCheck size={14} />} label="Refund intent detected" />
+        <ContextRow icon={<PackageCheck size={14} />} label="Order #UA-10482 linked" />
+        <ContextRow icon={<PackageCheck size={14} />} label="Item-not-received detected" />
       </div>
-      <p className="mb-3 text-[13px] font-semibold tracking-[-0.03em]">
-        Rule: {demo.recommendation.rule}
-      </p>
-      <p className="mb-2 text-[12px] font-semibold text-[#666666]">Why this matched:</p>
-      <ul className="space-y-2">
-        {demo.recommendation.conditions.map((line) => (
-          <li key={line} className="flex gap-2 text-[12px] leading-[1.35] text-[#444444]">
-            <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-[#4d8d3d]" />
-            <span>{line}</span>
-          </li>
-        ))}
-      </ul>
-      <p className="mt-4 text-[11px] leading-[1.4] text-[#777777]">
-        Unauth applies your rules. Your team makes the final decision.
-      </p>
+      <CardNote>
+        Gorgias AI approved the refund. Unauth intercepts it before the payout clears.
+      </CardNote>
     </FeatureCard>
   );
 }
 
-function EvidenceCard() {
+function EvidenceCard({ scale }: { scale?: number }) {
   return (
-    <FeatureCard number="02" title="Claim context assembled">
+    <FeatureCard number="02" title="The gate checks it" scale={scale}>
       <h3 className="mb-4 text-[16px] font-semibold tracking-[-0.04em]">Delivery &amp; order evidence</h3>
       <div className="space-y-2">
         {demo.evidence.items.map((item) => (
           <ContextRow key={item} icon={<PackageCheck size={14} />} label={item} />
         ))}
       </div>
-      <div className="mt-3.5 rounded-lg border border-[#e9e5dd] bg-[#fbfaf5] px-3.5 py-3 text-[12px] font-semibold tracking-[-0.025em]">
-        Example: item-not-received with connected delivery proof.
-      </div>
+      <CardNote>Example: item-not-received with connected delivery proof.</CardNote>
     </FeatureCard>
   );
 }
 
-function AuditCard() {
+function AuditCard({ scale }: { scale?: number }) {
   return (
-    <FeatureCard number="05" title="Decision audit trail">
-      <h3 className="mb-4 text-[16px] font-semibold tracking-[-0.04em]">Queryable recommendation record</h3>
+    <FeatureCard number="05" title="The outcome is recorded" scale={scale}>
+      <h3 className="mb-4 text-[16px] font-semibold tracking-[-0.04em]">Permanent decision record</h3>
       <div className="space-y-2">
         {demo.audit.items.map((item) => (
           <ContextRow key={item} icon={<ClipboardList size={14} />} label={item} />
         ))}
       </div>
-      <div className="mt-3.5 rounded-lg border border-[#ececec] bg-white px-3.5 py-3 text-[12px] leading-[1.35] text-[#555555]">
-        Every meaningful evaluation is stored with claim id, ticket id, rule match, and signal snapshot.
+      <CardNote>
+        Decision, evidence, loss owner, and recovery route are documented permanently.
+      </CardNote>
+    </FeatureCard>
+  );
+}
+
+function RulesRunCard({ scale }: { scale?: number }) {
+  const rules = [
+    'Order value: above threshold',
+    'Claim count: 3rd claim this quarter',
+    'Delivery state: confirmed',
+    'Customer pattern: flagged',
+  ] as const;
+
+  return (
+    <FeatureCard number="03" title="Your rules run" scale={scale}>
+      <h3 className="mb-4 text-[16px] font-semibold tracking-[-0.04em]">Merchant rules</h3>
+      <div className="space-y-2">
+        {rules.map((rule) => (
+          <ContextRow key={rule} icon={<CheckCircle2 size={14} />} label={rule} />
+        ))}
       </div>
+      <CardNote>
+        Your rules. Not Unauth&apos;s defaults. Every hold is traceable back to the rule that
+        triggered it.
+      </CardNote>
+    </FeatureCard>
+  );
+}
+
+function LossAttributionCard({ scale }: { scale?: number }) {
+  const rows = [
+    { label: 'Carrier fault', selected: true },
+    { label: 'Warehouse error', selected: false },
+    { label: 'Repeat claimant', selected: false },
+    { label: 'Policy override', selected: false },
+  ] as const;
+
+  return (
+    <FeatureCard number="04" title="Loss is attributed" scale={scale}>
+      <h3 className="mb-4 text-[16px] font-semibold tracking-[-0.04em]">Loss owner</h3>
+      <div className="space-y-2">
+        {rows.map((row) => (
+          <ContextRow
+            key={row.label}
+            icon={row.selected ? <CircleDot size={14} /> : <Circle size={14} />}
+            label={row.label}
+            selected={row.selected}
+          />
+        ))}
+      </div>
+      <CardNote>Every loss gets an owner and a recovery route before the outcome is set.</CardNote>
     </FeatureCard>
   );
 }
@@ -181,14 +362,25 @@ function AuditCard() {
 function CategoryComparison() {
   return (
     <section className="mt-10 rounded-xl border border-[#dedede] bg-[#f5f4f1] px-6 py-8">
-      <p className={foundationStyles.landingSectionEyebrow}>{FL_CATEGORY_COMPARISON.eyebrow}</p>
+      <p className={foundationStyles.landingSectionEyebrow}>Step tag labels</p>
       <div className="mt-6 grid grid-cols-1 gap-8 md:grid-cols-2">
         <ComparisonColumn
-          title={FL_CATEGORY_COMPARISON.traditional.title}
-          items={FL_CATEGORY_COMPARISON.traditional.items}
+          title="Without the gate"
+          items={[
+            'Safe claims pass straight through',
+            'Risky claims are held',
+            'Outcomes are logged',
+          ]}
           muted
         />
-        <ComparisonColumn title={FL_CATEGORY_COMPARISON.unauth.title} items={FL_CATEGORY_COMPARISON.unauth.items} />
+        <ComparisonColumn
+          title="With Unauth"
+          items={[
+            'Cleared',
+            'Held',
+            'Logged',
+          ]}
+        />
       </div>
       <div className="mt-8 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
         <Link
@@ -196,11 +388,11 @@ function CategoryComparison() {
           prefetch={false}
           className="inline-flex h-11 items-center gap-2 rounded-full bg-[#111111] px-5 text-[14px] font-semibold text-white"
         >
-          Connect store and helpdesk
+          See the gate in action
           <ArrowRight size={15} />
         </Link>
         <p className="text-[13px] leading-[1.45] text-[#555555]">
-          Single-store value starts with your own claim history — network intelligence is an expansion layer.
+          Turn your automation all the way up. The gate still catches the claims that should never have been auto-paid.
         </p>
       </div>
     </section>
@@ -242,52 +434,53 @@ function ComparisonColumn({
   );
 }
 
-function MockPanel({ children }: { children: ReactNode }) {
-  return (
-    <div className="w-full max-w-[300px] rounded-[16px] border border-[#e7e7e7] bg-white shadow-[0_20px_50px_rgba(0,0,0,0.14)]">
-      <BrowserDots />
-      <div className="px-4 pb-5 pt-4">{children}</div>
-    </div>
-  );
-}
-
-function NumberBadge({ children }: { children: ReactNode }) {
-  return (
-    <div className="inline-flex h-[24px] min-w-[27px] items-center justify-center rounded-md border border-[#dedede] bg-white px-1.5 text-[13px] font-semibold tracking-[-0.03em] shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
-      {children}
-    </div>
-  );
-}
-
 function OpenButton() {
   return (
     <button
       type="button"
       aria-label="Open preview"
-      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#e3e3e3] bg-white shadow-[0_4px_14px_rgba(0,0,0,0.05)]"
+      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[rgba(20,24,31,0.10)] bg-[#fbfbfa] shadow-[0_4px_14px_rgba(0,0,0,0.05)]"
     >
       <ExternalLink size={18} />
     </button>
   );
 }
 
-function BrowserDots() {
+function ContextRow({
+  icon,
+  label,
+  selected = false,
+}: {
+  icon: ReactNode;
+  label: string;
+  selected?: boolean;
+}) {
   return (
-    <div className="flex h-[40px] items-center gap-2 border-b border-[#ededed] px-4">
-      <span className="h-2.5 w-2.5 rounded-full bg-[#d9d9d9]" />
-      <span className="h-2.5 w-2.5 rounded-full bg-[#d9d9d9]" />
-      <span className="h-2.5 w-2.5 rounded-full bg-[#d9d9d9]" />
+    <div
+      className={`flex min-h-[36px] items-center gap-2 rounded-lg border px-3 py-2 ${
+        selected
+          ? 'border-[#d9eadc] bg-[#f3fbf4]'
+          : 'border-[rgba(20,24,31,0.074)] bg-[#fbfbfa]'
+      }`}
+    >
+      <span className={`shrink-0 ${selected ? 'text-[#1f9d57]' : 'text-[#707784]'}`}>{icon}</span>
+      <span
+        className={`text-[12px] font-medium leading-[1.2] tracking-[-0.025em] ${
+          selected ? 'text-[#1f5f35]' : 'text-[#1d2027]'
+        }`}
+      >
+        {label}
+      </span>
     </div>
   );
 }
 
-function ContextRow({ icon, label }: { icon: ReactNode; label: string }) {
+// Shared footnote for every card. Fixed min-height so all five panels are the
+// same height → their browser-window tops and bottoms line up across the row.
+function CardNote({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-[36px] items-center gap-2 rounded-lg border border-[#e8e8e8] bg-white px-3 py-2">
-      <span className="shrink-0 text-[#666666]">{icon}</span>
-      <span className="text-[12px] font-medium leading-[1.2] tracking-[-0.025em] text-[#333333]">
-        {label}
-      </span>
+    <div className="mt-3.5 flex min-h-[76px] items-start rounded-lg border border-[rgba(20,24,31,0.066)] bg-[#fbfbfa] px-3.5 py-3 text-[12px] leading-[1.35] text-[#707784]">
+      {children}
     </div>
   );
 }
