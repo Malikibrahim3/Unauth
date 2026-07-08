@@ -7,7 +7,7 @@
     "dev:turbo": "NODE_OPTIONS=--max-old-space-size=8192 next dev",
     "build": "NODE_OPTIONS=--max-old-space-size=8192 next build",
     "start": "NODE_OPTIONS=--max-old-space-size=8192 next start",
-    "lint": "next lint",
+    "lint": "eslint app components lib",
     "test": "jest --passWithNoTests",
     "verify:rules": "jest tests/unit/rulesEngine.test.ts --runInBand && DOTENV_CONFIG_PATH=.env.local ts-node --project tsconfig.scripts.json --transpile-only -r dotenv/config -r tsconfig-paths/register scripts/verify-rules.ts",
     "verify:rules:live": "ts-node --project tsconfig.scripts.json --transpile-only -r tsconfig-paths/register scripts/verify-rules-live.ts",

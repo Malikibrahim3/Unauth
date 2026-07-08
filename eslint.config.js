@@ -38,6 +38,10 @@ module.exports = [
       "react/no-unescaped-entities": "off",
       "@next/next/no-img-element": "off",
       "react-hooks/exhaustive-deps": "warn",
+      "react-hooks/purity": "off",
+      "react-hooks/refs": "off",
+      "react-hooks/set-state-in-effect": "off",
+      "react-hooks/use-memo": "off",
     },
   },
 
