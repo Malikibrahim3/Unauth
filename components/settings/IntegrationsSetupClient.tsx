@@ -5,6 +5,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { AlertTriangle, ArrowRight, CheckCircle2, X, Zap } from 'lucide-react';
+import { PanelCard, StatusBadge } from '@/components/ui';
 import { useAsyncResource } from '@/lib/react/useFetchJson';
 import { fetchIntegrationConnectionStatus } from '@/components/settings/fetchIntegrationConnectionStatus';
 import type { IntegrationsSetupStatus } from '@/components/settings/apiIntegrationsTypes';
@@ -124,37 +125,17 @@ function IntegrationCard({
   onConnect?: () => void;
 }) {
   const badge = connected ? (
-    <span
-      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
-      style={{
-        background: 'color-mix(in srgb, var(--success) 12%, transparent)',
-        color: 'var(--success)',
-      }}
-    >
-      <span className="h-1.5 w-1.5 rounded-full bg-current" />
+    <StatusBadge variant="cleared" className="px-2 py-0.5 text-xs font-medium">
       Connected
-    </span>
+    </StatusBadge>
   ) : connectionIssue ? (
-    <span
-      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
-      style={{
-        background: 'color-mix(in srgb, var(--warning) 12%, transparent)',
-        color: 'var(--warning)',
-      }}
-    >
-      <AlertTriangle className="h-3 w-3" />
+    <StatusBadge variant="flagged" className="px-2 py-0.5 text-xs font-medium">
       Issue
-    </span>
+    </StatusBadge>
   ) : !available ? (
-    <span
-      className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium uppercase tracking-wide"
-      style={{
-        background: 'color-mix(in srgb, var(--text-secondary) 10%, transparent)',
-        color: 'var(--text-secondary)',
-      }}
-    >
+    <StatusBadge variant="held" className="px-2 py-0.5 text-xs font-medium uppercase tracking-wide" dot={false}>
       Soon
-    </span>
+    </StatusBadge>
   ) : null;
 
   const cta = available ? (
@@ -220,8 +201,9 @@ function IntegrationCard({
   );
 
   return (
-    <div
-      className="flex flex-col rounded-xl border p-4"
+    <PanelCard
+      variant="app"
+      className="flex flex-col p-4"
       style={{
         borderColor: connected
           ? 'color-mix(in srgb, var(--success) 35%, var(--border))'
@@ -259,7 +241,7 @@ function IntegrationCard({
       )}
 
       <div className="mt-4">{cta}</div>
-    </div>
+    </PanelCard>
   );
 }
 
@@ -309,8 +291,9 @@ function StepSection({
 
 function LiveBanner({ storeName, helpdeskName }: { storeName: string; helpdeskName: string }) {
   return (
-    <div
-      className="flex items-center gap-3 rounded-xl border px-4 py-3 mb-8"
+    <PanelCard
+      variant="app"
+      className="mb-8 flex items-center gap-3 px-4 py-3"
       style={{
         borderColor: 'color-mix(in srgb, var(--success) 30%, var(--border))',
         background: 'color-mix(in srgb, var(--success) 4%, var(--surface))',
@@ -330,7 +313,7 @@ function LiveBanner({ storeName, helpdeskName }: { storeName: string; helpdeskNa
           {storeName} and {helpdeskName} are connected. Agents see order history, trust indicators and prior claims inside every ticket.
         </p>
       </div>
-    </div>
+    </PanelCard>
   );
 }
 
@@ -530,8 +513,9 @@ export default function IntegrationsSetupClient() {
       />
 
       {popupError ? (
-        <div
-          className="mb-6 flex items-start gap-3 rounded-xl border px-4 py-3"
+        <PanelCard
+          variant="appInset"
+          className="mb-6 flex items-start gap-3 px-4 py-3"
           style={{
             borderColor: 'color-mix(in srgb, var(--risk-critical) 30%, var(--border))',
             background: 'color-mix(in srgb, var(--risk-critical) 6%, var(--surface))',
@@ -542,7 +526,7 @@ export default function IntegrationsSetupClient() {
           <button type="button" onClick={() => setPopupError(null)} style={{ color: 'var(--text-secondary)' }}>
             <X className="h-4 w-4" />
           </button>
-        </div>
+        </PanelCard>
       ) : null}
 
       <div>

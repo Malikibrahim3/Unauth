@@ -77,7 +77,10 @@ export default function GateActivationChecklist() {
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Gate activation</h2>
+          <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>AI agent payout gate</h2>
+          <p className="mt-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
+            If an AI agent (like Yuma or Siena) resolves tickets for you, the gate holds any payout it proposes until these checks pass.
+          </p>
           <p className="mt-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
             The gate is live only when every required connection and operating control is ready.
           </p>

@@ -108,7 +108,7 @@ export const TIER_CONFIG: Record<Tier, TierEntitlements> = {
     tier: 'pro',
     label: 'Pro',
     tagline: 'Single-store claim review with six months of network history',
-    priceMonthlyUsd: 99,
+    priceMonthlyUsd: 249,
     features: {
       own_store_analytics: true,
       chargeback_analytics: true,
@@ -136,7 +136,7 @@ export const TIER_CONFIG: Record<Tier, TierEntitlements> = {
     tier: 'growth',
     label: 'Growth',
     tagline: 'Multi-store operations with two years of network history and aggregate reporting',
-    priceMonthlyUsd: 399,
+    priceMonthlyUsd: 599,
     features: {
       own_store_analytics: true,
       chargeback_analytics: true,

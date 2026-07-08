@@ -1,5 +1,6 @@
 import { getActiveGorgiasMerchantApiAccess } from '@/lib/support/gorgias/merchantApiAccess';
 import { gorgiasApiBaseUrl, gorgiasApiRequest } from '@/lib/support/gorgias/registerSidebarWidget';
+import { formatCurrency } from '@/lib/utils/format';
 
 export const UNAUTH_HOLD_TAG = 'unauth-hold';
 export const UNAUTH_RESOLVED_TAG = 'unauth-resolved';
@@ -10,7 +11,7 @@ export type HoldTagRule = {
 };
 
 function money(amount: number, currency: string): string {
-  return `${new Intl.NumberFormat('en-GB', { maximumFractionDigits: 2 }).format(amount)} ${currency}`;
+  return formatCurrency(amount, currency);
 }
 
 export function buildHoldInternalNote(input: {

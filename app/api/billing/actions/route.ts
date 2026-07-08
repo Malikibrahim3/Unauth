@@ -78,6 +78,13 @@ export async function POST(req: NextRequest) {
   }
 
   if (!isStripeConfigured()) {
+    const allowStripeBypass =
+      env.VERCEL_ENV !== 'production' &&
+      env.VERCEL_ENV !== 'preview' &&
+      process.env.NODE_ENV !== 'production';
+    if (!allowStripeBypass) {
+      return NextResponse.json({ error: 'Stripe is not configured' }, { status: 503 });
+    }
     if (action === 'upgrade' && planId) {
       await applyPlanUpgrade(service, ctx.merchantId, planId, { sendEmail: 'plan_upgraded' });
       return NextResponse.json({ ok: true, devMode: true, message: 'Plan upgraded (Stripe not configured).' });

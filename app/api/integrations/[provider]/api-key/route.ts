@@ -18,7 +18,8 @@ export async function POST(
   const { provider: providerId } = await params;
   const provider = requireIntegrationProvider(providerId);
   assertLiveProvider(provider);
-  if (provider.authMode !== 'api_key' || provider.id !== 'aftership') {
+  const supportedApiKeyProviders = new Set(['aftership', 'shipbob']);
+  if (provider.authMode !== 'api_key' || !supportedApiKeyProviders.has(provider.id)) {
     return NextResponse.json({ error: 'API-key connection is not supported for this provider.' }, { status: 400 });
   }
 
@@ -37,15 +38,17 @@ export async function POST(
   }
 
   try {
-    await verifyAfterShipApiKey(parsed.data.apiKey);
+    if (provider.id === 'aftership') {
+      await verifyAfterShipApiKey(parsed.data.apiKey);
+    }
     await saveIntegrationCredential(serviceClient, ctx.merchantId, provider, {
       apiKey: parsed.data.apiKey,
-      webhookSecret: parsed.data.webhookSecret ?? null,
+      ...(provider.id === 'aftership' ? { webhookSecret: parsed.data.webhookSecret ?? null } : {}),
     });
     await upsertMerchantIntegration(serviceClient, ctx.merchantId, provider, 'connected', { lastError: null });
     return NextResponse.json({ ok: true, provider: provider.id, status: 'connected' });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'aftership_connect_failed';
+    const message = error instanceof Error ? error.message : `${provider.id}_connect_failed`;
     await upsertMerchantIntegration(serviceClient, ctx.merchantId, provider, 'error', { lastError: message });
     return NextResponse.json({ error: message }, { status: 400 });
   }

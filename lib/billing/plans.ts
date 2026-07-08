@@ -28,14 +28,14 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
   pro: {
     planId: 'pro',
     name: 'Pro',
-    priceGbp: 99,
+    priceGbp: 249,
     creditsMonthly: 1000,
     stripePriceId: null,
   },
   growth: {
     planId: 'growth',
     name: 'Growth',
-    priceGbp: 399,
+    priceGbp: 599,
     creditsMonthly: 5000,
     stripePriceId: null,
   },

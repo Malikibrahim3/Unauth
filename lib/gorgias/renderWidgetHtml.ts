@@ -1,6 +1,6 @@
 import {
   claimWidgetToJson,
-  useCreditGatedWidgetPreview,
+  isCreditGatedWidgetPreview,
   type GorgiasWidgetJsonOptions,
   type GorgiasWidgetLinkContext,
 } from '@/lib/gorgias/widgetJson';
@@ -105,7 +105,7 @@ function page(inner: string): string {
 export function renderGorgiasWidgetHtml(ctx: ClaimWidgetRenderContext): string {
   const { result, link, options } = ctx;
   const isDisconnected = !result.ok && result.kind === 'helpdesk_disconnected';
-  const creditGatedPreview = useCreditGatedWidgetPreview(options);
+  const creditGatedPreview = isCreditGatedWidgetPreview(options);
   const rowLabels = GORGIAS_SIDEBAR_ROW_LABELS;
 
   if (!result.ok && !creditGatedPreview) {
