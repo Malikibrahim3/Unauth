@@ -90,11 +90,20 @@ describe('integration registry', () => {
     expect(byId.document_upload.buildStatus).toBe('live');
     expect(byId.self_fulfillment_pack.buildStatus).toBe('live');
     expect(byId.shipbob.buildStatus).toBe('live');
-    expect(byId.loop.buildStatus).toBe('slot_only');
     expect(byId.stripe.buildStatus).toBe('slot_only');
     expect(byId.gmail).toBeUndefined();
     expect(byId.amazon_marketplace).toBeUndefined();
     expect(byId.slack).toBeUndefined();
+    // Dead integration stubs (no real wiring) were removed: loop, returngo,
+    // narvar, shiphero, extensiv, shipmonk, paypal, adyen.
+    expect(byId.loop).toBeUndefined();
+    expect(byId.returngo).toBeUndefined();
+    expect(byId.narvar).toBeUndefined();
+    expect(byId.shiphero).toBeUndefined();
+    expect(byId.extensiv).toBeUndefined();
+    expect(byId.shipmonk).toBeUndefined();
+    expect(byId.paypal).toBeUndefined();
+    expect(byId.adyen).toBeUndefined();
     expect(byId.carrier_claims.buildStatus).toBe('slot_only');
     expect(byId.carrier_claims.evidenceCapabilities).toEqual(expect.arrayContaining([
       'carrier_claim_submission_status',
@@ -105,7 +114,6 @@ describe('integration registry', () => {
     expect(byId.shipbob.evidenceCapabilities).toEqual(
       expect.arrayContaining(['warehouse_pick_pack', 'warehouse_exception', 'three_pl_sla_claim_status']),
     );
-    expect(byId.loop.evidenceCapabilities).toEqual(expect.arrayContaining(['return_request_status', 'return_inspection_outcome']));
     expect(new Set(INTEGRATION_PROVIDERS.map((provider) => provider.id))).toEqual(new Set([
       'shopify',
       'gorgias',
@@ -115,15 +123,7 @@ describe('integration registry', () => {
       'document_upload',
       'self_fulfillment_pack',
       'shipbob',
-      'shiphero',
-      'extensiv',
-      'shipmonk',
-      'loop',
-      'returngo',
-      'narvar',
       'stripe',
-      'paypal',
-      'adyen',
       'carrier_claims',
     ]));
   });

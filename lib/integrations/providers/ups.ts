@@ -8,7 +8,7 @@ export const upsProvider: IntegrationProvider = {
   buildStatus: 'live',
   description: 'Attempts to retrieve UPS signature or delivery photo when captured for the shipment.',
   evidenceCapabilities: ['delivery_photo', 'signature'],
-  capabilities: { readTracking: true, readAttachments: true },
+  capabilities: { readAttachments: true },
 };
 
 function upsBaseUrl(environment: string | undefined): string {

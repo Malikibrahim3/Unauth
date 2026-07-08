@@ -8,7 +8,7 @@ export const fedexProvider: IntegrationProvider = {
   buildStatus: 'live',
   description: 'Attempts to retrieve FedEx signature or delivery photo when captured for the shipment.',
   evidenceCapabilities: ['delivery_photo', 'signature'],
-  capabilities: { readTracking: true, readAttachments: true },
+  capabilities: { readAttachments: true },
 };
 
 function fedexBaseUrl(environment: string | undefined): string {

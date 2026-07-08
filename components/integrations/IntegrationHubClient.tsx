@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { AlertTriangle, ArrowRight, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, ShieldCheck, Upload, X } from 'lucide-react';
+import { PanelCard, StatusBadge as SharedStatusBadge } from '@/components/ui';
 import { useFetchJson, useAsyncResource } from '@/lib/react/useFetchJson';
 import { fetchIntegrationConnectionStatus } from '@/components/settings/fetchIntegrationConnectionStatus';
 import type { EvidenceCapability, ProviderConnectionView } from '@/lib/integrations/types';
@@ -63,15 +64,7 @@ const PROVIDER_LOGOS: Record<string, string> = {
   document_upload: '/integrations/document-upload.svg',
   self_fulfillment_pack: '/integrations/self-fulfillment.svg',
   shipbob: '/integrations/shipbob.svg',
-  shiphero: '/integrations/shiphero.svg',
-  extensiv: '/integrations/extensiv.png',
-  shipmonk: '/integrations/shipmonk.png',
-  loop_returns: '/integrations/loop-returns.png',
-  returngo: '/integrations/returngo.png',
-  narvar: '/integrations/narvar.png',
   stripe: '/integrations/stripe.svg',
-  paypal: '/integrations/paypal.svg',
-  adyen: '/integrations/adyen.svg',
   carrier_claims: '/integrations/carrier-claims.svg',
   woocommerce: '/integrations/woocommerce.svg',
   bigcommerce: '/integrations/bigcommerce.svg',
@@ -84,7 +77,7 @@ const PROVIDER_LOGOS: Record<string, string> = {
 // Status badge
 // ---------------------------------------------------------------------------
 
-function StatusBadge({
+function IntegrationStatusBadge({
   connected,
   connectionIssue,
   comingSoon,
@@ -94,41 +87,17 @@ function StatusBadge({
   comingSoon?: boolean;
 }) {
   if (comingSoon) {
-    return (
-      <span
-        className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
-        style={{ background: 'var(--bg-inset)', color: 'var(--text-secondary)' }}
-      >
-        Soon
-      </span>
-    );
+    return <SharedStatusBadge variant="held" dot={false}>Soon</SharedStatusBadge>;
   }
   if (connected) {
-    return (
-      <span
-        className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-semibold"
-        style={{
-          background: 'color-mix(in srgb, var(--success) 12%, transparent)',
-          color: 'var(--success)',
-        }}
-      >
-        <span className="h-1.5 w-1.5 rounded-full bg-current" />
-        Connected
-      </span>
-    );
+    return <SharedStatusBadge variant="cleared">Connected</SharedStatusBadge>;
   }
   if (connectionIssue) {
     return (
-      <span
-        className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-semibold"
-        style={{
-          background: 'color-mix(in srgb, var(--warning) 12%, transparent)',
-          color: 'var(--warning)',
-        }}
-      >
+      <SharedStatusBadge variant="flagged" className="gap-1.5">
         <AlertTriangle className="h-3 w-3" />
         Issue
-      </span>
+      </SharedStatusBadge>
     );
   }
   return null;
@@ -171,8 +140,9 @@ function ProviderCard({
     : 'var(--surface)';
 
   return (
-    <div
-      className="flex flex-col rounded-xl border p-4 transition-shadow"
+    <PanelCard
+      variant="app"
+      className="flex flex-col p-4 transition-shadow"
       style={{ borderColor, background: bgColor, minHeight: 160 }}
     >
       {/* Header row: logo + badge */}
@@ -189,7 +159,7 @@ function ProviderCard({
             className="h-full w-full object-contain"
           />
         </div>
-        <StatusBadge
+        <IntegrationStatusBadge
           connected={provider.connected}
           connectionIssue={provider.connectionIssue}
           comingSoon={provider.comingSoon}
@@ -298,7 +268,7 @@ function ProviderCard({
           )}
         </div>
       ) : null}
-    </div>
+    </PanelCard>
   );
 }
 
@@ -1036,6 +1006,22 @@ function SlotProviderLine({ provider }: { provider: UnifiedProvider }) {
 }
 
 // ---------------------------------------------------------------------------
+// Request-an-integration link (shown where slot-only tiles were removed)
+// ---------------------------------------------------------------------------
+
+function RequestIntegrationLink({ subject }: { subject: string }) {
+  return (
+    <a
+      href={`mailto:support@unauth.co?subject=${encodeURIComponent(subject)}`}
+      className="inline-block text-xs font-medium underline underline-offset-2"
+      style={{ color: 'var(--text-secondary)' }}
+    >
+      Need a different provider? Request an integration →
+    </a>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Category applicability question (WMS / Returns)
 // ---------------------------------------------------------------------------
 
@@ -1273,6 +1259,7 @@ function PaymentsDisputesSection({
               ) : null}
             </div>
           ) : null}
+          <RequestIntegrationLink subject="Integration request: payment processor" />
         </div>
       )}
     </section>
@@ -1387,16 +1374,6 @@ export default function IntegrationHubClient() {
       detail: setupStatus?.bigcommerce.detail ?? null,
       href: '/settings/integrations/bigcommerce',
     },
-    {
-      id: 'magento',
-      name: 'Magento',
-      description: 'Connect Adobe Commerce to monitor orders and customer identity.',
-      logo: '/integrations/magento.svg',
-      connected: false,
-      connectionIssue: false,
-      detail: null,
-      comingSoon: true,
-    },
   ];
 
   // Helpdesk
@@ -1434,39 +1411,37 @@ export default function IntegrationHubClient() {
   ];
 
   // Tracking & proof
+  // Only render tiles for providers whose integration is actually built
+  // (buildStatus === 'live'). Slot-only providers flip on automatically when
+  // their registry entry goes live.
   const trackingProof = useMemo(() => {
     return ['aftership', 'ups', 'fedex'].flatMap((id) => {
       const u = dynamicToUnified(id);
-      return u ? [u] : [];
+      return u && !u.comingSoon ? [u] : [];
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [byId]);
 
   // Logistics
   const logistics = useMemo(() => {
-    return ['shipbob', 'shiphero', 'extensiv', 'shipmonk'].flatMap((id) => {
+    return ['shipbob'].flatMap((id) => {
       const u = dynamicToUnified(id);
-      return u ? [u] : [];
+      return u && !u.comingSoon ? [u] : [];
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [byId]);
 
-  // Returns
-  const returns = useMemo(() => {
-    return ['loop_returns', 'returngo', 'narvar'].flatMap((id) => {
-      const u = dynamicToUnified(id);
-      return u ? [u] : [];
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [byId]);
+  // Returns — no returns-platform provider is currently built.
+  const returns: UnifiedProvider[] = [];
 
   // Payments & disputes
-  const carrierClaims = dynamicToUnified('carrier_claims');
+  const carrierClaimsRaw = dynamicToUnified('carrier_claims');
+  const carrierClaims = carrierClaimsRaw && !carrierClaimsRaw.comingSoon ? carrierClaimsRaw : null;
 
   const payments = useMemo(() => {
-    return ['stripe', 'paypal', 'adyen'].flatMap((id) => {
+    return ['stripe'].flatMap((id) => {
       const u = dynamicToUnified(id);
-      return u ? [u] : [];
+      return u && !u.comingSoon ? [u] : [];
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [byId]);
@@ -1768,6 +1743,7 @@ export default function IntegrationHubClient() {
           <ProviderGrid>
             {orderSource.map((p) => <ProviderCard key={p.id} provider={p} {...cardProps} />)}
           </ProviderGrid>
+          <RequestIntegrationLink subject="Integration request: order source" />
         </RequiredCategorySection>
 
         <RequiredCategorySection
@@ -1781,6 +1757,7 @@ export default function IntegrationHubClient() {
           <ProviderGrid>
             {helpdesk.map((p) => <ProviderCard key={p.id} provider={p} {...cardProps} />)}
           </ProviderGrid>
+          <RequestIntegrationLink subject="Integration request: helpdesk" />
         </RequiredCategorySection>
       </div>
 
@@ -1834,8 +1811,7 @@ export default function IntegrationHubClient() {
       ) : null}
 
       {/* Payments & disputes — own section, not bundled with WMS/Returns */}
-      {payments.length > 0 ? (
-        <PaymentsDisputesSection
+      <PaymentsDisputesSection
           shopifyPaymentsCovered={paymentSetup?.shopifyPaymentsCovered ?? null}
           inferredProcessor={paymentSetup?.inferredProcessor ?? null}
           selectedProcessor={selectedPaymentProcessor}
@@ -1843,7 +1819,6 @@ export default function IntegrationHubClient() {
           payments={payments}
           cardProps={cardProps}
         />
-      ) : null}
 
       {/* Contract documents — connectable, lower emphasis than tracking */}
       {documentUpload ? (
@@ -1963,6 +1938,8 @@ export default function IntegrationHubClient() {
                   <SlotProviderLine provider={carrierClaims} />
                 </div>
               ) : null}
+
+              <RequestIntegrationLink subject="Integration request: warehouse, returns, or carrier" />
             </div>
           ) : null}
         </section>

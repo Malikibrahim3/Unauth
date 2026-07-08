@@ -1,18 +1,10 @@
-import { adyenProvider } from '@/lib/integrations/providers/adyen';
 import { aftershipProvider } from '@/lib/integrations/providers/aftership';
 import { carrierClaimsProvider } from '@/lib/integrations/providers/carrierClaims';
 import { documentUploadProvider } from '@/lib/integrations/providers/documentUpload';
-import { extensivProvider } from '@/lib/integrations/providers/extensiv';
 import { fedexProvider } from '@/lib/integrations/providers/fedex';
 import { gorgiasProvider } from '@/lib/integrations/providers/gorgias';
-import { loopReturnsProvider } from '@/lib/integrations/providers/loopReturns';
-import { narvarProvider } from '@/lib/integrations/providers/narvar';
-import { paypalProvider } from '@/lib/integrations/providers/paypal';
-import { returngoProvider } from '@/lib/integrations/providers/returngo';
 import { selfFulfillmentProvider } from '@/lib/integrations/providers/selfFulfillment';
 import { shipbobProvider } from '@/lib/integrations/providers/shipbob';
-import { shipheroProvider } from '@/lib/integrations/providers/shiphero';
-import { shipmonkProvider } from '@/lib/integrations/providers/shipmonk';
 import { shopifyProvider } from '@/lib/integrations/providers/shopify';
 import { stripeProvider } from '@/lib/integrations/providers/stripe';
 import { upsProvider } from '@/lib/integrations/providers/ups';
@@ -27,15 +19,7 @@ export const INTEGRATION_PROVIDERS: IntegrationProvider[] = [
   documentUploadProvider,
   selfFulfillmentProvider,
   shipbobProvider,
-  shipheroProvider,
-  extensivProvider,
-  shipmonkProvider,
-  loopReturnsProvider,
-  returngoProvider,
-  narvarProvider,
   stripeProvider,
-  paypalProvider,
-  adyenProvider,
   carrierClaimsProvider,
 ];
 
