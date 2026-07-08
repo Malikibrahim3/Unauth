@@ -4,7 +4,7 @@ import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { TABLES } from '@/lib/supabase/tables';
 import { WorkbenchPage } from '@/components/ui';
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
-import { formatCurrencyNullable } from '@/lib/utils/format';
+import { formatCurrencyNullable, sumSameCurrency } from '@/lib/utils/format';
 import { listRecoveryCases } from '@/lib/recoveries/store';
 import { RecoveryBoardClient } from '@/app/(app)/recoveries/RecoveryBoardClient';
 import type { RecoveryCase } from '@/lib/recoveries/types';
@@ -93,23 +93,28 @@ export default async function RecoveriesPage() {
   const openRecoveries = recoveries.filter((item) => !['paid', 'closed_unrecoverable'].includes(item.status));
   const missingSourceData = recoveries.filter((item) => item.status === 'evidence_needed' || item.evidence_missing.length > 0).length;
   const needsCorrespondence = recoveries.filter((item) => item.status === 'chase_due').length;
-  const estimatedRecoverable = recoveries.reduce((sum, item) => sum + (item.estimated_recoverable_max ?? 0), 0);
-  const recovered = recoveries.reduce((sum, item) => sum + (item.amount_recovered ?? 0), 0);
-  const currency = recoveries.find((item) => item.currency)?.currency;
+  // Sum only rows in the dominant currency; a merchant with mixed-currency
+  // recoveries gets a disclosed exclusion instead of a silently-wrong total.
+  const recoverableSum = sumSameCurrency(recoveries, (item) => item.estimated_recoverable_max, (item) => item.currency);
+  const recoveredSum = sumSameCurrency(recoveries, (item) => item.amount_recovered, (item) => item.currency);
+  const estimatedRecoverable = recoverableSum.total;
+  const recovered = recoveredSum.total;
+  const currency = recoverableSum.currency;
+  const mixedHint = recoverableSum.mixedCount > 0 ? ` · ${recoverableSum.mixedCount} case${recoverableSum.mixedCount === 1 ? '' : 's'} in other currencies excluded` : '';
 
   return (
     <WorkbenchPage
-      eyebrow="Automation-first recovery"
+      eyebrow="Operations"
       title="Recovery board"
-      subtitle="Track source-backed post-purchase losses, missing evidence, correspondence needs, claim-pack readiness, and synced recovery outcomes."
+      subtitle="The losses you can still do something about: what needs evidence, what's ready to submit, what needs chasing, and what came back."
       navItems={WORKBENCH_NAV_ITEMS}
       activeNavKey="recoveries"
       kpiItems={[
         { label: 'Open recovery cases', value: openRecoveries.length.toLocaleString(), hint: 'Source-backed active cases' },
         { label: 'Missing source data', value: missingSourceData.toLocaleString(), hint: 'Automatically calculated' },
         { label: 'Needs correspondence', value: needsCorrespondence.toLocaleString(), hint: 'Generated requests only' },
-        { label: 'Estimated recovery', value: formatCurrencyNullable(estimatedRecoverable || null, currency) ?? '-', hint: 'Source-derived upper estimate' },
-        { label: 'Approved recovery', value: formatCurrencyNullable(recovered || null, currency) ?? '-', hint: 'Synced outcome' },
+        { label: 'Estimated recovery', value: formatCurrencyNullable(estimatedRecoverable || null, currency) ?? '-', hint: `Source-derived upper estimate${mixedHint}` },
+        { label: 'Approved recovery', value: formatCurrencyNullable(recovered || null, currency) ?? '-', hint: `Synced outcome${mixedHint}` },
       ]}
       main={<RecoveryBoardClient recoveries={recoveries} />}
       footer={

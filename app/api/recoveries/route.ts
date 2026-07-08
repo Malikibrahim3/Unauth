@@ -40,7 +40,9 @@ export async function POST(_request: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const serviceClient = createServiceClient();
-  const { denied } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_INBOX);
+  // Write action — must not be reachable by a read-only viewer, even though the
+  // handler is currently a disabled stub.
+  const { denied } = await requirePermission(serviceClient, user.id, PERMISSIONS.SUBMIT_PAYOUT_DECISIONS);
   if (denied) return denied;
 
   return NextResponse.json({
