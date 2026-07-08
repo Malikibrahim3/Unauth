@@ -174,6 +174,12 @@ describe('buildEvidencePackage CE3 path', () => {
         { profile_id: 'profile-1', audit_id: 'job-a', transaction_id: 'tx-2' },
         { profile_id: 'profile-1', audit_id: 'job-a', transaction_id: 'tx-disputed' },
       ],
+      identity_members: [
+        { identity_id: 'profile-1', identifier_hash: 'hash-email-cust' },
+      ],
+      identity_signals: [
+        { id: 'signal-1', merchant_id: 'merchant-a', identifier_hash: 'hash-email-cust' },
+      ],
       [TABLES.AUDIT_TRANSACTIONS]: [
         {
           id: 'tx-1',

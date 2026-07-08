@@ -5,7 +5,7 @@ import { EvidenceStrengthMeter } from '@/components/evidence/EvidenceStrengthMet
 import { DisputeReadinessPanel } from '@/components/evidence/DisputeReadinessPanel'
 import { EvidencePackagePreview } from '@/components/evidence/EvidencePackagePreview'
 import { SensitiveField } from '@/components/ui/SensitiveField'
-import { Badge } from '@/components/ui'
+import { PanelCard, StatusBadge } from '@/components/ui'
 import { NetworkFootprint } from '@/components/ui/NetworkFootprint'
 import { IdentitySignalsTable } from '@/app/(app)/chargebacks/[id]/IdentitySignalsTable'
 import { PriorMatchDetailSection } from '@/app/(app)/chargebacks/[id]/PriorMatchDetailSection'
@@ -66,7 +66,7 @@ export function EvidenceDetailPageView({
   const gradeLabel = STRENGTH_GRADE[evidenceStrength]
   const strengthLabel = STRENGTH_LABEL[evidenceStrength]
   const ce3Label = ce3DetailStatusLabel(pkg.ce3_eligible, identityMatchLevel)
-  const ce3Tone = ce3Label === 'CE 3.0 ready' ? 'success' : ce3Label === 'Needs stronger checkout-time data' ? 'neutral' : 'warning'
+  const ce3Variant = ce3Label === 'CE 3.0 ready' ? 'cleared' : ce3Label === 'Needs stronger checkout-time data' ? 'held' : 'flagged'
 
   return (
     <div className="p-6 md:p-8" style={{ background: 'var(--bg-canvas)', minHeight: '100vh' }}>
@@ -87,14 +87,13 @@ export function EvidenceDetailPageView({
         <main className="space-y-5 min-w-0">
 
           {/* ── HERO BLOCK ─────────────────────── */}
-          <section
+          <PanelCard
+            as="section"
             data-dossier-hero
+            variant="app"
+            className="p-6"
             style={{
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-md)',
               boxShadow: 'var(--shadow-md)',
-              padding: '24px',
             }}
           >
             {/* Eyebrow */}
@@ -207,7 +206,7 @@ export function EvidenceDetailPageView({
                 Print ↗
               </button>
             </div>
-          </section>
+          </PanelCard>
 
           {/* ── DOSSIER SECTIONS ──────────────── */}
           <DisputeReadinessPanel pkg={pkg} />
@@ -243,15 +242,13 @@ export function EvidenceDetailPageView({
             SIDEBAR — sticky metadata
         ═══════════════════════════════════════ */}
         <aside>
-          <div
+          <PanelCard
+            variant="app"
+            className="p-4"
             style={{
               position: 'sticky',
               top: 20,
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-md)',
               boxShadow: 'var(--shadow-sm)',
-              padding: '16px',
             }}
           >
             {/* CE 3.0 status */}
@@ -259,10 +256,10 @@ export function EvidenceDetailPageView({
               <div className="text-overline mb-2" style={{ color: 'var(--text-secondary)' }}>
                 CE 3.0 Status
               </div>
-              <Badge tone={ce3Tone} size="md">{ce3Label}</Badge>
+              <StatusBadge variant={ce3Variant}>{ce3Label}</StatusBadge>
               {pkg.cross_merchant_indicator && (
                 <div className="mt-2">
-                  <Badge tone="info" size="sm">Network flag</Badge>
+                  <StatusBadge variant="flagged">Network flag</StatusBadge>
                 </div>
               )}
             </div>
@@ -300,7 +297,7 @@ export function EvidenceDetailPageView({
                 Stored in your merchant-scoped archive with masked identifiers for export.
               </p>
             </div>
-          </div>
+          </PanelCard>
         </aside>
       </div>
     </div>

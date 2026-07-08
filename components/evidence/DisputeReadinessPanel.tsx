@@ -8,8 +8,7 @@
  * DO NOT modify narrative text, prior-match logic, or PDF generator route.
  */
 
-import { Badge } from '@/components/ui/Badge';
-import type { BadgeTone } from '@/components/ui/Badge';
+import { PanelCard, StatusBadge } from '@/components/ui';
 import { Info } from 'lucide-react';
 
 export interface EvidencePackageRow {
@@ -33,12 +32,6 @@ interface DisputeReadinessPanelProps {
   minSignals?: number;
   /** Minimum prior transactions for a strong match checklist (default: 2) */
   minPriorTransactions?: number;
-}
-
-function readinessTone(passed: boolean | 'warning'): BadgeTone {
-  if (passed === true) return 'success';
-  if (passed === 'warning') return 'warning';
-  return 'critical';
 }
 
 function readinessMarker(passed: boolean | 'warning') {
@@ -101,21 +94,19 @@ export function DisputeReadinessPanel({
   const allPassed = passedCount === checks.length;
 
   return (
-    <div
-      className="border p-5 space-y-3"
-      style={{ background: 'var(--surface)', borderColor: 'var(--border-muted)', borderRadius: 4 }}
-    >
+    <PanelCard variant="app" className="space-y-3 p-5">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-overline"><span aria-hidden="true" className="ua-section-dot" />Signal checklist</h2>
-        <Badge tone={allPassed ? 'success' : passedCount >= 3 ? 'warning' : 'critical'} variant="subtle" size="sm">
+        <StatusBadge variant={allPassed ? 'cleared' : passedCount >= 3 ? 'flagged' : 'blocked'} className="px-2 py-0.5 text-xs">
           {passedCount}/{checks.length} checks passed
-        </Badge>
+        </StatusBadge>
       </div>
 
       <div className="space-y-2">
         {checks.map((check) => (
-          <div
+          <PanelCard
             key={check.label}
+            variant="appInset"
             className="flex items-start gap-3 px-3 py-2.5"
             style={{
               background:
@@ -142,9 +133,9 @@ export function DisputeReadinessPanel({
                 <p className="text-xs font-semibold" style={{ color: 'var(--text)' }}>
                   {check.label}
                 </p>
-                <Badge tone={readinessTone(check.passed)} variant="subtle" size="sm">
+                <StatusBadge variant={check.passed === true ? 'cleared' : check.passed === 'warning' ? 'flagged' : 'blocked'} className="px-2 py-0.5 text-xs">
                   {check.passed === true ? 'Pass' : check.passed === 'warning' ? 'Caution' : 'Fail'}
-                </Badge>
+                </StatusBadge>
               </div>
               {check.detail && (
                 <p className="mt-0.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
@@ -152,11 +143,12 @@ export function DisputeReadinessPanel({
                 </p>
               )}
             </div>
-          </div>
+          </PanelCard>
         ))}
       </div>
 
-      <div
+      <PanelCard
+        variant="appInset"
         className="flex items-start gap-2 rounded-md px-3 py-2"
         style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-muted)' }}
       >
@@ -164,7 +156,7 @@ export function DisputeReadinessPanel({
         <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
           Read-only CE 3.0 readiness checklist based on signal data in your records. Full CE 3.0 qualification may require checkout-time IP/device capture. Use alongside your acquirer guidelines when preparing a dispute response.
         </p>
-      </div>
-    </div>
+      </PanelCard>
+    </PanelCard>
   );
 }
