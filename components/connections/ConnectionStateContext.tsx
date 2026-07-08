@@ -36,3 +36,24 @@ export function ConnectionStateProvider({
 export function useConnectionState(): ConnectionState {
   return useContext(ConnectionStateContext);
 }
+
+/**
+ * Whether the current merchant is a demo merchant. When true, the app layout
+ * already shows a demo-data banner, so per-page connection prompts should
+ * suppress themselves to avoid stacked banners.
+ */
+const DemoModeContext = createContext<boolean>(false);
+
+export function DemoModeProvider({
+  value,
+  children,
+}: {
+  value: boolean;
+  children: React.ReactNode;
+}) {
+  return <DemoModeContext.Provider value={value}>{children}</DemoModeContext.Provider>;
+}
+
+export function useDemoMode(): boolean {
+  return useContext(DemoModeContext);
+}

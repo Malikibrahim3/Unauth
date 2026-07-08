@@ -6,6 +6,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { ChevronRight, Menu, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import CommandPalette from './CommandPalette';
+import { useBreadcrumbOverride } from './BreadcrumbOverrideContext';
 import { MerchantEnvChip } from './MerchantEnvChip';
 import { AvatarMenu } from './AvatarMenu';
 import { ContextCreditsBadge } from './ContextCreditsBadge';
@@ -63,7 +64,13 @@ export default function AppHeader({
     return () => document.removeEventListener('keydown', onKeyDown);
   }, []);
   // Derive a simple breadcrumb from pathname when none is provided
-  const segments: BreadcrumbSegment[] = breadcrumbs ?? deriveFromPathname(pathname);
+  const overrideLabel = useBreadcrumbOverride();
+  const derived: BreadcrumbSegment[] = breadcrumbs ?? deriveFromPathname(pathname);
+  // Pages can override the current-page label (e.g. a case reference instead of a UUID).
+  const segments: BreadcrumbSegment[] =
+    overrideLabel && derived.length > 0
+      ? [...derived.slice(0, -1), { ...derived[derived.length - 1], label: overrideLabel }]
+      : derived;
 
   return (
     <header

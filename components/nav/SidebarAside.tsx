@@ -68,11 +68,6 @@ export function SidebarAside({
             onClick={onCloseMobile}
           >
             <UnauthLogo variant="auto" size={isCollapsed ? 9 : 22} />
-            {!isCollapsed && (
-              <span className="text-[15px] font-semibold text-[var(--text-primary)] leading-none">
-                Unauth
-              </span>
-            )}
           </Link>
           {!isCollapsed && (
             <button
