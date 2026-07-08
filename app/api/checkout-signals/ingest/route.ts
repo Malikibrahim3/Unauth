@@ -5,6 +5,7 @@ import { TABLES } from '@/lib/supabase/tables';
 import { buildFastContext } from '@/lib/engine/fastContext';
 import type { NormalisedOrder } from '@/lib/engine/types';
 import { canonicalizeEdgePair, type IdentifierRef } from '@/lib/identity/identifierGraph';
+import { verifyCollectorToken } from '@/lib/checkout/collectorToken';
 
 export const runtime = 'nodejs';
 
@@ -373,6 +374,16 @@ export async function POST(request: NextRequest) {
 
   const merchantId = await resolveMerchantId(supabase, body);
   if (!merchantId) return json({ ok: true });
+
+  // The merchantId is client-supplied. Require a signed collector token (minted
+  // by /api/shopify/collector-init) that binds this request to the resolved
+  // merchant, so arbitrary UUIDs cannot be used to poison another tenant's
+  // identity graph. Enforced whenever INTERNAL_HMAC_SECRET is set (always on
+  // preview + production per env.ts).
+  const collectorToken = text(body.collectorToken, 512);
+  if (!verifyCollectorToken(collectorToken, merchantId)) {
+    return json({ ok: false, error: 'invalid_collector_token' }, { status: 401 });
+  }
 
   const signal = parseSignalBody(body, merchantId);
   if (!signal) return json({ ok: false }, { status: 400 });

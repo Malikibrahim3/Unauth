@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
+import { resolveCallerContext } from '@/lib/permissions';
 import { sendEmail } from '@/lib/email/send';
 import { buildFoundingMerchantApplicationNotification } from '@/lib/email/templates';
 
@@ -34,20 +35,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Missing required application fields.' }, { status: 400 });
   }
 
-  const { data: merchant } = await supabase
-    .from(TABLES.MERCHANTS)
-    .select('id, name')
-    .eq('user_id', user.id)
-    .maybeSingle();
-
-  if (!merchant) {
+  // v2 tenancy: the merchants.user_id column was dropped at cutover. Resolve the
+  // caller's merchant server-side from active membership instead.
+  const ctx = await resolveCallerContext(serviceClient, user.id);
+  if (!ctx) {
     return NextResponse.json({ error: 'Merchant account not found.' }, { status: 404 });
   }
+  const merchantId = ctx.merchantId;
 
   const { data: completedAudit } = await serviceClient
     .from(TABLES.PROCESSING_JOBS)
     .select('id')
-    .eq('merchant_id', (merchant as { id: string }).id)
+    .eq('merchant_id', merchantId)
     .eq('status', 'completed')
     .limit(1)
     .maybeSingle();
@@ -61,7 +60,7 @@ export async function POST(request: NextRequest) {
   const { data: application, error: insertError } = await serviceClient
     .from('founding_merchant_applications' as any)
     .upsert({
-      merchant_id: (merchant as { id: string }).id,
+      merchant_id: merchantId,
       created_by_user_id: user.id,
       store_name: storeName,
       monthly_order_volume: monthlyOrderVolume,

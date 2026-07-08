@@ -118,30 +118,67 @@ describe('getMerchantOwnedJobIds', () => {
 // fetchMerchantScopedCustomerProfile — must use canonical merchant_ids filter
 // ---------------------------------------------------------------------------
 describe('fetchMerchantScopedCustomerProfile', () => {
-  it('queries customer_profiles with merchant and legacy user membership checks', async () => {
-    const orCalls: string[] = [];
-    const selectCalls: string[] = [];
-    const chain: any = {
-      select: jest.fn((columns: string) => {
-        selectCalls.push(columns);
+  it('scopes the network identity via a merchant-owned identity signal (v2)', async () => {
+    // v2: `identities` is a network-level table with NO merchant_id column.
+    // Ownership = the merchant has an identity_signal for one of the identity's
+    // member identifier hashes. The scoping MUST filter identity_signals by
+    // merchant_id (not the dropped merchant_ids array on identities).
+    const eqCalls: Record<string, [string, unknown][]> = {};
+    const mock = {
+      from: jest.fn((table: string) => {
+        eqCalls[table] = eqCalls[table] ?? [];
+        const chain: any = {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn((col: string, val: unknown) => {
+            eqCalls[table].push([col, val]);
+            return chain;
+          }),
+          in: jest.fn().mockReturnThis(),
+          limit: jest.fn(() => {
+            if (table === 'identity_members') {
+              return Promise.resolve({ data: [{ identifier_hash: 'hash-1' }], error: null });
+            }
+            // identity_signals
+            return Promise.resolve({ data: [{ id: 'sig-1' }], error: null });
+          }),
+          maybeSingle: jest.fn().mockResolvedValue({ data: { id: 'profile-123' }, error: null }),
+        };
         return chain;
       }),
-      eq: jest.fn().mockReturnThis(),
-      or: jest.fn((filter: string) => {
-        orCalls.push(filter);
-        return chain;
-      }),
-      maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
     };
-    const mock = { from: jest.fn().mockReturnValue(chain) };
 
-    await fetchMerchantScopedCustomerProfile(mock as any, 'merchant-xyz', 'profile-123', 'user-legacy');
+    const result = await fetchMerchantScopedCustomerProfile(mock as any, 'merchant-xyz', 'profile-123');
 
     expect(mock.from).toHaveBeenCalledWith('identities');
-    expect(selectCalls).toEqual(['*']);
-    expect(orCalls).toHaveLength(1);
-    expect(orCalls[0]).toContain('merchant_ids.cs.["merchant-xyz"]');
-    expect(orCalls[0]).toContain('merchant_ids.cs.["user-legacy"]');
+    expect(mock.from).toHaveBeenCalledWith('identity_members');
+    expect(mock.from).toHaveBeenCalledWith('identity_signals');
+    // The tenant boundary is identity_signals.merchant_id.
+    expect(eqCalls['identity_signals']).toContainEqual(['merchant_id', 'merchant-xyz']);
+    // A matching signal exists → the identity is returned.
+    expect(result).toEqual({ id: 'profile-123' });
+  });
+
+  it('returns null when the merchant has no signal for the identity (cross-tenant denied)', async () => {
+    const mock = {
+      from: jest.fn((table: string) => {
+        const chain: any = {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          in: jest.fn().mockReturnThis(),
+          limit: jest.fn(() => {
+            if (table === 'identity_members') {
+              return Promise.resolve({ data: [{ identifier_hash: 'hash-1' }], error: null });
+            }
+            return Promise.resolve({ data: [], error: null }); // no signal for this merchant
+          }),
+          maybeSingle: jest.fn().mockResolvedValue({ data: { id: 'profile-123' }, error: null }),
+        };
+        return chain;
+      }),
+    };
+
+    const result = await fetchMerchantScopedCustomerProfile(mock as any, 'other-merchant', 'profile-123');
+    expect(result).toBeNull();
   });
 
   it('surfaces customer profile query errors instead of pretending the profile is missing', async () => {

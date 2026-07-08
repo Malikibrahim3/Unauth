@@ -50,6 +50,18 @@ const rowsByTable: Record<string, Row[]> = {
       total_merchants_seen_at: 2,
     },
   ],
+  // v2 identity-graph scoping: a merchant "owns visibility" of a network-level
+  // identity when it has emitted an identity signal for one of the identity's
+  // member identifier hashes. The shared identity is visible to BOTH tenants;
+  // isolation is enforced at the transaction/notes level (owned job ids +
+  // merchant_id), which the assertions below verify.
+  identity_members: [
+    { identity_id: 'profile-shared', identifier_hash: 'hash-shared' },
+  ],
+  identity_signals: [
+    { id: 'sig-a', merchant_id: 'merchant-a', identifier_hash: 'hash-shared' },
+    { id: 'sig-b', merchant_id: 'merchant-b', identifier_hash: 'hash-shared' },
+  ],
   customer_profile_audit_appearances: [
     { profile_id: 'profile-shared', audit_id: 'job-a', transaction_id: 'tx-a' },
     { profile_id: 'profile-shared', audit_id: 'job-b', transaction_id: 'tx-b' },

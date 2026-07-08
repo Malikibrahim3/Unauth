@@ -41,17 +41,15 @@ describe('createScopedClient', () => {
     expect(builder.eq).toHaveBeenCalledWith('merchant_id', 'merchant-1');
   });
 
-  it('injects merchant_ids containment for legacy customer_profiles', () => {
+  it('fails closed for unclassified tables instead of running unscoped', () => {
     const builder = makeBuilder();
     const base = { from: jest.fn(() => builder) };
     const scoped = createScopedClient('merchant-1', base as any);
 
-    scoped.from('customer_profiles').select('id');
-
-    // customer_profiles is a JSONB-array tenant table (merchant_ids). Production
-    // applies containment via the PostgREST `.or(col.cs.[...])` JSON form, which
-    // is the correct operator for a JSONB column.
-    expect(builder.or).toHaveBeenCalledWith(`merchant_ids.cs.${JSON.stringify(['merchant-1'])}`);
+    // Historically, an unrecognised table name (e.g. the dropped v1
+    // `customer_profiles`) fell through to an UNSCOPED service-role query. The
+    // proxy must now throw so tenant isolation can never silently no-op.
+    expect(() => scoped.from('customer_profiles')).toThrow(/no tenant scope defined/i);
   });
 
   it('injects merchant_id into tenant inserts and rejects mismatches', () => {
@@ -107,6 +105,11 @@ describe('static guard: service-role API routes use scoped tenant access', () =>
     'app/api/lookup/route.ts': new Set(['access_audit_log']), // insert payload merchant_id
     'app/api/search/route.ts': new Set(['customer_profiles', 'transactions', 'evidence_packages']), // .in(... merchantJobIds)
     'app/api/settings/bulk-delete/route.ts': new Set(['*']), // dynamic from(table); serviceClient branch uses .eq('merchant_id', ctx.merchantId)
+    // v2 tenant tables accessed with the service-role client but manually scoped
+    // by merchant_id (audited 2026-07-04):
+    'app/api/claim-gate/check/route.ts': new Set(['support_payout_cases']), // .eq('merchant_id', input.merchantId) (merchant from validated API key)
+    'app/api/test/e2e-auth/route.ts': new Set(['merchant_users']), // .eq('merchant_id', merchantId); route is local-dev only
+    'app/api/claims/[claimId]/route.ts': new Set(['merchant_identity_state']), // .eq('merchant_id', ctx.merchantId)
   };
 
   it('finds API route files to scan', () => {

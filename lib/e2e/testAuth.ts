@@ -9,7 +9,12 @@ export const E2E_MERCHANT_ID = 'af070af9-df1a-46ba-89f8-29409926ef61';
 const ALLOWED_MERCHANT_IDS = new Set([E2E_MERCHANT_ID]);
 
 export function isE2eTestAuthEnabled(): boolean {
-  if (process.env.VERCEL_ENV === 'production') return false;
+  // This route mints a full OWNER session from a single static secret. It must
+  // NEVER be reachable on a deployed environment — preview deploys can carry
+  // real tenant data, so gating on `production` alone was insufficient. Enable
+  // only in local development (VERCEL_ENV unset or 'development').
+  const vercelEnv = process.env.VERCEL_ENV;
+  if (vercelEnv === 'production' || vercelEnv === 'preview') return false;
   if (!process.env.E2E_AUTH_SECRET?.trim()) return false;
   return true;
 }

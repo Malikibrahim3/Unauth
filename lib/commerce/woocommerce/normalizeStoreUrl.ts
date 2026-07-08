@@ -1,3 +1,5 @@
+import { assertPublicHostname } from '@/lib/security/ssrfGuard';
+
 export type NormalizedWooCommerceStore = {
   store_url: string;
   store_key: string;
@@ -27,6 +29,10 @@ export function normalizeWooCommerceStoreUrl(input: string): NormalizedWooCommer
   if (!parsed.hostname) {
     throw new Error('woocommerce_store_url_invalid');
   }
+
+  // SSRF guard: the host is merchant-supplied and later fetched server-side.
+  // Reject loopback/private/link-local/internal targets.
+  assertPublicHostname(parsed.hostname);
 
   const store_key = parsed.hostname.toLowerCase().replace(/^www\./, '');
   const store_url = stripTrailingSlash(`https://${store_key}`);

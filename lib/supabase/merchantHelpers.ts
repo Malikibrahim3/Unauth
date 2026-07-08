@@ -388,29 +388,45 @@ export async function fetchMerchantScopedCustomerProfile(
   serviceClient: SupabaseClient,
   merchantId: string,
   profileId: string,
-  // Legacy user_id fallback: merchant_ids stores both merchant UUIDs and owner
-  // user IDs for older rows. Providing this allows the query to match either.
   _legacyUserId?: string | null
 ): Promise<Record<string, unknown> | null> {
-  const filters = [
-    `merchant_ids.cs.${JSON.stringify([merchantId])}`,
-    _legacyUserId ? `merchant_ids.cs.${JSON.stringify([_legacyUserId])}` : null,
-  ].filter(Boolean).join(',');
-
-  const { data, error } = await serviceClient
+  // v2: identities are network-level cluster heads with no merchant_ids column.
+  // Merchant scoping = the merchant has emitted at least one identity signal
+  // for an identifier that belongs to this identity's cluster.
+  const { data: identity, error } = await serviceClient
     .from(TABLES.CUSTOMER_PROFILES)
     .select(PROFILE_SELECT)
     .eq('id', profileId)
-    // customer_profiles uses an array column merchant_ids; support both
-    // current merchant UUID and legacy owner user UUID rows.
-    .or(filters)
     .maybeSingle() as unknown as { data: Record<string, unknown> | null; error: { message: string } | null };
 
   if (error) {
     throw new Error(`fetchMerchantScopedCustomerProfile failed: ${error.message}`);
   }
+  if (!identity) return null;
 
-  return data ?? null;
+  const { data: members, error: membersError } = await serviceClient
+    .from('identity_members')
+    .select('identifier_hash')
+    .eq('identity_id', profileId)
+    .limit(200) as unknown as { data: Array<{ identifier_hash: string }> | null; error: { message: string } | null };
+
+  if (membersError) {
+    throw new Error(`fetchMerchantScopedCustomerProfile members failed: ${membersError.message}`);
+  }
+  const hashes = (members ?? []).map((m) => m.identifier_hash);
+  if (hashes.length === 0) return null;
+
+  const { data: signal, error: signalError } = await serviceClient
+    .from('identity_signals')
+    .select('id')
+    .eq('merchant_id', merchantId)
+    .in('identifier_hash', hashes)
+    .limit(1) as unknown as { data: Array<{ id: string }> | null; error: { message: string } | null };
+
+  if (signalError) {
+    throw new Error(`fetchMerchantScopedCustomerProfile signals failed: ${signalError.message}`);
+  }
+  return signal && signal.length > 0 ? identity : null;
 }
 
 // ---------------------------------------------------------------------------

@@ -39,6 +39,41 @@ const nextConfig = {
   outputFileTracingIncludes: {
     '/api/settings/chrome/download': ['./extensions/chrome/dist/**/*'],
   },
+  async headers() {
+    // Baseline security headers applied to every response. A Content-Security-
+    // Policy is intentionally NOT set here yet — it must be authored against the
+    // app's real script/style sources and rolled out Report-Only first (a
+    // /api/csp-report collector already exists). The headers below are safe to
+    // enforce immediately and do not change functionality.
+    // Report-Only CSP: collects violations at /api/csp-report WITHOUT blocking,
+    // so the policy can be tightened (drop 'unsafe-inline'/'unsafe-eval', pin
+    // connect-src hosts) from real data before switching to an enforcing
+    // Content-Security-Policy header. Safe to ship as-is.
+    const cspReportOnly = [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob: https:",
+      "font-src 'self' data:",
+      "connect-src 'self' https:",
+      "frame-ancestors 'self'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "object-src 'none'",
+      'report-uri /api/csp-report',
+    ].join('; ');
+
+    const securityHeaders = [
+      { key: 'X-Content-Type-Options', value: 'nosniff' },
+      { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+      { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+      { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+      { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), browsing-topics=()' },
+      { key: 'X-DNS-Prefetch-Control', value: 'off' },
+      { key: 'Content-Security-Policy-Report-Only', value: cspReportOnly },
+    ];
+    return [{ source: '/:path*', headers: securityHeaders }];
+  },
   async redirects() {
     // Backward-compat aliases for renamed routes. Page-level redirect stubs were
     // removed in favour of these config redirects so the route tree stays clean
