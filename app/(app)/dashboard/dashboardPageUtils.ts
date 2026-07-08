@@ -5,6 +5,7 @@ import { createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import { ACTIVE_CLAIM_STATUSES } from '@/lib/claims/sla';
 import { riskLevelToNewGrade } from '@/lib/confidence';
+import { formatCurrency } from '@/lib/utils/format';
 import type { ConnectionState } from '@/lib/connections/getConnectionState';
 import type { MerchantDataPresence } from '@/lib/supabase/getMerchantDataPresence';
 import type { MerchantSetupState } from '@/lib/connections/getMerchantSetupState';
@@ -91,7 +92,7 @@ export function buildConfig(state: MerchantSetupState, connection: ConnectionSta
       };
     case 'stale_existing_data':
       return {
-        subtitle: 'Showing your existing customer and order intelligence.',
+        subtitle: 'What is at risk, what needs action, and what came back.',
         primaryCta: { label: 'Reconnect sources', href: integrations },
         secondaryCta: undefined,
         banner: {
@@ -140,10 +141,11 @@ export function buildKpis(
     chaseDue: number;
     amountRecovered: number;
     payoutExposureOpen: number;
+    displayCurrency: string;
   },
 ): Kpi[] {
   const s = presence.sources;
-  const fmtMoney = (n: number) => (n <= 0 ? '—' : `£${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`);
+  const fmtMoney = (n: number) => (n <= 0 ? '—' : formatCurrency(n, metrics.displayCurrency));
 
   const openExposure: Kpi = {
     label: 'Open payout exposure',

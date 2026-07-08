@@ -5,6 +5,7 @@ export type ClaimRow = {
   id: string;
   status: string;
   claim_type?: string | null;
+  currency?: string | null;
   amount_at_risk: number | null;
   total_estimated_loss?: number | null;
   refund_amount?: number | null;

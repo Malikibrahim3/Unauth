@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { AlertTriangle, ArrowRight, Info } from 'lucide-react';
+import { PanelCard } from '@/components/ui';
 import type { Tone } from '@/app/(app)/dashboard/dashboardPageTypes';
 
 export function DashboardCompletenessBanner({
@@ -22,8 +23,10 @@ export function DashboardCompletenessBanner({
     : 'var(--surface-sunken)';
   const BannerIcon = isAlarm ? AlertTriangle : Info;
   return (
-    <section
-      className="flex flex-wrap items-center justify-between gap-4 rounded-md border px-4 py-3.5"
+    <PanelCard
+      as="section"
+      variant="appInset"
+      className="flex flex-wrap items-center justify-between gap-4 px-4 py-3.5"
       style={{ background: bg, borderColor: accentBorder }}
     >
       <div className="flex items-start gap-3 min-w-0">
@@ -45,6 +48,6 @@ export function DashboardCompletenessBanner({
         {primaryCta.label}
         <ArrowRight className="h-3.5 w-3.5" />
       </Link>
-    </section>
+    </PanelCard>
   );
 }

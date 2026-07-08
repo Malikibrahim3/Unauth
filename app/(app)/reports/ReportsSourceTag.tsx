@@ -1,5 +1,5 @@
 import { FileSpreadsheet, FlaskConical, Radio } from 'lucide-react';
-import { Badge } from '@/components/ui';
+import { StatusBadge } from '@/components/ui';
 
 /**
  * Source tag shown on every report section so the data lineages never blur.
@@ -10,21 +10,21 @@ import { Badge } from '@/components/ui';
 export function ReportsSourceTag({ source }: { source: 'csv' | 'live' | 'sample' }) {
   if (source === 'csv') {
     return (
-      <Badge tone="neutral" size="sm" className="gap-1">
+      <StatusBadge variant="held" className="gap-1" dot={false}>
         <FileSpreadsheet className="h-3 w-3" /> Legacy import
-      </Badge>
+      </StatusBadge>
     );
   }
   if (source === 'sample') {
     return (
-      <Badge tone="neutral" size="sm" className="gap-1">
+      <StatusBadge variant="held" className="gap-1" dot={false}>
         <FlaskConical className="h-3 w-3" /> Sample data
-      </Badge>
+      </StatusBadge>
     );
   }
   return (
-    <Badge tone="accent" size="sm" className="gap-1">
+    <StatusBadge variant="cleared" className="gap-1">
       <Radio className="h-3 w-3" /> Live source
-    </Badge>
+    </StatusBadge>
   );
 }

@@ -225,17 +225,19 @@ type NumericClaimMetricKey = {
 export function delta(current: number, prior: number | null | undefined): string | null {
   if (prior == null) return null;
   if (prior === 0) return current > 0 ? 'new vs prior period' : null;
+  // "down 100%" against a quiet period reads as noise — say it plainly instead.
+  if (current === 0) return 'none this period';
   const pct = Math.round(((current - prior) / prior) * 100);
   if (pct === 0) return null;
   return pct > 0 ? `up ${pct}%` : `down ${Math.abs(pct)}%`;
 }
 
-function deltaCurrency(current: number, prior: number | null | undefined): string | null {
+function deltaCurrency(current: number, prior: number | null | undefined, currency = 'USD'): string | null {
   if (prior == null) return null;
   if (prior === 0) return current > 0 ? 'new exposure vs prior period' : null;
   const diff = Math.round(current - prior);
   if (diff === 0) return null;
-  const amount = formatCurrencyNullable(Math.abs(diff));
+  const amount = formatCurrencyNullable(Math.abs(diff), currency);
   return diff > 0 ? `+${amount} vs prior` : `-${amount} vs prior`;
 }
 
@@ -253,7 +255,8 @@ export function metricHintCurrency(
   base: string,
   current: number,
   priorMetrics: ClaimOpsMetrics | null,
+  currency = 'USD',
 ): string {
-  const change = priorMetrics ? deltaCurrency(current, priorMetrics.valueAtRisk) : null;
+  const change = priorMetrics ? deltaCurrency(current, priorMetrics.valueAtRisk, currency) : null;
   return [base, change].filter(Boolean).join(' · ') || base;
 }

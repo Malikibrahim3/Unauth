@@ -1,7 +1,7 @@
 import { PageConnectionGate } from '@/components/connections/PageConnectionGate';
 import type { ConnectionState } from '@/lib/connections/getConnectionState';
 import type { MerchantSetupState } from '@/lib/connections/getMerchantSetupState';
-import { WorkbenchPage } from '@/components/ui';
+import { PanelCard, WorkbenchPage } from '@/components/ui';
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import ExportMenu from '@/components/reports/ExportMenu';
 import { ReportsTabBar } from '@/app/(app)/reports/ReportsTabBar';
@@ -34,7 +34,7 @@ export function ReportsPageView({
       activeNavKey="reports"
       actions={
         <div className="flex flex-wrap items-center gap-2">
-          <div className="inline-flex rounded-md border p-0.5" style={{ borderColor: 'var(--border)', background: 'var(--surface-sunken)' }}>
+          <PanelCard variant="appInset" className="inline-flex p-0.5">
             {['7d', '30d', '90d', 'all'].map((option) => (
               <a
                 key={option}
@@ -49,7 +49,7 @@ export function ReportsPageView({
                 {option}
               </a>
             ))}
-          </div>
+          </PanelCard>
           <ExportMenu range={range} />
         </div>
       }

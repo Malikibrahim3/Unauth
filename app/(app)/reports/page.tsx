@@ -8,6 +8,7 @@ import { requirePermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/per
 import { buildClaimOpsMetrics } from '@/lib/claims/reporting';
 import { listPartnerRecoveryRules, listPartners } from '@/lib/partners/store';
 import { listRecoveryCases } from '@/lib/recoveries/store';
+import { dominantCurrency } from '@/lib/utils/format';
 import { ReportsPageView } from '@/app/(app)/reports/ReportsPageView';
 import type { ClaimRow, OutcomeRow, ReportsTab, SourcesCoverage } from '@/app/(app)/reports/reportsPageTypes';
 import {
@@ -83,6 +84,7 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
       'id',
       'status',
       'claim_type',
+      'currency',
       'amount_at_risk',
       'total_estimated_loss',
       'refund_amount',
@@ -103,7 +105,7 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
 
   let priorClaimsQuery = serviceClient
     .from(TABLES.MERCHANT_CLAIMS)
-    .select('id,status,claim_type,amount_at_risk,total_estimated_loss,requested_action,submitted_at,created_at,updated_at')
+    .select('id,status,claim_type,currency,amount_at_risk,total_estimated_loss,requested_action,submitted_at,created_at,updated_at')
     .eq('merchant_id', ctx.merchantId);
   if (priorCutoff) priorClaimsQuery = priorClaimsQuery.gte('submitted_at', priorCutoff);
   if (priorEnd) priorClaimsQuery = priorClaimsQuery.lte('submitted_at', priorEnd);
@@ -164,6 +166,9 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
       : Promise.resolve({ data: [] as OutcomeRow[] }),
   ]);
 
+  // Display currency for money KPIs/charts: most common case currency, then recovery-case currency.
+  const displayCurrency = dominantCurrency(claims, dominantCurrency(allRecoveryCases));
+
   const claimMetrics = buildClaimOpsMetrics(claims, outcomeResult.data ?? []);
   const priorMetrics = range === 'all'
     ? null
@@ -201,6 +206,7 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
           priorMetrics,
           recoveryMetrics,
           range,
+          displayCurrency,
           claimTypeBreakdown: buildClaimTypeBreakdown(claims),
           requestedActionBreakdown: buildRequestedActionBreakdown(claims),
           outcomeBreakdown: buildOutcomeBreakdown(outcomeResult.data ?? []),
@@ -210,6 +216,7 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
           connectionState,
           liveCta,
           range,
+          displayCurrency,
           recoveryMetrics,
           recoveryStatusBreakdown: buildRecoveryStatusBreakdown(recoveryCases),
           partnerPerformance: buildPartnerPerformance(recoveryCases),

@@ -20,6 +20,7 @@
 
 import { Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { formatCurrency } from '@/lib/utils/format';
 import { useCountUp } from '@/hooks/useCountUp';
 
 export interface SavingsCardData {
@@ -36,19 +37,10 @@ interface SavingsCardProps {
   className?: string;
 }
 
-const savingsCurrencyFormatter = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-  maximumFractionDigits: 0,
-});
-
-function formatCurrency(value: number) {
-  return savingsCurrencyFormatter.format(value);
-}
-
 export function SavingsCard({ data, loading, className }: SavingsCardProps) {
+  const currency = data?.currency ?? 'USD';
   const animatedValue = useCountUp(data?.confirmedFraudValue ?? 0, {
-    format: (value) => formatCurrency(value),
+    format: (value) => formatCurrency(value, currency),
   });
 
   return (

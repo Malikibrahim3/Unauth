@@ -94,7 +94,7 @@ export default async function DashboardPage() {
     activity.push({
       type: 'Payout',
       detail: `${claimsNeedingAction} open payout case${claimsNeedingAction === 1 ? '' : 's'} need action`,
-      time: 'current',
+      time: '',
       href: '/claims',
     });
   }
@@ -102,7 +102,7 @@ export default async function DashboardPage() {
     activity.push({
       type: 'Recovery',
       detail: `${payoutMetrics.chaseDue} recovery case${payoutMetrics.chaseDue === 1 ? '' : 's'} chase due`,
-      time: 'current',
+      time: '',
       href: '/recoveries',
     });
   }
@@ -110,7 +110,7 @@ export default async function DashboardPage() {
     activity.push({
       type: 'Evidence',
       detail: `${payoutMetrics.casesMissingEvidence} case${payoutMetrics.casesMissingEvidence === 1 ? '' : 's'} missing evidence`,
-      time: 'current',
+      time: '',
       href: '/claims?queue=evidence',
     });
   }
@@ -123,6 +123,7 @@ export default async function DashboardPage() {
     chaseDue: payoutMetrics.chaseDue,
     amountRecovered: payoutMetrics.amountRecovered,
     payoutExposureOpen: payoutMetrics.payoutExposureOpen,
+    displayCurrency: payoutMetrics.displayCurrency,
   });
 
   return (
