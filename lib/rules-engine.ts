@@ -74,6 +74,7 @@ export const FIELD_LABELS: Record<string, string> = {
   claim_types: 'claim types',
   order_value_usd: 'order value',
   account_age_days: 'account age (days)',
+  is_network_flagged: 'identity is on the network watchlist',
   // Current claim
   claim_type: 'claim type',
   amount_at_risk: 'amount at risk',

@@ -165,6 +165,17 @@ interface RuleTraceEntry {
   is_winner: boolean;
 }
 
+/**
+ * Full definition of the winning rule as it existed at evaluation time (or
+ * null on no_match). Stored alongside rule_id so a later edit or deletion of
+ * that rule can never change what a past evaluation is understood to have
+ * matched against.
+ */
+function buildRuleSnapshot(rules: MerchantRule[], winnerRuleId: string | null): MerchantRule | null {
+  if (!winnerRuleId) return null;
+  return rules.find((r) => r.id === winnerRuleId) ?? null;
+}
+
 function buildRulesTrace(
   signals: RuleSignals,
   rules: MerchantRule[],
@@ -208,6 +219,7 @@ export async function writeRuleEvaluationAudit(
     claim_id: input.claimId ?? null,
     identity_id: input.identityId ?? null,
     rule_id: input.result.rule_id,
+    rule_snapshot: buildRuleSnapshot(input.rules, input.result.rule_id),
     recommendation: input.result.recommendation,
     matched_conditions: input.result.matched_conditions,
     all_rules_evaluated: trace,
@@ -298,6 +310,7 @@ export async function writeClaimRuleEvaluationAudit(
     justification_summary: justificationSummary,
     dedupe_key: dedupeKey,
     rule_id: input.result.rule_id,
+    rule_snapshot: buildRuleSnapshot(input.rules, input.result.rule_id),
     recommendation: input.result.recommendation,
     matched_conditions: input.result.matched_conditions,
     all_rules_evaluated: auditPayload,

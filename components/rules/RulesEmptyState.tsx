@@ -16,8 +16,8 @@ export function RulesEmptyState({ canManage, onUseDefaults, onBrowseTemplates }:
   return (
     <EmptyState
       icon={<SlidersHorizontal className="h-6 w-6" />}
-      title="No payout rules yet"
-      description="Default payout rules are active until you create your own."
+      title="No rules yet"
+      description="Start from a template or add your first rule. Default payout rules apply until you create your own."
       action={
         canManage ? (
           <div className="flex flex-col items-center justify-center gap-3">

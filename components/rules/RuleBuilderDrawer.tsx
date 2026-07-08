@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { AlertTriangle, Plus } from 'lucide-react';
-import { Badge, Button, Drawer, Input } from '@/components/ui';
+import { Button, Drawer, Input, PanelCard, StatusBadge } from '@/components/ui';
 import type { ConditionOperator, MerchantRule, RuleAction, RuleCondition } from '@/lib/rules-engine';
 import { RULE_FIELDS } from '@/lib/rules/fields';
 import { ACTION_LABELS, ACTION_TONES, summarizeConditions } from '@/lib/rules/summary';
@@ -231,10 +231,7 @@ export function RuleBuilderDrawer({
         </Field>
 
         {/* Live preview */}
-        <div
-          className="rounded-[var(--radius-md)] p-4"
-          style={{ background: 'var(--surface-sunken)', border: '1px solid var(--border-muted)' }}
-        >
+        <PanelCard variant="appInset" className="p-4">
           <span className="text-caption font-semibold uppercase tracking-wide" style={{ color: 'var(--text-tertiary)' }}>
             Preview
           </span>
@@ -242,14 +239,20 @@ export function RuleBuilderDrawer({
             If {preview}
           </p>
           <div className="mt-3">
-            <Badge tone={ACTION_TONES[action]} variant="subtle" dot>
+            <StatusBadge variant={ruleActionVariant(action)}>
               Recommend {ACTION_LABELS[action]}
-            </Badge>
+            </StatusBadge>
           </div>
-        </div>
+        </PanelCard>
       </div>
     </Drawer>
   );
+}
+
+function ruleActionVariant(action: RuleAction) {
+  if (action === 'approve') return 'cleared';
+  if (action === 'deny') return 'blocked';
+  return 'flagged';
 }
 
 function Field({

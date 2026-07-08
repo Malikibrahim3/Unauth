@@ -118,6 +118,7 @@ export const RULE_FIELDS: RuleFieldDef[] = [
   { field: 'merchant_prior_claim_count', type: 'integer', category: 'claim_history', operators: NUMERIC_OPERATORS },
   { field: 'days_since_last_claim', type: 'integer', category: 'claim_history', operators: NUMERIC_OPERATORS },
   { field: 'claim_types', type: 'string_array', category: 'claim_history', operators: STRING_ARRAY_OPERATORS, options: CLAIM_TYPE_OPTIONS },
+  { field: 'is_network_flagged', type: 'boolean', category: 'claim_history', operators: BOOLEAN_OPERATORS },
   // Order
   { field: 'order_value_usd', type: 'decimal', category: 'order', operators: NUMERIC_OPERATORS },
   { field: 'account_age_days', type: 'integer', category: 'order', operators: NUMERIC_OPERATORS },

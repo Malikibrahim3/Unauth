@@ -5,7 +5,7 @@ import {
   hashRules,
   hashSignals,
 } from '@/lib/claims/decision/auditHashes';
-import { writeClaimRuleEvaluationAudit } from '@/lib/rules/store';
+import { writeClaimRuleEvaluationAudit, writeRuleEvaluationAudit } from '@/lib/rules/store';
 import type { MerchantRule, RuleEvaluationResult } from '@/lib/rules-engine';
 
 const baseSignals = {
@@ -205,5 +205,61 @@ describe('writeClaimRuleEvaluationAudit', () => {
     });
     expect(status).toBe('written');
     expect(inserts).toHaveLength(1);
+  });
+
+  it('snapshots the full winning rule definition, not just its id', async () => {
+    const { client, inserts } = mockAuditClient();
+    await writeClaimRuleEvaluationAudit(client, {
+      merchantId: 'm1',
+      claimId: 'c1',
+      signals: baseSignals,
+      rules: baseRules,
+      result: baseResult,
+      evaluationSource: 'gorgias_widget',
+    });
+    expect(inserts[0].rule_snapshot).toEqual(baseRules[0]);
+  });
+
+  it('snapshots null on no_match', async () => {
+    const { client, inserts } = mockAuditClient();
+    await writeClaimRuleEvaluationAudit(client, {
+      merchantId: 'm1',
+      claimId: 'c1',
+      signals: baseSignals,
+      rules: baseRules,
+      result: { ...baseResult, rule_id: null, rule_name: null, recommendation: 'no_match' },
+      evaluationSource: 'gorgias_widget',
+    });
+    expect(inserts[0].rule_snapshot).toBeNull();
+  });
+});
+
+describe('writeRuleEvaluationAudit', () => {
+  it('snapshots the full winning rule definition alongside rule_id', async () => {
+    const { client, inserts } = mockAuditClient();
+    await writeRuleEvaluationAudit(client, {
+      merchantId: 'm1',
+      claimId: 'c1',
+      signals: baseSignals,
+      rules: baseRules,
+      result: baseResult,
+    });
+    expect(inserts).toHaveLength(1);
+    expect(inserts[0].rule_id).toBe('r1');
+    expect(inserts[0].rule_snapshot).toEqual(baseRules[0]);
+  });
+
+  it('remains accurate to the rule as evaluated even if the same rule id is later edited', async () => {
+    const { client, inserts } = mockAuditClient();
+    await writeRuleEvaluationAudit(client, {
+      merchantId: 'm1',
+      claimId: 'c1',
+      signals: baseSignals,
+      rules: baseRules,
+      result: baseResult,
+    });
+    const editedRule: MerchantRule = { ...baseRules[0], action: 'deny', priority: 5 };
+    expect(inserts[0].rule_snapshot).not.toEqual(editedRule);
+    expect((inserts[0].rule_snapshot as MerchantRule).action).toBe('manual_review');
   });
 });

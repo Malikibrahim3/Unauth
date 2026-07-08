@@ -1,9 +1,9 @@
 'use client';
 
 import { Plus } from 'lucide-react';
-import { Badge, Button, Drawer } from '@/components/ui';
+import { Button, Drawer, PanelCard, StatusBadge } from '@/components/ui';
 import type { ConditionOperator, RuleAction, RuleCondition } from '@/lib/rules-engine';
-import { ACTION_LABELS, ACTION_TONES, summarizeConditions } from '@/lib/rules/summary';
+import { ACTION_LABELS, summarizeConditions } from '@/lib/rules/summary';
 
 export interface RuleTemplate {
   id: string;
@@ -49,10 +49,10 @@ export function RuleTemplatesDrawer({
         )}
 
         {templates.map((template) => (
-          <div
+          <PanelCard
             key={template.id}
-            className="rounded-[var(--radius-md)] p-4"
-            style={{ background: 'var(--surface-sunken)', border: '1px solid var(--border-muted)' }}
+            variant="appInset"
+            className="p-4"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -60,9 +60,9 @@ export function RuleTemplatesDrawer({
                   <h3 className="text-body font-semibold" style={{ color: 'var(--text-primary)' }}>
                     {template.name}
                   </h3>
-                  <Badge tone={ACTION_TONES[template.action]} variant="subtle" size="sm" dot>
+                  <StatusBadge variant={ruleActionVariant(template.action)}>
                     {ACTION_LABELS[template.action]}
-                  </Badge>
+                  </StatusBadge>
                 </div>
                 <p className="mt-1 text-caption" style={{ color: 'var(--text-secondary)' }}>
                   {template.description}
@@ -83,9 +83,15 @@ export function RuleTemplatesDrawer({
               <span style={{ color: 'var(--text-tertiary)' }}>If </span>
               {summarizeConditions(template.conditions, template.condition_operator)}
             </p>
-          </div>
+          </PanelCard>
         ))}
       </div>
     </Drawer>
   );
+}
+
+function ruleActionVariant(action: RuleAction) {
+  if (action === 'approve') return 'cleared';
+  if (action === 'deny') return 'blocked';
+  return 'flagged';
 }

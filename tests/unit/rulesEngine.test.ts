@@ -220,6 +220,17 @@ describe('validateConditions', () => {
     const errs = validateConditions([{ id: 'a', field: 'has_sufficient_data', operator: 'gt', value: true }]);
     expect(errs).toHaveLength(1);
   });
+
+  it('accepts a boolean is_network_flagged condition', () => {
+    expect(
+      validateConditions([{ id: 'a', field: 'is_network_flagged', operator: 'eq', value: true }]),
+    ).toEqual([]);
+  });
+
+  it('rejects a non-boolean value for is_network_flagged', () => {
+    const errs = validateConditions([{ id: 'a', field: 'is_network_flagged', operator: 'eq', value: 'yes' }]);
+    expect(errs).toHaveLength(1);
+  });
 });
 
 describe('claim evidence field evaluation', () => {
