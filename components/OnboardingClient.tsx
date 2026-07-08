@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useReducer, cloneElement, type ReactElement } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Check, ShoppingBag, Headphones, Store, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -22,6 +21,8 @@ interface OnboardingClientProps {
   initialUsesReturnsPlatform?: string;
   shopifyConnected?: boolean;
   shopifyShopDomain?: string;
+  helpdeskConnected?: boolean;
+  helpdeskProvider?: 'gorgias' | 'zendesk' | 'freshdesk' | null;
 }
 
 const STEPS = [
@@ -61,6 +62,8 @@ export default function OnboardingClient({
   initialUsesReturnsPlatform = '',
   shopifyConnected = false,
   shopifyShopDomain = '',
+  helpdeskConnected = false,
+  helpdeskProvider = null,
 }: OnboardingClientProps) {
   void userId;
   const [state, dispatch] = useReducer(
@@ -85,15 +88,15 @@ export default function OnboardingClient({
     usesWms3pl,
     usesReturnsPlatform,
     loading,
-    skipLoading,
     error,
     shopDomain,
   } = state;
-  const router = useRouter();
 
   useEffect(() => {
     dispatch({ type: 'patch', patch: { shopDomain: shopifyShopDomain } });
   }, [shopifyShopDomain]);
+
+  const maxReachableStep = !shopifyConnected ? 1 : !helpdeskConnected ? 2 : 3;
 
   async function saveProfileAndContinue() {
     dispatch({ type: 'patch', patch: { loading: true, error: '' } });
@@ -117,27 +120,6 @@ export default function OnboardingClient({
       return;
     }
     dispatch({ type: 'patch', patch: { activeStep: 1 } });
-  }
-
-  async function skipOnboarding() {
-    dispatch({ type: 'patch', patch: { skipLoading: true, error: '' } });
-    const response = await fetch('/api/account/setup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        storeName: storeName.trim() || undefined,
-        platform: platform || undefined,
-        monthlyOrderVolume: annualVolume || undefined,
-        primaryLossConcern: primaryConcern || undefined,
-        usesWms3pl: usesWms3pl ? usesWms3pl === 'yes' : undefined,
-        usesReturnsPlatform: usesReturnsPlatform ? usesReturnsPlatform === 'yes' : undefined,
-        setupComplete: true,
-      }),
-    });
-    await response.json().catch(() => ({}));
-    dispatch({ type: 'patch', patch: { skipLoading: false } });
-    router.push('/dashboard');
-    router.refresh();
   }
 
   const current = STEPS[activeStep];
@@ -167,15 +149,6 @@ export default function OnboardingClient({
                 Add payout control to your Gorgias tickets
               </p>
             </div>
-            <button
-              type="button"
-              onClick={skipOnboarding}
-              disabled={skipLoading || loading}
-              className="inline-flex items-center rounded-md border px-2.5 py-1 text-xs transition-colors hover:bg-[var(--surface-hover)] disabled:cursor-not-allowed disabled:opacity-70"
-              style={{ color: 'var(--text-secondary)', borderColor: 'var(--border)', background: 'var(--surface-sunken)' }}
-            >
-              {skipLoading ? 'Skipping…' : 'Skip'}
-            </button>
           </div>
 
           <div className="space-y-2">
@@ -183,12 +156,14 @@ export default function OnboardingClient({
               const Icon = step.icon;
               const active = index === activeStep;
               const done = index < activeStep;
+              const reachable = index <= maxReachableStep;
               return (
                 <button
                   key={step.id}
                   type="button"
-                  onClick={() => dispatch({ type: 'patch', patch: { activeStep: index } })}
-                  className="grid w-full grid-cols-[24px_minmax(0,1fr)_auto] items-center gap-3 rounded-md border p-3 text-left transition-colors"
+                  disabled={!reachable}
+                  onClick={() => reachable && dispatch({ type: 'patch', patch: { activeStep: index } })}
+                  className="grid w-full grid-cols-[24px_minmax(0,1fr)_auto] items-center gap-3 rounded-md border p-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                   style={{
                     background: active ? 'var(--copper-glow)' : 'var(--surface-sunken)',
                     borderColor: active ? 'var(--accent)' : 'var(--border)',
@@ -329,60 +304,59 @@ export default function OnboardingClient({
                   </div>
                 </div>
               )}
-              <div className="flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() => dispatch({ type: 'patch', patch: { activeStep: 2 } })}
-                  className="t-caption hover:underline"
-                  style={{ color: 'var(--text-tertiary)' }}
-                >
-                  {shopifyConnected ? 'Continue to Gorgias →' : "I'll connect later — skip to Gorgias"}
-                </button>
-                {shopifyConnected && (
+              {shopifyConnected && (
+                <div className="flex justify-end">
                   <Button type="button" onClick={() => dispatch({ type: 'patch', patch: { activeStep: 2 } })}>
                     Continue <ArrowRight className="h-4 w-4 ml-1" />
                   </Button>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           )}
 
           {activeStep === 2 && (
             <div className="space-y-4">
-              <div className="rounded-md border p-4 space-y-3" style={{ background: 'var(--surface-sunken)', borderColor: 'var(--border)' }}>
-                <p className="text-body-sm" style={{ color: 'var(--text-secondary)' }}>
-                  Connect Gorgias from the integrations page. Once connected, Unauth will automatically add a claim context card to every Gorgias ticket — showing order history, prior claims, and trust indicators for the customer.
-                </p>
-                <p className="t-caption" style={{ color: 'var(--text-tertiary)' }}>
-                  You can also add Zendesk or Freshdesk later from the same page.
-                </p>
-                <Link
-                  href="/settings/integrations/gorgias"
-                  className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold"
-                  style={{ background: 'var(--copper-glow)', borderColor: 'var(--accent)', border: '1px solid', color: 'var(--accent)' }}
-                >
-                  <Headphones className="h-4 w-4" />
-                  Set up Gorgias integration
-                </Link>
-              </div>
-              <div className="flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() => dispatch({ type: 'patch', patch: { activeStep: 3 } })}
-                  className="t-caption hover:underline"
-                  style={{ color: 'var(--text-tertiary)' }}
-                >
-                  {"I'll connect later — go to dashboard"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => dispatch({ type: 'patch', patch: { activeStep: 3 } })}
-                  className="t-caption font-semibold hover:underline"
-                  style={{ color: 'var(--accent)' }}
-                >
-                  Already connected? Continue →
-                </button>
-              </div>
+              {helpdeskConnected ? (
+                <div className="rounded-md border px-4 py-3" style={{ background: 'var(--sev-clear-fill)', borderColor: 'var(--neutral)' }}>
+                  <div className="flex items-center gap-2">
+                    <Check className="h-4 w-4" style={{ color: 'var(--neutral)' }} />
+                    <p className="text-body-sm font-semibold" style={{ color: 'var(--neutral)' }}>
+                      {helpdeskProvider === 'zendesk'
+                        ? 'Zendesk connected'
+                        : helpdeskProvider === 'freshdesk'
+                          ? 'Freshdesk connected'
+                          : 'Gorgias connected'}
+                    </p>
+                  </div>
+                  <p className="t-caption mt-1" style={{ color: 'var(--text-secondary)' }}>
+                    Agents will see claim context inside every support ticket automatically.
+                  </p>
+                </div>
+              ) : (
+                <div className="rounded-md border p-4 space-y-3" style={{ background: 'var(--surface-sunken)', borderColor: 'var(--border)' }}>
+                  <p className="text-body-sm" style={{ color: 'var(--text-secondary)' }}>
+                    Connect Gorgias from the integrations page. Once connected, Unauth will automatically add a claim context card to every Gorgias ticket — showing order history, prior claims, and trust indicators for the customer.
+                  </p>
+                  <p className="t-caption" style={{ color: 'var(--text-tertiary)' }}>
+                    You can also add Zendesk or Freshdesk later from the same page.
+                  </p>
+                  <Link
+                    href="/settings/integrations/gorgias"
+                    className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold"
+                    style={{ background: 'var(--copper-glow)', borderColor: 'var(--accent)', border: '1px solid', color: 'var(--accent)' }}
+                  >
+                    <Headphones className="h-4 w-4" />
+                    Set up Gorgias integration
+                  </Link>
+                </div>
+              )}
+              {helpdeskConnected && (
+                <div className="flex justify-end">
+                  <Button type="button" onClick={() => dispatch({ type: 'patch', patch: { activeStep: 3 } })}>
+                    Continue <ArrowRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
+              )}
             </div>
           )}
 

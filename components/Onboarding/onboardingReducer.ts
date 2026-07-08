@@ -7,7 +7,6 @@ export type OnboardingState = {
   usesWms3pl: string;
   usesReturnsPlatform: string;
   loading: boolean;
-  skipLoading: boolean;
   error: string;
   shopDomain: string;
 };
@@ -33,7 +32,6 @@ export function createInitialOnboardingState(input: {
     usesWms3pl: input.initialUsesWms3pl,
     usesReturnsPlatform: input.initialUsesReturnsPlatform,
     loading: false,
-    skipLoading: false,
     error: '',
     shopDomain: input.shopifyShopDomain,
   };
