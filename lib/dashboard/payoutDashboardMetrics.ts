@@ -7,6 +7,7 @@ import { ACTIVE_CLAIM_STATUSES } from '@/lib/claims/sla';
 import { listRecoveryCases } from '@/lib/recoveries/store';
 import type { RecoveryCaseStatus } from '@/lib/recoveries/types';
 import { LOSS_ATTRIBUTION_DISPLAY, type LossAttributionLabel } from '@/lib/payouts/types';
+import { dominantCurrency } from '@/lib/utils/format';
 
 const CLOSED_RECOVERY: RecoveryCaseStatus[] = ['paid', 'closed_unrecoverable', 'rejected'];
 const REJECTED_RECOVERY: RecoveryCaseStatus[] = ['rejected', 'closed_unrecoverable'];
@@ -22,6 +23,8 @@ export type PayoutDashboardMetrics = {
   chaseDue: number;
   casesMissingEvidence: number;
   topLossOwners: Array<{ owner: string; label: string; count: number; exposure: number }>;
+  /** Most common currency across the merchant's support payout cases (fallback USD). */
+  displayCurrency: string;
 };
 
 function ownerLabel(key: string | null): string {
@@ -37,7 +40,7 @@ export async function loadPayoutDashboardMetrics(
     client
       .from(TABLES.MERCHANT_CLAIMS)
       .select(
-        'id,amount_at_risk,recoverability,loss_attribution,recommended_payout_action,status',
+        'id,amount_at_risk,currency,recoverability,loss_attribution,recommended_payout_action,status',
       )
       .eq('merchant_id', merchantId)
       // Must use only valid claim_status enum values; an invalid value (e.g. the
@@ -67,31 +70,45 @@ export async function loadPayoutDashboardMetrics(
   const openClaims = (openClaimsRes.data ?? []) as Array<{
     id: string;
     amount_at_risk: number | null;
+    currency: string | null;
     recoverability: string | null;
     loss_attribution: string | null;
     recommended_payout_action: string | null;
     status: string;
   }>;
 
-  const payoutExposureOpen = openClaims.reduce((s, c) => s + (c.amount_at_risk ?? 0), 0);
+  // Display currency: most common case currency, then recovery-case currency, then USD.
+  const displayCurrency = dominantCurrency(openClaims, dominantCurrency(recoveryCases));
+
+  // All money aggregates sum only rows in the display currency — rows in any
+  // other currency are excluded rather than silently mixed into one total.
+  const inDisplayCurrency = (currency: string | null | undefined) =>
+    (currency?.toUpperCase() ?? displayCurrency) === displayCurrency;
+
+  const payoutExposureOpen = openClaims
+    .filter((c) => inDisplayCurrency(c.currency))
+    .reduce((s, c) => s + (c.amount_at_risk ?? 0), 0);
 
   const recoveryCasesOpen = recoveryCases.filter((c) => !CLOSED_RECOVERY.includes(c.status)).length;
 
   const recoverableIdentified = recoveryCases
-    .filter((c) => !CLOSED_RECOVERY.includes(c.status))
+    .filter((c) => !CLOSED_RECOVERY.includes(c.status) && inDisplayCurrency(c.currency))
     .reduce((s, c) => s + (c.estimated_recoverable_max ?? c.estimated_recoverable_min ?? 0), 0);
 
-  const amountRecovered = recoveryCases.reduce((s, c) => s + (c.amount_recovered ?? 0), 0);
+  const amountRecovered = recoveryCases
+    .filter((c) => inDisplayCurrency(c.currency))
+    .reduce((s, c) => s + (c.amount_recovered ?? 0), 0);
 
   const rejectedUnrecoverableAmount = recoveryCases
-    .filter((c) => REJECTED_RECOVERY.includes(c.status))
+    .filter((c) => REJECTED_RECOVERY.includes(c.status) && inDisplayCurrency(c.currency))
     .reduce((s, c) => s + c.merchant_loss_amount, 0);
 
   const preventionOnlyExposure = openClaims
     .filter(
       (c) =>
+        inDisplayCurrency(c.currency) &&
         c.recoverability === 'not_recoverable' &&
-        (c.loss_attribution === 'merchant_policy' || c.loss_attribution === 'failed_delivery_evidence'),
+        (c.loss_attribution === 'merchant_policy' || c.loss_attribution === 'delivery_confirmed_evidence'),
     )
     .reduce((s, c) => s + (c.amount_at_risk ?? 0), 0);
 
@@ -142,5 +159,6 @@ export async function loadPayoutDashboardMetrics(
     chaseDue,
     casesMissingEvidence,
     topLossOwners,
+    displayCurrency,
   };
 }

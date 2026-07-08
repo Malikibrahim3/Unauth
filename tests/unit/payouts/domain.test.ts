@@ -1,7 +1,7 @@
 import { computePayoutExposure } from '@/lib/payouts/exposure';
 import { reconcileRequestedActions } from '@/lib/payouts/requestedAction';
 import { buildEvidenceChecklist } from '@/lib/payouts/evidenceChecklist';
-import { deriveLossAttribution } from '@/lib/payouts/attribution';
+import { deriveLossAttribution, applyPolicyOverrideAttribution } from '@/lib/payouts/attribution';
 import { deriveRecoveryPath } from '@/lib/payouts/recovery';
 import { buildSupportPayoutCase } from '@/lib/payouts/supportPayoutCase';
 import { BANNED_UI_TERMS } from '@/lib/copy/terms';
@@ -111,9 +111,9 @@ describe('buildEvidenceChecklist', () => {
 });
 
 describe('deriveLossAttribution', () => {
-  it('INR delivered with POD → failed delivery evidence, high confidence', () => {
+  it('INR delivered with POD → delivery confirmed evidence, high confidence', () => {
     const res = deriveLossAttribution(makeContext(), 'item_not_received');
-    expect(res.label).toBe('failed_delivery_evidence');
+    expect(res.label).toBe('delivery_confirmed_evidence');
     expect(res.confidence).toBe('high');
     expect(res.isAdvisory).toBe(true);
     expect(res.networkBenchmark).toBeNull();
@@ -153,6 +153,78 @@ describe('deriveLossAttribution', () => {
       }
     }
   });
+
+  it('reclassifies a weak customer_claim to repeat_claimant when merchant claim frequency is elevated', () => {
+    const ctx = makeContext({
+      claim: { type: 'chargeback' },
+      history: { merchantPriorClaimCount: 3, networkClaimCount: 1 },
+    });
+    const res = deriveLossAttribution(ctx, 'chargeback');
+    expect(res.label).toBe('repeat_claimant');
+    expect(res.confidence).toBe('medium');
+  });
+
+  it('reclassifies a weak customer_claim to repeat_claimant on network-wide frequency alone', () => {
+    const ctx = makeContext({
+      claim: { type: 'chargeback' },
+      history: { merchantPriorClaimCount: 0, networkClaimCount: 4 },
+    });
+    const res = deriveLossAttribution(ctx, 'chargeback');
+    expect(res.label).toBe('repeat_claimant');
+  });
+
+  it('does not reclassify to repeat_claimant when claim frequency is unremarkable', () => {
+    const ctx = makeContext({
+      claim: { type: 'chargeback' },
+      history: { merchantPriorClaimCount: 0, networkClaimCount: 0 },
+    });
+    const res = deriveLossAttribution(ctx, 'chargeback');
+    expect(res.label).toBe('customer_claim');
+  });
+
+  it('never reclassifies a strong type-based attribution to repeat_claimant', () => {
+    const ctx = makeContext({
+      claim: { type: 'wrong_item' },
+      evidence: { hasCustomerEvidence: true, customerEvidenceItems: 1, merchantEvidenceItems: 1, deliveryEvidenceItems: 0, totalEvidenceItems: 2, hasDeliveryEvidence: false },
+      history: { merchantPriorClaimCount: 10, networkClaimCount: 10 },
+    });
+    const res = deriveLossAttribution(ctx, 'wrong_item');
+    expect(res.label).toBe('warehouse_mispick');
+  });
+});
+
+describe('applyPolicyOverrideAttribution', () => {
+  it('reclassifies to policy_override when the agent approved a payout the rules recommended denying', () => {
+    const base = deriveLossAttribution(makeContext({ claim: { type: 'chargeback' } }), 'chargeback');
+    const res = applyPolicyOverrideAttribution(base, {
+      followedRecommendation: false,
+      recommendedAction: 'deny_under_policy',
+      decision: 'approved',
+    });
+    expect(res.label).toBe('policy_override');
+    expect(res.confidence).toBe('high');
+    expect(res.reasons.length).toBeGreaterThan(0);
+  });
+
+  it('leaves attribution unchanged when the decision followed the recommendation', () => {
+    const base = deriveLossAttribution(makeContext(), 'item_not_received');
+    const res = applyPolicyOverrideAttribution(base, {
+      followedRecommendation: true,
+      recommendedAction: 'deny_under_policy',
+      decision: 'denied',
+    });
+    expect(res).toBe(base);
+  });
+
+  it('leaves attribution unchanged when the recommendation was not a policy denial', () => {
+    const base = deriveLossAttribution(makeContext(), 'item_not_received');
+    const res = applyPolicyOverrideAttribution(base, {
+      followedRecommendation: false,
+      recommendedAction: 'escalate_internal_review',
+      decision: 'approved',
+    });
+    expect(res).toBe(base);
+  });
 });
 
 describe('deriveRecoveryPath', () => {
@@ -165,7 +237,7 @@ describe('deriveRecoveryPath', () => {
     expect(rec.likelyOwner).toBe('unknown');
   });
 
-  it('failed delivery evidence → not recoverable, merchant owns it', () => {
+  it('delivery confirmed evidence → not recoverable, merchant owns it', () => {
     const ctx = makeContext();
     const evidence = buildEvidenceChecklist(ctx, 'item_not_received');
     const attribution = deriveLossAttribution(ctx, 'item_not_received');

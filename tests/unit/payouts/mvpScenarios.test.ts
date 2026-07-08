@@ -50,7 +50,7 @@ describe('MVP scenarios (widget → case → recovery)', () => {
     );
 
     expect(payoutCase.evidence.strength).toBe('strong');
-    expect(payoutCase.attribution.label).toBe('failed_delivery_evidence');
+    expect(payoutCase.attribution.label).toBe('delivery_confirmed_evidence');
     expect(payoutCase.recovery.recoverability).toBe('not_recoverable');
     expect(payoutCase.recommendation?.action).toBe('escalate_internal_review');
 

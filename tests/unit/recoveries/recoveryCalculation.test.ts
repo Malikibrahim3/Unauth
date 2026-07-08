@@ -116,7 +116,7 @@ describe('shouldCreateRecoveryCaseFromRow', () => {
   it('does not create for strong-POD disputed delivery with low recovery likelihood', () => {
     expect(shouldCreateRecoveryCaseFromRow({
       ...baseRow,
-      loss_attribution: 'failed_delivery_evidence',
+      loss_attribution: 'delivery_confirmed_evidence',
       recoverability: 'not_recoverable',
       recovery_owner: 'merchant',
     })).toBe(false);

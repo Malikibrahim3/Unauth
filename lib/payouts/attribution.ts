@@ -57,14 +57,14 @@ function deliveryFacts(context: ClaimDecisionContext): DeliveryFacts {
 function attributeItemNotReceived(f: DeliveryFacts): Draft {
   if (f.hasPod) {
     return {
-      label: 'failed_delivery_evidence',
+      label: 'delivery_confirmed_evidence',
       confidence: 'high',
       reasons: [reason('delivered_with_pod', 'Delivered with proof of delivery on file', 'delivery.hasProofOfDelivery')],
     };
   }
   if (f.delivered) {
     return {
-      label: 'failed_delivery_evidence',
+      label: 'delivery_confirmed_evidence',
       confidence: 'medium',
       reasons: [reason('delivered_no_pod', 'Marked delivered but no proof of delivery on file', 'delivery.status')],
     };
@@ -191,6 +191,43 @@ function attributePolicyOrCustomer(label: LossAttributionLabel, code: string, te
   return { label, confidence: 'low', reasons: [reason(code, text, null)] };
 }
 
+/**
+ * A customer_claim result means no carrier/warehouse/policy signal was strong
+ * enough to attribute the loss elsewhere. Before settling there, check whether
+ * this identity's own claim frequency is itself the more likely explanation —
+ * this only reclassifies the weak catch-all bucket, never a claim already
+ * attributed to a carrier, warehouse, or policy cause.
+ */
+const REPEAT_CLAIMANT_MIN_PRIOR_CLAIMS = 3;
+
+function applyRepeatClaimantSignal(draft: Draft, context: ClaimDecisionContext): Draft {
+  if (draft.label !== 'customer_claim') return draft;
+
+  const { merchantPriorClaimCount, networkClaimCount, daysSinceLastClaim } = context.history;
+  const merchantFrequency = merchantPriorClaimCount >= REPEAT_CLAIMANT_MIN_PRIOR_CLAIMS;
+  const networkFrequency = networkClaimCount != null && networkClaimCount >= REPEAT_CLAIMANT_MIN_PRIOR_CLAIMS;
+  if (!merchantFrequency && !networkFrequency) return draft;
+
+  const reasons: LossAttributionReason[] = [
+    merchantFrequency
+      ? reason(
+          'repeat_at_merchant',
+          `${merchantPriorClaimCount} prior claim(s) at this merchant, including this one`,
+          'history.merchantPriorClaimCount',
+        )
+      : reason(
+          'repeat_across_network',
+          `${networkClaimCount} prior claim(s) for this identity across merchants`,
+          'history.networkClaimCount',
+        ),
+  ];
+  if (daysSinceLastClaim != null) {
+    reasons.push(reason('claim_recency', `Last claim ${daysSinceLastClaim} day(s) ago`, 'history.daysSinceLastClaim'));
+  }
+
+  return { label: 'repeat_claimant', confidence: 'medium', reasons };
+}
+
 export function deriveLossAttribution(
   context: ClaimDecisionContext,
   claimType: PayoutClaimType | null,
@@ -228,10 +265,50 @@ export function deriveLossAttribution(
       break;
   }
 
+  draft = applyRepeatClaimantSignal(draft, context);
+
   return {
     label: draft.label,
     confidence: draft.confidence,
     reasons: draft.reasons,
+    networkBenchmark: null,
+    isAdvisory: true,
+  };
+}
+
+/**
+ * Reclassify an already-derived attribution to `policy_override` when the
+ * merchant's own rule recommendation was to deny under policy and the
+ * recorded decision approved the payout anyway. Mirrors the "policy leakage"
+ * condition in lib/dashboard/payoutDashboardMetrics.ts — same signal, applied
+ * at the point the decision is actually known (attribution runs before a
+ * decision exists, so this is a separate reclassification step, not part of
+ * deriveLossAttribution itself).
+ */
+export function applyPolicyOverrideAttribution(
+  attribution: LossAttributionResult,
+  outcome: {
+    followedRecommendation: boolean | null;
+    recommendedAction: string | null;
+    decision: string | null;
+  },
+): LossAttributionResult {
+  const isOverride =
+    outcome.followedRecommendation === false &&
+    outcome.recommendedAction === 'deny_under_policy' &&
+    outcome.decision === 'approved';
+  if (!isOverride) return attribution;
+
+  return {
+    label: 'policy_override',
+    confidence: 'high',
+    reasons: [
+      reason(
+        'policy_override',
+        'Merchant rule recommended denying under policy; the recorded decision approved payout anyway',
+        'claim_outcomes.followed_recommendation',
+      ),
+    ],
     networkBenchmark: null,
     isAdvisory: true,
   };

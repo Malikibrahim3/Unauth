@@ -61,7 +61,7 @@ export function deriveRecoveryPath(
   }
 
   // 2. Merchant holds delivery evidence → nothing to recover from a third party.
-  if (attribution.label === 'failed_delivery_evidence') {
+  if (attribution.label === 'delivery_confirmed_evidence') {
     return {
       recoverability: 'not_recoverable',
       likelyOwner: 'merchant',
@@ -90,20 +90,28 @@ export function deriveRecoveryPath(
     };
   }
 
-  // 4. Customer / merchant-policy / packaging → internal, not third-party recoverable.
+  // 4. Customer / merchant-policy / packaging / repeat-claimant / policy-override →
+  // internal, not third-party recoverable.
   if (
     attribution.label === 'customer_claim' ||
     attribution.label === 'merchant_policy' ||
-    attribution.label === 'packaging_failure'
+    attribution.label === 'packaging_failure' ||
+    attribution.label === 'repeat_claimant' ||
+    attribution.label === 'policy_override'
   ) {
+    const suggestedNextAction =
+      attribution.label === 'customer_claim'
+        ? 'Resolve directly with the customer; no third-party recovery applies.'
+        : attribution.label === 'repeat_claimant'
+          ? "Review this customer's claim history before approving; no third-party recovery applies."
+          : attribution.label === 'policy_override'
+            ? "Flag for internal review — payout was approved against the merchant's own rule recommendation."
+            : 'Apply your merchant policy; no third-party recovery applies.';
     return {
       recoverability: 'not_recoverable',
       likelyOwner: 'merchant',
       requiredEvidence: [],
-      suggestedNextAction:
-        attribution.label === 'customer_claim'
-          ? 'Resolve directly with the customer; no third-party recovery applies.'
-          : 'Apply your merchant policy; no third-party recovery applies.',
+      suggestedNextAction,
       reasons: ['Loss sits with the merchant or customer; no external party to chase'],
     };
   }

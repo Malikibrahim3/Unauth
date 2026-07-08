@@ -3035,6 +3035,7 @@ export type Database = {
           merchant_id: string
           recommendation: string | null
           rule_id: string | null
+          rule_snapshot: Json | null
           rules_hash: string | null
           signals_hash: string | null
           source_ticket_id: string | null
@@ -3053,6 +3054,7 @@ export type Database = {
           merchant_id: string
           recommendation?: string | null
           rule_id?: string | null
+          rule_snapshot?: Json | null
           rules_hash?: string | null
           signals_hash?: string | null
           source_ticket_id?: string | null
@@ -3071,6 +3073,7 @@ export type Database = {
           merchant_id?: string
           recommendation?: string | null
           rule_id?: string | null
+          rule_snapshot?: Json | null
           rules_hash?: string | null
           signals_hash?: string | null
           source_ticket_id?: string | null
@@ -4862,7 +4865,9 @@ export type Database = {
         | "customer_claim"
         | "carrier_loss"
         | "carrier_damage"
-        | "failed_delivery_evidence"
+        | "delivery_confirmed_evidence"
+        | "repeat_claimant"
+        | "policy_override"
         | "warehouse_mispick"
         | "warehouse_missing_item"
         | "three_pl_late_dispatch"
@@ -5370,7 +5375,7 @@ export const Constants = {
         "customer_claim",
         "carrier_loss",
         "carrier_damage",
-        "failed_delivery_evidence",
+        "delivery_confirmed_evidence",
         "warehouse_mispick",
         "warehouse_missing_item",
         "three_pl_late_dispatch",
@@ -5378,6 +5383,8 @@ export const Constants = {
         "packaging_failure",
         "merchant_policy",
         "unknown",
+        "repeat_claimant",
+        "policy_override",
       ],
       loss_case_category: [
         "delivery_loss",

@@ -163,7 +163,7 @@ function supportPayoutCaseFromRow(row: SupportPayoutCaseRow): SupportPayoutCase 
 export function shouldCreateRecoveryCaseFromRow(row: SupportPayoutCaseRow): boolean {
   if (row.recoverability === 'not_recoverable') return false;
   if (row.recovery_owner === 'merchant') return false;
-  if (row.loss_attribution === 'merchant_policy' || row.loss_attribution === 'failed_delivery_evidence') return false;
+  if (row.loss_attribution === 'merchant_policy' || row.loss_attribution === 'delivery_confirmed_evidence') return false;
   if (row.recoverability === 'recoverable' || row.recoverability === 'possibly_recoverable') return true;
   if (row.recovery_owner && EXTERNAL_RECOVERY_OWNERS.has(row.recovery_owner)) return true;
   if (row.loss_attribution && EXTERNAL_ATTRIBUTIONS.has(row.loss_attribution)) return true;

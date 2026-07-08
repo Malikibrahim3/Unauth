@@ -305,7 +305,7 @@ export const LOSS_ATTRIBUTION_LABELS = [
   'customer_claim',
   'carrier_loss',
   'carrier_damage',
-  'failed_delivery_evidence',
+  'delivery_confirmed_evidence',
   'warehouse_mispick',
   'warehouse_missing_item',
   'three_pl_late_dispatch',
@@ -313,6 +313,8 @@ export const LOSS_ATTRIBUTION_LABELS = [
   'packaging_failure',
   'merchant_policy',
   'unknown',
+  'repeat_claimant',
+  'policy_override',
 ] as const;
 export type LossAttributionLabel = (typeof LOSS_ATTRIBUTION_LABELS)[number];
 
@@ -320,7 +322,7 @@ export const LOSS_ATTRIBUTION_DISPLAY: Record<LossAttributionLabel, string> = {
   customer_claim: 'Customer claim',
   carrier_loss: 'Carrier loss',
   carrier_damage: 'Carrier damage',
-  failed_delivery_evidence: 'Delivery evidence on file',
+  delivery_confirmed_evidence: 'Delivery evidence on file',
   warehouse_mispick: 'Warehouse mispick',
   warehouse_missing_item: 'Warehouse short-pick',
   three_pl_late_dispatch: '3PL late dispatch',
@@ -328,6 +330,8 @@ export const LOSS_ATTRIBUTION_DISPLAY: Record<LossAttributionLabel, string> = {
   packaging_failure: 'Packaging failure',
   merchant_policy: 'Merchant policy',
   unknown: 'Unclear',
+  repeat_claimant: 'Repeat claimant',
+  policy_override: 'Policy override',
 };
 
 export const ATTRIBUTION_CONFIDENCES = [
