@@ -69,4 +69,66 @@ describe('backfillShopifyOrders', () => {
     );
     expect(updates[0]).toMatchObject({ last_error: null });
   });
+
+  it('retries a 429 rate-limit response and succeeds once Shopify recovers', async () => {
+    let callCount = 0;
+    global.fetch = jest.fn(async () => {
+      callCount += 1;
+      if (callCount === 1) {
+        return {
+          ok: false,
+          status: 429,
+          headers: { get: (name: string) => (name === 'retry-after' ? '0' : null) },
+          json: async () => ({}),
+        };
+      }
+      return {
+        ok: true,
+        status: 200,
+        headers: { get: () => null },
+        json: async () => ({
+          orders: [{ id: 2002, email: 'shopper2@example.com' }],
+        }),
+      };
+    }) as jest.Mock;
+
+    const supabase = {
+      from: () => ({
+        update: () => ({ eq: () => ({ eq: async () => ({ error: null }) }) }),
+      }),
+    };
+
+    const result = await backfillShopifyOrders({
+      shopDomain: 'acme.myshopify.com',
+      accessToken: 'token',
+      supabase,
+    });
+
+    expect(callCount).toBe(2);
+    expect(result).toMatchObject({ orders: 1, source_orders_upserted: 1, errors: 0 });
+  });
+
+  it('gives up after repeated 429s and surfaces the rate-limit failure', async () => {
+    global.fetch = jest.fn(async () => ({
+      ok: false,
+      status: 429,
+      headers: { get: (name: string) => (name === 'retry-after' ? '0' : null) },
+      json: async () => ({}),
+      text: async () => 'rate limited',
+    })) as jest.Mock;
+
+    const supabase = {
+      from: () => ({
+        update: () => ({ eq: () => ({ eq: async () => ({ error: null }) }) }),
+      }),
+    };
+
+    await expect(
+      backfillShopifyOrders({
+        shopDomain: 'acme.myshopify.com',
+        accessToken: 'token',
+        supabase,
+      }),
+    ).rejects.toThrow(/429/);
+  });
 });
