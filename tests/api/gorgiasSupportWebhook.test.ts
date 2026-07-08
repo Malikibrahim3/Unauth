@@ -229,7 +229,17 @@ function makeGorgiasWebhookSupabase(options?: {
           limit: () => chain,
           maybeSingle: async () => ({ data: null, error: null }),
         };
-        return { select: () => chain };
+        return {
+          select: () => chain,
+          upsert: () => ({
+            select: () => ({
+              single: async () => ({
+                data: { id: '88888888-8888-4888-8888-888888888888' },
+                error: null,
+              }),
+            }),
+          }),
+        };
       }
 
       if (table === 'source_orders') {
@@ -255,8 +265,10 @@ function makeGorgiasWebhookSupabase(options?: {
         const claimRow = { id: 'ffffffff-ffff-4fff-8fff-ffffffffffff' };
         const selectChain: any = {
           eq: () => selectChain,
+          order: () => selectChain,
           limit: () => selectChain,
           maybeSingle: async () => ({ data: null, error: null }),
+          then: (resolve: (value: unknown) => void) => resolve({ data: [], error: null }),
         };
         return {
           select: () => selectChain,

@@ -157,7 +157,7 @@ const upsertCaseSchema = z.object({
   provider_connection_id: z.string().uuid().nullable().optional(),
   external_case_id: z.string().min(1),
   external_url: z.string().nullable().optional(),
-  customer_email: z.string().email().optional(),
+  customer_email: z.string().email().nullable().optional(),
   customer_name: z.string().nullable().optional(),
   ticket_subject: z.string().nullable().optional(),
   customer_email_hash: z.string().nullable().optional(),

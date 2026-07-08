@@ -174,13 +174,9 @@ describe('ingestSupportCase — v2 support payout intake', () => {
     expect(result.is_claim).toBe(false);
     expect(result.claim_type).toBeNull();
     expect(result.claim_type_confidence).toBeNull();
-    expect(result.merchant_claim_id).not.toBeNull();
-    expect(rowsOf(client, TABLES.MERCHANT_CLAIMS)).toHaveLength(1);
-    expect(rowsOf(client, TABLES.MERCHANT_CLAIMS)[0]).toMatchObject({
-      status: 'new',
-      claim_type: 'other',
-      requires_review: true,
-    });
+    expect(result.merchant_claim_id).toBeNull();
+    expect(result.is_payout_case).toBe(false);
+    expect(rowsOf(client, TABLES.MERCHANT_CLAIMS)).toHaveLength(0);
   });
 
   it('upserts a duplicate ticket id instead of duplicating', async () => {
@@ -193,7 +189,7 @@ describe('ingestSupportCase — v2 support payout intake', () => {
     expect(intake).toHaveLength(1);
   });
 
-  it('writes a non-claim ticket to intake and creates a needs-classification payout case', async () => {
+  it('writes a non-claim ticket to intake without creating a payout case', async () => {
     const client = createMemoryClient();
     const result = await ingestSupportCase(
       client,
@@ -206,12 +202,9 @@ describe('ingestSupportCase — v2 support payout intake', () => {
     expect(result.is_claim).toBe(false);
     expect(caseRows(client)).toHaveLength(1);
     expect(caseRows(client)[0]).toMatchObject({ subject: 'Sizing question' });
-    expect(rowsOf(client, TABLES.MERCHANT_CLAIMS)).toHaveLength(1);
-    expect(rowsOf(client, TABLES.MERCHANT_CLAIMS)[0]).toMatchObject({
-      status: 'new',
-      claim_type: 'other',
-      requires_review: true,
-    });
+    expect(result.merchant_claim_id).toBeNull();
+    expect(result.support_payout_case_id).toBeNull();
+    expect(rowsOf(client, TABLES.MERCHANT_CLAIMS)).toHaveLength(0);
   });
 
   it('links a payout case to a source order when order context is available', async () => {
@@ -281,6 +274,45 @@ describe('ingestSupportCase — v2 support payout intake', () => {
     expect(rowsOf(client, TABLES.MERCHANT_CLAIMS)).toHaveLength(1);
     const claimEvents = rowsOf(client, 'claim_events');
     expect(claimEvents.map((event) => event.event_type)).toEqual(['created']);
+  });
+
+  it('non-claim follow-up events still update the existing payout case without downgrading it', async () => {
+    const client = createMemoryClient();
+    const claimTicket = gorgiasTicket({
+      id: 'g-followup',
+      subject: 'Chargeback threat',
+      tags: ['chargeback'],
+      body: 'I will file a chargeback',
+      order: { id: '1010', total_price: 50 },
+    });
+
+    const first = await ingestSupportCase(client, body(MERCHANT_A, claimTicket));
+    expect(first.merchant_claim_id).not.toBeNull();
+    const beforeFollowUp = rowsOf(client, TABLES.MERCHANT_CLAIMS)[0];
+    expect(beforeFollowUp.status).toBe('open');
+
+    // Later webhook for the same ticket that no longer looks like a claim.
+    const followUp = await ingestSupportCase(
+      client,
+      body(MERCHANT_A, {
+        ...claimTicket,
+        subject: 'Account note',
+        tags: [],
+        messages: [{ body: 'thanks for the update', from_agent: false }],
+        integrations: { shopify: { order: { id: '1010', total_price: 75 } } },
+      })
+    );
+
+    // Same case is still updated (not duplicated, not deleted, not downgraded).
+    expect(followUp.merchant_claim_id).toBe(first.merchant_claim_id);
+    const cases = rowsOf(client, TABLES.MERCHANT_CLAIMS);
+    expect(cases).toHaveLength(1);
+    expect(cases[0]).toMatchObject({
+      id: first.merchant_claim_id,
+      status: 'open',
+      amount_at_risk: 75,
+    });
+    expect(cases[0].claim_type).toBe(beforeFollowUp.claim_type);
   });
 });
 

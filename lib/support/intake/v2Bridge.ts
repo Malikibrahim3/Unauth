@@ -235,8 +235,14 @@ const DETECTION_METHOD_MAP: Record<string, string> = {
 };
 
 /**
- * Creates or updates a support payout case for every ingested ticket.
- * Claim-detected tickets use open status; others stay in new / needs classification.
+ * Creates or updates a support payout case for a ticket.
+ *
+ * Creation is gated on claim detection (issue #1008 / CR-1): a new payout
+ * case is only inserted when `isClaim` is true. Non-claim tickets are still
+ * ingested into source_tickets / source_ticket_events upstream — they just
+ * never open a payout case. If a case already exists for the ticket,
+ * follow-up events keep updating it, but non-claim-looking follow-ups do not
+ * downgrade the existing claim classification.
  */
 export async function ensurePayoutCaseForTicketV2(
   supabase: Client,
@@ -306,25 +312,34 @@ export async function ensurePayoutCaseForTicketV2(
   if (existing?.id) {
     const updatePatch: Record<string, unknown> = {
       source_order_id: input.sourceOrderId,
-      claim_type: claimType,
-      status: caseStatus,
-      detection_method: detectionMethod,
       amount_at_risk: input.payoutExposureAmount ?? null,
       total_estimated_loss: input.payoutExposureAmount ?? null,
       currency: input.payoutExposureCurrency ?? null,
       reason_raw: input.claimReason,
       reason_normalized: input.claimReason,
       requested_action: input.requestedAction ?? 'unknown',
-      requires_review: input.requiresReview || !input.isClaim,
-      detection_detail: detectionDetail,
       updated_at: new Date().toISOString(),
     };
+    if (input.isClaim) {
+      // Only claim-confirming events may change the case classification;
+      // non-claim-looking follow-ups keep the existing claim_type/status.
+      updatePatch.claim_type = claimType;
+      updatePatch.status = caseStatus;
+      updatePatch.detection_method = detectionMethod;
+      updatePatch.requires_review = input.requiresReview;
+      updatePatch.detection_detail = detectionDetail;
+    }
     if (input.identityId) {
       updatePatch.identity_id = input.identityId;
     }
     const { error: updateError } = await supabase.from(TABLES.MERCHANT_CLAIMS).update(updatePatch).eq('id', existing.id);
     if (updateError) throw new Error(`ticket_claim_update_failed: ${updateError.message}`);
     return existing.id as string;
+  }
+
+  // Gate creation: non-claim tickets never open a payout case.
+  if (!input.isClaim) {
+    return null;
   }
 
   const { data: claim, error } = await supabase.from(TABLES.MERCHANT_CLAIMS).insert({

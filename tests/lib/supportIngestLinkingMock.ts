@@ -101,8 +101,14 @@ export function supportLinkingLookupTables() {
   // via `.or(...)`). With no seeded rows these resolve to null → link_status
   // 'unlinked', which is the expected "not found" path for these fixtures.
   return {
-    source_customers: () => chainableBuilder({ data: null, error: null }),
+    source_customers: () =>
+      chainableBuilder(
+        { data: null, error: null },
+        { data: { id: '88888888-8888-4888-8888-888888888888' }, error: null }
+      ),
     source_orders: () => chainableBuilder({ data: null, error: null }),
+    identity_signals: () => chainableBuilder({ data: [], error: null }),
+    identity_members: () => chainableBuilder({ data: [], error: null }),
     // Claim creation path (ensureClaimForTicketV2): the existing-claim lookup
     // (.maybeSingle) finds nothing, and the subsequent insert (.single) returns
     // the new claim row. claim_events / claim_evidence inserts resolve cleanly.

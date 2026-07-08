@@ -604,14 +604,17 @@ function buildNormalizedBase(
     raw_payload_hash: hashRawPayload(rawTicket),
     ...fields,
   };
-  return {
+  const normalized: NormalizedSupportCaseIntake = {
     ...merged,
-    customer_email: merged.customer_email ?? null,
     customer_name: merged.customer_name ?? null,
     ticket_subject: merged.ticket_subject ?? null,
     opened_at_provider: merged.opened_at_provider ?? null,
     closed_at_provider: merged.closed_at_provider ?? null,
   };
+  if (merged.customer_email) {
+    normalized.customer_email = merged.customer_email;
+  }
+  return normalized;
 }
 
 export function normalizeZendeskTicket(
