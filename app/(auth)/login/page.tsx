@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { PanelCard } from '@/components/ui';
 import { createClient } from '@/lib/supabase/client';
 import { AuthError, authButtonStyle, authInputClassName } from '../AuthShell';
 
@@ -69,12 +70,12 @@ function LoginPageInner() {
   }
 
   return (
-    <section>
-      <h1 className="text-3xl font-semibold tracking-normal text-[#17151F]">Sign in</h1>
+    <PanelCard as="section" variant="app" className="p-6">
+      <h1 className="text-3xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">Sign in</h1>
 
       <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
         <div>
-          <label htmlFor="login-email" className="mb-2 block text-sm font-medium text-[#3D394B]">
+          <label htmlFor="login-email" className="mb-2 block text-sm font-medium text-[var(--text-secondary)]">
             Email
           </label>
           <Input
@@ -93,7 +94,7 @@ function LoginPageInner() {
         </div>
 
         <div>
-          <label htmlFor="login-password" className="mb-2 block text-sm font-medium text-[#3D394B]">
+          <label htmlFor="login-password" className="mb-2 block text-sm font-medium text-[var(--text-secondary)]">
             Password
           </label>
           <Input
@@ -124,18 +125,18 @@ function LoginPageInner() {
         </Button>
       </form>
 
-      <p className="mt-5 text-sm text-[#625D70]">
+      <p className="mt-5 text-sm text-[var(--text-secondary)]">
         Forgot password?{' '}
-        <Link href="/reset" className="font-medium text-[#5D4B8B] underline-offset-4 hover:underline">
+        <Link href="/reset" className="font-medium text-[var(--accent)] underline-offset-4 hover:underline">
           Reset it
         </Link>
       </p>
-      <p className="mt-4 text-sm text-[#625D70]">
+      <p className="mt-4 text-sm text-[var(--text-secondary)]">
         Don&apos;t have an account?{' '}
-        <Link href="/signup" className="font-medium text-[#5D4B8B] underline-offset-4 hover:underline">
+        <Link href="/signup" className="font-medium text-[var(--accent)] underline-offset-4 hover:underline">
           Create one
         </Link>
       </p>
-    </section>
+    </PanelCard>
   );
 }

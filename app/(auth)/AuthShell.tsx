@@ -8,7 +8,7 @@ type AuthShellProps = {
 
 export function AuthShell({ children }: AuthShellProps) {
   return (
-    <main className="min-h-screen bg-[#F8F8F7] text-[#17151F]">
+    <main className="min-h-screen bg-[var(--fl-bg)] text-[var(--fl-ink)]">
       <div className="mx-auto flex min-h-screen w-full max-w-[440px] flex-col px-5 py-6 sm:px-6">
         <Link href="/" className="mb-12 inline-flex w-fit">
           <UnauthLogo variant="light" size="nav" />
@@ -23,20 +23,19 @@ export function AuthError({ id, children }: { id?: string; children?: ReactNode 
   if (!children) return null;
 
   return (
-    <p id={id} className="mt-2 text-sm leading-5 text-[#9F2F3B]">
+    <p id={id} className="mt-2 text-sm leading-5 text-[var(--risk-critical-fg)]">
       {children}
     </p>
   );
 }
 
 export const authInputClassName =
-  'h-12 rounded-md border-[#D9D7E2] bg-white px-3.5 text-[16px] text-[#17151F] shadow-none placeholder:text-[#8C879A] focus:border-[#5D4B8B] focus:bg-white focus:ring-[0_0_0_3px_rgba(93,75,139,0.16)]';
+  'h-12 rounded-[var(--radius-md)] border-[var(--border)] bg-[var(--surface)] px-3.5 text-[16px] text-[var(--text-primary)] shadow-none placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:bg-[var(--surface)] focus:ring-[var(--shadow-focus)]';
 
 export const authButtonStyle = {
-  background: '#5D4B8B',
+  background: 'var(--accent)',
   color: '#FFFFFF',
-  borderColor: '#5D4B8B',
-  borderRadius: '8px',
-  boxShadow: 'none',
+  borderColor: 'var(--accent)',
+  borderRadius: 'var(--radius-full)',
+  boxShadow: 'var(--landing-shadow-cta)',
 } as const;
-

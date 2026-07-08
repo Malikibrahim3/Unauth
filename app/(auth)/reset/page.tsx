@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { PanelCard } from '@/components/ui';
 import { createClient } from '@/lib/supabase/client';
 import { AuthError, authButtonStyle, authInputClassName } from '../AuthShell';
 
@@ -41,27 +42,27 @@ export default function ResetPage() {
 
   if (sent) {
     return (
-      <section>
-        <h1 className="text-3xl font-semibold tracking-normal text-[#17151F]">Check your email</h1>
-        <p className="mt-4 text-base leading-7 text-[#625D70]">
-          We&apos;ve sent a reset link to <span className="font-medium text-[#17151F]">{email.trim()}</span>.
+      <PanelCard as="section" variant="app" className="p-6">
+        <h1 className="text-3xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">Check your email</h1>
+        <p className="mt-4 text-base leading-7 text-[var(--text-secondary)]">
+          We&apos;ve sent a reset link to <span className="font-medium text-[var(--text-primary)]">{email.trim()}</span>.
           It may take a minute to arrive.
         </p>
-        <Link href="/login" className="mt-8 inline-flex text-sm font-medium text-[#5D4B8B] underline-offset-4 hover:underline">
+        <Link href="/login" className="mt-8 inline-flex text-sm font-medium text-[var(--accent)] underline-offset-4 hover:underline">
           Back to sign in
         </Link>
-      </section>
+      </PanelCard>
     );
   }
 
   return (
-    <section>
-      <h1 className="text-3xl font-semibold tracking-normal text-[#17151F]">Reset your password</h1>
-      <p className="mt-4 text-base leading-7 text-[#625D70]">Enter your email and we&apos;ll send you a reset link.</p>
+    <PanelCard as="section" variant="app" className="p-6">
+      <h1 className="text-3xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">Reset your password</h1>
+      <p className="mt-4 text-base leading-7 text-[var(--text-secondary)]">Enter your email and we&apos;ll send you a reset link.</p>
 
       <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
         <div>
-          <label htmlFor="reset-email" className="mb-2 block text-sm font-medium text-[#3D394B]">
+          <label htmlFor="reset-email" className="mb-2 block text-sm font-medium text-[var(--text-secondary)]">
             Email
           </label>
           <Input
@@ -91,9 +92,9 @@ export default function ResetPage() {
         </Button>
       </form>
 
-      <Link href="/login" className="mt-6 inline-flex text-sm font-medium text-[#5D4B8B] underline-offset-4 hover:underline">
+      <Link href="/login" className="mt-6 inline-flex text-sm font-medium text-[var(--accent)] underline-offset-4 hover:underline">
         Back to sign in
       </Link>
-    </section>
+    </PanelCard>
   );
 }
