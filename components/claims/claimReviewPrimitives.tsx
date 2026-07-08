@@ -2,23 +2,19 @@
 
 import type { ReactNode } from 'react';
 import { getClaimSlaState } from '@/lib/claims/sla';
+import { PanelCard, StatusBadge, statusBadgeVariantFor } from '@/components/ui';
 import {
   EVIDENCE_SOURCE_LABELS,
   EVIDENCE_TYPE_LABELS,
   QUICK_LIFECYCLE_STATUSES,
   STATUS_LABELS,
 } from '@/components/claims/claimReviewLabels';
-import { SLA_COLOUR_MAP, STATUS_COLOUR_MAP, btnStyle, inputStyle } from '@/components/claims/claimReviewStyles';
+import { btnStyle, inputStyle } from '@/components/claims/claimReviewStyles';
 import type { ClaimRecord, ClaimStatus, EvidenceSource, EvidenceType } from '@/components/claims/claimReviewTypes';
 
 export function StatusPill({ status }: { status: string }) {
   const label = STATUS_LABELS[status] ?? status;
-  const c = STATUS_COLOUR_MAP[status] ?? { bg: 'var(--bg-subtle)', text: 'var(--text-secondary)' };
-  return (
-    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: c.bg, color: c.text }}>
-      {label}
-    </span>
-  );
+  return <StatusBadge variant={statusBadgeVariantFor(status)}>{label}</StatusBadge>;
 }
 
 const SLA_DISPLAY_LABEL: Record<string, string> = {
@@ -31,13 +27,9 @@ const SLA_DISPLAY_LABEL: Record<string, string> = {
 
 export function SlaBadge({ claim }: { claim: ClaimRecord }) {
   const sla = getClaimSlaState(claim);
-  const c = SLA_COLOUR_MAP[sla.state] ?? SLA_COLOUR_MAP.normal;
   const label = SLA_DISPLAY_LABEL[sla.label] ?? sla.label;
-  return (
-    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: c.bg, color: c.text }}>
-      {label}
-    </span>
-  );
+  const variant = sla.state === 'overdue' ? 'blocked' : sla.state === 'approaching' ? 'flagged' : sla.state === 'resolved' ? 'cleared' : 'held';
+  return <StatusBadge variant={variant}>{label}</StatusBadge>;
 }
 
 export function FieldLabel({ children, htmlFor }: { children: ReactNode; htmlFor?: string }) {
@@ -66,11 +58,11 @@ export function RailSection({
   highlighted?: boolean;
 }) {
   return (
-    <div
-      className="rounded-md border overflow-hidden"
+    <PanelCard
+      variant="app"
+      className="overflow-hidden p-0"
       style={{
         borderColor: highlighted ? 'var(--text-primary)' : 'var(--border-muted)',
-        background: 'var(--surface)',
         boxShadow: highlighted ? '0 0 0 1px var(--text-primary)' : undefined,
       }}
     >
@@ -92,16 +84,16 @@ export function RailSection({
           {children}
         </div>
       )}
-    </div>
+    </PanelCard>
   );
 }
 
 export function CaseIntelTile({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="rounded-md border px-3 py-2.5 min-w-0" style={{ borderColor: 'var(--border-muted)', background: 'var(--bg-inset)' }}>
+    <PanelCard variant="appInset" className="min-w-0 px-3 py-2.5">
       <p className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--text-secondary)' }}>{label}</p>
       <div className="text-sm leading-snug" style={{ color: 'var(--text)' }}>{children}</div>
-    </div>
+    </PanelCard>
   );
 }
 

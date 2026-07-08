@@ -1,5 +1,6 @@
 'use client';
 
+import { StatusBadge } from '@/components/ui';
 import { RailSection } from '@/components/claims/claimReviewPrimitives';
 import type { ClaimReviewWorkbench } from '@/components/claims/claimReviewWorkbench';
 
@@ -20,7 +21,7 @@ export function ClaimReviewEvidenceRail({ wb }: { wb: ClaimReviewWorkbench }) {
         open={state.railOpen.evidence}
         onToggle={(id) => dispatch({ type: 'toggleRail', id })}
         badge={evidenceRecorded ? (
-          <span className="text-xs rounded-full px-1.5 py-0.5 font-semibold" style={{ background: 'var(--success-bg)', color: 'var(--success)' }}>On record</span>
+          <StatusBadge variant="cleared">On record</StatusBadge>
         ) : undefined}
       >
         {!claimId ? (
@@ -45,7 +46,7 @@ export function ClaimReviewEvidenceRail({ wb }: { wb: ClaimReviewWorkbench }) {
         open={state.railOpen.response}
         onToggle={(id) => dispatch({ type: 'toggleRail', id })}
         badge={responseRecorded ? (
-          <span className="text-xs rounded-full px-1.5 py-0.5 font-semibold" style={{ background: 'var(--success-bg)', color: 'var(--success)' }}>Source reply</span>
+          <StatusBadge variant="cleared">Source reply</StatusBadge>
         ) : undefined}
       >
         <div className="space-y-2 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>

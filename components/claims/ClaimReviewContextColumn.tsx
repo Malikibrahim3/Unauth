@@ -1,6 +1,7 @@
 'use client';
 
 import { signalLabel } from '@/lib/copy/signalLabels';
+import { PanelCard, StatusBadge } from '@/components/ui';
 import { claimEventLabel, claimEventSummary } from '@/lib/claims/events';
 import { formatClaimAge, formatFiledDate } from '@/lib/claims/sla';
 import SupportCaseContextList from '@/components/support/SupportCaseContextList';
@@ -73,7 +74,7 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
           onRefresh={refreshRecommendation}
         />
       ) : null}
-      <section className="rounded-md p-4 border" style={{ borderColor: 'var(--border-muted)', background: 'var(--surface)' }}>
+      <PanelCard as="section" variant="app" className="p-4">
         <p className="text-caption font-semibold mb-3" style={{ color: 'var(--text-secondary)' }}>Claim evidence context</p>
         {selectedClaim ? (
           <>
@@ -126,9 +127,9 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
         ) : (
           <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>No claim selected. Expand Edit claim details at the bottom of this column to create one.</p>
         )}
-      </section>
+      </PanelCard>
 
-      <div className="rounded-md p-4 border" style={{ borderColor: 'var(--border-muted)', background: 'var(--surface)' }}>
+      <PanelCard variant="app" className="p-4">
         <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>Customer payout context</p>
@@ -158,9 +159,9 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
         {behaviorSignals.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-1.5">
             {behaviorSignals.slice(0, 5).map((f) => (
-              <span key={f} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs" style={{ background: 'var(--warning-bg)', color: 'var(--warning)' }}>
+              <StatusBadge key={f} variant="flagged">
                 {signalLabel(f).short}
-              </span>
+              </StatusBadge>
             ))}
           </div>
         )}
@@ -169,16 +170,16 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
             <p className="text-xs font-semibold mb-1.5" style={{ color: 'var(--text-secondary)' }}>Matching data points</p>
             <div className="flex flex-wrap gap-1.5">
               {identityPoints.map((point) => (
-                <span key={point} className="inline-flex items-center rounded-full px-2 py-0.5 text-xs" style={{ background: 'var(--bg-inset)', color: 'var(--text)' }}>
+                <StatusBadge key={point} variant="held" dot={false}>
                   {point}
-                </span>
+                </StatusBadge>
               ))}
             </div>
           </div>
         )}
-      </div>
+      </PanelCard>
 
-      <section className="rounded-md p-4 border" style={{ borderColor: 'var(--border-muted)', background: 'var(--surface)' }}>
+      <PanelCard as="section" variant="app" className="p-4">
         <div className="flex items-center justify-between mb-3">
           <p className="text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>Store-owned claim history</p>
           <span className="text-xs font-semibold" style={{ color: 'var(--text)' }}>Store-scoped</span>
@@ -188,22 +189,22 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
         ) : (
           <div className="space-y-2">
             {withinStoreSignals.map((row) => (
-              <div key={row.key} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto] gap-2 rounded-md border p-2.5 text-xs" style={{ borderColor: 'var(--border-muted)', background: 'var(--bg-inset)' }}>
+              <PanelCard key={row.key} variant="appInset" className="grid grid-cols-1 gap-2 p-2.5 text-xs md:grid-cols-[1fr_1fr_1fr_auto]">
                 <span className="font-semibold capitalize">{row.signal}</span>
                 <span>{row.detail}</span>
                 <span>{row.reason}</span>
                 <span className="inline-flex items-center gap-2">
                   <span className="font-mono" style={{ color: 'var(--text-secondary)' }}>{row.date ? new Date(row.date).toLocaleDateString('en-US') : '-'}</span>
-                  <span className="rounded-full px-2 py-0.5 text-xs font-semibold" style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}>{row.grade}</span>
+                  <StatusBadge variant="held" dot={false}>{row.grade}</StatusBadge>
                 </span>
-              </div>
+              </PanelCard>
             ))}
           </div>
         )}
-      </section>
+      </PanelCard>
 
       {selectedClaim && latestOutcome && (
-        <section className="rounded-md p-4 border" style={{ borderColor: 'var(--border-muted)', background: 'var(--surface)' }}>
+        <PanelCard as="section" variant="app" className="p-4">
           <p className="text-caption font-semibold mb-3" style={{ color: 'var(--text-secondary)' }}>Recorded merchant outcome</p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
             <div>
@@ -231,16 +232,16 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
               </div>
             )}
           </div>
-        </section>
+        </PanelCard>
       )}
 
       <SupportCaseContextList cases={supportCases} />
 
-      <section className="rounded-md p-4 border" style={{ borderColor: 'var(--border-muted)', background: 'var(--surface)' }}>
-        <div className="mb-3 inline-flex rounded-md border p-0.5" style={{ borderColor: 'var(--border-muted)', background: 'var(--bg-inset)' }}>
+      <PanelCard as="section" variant="app" className="p-4">
+        <PanelCard variant="appInset" className="mb-3 inline-flex p-0.5">
           <button type="button" onClick={() => patch({ auditTab: 'timeline' })} className="px-2.5 py-1 text-xs rounded" style={{ background: state.auditTab === 'timeline' ? 'var(--accent)' : 'transparent', color: state.auditTab === 'timeline' ? 'white' : 'var(--text-secondary)' }}>Event timeline</button>
           <button type="button" onClick={() => patch({ auditTab: 'history' })} className="px-2.5 py-1 text-xs rounded" style={{ background: state.auditTab === 'history' ? 'var(--accent)' : 'transparent', color: state.auditTab === 'history' ? 'white' : 'var(--text-secondary)' }}>Claim history</button>
-        </div>
+        </PanelCard>
         {state.auditTab === 'timeline' && (
           <>
             {!selectedClaim ? (
@@ -250,7 +251,7 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
             ) : (
               <ol className="space-y-2">
                 {selectedClaimEvents.map((event) => (
-                  <li key={event.id} className="rounded-md border p-3" style={{ borderColor: 'var(--border-muted)', background: 'var(--bg-inset)' }}>
+                  <PanelCard key={event.id} as="li" variant="appInset" className="p-3">
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div>
                         <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{claimEventLabel(event.event_type)}</p>
@@ -261,7 +262,7 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
                         {event.actor_user_id && <p>{actorLabel(event.actor_user_id)}</p>}
                       </div>
                     </div>
-                  </li>
+                  </PanelCard>
                 ))}
               </ol>
             )}
@@ -270,7 +271,7 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
         {state.auditTab === 'history' && (
           <ClaimReviewHistoryTable history={history} onSelectClaim={setClaimId} />
         )}
-      </section>
+      </PanelCard>
     </div>
   );
 }

@@ -5,32 +5,22 @@ import {
   LOSS_ATTRIBUTION_DISPLAY,
   type LossAttributionResult,
 } from '@/lib/payouts/types';
-import { TONE_STYLE, confidenceTone } from '@/components/claims/payout/payoutCopy';
+import { PanelCard, StatusBadge } from '@/components/ui';
+import { confidenceTone } from '@/components/claims/payout/payoutCopy';
 
 export function LossAttributionCard({ attribution }: { attribution: LossAttributionResult }) {
-  const tone = TONE_STYLE[confidenceTone(attribution.confidence)];
   const isUnknown =
     attribution.label === 'unknown' || attribution.confidence === 'needs_more_evidence';
 
   return (
-    <section
-      className="rounded-md p-4 border"
-      style={{ borderColor: 'var(--border-muted)', background: 'var(--surface)' }}
-    >
+    <PanelCard as="section" variant="app" className="p-4">
       <div className="flex items-center justify-between mb-2">
         <p className="text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>
           Loss attribution (advisory)
         </p>
-        <span
-          className="inline-block text-xs font-semibold rounded-full px-2.5 py-1"
-          style={{
-            background: tone.bg,
-            color: tone.color,
-            border: attribution.confidence === 'needs_more_evidence' ? '1px dashed var(--border-muted)' : undefined,
-          }}
-        >
+        <StatusBadge variant={confidenceVariant(confidenceTone(attribution.confidence))}>
           {ATTRIBUTION_CONFIDENCE_LABELS[attribution.confidence]}
-        </span>
+        </StatusBadge>
       </div>
 
       <p className="font-semibold text-base" style={{ color: 'var(--text)' }}>
@@ -53,6 +43,12 @@ export function LossAttributionCard({ attribution }: { attribution: LossAttribut
           ))}
         </ul>
       )}
-    </section>
+    </PanelCard>
   );
+}
+
+function confidenceVariant(tone: ReturnType<typeof confidenceTone>) {
+  if (tone === 'success') return 'cleared';
+  if (tone === 'warning') return 'flagged';
+  return 'held';
 }

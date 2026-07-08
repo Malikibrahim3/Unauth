@@ -1,4 +1,4 @@
-import type { FC } from 'react';
+import { StatusBadge as SharedStatusBadge } from '@/components/ui';
 
 type Status = 'BLOCKED' | 'FLAGGED' | 'CLEARED';
 
@@ -18,25 +18,17 @@ const rows: ClaimRow[] = [
   { id: 'C-3890', claims: 2, absorbed: '£134', lastType: 'Late delivery',      status: 'FLAGGED'  },
 ];
 
-const badge: Record<Status, string> = {
-  BLOCKED: 'bg-red-950   border border-red-900/50   text-red-300',
-  FLAGGED: 'bg-amber-950 border border-amber-900/50 text-amber-300',
-  CLEARED: 'bg-green-950 border border-green-900/50 text-green-300',
-};
-
 const rowTint: Record<Status, string> = {
   BLOCKED: 'bg-red-500/[0.05]',
   FLAGGED: 'bg-amber-500/[0.04]',
   CLEARED: '',
 };
 
-const StatusBadge: FC<{ status: Status }> = ({ status }) => (
-  <span
-    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium tracking-[0.01em] ${badge[status]}`}
-  >
-    {status}
-  </span>
-);
+const statusVariant: Record<Status, 'blocked' | 'flagged' | 'cleared'> = {
+  BLOCKED: 'blocked',
+  FLAGGED: 'flagged',
+  CLEARED: 'cleared',
+};
 
 export default function ClaimHistoryTable() {
   return (
@@ -105,7 +97,7 @@ export default function ClaimHistoryTable() {
 
                 {/* STATUS */}
                 <td className="px-5 py-[14px] pr-6">
-                  <StatusBadge status={row.status} />
+                  <SharedStatusBadge variant={statusVariant[row.status]}>{row.status}</SharedStatusBadge>
                 </td>
               </tr>
             ))}

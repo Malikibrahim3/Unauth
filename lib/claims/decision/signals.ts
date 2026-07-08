@@ -38,6 +38,7 @@ export type ClaimDecisionSignals = IdentitySignals & {
   prior_loss_outcomes?: number;
   prior_recovered_outcomes?: number;
   ticket_claim_type_confidence?: number | null;
+  is_network_flagged?: boolean;
   // Payout & recovery (populated when a SupportPayoutCase is supplied; otherwise
   // left undefined so rules referencing them simply do not match).
   total_estimated_loss?: number | null;
@@ -54,7 +55,7 @@ export function claimDecisionContextToSignals(
   context: ClaimDecisionContext,
   payoutCase?: SupportPayoutCase,
 ): ClaimDecisionSignals {
-  const { claim, order, delivery, history, evidence } = context;
+  const { claim, order, delivery, history, evidence, identity } = context;
 
   const orderValue =
     claim.amountAtRisk ??
@@ -100,5 +101,6 @@ export function claimDecisionContextToSignals(
     prior_loss_outcomes: history.priorLossOutcomes,
     prior_recovered_outcomes: history.priorRecoveredOutcomes,
     ticket_claim_type_confidence: context.ticket?.claimTypeConfidence ?? null,
+    is_network_flagged: identity?.isNetworkFlagged ?? false,
   };
 }

@@ -1,22 +1,18 @@
 import type {
   ClaimStatus,
-  ClaimType,
   Decision,
   EvidenceSource,
   EvidenceType,
   Outcome,
 } from '@/components/claims/claimReviewTypes';
+import { CLAIM_TYPE_LABELS as CANONICAL_CLAIM_TYPE_LABELS } from '@/lib/claims/claimTypes';
 
 export const DEFAULT_META_ROWS = [{ id: 'default-note', key: 'note', value: '' }];
 
-export const CLAIM_TYPE_LABELS: Record<ClaimType, string> = {
+/** Canonical DB claim-type labels plus legacy shorthand still present in stored rows. */
+export const CLAIM_TYPE_LABELS: Record<string, string> = {
+  ...CANONICAL_CLAIM_TYPE_LABELS,
   missing_parcel: 'Missing parcel',
-  damaged: 'Damaged item',
-  wrong_item: 'Wrong item',
-  refund_request: 'Refund request',
-  chargeback: 'Chargeback',
-  return_abuse: 'Return abuse',
-  other: 'Other',
 };
 
 export const DECISION_LABELS: Record<Decision, string> = {

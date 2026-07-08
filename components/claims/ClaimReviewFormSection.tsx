@@ -1,5 +1,6 @@
 'use client';
 
+import { PanelCard } from '@/components/ui';
 import { CLAIM_TYPE_LABELS } from '@/components/claims/claimReviewLabels';
 import { formatOrderOption } from '@/components/claims/claimReviewLogic';
 import { inputStyle } from '@/components/claims/claimReviewStyles';
@@ -19,9 +20,10 @@ export function ClaimReviewFormSection({ wb }: { wb: ClaimReviewWorkbench }) {
   } = wb;
 
   return (
-    <section
-      className="order-3 min-w-0 min-[1100px]:col-start-1 min-[1100px]:row-start-2 rounded-md border overflow-hidden"
-      style={{ borderColor: 'var(--border-muted)', background: 'var(--surface)' }}
+    <PanelCard
+      as="section"
+      variant="app"
+      className="order-3 min-w-0 overflow-hidden p-0 min-[1100px]:col-start-1 min-[1100px]:row-start-2"
     >
       <button
         type="button"
@@ -33,9 +35,9 @@ export function ClaimReviewFormSection({ wb }: { wb: ClaimReviewWorkbench }) {
       </button>
       {claimFormOpen && (
         <div className="px-4 pb-4 pt-0 border-t space-y-3" style={{ borderColor: 'var(--border-muted)' }}>
-          <p className="rounded-md border px-3 py-2 text-xs leading-relaxed" style={{ borderColor: 'var(--border-muted)', background: 'var(--bg-inset)', color: 'var(--text-secondary)' }}>
+          <PanelCard variant="appInset" className="px-3 py-2 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
             Case facts are created from connected order, helpdesk, payment, returns, carrier, warehouse, or correspondence sources. Missing data stays marked unavailable until a connector or matched source record supplies it.
-          </p>
+          </PanelCard>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {shops.length > 0 && (
               <div>
@@ -57,9 +59,9 @@ export function ClaimReviewFormSection({ wb }: { wb: ClaimReviewWorkbench }) {
                   {orderOptions.map((o) => <option key={o.id} value={o.id}>{formatOrderOption(o)}</option>)}
                 </select>
               ) : (
-                <p id="claim-order" className="rounded-md border px-2 py-1.5 text-xs" style={{ borderColor: 'var(--border-muted)', background: 'var(--bg-inset)', color: 'var(--text-secondary)' }}>
+                <PanelCard id="claim-order" variant="appInset" className="px-2 py-1.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
                   No connected order record is available for this context.
-                </p>
+                </PanelCard>
               )}
             </div>
             <div>
@@ -83,6 +85,6 @@ export function ClaimReviewFormSection({ wb }: { wb: ClaimReviewWorkbench }) {
           </div>
         </div>
       )}
-    </section>
+    </PanelCard>
   );
 }

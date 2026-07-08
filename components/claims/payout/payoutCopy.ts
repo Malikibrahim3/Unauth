@@ -11,6 +11,7 @@ import type {
   Money,
   Recoverability,
 } from '@/lib/payouts/types';
+import { formatCurrency } from '@/lib/utils/format';
 
 export const PAYOUT_DISCLAIMER =
   'Loss attribution and recovery route are advisory estimates from the available evidence. Your team owns the decision.';
@@ -56,16 +57,8 @@ export function recoverabilityTone(recoverability: Recoverability): PayoutTone {
   }
 }
 
-const CURRENCY_SYMBOLS: Record<string, string> = { USD: '$', GBP: '£', EUR: '€' };
-
 export function formatPayoutMoney(money: Money): string {
-  const amount = money.amount.toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-  if (!money.currency) return amount;
-  const symbol = CURRENCY_SYMBOLS[money.currency.toUpperCase()];
-  return symbol ? `${symbol}${amount}` : `${money.currency} ${amount}`;
+  return formatCurrency(money.amount, money.currency ?? undefined);
 }
 
 /** Humanize a checklist item key (e.g. proof_of_delivery → "proof of delivery"). */

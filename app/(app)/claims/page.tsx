@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 // TODO(product-gating): require CLAIM_REVIEW_QUEUE entitlement when ENFORCE_PRODUCT_GATES is enabled.
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
+import { sumSameCurrency } from '@/lib/utils/format';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { getConnectionState } from '@/lib/connections/getConnectionState';
 import { ACTIVE_CLAIM_STATUSES, getClaimSlaState } from '@/lib/claims/sla';
@@ -201,17 +202,32 @@ export default async function ClaimsPage({
     }
   }
 
-  // Join source_orders for each claim to recover the customer display (email) and order ref.
+  // Join source_orders (with the linked source_customer) for each claim to recover
+  // the customer display (name, email) and order ref in a single query.
   const sourceOrderIds = Array.from(new Set(claimRows.flatMap((c) => (c.source_order_id ? [c.source_order_id] : []))));
-  const orderById = new Map<string, { order_number: string | null; email: string | null }>();
+  const orderById = new Map<string, { order_number: string | null; email: string | null; customer_name: string | null }>();
   if (sourceOrderIds.length > 0) {
     const { data: orderRows } = await serviceClient
       .from('source_orders')
-      .select('id,order_number,email')
+      .select('id,order_number,email,source_customer:source_customers(first_name,last_name,email)')
       .eq('merchant_id', ctx.merchantId)
       .in('id', sourceOrderIds);
-    for (const row of orderRows ?? []) {
-      orderById.set(row.id, { order_number: row.order_number, email: row.email });
+    type OrderJoinRow = {
+      id: string;
+      order_number: string | null;
+      email: string | null;
+      source_customer: { first_name: string | null; last_name: string | null; email: string | null } | null;
+    };
+    for (const row of (orderRows ?? []) as unknown as OrderJoinRow[]) {
+      const customerName = [row.source_customer?.first_name, row.source_customer?.last_name]
+        .filter((part): part is string => !!part && part.trim().length > 0)
+        .join(' ')
+        .trim();
+      orderById.set(row.id, {
+        order_number: row.order_number,
+        email: row.email ?? row.source_customer?.email ?? null,
+        customer_name: customerName.length > 0 ? customerName : null,
+      });
     }
   }
 
@@ -249,7 +265,9 @@ export default async function ClaimsPage({
     const order = c.source_order_id ? orderById.get(c.source_order_id) ?? null : null;
     return {
       id: c.id,
-      customer_id: c.identity_id,
+      // Identity is the customer key when resolved; otherwise fall back to a
+      // per-claim key so the order-derived customer summary still attaches.
+      customer_id: c.identity_id ?? c.id,
       shop_domain: null,
       shopify_order_id: order?.order_number ?? null,
       source_ticket_ref: c.source_ticket_id ? ticketRefById.get(c.source_ticket_id) ?? null : null,
@@ -281,11 +299,16 @@ export default async function ClaimsPage({
   // Build the CustomerProfileSummary view-model from identity + merchant-scoped order/state.
   const customerById = new Map<string, CustomerProfileSummary>();
   for (const c of claimRows) {
-    if (!c.identity_id || customerById.has(c.identity_id)) continue;
+    const customerKey = c.identity_id ?? c.id;
+    if (customerById.has(customerKey)) continue;
     const order = c.source_order_id ? orderById.get(c.source_order_id) ?? null : null;
-    const displayName = displayNameByIdentityId.get(c.identity_id) ?? null;
-    customerById.set(c.identity_id, {
-      id: c.identity_id,
+    const displayName =
+      (c.identity_id ? displayNameByIdentityId.get(c.identity_id) : null) ??
+      order?.customer_name ??
+      null;
+    if (!displayName && !order?.email) continue;
+    customerById.set(customerKey, {
+      id: customerKey,
       names: displayName ? [displayName] : null,
       primary_email: order?.email ?? null,
       risk_level: 'none',
@@ -302,7 +325,7 @@ export default async function ClaimsPage({
     fetchClaimQueueCounts(serviceClient, ctx.merchantId, user.id),
     serviceClient
       .from(TABLES.MERCHANT_CLAIMS)
-      .select('amount_at_risk')
+      .select('amount_at_risk,currency')
       .eq('merchant_id', ctx.merchantId),
     serviceClient
       .from(TABLES.MERCHANT_CLAIMS)
@@ -310,9 +333,12 @@ export default async function ClaimsPage({
       .eq('merchant_id', ctx.merchantId),
   ]);
 
-  const totalAtRisk = (allAmountRows ?? []).reduce(
-    (s: number, c: { amount_at_risk: number | null }) => s + (c.amount_at_risk ?? 0),
-    0,
+  // Sum only rows in the dominant currency; mixed-currency rows are excluded
+  // rather than silently added into a single-currency total.
+  const { total: totalAtRisk } = sumSameCurrency(
+    (allAmountRows ?? []) as Array<{ amount_at_risk: number | null; currency: string | null }>,
+    (c) => c.amount_at_risk,
+    (c) => c.currency,
   );
 
   const listView = resolveClaimsListView({

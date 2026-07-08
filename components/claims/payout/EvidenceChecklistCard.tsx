@@ -5,7 +5,8 @@ import {
   EVIDENCE_STRENGTH_LABELS,
   type EvidenceChecklistResult,
 } from '@/lib/payouts/types';
-import { TONE_STYLE, strengthTone } from '@/components/claims/payout/payoutCopy';
+import { PanelCard, StatusBadge } from '@/components/ui';
+import { strengthTone } from '@/components/claims/payout/payoutCopy';
 import { useConnectionState } from '@/components/connections/ConnectionStateContext';
 
 // Claim types for which delivery / tracking evidence is a meaningful gap.
@@ -23,7 +24,6 @@ export function EvidenceChecklistCard({
   delivery?: import('@/lib/claims/decision/types').ClaimDecisionContext['delivery'];
 }) {
   const { trackingConnected } = useConnectionState();
-  const tone = TONE_STYLE[strengthTone(evidence.strength)];
   const hasMissing = evidence.items.some((i) => i.state === 'missing');
 
   // Show a named delivery-evidence gap when claim type is INR-relevant and no
@@ -41,20 +41,14 @@ export function EvidenceChecklistCard({
       : 'Tracking data is unavailable for this case.';
 
   return (
-    <section
-      className="rounded-md p-4 border"
-      style={{ borderColor: 'var(--border-muted)', background: 'var(--surface)' }}
-    >
+    <PanelCard as="section" variant="app" className="p-4">
       <div className="flex items-center justify-between mb-3">
         <p className="text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>
           Evidence on file
         </p>
-        <span
-          className="inline-block text-xs font-semibold rounded-full px-2.5 py-1"
-          style={{ background: tone.bg, color: tone.color }}
-        >
+        <StatusBadge variant={strengthVariant(strengthTone(evidence.strength))}>
           {EVIDENCE_STRENGTH_LABELS[evidence.strength]}
-        </span>
+        </StatusBadge>
       </div>
 
       {evidence.items.length === 0 ? (
@@ -103,8 +97,9 @@ export function EvidenceChecklistCard({
 
       {/* Delivery evidence gap — shown when tracking is not connected on INR-type cases */}
       {showDeliveryGap ? (
-        <div
-          className="mt-3 flex items-start gap-2 rounded-md border px-3 py-2.5 text-xs"
+        <PanelCard
+          variant="appInset"
+          className="mt-3 flex items-start gap-2 px-3 py-2.5 text-xs"
           style={{
             borderColor: 'color-mix(in srgb, var(--warning) 25%, var(--border))',
             background: 'color-mix(in srgb, var(--warning) 6%, var(--surface))',
@@ -126,7 +121,7 @@ export function EvidenceChecklistCard({
               Connect a tracking source →
             </Link>
           </span>
-        </div>
+        </PanelCard>
       ) : null}
 
       {hasMissing && !showDeliveryGap && (
@@ -134,6 +129,12 @@ export function EvidenceChecklistCard({
           Missing items weaken the case — request evidence from the customer or carrier before paying out.
         </p>
       )}
-    </section>
+    </PanelCard>
   );
+}
+
+function strengthVariant(tone: ReturnType<typeof strengthTone>) {
+  if (tone === 'success') return 'cleared';
+  if (tone === 'warning') return 'flagged';
+  return 'held';
 }

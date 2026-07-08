@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { ExternalLink, RefreshCw } from 'lucide-react';
-import { Button } from '@/components/ui';
+import { Button, PanelCard, StatusBadge } from '@/components/ui';
 import { formatCurrencyNullable } from '@/lib/utils/format';
 import { RECOVERY_TYPE_LABELS } from '@/lib/partners/types';
 import {
@@ -42,10 +42,7 @@ export function RecoveryCaseCard({
       recovery?.recoverability === 'possibly_recoverable');
 
   return (
-    <section
-      className="rounded-md border p-4"
-      style={{ borderColor: 'var(--border-muted)', background: 'var(--surface)' }}
-    >
+    <PanelCard as="section" variant="app" className="p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>
@@ -83,16 +80,16 @@ export function RecoveryCaseCard({
             </div>
           </div>
           <div className="mt-3 flex flex-wrap gap-1.5">
-            <span className="rounded-[6px] px-2 py-0.5 text-xs" style={{ background: 'var(--bg-inset)', color: 'var(--text-secondary)' }}>
+            <StatusBadge variant="held" dot={false}>
               {RECOVERY_TYPE_LABELS[recoveryCase.recovery_type]}
-            </span>
-            <span className="rounded-[6px] px-2 py-0.5 text-xs" style={{ background: recoveryCase.evidence_complete ? 'var(--success-bg)' : 'var(--warning-bg)', color: recoveryCase.evidence_complete ? 'var(--success)' : 'var(--warning)' }}>
+            </StatusBadge>
+            <StatusBadge variant={recoveryCase.evidence_complete ? 'cleared' : 'flagged'}>
               {recoveryCase.evidence_complete ? 'Evidence complete' : `${recoveryCase.evidence_missing.length} missing`}
-            </span>
+            </StatusBadge>
             {recoveryCase.partner?.name ? (
-              <span className="rounded-[6px] px-2 py-0.5 text-xs" style={{ background: 'var(--bg-inset)', color: 'var(--text-secondary)' }}>
+              <StatusBadge variant="held" dot={false}>
                 {recoveryCase.partner.name}
-              </span>
+              </StatusBadge>
             ) : null}
           </div>
           {recoveryCase.evidence_missing.length > 0 ? (
@@ -100,9 +97,9 @@ export function RecoveryCaseCard({
               <p className="mb-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>Missing evidence</p>
               <div className="flex flex-wrap gap-1.5">
                 {recoveryCase.evidence_missing.map((item) => (
-                  <span key={item} className="rounded-[6px] px-2 py-0.5 text-xs" style={{ background: 'var(--surface-sunken)', color: 'var(--text-secondary)' }}>
+                  <StatusBadge key={item} variant="held" dot={false}>
                     {item.replaceAll('_', ' ')}
-                  </span>
+                  </StatusBadge>
                 ))}
               </div>
             </div>
@@ -128,9 +125,9 @@ export function RecoveryCaseCard({
               <p className="mb-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>Required for recovery</p>
               <div className="flex flex-wrap gap-1.5">
                 {recovery.requiredEvidence.map((item) => (
-                  <span key={item} className="rounded-[6px] px-2 py-0.5 text-xs" style={{ background: 'var(--surface-sunken)', color: 'var(--text-secondary)' }}>
+                  <StatusBadge key={item} variant="held" dot={false}>
                     {item.replaceAll('_', ' ')}
-                  </span>
+                  </StatusBadge>
                 ))}
               </div>
             </div>
@@ -148,6 +145,6 @@ export function RecoveryCaseCard({
           No external recovery route currently identified.
         </p>
       )}
-    </section>
+    </PanelCard>
   );
 }

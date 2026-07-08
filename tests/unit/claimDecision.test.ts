@@ -126,6 +126,7 @@ describe('claimDecisionContextToSignals', () => {
     expect(signals.merchant_prior_claim_count).toBe(1);
     expect(signals.merchant_same_type_claim_count).toBe(1);
     expect(signals.merchant_prior_same_type_claim_count).toBe(0);
+    expect(signals.is_network_flagged).toBe(false);
   });
 
   it('handles missing optional context with safe defaults', () => {
@@ -140,6 +141,25 @@ describe('claimDecisionContextToSignals', () => {
     expect(signals.delivery_status).toBeNull();
     expect(signals.has_tracking).toBe(false);
     expect(signals.merchant_claim_count).toBe(2);
+    expect(signals.is_network_flagged).toBe(false);
+  });
+
+  it('carries the identity network-flag through to the signal the rules engine reads', () => {
+    const signals = claimDecisionContextToSignals(
+      baseContext({
+        identity: {
+          id: 'i1',
+          confidenceGrade: 'probable',
+          confidenceScore: 72,
+          evidenceScore: 45,
+          evidenceLevel: 'some',
+          hasSufficientData: true,
+          evidenceBreakdown: [],
+          isNetworkFlagged: true,
+        },
+      }),
+    );
+    expect(signals.is_network_flagged).toBe(true);
   });
 });
 
@@ -173,6 +193,27 @@ describe('evaluateRules with claim-specific fields', () => {
     const signals = claimDecisionContextToSignals(baseContext());
     const result = evaluateRules(signals, [
       rule([{ id: 'a', field: 'prior_approved_claims', operator: 'gte', value: 1 }]),
+    ]);
+    expect(result.recommendation).toBe('manual_review');
+  });
+
+  it('matches on is_network_flagged', () => {
+    const signals = claimDecisionContextToSignals(
+      baseContext({
+        identity: {
+          id: 'i1',
+          confidenceGrade: 'probable',
+          confidenceScore: 72,
+          evidenceScore: 45,
+          evidenceLevel: 'some',
+          hasSufficientData: true,
+          evidenceBreakdown: [],
+          isNetworkFlagged: true,
+        },
+      }),
+    );
+    const result = evaluateRules(signals, [
+      rule([{ id: 'a', field: 'is_network_flagged', operator: 'eq', value: true }]),
     ]);
     expect(result.recommendation).toBe('manual_review');
   });

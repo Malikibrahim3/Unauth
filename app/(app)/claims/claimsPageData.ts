@@ -1,12 +1,36 @@
+import { CLAIM_TYPE_LABELS as CANONICAL_CLAIM_TYPE_LABELS } from '@/lib/claims/claimTypes';
+
+/** Canonical claim-type labels plus legacy shorthand still present in stored rows. */
 export const CLAIM_TYPE_LABELS: Record<string, string> = {
+  ...CANONICAL_CLAIM_TYPE_LABELS,
   missing_parcel: 'Missing parcel',
-  damaged: 'Damaged item',
-  wrong_item: 'Wrong item',
-  refund_request: 'Refund request',
-  chargeback: 'Chargeback',
-  return_abuse: 'Return abuse',
-  other: 'Other',
 };
+
+/** Humanise a raw enum value: underscores → spaces, sentence case. Display fallback only. */
+export function humanizeEnumValue(value: string): string {
+  const words = value.replace(/_/g, ' ').trim();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+/**
+ * Display labels for merchant-recorded outcome values. Legacy fraud-era values
+ * map to neutral policy language and must never render raw.
+ */
+export const OUTCOME_LABELS: Record<string, string> = {
+  loss: 'Recorded as loss',
+  recovered: 'Recovered',
+  pending: 'Outcome pending',
+  chargeback_won: 'Chargeback won',
+  chargeback_lost: 'Chargeback lost',
+  customer_verified: 'Customer verified',
+  // Read-compat: legacy accusation-style value displays as a neutral policy denial.
+  suspected_fraud: 'Denied under policy',
+  legitimate: 'Resolved as legitimate',
+};
+
+export function outcomeLabel(outcome: string): string {
+  return OUTCOME_LABELS[outcome] ?? humanizeEnumValue(outcome);
+}
 
 export const DECISION_LABELS: Record<string, string> = {
   approved: 'Resolved in customer favour',

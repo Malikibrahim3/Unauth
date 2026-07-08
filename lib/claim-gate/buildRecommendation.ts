@@ -24,6 +24,7 @@ import {
   type EvidenceStrength,
   type EvidenceStrengthResult,
 } from '@/lib/claim-gate/evidenceStrength';
+import { formatCurrency } from '@/lib/utils/format';
 
 // Carrier claim windows (days) by carrier slug. Used for lost-in-transit deadline calculation.
 const LOST_PARCEL_CLAIM_WINDOW_DAYS: Record<string, number> = {
@@ -89,18 +90,6 @@ export type GateRecommendation = {
 };
 
 const WAREHOUSE_CLAIM_TYPES = new Set<ClaimGateClaimType>(['WRONG_ITEM', 'MISSING_ITEM']);
-
-function formatMoney(amount: number, currency: string): string {
-  try {
-    return new Intl.NumberFormat('en-GB', {
-      style: 'currency',
-      currency,
-      maximumFractionDigits: 2,
-    }).format(amount);
-  } catch {
-    return `${amount} ${currency}`;
-  }
-}
 
 /**
  * Rule A — render the rules that fired into human-readable reasoning. Each line
@@ -374,7 +363,7 @@ export function formatRecommendationNote(recommendation: GateRecommendation, cas
   );
   lines.push('');
 
-  lines.push(`Money at risk: ${formatMoney(recommendation.money_at_risk, recommendation.currency)}`);
+  lines.push(`Money at risk: ${formatCurrency(recommendation.money_at_risk, recommendation.currency)}`);
   lines.push('');
 
   const availableRoutes = recommendation.recovery_routes.filter((route) => route.available);

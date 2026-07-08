@@ -3,7 +3,8 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { createOutcomeSchema, upsertMerchantCaseOutcome } from '@/lib/claims/store';
 import { computeFollowedRecommendation } from '@/lib/payouts/recommendation';
-import type { PayoutRecommendation } from '@/lib/payouts/types';
+import { applyPolicyOverrideAttribution } from '@/lib/payouts/attribution';
+import type { AttributionConfidence, LossAttributionLabel, PayoutRecommendation } from '@/lib/payouts/types';
 import { TABLES } from '@/lib/supabase/tables';
 import { appendClaimEvent } from '@/lib/claims/events';
 import { loadClaimForMerchant, updateClaimStatus } from '@/lib/claims/access';
@@ -48,7 +49,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const { data: claimRecommendationRow } = await serviceClient
     .from(TABLES.MERCHANT_CLAIMS)
-    .select('recommended_payout_action')
+    .select('recommended_payout_action,loss_attribution,attribution_confidence')
     .eq('id', claimId)
     .eq('merchant_id', ctx.merchantId)
     .maybeSingle();
@@ -60,6 +61,29 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     decision: parsed.data.decision,
     outcome: parsed.data.outcome,
   });
+
+  const priorAttributionLabel = (claimRecommendationRow?.loss_attribution as LossAttributionLabel | null) ?? 'unknown';
+  const reclassified = applyPolicyOverrideAttribution(
+    {
+      label: priorAttributionLabel,
+      confidence: (claimRecommendationRow?.attribution_confidence as AttributionConfidence | null) ?? 'needs_more_evidence',
+      reasons: [],
+      networkBenchmark: null,
+      isAdvisory: true,
+    },
+    {
+      followedRecommendation,
+      recommendedAction: recommendedAtDecision,
+      decision: parsed.data.decision,
+    },
+  );
+  if (reclassified.label !== priorAttributionLabel) {
+    await serviceClient
+      .from(TABLES.MERCHANT_CLAIMS)
+      .update({ loss_attribution: reclassified.label, attribution_confidence: reclassified.confidence })
+      .eq('id', claimId)
+      .eq('merchant_id', ctx.merchantId);
+  }
 
   try {
     const [previous, outcome] = await Promise.all([

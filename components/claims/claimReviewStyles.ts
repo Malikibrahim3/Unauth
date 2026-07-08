@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import { formatCurrency } from '@/lib/utils/format';
 
 export const CLAIM_REVIEW_PANEL_ROOT_STYLE: CSSProperties = {
   minHeight: '100vh',
@@ -32,15 +33,9 @@ export const SLA_COLOUR_MAP: Record<string, { bg: string; text: string }> = {
   resolved: { bg: 'var(--success-bg)', text: 'var(--success)' },
 };
 
-const MONEY_FORMATTER = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-  minimumFractionDigits: 2,
-});
-
-export function formatClaimMoney(value: number | null | undefined, _currency?: string | null) {
+export function formatClaimMoney(value: number | null | undefined, currency?: string | null) {
   if (typeof value !== 'number' || Number.isNaN(value)) return '—';
-  return MONEY_FORMATTER.format(value);
+  return formatCurrency(value, currency ?? 'USD');
 }
 
 export function inputStyle(): CSSProperties {

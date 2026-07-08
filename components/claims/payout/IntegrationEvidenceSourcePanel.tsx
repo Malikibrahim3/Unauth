@@ -1,6 +1,7 @@
 'use client';
 
 import type { EvidencePack } from '@/lib/integrations/types';
+import { PanelCard, StatusBadge } from '@/components/ui';
 
 function labelSummary(summary: string) {
   if (summary.toLowerCase().includes('attempted') && summary.toLowerCase().includes('not available')) {
@@ -19,10 +20,7 @@ export function IntegrationEvidenceSourcePanel({
   if (connected.length === 0) return null;
 
   return (
-    <section
-      className="rounded-md p-4 border"
-      style={{ borderColor: 'var(--border-muted)', background: 'var(--surface)' }}
-    >
+    <PanelCard as="section" variant="app" className="p-4">
       <div className="mb-3 flex items-center justify-between gap-3">
         <p className="text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>
           Connected evidence sources
@@ -41,24 +39,18 @@ export function IntegrationEvidenceSourcePanel({
             ...attemptedUnavailable.map((item) => item.message),
           ];
           return (
-            <li
-              key={source.providerId}
-              className="rounded-md border p-3 text-sm"
-              style={{ borderColor: 'var(--border-muted)', background: 'var(--bg-inset)' }}
-            >
+            <PanelCard key={source.providerId} as="li" variant="appInset" className="p-3 text-sm">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-semibold" style={{ color: 'var(--text)' }}>{source.providerName}</span>
-                <span className="rounded-full px-2 py-0.5 text-xs font-semibold" style={{ background: 'var(--success-bg)', color: 'var(--success)' }}>
-                  Connected
-                </span>
+                <StatusBadge variant="cleared">Connected</StatusBadge>
               </div>
               <p className="mt-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
                 {summaries.length > 0 ? summaries.map(labelSummary).join(' · ') : 'Connected, no matching evidence found for this case yet'}
               </p>
-            </li>
+            </PanelCard>
           );
         })}
       </ul>
-    </section>
+    </PanelCard>
   );
 }
