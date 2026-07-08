@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ArrowLeft, Info, ReceiptText, ShieldCheck } from 'lucide-react';
 import CaseSummaryStrip from '@/components/customers/CaseSummaryStrip';
+import { PanelCard } from '@/components/ui';
 import { formatCurrencyNullable, formatDateMode } from '@/lib/utils/format';
 import { FLAG_EXPERIENCE_POLISH_V1 } from '@/lib/flags';
 import type {
@@ -84,11 +85,10 @@ export function CustomerProfilePageHero({
   return (
     <>
       {gorgiasSource === 'gorgias' && (
-        <div
-          className="mb-4 flex items-center gap-3 rounded-md border px-4 py-2.5 text-sm"
+        <PanelCard
+          variant="app"
+          className="mb-4 flex items-center gap-3 px-4 py-2.5 text-sm"
           style={{
-            background: 'var(--surface)',
-            borderColor: 'var(--border)',
             color: 'var(--text-secondary)',
           }}
         >
@@ -99,7 +99,7 @@ export function CustomerProfilePageHero({
               <> · case <span className="font-mono">#{gorgiasTicketId}</span></>
             )}
           </span>
-        </div>
+        </PanelCard>
       )}
       <div className="flex items-center gap-3 mb-6">
         <Link
@@ -120,7 +120,7 @@ export function CustomerProfilePageHero({
         <span className="text-sm font-medium truncate max-w-xs" style={{ color: 'var(--text)' }}>{displayName}</span>
       </div>
 
-      <section className="mb-5 overflow-hidden rounded-md border" style={{ background: 'var(--surface)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-sm)' }}>
+      <PanelCard as="section" variant="app" className="mb-5 overflow-hidden p-0" style={{ boxShadow: 'var(--shadow-sm)' }}>
         <div className="grid gap-4 p-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-3">
@@ -210,7 +210,7 @@ export function CustomerProfilePageHero({
             Last seen {formatDateMode(profile.last_seen, 'recent')}
           </span>
         </div>
-      </section>
+      </PanelCard>
 
       {FLAG_EXPERIENCE_POLISH_V1 && !hasCleanRecord && (
         <div className="mb-[var(--space-5)]">
@@ -225,7 +225,7 @@ export function CustomerProfilePageHero({
         </div>
       )}
 
-      <section className="mb-[var(--space-5)] rounded-md border p-4" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+      <PanelCard as="section" variant="app" className="mb-[var(--space-5)] p-4">
         <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
           <p className="text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>Evidence scope</p>
           <span className="text-caption" style={{ color: 'var(--text-secondary)' }}>
@@ -233,7 +233,7 @@ export function CustomerProfilePageHero({
           </span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div className="rounded-md border p-3" style={{ borderColor: 'var(--border-muted)', background: 'var(--bg-inset)' }}>
+          <PanelCard variant="appInset" className="p-3">
             <p className="text-caption font-semibold mb-2" style={{ color: 'var(--text)' }}>This store</p>
             <div className="grid grid-cols-2 gap-y-1.5 text-caption">
               <span style={{ color: 'var(--text-secondary)' }}>Orders</span>
@@ -267,8 +267,8 @@ export function CustomerProfilePageHero({
                 </div>
               </div>
             )}
-          </div>
-          <div className="rounded-md border p-3" style={{ borderColor: 'var(--border-muted)', background: 'var(--bg-inset)' }}>
+          </PanelCard>
+          <PanelCard variant="appInset" className="p-3">
             <p className="text-caption font-semibold mb-2" style={{ color: 'var(--text)' }}>Payout history</p>
             <div className="grid grid-cols-2 gap-y-1.5 text-caption">
               <span style={{ color: 'var(--text-secondary)' }}>Merchant orders</span>
@@ -288,9 +288,9 @@ export function CustomerProfilePageHero({
                 {formatDateMode(profile.first_seen, 'table')} → {formatDateMode(profile.last_seen, 'table')}
               </span>
             </div>
-          </div>
+          </PanelCard>
         </div>
-      </section>
+      </PanelCard>
     </>
   );
 }

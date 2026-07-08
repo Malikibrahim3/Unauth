@@ -12,7 +12,7 @@ import {
 import { labelFor } from '@/lib/copy/labels';
 import { formatCurrencyNullable, formatDate } from '@/lib/utils/format';
 import { GradeBadge, type ConfidenceGradeValue } from '@/components/ui/GradeBadge';
-import { Badge } from '@/components/ui/Badge';
+import { PanelCard, StatusBadge } from '@/components/ui';
 import { labelize, type RoadmapTransaction } from '@/app/(app)/customers/[id]/customerProfilePageLabels';
 
 function TimelineDetail({
@@ -28,13 +28,13 @@ function TimelineDetail({
 }) {
   if (value == null || value === '') return null;
   return (
-    <div className="min-w-0 rounded-md border p-3" style={{ borderColor: 'var(--border-muted)', background: 'var(--bg-inset)' }}>
+    <PanelCard variant="appInset" className="min-w-0 p-3">
       <div className="flex items-center gap-2">
         <Icon className="h-3.5 w-3.5 shrink-0" style={{ color: 'var(--text-tertiary)' }} />
         <p className="text-caption" style={{ color: 'var(--text-tertiary)' }}>{label}</p>
       </div>
       <p className={`mt-1 text-body-sm break-words ${mono ? 'font-mono' : ''}`} style={{ color: 'var(--text)' }}>{value}</p>
-    </div>
+    </PanelCard>
   );
 }
 
@@ -98,7 +98,7 @@ export function RoadmapOrderCard({ tx, isLast }: { tx: RoadmapTransaction; isLas
         {tx.chargeback_filed ? <AlertTriangle className="h-4 w-4" /> : hasClaim ? <RotateCcw className="h-4 w-4" /> : <ReceiptText className="h-4 w-4" />}
       </span>
 
-      <article className="rounded-md border bg-[var(--surface)]" style={{ borderColor: 'var(--border-muted)' }}>
+      <PanelCard as="article" variant="app" className="p-0">
         <div className="flex flex-wrap items-start justify-between gap-3 border-b px-4 py-3" style={{ borderColor: 'var(--border-muted)' }}>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
@@ -136,7 +136,7 @@ export function RoadmapOrderCard({ tx, isLast }: { tx: RoadmapTransaction; isLas
         </div>
 
         {(tx.refund_claimed ?? tx.chargeback_filed) && (
-          <div className="mx-4 mb-4 rounded-md border p-3" style={{ borderColor: 'var(--risk-high-bd)', background: 'var(--risk-high-bg)' }}>
+          <PanelCard className="mx-4 mb-4 p-3" variant="appInset" style={{ borderColor: 'var(--risk-high-bd)', background: 'var(--risk-high-bg)' }}>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
                 <p className="text-caption" style={{ color: 'var(--risk-high)' }}>Claim status</p>
@@ -157,17 +157,17 @@ export function RoadmapOrderCard({ tx, isLast }: { tx: RoadmapTransaction; isLas
                 </p>
               </div>
             </div>
-          </div>
+          </PanelCard>
         )}
 
         {flags.length > 0 && (
           <div className="flex flex-wrap gap-2 px-4 pb-4">
             {flags.map((flag: string) => (
-              <Badge key={flag} tone="neutral" variant="subtle" size="sm">{labelize(flag)}</Badge>
+              <StatusBadge key={flag} variant="held" dot={false}>{labelize(flag)}</StatusBadge>
             ))}
           </div>
         )}
-      </article>
+      </PanelCard>
     </li>
   );
 }

@@ -2,6 +2,7 @@ import { Activity, ShieldCheck } from 'lucide-react';
 import CustomerNotes from '@/components/audit/CustomerNotes';
 import CustomerSupportCasesSection from '@/components/customers/CustomerSupportCasesSection';
 import BehaviorRoadmap from '@/components/customers/BehaviorRoadmap';
+import { PanelCard } from '@/components/ui';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { formatCurrencyNullable, formatDate, formatDateMode } from '@/lib/utils/format';
@@ -46,10 +47,11 @@ function CompactTransactionList({ transactions }: { transactions: RoadmapTransac
   return (
     <ol className="space-y-2">
       {transactions.slice(0, 25).map((tx) => (
-        <li
+        <PanelCard
+          as="li"
           key={tx.order_id}
-          className="rounded-md border px-4 py-3"
-          style={{ borderColor: 'var(--border-muted)', background: 'var(--bg-inset)' }}
+          variant="appInset"
+          className="px-4 py-3"
         >
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
@@ -74,7 +76,7 @@ function CompactTransactionList({ transactions }: { transactions: RoadmapTransac
               {tx.refund_reason || tx.chargeback_reason_code || 'Reason not provided'}
             </p>
           )}
-        </li>
+        </PanelCard>
       ))}
     </ol>
   );
@@ -112,12 +114,12 @@ export function CustomerProfilePageMainColumn({
     <div className="min-w-0 space-y-[var(--space-5)]">
       {!hasCleanRecord && (
         <SectionCard title="Order & payout history" description="Chronological order, refund, reship, chargeback, and payout-case events from merchant-owned data.">
-          <div className="mb-[var(--space-5)] rounded-md border p-[var(--space-4)]" style={{ borderColor: 'var(--border-muted)', background: 'var(--bg-inset)' }}>
+          <PanelCard variant="appInset" className="mb-[var(--space-5)] p-[var(--space-4)]">
             <div className="flex items-start gap-3">
               <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--text-secondary)' }} />
               <p className="text-body-sm leading-relaxed" style={{ color: 'var(--text)' }}>{merchantNarrative}</p>
             </div>
-          </div>
+          </PanelCard>
 
           {payoutRoadmapEvents.length > 0 ? (
             <BehaviorRoadmap events={payoutRoadmapEvents} />
@@ -160,13 +162,13 @@ export function CustomerProfilePageMainColumn({
                 default: description = labelize(entry.event_type);
               }
               return (
-                <li key={entry.id} className="flex items-start gap-3 rounded-md border p-3" style={{ borderColor: 'var(--border-muted)', background: 'var(--bg-inset)' }}>
+                <PanelCard key={entry.id} as="li" variant="appInset" className="flex items-start gap-3 p-3">
                   <Activity className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--text-secondary)' }} />
                   <div className="min-w-0 flex-1">
                     <p className="text-body-sm" style={{ color: 'var(--text)' }}>{description}</p>
                     <p className="text-caption" style={{ color: 'var(--text-tertiary)' }} title={formatDate(entry.created_at)}>{formatDateMode(entry.created_at, 'recent')}</p>
                   </div>
-                </li>
+                </PanelCard>
               );
             })}
           </ol>

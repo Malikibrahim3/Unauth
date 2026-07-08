@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { Badge } from '@/components/ui/Badge';
+import { PanelCard, StatusBadge } from '@/components/ui';
 import { formatCurrencyNullable, formatDateMode } from '@/lib/utils/format';
 import { labelFor } from '@/lib/copy/labels';
 
@@ -92,7 +92,7 @@ export default function BehaviorRoadmap({ events }: BehaviorRoadmapProps) {
   }, [events]);
 
   return (
-    <div className="overflow-hidden rounded-md border" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+    <PanelCard variant="app" className="overflow-hidden p-0">
       <div className="border-b px-4 py-3" style={{ borderColor: 'var(--border)' }}>
         <div className="flex items-center justify-between gap-3">
           <p className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>Order & claim history</p>
@@ -107,13 +107,7 @@ export default function BehaviorRoadmap({ events }: BehaviorRoadmapProps) {
         {patternTags.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1.5">
             {patternTags.map((tag) => (
-              <span
-                key={tag}
-                className="rounded-sm border px-1.5 py-0.5 text-xs font-medium"
-                style={{ background: 'var(--surface-sunken)', borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
-              >
-                {tag}
-              </span>
+              <StatusBadge key={tag} variant="held" dot={false}>{tag}</StatusBadge>
             ))}
           </div>
         )}
@@ -178,6 +172,6 @@ export default function BehaviorRoadmap({ events }: BehaviorRoadmapProps) {
           );
         })}
       </ol>
-    </div>
+    </PanelCard>
   );
 }
