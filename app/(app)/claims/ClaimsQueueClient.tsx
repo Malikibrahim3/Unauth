@@ -3,9 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { ShieldCheck, ExternalLink, FileText, ArrowRight, Clock } from 'lucide-react';
 import { StatusPill, SlaPill } from '@/app/(app)/claims/claimsPageUi';
-import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
-import { PrivacyBadge } from '@/components/ui/PrivacyBadge';
-import { riskLevelToNewGrade } from '@/lib/confidence';
+import { EvidenceLine, PanelCard, StatusBadge, statusBadgeVariantFor } from '@/components/ui';
 import { formatCurrencyNullable } from '@/lib/utils/format';
 import { formatClaimAge, formatFiledDate } from '@/lib/claims/sla';
 import {
@@ -20,6 +18,9 @@ import { humanizeEvidenceKey } from '@/components/claims/payout/payoutCopy';
 import {
   CLAIM_TYPE_LABELS,
   DECISION_LABELS,
+  STATUS_META,
+  humanizeEnumValue,
+  outcomeLabel,
   type ClaimRow,
   type CustomerProfileSummary,
   type EvidencePackageRow,
@@ -38,8 +39,8 @@ type Props = {
 };
 
 function customerDisplayName(customer: CustomerProfileSummary | null | undefined) {
-  if (!customer) return 'Unknown customer';
-  return customer.names?.[0] ?? `hash:${customer.id.slice(0, 10)}`;
+  if (!customer) return 'Customer not linked';
+  return customer.names?.[0] ?? customer.primary_email ?? 'Customer not linked';
 }
 
 function resolveInitialSelection(claims: ClaimRow[], initialFocusClaimId?: string | null): string | null {
@@ -50,12 +51,16 @@ function resolveInitialSelection(claims: ClaimRow[], initialFocusClaimId?: strin
 }
 
 function workflowStatusLabel(status: string): string {
-  return PAYOUT_CASE_STATUS_LABELS[status as keyof typeof PAYOUT_CASE_STATUS_LABELS] ?? status.replace(/_/g, ' ');
+  return (
+    PAYOUT_CASE_STATUS_LABELS[status as keyof typeof PAYOUT_CASE_STATUS_LABELS] ??
+    STATUS_META[status]?.label ??
+    humanizeEnumValue(status)
+  );
 }
 
 function nextActionLabel(action: string | null | undefined): string | null {
   if (!action) return null;
-  return PAYOUT_CASE_NEXT_ACTION_LABELS[action as keyof typeof PAYOUT_CASE_NEXT_ACTION_LABELS] ?? action.replace(/_/g, ' ');
+  return PAYOUT_CASE_NEXT_ACTION_LABELS[action as keyof typeof PAYOUT_CASE_NEXT_ACTION_LABELS] ?? humanizeEnumValue(action);
 }
 
 function sourceSystemLabel(claim: ClaimRow): string {
@@ -152,13 +157,13 @@ export function ClaimsQueueClient({
               <div className="flex items-center gap-1.5 flex-wrap">
                 <StatusPill status={c.status} />
                 <SlaPill claim={c} />
-                {customer?.risk_level && (
-                  <ConfidenceBadge grade={riskLevelToNewGrade(customer.risk_level)} size="sm" />
-                )}
                 {c.recoverability && (
-                  <span className="rounded-[6px] px-1.5 py-0.5 text-[11px] font-medium" style={{ background: 'var(--surface-sunken)', color: 'var(--text-secondary)' }}>
+                  <StatusBadge
+                    variant={statusBadgeVariantFor(c.recoverability)}
+                    className="px-1.5 py-0.5 text-[11px] font-medium"
+                  >
                     {RECOVERABILITY_LABELS[c.recoverability as keyof typeof RECOVERABILITY_LABELS] ?? c.recoverability}
-                  </span>
+                  </StatusBadge>
                 )}
               </div>
             </button>
@@ -239,8 +244,10 @@ function ClaimDetailPanel({
       </div>
 
       {/* Workflow state — primary call-out */}
-      <section
-        className="rounded-md border px-4 py-3"
+      <PanelCard
+        as="section"
+        variant="appInset"
+        className="px-4 py-3"
         style={{
           background: 'var(--info-bg)',
           borderColor: 'var(--info-bd)',
@@ -282,18 +289,18 @@ function ClaimDetailPanel({
           {ops.reviewState}
         </p>
         <div className="mt-2 flex flex-wrap gap-1.5">
-          <span className="rounded-[6px] px-2 py-0.5 text-[11px] font-medium" style={{ background: 'var(--surface)', color: 'var(--text-secondary)' }}>
+          <StatusBadge variant={statusBadgeVariantFor(ops.evidenceStatus)} className="px-2 py-0.5 text-[11px] font-medium">
             {ops.evidenceStatus}
-          </span>
+          </StatusBadge>
           {claim.next_action && (
-            <span className="rounded-[6px] px-2 py-0.5 text-[11px] font-medium" style={{ background: 'var(--surface)', color: 'var(--text-secondary)' }}>
+            <StatusBadge variant={statusBadgeVariantFor(claim.next_action)} className="px-2 py-0.5 text-[11px] font-medium">
               {nextActionLabel(claim.next_action)}
-            </span>
+            </StatusBadge>
           )}
           {claim.recovery_state && (
-            <span className="rounded-[6px] px-2 py-0.5 text-[11px] font-medium" style={{ background: 'var(--surface)', color: 'var(--text-secondary)' }}>
+            <StatusBadge variant={statusBadgeVariantFor(claim.recovery_state)} className="px-2 py-0.5 text-[11px] font-medium">
               {RECOVERY_STATE_LABELS[claim.recovery_state as keyof typeof RECOVERY_STATE_LABELS] ?? claim.recovery_state}
-            </span>
+            </StatusBadge>
           )}
         </div>
         <Link
@@ -302,14 +309,11 @@ function ClaimDetailPanel({
         >
           Review evidence <ArrowRight className="h-3 w-3" />
         </Link>
-      </section>
+      </PanelCard>
 
       {/* Recovery chase-up */}
       {(claim.recoverability || claim.recovery_owner || claim.loss_attribution) && (
-        <section
-          className="rounded-md border"
-          style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
-        >
+        <PanelCard as="section" variant="app" className="overflow-hidden p-0">
           <div
             className="flex items-center justify-between gap-3 px-4 py-2.5 border-b"
             style={{ borderColor: 'var(--border-muted)' }}
@@ -321,9 +325,9 @@ function ClaimDetailPanel({
               Recovery chase-up
             </p>
             {claim.recoverability && (
-              <span className="rounded-md px-2 py-0.5 text-caption font-semibold" style={{ background: 'var(--surface-sunken)', color: 'var(--text-secondary)' }}>
+              <StatusBadge variant={statusBadgeVariantFor(claim.recoverability)} className="px-2 py-0.5 text-caption font-semibold">
                 {RECOVERABILITY_LABELS[claim.recoverability as keyof typeof RECOVERABILITY_LABELS] ?? claim.recoverability}
-              </span>
+              </StatusBadge>
             )}
           </div>
           <div className="space-y-2 px-4 py-3">
@@ -352,17 +356,11 @@ function ClaimDetailPanel({
               </p>
             )}
           </div>
-        </section>
+        </PanelCard>
       )}
 
       {/* Evidence package */}
-      <section
-        className="rounded-md border"
-        style={{
-          background: 'var(--surface)',
-          borderColor: 'var(--border)',
-        }}
-      >
+      <PanelCard as="section" variant="app" className="overflow-hidden p-0">
         <div
           className="flex items-center justify-between px-4 py-2.5 border-b"
           style={{ borderColor: 'var(--border-muted)' }}
@@ -381,20 +379,20 @@ function ClaimDetailPanel({
           {evidence ? (
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <p
-                  className="text-body-sm font-semibold font-mono truncate"
-                  style={{ color: 'var(--text-primary)' }}
-                >
-                  {evidence.reference_number}
-                </p>
-                <p className="text-caption mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                  Generated{' '}
-                  {new Date(evidence.generated_at).toLocaleDateString('en-US', {
+                <EvidenceLine
+                  icon="confirmed"
+                  text={
+                    <span className="font-mono font-semibold text-[var(--text-primary)]">
+                      {evidence.reference_number}
+                    </span>
+                  }
+                  timestamp={new Date(evidence.generated_at).toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',
                     year: 'numeric',
                   })}
-                </p>
+                  className="text-caption"
+                />
               </div>
               <Link
                 href={`/claims/${claim.id}`}
@@ -420,14 +418,11 @@ function ClaimDetailPanel({
             </div>
           )}
         </div>
-      </section>
+      </PanelCard>
 
       {/* Customer identity */}
       {customer && (
-        <section
-          className="rounded-md border"
-          style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
-        >
+        <PanelCard as="section" variant="app" className="overflow-hidden p-0">
           <div
             className="flex items-center justify-between px-4 py-2.5 border-b"
             style={{ borderColor: 'var(--border-muted)' }}
@@ -438,12 +433,6 @@ function ClaimDetailPanel({
             >
               Customer
             </p>
-            <div className="flex items-center gap-1.5">
-              <span className="text-caption" style={{ color: 'var(--text-tertiary)' }}>
-                Identity grade
-              </span>
-              <ConfidenceBadge grade={riskLevelToNewGrade(customer.risk_level)} size="sm" showLabel={false} />
-            </div>
           </div>
           <div className="px-4 py-3">
             <div className="flex items-start justify-between gap-3">
@@ -454,12 +443,11 @@ function ClaimDetailPanel({
                 >
                   {customerDisplayName(customer)}
                 </p>
-                <div className="mt-1 flex flex-wrap items-center gap-2">
-                  <PrivacyBadge value="Hashed" />
-                  <p className="text-caption font-mono truncate" style={{ color: 'var(--text-tertiary)' }}>
-                    {customer.id}
+                {customer.primary_email ? (
+                  <p className="mt-1 text-caption truncate" style={{ color: 'var(--text-tertiary)' }}>
+                    {customer.primary_email}
                   </p>
-                </div>
+                ) : null}
               </div>
               <Link
                 href={`/customers/${customer.id}`}
@@ -470,15 +458,12 @@ function ClaimDetailPanel({
               </Link>
             </div>
           </div>
-        </section>
+        </PanelCard>
       )}
 
       {/* Merchant-recorded outcome (if any) */}
       {outcome && (
-        <section
-          className="rounded-md border"
-          style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
-        >
+        <PanelCard as="section" variant="app" className="overflow-hidden p-0">
           <div
             className="flex items-center gap-2 px-4 py-2.5 border-b"
             style={{ borderColor: 'var(--border-muted)' }}
@@ -497,14 +482,14 @@ function ClaimDetailPanel({
             </p>
             {outcome.outcome && outcome.outcome !== outcome.decision && (
               <p className="text-caption mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-                {outcome.outcome}
+                {outcomeLabel(outcome.outcome)}
               </p>
             )}
             <p className="text-caption mt-1" style={{ color: 'var(--text-tertiary)' }}>
               Updated {new Date(outcome.updated_at).toLocaleDateString('en-US')}
             </p>
           </div>
-        </section>
+        </PanelCard>
       )}
     </div>
   );

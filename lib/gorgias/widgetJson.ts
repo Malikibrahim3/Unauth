@@ -9,6 +9,7 @@ import type {
 import type { ConfidenceGrade } from '@/lib/engine/weights';
 import type { ScoreFactor } from '@/lib/engine/evidence/score';
 import { env } from '@/lib/utils/env';
+import { formatCurrency } from '@/lib/utils/format';
 import { buildGorgiasWidgetUnlockUrlSet } from '@/lib/gorgias/widgetUnlockUrls';
 import { GORGIAS_SETTINGS_INTEGRATIONS_PATH } from '@/lib/support/gorgias/supportConnectionShared';
 import { computeWidgetTrustSummary } from '@/lib/gorgias/widgetTrustSignals';
@@ -109,7 +110,7 @@ export type GorgiasWidgetJsonOptions = {
 };
 
 /** True unless an explicit non-production diagnostic preview was requested. */
-export function useCreditGatedWidgetPreview(options?: GorgiasWidgetJsonOptions): boolean {
+export function isCreditGatedWidgetPreview(options?: GorgiasWidgetJsonOptions): boolean {
   return !(options?.allowDetailedPreview === true && process.env.NODE_ENV !== 'production');
 }
 
@@ -339,16 +340,8 @@ function withUnlockFields(
 // All factual/advisory; never a verdict. Plain ·-joined strings for native rows.
 // ---------------------------------------------------------------------------
 
-const CURRENCY_SYMBOLS: Record<string, string> = { USD: '$', GBP: '£', EUR: '€' };
-
 function formatMoney(m: Money): string {
-  const amt = m.amount.toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-  if (!m.currency) return amt;
-  const symbol = CURRENCY_SYMBOLS[m.currency.toUpperCase()];
-  return symbol ? `${symbol}${amt}` : `${m.currency} ${amt}`;
+  return formatCurrency(m.amount, m.currency ?? undefined);
 }
 
 function humanizeKey(key: string): string {

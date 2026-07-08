@@ -1,5 +1,6 @@
 'use client';
 
+import { PanelCard, StatusBadge, statusBadgeVariantFor } from '@/components/ui';
 import { formatCurrencyNullable } from '@/lib/utils/format';
 import { RECOVERY_TYPE_LABELS } from '@/lib/partners/types';
 import {
@@ -20,20 +21,25 @@ function dateLabel(value: string | null) {
 
 export function RecoveryBoardClient({ recoveries }: Props) {
   return (
-    <div className="grid gap-4 xl:grid-cols-3 2xl:grid-cols-5">
+    <div>
+      <p className="mb-3 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+        Card status and evidence completeness update from connected source sync, matched correspondence, and provider status events.
+      </p>
+      <div className="grid gap-4 xl:grid-cols-3 2xl:grid-cols-5">
       {RECOVERY_BOARD_COLUMNS.map((column) => {
         const rows = recoveries.filter((item) => column.statuses.includes(item.status));
         return (
-          <section
+          <PanelCard
+            as="section"
+            variant="app"
             key={column.key}
-            className="min-w-0 rounded-[8px] border"
-            style={{ borderColor: 'var(--border-muted)', background: 'var(--surface)' }}
+            className="min-w-0 overflow-hidden p-0"
           >
             <div className="flex items-center justify-between gap-3 border-b px-3 py-2" style={{ borderColor: 'var(--border-muted)' }}>
               <p className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>{column.label}</p>
-              <span className="rounded-[6px] px-2 py-0.5 text-[11px] font-mono" style={{ background: 'var(--surface-sunken)', color: 'var(--text-tertiary)' }}>
+              <StatusBadge variant="held" className="px-2 py-0.5 text-[11px] font-mono" dot={false}>
                 {rows.length}
-              </span>
+              </StatusBadge>
             </div>
             <div className="space-y-2 p-2">
               {rows.length === 0 ? (
@@ -43,10 +49,11 @@ export function RecoveryBoardClient({ recoveries }: Props) {
               ) : rows.map((item) => {
                 const orderLabel = item.support_payout_case?.order_number ?? item.support_payout_case?.ticket_external_id ?? item.support_payout_case_id.slice(0, 8);
                 return (
-                  <article
+                  <PanelCard
+                    as="article"
                     key={item.id}
-                    className="rounded-[8px] border p-3"
-                    style={{ borderColor: 'var(--border-muted)', background: 'var(--surface-sunken)' }}
+                    variant="appInset"
+                    className="p-3"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
@@ -57,9 +64,12 @@ export function RecoveryBoardClient({ recoveries }: Props) {
                           {RECOVERY_TYPE_LABELS[item.recovery_type]} · {RECOVERY_OWNER_LABELS[item.owner_type]}
                         </p>
                       </div>
-                      <span className="shrink-0 rounded-[6px] px-2 py-0.5 text-[11px]" style={{ background: 'var(--bg-inset)', color: 'var(--text-secondary)' }}>
+                      <StatusBadge
+                        variant={statusBadgeVariantFor(item.status)}
+                        className="shrink-0 px-2 py-0.5 text-[11px]"
+                      >
                         {RECOVERY_STATUS_LABELS[item.status]}
-                      </span>
+                      </StatusBadge>
                     </div>
                     <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
                       <div>
@@ -84,25 +94,26 @@ export function RecoveryBoardClient({ recoveries }: Props) {
                       </div>
                     </div>
                     <div className="mt-3 flex flex-wrap gap-1.5">
-                      <span className="rounded-[6px] px-2 py-0.5 text-[11px]" style={{ background: item.evidence_complete ? 'var(--success-bg)' : 'var(--warning-bg)', color: item.evidence_complete ? 'var(--success)' : 'var(--warning)' }}>
+                      <StatusBadge
+                        variant={item.evidence_complete ? 'cleared' : 'flagged'}
+                        className="px-2 py-0.5 text-[11px]"
+                      >
                         {item.evidence_complete ? 'Evidence complete' : `${item.evidence_missing.length} evidence missing`}
-                      </span>
+                      </StatusBadge>
                       {item.partner?.name ? (
-                        <span className="rounded-[6px] px-2 py-0.5 text-[11px]" style={{ background: 'var(--bg-inset)', color: 'var(--text-secondary)' }}>
+                        <StatusBadge variant="held" className="px-2 py-0.5 text-[11px]">
                           {item.partner.name}
-                        </span>
+                        </StatusBadge>
                       ) : null}
                     </div>
-                    <p className="mt-3 border-t pt-2 text-[11px] leading-relaxed" style={{ borderColor: 'var(--border-muted)', color: 'var(--text-tertiary)' }}>
-                      Status and evidence completeness update only from connected source sync, matched correspondence, or provider status events.
-                    </p>
-                  </article>
+                  </PanelCard>
                 );
               })}
             </div>
-          </section>
+          </PanelCard>
         );
       })}
+      </div>
     </div>
   );
 }

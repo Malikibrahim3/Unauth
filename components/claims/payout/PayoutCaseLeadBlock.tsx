@@ -9,8 +9,10 @@ import {
   type CaseClarificationRequest,
   type SupportPayoutCase,
 } from '@/lib/payouts/types';
+import { PanelCard, StatusBadge } from '@/components/ui';
 import { PAYOUT_DISCLAIMER } from '@/components/claims/payout/payoutCopy';
 import { humanizeEvidenceKey } from '@/components/claims/payout/payoutCopy';
+import { formatCurrency } from '@/lib/utils/format';
 import { PayoutExposureCard } from '@/components/claims/payout/PayoutExposureCard';
 import { EvidenceChecklistCard } from '@/components/claims/payout/EvidenceChecklistCard';
 import { DeliveryEvidenceCard } from '@/components/claims/payout/DeliveryEvidenceCard';
@@ -40,14 +42,11 @@ export function PayoutCaseLeadBlock({
   if (!payoutCase) {
     if (!loading) return null;
     return (
-      <section
-        className="rounded-md p-4 border"
-        style={{ borderColor: 'var(--border-muted)', background: 'var(--surface)' }}
-      >
+      <PanelCard as="section" variant="app" className="p-4">
         <p className="text-caption" style={{ color: 'var(--text-tertiary)' }}>
           Loading payout exposure…
         </p>
-      </section>
+      </PanelCard>
     );
   }
 
@@ -86,10 +85,7 @@ function PayoutWorkflowSummary({
   const missing = payoutCase.evidence.items.filter((item) => item.state !== 'present');
 
   return (
-    <section
-      className="rounded-md border p-4"
-      style={{ borderColor: 'var(--border-muted)', background: 'var(--surface)' }}
-    >
+    <PanelCard as="section" variant="app" className="p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-caption font-semibold uppercase tracking-wide" style={{ color: 'var(--text-tertiary)', letterSpacing: '0.06em' }}>
@@ -102,14 +98,14 @@ function PayoutWorkflowSummary({
             {payoutCase.nextActionReason}
           </p>
         </div>
-        <span className="rounded-[6px] px-2.5 py-1 text-xs font-semibold" style={{ background: 'var(--info-bg)', color: 'var(--info)' }}>
+        <StatusBadge variant="held">
           {PAYOUT_CASE_NEXT_ACTION_LABELS[payoutCase.nextAction]}
-        </span>
+        </StatusBadge>
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <WorkflowFact label="Requested action" value={REQUESTED_ACTION_LABELS[payoutCase.requestedAction.primary]} />
-        <WorkflowFact label="Payout exposure" value={`${payoutCase.exposure.total.currency ?? 'USD'} ${payoutCase.exposure.total.amount.toFixed(2)}`} />
+        <WorkflowFact label="Payout exposure" value={formatCurrency(payoutCase.exposure.total.amount, payoutCase.exposure.total.currency ?? undefined)} />
         <WorkflowFact label="Decision state" value={PAYOUT_DECISION_STATE_LABELS[payoutCase.payoutDecisionState]} />
         <WorkflowFact label="Recovery" value={RECOVERY_STATE_LABELS[payoutCase.recoveryState]} />
       </div>
@@ -120,11 +116,11 @@ function PayoutWorkflowSummary({
       </div>
 
       <div className="mt-4 grid gap-3 lg:grid-cols-2">
-        <div className="rounded-md border p-3" style={{ borderColor: 'var(--border-muted)', background: 'var(--bg-inset)' }}>
+        <PanelCard variant="appInset" className="p-3">
           <p className="text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>Clarification requests</p>
           <ClarificationRequestList requests={payoutCase.clarificationRequests} />
-        </div>
-        <div className="rounded-md border p-3" style={{ borderColor: 'var(--border-muted)', background: 'var(--bg-inset)' }}>
+        </PanelCard>
+        <PanelCard variant="appInset" className="p-3">
           <p className="text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>Agent decision and recovery</p>
           <div className="mt-2 space-y-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
             <p>
@@ -142,18 +138,18 @@ function PayoutWorkflowSummary({
                 : 'None'}
             </p>
           </div>
-        </div>
+        </PanelCard>
       </div>
-    </section>
+    </PanelCard>
   );
 }
 
 function WorkflowFact({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border p-3" style={{ borderColor: 'var(--border-muted)', background: 'var(--bg-inset)' }}>
+    <PanelCard variant="appInset" className="p-3">
       <p className="text-caption" style={{ color: 'var(--text-tertiary)' }}>{label}</p>
       <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{value}</p>
-    </div>
+    </PanelCard>
   );
 }
 
@@ -167,20 +163,20 @@ function EvidencePillGroup({
   empty: string;
 }) {
   return (
-    <div className="rounded-md border p-3" style={{ borderColor: 'var(--border-muted)', background: 'var(--bg-inset)' }}>
+    <PanelCard variant="appInset" className="p-3">
       <p className="text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>{title}</p>
       {items.length > 0 ? (
         <div className="mt-2 flex flex-wrap gap-1.5">
           {items.slice(0, 8).map((item) => (
-            <span key={item} className="rounded-[6px] px-2 py-0.5 text-[11px]" style={{ background: 'var(--surface)', color: 'var(--text-secondary)' }}>
+            <StatusBadge key={item} variant="held" dot={false}>
               {item}
-            </span>
+            </StatusBadge>
           ))}
         </div>
       ) : (
         <p className="mt-2 text-xs" style={{ color: 'var(--text-tertiary)' }}>{empty}</p>
       )}
-    </div>
+    </PanelCard>
   );
 }
 
@@ -196,14 +192,14 @@ function ClarificationRequestList({ requests }: { requests: CaseClarificationReq
   return (
     <div className="mt-2 space-y-2">
       {requests.slice(0, 4).map((request) => (
-        <div key={request.id} className="rounded-md border p-2.5" style={{ borderColor: 'var(--border-muted)', background: 'var(--surface)' }}>
+        <PanelCard key={request.id} variant="app" className="p-2.5">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
               {request.target_name ?? request.target_type.toUpperCase()}
             </p>
-            <span className="rounded-[6px] px-2 py-0.5 text-[11px]" style={{ background: 'var(--surface-sunken)', color: 'var(--text-secondary)' }}>
+            <StatusBadge variant="held" dot={false}>
               {request.status.replace(/_/g, ' ')}
-            </span>
+            </StatusBadge>
           </div>
           <p className="mt-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
             {request.request_summary}
@@ -213,7 +209,7 @@ function ClarificationRequestList({ requests }: { requests: CaseClarificationReq
               Needs {request.requested_evidence.map(humanizeEvidenceKey).join(', ')}
             </p>
           )}
-        </div>
+        </PanelCard>
       ))}
     </div>
   );

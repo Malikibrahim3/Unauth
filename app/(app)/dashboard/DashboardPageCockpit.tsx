@@ -11,11 +11,11 @@ import {
   Repeat2,
 } from 'lucide-react';
 import type { TrendDataPoint } from '@/components/charts/WeeklyTrendChart';
+import { EvidenceLine, PanelCard, uiTokens } from '@/components/ui';
 import type { ConnectionState } from '@/lib/connections/getConnectionState';
 import type { MerchantSetupState } from '@/lib/connections/getMerchantSetupState';
 import type { PayoutDashboardMetrics } from '@/lib/dashboard/payoutDashboardMetrics';
 import { MetricCard } from '@/app/(app)/dashboard/DashboardPagePrimitives';
-import { DashboardCompletenessBanner } from '@/app/(app)/dashboard/DashboardCompletenessBanner';
 import { DashboardSyncRow } from '@/app/(app)/dashboard/DashboardSyncRow';
 import { capitalize } from '@/app/(app)/dashboard/dashboardPageUtils';
 import type { ActivityItem, DashboardConfig } from '@/app/(app)/dashboard/dashboardPageTypes';
@@ -79,15 +79,13 @@ export function DashboardPageCockpit(props: DashboardPageCockpitProps) {
         </div>
       </header>
 
-      {config.banner ? <DashboardCompletenessBanner banner={config.banner} primaryCta={config.primaryCta} /> : null}
-
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         {kpis.map((kpi) => (
           <MetricCard key={kpi.label} {...kpi} />
         ))}
       </div>
 
-      <section className="rounded-[10px] border p-4" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+      <PanelCard as="section" variant="app" className="p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Payout and recovery results</p>
@@ -98,38 +96,38 @@ export function DashboardPageCockpit(props: DashboardPageCockpitProps) {
           </Link>
         </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-[6px] border p-3" style={{ borderColor: 'var(--border)', background: 'var(--surface-sunken)' }}>
+          <PanelCard variant="appInset" className="p-3">
             <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Open payout exposure</p>
-            <p className="mt-1 font-semibold tabular-nums" style={{ color: 'var(--text-primary)' }}>{formatCurrencyNullable(metrics.payoutExposureOpen || null)}</p>
-          </div>
-          <div className="rounded-[6px] border p-3" style={{ borderColor: 'var(--border)', background: 'var(--surface-sunken)' }}>
+            <p className="mt-1 font-semibold tabular-nums" style={{ color: 'var(--text-primary)' }}>{formatCurrencyNullable(metrics.payoutExposureOpen || null, metrics.displayCurrency)}</p>
+          </PanelCard>
+          <PanelCard variant="appInset" className="p-3">
             <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Recoverable amount identified</p>
-            <p className="mt-1 font-semibold tabular-nums" style={{ color: 'var(--text-primary)' }}>{formatCurrencyNullable(metrics.recoverableIdentified || null)}</p>
-          </div>
-          <div className="rounded-[6px] border p-3" style={{ borderColor: 'var(--border)', background: 'var(--surface-sunken)' }}>
+            <p className="mt-1 font-semibold tabular-nums" style={{ color: 'var(--text-primary)' }}>{formatCurrencyNullable(metrics.recoverableIdentified || null, metrics.displayCurrency)}</p>
+          </PanelCard>
+          <PanelCard variant="appInset" className="p-3">
             <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Amount recovered</p>
-            <p className="mt-1 font-semibold tabular-nums" style={{ color: 'var(--text-primary)' }}>{formatCurrencyNullable(metrics.amountRecovered || null)}</p>
-          </div>
-          <div className="rounded-[6px] border p-3" style={{ borderColor: 'var(--border)', background: 'var(--surface-sunken)' }}>
+            <p className="mt-1 font-semibold tabular-nums" style={{ color: 'var(--text-primary)' }}>{formatCurrencyNullable(metrics.amountRecovered || null, metrics.displayCurrency)}</p>
+          </PanelCard>
+          <PanelCard variant="appInset" className="p-3">
             <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Recovery cases chase due</p>
             <p className="mt-1 font-semibold tabular-nums" style={{ color: 'var(--text-primary)' }}>{metrics.chaseDue > 0 ? metrics.chaseDue.toLocaleString() : '—'}</p>
-          </div>
-          <div className="rounded-[6px] border p-3" style={{ borderColor: 'var(--border)', background: 'var(--surface-sunken)' }}>
+          </PanelCard>
+          <PanelCard variant="appInset" className="p-3">
             <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Rejected / unrecoverable</p>
-            <p className="mt-1 font-semibold tabular-nums" style={{ color: 'var(--text-primary)' }}>{formatCurrencyNullable(metrics.rejectedUnrecoverableAmount || null)}</p>
-          </div>
-          <div className="rounded-[6px] border p-3" style={{ borderColor: 'var(--border)', background: 'var(--surface-sunken)' }}>
+            <p className="mt-1 font-semibold tabular-nums" style={{ color: 'var(--text-primary)' }}>{formatCurrencyNullable(metrics.rejectedUnrecoverableAmount || null, metrics.displayCurrency)}</p>
+          </PanelCard>
+          <PanelCard variant="appInset" className="p-3">
             <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Prevention-only exposure</p>
-            <p className="mt-1 font-semibold tabular-nums" style={{ color: 'var(--text-primary)' }}>{formatCurrencyNullable(metrics.preventionOnlyExposure || null)}</p>
-          </div>
-          <div className="rounded-[6px] border p-3" style={{ borderColor: 'var(--border)', background: 'var(--surface-sunken)' }}>
+            <p className="mt-1 font-semibold tabular-nums" style={{ color: 'var(--text-primary)' }}>{formatCurrencyNullable(metrics.preventionOnlyExposure || null, metrics.displayCurrency)}</p>
+          </PanelCard>
+          <PanelCard variant="appInset" className="p-3">
             <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Policy leakage</p>
-            <p className="mt-1 font-semibold tabular-nums" style={{ color: 'var(--text-primary)' }}>{formatCurrencyNullable(metrics.policyLeakageExposure || null)}</p>
-          </div>
-          <div className="rounded-[6px] border p-3" style={{ borderColor: 'var(--border)', background: 'var(--surface-sunken)' }}>
+            <p className="mt-1 font-semibold tabular-nums" style={{ color: 'var(--text-primary)' }}>{formatCurrencyNullable(metrics.policyLeakageExposure || null, metrics.displayCurrency)}</p>
+          </PanelCard>
+          <PanelCard variant="appInset" className="p-3">
             <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Cases missing evidence</p>
             <p className="mt-1 font-semibold tabular-nums" style={{ color: 'var(--text-primary)' }}>{metrics.casesMissingEvidence > 0 ? metrics.casesMissingEvidence.toLocaleString() : '—'}</p>
-          </div>
+          </PanelCard>
         </div>
         {metrics.topLossOwners.length > 0 ? (
           <div className="mt-4">
@@ -139,17 +137,17 @@ export function DashboardPageCockpit(props: DashboardPageCockpitProps) {
                 <div key={row.owner} className="flex items-center justify-between text-xs">
                   <span style={{ color: 'var(--text-primary)' }}>{row.label}</span>
                   <span className="tabular-nums" style={{ color: 'var(--text-secondary)' }}>
-                    {row.count} case{row.count === 1 ? '' : 's'} · {formatCurrencyNullable(row.exposure || null)}
+                    {row.count} case{row.count === 1 ? '' : 's'} · {formatCurrencyNullable(row.exposure || null, metrics.displayCurrency)}
                   </span>
                 </div>
               ))}
             </div>
           </div>
         ) : null}
-      </section>
+      </PanelCard>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <section className="rounded-[10px] border p-4" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+        <PanelCard as="section" variant="app" className="p-4">
           <div className="flex items-center justify-between mb-3">
             <div>
               <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Support payout cases over time</p>
@@ -159,7 +157,7 @@ export function DashboardPageCockpit(props: DashboardPageCockpitProps) {
               Payout control <ArrowRight className="h-3 w-3" aria-hidden="true" />
             </Link>
           </div>
-          {connectionState.helpdesk && claimTrend.some((pt) => pt.value > 0) ? (
+          {claimTrend.some((pt) => pt.value > 0) ? (
             <WeeklyTrendChart data={claimTrend} color="var(--accent)" primaryLabel="Cases" height={130} />
           ) : (
             <div
@@ -171,10 +169,10 @@ export function DashboardPageCockpit(props: DashboardPageCockpitProps) {
               </p>
             </div>
           )}
-        </section>
+        </PanelCard>
 
         <aside className="space-y-4">
-          <section className="rounded-[10px] border p-4" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+          <PanelCard as="section" variant="app" className="p-4">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Needs attention</p>
               <Link href="/claims" className="text-xs font-semibold hover:underline" style={{ color: 'var(--accent)' }}>Open queue</Link>
@@ -196,9 +194,9 @@ export function DashboardPageCockpit(props: DashboardPageCockpitProps) {
               </span>
               <ArrowRight className="h-3 w-3" style={{ color: 'var(--accent)' }} />
             </Link>
-          </section>
+          </PanelCard>
 
-          <section className="rounded-[10px] border p-4" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+          <PanelCard as="section" variant="app" className="p-4">
             <p className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Sync health</p>
             <div className="space-y-2">
               <DashboardSyncRow
@@ -214,19 +212,20 @@ export function DashboardPageCockpit(props: DashboardPageCockpitProps) {
                 hasData={connectionState.helpdesk}
               />
             </div>
-          </section>
+          </PanelCard>
 
           {activity.length > 0 ? (
-            <section className="rounded-[10px] border p-4" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-              <p className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Recent activity</p>
+            <PanelCard as="section" variant="app" className="p-4">
+              <p className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Open follow-ups</p>
               <div className="space-y-2.5">
                 {activity.map((item, idx) => {
                   const content = (
-                    <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2">
-                      <span className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>{item.type}</span>
-                      <p className="truncate text-xs" style={{ color: 'var(--text-primary)' }}>{item.detail}</p>
-                      <span className="text-xs font-mono" style={{ color: 'var(--text-tertiary)' }}>{item.time}</span>
-                    </div>
+                    <EvidenceLine
+                      icon="confirmed"
+                      text={<><span className="font-semibold text-[var(--text-secondary)]">{item.type}</span> · {item.detail}</>}
+                      timestamp={item.time || '→'}
+                      className={uiTokens.app.caption}
+                    />
                   );
                   return item.href ? (
                     <Link key={`${item.type}-${idx}`} href={item.href} className="block hover:opacity-80">{content}</Link>
@@ -235,7 +234,7 @@ export function DashboardPageCockpit(props: DashboardPageCockpitProps) {
                   );
                 })}
               </div>
-            </section>
+            </PanelCard>
           ) : null}
         </aside>
       </div>

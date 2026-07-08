@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { LayoutTemplate, Plus } from 'lucide-react';
-import { Button, PageHeader } from '@/components/ui';
+import { Button, PanelCard, StatusBadge, WorkbenchPage, statusBadgeVariantFor } from '@/components/ui';
 import type { MerchantRule } from '@/lib/rules-engine';
 import { DEFAULT_PAYOUT_RULES } from '@/lib/rules/payoutDefaults';
 import { ACTION_LABELS } from '@/lib/rules/summary';
@@ -237,43 +237,11 @@ export function RulesPageClient({ canManage }: RulesPageClientProps) {
     }
   };
 
-  return (
-    <div className="flex flex-col gap-5">
-      <PageHeader
-        title="Payout Rules"
-        subtitle="Merchant policy decides the recommended action on each support payout case — from the claim type, requested action, payout exposure, and evidence on file."
-        primaryAction={
-          canManage ? (
-            <Button
-              variant="primary"
-              leadingIcon={<Plus className="h-4 w-4" />}
-              onClick={rules.length === 0 ? handleUseDefaults : openCreate}
-              loading={creatingDefaults}
-            >
-              {rules.length === 0 ? 'Use default payout rules' : 'New rule'}
-            </Button>
-          ) : undefined
-        }
-        secondaryActions={
-          canManage
-            ? [
-                <Button
-                  key="templates"
-                  variant="secondary"
-                  leadingIcon={<LayoutTemplate className="h-4 w-4" />}
-                  onClick={openTemplates}
-                >
-                  Browse Templates
-                </Button>,
-              ]
-            : undefined
-        }
-      />
+  const activeCount = rules.filter((r) => r.is_active).length;
 
-      <section
-        className="rounded-[var(--radius-lg)] border p-4"
-        style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
-      >
+  const mainContent = (
+    <div className="flex flex-col gap-5 py-6">
+      <PanelCard as="section" variant="app" className="p-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <h2 className="text-body font-semibold" style={{ color: 'var(--text-primary)' }}>
@@ -285,17 +253,17 @@ export function RulesPageClient({ canManage }: RulesPageClientProps) {
           </div>
           <div className="flex flex-wrap gap-2">
             {DEFAULT_PAYOUT_RULES.map((rule) => (
-              <span
+              <StatusBadge
                 key={rule.name}
-                className="rounded-[var(--radius-md)] border px-2.5 py-1 text-caption"
-                style={{ borderColor: 'var(--border-muted)', color: 'var(--text-secondary)' }}
+                variant={statusBadgeVariantFor(rule.action)}
+                className="px-2.5 py-1 text-caption"
               >
                 {rule.name}: {ACTION_LABELS[rule.action]}
-              </span>
+              </StatusBadge>
             ))}
           </div>
         </div>
-      </section>
+      </PanelCard>
 
       {loading ? (
         <div className="flex flex-col gap-3">
@@ -331,6 +299,60 @@ export function RulesPageClient({ canManage }: RulesPageClientProps) {
           ))}
         </div>
       )}
+    </div>
+  );
+
+  return (
+    <>
+      <WorkbenchPage
+        eyebrow="Operations"
+        title="Payout Rules"
+        subtitle="Your policy, applied to every case: what to approve, what to question, and what to deny."
+        actions={
+          canManage ? (
+            <>
+              <Button
+                variant="secondary"
+                leadingIcon={<LayoutTemplate className="h-4 w-4" />}
+                onClick={openTemplates}
+              >
+                Browse Templates
+              </Button>
+              <Button
+                variant="primary"
+                leadingIcon={<Plus className="h-4 w-4" />}
+                onClick={rules.length === 0 ? handleUseDefaults : openCreate}
+                loading={creatingDefaults}
+              >
+                {rules.length === 0 ? 'Add default payout rules' : 'New rule'}
+              </Button>
+            </>
+          ) : undefined
+        }
+        kpiItems={[
+          {
+            label: 'Active rules',
+            value: loading ? '—' : activeCount.toLocaleString(),
+            hint: 'Evaluated top to bottom',
+          },
+          {
+            label: 'Total rules',
+            value: loading ? '—' : rules.length.toLocaleString(),
+            hint: 'Including disabled rules',
+          },
+          {
+            label: 'Disabled rules',
+            value: loading ? '—' : (rules.length - activeCount).toLocaleString(),
+            hint: 'Kept but not applied',
+          },
+          {
+            label: 'Default payout rules',
+            value: DEFAULT_PAYOUT_RULES.length.toLocaleString(),
+            hint: 'Applied when you have none',
+          },
+        ]}
+        main={mainContent}
+      />
 
       <RuleBuilderDrawer
         key={`${editingRule?.id ?? 'new'}-${builderOpen}`}
@@ -364,6 +386,6 @@ export function RulesPageClient({ canManage }: RulesPageClientProps) {
           {toast.message}
         </div>
       )}
-    </div>
+    </>
   );
 }

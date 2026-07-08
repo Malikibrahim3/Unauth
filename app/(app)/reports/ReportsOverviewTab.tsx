@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
-import { SectionCard } from '@/components/ui';
+import { PanelCard, SectionCard } from '@/components/ui';
 import { formatCurrencyCompact } from '@/components/charts/chartFormatters';
 import { AnalyticsHBarChart } from '@/components/analytics/AnalyticsHBarChart';
 import { AnalyticsKpiCard } from '@/components/analytics/AnalyticsKpiCard';
@@ -33,6 +33,8 @@ export type OverviewTabProps = {
   outcomeBreakdown: OutcomeBreakdown;
   sourcesCoverage: SourcesCoverage;
   range: string;
+  /** Currency code money KPIs are reported in (most common case currency). */
+  displayCurrency: string;
 };
 
 export function OverviewTab({
@@ -47,21 +49,31 @@ export function OverviewTab({
   outcomeBreakdown,
   sourcesCoverage,
   range,
+  displayCurrency,
 }: OverviewTabProps) {
   const rangeLabel = range === 'all' ? 'all time' : `last ${range.replace('d', ' days')}`;
-  // Only claim "Live source" when a real integration is connected; otherwise the
-  // data is existing/sample data and must not be badged as live.
-  const sourceMode: 'live' | 'sample' =
-    connectionState.orderSourceConnected || connectionState.helpdesk ? 'live' : 'sample';
-  const hasCases = claims.length > 0 || connectionState.helpdesk;
+  // Charts below are computed from the merchant's own payout-case rows, so they are
+  // never "sample data". Badge "Live source" when an integration is connected;
+  // otherwise show no lineage badge (real rows, non-live ingestion).
+  const isConnected = connectionState.orderSourceConnected || Boolean(connectionState.helpdesk);
+  const chartTag = isConnected ? <SourceTag source="live" /> : undefined;
+  const hasCases = claims.length > 0 || Boolean(connectionState.helpdesk);
+  const evidenceGapRows = [
+    { label: 'Evidence requested', value: claimMetrics.evidenceRequestedClaims, color: 'var(--warning)' },
+    { label: 'Manual review', value: claimMetrics.inReviewOrPendingClaims, color: 'var(--accent)' },
+    { label: 'Ageing cases', value: claimMetrics.overdueClaims, color: 'var(--text-tertiary)' },
+    { label: 'Recovery evidence needed', value: recoveryMetrics.evidenceNeeded, color: 'var(--neutral)' },
+  ];
+  const hasEvidenceGapData = evidenceGapRows.some((row) => row.value > 0);
   const sourceCoverage = (connectionState.shopify ? 50 : 0) + (connectionState.helpdesk ? 50 : 0);
   const followThroughPct = claimMetrics.recommendationFollowThroughRate * 100;
 
   return (
     <div className="p-4 space-y-4">
       {liveCta && (
-        <div
-          className="rounded-md border px-4 py-3"
+        <PanelCard
+          variant="appInset"
+          className="px-4 py-3"
           style={{
             background: 'color-mix(in srgb, var(--warning) 8%, var(--surface))',
             borderColor: 'color-mix(in srgb, var(--warning) 28%, var(--border))',
@@ -76,19 +88,23 @@ export function OverviewTab({
               {liveCta.label} <ArrowRight className="h-3 w-3" aria-hidden="true" />
             </Link>
           </div>
-        </div>
+        </PanelCard>
       )}
 
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <AnalyticsKpiCard
           label="Payout exposure reviewed"
-          value={claimMetrics.valueAtRisk ? formatCurrencyCompact(claimMetrics.valueAtRisk) : '—'}
-          hint={metricHintCurrency(rangeLabel, claimMetrics.valueAtRisk, priorMetrics)}
+          value={claimMetrics.valueAtRisk ? formatCurrencyCompact(claimMetrics.valueAtRisk, displayCurrency) : '—'}
+          hint={claimMetrics.valueAtRisk
+            ? metricHintCurrency(rangeLabel, claimMetrics.valueAtRisk, priorMetrics, displayCurrency)
+            : 'No payout exposure recorded in this period'}
         />
         <AnalyticsKpiCard
           label="Refunds approved"
-          value={claimMetrics.amountRefunded ? formatCurrencyCompact(claimMetrics.amountRefunded) : '—'}
-          hint={metricHint('Recorded outcomes', claimMetrics.approvedClaims, priorMetrics, 'approvedClaims')}
+          value={claimMetrics.amountRefunded ? formatCurrencyCompact(claimMetrics.amountRefunded, displayCurrency) : '—'}
+          hint={claimMetrics.amountRefunded
+            ? metricHint('Recorded outcomes', claimMetrics.approvedClaims, priorMetrics, 'approvedClaims')
+            : 'No refunds recorded in this period'}
         />
         <AnalyticsKpiCard
           label="Payouts denied under policy"
@@ -111,20 +127,24 @@ export function OverviewTab({
         />
         <AnalyticsKpiCard
           label="Recovered amount"
-          value={recoveryMetrics.recoveredAmount ? formatCurrencyCompact(recoveryMetrics.recoveredAmount) : '—'}
-          hint="Recovery outcomes"
+          value={recoveryMetrics.recoveredAmount ? formatCurrencyCompact(recoveryMetrics.recoveredAmount, displayCurrency) : '—'}
+          hint={recoveryMetrics.recoveredAmount ? 'Recovery outcomes' : 'No recoveries recorded yet'}
           compact
         />
         <AnalyticsKpiCard
           label="Open recovery value"
-          value={recoveryMetrics.openRecoveryValue ? formatCurrencyCompact(recoveryMetrics.openRecoveryValue) : '—'}
-          hint={`${recoveryMetrics.openCases.toLocaleString()} open recovery cases`}
+          value={recoveryMetrics.openRecoveryValue ? formatCurrencyCompact(recoveryMetrics.openRecoveryValue, displayCurrency) : '—'}
+          hint={recoveryMetrics.openCases > 0
+            ? `${recoveryMetrics.openCases.toLocaleString()} open recovery cases`
+            : 'No open recovery cases'}
           compact
         />
         <AnalyticsKpiCard
           label="Rule follow-through"
           value={claimMetrics.recommendationCount > 0 ? `${Math.round(followThroughPct)}%` : '—'}
-          hint={`${claimMetrics.followedRecommendations.toLocaleString()} of ${claimMetrics.recommendationCount.toLocaleString()} recorded`}
+          hint={claimMetrics.recommendationCount > 0
+            ? `${claimMetrics.followedRecommendations.toLocaleString()} of ${claimMetrics.recommendationCount.toLocaleString()} recorded`
+            : 'No outcomes recorded yet'}
           compact
         />
       </div>
@@ -151,56 +171,71 @@ export function OverviewTab({
       </div>
 
       <div className="grid gap-4 xl:grid-cols-2">
-        <SectionCard title="Requested payout actions" description={`Case intake mix · ${rangeLabel}`} actions={<SourceTag source={sourceMode} />}>
-          <AnalyticsHBarChart
-            data={requestedActionBreakdown.slice(0, 7).map((item) => ({
-              label: item.label,
-              value: item.count,
-              color: 'var(--accent)',
-            }))}
-            yAxisWidth={150}
-            emptyLabel="No payout action data"
-          />
+        <SectionCard title="Requested payout actions" description={`Case intake mix · ${rangeLabel}`} actions={chartTag}>
+          {requestedActionBreakdown.length > 0 ? (
+            <AnalyticsHBarChart
+              data={requestedActionBreakdown.slice(0, 7).map((item) => ({
+                label: item.label,
+                value: item.count,
+                color: 'var(--accent)',
+              }))}
+              yAxisWidth={150}
+              emptyLabel="No payout action data"
+            />
+          ) : (
+            <ChartEmptyState>
+              Requested actions appear once support payout cases are created from your helpdesk — no sample data shown.
+            </ChartEmptyState>
+          )}
         </SectionCard>
 
-        <SectionCard title="Evidence gap trends" description={`Cases waiting on evidence · ${rangeLabel}`} actions={<SourceTag source={sourceMode} />}>
-          <AnalyticsHBarChart
-            data={[
-              { label: 'Evidence requested', value: claimMetrics.evidenceRequestedClaims, color: 'var(--warning)' },
-              { label: 'Manual review', value: claimMetrics.inReviewOrPendingClaims, color: 'var(--accent)' },
-              { label: 'Ageing cases', value: claimMetrics.overdueClaims, color: 'var(--text-tertiary)' },
-              { label: 'Recovery evidence needed', value: recoveryMetrics.evidenceNeeded, color: 'var(--neutral)' },
-            ]}
-            yAxisWidth={160}
-            emptyLabel="No evidence gaps"
-          />
+        <SectionCard title="Evidence gap trends" description="Open evidence work right now" actions={chartTag}>
+          {hasEvidenceGapData ? (
+            <AnalyticsHBarChart data={evidenceGapRows} yAxisWidth={160} emptyLabel="No evidence gaps" />
+          ) : (
+            <ChartEmptyState>
+              Evidence gaps appear once payout or recovery cases start waiting on evidence — no sample data shown.
+            </ChartEmptyState>
+          )}
         </SectionCard>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-2">
-        <SectionCard title="Case reasons by exposure" description={`Support payout case mix · ${rangeLabel}`} actions={<SourceTag source={sourceMode} />}>
-          <AnalyticsHBarChart
-            data={claimTypeBreakdown.slice(0, 7).map((item) => ({
-              label: item.label,
-              value: item.value || item.count,
-              color: 'var(--accent)',
-            }))}
-            yAxisWidth={150}
-            valueFormatter={(value) => itemValueLabel(value)}
-            emptyLabel="No case reason data"
-          />
+        <SectionCard title="Case reasons by exposure" description={`Support payout case mix · ${rangeLabel}`} actions={chartTag}>
+          {claimTypeBreakdown.length > 0 ? (
+            <AnalyticsHBarChart
+              data={claimTypeBreakdown.slice(0, 7).map((item) => ({
+                label: item.label,
+                value: item.value || item.count,
+                color: 'var(--accent)',
+              }))}
+              yAxisWidth={150}
+              valueFormatter={(value) => itemValueLabel(value, displayCurrency)}
+              emptyLabel="No case reason data"
+            />
+          ) : (
+            <ChartEmptyState>
+              Case reasons and payout exposure appear once support payout cases are recorded — no sample data shown.
+            </ChartEmptyState>
+          )}
         </SectionCard>
 
-        <SectionCard title="Final outcome trends" description={`Agent decision outcomes · ${rangeLabel}`} actions={<SourceTag source={sourceMode} />}>
-          <AnalyticsHBarChart
-            data={outcomeBreakdown.slice(0, 7).map((item) => ({
-              label: item.label,
-              value: item.count,
-              color: 'var(--neutral)',
-            }))}
-            yAxisWidth={150}
-            emptyLabel="No recorded outcomes yet"
-          />
+        <SectionCard title="Final outcomes" description={`Agent decision outcomes · ${rangeLabel}`} actions={chartTag}>
+          {outcomeBreakdown.length > 0 ? (
+            <AnalyticsHBarChart
+              data={outcomeBreakdown.slice(0, 7).map((item) => ({
+                label: item.label,
+                value: item.count,
+                color: 'var(--neutral)',
+              }))}
+              yAxisWidth={150}
+              emptyLabel="No recorded outcomes yet"
+            />
+          ) : (
+            <ChartEmptyState>
+              Outcomes appear once agent decisions are recorded against payout cases — no sample data shown.
+            </ChartEmptyState>
+          )}
         </SectionCard>
       </div>
 
@@ -232,6 +267,19 @@ export function OverviewTab({
   );
 }
 
-function itemValueLabel(value: number): string {
-  return value >= 1000 ? formatCurrencyCompact(value) : String(value);
+function itemValueLabel(value: number, currency: string): string {
+  return value >= 1000 ? formatCurrencyCompact(value, currency) : String(value);
+}
+
+/** Honest empty state for a chart card — states what will appear and which source feeds it. */
+function ChartEmptyState({ children }: { children: string }) {
+  return (
+    <PanelCard
+      variant="appInset"
+      className="flex min-h-[120px] items-center justify-center border-dashed px-6 text-center"
+      style={{ borderColor: 'var(--border)' }}
+    >
+      <p className="t-caption max-w-[36ch] leading-snug" style={{ color: 'var(--text-tertiary)' }}>{children}</p>
+    </PanelCard>
+  );
 }

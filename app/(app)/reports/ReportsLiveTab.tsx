@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { ArrowRight, Headphones, ShoppingBag } from 'lucide-react';
-import { SectionCard } from '@/components/ui';
+import { PanelCard, SectionCard } from '@/components/ui';
 import { AnalyticsKpiCard } from '@/components/analytics/AnalyticsKpiCard';
 import { AnalyticsHBarChart } from '@/components/analytics/AnalyticsHBarChart';
 import { AnalyticsGaugeCard } from '@/components/analytics/AnalyticsGaugeCard';
@@ -21,6 +21,8 @@ export type RecoveryTabProps = {
   connectionState: ConnectionState;
   liveCta: LiveSetupCta | null;
   range: string;
+  /** Currency code money KPIs are reported in (most common case currency). */
+  displayCurrency: string;
   recoveryMetrics: RecoveryMetrics;
   recoveryStatusBreakdown: RecoveryStatusBreakdown;
   partnerPerformance: PartnerPerformanceRow[];
@@ -31,21 +33,24 @@ export function RecoveryTab({
   connectionState,
   liveCta,
   range,
+  displayCurrency,
   recoveryMetrics,
   recoveryStatusBreakdown,
   partnerPerformance,
   sourcesCoverage,
 }: RecoveryTabProps) {
   const rangeLabel = range === 'all' ? 'all time' : `last ${range.replace('d', ' days')}`;
-  // Only badge "Live source" when a real integration is connected.
-  const sourceMode: 'live' | 'sample' =
-    connectionState.orderSourceConnected || connectionState.helpdesk ? 'live' : 'sample';
+  // Charts are built from the merchant's own recovery-case rows, so never badge
+  // them "Sample data". Badge "Live source" only when an integration is connected.
+  const isConnected = connectionState.orderSourceConnected || Boolean(connectionState.helpdesk);
+  const chartTag = isConnected ? <SourceTag source="live" /> : undefined;
 
   return (
     <div className="p-4 space-y-4">
       {liveCta && (
-        <div
-          className="rounded border px-4 py-3 flex flex-wrap items-center justify-between gap-3"
+        <PanelCard
+          variant="appInset"
+          className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
           style={{
             background: 'color-mix(in srgb, var(--warning) 8%, var(--surface))',
             borderColor: 'color-mix(in srgb, var(--warning) 28%, var(--border))',
@@ -70,13 +75,25 @@ export function RecoveryTab({
           <Link href="/settings/integrations" className="btn-accent shrink-0 inline-flex items-center gap-1.5 rounded-md px-3.5 py-1.5 text-caption font-semibold">
             {liveCta.label} <ArrowRight className="h-3 w-3" aria-hidden="true" />
           </Link>
-        </div>
+        </PanelCard>
       )}
 
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-        <AnalyticsKpiCard label="Recovered amount" value={recoveryMetrics.recoveredAmount ? formatCurrencyCompact(recoveryMetrics.recoveredAmount) : '—'} hint={rangeLabel} />
-        <AnalyticsKpiCard label="Unrecovered amount" value={recoveryMetrics.unrecoveredAmount ? formatCurrencyCompact(recoveryMetrics.unrecoveredAmount) : '—'} />
-        <AnalyticsKpiCard label="Open recovery value" value={recoveryMetrics.openRecoveryValue ? formatCurrencyCompact(recoveryMetrics.openRecoveryValue) : '—'} />
+        <AnalyticsKpiCard
+          label="Recovered amount"
+          value={recoveryMetrics.recoveredAmount ? formatCurrencyCompact(recoveryMetrics.recoveredAmount, displayCurrency) : '—'}
+          hint={recoveryMetrics.recoveredAmount ? rangeLabel : 'No recoveries recorded in this period'}
+        />
+        <AnalyticsKpiCard
+          label="Unrecovered amount"
+          value={recoveryMetrics.unrecoveredAmount ? formatCurrencyCompact(recoveryMetrics.unrecoveredAmount, displayCurrency) : '—'}
+          hint={recoveryMetrics.unrecoveredAmount ? undefined : 'No unrecovered losses recorded'}
+        />
+        <AnalyticsKpiCard
+          label="Open recovery value"
+          value={recoveryMetrics.openRecoveryValue ? formatCurrencyCompact(recoveryMetrics.openRecoveryValue, displayCurrency) : '—'}
+          hint={recoveryMetrics.openRecoveryValue ? undefined : 'No open recovery value right now'}
+        />
         <AnalyticsKpiCard label="Recovery cases" value={recoveryMetrics.totalCases} />
       </div>
 
@@ -109,7 +126,7 @@ export function RecoveryTab({
       </div>
 
       <div className="grid gap-4 xl:grid-cols-2">
-        <SectionCard title="Recovery status" description={`Recovery case board · ${rangeLabel}`} actions={<SourceTag source={sourceMode} />}>
+        <SectionCard title="Recovery status" description={`Recovery case board · ${rangeLabel}`} actions={chartTag}>
           <AnalyticsHBarChart
             data={recoveryStatusBreakdown.slice(0, 8).map((item) => ({
               label: item.label,
@@ -121,7 +138,7 @@ export function RecoveryTab({
           />
         </SectionCard>
 
-        <SectionCard title="Partner performance" description="Recovered and open recovery value by owner" actions={<SourceTag source={sourceMode} />}>
+        <SectionCard title="Partner performance" description="Recovered and open recovery value by owner" actions={chartTag}>
           <AnalyticsHBarChart
             data={partnerPerformance.slice(0, 8).map((item) => ({
               label: item.partnerName,
@@ -129,7 +146,7 @@ export function RecoveryTab({
               color: item.recoveredAmount > 0 ? 'var(--neutral)' : 'var(--accent)',
             }))}
             yAxisWidth={160}
-            valueFormatter={(value) => formatCurrencyCompact(value)}
+            valueFormatter={(value) => formatCurrencyCompact(value, displayCurrency)}
             emptyLabel="No partner recovery data"
           />
         </SectionCard>
@@ -145,7 +162,7 @@ export function RecoveryTab({
               { label: 'Unrecovered amount', value: recoveryMetrics.unrecoveredAmount, color: 'var(--text-tertiary)' },
             ]}
             yAxisWidth={180}
-            valueFormatter={(value) => formatCurrencyCompact(value)}
+            valueFormatter={(value) => formatCurrencyCompact(value, displayCurrency)}
             emptyLabel="No recovery value yet"
           />
         </SectionCard>

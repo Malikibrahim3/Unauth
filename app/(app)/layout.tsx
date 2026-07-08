@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import Sidebar from '@/components/nav/Sidebar';
 import AppHeader from '@/components/layout/AppHeader';
+import { BreadcrumbOverrideProvider } from '@/components/layout/BreadcrumbOverrideContext';
 import DemoBanner from '@/components/common/DemoBanner';
 import BillingStatusBanner from '@/components/billing/BillingStatusBanner';
 import AmplitudeInit from '@/components/common/AmplitudeInit';
@@ -12,7 +13,7 @@ import { shouldRequireOnboarding } from '@/lib/account/onboardingGate';
 import { ensureMerchantContextForUser } from '@/lib/account/ensureMerchantContext';
 import { getMerchantProfileById } from '@/lib/account/merchantProfile';
 import { getConnectionState } from '@/lib/connections/getConnectionState';
-import { ConnectionStateProvider } from '@/components/connections/ConnectionStateContext';
+import { ConnectionStateProvider, DemoModeProvider } from '@/components/connections/ConnectionStateContext';
 import { NavigationProvider } from '@/components/navigation/NavigationProvider';
 import { DevPreviewProvider } from '@/components/product/DevPreviewContext';
 import { DEV_TIER_COOKIE, getDevPreviewFromCookieValue } from '@/lib/product/devPreview';
@@ -85,6 +86,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     hasMerchantContext: !!ctx,
     setupComplete: merchantComplete,
     auditRunCount: (jobs ?? []).length,
+    shopifyConnected: connectionState.shopify,
+    helpdeskConnected: connectionState.helpdesk,
   })) {
     redirect('/onboarding');
   }
@@ -126,6 +129,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         />
 
         <div className="flex flex-1 flex-col overflow-hidden">
+          <BreadcrumbOverrideProvider>
           <AppHeader
             merchantName={displayMerchantName ?? null}
             environment={process.env.VERCEL_ENV ?? 'development'}
@@ -143,9 +147,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
           <main id="app-scroll-container" className="flex-1 overflow-y-auto overflow-x-hidden">
             <ConnectionStateProvider value={connectionState}>
-              {children}
+              <DemoModeProvider value={allDemo}>
+                {children}
+              </DemoModeProvider>
             </ConnectionStateProvider>
           </main>
+          </BreadcrumbOverrideProvider>
         </div>
       </div>
     </DevPreviewProvider>

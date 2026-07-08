@@ -2,6 +2,8 @@
 
 import type { EvidenceStrength } from '@/lib/claim-gate/evidenceStrength';
 import type { GateRecommendation } from '@/lib/claim-gate/buildRecommendation';
+import { formatCurrency } from '@/lib/utils/format';
+import { PanelCard, StatusBadge } from '@/components/ui';
 
 /**
  * Renders the deterministic gate recommendation in neutral plain English.
@@ -16,47 +18,29 @@ const STRENGTH_LABELS: Record<EvidenceStrength, string> = {
   insufficient: 'Insufficient',
 };
 
-const STRENGTH_TONE: Record<EvidenceStrength, { bg: string; color: string }> = {
-  strong: { bg: 'var(--success-bg)', color: 'var(--success)' },
-  partial: { bg: 'var(--warning-bg)', color: 'var(--warning)' },
-  weak: { bg: 'var(--warning-bg)', color: 'var(--warning)' },
-  insufficient: { bg: 'var(--surface-raised)', color: 'var(--text-secondary)' },
+const STRENGTH_VARIANT: Record<EvidenceStrength, 'blocked' | 'flagged' | 'cleared' | 'held'> = {
+  strong: 'cleared',
+  partial: 'flagged',
+  weak: 'flagged',
+  insufficient: 'held',
 };
-
-function formatMoney(amount: number, currency: string): string {
-  try {
-    return new Intl.NumberFormat('en-GB', { style: 'currency', currency, maximumFractionDigits: 2 }).format(amount);
-  } catch {
-    return `${amount} ${currency}`;
-  }
-}
 
 export function GateRecommendationPanel({ recommendation }: { recommendation: GateRecommendation | null }) {
   if (!recommendation) return null;
 
   const held = recommendation.decision === 'hold';
-  const decisionTone = held
-    ? { bg: 'var(--warning-bg)', color: 'var(--warning)' }
-    : { bg: 'var(--success-bg)', color: 'var(--success)' };
   const strength = recommendation.reasoning.evidence_strength;
-  const strengthTone = STRENGTH_TONE[strength];
   const availableRoutes = recommendation.recovery_routes.filter((route) => route.available);
 
   return (
-    <section
-      className="rounded-xl border p-4 space-y-3"
-      style={{ borderColor: 'var(--border-subtle)', background: 'var(--surface)' }}
-    >
+    <PanelCard as="section" variant="app" className="space-y-3 p-4">
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-body font-semibold" style={{ color: 'var(--text-primary)' }}>
           Review gate
         </h3>
-        <span
-          className="inline-block text-caption font-semibold rounded-full px-2.5 py-1 uppercase tracking-wide"
-          style={{ background: decisionTone.bg, color: decisionTone.color }}
-        >
+        <StatusBadge variant={held ? 'flagged' : 'cleared'}>
           {held ? 'Hold' : 'Proceed'}
-        </span>
+        </StatusBadge>
       </div>
 
       <div>
@@ -96,12 +80,9 @@ export function GateRecommendationPanel({ recommendation }: { recommendation: Ga
         <span className="text-caption" style={{ color: 'var(--text-secondary)' }}>
           Evidence:
         </span>
-        <span
-          className="inline-block text-caption font-semibold rounded-full px-2 py-0.5"
-          style={{ background: strengthTone.bg, color: strengthTone.color }}
-        >
+        <StatusBadge variant={STRENGTH_VARIANT[strength]}>
           {STRENGTH_LABELS[strength]}
-        </span>
+        </StatusBadge>
         <span className="text-caption" style={{ color: 'var(--text-tertiary)' }}>
           {recommendation.reasoning.evidence_strength_explanation}
         </span>
@@ -110,7 +91,7 @@ export function GateRecommendationPanel({ recommendation }: { recommendation: Ga
       <p className="text-caption" style={{ color: 'var(--text-secondary)' }}>
         Money at risk:{' '}
         <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>
-          {formatMoney(recommendation.money_at_risk, recommendation.currency)}
+          {formatCurrency(recommendation.money_at_risk, recommendation.currency)}
         </span>
       </p>
 
@@ -154,6 +135,6 @@ export function GateRecommendationPanel({ recommendation }: { recommendation: Ga
           ))}
         </ul>
       )}
-    </section>
+    </PanelCard>
   );
 }

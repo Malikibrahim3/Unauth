@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, Pencil, Trash2 } from 'lucide-react';
-import { Badge, Button, Card } from '@/components/ui';
+import { Button, PanelCard, StatusBadge, statusBadgeVariantFor } from '@/components/ui';
 import type { MerchantRule } from '@/lib/rules-engine';
-import { ACTION_LABELS, ACTION_TONES, summarizeConditions } from '@/lib/rules/summary';
+import { ACTION_LABELS, summarizeCondition } from '@/lib/rules/summary';
 
 interface RuleCardProps {
   rule: MerchantRule;
@@ -33,7 +33,7 @@ export function RuleCard({
   const summary = summarizeRuleTrigger(rule);
 
   return (
-    <Card variant="raised" density="compact">
+    <PanelCard variant="app" className="p-3">
       <div className="flex items-start gap-3">
         {/* Priority handle */}
         {canManage && (
@@ -64,11 +64,11 @@ export function RuleCard({
             <h3 className="truncate text-body font-semibold" style={{ color: 'var(--text-primary)' }}>
               {rule.name}
             </h3>
-            <Badge tone={ACTION_TONES[rule.action]} variant="subtle" size="sm" dot>
+            <StatusBadge variant={statusBadgeVariantFor(rule.action)} className="px-2 py-0.5 text-xs">
               {ACTION_LABELS[rule.action]}
-            </Badge>
+            </StatusBadge>
             {!rule.is_active && (
-              <Badge tone="neutral" variant="subtle" size="sm">Disabled</Badge>
+              <StatusBadge variant="blocked" className="px-2 py-0.5 text-xs">Disabled</StatusBadge>
             )}
           </div>
 
@@ -90,6 +90,10 @@ export function RuleCard({
           >
             <span style={{ color: 'var(--text-tertiary)' }}>When </span>
             {summary}
+            <span style={{ color: 'var(--text-tertiary)' }}> → recommend </span>
+            <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>
+              {ACTION_LABELS[rule.action] ?? rule.action}
+            </span>
           </p>
         </div>
 
@@ -145,12 +149,14 @@ export function RuleCard({
           </div>
         </div>
       )}
-    </Card>
+    </PanelCard>
   );
 }
 
 function summarizeRuleTrigger(rule: MerchantRule): string {
-  return summarizeConditions(rule.conditions, rule.condition_operator);
+  if (rule.conditions.length === 0) return 'any support payout case';
+  const joiner = rule.condition_operator === 'and' ? ' and ' : ' or ';
+  return rule.conditions.map(summarizeCondition).join(joiner);
 }
 
 function ActiveToggle({

@@ -4,8 +4,13 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { CheckCircle2, Download, ExternalLink } from 'lucide-react';
 import Image from 'next/image';
+import { PanelCard, StatusBadge } from '@/components/ui';
 import HelpdeskSidebarPreview from '@/components/settings/HelpdeskSidebarPreview';
 import ZendeskSupportSyncClient from '@/components/settings/ZendeskSupportSyncClient';
+import {
+  ZENDESK_SUPPORT_WEBHOOK_PATH,
+  ZENDESK_WEBHOOK_DOMAIN_QUERY_PARAM,
+} from '@/lib/support/zendesk/supportConnectionShared';
 
 const ZENDESK_ZIP_PATH = '/downloads/unauth-zendesk-app.zip';
 
@@ -43,6 +48,11 @@ const SETUP_STEPS = [
     number: 6,
     title: 'Import ticket history',
     detail: 'Enter your Zendesk subdomain and API token below to sync up to 24 months of tickets.',
+  },
+  {
+    number: 7,
+    title: 'Add the ticket webhook',
+    detail: `Zendesk Admin → Apps and integrations → Webhooks → create a webhook pointing to this deployment at ${ZENDESK_SUPPORT_WEBHOOK_PATH}?${ZENDESK_WEBHOOK_DOMAIN_QUERY_PARAM}=<your-subdomain>, then attach it to a trigger on ticket created/updated. Include the webhook secret shown when you connect below.`,
   },
 ];
 
@@ -120,24 +130,9 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
               Zendesk
             </p>
             {!statusLoading ? (
-              <span
-                className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium"
-                style={{
-                  background: allDone
-                    ? 'color-mix(in srgb, var(--success) 12%, transparent)'
-                    : sidebarVerified
-                    ? 'color-mix(in srgb, var(--warning) 12%, transparent)'
-                    : 'color-mix(in srgb, var(--text-secondary) 12%, transparent)',
-                  color: allDone
-                    ? 'var(--success)'
-                    : sidebarVerified
-                    ? 'var(--warning)'
-                    : 'var(--text-secondary)',
-                }}
-              >
-                <span className="h-1.5 w-1.5 rounded-full bg-current" />
+              <StatusBadge variant={allDone ? 'cleared' : sidebarVerified ? 'flagged' : 'held'}>
                 {allDone ? 'Connected' : sidebarVerified ? 'Partial setup' : 'Not connected'}
-              </span>
+              </StatusBadge>
             ) : null}
           </div>
           {allDone ? (
@@ -153,10 +148,7 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
       </div>
 
       {/* Setup steps */}
-      <div
-        className="rounded-xl border divide-y"
-        style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
-      >
+      <PanelCard variant="app" className="divide-y overflow-hidden p-0">
         <div className="px-4 py-2.5">
           <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
             Setup steps
@@ -209,7 +201,7 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
             </div>
           );
         })}
-      </div>
+      </PanelCard>
 
       {/* Actions */}
       <div className="flex flex-wrap gap-3">
@@ -253,8 +245,9 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
       </div>
 
       {verifyError ? (
-        <div
-          className="rounded-xl border px-4 py-3 text-sm"
+        <PanelCard
+          variant="app"
+          className="px-4 py-3 text-sm"
           style={{
             borderColor: 'color-mix(in srgb, var(--risk-critical) 30%, var(--border))',
             background: 'color-mix(in srgb, var(--risk-critical) 6%, var(--surface))',
@@ -262,7 +255,7 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
           }}
         >
           {verifyError}
-        </div>
+        </PanelCard>
       ) : null}
 
       {/* Ticket sync section */}
