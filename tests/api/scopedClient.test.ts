@@ -100,9 +100,7 @@ describe('static guard: service-role API routes use scoped tenant access', () =>
   const verifiedManualScoping: Record<string, Set<string>> = {
     'app/api/account/delete/route.ts': new Set(['*']), // audited purge list; direct deletes scope by merchant_id or merchant-derived ids
     'app/api/audit-trail/route.ts': new Set(['merchant_members']), // .eq('merchant_id', ctx.merchantId)
-    'app/api/lookup/quick-score/route.ts': new Set(['access_audit_log']), // insert payload merchant_id
     'app/api/lookup/remaining/route.ts': new Set(['lookup_daily_counts']), // .eq('merchant_id', ctx.merchantId)
-    'app/api/lookup/route.ts': new Set(['access_audit_log']), // insert payload merchant_id
     'app/api/search/route.ts': new Set(['customer_profiles', 'transactions', 'evidence_packages']), // .in(... merchantJobIds)
     'app/api/settings/bulk-delete/route.ts': new Set(['*']), // dynamic from(table); serviceClient branch uses .eq('merchant_id', ctx.merchantId)
     // v2 tenant tables accessed with the service-role client but manually scoped

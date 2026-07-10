@@ -88,7 +88,7 @@ describe('Gorgias widget unlock links', () => {
     expect(payload.identity).toContain('DEFINITE');
     expect(payload.orders).toContain('9');
     expect(payload.orders).not.toContain('20');
-    expect(payload.ce3_evidence).toContain('Network signal available');
+    expect(payload.ce3_evidence).toContain('Additional identity context available');
     expect(payload.primary_reason).toContain('Item not received');
     expect(payload.cta_url).toContain('source=gorgias');
     expect(payload.cta_url).toContain('ticket_id=T-1');

@@ -46,6 +46,12 @@ export async function POST(request: NextRequest) {
   if (!(file instanceof File) || file.size === 0) {
     return NextResponse.json({ error: 'An agreement file is required.' }, { status: 400 });
   }
+  if (file.type !== 'application/pdf' || !file.name.toLowerCase().endsWith('.pdf')) {
+    return NextResponse.json({ error: 'Agreements must be uploaded as PDF files.' }, { status: 400 });
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    return NextResponse.json({ error: 'Agreement PDFs must be 10 MB or smaller.' }, { status: 400 });
+  }
 
   const bytes = Buffer.from(await file.arrayBuffer());
   const filePath = `${ctx.merchantId}/agreements/${typeResult.data}/${randomUUID()}-${safeFileName(file.name)}`;
@@ -58,7 +64,7 @@ export async function POST(request: NextRequest) {
   if (uploadError) return NextResponse.json({ error: uploadError.message }, { status: 500 });
 
   const { data: agreement, error: agreementError } = await serviceClient
-    .from(TABLES.AGREEMENTS as any)
+    .from(TABLES.AGREEMENTS)
     .insert({
       merchant_id: ctx.merchantId,
       agreement_type: typeResult.data,
@@ -68,7 +74,7 @@ export async function POST(request: NextRequest) {
       document_url: filePath,
       file_mime_type: file.type || 'application/octet-stream',
       file_size_bytes: file.size,
-      status: 'uploaded',
+      status: 'needs_review',
       effective_from: optionalText(formData, 'effective_from'),
       effective_to: optionalText(formData, 'effective_to'),
       version_label: optionalText(formData, 'version_label'),
@@ -79,11 +85,11 @@ export async function POST(request: NextRequest) {
   if (agreementError) return NextResponse.json({ error: agreementError.message }, { status: 500 });
 
   const { data: job, error: jobError } = await serviceClient
-    .from(TABLES.DOCUMENT_UPLOAD_JOBS as any)
+    .from(TABLES.DOCUMENT_UPLOAD_JOBS)
     .insert({
       merchant_id: ctx.merchantId,
       agreement_id: agreement.id,
-      status: 'queued',
+      status: 'needs_review',
     })
     .select('id,status,created_at')
     .single();
@@ -92,8 +98,8 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({
     ok: true,
     agreement,
-    upload_status: 'queued',
+    upload_status: 'needs_review',
     document_upload_job: job,
-    message: 'Agreement uploaded. Generated clauses and rules must be reviewed before they can affect claims.',
+    message: 'Agreement uploaded. Enter and approve its terms before they can affect claims.',
   });
 }

@@ -19,14 +19,9 @@ import { z } from 'zod';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
+import { formatCurrency } from '@/lib/utils/format';
 
 export const dynamic = 'force-dynamic';
-
-const searchCurrencyFormatter = new Intl.NumberFormat('en-GB', {
-  style: 'currency',
-  currency: 'GBP',
-  maximumFractionDigits: 0,
-});
 
 const SearchQuerySchema = z.object({
   q:     z.string().min(1).max(200),
@@ -131,7 +126,7 @@ export async function GET(req: NextRequest) {
             type: 'order',
             id: o.id,
             label: o.order_number ? `Order ${o.order_number}` : `Order ${o.id.slice(0, 8)}`,
-            sublabel: o.total_price != null ? searchCurrencyFormatter.format(o.total_price) : o.email ?? undefined,
+            sublabel: o.total_price != null ? formatCurrency(o.total_price, o.currency ?? undefined) : o.email ?? undefined,
             href: o.source_customer_id ? `/customers/${o.source_customer_id}` : '/claims',
           });
         }
@@ -159,7 +154,7 @@ export async function GET(req: NextRequest) {
           type: 'case',
           id: c.id,
           label: `Payout case · ${(c.claim_type ?? 'claim').replace(/_/g, ' ')}`,
-          sublabel: c.amount_at_risk != null ? searchCurrencyFormatter.format(c.amount_at_risk) : c.status ?? undefined,
+          sublabel: c.amount_at_risk != null ? formatCurrency(c.amount_at_risk, c.currency ?? undefined) : c.status ?? undefined,
           href: `/claims/${c.id}`,
         });
       }

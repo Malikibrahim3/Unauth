@@ -25,7 +25,7 @@ function makeClient(config: Record<string, TableConfig>): any {
       };
       return builder;
     },
-    rpc: () =>
+    rpc: jest.fn(() =>
       Promise.resolve({
         data: [
           {
@@ -40,14 +40,14 @@ function makeClient(config: Record<string, TableConfig>): any {
           },
         ],
         error: null,
-      }),
+      })),
   };
 }
 
 const auth = { merchantId: 'm1', apiKeyId: 'k1', requestIp: null };
 
-describe('buildGorgiasClaimWidgetDataV2 evidence threading', () => {
-  it('includes cached evidence when k-anon disclosure returns an identity', async () => {
+describe('buildGorgiasClaimWidgetDataV2 store-scoped launch', () => {
+  it('does not query or disclose network data', async () => {
     const client = makeClient({
       source_orders: { list: { data: [{ id: 'o1', placed_at: '2026-05-01T00:00:00.000Z' }], error: null } },
       claims: { list: { data: [], error: null } },
@@ -74,18 +74,20 @@ describe('buildGorgiasClaimWidgetDataV2 evidence threading', () => {
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.data.evidenceDisclosed).toBe(true);
-    expect(result.data.evidenceScore).toBe(62);
-    expect(result.data.evidenceLevel).toBe('substantial');
-    expect(result.data.hasSufficientData).toBe(true);
-    expect(result.data.scoringConfigVersion).toBe('evidence-v1');
-    expect(result.data.claimTypes).toEqual(['item_not_received', 'chargeback']);
-    expect(result.data.isNetworkFlagged).toBe(true);
+    expect(client.rpc).not.toHaveBeenCalled();
+    expect(result.data.network).toBeNull();
+    expect(result.data.evidenceDisclosed).toBe(false);
+    expect(result.data.evidenceScore).toBe(0);
+    expect(result.data.evidenceLevel).toBe('minimal');
+    expect(result.data.hasSufficientData).toBe(false);
+    expect(result.data.scoringConfigVersion).toBeNull();
+    expect(result.data.claimTypes).toEqual([]);
+    expect(result.data.isNetworkFlagged).toBe(false);
   });
 
-  it('withholds evidence when the k-anon RPC returns no identity', async () => {
+  it('keeps network data null when no store history exists', async () => {
     const client = {
-      from(table: string) {
+      from(_table: string) {
         const builder: Record<string, unknown> = {
           select: () => builder,
           eq: () => builder,
@@ -98,7 +100,7 @@ describe('buildGorgiasClaimWidgetDataV2 evidence threading', () => {
         };
         return builder;
       },
-      rpc: () => Promise.resolve({ data: [], error: null }),
+      rpc: jest.fn(() => Promise.resolve({ data: [], error: null })),
     };
 
     const { result } = await buildGorgiasClaimWidgetDataV2(client, auth, {
@@ -113,5 +115,6 @@ describe('buildGorgiasClaimWidgetDataV2 evidence threading', () => {
     expect(result.data.evidenceScore).toBe(0);
     expect(result.data.network).toBeNull();
     expect(result.data.isNetworkFlagged).toBe(false);
+    expect(client.rpc).not.toHaveBeenCalled();
   });
 });

@@ -210,8 +210,8 @@ export default function OnboardingClient({
                 <select aria-label="Platform" value={platform} onChange={(e) => dispatch({ type: 'patch', patch: { platform: e.target.value } })}>
                   <option value="">Select platform…</option>
                   <option value="shopify">Shopify</option>
-                  <option value="woocommerce">WooCommerce</option>
-                  <option value="bigcommerce">BigCommerce</option>
+                  <option value="woocommerce" disabled>WooCommerce (coming soon)</option>
+                  <option value="bigcommerce" disabled>BigCommerce (coming soon)</option>
                   <option value="magento">Magento</option>
                   <option value="custom">Custom</option>
                   <option value="other">Other</option>

@@ -1,33 +1,17 @@
-import { bigcommerceOrderToCsvRow } from '@/lib/commerce/bigcommerce/bigcommerceOrderToCsvRow';
+import fs from 'fs';
+import path from 'path';
 
-describe('bigcommerceOrderToCsvRow', () => {
-  it('maps a minimal order with billing email', () => {
-    const row = bigcommerceOrderToCsvRow(
-      {
-        id: 2001,
-        date_created: 'Mon, 01 Jun 2024 12:00:00 +0000',
-        total_inc_tax: '99.00',
-        currency_code: 'USD',
-        status: 'Awaiting Fulfillment',
-        billing_address: { email: 'buyer@example.com', phone: '555-0100' },
-      },
-      null,
-    );
+const exists = (relativePath: string) => fs.existsSync(path.join(process.cwd(), relativePath));
+const read = (relativePath: string) => fs.readFileSync(path.join(process.cwd(), relativePath), 'utf8');
 
-    expect(row).toMatchObject({
-      order_id: '2001',
-      customer_email: 'buyer@example.com',
-      order_total: '99.00',
-      currency: 'USD',
-    });
+describe('BigCommerce CSV adapter retirement', () => {
+  it('removes the BigCommerce-to-CSV adapter', () => {
+    expect(exists('lib/commerce/bigcommerce/bigcommerceOrderToCsvRow.ts')).toBe(false);
   });
 
-  it('returns null without email', () => {
-    expect(
-      bigcommerceOrderToCsvRow(
-        { id: 1, date_created: 'Mon, 01 Jun 2024 12:00:00 +0000', billing_address: { email: '' } },
-        null,
-      ),
-    ).toBeNull();
+  it('keeps dormant v2 ingestion typed without the CSV adapter', () => {
+    expect(read('lib/commerce/bigcommerce/processOrderWebhook.ts')).toContain(
+      "@/lib/commerce/bigcommerce/orderTypes",
+    );
   });
 });

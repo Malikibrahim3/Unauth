@@ -9,8 +9,7 @@ export type Entitlement =
   | 'WATCHLIST'
   | 'REPORTS_ADVANCED'
   | 'LIVE_LOOKUP_API'
-  | 'QUICK_SCORE'
-  | 'NETWORK_GRAPH';
+  | 'QUICK_SCORE';
 
 export interface EntitlementMeta {
   label: string;

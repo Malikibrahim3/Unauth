@@ -8,14 +8,13 @@
  *    and cross-merchant profiles are never returned.
  * 2. /api/evidence/ce3-check — cross-merchant order IDs return ineligible,
  *    owned orders work correctly.
- * 3. /api/inbox/export — normal rows with match_status='none' are excluded.
- * 4. fetchMerchantReviewQueueRows helper — semantics match definition.
- * 5. Static guard — service-role routes must be auth-gated.
+ * 3. Retired legacy inbox routes remain absent.
+ * 4. Static guard — service-role routes must be auth-gated.
  */
 
 import path from 'path';
 import fs from 'fs';
-const { globSync } = require('glob');
+import { globSync } from 'glob';
 import {
   fetchMerchantReviewQueueRows,
   fetchReviewQueueProfileIds,
@@ -157,13 +156,20 @@ describe('/api/customers/search — auth requirement', () => {
     expect(content).toContain('401');
   });
 
-  it('route file uses createScopedClient to scope results', () => {
+  it('scopes results to the caller merchant via owned profile IDs', () => {
     const content = fs.readFileSync(
       path.join(process.cwd(), 'app/api/customers/search/route.ts'),
       'utf-8'
     );
-    expect(content).toContain('createScopedClient');
+    // `identities` is a network-level table with no merchant_id, so scoping is
+    // done by resolving merchant-owned profile IDs (via the merchant-scoped
+    // findCustomerProfileIdsByText) and fetching ONLY those IDs — never an
+    // unscoped scan of identities.
+    expect(content).toContain('findCustomerProfileIdsByText');
     expect(content).toContain('ctx.merchantId');
+    expect(content).toContain(".in('id'");
+    // Must NOT run its own ilike/text scan against identities on user input.
+    expect(content).not.toMatch(/\.ilike\(/);
   });
 
   it('route returns 401 when user is null — verified via source analysis', () => {
@@ -189,30 +195,29 @@ describe('/api/customers/search — auth requirement', () => {
 // /api/evidence/ce3-check — cross-merchant order is rejected
 // ---------------------------------------------------------------------------
 describe('/api/evidence/ce3-check — merchant scoping', () => {
-  it('route file uses fetchMerchantScopedCustomerProfile', () => {
+  it('route delegates to the v2 evidence builder', () => {
     const content = fs.readFileSync(
       path.join(process.cwd(), 'app/api/evidence/ce3-check/route.ts'),
       'utf-8'
     );
-    expect(content).toContain('fetchMerchantScopedCustomerProfile');
+    expect(content).toContain('buildEvidencePackage');
   });
 
-  it('route file uses fetchMerchantScopedCustomerTransactions', () => {
+  it('v2 builder scopes customer reads by merchant_id', () => {
     const content = fs.readFileSync(
-      path.join(process.cwd(), 'app/api/evidence/ce3-check/route.ts'),
+      path.join(process.cwd(), 'lib/evidence/buildPackage.ts'),
       'utf-8'
     );
-    expect(content).toContain('fetchMerchantScopedCustomerTransactions');
+    expect(content).toContain(".eq('merchant_id', merchantId)");
   });
 
-  it('route file does NOT use .eq(merchant_id) on customer_profiles or audit_transactions', () => {
+  it('route file does not use dropped v1 customer/audit helpers', () => {
     const content = fs.readFileSync(
       path.join(process.cwd(), 'app/api/evidence/ce3-check/route.ts'),
       'utf-8'
     );
-    // Should not have legacy incorrect field usage
-    expect(content).not.toContain(".eq('merchant_id', ctx.merchantId)");
-    expect(content).not.toContain('.limit(500)');
+    expect(content).not.toContain('fetchMerchantScopedCustomerProfile');
+    expect(content).not.toContain('fetchMerchantScopedCustomerTransactions');
   });
 
   it('cross-merchant order ID returns ineligible — order not in merchant transactions', () => {
@@ -233,7 +238,7 @@ describe('/api/evidence/ce3-check — merchant scoping', () => {
 describe('fetchMerchantReviewQueueRows — review queue definition', () => {
   it('returns empty when merchant has no jobs', async () => {
     const mock = {
-      from: jest.fn((table: string) => {
+      from: jest.fn((_table: string) => {
         const c = makeChain({ data: [], error: null });
         c.eq = jest.fn().mockReturnThis();
         c.range = jest.fn().mockResolvedValue({ data: [], error: null });
@@ -277,12 +282,8 @@ describe('fetchMerchantReviewQueueRows — review queue definition', () => {
     expect(jobIdIn).toBeDefined();
     expect(jobIdIn![1]).toContain('job-1');
 
-    // Verify the review-queue inclusion filter (buildReviewableFilter) is
-    // applied. Review-worthiness is now the persisted, behaviour-gated
-    // `review_worthy` flag (real identity match AND suspicious behaviour),
-    // not identity grade alone — which over-flagged loyal repeat customers.
-    const hasReviewWorthyOr = orCalls.some((expr) => expr.includes('review_worthy'));
-    expect(hasReviewWorthyOr).toBe(true);
+    const hasConfidenceFilter = orCalls.some((expr) => expr.includes('identity_confidence_grade'));
+    expect(hasConfidenceFilter).toBe(true);
 
     // Verify dismissed_by_merchant is excluded
     const dismissedNot = notCalls.find(([col]) => col === 'dismissed_by_merchant');
@@ -362,29 +363,16 @@ describe('fetchMerchantReviewQueueRows — review queue definition', () => {
 // /api/inbox/export — correct population semantics
 // ---------------------------------------------------------------------------
 describe('/api/inbox/export — review population semantics', () => {
-  it('export route uses fetchMerchantReviewQueueRows', () => {
-    const content = fs.readFileSync(
-      path.join(process.cwd(), 'app/api/inbox/export/route.ts'),
-      'utf-8'
-    );
-    expect(content).toContain('fetchMerchantReviewQueueRows');
+  it('legacy inbox export route is retired', () => {
+    expect(fs.existsSync(path.join(process.cwd(), 'app/api/inbox/export/route.ts'))).toBe(false);
   });
 
-  it('export route does NOT use legacy match_score ordering', () => {
-    const content = fs.readFileSync(
-      path.join(process.cwd(), 'app/api/inbox/export/route.ts'),
-      'utf-8'
-    );
-    expect(content).not.toContain("order('match_score'");
+  it('legacy audit export route is retired', () => {
+    expect(fs.existsSync(path.join(process.cwd(), 'app/api/audit/[runId]/export/route.ts'))).toBe(false);
   });
 
-  it('export route does NOT use legacy risk_level filter', () => {
-    const content = fs.readFileSync(
-      path.join(process.cwd(), 'app/api/inbox/export/route.ts'),
-      'utf-8'
-    );
-    expect(content).not.toContain("in('risk_level'");
-    expect(content).not.toContain("risk_level");
+  it('current claims route remains the payout-control API', () => {
+    expect(fs.existsSync(path.join(process.cwd(), 'app/api/claims/route.ts'))).toBe(true);
   });
 });
 
@@ -395,16 +383,8 @@ describe('/api/inbox/export — review population semantics', () => {
 // /api/inbox — query-backed inbox semantics
 // ---------------------------------------------------------------------------
 describe('/api/inbox — query-backed review queue', () => {
-  it('API route queries audit_transactions through the shared helper', () => {
-    const content = fs.readFileSync(
-      path.join(process.cwd(), 'app/api/inbox/route.ts'),
-      'utf-8'
-    );
-    expect(content).toContain('fetchMerchantReviewQueueRows');
-    expect(content).toContain('fetchReviewQueueProfileIds');
-    expect(content).toContain('requirePermission');
-    expect(content).not.toContain('inbox_items');
-    expect(content).not.toContain("from('inbox_items')");
+  it('legacy inbox API route is retired', () => {
+    expect(fs.existsSync(path.join(process.cwd(), 'app/api/inbox/route.ts'))).toBe(false);
   });
 
   it('profile lookup is scoped by owned audit/job ids', async () => {
@@ -582,11 +562,8 @@ describe('fetchMerchantReviewQueueRows — null match_status regression', () => 
     expect(rows[0].identity_confidence_grade).toBe('B');
     expect(rows[0].match_status).toBeNull();
 
-    // Inclusion is now driven by the persisted, behaviour-gated review_worthy
-    // flag — which is precomputed and independent of match_status, so a graded
-    // row with null match_status is handled correctly without a match_status OR.
-    const hasReviewWorthyOr = orCalls.some((expr) => expr.includes('review_worthy'));
-    expect(hasReviewWorthyOr).toBe(true);
+    const hasConfidenceFilter = orCalls.some((expr) => expr.includes('identity_confidence_grade'));
+    expect(hasConfidenceFilter).toBe(true);
   });
 
   it('row with match_status=none and null grade is excluded by .or() semantics', () => {
@@ -711,12 +688,16 @@ describe('next.config.js — image optimizer DoS mitigation', () => {
 // /api/customers/search — hostile input behavioral tests
 // ---------------------------------------------------------------------------
 describe('/api/customers/search — hostile input behavioral tests', () => {
-  it('route imports escapePostgrestFilterValue', () => {
+  it('delegates user-input search to the escaping helper (no raw scans)', () => {
     const content = fs.readFileSync(
       path.join(process.cwd(), 'app/api/customers/search/route.ts'),
       'utf-8'
     );
-    expect(content).toContain('escapePostgrestFilterValue');
+    // User input flows only through findCustomerProfileIdsByText, which escapes
+    // it via escapePostgrestFilterValue internally. The route itself performs no
+    // ilike/or scan on raw input, so injection is contained in the helper.
+    expect(content).toContain('findCustomerProfileIdsByText');
+    expect(content).not.toMatch(/\.ilike\(/);
   });
 
   it('route does NOT construct a raw .or() string from user input', () => {
@@ -1263,32 +1244,36 @@ describe('/api/customers/search — partial name matching', () => {
     expect(content).not.toMatch(/\.contains\s*\(\s*['"]names['"]\s*,\s*\[q\]/);
   });
 
-  it('uses application-side partial name match (includes / toLowerCase)', () => {
+  it('supports partial matching via the merchant-scoped anchor-index helper', () => {
     const content = fs.readFileSync(
       path.join(process.cwd(), 'app/api/customers/search/route.ts'),
       'utf-8'
     );
-    expect(content).toContain('.includes(qLower)');
-    expect(content).toContain('.toLowerCase()');
+    // Partial (substring) matching is delegated to findCustomerProfileIdsByText,
+    // which runs an escaped `%q%` ilike over merchant-scoped identity anchors.
+    expect(content).toContain('findCustomerProfileIdsByText');
   });
 
-  it('still uses escapePostgrestFilterValue for email ilike — no raw interpolation', () => {
+  it('never interpolates raw user input into a query (escaping lives in the helper)', () => {
     const content = fs.readFileSync(
       path.join(process.cwd(), 'app/api/customers/search/route.ts'),
       'utf-8'
     );
-    expect(content).toContain('escapePostgrestFilterValue');
-    // Must not interpolate ${q} directly into ilike
+    // The route runs no ilike/or scan on user input; all text search flows
+    // through findCustomerProfileIdsByText, which escapes via
+    // escapePostgrestFilterValue internally.
     expect(content).not.toMatch(/ilike\s*\([^)]*\$\{q\}/);
+    expect(content).not.toMatch(/\.ilike\(/);
   });
 
-  it('merchant scoping via createScopedClient is preserved', () => {
+  it('preserves merchant scoping via caller-owned profile IDs', () => {
     const content = fs.readFileSync(
       path.join(process.cwd(), 'app/api/customers/search/route.ts'),
       'utf-8'
     );
-    expect(content).toContain('createScopedClient');
+    // Results are constrained to IDs the caller's merchant owns.
     expect(content).toContain('ctx.merchantId');
+    expect(content).toContain(".in('id'");
   });
 });
 

@@ -11,6 +11,8 @@ const REDIRECT_PAGES = [
   ['app/(app)/help/how-it-works/page.tsx', '/help'],
   ['app/(app)/help/confidence-grades/page.tsx', '/help'],
   ['app/(app)/help/identity-matching/page.tsx', '/help'],
+  ['app/(app)/settings/integrations/woocommerce/page.tsx', '/settings/integrations'],
+  ['app/(app)/settings/integrations/bigcommerce/page.tsx', '/settings/integrations'],
 ] as const;
 
 function read(rel: string): string {

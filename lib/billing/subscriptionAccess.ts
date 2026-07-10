@@ -64,7 +64,7 @@ export function checkPlanFeatureAccess(
   return {
     allowed: false,
     reason: 'plan_gated',
-    message: `This feature is available on ${upgradePlan === 'scale' ? 'Scale' : 'paid'} plans. Upgrade to unlock.`,
+    message: `This feature is available on ${upgradePlan === 'scale' ? 'Enterprise' : 'paid'} plans. Upgrade to unlock.`,
     upgradePlan,
   };
 }

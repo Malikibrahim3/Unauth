@@ -114,6 +114,10 @@ async function shipBobRequest<T>(
   return body as T;
 }
 
+export async function verifyShipBobPat(pat: string, sandbox?: boolean): Promise<void> {
+  await shipBobRequest<Record<string, unknown>>('/order?limit=1', { pat, sandbox });
+}
+
 function productFromRaw(product: Record<string, any>) {
   return {
     reference_id: firstString(product.reference_id, product.referenceId, product.sku, product.id) ?? '',

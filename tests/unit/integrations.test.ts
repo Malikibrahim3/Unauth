@@ -339,9 +339,23 @@ describe('evidence assembly', () => {
         shipment_count: 1,
         pick_pack_events: 1,
       });
+      expect(evidence.connections).toMatchObject({ carrier_tracking: true, warehouse: true });
       expect(tables.integration_evidence_items.map((row) => row.source_provider).sort()).toEqual(['aftership', 'shipbob']);
       expect(tables.integration_evidence_items.find((row) => row.source_provider === 'aftership')?.value)
         .toMatchObject({ tracking_source: 'aftership', evidence_strength: 'strong' });
+
+      global.fetch = jest.fn().mockRejectedValue(new Error('provider unavailable')) as any;
+      const unavailableEvidence = await buildEvidence({
+        client: mockClient(tables),
+        merchantId: 'm1',
+        customerEmail: 'customer@example.com',
+        externalOrderId: '#1001',
+        externalTicketId: null,
+        platform: 'gorgias',
+        claimText: 'Tracking says delivered but I never received it',
+        claimType: 'DELIVERED_NOT_RECEIVED',
+      });
+      expect(unavailableEvidence.connections).toMatchObject({ carrier_tracking: false, warehouse: false });
     } finally {
       process.env.AFTERSHIP_API_KEY = originalAfterShip;
       process.env.SHIPBOB_PAT = originalShipBobPat;

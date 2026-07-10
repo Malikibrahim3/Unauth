@@ -48,34 +48,27 @@ describe('customer API merchant isolation', () => {
   });
 });
 
-describe('CSV export injection protection', () => {
+describe('legacy audit CSV export retirement', () => {
   const EXPORT_PATH = path.resolve(
     process.cwd(),
     'app/api/audit/[runId]/export/route.ts'
   );
 
-  let exportSource: string;
-
-  beforeAll(() => {
-    exportSource = fs.readFileSync(EXPORT_PATH, 'utf8');
+  it('removes the legacy audit export route', () => {
+    expect(fs.existsSync(EXPORT_PATH)).toBe(false);
   });
 
-  it('exports all rows (not filtered to graded only)', () => {
-    expect(exportSource).not.toContain(".not('identity_confidence_grade', 'is', null)");
-    expect(exportSource).not.toContain(".in('risk_level'");
+  it('removes the legacy audit customer route', () => {
+    expect(fs.existsSync(path.resolve(process.cwd(), 'app/api/audit/[runId]/customer/route.ts'))).toBe(false);
   });
 
-  it('uses escapeCsvCell to neutralize formula injection', () => {
-    expect(exportSource).toContain('escapeCsvCell');
-    expect(exportSource).toContain("FORMULA_PREFIXES = ['=', '+', '-', '@'");
+  it('keeps formula-safe CSV escaping for current exports', () => {
+    const helpers = fs.readFileSync(path.resolve(process.cwd(), 'lib/supabase/merchantHelpers.ts'), 'utf8');
+    expect(helpers).toContain('escapeCsvCell');
+    expect(helpers).toContain('FORMULA_CHARS');
   });
 
-  it('orders export by id for deterministic pagination', () => {
-    expect(exportSource).toContain(".order('id', { ascending: true })");
-  });
-
-  it('tracks expectedTotalRows for completeness check', () => {
-    expect(exportSource).toContain('expectedTotalRows');
-    expect(exportSource).toContain('rows.length >= expectedTotalRows');
+  it('keeps the payout-case API as the current review surface', () => {
+    expect(fs.existsSync(path.resolve(process.cwd(), 'app/api/claims/route.ts'))).toBe(true);
   });
 });

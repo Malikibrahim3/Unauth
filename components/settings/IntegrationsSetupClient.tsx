@@ -33,18 +33,18 @@ const COMMERCE_PLATFORMS: (Platform & { id: CommercePlatformId })[] = [
   {
     id: 'woocommerce',
     name: 'WooCommerce',
-    description: 'Pull order and customer data from your WordPress store',
-    href: '/settings/integrations/woocommerce',
+    description: 'WooCommerce order and customer sync is coming soon',
+    href: '#',
     logo: '/integrations/woocommerce.svg',
-    available: true,
+    available: false,
   },
   {
     id: 'bigcommerce',
     name: 'BigCommerce',
-    description: 'Connect your BigCommerce storefront to sync orders and customers',
-    href: '/settings/integrations/bigcommerce',
+    description: 'BigCommerce order and customer sync is coming soon',
+    href: '#',
     logo: '/integrations/bigcommerce.svg',
-    available: true,
+    available: false,
   },
   {
     id: 'magento',
@@ -483,18 +483,11 @@ export default function IntegrationsSetupClient() {
     );
   }
 
-  const orderSourceConnected =
-    status.shopify.connected || status.woocommerce.connected || status.bigcommerce.connected;
+  const orderSourceConnected = status.shopify.connected;
   const helpdeskConnected =
     status.gorgias.connected || status.freshdesk.connected || status.zendesk.connected;
 
-  const connectedStoreName = status.shopify.connected
-    ? 'Shopify'
-    : status.woocommerce.connected
-    ? 'WooCommerce'
-    : status.bigcommerce.connected
-    ? 'BigCommerce'
-    : null;
+  const connectedStoreName = status.shopify.connected ? 'Shopify' : null;
 
   const connectedHelpdeskName = status.gorgias.connected
     ? 'Gorgias'
@@ -550,9 +543,9 @@ export default function IntegrationsSetupClient() {
                   name={platform.name}
                   description={platform.description}
                   href={platform.href}
-                  connected={connected}
+                  connected={platform.available && connected}
                   connectionIssue={connectionIssue}
-                  detail={detail}
+                  detail={platform.available ? detail : null}
                   available={platform.available}
                   onConnect={platform.id === 'shopify' ? () => setShopifyModalOpen(true) : undefined}
                 />

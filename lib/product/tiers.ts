@@ -11,6 +11,5 @@ export const TIER_LABELS: Record<Tier, string> = {
   free: TIER_CONFIG.free.label,
   pro: TIER_CONFIG.pro.label,
   growth: TIER_CONFIG.growth.label,
-  scale: TIER_CONFIG.scale.label,
   enterprise: TIER_CONFIG.enterprise.label,
 };

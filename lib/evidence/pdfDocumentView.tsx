@@ -12,6 +12,7 @@ import type { EvidencePackage } from './types'
 
 const { Document, Page, Text, View, StyleSheet } = await import('@react-pdf/renderer')
 import { CE3_SIGNAL_LABELS } from './ce3'
+import { formatCurrency } from '@/lib/utils/format'
 
 // =============================================================================
 // Palette
@@ -35,7 +36,7 @@ const C = {
 }
 
 const EXPORT_DISCLAIMER =
-  'This report presents cross-merchant identity match data. Merchants may use this information to support chargeback dispute processes at their discretion.'
+  'This report presents evidence and claim-history context from your store. Merchants may use this information to support chargeback dispute processes at their discretion.'
 
 const IDENTITY_EVIDENCE_COL_WIDTHS = [120, 130, 60, 40, 70] as const
 const ORDER_HISTORY_COL_WIDTHS = [60, 100, 60, 65, 65, 90] as const
@@ -101,14 +102,12 @@ const pdfDateFormatter = new Intl.DateTimeFormat('en-US', {
   year: 'numeric',
   timeZone: 'UTC',
 });
-const pdfCurrencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
-
 function fmt(d: Date): string {
   return pdfDateFormatter.format(d)
 }
 
-function fmtCurrency(amount: number, _currency = 'USD'): string {
-  return pdfCurrencyFormatter.format(amount)
+function fmtCurrency(amount: number, currency = 'USD'): string {
+  return formatCurrency(amount, currency)
 }
 
 function priorMatchStrength(pkg: EvidencePackage): 'Strong' | 'Partial' | 'None' {
@@ -343,29 +342,11 @@ function PDFPriorMatchAssessment({ pkg }: { pkg: EvidencePackage }) {
   )
 }
 
-function PDFCrossMerchantSection({ pkg }: { pkg: EvidencePackage }) {
-  const { crossMerchant, merchant } = pkg
-  if (crossMerchant.satisfied && crossMerchant.merchantCount != null) {
-    return (
-      <View style={s.amberBox}>
-        <Text style={s.amberText}>
-          {`This customer's identity has been observed at ${crossMerchant.merchantCount} other merchant${crossMerchant.merchantCount === 1 ? '' : 's'} in the Unauth network. No merchant names, customer details, or order data from other merchants are disclosed. This cross-merchant match data may provide additional context alongside your store-level evidence.`}
-        </Text>
-        {crossMerchant.networkOrderCount != null && (
-          <View style={{ marginTop: 6 }}>
-            <Text style={s.amberText}>Total orders across network: {crossMerchant.networkOrderCount}</Text>
-            {crossMerchant.networkRefundRate != null && (
-              <Text style={s.amberText}>Refund rate across network: {crossMerchant.networkRefundRate}%</Text>
-            )}
-          </View>
-        )}
-      </View>
-    )
-  }
+function PDFStoreScopeSection({ pkg }: { pkg: EvidencePackage }) {
   return (
     <View style={s.infoBox}>
       <Text style={s.infoText}>
-        Cross-merchant pattern data is not available for this customer at this time. Evidence is based solely on activity at {merchant.name}.
+        Evidence in this report is based solely on order and claim activity recorded by {pkg.merchant.name}.
       </Text>
     </View>
   )
@@ -419,7 +400,7 @@ export default function EvidenceDocument({ pkg, narrative }: { pkg: EvidencePack
         <Text style={s.sectionLabel}>PRIOR ORDER IDENTITY MATCH</Text>
         <PDFPriorMatchAssessment pkg={pkg} />
         <Text style={s.sectionLabel}>CROSS-MERCHANT PATTERN</Text>
-        <PDFCrossMerchantSection pkg={pkg} />
+        <PDFStoreScopeSection pkg={pkg} />
         {pkg.merchantNotes && (
           <View>
             <Text style={s.sectionLabel}>MERCHANT NOTES</Text>

@@ -1,16 +1,19 @@
+// Human-readable evidence/attribution labels for internal claim-history flag
+// codes. Wording follows docs/product/TERMINOLOGY.md: describe the observed
+// pattern for merchant review, never accuse ("fraud", "abuse", "ring", etc.).
 const FLAG_HUMAN_LABELS: Record<string, string> = {
-  cross_merchant: 'Refund abuse across multiple merchants',
-  crossmerchant: 'Refund abuse across multiple merchants',
-  address_clustering: 'Address cluster detected',
-  addressclustering: 'Address cluster detected',
-  billing_address_clustering: 'Billing address cluster detected',
-  inrabuse: 'High INR velocity',
-  inr_abuse: 'High INR velocity',
+  cross_merchant: 'Repeat claim pattern across multiple merchants',
+  crossmerchant: 'Repeat claim pattern across multiple merchants',
+  address_clustering: 'Address cluster identified',
+  addressclustering: 'Address cluster identified',
+  billing_address_clustering: 'Billing address cluster identified',
+  inrabuse: 'High item-not-received claim velocity',
+  inr_abuse: 'High item-not-received claim velocity',
   inrspeed: 'Fast item-not-received claims',
   inr_speed: 'Fast item-not-received claims',
   refund_rate: 'Elevated refund rate',
   refundrate: 'Elevated refund rate',
-  refund_pattern: 'Suspicious refund pattern',
+  refund_pattern: 'Claim pattern requires review under merchant policy',
   velocity: 'Unusual order velocity',
   payment_churn: 'Payment method churn',
   dispute_history: 'Prior dispute history',
@@ -27,7 +30,13 @@ function normalizeFlagKey(flag: string): string {
   return flag.trim().toLowerCase().replace(/\s+/g, '_');
 }
 
-export function humanizeFraudFlags(flags: string[]): string[] {
+/**
+ * Converts internal claim-history signal codes into merchant-facing evidence
+ * labels. Does not alter which flags exist or how they are computed upstream
+ * — this only maps a code to approved-vocabulary text (see
+ * docs/product/TERMINOLOGY.md).
+ */
+export function humanizeClaimHistorySignals(flags: string[]): string[] {
   const out: string[] = [];
   const seen = new Set<string>();
 
@@ -44,6 +53,9 @@ export function humanizeFraudFlags(flags: string[]): string[] {
   }
   return out;
 }
+
+/** @deprecated Use `humanizeClaimHistorySignals`. Kept as an alias for callers not yet migrated. */
+export const humanizeFraudFlags = humanizeClaimHistorySignals;
 
 export function crossMerchantSummary(
   merchantCount: number,

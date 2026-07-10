@@ -541,6 +541,10 @@ export async function POST(request: NextRequest) {
     const message = err instanceof Error ? err.message.slice(0, 300) : 'webhook_processing_failed';
     await completeProcessedWebhook(supabase, idempotencyKey, 'failed', message);
     console.error('Shopify webhook processing failed', { webhookId, topic, shopDomain, message });
+    // Return 5xx so Shopify retries with backoff. The webhook is marked
+    // 'failed' (not 'completed'), so claimProcessedWebhook re-claims and
+    // reprocesses it on retry instead of dropping the event silently.
+    return NextResponse.json({ error: 'webhook_processing_failed' }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });

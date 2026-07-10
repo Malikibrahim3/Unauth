@@ -9,7 +9,6 @@ import {
 import { normalizeTier } from '@/lib/billing/normalizeTier';
 import {
   ENTITLEMENT_TO_FEATURE,
-  hasEntitlementForTier,
 } from '@/lib/billing/entitlementBridge';
 import { hasEntitlement, getPlanEntitlements } from '@/lib/product/entitlements';
 import type { Entitlement } from '@/lib/product/entitlements.types';
@@ -21,7 +20,6 @@ describe('billing tiers (canonical SSOT)', () => {
     expect(can('free', 'context_checks')).toBe(true);
     expect(can('free', 'claims_queue')).toBe(true);
     expect(can('free', 'helpdesk_widget')).toBe(true);
-    expect(can('free', 'network_signal_enrichment')).toBe(true);
     expect(can('free', 'watchlist')).toBe(false);
     expect(limit('free', 'contextCreditsPerMonth')).toBe(100);
     expect(limit('free', 'historyDays')).toBe(30);
@@ -42,22 +40,22 @@ describe('billing tiers (canonical SSOT)', () => {
     expect(isBillingActive()).toBe(process.env.BILLING_ACTIVE === 'true');
     if (!isBillingActive()) {
       expect(effectiveTier('growth')).toBe('free');
-      expect(can('growth', 'network_signal_enrichment')).toBe(true);
+      expect(can('growth', 'customer_search')).toBe(true);
       expect(can('pro', 'customer_dossier')).toBe(true);
       expect(limit('growth', 'connectedStores')).toBe(TIER_CONFIG.free.limits.connectedStores);
     }
   });
 
-  it('growth tier config unlocks network features', () => {
-    expect(TIER_CONFIG.growth.features.network_signal_enrichment).toBe(true);
-    expect(TIER_CONFIG.growth.features.identity_graph).toBe(true);
-    expect(TIER_CONFIG.pro.features.network_signal_enrichment).toBe(true);
+  it('growth tier config unlocks multi-store operations and advanced reporting', () => {
+    expect(TIER_CONFIG.growth.features.multi_store).toBe(true);
+    expect(TIER_CONFIG.growth.features.advanced_reports).toBe(true);
+    expect(TIER_CONFIG.pro.features.multi_store).toBeUndefined();
   });
 
-  it('enterprise tier config is API-focused for embedded claim context', () => {
+  it('enterprise tier config includes the full product surface plus API access', () => {
     expect(TIER_CONFIG.enterprise.features.lookup_api).toBe(true);
     expect(TIER_CONFIG.enterprise.features.quick_score_api).toBe(true);
-    expect(TIER_CONFIG.enterprise.features.customer_dossier).toBeUndefined();
+    expect(TIER_CONFIG.enterprise.features.customer_dossier).toBe(true);
   });
 
   it('normalizeTier maps legacy advanced → growth', () => {
@@ -71,7 +69,7 @@ describe('billing tiers (canonical SSOT)', () => {
       return;
     }
     expect(minimumTierForFeature('customer_search')).toBe('free');
-    expect(minimumTierForFeature('lookup_api')).toBe('scale');
+    expect(minimumTierForFeature('lookup_api')).toBe('enterprise');
   });
 });
 
@@ -101,17 +99,13 @@ describe('entitlement bridge (legacy UI → FeatureKey)', () => {
     );
     expect(configuredEntitlements('growth')).toEqual(
       expect.arrayContaining([
-        'NETWORK_GRAPH',
         'REPORTS_ADVANCED',
       ]),
     );
-    expect(configuredEntitlements('scale')).toEqual(
-      expect.arrayContaining(['REPORTS_ADVANCED']),
+    expect(configuredEntitlements('enterprise')).toEqual(
+      expect.arrayContaining(['REPORTS_ADVANCED', 'LIVE_LOOKUP_API', 'QUICK_SCORE']),
     );
-    expect(configuredEntitlements('growth')).toEqual(
-      expect.arrayContaining(['NETWORK_GRAPH']),
-    );
-    expect(configuredEntitlements('enterprise').length).toBeLessThan(ALL_ENTITLEMENTS.length);
+    expect(configuredEntitlements('enterprise').length).toBeLessThanOrEqual(ALL_ENTITLEMENTS.length);
   });
 
   it('hasEntitlement follows billing-active gate via can()', () => {

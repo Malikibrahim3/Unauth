@@ -16,8 +16,51 @@ import { logGorgiasWebhookResult } from '@/lib/support/intake/webhookLog';
 import { enforceRateLimit, getClientIp, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
 import { createServiceClient } from '@/lib/supabase/server';
 import { evaluatePublicGate } from '@/lib/claim-gate/publicGate';
+import { resolveGorgiasTicketCustomerEmail } from '@/lib/support/gorgias/ticketCustomerEmail';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
-function gateClaimTypeFromSupport(value: string | null): string {
+type GateOrderReference = {
+  id: string;
+  external_id: string;
+  order_number: string | null;
+  placed_at: string | null;
+  ingested_at: string | null;
+};
+
+export async function resolveUnambiguousEmailOrder(
+  client: SupabaseClient,
+  merchantId: string,
+  email: string,
+): Promise<GateOrderReference | null> {
+  const { data, error } = await client
+    .from('source_orders')
+    .select('id,external_id,order_number,placed_at,ingested_at')
+    .eq('merchant_id', merchantId)
+    .ilike('email', email)
+    .order('placed_at', { ascending: false, nullsFirst: false })
+    .order('ingested_at', { ascending: false, nullsFirst: false })
+    .limit(2);
+  if (error) throw new Error(`gorgias_email_order_lookup_failed: ${error.message}`);
+
+  const orders = (data ?? []) as GateOrderReference[];
+  const newest = orders[0];
+  if (!newest) return null;
+  const newestAt = newest.placed_at ?? newest.ingested_at;
+  const newestMs = newestAt ? Date.parse(newestAt) : Number.NaN;
+  if (!Number.isFinite(newestMs)) return null;
+
+  const second = orders[1];
+  const secondAt = second ? second.placed_at ?? second.ingested_at : null;
+  const secondMs = secondAt ? Date.parse(secondAt) : Number.NaN;
+  if (second && (!Number.isFinite(secondMs) || secondMs === newestMs)) return null;
+  return newest;
+}
+
+// Map a support-classified claim type to a claim-gate type. Returns null for
+// anything we can't confidently map, so the caller SKIPS auto gate-evaluation
+// and leaves the ticket for manual review — instead of silently forcing every
+// unrecognised claim into `item_not_received`.
+function gateClaimTypeFromSupport(value: string | null): string | null {
   switch (value) {
     case 'INR':
       return 'item_not_received';
@@ -28,7 +71,7 @@ function gateClaimTypeFromSupport(value: string | null): string {
     case 'not_as_described':
       return 'missing_item';
     default:
-      return 'item_not_received';
+      return null;
   }
 }
 
@@ -128,17 +171,42 @@ export async function POST(request: NextRequest) {
       is_claim: result.is_claim,
       claim_type: result.claim_type,
     });
-    if (result.is_claim && (result.order_ref || result.shopify_order_id)) {
+    const gateClaimType = gateClaimTypeFromSupport(result.claim_type);
+    const serviceClient = createServiceClient();
+    let gateOrderId = result.shopify_order_id;
+    let gateOrderName = result.order_ref;
+    if (result.is_claim && gateClaimType && !gateOrderId && !gateOrderName) {
+      const ticket = extractGorgiasTicketPayload(body);
+      const customerEmail = resolveGorgiasTicketCustomerEmail(ticket)?.normEmail ?? null;
+      if (customerEmail) {
+        try {
+          const emailOrder = await resolveUnambiguousEmailOrder(
+            serviceClient,
+            result.merchant_id,
+            customerEmail,
+          );
+          gateOrderId = emailOrder?.id ?? null;
+          gateOrderName = emailOrder?.order_number ?? emailOrder?.external_id ?? null;
+        } catch (lookupError) {
+          console.warn('Gorgias email order fallback skipped', {
+            merchant_id: result.merchant_id,
+            external_case_id: result.external_case_id,
+            message: lookupError instanceof Error ? lookupError.message : String(lookupError),
+          });
+        }
+      }
+    }
+    if (result.is_claim && gateClaimType && (gateOrderName || gateOrderId)) {
       try {
         await evaluatePublicGate({
-          client: createServiceClient(),
+          client: serviceClient,
           payload: {
             merchantId: result.merchant_id,
             platform: 'gorgias',
             ticket_id: result.external_case_id,
-            order_id: result.shopify_order_id,
-            order_name: result.order_ref,
-            claim_type: gateClaimTypeFromSupport(result.claim_type),
+            order_id: gateOrderId,
+            order_name: gateOrderName,
+            claim_type: gateClaimType,
             customer_message: result.claim_reason ?? 'Gorgias ticket matched a post-purchase claim pattern.',
             requested_action: result.requested_action ?? 'unknown',
             idempotency_key: `gorgias:${result.external_case_id}`,
@@ -159,7 +227,7 @@ export async function POST(request: NextRequest) {
     // must never fail a webhook that already ingested successfully.
     try {
       const access = await getActiveGorgiasMerchantApiAccess(
-        createServiceClient(),
+        serviceClient,
         result.merchant_id
       );
       if (access) {

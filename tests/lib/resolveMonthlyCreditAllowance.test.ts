@@ -8,10 +8,10 @@ describe('resolveMonthlyCreditAllowance', () => {
     expect(resolveMonthlyCreditAllowance('growth', null)).toEqual({ ok: true, allowance: PLAN_CONTEXT_CREDITS.growth });
   });
 
-  it('requires explicit allowance for scale and enterprise', () => {
-    expect(resolveMonthlyCreditAllowance('scale', null).ok).toBe(false);
+  it('requires explicit allowance for enterprise', () => {
+    expect(resolveMonthlyCreditAllowance('enterprise', null).ok).toBe(false);
     expect(resolveMonthlyCreditAllowance('enterprise', undefined).ok).toBe(false);
-    expect(resolveMonthlyCreditAllowance('scale', 12_000)).toEqual({
+    expect(resolveMonthlyCreditAllowance('enterprise', 12_000)).toEqual({
       ok: true,
       allowance: 12_000,
     });

@@ -58,3 +58,6 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+// Vercel Cron invokes scheduled jobs with GET (Authorization: Bearer CRON_SECRET).
+export const GET = POST;

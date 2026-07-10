@@ -137,105 +137,92 @@ describe('buildEvidencePackage CE3 path', () => {
   it('does not throw for a valid disputed order with ce3_signal_hashes', async () => {
     const { buildEvidencePackage } = await import('@/lib/evidence/buildPackage');
 
-    const shared = {
-      deviceMatch: 'h_dev',
-      ipCluster: 'h_ip',
-      addressCluster: 'h_addr',
-      accountLink: 'h_acc',
-      emailVariant: 'h_em',
-    };
-
     const rowsByTable: Record<string, Record<string, unknown>[]> = {
       [TABLES.MERCHANTS]: [{ id: 'merchant-a', user_id: 'user-a', business_name: 'Merchant A' }],
-      [TABLES.PROCESSING_JOBS]: [{ id: 'job-a', merchant_id: 'merchant-a', hidden_by_merchant: false }],
-      [TABLES.CUSTOMER_PROFILES]: [
+      [TABLES.SOURCE_CUSTOMERS]: [
         {
           id: 'profile-1',
-          merchant_ids: ['merchant-a'],
-          emails: ['cust@example.com'],
-          names: ['Customer'],
-          phones: [],
-          addresses: ['1 Main St'],
-          ips: ['203.0.113.1'],
-          card_last4s: ['4242'],
-          primary_email: 'cust@example.com',
-          total_orders: 3,
-          total_refund_claims: 1,
-          refund_rate: 0.33,
-          first_seen: '2023-01-01T00:00:00.000Z',
-          last_seen: '2025-06-01T00:00:00.000Z',
-          fraud_flags: [],
-          risk_level: 'high',
-          total_merchants_seen_at: 1,
+          merchant_id: 'merchant-a',
+          email: 'cust@example.com',
+          phone: null,
+          first_name: 'Customer',
+          last_name: null,
+          account_created_at: '2023-01-01T00:00:00.000Z',
+          created_at: '2023-01-01T00:00:00.000Z',
         },
       ],
-      customer_profile_audit_appearances: [
-        { profile_id: 'profile-1', audit_id: 'job-a', transaction_id: 'tx-1' },
-        { profile_id: 'profile-1', audit_id: 'job-a', transaction_id: 'tx-2' },
-        { profile_id: 'profile-1', audit_id: 'job-a', transaction_id: 'tx-disputed' },
+      [TABLES.SOURCE_ADDRESSES]: [
+        {
+          id: 'address-1',
+          merchant_id: 'merchant-a',
+          line1: '1 Main St',
+          line2: null,
+          city: 'London',
+          region: null,
+          postal_code: 'SW1A 1AA',
+          country: 'GB',
+          normalized_full: '1 main st london sw1a 1aa gb',
+        },
       ],
-      identity_members: [
-        { identity_id: 'profile-1', identifier_hash: 'hash-email-cust' },
-      ],
-      identity_signals: [
-        { id: 'signal-1', merchant_id: 'merchant-a', identifier_hash: 'hash-email-cust' },
-      ],
-      [TABLES.AUDIT_TRANSACTIONS]: [
+      [TABLES.SOURCE_ORDERS]: [
         {
           id: 'tx-1',
-          job_id: 'job-a',
-          order_id: 'ORD-1',
-          customer_email: 'cust@example.com',
-          customer_name: 'Customer',
-          shipping_address: '1 Main St',
-          device_ip: '203.0.113.1',
+          merchant_id: 'merchant-a',
+          source_customer_id: 'profile-1',
+          external_id: 'ORD-1',
+          order_number: 'ORD-1',
+          email: 'cust@example.com',
+          phone: null,
+          financial_status: 'paid',
+          fulfillment_state: 'fulfilled',
+          total_price: 40,
+          currency: 'USD',
           card_last4: '4242',
-          order_value: 40,
-          match_score: 50,
-          risk_level: 'low',
-          ce3_signal_hashes: { deviceMatch: 'h_dev', ipCluster: 'h_ip' },
-          refund_claimed: false,
+          browser_ip: '203.0.113.1',
+          shipping_address_id: 'address-1',
           // ~137 days before the dispute → inside the 120–365 day window
-          order_date: '2025-01-15T00:00:00.000Z',
-          processed_at: '2025-06-02T00:00:00.000Z',
+          placed_at: '2025-01-15T00:00:00.000Z',
+          ingested_at: '2025-01-15T00:00:00.000Z',
         },
         {
           id: 'tx-2',
-          job_id: 'job-a',
-          order_id: 'ORD-2',
-          customer_email: 'cust@example.com',
-          customer_name: 'Customer',
-          shipping_address: '1 Main St',
-          device_ip: '203.0.113.1',
+          merchant_id: 'merchant-a',
+          source_customer_id: 'profile-1',
+          external_id: 'ORD-2',
+          order_number: 'ORD-2',
+          email: 'cust@example.com',
+          phone: null,
+          financial_status: 'paid',
+          fulfillment_state: 'fulfilled',
+          total_price: 55,
+          currency: 'USD',
           card_last4: '4242',
-          order_value: 55,
-          match_score: 50,
-          risk_level: 'low',
-          ce3_signal_hashes: { deviceMatch: 'h_dev', ipCluster: 'h_ip', addressCluster: 'h_addr' },
-          refund_claimed: false,
+          browser_ip: '203.0.113.1',
+          shipping_address_id: 'address-1',
           // ~168 days before the dispute → inside the 120–365 day window
-          order_date: '2024-12-15T00:00:00.000Z',
-          processed_at: '2025-06-02T00:00:00.000Z',
+          placed_at: '2024-12-15T00:00:00.000Z',
+          ingested_at: '2024-12-15T00:00:00.000Z',
         },
         {
           id: 'tx-disputed',
-          job_id: 'job-a',
-          order_id: 'ORD-D',
-          customer_email: 'cust@example.com',
-          customer_name: 'Customer',
-          shipping_address: '1 Main St',
-          device_ip: '203.0.113.1',
+          merchant_id: 'merchant-a',
+          source_customer_id: 'profile-1',
+          external_id: 'ORD-D',
+          order_number: 'ORD-D',
+          email: 'cust@example.com',
+          phone: null,
+          financial_status: 'paid',
+          fulfillment_state: 'fulfilled',
+          total_price: 99,
+          currency: 'USD',
           card_last4: '4242',
-          order_value: 99,
-          match_score: 80,
-          risk_level: 'high',
-          ce3_signal_hashes: shared,
-          refund_claimed: true,
-          order_date: '2025-06-01T12:00:00.000Z',
-          processed_at: '2025-06-02T00:00:00.000Z',
+          browser_ip: '203.0.113.1',
+          shipping_address_id: 'address-1',
+          placed_at: '2025-06-01T12:00:00.000Z',
+          ingested_at: '2025-06-01T12:00:00.000Z',
         },
       ],
-      customer_notes: [],
+      [TABLES.MERCHANT_CLAIMS]: [],
     };
 
     class QueryBuilder {
@@ -266,12 +253,7 @@ describe('buildEvidencePackage CE3 path', () => {
         for (const [column, values] of this.inFilters) {
           rows = rows.filter((row) => values.includes(row[column]));
         }
-        if (this.table === TABLES.CUSTOMER_PROFILES && this.orFilter) {
-          const allowed = [...this.orFilter.matchAll(/merchant_ids\.cs\.\["([^"]+)"\]/g)].map((m) => m[1]);
-          rows = rows.filter((row) =>
-            allowed.some((id) => Array.isArray(row.merchant_ids) && (row.merchant_ids as string[]).includes(id))
-          );
-        }
+        void this.orFilter;
         return rows;
       }
     }

@@ -159,3 +159,6 @@ export async function POST(request: NextRequest) {
   console.log('[verify-connections] done', results);
   return NextResponse.json({ ok: true, results });
 }
+
+// Vercel Cron invokes scheduled jobs with GET (Authorization: Bearer CRON_SECRET).
+export const GET = POST;

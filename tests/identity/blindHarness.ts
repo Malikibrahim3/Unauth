@@ -258,7 +258,7 @@ export async function runBlindDataset(dataset: string, fileName = `${dataset}.cs
   const linkerInputs = validRows.map(toLinkerInput);
   const linkerResult = linkIdentities(linkerInputs);
   const ordersById = new Map(validRows.map((row) => [row.order_id, toScorerOrder(row)]));
-  // Mirror the production CSV pipeline (lib/processing/worker.ts): after the
+  // Mirror the calibration harness flow: after the
   // core linker, run candidate-group promotion + identity-signal expansion, then
   // score the MERGED cluster set. Without this the harness under-clusters
   // (e.g. phone-bridge fraud, linked only via a single strong signal, never

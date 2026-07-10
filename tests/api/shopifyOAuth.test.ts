@@ -26,10 +26,6 @@ jest.mock('next/server', () => {
   };
 });
 
-jest.mock('@/lib/shopify/auditBridge', () => ({
-  backfillShopifyAuditTransactions: jest.fn(async () => ({ batches: 0, scored: 0, skipped: 0 })),
-}));
-
 jest.mock('@/lib/shopify/webhooks', () => ({
   registerShopifyWebhooks: jest.fn(async () => {}),
 }));
@@ -80,10 +76,6 @@ function buildOAuthCallbackParams(input: {
   return params;
 }
 
-const { backfillShopifyAuditTransactions } = jest.requireMock('@/lib/shopify/auditBridge') as {
-  backfillShopifyAuditTransactions: jest.Mock;
-};
-
 /**
  * The OAuth install/callback routes no longer issue a bare 307 redirect.
  * They return an HTML "oauth complete" page (status 200) that postMessages the
@@ -113,7 +105,6 @@ describe('Shopify OAuth routes', () => {
       json: async () => ({ access_token: 'shop-token' }),
     })) as jest.Mock;
     backfillShopifyMerchantIdentities.mockResolvedValue({ orders: 0, inserted: 0 });
-    backfillShopifyAuditTransactions.mockResolvedValue({ batches: 0, scored: 0, skipped: 0 });
   });
 
   describe('install route', () => {

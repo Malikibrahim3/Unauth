@@ -3,7 +3,7 @@ import {
   hasEntitlementForTier,
   requiredTierForEntitlement,
 } from '@/lib/billing/entitlementBridge';
-import { can, tierLabel, type FeatureKey, type Tier } from '@/lib/billing/tiers';
+import { can, tierLabel, type Tier } from '@/lib/billing/tiers';
 import type { Entitlement, EntitlementMeta } from '@/lib/product/entitlements.types';
 
 export type { Entitlement, EntitlementMeta } from '@/lib/product/entitlements.types';
@@ -21,7 +21,6 @@ export const ENTITLEMENT_META: Record<Entitlement, EntitlementMeta> = {
   REPORTS_ADVANCED: { label: 'Advanced reports', availability: 'live' },
   LIVE_LOOKUP_API: { label: 'Live lookup API', availability: 'live' },
   QUICK_SCORE: { label: 'Quick score', availability: 'live' },
-  NETWORK_GRAPH: { label: 'Network Intelligence', availability: 'live' },
 };
 
 const ALL_ENTITLEMENTS = Object.keys(ENTITLEMENT_META) as Entitlement[];

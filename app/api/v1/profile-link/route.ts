@@ -31,12 +31,11 @@ async function POSTHandler(request: NextRequest) {
   }
 
   const service = createServiceClient();
-  const filters = `merchant_ids.cs.${JSON.stringify([authResult.merchantId])}`;
   const { data: profile } = await service
-    .from(TABLES.CUSTOMER_PROFILES)
+    .from(TABLES.SOURCE_CUSTOMERS)
     .select('id')
-    .contains('emails', JSON.stringify([normEmail]))
-    .or(filters)
+    .eq('merchant_id', authResult.merchantId)
+    .ilike('email', normEmail)
     .limit(1)
     .maybeSingle() as unknown as { data: { id: string } | null };
 

@@ -1,10 +1,10 @@
-// TODO(product-gating): require CUSTOMER_SEARCH entitlement when ENFORCE_PRODUCT_GATES is enabled.
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { withRequestLogging } from '@/lib/log';
 import { findCustomerProfileIdsByText } from '@/lib/customers/profileSearch';
+import { enforceEntitlement } from '@/lib/product/requireEntitlement';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,6 +38,9 @@ async function GETHandler(req: NextRequest) {
   const serviceClient = createServiceClient();
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_CUSTOMERS);
   if (denied) return denied;
+
+  const gated = await enforceEntitlement(serviceClient, ctx.merchantId, 'CUSTOMER_SEARCH');
+  if (gated) return gated;
 
   // ── Input validation ──────────────────────────────────────────────────────
   const q = req.nextUrl.searchParams.get('q')?.trim() ?? '';

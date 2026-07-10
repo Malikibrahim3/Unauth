@@ -4,7 +4,7 @@
  * Verifies:
  *   1. Merchant scoping — only jobs owned by the target merchant are queried.
  *   2. Review-worthy filter — dismissed transactions are excluded.
- *   3. order_value accumulation (string NUMERIC from DB + JS number).
+ *   3. total_price accumulation (string NUMERIC from DB + JS number).
  *   4. Returns null on Supabase error (never returns 0 on failure).
  *   5. Returns 0 when merchant has no jobs.
  */
@@ -117,12 +117,12 @@ describe('getExposureAtRisk', () => {
     expect(merchantIdArgs).not.toContain(MERCHANT_B);
   });
 
-  it('sums order_value from graded transactions (string NUMERIC)', async () => {
+  it('sums total_price from graded transactions (string NUMERIC)', async () => {
     const client = buildMockClient(
       [{ data: [{ id: 'job-1' }], error: null }, { data: [], error: null }],
       {
         graded: [
-          { data: [{ order_value: '100.50' }, { order_value: '49.50' }], error: null },
+          { data: [{ total_price: '100.50' }, { total_price: '49.50' }], error: null },
           { data: [], error: null },
         ],
         status: [
@@ -134,16 +134,16 @@ describe('getExposureAtRisk', () => {
     expect(result).toBeCloseTo(150.0, 2);
   });
 
-  it('sums order_value from both graded and status-only clauses without double-counting', async () => {
+  it('sums total_price from both graded and status-only clauses without double-counting', async () => {
     const client = buildMockClient(
       [{ data: [{ id: 'job-1' }], error: null }, { data: [], error: null }],
       {
         graded: [
-          { data: [{ order_value: 200 }], error: null },
+          { data: [{ total_price: 200 }], error: null },
           { data: [], error: null },
         ],
         status: [
-          { data: [{ order_value: '75.00' }], error: null },
+          { data: [{ total_price: '75.00' }], error: null },
           { data: [], error: null },
         ],
       },
@@ -152,12 +152,12 @@ describe('getExposureAtRisk', () => {
     expect(result).toBeCloseTo(275.0, 2);
   });
 
-  it('skips null order_value rows without erroring', async () => {
+  it('skips null total_price rows without erroring', async () => {
     const client = buildMockClient(
       [{ data: [{ id: 'job-1' }], error: null }, { data: [], error: null }],
       {
         graded: [
-          { data: [{ order_value: null }, { order_value: '50.00' }], error: null },
+          { data: [{ total_price: null }, { total_price: '50.00' }], error: null },
           { data: [], error: null },
         ],
         status: [{ data: [], error: null }],
@@ -193,7 +193,7 @@ describe('getExposureAtRisk', () => {
     const client = buildMockClient(
       [{ data: [{ id: ownedJobId }], error: null }, { data: [], error: null }],
       {
-        graded: [{ data: [{ order_value: '100' }], error: null }, { data: [], error: null }],
+        graded: [{ data: [{ total_price: '100' }], error: null }, { data: [], error: null }],
         status: [{ data: [], error: null }],
       },
     );

@@ -48,6 +48,10 @@ const COLUMN_SCOPES: Record<string, TenantScope> = {
   customer_notes: { kind: 'column', column: 'merchant_id' },
   customer_activity_log: { kind: 'column', column: 'merchant_id' },
   merchant_identity_state: { kind: 'column', column: 'merchant_id' },
+  // Verified live: both tables have a merchant_id column. Registered so the
+  // audit-trail and team-permissions routes stop failing closed at runtime.
+  user_action_log: { kind: 'column', column: 'merchant_id' },
+  user_permission_grants: { kind: 'column', column: 'merchant_id' },
 };
 
 /**

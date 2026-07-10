@@ -193,6 +193,20 @@ describe('POST /api/account/delete', () => {
       'integration_evidence_items',
       'integration_documents',
       'extracted_partner_terms',
+      'evidence_download_tokens',
+      'profile_view_tokens',
+      'evidence_packages',
+      'agreement_rule_evaluations',
+      'agreement_rules',
+      'agreement_clauses',
+      'document_upload_jobs',
+      'agreements',
+      'accountability_events',
+      'recovery_tasks',
+      'loss_sources',
+      'evidence_items',
+      'category_applicability',
+      'pack_confirmations',
       'sync_jobs',
       'sync_job_chunks',
       'merchant_users',
@@ -231,18 +245,24 @@ describe('POST /api/account/delete', () => {
     });
   });
 
-  it('handles missing legacy cleanup tables without blocking auth deletion', async () => {
-    const { deleteUser } = setup({
-      deleteErrors: {
-        processing_jobs: 'relation "processing_jobs" does not exist',
-        audit_transactions: 'relation "audit_transactions" does not exist',
-      },
-    });
+  it('does not query dropped legacy tables or orphan-profile RPCs', async () => {
+    const { service, deleteUser } = setup();
 
     const res = await POST(makeRequest({ confirm: 'DELETE' }));
 
     expect(res.status).toBe(200);
     expect(deleteUser).toHaveBeenCalledWith(USER_ID);
+    const touchedTables = [
+      ...service.selects.map((operation) => operation.table),
+      ...service.deleteOperations.map((operation) => operation.table),
+    ];
+    expect(touchedTables).not.toEqual(expect.arrayContaining([
+      'public_audits',
+      'csv_upload_queue',
+      'customer_profiles',
+      'customer_profile_audit_appearances',
+    ]));
+    expect(service.rpc).not.toHaveBeenCalled();
   });
 
   it('does not delete the auth user when a current v2 cleanup table fails', async () => {

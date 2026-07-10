@@ -1,18 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { findMerchantCustomerByEmail } from '@/lib/gorgias/findMerchantCustomerByEmail';
-import {
-  normaliseEmail,
-  normaliseIP,
-  normaliseAddress,
-  normaliseCard,
-} from '@/lib/identity/normalise';
-import { hashIdentifier } from '@/lib/identity/hash';
 import type { ContextUnlockType } from '@/lib/billing/contextCredits';
+import { hashIdentifier } from '@/lib/identity/hash';
+import { normaliseEmail } from '@/lib/identity/normalise';
 import { TABLES } from '@/lib/supabase/tables';
-
-/** Fields required by {@link formatContextLookupResults}. */
-const WIDGET_CONTEXT_PROFILE_SELECT =
-  'id, primary_email, merchant_ids, fraud_flags, total_orders, total_refund_claims, total_merchants_seen_at, refund_rate, fastest_claim_days, first_seen, last_seen';
 
 export type ContextLookupIdentifiers = {
   rawEmail?: string;
@@ -30,111 +20,77 @@ export type ContextLookupSearchResult =
     }
   | { ok: false; queriedHashes: string[]; error: string };
 
-export async function runContextProfileSearch(
-  service: SupabaseClient,
-  identifiers: ContextLookupIdentifiers,
-): Promise<ContextLookupSearchResult> {
-  const rawEmail = identifiers.rawEmail?.trim() ?? '';
-  const rawName = identifiers.rawName?.trim() ?? '';
-  const rawAddress = identifiers.rawAddress?.trim() ?? '';
-  const rawCard = identifiers.rawCard?.trim() ?? '';
-  const rawIp = identifiers.rawIp?.trim() ?? '';
+type StoreOrderRow = {
+  id: string;
+  email: string | null;
+  placed_at: string | null;
+};
 
-  const normEmail = rawEmail ? normaliseEmail(rawEmail) : null;
-  const normCard = rawCard ? normaliseCard(rawCard) : null;
-  const normIp = rawIp ? normaliseIP(rawIp) : null;
-  const normAddress = rawAddress ? normaliseAddress(rawAddress) : null;
-  const normName = rawName ? rawName.toLowerCase() : null;
-
-  const queriedHashes = [
-    normEmail ? hashIdentifier(normEmail) : null,
-    normAddress ? hashIdentifier(normAddress) : null,
-    normIp ? hashIdentifier(normIp) : null,
-    normCard ? hashIdentifier(normCard) : null,
-  ].filter(Boolean) as string[];
-
-  const { data: rows, error } = await service.rpc('search_customer_profiles', {
-    p_email: null,
-    p_name: normName || null,
-    p_address: null,
-    p_card: null,
-    p_ip: null,
-    p_email_hash: normEmail ? hashIdentifier(normEmail) : null,
-    p_address_hash: normAddress ? hashIdentifier(normAddress) : null,
-    p_card_hash: normCard && normCard.length === 4 ? hashIdentifier(normCard) : null,
-    p_ip_hash: normIp ? hashIdentifier(normIp) : null,
-  });
-
-  if (error) {
-    return { ok: false, queriedHashes, error: error.message };
-  }
-
-  return {
-    ok: true,
-    queriedHashes,
-    rawRows: (rows ?? []) as Record<string, unknown>[],
-  };
-}
+type StoreClaimRow = {
+  source_order_id: string | null;
+  submitted_at: string | null;
+};
 
 /**
- * Gorgias widget unlock: resolve the merchant-scoped profile the sidebar already found,
- * then merge k-anonymity RPC matches for pseudonymous network context on full unlock.
- * The RPC alone omits profiles with total_merchants_seen_at &lt; 3 even when the widget shows them.
+ * Builds store-scoped claim history for a widget unlock. Network disclosure is
+ * intentionally absent from the launch path.
  */
 export async function runWidgetContextProfileSearch(
   service: SupabaseClient,
   merchantId: string,
   identifiers: ContextLookupIdentifiers,
 ): Promise<ContextLookupSearchResult> {
-  const rawEmail = identifiers.rawEmail?.trim() ?? '';
-  const normEmail = rawEmail ? normaliseEmail(rawEmail) : null;
-  if (!normEmail) {
-    return runContextProfileSearch(service, identifiers);
+  const normEmail = normaliseEmail(identifiers.rawEmail?.trim() ?? '');
+  if (!normEmail) return { ok: true, queriedHashes: [], rawRows: [] };
+
+  const emailHash = hashIdentifier(normEmail);
+  const { data: orderData, error: orderError } = await service
+    .from(TABLES.AUDIT_TRANSACTIONS)
+    .select('id, email, placed_at')
+    .eq('merchant_id', merchantId)
+    .ilike('email', normEmail)
+    .order('placed_at', { ascending: true })
+    .limit(1000);
+
+  if (orderError) {
+    return { ok: false, queriedHashes: [emailHash], error: orderError.message };
   }
 
-  const merchantScopedHashes = [hashIdentifier(normEmail)];
-  const rowsById = new Map<string, Record<string, unknown>>();
-
-  const { customer } = await findMerchantCustomerByEmail(service, merchantId, normEmail);
-  if (customer?.id) {
-    const { data, error } = await service
-      .from(TABLES.CUSTOMER_PROFILES)
-      .select(WIDGET_CONTEXT_PROFILE_SELECT)
-      .eq('id', customer.id)
-      .maybeSingle();
-
-    if (error) {
-      return { ok: false, queriedHashes: merchantScopedHashes, error: error.message };
-    }
-    if (data) {
-      rowsById.set(String(data.id), data as Record<string, unknown>);
-    }
+  const orders = (orderData ?? []) as StoreOrderRow[];
+  if (orders.length === 0) {
+    return { ok: true, queriedHashes: [emailHash], rawRows: [] };
   }
 
-  const networkSearch = await runContextProfileSearch(service, identifiers);
-  if (!networkSearch.ok) {
-    if (rowsById.size > 0) {
-      return {
-        ok: true,
-        queriedHashes: merchantScopedHashes,
-        rawRows: [...rowsById.values()],
-      };
-    }
-    return networkSearch;
+  const orderIds = orders.map((order) => order.id);
+  const { data: claimData, error: claimError } = await service
+    .from(TABLES.MERCHANT_CLAIMS)
+    .select('source_order_id, submitted_at')
+    .eq('merchant_id', merchantId)
+    .in('source_order_id', orderIds.slice(0, 200));
+
+  if (claimError) {
+    return { ok: false, queriedHashes: [emailHash], error: claimError.message };
   }
 
-  for (const row of networkSearch.rawRows) {
-    rowsById.set(String(row.id), row);
-  }
-
-  const queriedHashes = [
-    ...new Set([...merchantScopedHashes, ...networkSearch.queriedHashes]),
-  ];
+  const claims = (claimData ?? []) as StoreClaimRow[];
+  const firstSeen = orders.find((order) => order.placed_at)?.placed_at ?? null;
+  const lastSeen = [...orders].reverse().find((order) => order.placed_at)?.placed_at ?? null;
 
   return {
     ok: true,
-    queriedHashes,
-    rawRows: [...rowsById.values()],
+    queriedHashes: [emailHash],
+    rawRows: [
+      {
+        id: `store:${emailHash}`,
+        merchant_ids: [merchantId],
+        primary_email: normEmail,
+        total_orders: orders.length,
+        total_refund_claims: claims.length,
+        refund_rate: orders.length > 0 ? claims.length / orders.length : 0,
+        first_seen: firstSeen,
+        last_seen: lastSeen,
+      },
+    ],
   };
 }
 
@@ -160,63 +116,34 @@ export type FormattedContextResult = {
 
 export function formatContextLookupResults(
   merchantId: string,
-  contextType: ContextUnlockType,
+  _contextType: ContextUnlockType,
   rawRows: Record<string, unknown>[],
 ): FormattedContextResult[] {
-  const rawResults = rawRows.map((p) => {
-    const merchantIds: string[] = Array.isArray(p.merchant_ids) ? (p.merchant_ids as string[]) : [];
-    const merchantContributed = merchantIds.includes(merchantId);
-
-    return {
-      id: String(p.id),
-      identitySignals: Array.isArray(p.fraud_flags) ? (p.fraud_flags as string[]) : [],
-      total_orders: p.total_orders,
-      total_refund_claims: p.total_refund_claims,
-      total_merchants_seen_at: p.total_merchants_seen_at,
-      refund_rate: p.refund_rate,
-      fastest_claim_days: p.fastest_claim_days,
-      first_seen: p.first_seen,
-      last_seen: p.last_seen,
-      merchant_contributed: merchantContributed,
-      primary_email: merchantContributed ? (p.primary_email as string | null) : null,
-    };
-  });
-
-  return rawResults
-    .filter((row) => contextType === 'full_context' || row.merchant_contributed)
-    .map((row) => ({
-      id: row.id,
-      context_scope: contextType === 'full_context' ? 'store_and_network' : 'store_only',
-      context_points: [
-        Number(row.total_refund_claims ?? 0) > 0
-          ? 'Previous store claims found'
-          : 'No previous store claims found',
-        row.fastest_claim_days != null
-          ? `Fastest prior claim timing: ${row.fastest_claim_days} day${row.fastest_claim_days === 1 ? '' : 's'}`
-          : 'No prior claim timing available',
-        contextType === 'full_context' && Number(row.total_merchants_seen_at ?? 0) > 1
-          ? 'Similar pseudonymous pattern observed across participating merchants'
-          : null,
-      ].filter((p): p is string => p != null),
-      store_context: {
-        orders: Number(row.total_orders ?? 0),
-        claims: Number(row.total_refund_claims ?? 0),
-        refundRate: Number(row.refund_rate ?? 0),
-        firstSeen: row.first_seen,
-        lastSeen: row.last_seen,
-        primaryEmail: row.primary_email,
-      },
-      network_context:
-        contextType === 'full_context'
-          ? {
-              merchantsSeen: Number(row.total_merchants_seen_at ?? 0),
-              pseudonymousPatternObserved: Number(row.total_merchants_seen_at ?? 0) > 1,
-              note: 'Network context is derived from pseudonymous linked signals. Raw customer data from other merchants is not exposed.',
-            }
-          : null,
-      identity_consistency: row.identitySignals.slice(0, 5),
-    }));
+  return rawRows
+    .filter((row) => Array.isArray(row.merchant_ids) && row.merchant_ids.includes(merchantId))
+    .map((row) => {
+      const claimCount = Number(row.total_refund_claims ?? 0);
+      return {
+        id: String(row.id),
+        context_scope: 'store_only' as const,
+        context_points: [
+          claimCount > 0
+            ? `${claimCount} previous store claim${claimCount === 1 ? '' : 's'} found`
+            : 'No previous store claims found',
+        ],
+        store_context: {
+          orders: Number(row.total_orders ?? 0),
+          claims: claimCount,
+          refundRate: Number(row.refund_rate ?? 0),
+          firstSeen: row.first_seen,
+          lastSeen: row.last_seen,
+          primaryEmail: typeof row.primary_email === 'string' ? row.primary_email : null,
+        },
+        network_context: null,
+        identity_consistency: [],
+      };
+    });
 }
 
 export const CONTEXT_REVIEW_DISCLAIMER =
-  'Unauth provides contextual information for merchant review. Unauth does not make refund, fulfilment, account, or customer eligibility decisions.';
+  'Unauth provides store-scoped context for merchant review. Unauth does not make refund, fulfilment, account, or customer eligibility decisions.';

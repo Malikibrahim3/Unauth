@@ -12,12 +12,18 @@ import {
   evidenceRowsFromNormalized,
   mapAfterShipTrackingToEvidence,
   mapCarrierProofToEvidence,
+  mapShipBobFulfillmentToEvidence,
   mapShopifyDisputeToEvidence,
 } from '@/lib/integrations/evidenceMapper';
 import { fetchAfterShipTracking } from '@/lib/integrations/providers/aftership';
 import { fetchFedExDeliveryProof } from '@/lib/integrations/providers/fedex';
 import { fetchShopifyPaymentDisputes } from '@/lib/integrations/providers/shopify';
 import { fetchUpsDeliveryProof } from '@/lib/integrations/providers/ups';
+import {
+  getOrderByReferenceId,
+  getReturnForOrder,
+  getShipmentTimeline,
+} from '@/lib/integrations/providers/shipbob';
 import { requireIntegrationProvider } from '@/lib/integrations/registry';
 import type { NormalizedEvidenceItem } from '@/lib/integrations/types';
 
@@ -25,6 +31,7 @@ const syncSchema = z.object({
   supportPayoutCaseId: z.string().uuid().optional(),
   orderId: z.string().uuid().optional(),
   trackingNumber: z.string().trim().min(1).optional(),
+  orderReference: z.string().trim().min(1).optional(),
 });
 
 async function resolveTrackingNumber(client: any, merchantId: string, orderId?: string, provided?: string) {
@@ -48,6 +55,23 @@ async function insertEvidence(client: any, items: ReturnType<typeof evidenceRows
     .from('integration_evidence_items')
     .upsert(items, { onConflict: 'id' });
   if (error) throw new Error(`integration_evidence_insert_failed: ${error.message}`);
+}
+
+async function resolveOrderReference(
+  client: any,
+  merchantId: string,
+  orderId?: string,
+  provided?: string,
+): Promise<string | null> {
+  if (provided?.trim()) return provided.trim().replace(/^#/, '');
+  if (!orderId) return null;
+  const { data } = await client
+    .from('source_orders')
+    .select('external_id,order_number')
+    .eq('merchant_id', merchantId)
+    .eq('id', orderId)
+    .maybeSingle();
+  return data?.order_number ?? data?.external_id ?? null;
 }
 
 export async function POST(
@@ -116,6 +140,31 @@ export async function POST(
       if (!trackingNumber) return NextResponse.json({ error: 'Tracking number is required for AfterShip sync.' }, { status: 400 });
       const tracking = await fetchAfterShipTracking({ apiKey: String(credentials.apiKey), trackingNumber });
       normalized = mapAfterShipTrackingToEvidence(tracking, {
+        merchantId: ctx.merchantId,
+        supportPayoutCaseId: parsed.data.supportPayoutCaseId,
+        now,
+      });
+    } else if (provider.id === 'shipbob') {
+      const credentials = await getIntegrationCredential(serviceClient, ctx.merchantId, provider.id);
+      if (!credentials?.apiKey) return NextResponse.json({ error: 'ShipBob is not connected.' }, { status: 400 });
+      const orderReference = await resolveOrderReference(
+        serviceClient,
+        ctx.merchantId,
+        parsed.data.orderId,
+        parsed.data.orderReference,
+      );
+      if (!orderReference) {
+        return NextResponse.json({ error: 'Order reference is required for ShipBob sync.' }, { status: 400 });
+      }
+      const shipbobOrder = await getOrderByReferenceId(orderReference, String(credentials.apiKey));
+      if (!shipbobOrder) {
+        return NextResponse.json({ error: 'Order was not found in ShipBob.' }, { status: 404 });
+      }
+      const timelineGroups = await Promise.all(
+        shipbobOrder.shipments.map((shipment) => getShipmentTimeline(shipment.id, String(credentials.apiKey))),
+      );
+      const returnOrder = await getReturnForOrder(shipbobOrder.id, String(credentials.apiKey));
+      normalized = mapShipBobFulfillmentToEvidence(shipbobOrder, timelineGroups.flat(), returnOrder, {
         merchantId: ctx.merchantId,
         supportPayoutCaseId: parsed.data.supportPayoutCaseId,
         now,

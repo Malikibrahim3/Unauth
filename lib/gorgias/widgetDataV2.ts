@@ -1,8 +1,7 @@
 /**
  * v2 widget data assembly. Own-store stats come from the merchant's layer-1
- * rows (source_orders / claims); ALL cross-merchant intelligence flows through
- * the lookup_network_identity RPC so k-anonymity is enforced in exactly one
- * place and every disclosure lands in network_access_log (test finding C4).
+ * rows (source_orders / claims). Network disclosure is disabled for the
+ * store-scoped launch while the dormant state-machine support remains intact.
  * Replaces the legacy customer_profiles/order_claim_context assembly in
  * widgetData.ts, whose backing tables were dropped at the v2 cutover.
  */
@@ -23,6 +22,8 @@ import {
   type PrimaryReason,
   type ThisStoreStats,
 } from '@/lib/gorgias/widgetData';
+
+const NETWORK_DISCLOSURE_ENABLED = false;
 
 const CLAIM_TYPE_LABELS_V2: Record<string, string> = {
   item_not_received: 'Item not received',
@@ -135,29 +136,14 @@ export async function buildGorgiasClaimWidgetDataV2(
       lookupDiagnostics: null,
     };
   }
-  const emailHash = hashIdentifier(normEmail);
-  const root = emailRoot(normEmail);
-  const hashes: Array<{ type: string; hash: string }> = [{ type: 'email', hash: emailHash }];
-  if (root) hashes.push({ type: 'email_root', hash: hashIdentifier(root) });
-
-  // ── own-store stats (merchant-owned layer-1 data), fetched in parallel
-  // with the k-anonymous network lookup to save a round trip
-  const ip = auth.requestIp?.trim() ?? '';
-  const safeIp = /^(\d{1,3}\.){3}\d{1,3}$/.test(ip) || (ip.includes(':') && /^[0-9a-fA-F:.]+$/.test(ip)) ? ip : null;
-  const [ordersRes, netRes] = await Promise.all([
-    service
-      .from('source_orders')
-      .select('id, placed_at')
-      .eq('merchant_id', auth.merchantId)
-      .ilike('email', normEmail)
-      .order('placed_at', { ascending: false })
-      .limit(1000),
-    service.rpc('lookup_network_identity', {
-      p_merchant_id: auth.merchantId,
-      p_identifier_hashes: hashes,
-      p_request_ip: safeIp,
-    }),
-  ]);
+  // ── own-store stats (merchant-owned layer-1 data)
+  const ordersRes = await service
+    .from('source_orders')
+    .select('id, placed_at')
+    .eq('merchant_id', auth.merchantId)
+    .ilike('email', normEmail)
+    .order('placed_at', { ascending: false })
+    .limit(1000);
   const { data: orders, error: oe } = ordersRes;
   if (oe) {
     return { result: { ok: false, kind: 'error', message: 'Store order lookup failed.' }, lookupDiagnostics: null };
@@ -190,15 +176,28 @@ export async function buildGorgiasClaimWidgetDataV2(
   const storeRecentClaimCount = storeClaims.filter((c) => c.submitted_at >= ninetyDaysAgo).length;
   const storeClaimValueRaw = storeClaims.reduce((s, c) => s + Number(c.amount_at_risk ?? 0), 0);
 
-  // ── network intelligence via the single k-anonymous read path
-  const { data: netRows, error: ne } = netRes;
-  if (ne) {
-    return { result: { ok: false, kind: 'error', message: 'Network lookup failed.' }, lookupDiagnostics: null };
+  let identity: RpcIdentityRow | null = null;
+  if (NETWORK_DISCLOSURE_ENABLED) {
+    const emailHash = hashIdentifier(normEmail);
+    const root = emailRoot(normEmail);
+    const hashes: Array<{ type: string; hash: string }> = [{ type: 'email', hash: emailHash }];
+    if (root) hashes.push({ type: 'email_root', hash: hashIdentifier(root) });
+
+    const ip = auth.requestIp?.trim() ?? '';
+    const safeIp = /^(\d{1,3}\.){3}\d{1,3}$/.test(ip) || (ip.includes(':') && /^[0-9a-fA-F:.]+$/.test(ip)) ? ip : null;
+    const { data: netRows, error: networkError } = await service.rpc('lookup_network_identity', {
+      p_merchant_id: auth.merchantId,
+      p_identifier_hashes: hashes,
+      p_request_ip: safeIp,
+    });
+    if (networkError) {
+      return { result: { ok: false, kind: 'error', message: 'Network lookup failed.' }, lookupDiagnostics: null };
+    }
+    identity = Array.isArray(netRows) && netRows.length > 0 ? (netRows[0] as RpcIdentityRow) : null;
   }
-  const identity = Array.isArray(netRows) && netRows.length > 0 ? (netRows[0] as RpcIdentityRow) : null;
 
   let linkedIdentity: RpcIdentityRow | null = null;
-  if (params.linkedIdentityId) {
+  if (NETWORK_DISCLOSURE_ENABLED && params.linkedIdentityId) {
     const emailHash = hashIdentifier(normEmail);
     const { data: ownSignals } = await service
       .from('identity_signals')
@@ -261,7 +260,7 @@ export async function buildGorgiasClaimWidgetDataV2(
     claimTypes: canonicalClaimTypesFromCounts(storeTypeCounts),
   };
 
-  if (resolvedIdentity) {
+  if (NETWORK_DISCLOSURE_ENABLED && resolvedIdentity) {
     const typeCounts = (resolvedIdentity.claim_type_counts ?? {}) as Record<string, number>;
     network = {
       merchantCount: Number(resolvedIdentity.merchant_count ?? 0),

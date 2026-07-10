@@ -13,6 +13,9 @@ export const TABLES = {
   // their call sites are being migrated incrementally post-cutover. ──
   PROCESSING_JOBS: 'sync_jobs',
   AUDIT_TRANSACTIONS: 'source_orders',
+  SOURCE_CUSTOMERS: 'source_customers',
+  SOURCE_ADDRESSES: 'source_addresses',
+  SOURCE_ORDERS: 'source_orders',
   MERCHANT_CLAIMS: 'support_payout_cases',
   CUSTOMER_PROFILES: 'identities',
   IDENTITY_PROFILES: 'identity_profiles',
@@ -101,5 +104,4 @@ export const STORAGE_BUCKETS = {
 
 export const COLUMNS = {
   IDENTITY_CONFIDENCE_GRADE: 'identity_confidence_grade',
-  REVIEW_WORTHY: 'review_worthy',
 } as const;

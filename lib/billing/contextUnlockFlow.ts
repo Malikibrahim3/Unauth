@@ -48,7 +48,7 @@ export async function precheckContextCredits(
       snapshot,
       creditsRequired,
       error:
-        snapshot.tier === 'scale' || snapshot.tier === 'enterprise'
+        snapshot.tier === 'enterprise'
           ? SCALE_ALLOWANCE_MESSAGE
           : 'Context credit allowance is not configured for this account.',
     };

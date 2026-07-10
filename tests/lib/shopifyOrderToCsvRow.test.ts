@@ -1,51 +1,19 @@
-import {
-  shopifyOrderToCsvRow,
-  type ShopifyOrderSignalRow,
-} from '@/lib/shopify/shopifyOrderToCsvRow';
+import fs from 'fs';
+import path from 'path';
 
-describe('shopifyOrderToCsvRow', () => {
-  const baseSignal: ShopifyOrderSignalRow = {
-    shop_domain: 'acme.myshopify.com',
-    shopify_order_id: '12345',
-    created_at_shopify: '2026-05-26T16:48:08+00:00',
-    total_price: 99.5,
-    currency: 'USD',
-    financial_status: 'paid',
-    fulfillment_status: 'fulfilled',
-    refunds_count: 0,
-    payment_gateway_names: ['shopify_payments'],
-    shipping_country: 'US',
-  };
+const exists = (relativePath: string) => fs.existsSync(path.join(process.cwd(), relativePath));
+const read = (relativePath: string) => fs.readFileSync(path.join(process.cwd(), relativePath), 'utf8');
 
-  it('maps signal + identity to CSV row shape', () => {
-    const row = shopifyOrderToCsvRow(baseSignal, {
-      email: 'buyer@example.com',
-      shipping_address: '1 Main St, London, GB',
-      billing_address: '1 Main St, London, GB',
-      customer_id: '9988',
-    });
-
-    expect(row).not.toBeNull();
-    expect(row?.order_id).toBe('12345');
-    expect(row?.customer_email).toBe('buyer@example.com');
-    expect(row?.order_total).toBe('99.5');
-    expect(row?.currency).toBe('USD');
-    expect(row?.order_status).toBe('completed');
-    expect(row?.delivery_status).toBe('delivered');
-    expect(row?.payment_method).toBe('shopify_payments');
-    expect(row?.account_id).toBe('9988');
+describe('Shopify CSV adapter retirement', () => {
+  it('removes the Shopify-to-CSV adapter', () => {
+    expect(exists('lib/shopify/shopifyOrderToCsvRow.ts')).toBe(false);
   });
 
-  it('returns null without customer email', () => {
-    expect(shopifyOrderToCsvRow(baseSignal, { email: null })).toBeNull();
+  it('uses the v2 order processor for historical imports', () => {
+    expect(read('lib/shopify/backfill.ts')).toContain('processShopifyOrderPayload');
   });
 
-  it('maps refunded financial status', () => {
-    const row = shopifyOrderToCsvRow(
-      { ...baseSignal, financial_status: 'refunded', refunds_count: 1 },
-      { email: 'buyer@example.com' }
-    );
-    expect(row?.order_status).toBe('refunded');
-    expect(row?.refund_status).toBe('full');
+  it('starts the 24-month backfill through the shared window helper', () => {
+    expect(read('lib/shopify/backfill.ts')).toContain('integrationBackfillSinceIso');
   });
 });

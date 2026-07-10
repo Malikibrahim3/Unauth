@@ -1,8 +1,4 @@
-import {
-  effectiveTier,
-  isBillingActive,
-  TIER_CONFIG,
-} from '@/lib/billing/tiers';
+import { TIER_CONFIG } from '@/lib/billing/tiers';
 import { resolveMonthlyCreditAllowance } from '@/lib/billing/resolveMonthlyCreditAllowance';
 import { PLAN_CONTEXT_CREDITS } from '@/lib/billing/contextCredits';
 
@@ -21,13 +17,13 @@ describe('billing activation', () => {
     expect(freeAllowance).toEqual({ ok: true, allowance: PLAN_CONTEXT_CREDITS.free });
   });
 
-  it('does not grant unlimited credits to scale without explicit allowance', () => {
-    const scale = resolveMonthlyCreditAllowance('scale', null);
-    expect(scale.ok).toBe(false);
-    if (!scale.ok) {
-      expect(scale.error).toBe('scale_allowance_required');
+  it('does not grant unlimited credits to enterprise without explicit allowance', () => {
+    const enterprise = resolveMonthlyCreditAllowance('enterprise', null);
+    expect(enterprise.ok).toBe(false);
+    if (!enterprise.ok) {
+      expect(enterprise.error).toBe('enterprise_allowance_required');
     }
-    const configured = resolveMonthlyCreditAllowance('scale', 25_000);
+    const configured = resolveMonthlyCreditAllowance('enterprise', 25_000);
     expect(configured).toEqual({ ok: true, allowance: 25_000 });
   });
 
@@ -35,7 +31,9 @@ describe('billing activation', () => {
     process.env.VERCEL_ENV = 'development';
     delete process.env.BILLING_ACTIVE;
     jest.isolateModules(() => {
-      const { effectiveTier: eff, isBillingActive: active } = require('@/lib/billing/tiers');
+      const { effectiveTier: eff, isBillingActive: active } = jest.requireActual<
+        typeof import('@/lib/billing/tiers')
+      >('@/lib/billing/tiers');
       expect(active()).toBe(false);
       expect(eff('growth')).toBe('free');
     });
@@ -45,7 +43,9 @@ describe('billing activation', () => {
     process.env.VERCEL_ENV = 'production';
     delete process.env.BILLING_ACTIVE;
     jest.isolateModules(() => {
-      const { effectiveTier: eff, isBillingActive: active } = require('@/lib/billing/tiers');
+      const { effectiveTier: eff, isBillingActive: active } = jest.requireActual<
+        typeof import('@/lib/billing/tiers')
+      >('@/lib/billing/tiers');
       expect(active()).toBe(true);
       expect(eff('growth')).toBe('growth');
       expect(TIER_CONFIG.growth.features.advanced_reports).toBe(true);

@@ -435,7 +435,7 @@ export async function fetchMerchantScopedCustomerProfile(
 
 export const TX_SAFE_SELECT =
   'id,job_id,order_id,customer_email,customer_name,shipping_address,' +
-  'device_ip,card_last4,order_value,match_score,fraud_flags,risk_level,' +
+  'device_ip,card_last4,total_price,match_score,fraud_flags,risk_level,' +
   'identity_confidence_grade,identity_score,match_status,' +
   'identity_match_score,identity_match_grade,' +
   'refund_claimed,refund_reason,chargeback_filed,' +
@@ -605,7 +605,7 @@ export async function fetchMerchantScopedTransaction(
 type AuditCustomerSummarySourceRow = {
   customer_email: string | null;
   customer_name: string | null;
-  order_value: number | string | null;
+  total_price: number | string | null;
   identity_score: number | null;
   identity_confidence_grade: string | null;
   cluster_id: string | null;
@@ -687,7 +687,7 @@ export async function refreshAuditCustomerSummaries(
   const rows = await paginateAll<AuditCustomerSummarySourceRow>((from, to) =>
     serviceClient
       .from(TABLES.AUDIT_TRANSACTIONS)
-      .select('customer_email,customer_name,order_value,identity_score,identity_confidence_grade,cluster_id,processed_at')
+      .select('customer_email,customer_name,total_price,identity_score,identity_confidence_grade,cluster_id,processed_at')
       .eq('job_id', auditId)
       .or(buildReviewableFilter())
       .not('dismissed_by_merchant', 'is', true)
@@ -711,7 +711,7 @@ export async function refreshAuditCustomerSummaries(
     existing.customer_email ||= row.customer_email;
     existing.customer_name ||= row.customer_name;
     existing.order_count += 1;
-    existing.total_spend += typeof row.order_value === 'string' ? Number.parseFloat(row.order_value) || 0 : row.order_value ?? 0;
+    existing.total_spend += typeof row.total_price === 'string' ? Number.parseFloat(row.total_price) || 0 : row.total_price ?? 0;
     existing.max_score = Math.max(existing.max_score, row.identity_score ?? 0);
     if (row.processed_at && (!existing.first_seen || row.processed_at < existing.first_seen)) existing.first_seen = row.processed_at;
     if (row.processed_at && (!existing.last_seen || row.processed_at > existing.last_seen)) existing.last_seen = row.processed_at;
@@ -829,7 +829,7 @@ export async function paginateAll<T>(
  * Columns selected for review-queue rows.
  */
 export const REVIEW_QUEUE_SELECT =
-  'id,job_id,order_id,processed_at,order_value,identity_confidence_grade,' +
+  'id,job_id,order_id,processed_at,total_price,identity_confidence_grade,' +
   'identity_score,match_status,customer_email,customer_name,signals_matched,' +
   'dismissed_by_merchant';
 
@@ -938,7 +938,7 @@ export async function fetchReviewQueueProfileIds(
 // ---------------------------------------------------------------------------
 
 /**
- * Returns the sum of `order_value` (NUMERIC) for review-worthy, non-dismissed
+ * Returns the sum of `total_price` (NUMERIC) for review-worthy, non-dismissed
  * audit_transactions that belong to the given merchant.
  *
  * DEFINITION of "review-worthy" (matches countReviewWorthyTransactions):
@@ -952,7 +952,7 @@ export async function fetchReviewQueueProfileIds(
  * transaction query.  Zero cross-tenant data is ever returned.
  *
  * PRECISION: values are accumulated as JavaScript numbers (64-bit float).
- * For amounts up to ~$10 billion this is exact to the cent when order_value
+ * For amounts up to ~$10 billion this is exact to the cent when total_price
  * carries at most 2 decimal places in the DB.  If you need arbitrary
  * precision, replace the accumulator with a Decimal library.
  *
@@ -960,7 +960,7 @@ export async function fetchReviewQueueProfileIds(
  *
  * @param serviceClient  Service-role Supabase client (bypasses RLS).
  * @param merchantId     The authenticated merchant's UUID.
- * @returns Sum of order_value, or null if the query could not be completed.
+ * @returns Sum of total_price, or null if the query could not be completed.
  */
 export async function getExposureAtRisk(
   serviceClient: SupabaseClient,
@@ -990,7 +990,7 @@ export async function getExposureAtRisk(
 
     if (ownedJobIds.length === 0) return 0;
 
-    // Step 2: Paginate review-worthy transactions and sum order_value.
+    // Step 2: Paginate review-worthy transactions and sum total_price.
     // We fetch two clause sets (graded + status-only) to mirror the canonical
     // review-worthy definition without double-counting.
     const TX_BATCH = 1000;
@@ -1005,13 +1005,13 @@ export async function getExposureAtRisk(
       const sumClausePage = async (offset: number): Promise<number | null> => {
         const base = serviceClient
           .from(TABLES.AUDIT_TRANSACTIONS)
-          .select('order_value')
+          .select('total_price')
           .in('job_id', ownedJobIds)
           .not('dismissed_by_merchant', 'is', true)
           .range(offset, offset + TX_BATCH - 1);
 
         const { data, error } = (await extraFilter(base as unknown as ReturnType<typeof serviceClient.from>)) as unknown as {
-          data: Array<{ order_value: string | number | null }> | null;
+          data: Array<{ total_price: string | number | null }> | null;
           error: { message: string } | null;
         };
 
@@ -1022,11 +1022,11 @@ export async function getExposureAtRisk(
         if (!data || data.length === 0) return clauseSum;
 
         for (const row of data) {
-          if (row.order_value !== null && row.order_value !== undefined) {
+          if (row.total_price !== null && row.total_price !== undefined) {
             // Supabase may return NUMERIC as a string.
-            const v = typeof row.order_value === 'string'
-              ? parseFloat(row.order_value)
-              : (row.order_value as number);
+            const v = typeof row.total_price === 'string'
+              ? parseFloat(row.total_price)
+              : row.total_price;
             if (!isNaN(v)) clauseSum += v;
           }
         }

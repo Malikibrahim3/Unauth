@@ -1,4 +1,4 @@
-import { after, NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
@@ -323,33 +323,6 @@ async function linkSignalToIdentityGraph(
   if (edgeError) throw new Error(`checkout_edge_upsert_failed: ${edgeError.message}`);
 }
 
-async function updateCrossMerchantDeviceHits(
-  supabase: ServiceClient,
-  signalId: string | undefined,
-  deviceFp: string | null,
-  merchantId: string
-): Promise<void> {
-  if (!signalId || !deviceFp) return;
-
-  const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
-  const { data, error } = await supabase
-    .from(TABLES.CHECKOUT_SIGNALS)
-    .select('merchant_id')
-    .eq('device_fp', deviceFp)
-    .neq('merchant_id', merchantId)
-    .gte('created_at', since)
-    .limit(1000);
-  if (error || !data?.length) return;
-
-  const otherMerchantCount = new Set(data.map((row: { merchant_id: string }) => row.merchant_id)).size;
-  if (otherMerchantCount <= 0) return;
-
-  await supabase.rpc('set_checkout_signal_cross_merchant_hits', {
-    p_signal_id: signalId,
-    p_hit_count: otherMerchantCount,
-  });
-}
-
 export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
 }
@@ -424,12 +397,6 @@ export async function POST(request: NextRequest) {
         message: error instanceof Error ? error.message : 'unknown',
       });
     }
-  }
-
-  if (signal.deviceFp) {
-    after(async () => {
-      await updateCrossMerchantDeviceHits(supabase, inserted?.id, signal.deviceFp, signal.merchantId);
-    });
   }
 
   return json({ ok: true });

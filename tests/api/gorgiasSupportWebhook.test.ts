@@ -31,7 +31,7 @@ import {
   inferGorgiasEventType,
   ingestGorgiasSupportWebhook,
 } from '@/lib/support/gorgias/ingestWebhook';
-import { POST } from '@/app/api/gorgias/support-webhook/route';
+import { POST, resolveUnambiguousEmailOrder } from '@/app/api/gorgias/support-webhook/route';
 import type { GorgiasSupportConnectionRow } from '@/lib/support/gorgias/resolveConnection';
 import {
   resolveSupportLinkingTable,
@@ -858,9 +858,27 @@ describe('Gorgias support webhook', () => {
     ).toBe('ticket_updated');
   });
 
-  it('extracts wrapped ticket payloads', () => {
+  it('extracts wrapped ticket payloads and rejects tied email-order matches', async () => {
     const ticket = extractGorgiasTicketPayload({ ticket: gorgiasTicket });
     expect(ticket.id).toBe('g-500');
+
+    const tiedOrders = [
+      { id: 'order-a', external_id: 'A', order_number: 'A', placed_at: '2026-05-01T10:00:00Z', ingested_at: null },
+      { id: 'order-b', external_id: 'B', order_number: 'B', placed_at: '2026-05-01T10:00:00Z', ingested_at: null },
+    ];
+    const query = {
+      select() { return this; },
+      eq() { return this; },
+      ilike() { return this; },
+      order() { return this; },
+      limit() { return this; },
+      then(resolve: (value: { data: typeof tiedOrders; error: null }) => unknown) {
+        return Promise.resolve({ data: tiedOrders, error: null }).then(resolve);
+      },
+    };
+    const client = { from: () => query };
+    await expect(resolveUnambiguousEmailOrder(client as never, MERCHANT_ID, 'shopper@example.com'))
+      .resolves.toBeNull();
   });
 
   it('accepts connection-specific webhook secret', async () => {

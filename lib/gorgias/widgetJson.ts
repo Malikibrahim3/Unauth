@@ -662,15 +662,15 @@ function buildNetworkEvidenceField(
   showNetworkIntelligence: boolean,
 ): string {
   if (showNetworkIntelligence) {
-    if (ce3EvidenceAvailable) return 'CE 3.0 evidence available — documented cross-merchant history';
+    if (ce3EvidenceAvailable) return 'CE 3.0 evidence available from this store';
     if (network && network.merchantCount > 0) {
       const merchants = network.merchantCount === 1 ? 'merchant' : 'merchants';
       return `Seen at ${network.merchantCount} ${merchants} · no CE 3.0 evidence`;
     }
     return NO_CROSS_STORE_LABEL;
   }
-  if (network && network.merchantCount > 0) return 'Network signal available — upgrade to see details';
-  if (ce3EvidenceAvailable) return 'Cross-merchant evidence available — upgrade to access';
+  if (network && network.merchantCount > 0) return 'Additional identity context available';
+  if (ce3EvidenceAvailable) return 'Store order evidence available';
   return '—';
 }
 

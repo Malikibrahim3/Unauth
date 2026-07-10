@@ -1,5 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import type { ShopifyDisputeNode } from '@/lib/integrations/providers/shopify';
+import type {
+  ShipBobOrder,
+  ShipBobReturn,
+  ShipBobTimelineEvent,
+} from '@/lib/integrations/providers/shipbob';
 import { getIntegrationProvider, requireIntegrationProvider } from '@/lib/integrations/registry';
 import { stableEvidenceId } from '@/lib/integrations/stableEvidenceId';
 import type {
@@ -73,6 +78,60 @@ function firstDate(...values: unknown[]): string | null {
     if (Number.isFinite(ms)) return new Date(ms).toISOString();
   }
   return null;
+}
+
+export function mapShipBobFulfillmentToEvidence(
+  order: ShipBobOrder,
+  timelines: ShipBobTimelineEvent[],
+  returnOrder: ShipBobReturn | null,
+  input: BaseMapInput,
+): NormalizedEvidenceItem[] {
+  const reference = order.reference_id || order.id;
+  const pickPackEvents = timelines.filter((event) => /pick|pack|fulfill|ship/i.test(event.description));
+  const exception = timelines.find((event) => /exception|failed|delay|short|missing|damage/i.test(event.description));
+  const items = [createEvidence({
+    ...input,
+    sourceProvider: 'shipbob',
+    evidenceType: 'warehouse_pick_pack',
+    title: 'ShipBob fulfillment record',
+    summary: `${order.shipments.length} shipment(s), ${pickPackEvents.length} pick/pack event(s)`,
+    confidence: pickPackEvents.length > 0 ? 'high' : 'medium',
+    value: pickPackEvents.length,
+    occurredAt: firstDate(...timelines.map((event) => event.event_date)),
+    rawReference: JSON.stringify({ order: order.raw, timelines }),
+    id: stableEvidenceId(input.merchantId, 'shipbob', 'warehouse_pick_pack', reference),
+  })];
+
+  if (exception) {
+    items.push(createEvidence({
+      ...input,
+      sourceProvider: 'shipbob',
+      evidenceType: 'warehouse_exception',
+      title: 'ShipBob fulfillment exception',
+      summary: exception.description,
+      confidence: 'high',
+      value: true,
+      occurredAt: firstDate(exception.event_date),
+      rawReference: JSON.stringify(exception),
+      id: stableEvidenceId(input.merchantId, 'shipbob', 'warehouse_exception', `${reference}:${exception.event_date}`),
+    }));
+  }
+
+  if (returnOrder) {
+    items.push(createEvidence({
+      ...input,
+      sourceProvider: 'shipbob',
+      evidenceType: 'three_pl_sla_claim_status',
+      title: 'ShipBob return status',
+      summary: `Return ${returnOrder.id}: ${returnOrder.status}`,
+      confidence: 'high',
+      value: returnOrder.status,
+      rawReference: JSON.stringify(returnOrder.raw),
+      id: stableEvidenceId(input.merchantId, 'shipbob', 'three_pl_sla_claim_status', returnOrder.id),
+    }));
+  }
+
+  return items;
 }
 
 export function mapGorgiasTicketToEvidence(

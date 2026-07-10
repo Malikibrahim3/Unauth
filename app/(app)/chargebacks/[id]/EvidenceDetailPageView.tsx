@@ -162,7 +162,7 @@ export function EvidenceDetailPageView({
                 </div>
               </div>
               <div>
-                <div className="text-caption mb-1" style={{ color: 'var(--text-secondary)' }}>Cross-merchant</div>
+                <div className="text-caption mb-1" style={{ color: 'var(--text-secondary)' }}>Store history</div>
                 <div className="font-semibold" style={{ fontSize: 13, color: 'var(--text-primary)' }}>
                   {pkg.cross_merchant_indicator ? 'Yes' : 'Not linked'}
                 </div>
@@ -234,7 +234,7 @@ export function EvidenceDetailPageView({
           )}
 
           <p className="text-caption" style={{ color: 'var(--text-tertiary)' }}>
-            This report presents cross-merchant identity match data. Merchants may use this information to support chargeback dispute processes at their discretion.
+            This report presents evidence and claim-history context from your store. Merchants may use this information to support chargeback dispute processes at their discretion.
           </p>
         </main>
 

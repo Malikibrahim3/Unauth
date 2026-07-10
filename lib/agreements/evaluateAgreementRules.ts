@@ -133,7 +133,7 @@ export async function evaluateAgreementRules(input: {
   lossSource: LossSourceClassification;
 }): Promise<AgreementRuleEvaluationResult> {
   const { data, error } = await input.client
-    .from(TABLES.AGREEMENT_RULES as any)
+    .from(TABLES.AGREEMENT_RULES)
     .select('id,agreement_id,rule_code,rule_name,rule_type,applies_to_claim_type,conditions,result,priority,counterparty_name')
     .eq('merchant_id', input.merchantId)
     .eq('status', 'active')
@@ -171,7 +171,7 @@ export async function evaluateAgreementRules(input: {
   };
 
   const matched = rules.filter((rule) => evaluateConditions(rule.conditions, context));
-  await Promise.all(rules.map((rule) => input.client.from(TABLES.AGREEMENT_RULE_EVALUATIONS as any).insert({
+  await Promise.all(rules.map((rule) => input.client.from(TABLES.AGREEMENT_RULE_EVALUATIONS).insert({
     claim_id: input.claimId,
     agreement_id: rule.agreement_id,
     agreement_rule_id: rule.id,
@@ -219,4 +219,3 @@ export async function evaluateAgreementRules(input: {
     warning: null,
   };
 }
-

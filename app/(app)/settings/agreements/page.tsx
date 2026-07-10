@@ -10,6 +10,12 @@ type UploadState =
   | { status: 'success'; agreementId: string; jobId: string }
   | { status: 'error'; message: string };
 
+type RuleState =
+  | { status: 'idle' }
+  | { status: 'saving' }
+  | { status: 'success' }
+  | { status: 'error'; message: string };
+
 const agreementTypes = [
   ['COURIER', 'Courier'],
   ['WAREHOUSE_3PL', 'Warehouse / 3PL'],
@@ -23,6 +29,7 @@ const agreementTypes = [
 
 export default function AgreementSettingsPage() {
   const [uploadState, setUploadState] = useState<UploadState>({ status: 'idle' });
+  const [ruleState, setRuleState] = useState<RuleState>({ status: 'idle' });
   const formRef = useRef<HTMLFormElement>(null);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -45,9 +52,44 @@ export default function AgreementSettingsPage() {
         agreementId: body.agreement?.id ?? '',
         jobId: body.document_upload_job?.id ?? '',
       });
+      setRuleState({ status: 'idle' });
       formRef.current?.reset();
     } catch (error) {
       setUploadState({ status: 'error', message: error instanceof Error ? error.message : 'Agreement upload failed.' });
+    }
+  }
+
+  async function handleRuleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (uploadState.status !== 'success') return;
+    setRuleState({ status: 'saving' });
+    const formData = new FormData(event.currentTarget);
+    const deadline = String(formData.get('deadline_days') ?? '').trim();
+    const requiredEvidence = String(formData.get('required_evidence') ?? '')
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+    try {
+      const response = await fetch(`/api/agreements/${uploadState.agreementId}/rules`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rule_name: String(formData.get('rule_name') ?? ''),
+          rule_type: String(formData.get('rule_type') ?? ''),
+          applies_to_claim_type: String(formData.get('applies_to_claim_type') ?? ''),
+          recovery_eligible: String(formData.get('recovery_eligible') ?? ''),
+          recovery_route: String(formData.get('recovery_route') ?? ''),
+          reason: String(formData.get('reason') ?? ''),
+          deadline_days: deadline ? Number(deadline) : null,
+          required_evidence: requiredEvidence,
+          priority: 100,
+        }),
+      });
+      const body = await response.json().catch(() => ({})) as { error?: string };
+      if (!response.ok) throw new Error(body.error ?? 'Agreement rule approval failed.');
+      setRuleState({ status: 'success' });
+    } catch (error) {
+      setRuleState({ status: 'error', message: error instanceof Error ? error.message : 'Agreement rule approval failed.' });
     }
   }
 
@@ -73,7 +115,7 @@ export default function AgreementSettingsPage() {
             <div>
               <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Upload agreement</h2>
               <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                Extracted clauses and rules stay in review until approved.
+                Upload the source PDF, then enter the terms you have verified.
               </p>
             </div>
           </div>
@@ -145,8 +187,8 @@ export default function AgreementSettingsPage() {
             style={{ borderColor: 'var(--border)', background: 'var(--bg-canvas)', color: 'var(--text-secondary)' }}
           >
             <Upload className="h-6 w-6" aria-hidden />
-            <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Choose PDF, DOCX, or text file</span>
-            <input name="file" type="file" required className="sr-only" accept=".pdf,.doc,.docx,.txt,.md,application/pdf,text/plain" />
+            <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Choose PDF (10 MB max)</span>
+            <input name="file" type="file" required className="sr-only" accept=".pdf,application/pdf" />
           </label>
 
           {uploadState.status === 'error' ? (
@@ -157,7 +199,7 @@ export default function AgreementSettingsPage() {
           {uploadState.status === 'success' ? (
             <p className="flex items-center gap-2 rounded-[var(--radius-sm)] border px-3 py-2 text-sm" style={{ borderColor: 'var(--success)', color: 'var(--success)' }}>
               <CheckCircle2 className="h-4 w-4" aria-hidden />
-              Agreement uploaded and queued for extraction.
+              Agreement uploaded. Enter its verified terms to activate it.
             </p>
           ) : null}
 
@@ -172,16 +214,78 @@ export default function AgreementSettingsPage() {
           </button>
         </form>
 
-        <section
-          className="rounded-[var(--radius-sm)] border p-5"
-          style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
-        >
-          <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Rule activation</h2>
-          <div className="mt-4 space-y-3 text-sm" style={{ color: 'var(--text-secondary)' }}>
-            <p>Uploaded agreements create a queued document job.</p>
-            <p>Extracted clauses can generate draft agreement rules with clause provenance.</p>
-            <p>Only active agreement rules are evaluated by the claim gate.</p>
-          </div>
+        <section className="rounded-[var(--radius-sm)] border p-5" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
+          <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Verified terms</h2>
+          {uploadState.status !== 'success' ? (
+            <div className="mt-4 space-y-3 text-sm" style={{ color: 'var(--text-secondary)' }}>
+              <p>Upload a PDF first. Unapproved documents never affect claim decisions.</p>
+              <p>After upload, enter the recovery rule exactly as it appears in the agreement.</p>
+            </div>
+          ) : (
+            <form onSubmit={handleRuleSubmit} className="mt-4 space-y-4">
+              <label className="block space-y-1 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                Rule name
+                <input name="rule_name" required maxLength={160} className="w-full rounded-[var(--radius-sm)] border px-3 py-2" style={{ borderColor: 'var(--border)', background: 'var(--bg-canvas)' }} placeholder="Lost parcel recovery eligibility" />
+              </label>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="space-y-1 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                  Claim type
+                  <select name="applies_to_claim_type" className="w-full rounded-[var(--radius-sm)] border px-3 py-2" style={{ borderColor: 'var(--border)', background: 'var(--bg-canvas)' }} defaultValue="LOST_PARCEL">
+                    <option value="LOST_PARCEL">Lost parcel</option>
+                    <option value="ITEM_NOT_RECEIVED">Item not received</option>
+                    <option value="DELIVERED_NOT_RECEIVED">Delivered not received</option>
+                    <option value="DAMAGED_ITEM">Damaged item</option>
+                    <option value="MISSING_ITEM">Missing item</option>
+                    <option value="WRONG_ITEM">Wrong item</option>
+                    <option value="DELAYED_DELIVERY">Delayed delivery</option>
+                    <option value="RETURN_EXCEPTION">Return exception</option>
+                    <option value="CHARGEBACK">Chargeback</option>
+                    <option value="ANY">Any claim</option>
+                  </select>
+                </label>
+                <label className="space-y-1 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                  Rule effect
+                  <select name="rule_type" className="w-full rounded-[var(--radius-sm)] border px-3 py-2" style={{ borderColor: 'var(--border)', background: 'var(--bg-canvas)' }} defaultValue="RECOVERY_ELIGIBILITY">
+                    <option value="RECOVERY_ELIGIBILITY">Recovery eligibility</option>
+                    <option value="EVIDENCE_REQUIREMENT">Evidence requirement</option>
+                    <option value="DEADLINE">Deadline</option>
+                    <option value="LIABILITY_CAP">Liability cap</option>
+                    <option value="EXCLUSION">Exclusion</option>
+                    <option value="ESCALATION">Escalation</option>
+                  </select>
+                </label>
+                <label className="space-y-1 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                  Recovery status
+                  <select name="recovery_eligible" className="w-full rounded-[var(--radius-sm)] border px-3 py-2" style={{ borderColor: 'var(--border)', background: 'var(--bg-canvas)' }} defaultValue="eligible">
+                    <option value="eligible">Eligible</option>
+                    <option value="not_eligible">Not eligible</option>
+                    <option value="pending_evidence">Pending evidence</option>
+                  </select>
+                </label>
+                <label className="space-y-1 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                  Claim deadline (days)
+                  <input name="deadline_days" type="number" min={1} max={3650} className="w-full rounded-[var(--radius-sm)] border px-3 py-2" style={{ borderColor: 'var(--border)', background: 'var(--bg-canvas)' }} placeholder="30" />
+                </label>
+              </div>
+              <label className="block space-y-1 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                Recovery route
+                <input name="recovery_route" required maxLength={120} className="w-full rounded-[var(--radius-sm)] border px-3 py-2" style={{ borderColor: 'var(--border)', background: 'var(--bg-canvas)' }} placeholder="CARRIER_CLAIM" />
+              </label>
+              <label className="block space-y-1 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                Required evidence (comma separated)
+                <input name="required_evidence" className="w-full rounded-[var(--radius-sm)] border px-3 py-2" style={{ borderColor: 'var(--border)', background: 'var(--bg-canvas)' }} placeholder="tracking scan, invoice, proof of value" />
+              </label>
+              <label className="block space-y-1 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                Decision reason
+                <textarea name="reason" required maxLength={1000} rows={3} className="w-full rounded-[var(--radius-sm)] border px-3 py-2" style={{ borderColor: 'var(--border)', background: 'var(--bg-canvas)' }} placeholder="Describe the verified agreement term." />
+              </label>
+              {ruleState.status === 'error' ? <p className="text-sm" style={{ color: 'var(--risk-critical)' }}>{ruleState.message}</p> : null}
+              {ruleState.status === 'success' ? <p className="text-sm" style={{ color: 'var(--success)' }}>Agreement rule approved and active.</p> : null}
+              <button type="submit" disabled={ruleState.status === 'saving' || ruleState.status === 'success'} className="rounded-[var(--radius-sm)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60" style={{ background: 'var(--accent)' }}>
+                {ruleState.status === 'saving' ? 'Activating...' : 'Approve and activate'}
+              </button>
+            </form>
+          )}
         </section>
       </div>
     </SettingsPageShell>

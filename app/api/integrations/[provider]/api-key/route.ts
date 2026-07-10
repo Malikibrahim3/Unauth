@@ -5,6 +5,7 @@ import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { assertLiveProvider, saveIntegrationCredential, upsertMerchantIntegration } from '@/lib/integrations/auth';
 import { requireIntegrationProvider } from '@/lib/integrations/registry';
 import { verifyAfterShipApiKey } from '@/lib/integrations/providers/aftership';
+import { verifyShipBobPat } from '@/lib/integrations/providers/shipbob';
 
 const apiKeySchema = z.object({
   apiKey: z.string().trim().min(8),
@@ -40,6 +41,8 @@ export async function POST(
   try {
     if (provider.id === 'aftership') {
       await verifyAfterShipApiKey(parsed.data.apiKey);
+    } else if (provider.id === 'shipbob') {
+      await verifyShipBobPat(parsed.data.apiKey);
     }
     await saveIntegrationCredential(serviceClient, ctx.merchantId, provider, {
       apiKey: parsed.data.apiKey,

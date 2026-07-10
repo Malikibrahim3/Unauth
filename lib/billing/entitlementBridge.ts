@@ -16,7 +16,6 @@ export const ENTITLEMENT_TO_FEATURE: Record<Entitlement, FeatureKey> = {
   REPORTS_ADVANCED: 'advanced_reports',
   LIVE_LOOKUP_API: 'lookup_api',
   QUICK_SCORE: 'quick_score_api',
-  NETWORK_GRAPH: 'identity_graph',
 };
 
 export function hasEntitlementForTier(tier: Tier | string, entitlement: Entitlement): boolean {

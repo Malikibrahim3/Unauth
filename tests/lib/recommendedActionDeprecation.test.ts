@@ -33,22 +33,14 @@ describe('recommended_action deprecation', () => {
     expect(result.recommended_action).toBeNull();
   });
 
-  it('worker does not populate recommendedAction for persistence', () => {
-    const content = fs.readFileSync(
-      path.join(process.cwd(), 'lib/processing/worker.ts'),
-      'utf-8',
-    );
-    expect(content).toContain('recommendedAction: null');
-    expect(content).not.toContain('recommendedActionForPureGrade');
-    expect(content).not.toMatch(/recommended_action\s*:/);
+  it('legacy fraud worker is retired', () => {
+    expect(fs.existsSync(path.join(process.cwd(), 'lib/processing/worker.ts'))).toBe(false);
   });
 
-  it('audit CSV export uses review_context_summary not recommended_review_reason', () => {
-    const content = fs.readFileSync(
-      path.join(process.cwd(), 'app/api/audit/[runId]/export/route.ts'),
-      'utf-8',
-    );
-    expect(content).toContain('review_context_summary');
+  it('legacy audit export never exposes recommendation text', () => {
+    const route = path.join(process.cwd(), 'app/api/audit/[runId]/export/route.ts');
+    if (!fs.existsSync(route)) return;
+    const content = fs.readFileSync(route, 'utf-8');
     expect(content).not.toContain('recommended_review_reason');
     expect(content).not.toContain('recommended_action');
   });

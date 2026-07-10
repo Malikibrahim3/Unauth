@@ -11,6 +11,14 @@
     {
       "path": "/api/cron/recompute-evidence-scores",
       "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/billing-lifecycle",
+      "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/cron/mark-stale-claims",
+      "schedule": "0 1 * * *"
     }
   ]
 }

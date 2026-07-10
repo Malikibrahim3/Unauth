@@ -1,8 +1,8 @@
-// TODO(product-gating): require CUSTOMER_DOSSIER entitlement when ENFORCE_PRODUCT_GATES is enabled.
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
+import { enforceEntitlement } from '@/lib/product/requireEntitlement';
 import { logAction } from '@/lib/permissions/audit';
 import { buildBehavioralNarrative } from '@/lib/customers/narrative';
 import { withRequestLogging } from '@/lib/log';
@@ -167,6 +167,9 @@ async function GETHandler(
   const serviceClient = createServiceClient();
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_CUSTOMERS);
   if (denied) return denied;
+
+  const gated = await enforceEntitlement(serviceClient, ctx.merchantId, 'CUSTOMER_DOSSIER');
+  if (gated) return gated;
 
   const customerId = resolvedParams.id;
 

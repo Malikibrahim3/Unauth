@@ -249,7 +249,7 @@ describe('shopify webhook p0', () => {
     expect(orderUpserts[0].external_id).toBe('11');
   });
 
-  it('failed processing finalizes as failed but still returns 200', async () => {
+  it('failed processing finalizes as failed and returns 5xx so Shopify retries', async () => {
     const { emitIdentityObservations } = jest.requireMock('@/lib/identity/observations') as {
       emitIdentityObservations: jest.Mock;
     };
@@ -267,7 +267,7 @@ describe('shopify webhook p0', () => {
     createServiceClient.mockReturnValue(supabase);
     const req = signedReq('{"id":12,"email":"fail@test.com"}', 'orders/create', 'wid-failed');
     const res = await POST(req);
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(500);
     expect(completions.some((u) => u.status === 'failed')).toBe(true);
   });
 
@@ -506,7 +506,7 @@ describe('shopify webhook p0', () => {
     const body = JSON.stringify({ id: 334, order_id: 778 });
     const req = signedReq(body, 'fulfillments/update', 'wid-fulfill-fail');
     const res = await POST(req);
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(500);
     expect(completions.some((u) => u.status === 'failed')).toBe(true);
   });
 });

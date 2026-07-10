@@ -45,7 +45,12 @@ const SEED_TAG = 'demo-v2';
 const SEED_NOTE = `[seed:${SEED_TAG}]`;
 const SEED_PREFIX = 'seed-demo-v2';
 const RESET_ONLY = process.argv.includes('--reset');
-const ANCHOR = new Date('2026-06-20T12:00:00.000Z');
+// Anchor to "now" so case ageing always looks live; ids stay deterministic.
+const ANCHOR = new Date();
+ANCHOR.setUTCMinutes(0, 0, 0);
+// Helpdesk-style numeric ticket ids: sequential 5-digit numbers derived from
+// the case's stable position in CASES, so re-seeding is idempotent.
+const TICKET_ID_BASE = 84213;
 
 const CUSTOMERS = [
   { key: 'maya', first: 'Maya', last: 'Chen', email: 'maya.chen@elara-demo.test', phone: '+447700900101', accountAgeDays: 420 },
@@ -67,7 +72,7 @@ const CASES = [
     requestedAction: 'refund',
     amount: 118.4,
     orderDaysAgo: 39,
-    ticketDaysAgo: 4,
+    ticketDaysAgo: 23,
     fulfillmentState: 'delivered',
     reason: 'Tracking shows delivered but customer says the parcel never arrived.',
     subject: 'Delivered order not received',
@@ -91,7 +96,7 @@ const CASES = [
     requestedAction: 'replacement',
     amount: 86.2,
     orderDaysAgo: 24,
-    ticketDaysAgo: 3,
+    ticketDaysAgo: 16,
     fulfillmentState: 'delivered',
     reason: 'Customer reports cracked hardware on arrival and requested a replacement.',
     subject: 'Damaged item arrived',
@@ -114,8 +119,8 @@ const CASES = [
     status: 'ready_for_decision',
     requestedAction: 'replacement',
     amount: 64.75,
-    orderDaysAgo: 21,
-    ticketDaysAgo: 2,
+    orderDaysAgo: 26,
+    ticketDaysAgo: 19,
     fulfillmentState: 'delivered',
     reason: 'Customer ordered a medium jacket but received a small.',
     subject: 'Wrong size in parcel',
@@ -139,7 +144,7 @@ const CASES = [
     requestedAction: 'refund',
     amount: 142,
     orderDaysAgo: 68,
-    ticketDaysAgo: 6,
+    ticketDaysAgo: 34,
     fulfillmentState: 'delivered',
     reason: 'Goodwill refund requested outside the published return window.',
     subject: 'Refund outside return window',
@@ -161,8 +166,8 @@ const CASES = [
     status: 'manual_review',
     requestedAction: 'investigation',
     amount: 211.5,
-    orderDaysAgo: 31,
-    ticketDaysAgo: 5,
+    orderDaysAgo: 45,
+    ticketDaysAgo: 27,
     fulfillmentState: 'delivered',
     reason: 'Issuer dispute opened after the customer received delivery updates.',
     subject: 'Chargeback opened for delivered order',
@@ -186,7 +191,7 @@ const CASES = [
     requestedAction: 'refund',
     amount: 96.1,
     orderDaysAgo: 17,
-    ticketDaysAgo: 1,
+    ticketDaysAgo: 6,
     fulfillmentState: 'delivered',
     reason: 'Repeated returnless refund requests across recent orders.',
     subject: 'Returnless refund request',
@@ -209,7 +214,7 @@ const CASES = [
     requestedAction: 'refund',
     amount: 73.3,
     orderDaysAgo: 46,
-    ticketDaysAgo: 7,
+    ticketDaysAgo: 38,
     fulfillmentState: 'delivered',
     reason: 'Customer reports stitching failed after first wear.',
     subject: 'Product defect after first wear',
@@ -233,7 +238,7 @@ const CASES = [
     requestedAction: 'refund',
     amount: 52,
     orderDaysAgo: 13,
-    ticketDaysAgo: 2,
+    ticketDaysAgo: 9,
     fulfillmentState: 'delivered',
     reason: 'Customer says one item was missing from a multi-item order.',
     subject: 'One item missing from parcel',
@@ -256,7 +261,7 @@ const CASES = [
     status: 'open',
     requestedAction: 'refund',
     amount: 89.99,
-    orderDaysAgo: 19,
+    orderDaysAgo: 12,
     ticketDaysAgo: 1,
     fulfillmentState: 'in_transit',
     reason: 'Order dispatched late by fulfilment partner and customer is asking for a refund.',
@@ -304,7 +309,7 @@ const CASES = [
     requestedAction: 'refund',
     amount: 58.25,
     orderDaysAgo: 77,
-    ticketDaysAgo: 42,
+    ticketDaysAgo: 45,
     fulfillmentState: 'delivered',
     reason: 'Carrier confirmed loss after depot scan; refund issued.',
     subject: 'Lost parcel refund',
@@ -329,7 +334,7 @@ const CASES = [
     requestedAction: 'refund',
     amount: 131.2,
     orderDaysAgo: 92,
-    ticketDaysAgo: 55,
+    ticketDaysAgo: 54,
     fulfillmentState: 'delivered',
     reason: 'Claim denied after return policy review and repeated refund pattern.',
     subject: 'Refund request denied',
@@ -353,7 +358,7 @@ const CASES = [
     requestedAction: 'replacement',
     amount: 77.8,
     orderDaysAgo: 88,
-    ticketDaysAgo: 51,
+    ticketDaysAgo: 50,
     fulfillmentState: 'delivered',
     reason: 'Wrong item confirmed and replacement shipped.',
     subject: 'Replacement shipped',
@@ -377,7 +382,7 @@ const CASES = [
     requestedAction: 'store_credit',
     amount: 44.9,
     orderDaysAgo: 8,
-    ticketDaysAgo: 1,
+    ticketDaysAgo: 2,
     fulfillmentState: 'delivered',
     reason: 'Customer requested store credit after sizing concern.',
     subject: 'Store credit request',
@@ -400,7 +405,7 @@ const CASES = [
     requestedAction: 'replacement',
     amount: 119.99,
     orderDaysAgo: 15,
-    ticketDaysAgo: 2,
+    ticketDaysAgo: 12,
     fulfillmentState: 'delivered',
     reason: 'Customer provided photo evidence of transit damage.',
     subject: 'Transit damage photo supplied',
@@ -423,8 +428,8 @@ const CASES = [
     status: 'open',
     requestedAction: 'discount',
     amount: 67.45,
-    orderDaysAgo: 10,
-    ticketDaysAgo: 1,
+    orderDaysAgo: 37,
+    ticketDaysAgo: 31,
     fulfillmentState: 'delivered',
     reason: 'Product colour differed from supplier listing and customer requested discount.',
     subject: 'Product colour not as described',
@@ -441,6 +446,142 @@ const CASES = [
     recovery: { type: 'supplier_defect', owner: 'supplier', status: 'draft', min: 20, max: 67.45 },
   },
 ];
+
+const PARTNERS = [
+  {
+    key: 'royal-mail',
+    name: 'Royal Mail',
+    type: 'carrier',
+    contactUrl: 'https://www.royalmail.com/claims',
+    contactEmail: null,
+    notes: 'Primary domestic carrier. Claims via business portal.',
+  },
+  {
+    key: 'evri',
+    name: 'Evri',
+    type: 'carrier',
+    contactUrl: 'https://www.evri.com/contact-us',
+    contactEmail: null,
+    notes: 'Secondary carrier for standard parcels.',
+  },
+  {
+    key: 'bolt-fulfilment',
+    name: 'Bolt Fulfilment',
+    type: 'three_pl',
+    contactUrl: null,
+    contactEmail: 'claims@boltfulfilment.test',
+    notes: 'Fulfilment partner. Pick/pack errors and dispatch SLA credits.',
+  },
+  {
+    key: 'novia-textiles',
+    name: 'Novia Textiles',
+    type: 'supplier',
+    contactUrl: null,
+    contactEmail: 'accounts@noviatextiles.test',
+    notes: 'Apparel supplier. Defect credits against batch codes.',
+  },
+];
+
+const PARTNER_RULES = [
+  {
+    key: 'royal-mail-lost-parcel',
+    partner: 'royal-mail',
+    ruleName: 'Royal Mail lost parcel claim',
+    recoveryType: 'carrier_claim',
+    claimType: 'item_not_received',
+    requiredEvidence: ['tracking_status', 'proof_of_dispatch', 'proof_of_value'],
+    deadlineDays: 14,
+    confidence: 'high',
+    submissionMethod: 'portal',
+    submissionUrl: 'https://www.royalmail.com/claims',
+    claimableCosts: ['item_cost', 'outbound_postage'],
+    excludedCosts: ['support_time'],
+  },
+  {
+    key: 'royal-mail-damage',
+    partner: 'royal-mail',
+    ruleName: 'Royal Mail damage in transit',
+    recoveryType: 'carrier_claim',
+    claimType: 'damaged_item',
+    requiredEvidence: ['customer_photo', 'packaging_photo', 'proof_of_value'],
+    deadlineDays: 14,
+    confidence: 'medium',
+    submissionMethod: 'portal',
+    submissionUrl: 'https://www.royalmail.com/claims',
+    claimableCosts: ['item_cost'],
+    excludedCosts: ['support_time'],
+  },
+  {
+    key: 'evri-lost-parcel',
+    partner: 'evri',
+    ruleName: 'Evri lost parcel claim',
+    recoveryType: 'carrier_claim',
+    claimType: 'item_not_received',
+    requiredEvidence: ['tracking_status', 'proof_of_dispatch', 'proof_of_value'],
+    deadlineDays: 28,
+    confidence: 'medium',
+    submissionMethod: 'portal',
+    submissionUrl: 'https://www.evri.com/contact-us',
+    claimableCosts: ['item_cost', 'outbound_postage'],
+    excludedCosts: ['support_time'],
+  },
+  {
+    key: 'bolt-wrong-item',
+    partner: 'bolt-fulfilment',
+    ruleName: 'Bolt Fulfilment wrong-item pick error',
+    recoveryType: 'three_pl_claim',
+    claimType: 'wrong_item',
+    requiredEvidence: ['customer_photo', 'pick_pack_record'],
+    deadlineDays: 30,
+    confidence: 'high',
+    submissionMethod: 'email',
+    submissionEmail: 'claims@boltfulfilment.test',
+    claimableCosts: ['item_cost', 'reship_postage'],
+    excludedCosts: ['support_time'],
+  },
+  {
+    key: 'bolt-late-dispatch',
+    partner: 'bolt-fulfilment',
+    ruleName: 'Bolt Fulfilment late dispatch SLA credit',
+    recoveryType: 'three_pl_claim',
+    claimType: 'late_delivery',
+    requiredEvidence: ['dispatch_sla', 'carrier_scan_history'],
+    deadlineDays: 30,
+    confidence: 'medium',
+    submissionMethod: 'email',
+    submissionEmail: 'claims@boltfulfilment.test',
+    claimableCosts: ['shipping_cost', 'goodwill_credit'],
+    excludedCosts: ['item_cost'],
+  },
+  {
+    key: 'novia-defect-credit',
+    partner: 'novia-textiles',
+    ruleName: 'Novia Textiles defect credit',
+    recoveryType: 'supplier_defect',
+    claimType: 'damaged_item',
+    requiredEvidence: ['customer_photo', 'supplier_batch_code'],
+    deadlineDays: 60,
+    confidence: 'medium',
+    submissionMethod: 'email',
+    submissionEmail: 'accounts@noviatextiles.test',
+    claimableCosts: ['item_cost'],
+    excludedCosts: ['support_time', 'outbound_postage'],
+  },
+];
+
+function ticketExternalId(index) {
+  return String(TICKET_ID_BASE + index);
+}
+
+function partnerIdForRecovery(casePlan) {
+  const owner = casePlan.recovery?.owner;
+  if (owner === 'carrier') {
+    return uuid(`partner:${casePlan.key === 'damaged-photos' ? 'evri' : 'royal-mail'}`);
+  }
+  if (owner === 'three_pl') return uuid('partner:bolt-fulfilment');
+  if (owner === 'supplier') return uuid('partner:novia-textiles');
+  return null;
+}
 
 function sha(value) {
   return createHash('sha256').update(value).digest('hex');
@@ -496,6 +637,13 @@ async function resolveElaraMerchantId() {
 }
 
 async function clearSeed(merchantId) {
+  if (!RESET_ONLY) {
+    // Normal runs upsert every row in place (deterministic ids) — no deletes
+    // needed, and support_payout_cases cannot be deleted anyway because
+    // claim_events is append-only and blocks the cascade.
+    console.log('Skipping clear (rows are upserted in place).');
+    return;
+  }
   const seededCases = await checked(
     'support_payout_cases',
     'lookup',
@@ -521,10 +669,22 @@ async function clearSeed(merchantId) {
       .eq('merchant_id', merchantId)
       .eq('detection_detail->>seed', SEED_TAG),
   );
+  // Legacy slug-style ticket ids from older seed versions.
   await checked(
     'source_tickets',
     'delete',
     supabase.from('source_tickets').delete().eq('merchant_id', merchantId).like('external_id', `${SEED_PREFIX}-%`),
+  );
+  // Current numeric helpdesk-style ticket ids (deterministic per case index).
+  await checked(
+    'source_tickets',
+    'delete',
+    supabase
+      .from('source_tickets')
+      .delete()
+      .eq('merchant_id', merchantId)
+      .eq('provider', 'gorgias')
+      .in('external_id', CASES.map((_, index) => ticketExternalId(index))),
   );
   await checked(
     'source_orders',
@@ -536,6 +696,28 @@ async function clearSeed(merchantId) {
     'delete',
     supabase.from('source_customers').delete().eq('merchant_id', merchantId).eq('note', SEED_NOTE),
   );
+  if (RESET_ONLY) {
+    // Partners/rules are normally kept and upserted in place; only remove them
+    // on an explicit reset (after seeded recovery cases referencing them are gone).
+    await checked(
+      'partner_recovery_rules',
+      'delete',
+      supabase
+        .from('partner_recovery_rules')
+        .delete()
+        .eq('merchant_id', merchantId)
+        .in('id', PARTNER_RULES.map((rule) => uuid(`partner-rule:${rule.key}`))),
+    );
+    await checked(
+      'partners',
+      'delete',
+      supabase
+        .from('partners')
+        .delete()
+        .eq('merchant_id', merchantId)
+        .in('id', PARTNERS.map((partner) => uuid(`partner:${partner.key}`))),
+    );
+  }
   console.log('Cleared previously-seeded demo-v2 rows.');
 }
 
@@ -599,7 +781,7 @@ function buildOrderRows(merchantId) {
       line_items_count: 1 + (index % 3),
       note: SEED_NOTE,
       tags: ['sample_data', 'demo_v2', casePlan.claimType],
-      placed_at: daysAgoIso(casePlan.orderDaysAgo, 11),
+      placed_at: daysAgoIso(casePlan.orderDaysAgo, 8 + ((index + 3) % 9)),
       cancelled_at: null,
       cancel_reason: null,
       raw_payload_hash: sha(`order:${casePlan.key}`),
@@ -618,7 +800,7 @@ function buildTicketRows(merchantId) {
       merchant_id: merchantId,
       provider: 'gorgias',
       connection_id: null,
-      external_id: `${SEED_PREFIX}-ticket-${casePlan.key}`,
+      external_id: ticketExternalId(index),
       external_url: null,
       source_customer_id: uuid(`customer:${customer.key}`),
       subject: casePlan.subject,
@@ -630,11 +812,11 @@ function buildTicketRows(merchantId) {
       message_count: 2 + (index % 5),
       customer_reply_count: 1 + (index % 3),
       was_reopened: casePlan.status === 'escalated' || casePlan.status === 'manual_review',
-      linked_order_external_ids: [orderNumber, `${SEED_PREFIX}-order-${casePlan.key}`],
-      opened_at_provider: daysAgoIso(casePlan.ticketDaysAgo, 12),
+      linked_order_external_ids: [orderNumber],
+      opened_at_provider: daysAgoIso(casePlan.ticketDaysAgo, 9 + (index % 7)),
       closed_at_provider: casePlan.status.startsWith('resolved_') ? daysAgoIso(Math.max(1, casePlan.ticketDaysAgo - 4), 14) : null,
-      created_at_provider: daysAgoIso(casePlan.ticketDaysAgo, 12),
-      updated_at_provider: daysAgoIso(casePlan.status.startsWith('resolved_') ? 9 : 1, 15),
+      created_at_provider: daysAgoIso(casePlan.ticketDaysAgo, 9 + (index % 7)),
+      updated_at_provider: daysAgoIso(casePlan.status.startsWith('resolved_') ? Math.max(1, casePlan.ticketDaysAgo - 4) : 1, 15),
       raw_payload_hash: sha(`ticket:${casePlan.key}`),
       ingested_at: daysAgoIso(0, 8),
       updated_at: daysAgoIso(1, 8),
@@ -644,9 +826,8 @@ function buildTicketRows(merchantId) {
 
 function buildCaseRows(merchantId) {
   return CASES.map((casePlan, index) => {
-    const submittedDaysAgo = casePlan.status.startsWith('resolved_')
-      ? Math.max(12, casePlan.ticketDaysAgo)
-      : casePlan.ticketDaysAgo;
+    const submittedDaysAgo = casePlan.ticketDaysAgo;
+    const submittedHour = 9 + (index % 7);
     const resolved = casePlan.status.startsWith('resolved_') || casePlan.status === 'closed';
     return {
       id: uuid(`case:${casePlan.key}`),
@@ -691,10 +872,10 @@ function buildCaseRows(merchantId) {
       assigned_to: null,
       assigned_at: null,
       snoozed_until: index === 9 ? daysFromAnchorIso(2, 9) : null,
-      first_viewed_at: index % 4 === 0 ? null : daysAgoIso(1, 11),
-      submitted_at: daysAgoIso(submittedDaysAgo, 12),
-      created_at: daysAgoIso(submittedDaysAgo, 12),
-      updated_at: daysAgoIso(resolved ? 9 : 1, 15),
+      first_viewed_at: index % 4 === 0 ? null : daysAgoIso(Math.max(0, submittedDaysAgo - 1), 11),
+      submitted_at: daysAgoIso(submittedDaysAgo, submittedHour),
+      created_at: daysAgoIso(submittedDaysAgo, submittedHour),
+      updated_at: daysAgoIso(resolved ? Math.max(1, submittedDaysAgo - 6) : Math.min(1, submittedDaysAgo), 15),
     };
   });
 }
@@ -711,8 +892,8 @@ function buildOutcomeRows() {
     recommended_payout_action: casePlan.recommendedAction,
     followed_recommendation: casePlan.outcome.followed,
     decided_by: null,
-    decided_at: daysAgoIso(8, 15),
-    updated_at: daysAgoIso(8, 15),
+    decided_at: daysAgoIso(Math.max(1, casePlan.ticketDaysAgo - 5), 15),
+    updated_at: daysAgoIso(Math.max(1, casePlan.ticketDaysAgo - 5), 15),
   }));
 }
 
@@ -724,7 +905,7 @@ function buildRecoveryRows(merchantId) {
       id: uuid(`recovery:${casePlan.key}`),
       merchant_id: merchantId,
       support_payout_case_id: uuid(`case:${casePlan.key}`),
-      partner_id: null,
+      partner_id: partnerIdForRecovery(casePlan),
       recovery_type: recovery.type,
       owner_type: recovery.owner,
       status: recovery.status,
@@ -744,10 +925,58 @@ function buildRecoveryRows(merchantId) {
       calculation_reason: [`Sample recovery route seeded for ${casePlan.lossAttribution}.`],
       excluded_costs: [],
       internal_owner_user_id: null,
-      created_at: daysAgoIso(casePlan.ticketDaysAgo, 13),
-      updated_at: daysAgoIso(1, 14),
+      created_at: daysAgoIso(Math.max(0, casePlan.ticketDaysAgo - 1), 13),
+      updated_at: daysAgoIso(Math.min(1, casePlan.ticketDaysAgo), 14),
     };
   });
+}
+
+function buildPartnerRows(merchantId) {
+  return PARTNERS.map((partner, index) => ({
+    id: uuid(`partner:${partner.key}`),
+    merchant_id: merchantId,
+    name: partner.name,
+    partner_type: partner.type,
+    status: 'active',
+    contact_email: partner.contactEmail,
+    contact_url: partner.contactUrl,
+    external_reference: null,
+    notes: `${partner.notes} ${SEED_NOTE}`,
+    created_at: daysAgoIso(120 - index * 7, 10),
+    updated_at: daysAgoIso(7, 10),
+  }));
+}
+
+function buildPartnerRuleRows(merchantId) {
+  return PARTNER_RULES.map((rule, index) => ({
+    id: uuid(`partner-rule:${rule.key}`),
+    merchant_id: merchantId,
+    partner_id: uuid(`partner:${rule.partner}`),
+    rule_name: rule.ruleName,
+    recovery_type: rule.recoveryType,
+    applies_to_claim_type: rule.claimType,
+    required_evidence: rule.requiredEvidence,
+    deadline_days: rule.deadlineDays,
+    confidence: rule.confidence,
+    source_type: 'merchant_configured',
+    submission_method: rule.submissionMethod,
+    submission_url: rule.submissionUrl ?? null,
+    submission_email: rule.submissionEmail ?? null,
+    liability_cap_amount: null,
+    liability_cap_basis: null,
+    liability_cap_currency: null,
+    claimable_costs: rule.claimableCosts,
+    excluded_costs: rule.excludedCosts,
+    active: true,
+    created_at: daysAgoIso(110 - index * 5, 11),
+    updated_at: daysAgoIso(7, 11),
+  }));
+}
+
+async function upsertRows(table, rows) {
+  if (rows.length === 0) return;
+  await checked(table, 'upsert', supabase.from(table).upsert(rows, { onConflict: 'id' }));
+  console.log(`Upserted ${rows.length} ${table} rows.`);
 }
 
 async function insertRows(table, rows) {
@@ -757,12 +986,17 @@ async function insertRows(table, rows) {
 }
 
 async function seed(merchantId) {
-  await insertRows('source_customers', buildCustomerRows(merchantId));
-  await insertRows('source_orders', buildOrderRows(merchantId));
-  await insertRows('source_tickets', buildTicketRows(merchantId));
-  await insertRows('support_payout_cases', buildCaseRows(merchantId));
-  await insertRows('claim_outcomes', buildOutcomeRows());
-  await insertRows('recovery_cases', buildRecoveryRows(merchantId));
+  await upsertRows('partners', buildPartnerRows(merchantId));
+  await upsertRows('partner_recovery_rules', buildPartnerRuleRows(merchantId));
+  // All rows have deterministic ids, so re-seeding upserts in place. Deleting
+  // support_payout_cases is impossible anyway: claim_events is append-only and
+  // blocks the cascade.
+  await upsertRows('source_customers', buildCustomerRows(merchantId));
+  await upsertRows('source_orders', buildOrderRows(merchantId));
+  await upsertRows('source_tickets', buildTicketRows(merchantId));
+  await upsertRows('support_payout_cases', buildCaseRows(merchantId));
+  await upsertRows('claim_outcomes', buildOutcomeRows());
+  await upsertRows('recovery_cases', buildRecoveryRows(merchantId));
 }
 
 (async () => {
@@ -777,7 +1011,11 @@ async function seed(merchantId) {
     await seed(merchantId);
     const [{ count: orderCount }, { count: ticketCount }, { count: caseCount }, { count: recoveryCount }] = await Promise.all([
       supabase.from('source_orders').select('id', { count: 'exact', head: true }).eq('merchant_id', merchantId).eq('note', SEED_NOTE),
-      supabase.from('source_tickets').select('id', { count: 'exact', head: true }).eq('merchant_id', merchantId).like('external_id', `${SEED_PREFIX}-%`),
+      supabase
+        .from('source_tickets')
+        .select('id', { count: 'exact', head: true })
+        .eq('merchant_id', merchantId)
+        .in('external_id', CASES.map((_, index) => ticketExternalId(index))),
       supabase
         .from('support_payout_cases')
         .select('id', { count: 'exact', head: true })

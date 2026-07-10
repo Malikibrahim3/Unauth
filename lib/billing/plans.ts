@@ -39,9 +39,11 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     creditsMonthly: 5000,
     stripePriceId: null,
   },
+  // Internal PlanId for the top paid plan; surfaced to users as "Enterprise"
+  // (contact-sales). The Tier model resolves this plan to the `enterprise` tier.
   scale: {
     planId: 'scale',
-    name: 'Scale',
+    name: 'Enterprise',
     priceGbp: 'custom',
     creditsMonthly: 'custom',
     stripePriceId: null,

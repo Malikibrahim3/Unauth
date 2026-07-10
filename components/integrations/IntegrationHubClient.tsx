@@ -415,7 +415,7 @@ function ConnectModal({
 
   if (!target) return null;
 
-  const isApiKey = target.id === 'aftership';
+  const isApiKey = target.id === 'aftership' || target.id === 'shipbob';
   const isOAuth = target.id === 'ups' || target.id === 'fedex';
 
   async function submit(e: FormEvent) {
@@ -453,15 +453,17 @@ function ConnectModal({
                 onChange={(e) => setApiKey(e.target.value)}
                 className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
                 style={{ borderColor: 'var(--border)', background: 'var(--bg-inset)', color: 'var(--text)' }}
-                placeholder="AfterShip API key"
+                placeholder={target.id === 'shipbob' ? 'ShipBob personal access token' : 'AfterShip API key'}
               />
-              <input
-                value={webhookSecret}
-                onChange={(e) => setWebhookSecret(e.target.value)}
-                className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
-                style={{ borderColor: 'var(--border)', background: 'var(--bg-inset)', color: 'var(--text)' }}
-                placeholder="Webhook signing secret (optional)"
-              />
+              {target.id === 'aftership' ? (
+                <input
+                  value={webhookSecret}
+                  onChange={(e) => setWebhookSecret(e.target.value)}
+                  className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
+                  style={{ borderColor: 'var(--border)', background: 'var(--bg-inset)', color: 'var(--text)' }}
+                  placeholder="Webhook signing secret (optional)"
+                />
+              ) : null}
             </>
           ) : isOAuth ? (
             <>
@@ -530,6 +532,7 @@ function SyncModal({
   onSubmit: (payload: Record<string, string>) => Promise<void>;
 }) {
   const [trackingNumber, setTrackingNumber] = useState('');
+  const [orderReference, setOrderReference] = useState('');
   const [caseId, setCaseId] = useState('');
 
   if (!target) return null;
@@ -537,7 +540,7 @@ function SyncModal({
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    await onSubmit({ trackingNumber, supportPayoutCaseId: caseId });
+    await onSubmit({ trackingNumber, orderReference, supportPayoutCaseId: caseId });
   }
 
   return (
@@ -567,6 +570,15 @@ function SyncModal({
               className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
               style={{ borderColor: 'var(--border)', background: 'var(--bg-inset)', color: 'var(--text)' }}
               placeholder="Tracking number"
+            />
+          ) : null}
+          {target.id === 'shipbob' ? (
+            <input
+              value={orderReference}
+              onChange={(e) => setOrderReference(e.target.value)}
+              className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
+              style={{ borderColor: 'var(--border)', background: 'var(--bg-inset)', color: 'var(--text)' }}
+              placeholder="Shopify order number or ShipBob reference"
             />
           ) : null}
           <input
@@ -1357,22 +1369,22 @@ export default function IntegrationHubClient() {
     {
       id: 'woocommerce',
       name: 'WooCommerce',
-      description: 'Pull order and customer data from your WordPress store.',
+      description: 'WooCommerce order and customer sync is coming soon.',
       logo: '/integrations/woocommerce.svg',
-      connected: setupStatus?.woocommerce.connected ?? false,
+      connected: false,
       connectionIssue: false,
-      detail: setupStatus?.woocommerce.detail ?? null,
-      href: '/settings/integrations/woocommerce',
+      detail: null,
+      comingSoon: true,
     },
     {
       id: 'bigcommerce',
       name: 'BigCommerce',
-      description: 'Sync orders and customers from your BigCommerce storefront.',
+      description: 'BigCommerce order and customer sync is coming soon.',
       logo: '/integrations/bigcommerce.svg',
-      connected: setupStatus?.bigcommerce.connected ?? false,
+      connected: false,
       connectionIssue: false,
-      detail: setupStatus?.bigcommerce.detail ?? null,
-      href: '/settings/integrations/bigcommerce',
+      detail: null,
+      comingSoon: true,
     },
   ];
 
@@ -1453,10 +1465,7 @@ export default function IntegrationHubClient() {
   const selfFulfillment = warehouseNotApplicable ? dynamicToUnified('self_fulfillment_pack') : null;
 
   // Connected store / helpdesk names for banner
-  const connectedStoreName = setupStatus?.shopify.connected ? 'Shopify'
-    : setupStatus?.woocommerce.connected ? 'WooCommerce'
-    : setupStatus?.bigcommerce.connected ? 'BigCommerce'
-    : null;
+  const connectedStoreName = setupStatus?.shopify.connected ? 'Shopify' : null;
 
   const connectedHelpdeskName = setupStatus?.gorgias.connected ? 'Gorgias'
     : setupStatus?.freshdesk.connected ? 'Freshdesk'
@@ -1587,7 +1596,7 @@ export default function IntegrationHubClient() {
     if (!connectTarget) return;
     setBusyId(connectTarget.id);
     try {
-      const path = connectTarget.id === 'aftership'
+      const path = connectTarget.id === 'aftership' || connectTarget.id === 'shipbob'
         ? `/api/integrations/${connectTarget.id}/api-key`
         : `/api/integrations/${connectTarget.id}/connect`;
       await postJson(path, payload);

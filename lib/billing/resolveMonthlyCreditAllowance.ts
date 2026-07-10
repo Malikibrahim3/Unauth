@@ -15,13 +15,6 @@ export function resolveMonthlyCreditAllowance(
   tier: Tier,
   contextCreditsMonthly: number | null | undefined,
 ): ResolvedMonthlyAllowance {
-  if (tier === 'scale') {
-    if (contextCreditsMonthly == null || contextCreditsMonthly < 1) {
-      return { ok: false, error: 'scale_allowance_required' };
-    }
-    return { ok: true, allowance: contextCreditsMonthly };
-  }
-
   if (tier === 'enterprise') {
     if (contextCreditsMonthly == null || contextCreditsMonthly < 1) {
       return { ok: false, error: 'enterprise_allowance_required' };

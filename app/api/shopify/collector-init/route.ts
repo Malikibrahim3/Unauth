@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import { mintCollectorToken } from '@/lib/checkout/collectorToken';
+import { getAppUrl } from '@/lib/utils/appUrl';
 
 export const runtime = 'nodejs';
 
@@ -27,6 +28,7 @@ export async function GET(request: NextRequest) {
   }
 
   const collectorToken = mintCollectorToken(connection.merchant_id);
+  const ingestEndpoint = `${getAppUrl()}/api/checkout-signals/ingest`;
 
   const js = `
 if (window.UnauthCollector) {
@@ -34,7 +36,7 @@ if (window.UnauthCollector) {
     merchantId: ${JSON.stringify(connection.merchant_id)},
     platform: "shopify",
     token: ${JSON.stringify(collectorToken)},
-    endpoint: "https://app.unauth.co/api/checkout-signals/ingest"
+    endpoint: ${JSON.stringify(ingestEndpoint)}
   });
 }
   `.trim();

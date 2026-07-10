@@ -306,16 +306,18 @@ async function fetchAfterShipEvidence(input: {
   merchantId: string;
   shipments: Array<Record<string, unknown>>;
   apiKey: string | null;
-}): Promise<ClaimGateFulfillmentEvidence[]> {
+}): Promise<{ evidence: ClaimGateFulfillmentEvidence[]; fetched: boolean }> {
   const apiKey = input.apiKey;
-  if (!apiKey) return [];
+  if (!apiKey) return { evidence: [], fetched: false };
   const evidence: ClaimGateFulfillmentEvidence[] = [];
+  let fetched = false;
   for (const shipment of input.shipments) {
     const trackingNumber = stringValue(shipment.tracking_number);
     if (!trackingNumber) continue;
     const carrier = stringValue(shipment.tracking_company) ?? 'default';
     try {
       const tracking = await getTracking(trackingNumber, carrier, apiKey);
+      fetched = true;
       if (!tracking) {
         const fallback: ClaimGateFulfillmentEvidence = {
           tracking_number: trackingNumber,
@@ -370,7 +372,7 @@ async function fetchAfterShipEvidence(input: {
       });
     }
   }
-  return evidence;
+  return { evidence, fetched };
 }
 
 function shipBobEvidence(order: ShipBobOrder | null, timelines: ShipBobTimelineEvent[], returnOrder: ShipBobReturn | null): ClaimGateShipBobEvidence {
@@ -394,11 +396,11 @@ async function fetchShipBobEvidence(input: {
   merchantId: string;
   order: Record<string, unknown> | null;
   pat: string | null;
-}): Promise<ClaimGateShipBobEvidence | null> {
+}): Promise<{ evidence: ClaimGateShipBobEvidence | null; fetched: boolean }> {
   const pat = input.pat;
-  if (!pat) return null;
+  if (!pat) return { evidence: null, fetched: false };
   const reference = stringValue(input.order?.order_number) ?? stringValue(input.order?.external_id);
-  if (!reference) return null;
+  if (!reference) return { evidence: null, fetched: false };
   try {
     const order = await getOrderByReferenceId(reference, pat);
     if (!order) {
@@ -416,7 +418,7 @@ async function fetchShipBobEvidence(input: {
         rawReference: { reference_id: reference, not_found: true },
         stableKey: reference,
       });
-      return empty;
+      return { evidence: empty, fetched: true };
     }
     const timelineGroups = await Promise.all(order.shipments.map((shipment) => getShipmentTimeline(shipment.id, pat)));
     const timelines = timelineGroups.flat();
@@ -437,13 +439,13 @@ async function fetchShipBobEvidence(input: {
       rawReference: { order: order.raw, timelines, return: returnOrder?.raw ?? null },
       stableKey: order.id || reference,
     });
-    return mapped;
+    return { evidence: mapped, fetched: true };
   } catch (error) {
     console.warn('claim_gate_shipbob_lookup_failed', {
       reference,
       message: error instanceof Error ? error.message : String(error),
     });
-    return null;
+    return { evidence: null, fetched: false };
   }
 }
 
@@ -489,13 +491,15 @@ export async function buildEvidence(input: {
     getProviderCredential(input.merchantId, 'aftership', 'AFTERSHIP_API_KEY', input.client),
     getProviderCredential(input.merchantId, 'shipbob', 'SHIPBOB_PAT', input.client),
   ]);
-  const [fulfillmentEvidence, shipbobEvidenceResult] = await Promise.all([
+  const [aftershipResult, shipbobResult] = await Promise.all([
     fetchAfterShipEvidence({ client: input.client, merchantId: input.merchantId, shipments, apiKey: aftershipKey }),
     fetchShipBobEvidence({ client: input.client, merchantId: input.merchantId, order, pat: shipbobPat }),
   ]);
+  const fulfillmentEvidence = aftershipResult.evidence;
+  const shipbobEvidenceResult = shipbobResult.evidence;
   const connections = {
-    carrier_tracking: Boolean(aftershipKey),
-    warehouse: Boolean(shipbobPat),
+    carrier_tracking: aftershipResult.fetched,
+    warehouse: shipbobResult.fetched,
     helpdesk: Boolean(ticket),
   };
   const status = deliveryStatus(order, shipment);

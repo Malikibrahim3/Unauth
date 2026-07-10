@@ -11,7 +11,7 @@ export const LABELS = {
   signals_matched: 'Review reasons',
   elevated_refund_rate: 'Refund rate elevated',
   value_escalation: 'Unusually high order value',
-  crossMerchantSignal: 'Matches across merchants',
+  crossMerchantSignal: 'Linked store accounts',
   networkDeviceLink: 'Shared device',
   ipCluster: 'Shared IP address',
 
@@ -45,8 +45,8 @@ export const LABELS = {
   name_variant: 'Name variation',
   behavioral_anomaly: 'Unusual order behaviour',
 
-  crossmerchant: 'Matches across merchants',
-  crossmerchant_identity_match: 'Matches across merchants',
+  crossmerchant: 'Linked store accounts',
+  crossmerchant_identity_match: 'Linked store accounts',
   refund_rate: 'Refund rate elevated',
   refund_rate_over_60pct: 'Refund rate 60%',
   payment_fingerprint_match: 'Shared payment card',
