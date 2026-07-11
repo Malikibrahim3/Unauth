@@ -108,7 +108,10 @@ describe('Static security guard: service-role routes must be auth-gated', () => 
       // Routes legitimately protected by non-session mechanisms: public API key,
       // widget token, single-use signed download token, OAuth handshake, or cron
       // secret. These do not use auth.getUser()/requirePermission() but are gated.
-      const hasApiKeyAuth = content.includes('validateApiKey');
+      // `authenticateIngest` (lib/api/v1/ingest/auth.ts) wraps validateApiKey:
+      // it derives the merchant from the API key and returns a 401 NextResponse
+      // otherwise, so canonical-intake routes are API-key gated.
+      const hasApiKeyAuth = content.includes('validateApiKey') || content.includes('authenticateIngest');
       const hasWidgetAuth = content.includes('validateWidgetToken');
       const hasSignedTokenAuth =
         content.includes('parseAndVerifySignedToken') || content.includes('signedAccess');
