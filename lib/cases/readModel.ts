@@ -2,7 +2,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/lib/supabase/tables';
 import { getCaseRelatedRecords } from '@/lib/cases/relatedRecords';
-import { claimEventsToTimeline, domainEventsToTimeline, mergeTimeline, recoveryEventsToTimeline, ticketEventsToTimeline, workTasksToTimeline } from '@/lib/cases/timeline';
+import { claimEventsToTimeline, commerceEventsToTimeline, domainEventsToTimeline, mergeTimeline, recoveryEventsToTimeline, ticketEventsToTimeline, workTasksToTimeline } from '@/lib/cases/timeline';
 
 export async function getCaseReadModel(client: SupabaseClient, merchantId: string, caseId: string) {
   const { data: payoutCase, error: caseError } = await client
@@ -14,7 +14,7 @@ export async function getCaseReadModel(client: SupabaseClient, merchantId: strin
   if (caseError) throw new Error(`case_read_model_case_failed: ${caseError.message}`);
   if (!payoutCase) return null;
 
-  const [relatedRecords, financialResult, domainEventsResult, claimEventsResult, recoveryEventsResult, workTasksResult, ticketEventsResult] = await Promise.all([
+  const [relatedRecords, financialResult, domainEventsResult, claimEventsResult, recoveryEventsResult, workTasksResult, ticketEventsResult, orderResult, fulfillmentsResult, refundsResult] = await Promise.all([
     getCaseRelatedRecords(client, merchantId, caseId),
     client.from(TABLES.CASE_FINANCIAL_SUMMARIES).select('*').eq('merchant_id', merchantId).eq('support_payout_case_id', caseId),
     client.from(TABLES.DOMAIN_EVENTS).select('id,event_type,occurred_at,recorded_at,actor_type,actor_id,payload').eq('merchant_id', merchantId).eq('aggregate_type', 'case').eq('aggregate_id', caseId).order('occurred_at', { ascending: false }),
@@ -23,6 +23,16 @@ export async function getCaseReadModel(client: SupabaseClient, merchantId: strin
     client.from(TABLES.WORK_TASKS).select('id,title,status,created_at,updated_at,completed_at').eq('merchant_id', merchantId).eq('support_payout_case_id', caseId).order('updated_at', { ascending: false }),
     payoutCase.source_ticket_id
       ? client.from(TABLES.SUPPORT_CASE_EVENTS).select('id,event_type,occurred_at,created_at,summary,actor_type').eq('merchant_id', merchantId).eq('source_ticket_id', payoutCase.source_ticket_id).order('occurred_at', { ascending: false })
+      : Promise.resolve({ data: [], error: null }),
+    // Commerce facts (source-of-truth order / fulfillment / refund) for the timeline.
+    payoutCase.source_order_id
+      ? client.from(TABLES.SOURCE_ORDERS).select('id,order_number,placed_at,created_at,total_price,currency').eq('merchant_id', merchantId).eq('id', payoutCase.source_order_id).maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+    payoutCase.source_order_id
+      ? client.from(TABLES.SOURCE_FULFILLMENTS).select('id,status,shipment_status,tracking_company,tracking_number,occurred_at,ingested_at').eq('merchant_id', merchantId).eq('source_order_id', payoutCase.source_order_id).order('occurred_at', { ascending: false })
+      : Promise.resolve({ data: [], error: null }),
+    payoutCase.source_order_id
+      ? client.from(TABLES.SOURCE_REFUNDS).select('id,amount,currency,reason,refunded_at,ingested_at').eq('merchant_id', merchantId).eq('source_order_id', payoutCase.source_order_id).order('refunded_at', { ascending: false })
       : Promise.resolve({ data: [], error: null }),
   ]);
   if (financialResult.error) throw new Error(`case_read_model_financial_failed: ${financialResult.error.message}`);
@@ -44,6 +54,11 @@ export async function getCaseReadModel(client: SupabaseClient, merchantId: strin
       recoveryEventsToTimeline(recoveryEventsResult.data ?? []),
       workTasksToTimeline(workTasksResult.data ?? []),
       ticketEventsToTimeline(ticketEventsResult.data ?? []),
+      commerceEventsToTimeline({
+        order: (orderResult.data as never) ?? null,
+        fulfillments: (fulfillmentsResult.data as never) ?? [],
+        refunds: (refundsResult.data as never) ?? [],
+      }),
     ),
     domainEvents,
     claimEvents,

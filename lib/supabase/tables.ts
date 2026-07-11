@@ -104,6 +104,7 @@ export const TABLES = {
   SOURCE_TRANSACTIONS: 'source_transactions',
   SOURCE_REPLACEMENTS: 'source_replacements',
   SOURCE_FULFILLMENTS: 'source_fulfillments',
+  SOURCE_REFUNDS: 'source_refunds',
   SOURCE_SHIPMENTS: 'source_shipments',
   SOURCE_TRACKING_EVENTS: 'source_tracking_events',
   SOURCE_RETURNS: 'source_returns',

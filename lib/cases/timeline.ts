@@ -142,3 +142,74 @@ export function ticketEventsToTimeline(rows: TicketEventRow[]): TimelineItem[] {
     freshness: 'fresh',
   }));
 }
+
+type CommerceOrderRow = { id: string; order_number: string | null; placed_at: string | null; created_at: string | null; total_price: number | null; currency: string | null };
+type CommerceFulfillmentRow = { id: string; status: string | null; shipment_status: string | null; tracking_company: string | null; tracking_number: string | null; occurred_at: string | null; ingested_at: string | null };
+type CommerceRefundRow = { id: string; amount: number | null; currency: string | null; reason: string | null; refunded_at: string | null; ingested_at: string | null };
+
+/**
+ * Project source-of-truth commerce facts (order placed, fulfillment dispatch /
+ * delivery, refund) into the unified timeline. Source-agnostic: it reads the
+ * canonical `source_*` rows, so it works for any commerce provider, not just
+ * one platform.
+ */
+export function commerceEventsToTimeline(input: {
+  order?: CommerceOrderRow | null;
+  fulfillments?: CommerceFulfillmentRow[];
+  refunds?: CommerceRefundRow[];
+}): TimelineItem[] {
+  const items: TimelineItem[] = [];
+  const order = input.order;
+  if (order) {
+    const placed = order.placed_at ?? order.created_at ?? '';
+    items.push({
+      id: `commerce:order:${order.id}`,
+      type: 'commerce.order_placed',
+      occurredAt: placed,
+      recordedAt: order.created_at ?? placed,
+      sourceSystem: 'commerce',
+      actor: { type: 'customer' },
+      title: order.order_number ? `Order ${order.order_number} placed` : 'Order placed',
+      relatedValue: order.total_price != null && order.currency
+        ? { amountMinor: Math.round(order.total_price * 100), currency: order.currency }
+        : undefined,
+      relatedEntity: { type: 'order', id: order.id },
+      freshness: 'fresh',
+    });
+  }
+  for (const f of input.fulfillments ?? []) {
+    const when = f.occurred_at ?? f.ingested_at ?? '';
+    const state = f.shipment_status ?? f.status ?? 'updated';
+    items.push({
+      id: `commerce:fulfillment:${f.id}`,
+      type: `commerce.fulfillment_${(f.shipment_status ?? f.status ?? 'updated').toLowerCase()}`,
+      occurredAt: when,
+      recordedAt: f.ingested_at ?? when,
+      sourceSystem: 'commerce',
+      actor: { type: 'carrier', label: f.tracking_company ?? undefined },
+      title: `Fulfillment ${state.replaceAll('_', ' ')}`,
+      summary: f.tracking_number ? `Tracking ${f.tracking_number}` : undefined,
+      relatedEntity: { type: 'fulfillment', id: f.id },
+      freshness: 'fresh',
+    });
+  }
+  for (const r of input.refunds ?? []) {
+    const when = r.refunded_at ?? r.ingested_at ?? '';
+    items.push({
+      id: `commerce:refund:${r.id}`,
+      type: 'commerce.refund_issued',
+      occurredAt: when,
+      recordedAt: r.ingested_at ?? when,
+      sourceSystem: 'commerce',
+      actor: { type: 'merchant' },
+      title: 'Refund issued',
+      summary: r.reason ?? undefined,
+      relatedValue: r.amount != null && r.currency
+        ? { amountMinor: Math.round(r.amount * 100), currency: r.currency }
+        : undefined,
+      relatedEntity: { type: 'refund', id: r.id },
+      freshness: 'fresh',
+    });
+  }
+  return items;
+}
