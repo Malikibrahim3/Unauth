@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
-import { ChevronRight, Menu, Search } from 'lucide-react';
+import { Bell, ChevronRight, Menu, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import CommandPalette from './CommandPalette';
 import { useBreadcrumbOverride } from './BreadcrumbOverrideContext';
@@ -192,6 +192,15 @@ export default function AppHeader({
         <kbd className="hidden sm:inline font-mono text-xs opacity-60">⌘K</kbd>
       </button>
 
+      <Link
+        href="/notifications"
+        aria-label="Notifications"
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+        style={{ borderColor: 'var(--border)', background: 'var(--surface-sunken)' }}
+      >
+        <Bell size={14} aria-hidden="true" />
+      </Link>
+
       <AvatarMenu email={userEmail} />
 
       <CommandPalette isOpen={paletteOpen} onClose={closePalette} />
@@ -212,6 +221,7 @@ function deriveFromPathname(pathname: string): BreadcrumbSegment[] {
     inbox:       'Payout Control',
     store:       'Dashboard',
     reports:     'Reports',
+    notifications: 'Notifications',
     recoveries:  'Recoveries',
     partners:    'Partners',
     rules:       'Rules',
