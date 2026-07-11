@@ -70,6 +70,9 @@ const envSchema = z.object({
   APP_URL: z.string().url().optional(),
   /** Merchant id scoped to the public /demo page. */
   NEXT_PUBLIC_DEMO_MERCHANT_ID: z.string().uuid().optional(),
+  SOURCE_AGNOSTIC_READS: z.string().optional(),
+  SOURCE_AGNOSTIC_WRITES: z.string().optional(),
+  SOURCE_AGNOSTIC_PILOT_MERCHANTS: z.string().optional(),
 }).superRefine((env, ctx) => {
   if (!env.NEXT_PUBLIC_SUPABASE_ANON_KEY && !env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) {
     ctx.addIssue({
