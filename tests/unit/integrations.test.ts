@@ -426,6 +426,51 @@ describe('evidence assembly', () => {
       ]),
     );
   });
+
+  it('includes order + fulfillment evidence from the case graph even when no store provider is connected', async () => {
+    const pack = await assembleEvidencePack({
+      client: mockClient({
+        // No store/helpdesk provider connected — inclusion must be driven by
+        // canonical source-graph data, not hasConnected('shopify'|'gorgias').
+        merchant_integrations: [],
+        store_connections: [],
+        helpdesk_connections: [],
+        source_tickets: [],
+        source_orders: [{
+          id: 'order-1',
+          merchant_id: 'm1',
+          external_id: '1001',
+          order_number: '1001',
+          total_price: 118,
+          currency: 'GBP',
+          line_items_count: 2,
+          placed_at: '2026-06-16T00:00:00.000Z',
+          created_at: '2026-06-16T00:00:00.000Z',
+        }],
+        source_refunds: [],
+        source_fulfillments: [{
+          id: 'fulfillment-1',
+          merchant_id: 'm1',
+          source_order_id: 'order-1',
+          status: 'success',
+          shipment_status: 'delivered',
+          tracking_company: 'UPS',
+          tracking_number: '1Z999',
+          occurred_at: '2026-06-18T10:00:00.000Z',
+        }],
+        category_applicability: [],
+        integration_evidence_items: [],
+        extracted_partner_terms: [],
+      }),
+      merchantId: 'm1',
+      supportPayoutCaseId: 'c1',
+      orderId: 'order-1',
+    });
+
+    const evidenceTypes = pack.items.map((item) => item.evidenceType);
+    expect(evidenceTypes).toContain('order_value');
+    expect(evidenceTypes.some((type) => type === 'tracking_number' || type === 'delivery_status')).toBe(true);
+  });
 });
 
 describe('integration security migration', () => {

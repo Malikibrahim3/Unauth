@@ -134,38 +134,43 @@ export async function assembleEvidencePack(input: AssembleEvidencePackInput): Pr
       : Promise.resolve({ data: [], error: null }),
   ]);
 
-  if (hasConnected(views, 'gorgias')) {
+  // Evidence inclusion is driven by the presence of canonical source-graph data
+  // for this case (source_tickets / source_orders / source_refunds /
+  // source_fulfillments), NOT by which provider happens to be connected. The
+  // map* helpers remain provider-shaped adapters over those canonical rows.
+  // Connection state only informs the missing-evidence coverage hints below.
+  if (ticketRes.data) {
     items.push(...mapGorgiasTicketToEvidence(ticketRes.data as any, {
       merchantId: input.merchantId,
       supportPayoutCaseId: input.supportPayoutCaseId,
       now: generatedAt,
     }));
-  } else {
+  } else if (!hasConnected(views, 'gorgias')) {
     missingEvidence.push(missing(views, 'gorgias', 'ticket_messages', 'not_connected', 'Gorgias is not connected.'));
   }
 
-  if (hasConnected(views, 'shopify')) {
+  if (orderRes.data) {
     items.push(...mapShopifyOrderToEvidence(orderRes.data as any, {
       merchantId: input.merchantId,
       supportPayoutCaseId: input.supportPayoutCaseId,
       now: generatedAt,
     }));
-    for (const refund of (refundRes.data ?? []) as any[]) {
-      items.push(mapShopifyRefundToEvidence(refund, {
-        merchantId: input.merchantId,
-        supportPayoutCaseId: input.supportPayoutCaseId,
-        now: generatedAt,
-      }));
-    }
-    for (const fulfillment of (fulfillmentRes.data ?? []) as any[]) {
-      items.push(...mapShopifyFulfillmentToEvidence(fulfillment, {
-        merchantId: input.merchantId,
-        supportPayoutCaseId: input.supportPayoutCaseId,
-        now: generatedAt,
-      }));
-    }
-  } else {
+  } else if (!hasConnected(views, 'shopify')) {
     missingEvidence.push(missing(views, 'shopify', 'order_value', 'not_connected', 'Shopify is not connected.'));
+  }
+  for (const refund of (refundRes.data ?? []) as any[]) {
+    items.push(mapShopifyRefundToEvidence(refund, {
+      merchantId: input.merchantId,
+      supportPayoutCaseId: input.supportPayoutCaseId,
+      now: generatedAt,
+    }));
+  }
+  for (const fulfillment of (fulfillmentRes.data ?? []) as any[]) {
+    items.push(...mapShopifyFulfillmentToEvidence(fulfillment, {
+      merchantId: input.merchantId,
+      supportPayoutCaseId: input.supportPayoutCaseId,
+      now: generatedAt,
+    }));
   }
 
   for (const row of (integrationEvidenceRes.data ?? []) as any[]) {
