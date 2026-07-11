@@ -43,22 +43,38 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!parsed.success) return NextResponse.json({ error: 'Invalid recovery task payload' }, { status: 400 });
 
   const { id } = await params;
-  const { data: task, error: loadError } = await serviceClient
-    .from(TABLES.RECOVERY_TASKS as any)
-    .select('id,claim_id,loss_source_id,merchant_id,task_type,owner_type,status,amount_to_recover')
+  const { data: workTask, error: loadError } = await serviceClient
+    .from(TABLES.WORK_TASKS as any)
+    .select('id,support_payout_case_id,merchant_id,title,status,source_metadata')
     .eq('id', id)
     .eq('merchant_id', ctx.merchantId)
     .maybeSingle();
   if (loadError) return NextResponse.json({ error: loadError.message }, { status: 500 });
-  if (!task) return NextResponse.json({ error: 'Recovery task not found' }, { status: 404 });
+  if (!workTask) return NextResponse.json({ error: 'Recovery task not found' }, { status: 404 });
+
+  const taskMetadata = (workTask.source_metadata ?? {}) as Record<string, unknown>;
+  const task = {
+    id: workTask.id as string,
+    claim_id: workTask.support_payout_case_id as string,
+    loss_source_id: (taskMetadata.loss_source_id as string | undefined) ?? null,
+    task_type: (taskMetadata.task_type as string | undefined) ?? workTask.title,
+    owner_type: (taskMetadata.owner_type as string | undefined) ?? null,
+    status: workTask.status as string,
+    amount_to_recover: Number(taskMetadata.amount_to_recover ?? 0),
+  };
 
   const completedAt = new Date().toISOString();
   const { data: updated, error: updateError } = await serviceClient
-    .from(TABLES.RECOVERY_TASKS as any)
+    .from(TABLES.WORK_TASKS as any)
     .update({
       status: 'completed',
-      external_reference: parsed.data.external_reference ?? null,
-      notes: parsed.data.notes ?? null,
+      completed_at: completedAt,
+      completed_by: user.id,
+      completion_outcome: {
+        recovered_amount: parsed.data.recovered_amount,
+        external_reference: parsed.data.external_reference ?? null,
+        notes: parsed.data.notes ?? null,
+      },
       updated_at: completedAt,
     })
     .eq('id', id)

@@ -108,6 +108,12 @@ export const TABLES = {
   SOURCE_RETURNS: 'source_returns',
   SOURCE_MESSAGES: 'source_messages',
   INGESTION_FIELD_ERRORS: 'ingestion_field_errors',
+  // ── Canonical operations model (Phase 7) ──
+  EVIDENCE_LINKS: 'evidence_links',
+  CASE_DECISIONS: 'case_decisions',
+  CASE_OUTCOMES: 'case_outcomes',
+  LOSS_ATTRIBUTION_CANDIDATES: 'loss_attribution_candidates',
+  WORK_TASKS: 'work_tasks',
 } as const;
 
 /** Step 3 compatibility / derived views — see PHASE_2_IMPLEMENTATION_SPEC.md */

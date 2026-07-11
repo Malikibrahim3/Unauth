@@ -181,31 +181,75 @@ async function insertLossSource(client: SupabaseClient, input: {
   };
 }
 
+/**
+ * Map an accountability workflow status (e.g. `eligible_to_chase`) onto the canonical
+ * `work_tasks.status` CHECK domain. The original workflow status is preserved verbatim
+ * in `source_metadata.workflow_status` and in the returned {@link PersistedRecoveryTask}
+ * so the Gorgias widget / gate response contract is unchanged.
+ */
+function workTaskStatus(workflowStatus: string | undefined): {
+  status: string;
+  blockingReason: string | null;
+} {
+  switch (workflowStatus) {
+    case 'not_economically_recoverable':
+      return { status: 'blocked', blockingReason: 'Not economically recoverable' };
+    case 'pending_required_evidence':
+      return { status: 'blocked', blockingReason: 'Awaiting required evidence' };
+    case 'in_progress':
+    case 'blocked':
+    case 'completed':
+    case 'cancelled':
+      return { status: workflowStatus, blockingReason: null };
+    // 'eligible_to_chase', 'open', undefined and anything else → an actionable task.
+    default:
+      return { status: 'open', blockingReason: null };
+  }
+}
+
+function workTaskTitle(taskType: string): string {
+  return taskType
+    .toLowerCase()
+    .split('_')
+    .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : part))
+    .join(' ');
+}
+
 async function insertRecoveryTask(client: SupabaseClient, input: {
   merchantId: string;
   claimId: string;
   lossSourceId: string;
+  lossCaseId: string | null;
   task: RecommendedRecoveryTask;
   status?: string;
 }): Promise<PersistedRecoveryTask> {
+  const mapped = workTaskStatus(input.status);
   const { data, error } = await client
-    .from(TABLES.RECOVERY_TASKS as any)
+    .from(TABLES.WORK_TASKS as any)
     .insert({
-      claim_id: input.claimId,
       merchant_id: input.merchantId,
-      loss_source_id: input.lossSourceId,
-      task_type: input.task.task_type,
-      owner_type: input.task.owner_type,
-      due_at: input.task.due_at,
-      priority: input.task.priority,
-      status: input.status ?? 'open',
-      amount_to_recover: input.task.amount_to_recover,
-      recovery_deadline: input.task.recovery_deadline,
-      notes: input.task.notes,
+      support_payout_case_id: input.claimId,
+      loss_case_id: input.lossCaseId,
+      title: workTaskTitle(input.task.task_type),
+      description: input.task.notes,
+      owner_role: input.task.owner_type,
+      due_at: input.task.due_at ?? input.task.recovery_deadline,
+      priority: input.task.priority.toLowerCase(),
+      status: mapped.status,
+      blocking_reason: mapped.blockingReason,
+      source: 'accountability_workflow',
+      source_metadata: {
+        task_type: input.task.task_type,
+        owner_type: input.task.owner_type,
+        amount_to_recover: input.task.amount_to_recover,
+        recovery_deadline: input.task.recovery_deadline,
+        loss_source_id: input.lossSourceId,
+        workflow_status: input.status ?? 'open',
+      },
     })
-    .select('*')
+    .select('id')
     .single();
-  if (error) throw new Error(`recovery_task_insert_failed: ${error.message}`);
+  if (error) throw new Error(`work_task_insert_failed: ${error.message}`);
   await insertAccountabilityEvent(client, {
     merchantId: input.merchantId,
     claimId: input.claimId,
@@ -216,8 +260,13 @@ async function insertRecoveryTask(client: SupabaseClient, input: {
     metadata: { task: input.task },
   });
   return {
-    ...(data as PersistedRecoveryTask),
-    amount_to_recover: Number(data.amount_to_recover ?? 0),
+    ...input.task,
+    id: data.id,
+    claim_id: input.claimId,
+    merchant_id: input.merchantId,
+    loss_source_id: input.lossSourceId,
+    amount_to_recover: Number(input.task.amount_to_recover ?? 0),
+    status: input.status ?? 'open',
   };
 }
 
@@ -265,6 +314,7 @@ export async function createAccountabilityWorkflow(
         merchantId: input.merchantId,
         claimId: input.claimId,
         lossSourceId: lossSource.id,
+        lossCaseId: null,
         task,
         status,
       }));
