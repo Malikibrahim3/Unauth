@@ -141,24 +141,47 @@ passed tests, 3 skipped), application lint has 0 errors (73 pre-existing warning
 and all new migrations are applied to the linked project. Full `tsc` remains
 blocked only by the known stale `.next` route declaration for support-context.
 
-Residual roadmap gates (do not call Phases 8–11 fully complete yet):
+Residual roadmap gates — CLOSED in the Claude follow-up pass (2026-07-12):
 
-- Finish universal-search groups/identifiers (tickets, shipments, transactions,
-  recovery references, SKU/external references) and context drawer entry points
-  from Customers, Reports, and search.
-- Finish claim-detail read-model adoption and commerce event projection in the
-  unified timeline.
-- Add comment edit/delete APIs and audit events; email preference/delivery worker.
-- Expand workflow templates/outputs and ordered transition-graph reconciliation.
-- Implement actual low-risk connector adapter executors (the generic service
-  currently records manual-required when an adapter lacks `executeAction`) and
-  retire direct Gorgias write-back callers after parity.
-- Complete the IntegrationHubClient decomposition and per-connection issue links,
-  capability/sync-history dialogs, and applicability-aware coverage.
-- Add dead-letter retry/ignore/replay operational endpoints, finish GDPR coverage
-  for every new table/storage path, run non-empty parity reports for pilot
-  merchants, and execute the staged pilot cutover. Destructive legacy-table
-  removal remains a later separately approved migration.
+- ✅ Universal search now covers tickets, shipments, transactions, recovery
+  references, and SKU/external-ref matching; command palette renders + keyboard-
+  navigates all six non-customer groups. `feat: complete universal search coverage`.
+- ✅ Commerce events (order placed / fulfillment / refund) project into the unified
+  case timeline; a test proves all five source kinds merge. `feat: project commerce
+  events into unified case timeline`.
+- ✅ Comment edit/delete APIs with append-only audit events (author-scoped, soft
+  delete). `feat: comment edit and delete with audit trail`.
+- ✅ Real low-risk connector executor: Gorgias `tickets.write_note`/`write_tag`
+  now `executeAction` through the live API (no more forced manual-required).
+  `feat: real low-risk connector executor for Gorgias`.
+- ✅ Dead-letter retry/ignore/replay operational endpoints
+  (`/api/ops/domain-event-deliveries`). `feat: dead-letter retry/ignore/replay`.
+- ✅ GDPR coverage completed AND a real bug fixed: append-only triggers
+  (recovery_case_events, loss_case_events, case_comment_events, case_decisions,
+  case_outcomes) blocked account deletion via the merchants cascade; they now
+  permit DELETE under a purge flag and are purged in the RPC. Migrations
+  `20260712090000`, `20260712100000` applied live. `fix(gdpr): purge append-only
+  tables on account deletion`.
+- ✅ Notification preferences (in-app mute + email opt-in) store + self-service API;
+  mention notifications respect the in-app preference. `feat: notification preferences`.
+
+Suite after the pass: 1,835 passed, 3 skipped, 0 failed; TypeScript clean; lint 0 errors.
+
+Still genuinely open (larger refactors or infra/ops — NOT yet done):
+
+- Claim-detail read-model **adoption**: `getCaseReadModel` exists and now includes
+  commerce events, but `ClaimReviewPanel`/`app/api/claims/[claimId]/route.ts` do not
+  yet consume it as their single read-model assembler.
+- Context drawer entry points from Customers, Reports, and search (drawer is wired
+  from Work/Losses/Recovery only).
+- Email **delivery worker**: preferences/opt-in are recorded, but no SMTP/provider
+  sender exists — needs an email provider decision + credentials.
+- Workflow templates/outputs expansion + ordered transition-graph reconciliation.
+- IntegrationHubClient decomposition, per-connection issue links, capability/
+  sync-history dialogs, applicability-aware coverage.
+- Non-empty parity reports for pilot merchants + staged pilot cutover (needs pilot
+  data + an operational go decision).
+- Destructive legacy-table removal (separate owner-approved migration).
 
 Then continue through Phases 9–11.
 
