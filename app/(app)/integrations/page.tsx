@@ -1,11 +1,30 @@
-import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
+import ApiIntegrationsClient from '@/components/settings/ApiIntegrationsClient';
+import GateActivationChecklist from '@/components/settings/GateActivationChecklist';
+import IntegrationHubClient from '@/components/integrations/IntegrationHubClient';
+import { WorkbenchPage } from '@/components/workbench/WorkbenchPage';
+import { ShopifyOAuthPopupCloser } from '@/components/settings/ShopifyOAuthPopupCloser';
 
 /**
- * Legacy top-level Integrations Hub. The canonical integration surface is
- * /settings/integrations (linked from the sidebar and every "connect" CTA).
- * This route is retained as a redirect so existing bookmarks / Gorgias widget
- * deep-links keep working without showing a duplicate hub.
+ * The canonical Integration Centre. Provider-specific setup pages remain under
+ * /settings/integrations/* while the settings index redirects here.
  */
-export default function IntegrationsHubRedirect() {
-  redirect('/settings/integrations');
+export default function IntegrationsPage() {
+  return (
+    <WorkbenchPage
+      eyebrow="Operations"
+      title="Integrations"
+      subtitle="Connect and monitor the data sources that provide case context, evidence, and recovery signals."
+      main={
+        <div className="space-y-10">
+          <Suspense fallback={null}>
+            <ShopifyOAuthPopupCloser />
+          </Suspense>
+          <GateActivationChecklist />
+          <IntegrationHubClient />
+          <ApiIntegrationsClient section="advanced" />
+        </div>
+      }
+    />
+  );
 }

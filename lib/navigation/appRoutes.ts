@@ -211,11 +211,11 @@ export const APP_ROUTES = {
   },
   integrations: {
     key: 'integrations',
-    href: '/settings/integrations',
+    href: '/integrations',
     label: 'Integrations',
     pageTitle: 'Integrations',
     permission: PERMISSIONS.VIEW_SETTINGS,
-    aliases: ['/integrations'],
+    aliases: ['/settings/integrations'],
     icon: Plug,
     sidebar: true,
     workbench: false,
