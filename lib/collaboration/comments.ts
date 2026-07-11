@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { TABLES } from '@/lib/supabase/tables';
 import { recordDomainEvent } from '@/lib/events/domainEventStore';
+import { filterInAppNotificationRecipients } from '@/lib/collaboration/notificationPreferences';
 
 export const createCommentSchema = z.object({
   body: z.string().trim().min(1).max(10_000),
@@ -74,16 +75,20 @@ export async function createCaseComment(client: SupabaseClient, input: {
       mentioned_user_id: userId,
     })));
     if (mentionError) throw new Error(`comment_mentions_create_failed: ${mentionError.message}`);
-    const { error: notificationError } = await client.from(TABLES.NOTIFICATIONS).insert(mentionedUserIds.map((userId) => ({
-      merchant_id: input.merchantId,
-      recipient_user_id: userId,
-      kind: 'mention',
-      title: 'You were mentioned in a payout case',
-      body: parsed.body.slice(0, 240),
-      target_href: `/claims/${input.caseId}`,
-      deduplication_key: `comment-mention:${comment.id}:${userId}`,
-    })));
-    if (notificationError) throw new Error(`comment_notifications_create_failed: ${notificationError.message}`);
+    // Respect each recipient's in-app preference for the 'mention' kind (default on).
+    const inAppRecipients = await filterInAppNotificationRecipients(client, input.merchantId, mentionedUserIds, 'mention');
+    if (inAppRecipients.length) {
+      const { error: notificationError } = await client.from(TABLES.NOTIFICATIONS).insert(inAppRecipients.map((userId) => ({
+        merchant_id: input.merchantId,
+        recipient_user_id: userId,
+        kind: 'mention',
+        title: 'You were mentioned in a payout case',
+        body: parsed.body.slice(0, 240),
+        target_href: `/claims/${input.caseId}`,
+        deduplication_key: `comment-mention:${comment.id}:${userId}`,
+      })));
+      if (notificationError) throw new Error(`comment_notifications_create_failed: ${notificationError.message}`);
+    }
   }
 
   await recordDomainEvent(client, {
