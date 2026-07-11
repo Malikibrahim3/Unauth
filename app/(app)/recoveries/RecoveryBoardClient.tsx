@@ -57,9 +57,13 @@ export function RecoveryBoardClient({ recoveries }: Props) {
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="truncate text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
+                        <a
+                          href={`/recoveries/${item.id}`}
+                          className="block truncate text-xs font-semibold no-underline hover:underline"
+                          style={{ color: 'var(--text-primary)' }}
+                        >
                           {orderLabel}
-                        </p>
+                        </a>
                         <p className="mt-0.5 text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
                           {RECOVERY_TYPE_LABELS[item.recovery_type]} · {RECOVERY_OWNER_LABELS[item.owner_type]}
                         </p>

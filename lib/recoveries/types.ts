@@ -53,6 +53,8 @@ export type RecoveryCase = {
   id: string;
   merchant_id: string;
   support_payout_case_id: string;
+  loss_case_id: string | null;
+  prevention_only: boolean;
   partner_id: string | null;
   recovery_type: PartnerRecoveryType;
   owner_type: RecoveryOwnerType;
