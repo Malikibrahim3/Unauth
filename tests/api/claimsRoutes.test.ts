@@ -93,6 +93,7 @@ function setupServiceClient(opts: {
               merchant_id: claimMerchantId,
               shop_domain: claimShopDomain,
               status: claimStatus,
+              state_version: 1,
               claim_type: 'missing_parcel',
               customer_id: 'p1',
               submitted_at: new Date(Date.now() - 86400000).toISOString(),
@@ -140,6 +141,9 @@ function setupServiceClient(opts: {
   }
 
   const service = {
+    rpc: async (fn: string) => fn === 'record_domain_event'
+      ? { data: 'event-1', error: null }
+      : { data: null, error: null },
     from: (table: string) => {
       if (storeConnectionTables.has(table)) {
         return {
@@ -160,6 +164,7 @@ function setupServiceClient(opts: {
               data: {
                 id: '550e8400-e29b-41d4-a716-446655440000',
                 status: updateChain.status ?? claimStatus,
+                state_version: updateChain.payload?.state_version ?? 1,
                 first_viewed_at: updateChain.payload?.first_viewed_at ?? firstViewedAt,
                 first_viewed_by: updateChain.payload?.first_viewed_by ?? (firstViewedAt ? TEST_USER_ID : null),
                 assigned_to: Object.prototype.hasOwnProperty.call(updateChain.payload ?? {}, 'assigned_to') ? updateChain.payload.assigned_to : assignedTo,

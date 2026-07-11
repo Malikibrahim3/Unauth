@@ -22,6 +22,7 @@ export type ClaimForAction = {
   assigned_to?: string | null;
   assigned_at?: string | null;
   snoozed_until?: string | null;
+  state_version?: number;
   _viewRecorded?: boolean;
 };
 
@@ -30,7 +31,7 @@ type ClaimLoadResult =
   | { claim: null; denied: 'not_found' | 'forbidden' };
 
 const CLAIM_SELECT =
-  'id,merchant_id,source_ticket_id,source_order_id,identity_id,claim_type,status,detection_method,reason_raw,reason_normalized,amount_at_risk,currency,requires_review,submitted_at,created_at,updated_at,first_viewed_at,assigned_to,assigned_at,snoozed_until';
+  'id,merchant_id,source_ticket_id,source_order_id,identity_id,claim_type,status,detection_method,reason_raw,reason_normalized,amount_at_risk,currency,requires_review,submitted_at,created_at,updated_at,first_viewed_at,assigned_to,assigned_at,snoozed_until,state_version';
 
 async function fetchClaim(serviceClient: any, claimId: string): Promise<ClaimForAction | null> {
   const { data, error } = await serviceClient
@@ -42,7 +43,7 @@ async function fetchClaim(serviceClient: any, claimId: string): Promise<ClaimFor
   return data ?? null;
 }
 
-export async function markClaimViewed(serviceClient: any, claim: ClaimForAction, merchantId: string, userId: string) {
+export async function markClaimViewed(serviceClient: any, claim: ClaimForAction, _merchantId: string, _userId: string) {
   if (claim.first_viewed_at) return { ...claim, _viewRecorded: false };
   const { data, error } = await serviceClient
     .from(TABLES.MERCHANT_CLAIMS)

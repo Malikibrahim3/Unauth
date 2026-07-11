@@ -1,11 +1,28 @@
 # Source-Agnostic Architecture — Live Work Checkpoint
 
 **Purpose:** Disk-backed continuation state for another model if this task is interrupted.
-**Last updated:** 2026-07-11
+**Last updated:** 2026-07-11 (Phase 6 continuation)
 **Branch/baseline:** `codex/refocus-claim-gate-map` at `1950bf64`
 **Requested deliverable:** Review the approved source-agnostic MVP+ requirements against the current app and create a comprehensive implementation document that a less capable coding model can follow.
 
 ## Primary saved deliverable
+
+## Implementation progress
+
+Phases 0 through 5 are implemented and committed. Phase 5 is commit `ae4aa1de`
+(`feat(source-agnostic): Phase 5 — record matching + related-record graph`).
+
+Phase 6 is in progress and deliberately uncommitted. Its current worktree changes
+add a persisted-workflow-compatible case state machine, optimistic-concurrency
+transition service, leased domain-event dispatcher and cron route, read-only case
+read model/related-record wrapper, timeline utilities, financial projection, and
+focused tests. The claim workbench server page no longer records a view on load;
+the explicit POST view endpoint remains a mutation. Status and reopen API routes
+now use `transitionCase` and preserve compatibility `claim_events` labels.
+
+Do not commit Phase 6 until the remaining direct case mutation paths, decision and
+retrospective-refund projections, loss/recovery/customer handlers, live verification,
+and the complete Phase 6 test gate are complete.
 
 `docs/IMPL_source_agnostic_connected_ecosystem.md`
 

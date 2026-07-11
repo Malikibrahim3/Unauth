@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
-import { loadClaimForMerchant, updateClaimStatus } from '@/lib/claims/access';
-import { appendClaimEvent } from '@/lib/claims/events';
+import { loadClaimForMerchant } from '@/lib/claims/access';
 import { isFinalClaimStatus } from '@/lib/claims/sla';
+import { CaseTransitionRejectedError, CaseVersionConflictError, transitionCase } from '@/lib/cases/transitionCase';
 
 const reopenBodySchema = z.object({
   note: z.string().trim().min(3),
@@ -40,20 +40,23 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   try {
-    const updated = await updateClaimStatus(serviceClient, claim, ctx.merchantId, 'open', { allowReopen: true });
-    await appendClaimEvent(serviceClient, {
-      claim_id: claimId,
-      merchant_id: ctx.merchantId,
-      event_type: 'claim_reopened',
-      previous_status: claim.status,
-      new_status: 'open',
-      note: parsed.data.note,
-      actor_user_id: user.id,
-      triggered_by: 'merchant_manual_reopen',
-      metadata: { triggered_by: 'merchant_manual_reopen' },
+    const updated = await transitionCase(serviceClient, {
+      merchantId: ctx.merchantId,
+      caseId: claimId,
+      expectedVersion: claim.state_version ?? 1,
+      patch: { status: 'open' },
+      reason: parsed.data.note,
+      actorUserId: user.id,
+      triggeredBy: 'merchant_manual_reopen',
+      eventType: 'case.updated',
+      claimEventType: 'claim_reopened',
+      allowReopen: true,
     });
-    return NextResponse.json({ claim: { id: updated.id, status: updated.status } });
-  } catch {
+    return NextResponse.json({ claim: { id: updated.caseId, status: updated.status, state_version: updated.newVersion } });
+  } catch (error) {
+    if (error instanceof CaseTransitionRejectedError || error instanceof CaseVersionConflictError) {
+      return NextResponse.json({ error: 'Case was updated by another user. Refresh and try again.' }, { status: 409 });
+    }
     return NextResponse.json({ error: 'Failed to reopen claim' }, { status: 500 });
   }
 }
