@@ -3,9 +3,10 @@
 import { ClaimDecisionRecommendationCard, type ClaimDecisionPayload } from '@/components/claims/ClaimDecisionRecommendationCard';
 import { ClaimReviewEvidenceRail } from '@/components/claims/ClaimReviewEvidenceRail';
 import { ClaimReviewNextStepCard } from '@/components/claims/ClaimReviewNextStepCard';
+import { ClaimReviewManageCard } from '@/components/claims/ClaimReviewManageCard';
 import type { ClaimReviewWorkbench } from '@/components/claims/claimReviewWorkbench';
 
-export function ClaimReviewActionRail({ wb }: { wb: ClaimReviewWorkbench }) {
+export function ClaimReviewActionRail({ wb, canManage = false }: { wb: ClaimReviewWorkbench; canManage?: boolean }) {
   const {
     claimId,
     state,
@@ -38,6 +39,8 @@ export function ClaimReviewActionRail({ wb }: { wb: ClaimReviewWorkbench }) {
         open={state.railOpen.recommendation ?? true}
         onToggle={(id) => dispatch({ type: 'toggleRail', id })}
       />
+
+      <ClaimReviewManageCard wb={wb} canManage={canManage} />
 
       <ClaimReviewEvidenceRail wb={wb} />
     </aside>
