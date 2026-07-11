@@ -96,6 +96,17 @@ export const TABLES = {
   RECORD_MATCH_RESOLUTIONS: 'record_match_resolutions',
   CASE_FINANCIAL_ENTRIES: 'case_financial_entries',
   CASE_FINANCIAL_SUMMARIES: 'case_financial_summaries',
+  // ── Canonical entity model (Phase 3) ──
+  MERCHANT_CUSTOMERS: 'merchant_customers',
+  SOURCE_ORDER_LINES: 'source_order_lines',
+  SOURCE_PAYMENTS: 'source_payments',
+  SOURCE_TRANSACTIONS: 'source_transactions',
+  SOURCE_REPLACEMENTS: 'source_replacements',
+  SOURCE_SHIPMENTS: 'source_shipments',
+  SOURCE_TRACKING_EVENTS: 'source_tracking_events',
+  SOURCE_RETURNS: 'source_returns',
+  SOURCE_MESSAGES: 'source_messages',
+  INGESTION_FIELD_ERRORS: 'ingestion_field_errors',
 } as const;
 
 /** Step 3 compatibility / derived views — see PHASE_2_IMPLEMENTATION_SPEC.md */

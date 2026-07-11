@@ -2821,6 +2821,70 @@ export type Database = {
           },
         ]
       }
+      ingestion_field_errors: {
+        Row: {
+          code: string
+          created_at: string
+          field: string
+          id: string
+          ingestion_event_id: string | null
+          merchant_id: string
+          message: string | null
+          raw_value_hash: string | null
+          resolution_status: string
+          severity: string
+          source_record_id: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          field: string
+          id?: string
+          ingestion_event_id?: string | null
+          merchant_id: string
+          message?: string | null
+          raw_value_hash?: string | null
+          resolution_status?: string
+          severity?: string
+          source_record_id?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          field?: string
+          id?: string
+          ingestion_event_id?: string | null
+          merchant_id?: string
+          message?: string | null
+          raw_value_hash?: string | null
+          resolution_status?: string
+          severity?: string
+          source_record_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingestion_field_errors_ingestion_event_id_fkey"
+            columns: ["ingestion_event_id"]
+            isOneToOne: false
+            referencedRelation: "ingestion_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ingestion_field_errors_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ingestion_field_errors_source_record_id_fkey"
+            columns: ["source_record_id"]
+            isOneToOne: false
+            referencedRelation: "source_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       integration_credentials: {
         Row: {
           connection_id: string | null
@@ -3359,6 +3423,47 @@ export type Database = {
             foreignKeyName: "fk_v2_mcred_merchant"
             columns: ["merchant_id"]
             isOneToOne: true
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      merchant_customers: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          email: string | null
+          id: string
+          identity_id: string | null
+          merchant_id: string
+          raw_metadata: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          identity_id?: string | null
+          merchant_id: string
+          raw_metadata?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          identity_id?: string | null
+          merchant_id?: string
+          raw_metadata?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "merchant_customers_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
             referencedRelation: "merchants"
             referencedColumns: ["id"]
           },
@@ -4999,6 +5104,164 @@ export type Database = {
           },
         ]
       }
+      source_messages: {
+        Row: {
+          actor_type: string | null
+          attachment_metadata: Json
+          body_ref: string | null
+          channel: string | null
+          created_at: string
+          external_id: string
+          id: string
+          merchant_id: string
+          raw_metadata: Json
+          sent_at: string | null
+          source_record_id: string | null
+          source_sent_at: string | null
+          source_ticket_id: string
+          summary: string | null
+          visibility: string | null
+        }
+        Insert: {
+          actor_type?: string | null
+          attachment_metadata?: Json
+          body_ref?: string | null
+          channel?: string | null
+          created_at?: string
+          external_id: string
+          id?: string
+          merchant_id: string
+          raw_metadata?: Json
+          sent_at?: string | null
+          source_record_id?: string | null
+          source_sent_at?: string | null
+          source_ticket_id: string
+          summary?: string | null
+          visibility?: string | null
+        }
+        Update: {
+          actor_type?: string | null
+          attachment_metadata?: Json
+          body_ref?: string | null
+          channel?: string | null
+          created_at?: string
+          external_id?: string
+          id?: string
+          merchant_id?: string
+          raw_metadata?: Json
+          sent_at?: string | null
+          source_record_id?: string | null
+          source_sent_at?: string | null
+          source_ticket_id?: string
+          summary?: string | null
+          visibility?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_messages_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_messages_source_record_id_fkey"
+            columns: ["source_record_id"]
+            isOneToOne: false
+            referencedRelation: "source_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_messages_source_ticket_id_fkey"
+            columns: ["source_ticket_id"]
+            isOneToOne: false
+            referencedRelation: "source_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      source_order_lines: {
+        Row: {
+          cost_minor: number | null
+          created_at: string
+          currency: string | null
+          external_id: string
+          id: string
+          merchant_id: string
+          product_ref: string | null
+          quantity: number | null
+          raw_metadata: Json
+          sku: string | null
+          source_order_id: string
+          source_record_id: string | null
+          title: string | null
+          total_minor: number | null
+          unit_price_minor: number | null
+          updated_at: string
+          variant_ref: string | null
+        }
+        Insert: {
+          cost_minor?: number | null
+          created_at?: string
+          currency?: string | null
+          external_id: string
+          id?: string
+          merchant_id: string
+          product_ref?: string | null
+          quantity?: number | null
+          raw_metadata?: Json
+          sku?: string | null
+          source_order_id: string
+          source_record_id?: string | null
+          title?: string | null
+          total_minor?: number | null
+          unit_price_minor?: number | null
+          updated_at?: string
+          variant_ref?: string | null
+        }
+        Update: {
+          cost_minor?: number | null
+          created_at?: string
+          currency?: string | null
+          external_id?: string
+          id?: string
+          merchant_id?: string
+          product_ref?: string | null
+          quantity?: number | null
+          raw_metadata?: Json
+          sku?: string | null
+          source_order_id?: string
+          source_record_id?: string | null
+          title?: string | null
+          total_minor?: number | null
+          unit_price_minor?: number | null
+          updated_at?: string
+          variant_ref?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_order_lines_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_order_lines_source_order_id_fkey"
+            columns: ["source_order_id"]
+            isOneToOne: false
+            referencedRelation: "source_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_order_lines_source_record_id_fkey"
+            columns: ["source_record_id"]
+            isOneToOne: false
+            referencedRelation: "source_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       source_orders: {
         Row: {
           accept_language: string | null
@@ -5193,6 +5456,105 @@ export type Database = {
           },
         ]
       }
+      source_payments: {
+        Row: {
+          amount_minor: number | null
+          captured_at: string | null
+          created_at: string
+          currency: string | null
+          external_id: string
+          id: string
+          merchant_id: string
+          method_category: string | null
+          provider: string | null
+          raw_metadata: Json
+          refunded_at: string | null
+          source_account_id: string | null
+          source_customer_id: string | null
+          source_order_id: string | null
+          source_record_id: string | null
+          source_status: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount_minor?: number | null
+          captured_at?: string | null
+          created_at?: string
+          currency?: string | null
+          external_id: string
+          id?: string
+          merchant_id: string
+          method_category?: string | null
+          provider?: string | null
+          raw_metadata?: Json
+          refunded_at?: string | null
+          source_account_id?: string | null
+          source_customer_id?: string | null
+          source_order_id?: string | null
+          source_record_id?: string | null
+          source_status?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount_minor?: number | null
+          captured_at?: string | null
+          created_at?: string
+          currency?: string | null
+          external_id?: string
+          id?: string
+          merchant_id?: string
+          method_category?: string | null
+          provider?: string | null
+          raw_metadata?: Json
+          refunded_at?: string | null
+          source_account_id?: string | null
+          source_customer_id?: string | null
+          source_order_id?: string | null
+          source_record_id?: string | null
+          source_status?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_payments_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_payments_source_account_id_fkey"
+            columns: ["source_account_id"]
+            isOneToOne: false
+            referencedRelation: "source_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_payments_source_customer_id_fkey"
+            columns: ["source_customer_id"]
+            isOneToOne: false
+            referencedRelation: "source_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_payments_source_order_id_fkey"
+            columns: ["source_order_id"]
+            isOneToOne: false
+            referencedRelation: "source_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_payments_source_record_id_fkey"
+            columns: ["source_record_id"]
+            isOneToOne: false
+            referencedRelation: "source_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       source_records: {
         Row: {
           canonical_entity_id: string | null
@@ -5340,6 +5702,300 @@ export type Database = {
             columns: ["source_order_id"]
             isOneToOne: false
             referencedRelation: "source_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      source_replacements: {
+        Row: {
+          created_at: string
+          currency: string | null
+          external_id: string
+          id: string
+          issued_at: string | null
+          item_value_minor: number | null
+          merchant_id: string
+          original_line_ref: string | null
+          raw_metadata: Json
+          replacement_line_ref: string | null
+          shipping_cost_minor: number | null
+          source_account_id: string | null
+          source_order_id: string | null
+          source_record_id: string | null
+          source_status: string | null
+          status: string | null
+          support_payout_case_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string | null
+          external_id: string
+          id?: string
+          issued_at?: string | null
+          item_value_minor?: number | null
+          merchant_id: string
+          original_line_ref?: string | null
+          raw_metadata?: Json
+          replacement_line_ref?: string | null
+          shipping_cost_minor?: number | null
+          source_account_id?: string | null
+          source_order_id?: string | null
+          source_record_id?: string | null
+          source_status?: string | null
+          status?: string | null
+          support_payout_case_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string | null
+          external_id?: string
+          id?: string
+          issued_at?: string | null
+          item_value_minor?: number | null
+          merchant_id?: string
+          original_line_ref?: string | null
+          raw_metadata?: Json
+          replacement_line_ref?: string | null
+          shipping_cost_minor?: number | null
+          source_account_id?: string | null
+          source_order_id?: string | null
+          source_record_id?: string | null
+          source_status?: string | null
+          status?: string | null
+          support_payout_case_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_replacements_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_replacements_source_account_id_fkey"
+            columns: ["source_account_id"]
+            isOneToOne: false
+            referencedRelation: "source_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_replacements_source_order_id_fkey"
+            columns: ["source_order_id"]
+            isOneToOne: false
+            referencedRelation: "source_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_replacements_source_record_id_fkey"
+            columns: ["source_record_id"]
+            isOneToOne: false
+            referencedRelation: "source_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_replacements_support_payout_case_id_fkey"
+            columns: ["support_payout_case_id"]
+            isOneToOne: false
+            referencedRelation: "support_payout_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      source_returns: {
+        Row: {
+          created_at: string
+          disposition: string | null
+          external_id: string
+          id: string
+          inspected_at: string | null
+          merchant_id: string
+          raw_metadata: Json
+          received_at: string | null
+          refund_reference: string | null
+          replacement_reference: string | null
+          requested_at: string | null
+          source_account_id: string | null
+          source_order_id: string | null
+          source_record_id: string | null
+          source_status: string | null
+          status: string | null
+          support_payout_case_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          disposition?: string | null
+          external_id: string
+          id?: string
+          inspected_at?: string | null
+          merchant_id: string
+          raw_metadata?: Json
+          received_at?: string | null
+          refund_reference?: string | null
+          replacement_reference?: string | null
+          requested_at?: string | null
+          source_account_id?: string | null
+          source_order_id?: string | null
+          source_record_id?: string | null
+          source_status?: string | null
+          status?: string | null
+          support_payout_case_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          disposition?: string | null
+          external_id?: string
+          id?: string
+          inspected_at?: string | null
+          merchant_id?: string
+          raw_metadata?: Json
+          received_at?: string | null
+          refund_reference?: string | null
+          replacement_reference?: string | null
+          requested_at?: string | null
+          source_account_id?: string | null
+          source_order_id?: string | null
+          source_record_id?: string | null
+          source_status?: string | null
+          status?: string | null
+          support_payout_case_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_returns_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_returns_source_account_id_fkey"
+            columns: ["source_account_id"]
+            isOneToOne: false
+            referencedRelation: "source_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_returns_source_order_id_fkey"
+            columns: ["source_order_id"]
+            isOneToOne: false
+            referencedRelation: "source_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_returns_source_record_id_fkey"
+            columns: ["source_record_id"]
+            isOneToOne: false
+            referencedRelation: "source_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_returns_support_payout_case_id_fkey"
+            columns: ["support_payout_case_id"]
+            isOneToOne: false
+            referencedRelation: "support_payout_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      source_shipments: {
+        Row: {
+          carrier: string | null
+          created_at: string
+          delivered_at: string | null
+          external_id: string
+          id: string
+          merchant_id: string
+          raw_metadata: Json
+          service: string | null
+          shipped_at: string | null
+          source_account_id: string | null
+          source_fulfillment_id: string | null
+          source_order_id: string | null
+          source_record_id: string | null
+          source_status: string | null
+          status: string | null
+          tracking_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          carrier?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          external_id: string
+          id?: string
+          merchant_id: string
+          raw_metadata?: Json
+          service?: string | null
+          shipped_at?: string | null
+          source_account_id?: string | null
+          source_fulfillment_id?: string | null
+          source_order_id?: string | null
+          source_record_id?: string | null
+          source_status?: string | null
+          status?: string | null
+          tracking_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          carrier?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          external_id?: string
+          id?: string
+          merchant_id?: string
+          raw_metadata?: Json
+          service?: string | null
+          shipped_at?: string | null
+          source_account_id?: string | null
+          source_fulfillment_id?: string | null
+          source_order_id?: string | null
+          source_record_id?: string | null
+          source_status?: string | null
+          status?: string | null
+          tracking_number?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_shipments_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_shipments_source_account_id_fkey"
+            columns: ["source_account_id"]
+            isOneToOne: false
+            referencedRelation: "source_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_shipments_source_fulfillment_id_fkey"
+            columns: ["source_fulfillment_id"]
+            isOneToOne: false
+            referencedRelation: "source_fulfillments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_shipments_source_order_id_fkey"
+            columns: ["source_order_id"]
+            isOneToOne: false
+            referencedRelation: "source_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_shipments_source_record_id_fkey"
+            columns: ["source_record_id"]
+            isOneToOne: false
+            referencedRelation: "source_records"
             referencedColumns: ["id"]
           },
         ]
@@ -5503,6 +6159,175 @@ export type Database = {
             columns: ["source_customer_id"]
             isOneToOne: false
             referencedRelation: "source_customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      source_tracking_events: {
+        Row: {
+          created_at: string
+          description: string | null
+          event_at: string | null
+          external_id: string
+          id: string
+          location_text: string | null
+          merchant_id: string
+          raw_metadata: Json
+          source_event_at: string | null
+          source_record_id: string | null
+          source_shipment_id: string
+          source_status: string | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          event_at?: string | null
+          external_id: string
+          id?: string
+          location_text?: string | null
+          merchant_id: string
+          raw_metadata?: Json
+          source_event_at?: string | null
+          source_record_id?: string | null
+          source_shipment_id: string
+          source_status?: string | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          event_at?: string | null
+          external_id?: string
+          id?: string
+          location_text?: string | null
+          merchant_id?: string
+          raw_metadata?: Json
+          source_event_at?: string | null
+          source_record_id?: string | null
+          source_shipment_id?: string
+          source_status?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_tracking_events_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_tracking_events_source_record_id_fkey"
+            columns: ["source_record_id"]
+            isOneToOne: false
+            referencedRelation: "source_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_tracking_events_source_shipment_id_fkey"
+            columns: ["source_shipment_id"]
+            isOneToOne: false
+            referencedRelation: "source_shipments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      source_transactions: {
+        Row: {
+          amount_minor: number | null
+          created_at: string
+          currency: string | null
+          external_id: string
+          id: string
+          merchant_id: string
+          occurred_at: string | null
+          parent_transaction_ref: string | null
+          provider_reference: string | null
+          raw_metadata: Json
+          source_account_id: string | null
+          source_order_id: string | null
+          source_payment_id: string | null
+          source_record_id: string | null
+          source_status: string | null
+          status: string | null
+          transaction_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount_minor?: number | null
+          created_at?: string
+          currency?: string | null
+          external_id: string
+          id?: string
+          merchant_id: string
+          occurred_at?: string | null
+          parent_transaction_ref?: string | null
+          provider_reference?: string | null
+          raw_metadata?: Json
+          source_account_id?: string | null
+          source_order_id?: string | null
+          source_payment_id?: string | null
+          source_record_id?: string | null
+          source_status?: string | null
+          status?: string | null
+          transaction_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount_minor?: number | null
+          created_at?: string
+          currency?: string | null
+          external_id?: string
+          id?: string
+          merchant_id?: string
+          occurred_at?: string | null
+          parent_transaction_ref?: string | null
+          provider_reference?: string | null
+          raw_metadata?: Json
+          source_account_id?: string | null
+          source_order_id?: string | null
+          source_payment_id?: string | null
+          source_record_id?: string | null
+          source_status?: string | null
+          status?: string | null
+          transaction_type?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_transactions_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_transactions_source_account_id_fkey"
+            columns: ["source_account_id"]
+            isOneToOne: false
+            referencedRelation: "source_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_transactions_source_order_id_fkey"
+            columns: ["source_order_id"]
+            isOneToOne: false
+            referencedRelation: "source_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_transactions_source_payment_id_fkey"
+            columns: ["source_payment_id"]
+            isOneToOne: false
+            referencedRelation: "source_payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_transactions_source_record_id_fkey"
+            columns: ["source_record_id"]
+            isOneToOne: false
+            referencedRelation: "source_records"
             referencedColumns: ["id"]
           },
         ]
@@ -6544,6 +7369,43 @@ export type Database = {
           p_topic: string
         }
         Returns: boolean
+      }
+      claim_sync_job: {
+        Args: { p_lease_seconds?: number; p_limit?: number; p_worker?: string }
+        Returns: {
+          attempts: number
+          column_map: Json | null
+          completed_at: string | null
+          connection_id: string | null
+          created_at: string
+          cursor: Json | null
+          error_log: Json
+          failed_rows: number
+          file_hash: string | null
+          finalize_claimed_at: string | null
+          hidden: boolean
+          id: string
+          job_kind: string
+          label: string | null
+          last_error_code: string | null
+          max_attempts: number
+          merchant_id: string
+          next_attempt_at: string | null
+          processed_rows: number
+          source: Database["public"]["Enums"]["signal_source"] | null
+          source_account_id: string | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["sync_job_status"]
+          storage_path: string | null
+          total_rows: number | null
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "sync_jobs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       complete_domain_event_delivery: {
         Args: { p_delivery_id: string }

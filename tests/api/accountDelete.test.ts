@@ -219,6 +219,17 @@ describe('POST /api/account/delete', () => {
       'sync_job_chunks',
       'merchant_users',
       'merchants',
+      // Canonical entity model (Phase 3)
+      'source_order_lines',
+      'source_payments',
+      'source_transactions',
+      'source_replacements',
+      'source_shipments',
+      'source_tracking_events',
+      'source_returns',
+      'source_messages',
+      'merchant_customers',
+      'ingestion_field_errors',
     ]));
     // Source-agnostic foundation tables (incl. append-only domain_events and
     // case_financial_entries) are purged via the flag-gated RPC before the

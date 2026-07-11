@@ -73,6 +73,18 @@ async function removeStorageObjects(
 }
 
 const CURRENT_V2_MERCHANT_DELETE_TABLES: string[] = [
+  // Canonical entity model (Phase 3) — children before parents. All have
+  // merchant_id; FKs are cascade/set-null so any residual dependents follow.
+  'source_tracking_events',
+  'source_messages',
+  'source_order_lines',
+  'source_transactions',
+  'source_payments',
+  'source_replacements',
+  'source_returns',
+  'source_shipments',
+  'ingestion_field_errors',
+  'merchant_customers',
   'evidence_download_tokens',
   'profile_view_tokens',
   'agreement_rule_evaluations',
