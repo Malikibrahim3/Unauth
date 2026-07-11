@@ -119,6 +119,9 @@ export const TABLES = {
   COMMENT_MENTIONS: 'comment_mentions',
   NOTIFICATIONS: 'notifications',
   NOTIFICATION_PREFERENCES: 'notification_preferences',
+  WORKFLOW_DEFINITIONS: 'workflow_definitions',
+  WORKFLOW_RUNS: 'workflow_runs',
+  WORKFLOW_STEP_RUNS: 'workflow_step_runs',
 } as const;
 
 /** Step 3 compatibility / derived views — see PHASE_2_IMPLEMENTATION_SPEC.md */

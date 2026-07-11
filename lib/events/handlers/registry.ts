@@ -8,6 +8,7 @@ import { lossProjection } from '@/lib/events/handlers/lossProjection';
 import { recoveryProjection } from '@/lib/events/handlers/recoveryProjection';
 import { customerProjection } from '@/lib/events/handlers/customerProjection';
 import { refundProjection } from '@/lib/events/handlers/refundProjection';
+import { workflowHandler } from '@/lib/events/handlers/workflowHandler';
 import type { DomainEventHandler, DomainEventRecord } from '@/lib/events/handlers/types';
 
 export const DOMAIN_EVENT_HANDLERS: Record<string, DomainEventHandler> = {
@@ -18,6 +19,7 @@ export const DOMAIN_EVENT_HANDLERS: Record<string, DomainEventHandler> = {
   recoveryProjection,
   customerProjection,
   refundProjection,
+  workflowHandler,
 };
 
 type Delivery = { id: string; domain_event_id: string; handler_name: string };
