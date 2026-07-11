@@ -19,6 +19,8 @@ const recoveryTypeSchema = z.enum(RECOVERY_TYPES);
 export const createRecoveryCaseSchema = z.object({
   merchant_id: z.string().uuid(),
   support_payout_case_id: z.string().uuid(),
+  loss_case_id: z.string().uuid().nullable().optional(),
+  prevention_only: z.boolean().optional(),
   partner_id: z.string().uuid().nullable().optional(),
   recovery_type: recoveryTypeSchema,
   owner_type: recoveryOwnerTypeSchema,
@@ -148,10 +150,15 @@ export async function createRecoveryCase(
   input: CreateRecoveryCaseInput,
 ): Promise<RecoveryCase> {
   const parsed = createRecoveryCaseSchema.parse(input);
+  if (!parsed.loss_case_id && parsed.prevention_only !== true) {
+    throw new Error('createRecoveryCase requires a canonical loss_case_id unless prevention_only is set');
+  }
   const { data, error } = await client
     .from(TABLES.RECOVERY_CASES)
     .insert({
       ...parsed,
+      loss_case_id: parsed.loss_case_id ?? null,
+      prevention_only: parsed.prevention_only ?? false,
       partner_id: parsed.partner_id ?? null,
       excluded_costs: parsed.excluded_costs,
       internal_owner_user_id: parsed.internal_owner_user_id ?? null,

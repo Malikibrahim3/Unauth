@@ -1,5 +1,5 @@
 import { findBestPartnerRecoveryRule } from '@/lib/partners/store';
-import { updateRecoveryCaseStatus } from '@/lib/recoveries/store';
+import { createRecoveryCase, updateRecoveryCaseStatus } from '@/lib/recoveries/store';
 
 class FakeQuery {
   constructor(
@@ -108,6 +108,28 @@ describe('recovery store', () => {
       from_status: 'ready_to_submit',
       to_status: 'submitted',
     });
+  });
+
+  const baseCreateInput = {
+    merchant_id: '00000000-0000-0000-0000-000000000001',
+    support_payout_case_id: '00000000-0000-0000-0000-000000000010',
+    recovery_type: 'carrier_claim' as const,
+    owner_type: 'carrier' as const,
+    merchant_loss_amount: 80,
+    currency: 'GBP',
+  };
+
+  it('requires a canonical loss_case_id unless prevention_only', async () => {
+    const state = { recoveryCase: {}, rules: [], insertedEvents: [] };
+    await expect(createRecoveryCase(fakeClient(state), { ...baseCreateInput })).rejects.toThrow(
+      /requires a canonical loss_case_id/,
+    );
+  });
+
+  it('persists loss_case_id when linked to a canonical loss record', async () => {
+    const state = { recoveryCase: {}, rules: [], insertedEvents: [] };
+    const created = await createRecoveryCase(fakeClient(state), { ...baseCreateInput, loss_case_id: '00000000-0000-0000-0000-0000000000aa' });
+    expect(created.loss_case_id).toBe('00000000-0000-0000-0000-0000000000aa');
   });
 });
 

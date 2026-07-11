@@ -194,6 +194,18 @@ export async function maybeCreateRecoveryCaseFromSupportPayoutCase(input: {
   const payoutRow = row as SupportPayoutCaseRow;
   if (!shouldCreateRecoveryCaseFromRow(payoutRow)) return null;
 
+  // A financial recovery must attach to a canonical loss record. Without one
+  // there is nothing to recover against, so we do not create an orphan case.
+  const { data: lossCase } = await input.client
+    .from(TABLES.LOSS_CASES)
+    .select('id')
+    .eq('merchant_id', input.merchantId)
+    .eq('support_payout_case_id', input.supportPayoutCaseId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!lossCase?.id) return null;
+
   const evidenceRes = await input.client
     .from('claim_evidence')
     .select('evidence_type')
@@ -229,6 +241,7 @@ export async function maybeCreateRecoveryCaseFromSupportPayoutCase(input: {
   return createRecoveryCase(input.client, {
     merchant_id: input.merchantId,
     support_payout_case_id: input.supportPayoutCaseId,
+    loss_case_id: lossCase.id,
     partner_id: partnerRule?.partner_id ?? null,
     recovery_type: estimate.recoveryType,
     owner_type: ownerTypeForOwner(estimate.recoveryOwner),
