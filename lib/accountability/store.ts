@@ -70,7 +70,22 @@ async function insertEvidenceItems(client: SupabaseClient, input: ClassifyLossSo
     .insert(rows)
     .select('id,title,evidence_type');
   if (error) throw new Error(`evidence_items_insert_failed: ${error.message}`);
-  return (data ?? []) as Array<{ id: string; title: string; evidence_type: string }>;
+  const items = (data ?? []) as Array<{ id: string; title: string; evidence_type: string }>;
+  // Canonical linkage: each evidence item is visible against the case exactly
+  // once via evidence_links (the evidence_items.claim_id column is legacy).
+  if (items.length > 0) {
+    const { error: linkError } = await client
+      .from(TABLES.EVIDENCE_LINKS as any)
+      .insert(
+        items.map((item) => ({
+          merchant_id: input.merchantId,
+          evidence_item_id: item.id,
+          support_payout_case_id: input.claimId,
+        })),
+      );
+    if (linkError) throw new Error(`evidence_links_insert_failed: ${linkError.message}`);
+  }
+  return items;
 }
 
 async function insertAccountabilityEvent(client: SupabaseClient, input: {
