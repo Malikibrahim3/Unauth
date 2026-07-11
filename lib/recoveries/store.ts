@@ -126,6 +126,7 @@ export async function addRecoveryCaseEvent(
     toStatus?: RecoveryCaseStatus | null;
     note?: string | null;
     metadata?: Record<string, unknown>;
+    idempotencyKey?: string | null;
   },
 ): Promise<RecoveryCaseEvent> {
   const { data, error } = await client
@@ -138,6 +139,7 @@ export async function addRecoveryCaseEvent(
       to_status: input.toStatus ?? null,
       note: input.note ?? null,
       metadata: input.metadata ?? {},
+      idempotency_key: input.idempotencyKey ?? null,
     })
     .select()
     .single();
@@ -185,10 +187,21 @@ export async function createRecoveryCase(
  */
 export async function markRecoveryCaseChased(
   client: SupabaseClient,
-  input: { merchantId: string; recoveryCaseId: string; note?: string | null },
+  input: { merchantId: string; recoveryCaseId: string; note?: string | null; idempotencyKey?: string | null },
 ): Promise<RecoveryCase> {
   const existing = await getRecoveryCase(client, input.merchantId, input.recoveryCaseId);
   if (!existing) throw new Error('Recovery case not found');
+
+  if (input.idempotencyKey) {
+    const { data: prior, error: priorError } = await client
+      .from(TABLES.RECOVERY_CASE_EVENTS)
+      .select('id')
+      .eq('merchant_id', input.merchantId)
+      .eq('idempotency_key', input.idempotencyKey)
+      .maybeSingle();
+    if (priorError) throw new Error(`Failed to check recovery action idempotency: ${priorError.message}`);
+    if (prior) return existing;
+  }
 
   const now = new Date().toISOString();
   const nextChase = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -210,6 +223,7 @@ export async function markRecoveryCaseChased(
     toStatus: 'waiting_response',
     note: input.note ?? null,
     metadata: { chased_at: now },
+    idempotencyKey: input.idempotencyKey,
   });
   return updated;
 }
@@ -223,10 +237,22 @@ export async function updateRecoveryCaseStatus(
     note?: string | null;
     amountRecovered?: number | null;
     rejectionReason?: string | null;
+    idempotencyKey?: string | null;
   },
 ): Promise<RecoveryCase> {
   const existing = await getRecoveryCase(client, input.merchantId, input.recoveryCaseId);
   if (!existing) throw new Error('Recovery case not found');
+
+  if (input.idempotencyKey) {
+    const { data: prior, error: priorError } = await client
+      .from(TABLES.RECOVERY_CASE_EVENTS)
+      .select('id')
+      .eq('merchant_id', input.merchantId)
+      .eq('idempotency_key', input.idempotencyKey)
+      .maybeSingle();
+    if (priorError) throw new Error(`Failed to check recovery action idempotency: ${priorError.message}`);
+    if (prior) return existing;
+  }
 
   const patch: Record<string, unknown> = {
     status: input.status,
@@ -256,6 +282,7 @@ export async function updateRecoveryCaseStatus(
       amount_recovered: input.amountRecovered ?? null,
       rejection_reason: input.rejectionReason ?? null,
     },
+    idempotencyKey: input.idempotencyKey,
   });
   return updated;
 }

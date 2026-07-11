@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { PanelCard, StatusBadge, statusBadgeVariantFor } from '@/components/ui';
 import { formatCurrencyNullable } from '@/lib/utils/format';
 import { RECOVERY_TYPE_LABELS } from '@/lib/partners/types';
@@ -12,19 +13,59 @@ import { RECOVERY_BOARD_COLUMNS } from '@/lib/recoveries/status';
 
 type Props = {
   recoveries: RecoveryCase[];
+  canManage: boolean;
 };
+
+type RecoveryAction = 'ready' | 'submitted' | 'chased' | 'approved' | 'rejected' | 'paid' | 'closed_unrecoverable';
+
+const ACTIONS: Array<{ action: RecoveryAction; label: string; statuses: RecoveryCase['status'][]; confirm?: boolean }> = [
+  { action: 'ready', label: 'Mark ready', statuses: ['draft', 'evidence_needed'] },
+  { action: 'submitted', label: 'Mark submitted', statuses: ['ready_to_submit'], confirm: true },
+  { action: 'chased', label: 'Record chase', statuses: ['submitted', 'waiting_response', 'chase_due'] },
+  { action: 'approved', label: 'Record approved', statuses: ['submitted', 'waiting_response', 'chase_due'] },
+  { action: 'rejected', label: 'Record rejected', statuses: ['submitted', 'waiting_response', 'chase_due'] },
+  { action: 'paid', label: 'Record paid', statuses: ['approved', 'partially_approved'], confirm: true },
+  { action: 'closed_unrecoverable', label: 'Close unrecoverable', statuses: ['draft', 'evidence_needed', 'rejected', 'appealed'], confirm: true },
+];
 
 function dateLabel(value: string | null) {
   if (!value) return 'No date';
   return new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-export function RecoveryBoardClient({ recoveries }: Props) {
+export function RecoveryBoardClient({ recoveries, canManage }: Props) {
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+
+  async function runAction(item: RecoveryCase, option: (typeof ACTIONS)[number]) {
+    if (option.confirm && !window.confirm(`${option.label} for this recovery case? This records an immutable activity event.`)) return;
+    setBusyId(`${item.id}:${option.action}`);
+    setMessage(null);
+    try {
+      const response = await fetch(`/api/recoveries/${item.id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: option.action,
+          idempotencyKey: `${item.id}:${option.action}:${crypto.randomUUID()}`,
+        }),
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error ?? 'Recovery action failed');
+      window.location.reload();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Recovery action failed');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   return (
     <div>
       <p className="mb-3 text-xs" style={{ color: 'var(--text-tertiary)' }}>
         Card status and evidence completeness update from connected source sync, matched correspondence, and provider status events.
       </p>
+      {message ? <p role="alert" className="mb-3 text-xs" style={{ color: 'var(--danger)' }}>{message}</p> : null}
       <div className="grid gap-4 xl:grid-cols-3 2xl:grid-cols-5">
       {RECOVERY_BOARD_COLUMNS.map((column) => {
         const rows = recoveries.filter((item) => column.statuses.includes(item.status));
@@ -110,6 +151,22 @@ export function RecoveryBoardClient({ recoveries }: Props) {
                         </StatusBadge>
                       ) : null}
                     </div>
+                    {canManage ? (
+                      <div className="mt-3 flex flex-wrap gap-1.5 border-t pt-3" style={{ borderColor: 'var(--border-muted)' }}>
+                        {ACTIONS.filter((option) => option.statuses.includes(item.status)).map((option) => (
+                          <button
+                            key={option.action}
+                            type="button"
+                            className="rounded-md px-2 py-1 text-[11px] font-medium"
+                            style={{ border: '1px solid var(--border-muted)', color: 'var(--text-secondary)' }}
+                            disabled={busyId === `${item.id}:${option.action}`}
+                            onClick={() => runAction(item, option)}
+                          >
+                            {busyId === `${item.id}:${option.action}` ? 'Saving…' : option.label}
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
                   </PanelCard>
                 );
               })}

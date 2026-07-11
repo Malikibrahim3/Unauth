@@ -101,6 +101,7 @@ export type RecoveryCaseEvent = {
   to_status: RecoveryCaseStatus | null;
   note: string | null;
   metadata: Record<string, unknown>;
+  idempotency_key?: string | null;
   created_at: string;
 };
 

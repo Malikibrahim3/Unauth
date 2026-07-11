@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
-import { PERMISSIONS, requirePermission } from '@/lib/permissions';
+import { hasPermission, PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { TABLES } from '@/lib/supabase/tables';
 import { WorkbenchPage } from '@/components/ui';
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
@@ -87,6 +87,7 @@ export default async function RecoveriesPage() {
   const serviceClient = createServiceClient();
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_INBOX);
   if (denied) redirect('/dashboard');
+  const canManage = await hasPermission(serviceClient, ctx, PERMISSIONS.SUBMIT_PAYOUT_DECISIONS);
 
   const rawRecoveries = await listRecoveryCases(serviceClient, ctx.merchantId);
   const recoveries = await enrichRecoveryCases(serviceClient, ctx.merchantId, rawRecoveries);
@@ -116,7 +117,7 @@ export default async function RecoveriesPage() {
         { label: 'Estimated recovery', value: formatCurrencyNullable(estimatedRecoverable || null, currency) ?? '-', hint: `Source-derived upper estimate${mixedHint}` },
         { label: 'Approved recovery', value: formatCurrencyNullable(recovered || null, currency) ?? '-', hint: `Synced outcome${mixedHint}` },
       ]}
-      main={<RecoveryBoardClient recoveries={recoveries} />}
+      main={<RecoveryBoardClient recoveries={recoveries} canManage={canManage} />}
       footer={
         <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
           Recovery cases are created and updated by connected source data, matched correspondence, and provider status sync. Unavailable evidence is tracked as unavailable, not manually filled.
