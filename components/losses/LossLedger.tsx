@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { SourceBadge } from '@/components/sources/SourceBadge';
 import { FreshnessIndicator, type FreshnessState } from '@/components/sources/FreshnessIndicator';
+import { CaseContextDrawer } from '@/components/cases/CaseContextDrawer';
 
 export type LossLedgerRow = {
   id: string;
@@ -52,6 +53,7 @@ function titleCase(value: string | null): string {
 
 export function LossLedger({ rows }: { rows: LossLedgerRow[] }) {
   const [view, setView] = useState<ViewKey>('all');
+  const [contextCaseId, setContextCaseId] = useState<string | null>(null);
   const counts = useMemo(() => {
     const map = {} as Record<ViewKey, number>;
     for (const v of VIEWS) map[v.key] = rows.filter(v.match).length;
@@ -102,7 +104,7 @@ export function LossLedger({ rows }: { rows: LossLedgerRow[] }) {
             </thead>
             <tbody>
               {visible.map((row) => (
-                <tr key={row.id} style={{ borderTop: '1px solid var(--border-subtle, rgba(0,0,0,0.08))' }}>
+                <tr key={row.id} onClick={() => row.supportPayoutCaseId && setContextCaseId(row.supportPayoutCaseId)} className={row.supportPayoutCaseId ? 'cursor-pointer' : undefined} style={{ borderTop: '1px solid var(--border-subtle, rgba(0,0,0,0.08))' }}>
                   <td className="py-2 pr-4" style={{ color: 'var(--text-primary)' }}>{titleCase(row.category)}</td>
                   <td className="py-2 pr-4" style={{ color: 'var(--text-secondary)' }}>{titleCase(row.attribution)}</td>
                   <td className="py-2 pr-4" style={{ color: 'var(--text-secondary)' }}>
@@ -124,6 +126,7 @@ export function LossLedger({ rows }: { rows: LossLedgerRow[] }) {
           </table>
         </div>
       )}
+      {contextCaseId ? <CaseContextDrawer caseId={contextCaseId} onClose={() => setContextCaseId(null)} /> : null}
     </div>
   );
 }

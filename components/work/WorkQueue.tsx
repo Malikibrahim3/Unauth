@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { CaseContextDrawer } from '@/components/cases/CaseContextDrawer';
 
 export type WorkQueueItem = {
   id: string;
@@ -59,6 +60,7 @@ const PRIORITY_COLOR: Record<string, string> = {
 
 export function WorkQueue({ items, nowMs }: { items: WorkQueueItem[]; nowMs: number }) {
   const [tab, setTab] = useState<TabKey>('open');
+  const [contextCaseId, setContextCaseId] = useState<string | null>(null);
   const counts = useMemo(() => {
     const map = {} as Record<TabKey, number>;
     for (const t of TABS) map[t.key] = items.filter((item) => t.match(item, nowMs)).length;
@@ -129,7 +131,7 @@ export function WorkQueue({ items, nowMs }: { items: WorkQueueItem[]; nowMs: num
             return (
               <li key={item.id}>
                 {item.supportPayoutCaseId ? (
-                  <a href={`/claims/${item.supportPayoutCaseId}`} className="block no-underline">{inner}</a>
+                  <button type="button" onClick={() => setContextCaseId(item.supportPayoutCaseId)} className="block w-full text-left">{inner}</button>
                 ) : (
                   inner
                 )}
@@ -138,6 +140,7 @@ export function WorkQueue({ items, nowMs }: { items: WorkQueueItem[]; nowMs: num
           })}
         </ul>
       )}
+      {contextCaseId ? <CaseContextDrawer caseId={contextCaseId} onClose={() => setContextCaseId(null)} /> : null}
     </div>
   );
 }
