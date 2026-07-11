@@ -17,6 +17,7 @@ import { enforceRateLimit, getClientIp, limitFromEnv, rateLimitKey } from '@/lib
 import { createServiceClient } from '@/lib/supabase/server';
 import { evaluatePublicGate } from '@/lib/claim-gate/publicGate';
 import { resolveGorgiasTicketCustomerEmail } from '@/lib/support/gorgias/ticketCustomerEmail';
+import { matchOrder } from '@/lib/relationships/matchOrder';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 type GateOrderReference = {
@@ -32,28 +33,21 @@ export async function resolveUnambiguousEmailOrder(
   merchantId: string,
   email: string,
 ): Promise<GateOrderReference | null> {
+  // Route through the shared matcher so email → order matching is consistent
+  // everywhere. An email that matches several orders is `ambiguous` and yields
+  // no auto-anchor (§8 — never silently pick one). Only a single match anchors.
+  const result = await matchOrder(client, { merchantId, email });
+  if (result.status === 'ambiguous' || result.candidates.length !== 1) return null;
+  const orderId = result.candidates[0].entityId;
+
   const { data, error } = await client
     .from('source_orders')
     .select('id,external_id,order_number,placed_at,ingested_at')
     .eq('merchant_id', merchantId)
-    .ilike('email', email)
-    .order('placed_at', { ascending: false, nullsFirst: false })
-    .order('ingested_at', { ascending: false, nullsFirst: false })
-    .limit(2);
+    .eq('id', orderId)
+    .maybeSingle();
   if (error) throw new Error(`gorgias_email_order_lookup_failed: ${error.message}`);
-
-  const orders = (data ?? []) as GateOrderReference[];
-  const newest = orders[0];
-  if (!newest) return null;
-  const newestAt = newest.placed_at ?? newest.ingested_at;
-  const newestMs = newestAt ? Date.parse(newestAt) : Number.NaN;
-  if (!Number.isFinite(newestMs)) return null;
-
-  const second = orders[1];
-  const secondAt = second ? second.placed_at ?? second.ingested_at : null;
-  const secondMs = secondAt ? Date.parse(secondAt) : Number.NaN;
-  if (second && (!Number.isFinite(secondMs) || secondMs === newestMs)) return null;
-  return newest;
+  return (data as GateOrderReference | null) ?? null;
 }
 
 // Map a support-classified claim type to a claim-gate type. Returns null for

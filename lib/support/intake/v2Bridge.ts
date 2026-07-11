@@ -12,6 +12,7 @@ import { ensureClaimDecisionEvidence } from '@/lib/claims/decision/ensureEvidenc
 import { TABLES } from '@/lib/supabase/tables';
 import { extractOrderRefFromText } from '@/lib/support/intake/store';
 import { resolveTicketOrderLink } from '@/lib/support/intake/resolveTicketOrderLink';
+import { recordCandidates } from '@/lib/relationships/candidateStore';
 
 type Client = SupabaseClient<any>;
 
@@ -94,7 +95,22 @@ export async function linkTicketToCommerceV2(
     customerEmail: refs.email,
     sourceCustomerId: customerId,
   });
-  orderId = orderLink.sourceOrderId;
+  // Only a confirmed match may set the ticket's source_order_id. Ambiguous
+  // email matches are recorded as candidates for explicit user resolution and
+  // leave the ticket unanchored (§8 — no silent merge).
+  orderId = orderLink.matchStatus === 'confirmed' ? orderLink.sourceOrderId : null;
+  if (orderLink.matchStatus === 'ambiguous' && orderLink.candidateOrderIds.length > 0) {
+    await recordCandidates(supabase, {
+      merchantId: input.merchantId,
+      subjectEntityType: 'ticket',
+      subjectEntityId: input.ticketId,
+      candidates: orderLink.candidateOrderIds.map((id) => ({
+        entityType: 'order',
+        entityId: id,
+        method: 'email',
+      })),
+    });
+  }
   if (orderId) {
     const { data } = await supabase
       .from('source_orders')

@@ -196,13 +196,39 @@ class QueryBuilder {
 
 export type MemoryClient = {
   from: (table: string) => QueryBuilder;
+  rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: null }>;
   __store: MemoryStore;
 };
+
+let rpcSeq = 0;
 
 export function createMemoryClient(seed?: MemoryStore): MemoryClient {
   const store: MemoryStore = seed ?? new Map();
   return {
     from: (table: string) => new QueryBuilder(store, table),
+    // Minimal RPC shim. `record_domain_event` appends a domain_events row and
+    // returns its id, so code paths that emit domain events run end-to-end.
+    rpc: async (fn: string, args: Record<string, unknown>) => {
+      if (fn === 'record_domain_event') {
+        const events = store.get('domain_events') ?? [];
+        const idem = args.p_idempotency_key as string;
+        const existing = events.find((e) => e.idempotency_key === idem);
+        if (existing) return { data: existing.id, error: null };
+        const id = `evt-${++rpcSeq}`;
+        events.push({
+          id,
+          merchant_id: args.p_merchant_id,
+          event_type: args.p_event_type,
+          aggregate_type: args.p_aggregate_type,
+          aggregate_id: args.p_aggregate_id,
+          idempotency_key: idem,
+          payload: args.p_payload,
+        });
+        store.set('domain_events', events);
+        return { data: id, error: null };
+      }
+      return { data: null, error: null };
+    },
     __store: store,
   };
 }

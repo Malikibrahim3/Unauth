@@ -7,6 +7,14 @@ export type ResolvedTicketOrder = {
   totalPrice: number | null;
   currency: string | null;
   matchMethod: 'order_ref' | 'email_fallback' | null;
+  /**
+   * Explicit match state. `confirmed` for a unique order-ref hit or a unique
+   * email hit; `ambiguous` when an email matches several orders (no silent
+   * pick — sourceOrderId stays null and candidateOrderIds lists them);
+   * `unmatched` when nothing resolves.
+   */
+  matchStatus: 'confirmed' | 'ambiguous' | 'unmatched';
+  candidateOrderIds: string[];
 };
 
 function readLinkedOrderRefs(linked: unknown): string[] {
@@ -40,26 +48,19 @@ async function lookupOrderByRef(
   };
 }
 
-async function lookupOrderByEmail(
+type EmailOrderMatch = { id: string; total_price: number | null; currency: string | null; order_number: string | null };
+
+/**
+ * Returns every order matching the email. The caller decides confirmed vs
+ * ambiguous — this never silently picks the newest of several.
+ */
+async function lookupOrdersByEmail(
   supabase: SupabaseClient,
   merchantId: string,
   email: string,
-  preferredOrderRef?: string | null,
-): Promise<{ id: string; total_price: number | null; currency: string | null; order_number: string | null } | null> {
+): Promise<EmailOrderMatch[]> {
   const normalizedEmail = email.trim().toLowerCase();
-  if (!normalizedEmail) return null;
-
-  if (preferredOrderRef) {
-    const byRef = await lookupOrderByRef(supabase, merchantId, preferredOrderRef);
-    if (byRef) {
-      const { data } = await supabase
-        .from('source_orders')
-        .select('order_number')
-        .eq('id', byRef.id)
-        .maybeSingle();
-      return { ...byRef, order_number: (data?.order_number as string | null) ?? null };
-    }
-  }
+  if (!normalizedEmail) return [];
 
   const { data: rows } = await supabase
     .from('source_orders')
@@ -67,16 +68,16 @@ async function lookupOrderByEmail(
     .eq('merchant_id', merchantId)
     .ilike('email', normalizedEmail)
     .order('placed_at', { ascending: false })
-    .limit(5);
+    .limit(25);
 
-  const match = (rows ?? [])[0];
-  if (!match?.id) return null;
-  return {
-    id: match.id as string,
-    total_price: match.total_price != null ? Number(match.total_price) : null,
-    currency: (match.currency as string | null) ?? null,
-    order_number: (match.order_number as string | null) ?? null,
-  };
+  return ((rows ?? []) as Array<Record<string, unknown>>)
+    .filter((r) => typeof r.id === 'string')
+    .map((r) => ({
+      id: r.id as string,
+      total_price: r.total_price != null ? Number(r.total_price) : null,
+      currency: (r.currency as string | null) ?? null,
+      order_number: (r.order_number as string | null) ?? null,
+    }));
 }
 
 /**
@@ -114,6 +115,8 @@ export async function resolveTicketOrderLink(
         totalPrice: order.total_price,
         currency: order.currency,
         matchMethod: 'order_ref',
+        matchStatus: 'confirmed',
+        candidateOrderIds: [order.id],
       };
     }
   }
@@ -129,25 +132,43 @@ export async function resolveTicketOrderLink(
     email = (customer?.email as string | undefined) ?? null;
   }
 
+  const preferredRef = (refs.values().next().value as string | undefined) ?? null;
+
   if (email) {
-    const preferredRef = refs.values().next().value as string | undefined;
-    const order = await lookupOrderByEmail(supabase, input.merchantId, email, preferredRef ?? null);
-    if (order) {
+    const matches = await lookupOrdersByEmail(supabase, input.merchantId, email);
+    if (matches.length === 1) {
+      const order = matches[0];
       return {
         sourceOrderId: order.id,
-        orderRef: order.order_number ?? preferredRef ?? null,
+        orderRef: order.order_number ?? preferredRef,
         totalPrice: order.total_price,
         currency: order.currency,
         matchMethod: 'email_fallback',
+        matchStatus: 'confirmed',
+        candidateOrderIds: [order.id],
+      };
+    }
+    if (matches.length > 1) {
+      // Ambiguous: several orders share this email. Do not silently pick one.
+      return {
+        sourceOrderId: null,
+        orderRef: preferredRef,
+        totalPrice: null,
+        currency: null,
+        matchMethod: 'email_fallback',
+        matchStatus: 'ambiguous',
+        candidateOrderIds: matches.map((m) => m.id),
       };
     }
   }
 
   return {
     sourceOrderId: null,
-    orderRef: refs.values().next().value ?? null,
+    orderRef: preferredRef,
     totalPrice: null,
     currency: null,
     matchMethod: null,
+    matchStatus: 'unmatched',
+    candidateOrderIds: [],
   };
 }
