@@ -10,6 +10,7 @@ import { RuleCard } from './RuleCard';
 import { RuleBuilderDrawer, type RuleDraftPayload } from './RuleBuilderDrawer';
 import { RuleTemplatesDrawer, type RuleTemplate } from './RuleTemplatesDrawer';
 import { RulesEmptyState } from './RulesEmptyState';
+import { FlowsTab } from './FlowsTab';
 
 type Toast = { message: string; type: 'success' | 'error' };
 
@@ -18,6 +19,7 @@ interface RulesPageClientProps {
 }
 
 export function RulesPageClient({ canManage }: RulesPageClientProps) {
+  const [section, setSection] = useState<'rules' | 'flows'>('rules');
   const [rules, setRules] = useState<MerchantRule[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -306,10 +308,10 @@ export function RulesPageClient({ canManage }: RulesPageClientProps) {
     <>
       <WorkbenchPage
         eyebrow="Operations"
-        title="Payout Rules"
-        subtitle="Your policy, applied to every case: what to approve, what to question, and what to deny."
+        title="Rules and Flows"
+        subtitle="Rules recommend from facts. Flows route the resulting work without making merchant decisions."
         actions={
-          canManage ? (
+          canManage && section === 'rules' ? (
             <>
               <Button
                 variant="secondary"
@@ -351,7 +353,7 @@ export function RulesPageClient({ canManage }: RulesPageClientProps) {
             hint: 'Applied when you have none',
           },
         ]}
-        main={mainContent}
+        main={<><div className="flex gap-1 border-b pt-4"><button type="button" onClick={() => setSection('rules')} className="px-3 py-2 text-sm font-medium" style={{ borderBottom: section === 'rules' ? '2px solid var(--accent)' : '2px solid transparent' }}>Rules</button><button type="button" onClick={() => setSection('flows')} className="px-3 py-2 text-sm font-medium" style={{ borderBottom: section === 'flows' ? '2px solid var(--accent)' : '2px solid transparent' }}>Flows</button></div>{section === 'rules' ? mainContent : <FlowsTab canManage={canManage} />}</>}
       />
 
       <RuleBuilderDrawer
