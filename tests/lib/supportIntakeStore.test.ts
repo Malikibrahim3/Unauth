@@ -149,6 +149,51 @@ describe('support intake store', () => {
     );
   });
 
+  it('sets an event_idempotency_key derived from the payload hash', async () => {
+    const { supabase, inserts } = makeInsertSupabase();
+    await appendSupportCaseEvent(supabase, {
+      merchant_id: merchantA,
+      support_case_id: caseId,
+      provider: 'gorgias',
+      event_type: 'ticket_updated',
+      raw_payload: { change: 'reopened' },
+    });
+    const key = inserts[0].payload.event_idempotency_key as string;
+    expect(typeof key).toBe('string');
+    expect(key.startsWith(`${merchantA}:${caseId}:ticket_updated:`)).toBe(true);
+  });
+
+  it('returns the existing event on an idempotent replay (unique-violation 23505)', async () => {
+    const existing = { id: 'evt-existing', event_type: 'ticket_updated' };
+    let selected: { column: string; value: string } | null = null;
+    const supabase = {
+      from: (_table: string) => ({
+        insert: () => ({
+          select: () => ({
+            single: async () => ({ data: null, error: { message: 'duplicate key', code: '23505' } }),
+          }),
+        }),
+        select: () => ({
+          eq: (column: string, value: string) => ({
+            maybeSingle: async () => {
+              selected = { column, value };
+              return { data: existing, error: null };
+            },
+          }),
+        }),
+      }),
+    };
+    const result = await appendSupportCaseEvent(supabase, {
+      merchant_id: merchantA,
+      support_case_id: caseId,
+      provider: 'gorgias',
+      event_type: 'ticket_updated',
+      raw_payload: { change: 'reopened' },
+    });
+    expect(result).toEqual(existing);
+    expect(selected?.column).toBe('event_idempotency_key');
+  });
+
   it('does not store raw payload on case intake', async () => {
     const { supabase, calls } = makeUpsertSupabase();
     await upsertSupportCaseIntake(supabase, {

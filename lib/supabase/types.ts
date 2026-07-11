@@ -5348,6 +5348,7 @@ export type Database = {
         Row: {
           actor_type: string | null
           created_at: string
+          event_idempotency_key: string | null
           event_type: string
           extracted_identifiers: Json
           id: string
@@ -5361,6 +5362,7 @@ export type Database = {
         Insert: {
           actor_type?: string | null
           created_at?: string
+          event_idempotency_key?: string | null
           event_type: string
           extracted_identifiers?: Json
           id?: string
@@ -5374,6 +5376,7 @@ export type Database = {
         Update: {
           actor_type?: string | null
           created_at?: string
+          event_idempotency_key?: string | null
           event_type?: string
           extracted_identifiers?: Json
           id?: string
@@ -6533,6 +6536,15 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      claim_processed_webhook: {
+        Args: {
+          p_key: string
+          p_provider: string
+          p_store_key: string
+          p_topic: string
+        }
+        Returns: boolean
+      }
       complete_domain_event_delivery: {
         Args: { p_delivery_id: string }
         Returns: undefined
@@ -6624,6 +6636,10 @@ export type Database = {
       next_pending_processing_chunk_index: {
         Args: { p_job_id: string }
         Returns: number
+      }
+      purge_merchant_source_agnostic: {
+        Args: { p_merchant_id: string }
+        Returns: undefined
       }
       record_domain_event: {
         Args: {

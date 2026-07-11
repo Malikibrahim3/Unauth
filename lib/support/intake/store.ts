@@ -264,7 +264,16 @@ type SupabaseInsertClient = {
   from: (table: string) => {
     insert: (payload: Record<string, unknown>) => {
       select: (columns?: string) => {
-        single: () => Promise<{ data: Record<string, unknown> | null; error: { message: string } | null }>;
+        single: () => Promise<{
+          data: Record<string, unknown> | null;
+          error: { message: string; code?: string } | null;
+        }>;
+      };
+    };
+    // Used to return the existing event on an idempotent replay (23505).
+    select: (columns?: string) => {
+      eq: (column: string, value: string) => {
+        maybeSingle: () => Promise<{ data: Record<string, unknown> | null; error: { message: string } | null }>;
       };
     };
   };
@@ -386,6 +395,14 @@ export async function appendSupportCaseEvent(
     parsed.raw_payload_hash ??
     (parsed.raw_payload !== undefined ? hashRawPayload(parsed.raw_payload) : null);
 
+  // Idempotency key: stable across replays of the same event, unique across
+  // distinct events for a case. Only set when we have a payload hash to key on;
+  // events without a hash are not deduped (key stays null → many nulls allowed).
+  const eventIdempotencyKey =
+    rawPayloadHash != null
+      ? `${parsed.merchant_id}:${parsed.support_case_id}:${parsed.event_type}:${rawPayloadHash}`
+      : null;
+
   // v2 source_ticket_events shape
   const payload = {
     merchant_id: parsed.merchant_id,
@@ -400,6 +417,7 @@ export async function appendSupportCaseEvent(
       ...(actorIdentifierHash ? { actor_identifier_hash: actorIdentifierHash } : {}),
     },
     raw_payload_hash: rawPayloadHash,
+    event_idempotency_key: eventIdempotencyKey,
   };
 
   const { data, error } = await supabase
@@ -408,7 +426,19 @@ export async function appendSupportCaseEvent(
     .select()
     .single();
 
-  if (error) throw new Error(`insert ${TABLES.SUPPORT_CASE_EVENTS} failed: ${error.message}`);
+  if (error) {
+    // Replayed helpdesk event: the unique index on event_idempotency_key rejects
+    // the duplicate (23505). Return the already-recorded event — idempotent.
+    if (eventIdempotencyKey && error.code === '23505') {
+      const { data: existing } = await supabase
+        .from(TABLES.SUPPORT_CASE_EVENTS)
+        .select()
+        .eq('event_idempotency_key', eventIdempotencyKey)
+        .maybeSingle();
+      if (existing) return existing;
+    }
+    throw new Error(`insert ${TABLES.SUPPORT_CASE_EVENTS} failed: ${error.message}`);
+  }
   return data;
 }
 

@@ -353,8 +353,10 @@ export async function ingestSupportCase(
       order_ref: normalized.order_ref,
       claim_reason: normalized.claim_reason,
       case_status: normalized.case_status,
-      event_idempotency: 'not_implemented',
     },
+    // Real idempotency is now enforced by source_ticket_events.event_idempotency_key
+    // (unique index); appendSupportCaseEvent derives it from the payload hash and
+    // returns the existing event on a replay.
     raw_payload_hash: normalized.raw_payload_hash,
   });
 

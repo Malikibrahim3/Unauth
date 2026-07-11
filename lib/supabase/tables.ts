@@ -84,6 +84,7 @@ export const TABLES = {
   AGREEMENT_RULES: 'agreement_rules',
   AGREEMENT_RULE_EVALUATIONS: 'agreement_rule_evaluations',
   DOCUMENT_UPLOAD_JOBS: 'document_upload_jobs',
+  PROCESSED_WEBHOOKS: 'processed_webhooks',
   // ── Source-agnostic MVP+ foundation (Phase 1) ──
   SOURCE_ACCOUNTS: 'source_accounts',
   SOURCE_RECORDS: 'source_records',
