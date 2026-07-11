@@ -53,20 +53,19 @@ Phase 7 runtime cutover is largely complete (commits after the Phase 7 foundatio
 
 Full suite green after each: latest 1,778 passed, 3 skipped, 0 failed. TypeScript clean.
 
-Remaining before Phase 7 is fully closed — **only the `claim_evidence` store**:
-retire it into canonical `evidence_items` + `evidence_links`. This is more entangled
-than the integration path and needs its own unit because:
+**Phase 7 is fully closed** (`8a505ec3`): `claim_evidence` retired into canonical
+`evidence_items` + `evidence_links`. Migration `20260711160000` (applied live)
+reproduces the fulfillment-sync idempotency as a partial unique index on
+`evidence_items` and indexes the claim-evidence-origin subset. Writers
+(`ensureClaimDecisionEvidence`, `upsertClaimEvidenceItem`) write canonical with
+`origin_store='claim_evidence'`; readers (decision context, claims list+detail,
+recovery creator) read the origin-filtered subset (`legacy_table` OR `origin_store`)
+so decision-context counts — and therefore frozen scoring — are unchanged. or-filter
+verified against live DB (74 rows). `loss_case_evidence` had no runtime writer.
 
-1. it carries an idempotency unique index (`claim_evidence_fulfillment_sync_uniq`)
-   that must be reproduced as a partial unique index on `evidence_items` via a new
-   migration before the writer can move;
-2. writers `lib/claims/decision/ensureEvidence.ts` and `upsertClaimEvidenceItem`
-   (`lib/claims/store.ts`) must move to the canonical store;
-3. readers with richer shapes must follow: `app/api/claims/[claimId]/route.ts`
-   (selects id/evidence_type/source/evidence_url/created_at),
-   `app/api/claims/route.ts` (per-claim counts), `lib/claims/decision/context.ts`
-   (claim_evidence type counts), `lib/recoveries/createFromSupportPayoutCase.ts`.
-`loss_case_evidence` has no runtime writer (backfilled once; account-delete only).
+All four legacy evidence stores (`integration_evidence_items`, `claim_evidence`,
+`loss_case_evidence`, plus the legacy `evidence_items.claim_id`-only linkage) are now
+retired at runtime; canonical `evidence_items` + `evidence_links` is the single store.
 
 ## Phase 8 — Connected product UX (in progress)
 
