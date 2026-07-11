@@ -114,6 +114,11 @@ export const TABLES = {
   CASE_OUTCOMES: 'case_outcomes',
   LOSS_ATTRIBUTION_CANDIDATES: 'loss_attribution_candidates',
   WORK_TASKS: 'work_tasks',
+  CASE_COMMENTS: 'case_comments',
+  CASE_COMMENT_EVENTS: 'case_comment_events',
+  COMMENT_MENTIONS: 'comment_mentions',
+  NOTIFICATIONS: 'notifications',
+  NOTIFICATION_PREFERENCES: 'notification_preferences',
 } as const;
 
 /** Step 3 compatibility / derived views — see PHASE_2_IMPLEMENTATION_SPEC.md */

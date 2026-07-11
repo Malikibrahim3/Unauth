@@ -7,6 +7,7 @@ import { ClaimReviewFormSection } from '@/components/claims/ClaimReviewFormSecti
 import { ClaimReviewHeader } from '@/components/claims/ClaimReviewHeader';
 import { ClaimReviewToast } from '@/components/claims/ClaimReviewToast';
 import { CLAIM_REVIEW_PANEL_ROOT_STYLE } from '@/components/claims/claimReviewStyles';
+import { CaseComments } from '@/components/collaboration/CaseComments';
 
 export default function ClaimReviewPanel({
   profileId,
@@ -27,6 +28,7 @@ export default function ClaimReviewPanel({
         <ClaimReviewContextColumn wb={wb} />
         <ClaimReviewActionRail wb={wb} canManage={canManage} />
         <ClaimReviewFormSection wb={wb} />
+        {initialClaimId ? <CaseComments caseId={initialClaimId} canComment={canManage} /> : null}
       </div>
     </div>
   );
