@@ -15,7 +15,13 @@ async function executeOutput(client: SupabaseClient, definition: WorkflowDefinit
   } else {
     const title = output.type === 'create_task' ? output.title : output.type === 'request_evidence' ? output.title ?? `Request ${output.evidenceType.replaceAll('_', ' ')}` : 'Review approaching deadline';
     const dueHours = output.type === 'set_deadline' ? output.dueInHours : output.type === 'create_task' ? output.dueInHours : undefined;
-    const { data: task, error } = await client.from(TABLES.WORK_TASKS).upsert({ merchant_id: event.merchant_id, support_payout_case_id: caseId, title, owner_role: output.type === 'create_task' ? output.ownerRole ?? null : null, priority: output.type === 'create_task' ? output.priority ?? 'medium' : 'medium', due_at: dueHours ? new Date(Date.now() + dueHours * 3600000).toISOString() : null, source: 'workflow', source_metadata: { workflow_run_id: runId, step_index: index, evidence_type: output.type === 'request_evidence' ? output.evidenceType : null, migration_key: `workflow:${runId}:step:${index}` } }, { onConflict: "merchant_id,(source_metadata->>'migration_key')", ignoreDuplicates: true }).select('id').maybeSingle();
+    const migrationKey = `workflow:${runId}:step:${index}`;
+    let { data: task, error } = await client.from(TABLES.WORK_TASKS).insert({ merchant_id: event.merchant_id, support_payout_case_id: caseId, title, owner_role: output.type === 'create_task' ? output.ownerRole ?? null : null, priority: output.type === 'create_task' ? output.priority ?? 'medium' : 'medium', due_at: dueHours ? new Date(Date.now() + dueHours * 3600000).toISOString() : null, source: 'workflow', source_metadata: { workflow_run_id: runId, step_index: index, evidence_type: output.type === 'request_evidence' ? output.evidenceType : null, migration_key: migrationKey } }).select('id').maybeSingle();
+    if (error?.code === '23505') {
+      const existing = await client.from(TABLES.WORK_TASKS).select('id').eq('merchant_id', event.merchant_id).contains('source_metadata', { migration_key: migrationKey }).maybeSingle();
+      task = existing.data;
+      error = existing.error;
+    }
     if (error) throw new Error(`workflow_task_failed: ${error.message}`);
     result = { task_id: task?.id ?? null };
   }
