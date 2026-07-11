@@ -92,6 +92,13 @@ Do not overbuild until the core workflow is proven:
 
 The MVP is additive and focused.
 
+> **MVP+ source architecture override (see `docs/product/SOURCE_AGNOSTIC_MVP_PLUS.md`).**
+> The items above stay out of scope. What is now **in** scope: canonical CSV / webhook /
+> API / manual intake and the source-agnostic connector/event foundation. This is a new
+> canonical business-record importer, **not** a revival of the deleted fraud-audit CSV
+> worker. Shopify/Gorgias remain the launch connectors but must not be architectural
+> assumptions.
+
 ---
 
 ## Language

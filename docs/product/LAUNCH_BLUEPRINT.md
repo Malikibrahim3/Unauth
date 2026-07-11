@@ -28,6 +28,14 @@
 9. Account deletion / GDPR: **rebuild** on v2.
 10. Old DB password in history: **leave** (rotated, dead).
 
+> **MVP+ source architecture override (see `docs/product/SOURCE_AGNOSTIC_MVP_PLUS.md`).**
+> Revises locked decisions #2 and #5 for architecture only: a **new canonical CSV
+> importer** (distinct from the dead fraud-worker CSV) plus canonical webhook / API /
+> manual intake are now in scope, and WooCommerce/BigCommerce are registered truthfully in
+> the connector runtime while their merchant-facing cards stay "coming soon"
+> (`launchVisible: false`). Launch connector set (Shopify/Gorgias) is unchanged; the
+> architecture must simply not depend on it.
+
 ---
 
 ## ✅ Done (2026-07-10)

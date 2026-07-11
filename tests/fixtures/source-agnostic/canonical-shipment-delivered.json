@@ -1,0 +1,23 @@
+{
+  "id": "EXAMPLE-EVT-SHIP-7001",
+  "type": "shipment.delivered",
+  "occurred_at": "2026-07-12T14:05:00Z",
+  "source": {
+    "system": "custom_carrier",
+    "account_id": "uk-carrier",
+    "record_id": "SHIP-7001",
+    "record_url": "https://carrier.example/track/EX123456789GB"
+  },
+  "schema_version": 1,
+  "data": {
+    "external_id": "SHIP-7001",
+    "order_external_id": "ORDER-1001",
+    "tracking_number": "EX123456789GB",
+    "carrier": "example-carrier",
+    "service": "tracked-48",
+    "status": "delivered",
+    "source_status": "DELIVERED",
+    "shipped_at": "2026-07-11T18:00:00Z",
+    "delivered_at": "2026-07-12T14:05:00Z"
+  }
+}

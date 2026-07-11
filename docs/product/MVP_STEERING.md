@@ -290,6 +290,13 @@ The MVP should focus on:
 
 Design the data model to be source-aware, but do not overbuild integrations.
 
+> **MVP+ source architecture override (see `docs/product/SOURCE_AGNOSTIC_MVP_PLUS.md`).**
+> Shopify and Gorgias remain the launch connectors and broad connector breadth is still
+> later, but the architecture may **not** assume them. Canonical CSV / webhook / API /
+> manual intake and the connector/event foundation are now in scope. No core case,
+> evidence, loss, recovery, financial, search, or UI behavior may depend on Shopify or
+> Gorgias.
+
 ---
 
 ## 10. Core Object: Support Payout Case
@@ -299,6 +306,11 @@ The MVP should centre around:
 **SupportPayoutCase**
 
 This represents a post-purchase event where money or value may leave the business.
+
+> **MVP+ source architecture override (see `docs/product/SOURCE_AGNOSTIC_MVP_PLUS.md`).**
+> A support payout case must **not** be required to anchor to a Shopify order or a known
+> helpdesk ticket. Manual, API, CSV, and canonical-webhook cases are first-class; an
+> unanchored case is valid when it carries a `manual_reference`.
 
 Examples:
 
@@ -1105,6 +1117,11 @@ Build in this order:
 7. **Partner rulebook v1** — carrier/3PL/supplier/default rules; required evidence; deadlines; claimable/excluded costs.
 8. **Dashboard** — payout exposure; recoverable amount; recovered amount; prevention-only; policy leakage; top owners/claim types.
 
+> **MVP+ source architecture override (see `docs/product/SOURCE_AGNOSTIC_MVP_PLUS.md`).**
+> The connector/event/canonical-intake foundation is now part of implementation priority
+> and is sequenced ahead of broad connector breadth. See
+> `docs/IMPL_source_agnostic_connected_ecosystem.md` for the phased plan.
+
 ---
 
 ## 24. Hard Constraints
@@ -1151,3 +1168,8 @@ The MVP is:
 It should feel to the merchant like:
 
 > "We finally have control over refunds, reships, evidence, recoveries, and preventable post-purchase losses."
+
+> **MVP+ source architecture override (see `docs/product/SOURCE_AGNOSTIC_MVP_PLUS.md`).**
+> Shopify/Gorgias are the launch stack, not an architectural assumption. The same MVP
+> workflow must complete on Zendesk, a custom OMS + canonical webhook, or CSV/manual
+> intake with no Shopify/Gorgias fallback path.

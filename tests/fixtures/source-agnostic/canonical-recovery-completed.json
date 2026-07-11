@@ -1,0 +1,21 @@
+{
+  "id": "EXAMPLE-EVT-RECOVERY-6001",
+  "type": "recovery.completed",
+  "occurred_at": "2026-08-01T12:00:00Z",
+  "source": {
+    "system": "custom_ops",
+    "account_id": "uk-ops",
+    "record_id": "RECOVERY-6001",
+    "record_url": "https://merchant.example/recoveries/RECOVERY-6001"
+  },
+  "schema_version": 1,
+  "data": {
+    "external_id": "RECOVERY-6001",
+    "order_external_id": "ORDER-1001",
+    "recovery_owner": "example-carrier",
+    "outcome": "paid",
+    "recovered_minor": 8400,
+    "currency": "GBP",
+    "completed_at": "2026-08-01T12:00:00Z"
+  }
+}
