@@ -42,20 +42,31 @@ Phase 7 runtime cutover is largely complete (commits after the Phase 7 foundatio
 - 7.4 `baf47091` — `recovery_cases.loss_case_id`/`prevention_only`; recovery
   creation requires a canonical loss record.
 - 7.1 (partial) `0aebad73` — accountability evidence now written with `evidence_links`.
+- 7.1 (provider hardcoding) `ed46e9a8` — `assembleEvidencePack` selects evidence by
+  the presence of canonical source-graph data instead of `hasConnected('shopify'|
+  'gorgias')`; connection state now only informs the missing-evidence hints.
 
-Full suite green after each: 1,777 passed, 3 skipped, 0 failed. TypeScript clean.
+Full suite green after each: latest 1,778 passed, 3 skipped, 0 failed. TypeScript clean.
 
-Remaining before Phase 7 is fully closed (next unit): the broader §10.1 evidence
-read-model cutover — migrate the legacy evidence readers (`lib/claims/decision/
-context.ts`, `lib/claim-gate/buildEvidence.ts`, `app/api/claims/[claimId]/route.ts`,
-`app/api/claims/route.ts`) and the integration evidence writers (`lib/integrations/
-syncAfterShipEvidence.ts`, `app/api/integrations/[provider]/{sync,webhook}/route.ts`,
-`app/api/integrations/documents/[id]/approve/route.ts`, `app/api/fulfillment/
-pack-confirmation/route.ts`) onto canonical `evidence_items` + `evidence_links`, and
-remove the `hasConnected('shopify'|'gorgias')` provider-hardcoding in
-`lib/payouts/assembleEvidencePack.ts` so it selects evidence by the case graph. This
-sits next to decision/evidence-pack logic near the frozen scoring boundary, so it
-should be done as its own carefully-verified unit. Then continue through Phase 11.
+Remaining before Phase 7 is fully closed (next unit) — the evidence-table
+consolidation only: retire the four legacy evidence stores in favour of canonical
+`evidence_items` + `evidence_links`. This is a **writers-first** migration:
+
+1. Add a shared canonical-evidence writer helper (`evidence_items` row + `evidence_links`).
+2. Cut the integration evidence writers over to it: `lib/integrations/
+   syncAfterShipEvidence.ts`, `app/api/integrations/[provider]/{sync,webhook}/route.ts`,
+   `app/api/integrations/documents/[id]/approve/route.ts`,
+   `app/api/fulfillment/pack-confirmation/route.ts`, plus the `claim_evidence`
+   writers `lib/claims/decision/ensureEvidence.ts` and `upsertClaimEvidenceItem`.
+3. Then migrate the readers (`lib/claims/decision/context.ts`,
+   `lib/claim-gate/buildEvidence.ts`, `lib/payouts/assembleEvidencePack.ts`
+   integration-evidence read, `app/api/claims/[claimId]/route.ts`,
+   `app/api/claims/route.ts`) to read via `evidence_links`.
+4. Stop writing the legacy tables and keep them read-only for one release.
+
+This carries wide test churn (e.g. `tests/unit/integrations.test.ts` asserts on
+`integration_evidence_items` rows) and sits next to frozen decision/evidence-pack
+logic, so it must be its own carefully-verified unit. Then continue through Phase 11.
 
 `docs/IMPL_source_agnostic_connected_ecosystem.md`
 
