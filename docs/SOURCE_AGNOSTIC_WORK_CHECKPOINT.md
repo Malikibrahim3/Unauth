@@ -1,7 +1,7 @@
 # Source-Agnostic Architecture — Live Work Checkpoint
 
 **Purpose:** Disk-backed continuation state for another model if this task is interrupted.
-**Last updated:** 2026-07-11 (Phase 7 runtime cutover: 7.2–7.5 complete, 7.1 partial)
+**Last updated:** 2026-07-11 (Phase 7 nearly closed; Phase 8 navigation + Work/Losses landed)
 **Branch:** `codex/refocus-claim-gate-map`
 **Requested deliverable:** Implement the source-agnostic MVP+ plan through Phase 11, with live migrations, tests, and one commit per phase/sub-phase.
 
@@ -46,27 +46,53 @@ Phase 7 runtime cutover is largely complete (commits after the Phase 7 foundatio
   the presence of canonical source-graph data instead of `hasConnected('shopify'|
   'gorgias')`; connection state now only informs the missing-evidence hints.
 
+- 7.1 (integration evidence) `ca068ecc` — retired `integration_evidence_items`: all
+  integration + claim-gate evidence writers now persist to canonical `evidence_items`
+  (+ `evidence_links`) via `lib/integrations/canonicalEvidence.ts`; readers
+  (`assembleEvidencePack`, claim decision `context.ts`) reconstruct the provider shape.
+
 Full suite green after each: latest 1,778 passed, 3 skipped, 0 failed. TypeScript clean.
 
-Remaining before Phase 7 is fully closed (next unit) — the evidence-table
-consolidation only: retire the four legacy evidence stores in favour of canonical
-`evidence_items` + `evidence_links`. This is a **writers-first** migration:
+Remaining before Phase 7 is fully closed — **only the `claim_evidence` store**:
+retire it into canonical `evidence_items` + `evidence_links`. This is more entangled
+than the integration path and needs its own unit because:
 
-1. Add a shared canonical-evidence writer helper (`evidence_items` row + `evidence_links`).
-2. Cut the integration evidence writers over to it: `lib/integrations/
-   syncAfterShipEvidence.ts`, `app/api/integrations/[provider]/{sync,webhook}/route.ts`,
-   `app/api/integrations/documents/[id]/approve/route.ts`,
-   `app/api/fulfillment/pack-confirmation/route.ts`, plus the `claim_evidence`
-   writers `lib/claims/decision/ensureEvidence.ts` and `upsertClaimEvidenceItem`.
-3. Then migrate the readers (`lib/claims/decision/context.ts`,
-   `lib/claim-gate/buildEvidence.ts`, `lib/payouts/assembleEvidencePack.ts`
-   integration-evidence read, `app/api/claims/[claimId]/route.ts`,
-   `app/api/claims/route.ts`) to read via `evidence_links`.
-4. Stop writing the legacy tables and keep them read-only for one release.
+1. it carries an idempotency unique index (`claim_evidence_fulfillment_sync_uniq`)
+   that must be reproduced as a partial unique index on `evidence_items` via a new
+   migration before the writer can move;
+2. writers `lib/claims/decision/ensureEvidence.ts` and `upsertClaimEvidenceItem`
+   (`lib/claims/store.ts`) must move to the canonical store;
+3. readers with richer shapes must follow: `app/api/claims/[claimId]/route.ts`
+   (selects id/evidence_type/source/evidence_url/created_at),
+   `app/api/claims/route.ts` (per-claim counts), `lib/claims/decision/context.ts`
+   (claim_evidence type counts), `lib/recoveries/createFromSupportPayoutCase.ts`.
+`loss_case_evidence` has no runtime writer (backfilled once; account-delete only).
 
-This carries wide test churn (e.g. `tests/unit/integrations.test.ts` asserts on
-`integration_evidence_items` rows) and sits next to frozen decision/evidence-pack
-logic, so it must be its own carefully-verified unit. Then continue through Phase 11.
+## Phase 8 — Connected product UX (in progress)
+
+Landed `f1b9e430` (§11.1 partial): sidebar restructured to the ten target areas
+(Customers + Integrations now surfaced; `/integrations` kept as a compatibility
+alias to the hub; Rules → "Rules and Flows"; Partners dropped from the sidebar but
+route retained). New canonical-backed pages `/work` (WorkQueue over `work_tasks`)
+and `/losses` (LossLedger over `loss_cases`), plus `SourceBadge` + `FreshnessIndicator`
+primitives. Both routes compile and serve (auth-gated 307); not yet rendered
+authenticated in-browser (login requires a password the agent does not enter).
+
+Phase 8 remaining (larger interactive units, each needs a browser test per action):
+- §11.3 payout case page — repair the orphaned action rail (assign owner, record
+  decision/outcome, request evidence, transition/reopen/snooze, open recovery,
+  connector write-back) wired through the transition/event APIs; refactor
+  `app/api/claims/[claimId]/route.ts` into a read-model assembler.
+- §11.4 reusable Case context drawer across modules.
+- §11.5 universal multi-entity search + command palette (default-on, fix keyboard
+  defects, no `ilike` on UUIDs).
+- §11.6 Losses/Recovery — recovery board controlled quick actions via the
+  transition/event service; `/recoveries/[id]` detail route; replace the 405 mutation
+  routes; wire `SourceBadge`/`FreshnessIndicator` into more surfaces.
+- Invert `/integrations` to be the canonical hub with `/settings/integrations` as the
+  redirect (currently the reverse), per §11.1.
+
+Then continue through Phases 9–11.
 
 `docs/IMPL_source_agnostic_connected_ecosystem.md`
 
