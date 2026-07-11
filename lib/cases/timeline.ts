@@ -97,3 +97,48 @@ export function claimEventsToTimeline(rows: ClaimEventRow[]): TimelineItem[] {
     freshness: 'fresh',
   }));
 }
+
+type RecoveryEventRow = { id: string; event_type: string; created_at: string; note: string | null };
+type WorkTaskRow = { id: string; title: string; status: string; created_at: string; updated_at: string; completed_at: string | null };
+type TicketEventRow = { id: string; event_type: string; occurred_at: string | null; created_at: string; summary: string | null; actor_type: string | null };
+
+export function recoveryEventsToTimeline(rows: RecoveryEventRow[]): TimelineItem[] {
+  return rows.map((row) => ({
+    id: `recovery:${row.id}`,
+    type: `recovery.${row.event_type}`,
+    occurredAt: row.created_at,
+    recordedAt: row.created_at,
+    sourceSystem: 'unauth',
+    actor: { type: 'system' },
+    title: `Recovery ${row.event_type.replaceAll('_', ' ')}`,
+    summary: row.note ?? undefined,
+    freshness: 'fresh',
+  }));
+}
+
+export function workTasksToTimeline(rows: WorkTaskRow[]): TimelineItem[] {
+  return rows.map((row) => ({
+    id: `task:${row.id}`,
+    type: `task.${row.status}`,
+    occurredAt: row.completed_at ?? row.updated_at ?? row.created_at,
+    recordedAt: row.updated_at ?? row.created_at,
+    sourceSystem: 'unauth',
+    actor: { type: 'system' },
+    title: `Task ${row.status.replaceAll('_', ' ')}: ${row.title}`,
+    freshness: 'fresh',
+  }));
+}
+
+export function ticketEventsToTimeline(rows: TicketEventRow[]): TimelineItem[] {
+  return rows.map((row) => ({
+    id: `ticket:${row.id}`,
+    type: `ticket.${row.event_type}`,
+    occurredAt: row.occurred_at ?? row.created_at,
+    recordedAt: row.created_at,
+    sourceSystem: 'support',
+    actor: { type: row.actor_type ?? 'system' },
+    title: row.event_type.replaceAll('_', ' '),
+    summary: row.summary ?? undefined,
+    freshness: 'fresh',
+  }));
+}
