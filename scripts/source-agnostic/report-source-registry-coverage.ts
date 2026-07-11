@@ -1,0 +1,3 @@
+import { finish, rows } from './report-utils';
+async function main() { const records = await rows<{ canonical_entity_id: string | null; source_account_id: string | null; source_system: string }>('source_records', 'canonical_entity_id,source_account_id,source_system'); const canonical = records.filter((row) => row.canonical_entity_id); const missingAccount = canonical.filter((row) => !row.source_account_id && row.source_system !== 'manual').length; finish('source_registry_coverage', { records: records.length, canonical: canonical.length, missing_account_provenance: missingAccount }, missingAccount); }
+main().catch((error) => { console.error(error instanceof Error ? error.message : String(error)); process.exit(1); });

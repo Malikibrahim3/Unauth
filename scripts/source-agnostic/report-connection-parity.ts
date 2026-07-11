@@ -27,12 +27,13 @@ function loadEnv(): Record<string, string> {
 const env = loadEnv();
 const URL = env.SUPABASE_URL || env.NEXT_PUBLIC_SUPABASE_URL;
 const KEY = env.SUPABASE_SERVICE_ROLE_KEY;
+const MERCHANT_ID = env.MERCHANT_ID || process.argv.find((arg) => arg.startsWith('--merchant='))?.slice(11);
 
 const STORE_STATUS: Record<string, string> = { active: 'connected', revoked: 'revoked', error: 'error', disabled: 'disabled' };
 const HELPDESK_STATUS: Record<string, string> = { active: 'connected', disabled: 'disabled', error: 'error', revoked: 'revoked' };
 
 async function rest<T>(table: string, query: string): Promise<T[]> {
-  const r = await fetch(`${URL}/rest/v1/${table}?${query}`, {
+  const r = await fetch(`${URL}/rest/v1/${table}?${query}&merchant_id=eq.${encodeURIComponent(MERCHANT_ID as string)}`, {
     headers: { apikey: KEY as string, authorization: `Bearer ${KEY}` },
   });
   if (!r.ok) throw new Error(`${table} read failed: ${r.status}`);
@@ -42,8 +43,8 @@ async function rest<T>(table: string, query: string): Promise<T[]> {
 type Row = { merchant_id: string; provider_id: string; provider_account_id: string | null; status: string };
 
 async function main() {
-  if (!URL || !KEY) {
-    console.error('Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY');
+  if (!URL || !KEY || !MERCHANT_ID) {
+    console.error('Missing Supabase configuration or explicit MERCHANT_ID scope');
     process.exit(1);
   }
 

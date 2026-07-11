@@ -16,11 +16,12 @@ function loadEnv(): Record<string, string> {
 const config = loadEnv();
 const url = config.SUPABASE_URL || config.NEXT_PUBLIC_SUPABASE_URL;
 const key = config.SUPABASE_SERVICE_ROLE_KEY;
+const merchantId = config.MERCHANT_ID || process.argv.find((arg) => arg.startsWith('--merchant='))?.slice(11);
 
 async function allRows<T>(table: string, select: string): Promise<T[]> {
   const rows: T[] = [];
   for (let start = 0; ; start += 1000) {
-    const response = await fetch(`${url}/rest/v1/${table}?select=${encodeURIComponent(select)}`, {
+    const response = await fetch(`${url}/rest/v1/${table}?select=${encodeURIComponent(select)}&merchant_id=eq.${encodeURIComponent(merchantId as string)}`, {
       headers: { apikey: key, authorization: `Bearer ${key}`, Range: `${start}-${start + 999}` },
     });
     if (!response.ok) throw new Error(`${table} read failed: ${response.status}`);
@@ -36,7 +37,7 @@ type Entry = { merchant_id: string; support_payout_case_id: string | null; curre
 type Summary = { merchant_id: string; support_payout_case_id: string; currency: string } & Record<`${State}_minor`, number>;
 
 async function main() {
-  if (!url || !key) throw new Error('Missing Supabase URL or service role key');
+  if (!url || !key || !merchantId) throw new Error('Missing Supabase configuration or explicit MERCHANT_ID scope');
   const [entries, summaries] = await Promise.all([
     allRows<Entry>('case_financial_entries', 'merchant_id,support_payout_case_id,currency,state,amount_minor,reverses_entry_id,metadata'),
     allRows<Summary>('case_financial_summaries', `merchant_id,support_payout_case_id,currency,${states.map((state) => `${state}_minor`).join(',')}`),

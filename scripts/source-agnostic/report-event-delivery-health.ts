@@ -1,0 +1,3 @@
+import { finish, rows } from './report-utils';
+async function main() { const deliveries = await rows<{ status: string; attempts: number; last_error: string | null }>('domain_event_deliveries', 'status,attempts,last_error'); const counts = deliveries.reduce<Record<string, number>>((map, row) => ({ ...map, [row.status]: (map[row.status] ?? 0) + 1 }), {}); finish('event_delivery_health', { deliveries: deliveries.length, pending: counts.pending ?? 0, failed: counts.failed ?? 0, dead_letter: counts.dead_letter ?? 0 }, counts.dead_letter ?? 0); }
+main().catch((error) => { console.error(error instanceof Error ? error.message : String(error)); process.exit(1); });
