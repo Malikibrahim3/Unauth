@@ -1,7 +1,7 @@
 # Source-Agnostic Architecture — Live Work Checkpoint
 
 **Purpose:** Disk-backed continuation state for another model if this task is interrupted.
-**Last updated:** 2026-07-11 (Phase 7 nearly closed; Phase 8 navigation + Work/Losses landed)
+**Last updated:** 2026-07-11 (Phase 7 closed; Phase 8 interactive recovery/search units landed)
 **Branch:** `codex/refocus-claim-gate-map`
 **Requested deliverable:** Implement the source-agnostic MVP+ plan through Phase 11, with live migrations, tests, and one commit per phase/sub-phase.
 
@@ -88,6 +88,18 @@ heaviest route was compile-flaky; the component test is the CI-repeatable substi
 E2E in-browser verification uses `/api/test/e2e-auth` (local-only, `E2E_AUTH_SECRET`
 in gitignored `.env.local`) — password-free owner session bootstrap.
 
+Phase 8 completed since the prior checkpoint:
+
+- `85f4686b` — `/integrations` is the canonical Integration Centre; the
+  `/settings/integrations` index now redirects without removing provider setup
+  deep links.
+- `0e4da830` — recovery-board quick actions are permission-gated, confirmed
+  when consequential, append immutable activity events, and use an additive
+  live migration (`20260711170000`) for action idempotency.
+- `eec310f5` — unified command search is default-on; its displayed order/case
+  results now participate in Arrow/Enter navigation, failures are visible, and
+  UUID searches avoid invalid `ilike` filters.
+
 Phase 8 remaining (larger interactive units):
 - §11.3 tail — refactor `app/api/claims/[claimId]/route.ts` into a read-model
   assembler; audit primary CTAs for targets that don't render.
@@ -95,11 +107,8 @@ Phase 8 remaining (larger interactive units):
   helpdesk + decision + task + recovery events) + CaseRelatedRecords.
 - §11.5 universal multi-entity search + command palette (default-on, fix keyboard
   defects, no `ilike` on UUIDs).
-- §11.6 Losses/Recovery — recovery board controlled quick actions via the
-  transition/event service; `/recoveries/[id]` detail route; replace the 405 mutation
-  routes; wire `SourceBadge`/`FreshnessIndicator` into more surfaces.
-- Invert `/integrations` to be the canonical hub with `/settings/integrations` as the
-  redirect (currently the reverse), per §11.1.
+- §11.6 tail — wire `SourceBadge`/`FreshnessIndicator` into more surfaces and
+  expand recovery action coverage where a source-backed transition is available.
 
 Then continue through Phases 9–11.
 
