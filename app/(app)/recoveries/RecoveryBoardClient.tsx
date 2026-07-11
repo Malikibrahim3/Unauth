@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { PanelCard, StatusBadge, statusBadgeVariantFor } from '@/components/ui';
+import { CaseContextDrawer } from '@/components/cases/CaseContextDrawer';
 import { formatCurrencyNullable } from '@/lib/utils/format';
 import { RECOVERY_TYPE_LABELS } from '@/lib/partners/types';
 import {
@@ -36,6 +37,7 @@ function dateLabel(value: string | null) {
 export function RecoveryBoardClient({ recoveries, canManage }: Props) {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [contextCaseId, setContextCaseId] = useState<string | null>(null);
 
   async function runAction(item: RecoveryCase, option: (typeof ACTIONS)[number]) {
     if (option.confirm && !window.confirm(`${option.label} for this recovery case? This records an immutable activity event.`)) return;
@@ -150,6 +152,14 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
                           {item.partner.name}
                         </StatusBadge>
                       ) : null}
+                      <button
+                        type="button"
+                        onClick={() => setContextCaseId(item.support_payout_case_id)}
+                        className="rounded-md px-2 py-0.5 text-[11px]"
+                        style={{ border: '1px solid var(--border-muted)', color: 'var(--text-secondary)' }}
+                      >
+                        Case context
+                      </button>
                     </div>
                     {canManage ? (
                       <div className="mt-3 flex flex-wrap gap-1.5 border-t pt-3" style={{ borderColor: 'var(--border-muted)' }}>
@@ -175,6 +185,7 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
         );
       })}
       </div>
+      {contextCaseId ? <CaseContextDrawer caseId={contextCaseId} onClose={() => setContextCaseId(null)} /> : null}
     </div>
   );
 }
