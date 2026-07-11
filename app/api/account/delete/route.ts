@@ -258,6 +258,18 @@ export async function POST(request: NextRequest) {
       await deleteInChunks(service, 'claim_outcomes', 'claim_id', supportPayoutCaseIds);
       await deleteInChunks(service, 'sync_job_chunks', 'job_id', syncJobIds);
 
+      // Source-agnostic foundation tables. domain_events and case_financial_entries
+      // are append-only (their triggers block DELETE), and case_financial_entries
+      // cascades from support_payout_cases — so this flag-gated purge MUST run
+      // before the generic loop deletes support_payout_cases. One RPC removes all
+      // 10 source-agnostic tables for the merchant in FK-safe order.
+      const { error: purgeError } = await service.rpc('purge_merchant_source_agnostic', {
+        p_merchant_id: merchantId,
+      });
+      if (purgeError) {
+        throw new Error(`source-agnostic purge failed: ${purgeError.message}`);
+      }
+
       for (const table of CURRENT_V2_MERCHANT_DELETE_TABLES) {
         await deleteMerchantRows(service, table, merchantId);
       }

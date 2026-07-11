@@ -71,21 +71,26 @@ identity migration (IMPL §4) must replace these with connection/account-scoped 
 preceded by a collision report. **No enum/weight/threshold change** — identity-key scoping
 only.
 
-## DB-gated items deferred (require an isolated verification DB, not production)
+## DB-gated items — RESOLVED 2026-07-11 (live DB access authorised by owner)
 
-The following Phase 0 sub-steps could not be completed statically and are explicitly
-deferred to whoever runs Phase 1 with proper (non-production) DB access:
+The user authorised connecting to the linked Supabase project (`lquvbikyvmbjbfffrlky`) and
+applying migrations. Results:
 
-- Live `pg_dump --schema-only` + `supabase_migrations.schema_migrations` ledger dump.
-- Regenerating `types.ts` and diffing against the migration ledger.
-- Row counts and FK/uniqueness/RLS state for every table being consolidated
-  (`store_connections`, `helpdesk_connections`, `merchant_integrations`,
-  `integration_credentials`, the `source_*` tables, the four evidence stores, the
-  loss/recovery/task stores).
+- **`types.ts` regenerated** from the live schema. The four accountability tables
+  (`evidence_items`, `loss_sources`, `recovery_tasks`, `accountability_events`) and every
+  post-2026-07-08 migration are now present. The staleness is resolved.
+- **Live existence confirmed** via REST: all four accountability tables return `200`
+  (exist, 0 rows). `merchant_integrations` = 2 rows, `source_orders` = 5743 rows
+  (merchant_id 5743/5743 non-null → safe to column-scope later).
+- **Migration ledger in sync**: `supabase migration list` shows local == remote through
+  `20260710140100`; nothing pending before Phase 1.
+- Toolchain: `supabase db push` applies migrations; `supabase gen types` regenerates types;
+  REST (service key) verifies. Direct `psql`/`db dump` are unavailable (dead pooler
+  password + Docker down) but are not needed.
 
-None of these block authoring Phase 1 DDL as **additive** migrations, but the backfill and
-constraint-tightening steps in Phase 1 must run the collision/row-count reports against a
-real DB before switching any constraint or read.
+Row-count / collision reports for the constraint-tightening backfill remain a **Phase 2**
+step (they only matter when provider-scoped uniqueness is actually replaced), not a blocker
+for the additive Phase 1 foundation, which has been applied and verified.
 
 ## Static presence matrix (verified 2026-07-11)
 

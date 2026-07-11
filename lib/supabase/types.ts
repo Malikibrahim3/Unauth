@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       access_audit_log: {
@@ -85,6 +60,384 @@ export type Database = {
             columns: ["merchant_id"]
             isOneToOne: false
             referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      accountability_events: {
+        Row: {
+          actor_name: string | null
+          actor_type: string
+          claim_id: string
+          created_at: string
+          description: string | null
+          event_type: string
+          id: string
+          loss_source_id: string | null
+          merchant_id: string
+          metadata: Json
+          recovery_task_id: string | null
+        }
+        Insert: {
+          actor_name?: string | null
+          actor_type?: string
+          claim_id: string
+          created_at?: string
+          description?: string | null
+          event_type: string
+          id?: string
+          loss_source_id?: string | null
+          merchant_id: string
+          metadata?: Json
+          recovery_task_id?: string | null
+        }
+        Update: {
+          actor_name?: string | null
+          actor_type?: string
+          claim_id?: string
+          created_at?: string
+          description?: string | null
+          event_type?: string
+          id?: string
+          loss_source_id?: string | null
+          merchant_id?: string
+          metadata?: Json
+          recovery_task_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accountability_events_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "support_payout_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountability_events_loss_source_id_fkey"
+            columns: ["loss_source_id"]
+            isOneToOne: false
+            referencedRelation: "loss_sources"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountability_events_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountability_events_recovery_task_id_fkey"
+            columns: ["recovery_task_id"]
+            isOneToOne: false
+            referencedRelation: "recovery_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agreement_clauses: {
+        Row: {
+          agreement_id: string
+          approved: boolean
+          clause_text: string
+          clause_type: string
+          confidence: string
+          created_at: string
+          extracted_value: Json
+          id: string
+          merchant_id: string
+          page_number: number | null
+          reviewed: boolean
+          reviewed_at: string | null
+          reviewed_by: string | null
+          source_location: string | null
+        }
+        Insert: {
+          agreement_id: string
+          approved?: boolean
+          clause_text: string
+          clause_type: string
+          confidence?: string
+          created_at?: string
+          extracted_value?: Json
+          id?: string
+          merchant_id: string
+          page_number?: number | null
+          reviewed?: boolean
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_location?: string | null
+        }
+        Update: {
+          agreement_id?: string
+          approved?: boolean
+          clause_text?: string
+          clause_type?: string
+          confidence?: string
+          created_at?: string
+          extracted_value?: Json
+          id?: string
+          merchant_id?: string
+          page_number?: number | null
+          reviewed?: boolean
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_location?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agreement_clauses_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "agreements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreement_clauses_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agreement_rule_evaluations: {
+        Row: {
+          agreement_id: string | null
+          agreement_rule_id: string | null
+          claim_id: string
+          created_at: string
+          evaluation_summary: string | null
+          id: string
+          matched: boolean
+          merchant_id: string
+          result: Json | null
+        }
+        Insert: {
+          agreement_id?: string | null
+          agreement_rule_id?: string | null
+          claim_id: string
+          created_at?: string
+          evaluation_summary?: string | null
+          id?: string
+          matched: boolean
+          merchant_id: string
+          result?: Json | null
+        }
+        Update: {
+          agreement_id?: string | null
+          agreement_rule_id?: string | null
+          claim_id?: string
+          created_at?: string
+          evaluation_summary?: string | null
+          id?: string
+          matched?: boolean
+          merchant_id?: string
+          result?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agreement_rule_evaluations_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "agreements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreement_rule_evaluations_agreement_rule_id_fkey"
+            columns: ["agreement_rule_id"]
+            isOneToOne: false
+            referencedRelation: "agreement_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreement_rule_evaluations_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "support_payout_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreement_rule_evaluations_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agreement_rules: {
+        Row: {
+          agreement_id: string
+          applies_to_claim_type: string
+          clause_id: string | null
+          conditions: Json
+          counterparty_name: string | null
+          created_at: string
+          effective_from: string | null
+          effective_to: string | null
+          id: string
+          merchant_id: string
+          priority: number
+          result: Json
+          rule_code: string
+          rule_name: string
+          rule_type: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          agreement_id: string
+          applies_to_claim_type?: string
+          clause_id?: string | null
+          conditions: Json
+          counterparty_name?: string | null
+          created_at?: string
+          effective_from?: string | null
+          effective_to?: string | null
+          id?: string
+          merchant_id: string
+          priority?: number
+          result: Json
+          rule_code: string
+          rule_name: string
+          rule_type: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          agreement_id?: string
+          applies_to_claim_type?: string
+          clause_id?: string | null
+          conditions?: Json
+          counterparty_name?: string | null
+          created_at?: string
+          effective_from?: string | null
+          effective_to?: string | null
+          id?: string
+          merchant_id?: string
+          priority?: number
+          result?: Json
+          rule_code?: string
+          rule_name?: string
+          rule_type?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agreement_rules_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "agreements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreement_rules_clause_id_fkey"
+            columns: ["clause_id"]
+            isOneToOne: false
+            referencedRelation: "agreement_clauses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreement_rules_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agreements: {
+        Row: {
+          agreement_type: string
+          counterparty_name: string | null
+          created_at: string
+          document_name: string | null
+          document_url: string | null
+          effective_from: string | null
+          effective_to: string | null
+          file_mime_type: string | null
+          file_size_bytes: number | null
+          id: string
+          merchant_id: string
+          raw_text: string | null
+          service_name: string | null
+          status: string
+          updated_at: string
+          uploaded_by: string | null
+          version_label: string | null
+        }
+        Insert: {
+          agreement_type: string
+          counterparty_name?: string | null
+          created_at?: string
+          document_name?: string | null
+          document_url?: string | null
+          effective_from?: string | null
+          effective_to?: string | null
+          file_mime_type?: string | null
+          file_size_bytes?: number | null
+          id?: string
+          merchant_id: string
+          raw_text?: string | null
+          service_name?: string | null
+          status?: string
+          updated_at?: string
+          uploaded_by?: string | null
+          version_label?: string | null
+        }
+        Update: {
+          agreement_type?: string
+          counterparty_name?: string | null
+          created_at?: string
+          document_name?: string | null
+          document_url?: string | null
+          effective_from?: string | null
+          effective_to?: string | null
+          file_mime_type?: string | null
+          file_size_bytes?: number | null
+          id?: string
+          merchant_id?: string
+          raw_text?: string | null
+          service_name?: string | null
+          status?: string
+          updated_at?: string
+          uploaded_by?: string | null
+          version_label?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agreements_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      api_key_minute_counts: {
+        Row: {
+          api_key_id: string
+          count: number
+          window_minute: number
+        }
+        Insert: {
+          api_key_id: string
+          count?: number
+          window_minute: number
+        }
+        Update: {
+          api_key_id?: string
+          count?: number
+          window_minute?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_key_minute_counts_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "merchant_api_keys"
             referencedColumns: ["id"]
           },
         ]
@@ -309,6 +662,207 @@ export type Database = {
             columns: ["support_payout_case_id"]
             isOneToOne: false
             referencedRelation: "support_payout_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      case_financial_entries: {
+        Row: {
+          amount_minor: number
+          created_at: string
+          currency: string
+          direction: string
+          domain_event_id: string | null
+          effective_at: string
+          id: string
+          loss_case_id: string | null
+          merchant_id: string
+          metadata: Json
+          recorded_at: string
+          recovery_case_id: string | null
+          reverses_entry_id: string | null
+          source_record_id: string | null
+          state: string
+          support_payout_case_id: string | null
+        }
+        Insert: {
+          amount_minor: number
+          created_at?: string
+          currency: string
+          direction?: string
+          domain_event_id?: string | null
+          effective_at?: string
+          id?: string
+          loss_case_id?: string | null
+          merchant_id: string
+          metadata?: Json
+          recorded_at?: string
+          recovery_case_id?: string | null
+          reverses_entry_id?: string | null
+          source_record_id?: string | null
+          state: string
+          support_payout_case_id?: string | null
+        }
+        Update: {
+          amount_minor?: number
+          created_at?: string
+          currency?: string
+          direction?: string
+          domain_event_id?: string | null
+          effective_at?: string
+          id?: string
+          loss_case_id?: string | null
+          merchant_id?: string
+          metadata?: Json
+          recorded_at?: string
+          recovery_case_id?: string | null
+          reverses_entry_id?: string | null
+          source_record_id?: string | null
+          state?: string
+          support_payout_case_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_financial_entries_domain_event_id_fkey"
+            columns: ["domain_event_id"]
+            isOneToOne: false
+            referencedRelation: "domain_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_financial_entries_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_financial_entries_reverses_entry_id_fkey"
+            columns: ["reverses_entry_id"]
+            isOneToOne: false
+            referencedRelation: "case_financial_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_financial_entries_source_record_id_fkey"
+            columns: ["source_record_id"]
+            isOneToOne: false
+            referencedRelation: "source_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_financial_entries_support_payout_case_id_fkey"
+            columns: ["support_payout_case_id"]
+            isOneToOne: false
+            referencedRelation: "support_payout_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      case_financial_summaries: {
+        Row: {
+          approved_minor: number
+          confirmed_loss_minor: number
+          currency: string
+          estimated_loss_minor: number
+          exposed_minor: number
+          last_event_id: string | null
+          merchant_id: string
+          paid_minor: number
+          prevented_minor: number
+          recoverable_minor: number
+          recovered_minor: number
+          requested_minor: number
+          support_payout_case_id: string
+          updated_at: string
+          written_off_minor: number
+        }
+        Insert: {
+          approved_minor?: number
+          confirmed_loss_minor?: number
+          currency: string
+          estimated_loss_minor?: number
+          exposed_minor?: number
+          last_event_id?: string | null
+          merchant_id: string
+          paid_minor?: number
+          prevented_minor?: number
+          recoverable_minor?: number
+          recovered_minor?: number
+          requested_minor?: number
+          support_payout_case_id: string
+          updated_at?: string
+          written_off_minor?: number
+        }
+        Update: {
+          approved_minor?: number
+          confirmed_loss_minor?: number
+          currency?: string
+          estimated_loss_minor?: number
+          exposed_minor?: number
+          last_event_id?: string | null
+          merchant_id?: string
+          paid_minor?: number
+          prevented_minor?: number
+          recoverable_minor?: number
+          recovered_minor?: number
+          requested_minor?: number
+          support_payout_case_id?: string
+          updated_at?: string
+          written_off_minor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_financial_summaries_last_event_id_fkey"
+            columns: ["last_event_id"]
+            isOneToOne: false
+            referencedRelation: "case_financial_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_financial_summaries_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_financial_summaries_support_payout_case_id_fkey"
+            columns: ["support_payout_case_id"]
+            isOneToOne: false
+            referencedRelation: "support_payout_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      category_applicability: {
+        Row: {
+          category: string
+          merchant_id: string
+          set_at: string
+          set_by: string | null
+          status: string
+        }
+        Insert: {
+          category: string
+          merchant_id: string
+          set_at?: string
+          set_by?: string | null
+          status: string
+        }
+        Update: {
+          category?: string
+          merchant_id?: string
+          set_at?: string
+          set_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_applicability_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
             referencedColumns: ["id"]
           },
         ]
@@ -856,6 +1410,452 @@ export type Database = {
         }
         Relationships: []
       }
+      document_upload_jobs: {
+        Row: {
+          agreement_id: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          merchant_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          agreement_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          merchant_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          agreement_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          merchant_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_upload_jobs_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "agreements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_upload_jobs_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      domain_event_deliveries: {
+        Row: {
+          attempts: number
+          completed_at: string | null
+          created_at: string
+          domain_event_id: string
+          handler_name: string
+          id: string
+          last_error: string | null
+          leased_by: string | null
+          leased_until: string | null
+          max_attempts: number
+          merchant_id: string
+          next_attempt_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          completed_at?: string | null
+          created_at?: string
+          domain_event_id: string
+          handler_name: string
+          id?: string
+          last_error?: string | null
+          leased_by?: string | null
+          leased_until?: string | null
+          max_attempts?: number
+          merchant_id: string
+          next_attempt_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          completed_at?: string | null
+          created_at?: string
+          domain_event_id?: string
+          handler_name?: string
+          id?: string
+          last_error?: string | null
+          leased_by?: string | null
+          leased_until?: string | null
+          max_attempts?: number
+          merchant_id?: string
+          next_attempt_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "domain_event_deliveries_domain_event_id_fkey"
+            columns: ["domain_event_id"]
+            isOneToOne: false
+            referencedRelation: "domain_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "domain_event_deliveries_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      domain_events: {
+        Row: {
+          actor_id: string | null
+          actor_type: string
+          aggregate_id: string | null
+          aggregate_type: string
+          causation_id: string | null
+          connection_id: string | null
+          correlation_id: string | null
+          created_at: string
+          event_type: string
+          id: string
+          idempotency_key: string
+          ingestion_event_id: string | null
+          merchant_id: string
+          occurred_at: string
+          payload: Json
+          recorded_at: string
+          schema_version: number
+          source_record_id: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_type?: string
+          aggregate_id?: string | null
+          aggregate_type: string
+          causation_id?: string | null
+          connection_id?: string | null
+          correlation_id?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          idempotency_key: string
+          ingestion_event_id?: string | null
+          merchant_id: string
+          occurred_at?: string
+          payload?: Json
+          recorded_at?: string
+          schema_version?: number
+          source_record_id?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          actor_type?: string
+          aggregate_id?: string | null
+          aggregate_type?: string
+          causation_id?: string | null
+          connection_id?: string | null
+          correlation_id?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          idempotency_key?: string
+          ingestion_event_id?: string | null
+          merchant_id?: string
+          occurred_at?: string
+          payload?: Json
+          recorded_at?: string
+          schema_version?: number
+          source_record_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "domain_events_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "merchant_integrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "domain_events_ingestion_event_id_fkey"
+            columns: ["ingestion_event_id"]
+            isOneToOne: false
+            referencedRelation: "ingestion_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "domain_events_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "domain_events_source_record_id_fkey"
+            columns: ["source_record_id"]
+            isOneToOne: false
+            referencedRelation: "source_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      entity_relationships: {
+        Row: {
+          confidence: number | null
+          created_at: string
+          evidence: Json
+          from_entity_id: string
+          from_entity_type: string
+          id: string
+          match_method: string | null
+          match_status: string
+          merchant_id: string
+          relationship_type: string
+          resolved_at: string | null
+          resolved_by: string | null
+          to_entity_id: string
+          to_entity_type: string
+          updated_at: string
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string
+          evidence?: Json
+          from_entity_id: string
+          from_entity_type: string
+          id?: string
+          match_method?: string | null
+          match_status?: string
+          merchant_id: string
+          relationship_type: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          to_entity_id: string
+          to_entity_type: string
+          updated_at?: string
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string
+          evidence?: Json
+          from_entity_id?: string
+          from_entity_type?: string
+          id?: string
+          match_method?: string | null
+          match_status?: string
+          merchant_id?: string
+          relationship_type?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          to_entity_id?: string
+          to_entity_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entity_relationships_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evidence_download_tokens: {
+        Row: {
+          created_at: string
+          evidence_id: string
+          expires_at: string
+          id: string
+          merchant_id: string
+          token_hash: string
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          evidence_id: string
+          expires_at: string
+          id?: string
+          merchant_id: string
+          token_hash: string
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          evidence_id?: string
+          expires_at?: string
+          id?: string
+          merchant_id?: string
+          token_hash?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evidence_download_tokens_evidence_id_fkey"
+            columns: ["evidence_id"]
+            isOneToOne: false
+            referencedRelation: "evidence_packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evidence_download_tokens_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evidence_items: {
+        Row: {
+          claim_id: string
+          created_at: string
+          evidence_type: string
+          external_url: string | null
+          id: string
+          merchant_id: string
+          occurred_at: string | null
+          proves: string | null
+          raw_payload: Json | null
+          source_system: string
+          summary: string | null
+          title: string | null
+        }
+        Insert: {
+          claim_id: string
+          created_at?: string
+          evidence_type: string
+          external_url?: string | null
+          id?: string
+          merchant_id: string
+          occurred_at?: string | null
+          proves?: string | null
+          raw_payload?: Json | null
+          source_system: string
+          summary?: string | null
+          title?: string | null
+        }
+        Update: {
+          claim_id?: string
+          created_at?: string
+          evidence_type?: string
+          external_url?: string | null
+          id?: string
+          merchant_id?: string
+          occurred_at?: string | null
+          proves?: string | null
+          raw_payload?: Json | null
+          source_system?: string
+          summary?: string | null
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evidence_items_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "support_payout_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evidence_items_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evidence_packages: {
+        Row: {
+          ce3_eligible: boolean
+          ce3_prior_transactions: Json
+          ce3_qualifying_signals: Json
+          created_at: string
+          cross_merchant_indicator: boolean
+          customer_profile_id: string | null
+          generated_at: string
+          generated_for_order_id: string | null
+          id: string
+          merchant_id: string
+          merchant_notes: string | null
+          narrative_summary: string | null
+          pdf_storage_path: string | null
+          reference_number: string
+          signal_snapshot: Json
+        }
+        Insert: {
+          ce3_eligible?: boolean
+          ce3_prior_transactions?: Json
+          ce3_qualifying_signals?: Json
+          created_at?: string
+          cross_merchant_indicator?: boolean
+          customer_profile_id?: string | null
+          generated_at?: string
+          generated_for_order_id?: string | null
+          id?: string
+          merchant_id: string
+          merchant_notes?: string | null
+          narrative_summary?: string | null
+          pdf_storage_path?: string | null
+          reference_number: string
+          signal_snapshot?: Json
+        }
+        Update: {
+          ce3_eligible?: boolean
+          ce3_prior_transactions?: Json
+          ce3_qualifying_signals?: Json
+          created_at?: string
+          cross_merchant_indicator?: boolean
+          customer_profile_id?: string | null
+          generated_at?: string
+          generated_for_order_id?: string | null
+          id?: string
+          merchant_id?: string
+          merchant_notes?: string | null
+          narrative_summary?: string | null
+          pdf_storage_path?: string | null
+          reference_number?: string
+          signal_snapshot?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evidence_packages_customer_profile_id_fkey"
+            columns: ["customer_profile_id"]
+            isOneToOne: false
+            referencedRelation: "source_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evidence_packages_generated_for_order_id_fkey"
+            columns: ["generated_for_order_id"]
+            isOneToOne: false
+            referencedRelation: "source_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evidence_packages_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       external_clarification_requests: {
         Row: {
           body_hash: string | null
@@ -1088,6 +2088,56 @@ export type Database = {
             foreignKeyName: "extracted_partner_terms_merchant_id_fkey"
             columns: ["merchant_id"]
             isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      founding_merchant_applications: {
+        Row: {
+          agreed_to_terms_at: string | null
+          created_at: string
+          created_by_user_id: string | null
+          fraud_problem: string
+          id: string
+          internal_notified_at: string | null
+          merchant_id: string
+          monthly_order_volume: string
+          monthly_refund_chargeback_volume: string | null
+          store_name: string
+          updated_at: string
+        }
+        Insert: {
+          agreed_to_terms_at?: string | null
+          created_at?: string
+          created_by_user_id?: string | null
+          fraud_problem: string
+          id?: string
+          internal_notified_at?: string | null
+          merchant_id: string
+          monthly_order_volume: string
+          monthly_refund_chargeback_volume?: string | null
+          store_name: string
+          updated_at?: string
+        }
+        Update: {
+          agreed_to_terms_at?: string | null
+          created_at?: string
+          created_by_user_id?: string | null
+          fraud_problem?: string
+          id?: string
+          internal_notified_at?: string | null
+          merchant_id?: string
+          monthly_order_volume?: string
+          monthly_refund_chargeback_volume?: string | null
+          store_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "founding_merchant_applications_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: true
             referencedRelation: "merchants"
             referencedColumns: ["id"]
           },
@@ -1681,38 +2731,144 @@ export type Database = {
         }
         Relationships: []
       }
+      ingestion_events: {
+        Row: {
+          attempts: number
+          connection_id: string | null
+          created_at: string
+          event_type: string | null
+          id: string
+          idempotency_key: string
+          last_error: string | null
+          leased_by: string | null
+          leased_until: string | null
+          max_attempts: number
+          merchant_id: string
+          next_attempt_at: string
+          payload: Json | null
+          payload_hash: string
+          payload_ref: string | null
+          provider_event_id: string | null
+          received_at: string
+          retention_deadline: string | null
+          source_account_ref: string | null
+          source_system: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          connection_id?: string | null
+          created_at?: string
+          event_type?: string | null
+          id?: string
+          idempotency_key: string
+          last_error?: string | null
+          leased_by?: string | null
+          leased_until?: string | null
+          max_attempts?: number
+          merchant_id: string
+          next_attempt_at?: string
+          payload?: Json | null
+          payload_hash: string
+          payload_ref?: string | null
+          provider_event_id?: string | null
+          received_at?: string
+          retention_deadline?: string | null
+          source_account_ref?: string | null
+          source_system: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          connection_id?: string | null
+          created_at?: string
+          event_type?: string | null
+          id?: string
+          idempotency_key?: string
+          last_error?: string | null
+          leased_by?: string | null
+          leased_until?: string | null
+          max_attempts?: number
+          merchant_id?: string
+          next_attempt_at?: string
+          payload?: Json | null
+          payload_hash?: string
+          payload_ref?: string | null
+          provider_event_id?: string | null
+          received_at?: string
+          retention_deadline?: string | null
+          source_account_ref?: string | null
+          source_system?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingestion_events_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "merchant_integrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ingestion_events_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       integration_credentials: {
         Row: {
+          connection_id: string | null
           created_at: string
           encrypted_payload: string
           expires_at: string | null
           id: string
+          key_version: number
           merchant_id: string
           provider_id: string
+          rotated_at: string | null
           scopes: string[]
           updated_at: string
         }
         Insert: {
+          connection_id?: string | null
           created_at?: string
           encrypted_payload: string
           expires_at?: string | null
           id?: string
+          key_version?: number
           merchant_id: string
           provider_id: string
+          rotated_at?: string | null
           scopes?: string[]
           updated_at?: string
         }
         Update: {
+          connection_id?: string | null
           created_at?: string
           encrypted_payload?: string
           expires_at?: string | null
           id?: string
+          key_version?: number
           merchant_id?: string
           provider_id?: string
+          rotated_at?: string | null
           scopes?: string[]
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "integration_credentials_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "merchant_integrations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "integration_credentials_merchant_id_fkey"
             columns: ["merchant_id"]
@@ -2060,6 +3216,72 @@ export type Database = {
           },
         ]
       }
+      loss_sources: {
+        Row: {
+          accountable_party_name: string | null
+          accountable_party_type: string
+          claim_id: string
+          confidence: string
+          created_at: string
+          evidence_item_ids: string[]
+          evidence_summary: string | null
+          id: string
+          merchant_id: string
+          money_at_risk: number
+          potential_recovery_amount: number
+          source_type: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          accountable_party_name?: string | null
+          accountable_party_type?: string
+          claim_id: string
+          confidence?: string
+          created_at?: string
+          evidence_item_ids?: string[]
+          evidence_summary?: string | null
+          id?: string
+          merchant_id: string
+          money_at_risk?: number
+          potential_recovery_amount?: number
+          source_type: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          accountable_party_name?: string | null
+          accountable_party_type?: string
+          claim_id?: string
+          confidence?: string
+          created_at?: string
+          evidence_item_ids?: string[]
+          evidence_summary?: string | null
+          id?: string
+          merchant_id?: string
+          money_at_risk?: number
+          potential_recovery_amount?: number
+          source_type?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loss_sources_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "support_payout_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loss_sources_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       merchant_api_keys: {
         Row: {
           created_at: string
@@ -2196,39 +3418,105 @@ export type Database = {
       merchant_integrations: {
         Row: {
           auth_mode: string
+          capabilities_snapshot: Json
           category: string
+          connector_version: string | null
           created_at: string
+          data_fresh_through: string | null
+          disconnected_at: string | null
+          display_name: string | null
+          granted_scopes: string[]
           id: string
+          imported_record_count: number
           last_error: string | null
+          last_error_at: string | null
+          last_error_code: string | null
+          last_error_message: string | null
+          last_successful_sync_at: string | null
           last_sync_at: string | null
+          last_sync_completed_at: string | null
+          last_sync_started_at: string | null
           merchant_id: string
+          next_scheduled_sync_at: string | null
+          provider_account_id: string | null
+          provider_account_name: string | null
+          provider_base_url: string | null
           provider_id: string
           status: string
+          subscribed: boolean
+          sync_cursor: Json | null
           updated_at: string
+          webhook_last_received_at: string | null
+          webhook_status: string | null
+          writeback_enabled: boolean
         }
         Insert: {
           auth_mode: string
+          capabilities_snapshot?: Json
           category: string
+          connector_version?: string | null
           created_at?: string
+          data_fresh_through?: string | null
+          disconnected_at?: string | null
+          display_name?: string | null
+          granted_scopes?: string[]
           id?: string
+          imported_record_count?: number
           last_error?: string | null
+          last_error_at?: string | null
+          last_error_code?: string | null
+          last_error_message?: string | null
+          last_successful_sync_at?: string | null
           last_sync_at?: string | null
+          last_sync_completed_at?: string | null
+          last_sync_started_at?: string | null
           merchant_id: string
+          next_scheduled_sync_at?: string | null
+          provider_account_id?: string | null
+          provider_account_name?: string | null
+          provider_base_url?: string | null
           provider_id: string
           status?: string
+          subscribed?: boolean
+          sync_cursor?: Json | null
           updated_at?: string
+          webhook_last_received_at?: string | null
+          webhook_status?: string | null
+          writeback_enabled?: boolean
         }
         Update: {
           auth_mode?: string
+          capabilities_snapshot?: Json
           category?: string
+          connector_version?: string | null
           created_at?: string
+          data_fresh_through?: string | null
+          disconnected_at?: string | null
+          display_name?: string | null
+          granted_scopes?: string[]
           id?: string
+          imported_record_count?: number
           last_error?: string | null
+          last_error_at?: string | null
+          last_error_code?: string | null
+          last_error_message?: string | null
+          last_successful_sync_at?: string | null
           last_sync_at?: string | null
+          last_sync_completed_at?: string | null
+          last_sync_started_at?: string | null
           merchant_id?: string
+          next_scheduled_sync_at?: string | null
+          provider_account_id?: string | null
+          provider_account_name?: string | null
+          provider_base_url?: string | null
           provider_id?: string
           status?: string
+          subscribed?: boolean
+          sync_cursor?: Json | null
           updated_at?: string
+          webhook_last_received_at?: string | null
+          webhook_status?: string | null
+          writeback_enabled?: boolean
         }
         Relationships: [
           {
@@ -2645,6 +3933,50 @@ export type Database = {
           },
         ]
       }
+      pack_confirmations: {
+        Row: {
+          confirmed_at: string
+          confirmed_by: string | null
+          created_at: string
+          fulfillment_id: string
+          id: string
+          item_match_confirmed: boolean
+          merchant_id: string
+          order_id: string
+          photo_url: string | null
+        }
+        Insert: {
+          confirmed_at?: string
+          confirmed_by?: string | null
+          created_at?: string
+          fulfillment_id: string
+          id?: string
+          item_match_confirmed?: boolean
+          merchant_id: string
+          order_id: string
+          photo_url?: string | null
+        }
+        Update: {
+          confirmed_at?: string
+          confirmed_by?: string | null
+          created_at?: string
+          fulfillment_id?: string
+          id?: string
+          item_match_confirmed?: boolean
+          merchant_id?: string
+          order_id?: string
+          photo_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pack_confirmations_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partner_recovery_rules: {
         Row: {
           active: boolean
@@ -2857,6 +4189,161 @@ export type Database = {
         }
         Relationships: []
       }
+      profile_view_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          merchant_id: string
+          profile_id: string
+          token_hash: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          merchant_id: string
+          profile_id: string
+          token_hash: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          merchant_id?: string
+          profile_id?: string
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_view_tokens_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_view_tokens_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "source_customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      record_match_candidates: {
+        Row: {
+          candidate_entity_id: string
+          candidate_entity_type: string
+          confidence: number | null
+          created_at: string
+          evidence: Json
+          id: string
+          match_method: string
+          merchant_id: string
+          status: string
+          subject_entity_id: string
+          subject_entity_type: string
+          updated_at: string
+        }
+        Insert: {
+          candidate_entity_id: string
+          candidate_entity_type: string
+          confidence?: number | null
+          created_at?: string
+          evidence?: Json
+          id?: string
+          match_method: string
+          merchant_id: string
+          status?: string
+          subject_entity_id: string
+          subject_entity_type: string
+          updated_at?: string
+        }
+        Update: {
+          candidate_entity_id?: string
+          candidate_entity_type?: string
+          confidence?: number | null
+          created_at?: string
+          evidence?: Json
+          id?: string
+          match_method?: string
+          merchant_id?: string
+          status?: string
+          subject_entity_id?: string
+          subject_entity_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "record_match_candidates_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      record_match_resolutions: {
+        Row: {
+          created_at: string
+          id: string
+          merchant_id: string
+          metadata: Json
+          new_status: string
+          prior_status: string | null
+          reason: string | null
+          resolved_at: string
+          resolved_by: string | null
+          selected_candidate_id: string | null
+          subject_entity_id: string
+          subject_entity_type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          merchant_id: string
+          metadata?: Json
+          new_status: string
+          prior_status?: string | null
+          reason?: string | null
+          resolved_at?: string
+          resolved_by?: string | null
+          selected_candidate_id?: string | null
+          subject_entity_id: string
+          subject_entity_type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          merchant_id?: string
+          metadata?: Json
+          new_status?: string
+          prior_status?: string | null
+          reason?: string | null
+          resolved_at?: string
+          resolved_by?: string | null
+          selected_candidate_id?: string | null
+          subject_entity_id?: string
+          subject_entity_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "record_match_resolutions_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "record_match_resolutions_selected_candidate_id_fkey"
+            columns: ["selected_candidate_id"]
+            isOneToOne: false
+            referencedRelation: "record_match_candidates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recovery_case_events: {
         Row: {
           created_at: string
@@ -3020,6 +4507,88 @@ export type Database = {
           },
         ]
       }
+      recovery_tasks: {
+        Row: {
+          amount_to_recover: number
+          claim_id: string
+          created_at: string
+          due_at: string | null
+          external_reference: string | null
+          id: string
+          loss_source_id: string | null
+          merchant_id: string
+          notes: string | null
+          owner_email: string | null
+          owner_name: string | null
+          owner_type: string
+          priority: string
+          recovery_deadline: string | null
+          status: string
+          task_type: string
+          updated_at: string
+        }
+        Insert: {
+          amount_to_recover?: number
+          claim_id: string
+          created_at?: string
+          due_at?: string | null
+          external_reference?: string | null
+          id?: string
+          loss_source_id?: string | null
+          merchant_id: string
+          notes?: string | null
+          owner_email?: string | null
+          owner_name?: string | null
+          owner_type?: string
+          priority?: string
+          recovery_deadline?: string | null
+          status?: string
+          task_type: string
+          updated_at?: string
+        }
+        Update: {
+          amount_to_recover?: number
+          claim_id?: string
+          created_at?: string
+          due_at?: string | null
+          external_reference?: string | null
+          id?: string
+          loss_source_id?: string | null
+          merchant_id?: string
+          notes?: string | null
+          owner_email?: string | null
+          owner_name?: string | null
+          owner_type?: string
+          priority?: string
+          recovery_deadline?: string | null
+          status?: string
+          task_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recovery_tasks_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "support_payout_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recovery_tasks_loss_source_id_fkey"
+            columns: ["loss_source_id"]
+            isOneToOne: false
+            referencedRelation: "loss_sources"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recovery_tasks_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rule_evaluations: {
         Row: {
           all_rules_evaluated: Json | null
@@ -3112,6 +4681,63 @@ export type Database = {
             columns: ["source_ticket_id"]
             isOneToOne: false
             referencedRelation: "source_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      source_accounts: {
+        Row: {
+          base_url: string | null
+          connection_id: string | null
+          created_at: string
+          display_name: string | null
+          external_account_id: string | null
+          id: string
+          is_synthetic: boolean
+          merchant_id: string
+          metadata: Json
+          provider_id: string
+          updated_at: string
+        }
+        Insert: {
+          base_url?: string | null
+          connection_id?: string | null
+          created_at?: string
+          display_name?: string | null
+          external_account_id?: string | null
+          id?: string
+          is_synthetic?: boolean
+          merchant_id: string
+          metadata?: Json
+          provider_id: string
+          updated_at?: string
+        }
+        Update: {
+          base_url?: string | null
+          connection_id?: string | null
+          created_at?: string
+          display_name?: string | null
+          external_account_id?: string | null
+          id?: string
+          is_synthetic?: boolean
+          merchant_id?: string
+          metadata?: Json
+          provider_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_accounts_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "merchant_integrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_accounts_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
             referencedColumns: ["id"]
           },
         ]
@@ -3563,6 +5189,100 @@ export type Database = {
             columns: ["source_customer_id"]
             isOneToOne: false
             referencedRelation: "source_customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      source_records: {
+        Row: {
+          canonical_entity_id: string | null
+          canonical_entity_type: string | null
+          connection_id: string | null
+          connector_version: string | null
+          created_at: string
+          external_id: string
+          freshness_state: string
+          id: string
+          ingested_at: string
+          last_synced_at: string | null
+          merchant_id: string
+          payload_hash: string | null
+          source_account_id: string | null
+          source_created_at: string | null
+          source_entity_type: string
+          source_metadata: Json
+          source_system: string
+          source_updated_at: string | null
+          source_url: string | null
+          sync_state: string
+          updated_at: string
+        }
+        Insert: {
+          canonical_entity_id?: string | null
+          canonical_entity_type?: string | null
+          connection_id?: string | null
+          connector_version?: string | null
+          created_at?: string
+          external_id: string
+          freshness_state?: string
+          id?: string
+          ingested_at?: string
+          last_synced_at?: string | null
+          merchant_id: string
+          payload_hash?: string | null
+          source_account_id?: string | null
+          source_created_at?: string | null
+          source_entity_type: string
+          source_metadata?: Json
+          source_system: string
+          source_updated_at?: string | null
+          source_url?: string | null
+          sync_state?: string
+          updated_at?: string
+        }
+        Update: {
+          canonical_entity_id?: string | null
+          canonical_entity_type?: string | null
+          connection_id?: string | null
+          connector_version?: string | null
+          created_at?: string
+          external_id?: string
+          freshness_state?: string
+          id?: string
+          ingested_at?: string
+          last_synced_at?: string | null
+          merchant_id?: string
+          payload_hash?: string | null
+          source_account_id?: string | null
+          source_created_at?: string | null
+          source_entity_type?: string
+          source_metadata?: Json
+          source_system?: string
+          source_updated_at?: string | null
+          source_url?: string | null
+          sync_state?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_records_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "merchant_integrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_records_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_records_source_account_id_fkey"
+            columns: ["source_account_id"]
+            isOneToOne: false
+            referencedRelation: "source_accounts"
             referencedColumns: ["id"]
           },
         ]
@@ -4084,6 +5804,7 @@ export type Database = {
           attribution_confidence:
             | Database["public"]["Enums"]["attribution_confidence"]
             | null
+          case_origin: string
           claim_type: Database["public"]["Enums"]["claim_type"]
           created_at: string
           currency: string | null
@@ -4097,10 +5818,13 @@ export type Database = {
           loss_attribution:
             | Database["public"]["Enums"]["loss_attribution"]
             | null
+          manual_reference: string | null
+          manual_source_url: string | null
           merchant_id: string
           next_action: string | null
           next_action_reason: string | null
           payout_decision_state: string
+          primary_currency: string | null
           reason_normalized: string | null
           reason_raw: string | null
           recommended_payout_action: string | null
@@ -4119,6 +5843,7 @@ export type Database = {
           snoozed_until: string | null
           source_order_id: string | null
           source_ticket_id: string | null
+          state_version: number
           status: Database["public"]["Enums"]["claim_status"]
           store_credit_amount: number | null
           submitted_at: string
@@ -4132,6 +5857,7 @@ export type Database = {
           attribution_confidence?:
             | Database["public"]["Enums"]["attribution_confidence"]
             | null
+          case_origin?: string
           claim_type: Database["public"]["Enums"]["claim_type"]
           created_at?: string
           currency?: string | null
@@ -4145,10 +5871,13 @@ export type Database = {
           loss_attribution?:
             | Database["public"]["Enums"]["loss_attribution"]
             | null
+          manual_reference?: string | null
+          manual_source_url?: string | null
           merchant_id: string
           next_action?: string | null
           next_action_reason?: string | null
           payout_decision_state?: string
+          primary_currency?: string | null
           reason_normalized?: string | null
           reason_raw?: string | null
           recommended_payout_action?: string | null
@@ -4167,6 +5896,7 @@ export type Database = {
           snoozed_until?: string | null
           source_order_id?: string | null
           source_ticket_id?: string | null
+          state_version?: number
           status?: Database["public"]["Enums"]["claim_status"]
           store_credit_amount?: number | null
           submitted_at?: string
@@ -4180,6 +5910,7 @@ export type Database = {
           attribution_confidence?:
             | Database["public"]["Enums"]["attribution_confidence"]
             | null
+          case_origin?: string
           claim_type?: Database["public"]["Enums"]["claim_type"]
           created_at?: string
           currency?: string | null
@@ -4193,10 +5924,13 @@ export type Database = {
           loss_attribution?:
             | Database["public"]["Enums"]["loss_attribution"]
             | null
+          manual_reference?: string | null
+          manual_source_url?: string | null
           merchant_id?: string
           next_action?: string | null
           next_action_reason?: string | null
           payout_decision_state?: string
+          primary_currency?: string | null
           reason_normalized?: string | null
           reason_raw?: string | null
           recommended_payout_action?: string | null
@@ -4215,6 +5949,7 @@ export type Database = {
           snoozed_until?: string | null
           source_order_id?: string | null
           source_ticket_id?: string | null
+          state_version?: number
           status?: Database["public"]["Enums"]["claim_status"]
           store_credit_amount?: number | null
           submitted_at?: string
@@ -4325,30 +6060,39 @@ export type Database = {
       }
       sync_job_chunks: {
         Row: {
+          attempts: number
           chunk_index: number
           claimed_at: string | null
           completed_at: string | null
           id: string
           job_id: string
           last_error: string | null
+          max_attempts: number
+          next_attempt_at: string | null
           status: Database["public"]["Enums"]["sync_job_status"]
         }
         Insert: {
+          attempts?: number
           chunk_index: number
           claimed_at?: string | null
           completed_at?: string | null
           id?: string
           job_id: string
           last_error?: string | null
+          max_attempts?: number
+          next_attempt_at?: string | null
           status?: Database["public"]["Enums"]["sync_job_status"]
         }
         Update: {
+          attempts?: number
           chunk_index?: number
           claimed_at?: string | null
           completed_at?: string | null
           id?: string
           job_id?: string
           last_error?: string | null
+          max_attempts?: number
+          next_attempt_at?: string | null
           status?: Database["public"]["Enums"]["sync_job_status"]
         }
         Relationships: [
@@ -4363,9 +6107,12 @@ export type Database = {
       }
       sync_jobs: {
         Row: {
+          attempts: number
           column_map: Json | null
           completed_at: string | null
+          connection_id: string | null
           created_at: string
+          cursor: Json | null
           error_log: Json
           failed_rows: number
           file_hash: string | null
@@ -4374,18 +6121,26 @@ export type Database = {
           id: string
           job_kind: string
           label: string | null
+          last_error_code: string | null
+          max_attempts: number
           merchant_id: string
+          next_attempt_at: string | null
           processed_rows: number
           source: Database["public"]["Enums"]["signal_source"] | null
+          source_account_id: string | null
+          started_at: string | null
           status: Database["public"]["Enums"]["sync_job_status"]
           storage_path: string | null
           total_rows: number | null
           updated_at: string
         }
         Insert: {
+          attempts?: number
           column_map?: Json | null
           completed_at?: string | null
+          connection_id?: string | null
           created_at?: string
+          cursor?: Json | null
           error_log?: Json
           failed_rows?: number
           file_hash?: string | null
@@ -4394,18 +6149,26 @@ export type Database = {
           id?: string
           job_kind: string
           label?: string | null
+          last_error_code?: string | null
+          max_attempts?: number
           merchant_id: string
+          next_attempt_at?: string | null
           processed_rows?: number
           source?: Database["public"]["Enums"]["signal_source"] | null
+          source_account_id?: string | null
+          started_at?: string | null
           status?: Database["public"]["Enums"]["sync_job_status"]
           storage_path?: string | null
           total_rows?: number | null
           updated_at?: string
         }
         Update: {
+          attempts?: number
           column_map?: Json | null
           completed_at?: string | null
+          connection_id?: string | null
           created_at?: string
+          cursor?: Json | null
           error_log?: Json
           failed_rows?: number
           file_hash?: string | null
@@ -4414,9 +6177,14 @@ export type Database = {
           id?: string
           job_kind?: string
           label?: string | null
+          last_error_code?: string | null
+          max_attempts?: number
           merchant_id?: string
+          next_attempt_at?: string | null
           processed_rows?: number
           source?: Database["public"]["Enums"]["signal_source"] | null
+          source_account_id?: string | null
+          started_at?: string | null
           status?: Database["public"]["Enums"]["sync_job_status"]
           storage_path?: string | null
           total_rows?: number | null
@@ -4424,10 +6192,24 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "sync_jobs_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "merchant_integrations"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "sync_jobs_merchant_id_fkey"
             columns: ["merchant_id"]
             isOneToOne: false
             referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sync_jobs_source_account_id_fkey"
+            columns: ["source_account_id"]
+            isOneToOne: false
+            referencedRelation: "source_accounts"
             referencedColumns: ["id"]
           },
         ]
@@ -4667,6 +6449,15 @@ export type Database = {
       }
     }
     Functions: {
+      add_merchant_topup_credits: {
+        Args: {
+          p_amount_gbp: number
+          p_credits: number
+          p_merchant_id: string
+          p_stripe_payment_intent_id?: string
+        }
+        Returns: Json
+      }
       all_processing_job_chunks_complete: {
         Args: { p_job_id: string }
         Returns: boolean
@@ -4675,13 +6466,121 @@ export type Database = {
         Args: { p_chunk_index: number; p_job_id: string }
         Returns: string
       }
+      claim_domain_event_deliveries: {
+        Args: {
+          p_handler_name: string
+          p_lease_seconds?: number
+          p_limit?: number
+          p_worker_id?: string
+        }
+        Returns: {
+          attempts: number
+          completed_at: string | null
+          created_at: string
+          domain_event_id: string
+          handler_name: string
+          id: string
+          last_error: string | null
+          leased_by: string | null
+          leased_until: string | null
+          max_attempts: number
+          merchant_id: string
+          next_attempt_at: string
+          status: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "domain_event_deliveries"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      claim_ingestion_event: {
+        Args: {
+          p_event_id: string
+          p_lease_seconds?: number
+          p_worker_id: string
+        }
+        Returns: {
+          attempts: number
+          connection_id: string | null
+          created_at: string
+          event_type: string | null
+          id: string
+          idempotency_key: string
+          last_error: string | null
+          leased_by: string | null
+          leased_until: string | null
+          max_attempts: number
+          merchant_id: string
+          next_attempt_at: string
+          payload: Json | null
+          payload_hash: string
+          payload_ref: string | null
+          provider_event_id: string | null
+          received_at: string
+          retention_deadline: string | null
+          source_account_ref: string | null
+          source_system: string
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "ingestion_events"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      complete_domain_event_delivery: {
+        Args: { p_delivery_id: string }
+        Returns: undefined
+      }
       complete_processing_job_chunk: {
         Args: { p_chunk_index: number; p_job_id: string }
+        Returns: undefined
+      }
+      consume_context_credits_if_available: {
+        Args: {
+          p_allow_soft_cap?: boolean
+          p_claim_id?: string
+          p_context_type: string
+          p_credits_to_spend: number
+          p_customer_ref?: string
+          p_merchant_id: string
+          p_metadata?: Json
+          p_monthly_allowance: number
+          p_order_ref?: string
+          p_period_end: string
+          p_period_start: string
+          p_plan_tier: string
+          p_reason?: string
+          p_ticket_ref?: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      deduct_merchant_credits: {
+        Args: { p_credits: number; p_merchant_id: string }
+        Returns: Json
+      }
+      fail_domain_event_delivery: {
+        Args: {
+          p_backoff_seconds?: number
+          p_delivery_id: string
+          p_error: string
+        }
         Returns: undefined
       }
       fail_processing_job_chunk: {
         Args: { p_chunk_index: number; p_error: string; p_job_id: string }
         Returns: undefined
+      }
+      generate_evidence_reference: { Args: never; Returns: string }
+      increment_api_key_minute_count: {
+        Args: { p_key_id: string; p_window_minute: number }
+        Returns: number
       }
       increment_job_progress: {
         Args: {
@@ -4726,6 +6625,51 @@ export type Database = {
         Args: { p_job_id: string }
         Returns: number
       }
+      record_domain_event: {
+        Args: {
+          p_actor_id?: string
+          p_actor_type?: string
+          p_aggregate_id: string
+          p_aggregate_type: string
+          p_causation_id?: string
+          p_connection_id?: string
+          p_correlation_id?: string
+          p_event_type: string
+          p_handlers?: string[]
+          p_idempotency_key: string
+          p_ingestion_event_id?: string
+          p_merchant_id: string
+          p_occurred_at?: string
+          p_payload?: Json
+          p_source_record_id?: string
+        }
+        Returns: {
+          actor_id: string | null
+          actor_type: string
+          aggregate_id: string | null
+          aggregate_type: string
+          causation_id: string | null
+          connection_id: string | null
+          correlation_id: string | null
+          created_at: string
+          event_type: string
+          id: string
+          idempotency_key: string
+          ingestion_event_id: string | null
+          merchant_id: string
+          occurred_at: string
+          payload: Json
+          recorded_at: string
+          schema_version: number
+          source_record_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "domain_events"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       refresh_audit_customer_summaries: {
         Args: { p_audit_id: string; p_merchant_id: string }
         Returns: number
@@ -4740,9 +6684,21 @@ export type Database = {
         }
         Returns: undefined
       }
+      reset_merchant_monthly_credits: {
+        Args: {
+          p_cycle_reset_at: string
+          p_merchant_id: string
+          p_monthly_allowance: number
+        }
+        Returns: Json
+      }
       set_checkout_signal_cross_merchant_hits: {
         Args: { p_hit_count: number; p_signal_id: string }
         Returns: undefined
+      }
+      set_merchant_monthly_credits: {
+        Args: { p_merchant_id: string; p_monthly_credits: number }
+        Returns: Json
       }
       try_claim_job_finalize: { Args: { p_job_id: string }; Returns: boolean }
     }
@@ -4866,8 +6822,6 @@ export type Database = {
         | "carrier_loss"
         | "carrier_damage"
         | "delivery_confirmed_evidence"
-        | "repeat_claimant"
-        | "policy_override"
         | "warehouse_mispick"
         | "warehouse_missing_item"
         | "three_pl_late_dispatch"
@@ -4875,6 +6829,8 @@ export type Database = {
         | "packaging_failure"
         | "merchant_policy"
         | "unknown"
+        | "repeat_claimant"
+        | "policy_override"
       loss_case_category:
         | "delivery_loss"
         | "chargeback_or_payment_dispute"
@@ -5241,9 +7197,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       attribution_confidence: ["high", "medium", "low", "needs_more_evidence"],

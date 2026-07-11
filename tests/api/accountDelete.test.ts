@@ -47,6 +47,7 @@ function makeService(options: MockOptions = {}) {
   const deleteOperations: DeleteOperation[] = [];
   const selects: Array<{ table: string; column: string; value: string }> = [];
   const removals: Array<{ bucket: string; paths: string[] }> = [];
+  const rpcCalls: Array<{ fn: string; args: unknown }> = [];
 
   const dataByTable: Record<string, unknown[]> = {
     csv_upload_queue: [{ storage_path: 'uploads/raw.csv' }],
@@ -62,6 +63,7 @@ function makeService(options: MockOptions = {}) {
     deleteOperations,
     selects,
     removals,
+    rpcCalls,
     from(table: string) {
       let operation: 'select' | 'delete' | null = null;
       const builder = {
@@ -97,9 +99,15 @@ function makeService(options: MockOptions = {}) {
       };
       return builder;
     },
-    rpc: jest.fn(() => ({
-      maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
-    })),
+    rpc: jest.fn((fn: string, args: unknown) => {
+      rpcCalls.push({ fn, args });
+      // PostgREST rpc builders are thenable and resolve to { data, error }.
+      return {
+        maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
+        then: (resolve: (v: { data: unknown; error: null }) => unknown) =>
+          Promise.resolve(resolve({ data: null, error: null })),
+      };
+    }),
     storage: {
       from(bucket: string) {
         return {
@@ -212,6 +220,14 @@ describe('POST /api/account/delete', () => {
       'merchant_users',
       'merchants',
     ]));
+    // Source-agnostic foundation tables (incl. append-only domain_events and
+    // case_financial_entries) are purged via the flag-gated RPC before the
+    // generic loop deletes support_payout_cases (which they cascade from).
+    expect(service.rpcCalls).toEqual(
+      expect.arrayContaining([
+        { fn: 'purge_merchant_source_agnostic', args: { p_merchant_id: MERCHANT_ID } },
+      ]),
+    );
     expect(deleteUser).toHaveBeenCalledWith(USER_ID);
   });
 
@@ -262,7 +278,9 @@ describe('POST /api/account/delete', () => {
       'customer_profiles',
       'customer_profile_audit_appearances',
     ]));
-    expect(service.rpc).not.toHaveBeenCalled();
+    // The only RPC the purge may call is the source-agnostic purge; no legacy
+    // orphan-profile RPCs.
+    expect(service.rpcCalls.map((c) => c.fn)).toEqual(['purge_merchant_source_agnostic']);
   });
 
   it('does not delete the auth user when a current v2 cleanup table fails', async () => {

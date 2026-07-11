@@ -84,6 +84,17 @@ export const TABLES = {
   AGREEMENT_RULES: 'agreement_rules',
   AGREEMENT_RULE_EVALUATIONS: 'agreement_rule_evaluations',
   DOCUMENT_UPLOAD_JOBS: 'document_upload_jobs',
+  // ── Source-agnostic MVP+ foundation (Phase 1) ──
+  SOURCE_ACCOUNTS: 'source_accounts',
+  SOURCE_RECORDS: 'source_records',
+  INGESTION_EVENTS: 'ingestion_events',
+  DOMAIN_EVENTS: 'domain_events',
+  DOMAIN_EVENT_DELIVERIES: 'domain_event_deliveries',
+  ENTITY_RELATIONSHIPS: 'entity_relationships',
+  RECORD_MATCH_CANDIDATES: 'record_match_candidates',
+  RECORD_MATCH_RESOLUTIONS: 'record_match_resolutions',
+  CASE_FINANCIAL_ENTRIES: 'case_financial_entries',
+  CASE_FINANCIAL_SUMMARIES: 'case_financial_summaries',
 } as const;
 
 /** Step 3 compatibility / derived views — see PHASE_2_IMPLEMENTATION_SPEC.md */
