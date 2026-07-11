@@ -63,6 +63,33 @@ export type CanonicalShipment = {
   deliveredAt: string | null;
 };
 
+export type CanonicalTrackingEvent = {
+  externalId: string;
+  status: string | null;
+  sourceStatus: string | null;
+  locationText: string | null;
+  description: string | null;
+  eventAt: string | null;
+};
+
+export type CanonicalFulfilment = {
+  externalId: string;
+  orderExternalId: string | null;
+  status: string | null;
+  sourceStatus: string | null;
+  trackingNumber: string | null;
+  carrier: string | null;
+};
+
+export type CanonicalReturn = {
+  externalId: string;
+  orderExternalId: string | null;
+  status: string | null;
+  sourceStatus: string | null;
+  disposition: string | null;
+  requestedAt: string | null;
+};
+
 export type CanonicalTicket = {
   externalId: string;
   subject: string | null;
