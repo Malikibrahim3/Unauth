@@ -1,0 +1,2 @@
+export type ConnectorActionRequest = { connectionId: string; capabilityId: string; externalRecordId: string; caseId?: string | null; payload: Record<string, unknown>; idempotencyKey: string };
+export type ConnectorActionPreview = { provider: string; account: string; capabilityId: string; externalRecordId: string; availability: string; reason: string; risk: 'low' | 'medium' | 'high'; reversible: boolean };

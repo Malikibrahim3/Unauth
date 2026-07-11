@@ -122,6 +122,7 @@ export const TABLES = {
   WORKFLOW_DEFINITIONS: 'workflow_definitions',
   WORKFLOW_RUNS: 'workflow_runs',
   WORKFLOW_STEP_RUNS: 'workflow_step_runs',
+  CONNECTOR_ACTION_RUNS: 'connector_action_runs',
 } as const;
 
 /** Step 3 compatibility / derived views — see PHASE_2_IMPLEMENTATION_SPEC.md */
