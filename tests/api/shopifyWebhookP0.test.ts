@@ -41,6 +41,8 @@ type TableHandler = {
   onInsert?: (payload: any) => void;
   onUpsert?: (payload: any, opts: any) => void;
   onUpdate?: (payload: any) => void;
+  // For processed_webhooks: drives the claim_processed_webhook RPC result.
+  claimDuplicate?: boolean;
 };
 
 function makeSupabase(handlers: Record<string, TableHandler> = {}) {
@@ -71,7 +73,15 @@ function makeSupabase(handlers: Record<string, TableHandler> = {}) {
     };
     return builder;
   };
-  return { from };
+  // Webhook idempotency now claims atomically via the claim_processed_webhook RPC.
+  // It returns true for a duplicate (already-completed) webhook, false otherwise.
+  const rpc = async (fn: string, _args: any) => {
+    if (fn === 'claim_processed_webhook') {
+      return { data: Boolean(handlers.processed_webhooks?.claimDuplicate), error: null };
+    }
+    return { data: null, error: null };
+  };
+  return { from, rpc };
 }
 
 // Connection row returned for a known store.
@@ -90,6 +100,8 @@ function processedWebhooks(
     maybeSingleData: existingStatus
       ? { idempotency_key: 'k', status: existingStatus, attempts: 1 }
       : null,
+    // Only an already-completed webhook is a duplicate at atomic claim time.
+    claimDuplicate: existingStatus === 'completed',
     onUpsert: (payload) => capture?.claims?.push(payload),
     onUpdate: (payload) => capture?.completions?.push(payload),
   };
@@ -174,10 +186,13 @@ describe('shopify webhook p0', () => {
     expect(json.duplicate).toBe(true);
   });
 
-  it('failed webhook is re-claimed with an incremented attempt count', async () => {
-    const claims: any[] = [];
+  it('a previously-failed webhook is re-claimed (not a duplicate) and processed', async () => {
+    // The attempt increment now happens atomically inside claim_processed_webhook
+    // (DB-side), so it is no longer observed via an upsert payload. A failed prior
+    // attempt is NOT a duplicate: the webhook re-enters processing and finalizes.
+    const completions: any[] = [];
     const supabase = makeSupabase({
-      processed_webhooks: processedWebhooks('failed', { claims }),
+      processed_webhooks: processedWebhooks('failed', { completions }),
       store_connections: { maybeSingleData: CONNECTION },
       source_customers: { singleData: { id: 'cust-1' } },
       source_orders: { maybeSingleData: null, singleData: { id: 'order-1' } },
@@ -187,9 +202,10 @@ describe('shopify webhook p0', () => {
     const req = signedReq('{"id":1,"email":"a@b.com"}', 'orders/create', 'wid-3');
     const res = await POST(req);
     expect(res.status).toBe(200);
-    expect(claims).toHaveLength(1);
-    expect(claims[0].status).toBe('processing');
-    expect(claims[0].attempts).toBe(2);
+    const json = await res.json();
+    expect(json.duplicate).not.toBe(true);
+    expect(completions).toHaveLength(1);
+    expect(completions[0].status).toBe('completed');
   });
 
   it('successful orders/create upserts a source_orders row and finalizes completed', async () => {
