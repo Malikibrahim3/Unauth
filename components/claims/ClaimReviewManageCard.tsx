@@ -2,7 +2,7 @@
 
 import { RailSection, ClaimLifecycleStatusBar, FieldLabel } from '@/components/claims/claimReviewPrimitives';
 import { btnStyle, inputStyle } from '@/components/claims/claimReviewStyles';
-import { DECISION_LABELS, OUTCOME_LABELS, EVIDENCE_TYPE_LABELS, EVIDENCE_SOURCE_LABELS } from '@/components/claims/claimReviewLabels';
+import { EVIDENCE_TYPE_LABELS, EVIDENCE_SOURCE_LABELS } from '@/components/claims/claimReviewLabels';
 import type { Decision, Outcome, EvidenceType, EvidenceSource, ClaimStatus } from '@/components/claims/claimReviewTypes';
 import type { ClaimReviewWorkbench } from '@/components/claims/claimReviewWorkbench';
 
