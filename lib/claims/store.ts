@@ -344,8 +344,89 @@ export async function upsertMerchantClaim(
   return data;
 }
 
-export async function upsertMerchantCaseOutcome(supabase: any, input: z.input<typeof createOutcomeSchema>) {
+/**
+ * Append an immutable decision + outcome pair to the Phase 7 append-only history.
+ * Each call supersedes the previous decision (never mutating it); reversals also
+ * set `reverses_decision_id`. The legacy single-row `claim_outcomes` projection is
+ * still maintained by the caller as the current-state compatibility view.
+ */
+async function appendCaseDecisionHistory(supabase: any, args: {
+  claimId: string;
+  decidedAt: string;
+  decision: string;
+  outcome: string;
+  amountRefunded: number | null;
+  amountRecovered: number | null;
+  notes: string | null;
+  actorUserId: string | null;
+  recommendedPayoutAction: string | null;
+  followedRecommendation: boolean | null;
+  reversal: boolean;
+}) {
+  const { data: caseRow } = await supabase
+    .from(TABLES.MERCHANT_CLAIMS)
+    .select('merchant_id,currency,primary_currency')
+    .eq('id', args.claimId)
+    .maybeSingle();
+  if (!caseRow?.merchant_id) return; // case-less test fixtures: nothing to attribute history to
+  const merchantId = caseRow.merchant_id as string;
+  const currency = (caseRow.primary_currency ?? caseRow.currency ?? null) as string | null;
+  const amount = args.amountRecovered ?? args.amountRefunded;
+  const amountMinor = amount == null ? null : Math.round(amount * 100);
+
+  const { data: prior } = await supabase
+    .from(TABLES.CASE_DECISIONS)
+    .select('id')
+    .eq('merchant_id', merchantId)
+    .eq('support_payout_case_id', args.claimId)
+    .order('effective_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const priorId = (prior?.id as string | undefined) ?? null;
+  const base = `${args.claimId}:${args.decidedAt}:${crypto.randomUUID()}`;
+  const actorType = args.actorUserId ? 'user' : 'system';
+
+  const { error: decisionError } = await supabase.from(TABLES.CASE_DECISIONS).insert({
+    merchant_id: merchantId,
+    support_payout_case_id: args.claimId,
+    decision: args.decision,
+    action: args.outcome,
+    amount_minor: amountMinor,
+    currency,
+    recommendation_snapshot: { recommended_payout_action: args.recommendedPayoutAction },
+    followed_recommendation: args.followedRecommendation,
+    reason: args.notes,
+    actor_type: actorType,
+    actor_user_id: args.actorUserId,
+    effective_at: args.decidedAt,
+    supersedes_decision_id: priorId,
+    reverses_decision_id: args.reversal ? priorId : null,
+    idempotency_key: `decision:${base}`,
+  });
+  if (decisionError) throw new Error(`append case_decisions failed: ${decisionError.message}`);
+
+  const { error: outcomeError } = await supabase.from(TABLES.CASE_OUTCOMES).insert({
+    merchant_id: merchantId,
+    support_payout_case_id: args.claimId,
+    outcome_type: args.outcome,
+    amount_minor: amountMinor,
+    currency,
+    reason: args.notes,
+    actor_type: actorType,
+    actor_user_id: args.actorUserId,
+    effective_at: args.decidedAt,
+    idempotency_key: `outcome:${base}`,
+  });
+  if (outcomeError) throw new Error(`append case_outcomes failed: ${outcomeError.message}`);
+}
+
+export async function upsertMerchantCaseOutcome(
+  supabase: any,
+  input: z.input<typeof createOutcomeSchema>,
+  options: { reversal?: boolean } = {},
+) {
   const payload = createOutcomeSchema.parse(input);
+  const decidedAt = payload.decided_at ?? new Date().toISOString();
   const row = {
     ...(payload.id ? { id: payload.id } : {}),
     claim_id: payload.claim_id,
@@ -355,7 +436,7 @@ export async function upsertMerchantCaseOutcome(supabase: any, input: z.input<ty
     amount_recovered: payload.amount_recovered ?? null,
     notes: payload.notes ?? null,
     decided_by: payload.actor_user_id ?? null,
-    decided_at: payload.decided_at ?? new Date().toISOString(),
+    decided_at: decidedAt,
     recommended_payout_action: payload.recommended_payout_action ?? null,
     followed_recommendation: payload.followed_recommendation ?? null,
   };
@@ -365,6 +446,20 @@ export async function upsertMerchantCaseOutcome(supabase: any, input: z.input<ty
     .select()
     .single();
   if (error) throw new Error(`upsert claim_outcomes failed: ${error.message}`);
+
+  await appendCaseDecisionHistory(supabase, {
+    claimId: payload.claim_id,
+    decidedAt,
+    decision: toV2Decision(payload.decision),
+    outcome: payload.outcome,
+    amountRefunded: payload.amount_refunded ?? null,
+    amountRecovered: payload.amount_recovered ?? null,
+    notes: payload.notes ?? null,
+    actorUserId: payload.actor_user_id ?? null,
+    recommendedPayoutAction: payload.recommended_payout_action ?? null,
+    followedRecommendation: payload.followed_recommendation ?? null,
+    reversal: options.reversal === true,
+  });
   return data;
 }
 

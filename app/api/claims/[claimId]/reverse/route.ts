@@ -64,7 +64,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       amount_recovered: parsed.data.amount_recovered ?? null,
       notes: parsed.data.note,
       actor_user_id: user.id,
-    });
+    }, { reversal: true });
     const status = claimStatusForOutcome(parsed.data);
     await transitionCase(serviceClient, {
       merchantId: ctx.merchantId,

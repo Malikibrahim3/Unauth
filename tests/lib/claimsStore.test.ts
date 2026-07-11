@@ -10,11 +10,15 @@ function makeSupabaseCapture(
   options: {
     sourceOrders?: Array<{ id: string; merchant_id: string; external_id?: string; order_number?: string }>;
     existingClaims?: Array<Record<string, any>>;
+    payoutCases?: Array<Record<string, any>>;
+    priorDecisions?: Array<Record<string, any>>;
   } = {}
 ) {
   const calls: CapturedCall[] = [];
   const sourceOrders = options.sourceOrders ?? [];
   const existingClaims = options.existingClaims ?? [];
+  const payoutCases = options.payoutCases ?? [];
+  const priorDecisions = options.priorDecisions ?? [];
 
   const supabase = {
     from: (table: string) => {
@@ -28,6 +32,7 @@ function makeSupabaseCapture(
           return builder;
         },
         limit: () => builder,
+        order: () => builder,
         maybeSingle: async () => {
           if (table === 'source_orders') {
             const row = sourceOrders.find(
@@ -35,6 +40,18 @@ function makeSupabaseCapture(
                 o.merchant_id === filters.merchant_id &&
                 (('external_id' in filters && o.external_id === filters.external_id) ||
                   ('order_number' in filters && o.order_number === filters.order_number))
+            );
+            return { data: row ?? null, error: null };
+          }
+          if (table === 'support_payout_cases' && payoutCases.length > 0) {
+            const row = payoutCases.find((c) =>
+              Object.entries(filters).every(([k, v]) => c[k] === v)
+            );
+            return { data: row ?? null, error: null };
+          }
+          if (table === 'case_decisions') {
+            const row = priorDecisions.find((c) =>
+              Object.entries(filters).every(([k, v]) => c[k] === v)
             );
             return { data: row ?? null, error: null };
           }
@@ -107,6 +124,51 @@ describe('claims store', () => {
     });
     expect(calls[0].table).toBe('claim_outcomes');
     expect(calls[0].payload.decision).toBe('full_refund');
+  });
+
+  it('appends immutable case_decisions and case_outcomes alongside the claim_outcomes projection', async () => {
+    const CASE_ID = '550e8400-e29b-41d4-a716-446655440000';
+    const { supabase, calls } = makeSupabaseCapture({
+      payoutCases: [{ id: CASE_ID, merchant_id: 'merchant-1', primary_currency: 'GBP' }],
+    });
+    await upsertMerchantCaseOutcome(supabase, {
+      claim_id: CASE_ID,
+      decision: 'full_refund',
+      outcome: 'loss',
+      amount_refunded: 49.99,
+      actor_user_id: '11111111-1111-1111-1111-111111111111',
+    });
+    const decision = calls.find((c) => c.table === 'case_decisions' && c.op === 'insert');
+    const outcome = calls.find((c) => c.table === 'case_outcomes' && c.op === 'insert');
+    expect(decision?.payload).toMatchObject({
+      merchant_id: 'merchant-1',
+      support_payout_case_id: CASE_ID,
+      decision: 'full_refund',
+      amount_minor: 4999,
+      currency: 'GBP',
+      supersedes_decision_id: null,
+      reverses_decision_id: null,
+      actor_type: 'user',
+    });
+    expect(outcome?.payload).toMatchObject({ outcome_type: 'loss', amount_minor: 4999, currency: 'GBP' });
+  });
+
+  it('links a reversal to the prior decision without mutating it', async () => {
+    const CASE_ID = '550e8400-e29b-41d4-a716-446655440000';
+    const { supabase, calls } = makeSupabaseCapture({
+      payoutCases: [{ id: CASE_ID, merchant_id: 'merchant-1', primary_currency: 'USD' }],
+      priorDecisions: [{ id: 'decision-prior', merchant_id: 'merchant-1', support_payout_case_id: CASE_ID }],
+    });
+    await upsertMerchantCaseOutcome(
+      supabase,
+      { claim_id: CASE_ID, decision: 'denied', outcome: 'pending', notes: 'reversing prior', actor_user_id: '11111111-1111-1111-1111-111111111111' },
+      { reversal: true },
+    );
+    const decision = calls.find((c) => c.table === 'case_decisions' && c.op === 'insert');
+    expect(decision?.payload.supersedes_decision_id).toBe('decision-prior');
+    expect(decision?.payload.reverses_decision_id).toBe('decision-prior');
+    // Append-only: no update/delete against case_decisions.
+    expect(calls.some((c) => c.table === 'case_decisions' && c.op !== 'insert')).toBe(false);
   });
 
   it('adding evidence item works', async () => {
