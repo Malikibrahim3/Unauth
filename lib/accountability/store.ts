@@ -130,6 +130,37 @@ function taskWithAgreement(task: RecommendedRecoveryTask, agreement: Awaited<Ret
   return task;
 }
 
+/** Map the accountability party taxonomy onto the canonical loss counterparty enum. */
+function counterpartyType(party: string): string {
+  switch (party) {
+    case 'CUSTOMER':
+      return 'customer';
+    case 'CARRIER':
+      return 'carrier';
+    case 'WAREHOUSE_3PL':
+      return '3pl';
+    case 'PAYMENT_PROVIDER':
+      return 'payment_processor';
+    case 'MERCHANT':
+    case 'SUPPORT_TEAM':
+    case 'AI_AGENT':
+      return 'internal_team';
+    default:
+      return 'unknown';
+  }
+}
+
+function candidateConfidence(confidence: string): number {
+  switch (confidence) {
+    case 'HIGH':
+      return 1;
+    case 'MEDIUM':
+      return 0.6;
+    default:
+      return 0.3;
+  }
+}
+
 async function insertLossSource(client: SupabaseClient, input: {
   classification: LossSourceClassification;
   merchantId: string;
@@ -147,37 +178,77 @@ async function insertLossSource(client: SupabaseClient, input: {
   const potential = input.agreement.recovery_eligible === false
     ? 0
     : input.agreement.expected_recovery_amount || input.classification.potential_recovery_amount;
-  const { data, error } = await client
-    .from(TABLES.LOSS_SOURCES as any)
+  const evidenceSummary = input.agreement.reason
+    ? `${input.classification.evidence_summary} Agreement check: ${input.agreement.reason}`
+    : input.classification.evidence_summary;
+  const nowIso = new Date().toISOString();
+
+  // Canonical loss record. `case_type`/`attribution` retain the fine-grained
+  // accountability source type; the workflow status is preserved in metadata and
+  // in `recoverability` while `status` uses the canonical loss lifecycle enum.
+  const { data: lossCase, error } = await client
+    .from(TABLES.LOSS_CASES as any)
     .insert({
-      claim_id: input.claimId,
       merchant_id: input.merchantId,
-      source_type: input.classification.source_type,
-      confidence: input.classification.confidence,
+      support_payout_case_id: input.claimId,
+      case_category: 'unknown_post_purchase_loss',
+      case_type: input.classification.source_type.toLowerCase(),
+      recovery_route: 'needs_more_evidence',
+      status: 'detected',
+      counterparty_type: counterpartyType(input.classification.accountable_party_type),
+      counterparty_name: input.classification.accountable_party_name,
+      estimated_recovery_minor: Math.round(potential * 100),
+      source_confidence: 'insufficient_source_data',
+      source_fingerprint: `accountability:${input.claimId}:${input.classification.source_type}`,
+      attribution: input.classification.source_type,
+      attribution_confidence: candidateConfidence(input.classification.confidence),
+      recoverability: status,
+      estimated_at: nowIso,
+      source_metadata: {
+        origin: 'accountability_workflow',
+        money_at_risk: input.classification.money_at_risk,
+        evidence_summary: evidenceSummary,
+        evidence_item_ids: input.evidenceItemIds,
+        workflow_status: status,
+        agreement_reason: input.agreement.reason ?? null,
+      },
+    })
+    .select('id')
+    .single();
+  if (error) throw new Error(`loss_case_insert_failed: ${error.message}`);
+
+  // Primary attribution candidate; alternate attributions attach here without
+  // creating a second double-counted loss record.
+  const { error: candidateError } = await client
+    .from(TABLES.LOSS_ATTRIBUTION_CANDIDATES as any)
+    .insert({
+      merchant_id: input.merchantId,
+      loss_case_id: lossCase.id,
+      attribution: input.classification.source_type,
+      confidence: candidateConfidence(input.classification.confidence),
       accountable_party_type: input.classification.accountable_party_type,
       accountable_party_name: input.classification.accountable_party_name,
-      evidence_summary: input.agreement.reason ? `${input.classification.evidence_summary} Agreement check: ${input.agreement.reason}` : input.classification.evidence_summary,
-      evidence_item_ids: input.evidenceItemIds,
-      money_at_risk: input.classification.money_at_risk,
-      potential_recovery_amount: potential,
-      status,
-    })
-    .select('*')
-    .single();
-  if (error) throw new Error(`loss_source_insert_failed: ${error.message}`);
+      is_primary: true,
+      metadata: { evidence_summary: evidenceSummary },
+    });
+  if (candidateError) throw new Error(`loss_attribution_candidate_insert_failed: ${candidateError.message}`);
+
   await insertAccountabilityEvent(client, {
     merchantId: input.merchantId,
     claimId: input.claimId,
-    lossSourceId: data.id,
+    lossSourceId: lossCase.id,
     eventType: 'SOURCE_CLASSIFIED',
     description: `Likely source classified as ${input.classification.source_type}.`,
     metadata: { agreement: input.agreement },
   });
   return {
-    ...(data as PersistedLossSource),
-    money_at_risk: Number(data.money_at_risk ?? 0),
-    potential_recovery_amount: Number(data.potential_recovery_amount ?? 0),
-    recommended_recovery_tasks: input.classification.recommended_recovery_tasks,
+    ...input.classification,
+    id: lossCase.id,
+    claim_id: input.claimId,
+    merchant_id: input.merchantId,
+    evidence_item_ids: input.evidenceItemIds,
+    potential_recovery_amount: potential,
+    status,
   };
 }
 
@@ -314,7 +385,7 @@ export async function createAccountabilityWorkflow(
         merchantId: input.merchantId,
         claimId: input.claimId,
         lossSourceId: lossSource.id,
-        lossCaseId: null,
+        lossCaseId: lossSource.id,
         task,
         status,
       }));

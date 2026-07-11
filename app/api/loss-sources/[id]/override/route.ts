@@ -68,33 +68,67 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!parsed.success) return NextResponse.json({ error: 'Invalid loss source override payload' }, { status: 400 });
 
   const { id } = await params;
-  const { data: source, error: loadError } = await serviceClient
-    .from(TABLES.LOSS_SOURCES as any)
-    .select('id,claim_id,merchant_id,source_type,accountable_party_type,accountable_party_name,evidence_summary')
+  const { data: lossCase, error: loadError } = await serviceClient
+    .from(TABLES.LOSS_CASES as any)
+    .select('id,support_payout_case_id,merchant_id,case_type,attribution,counterparty_type,counterparty_name,source_metadata')
     .eq('id', id)
     .eq('merchant_id', ctx.merchantId)
     .maybeSingle();
   if (loadError) return NextResponse.json({ error: loadError.message }, { status: 500 });
-  if (!source) return NextResponse.json({ error: 'Loss source not found' }, { status: 404 });
+  if (!lossCase) return NextResponse.json({ error: 'Loss source not found' }, { status: 404 });
+
+  // Preserve the loss_sources-shaped view the widget/response expects.
+  const priorMetadata = (lossCase.source_metadata ?? {}) as Record<string, unknown>;
+  const source = {
+    id: lossCase.id as string,
+    claim_id: lossCase.support_payout_case_id as string,
+    source_type: (lossCase.attribution as string | null) ?? (lossCase.case_type as string).toUpperCase(),
+    accountable_party_type: lossCase.counterparty_type as string,
+    accountable_party_name: lossCase.counterparty_name as string | null,
+    evidence_summary: (priorMetadata.evidence_summary as string | undefined) ?? '',
+  };
 
   const summary = [
     source.evidence_summary,
     `Override: ${parsed.data.override_reason}`,
   ].filter(Boolean).join('\n');
   const { data: updated, error: updateError } = await serviceClient
-    .from(TABLES.LOSS_SOURCES as any)
+    .from(TABLES.LOSS_CASES as any)
     .update({
-      source_type: parsed.data.source_type,
-      accountable_party_type: parsed.data.accountable_party_type,
-      accountable_party_name: parsed.data.accountable_party_name ?? null,
-      confidence: 'HIGH',
-      evidence_summary: summary,
+      case_type: parsed.data.source_type.toLowerCase(),
+      attribution: parsed.data.source_type,
+      attribution_confidence: 1,
+      counterparty_type: ({
+        CUSTOMER: 'customer',
+        CARRIER: 'carrier',
+        WAREHOUSE_3PL: '3pl',
+        PAYMENT_PROVIDER: 'payment_processor',
+        MERCHANT: 'internal_team',
+        SUPPORT_TEAM: 'internal_team',
+        AI_AGENT: 'internal_team',
+      } as Record<string, string>)[parsed.data.accountable_party_type] ?? 'unknown',
+      counterparty_name: parsed.data.accountable_party_name ?? null,
+      source_confidence: 'source_verified',
+      source_metadata: { ...priorMetadata, evidence_summary: summary },
     })
     .eq('id', id)
     .eq('merchant_id', ctx.merchantId)
     .select('*')
     .single();
   if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 });
+
+  // Reflect the override on the primary attribution candidate.
+  await serviceClient
+    .from(TABLES.LOSS_ATTRIBUTION_CANDIDATES as any)
+    .update({
+      attribution: parsed.data.source_type,
+      confidence: 1,
+      accountable_party_type: parsed.data.accountable_party_type,
+      accountable_party_name: parsed.data.accountable_party_name ?? null,
+    })
+    .eq('loss_case_id', id)
+    .eq('merchant_id', ctx.merchantId)
+    .eq('is_primary', true);
 
   const { error: eventError } = await serviceClient.from(TABLES.ACCOUNTABILITY_EVENTS as any).insert({
     claim_id: source.claim_id,
