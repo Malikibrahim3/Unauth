@@ -4,6 +4,7 @@ import GateActivationChecklist from '@/components/settings/GateActivationCheckli
 import IntegrationHubClient from '@/components/integrations/IntegrationHubClient';
 import { WorkbenchPage } from '@/components/workbench/WorkbenchPage';
 import { ShopifyOAuthPopupCloser } from '@/components/settings/ShopifyOAuthPopupCloser';
+import { IntegrationCentre } from '@/components/integrations/IntegrationCentre';
 
 /**
  * The canonical Integration Centre. Provider-specific setup pages remain under
@@ -21,6 +22,7 @@ export default function IntegrationsPage() {
             <ShopifyOAuthPopupCloser />
           </Suspense>
           <GateActivationChecklist />
+          <IntegrationCentre />
           <IntegrationHubClient />
           <ApiIntegrationsClient section="advanced" />
         </div>
