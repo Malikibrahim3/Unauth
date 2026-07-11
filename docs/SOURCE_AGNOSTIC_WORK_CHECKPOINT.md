@@ -110,6 +110,56 @@ Phase 8 remaining (larger interactive units):
 - §11.6 tail — wire `SourceBadge`/`FreshnessIndicator` into more surfaces and
   expand recovery action coverage where a source-backed transition is available.
 
+## Continuation through Phases 9–11 (Codex, 2026-07-11)
+
+Further committed work:
+
+- `f2c550af`, `9e5c5555`, `c27f9c24` — reusable tenant-scoped case context
+  drawer from Work/Losses/Recovery plus unified claim/domain/task/recovery/helpdesk
+  activity timeline.
+- `2982bc3c`, `a8e6c104`, `1afc38d1` — comments, active-member mentions,
+  immutable comment audit, deduplicated notifications, recipient-scoped centre,
+  and real notification event projection. Migration `20260711180000` is live.
+- `20735189`, `fe9c08d8`, `50281dfe` — bounded/versioned workflow engine,
+  idempotent run/step/task execution, APIs, and separate Rules/Flows UI. Migration
+  `20260711190000` is live.
+- `0bf16200` — controlled connector-action preview/execution service with
+  permission re-check, capability/runtime/write-back checks, forbidden high-risk
+  actions, confirmation primitive, manual-completion outcome, and idempotent
+  action ledger. Migration `20260711200000` is live.
+- `7b2459cd`, `3d6d1334` — Integration Centre health/coverage read model and UI,
+  plus validated platform settings API/UI.
+- `71236438`, `f4cb1e4f`, `46f6d78e`, `881de0b4` — all six parity/health reports
+  now require merchant scope; production credential fallback fails closed;
+  AfterShip webhook tenancy resolves from canonical connection; uploads are
+  quarantined and extraction is blocked pending clean malware scan; rotated DB
+  credential removed from 11 tracked scripts; cutover flags and operational
+  indexes added. Migrations `20260711210000` and `20260711220000` are live.
+
+Latest verification: full Jest suite green (226 passed suites, 1 skipped; 1,806
+passed tests, 3 skipped), application lint has 0 errors (73 pre-existing warnings),
+and all new migrations are applied to the linked project. Full `tsc` remains
+blocked only by the known stale `.next` route declaration for support-context.
+
+Residual roadmap gates (do not call Phases 8–11 fully complete yet):
+
+- Finish universal-search groups/identifiers (tickets, shipments, transactions,
+  recovery references, SKU/external references) and context drawer entry points
+  from Customers, Reports, and search.
+- Finish claim-detail read-model adoption and commerce event projection in the
+  unified timeline.
+- Add comment edit/delete APIs and audit events; email preference/delivery worker.
+- Expand workflow templates/outputs and ordered transition-graph reconciliation.
+- Implement actual low-risk connector adapter executors (the generic service
+  currently records manual-required when an adapter lacks `executeAction`) and
+  retire direct Gorgias write-back callers after parity.
+- Complete the IntegrationHubClient decomposition and per-connection issue links,
+  capability/sync-history dialogs, and applicability-aware coverage.
+- Add dead-letter retry/ignore/replay operational endpoints, finish GDPR coverage
+  for every new table/storage path, run non-empty parity reports for pilot
+  merchants, and execute the staged pilot cutover. Destructive legacy-table
+  removal remains a later separately approved migration.
+
 Then continue through Phases 9–11.
 
 `docs/IMPL_source_agnostic_connected_ecosystem.md`
