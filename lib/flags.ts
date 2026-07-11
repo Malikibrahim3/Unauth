@@ -46,6 +46,7 @@ export const FLAG_SAVINGS_CARD = boolFlag(
 /** E-5  Analyst Command Center — extended ⌘K with multi-entity search */
 export const FLAG_COMMAND_CENTER = boolFlag(
   'NEXT_PUBLIC_FLAG_COMMAND_CENTER',
+  true,
 );
 
 /** E-6  Review Queue Prioritisation — sort by confidence × exposure */

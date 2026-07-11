@@ -3,9 +3,6 @@
 import { useRouter } from 'next/navigation';
 import { FileText, Hash, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { FLAG_COMMAND_CENTER } from '@/lib/flags';
-import type { ConfidenceGrade } from '@/lib/engine/weights';
-import { GradeBadge, type ConfidenceGradeValue } from '@/components/ui/GradeBadge';
 import type {
   CommandPaletteAction,
   CommandPaletteState,
@@ -13,18 +10,12 @@ import type {
   NavItem,
 } from '@/components/layout/commandPaletteReducer';
 
-const COMMAND_GRADE_TO_LETTER: Record<ConfidenceGrade, ConfidenceGradeValue> = {
-  definite: 'A',
-  probable: 'B',
-  possible: 'C',
-  weak: 'D',
-};
-
 type CommandPaletteResultsListProps = {
   state: CommandPaletteState;
   filteredNav: NavItem[];
   searchRowIdx: number;
   customerStartIdx: number;
+  unifiedStartIdx: number;
   navStartIdx: number;
   dispatch: React.Dispatch<CommandPaletteAction>;
   onClose: () => void;
@@ -38,6 +29,7 @@ export function CommandPaletteResultsList({
   filteredNav,
   searchRowIdx,
   customerStartIdx,
+  unifiedStartIdx,
   navStartIdx,
   dispatch,
   onClose,
@@ -96,26 +88,18 @@ export function CommandPaletteResultsList({
                 <p className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>{c.name}</p>
                 {c.email ? <p className="text-xs truncate" style={{ color: 'var(--text-secondary)' }}>{c.email}</p> : null}
               </div>
-              <GradeBadge
-                grade={COMMAND_GRADE_TO_LETTER[c.risk_level as ConfidenceGrade] ?? 'F'}
-                size="sm"
-                compact
-              />
             </button>
           ))}
         </>
       ) : null}
 
-      {FLAG_COMMAND_CENTER && state.unifiedResults.some((r) => r.type !== 'customer') ? (
+      {state.unifiedResults.some((r) => r.type !== 'customer') ? (
         <>
           {(['order', 'case'] as const).map((type) => {
             const group = state.unifiedResults.filter((r) => r.type === type);
             if (!group.length) return null;
             const groupLabel = type === 'order' ? 'Orders' : 'Payout cases';
-            const baseIdx =
-              customerStartIdx +
-              state.customerResults.length +
-              state.unifiedResults.filter((r) => r.type !== 'customer').indexOf(group[0]);
+            const baseIdx = unifiedStartIdx + state.unifiedResults.filter((r) => r.type !== 'customer').indexOf(group[0]);
             return (
               <div key={type}>
                 <p className="px-4 pt-2 pb-1 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
@@ -149,6 +133,10 @@ export function CommandPaletteResultsList({
             );
           })}
         </>
+      ) : null}
+
+      {state.searchError ? (
+        <p role="alert" className="px-4 py-2 text-xs" style={{ color: 'var(--danger)' }}>{state.searchError}</p>
       ) : null}
 
       {filteredNav.length > 0 || !state.query.trim() ? (

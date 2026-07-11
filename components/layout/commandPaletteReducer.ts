@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import type { ConfidenceGrade } from '@/lib/engine/weights';
 
 export interface CustomerResult {
   id: string;
@@ -23,6 +22,7 @@ export type CommandPaletteState = {
   customerResults: CustomerResult[];
   unifiedResults: UnifiedResult[];
   searchingCustomers: boolean;
+  searchError: string | null;
 };
 
 export type CommandPaletteAction =
@@ -30,6 +30,7 @@ export type CommandPaletteAction =
   | { type: 'setActiveIdx'; activeIdx: number }
   | { type: 'searchStart' }
   | { type: 'searchSuccess'; customerResults: CustomerResult[]; unifiedResults: UnifiedResult[] }
+  | { type: 'searchFailure'; error: string }
   | { type: 'searchClear' }
   | { type: 'reset' };
 
@@ -39,6 +40,7 @@ export const initialCommandPaletteState: CommandPaletteState = {
   customerResults: [],
   unifiedResults: [],
   searchingCustomers: false,
+  searchError: null,
 };
 
 export function commandPaletteReducer(
@@ -51,20 +53,24 @@ export function commandPaletteReducer(
     case 'setActiveIdx':
       return { ...state, activeIdx: action.activeIdx };
     case 'searchStart':
-      return { ...state, searchingCustomers: true };
+      return { ...state, searchingCustomers: true, searchError: null };
     case 'searchSuccess':
       return {
         ...state,
         searchingCustomers: false,
         customerResults: action.customerResults,
         unifiedResults: action.unifiedResults,
+        searchError: null,
       };
+    case 'searchFailure':
+      return { ...state, searchingCustomers: false, searchError: action.error };
     case 'searchClear':
       return {
         ...state,
         searchingCustomers: false,
         customerResults: [],
         unifiedResults: [],
+        searchError: null,
       };
     case 'reset':
       return initialCommandPaletteState;

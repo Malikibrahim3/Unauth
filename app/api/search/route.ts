@@ -30,7 +30,7 @@ const SearchQuerySchema = z.object({
   page:  z.coerce.number().int().min(1).default(1),
 });
 
-type ResultType = 'customer' | 'order' | 'case';
+type ResultType = 'customer' | 'order' | 'case' | 'recovery';
 
 interface SearchResult {
   type: ResultType;
@@ -44,6 +44,10 @@ interface SearchResult {
 /** Strip characters that would break a PostgREST `or(...)` ilike filter. */
 function sanitizeIlike(value: string): string {
   return value.replace(/[%,()*]/g, ' ').trim();
+}
+
+function isUuid(value: string): boolean {
+  return z.string().uuid().safeParse(value).success;
 }
 
 export async function GET(req: NextRequest) {
@@ -83,7 +87,8 @@ export async function GET(req: NextRequest) {
   const offset = (page - 1) * limit;
   const results: SearchResult[] = [];
 
-  // ── 1. Customers ── source_customers, merchant-scoped ──────────────────────
+  // Each read is intentionally independent: one unavailable source projection
+  // must not hide otherwise-authorised results from the other groups.
   if (requested.includes('customers')) {
     try {
       const { data: customers } = await serviceClient
@@ -104,7 +109,9 @@ export async function GET(req: NextRequest) {
           href: `/customers/${c.id}`,
         });
       }
-    } catch { /* non-fatal */ }
+    } catch (error) {
+      console.error('Search customers failed', error);
+    }
   }
 
   // ── 2. Orders ── source_orders, merchant-scoped ────────────────────────────
@@ -131,23 +138,28 @@ export async function GET(req: NextRequest) {
           });
         }
       }
-    } catch { /* non-fatal */ }
+    } catch (error) {
+      console.error('Search orders failed', error);
+    }
   }
 
   // ── 3. Payout cases ── support_payout_cases for matched orders or by id ─────
   if (requested.includes('cases')) {
     try {
-      const orFilters: string[] = [`id.ilike.${pattern}`];
+      const orFilters: string[] = [];
+      if (isUuid(q)) orFilters.push(`id.eq.${q}`);
       if (matchedOrderIds.length > 0) {
         orFilters.push(`source_order_id.in.(${matchedOrderIds.join(',')})`);
       }
-      const { data: cases } = await serviceClient
+      let caseQuery = serviceClient
         .from(TABLES.MERCHANT_CLAIMS)
         .select('id, claim_type, status, amount_at_risk, currency')
         .eq('merchant_id', merchantId)
-        .or(orFilters.join(','))
         .limit(limit)
         .range(offset, offset + limit - 1);
+      if (orFilters.length > 0) caseQuery = caseQuery.or(orFilters.join(','));
+      else if (!isUuid(q)) caseQuery = caseQuery.ilike('claim_type', pattern);
+      const { data: cases } = await caseQuery;
 
       for (const c of (cases as Array<{ id: string; claim_type: string | null; status: string | null; amount_at_risk: number | null; currency: string | null }> ?? [])) {
         results.push({
@@ -158,7 +170,9 @@ export async function GET(req: NextRequest) {
           href: `/claims/${c.id}`,
         });
       }
-    } catch { /* non-fatal */ }
+    } catch (error) {
+      console.error('Search payout cases failed', error);
+    }
   }
 
   return NextResponse.json({
