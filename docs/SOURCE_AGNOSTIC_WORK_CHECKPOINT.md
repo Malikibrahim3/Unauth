@@ -1,7 +1,7 @@
 # Source-Agnostic Architecture — Live Work Checkpoint
 
 **Purpose:** Disk-backed continuation state for another model if this task is interrupted.
-**Last updated:** 2026-07-11 (Phase 6 complete)
+**Last updated:** 2026-07-11 (Phase 7 runtime cutover: 7.2–7.5 complete, 7.1 partial)
 **Branch:** `codex/refocus-claim-gate-map`
 **Requested deliverable:** Implement the source-agnostic MVP+ plan through Phase 11, with live migrations, tests, and one commit per phase/sub-phase.
 
@@ -29,8 +29,33 @@ Phase 6 verification: changed-file ESLint passed, source TypeScript passed (excl
 known stale `.next` declarations), `git diff --check` passed, and the complete Jest
 suite passed with 1,773 tests passed, 3 skipped, and 0 failed.
 
-Next: execute Phase 7, "Consolidate evidence, losses, recoveries, and tasks," from
-`docs/IMPL_source_agnostic_connected_ecosystem.md`, then continue through Phase 11.
+Phase 7 runtime cutover is largely complete (commits after the Phase 7 foundation
+`15ab4b51`):
+
+- 7.5 `d9141e51` — recovery-task writes/completion routed through canonical `work_tasks`.
+- 7.3 `26c41ba0` — loss classification writes routed through `loss_cases` +
+  `loss_attribution_candidates`; override route reads/updates canonical loss.
+- 7.2 `2b6a4086` — every recorded outcome appends immutable `case_decisions` +
+  `case_outcomes` alongside the legacy `claim_outcomes` compatibility projection;
+  reversals set `reverses_decision_id`.
+- types regenerated `2d071085`.
+- 7.4 `baf47091` — `recovery_cases.loss_case_id`/`prevention_only`; recovery
+  creation requires a canonical loss record.
+- 7.1 (partial) `0aebad73` — accountability evidence now written with `evidence_links`.
+
+Full suite green after each: 1,777 passed, 3 skipped, 0 failed. TypeScript clean.
+
+Remaining before Phase 7 is fully closed (next unit): the broader §10.1 evidence
+read-model cutover — migrate the legacy evidence readers (`lib/claims/decision/
+context.ts`, `lib/claim-gate/buildEvidence.ts`, `app/api/claims/[claimId]/route.ts`,
+`app/api/claims/route.ts`) and the integration evidence writers (`lib/integrations/
+syncAfterShipEvidence.ts`, `app/api/integrations/[provider]/{sync,webhook}/route.ts`,
+`app/api/integrations/documents/[id]/approve/route.ts`, `app/api/fulfillment/
+pack-confirmation/route.ts`) onto canonical `evidence_items` + `evidence_links`, and
+remove the `hasConnected('shopify'|'gorgias')` provider-hardcoding in
+`lib/payouts/assembleEvidencePack.ts` so it selects evidence by the case graph. This
+sits next to decision/evidence-pack logic near the frozen scoring boundary, so it
+should be done as its own carefully-verified unit. Then continue through Phase 11.
 
 `docs/IMPL_source_agnostic_connected_ecosystem.md`
 
