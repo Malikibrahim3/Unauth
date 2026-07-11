@@ -8,7 +8,7 @@ export interface CustomerResult {
 }
 
 export interface UnifiedResult {
-  type: 'customer' | 'order' | 'case';
+  type: 'customer' | 'order' | 'case' | 'ticket' | 'shipment' | 'transaction' | 'recovery';
   id: string;
   label: string;
   sublabel?: string;

@@ -96,6 +96,74 @@ describe('GET /api/search (v2 unified search)', () => {
     ]));
   });
 
+  it('returns a ticket result', async () => {
+    setup({
+      source_tickets: [{ id: 't-1', external_id: '5567', subject: 'Where is my order', status: 'open' }],
+    });
+    const res = await GET(req('5567', '&types=tickets'));
+    const body = await res.json();
+    expect(body.results).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'ticket', id: 't-1' }),
+    ]));
+  });
+
+  it('returns a shipment result by tracking number', async () => {
+    setup({
+      source_shipments: [{ id: 'sh-1', tracking_number: '1Z999', carrier: 'UPS', status: 'in_transit', source_order_id: 'so-1' }],
+    });
+    const res = await GET(req('1Z999', '&types=shipments'));
+    const body = await res.json();
+    expect(body.results).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'shipment', id: 'sh-1' }),
+    ]));
+  });
+
+  it('returns a transaction result by provider reference', async () => {
+    setup({
+      source_transactions: [{ id: 'tx-1', external_id: 'ch_123', provider_reference: 'ref_9', transaction_type: 'charge', amount_minor: 5000, currency: 'GBP', source_order_id: 'so-1' }],
+    });
+    const res = await GET(req('ch_123', '&types=transactions'));
+    const body = await res.json();
+    expect(body.results).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'transaction', id: 'tx-1' }),
+    ]));
+  });
+
+  it('returns a recovery result linking to its detail page', async () => {
+    const uuid = '11111111-1111-1111-1111-111111111111';
+    setup({
+      recovery_cases: [{ id: uuid, recovery_type: 'carrier_claim', owner_type: 'carrier', status: 'submitted', merchant_loss_amount: 80, currency: 'GBP' }],
+    });
+    const res = await GET(req(uuid, '&types=recoveries'));
+    const body = await res.json();
+    expect(body.results).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'recovery', id: uuid, href: `/recoveries/${uuid}` }),
+    ]));
+  });
+
+  it('matches orders by SKU via order lines', async () => {
+    setup({
+      source_order_lines: [{ source_order_id: 'so-7' }],
+      source_orders: [{ id: 'so-7', order_number: '7', email: null, total_price: 10, currency: 'GBP', source_customer_id: 'sc-7' }],
+    });
+    const res = await GET(req('SKU-ABC', '&types=orders'));
+    const body = await res.json();
+    expect(body.results).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'order', id: 'so-7' }),
+    ]));
+  });
+
+  it('strips internal join hints from results', async () => {
+    setup({
+      source_shipments: [{ id: 'sh-2', tracking_number: '1Z1', carrier: 'UPS', status: 'x', source_order_id: 'so-2' }],
+    });
+    const res = await GET(req('1Z1', '&types=shipments'));
+    const body = await res.json();
+    const shipment = body.results.find((r: { type: string }) => r.type === 'shipment');
+    expect(shipment).toBeDefined();
+    expect(shipment._orderId).toBeUndefined();
+  });
+
   it('returns empty results when nothing matches', async () => {
     setup({});
     const res = await GET(req('zzz-no-match'));

@@ -10,6 +10,17 @@ import type {
   NavItem,
 } from '@/components/layout/commandPaletteReducer';
 
+// Order MUST match the push order in app/api/search/route.ts so the flat
+// keyboard index model stays aligned across all groups.
+const UNIFIED_GROUPS = [
+  { type: 'order', label: 'Orders' },
+  { type: 'case', label: 'Payout cases' },
+  { type: 'ticket', label: 'Tickets' },
+  { type: 'shipment', label: 'Shipments' },
+  { type: 'transaction', label: 'Transactions' },
+  { type: 'recovery', label: 'Recoveries' },
+] as const;
+
 type CommandPaletteResultsListProps = {
   state: CommandPaletteState;
   filteredNav: NavItem[];
@@ -95,15 +106,17 @@ export function CommandPaletteResultsList({
 
       {state.unifiedResults.some((r) => r.type !== 'customer') ? (
         <>
-          {(['order', 'case'] as const).map((type) => {
+          {/* Rendered in the same order the search API pushes results so the flat
+              keyboard index model (nonCustomer array position) stays aligned. */}
+          {UNIFIED_GROUPS.map(({ type, label }) => {
             const group = state.unifiedResults.filter((r) => r.type === type);
             if (!group.length) return null;
-            const groupLabel = type === 'order' ? 'Orders' : 'Payout cases';
             const baseIdx = unifiedStartIdx + state.unifiedResults.filter((r) => r.type !== 'customer').indexOf(group[0]);
+            const Icon = type === 'order' ? Hash : FileText;
             return (
               <div key={type}>
                 <p className="px-4 pt-2 pb-1 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
-                  {groupLabel}
+                  {label}
                 </p>
                 {group.map((item, i) => (
                   <button
@@ -121,7 +134,7 @@ export function CommandPaletteResultsList({
                       className="flex h-7 w-7 items-center justify-center rounded-md shrink-0 text-xs"
                       style={{ background: 'var(--bg-subtle)', color: 'var(--icon-muted)' }}
                     >
-                      {type === 'order' ? <Hash size={13} aria-hidden="true" /> : <FileText size={13} aria-hidden="true" />}
+                      <Icon size={13} aria-hidden="true" />
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>{item.label}</p>
