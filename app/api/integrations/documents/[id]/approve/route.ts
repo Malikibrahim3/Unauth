@@ -3,9 +3,9 @@ import { z } from 'zod';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import {
-  evidenceRowsFromNormalized,
   mapApprovedPartnerTermsToEvidence,
 } from '@/lib/integrations/evidenceMapper';
+import { writeCanonicalEvidence } from '@/lib/integrations/canonicalEvidence';
 
 const approveSchema = z.object({
   partner_type: z.enum(['carrier', 'three_pl', 'supplier', 'insurer']).default('carrier'),
@@ -71,10 +71,12 @@ export async function POST(
     merchantId: ctx.merchantId,
     now,
   });
-  const { error: evidenceError } = await serviceClient
-    .from('integration_evidence_items')
-    .upsert(evidenceRowsFromNormalized(evidence), { onConflict: 'id' });
-  if (evidenceError) return NextResponse.json({ error: evidenceError.message }, { status: 500 });
+  try {
+    await writeCanonicalEvidence(serviceClient, evidence);
+  } catch (evidenceError) {
+    const message = evidenceError instanceof Error ? evidenceError.message : 'canonical_evidence_write_failed';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 
   return NextResponse.json({ terms, evidence_items: evidence.length });
 }

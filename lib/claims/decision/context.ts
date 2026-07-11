@@ -12,6 +12,7 @@ import {
   type TrackingEvidenceRow,
 } from '@/lib/integrations/trackingEvidenceSlice';
 import { getStoredIntegrationViews } from '@/lib/integrations/auth';
+import { providerShapeFromCanonical } from '@/lib/integrations/canonicalEvidence';
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
@@ -135,11 +136,11 @@ export async function buildClaimDecisionContext(
           .maybeSingle()
       : Promise.resolve({ data: null, error: null }),
     client
-      .from('integration_evidence_items')
-      .select('evidence_type, summary, value, occurred_at, raw_reference, source_provider')
+      .from('evidence_items')
+      .select('evidence_type, summary, structured_value, source_created_at, source_record_id, source_system, source_metadata')
       .eq('merchant_id', merchantId)
-      .eq('source_provider', 'aftership')
-      .eq('support_payout_case_id', claimId),
+      .eq('source_system', 'aftership')
+      .eq('claim_id', claimId),
     getStoredIntegrationViews(client, merchantId).then((views) => ({ data: views, error: null })),
     client
       .from('claim_evidence')
@@ -161,15 +162,15 @@ export async function buildClaimDecisionContext(
     (view) => view.id === 'aftership' && view.status === 'connected',
   );
   const shopifyTrackingNumber = fulfillmentRes.data?.tracking_number?.trim() ?? null;
-  let afterShipRows = (integrationEvidenceRes.data ?? []) as TrackingEvidenceRow[];
+  let afterShipRows = ((integrationEvidenceRes.data ?? []) as any[]).map(providerShapeFromCanonical) as TrackingEvidenceRow[];
   if (afterShipRows.length === 0 && shopifyTrackingNumber) {
     const { data: byTracking } = await client
-      .from('integration_evidence_items')
-      .select('evidence_type, summary, value, occurred_at, raw_reference, source_provider')
+      .from('evidence_items')
+      .select('evidence_type, summary, structured_value, source_created_at, source_record_id, source_system, source_metadata')
       .eq('merchant_id', merchantId)
-      .eq('source_provider', 'aftership')
-      .eq('raw_reference', shopifyTrackingNumber);
-    afterShipRows = (byTracking ?? []) as TrackingEvidenceRow[];
+      .eq('source_system', 'aftership')
+      .eq('source_record_id', shopifyTrackingNumber);
+    afterShipRows = ((byTracking ?? []) as any[]).map(providerShapeFromCanonical) as TrackingEvidenceRow[];
   }
   const trackingSlice = parseAfterShipEvidenceRows(afterShipRows, {
     afterShipConnected,

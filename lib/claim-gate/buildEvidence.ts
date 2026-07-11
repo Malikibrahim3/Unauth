@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { TABLES } from '@/lib/supabase/tables';
 import type {
   ClaimGateClaimType,
   ClaimGateEvidence,
@@ -276,22 +277,29 @@ async function writeIntegrationEvidence(input: {
   occurredAt?: string | null;
   stableKey: string;
 }) {
+  // Canonical evidence store (Phase 7.1). Provider/provenance fields map onto
+  // flat canonical columns; provider-shaped extras live in structured_value /
+  // source_metadata (see lib/integrations/canonicalEvidence.ts).
+  const confidenceNumeric: Record<string, number> = { high: 1, medium: 0.6, low: 0.3 };
   const row = {
     id: stableEvidenceId(input.merchantId, input.sourceProvider, input.evidenceType, input.stableKey),
     merchant_id: input.merchantId,
-    source_provider: input.sourceProvider,
-    source_category: input.sourceCategory,
     evidence_type: input.evidenceType,
     title: input.title,
     summary: input.summary,
-    confidence: input.confidence,
-    value: input.value,
-    raw_reference: JSON.stringify(input.rawReference),
-    occurred_at: input.occurredAt ?? null,
+    confidence: confidenceNumeric[input.confidence] ?? null,
+    source_system: input.sourceProvider,
+    source_record_id: JSON.stringify(input.rawReference),
+    source_created_at: input.occurredAt ?? null,
+    structured_value: { value: input.value },
+    source_metadata: {
+      source_category: input.sourceCategory,
+      confidence_label: input.confidence,
+    },
   };
   const { error } = await input.client
-    .from('integration_evidence_items')
-    .upsert(row, { onConflict: 'id' });
+    .from(TABLES.EVIDENCE_ITEMS as never)
+    .upsert(row as never, { onConflict: 'id' });
   if (error) {
     console.warn('claim_gate_integration_evidence_write_failed', {
       provider: input.sourceProvider,

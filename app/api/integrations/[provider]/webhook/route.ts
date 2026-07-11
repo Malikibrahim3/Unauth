@@ -2,7 +2,8 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
 import { getIntegrationCredential } from '@/lib/integrations/auth';
-import { evidenceRowsFromNormalized, mapAfterShipTrackingToEvidence } from '@/lib/integrations/evidenceMapper';
+import { mapAfterShipTrackingToEvidence } from '@/lib/integrations/evidenceMapper';
+import { writeCanonicalEvidence } from '@/lib/integrations/canonicalEvidence';
 import { requireIntegrationProvider } from '@/lib/integrations/registry';
 
 // AfterShip webhooks are authenticated with an HMAC signature over the raw body.
@@ -41,10 +42,12 @@ export async function POST(
   const body = JSON.parse(rawBody);
   const tracking = body?.data?.tracking ?? body?.tracking ?? body;
   const items = mapAfterShipTrackingToEvidence(tracking, { merchantId });
-  const { error } = await serviceClient
-    .from('integration_evidence_items')
-    .upsert(evidenceRowsFromNormalized(items), { onConflict: 'id' });
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    await writeCanonicalEvidence(serviceClient, items);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'canonical_evidence_write_failed';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 
   return NextResponse.json({ ok: true, evidence_items: items.length });
 }

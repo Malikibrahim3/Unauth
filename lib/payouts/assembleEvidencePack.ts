@@ -7,6 +7,7 @@ import {
   mapShopifyRefundToEvidence,
 } from '@/lib/integrations/evidenceMapper';
 import { getStoredIntegrationViews } from '@/lib/integrations/auth';
+import { providerShapeFromCanonical } from '@/lib/integrations/canonicalEvidence';
 import { getIntegrationProvider, INTEGRATION_PROVIDERS } from '@/lib/integrations/registry';
 import type {
   EvidenceCapability,
@@ -73,13 +74,16 @@ export async function assembleEvidencePack(input: AssembleEvidencePackInput): Pr
   const views = await getStoredIntegrationViews(input.client, input.merchantId);
   const items: NormalizedEvidenceItem[] = [];
   const missingEvidence: MissingEvidenceItem[] = [];
+  // Canonical evidence store (Phase 7.1): integration evidence now lives in
+  // evidence_items with flat provenance columns (source_system / source_record_id
+  // / claim_id). Rows are reconstructed into the provider shape below.
   const evidenceFilters = [
-    input.supportPayoutCaseId ? `support_payout_case_id.eq.${input.supportPayoutCaseId}` : '',
-    input.trackingNumber ? `raw_reference.eq.${input.trackingNumber}` : '',
-    input.orderId ? `raw_reference.eq.${input.orderId}` : '',
+    input.supportPayoutCaseId ? `claim_id.eq.${input.supportPayoutCaseId}` : '',
+    input.trackingNumber ? `source_record_id.eq.${input.trackingNumber}` : '',
+    input.orderId ? `source_record_id.eq.${input.orderId}` : '',
   ].filter(Boolean);
   let integrationEvidenceQuery = input.client
-    .from('integration_evidence_items')
+    .from('evidence_items')
     .select('*')
     .eq('merchant_id', input.merchantId);
   if (evidenceFilters.length > 0) {
@@ -173,7 +177,9 @@ export async function assembleEvidencePack(input: AssembleEvidencePackInput): Pr
     }));
   }
 
-  for (const row of (integrationEvidenceRes.data ?? []) as any[]) {
+  for (const canonicalRow of (integrationEvidenceRes.data ?? []) as any[]) {
+    const row = providerShapeFromCanonical(canonicalRow) as any;
+    if (!row.source_provider) continue;
     const provider = getIntegrationProvider(row.source_provider);
     if (!provider || provider.buildStatus === 'slot_only') continue;
     items.push({

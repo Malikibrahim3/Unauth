@@ -5,10 +5,8 @@ import { createServiceClient } from '@/lib/supabase/server';
 import {
   verifyPackConfirmationSignature,
 } from '@/lib/fulfillment/packConfirmation';
-import {
-  evidenceRowsFromNormalized,
-  mapSelfFulfillmentPackConfirmationToEvidence,
-} from '@/lib/integrations/evidenceMapper';
+import { mapSelfFulfillmentPackConfirmationToEvidence } from '@/lib/integrations/evidenceMapper';
+import { writeCanonicalEvidence } from '@/lib/integrations/canonicalEvidence';
 import { STORAGE_BUCKETS, TABLES } from '@/lib/supabase/tables';
 
 // Public endpoint guarded by an HMAC-signed, expiring, single-use link.
@@ -114,10 +112,12 @@ export async function POST(request: NextRequest) {
     merchantId: query.data.merchantId,
     now: confirmedAt,
   });
-  const { error: evidenceError } = await serviceClient
-    .from(TABLES.INTEGRATION_EVIDENCE_ITEMS)
-    .upsert(evidenceRowsFromNormalized(evidence), { onConflict: 'id' });
-  if (evidenceError) return NextResponse.json({ error: evidenceError.message }, { status: 500 });
+  try {
+    await writeCanonicalEvidence(serviceClient, evidence);
+  } catch (evidenceError) {
+    const message = evidenceError instanceof Error ? evidenceError.message : 'canonical_evidence_write_failed';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 
   return NextResponse.json({
     ok: true,

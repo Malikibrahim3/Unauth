@@ -1,8 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import {
-  evidenceRowsFromNormalized,
-  mapAfterShipTrackingToEvidence,
-} from '@/lib/integrations/evidenceMapper';
+import { mapAfterShipTrackingToEvidence } from '@/lib/integrations/evidenceMapper';
+import { writeCanonicalEvidence } from '@/lib/integrations/canonicalEvidence';
 import { getIntegrationCredential, upsertMerchantIntegration } from '@/lib/integrations/auth';
 import { fetchAfterShipTracking } from '@/lib/integrations/providers/aftership';
 import { aftershipProvider } from '@/lib/integrations/providers/aftership';
@@ -56,13 +54,7 @@ export async function syncAfterShipEvidenceForCase(input: {
       supportPayoutCaseId: input.supportPayoutCaseId,
       now,
     });
-    const rows = evidenceRowsFromNormalized(normalized);
-    if (rows.length > 0) {
-      const { error } = await input.client
-        .from('integration_evidence_items')
-        .upsert(rows, { onConflict: 'id' });
-      if (error) throw new Error(error.message);
-    }
+    await writeCanonicalEvidence(input.client, normalized);
     await upsertMerchantIntegration(input.client, input.merchantId, aftershipProvider, 'connected', {
       lastSyncAt: now,
       lastError: null,

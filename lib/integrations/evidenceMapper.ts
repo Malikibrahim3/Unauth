@@ -476,21 +476,3 @@ export function mapSelfFulfillmentPackConfirmationToEvidence(
 
   return items;
 }
-
-export function evidenceRowsFromNormalized(items: NormalizedEvidenceItem[]) {
-  return items.map((item) => ({
-    id: item.id,
-    merchant_id: item.merchantId,
-    support_payout_case_id: item.supportPayoutCaseId ?? null,
-    source_provider: item.sourceProvider,
-    source_category: item.sourceCategory,
-    evidence_type: item.evidenceType,
-    title: item.title,
-    summary: item.summary,
-    confidence: item.confidence,
-    value: item.value === undefined ? null : item.value,
-    occurred_at: item.occurredAt ?? null,
-    raw_reference: item.rawReference ?? null,
-    created_at: item.createdAt,
-  }));
-}

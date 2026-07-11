@@ -9,12 +9,12 @@ import {
   upsertMerchantIntegration,
 } from '@/lib/integrations/auth';
 import {
-  evidenceRowsFromNormalized,
   mapAfterShipTrackingToEvidence,
   mapCarrierProofToEvidence,
   mapShipBobFulfillmentToEvidence,
   mapShopifyDisputeToEvidence,
 } from '@/lib/integrations/evidenceMapper';
+import { writeCanonicalEvidence } from '@/lib/integrations/canonicalEvidence';
 import { fetchAfterShipTracking } from '@/lib/integrations/providers/aftership';
 import { fetchFedExDeliveryProof } from '@/lib/integrations/providers/fedex';
 import { fetchShopifyPaymentDisputes } from '@/lib/integrations/providers/shopify';
@@ -49,13 +49,6 @@ async function resolveTrackingNumber(client: any, merchantId: string, orderId?: 
   return data?.tracking_number ?? null;
 }
 
-async function insertEvidence(client: any, items: ReturnType<typeof evidenceRowsFromNormalized>) {
-  if (items.length === 0) return;
-  const { error } = await client
-    .from('integration_evidence_items')
-    .upsert(items, { onConflict: 'id' });
-  if (error) throw new Error(`integration_evidence_insert_failed: ${error.message}`);
-}
 
 async function resolveOrderReference(
   client: any,
@@ -187,7 +180,7 @@ export async function POST(
       normalized = [];
     }
 
-    await insertEvidence(serviceClient, evidenceRowsFromNormalized(normalized));
+    await writeCanonicalEvidence(serviceClient, normalized);
     await upsertMerchantIntegration(serviceClient, ctx.merchantId, provider, 'connected', {
       lastSyncAt: now,
       lastError: null,

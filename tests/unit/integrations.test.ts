@@ -340,8 +340,10 @@ describe('evidence assembly', () => {
         pick_pack_events: 1,
       });
       expect(evidence.connections).toMatchObject({ carrier_tracking: true, warehouse: true });
-      expect(tables.integration_evidence_items.map((row) => row.source_provider).sort()).toEqual(['aftership', 'shipbob']);
-      expect(tables.integration_evidence_items.find((row) => row.source_provider === 'aftership')?.value)
+      // Phase 7.1: integration evidence is written to the canonical evidence_items
+      // store (provider → source_system, value → structured_value.value).
+      expect(tables.evidence_items.map((row) => row.source_system).sort()).toEqual(['aftership', 'shipbob']);
+      expect(tables.evidence_items.find((row) => row.source_system === 'aftership')?.structured_value.value)
         .toMatchObject({ tracking_source: 'aftership', evidence_strength: 'strong' });
 
       global.fetch = jest.fn().mockRejectedValue(new Error('provider unavailable')) as any;
@@ -377,32 +379,34 @@ describe('evidence assembly', () => {
         source_refunds: [],
         source_fulfillments: [],
         category_applicability: [],
-        integration_evidence_items: [
+        // Phase 7.1 canonical evidence_items shape (source_system, claim_id,
+        // structured_value.value, source_metadata.source_category).
+        evidence_items: [
           {
             id: 'e1',
             merchant_id: 'm1',
-            support_payout_case_id: 'c1',
-            source_provider: 'ups',
-            source_category: 'carrier',
+            claim_id: 'c1',
+            source_system: 'ups',
+            source_metadata: { source_category: 'carrier', confidence_label: 'medium' },
             evidence_type: 'delivery_photo',
             title: 'UPS delivery photo',
             summary: 'Delivery photo attempted, not available for this shipment',
-            confidence: 'medium',
-            value: null,
-            raw_reference: '1Z999',
+            confidence: 0.6,
+            structured_value: { value: null },
+            source_record_id: '1Z999',
             created_at: '2026-06-20T00:00:00.000Z',
           },
           {
             id: 'slot-evidence',
             merchant_id: 'm1',
-            support_payout_case_id: 'c1',
-            source_provider: 'loop',
-            source_category: 'returns',
+            claim_id: 'c1',
+            source_system: 'loop',
+            source_metadata: { source_category: 'returns', confidence_label: 'low' },
             evidence_type: 'contract_terms',
             title: 'Should not surface',
             summary: 'Slot-only row should be ignored',
-            confidence: 'low',
-            value: null,
+            confidence: 0.3,
+            structured_value: { value: null },
             created_at: '2026-06-20T00:00:00.000Z',
           },
         ],
