@@ -98,3 +98,91 @@ export async function createCaseComment(client: SupabaseClient, input: {
   });
   return comment;
 }
+
+export const editCommentSchema = z.object({ body: z.string().trim().min(1).max(10_000) });
+
+/** Load a comment scoped to merchant + case for authorization. */
+async function loadComment(client: SupabaseClient, merchantId: string, caseId: string, commentId: string) {
+  const { data, error } = await client
+    .from(TABLES.CASE_COMMENTS)
+    .select('id,author_user_id,support_payout_case_id,deleted_at')
+    .eq('merchant_id', merchantId)
+    .eq('support_payout_case_id', caseId)
+    .eq('id', commentId)
+    .maybeSingle();
+  if (error) throw new Error(`case_comment_load_failed: ${error.message}`);
+  return data as { id: string; author_user_id: string | null; support_payout_case_id: string; deleted_at: string | null } | null;
+}
+
+/**
+ * Edit a comment's body. Only the author may edit, and only while the comment is
+ * live. Stamps `edited_at` and appends an immutable 'edited' audit event holding
+ * the new body snapshot; the prior snapshot is preserved by earlier audit rows.
+ */
+export async function editCaseComment(client: SupabaseClient, input: {
+  merchantId: string; caseId: string; commentId: string; actorUserId: string; body: string;
+}) {
+  const parsed = editCommentSchema.parse({ body: input.body });
+  const existing = await loadComment(client, input.merchantId, input.caseId, input.commentId);
+  if (!existing) return { ok: false as const, reason: 'not_found' };
+  if (existing.deleted_at) return { ok: false as const, reason: 'deleted' };
+  if (existing.author_user_id !== input.actorUserId) return { ok: false as const, reason: 'forbidden' };
+
+  const editedAt = new Date().toISOString();
+  const { data: updated, error } = await client
+    .from(TABLES.CASE_COMMENTS)
+    .update({ body: parsed.body, edited_at: editedAt, updated_at: editedAt })
+    .eq('merchant_id', input.merchantId)
+    .eq('id', input.commentId)
+    .select('id,author_user_id,body,edited_at,created_at')
+    .single();
+  if (error) throw new Error(`case_comment_edit_failed: ${error.message}`);
+
+  const { error: auditError } = await client.from(TABLES.CASE_COMMENT_EVENTS).insert({
+    merchant_id: input.merchantId, comment_id: input.commentId, event_type: 'edited',
+    actor_user_id: input.actorUserId, body_snapshot: parsed.body,
+  });
+  if (auditError) throw new Error(`case_comment_audit_failed: ${auditError.message}`);
+
+  await recordDomainEvent(client, {
+    merchantId: input.merchantId, eventType: 'case.comment_edited', aggregateType: 'case',
+    aggregateId: input.caseId, idempotencyKey: `case-comment-edited:${input.commentId}:${editedAt}`,
+    actorType: 'user', actorId: input.actorUserId, payload: { comment_id: input.commentId },
+  });
+  return { ok: true as const, comment: updated };
+}
+
+/**
+ * Soft-delete a comment (author only). The row is retained with `deleted_at`
+ * set and the body redacted; the audit trail (created/edited snapshots) is
+ * preserved via the append-only event log.
+ */
+export async function deleteCaseComment(client: SupabaseClient, input: {
+  merchantId: string; caseId: string; commentId: string; actorUserId: string;
+}) {
+  const existing = await loadComment(client, input.merchantId, input.caseId, input.commentId);
+  if (!existing) return { ok: false as const, reason: 'not_found' };
+  if (existing.deleted_at) return { ok: true as const, alreadyDeleted: true };
+  if (existing.author_user_id !== input.actorUserId) return { ok: false as const, reason: 'forbidden' };
+
+  const deletedAt = new Date().toISOString();
+  const { error } = await client
+    .from(TABLES.CASE_COMMENTS)
+    .update({ body: '[deleted]', deleted_at: deletedAt, updated_at: deletedAt })
+    .eq('merchant_id', input.merchantId)
+    .eq('id', input.commentId);
+  if (error) throw new Error(`case_comment_delete_failed: ${error.message}`);
+
+  const { error: auditError } = await client.from(TABLES.CASE_COMMENT_EVENTS).insert({
+    merchant_id: input.merchantId, comment_id: input.commentId, event_type: 'deleted',
+    actor_user_id: input.actorUserId, body_snapshot: null,
+  });
+  if (auditError) throw new Error(`case_comment_audit_failed: ${auditError.message}`);
+
+  await recordDomainEvent(client, {
+    merchantId: input.merchantId, eventType: 'case.comment_deleted', aggregateType: 'case',
+    aggregateId: input.caseId, idempotencyKey: `case-comment-deleted:${input.commentId}`,
+    actorType: 'user', actorId: input.actorUserId, payload: { comment_id: input.commentId },
+  });
+  return { ok: true as const };
+}
