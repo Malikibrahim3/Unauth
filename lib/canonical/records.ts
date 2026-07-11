@@ -63,6 +63,16 @@ export type CanonicalShipment = {
   deliveredAt: string | null;
 };
 
+export type CanonicalTicket = {
+  externalId: string;
+  subject: string | null;
+  channel: string | null;
+  status: string | null;
+  customer: CanonicalCustomer | null;
+  orderReference: string | null;
+  openedAt: string | null;
+};
+
 export const CANONICAL_ENTITY_TYPES = [
   'customer', 'order', 'order_line', 'refund', 'replacement', 'fulfilment',
   'shipment', 'tracking_event', 'return', 'dispute', 'ticket', 'message',

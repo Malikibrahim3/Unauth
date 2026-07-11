@@ -1,7 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { mapShopifyOrder } from '@/lib/connectors/providers/shopify/mappings';
-import { mapCanonicalOrder, mapCanonicalRefund, mapCanonicalShipment } from '@/lib/canonical/entities';
+import { mapGorgiasTicket } from '@/lib/connectors/providers/gorgias/mappings';
+import { mapCanonicalOrder, mapCanonicalRefund, mapCanonicalShipment, mapCanonicalTicket } from '@/lib/canonical/entities';
 
 const FX = path.join(process.cwd(), 'tests/fixtures/source-agnostic');
 const load = (f: string) => JSON.parse(fs.readFileSync(path.join(FX, f), 'utf8'));
@@ -94,5 +95,20 @@ describe('canonical refund + shipment mapping', () => {
     expect(shipment?.sourceStatus).toBe('DELIVERED');
     expect(shipment?.trackingNumber).toBe('EX123456789GB');
     expect(shipment?.deliveredAt).toBe('2026-07-12T14:05:00.000Z');
+  });
+});
+
+describe('canonical ticket mapping — helpdesk source independence', () => {
+  it('Gorgias and canonical ticket inputs agree on channel/status/customer', () => {
+    const g = mapGorgiasTicket(load('gorgias-ticket-created.json').payload).ticket!;
+    const c = mapCanonicalTicket(load('canonical-ticket-created.json').data).ticket!;
+    const fields = (t: typeof g) => ({ channel: t.channel, status: t.status, email: t.customer?.email, name: t.customer?.name });
+    expect(fields(g)).toEqual(fields(c));
+    expect(fields(g)).toEqual({ channel: 'email', status: 'open', email: 'casey@example.com', name: 'Casey Rivers' });
+  });
+
+  it('normalizes the Gorgias created_datetime to ISO UTC', () => {
+    const g = mapGorgiasTicket(load('gorgias-ticket-created.json').payload).ticket!;
+    expect(g.openedAt).toBe('2026-07-11T11:30:00.000Z');
   });
 });

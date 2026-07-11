@@ -9,7 +9,7 @@
  *
  * See docs/IMPL_source_agnostic_connected_ecosystem.md §3.
  */
-import type { CanonicalOrder, CanonicalOrderLine, CanonicalRefund, CanonicalShipment } from '@/lib/canonical/records';
+import type { CanonicalOrder, CanonicalOrderLine, CanonicalRefund, CanonicalShipment, CanonicalTicket } from '@/lib/canonical/records';
 import { CANONICAL_ENTITY_TYPES, type CanonicalEntityType } from '@/lib/canonical/records';
 import { mapCarrierShipmentStatus } from '@/lib/canonical/statuses';
 import { toIsoUtc, asMinor, toIntOrNull, toStringOrNull } from '@/lib/connectors/mapping/normalizeValue';
@@ -98,6 +98,35 @@ export function mapCanonicalRefund(data: Raw): { refund: CanonicalRefund | null;
     return { refund: null, errors };
   }
   return { refund: parsed.data as CanonicalRefund, errors };
+}
+
+export function mapCanonicalTicket(data: Raw): { ticket: CanonicalTicket | null; errors: RecordError[] } {
+  const externalId = toStringOrNull(data.external_id);
+  const errors: RecordError[] = [];
+  if (!externalId) {
+    errors.push(recordError('externalId', 'required_field_missing', 'external_id missing'));
+    return { ticket: null, errors };
+  }
+  const customerRaw = (data.customer ?? null) as Raw | null;
+  return {
+    ticket: {
+      externalId,
+      subject: toStringOrNull(data.subject),
+      channel: toStringOrNull(data.channel),
+      status: toStringOrNull(data.status),
+      customer: customerRaw
+        ? {
+            externalId: toStringOrNull(customerRaw.external_id),
+            email: toStringOrNull(customerRaw.email),
+            name: toStringOrNull(customerRaw.name),
+            phone: toStringOrNull(customerRaw.phone),
+          }
+        : null,
+      orderReference: toStringOrNull(data.order_reference),
+      openedAt: toIsoUtc(data.opened_at),
+    },
+    errors,
+  };
 }
 
 export function mapCanonicalShipment(data: Raw): { shipment: CanonicalShipment | null; errors: RecordError[] } {
