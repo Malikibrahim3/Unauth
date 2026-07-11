@@ -13,6 +13,9 @@ import {
   Handshake,
   Repeat2,
   SlidersHorizontal,
+  ListChecks,
+  TrendingDown,
+  Plug,
 } from 'lucide-react';
 import { PERMISSIONS, type Permission } from '@/lib/permissions';
 import type { ProductTier } from '@/lib/product/tiers';
@@ -21,13 +24,16 @@ import { ROUTE_ALIASES } from './aliases';
 export type AppRouteKey =
   | 'dashboard'
   | 'store'
+  | 'work'
   | 'customers'
   | 'claims'
+  | 'losses'
   | 'recoveries'
   | 'partners'
   | 'watchlist'
   | 'evidencePackages'
   | 'reports'
+  | 'integrations'
   | 'settings'
   | 'help'
   | 'global'
@@ -80,6 +86,18 @@ export const APP_ROUTES = {
     icon: Store,
     sidebar: false,
   },
+  work: {
+    key: 'work',
+    href: '/work',
+    label: 'Work',
+    pageTitle: 'Work',
+    permission: PERMISSIONS.VIEW_INBOX,
+    icon: ListChecks,
+    sidebar: true,
+    workbench: true,
+    commandPalette: true,
+    commandDescription: 'Open tasks across payout cases, losses, and recoveries',
+  },
   customers: {
     key: 'customers',
     href: '/customers',
@@ -89,7 +107,7 @@ export const APP_ROUTES = {
     tier: 'pro',
     tierLabel: 'Context',
     icon: Users,
-    sidebar: false,
+    sidebar: true,
     workbench: true,
     commandPalette: true,
     commandDescription: 'Customer context for support payout decisions',
@@ -109,6 +127,20 @@ export const APP_ROUTES = {
     commandPalette: true,
     commandDescription: 'Control support payouts, evidence, and recovery cases',
     badgeKey: 'claims',
+  },
+  losses: {
+    key: 'losses',
+    href: '/losses',
+    label: 'Losses',
+    pageTitle: 'Losses',
+    permission: PERMISSIONS.VIEW_INBOX,
+    tier: 'pro',
+    tierLabel: 'Losses',
+    icon: TrendingDown,
+    sidebar: true,
+    workbench: true,
+    commandPalette: true,
+    commandDescription: 'Canonical loss ledger: confirmed, estimated, recoverable, prevented, written off',
   },
   recoveries: {
     key: 'recoveries',
@@ -133,7 +165,7 @@ export const APP_ROUTES = {
     tier: 'pro',
     tierLabel: 'Rules',
     icon: Handshake,
-    sidebar: true,
+    sidebar: false,
     workbench: true,
     commandPalette: true,
     commandDescription: 'Configure carriers, 3PLs, suppliers, and recovery rules',
@@ -177,6 +209,19 @@ export const APP_ROUTES = {
     sidebar: true,
     workbench: true,
   },
+  integrations: {
+    key: 'integrations',
+    href: '/settings/integrations',
+    label: 'Integrations',
+    pageTitle: 'Integrations',
+    permission: PERMISSIONS.VIEW_SETTINGS,
+    aliases: ['/integrations'],
+    icon: Plug,
+    sidebar: true,
+    workbench: false,
+    commandPalette: true,
+    commandDescription: 'Connect commerce, helpdesk, carrier, and payment sources',
+  },
   settings: {
     key: 'settings',
     href: '/settings',
@@ -211,8 +256,8 @@ export const APP_ROUTES = {
   rules: {
     key: 'rules',
     href: '/rules',
-    label: 'Rules',
-    pageTitle: 'Rules',
+    label: 'Rules and Flows',
+    pageTitle: 'Rules and Flows',
     permission: PERMISSIONS.VIEW_SETTINGS,
     tier: 'pro',
     tierLabel: 'Rules',
@@ -251,8 +296,9 @@ export const COMMAND_PALETTE_FILTERS = [
 ] as const;
 
 export const SIDEBAR_NAV_GROUPS: Array<{ label: string; routeKeys: AppRouteKey[] }> = [
-  { label: 'Overview', routeKeys: ['dashboard'] },
-  { label: 'Operations', routeKeys: ['claims', 'recoveries', 'partners', 'rules', 'customers'] },
+  { label: 'Overview', routeKeys: ['dashboard', 'work'] },
+  { label: 'Operations', routeKeys: ['claims', 'losses', 'recoveries', 'customers'] },
+  { label: 'Configure', routeKeys: ['rules', 'integrations'] },
   { label: 'Outcomes', routeKeys: ['reports'] },
 ];
 
