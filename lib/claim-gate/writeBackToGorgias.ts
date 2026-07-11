@@ -187,20 +187,24 @@ export async function writeAccountabilityNoteToGorgias(input: {
         },
       );
     }
-    await gorgiasApiRequest<unknown>(
-      apiBase,
-      `/tickets/${encodeURIComponent(input.externalTicketId)}/messages`,
-      access.credentials,
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          channel: 'internal-note',
-          source: { type: 'api' },
-          body_text: input.bodyText,
-          from_agent: true,
-        }),
-      },
-    );
+    // Tag-only calls (empty body) skip the note POST so callers can apply tags
+    // without appending an empty internal note.
+    if (input.bodyText.trim()) {
+      await gorgiasApiRequest<unknown>(
+        apiBase,
+        `/tickets/${encodeURIComponent(input.externalTicketId)}/messages`,
+        access.credentials,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            channel: 'internal-note',
+            source: { type: 'api' },
+            body_text: input.bodyText,
+            from_agent: true,
+          }),
+        },
+      );
+    }
     return { attempted: true, ok: true };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

@@ -7,7 +7,10 @@
  * through its dedicated route) so it can never report a false success.
  */
 import { capability } from '@/lib/connectors/capabilities';
+import { writeAccountabilityNoteToGorgias } from '@/lib/claim-gate/writeBackToGorgias';
 import type {
+  ActionResult,
+  ConnectorAction,
   ConnectorAdapter,
   ConnectorContext,
   ConnectionTestResult,
@@ -89,6 +92,43 @@ export const gorgiasConnector: ConnectorAdapter = {
     if (!base) return null;
     if (input.entityType === 'ticket') return `${base}/tickets/${input.externalId}`;
     return null;
+  },
+
+  /**
+   * Low-risk write-backs: internal note and tag on a helpdesk ticket. These
+   * route through the real Gorgias API (the same path the accountability/gate
+   * write-backs use), so the controlled connector-action service executes them
+   * for real instead of falling back to manual-required.
+   */
+  async executeAction(ctx: ConnectorContext, action: ConnectorAction): Promise<ActionResult> {
+    const externalTicketId = typeof action.payload.externalRecordId === 'string'
+      ? action.payload.externalRecordId
+      : null;
+    if (!externalTicketId) {
+      return { ok: false, reversible: false, message: 'missing_external_ticket_id' };
+    }
+    const tags = Array.isArray(action.payload.tags)
+      ? action.payload.tags.map((t) => String(t))
+      : undefined;
+
+    if (action.capabilityId === 'tickets.write_note') {
+      const bodyText = typeof action.payload.bodyText === 'string' ? action.payload.bodyText : '';
+      if (!bodyText.trim()) return { ok: false, reversible: false, message: 'missing_note_body' };
+      const result = await writeAccountabilityNoteToGorgias({
+        client: ctx.client, merchantId: ctx.merchantId, externalTicketId, bodyText, tags,
+      });
+      return { ok: result.ok, reversible: false, message: result.error };
+    }
+
+    if (action.capabilityId === 'tickets.write_tag') {
+      if (!tags?.length) return { ok: false, reversible: false, message: 'missing_tags' };
+      const result = await writeAccountabilityNoteToGorgias({
+        client: ctx.client, merchantId: ctx.merchantId, externalTicketId, bodyText: '', tags,
+      });
+      return { ok: result.ok, reversible: true, message: result.error };
+    }
+
+    return { ok: false, reversible: false, message: `unsupported_capability:${action.capabilityId}` };
   },
 
   async disconnect(): Promise<DisconnectResult> {
