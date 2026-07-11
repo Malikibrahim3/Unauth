@@ -77,12 +77,22 @@ and `/losses` (LossLedger over `loss_cases`), plus `SourceBadge` + `FreshnessInd
 primitives. Both routes compile and serve (auth-gated 307); not yet rendered
 authenticated in-browser (login requires a password the agent does not enter).
 
-Phase 8 remaining (larger interactive units, each needs a browser test per action):
-- §11.3 payout case page — repair the orphaned action rail (assign owner, record
-  decision/outcome, request evidence, transition/reopen/snooze, open recovery,
-  connector write-back) wired through the transition/event APIs; refactor
-  `app/api/claims/[claimId]/route.ts` into a read-model assembler.
-- §11.4 reusable Case context drawer across modules.
+§11.3 (case action rail) landed `1e8d1017`: the payout case workbench had working
+mutation handlers (record decision/outcome, add evidence, assign/unassign,
+transition/reopen, snooze, reverse) that were never rendered. Added a
+permission-gated `ClaimReviewManageCard` wired to those handlers with confirmation
+before financial-state changes; `canManage` resolved server-side via
+`hasPermission(SUBMIT_PAYOUT_DECISIONS)`. Installed `jest-environment-jsdom` and added
+a deterministic 6-case render/permission/wiring test (dev in-browser drive of this
+heaviest route was compile-flaky; the component test is the CI-repeatable substitute).
+E2E in-browser verification uses `/api/test/e2e-auth` (local-only, `E2E_AUTH_SECRET`
+in gitignored `.env.local`) — password-free owner session bootstrap.
+
+Phase 8 remaining (larger interactive units):
+- §11.3 tail — refactor `app/api/claims/[claimId]/route.ts` into a read-model
+  assembler; audit primary CTAs for targets that don't render.
+- §11.4 reusable Case context drawer across modules + CaseTimeline (merge commerce +
+  helpdesk + decision + task + recovery events) + CaseRelatedRecords.
 - §11.5 universal multi-entity search + command palette (default-on, fix keyboard
   defects, no `ilike` on UUIDs).
 - §11.6 Losses/Recovery — recovery board controlled quick actions via the
