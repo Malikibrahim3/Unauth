@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { RailSection, ClaimLifecycleStatusBar, FieldLabel } from '@/components/claims/claimReviewPrimitives';
 import { btnStyle, inputStyle } from '@/components/claims/claimReviewStyles';
 import { EVIDENCE_TYPE_LABELS, EVIDENCE_SOURCE_LABELS } from '@/components/claims/claimReviewLabels';
@@ -163,9 +164,9 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
 
         {/* Recovery */}
         {recoveryCase?.id ? (
-          <a href="/recoveries" className="block w-full text-center px-3 py-1.5 rounded-md text-xs font-semibold no-underline" style={btnStyle('secondary')}>
+          <Link href={`/recoveries/${recoveryCase.id}`} className="block w-full text-center px-3 py-1.5 rounded-md text-xs font-semibold no-underline" style={btnStyle('secondary')}>
             Open recovery case →
-          </a>
+          </Link>
         ) : null}
       </div>
     </RailSection>
