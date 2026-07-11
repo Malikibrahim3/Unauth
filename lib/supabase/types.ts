@@ -666,6 +666,98 @@ export type Database = {
           },
         ]
       }
+      case_decisions: {
+        Row: {
+          action: string | null
+          actor_type: string
+          actor_user_id: string | null
+          amount_minor: number | null
+          currency: string | null
+          decision: string
+          effective_at: string
+          followed_recommendation: boolean | null
+          id: string
+          idempotency_key: string
+          merchant_id: string
+          reason: string | null
+          recommendation_snapshot: Json
+          recorded_at: string
+          reverses_decision_id: string | null
+          rule_snapshot: Json
+          supersedes_decision_id: string | null
+          support_payout_case_id: string
+        }
+        Insert: {
+          action?: string | null
+          actor_type?: string
+          actor_user_id?: string | null
+          amount_minor?: number | null
+          currency?: string | null
+          decision: string
+          effective_at?: string
+          followed_recommendation?: boolean | null
+          id?: string
+          idempotency_key: string
+          merchant_id: string
+          reason?: string | null
+          recommendation_snapshot?: Json
+          recorded_at?: string
+          reverses_decision_id?: string | null
+          rule_snapshot?: Json
+          supersedes_decision_id?: string | null
+          support_payout_case_id: string
+        }
+        Update: {
+          action?: string | null
+          actor_type?: string
+          actor_user_id?: string | null
+          amount_minor?: number | null
+          currency?: string | null
+          decision?: string
+          effective_at?: string
+          followed_recommendation?: boolean | null
+          id?: string
+          idempotency_key?: string
+          merchant_id?: string
+          reason?: string | null
+          recommendation_snapshot?: Json
+          recorded_at?: string
+          reverses_decision_id?: string | null
+          rule_snapshot?: Json
+          supersedes_decision_id?: string | null
+          support_payout_case_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_decisions_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_decisions_reverses_decision_id_fkey"
+            columns: ["reverses_decision_id"]
+            isOneToOne: false
+            referencedRelation: "case_decisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_decisions_supersedes_decision_id_fkey"
+            columns: ["supersedes_decision_id"]
+            isOneToOne: false
+            referencedRelation: "case_decisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_decisions_support_payout_case_id_fkey"
+            columns: ["support_payout_case_id"]
+            isOneToOne: false
+            referencedRelation: "support_payout_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       case_financial_entries: {
         Row: {
           amount_minor: number
@@ -828,6 +920,79 @@ export type Database = {
           },
           {
             foreignKeyName: "case_financial_summaries_support_payout_case_id_fkey"
+            columns: ["support_payout_case_id"]
+            isOneToOne: false
+            referencedRelation: "support_payout_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      case_outcomes: {
+        Row: {
+          actor_type: string
+          actor_user_id: string | null
+          amount_minor: number | null
+          currency: string | null
+          effective_at: string
+          id: string
+          idempotency_key: string
+          merchant_id: string
+          metadata: Json
+          outcome_type: string
+          reason: string | null
+          recorded_at: string
+          reverses_outcome_id: string | null
+          support_payout_case_id: string
+        }
+        Insert: {
+          actor_type?: string
+          actor_user_id?: string | null
+          amount_minor?: number | null
+          currency?: string | null
+          effective_at?: string
+          id?: string
+          idempotency_key: string
+          merchant_id: string
+          metadata?: Json
+          outcome_type: string
+          reason?: string | null
+          recorded_at?: string
+          reverses_outcome_id?: string | null
+          support_payout_case_id: string
+        }
+        Update: {
+          actor_type?: string
+          actor_user_id?: string | null
+          amount_minor?: number | null
+          currency?: string | null
+          effective_at?: string
+          id?: string
+          idempotency_key?: string
+          merchant_id?: string
+          metadata?: Json
+          outcome_type?: string
+          reason?: string | null
+          recorded_at?: string
+          reverses_outcome_id?: string | null
+          support_payout_case_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_outcomes_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_outcomes_reverses_outcome_id_fkey"
+            columns: ["reverses_outcome_id"]
+            isOneToOne: false
+            referencedRelation: "case_outcomes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_outcomes_support_payout_case_id_fkey"
             columns: ["support_payout_case_id"]
             isOneToOne: false
             referencedRelation: "support_payout_cases"
@@ -1722,46 +1887,97 @@ export type Database = {
       }
       evidence_items: {
         Row: {
-          claim_id: string
+          claim_id: string | null
+          confidence: number | null
+          connection_id: string | null
+          content_hash: string | null
           created_at: string
+          created_by: string | null
           evidence_type: string
           external_url: string | null
+          freshness_state: string
           id: string
+          ingested_at: string
+          last_synced_at: string | null
           merchant_id: string
           occurred_at: string | null
           proves: string | null
           raw_payload: Json | null
+          source_account_id: string | null
+          source_created_at: string | null
+          source_metadata: Json
+          source_record_id: string | null
           source_system: string
+          source_updated_at: string | null
+          source_url: string | null
+          storage_path: string | null
+          structured_value: Json
           summary: string | null
+          sync_state: string
           title: string | null
+          updated_at: string
         }
         Insert: {
-          claim_id: string
+          claim_id?: string | null
+          confidence?: number | null
+          connection_id?: string | null
+          content_hash?: string | null
           created_at?: string
+          created_by?: string | null
           evidence_type: string
           external_url?: string | null
+          freshness_state?: string
           id?: string
+          ingested_at?: string
+          last_synced_at?: string | null
           merchant_id: string
           occurred_at?: string | null
           proves?: string | null
           raw_payload?: Json | null
+          source_account_id?: string | null
+          source_created_at?: string | null
+          source_metadata?: Json
+          source_record_id?: string | null
           source_system: string
+          source_updated_at?: string | null
+          source_url?: string | null
+          storage_path?: string | null
+          structured_value?: Json
           summary?: string | null
+          sync_state?: string
           title?: string | null
+          updated_at?: string
         }
         Update: {
-          claim_id?: string
+          claim_id?: string | null
+          confidence?: number | null
+          connection_id?: string | null
+          content_hash?: string | null
           created_at?: string
+          created_by?: string | null
           evidence_type?: string
           external_url?: string | null
+          freshness_state?: string
           id?: string
+          ingested_at?: string
+          last_synced_at?: string | null
           merchant_id?: string
           occurred_at?: string | null
           proves?: string | null
           raw_payload?: Json | null
+          source_account_id?: string | null
+          source_created_at?: string | null
+          source_metadata?: Json
+          source_record_id?: string | null
           source_system?: string
+          source_updated_at?: string | null
+          source_url?: string | null
+          storage_path?: string | null
+          structured_value?: Json
           summary?: string | null
+          sync_state?: string
           title?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -1772,10 +1988,110 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "evidence_items_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "merchant_integrations"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "evidence_items_merchant_id_fkey"
             columns: ["merchant_id"]
             isOneToOne: false
             referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evidence_items_source_account_id_fkey"
+            columns: ["source_account_id"]
+            isOneToOne: false
+            referencedRelation: "source_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evidence_links: {
+        Row: {
+          created_at: string
+          evidence_item_id: string
+          id: string
+          loss_case_id: string | null
+          merchant_id: string
+          recovery_case_id: string | null
+          source_order_id: string | null
+          source_ticket_id: string | null
+          support_payout_case_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          evidence_item_id: string
+          id?: string
+          loss_case_id?: string | null
+          merchant_id: string
+          recovery_case_id?: string | null
+          source_order_id?: string | null
+          source_ticket_id?: string | null
+          support_payout_case_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          evidence_item_id?: string
+          id?: string
+          loss_case_id?: string | null
+          merchant_id?: string
+          recovery_case_id?: string | null
+          source_order_id?: string | null
+          source_ticket_id?: string | null
+          support_payout_case_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evidence_links_evidence_item_id_fkey"
+            columns: ["evidence_item_id"]
+            isOneToOne: false
+            referencedRelation: "evidence_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evidence_links_loss_case_id_fkey"
+            columns: ["loss_case_id"]
+            isOneToOne: false
+            referencedRelation: "loss_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evidence_links_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evidence_links_recovery_case_id_fkey"
+            columns: ["recovery_case_id"]
+            isOneToOne: false
+            referencedRelation: "recovery_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evidence_links_source_order_id_fkey"
+            columns: ["source_order_id"]
+            isOneToOne: false
+            referencedRelation: "source_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evidence_links_source_ticket_id_fkey"
+            columns: ["source_ticket_id"]
+            isOneToOne: false
+            referencedRelation: "source_tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evidence_links_support_payout_case_id_fkey"
+            columns: ["support_payout_case_id"]
+            isOneToOne: false
+            referencedRelation: "support_payout_cases"
             referencedColumns: ["id"]
           },
         ]
@@ -3049,6 +3365,63 @@ export type Database = {
           },
         ]
       }
+      loss_attribution_candidates: {
+        Row: {
+          accountable_party_name: string | null
+          accountable_party_type: string | null
+          attribution: string
+          confidence: number | null
+          created_at: string
+          id: string
+          is_primary: boolean
+          loss_case_id: string
+          merchant_id: string
+          metadata: Json
+          source_loss_id: string | null
+        }
+        Insert: {
+          accountable_party_name?: string | null
+          accountable_party_type?: string | null
+          attribution: string
+          confidence?: number | null
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          loss_case_id: string
+          merchant_id: string
+          metadata?: Json
+          source_loss_id?: string | null
+        }
+        Update: {
+          accountable_party_name?: string | null
+          accountable_party_type?: string | null
+          attribution?: string
+          confidence?: number | null
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          loss_case_id?: string
+          merchant_id?: string
+          metadata?: Json
+          source_loss_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loss_attribution_candidates_loss_case_id_fkey"
+            columns: ["loss_case_id"]
+            isOneToOne: false
+            referencedRelation: "loss_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loss_attribution_candidates_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loss_case_events: {
         Row: {
           created_at: string
@@ -3169,18 +3542,24 @@ export type Database = {
       loss_cases: {
         Row: {
           approved_recovery_minor: number | null
+          attribution: string | null
+          attribution_confidence: number | null
           case_category: Database["public"]["Enums"]["loss_case_category"]
           case_type: string
           chargeback_value_minor: number | null
           claim_deadline_at: string | null
+          confirmed_at: string | null
           counterparty_name: string | null
           counterparty_type: Database["public"]["Enums"]["loss_counterparty_type"]
           created_at: string
           currency: string | null
           customer_identity_id: string | null
           dispute_id: string | null
+          estimated_at: string | null
           estimated_recovery_minor: number | null
           evidence_completion_score: number
+          financial_entry_ids: string[]
+          financial_state: string
           fulfilment_id: string | null
           helpdesk_ticket_id: string | null
           id: string
@@ -3188,31 +3567,43 @@ export type Database = {
           missing_evidence_count: number
           order_id: string | null
           order_value_minor: number | null
+          owner_user_id: string | null
           payment_id: string | null
+          prevention_only: boolean
+          recoverability: string | null
           recovery_route: Database["public"]["Enums"]["loss_recovery_route"]
           refund_value_minor: number | null
           return_id: string | null
           shipment_id: string | null
           source_confidence: Database["public"]["Enums"]["loss_source_confidence"]
           source_fingerprint: string | null
+          source_metadata: Json
+          source_record_id: string | null
           status: Database["public"]["Enums"]["loss_case_status"]
           support_payout_case_id: string | null
           updated_at: string
+          written_off_at: string | null
         }
         Insert: {
           approved_recovery_minor?: number | null
+          attribution?: string | null
+          attribution_confidence?: number | null
           case_category: Database["public"]["Enums"]["loss_case_category"]
           case_type: string
           chargeback_value_minor?: number | null
           claim_deadline_at?: string | null
+          confirmed_at?: string | null
           counterparty_name?: string | null
           counterparty_type?: Database["public"]["Enums"]["loss_counterparty_type"]
           created_at?: string
           currency?: string | null
           customer_identity_id?: string | null
           dispute_id?: string | null
+          estimated_at?: string | null
           estimated_recovery_minor?: number | null
           evidence_completion_score?: number
+          financial_entry_ids?: string[]
+          financial_state?: string
           fulfilment_id?: string | null
           helpdesk_ticket_id?: string | null
           id?: string
@@ -3220,31 +3611,43 @@ export type Database = {
           missing_evidence_count?: number
           order_id?: string | null
           order_value_minor?: number | null
+          owner_user_id?: string | null
           payment_id?: string | null
+          prevention_only?: boolean
+          recoverability?: string | null
           recovery_route: Database["public"]["Enums"]["loss_recovery_route"]
           refund_value_minor?: number | null
           return_id?: string | null
           shipment_id?: string | null
           source_confidence?: Database["public"]["Enums"]["loss_source_confidence"]
           source_fingerprint?: string | null
+          source_metadata?: Json
+          source_record_id?: string | null
           status?: Database["public"]["Enums"]["loss_case_status"]
           support_payout_case_id?: string | null
           updated_at?: string
+          written_off_at?: string | null
         }
         Update: {
           approved_recovery_minor?: number | null
+          attribution?: string | null
+          attribution_confidence?: number | null
           case_category?: Database["public"]["Enums"]["loss_case_category"]
           case_type?: string
           chargeback_value_minor?: number | null
           claim_deadline_at?: string | null
+          confirmed_at?: string | null
           counterparty_name?: string | null
           counterparty_type?: Database["public"]["Enums"]["loss_counterparty_type"]
           created_at?: string
           currency?: string | null
           customer_identity_id?: string | null
           dispute_id?: string | null
+          estimated_at?: string | null
           estimated_recovery_minor?: number | null
           evidence_completion_score?: number
+          financial_entry_ids?: string[]
+          financial_state?: string
           fulfilment_id?: string | null
           helpdesk_ticket_id?: string | null
           id?: string
@@ -3252,16 +3655,22 @@ export type Database = {
           missing_evidence_count?: number
           order_id?: string | null
           order_value_minor?: number | null
+          owner_user_id?: string | null
           payment_id?: string | null
+          prevention_only?: boolean
+          recoverability?: string | null
           recovery_route?: Database["public"]["Enums"]["loss_recovery_route"]
           refund_value_minor?: number | null
           return_id?: string | null
           shipment_id?: string | null
           source_confidence?: Database["public"]["Enums"]["loss_source_confidence"]
           source_fingerprint?: string | null
+          source_metadata?: Json
+          source_record_id?: string | null
           status?: Database["public"]["Enums"]["loss_case_status"]
           support_payout_case_id?: string | null
           updated_at?: string
+          written_off_at?: string | null
         }
         Relationships: [
           {
@@ -3269,6 +3678,13 @@ export type Database = {
             columns: ["merchant_id"]
             isOneToOne: false
             referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loss_cases_source_record_id_fkey"
+            columns: ["source_record_id"]
+            isOneToOne: false
+            referencedRelation: "source_records"
             referencedColumns: ["id"]
           },
           {
@@ -4523,11 +4939,13 @@ export type Database = {
           id: string
           internal_owner_user_id: string | null
           last_chased_at: string | null
+          loss_case_id: string | null
           merchant_id: string
           merchant_loss_amount: number
           next_chase_at: string | null
           owner_type: Database["public"]["Enums"]["recovery_case_owner_type"]
           partner_id: string | null
+          prevention_only: boolean
           recovery_type: Database["public"]["Enums"]["recovery_case_type"]
           rejection_reason: string | null
           status: Database["public"]["Enums"]["recovery_case_status"]
@@ -4550,11 +4968,13 @@ export type Database = {
           id?: string
           internal_owner_user_id?: string | null
           last_chased_at?: string | null
+          loss_case_id?: string | null
           merchant_id: string
           merchant_loss_amount?: number
           next_chase_at?: string | null
           owner_type?: Database["public"]["Enums"]["recovery_case_owner_type"]
           partner_id?: string | null
+          prevention_only?: boolean
           recovery_type: Database["public"]["Enums"]["recovery_case_type"]
           rejection_reason?: string | null
           status?: Database["public"]["Enums"]["recovery_case_status"]
@@ -4577,11 +4997,13 @@ export type Database = {
           id?: string
           internal_owner_user_id?: string | null
           last_chased_at?: string | null
+          loss_case_id?: string | null
           merchant_id?: string
           merchant_loss_amount?: number
           next_chase_at?: string | null
           owner_type?: Database["public"]["Enums"]["recovery_case_owner_type"]
           partner_id?: string | null
+          prevention_only?: boolean
           recovery_type?: Database["public"]["Enums"]["recovery_case_type"]
           rejection_reason?: string | null
           status?: Database["public"]["Enums"]["recovery_case_status"]
@@ -4589,6 +5011,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "recovery_cases_loss_case_id_fkey"
+            columns: ["loss_case_id"]
+            isOneToOne: false
+            referencedRelation: "loss_cases"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "recovery_cases_merchant_id_fkey"
             columns: ["merchant_id"]
@@ -7219,6 +7648,114 @@ export type Database = {
           status?: string
         }
         Relationships: []
+      }
+      work_tasks: {
+        Row: {
+          blocking_reason: string | null
+          completed_at: string | null
+          completed_by: string | null
+          completion_outcome: Json | null
+          created_at: string
+          description: string | null
+          domain_event_id: string | null
+          due_at: string | null
+          id: string
+          loss_case_id: string | null
+          merchant_id: string
+          owner_role: string | null
+          owner_user_id: string | null
+          priority: string
+          recovery_case_id: string | null
+          source: string
+          source_metadata: Json
+          status: string
+          support_payout_case_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          blocking_reason?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          completion_outcome?: Json | null
+          created_at?: string
+          description?: string | null
+          domain_event_id?: string | null
+          due_at?: string | null
+          id?: string
+          loss_case_id?: string | null
+          merchant_id: string
+          owner_role?: string | null
+          owner_user_id?: string | null
+          priority?: string
+          recovery_case_id?: string | null
+          source?: string
+          source_metadata?: Json
+          status?: string
+          support_payout_case_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          blocking_reason?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          completion_outcome?: Json | null
+          created_at?: string
+          description?: string | null
+          domain_event_id?: string | null
+          due_at?: string | null
+          id?: string
+          loss_case_id?: string | null
+          merchant_id?: string
+          owner_role?: string | null
+          owner_user_id?: string | null
+          priority?: string
+          recovery_case_id?: string | null
+          source?: string
+          source_metadata?: Json
+          status?: string
+          support_payout_case_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_tasks_domain_event_id_fkey"
+            columns: ["domain_event_id"]
+            isOneToOne: false
+            referencedRelation: "domain_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_tasks_loss_case_id_fkey"
+            columns: ["loss_case_id"]
+            isOneToOne: false
+            referencedRelation: "loss_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_tasks_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_tasks_recovery_case_id_fkey"
+            columns: ["recovery_case_id"]
+            isOneToOne: false
+            referencedRelation: "recovery_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_tasks_support_payout_case_id_fkey"
+            columns: ["support_payout_case_id"]
+            isOneToOne: false
+            referencedRelation: "support_payout_cases"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
