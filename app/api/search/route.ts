@@ -155,11 +155,10 @@ export async function GET(req: NextRequest) {
         .from(TABLES.MERCHANT_CLAIMS)
         .select('id, claim_type, status, amount_at_risk, currency')
         .eq('merchant_id', merchantId)
-        .limit(limit)
-        .range(offset, offset + limit - 1);
+        .limit(limit);
       if (orFilters.length > 0) caseQuery = caseQuery.or(orFilters.join(','));
       else if (!isUuid(q)) caseQuery = caseQuery.ilike('claim_type', pattern);
-      const { data: cases } = await caseQuery;
+      const { data: cases } = await caseQuery.range(offset, offset + limit - 1);
 
       for (const c of (cases as Array<{ id: string; claim_type: string | null; status: string | null; amount_at_risk: number | null; currency: string | null }> ?? [])) {
         results.push({
