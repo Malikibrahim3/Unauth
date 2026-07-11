@@ -4,6 +4,7 @@ import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { loadClaimForMerchant } from '@/lib/claims/access';
 import { getRecoveryCaseForSupportPayoutCase } from '@/lib/recoveries/store';
 import { TABLES } from '@/lib/supabase/tables';
+import { CLAIM_EVIDENCE_ORIGIN_FILTER } from '@/lib/integrations/canonicalEvidence';
 import { listCaseClarificationRequests } from '@/lib/payouts/clarifications';
 import {
   toSupportPayoutCaseReason,
@@ -85,12 +86,22 @@ export async function GET(_request: Request, { params }: { params: Promise<{ cla
     .eq('claim_id', claimId)
     .maybeSingle();
 
-  // Evidence currently attached to the case.
-  const { data: evidenceRows } = await serviceClient
-    .from('claim_evidence')
-    .select('id,evidence_type,source,evidence_url,created_at')
+  // Evidence currently attached to the case (canonical evidence_items,
+  // claim_evidence-origin subset). Mapped to the legacy wire shape.
+  const { data: canonicalEvidenceRows } = await serviceClient
+    .from('evidence_items')
+    .select('id,evidence_type,storage_path,source_metadata,created_at')
     .eq('claim_id', claimId)
+    .eq('merchant_id', ctx.merchantId)
+    .or(CLAIM_EVIDENCE_ORIGIN_FILTER)
     .order('created_at', { ascending: false });
+  const evidenceRows = (canonicalEvidenceRows ?? []).map((row: any) => ({
+    id: row.id,
+    evidence_type: row.evidence_type,
+    source: row.source_metadata?.source ?? null,
+    evidence_url: row.storage_path ?? null,
+    created_at: row.created_at,
+  }));
 
   // Linked recovery case, if one has been explicitly opened.
   const recoveryCase = await getRecoveryCaseForSupportPayoutCase(serviceClient, ctx.merchantId, claimId);

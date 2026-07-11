@@ -80,6 +80,92 @@ export function providerShapeFromCanonical(row: CanonicalEvidenceRow) {
   };
 }
 
+/** Marker identifying evidence that used to live in the claim_evidence store. */
+export const CLAIM_EVIDENCE_ORIGIN = 'claim_evidence';
+
+/**
+ * PostgREST `.or()` filter selecting the claim_evidence-origin subset of
+ * evidence_items: backfilled rows (legacy_table) and new runtime writes
+ * (origin_store). Used by decision/claim readers so counts are identical to the
+ * pre-cutover claim_evidence table (preserving frozen decision-context scoring).
+ */
+export const CLAIM_EVIDENCE_ORIGIN_FILTER =
+  `source_metadata->>origin_store.eq.${CLAIM_EVIDENCE_ORIGIN},source_metadata->>legacy_table.eq.${CLAIM_EVIDENCE_ORIGIN}`;
+
+export type ClaimEvidenceInput = {
+  id?: string;
+  merchantId: string;
+  claimId: string;
+  evidenceType: string;
+  storagePath?: string | null;
+  contentHash?: string | null;
+  sourceMetadata?: Record<string, unknown>;
+  createdBy?: string | null;
+};
+
+function claimEvidenceRow(input: ClaimEvidenceInput) {
+  return {
+    ...(input.id ? { id: input.id } : {}),
+    merchant_id: input.merchantId,
+    claim_id: input.claimId,
+    evidence_type: input.evidenceType,
+    storage_path: input.storagePath ?? null,
+    content_hash: input.contentHash ?? null,
+    source_metadata: { ...(input.sourceMetadata ?? {}), origin_store: CLAIM_EVIDENCE_ORIGIN },
+    created_by: input.createdBy ?? null,
+  };
+}
+
+async function linkEvidenceToCase(
+  client: SupabaseClient,
+  merchantId: string,
+  evidenceItemId: string,
+  claimId: string,
+): Promise<void> {
+  await client
+    .from(TABLES.EVIDENCE_LINKS as never)
+    .upsert(
+      { merchant_id: merchantId, evidence_item_id: evidenceItemId, support_payout_case_id: claimId } as never,
+      { onConflict: 'evidence_item_id,support_payout_case_id', ignoreDuplicates: true },
+    );
+}
+
+/**
+ * Insert claim-scoped evidence into canonical evidence_items. Returns the raw
+ * insert result so callers can honour the fulfillment-sync idempotency index
+ * (unique violation code 23505) exactly as the legacy claim_evidence path did.
+ */
+export async function insertClaimEvidence(
+  client: SupabaseClient,
+  input: ClaimEvidenceInput,
+): Promise<{ id: string | null; error: { code?: string; message: string } | null }> {
+  const { data, error } = await client
+    .from(TABLES.EVIDENCE_ITEMS as never)
+    .insert(claimEvidenceRow(input) as never)
+    .select('id')
+    .single();
+  if (error) return { id: null, error };
+  const id = (data as { id: string }).id;
+  await linkEvidenceToCase(client, input.merchantId, id, input.claimId);
+  return { id, error: null };
+}
+
+/** Upsert claim-scoped evidence (onConflict id) into canonical evidence_items. */
+export async function upsertClaimEvidence(
+  client: SupabaseClient,
+  input: ClaimEvidenceInput,
+): Promise<Record<string, unknown>> {
+  const { data, error } = await client
+    .from(TABLES.EVIDENCE_ITEMS as never)
+    .upsert(claimEvidenceRow(input) as never, { onConflict: 'id' })
+    .select()
+    .single();
+  if (error) throw new Error(`upsert claim evidence failed: ${error.message}`);
+  const row = data as Record<string, unknown>;
+  await linkEvidenceToCase(client, input.merchantId, row.id as string, input.claimId);
+  return row;
+}
+
 export async function writeCanonicalEvidence(
   client: SupabaseClient,
   items: NormalizedEvidenceItem[],

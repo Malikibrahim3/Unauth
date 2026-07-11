@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ClaimDecisionContext } from '@/lib/claims/decision/types';
 import { buildDeliveryFromFulfillment } from '@/lib/claims/decision/deliveryEvidence';
+import { insertClaimEvidence } from '@/lib/integrations/canonicalEvidence';
 
 const AUTO_SOURCE = 'fulfillment_sync';
 
@@ -46,13 +47,13 @@ export async function ensureClaimDecisionEvidence(input: {
   }
 
   const evidenceType = delivery.hasProofOfDelivery ? 'proof_of_delivery' : 'tracking';
-  const { error } = await input.client.from('claim_evidence').insert({
-    claim_id: input.claimId,
-    merchant_id: input.merchantId,
-    evidence_type: evidenceType,
-    storage_path: delivery.trackingUrl,
-    evidence_hash: delivery.trackingNumber,
-    metadata: {
+  const { error } = await insertClaimEvidence(input.client, {
+    merchantId: input.merchantId,
+    claimId: input.claimId,
+    evidenceType,
+    storagePath: delivery.trackingUrl,
+    contentHash: delivery.trackingNumber,
+    sourceMetadata: {
       auto_source: AUTO_SOURCE,
       attach_source: input.source,
       source: 'shopify',
@@ -64,7 +65,7 @@ export async function ensureClaimDecisionEvidence(input: {
   });
 
   if (error) {
-    // Unique index claim_evidence_fulfillment_sync_uniq — concurrent attach is safe.
+    // Unique index evidence_items_fulfillment_sync_uniq — concurrent attach is safe.
     if (error.code === '23505') return { attached: false, skipped: true };
     console.error('[ensureClaimDecisionEvidence] insert failed', error.message);
     return { attached: false, skipped: false };

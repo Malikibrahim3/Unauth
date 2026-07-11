@@ -5,6 +5,7 @@ import { createClaimSchema, resolveSourceOrderId, upsertMerchantClaim } from '@/
 import { appendClaimEvent } from '@/lib/claims/events';
 import { ACTIVE_CLAIM_STATUSES, FINAL_CLAIM_STATUSES } from '@/lib/claims/sla';
 import { TABLES } from '@/lib/supabase/tables';
+import { CLAIM_EVIDENCE_ORIGIN_FILTER } from '@/lib/integrations/canonicalEvidence';
 import { toStoredClaimType } from '@/lib/payouts/taxonomy';
 
 type DuplicateClaimRow = {
@@ -144,9 +145,11 @@ export async function GET(request: NextRequest) {
     }
 
     const { data: evidenceRows } = await serviceClient
-      .from('claim_evidence')
+      .from('evidence_items')
       .select('claim_id')
-      .in('claim_id', claimIds);
+      .eq('merchant_id', ctx.merchantId)
+      .in('claim_id', claimIds)
+      .or(CLAIM_EVIDENCE_ORIGIN_FILTER);
     for (const row of evidenceRows ?? []) {
       evidenceCountByClaimId.set(row.claim_id, (evidenceCountByClaimId.get(row.claim_id) ?? 0) + 1);
     }

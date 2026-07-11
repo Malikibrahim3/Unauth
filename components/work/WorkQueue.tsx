@@ -38,11 +38,16 @@ function titleCase(value: string | null): string {
   return value.split(/[_\s]+/).map((p) => (p ? p[0].toUpperCase() + p.slice(1) : p)).join(' ');
 }
 
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+// Deterministic "13 Jul" formatting (UTC) — avoids server/client locale
+// hydration mismatches that Date.toLocaleDateString produces.
 function formatDue(dueAt: string | null): string {
   if (!dueAt) return 'No due date';
   const d = Date.parse(dueAt);
   if (Number.isNaN(d)) return 'No due date';
-  return new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  const date = new Date(d);
+  return `${date.getUTCDate()} ${MONTHS[date.getUTCMonth()]}`;
 }
 
 const PRIORITY_COLOR: Record<string, string> = {

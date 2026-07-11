@@ -16,6 +16,7 @@ import {
   toStoredClaimType,
 } from '@/lib/payouts/taxonomy';
 import { transitionCase } from '@/lib/cases/transitionCase';
+import { upsertClaimEvidence } from '@/lib/integrations/canonicalEvidence';
 
 const claimTypeSchema = z.enum(['missing_parcel', 'item_not_received', 'damaged', 'wrong_item', 'not_as_described', 'refund_request', 'chargeback', 'return_abuse', 'other']);
 const claimStatusSchema = z.enum(CANONICAL_CLAIM_STATUSES);
@@ -468,21 +469,17 @@ export async function upsertClaimEvidenceItem(supabase: any, input: z.input<type
   if (!payload.merchant_id) {
     throw new Error('merchant_id is required to attach claim evidence');
   }
-  const row = {
-    ...(payload.id ? { id: payload.id } : {}),
-    claim_id: payload.claim_id,
-    merchant_id: payload.merchant_id,
-    evidence_type: payload.evidence_type,
-    storage_path: payload.evidence_url ?? null,
-    evidence_hash: payload.evidence_hash ?? null,
-    metadata: { ...payload.metadata, source: payload.source },
-    added_by: payload.actor_user_id ?? null,
-  };
-  const { data, error } = await supabase
-    .from('claim_evidence')
-    .upsert(row, { onConflict: 'id' })
-    .select()
-    .single();
-  if (error) throw new Error(`upsert claim_evidence failed: ${error.message}`);
-  return data;
+  // Phase 7.1: claim evidence is persisted to the canonical evidence_items store
+  // (+ evidence_links) with an origin marker; the legacy claim_evidence table is
+  // no longer written at runtime.
+  return upsertClaimEvidence(supabase, {
+    id: payload.id,
+    merchantId: payload.merchant_id,
+    claimId: payload.claim_id,
+    evidenceType: payload.evidence_type,
+    storagePath: payload.evidence_url ?? null,
+    contentHash: payload.evidence_hash ?? null,
+    sourceMetadata: { ...payload.metadata, source: payload.source },
+    createdBy: payload.actor_user_id ?? null,
+  });
 }

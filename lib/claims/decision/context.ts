@@ -12,7 +12,7 @@ import {
   type TrackingEvidenceRow,
 } from '@/lib/integrations/trackingEvidenceSlice';
 import { getStoredIntegrationViews } from '@/lib/integrations/auth';
-import { providerShapeFromCanonical } from '@/lib/integrations/canonicalEvidence';
+import { providerShapeFromCanonical, CLAIM_EVIDENCE_ORIGIN_FILTER } from '@/lib/integrations/canonicalEvidence';
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
@@ -143,10 +143,11 @@ export async function buildClaimDecisionContext(
       .eq('claim_id', claimId),
     getStoredIntegrationViews(client, merchantId).then((views) => ({ data: views, error: null })),
     client
-      .from('claim_evidence')
+      .from('evidence_items')
       .select('evidence_type')
       .eq('claim_id', claimId)
-      .eq('merchant_id', merchantId),
+      .eq('merchant_id', merchantId)
+      .or(CLAIM_EVIDENCE_ORIGIN_FILTER),
     identityId
       ? client
           .from(TABLES.MERCHANT_CLAIMS)

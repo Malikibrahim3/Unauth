@@ -6,6 +6,7 @@ import type {
 } from '@/lib/payouts/types';
 import { derivePayoutWorkflow, withWorkflow } from '@/lib/payouts/workflow';
 import { TABLES } from '@/lib/supabase/tables';
+import { CLAIM_EVIDENCE_ORIGIN_FILTER } from '@/lib/integrations/canonicalEvidence';
 import { findBestPartnerRecoveryRule } from '@/lib/partners/store';
 import type { PartnerRecoveryType, PartnerRuleClaimType } from '@/lib/partners/types';
 import { calculateRecoveryEstimate } from '@/lib/recoveries/calculation';
@@ -207,10 +208,11 @@ export async function maybeCreateRecoveryCaseFromSupportPayoutCase(input: {
   if (!lossCase?.id) return null;
 
   const evidenceRes = await input.client
-    .from('claim_evidence')
+    .from('evidence_items')
     .select('evidence_type')
     .eq('claim_id', input.supportPayoutCaseId)
-    .eq('merchant_id', input.merchantId);
+    .eq('merchant_id', input.merchantId)
+    .or(CLAIM_EVIDENCE_ORIGIN_FILTER);
   const evidencePresent = Array.from(new Set((evidenceRes.data ?? []).map((item) => String(item.evidence_type))));
   const supportPayoutCase = supportPayoutCaseFromRow(payoutRow);
   const recoveryType = recoveryTypeForRow(payoutRow);

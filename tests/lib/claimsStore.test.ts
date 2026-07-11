@@ -180,8 +180,12 @@ describe('claims store', () => {
       source: 'shopify',
       metadata: { tracking_urls_count: 1 },
     });
-    expect(calls[0].table).toBe('claim_evidence');
-    expect(calls[0].payload.metadata.source).toBe('shopify');
+    // Phase 7.1: claim evidence writes to canonical evidence_items with an
+    // origin marker and source retained in source_metadata.
+    expect(calls[0].table).toBe('evidence_items');
+    expect(calls[0].payload.source_metadata.source).toBe('shopify');
+    expect(calls[0].payload.source_metadata.origin_store).toBe('claim_evidence');
+    expect(calls.some((c) => c.table === 'evidence_links')).toBe(true);
   });
 
   it('rejects invalid enum values', async () => {

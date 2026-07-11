@@ -33,11 +33,13 @@ const VIEWS: Array<{ key: ViewKey; label: string; match: (row: LossLedgerRow) =>
   { key: 'written_off', label: 'Written off', match: (r) => r.writtenOff },
 ];
 
+// Fixed 'en-GB' locale so server and client render identical strings (avoids
+// hydration mismatches from Intl's default-locale variance).
 function formatMinor(minor: number | null, currency: string | null): string {
   if (minor == null) return '—';
   const amount = minor / 100;
   try {
-    return new Intl.NumberFormat(undefined, { style: 'currency', currency: currency ?? 'USD' }).format(amount);
+    return new Intl.NumberFormat('en-GB', { style: 'currency', currency: currency ?? 'USD' }).format(amount);
   } catch {
     return `${amount.toFixed(2)} ${currency ?? ''}`.trim();
   }
