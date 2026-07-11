@@ -10,8 +10,8 @@ function stringCredential(value: unknown): string | null {
 
 /**
  * Resolves integration credentials for a provider.
- * Checks merchant-specific encrypted credentials first, then falls back to an
- * environment variable for development/test accounts without a stored row.
+ * Checks merchant-specific encrypted credentials first. Environment fallback
+ * is development/test-only and is never used after a production lookup failure.
  */
 export async function getProviderCredential(
   merchantId: string,
@@ -27,8 +27,7 @@ export async function getProviderCredential(
       stringCredential(credential?.accessToken);
     if (stored) return stored;
   } catch {
-    // Missing or unreadable merchant credential falls through to the env fallback.
+    if (process.env.NODE_ENV === 'production') return null;
   }
-
-  return process.env[fallbackEnvVar]?.trim() || null;
+  return process.env.NODE_ENV === 'production' ? null : process.env[fallbackEnvVar]?.trim() || null;
 }

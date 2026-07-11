@@ -17,12 +17,15 @@ export async function POST(
 
   const { data: document, error: lookupError } = await serviceClient
     .from('integration_documents')
-    .select('id,merchant_id,extraction_status')
+    .select('id,merchant_id,extraction_status,malware_scan_status')
     .eq('id', id)
     .eq('merchant_id', ctx.merchantId)
     .maybeSingle();
   if (lookupError) return NextResponse.json({ error: lookupError.message }, { status: 500 });
   if (!document) return NextResponse.json({ error: 'Document not found.' }, { status: 404 });
+  if (document.malware_scan_status !== 'clean' || document.extraction_status === 'quarantined') {
+    return NextResponse.json({ error: 'Document extraction is blocked until malware scanning reports clean.' }, { status: 409 });
+  }
 
   const { data, error } = await serviceClient
     .from('integration_documents')

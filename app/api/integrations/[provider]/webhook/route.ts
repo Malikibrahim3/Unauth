@@ -24,10 +24,19 @@ export async function POST(
   if (provider.id !== 'aftership') {
     return NextResponse.json({ error: 'Webhook is not supported for this provider yet.' }, { status: 400 });
   }
-  const merchantId = request.nextUrl.searchParams.get('merchantId');
-  if (!merchantId) return NextResponse.json({ error: 'merchantId is required.' }, { status: 400 });
-
+  const connectionId = request.nextUrl.searchParams.get('connectionId');
+  if (!connectionId) return NextResponse.json({ error: 'connectionId is required.' }, { status: 400 });
   const serviceClient = createServiceClient();
+  const { data: connection, error: connectionError } = await serviceClient
+    .from('merchant_integrations')
+    .select('merchant_id,provider_id,status')
+    .eq('id', connectionId)
+    .eq('provider_id', provider.id)
+    .maybeSingle();
+  if (connectionError || !connection || !['connected', 'syncing', 'degraded'].includes(connection.status)) {
+    return NextResponse.json({ error: 'Connection is not available.' }, { status: 404 });
+  }
+  const merchantId = connection.merchant_id;
   const credentials = await getIntegrationCredential(serviceClient, merchantId, provider.id);
   const webhookSecret = typeof credentials?.webhookSecret === 'string' ? credentials.webhookSecret : null;
   if (!webhookSecret) {

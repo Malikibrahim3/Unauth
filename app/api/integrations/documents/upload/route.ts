@@ -8,6 +8,15 @@ import { SUPPORTED_DOCUMENT_TYPES } from '@/lib/integrations/providers/documentU
 import { STORAGE_BUCKETS, TABLES } from '@/lib/supabase/tables';
 import type { DocumentType } from '@/lib/integrations/types';
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const ALLOWED_TYPES = new Set(['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain']);
+function magicMatches(bytes: Buffer, contentType: string): boolean {
+  if (contentType === 'application/pdf') return bytes.subarray(0, 5).toString('ascii') === '%PDF-';
+  if (contentType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') return bytes[0] === 0x50 && bytes[1] === 0x4b;
+  if (contentType === 'text/plain') return !bytes.subarray(0, Math.min(bytes.length, 1024)).includes(0);
+  return false;
+}
+
 function safeFileName(name: string): string {
   return name.trim().replace(/[^a-zA-Z0-9._-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 120) || 'document';
 }
@@ -33,8 +42,11 @@ export async function POST(request: NextRequest) {
   if (!(file instanceof File) || file.size === 0) {
     return NextResponse.json({ error: 'A document file is required.' }, { status: 400 });
   }
+  if (file.size > MAX_FILE_SIZE) return NextResponse.json({ error: 'Document exceeds the 10 MB limit.' }, { status: 413 });
+  if (!ALLOWED_TYPES.has(file.type)) return NextResponse.json({ error: 'Only PDF, DOCX, and plain-text documents are accepted.' }, { status: 415 });
 
   const bytes = Buffer.from(await file.arrayBuffer());
+  if (!magicMatches(bytes, file.type)) return NextResponse.json({ error: 'File contents do not match the declared document type.' }, { status: 415 });
   const filePath = `${ctx.merchantId}/${documentType}/${randomUUID()}-${safeFileName(file.name)}`;
   const { error: uploadError } = await serviceClient.storage
     .from(STORAGE_BUCKETS.INTEGRATION_DOCUMENTS)
@@ -50,7 +62,10 @@ export async function POST(request: NextRequest) {
       merchant_id: ctx.merchantId,
       document_type: documentType,
       file_path: filePath,
-      extraction_status: 'uploaded',
+      extraction_status: 'quarantined',
+      malware_scan_status: 'pending',
+      content_type: file.type,
+      size_bytes: file.size,
     })
     .select('id,document_type,file_path,extraction_status,approved_at,created_at')
     .single();
@@ -62,6 +77,6 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({
     ok: true,
     document,
-    message: 'Document uploaded. Extracted terms must be approved before rules use them.',
+    message: 'Document uploaded to quarantine. Extraction remains blocked until malware scanning completes.',
   });
 }
