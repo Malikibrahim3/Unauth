@@ -105,9 +105,10 @@ const CURRENT_V2_MERCHANT_DELETE_TABLES: string[] = [
   'external_clarification_requests',
   'external_correspondence',
   'loss_case_evidence',
-  'loss_case_events',
+  // loss_case_events / recovery_case_events are append-only; they are purged
+  // (flag-gated) inside purge_merchant_source_agnostic, not this generic loop —
+  // a direct DELETE here trips the immutability trigger.
   'loss_cases',
-  'recovery_case_events',
   'recovery_cases',
   'case_clarification_requests',
   'integration_evidence_items',

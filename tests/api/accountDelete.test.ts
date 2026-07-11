@@ -186,7 +186,8 @@ describe('POST /api/account/delete', () => {
       'claim_evidence',
       'claim_outcomes',
       'recovery_cases',
-      'recovery_case_events',
+      // recovery_case_events / loss_case_events are append-only and purged via
+      // purge_merchant_source_agnostic, not the generic delete loop.
       'partner_recovery_rules',
       'merchant_rules',
       'rule_evaluations',
