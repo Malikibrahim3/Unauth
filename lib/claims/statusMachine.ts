@@ -72,7 +72,7 @@ export function claimStatusForOutcome(input: { decision: string; outcome: string
 export function canTransitionClaimStatus(
   fromStatus: string | null | undefined,
   toStatus: string,
-  options: { allowReopen?: boolean } = {}
+  options: { allowReopen?: boolean; allowSnooze?: boolean } = {}
 ): boolean {
   const from = normalizeLegacyClaimStatus(fromStatus);
   const to = normalizeLegacyClaimStatus(toStatus);
@@ -100,7 +100,7 @@ export function canTransitionClaimStatus(
   // `stale` is a terminal state only reachable from a snoozed `pending` claim.
   if (to === 'stale') return from === 'pending';
   // `pending` is an entry/snooze state, never a forward transition target.
-  if (to === 'pending') return false;
+  if (to === 'pending') return options.allowSnooze === true;
   // `escalated` (chargeback dispute) resolves only to won/lost outcomes.
   if (from === 'escalated') return to === 'resolved_won' || to === 'resolved_lost';
 

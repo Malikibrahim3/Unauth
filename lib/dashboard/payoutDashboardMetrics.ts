@@ -10,7 +10,6 @@ import { LOSS_ATTRIBUTION_DISPLAY, type LossAttributionLabel } from '@/lib/payou
 import { dominantCurrency } from '@/lib/utils/format';
 
 const CLOSED_RECOVERY: RecoveryCaseStatus[] = ['paid', 'closed_unrecoverable', 'rejected'];
-const REJECTED_RECOVERY: RecoveryCaseStatus[] = ['rejected', 'closed_unrecoverable'];
 
 export type PayoutDashboardMetrics = {
   payoutExposureOpen: number;
@@ -36,7 +35,7 @@ export async function loadPayoutDashboardMetrics(
   client: SupabaseClient,
   merchantId: string,
 ): Promise<PayoutDashboardMetrics> {
-  const [openClaimsRes, allClaimIdsRes, recoveryCases] = await Promise.all([
+  const [openClaimsRes, allClaimIdsRes, recoveryCases, financialRes] = await Promise.all([
     client
       .from(TABLES.MERCHANT_CLAIMS)
       .select(
@@ -49,6 +48,7 @@ export async function loadPayoutDashboardMetrics(
       .in('status', [...ACTIVE_CLAIM_STATUSES]),
     client.from(TABLES.MERCHANT_CLAIMS).select('id').eq('merchant_id', merchantId),
     listRecoveryCases(client, merchantId).catch(() => []),
+    client.from(TABLES.CASE_FINANCIAL_SUMMARIES).select('*').eq('merchant_id', merchantId),
   ]);
 
   const claimIds = ((allClaimIdsRes.data ?? []) as Array<{ id: string }>).map((r) => r.id);
@@ -77,40 +77,29 @@ export async function loadPayoutDashboardMetrics(
     status: string;
   }>;
 
-  // Display currency: most common case currency, then recovery-case currency, then USD.
-  const displayCurrency = dominantCurrency(openClaims, dominantCurrency(recoveryCases));
+  const financial = (financialRes.data ?? []) as Array<{
+    support_payout_case_id: string; currency: string; exposed_minor: number;
+    recoverable_minor: number; recovered_minor: number; prevented_minor: number; written_off_minor: number;
+  }>;
+  // Ledger currencies are authoritative; source case/recovery currency is only a fallback.
+  const displayCurrency = dominantCurrency(financial, dominantCurrency(openClaims, dominantCurrency(recoveryCases)));
 
-  // All money aggregates sum only rows in the display currency — rows in any
-  // other currency are excluded rather than silently mixed into one total.
-  const inDisplayCurrency = (currency: string | null | undefined) =>
-    (currency?.toUpperCase() ?? displayCurrency) === displayCurrency;
-
-  const payoutExposureOpen = openClaims
-    .filter((c) => inDisplayCurrency(c.currency))
-    .reduce((s, c) => s + (c.amount_at_risk ?? 0), 0);
+  const activeClaimIds = new Set(openClaims.map((claim) => claim.id));
+  const displaySummaries = financial.filter((row) => row.currency.toUpperCase() === displayCurrency);
+  const summaryByCase = new Map(displaySummaries.map((row) => [row.support_payout_case_id, row]));
+  const payoutExposureOpen = displaySummaries
+    .filter((row) => activeClaimIds.has(row.support_payout_case_id))
+    .reduce((sum, row) => sum + row.exposed_minor / 100, 0);
 
   const recoveryCasesOpen = recoveryCases.filter((c) => !CLOSED_RECOVERY.includes(c.status)).length;
 
-  const recoverableIdentified = recoveryCases
-    .filter((c) => !CLOSED_RECOVERY.includes(c.status) && inDisplayCurrency(c.currency))
-    .reduce((s, c) => s + (c.estimated_recoverable_max ?? c.estimated_recoverable_min ?? 0), 0);
+  const recoverableIdentified = displaySummaries.reduce((sum, row) => sum + row.recoverable_minor / 100, 0);
 
-  const amountRecovered = recoveryCases
-    .filter((c) => inDisplayCurrency(c.currency))
-    .reduce((s, c) => s + (c.amount_recovered ?? 0), 0);
+  const amountRecovered = displaySummaries.reduce((sum, row) => sum + row.recovered_minor / 100, 0);
 
-  const rejectedUnrecoverableAmount = recoveryCases
-    .filter((c) => REJECTED_RECOVERY.includes(c.status) && inDisplayCurrency(c.currency))
-    .reduce((s, c) => s + c.merchant_loss_amount, 0);
+  const rejectedUnrecoverableAmount = displaySummaries.reduce((sum, row) => sum + row.written_off_minor / 100, 0);
 
-  const preventionOnlyExposure = openClaims
-    .filter(
-      (c) =>
-        inDisplayCurrency(c.currency) &&
-        c.recoverability === 'not_recoverable' &&
-        (c.loss_attribution === 'merchant_policy' || c.loss_attribution === 'delivery_confirmed_evidence'),
-    )
-    .reduce((s, c) => s + (c.amount_at_risk ?? 0), 0);
+  const preventionOnlyExposure = displaySummaries.reduce((sum, row) => sum + row.prevented_minor / 100, 0);
 
   const policyLeakageByOutcome = outcomes
     .filter(
@@ -119,7 +108,7 @@ export async function loadPayoutDashboardMetrics(
         o.recommended_payout_action === 'deny_under_policy' &&
         o.decision === 'approved',
     )
-    .reduce((s, o) => s + (o.amount_refunded ?? 0), 0);
+    .reduce((sum, outcome) => sum + ((summaryByCase.get(outcome.claim_id)?.exposed_minor ?? 0) / 100), 0);
 
   const chaseDue = recoveryCases.filter((c) => c.status === 'chase_due').length;
 
@@ -140,7 +129,7 @@ export async function loadPayoutDashboardMetrics(
     const cur = ownerMap.get(key) ?? { count: 0, exposure: 0 };
     ownerMap.set(key, {
       count: cur.count + 1,
-      exposure: cur.exposure + (c.amount_at_risk ?? 0),
+      exposure: cur.exposure + ((summaryByCase.get(c.id)?.exposed_minor ?? 0) / 100),
     });
   }
   const topLossOwners = [...ownerMap.entries()]

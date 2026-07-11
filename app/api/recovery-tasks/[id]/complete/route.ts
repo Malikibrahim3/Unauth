@@ -5,6 +5,7 @@ import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { TABLES } from '@/lib/supabase/tables';
 import { appendClaimEvent } from '@/lib/claims/events';
 import { writeAccountabilityNoteToGorgias } from '@/lib/claim-gate/writeBackToGorgias';
+import { recordDomainEvent } from '@/lib/events/domainEventStore';
 
 const bodySchema = z.object({
   recovered_amount: z.number().finite().min(0).optional().default(0),
@@ -104,19 +105,29 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const { error: eventError } = await serviceClient.from(TABLES.ACCOUNTABILITY_EVENTS as any).insert(eventRows);
   if (eventError) return NextResponse.json({ error: eventError.message }, { status: 500 });
 
-  const { data: existingOutcome } = await serviceClient
-    .from('claim_outcomes')
-    .select('id,amount_recovered,notes')
-    .eq('claim_id', task.claim_id)
+  const { data: payoutCase } = await serviceClient
+    .from(TABLES.MERCHANT_CLAIMS)
+    .select('currency,primary_currency')
+    .eq('merchant_id', ctx.merchantId)
+    .eq('id', task.claim_id)
     .maybeSingle();
-  if (existingOutcome) {
-    await serviceClient
-      .from('claim_outcomes')
-      .update({
-        amount_recovered: parsed.data.recovered_amount,
-        notes: parsed.data.notes ?? existingOutcome.notes ?? null,
-      })
-      .eq('id', existingOutcome.id);
+  const recoveryCurrency = payoutCase?.primary_currency ?? payoutCase?.currency ?? null;
+  if (parsed.data.recovered_amount > 0 && recoveryCurrency) {
+    await recordDomainEvent(serviceClient, {
+      merchantId: ctx.merchantId,
+      eventType: 'recovery.completed',
+      aggregateType: 'case',
+      aggregateId: task.claim_id,
+      idempotencyKey: `recovery-task:${task.id}:completed`,
+      payload: {
+        recovery_task_id: task.id,
+        amount_minor: Math.round(parsed.data.recovered_amount * 100),
+        currency: recoveryCurrency,
+      },
+      actorType: 'user',
+      actorId: user.id,
+      handlers: ['financialProjection', 'customerProjection', 'caseProjection', 'notificationProjection'],
+    });
   }
 
   await appendClaimEvent(serviceClient, {

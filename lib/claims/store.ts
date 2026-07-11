@@ -15,6 +15,7 @@ import {
   toStoredClaimStatus,
   toStoredClaimType,
 } from '@/lib/payouts/taxonomy';
+import { transitionCase } from '@/lib/cases/transitionCase';
 
 const claimTypeSchema = z.enum(['missing_parcel', 'item_not_received', 'damaged', 'wrong_item', 'not_as_described', 'refund_request', 'chargeback', 'return_abuse', 'other']);
 const claimStatusSchema = z.enum(CANONICAL_CLAIM_STATUSES);
@@ -243,7 +244,7 @@ async function fetchExistingClaim(
 export async function upsertMerchantClaim(
   supabase: any,
   input: z.input<typeof createClaimSchema>,
-  options: { ignoreDuplicates?: boolean } = {}
+  options: { ignoreDuplicates?: boolean; transitionExisting?: boolean; transitionSource?: string } = {}
 ) {
   const payload = createClaimSchema.parse(input);
   if (!payload.merchant_id) {
@@ -311,14 +312,26 @@ export async function upsertMerchantClaim(
   if (existing && options.ignoreDuplicates === true) return existing;
 
   if (existing) {
+    const updateRow = options.transitionExisting ? { ...row, status: existing.status } : row;
     const { data, error } = await supabase
       .from(TABLES.MERCHANT_CLAIMS)
-      .update(row)
+      .update(updateRow)
       .eq('id', existing.id)
       .eq('merchant_id', payload.merchant_id)
       .select()
       .single();
     if (error) throw new Error(`update claims failed: ${error.message}`);
+    if (options.transitionExisting && existing.status !== storedStatus) {
+      const transitioned = await transitionCase(supabase, {
+        merchantId: payload.merchant_id,
+        caseId: existing.id,
+        expectedVersion: existing.state_version ?? 1,
+        patch: { status: storedStatus },
+        triggeredBy: options.transitionSource ?? 'claim_upsert',
+        eventType: 'case.updated',
+      });
+      return { ...data, status: transitioned.status, state_version: transitioned.newVersion };
+    }
     return data;
   }
 

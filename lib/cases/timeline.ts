@@ -74,3 +74,26 @@ export function domainEventsToTimeline(rows: DomainEventRow[]): TimelineItem[] {
     freshness: 'fresh',
   }));
 }
+
+type ClaimEventRow = {
+  id: string;
+  event_type: string;
+  created_at: string;
+  note: string | null;
+  actor_user_id: string | null;
+  metadata: Record<string, unknown> | null;
+};
+
+export function claimEventsToTimeline(rows: ClaimEventRow[]): TimelineItem[] {
+  return rows.map((row) => ({
+    id: `claim:${row.id}`,
+    type: row.event_type,
+    occurredAt: typeof row.metadata?.triggered_at === 'string' ? row.metadata.triggered_at : row.created_at,
+    recordedAt: row.created_at,
+    sourceSystem: 'unauth',
+    actor: { type: row.actor_user_id ? 'user' : 'system', id: row.actor_user_id ?? undefined },
+    title: row.event_type.replaceAll('_', ' '),
+    summary: row.note ?? undefined,
+    freshness: 'fresh',
+  }));
+}

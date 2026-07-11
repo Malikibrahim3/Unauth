@@ -13,6 +13,7 @@ import { TABLES } from '@/lib/supabase/tables';
 import { extractOrderRefFromText } from '@/lib/support/intake/store';
 import { resolveTicketOrderLink } from '@/lib/support/intake/resolveTicketOrderLink';
 import { recordCandidates } from '@/lib/relationships/candidateStore';
+import { transitionCase } from '@/lib/cases/transitionCase';
 
 type Client = SupabaseClient<any>;
 
@@ -314,7 +315,7 @@ export async function ensurePayoutCaseForTicketV2(
   }
 
   const { data: existingRows, error: le } = await supabase.from(TABLES.MERCHANT_CLAIMS)
-    .select('id, status')
+    .select('id, status, state_version')
     .eq('merchant_id', input.merchantId)
     .eq('source_ticket_id', input.ticketId)
     .order('created_at', { ascending: true })
@@ -340,7 +341,6 @@ export async function ensurePayoutCaseForTicketV2(
       // Only claim-confirming events may change the case classification;
       // non-claim-looking follow-ups keep the existing claim_type/status.
       updatePatch.claim_type = claimType;
-      updatePatch.status = caseStatus;
       updatePatch.detection_method = detectionMethod;
       updatePatch.requires_review = input.requiresReview;
       updatePatch.detection_detail = detectionDetail;
@@ -350,6 +350,17 @@ export async function ensurePayoutCaseForTicketV2(
     }
     const { error: updateError } = await supabase.from(TABLES.MERCHANT_CLAIMS).update(updatePatch).eq('id', existing.id);
     if (updateError) throw new Error(`ticket_claim_update_failed: ${updateError.message}`);
+    if (input.isClaim && existing.status !== caseStatus) {
+      await transitionCase(supabase, {
+        merchantId: input.merchantId,
+        caseId: existing.id,
+        expectedVersion: existing.state_version ?? 1,
+        patch: { status: caseStatus },
+        triggeredBy: 'helpdesk_intake',
+        eventType: 'case.updated',
+        eventPayload: { source_ticket_id: input.ticketId },
+      });
+    }
     return existing.id as string;
   }
 

@@ -118,7 +118,7 @@ export async function createOrUpdateClaim(input: {
     requested_action: requestedAction(input.requestedAction),
     requires_merchant_review: input.decision ? input.decision.gateStatus !== 'PROCEED' : false,
     trigger_tags: ['claim_gate_check'],
-  });
+  }, { transitionExisting: true, transitionSource: 'claim_gate_check' });
 
   await upsertClaimEvidenceItem(input.client, {
     claim_id: claim.id,

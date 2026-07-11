@@ -5,7 +5,6 @@ import {
   recordCustomerResponseCopied,
   assignClaim,
   fetchClaimDecision,
-  markClaimViewed,
   reopenClaim,
   reverseClaimDecision,
   snoozeClaim,
@@ -18,7 +17,7 @@ import { buildCustomerResponse } from '@/lib/claims/customerResponses';
 import { claimHasEvidence } from '@/lib/claims/events';
 import { pickPriorityClaim } from '@/lib/claims/priority';
 import { ACTIVE_CLAIM_STATUSES, isFinalClaimStatus } from '@/lib/claims/sla';
-import { saveClaimDraft, shouldAttemptClaimViewed } from '@/components/claims/claimReviewDraft';
+import { saveClaimDraft } from '@/components/claims/claimReviewDraft';
 import { CLAIM_TYPE_LABELS } from '@/components/claims/claimReviewLabels';
 import {
   buildMetadata,
@@ -92,11 +91,6 @@ export function useClaimReviewWorkbench(profileId: string, initialClaimId?: stri
     dispatch({ type: 'patch', patch: patchValue });
   }, []);
 
-  const viewedAttemptedRef = useRef<Set<string> | null>(null);
-  if (viewedAttemptedRef.current === null) {
-    viewedAttemptedRef.current = new Set();
-  }
-
   const prevSelectedClaimIdForFormRef = useRef<string | null>(null);
   const { data, reload: reloadCustomer } = useFetchJson<CustomerPayload>(`/api/customers/${profileId}`);
   const { data: shopifyPayload } = useFetchJson<{ orders?: Array<Record<string, unknown>> }>(
@@ -106,7 +100,6 @@ export function useClaimReviewWorkbench(profileId: string, initialClaimId?: stri
     `/api/claims?profileId=${encodeURIComponent(profileId)}`,
   );
 
-  const shopifyOrders = shopifyPayload?.orders ?? [];
   const shops = claimsPayload?.shops ?? [];
   const shopDomain = state.shopDomain || claimsPayload?.activeShopDomain || '';
   const history = useMemo(() => claimsPayload?.claims ?? [], [claimsPayload?.claims]);
@@ -205,8 +198,11 @@ export function useClaimReviewWorkbench(profileId: string, initialClaimId?: stri
   }, []);
 
   useEffect(() => {
-    void reloadDecision(resolvedActiveClaimId || null);
-  }, [resolvedActiveClaimId, reloadDecision]);
+    setDecisionData(null);
+    setDecisionError(null);
+    setDecisionLoading(false);
+    setDecisionStale(Boolean(resolvedActiveClaimId));
+  }, [resolvedActiveClaimId]);
 
   useEffect(() => {
     if (!selectedClaim || !decisionData?.evaluatedAt || decisionLoading) return;
@@ -251,22 +247,6 @@ export function useClaimReviewWorkbench(profileId: string, initialClaimId?: stri
   useEffect(() => {
     saveClaimDraft(profileId, pickDraftFields(state, effectiveClaimId));
   }, [effectiveClaimId, profileId, state]);
-
-  useEffect(() => {
-    const claimRecord = selectedClaim;
-    if (!shouldAttemptClaimViewed(claimRecord?.id, claimRecord?.first_viewed_at, viewedAttemptedRef.current!)) {
-      return;
-    }
-    const selectedClaimId = claimRecord!.id;
-    viewedAttemptedRef.current!.add(selectedClaimId);
-    void markClaimViewed(selectedClaimId).then((result) => {
-      const msg = result.message.toLowerCase();
-      if (msg.includes('denied') || (msg.includes('failed') && !msg.includes('already'))) {
-        patch({ message: result.message, messageTone: 'error' });
-      }
-      void reloadClaims();
-    });
-  }, [patch, reloadClaims, selectedClaim]);
 
   const metadata = useMemo(() => buildMetadata(state.metaRows), [state.metaRows]);
   const effectiveOrderRef = manualMode ? state.manualOrderRef.trim() : effectiveSelectedOrderId;

@@ -31,6 +31,13 @@ type OutcomeExportRow = {
   updated_at: string | null;
 };
 
+type FinancialExportRow = {
+  support_payout_case_id: string;
+  currency: string;
+  paid_minor: number;
+  recovered_minor: number;
+};
+
 export async function GET(request: NextRequest) {
   const userClient = createClient();
   const { data: { user } } = await userClient.auth.getUser();
@@ -63,12 +70,30 @@ export async function GET(request: NextRequest) {
       .select('claim_id,decision,outcome,amount_refunded,amount_recovered,recommended_payout_action,followed_recommendation,decided_at,updated_at')
       .in('claim_id', claimRows.map((claim) => claim.id))
     : { data: [] as OutcomeExportRow[] };
+  const { data: financialSummaries } = claimRows.length > 0
+    ? await serviceClient
+      .from(TABLES.CASE_FINANCIAL_SUMMARIES)
+      .select('support_payout_case_id,currency,paid_minor,recovered_minor')
+      .eq('merchant_id', ctx.merchantId)
+      .in('support_payout_case_id', claimRows.map((claim) => claim.id))
+    : { data: [] };
+  const financialByCase = new Map<string, FinancialExportRow>(
+    ((financialSummaries ?? []) as FinancialExportRow[]).map((row) => [row.support_payout_case_id, row]),
+  );
+  const projectedOutcomes = (outcomes ?? []).map((row: OutcomeExportRow) => {
+    const financial = financialByCase.get(row.claim_id);
+    return {
+      ...row,
+      amount_refunded: financial ? financial.paid_minor / 100 : 0,
+      amount_recovered: financial ? financial.recovered_minor / 100 : 0,
+    };
+  });
 
   if (view === 'outcomes') {
     const claimStatusById = new Map(claimRows.map((claim) => [claim.id, claim.status]));
     const csv = [
       ['claim_id', 'status', 'decision', 'outcome', 'amount_refunded', 'amount_recovered', 'recommended_payout_action', 'followed_recommendation', 'decided_at'].join(','),
-      ...(outcomes ?? []).map((row: OutcomeExportRow) => [
+      ...projectedOutcomes.map((row: OutcomeExportRow) => [
         row.claim_id,
         claimStatusById.get(row.claim_id) ?? '',
         row.decision ?? '',
@@ -85,7 +110,7 @@ export async function GET(request: NextRequest) {
       ctx,
       action: 'export_audit',
       resourceType: 'report',
-      metadata: { view: 'outcomes', range, rowCount: (outcomes ?? []).length },
+      metadata: { view: 'outcomes', range, rowCount: projectedOutcomes.length },
     });
 
     return new NextResponse(csv, {
@@ -96,7 +121,7 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  const metrics = buildClaimOpsMetrics(claimRows, outcomes ?? []);
+  const metrics = buildClaimOpsMetrics(claimRows, projectedOutcomes);
   const rows = Object.entries(metrics).map(([metric, value]) => [metric, value]);
   const csv = [['metric', 'value'], ...rows].map((row) => row.map(csvCell).join(',')).join('\n');
 

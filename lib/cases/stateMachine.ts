@@ -66,7 +66,7 @@ export type CaseAxisState = {
 export function validateCaseTransition(
   current: CaseAxisState,
   patch: CaseAxisPatch,
-  options: { allowReopen?: boolean } = {},
+  options: { allowReopen?: boolean; allowDecisionReversal?: boolean; allowSnooze?: boolean } = {},
 ): { ok: boolean; rejected: string[] } {
   const rejected: string[] = [];
   if (patch.status !== undefined && !canTransitionClaimStatus(current.status, patch.status, options)) {
@@ -74,7 +74,8 @@ export function validateCaseTransition(
   }
   if (
     patch.payoutDecisionState !== undefined &&
-    !canTransitionDecisionState(current.payoutDecisionState, patch.payoutDecisionState)
+    !canTransitionDecisionState(current.payoutDecisionState, patch.payoutDecisionState) &&
+    !(options.allowDecisionReversal && patch.payoutDecisionState === 'reversed')
   ) {
     rejected.push('payout_decision_state');
   }

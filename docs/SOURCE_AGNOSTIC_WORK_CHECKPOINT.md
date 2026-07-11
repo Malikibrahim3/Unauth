@@ -1,9 +1,9 @@
 # Source-Agnostic Architecture — Live Work Checkpoint
 
 **Purpose:** Disk-backed continuation state for another model if this task is interrupted.
-**Last updated:** 2026-07-11 (Phase 6 continuation)
-**Branch/baseline:** `codex/refocus-claim-gate-map` at `1950bf64`
-**Requested deliverable:** Review the approved source-agnostic MVP+ requirements against the current app and create a comprehensive implementation document that a less capable coding model can follow.
+**Last updated:** 2026-07-11 (Phase 6 complete)
+**Branch:** `codex/refocus-claim-gate-map`
+**Requested deliverable:** Implement the source-agnostic MVP+ plan through Phase 11, with live migrations, tests, and one commit per phase/sub-phase.
 
 ## Primary saved deliverable
 
@@ -12,17 +12,25 @@
 Phases 0 through 5 are implemented and committed. Phase 5 is commit `ae4aa1de`
 (`feat(source-agnostic): Phase 5 — record matching + related-record graph`).
 
-Phase 6 is in progress and deliberately uncommitted. Its current worktree changes
-add a persisted-workflow-compatible case state machine, optimistic-concurrency
-transition service, leased domain-event dispatcher and cron route, read-only case
-read model/related-record wrapper, timeline utilities, financial projection, and
-focused tests. The claim workbench server page no longer records a view on load;
-the explicit POST view endpoint remains a mutation. Status and reopen API routes
-now use `transitionCase` and preserve compatibility `claim_events` labels.
+Phase 6 is complete. The foundation commit is `4c5f3774`; the completion commit is
+the next Phase 6 commit after this checkpoint update. All case mutations now route
+through the optimistic-concurrency transition service, reads are side-effect free,
+the merged timeline projects claim and domain events, and financial/loss/recovery/
+customer/refund handlers maintain the compatibility projections.
 
-Do not commit Phase 6 until the remaining direct case mutation paths, decision and
-retrospective-refund projections, loss/recovery/customer handlers, live verification,
-and the complete Phase 6 test gate are complete.
+Migration `20260711133000_phase6_financial_backfill.sql` was pushed to live Supabase
+project `lquvbikyvmbjbfffrlky`. Live verification found 242 financial entries and
+180 summaries. The parity report returned zero mismatches, orphaned entry groups,
+or duplicate migration keys; domain-event deliveries had zero pending, failed, or
+dead-letter rows. Generated Supabase types are current (the data/index-only migration
+did not alter the generated type file).
+
+Phase 6 verification: changed-file ESLint passed, source TypeScript passed (excluding
+known stale `.next` declarations), `git diff --check` passed, and the complete Jest
+suite passed with 1,773 tests passed, 3 skipped, and 0 failed.
+
+Next: execute Phase 7, "Consolidate evidence, losses, recoveries, and tasks," from
+`docs/IMPL_source_agnostic_connected_ecosystem.md`, then continue through Phase 11.
 
 `docs/IMPL_source_agnostic_connected_ecosystem.md`
 
@@ -152,15 +160,9 @@ Schema audit found tracked scripts under `scripts/v2-tests/` (11 `.sh` files, on
 
 ## Final handoff status
 
-The requested implementation-document work is complete and saved. Final checks completed:
-
-1. existing file references were resolved; remaining non-existent paths are explicitly proposed files/migrations/tests;
-2. connection/table naming, event vocabulary, evidence migration, compatibility flags, and frozen-scoring constraints were reconciled;
-3. the content sanity scan found no accidental credential or unresolved TODO/TBD;
-4. both Markdown files pass diff/whitespace checks;
-5. Git contains only the two intended untracked documentation files from this task.
-
-No product code, migrations, production data, external systems, commits, or deployments were changed.
+The planning/audit work is complete and implementation is active. Phases 0–6 have
+been implemented; their migrations were applied to the live linked Supabase project.
+Continue from Phase 7 without restarting the audit.
 
 ## Continuation commands
 
@@ -173,4 +175,6 @@ git diff --no-index /dev/null docs/SOURCE_AGNOSTIC_WORK_CHECKPOINT.md
 
 ## Scope boundary
 
-The user asked for an implementation document, not the implementation. Do not apply database migrations, modify production code, rotate credentials, push, deploy, or commit unless separately asked.
+The user explicitly requested end-to-end implementation through Phase 11. Apply and
+verify migrations, update generated types, test, and commit each phase/sub-phase. Do
+not change scoring or matching algorithms, and do not include unrelated worktree files.

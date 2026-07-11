@@ -44,9 +44,18 @@ export type TransitionCaseInput = {
   /** Domain-specific facts consumed by idempotent projection handlers. */
   eventPayload?: Record<string, unknown>;
   handlerNames?: string[];
+  attributes?: { assignedTo?: string | null; assignedAt?: string | null; snoozedUntil?: string | null };
   /** Legacy audit label retained while claim_events is still a compatibility projection. */
   claimEventType?: 'status_changed' | 'claim_reopened' | 'claim_snoozed' | 'claim_unsnoozed' | 'claim_assigned' | 'claim_unassigned' | 'outcome_added' | 'decision_reversed';
+  claimEventDetails?: {
+    previousDecision?: string | null; newDecision?: string | null;
+    previousOutcome?: string | null; newOutcome?: string | null;
+    metadata?: Record<string, unknown>;
+  };
   allowReopen?: boolean;
+  /** Allows a one-time reversal of a legacy decision that predates the decision axis. */
+  allowDecisionReversal?: boolean;
+  allowSnooze?: boolean;
 };
 
 export type TransitionCaseResult = {
@@ -79,22 +88,23 @@ export async function transitionCase(
   if (!current) throw new Error('case_not_found');
 
   const row = current as CaseRow;
-  if (row.state_version !== input.expectedVersion) {
+  const currentVersion = row.state_version ?? 1;
+  if (currentVersion !== input.expectedVersion) {
     throw new CaseVersionConflictError(input.caseId, input.expectedVersion);
   }
 
   const check = validateCaseTransition(
     {
       status: row.status,
-      payoutDecisionState: row.payout_decision_state,
-      recoveryState: row.recovery_state,
+      payoutDecisionState: row.payout_decision_state ?? 'undecided',
+      recoveryState: row.recovery_state ?? 'no_recovery_needed',
     },
     input.patch,
-    { allowReopen: input.allowReopen },
+    { allowReopen: input.allowReopen, allowDecisionReversal: input.allowDecisionReversal, allowSnooze: input.allowSnooze },
   );
   if (!check.ok) throw new CaseTransitionRejectedError(check.rejected);
 
-  const nextVersion = row.state_version + 1;
+  const nextVersion = currentVersion + 1;
   const patchRow: Record<string, unknown> = {
     state_version: nextVersion,
     updated_at: new Date().toISOString(),
@@ -102,16 +112,22 @@ export async function transitionCase(
   if (input.patch.status !== undefined) patchRow.status = input.patch.status;
   if (input.patch.payoutDecisionState !== undefined) patchRow.payout_decision_state = input.patch.payoutDecisionState;
   if (input.patch.recoveryState !== undefined) patchRow.recovery_state = input.patch.recoveryState;
+  if (input.attributes?.assignedTo !== undefined) patchRow.assigned_to = input.attributes.assignedTo;
+  if (input.attributes?.assignedAt !== undefined) patchRow.assigned_at = input.attributes.assignedAt;
+  if (input.attributes?.snoozedUntil !== undefined) patchRow.snoozed_until = input.attributes.snoozedUntil;
 
   // Optimistic concurrency: the update only matches while state_version is
   // still the version we validated. A racing transition bumps it first and this
   // update touches zero rows → version conflict.
-  const { data: updated, error: writeError } = await client
+  let writeQuery = client
     .from(TABLES.MERCHANT_CLAIMS)
     .update(patchRow)
     .eq('merchant_id', input.merchantId)
-    .eq('id', input.caseId)
-    .eq('state_version', input.expectedVersion)
+    .eq('id', input.caseId);
+  // Rows created before the foundation migration are upgraded on first write.
+  // All migrated/live rows take the strict compare-and-swap path.
+  if (row.state_version != null) writeQuery = writeQuery.eq('state_version', input.expectedVersion);
+  const { data: updated, error: writeError } = await writeQuery
     .select('status, payout_decision_state, recovery_state, state_version')
     .maybeSingle();
   if (writeError) throw new Error(`case_write_failed: ${writeError.message}`);
@@ -138,7 +154,14 @@ export async function transitionCase(
     actorType: input.actorUserId ? 'user' : 'system',
     actorId: input.actorUserId ?? null,
     occurredAt,
-    handlers: input.handlerNames ?? ['financialProjection', 'caseProjection', 'notificationProjection'],
+    handlers: input.handlerNames ?? [
+      'financialProjection',
+      'lossProjection',
+      'recoveryProjection',
+      'customerProjection',
+      'caseProjection',
+      'notificationProjection',
+    ],
   })) as string | null;
 
   // Compatibility audit row (removed in a later phase once readers migrate).
@@ -151,15 +174,23 @@ export async function transitionCase(
     note: input.reason ?? null,
     actor_user_id: input.actorUserId ?? null,
     triggered_by: input.triggeredBy ?? 'system',
-    metadata: { state_version: nextVersion, domain_event_id: domainEventId },
+    previous_decision: input.claimEventDetails?.previousDecision ?? null,
+    new_decision: input.claimEventDetails?.newDecision ?? null,
+    previous_outcome: input.claimEventDetails?.previousOutcome ?? null,
+    new_outcome: input.claimEventDetails?.newOutcome ?? null,
+    metadata: {
+      state_version: nextVersion,
+      domain_event_id: domainEventId,
+      ...input.claimEventDetails?.metadata,
+    },
   });
 
   return {
     caseId: input.caseId,
     newVersion: next.state_version,
     status: next.status,
-    payoutDecisionState: next.payout_decision_state,
-    recoveryState: next.recovery_state,
+    payoutDecisionState: next.payout_decision_state ?? row.payout_decision_state ?? 'undecided',
+    recoveryState: next.recovery_state ?? row.recovery_state ?? 'no_recovery_needed',
     domainEventId,
   };
 }

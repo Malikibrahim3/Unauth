@@ -4,12 +4,20 @@ import { TABLES } from '@/lib/supabase/tables';
 import { caseProjection } from '@/lib/events/handlers/caseProjection';
 import { financialProjection } from '@/lib/events/handlers/financialProjection';
 import { notificationProjection } from '@/lib/events/handlers/notificationProjection';
+import { lossProjection } from '@/lib/events/handlers/lossProjection';
+import { recoveryProjection } from '@/lib/events/handlers/recoveryProjection';
+import { customerProjection } from '@/lib/events/handlers/customerProjection';
+import { refundProjection } from '@/lib/events/handlers/refundProjection';
 import type { DomainEventHandler, DomainEventRecord } from '@/lib/events/handlers/types';
 
 export const DOMAIN_EVENT_HANDLERS: Record<string, DomainEventHandler> = {
   caseProjection,
   financialProjection,
   notificationProjection,
+  lossProjection,
+  recoveryProjection,
+  customerProjection,
+  refundProjection,
 };
 
 type Delivery = { id: string; domain_event_id: string; handler_name: string };

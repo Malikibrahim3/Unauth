@@ -2,6 +2,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/lib/supabase/tables';
 import { getCaseRelatedRecords } from '@/lib/cases/relatedRecords';
+import { claimEventsToTimeline, domainEventsToTimeline, mergeTimeline } from '@/lib/cases/timeline';
 
 export async function getCaseReadModel(client: SupabaseClient, merchantId: string, caseId: string) {
   const { data: payoutCase, error: caseError } = await client
@@ -23,11 +24,17 @@ export async function getCaseReadModel(client: SupabaseClient, merchantId: strin
   if (domainEventsResult.error) throw new Error(`case_read_model_events_failed: ${domainEventsResult.error.message}`);
   if (claimEventsResult.error) throw new Error(`case_read_model_claim_events_failed: ${claimEventsResult.error.message}`);
 
+  const domainEvents = domainEventsResult.data ?? [];
+  const claimEvents = claimEventsResult.data ?? [];
   return {
     case: payoutCase,
     relatedRecords,
     financialSummaries: financialResult.data ?? [],
-    domainEvents: domainEventsResult.data ?? [],
-    claimEvents: claimEventsResult.data ?? [],
+    timeline: mergeTimeline(
+      domainEventsToTimeline(domainEvents),
+      claimEventsToTimeline(claimEvents),
+    ),
+    domainEvents,
+    claimEvents,
   };
 }

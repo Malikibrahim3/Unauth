@@ -21,6 +21,18 @@ import {
   liveSetupCta,
 } from '@/app/(app)/reports/reportsPageUtils';
 
+type FinancialSummaryRow = {
+  support_payout_case_id: string;
+  currency: string;
+  exposed_minor: number;
+  paid_minor: number;
+  confirmed_loss_minor: number;
+  recoverable_minor: number;
+  recovered_minor: number;
+  prevented_minor: number;
+  written_off_minor: number;
+};
+
 function mapOutcomeRow(row: {
   claim_id: string;
   decision: string | null;
@@ -110,18 +122,48 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
   if (priorCutoff) priorClaimsQuery = priorClaimsQuery.gte('submitted_at', priorCutoff);
   if (priorEnd) priorClaimsQuery = priorClaimsQuery.lte('submitted_at', priorEnd);
 
-  const [claimsResult, priorClaimResult, allRecoveryCases, partners, partnerRules] = await Promise.all([
+  const [claimsResult, priorClaimResult, allRecoveryCases, partners, partnerRules, financialResult] = await Promise.all([
     claimsQuery.then((r: { error: unknown; data: ClaimRow[] | null }) => ({ data: r.error ? [] as ClaimRow[] : ((r.data ?? []) as ClaimRow[]) })),
     range === 'all' ? Promise.resolve({ data: [] as ClaimRow[] }) : priorClaimsQuery.then((r: { error: unknown; data: ClaimRow[] | null }) => ({ data: r.error ? [] as ClaimRow[] : ((r.data ?? []) as ClaimRow[]) })),
     listRecoveryCases(serviceClient, ctx.merchantId).catch(() => []),
     listPartners(serviceClient, ctx.merchantId).catch(() => []),
     listPartnerRecoveryRules(serviceClient, ctx.merchantId).catch(() => []),
+    serviceClient
+      .from(TABLES.CASE_FINANCIAL_SUMMARIES)
+      .select('support_payout_case_id,currency,exposed_minor,paid_minor,confirmed_loss_minor,recoverable_minor,recovered_minor,prevented_minor,written_off_minor')
+      .eq('merchant_id', ctx.merchantId)
+      .then((result: { error: unknown; data: FinancialSummaryRow[] | null }) => ({ data: result.error ? [] as FinancialSummaryRow[] : (result.data ?? []) })),
   ]);
-  const claims = claimsResult.data;
+  const financialByCaseCurrency = new Map<string, FinancialSummaryRow>(
+    financialResult.data.map((row: FinancialSummaryRow) => [`${row.support_payout_case_id}:${row.currency.toUpperCase()}`, row]),
+  );
+  const withFinancialSummary = (claim: ClaimRow): ClaimRow => {
+    const currency = (claim.currency ?? 'USD').toUpperCase();
+    const summary = financialByCaseCurrency.get(`${claim.id}:${currency}`);
+    if (!summary) return claim;
+    return {
+      ...claim,
+      amount_at_risk: Number(summary.exposed_minor ?? 0) / 100,
+      total_estimated_loss: Number(summary.confirmed_loss_minor ?? 0) / 100,
+      refund_amount: Number(summary.paid_minor ?? 0) / 100,
+    };
+  };
+  const claims = claimsResult.data.map(withFinancialSummary);
   const priorClaims = priorClaimResult.data;
+  const ledgerRecoveryCases = allRecoveryCases.map((recoveryCase) => {
+    const currency = recoveryCase.currency.toUpperCase();
+    const summary = financialByCaseCurrency.get(`${recoveryCase.support_payout_case_id}:${currency}`);
+    return summary ? {
+      ...recoveryCase,
+      eligible_loss_amount: Number(summary.recoverable_minor ?? 0) / 100,
+      estimated_recoverable_min: Number(summary.recoverable_minor ?? 0) / 100,
+      estimated_recoverable_max: Number(summary.recoverable_minor ?? 0) / 100,
+      amount_recovered: Number(summary.recovered_minor ?? 0) / 100,
+    } : recoveryCase;
+  });
   const recoveryCases = cutoff
-    ? allRecoveryCases.filter((recoveryCase) => recoveryCase.created_at >= cutoff || recoveryCase.updated_at >= cutoff)
-    : allRecoveryCases;
+    ? ledgerRecoveryCases.filter((recoveryCase) => recoveryCase.created_at >= cutoff || recoveryCase.updated_at >= cutoff)
+    : ledgerRecoveryCases;
 
   const [outcomeResult, priorOutcomeResult] = await Promise.all([
     claims.length > 0
@@ -165,14 +207,24 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
         }) => ({ data: r.error ? [] as OutcomeRow[] : ((r.data ?? []).map(mapOutcomeRow)) }))
       : Promise.resolve({ data: [] as OutcomeRow[] }),
   ]);
+  const currencyByCase = new Map(claimsResult.data.map((claim: ClaimRow) => [claim.id, (claim.currency ?? 'USD').toUpperCase()]));
+  const withFinancialOutcome = (outcome: OutcomeRow): OutcomeRow => {
+    const currency = currencyByCase.get(outcome.claim_id) ?? 'USD';
+    const summary = financialByCaseCurrency.get(`${outcome.claim_id}:${currency}`);
+    return summary
+      ? { ...outcome, amount_refunded: Number(summary.paid_minor ?? 0) / 100, amount_recovered: Number(summary.recovered_minor ?? 0) / 100 }
+      : outcome;
+  };
+  const outcomes = outcomeResult.data.map(withFinancialOutcome);
+  const priorOutcomes = priorOutcomeResult.data.map(withFinancialOutcome);
 
   // Display currency for money KPIs/charts: most common case currency, then recovery-case currency.
-  const displayCurrency = dominantCurrency(claims, dominantCurrency(allRecoveryCases));
+  const displayCurrency = dominantCurrency(claims, dominantCurrency(ledgerRecoveryCases));
 
-  const claimMetrics = buildClaimOpsMetrics(claims, outcomeResult.data ?? []);
+  const claimMetrics = buildClaimOpsMetrics(claims, outcomes);
   const priorMetrics = range === 'all'
     ? null
-    : buildClaimOpsMetrics(priorClaims, priorOutcomeResult.data ?? []);
+    : buildClaimOpsMetrics(priorClaims, priorOutcomes);
   const recoveryMetrics = buildRecoveryMetrics(recoveryCases);
 
   const sourcesCoverage: SourcesCoverage = {
@@ -209,7 +261,7 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
           displayCurrency,
           claimTypeBreakdown: buildClaimTypeBreakdown(claims),
           requestedActionBreakdown: buildRequestedActionBreakdown(claims),
-          outcomeBreakdown: buildOutcomeBreakdown(outcomeResult.data ?? []),
+          outcomeBreakdown: buildOutcomeBreakdown(outcomes),
           sourcesCoverage,
         },
         recovery: {

@@ -447,7 +447,14 @@ describe('shopify webhook p0', () => {
         maybeSingleData: { id: 'order-void-1', shipping_address_id: null, billing_address_id: null },
         onUpdate: (payload) => orderUpdates.push(payload),
       },
-      support_payout_cases: { onUpdate: (payload) => claimUpdates.push(payload) },
+      support_payout_cases: {
+        thenData: [{ id: 'claim-void-1', state_version: 1 }],
+        maybeSingleData: {
+          id: 'claim-void-1', status: 'open', state_version: 1,
+          payout_decision_state: 'undecided', recovery_state: 'no_recovery_needed',
+        },
+        onUpdate: (payload) => claimUpdates.push(payload),
+      },
     });
 
     await processWebhook(

@@ -20,6 +20,7 @@ import type { DomainEventHandler } from '@/lib/events/handlers/types';
 type PlannedEntry = { state: string; direction: 'debit' | 'credit' | 'memo' };
 
 function plannedEntriesForEvent(eventType: string, payload: Record<string, unknown>): PlannedEntry[] {
+  if (eventType === 'recovery.completed') return [{ state: 'recovered', direction: 'credit' }];
   if (eventType !== 'case.decision_recorded') return [];
   const action = typeof payload.action === 'string' ? payload.action : null;
   switch (action) {
@@ -30,7 +31,9 @@ function plannedEntriesForEvent(eventType: string, payload: Record<string, unkno
       return [
         { state: 'approved', direction: 'debit' },
         { state: 'paid', direction: 'debit' },
+        { state: 'confirmed_loss', direction: 'debit' },
       ];
+    case 'denied':
     case 'deny':
     case 'reject':
       // Prevented leakage — no payout.
@@ -54,7 +57,7 @@ async function existingEntryStates(
   return new Set(((data as Array<{ state: string }> | null) ?? []).map((r) => r.state));
 }
 
-async function recomputeSummary(
+export async function recomputeFinancialSummary(
   client: SupabaseClient,
   merchantId: string,
   caseId: string,
@@ -130,6 +133,6 @@ export const financialProjection: DomainEventHandler = async (client, event) => 
   );
   if (error) throw new Error(`financial_entry_insert_failed: ${error.message}`);
 
-  await recomputeSummary(client, event.merchant_id, caseId);
+  await recomputeFinancialSummary(client, event.merchant_id, caseId);
   return { applied: true, detail: `appended:${toInsert.map((p) => p.state).join(',')}` };
 };

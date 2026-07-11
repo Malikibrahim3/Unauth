@@ -3,9 +3,9 @@ import { z } from 'zod';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { upsertMerchantCaseOutcome } from '@/lib/claims/store';
-import { loadClaimForMerchant, updateClaimStatus } from '@/lib/claims/access';
-import { appendClaimEvent } from '@/lib/claims/events';
+import { loadClaimForMerchant } from '@/lib/claims/access';
 import { claimStatusForOutcome } from '@/lib/claims/statusMachine';
+import { CaseTransitionRejectedError, CaseVersionConflictError, transitionCase } from '@/lib/cases/transitionCase';
 
 const reverseBodySchema = z.object({
   // Accusation vocabulary ('blacklist', 'suspected_fraud') is not accepted; see lib/claims/store.ts.
@@ -66,25 +66,29 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       actor_user_id: user.id,
     });
     const status = claimStatusForOutcome(parsed.data);
-    await updateClaimStatus(serviceClient, claim, ctx.merchantId, status);
-    await appendClaimEvent(serviceClient, {
-      claim_id: claimId,
-      merchant_id: ctx.merchantId,
-      event_type: 'decision_reversed',
-      previous_status: claim.status,
-      new_status: status,
-      previous_decision: previous.decision,
-      new_decision: outcome.decision,
-      previous_outcome: previous.outcome,
-      new_outcome: outcome.outcome,
-      note: parsed.data.note,
-      actor_user_id: user.id,
-      triggered_by: 'merchant_manual',
-      metadata: { triggered_by: 'merchant_manual', previous_outcome_id: previous.id, outcome_id: outcome.id },
+    await transitionCase(serviceClient, {
+      merchantId: ctx.merchantId,
+      caseId: claimId,
+      expectedVersion: claim.state_version ?? 1,
+      patch: { status, payoutDecisionState: 'reversed' },
+      reason: parsed.data.note,
+      actorUserId: user.id,
+      triggeredBy: 'merchant_manual',
+      eventType: 'case.decision_recorded',
+      eventPayload: { action: parsed.data.decision, reversal: true, outcome_id: outcome.id },
+      claimEventType: 'decision_reversed',
+      claimEventDetails: {
+        previousDecision: previous.decision,
+        newDecision: outcome.decision,
+        previousOutcome: previous.outcome,
+        newOutcome: outcome.outcome,
+        metadata: { previous_outcome_id: previous.id, outcome_id: outcome.id },
+      },
+      allowDecisionReversal: true,
     });
     return NextResponse.json({ outcome: { id: outcome.id, claim_id: outcome.claim_id, decision: outcome.decision, outcome: outcome.outcome } });
   } catch (err) {
-    if (err instanceof Error && err.message.startsWith('illegal_claim_status_transition:')) {
+    if (err instanceof CaseTransitionRejectedError || err instanceof CaseVersionConflictError) {
       return NextResponse.json({ error: 'Illegal claim status transition.' }, { status: 409 });
     }
     return NextResponse.json({ error: 'Failed to reverse decision' }, { status: 500 });

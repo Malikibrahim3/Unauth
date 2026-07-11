@@ -1,6 +1,8 @@
 import crypto from 'crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createServiceClient } from '@/lib/supabase/server';
+import { recordDomainEvent } from '@/lib/events/domainEventStore';
+import { transitionCase } from '@/lib/cases/transitionCase';
 import { linkCheckoutSignalsToOrder } from '@/lib/checkoutSignals/linkOrder';
 import { normaliseAddress, normaliseCard } from '@/lib/identity/normalise';
 import { emitIdentityObservations, type ObservationEntity } from '@/lib/identity/observations';
@@ -352,7 +354,7 @@ async function processRefundTopic(
       return sum + (Number.isFinite(amount) ? amount : 0);
     }, 0) ?? 0,
   );
-  const { error } = await supabase
+  const { data: refund, error } = await supabase
     .from('source_refunds')
     .upsert(
       {
@@ -367,8 +369,26 @@ async function processRefundTopic(
         raw_payload_hash: crypto.createHash('sha256').update(rawBody, 'utf8').digest('hex'),
       },
       { onConflict: 'merchant_id,source_order_id,external_id' },
-    );
+    )
+    .select('id')
+    .single();
   if (error) throw new Error(`source_refund_upsert_failed: ${error.message}`);
+  await recordDomainEvent(supabase, {
+    merchantId,
+    eventType: 'refund.created',
+    aggregateType: 'refund',
+    aggregateId: refund?.id ?? null,
+    idempotencyKey: `shopify:refund:${String(payload.id)}`,
+    payload: {
+      source_order_id: order.id,
+      amount_minor: Number.isFinite(refundedAmount) ? Math.round(refundedAmount * 100) : null,
+      currency: payload.currency ?? payload.order?.currency ?? null,
+      reason: payload.note ?? payload.reason ?? null,
+      case_origin: 'connector',
+    },
+    occurredAt: payload.created_at ?? new Date().toISOString(),
+    handlers: ['refundProjection'],
+  });
 }
 
 async function processFulfillmentTopic(
@@ -471,7 +491,7 @@ async function processDisputeTopic(
   const claimStatus = mapDisputeStatusToClaimStatus(payload.status);
   const { data: existingClaim, error: ce } = await supabase
     .from(TABLES.MERCHANT_CLAIMS)
-    .select('id')
+    .select('id,state_version')
     .eq('merchant_id', merchantId)
     .eq('source_order_id', order.id)
     .eq('claim_type', 'chargeback')
@@ -481,11 +501,15 @@ async function processDisputeTopic(
 
   if (existingClaim) {
     if (topic === 'disputes/update' || topic === 'disputes/updated') {
-      const { error } = await supabase
-        .from(TABLES.MERCHANT_CLAIMS)
-        .update({ status: claimStatus, updated_at: now })
-        .eq('id', existingClaim.id);
-      if (error) throw new Error(`claim_update_failed: ${error.message}`);
+      await transitionCase(supabase, {
+        merchantId,
+        caseId: existingClaim.id,
+        expectedVersion: existingClaim.state_version ?? 1,
+        patch: { status: claimStatus },
+        triggeredBy: 'shopify_dispute',
+        eventType: 'case.updated',
+        eventPayload: { dispute_id: String(payload.id), topic },
+      });
     }
     return;
   }
@@ -541,13 +565,24 @@ async function processCancellationTopic(
     })
     .eq('id', order.id);
   if (error) throw new Error(`order_cancel_update_failed: ${error.message}`);
-  const { error: ve } = await supabase
+  const { data: activeCases, error: activeError } = await supabase
     .from(TABLES.MERCHANT_CLAIMS)
-    .update({ status: 'voided', updated_at: now })
+    .select('id,state_version')
     .eq('merchant_id', merchantId)
     .eq('source_order_id', order.id)
     .in('status', ['pending', 'open', 'escalated']);
-  if (ve) throw new Error(`claim_void_failed: ${ve.message}`);
+  if (activeError) throw new Error(`claim_void_lookup_failed: ${activeError.message}`);
+  for (const payoutCase of activeCases ?? []) {
+    await transitionCase(supabase, {
+      merchantId,
+      caseId: payoutCase.id,
+      expectedVersion: payoutCase.state_version ?? 1,
+      patch: { status: 'voided' },
+      triggeredBy: 'shopify_order_cancelled',
+      eventType: 'case.closed',
+      eventPayload: { source_order_id: order.id },
+    });
+  }
 }
 
 async function ingestEmbeddedOrderChildren(
