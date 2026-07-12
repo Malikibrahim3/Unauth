@@ -5,7 +5,7 @@ export function shipBobOAuthCookieOptions(maxAge = 600) {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax' as const,
-    path: '/api/integrations/shipbob',
+    path: '/',
     maxAge,
   };
 }

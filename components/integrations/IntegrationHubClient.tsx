@@ -225,14 +225,24 @@ function ProviderCard({
             </>
           ) : provider.connected ? (
             <>
-              <button
-                type="button"
-                onClick={() => provider.href ? (window.location.href = provider.href) : onDisconnect(provider)}
-                className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium"
-                style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
-              >
-                Manage
-              </button>
+              {provider.href ? (
+                <a
+                  href={provider.href}
+                  className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium"
+                  style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+                >
+                  Reconnect
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => onDisconnect(provider)}
+                  className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium"
+                  style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+                >
+                  Manage
+                </button>
+              )}
               {canSync && dyn ? (
                 <button
                   type="button"
@@ -246,6 +256,18 @@ function ProviderCard({
                 </button>
               ) : null}
             </>
+          ) : provider.connectionIssue && provider.href ? (
+            <a
+              href={provider.href}
+              className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium"
+              style={{
+                borderColor: 'color-mix(in srgb, var(--warning) 40%, var(--border))',
+                color: 'var(--warning)',
+              }}
+            >
+              Reconnect
+              <ArrowRight className="h-3.5 w-3.5" />
+            </a>
           ) : provider.connectionIssue ? (
             <button
               type="button"
@@ -260,6 +282,15 @@ function ProviderCard({
               Reconnect
               <ArrowRight className="h-3.5 w-3.5" />
             </button>
+          ) : provider.href ? (
+            <a
+              href={provider.href}
+              className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium"
+              style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
+            >
+              Connect
+              <ArrowRight className="h-3.5 w-3.5" />
+            </a>
           ) : (
             <button
               type="button"
@@ -1569,6 +1600,7 @@ export default function IntegrationHubClient() {
       ['shipbob_callback_failed', 'ShipBob authorisation could not be completed. Please try Connect ShipBob again.'],
       ['shipbob_authorization_denied', 'ShipBob authorisation was cancelled or denied.'],
       ['shipbob_invalid_state', 'ShipBob authorisation expired. Please start the connection again.'],
+      ['shipbob_identity_mismatch', 'ShipBob was authorised for a different Unauth session or workspace. Sign in again and reconnect.'],
       ['shipbob_unauthorized', 'You must be signed in to Unauth before connecting ShipBob.'],
       ['shipbob_forbidden', 'Your Unauth account does not have permission to manage integrations.'],
       ['shipbob_missing_merchant', 'Your Unauth workspace could not be resolved. Contact support before reconnecting ShipBob.'],

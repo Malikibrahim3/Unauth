@@ -10,6 +10,7 @@ import {
   persistShipBobOAuthConnection,
   ensureShipBobWebhookSubscriptions,
   enqueueShipBobInitialImport,
+  openShipBobOAuthState,
   storeShipBobWebhookSecret,
   type ShipBobOAuthState,
 } from '@/lib/integrations/providers/shipbobOAuth';
@@ -19,7 +20,7 @@ import {
 } from '@/lib/integrations/shipbobOAuthCookies';
 
 function redirect(params: Record<string, string>): NextResponse {
-  const url = new URL('/settings/integrations', getAppUrl());
+  const url = new URL('/integrations', getAppUrl());
   for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
   return NextResponse.redirect(url);
 }
@@ -45,29 +46,46 @@ export async function POST(request: NextRequest) { return handleCallback(request
 
 async function handleCallback(request: NextRequest) {
   const responseError = (key: string) => {
+    console.warn('shipbob_oauth_callback_rejected', {
+      code: key,
+      method: request.method,
+      hasStateCookie: Boolean(request.cookies.get(shipBobOAuthCookie)?.value),
+    });
     const response = redirect({ [`shipbob_${key}`]: '1' });
     response.cookies.set(shipBobOAuthCookie, '', clearShipBobOAuthCookieOptions());
     return response;
   };
   const { code, state, error } = await callbackParams(request);
-  if (error) return responseError('authorization_denied');
+  if (error) {
+    console.warn('shipbob_oauth_provider_error', { errorCategory: error.slice(0, 80) });
+    return responseError('authorization_denied');
+  }
   if (!code || !state) return responseError('missing_params');
 
-  const rawCookie = request.cookies.get(shipBobOAuthCookie)?.value;
-  if (!rawCookie) return responseError('invalid_state');
   let oauthState: ShipBobOAuthState;
-  try { oauthState = JSON.parse(rawCookie) as ShipBobOAuthState; } catch { return responseError('invalid_state'); }
-  if (!oauthState.state || oauthState.state !== state || !oauthState.codeVerifier) return responseError('invalid_state');
+  try {
+    // The encrypted state carries the PKCE verifier and merchant binding, so
+    // browsers that discard the temporary OAuth cookie can still complete the
+    // callback safely. The cookie fallback preserves in-flight legacy attempts.
+    oauthState = openShipBobOAuthState(state);
+  } catch {
+    const rawCookie = request.cookies.get(shipBobOAuthCookie)?.value;
+    if (!rawCookie) return responseError('invalid_state');
+    try { oauthState = JSON.parse(rawCookie) as ShipBobOAuthState; } catch { return responseError('invalid_state'); }
+    if (!oauthState.state || oauthState.state !== state || !oauthState.codeVerifier) return responseError('invalid_state');
+  }
 
   try {
     const userClient = createClient();
     const serviceClient = createServiceClient();
     const { data: { user } } = await userClient.auth.getUser();
     if (!user) return responseError('unauthorized');
+    if (oauthState.userId && oauthState.userId !== user.id) return responseError('identity_mismatch');
     const { denied } = await requirePermission(serviceClient, user.id, PERMISSIONS.MANAGE_SETTINGS);
     if (denied) return responseError('forbidden');
     const context = await ensureMerchantContextForUser(serviceClient, user);
     if (!context?.merchantId) return responseError('missing_merchant');
+    if (oauthState.merchantId && oauthState.merchantId !== context.merchantId) return responseError('identity_mismatch');
     if (!env.SHIPBOB_OAUTH_CLIENT_ID || !env.SHIPBOB_OAUTH_CLIENT_SECRET) return responseError('misconfigured');
 
     const redirectUri = `${getAppUrl()}/api/integrations/shipbob/callback`;

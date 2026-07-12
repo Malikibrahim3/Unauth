@@ -1,6 +1,11 @@
 import { createHmac } from 'node:crypto';
 import { verifyShipBobWebhookSignature } from '@/lib/connectors/providers/shipbob/api';
-import { SHIPBOB_READ_SCOPES } from '@/lib/integrations/providers/shipbobOAuth';
+import {
+  createShipBobOAuthState,
+  openShipBobOAuthState,
+  sealShipBobOAuthState,
+  SHIPBOB_READ_SCOPES,
+} from '@/lib/integrations/providers/shipbobOAuth';
 
 describe('ShipBob OAuth lifecycle', () => {
   it('requests the read scopes plus webhook subscription permission', () => {
@@ -13,6 +18,26 @@ describe('ShipBob OAuth lifecycle', () => {
       'webhooks_write',
       'offline_access',
     ]));
+  });
+
+  it('round-trips merchant-bound encrypted OAuth state without relying on a browser cookie', () => {
+    const now = Date.parse('2026-07-12T16:00:00.000Z');
+    const original = createShipBobOAuthState(true);
+    const token = sealShipBobOAuthState({
+      oauthState: original,
+      merchantId: 'merchant-1',
+      userId: 'user-1',
+      now,
+    });
+    expect(token).not.toContain(original.codeVerifier);
+    expect(openShipBobOAuthState(token, now + 1_000)).toMatchObject({
+      state: original.state,
+      codeVerifier: original.codeVerifier,
+      sandbox: true,
+      merchantId: 'merchant-1',
+      userId: 'user-1',
+    });
+    expect(() => openShipBobOAuthState(token, now + 11 * 60 * 1_000)).toThrow('shipbob_oauth_state_expired');
   });
 
   it('verifies documented webhook signatures and rejects stale messages', () => {

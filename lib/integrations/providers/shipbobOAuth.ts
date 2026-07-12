@@ -1,9 +1,8 @@
 import { createHash, randomBytes } from 'node:crypto';
-import { encryptIntegrationCredentials } from '@/lib/integrations/secrets';
+import { decryptIntegrationCredentials, encryptIntegrationCredentials } from '@/lib/integrations/secrets';
 import { upsertConnection } from '@/lib/connectors/connectionStore';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createShipBobSubscription, listShipBobSubscriptions, SHIPBOB_WEBHOOK_TOPICS, type ShipBobCredentials } from '@/lib/connectors/providers/shipbob/api';
-import { decryptIntegrationCredentials } from '@/lib/integrations/secrets';
 
 export const SHIPBOB_READ_SCOPES = [
   'openid',
@@ -21,6 +20,9 @@ export type ShipBobOAuthState = {
   state: string;
   codeVerifier: string;
   sandbox: boolean;
+  merchantId?: string;
+  userId?: string;
+  expiresAt?: string;
 };
 
 export function createShipBobOAuthState(sandbox: boolean): ShipBobOAuthState {
@@ -34,6 +36,34 @@ export function createShipBobOAuthState(sandbox: boolean): ShipBobOAuthState {
 
 export function shipBobCodeChallenge(codeVerifier: string): string {
   return createHash('sha256').update(codeVerifier).digest('base64url');
+}
+
+export function sealShipBobOAuthState(input: {
+  oauthState: ShipBobOAuthState;
+  merchantId: string;
+  userId: string;
+  now?: number;
+}): string {
+  return encryptIntegrationCredentials({
+    state: input.oauthState.state,
+    codeVerifier: input.oauthState.codeVerifier,
+    sandbox: input.oauthState.sandbox,
+    merchantId: input.merchantId,
+    userId: input.userId,
+    expiresAt: new Date((input.now ?? Date.now()) + 10 * 60 * 1000).toISOString(),
+  });
+}
+
+export function openShipBobOAuthState(token: string, now = Date.now()): ShipBobOAuthState {
+  const payload = decryptIntegrationCredentials(token);
+  const state = typeof payload.state === 'string' ? payload.state : '';
+  const codeVerifier = typeof payload.codeVerifier === 'string' ? payload.codeVerifier : '';
+  const merchantId = typeof payload.merchantId === 'string' ? payload.merchantId : '';
+  const userId = typeof payload.userId === 'string' ? payload.userId : '';
+  const expiresAt = typeof payload.expiresAt === 'string' ? payload.expiresAt : '';
+  if (!state || !codeVerifier || !merchantId || !userId || !expiresAt) throw new Error('shipbob_oauth_state_invalid');
+  if (!Number.isFinite(Date.parse(expiresAt)) || Date.parse(expiresAt) <= now) throw new Error('shipbob_oauth_state_expired');
+  return { state, codeVerifier, sandbox: payload.sandbox === true, merchantId, userId, expiresAt };
 }
 
 export function shipBobOAuthBaseUrl(sandbox: boolean): string {
