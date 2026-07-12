@@ -200,13 +200,29 @@ Automation-first is now a **core** requirement, documented and partly built:
   detector (`detectUnmatchedRefunds`). Migration `20260712110000` applied live.
 
 Phase 12 remaining:
-- more reconciliation detectors (changed refund amount, completed replacement,
-  dispute-outcome change, return received, stale evidence, should-be-closed);
-- wire the record matcher's probable/ambiguous matches to raise queue exceptions
-  (confirming a probable match promotes it and runs the normal projection);
-- exception-queue UI (surface in Work + a dedicated view) and automation-completion
-  metrics (% auto-completed, inputs per case) in reports/dashboard;
-- schedule the reconcile cron in the deploy config.
+- **Complete (`4321fc5a`)**: merchant-facing `/exceptions` queue plus Work
+  queue section; assign/release, candidate selection, confirm/reject/resolve/
+  dismiss actions; canonical case link; and a Work automation-completion card.
+  The assignee migration `20260712120000` is applied live.
+- **Complete**: Vercel daily `/api/cron/reconcile` schedule at `06:00 UTC`,
+  cursor/merchant-scoped resume support, and safe test/deployment documentation
+  in `docs/operations/reconciliation-schedule.md`.
+- **Complete**: metric API/card distinguishes automatic outcomes, probable
+  outcomes requiring confirmation, unknown outcomes, unresolved exceptions,
+  merchant inputs per case, and reconciliation lag.
+- **Complete**: resolution now dispatches `exceptionProjection`, refreshing the
+  canonical case and recomputing the existing append-only financial summary;
+  relationship resolution preserves candidate/relationship/resolution history
+  and emits the normal audit/domain events.
+
+Phase 12 verification: 34 focused detector/store/resolution/UI/metric/projection
+tests passed; full Jest suite passed (226 suites, 1 skipped; 1,812 tests, 3
+skipped); lint has zero errors (73 pre-existing warnings).
+
+External deployment dependencies only: set `CRON_SECRET` in Vercel and deploy
+the committed `vercel.json` schedule; run the documented E2E/demo-merchant
+smoke call before enabling pilot reconciliation. No live email credentials or
+pilot data are required to consider the implementation complete.
 
 Then continue through Phases 9–11.
 
