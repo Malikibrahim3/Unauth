@@ -1434,7 +1434,9 @@ export default function IntegrationHubClient() {
       detail: p.detail,
       comingSoon: p.buildStatus === 'slot_only',
       dynamic: p,
-      ...(p.id === 'shipbob' ? { href: '/api/integrations/shipbob/install?environment=sandbox' } : {}),
+      // Environment (sandbox vs production) is decided server-side from
+      // deployment config — never hardcoded in the client.
+      ...(p.id === 'shipbob' ? { href: '/api/integrations/shipbob/install' } : {}),
     };
   }
 
@@ -1760,22 +1762,34 @@ export default function IntegrationHubClient() {
 
   // Account-level sync for ShipBob — full paginated import, distinct from the
   // single-record evidence fetch in the modal. Also serves as the safe retry.
+  // Large accounts return status "running" per page-budget chunk; keep driving
+  // the continuation (the server resumes from the persisted cursor) instead of
+  // leaving the import stalled until the next scheduled worker tick.
   async function runShipBobAccountSync() {
     setBusyId('shipbob');
     try {
-      const result = await postJson('/api/integrations/shipbob/sync-account') as {
-        ran?: boolean; status?: string; reason?: string; importedRecords?: number | null; errorCode?: string | null;
-      };
-      if (result.ran === false) {
-        setToast(result.reason === 'job_already_running'
-          ? 'A ShipBob import is already running. Check back shortly.'
-          : 'ShipBob sync is queued and will run shortly.');
-      } else if (result.status === 'completed') {
-        setToast(`ShipBob sync complete. ${result.importedRecords ?? 0} records imported.`);
-      } else if (result.status === 'running') {
-        setToast('ShipBob import is running — large accounts continue in the background.');
-      } else {
+      const MAX_CONTINUATIONS = 20;
+      for (let chunk = 0; chunk < MAX_CONTINUATIONS; chunk += 1) {
+        const result = await postJson('/api/integrations/shipbob/sync-account') as {
+          ran?: boolean; status?: string; reason?: string; importedRecords?: number | null; errorCode?: string | null;
+        };
+        if (result.ran === false) {
+          setToast(result.reason === 'job_already_running'
+            ? 'A ShipBob import is already running. Check back shortly.'
+            : 'ShipBob sync is queued and will run shortly.');
+          break;
+        }
+        if (result.status === 'completed') {
+          setToast(`ShipBob sync complete. ${result.importedRecords ?? 0} records imported.`);
+          break;
+        }
+        if (result.status === 'running') {
+          setToast(`ShipBob import in progress — ${result.importedRecords ?? 0} records so far…`);
+          reloadHub();
+          continue;
+        }
         setToast(`ShipBob sync failed${result.errorCode ? ` (${result.errorCode})` : ''}. Use Retry import to run it again.`);
+        break;
       }
       reloadHub();
     } catch (err) {

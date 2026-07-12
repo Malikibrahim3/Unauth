@@ -34,7 +34,14 @@ export async function GET(request: NextRequest) {
   const context = await ensureMerchantContextForUser(serviceClient, user);
   if (!context?.merchantId) return redirect(request, 'shipbob_missing_merchant');
 
-  const sandbox = request.nextUrl.searchParams.get('environment') !== 'production';
+  // Environment comes from deployment config (SHIPBOB_SANDBOX), not the
+  // browser: a hardcoded client-side query param would send every real
+  // merchant to ShipBob's sandbox. The query param remains as an explicit
+  // per-request override for testing.
+  const environmentOverride = request.nextUrl.searchParams.get('environment');
+  const sandbox = environmentOverride
+    ? environmentOverride !== 'production'
+    : env.SHIPBOB_SANDBOX === 'true';
   const oauthState = createShipBobOAuthState(sandbox);
   const stateToken = sealShipBobOAuthState({
     oauthState,

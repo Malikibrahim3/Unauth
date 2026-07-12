@@ -1,15 +1,21 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
 import { getIntegrationCredential } from '@/lib/integrations/auth';
 import { enqueueIngestionEvent } from '@/lib/connectors/ingestionInbox';
 import { recordDomainEvent } from '@/lib/connectors/domainEvents';
 import { verifyShipBobWebhookSignature } from '@/lib/connectors/providers/shipbob/api';
+import { runShipBobAccountSync } from '@/lib/integrations/providers/shipbobSync';
+
+export const maxDuration = 60;
+
+/** Skip the sync nudge when a sync completed this recently (webhook bursts). */
+const SYNC_NUDGE_DEBOUNCE_MS = 2 * 60 * 1000;
 
 export async function POST(request: NextRequest) {
   const connectionId = request.nextUrl.searchParams.get('connectionId');
   if (!connectionId) return NextResponse.json({ error: 'connectionId_required' }, { status: 400 });
   const client = createServiceClient();
-  const { data: connection, error } = await client.from('merchant_integrations').select('id,merchant_id,provider_id,status,provider_account_id').eq('id', connectionId).eq('provider_id', 'shipbob').maybeSingle();
+  const { data: connection, error } = await client.from('merchant_integrations').select('id,merchant_id,provider_id,status,provider_account_id,last_sync_completed_at').eq('id', connectionId).eq('provider_id', 'shipbob').maybeSingle();
   if (error || !connection || !['connected', 'syncing', 'degraded'].includes(connection.status)) return NextResponse.json({ error: 'connection_unavailable' }, { status: 404 });
   const credentials = await getIntegrationCredential(client, connection.merchant_id, 'shipbob');
   const secret = typeof credentials?.webhookSecret === 'string' ? credentials.webhookSecret : null;
@@ -47,5 +53,23 @@ export async function POST(request: NextRequest) {
     payload: { topic, event_id: eventId },
   });
   await client.from('merchant_integrations').update({ webhook_last_received_at: new Date().toISOString(), webhook_status: 'healthy', last_error: null }).eq('id', connectionId);
+
+  // Nudge an incremental sync after responding, so the change this webhook
+  // announces reaches canonical records without waiting for the daily worker
+  // tick. Debounced per connection; runShipBobAccountSync is idempotent and
+  // backs off if a job is already running.
+  const lastCompleted = connection.last_sync_completed_at ? Date.parse(connection.last_sync_completed_at) : null;
+  const recentlySynced = lastCompleted !== null && Number.isFinite(lastCompleted) && Date.now() - lastCompleted < SYNC_NUDGE_DEBOUNCE_MS;
+  if (!recentlySynced) {
+    after(async () => {
+      try {
+        const { data: account } = await client.from('source_accounts').select('id').eq('merchant_id', connection.merchant_id).eq('connection_id', connectionId).maybeSingle();
+        await runShipBobAccountSync(client, { merchantId: connection.merchant_id, connectionId, sourceAccountId: account?.id ?? null });
+      } catch (nudgeError) {
+        // The daily worker remains the reconciliation backstop.
+        console.warn('shipbob_webhook_sync_nudge_failed', { message: nudgeError instanceof Error ? nudgeError.message : 'unknown' });
+      }
+    });
+  }
   return NextResponse.json({ ok: true, queued: true });
 }

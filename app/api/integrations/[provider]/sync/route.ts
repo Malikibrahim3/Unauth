@@ -25,6 +25,8 @@ import {
   getShipmentTimeline,
 } from '@/lib/integrations/providers/shipbob';
 import { requireIntegrationProvider } from '@/lib/integrations/registry';
+import { refreshShipBobCredentialsIfNeeded } from '@/lib/integrations/providers/shipbobOAuth';
+import { env } from '@/lib/utils/env';
 import type { NormalizedEvidenceItem } from '@/lib/integrations/types';
 
 const syncSchema = z.object({
@@ -138,7 +140,14 @@ export async function POST(
         now,
       });
     } else if (provider.id === 'shipbob') {
-      const credentials = await getIntegrationCredential(serviceClient, ctx.merchantId, provider.id);
+      // ShipBob OAuth tokens live ~1 hour — refresh before use or this fetch
+      // starts failing an hour after the merchant connects.
+      const credentials = env.SHIPBOB_OAUTH_CLIENT_ID && env.SHIPBOB_OAUTH_CLIENT_SECRET
+        ? await refreshShipBobCredentialsIfNeeded(serviceClient, ctx.merchantId, {
+            clientId: env.SHIPBOB_OAUTH_CLIENT_ID,
+            clientSecret: env.SHIPBOB_OAUTH_CLIENT_SECRET,
+          })
+        : await getIntegrationCredential(serviceClient, ctx.merchantId, provider.id);
       if (!credentials) return NextResponse.json({ error: 'ShipBob is not connected.' }, { status: 400 });
       const token = credentials?.accessToken ?? credentials?.apiKey;
       if (!token) return NextResponse.json({ error: 'ShipBob is not connected.' }, { status: 400 });

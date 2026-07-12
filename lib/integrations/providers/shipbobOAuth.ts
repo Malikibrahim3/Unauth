@@ -2,7 +2,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { decryptIntegrationCredentials, encryptIntegrationCredentials } from '@/lib/integrations/secrets';
 import { upsertConnection } from '@/lib/connectors/connectionStore';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { createShipBobSubscription, listShipBobSubscriptions, SHIPBOB_WEBHOOK_TOPICS, type ShipBobCredentials } from '@/lib/connectors/providers/shipbob/api';
+import { createShipBobSubscription, deleteShipBobSubscription, listShipBobSubscriptions, SHIPBOB_WEBHOOK_TOPICS, type ShipBobCredentials } from '@/lib/connectors/providers/shipbob/api';
 
 export const SHIPBOB_READ_SCOPES = [
   'openid',
@@ -225,9 +225,30 @@ export async function persistShipBobOAuthConnection(input: {
     connectorVersion: 'shipbob-oauth-v1',
   });
 
+  // Preserve the stored webhookSecret across reconnects: the existing ShipBob
+  // subscription is reused (no new secret is issued), so dropping it here
+  // would permanently fail signature verification on every future webhook.
+  let existingWebhookSecret: string | null = null;
+  const { data: existingCredential } = await input.client
+    .from('integration_credentials')
+    .select('encrypted_payload')
+    .eq('merchant_id', input.merchantId)
+    .eq('provider_id', 'shipbob')
+    .maybeSingle();
+  if (existingCredential?.encrypted_payload) {
+    try {
+      const previous = decryptIntegrationCredentials(existingCredential.encrypted_payload);
+      if (typeof previous.webhookSecret === 'string') existingWebhookSecret = previous.webhookSecret;
+    } catch {
+      // Undecryptable legacy payload — proceed without it; webhook setup will
+      // mint a fresh subscription+secret if verification later fails.
+    }
+  }
+
   const encryptedPayload = encryptIntegrationCredentials({
     accessToken: input.token.access_token,
     ...(input.token.refresh_token ? { refreshToken: input.token.refresh_token } : {}),
+    ...(existingWebhookSecret ? { webhookSecret: existingWebhookSecret } : {}),
     providerAccountId: channelId,
     providerAccountName: input.channel.name ?? input.channel.application_name ?? 'ShipBob',
     environment: input.sandbox ? 'sandbox' : 'production',
@@ -255,13 +276,24 @@ export async function ensureShipBobWebhookSubscriptions(input: {
   accessToken: string;
   sandbox: boolean;
   webhookUrl: string;
+  /**
+   * Whether we still hold the signing secret for an existing subscription.
+   * ShipBob only reveals the secret at creation time — reusing a subscription
+   * whose secret we no longer have (e.g. credentials deleted on disconnect)
+   * would fail signature verification on every future delivery, so such
+   * subscriptions are replaced rather than reused.
+   */
+  hasStoredSecret: boolean;
 }): Promise<{ healthy: boolean; subscriptionIds: string[]; webhookSecret?: string }> {
   const credentials: ShipBobCredentials = { accessToken: input.accessToken, sandbox: input.sandbox };
   const existing = await listShipBobSubscriptions(credentials);
   const required = new Set(SHIPBOB_WEBHOOK_TOPICS);
   const matching = existing.items.filter((subscription) => subscription.enabled !== false && subscription.url === input.webhookUrl && [...required].every((topic) => subscription.topics.includes(topic)));
-  if (matching.length > 0) {
+  if (matching.length > 0 && input.hasStoredSecret) {
     return { healthy: true, subscriptionIds: matching.map((subscription) => subscription.id) };
+  }
+  for (const orphan of matching) {
+    await deleteShipBobSubscription(credentials, orphan.id);
   }
   const created = await createShipBobSubscription(credentials, {
     url: input.webhookUrl,

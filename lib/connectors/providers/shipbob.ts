@@ -6,7 +6,8 @@
  */
 import { capability } from '@/lib/connectors/capabilities';
 import { verifyShipBobPat } from '@/lib/integrations/providers/shipbob';
-import { listShipBobLocations, listShipBobOrders, listShipBobReturns, shipBobToken, type ShipBobCredentials } from '@/lib/connectors/providers/shipbob/api';
+import { deleteShipBobSubscription, listShipBobLocations, listShipBobOrders, listShipBobReturns, listShipBobSubscriptions, shipBobToken, type ShipBobCredentials } from '@/lib/connectors/providers/shipbob/api';
+import { getAppUrl } from '@/lib/utils/appUrl';
 import { mapShipBobOrder, mapShipBobReturn } from '@/lib/connectors/providers/shipbob/mappings';
 import type {
   ConnectorAdapter,
@@ -143,7 +144,22 @@ export const shipbobConnector: ConnectorAdapter = {
     return input.sourceUrl ?? null;
   },
 
-  async disconnect(): Promise<DisconnectResult> {
-    return { ok: true };
+  async disconnect(ctx: ConnectorContext): Promise<DisconnectResult> {
+    // Best-effort: remove our webhook subscriptions so ShipBob stops POSTing
+    // to a dead connection and reconnects don't accumulate ghost
+    // subscriptions. Failure never blocks the disconnect itself.
+    const credentials = credentialsFromContext(ctx);
+    if (!shipBobToken(credentials)) return { ok: true };
+    try {
+      const ourUrlPrefix = `${getAppUrl()}/api/integrations/shipbob/webhook`;
+      const existing = await listShipBobSubscriptions(credentials);
+      const ours = existing.items.filter((subscription) => subscription.url?.startsWith(ourUrlPrefix));
+      for (const subscription of ours) {
+        await deleteShipBobSubscription(credentials, subscription.id);
+      }
+      return { ok: true };
+    } catch {
+      return { ok: true, message: 'shipbob_webhook_cleanup_failed' };
+    }
   },
 };

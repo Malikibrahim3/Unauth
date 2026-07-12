@@ -14,10 +14,15 @@ import {
   type ShipBobOAuthState,
 } from '@/lib/integrations/providers/shipbobOAuth';
 import { ensureShipBobSyncJob } from '@/lib/integrations/providers/shipbobSync';
+import { getIntegrationCredential } from '@/lib/integrations/auth';
 import {
   clearShipBobOAuthCookieOptions,
   shipBobOAuthCookie,
 } from '@/lib/integrations/shipbobOAuthCookies';
+
+// Token exchange + channel lookup + webhook subscription is a multi-call
+// chain against ShipBob; the platform default duration can cut it off.
+export const maxDuration = 60;
 
 function redirect(params: Record<string, string>): NextResponse {
   const url = new URL('/integrations', getAppUrl());
@@ -108,12 +113,16 @@ async function handleCallback(request: NextRequest) {
     const webhookUrl = `${getAppUrl()}/api/integrations/shipbob/webhook?connectionId=${encodeURIComponent(persisted.connectionId)}`;
     let subscriptionHealthy = false;
     try {
+      // Reuse an existing subscription only if we still hold its signing
+      // secret; otherwise it must be replaced or verification 401s forever.
+      const storedCredentials = await getIntegrationCredential(serviceClient, context.merchantId, 'shipbob');
       const subscription = await ensureShipBobWebhookSubscriptions({
         client: serviceClient,
         connectionId: persisted.connectionId,
         accessToken: token.access_token,
         sandbox: oauthState.sandbox,
         webhookUrl,
+        hasStoredSecret: typeof storedCredentials?.webhookSecret === 'string',
       });
       subscriptionHealthy = subscription.healthy;
       if (subscription.webhookSecret) {

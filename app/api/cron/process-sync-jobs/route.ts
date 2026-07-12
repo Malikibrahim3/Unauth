@@ -4,6 +4,9 @@ import { env } from '@/lib/utils/env';
 import { runDueSyncJobs } from '@/lib/connectors/syncWorker';
 
 export const dynamic = 'force-dynamic';
+// Paginated provider imports need the full Hobby-tier duration; a job cut off
+// mid-run stays 'running' until its lease expires and is then reclaimed.
+export const maxDuration = 60;
 
 function authorize(req: NextRequest): boolean {
   const secret = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '');

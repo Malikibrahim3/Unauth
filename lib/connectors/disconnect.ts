@@ -11,7 +11,8 @@
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/lib/supabase/tables';
-import { disconnectIntegration } from '@/lib/integrations/auth';
+import { disconnectIntegration, getIntegrationCredential } from '@/lib/integrations/auth';
+import { getConnector } from '@/lib/connectors/registry';
 import type { IntegrationCategory } from '@/lib/integrations/types';
 
 export type DisconnectableProvider = { id: string; category: IntegrationCategory };
@@ -22,6 +23,21 @@ export async function disconnectProviderConnection(
   provider: DisconnectableProvider,
 ): Promise<void> {
   const now = new Date().toISOString();
+
+  // Give the connector adapter a chance to clean up provider-side state
+  // (e.g. webhook subscriptions) while credentials still exist. Best-effort:
+  // provider-side cleanup failure never blocks the merchant's disconnect.
+  const adapter = getConnector(provider.id);
+  if (adapter && provider.category !== 'commerce' && provider.category !== 'helpdesk') {
+    try {
+      const credentials = await getIntegrationCredential(client, merchantId, provider.id);
+      if (credentials) {
+        await adapter.disconnect({ client, merchantId, connectionId: null, sourceAccountId: null, credentials });
+      }
+    } catch {
+      // Ignore — the local disconnect below is the source of truth.
+    }
+  }
 
   if (provider.category === 'commerce') {
     const { error } = await client
