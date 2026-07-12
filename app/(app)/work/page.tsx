@@ -1,10 +1,14 @@
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { TABLES } from '@/lib/supabase/tables';
 import { WorkbenchPage } from '@/components/ui';
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { WorkQueue, type WorkQueueItem } from '@/components/work/WorkQueue';
+import { ExceptionQueue } from '@/components/exceptions/ExceptionQueue';
+import { countOpenExceptions } from '@/lib/exceptions/store';
+import { AutomationCompletionCard } from '@/components/automation/AutomationCompletionCard';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,6 +55,7 @@ export default async function WorkPage() {
   const open = items.filter((t) => t.status === 'open').length;
   const blocked = items.filter((t) => t.status === 'blocked').length;
   const completed = items.filter((t) => t.status === 'completed').length;
+  const openExceptions = await countOpenExceptions(serviceClient, ctx.merchantId);
 
   return (
     <WorkbenchPage
@@ -63,8 +68,9 @@ export default async function WorkPage() {
         { label: 'Open tasks', value: open.toLocaleString(), hint: 'Awaiting action' },
         { label: 'Blocked', value: blocked.toLocaleString(), hint: 'Waiting on evidence or a decision' },
         { label: 'Completed', value: completed.toLocaleString(), hint: 'Closed out' },
+        { label: 'Exceptions', value: openExceptions.toLocaleString(), hint: 'Focused merchant decisions' },
       ]}
-      main={<WorkQueue items={items} nowMs={Date.now()} />}
+      main={<div className="space-y-8"><AutomationCompletionCard /><WorkQueue items={items} nowMs={Date.now()} /><section><div className="mb-3 flex items-baseline justify-between"><h2 className="text-base font-semibold">Exception queue</h2><Link href="/exceptions" className="text-sm underline">Open queue</Link></div><ExceptionQueue compact /></section></div>}
       footer={
         <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
           Tasks are created by the accountability workflow and recovery routing. Completing a task records an outcome and, where money is recovered, updates the financial ledger.

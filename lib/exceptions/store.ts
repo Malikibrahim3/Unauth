@@ -82,13 +82,33 @@ export async function listExceptions(
 ) {
   let query = client
     .from(TABLES.CASE_EXCEPTIONS)
-    .select('id,support_payout_case_id,exception_type,confidence,status,title,detail,context,source_system,created_at,resolved_at')
+    .select('id,support_payout_case_id,exception_type,confidence,status,title,detail,context,source_system,assigned_to,assigned_at,created_at,resolved_at')
     .eq('merchant_id', merchantId);
   query = query.eq('status', options.status ?? 'open');
   if (options.caseId) query = query.eq('support_payout_case_id', options.caseId);
   const { data, error } = await query.order('created_at', { ascending: false }).limit(options.limit ?? 100);
   if (error) throw new Error(`case_exceptions_list_failed: ${error.message}`);
   return data ?? [];
+}
+
+/** Claim or release an exception. Assignment is intentionally separate from its
+ * resolution, so a merchant can triage work without making a decision early. */
+export async function assignException(
+  client: SupabaseClient,
+  merchantId: string,
+  exceptionId: string,
+  assignedTo: string | null,
+) {
+  const { data, error } = await client
+    .from(TABLES.CASE_EXCEPTIONS)
+    .update({ assigned_to: assignedTo, assigned_at: assignedTo ? new Date().toISOString() : null })
+    .eq('merchant_id', merchantId)
+    .eq('id', exceptionId)
+    .eq('status', 'open')
+    .select('id,assigned_to,assigned_at')
+    .maybeSingle();
+  if (error) throw new Error(`case_exception_assign_failed: ${error.message}`);
+  return data;
 }
 
 /** Resolve or dismiss an open exception. Only an open exception can be settled. */

@@ -12,7 +12,7 @@ function makeClient(byTable: Record<string, unknown[]>) {
     from(table: string) {
       const b: Record<string, unknown> = {};
       const chain = () => b;
-      for (const m of ['select', 'eq', 'in', 'not', 'order', 'limit']) b[m] = chain;
+      for (const m of ['select', 'eq', 'in', 'is', 'not', 'lt', 'order', 'limit']) b[m] = chain;
       b.then = (resolve: (v: unknown) => unknown) => resolve({ data: byTable[table] ?? [], error: null });
       return b;
     },

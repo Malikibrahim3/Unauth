@@ -80,6 +80,7 @@ export async function resolveExceptionAction(client: SupabaseClient, input: Reso
       payload: { exception_id: input.exceptionId, exception_type: exception.exception_type, action: input.action, settle_status: settleStatus, match_status: matchStatus },
       actorType: 'user',
       actorId: input.actorUserId,
+      handlers: ['exceptionProjection'],
     });
   }
 

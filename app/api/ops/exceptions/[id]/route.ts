@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { resolveExceptionAction } from '@/lib/exceptions/resolveExceptionAction';
+import { assignException } from '@/lib/exceptions/store';
 
 export const dynamic = 'force-dynamic';
 
@@ -49,4 +50,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: result.reason }, { status: STATUS_BY_REASON[result.reason ?? ''] ?? 422 });
   }
   return NextResponse.json({ ok: true, exception: result.exception, matchStatus: result.matchStatus, settleStatus: result.settleStatus });
+}
+
+/** PATCH — claim/release an open exception for the current operator. */
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const userClient = createClient();
+  const { data: { user } } = await userClient.auth.getUser();
+  if (!user) return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 });
+  const serviceClient = createServiceClient();
+  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.SUBMIT_PAYOUT_DECISIONS);
+  if (denied || !ctx?.merchantId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  const body = await req.json().catch(() => null) as { assignToMe?: unknown; release?: unknown } | null;
+  if (!body || (body.assignToMe !== true && body.release !== true)) return NextResponse.json({ error: 'Invalid assignment request' }, { status: 400 });
+  const assignment = await assignException(serviceClient, ctx.merchantId, id, body.release === true ? null : user.id);
+  if (!assignment) return NextResponse.json({ error: 'Open exception not found' }, { status: 404 });
+  return NextResponse.json({ assignment });
 }

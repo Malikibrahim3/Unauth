@@ -21,11 +21,17 @@ function authorize(req: NextRequest): boolean {
 async function run(req: NextRequest) {
   if (!authorize(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const admin = createAdminClient();
+  const requestedMerchantId = req.nextUrl.searchParams.get('merchantId');
+  const cursor = req.nextUrl.searchParams.get('cursor');
 
-  const { data: merchants, error } = await admin
+  let merchantQuery = admin
     .from(TABLES.MERCHANTS)
     .select('id')
-    .limit(MERCHANT_BATCH);
+    .order('id', { ascending: true })
+    .limit(requestedMerchantId ? 1 : MERCHANT_BATCH);
+  if (requestedMerchantId) merchantQuery = merchantQuery.eq('id', requestedMerchantId);
+  else if (cursor) merchantQuery = merchantQuery.gt('id', cursor);
+  const { data: merchants, error } = await merchantQuery;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   let totalRaised = 0;
@@ -39,7 +45,8 @@ async function run(req: NextRequest) {
       console.error('[reconcile] merchant sweep failed', { merchantId: merchant.id, message: cause instanceof Error ? cause.message : String(cause) });
     }
   }
-  return NextResponse.json({ merchantsSwept: merchants?.length ?? 0, exceptionsRaised: totalRaised, results });
+  const lastMerchantId = merchants?.at(-1)?.id ?? null;
+  return NextResponse.json({ merchantsSwept: merchants?.length ?? 0, exceptionsRaised: totalRaised, results, nextCursor: !requestedMerchantId && (merchants?.length ?? 0) === MERCHANT_BATCH ? lastMerchantId : null });
 }
 
 export async function GET(req: NextRequest) { return run(req); }
