@@ -1658,6 +1658,13 @@ export default function IntegrationHubClient() {
     setToast(reason ? `${message[1]} (${reason})` : message[1]);
     reloadHub();
     window.history.replaceState({}, '', window.location.pathname);
+    if (params.has('shipbob_connected')) {
+      // Kick the initial import immediately rather than waiting for the daily
+      // worker tick (Hobby-plan crons are daily). Idempotent server-side.
+      void fetch('/api/integrations/shipbob/sync-account', { method: 'POST' })
+        .then(() => reloadHub())
+        .catch(() => { /* the scheduled worker and manual Sync remain as fallbacks */ });
+    }
   }, [reloadHub]);
 
   // Sync processor selection from API once data loads (useState initial value is null before fetch)
