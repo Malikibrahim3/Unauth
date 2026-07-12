@@ -27,34 +27,6 @@ function makeUpsertSupabase() {
   return { supabase, calls };
 }
 
-function makeCompatFallbackUpsertSupabase() {
-  const calls: Array<{ table: string; payload: Record<string, unknown>; onConflict: string }> = [];
-  let attempt = 0;
-  const supabase = {
-    from: (table: string) => ({
-      upsert: (payload: Record<string, unknown>, opts: { onConflict: string }) => ({
-        select: () => ({
-          single: async () => {
-            attempt += 1;
-            calls.push({ table, payload, onConflict: opts.onConflict });
-            if (attempt === 1) {
-              return {
-                data: null,
-                error: {
-                  message:
-                    "Could not find the 'detection_method' column of 'support_case_intake' in the schema cache",
-                },
-              };
-            }
-            return { data: payload, error: null };
-          },
-        }),
-      }),
-    }),
-  };
-  return { supabase, calls };
-}
-
 function makeCompatSqlFallbackUpsertSupabase() {
   const calls: Array<{ table: string; payload: Record<string, unknown>; onConflict: string }> = [];
   let attempt = 0;
@@ -117,10 +89,10 @@ describe('support intake store', () => {
     await upsertSupportCaseIntake(supabase, input);
 
     expect(calls).toHaveLength(2);
-    expect(calls[0].onConflict).toBe('merchant_id,provider,external_case_id');
-    expect(calls[1].onConflict).toBe('merchant_id,provider,external_case_id');
-    expect(calls[0].payload.external_case_id).toBe('ZD-9001');
-    expect(calls[1].payload.external_case_id).toBe('ZD-9001');
+    expect(calls[0].onConflict).toBe('merchant_id,provider,external_id');
+    expect(calls[1].onConflict).toBe('merchant_id,provider,external_id');
+    expect(calls[0].payload.external_id).toBe('ZD-9001');
+    expect(calls[1].payload.external_id).toBe('ZD-9001');
   });
 
   it('different merchants can share the same external_case_id', async () => {
@@ -140,8 +112,8 @@ describe('support intake store', () => {
 
     expect(calls[0].payload.merchant_id).toBe(merchantA);
     expect(calls[1].payload.merchant_id).toBe(merchantB);
-    expect(calls[0].payload.external_case_id).toBe('SHARED-1');
-    expect(calls[1].payload.external_case_id).toBe('SHARED-1');
+    expect(calls[0].payload.external_id).toBe('SHARED-1');
+    expect(calls[1].payload.external_id).toBe('SHARED-1');
   });
 
   it('provider enum rejects invalid provider', async () => {
@@ -169,10 +141,57 @@ describe('support intake store', () => {
     });
 
     expect(inserts).toHaveLength(1);
-    expect(inserts[0].table).toBe('support_case_events');
+    expect(inserts[0].table).toBe('source_ticket_events');
     expect(inserts[0].payload.event_type).toBe('status_changed');
     expect(inserts[0].payload.actor_identifier).toBeUndefined();
-    expect(inserts[0].payload.actor_identifier_hash).toMatch(/^[a-f0-9]{64}$/);
+    expect((inserts[0].payload.metadata as Record<string, unknown>).actor_identifier_hash).toMatch(
+      /^[a-f0-9]{64}$/,
+    );
+  });
+
+  it('sets an event_idempotency_key derived from the payload hash', async () => {
+    const { supabase, inserts } = makeInsertSupabase();
+    await appendSupportCaseEvent(supabase, {
+      merchant_id: merchantA,
+      support_case_id: caseId,
+      provider: 'gorgias',
+      event_type: 'ticket_updated',
+      raw_payload: { change: 'reopened' },
+    });
+    const key = inserts[0].payload.event_idempotency_key as string;
+    expect(typeof key).toBe('string');
+    expect(key.startsWith(`${merchantA}:${caseId}:ticket_updated:`)).toBe(true);
+  });
+
+  it('returns the existing event on an idempotent replay (unique-violation 23505)', async () => {
+    const existing = { id: 'evt-existing', event_type: 'ticket_updated' };
+    let selected: { column: string; value: string } | null = null;
+    const supabase = {
+      from: (_table: string) => ({
+        insert: () => ({
+          select: () => ({
+            single: async () => ({ data: null, error: { message: 'duplicate key', code: '23505' } }),
+          }),
+        }),
+        select: () => ({
+          eq: (column: string, value: string) => ({
+            maybeSingle: async () => {
+              selected = { column, value };
+              return { data: existing, error: null };
+            },
+          }),
+        }),
+      }),
+    };
+    const result = await appendSupportCaseEvent(supabase, {
+      merchant_id: merchantA,
+      support_case_id: caseId,
+      provider: 'gorgias',
+      event_type: 'ticket_updated',
+      raw_payload: { change: 'reopened' },
+    });
+    expect(result).toEqual(existing);
+    expect(selected?.column).toBe('event_idempotency_key');
   });
 
   it('does not store raw payload on case intake', async () => {
@@ -191,8 +210,12 @@ describe('support intake store', () => {
     expect(payload.raw_payload_hash).toBe(hashRawPayload({ conversation: ['full', 'thread'] }));
   });
 
-  it('retries support_case_intake upsert without compatibility-only columns when schema cache is behind', async () => {
-    const { supabase, calls } = makeCompatFallbackUpsertSupabase();
+  it('never sends classification-only columns on the v2 source_tickets row', async () => {
+    // v2 source_tickets keeps classification (detection_method, trigger tags,
+    // keyword_matched, requires_merchant_review) off the ticket row — those
+    // live on the claim row / source_ticket_events. The single upsert payload
+    // must therefore never carry them, regardless of input.
+    const { supabase, calls } = makeUpsertSupabase();
     await upsertSupportCaseIntake(supabase, {
       merchant_id: merchantA,
       provider: 'gorgias',
@@ -205,41 +228,29 @@ describe('support intake store', () => {
       raw_payload: { id: 1 },
     });
 
-    expect(calls).toHaveLength(2);
-    expect(calls[0].payload.detection_method).toBe('tag');
-    expect(calls[1].payload.detection_method).toBeUndefined();
-    expect(calls[1].payload.trigger_tag).toBeUndefined();
-    expect(calls[1].payload.trigger_tags).toBeUndefined();
-    expect(calls[1].payload.requires_merchant_review).toBeUndefined();
-    expect(calls[1].payload.keyword_matched).toBeUndefined();
+    expect(calls).toHaveLength(1);
+    expect(calls[0].payload.detection_method).toBeUndefined();
+    expect(calls[0].payload.trigger_tag).toBeUndefined();
+    expect(calls[0].payload.trigger_tags).toBeUndefined();
+    expect(calls[0].payload.requires_merchant_review).toBeUndefined();
+    expect(calls[0].payload.keyword_matched).toBeUndefined();
   });
 
-  it('retries support_case_intake upsert without compatibility-only columns when Postgres reports a missing live column', async () => {
-    const { supabase, calls } = makeCompatSqlFallbackUpsertSupabase();
-    await upsertSupportCaseIntake(supabase, {
-      merchant_id: merchantA,
-      provider: 'gorgias',
-      external_case_id: 'g-compat-2',
-      detection_method: 'tag',
-      trigger_tag: 'refund-requested',
-      trigger_tags: ['refund-requested'],
-      requires_merchant_review: true,
-      keyword_matched: 'refund',
-      raw_payload: { id: 2 },
-    });
-
-    expect(calls).toHaveLength(2);
-    expect(calls[0].payload.keyword_matched).toBe('refund');
-    expect(calls[1].payload.detection_method).toBeUndefined();
-    expect(calls[1].payload.trigger_tag).toBeUndefined();
-    expect(calls[1].payload.trigger_tags).toBeUndefined();
-    expect(calls[1].payload.requires_merchant_review).toBeUndefined();
-    expect(calls[1].payload.keyword_matched).toBeUndefined();
+  it('throws when the source_tickets upsert reports a missing column', async () => {
+    const { supabase } = makeCompatSqlFallbackUpsertSupabase();
+    await expect(
+      upsertSupportCaseIntake(supabase, {
+        merchant_id: merchantA,
+        provider: 'gorgias',
+        external_case_id: 'g-compat-2',
+        raw_payload: { id: 2 },
+      }),
+    ).rejects.toThrow(/source_tickets/);
   });
 
   it('hashes customer email and omits plaintext', async () => {
     const { supabase, calls } = makeUpsertSupabase();
-    await upsertSupportCaseIntake(supabase, {
+    const result = await upsertSupportCaseIntake(supabase, {
       merchant_id: merchantA,
       provider: 'zendesk',
       external_case_id: 'ZD-EMAIL',
@@ -249,7 +260,10 @@ describe('support intake store', () => {
 
     const payload = calls[0].payload;
     expect(payload.customer_email).toBeUndefined();
-    expect(payload.customer_email_hash).toBe(hashSupportEmail('Buyer@Example.com'));
+    // Plaintext email is never persisted on the ticket row; the hash is returned
+    // for the caller's downstream identity-signal write.
+    expect(payload.customer_email_hash).toBeUndefined();
+    expect(result.customer_email_hash).toBe(hashSupportEmail('Buyer@Example.com'));
   });
 
   it('public provider connection shape omits token fields', async () => {
@@ -287,7 +301,7 @@ describe('support intake store', () => {
       refresh_token_encrypted: 'secret-refresh',
     });
 
-    expect(calls[0].table).toBe('support_provider_connections');
+    expect(calls[0].table).toBe('helpdesk_connections');
     expect(calls[0].onConflict).toBe('merchant_id,provider,provider_account_id');
     expect(result.access_token_encrypted).toBeUndefined();
     expect(result.refresh_token_encrypted).toBeUndefined();

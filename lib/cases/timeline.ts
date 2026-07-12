@@ -1,0 +1,215 @@
+/**
+ * Unified case timeline. Merges normalized facts from several stores — source
+ * events, domain events, case/claim events, decisions, loss, recovery, tasks —
+ * into one stable, sorted shape.
+ *
+ * Sort order: `occurredAt`, then `recordedAt`, then `id`. Provider occurrence
+ * time is never overwritten with ingestion time.
+ *
+ * See docs/IMPL_source_agnostic_connected_ecosystem.md §6.
+ */
+
+export type TimelineActor = { type: string; id?: string; label?: string };
+
+export type TimelineItem = {
+  id: string;
+  type: string;
+  occurredAt: string;
+  recordedAt: string;
+  sourceSystem: string;
+  sourceAccount?: string;
+  actor: TimelineActor;
+  title: string;
+  summary?: string;
+  relatedValue?: { amountMinor: number; currency: string };
+  relatedEntity?: { type: string; id: string };
+  sourceUrl?: string;
+  freshness: string;
+};
+
+function compareTimeline(a: TimelineItem, b: TimelineItem): number {
+  if (a.occurredAt !== b.occurredAt) return a.occurredAt < b.occurredAt ? -1 : 1;
+  if (a.recordedAt !== b.recordedAt) return a.recordedAt < b.recordedAt ? -1 : 1;
+  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+}
+
+/**
+ * Merge several already-normalized timeline sources into one sorted list.
+ * De-duplicates by id (first occurrence wins), so a fact appearing in both a
+ * domain-event feed and a compatibility feed is shown once.
+ */
+export function mergeTimeline(...sources: TimelineItem[][]): TimelineItem[] {
+  const seen = new Set<string>();
+  const merged: TimelineItem[] = [];
+  for (const source of sources) {
+    for (const item of source) {
+      if (seen.has(item.id)) continue;
+      seen.add(item.id);
+      merged.push(item);
+    }
+  }
+  return merged.sort(compareTimeline);
+}
+
+type DomainEventRow = {
+  id: string;
+  event_type: string;
+  occurred_at: string | null;
+  recorded_at: string | null;
+  actor_type: string | null;
+  actor_id: string | null;
+  payload: Record<string, unknown> | null;
+};
+
+/** Project domain-event rows into timeline items. */
+export function domainEventsToTimeline(rows: DomainEventRow[]): TimelineItem[] {
+  return rows.map((r) => ({
+    id: `domain:${r.id}`,
+    type: r.event_type,
+    occurredAt: r.occurred_at ?? r.recorded_at ?? '',
+    recordedAt: r.recorded_at ?? r.occurred_at ?? '',
+    sourceSystem: 'unauth',
+    actor: { type: r.actor_type ?? 'system', id: r.actor_id ?? undefined },
+    title: r.event_type,
+    freshness: 'fresh',
+  }));
+}
+
+type ClaimEventRow = {
+  id: string;
+  event_type: string;
+  created_at: string;
+  note: string | null;
+  actor_user_id: string | null;
+  metadata: Record<string, unknown> | null;
+};
+
+export function claimEventsToTimeline(rows: ClaimEventRow[]): TimelineItem[] {
+  return rows.map((row) => ({
+    id: `claim:${row.id}`,
+    type: row.event_type,
+    occurredAt: typeof row.metadata?.triggered_at === 'string' ? row.metadata.triggered_at : row.created_at,
+    recordedAt: row.created_at,
+    sourceSystem: 'unauth',
+    actor: { type: row.actor_user_id ? 'user' : 'system', id: row.actor_user_id ?? undefined },
+    title: row.event_type.replaceAll('_', ' '),
+    summary: row.note ?? undefined,
+    freshness: 'fresh',
+  }));
+}
+
+type RecoveryEventRow = { id: string; event_type: string; created_at: string; note: string | null };
+type WorkTaskRow = { id: string; title: string; status: string; created_at: string; updated_at: string; completed_at: string | null };
+type TicketEventRow = { id: string; event_type: string; occurred_at: string | null; created_at: string; summary: string | null; actor_type: string | null };
+
+export function recoveryEventsToTimeline(rows: RecoveryEventRow[]): TimelineItem[] {
+  return rows.map((row) => ({
+    id: `recovery:${row.id}`,
+    type: `recovery.${row.event_type}`,
+    occurredAt: row.created_at,
+    recordedAt: row.created_at,
+    sourceSystem: 'unauth',
+    actor: { type: 'system' },
+    title: `Recovery ${row.event_type.replaceAll('_', ' ')}`,
+    summary: row.note ?? undefined,
+    freshness: 'fresh',
+  }));
+}
+
+export function workTasksToTimeline(rows: WorkTaskRow[]): TimelineItem[] {
+  return rows.map((row) => ({
+    id: `task:${row.id}`,
+    type: `task.${row.status}`,
+    occurredAt: row.completed_at ?? row.updated_at ?? row.created_at,
+    recordedAt: row.updated_at ?? row.created_at,
+    sourceSystem: 'unauth',
+    actor: { type: 'system' },
+    title: `Task ${row.status.replaceAll('_', ' ')}: ${row.title}`,
+    freshness: 'fresh',
+  }));
+}
+
+export function ticketEventsToTimeline(rows: TicketEventRow[]): TimelineItem[] {
+  return rows.map((row) => ({
+    id: `ticket:${row.id}`,
+    type: `ticket.${row.event_type}`,
+    occurredAt: row.occurred_at ?? row.created_at,
+    recordedAt: row.created_at,
+    sourceSystem: 'support',
+    actor: { type: row.actor_type ?? 'system' },
+    title: row.event_type.replaceAll('_', ' '),
+    summary: row.summary ?? undefined,
+    freshness: 'fresh',
+  }));
+}
+
+type CommerceOrderRow = { id: string; order_number: string | null; placed_at: string | null; created_at: string | null; total_price: number | null; currency: string | null };
+type CommerceFulfillmentRow = { id: string; status: string | null; shipment_status: string | null; tracking_company: string | null; tracking_number: string | null; occurred_at: string | null; ingested_at: string | null };
+type CommerceRefundRow = { id: string; amount: number | null; currency: string | null; reason: string | null; refunded_at: string | null; ingested_at: string | null };
+
+/**
+ * Project source-of-truth commerce facts (order placed, fulfillment dispatch /
+ * delivery, refund) into the unified timeline. Source-agnostic: it reads the
+ * canonical `source_*` rows, so it works for any commerce provider, not just
+ * one platform.
+ */
+export function commerceEventsToTimeline(input: {
+  order?: CommerceOrderRow | null;
+  fulfillments?: CommerceFulfillmentRow[];
+  refunds?: CommerceRefundRow[];
+}): TimelineItem[] {
+  const items: TimelineItem[] = [];
+  const order = input.order;
+  if (order) {
+    const placed = order.placed_at ?? order.created_at ?? '';
+    items.push({
+      id: `commerce:order:${order.id}`,
+      type: 'commerce.order_placed',
+      occurredAt: placed,
+      recordedAt: order.created_at ?? placed,
+      sourceSystem: 'commerce',
+      actor: { type: 'customer' },
+      title: order.order_number ? `Order ${order.order_number} placed` : 'Order placed',
+      relatedValue: order.total_price != null && order.currency
+        ? { amountMinor: Math.round(order.total_price * 100), currency: order.currency }
+        : undefined,
+      relatedEntity: { type: 'order', id: order.id },
+      freshness: 'fresh',
+    });
+  }
+  for (const f of input.fulfillments ?? []) {
+    const when = f.occurred_at ?? f.ingested_at ?? '';
+    const state = f.shipment_status ?? f.status ?? 'updated';
+    items.push({
+      id: `commerce:fulfillment:${f.id}`,
+      type: `commerce.fulfillment_${(f.shipment_status ?? f.status ?? 'updated').toLowerCase()}`,
+      occurredAt: when,
+      recordedAt: f.ingested_at ?? when,
+      sourceSystem: 'commerce',
+      actor: { type: 'carrier', label: f.tracking_company ?? undefined },
+      title: `Fulfillment ${state.replaceAll('_', ' ')}`,
+      summary: f.tracking_number ? `Tracking ${f.tracking_number}` : undefined,
+      relatedEntity: { type: 'fulfillment', id: f.id },
+      freshness: 'fresh',
+    });
+  }
+  for (const r of input.refunds ?? []) {
+    const when = r.refunded_at ?? r.ingested_at ?? '';
+    items.push({
+      id: `commerce:refund:${r.id}`,
+      type: 'commerce.refund_issued',
+      occurredAt: when,
+      recordedAt: r.ingested_at ?? when,
+      sourceSystem: 'commerce',
+      actor: { type: 'merchant' },
+      title: 'Refund issued',
+      summary: r.reason ?? undefined,
+      relatedValue: r.amount != null && r.currency
+        ? { amountMinor: Math.round(r.amount * 100), currency: r.currency }
+        : undefined,
+      relatedEntity: { type: 'refund', id: r.id },
+      freshness: 'fresh',
+    });
+  }
+  return items;
+}

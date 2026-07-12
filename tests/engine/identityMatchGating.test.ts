@@ -16,7 +16,7 @@
 
 type MatchStatus = 'none' | 'candidate' | 'probable' | 'definite';
 
-/** Mirrors the exact logic in lib/processing/worker.ts */
+/** Mirrors the calibration-frozen identity review gate used by the synthetic harness. */
 function scoreToMatchStatus(score: number | null): MatchStatus {
   if (!score || score < 25) return 'none';
   if (score < 50) return 'candidate';

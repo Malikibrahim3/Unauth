@@ -1,8 +1,7 @@
 #!/bin/bash
 # Category 2 — Identity resolution correctness (parts 2.1–2.9; merge/FP run separately)
 set -u
-DB="postgresql://postgres.lquvbikyvmbjbfffrlky@aws-0-eu-west-1.pooler.supabase.com:6543/postgres"
-export PGPASSWORD='Boyo19961996!uuu'
+source "$(dirname "$0")/db-env.sh"
 cd "$(dirname "$0")/../.."
 S=scripts/v2-tests/state.json
 g() { python3 -c "import json;d=json.load(open('$S'));print(d$1)"; }

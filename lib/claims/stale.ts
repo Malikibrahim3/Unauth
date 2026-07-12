@@ -1,4 +1,5 @@
 import { appendClaimEvent } from '@/lib/claims/events';
+import { TABLES } from '@/lib/supabase/tables';
 
 export async function markStalePendingClaims(
   serviceClient: any,
@@ -10,7 +11,7 @@ export async function markStalePendingClaims(
   const limit = options.limit ?? 500;
 
   const { data: claims, error: selectError } = await serviceClient
-    .from('claims')
+    .from(TABLES.MERCHANT_CLAIMS)
     .select('id,merchant_id,status,updated_at,submitted_at')
     .eq('status', 'pending')
     .lt('updated_at', cutoff)
@@ -20,7 +21,7 @@ export async function markStalePendingClaims(
   const markResults = await Promise.all(
     (claims ?? []).map(async (claim: { id: string; merchant_id: string }) => {
       const { data, error } = await serviceClient
-        .from('claims')
+        .from(TABLES.MERCHANT_CLAIMS)
         .update({ status: 'stale' })
         .eq('id', claim.id)
         .eq('status', 'pending')

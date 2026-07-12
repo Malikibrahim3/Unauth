@@ -3,7 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { normaliseAddress } from '@/lib/identity/normalise';
 import { emitIdentityObservations, type ObservationEntity } from '@/lib/identity/observations';
 import { resolveIdentitiesForKeys } from '@/lib/identity/resolver';
-import type { WooCommerceOrderPayload } from '@/lib/commerce/woocommerce/woocommerceOrderToCsvRow';
+import type { WooCommerceOrderPayload } from '@/lib/commerce/woocommerce/orderTypes';
 import { linkCheckoutSignalsToOrder } from '@/lib/checkoutSignals/linkOrder';
 
 /**

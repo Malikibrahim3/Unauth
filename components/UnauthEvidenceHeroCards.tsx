@@ -4,11 +4,11 @@ import styles from './UnauthEvidenceHeroCards.module.css';
 
 const tickets = [
   {
-    initials: 'JS',
+    initials: 'MC',
     avatar: 'avatarBlue',
-    title: 'Refund request — Order not received',
-    meta: '#12345  ·  Order #A1234',
-    desc: 'Customer says the package never arrived and is requesting a full refund.',
+    title: 'Item not received — package never arrived',
+    meta: 'GOR-DEMO-INR-9001  ·  Order AU-DEMO-008842',
+    desc: 'Customer says tracking shows delivered but nothing arrived. £84.20 at risk.',
     status: 'Open',
     time: '3m ago',
     dot: 'dotBlue',

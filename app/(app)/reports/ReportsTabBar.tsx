@@ -1,21 +1,18 @@
 import Link from 'next/link';
-import { FileSpreadsheet, Radio } from 'lucide-react';
+import { Radio } from 'lucide-react';
 import { REPORTS_TABS, type ReportsTab } from '@/app/(app)/reports/reportsPageTypes';
 
 const TAB_META: Record<ReportsTab, { label: string; icon: typeof Radio | null }> = {
   overview: { label: 'Overview', icon: null },
-  csv: { label: 'CSV audits', icon: FileSpreadsheet },
-  integration: { label: 'Live intelligence', icon: Radio },
+  recovery: { label: 'Recovery & partners', icon: Radio },
 };
 
 export function ReportsTabBar({
   active,
   range,
-  csvCount,
 }: {
   active: ReportsTab;
   range: string;
-  csvCount: number;
 }) {
   return (
     <div
@@ -42,23 +39,6 @@ export function ReportsTabBar({
           >
             {Icon ? <Icon className="h-3.5 w-3.5" /> : null}
             {TAB_META[tab].label}
-            {tab === 'csv' && csvCount > 0 ? (
-              <span
-                className="inline-flex items-center justify-center"
-                style={{
-                  height: 18,
-                  minWidth: 18,
-                  borderRadius: 'var(--radius-full)',
-                  background: 'var(--surface-sunken)',
-                  color: 'var(--text-secondary)',
-                  fontSize: 11,
-                  fontWeight: 500,
-                  padding: '0 5px',
-                }}
-              >
-                {csvCount}
-              </span>
-            ) : null}
           </Link>
         );
       })}

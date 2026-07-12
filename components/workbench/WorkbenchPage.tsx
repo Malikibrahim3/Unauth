@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react';
-import { WorkbenchNav, type WorkbenchNavItem } from './WorkbenchNav';
+import { type WorkbenchNavItem } from './WorkbenchNav';
 import { WorkbenchKpiStrip, type WorkbenchKpiItem } from './WorkbenchKpiStrip';
 import { WorkbenchActionBar } from './WorkbenchActionBar';
 import {
@@ -15,7 +15,9 @@ interface WorkbenchPageProps {
   eyebrow?: string;
   title: string;
   subtitle?: string;
+  /** Deprecated: the cross-page section nav is no longer rendered (the app sidebar owns it). */
   navItems?: WorkbenchNavItem[];
+  /** Deprecated: see navItems. */
   activeNavKey?: string;
   actions?: ReactNode;
   /** Prefer kpiItems over kpiStrip to avoid passing JSX as a prop. */
@@ -34,8 +36,6 @@ export function WorkbenchPage({
   eyebrow,
   title,
   subtitle,
-  navItems,
-  activeNavKey,
   actions,
   kpiItems,
   kpiStrip,
@@ -83,11 +83,6 @@ export function WorkbenchPage({
               <h1 className="t-page-title" style={PAGE_TITLE_STYLE}>
                 {title}
               </h1>
-              {navItems && activeNavKey && (
-                <div className="mt-4">
-                  <WorkbenchNav items={navItems} activeKey={activeNavKey} />
-                </div>
-              )}
               {subtitle && (
                 <p className="mt-2 text-body-sm" style={PAGE_SUBTITLE_STYLE}>
                   {subtitle}

@@ -22,7 +22,10 @@ function genUuid(): string {
 }
 
 type Row = Record<string, unknown>;
-type Filter = ['eq' | 'neq', string, unknown] | ['in', string, unknown[]];
+type Filter =
+  | ['eq' | 'neq' | 'ilike', string, unknown]
+  | ['in', string, unknown[]]
+  | ['or', Array<['eq', string, unknown]>, null];
 
 export type MemoryStore = Map<string, Row[]>;
 
@@ -84,6 +87,25 @@ class QueryBuilder {
     return this;
   }
 
+  ilike(col: string, val: unknown): this {
+    this.filters.push(['ilike', col, val]);
+    return this;
+  }
+
+  /**
+   * Supports the simple disjunction shapes the intake pipeline issues, e.g.
+   * `or('order_number.eq.1008,external_id.eq.1008')`. Only `.eq.` operands are
+   * parsed — that is all production uses here.
+   */
+  or(filter: string): this {
+    const clauses = filter.split(',').flatMap((part) => {
+      const match = part.match(/^([^.]+)\.eq\.(.*)$/);
+      return match ? [['eq', match[1], match[2]] as ['eq', string, unknown]] : [];
+    });
+    this.filters.push(['or', clauses, null]);
+    return this;
+  }
+
   order(_col: string, _opts?: { ascending?: boolean }): this {
     return this;
   }
@@ -96,6 +118,15 @@ class QueryBuilder {
     return this.filters.every(([op, col, val]) => {
       if (op === 'eq') return row[col] === val;
       if (op === 'neq') return row[col] !== val;
+      if (op === 'ilike') {
+        // `.or.eq.` operands compare as exact strings; the `%`-free email
+        // pattern intake uses is case-insensitive equality.
+        return String(row[col] ?? '').toLowerCase() === String(val ?? '').toLowerCase();
+      }
+      if (op === 'or') {
+        const clauses = col as unknown as Array<['eq', string, unknown]>;
+        return clauses.some(([, c, v]) => String(row[c]) === String(v));
+      }
       return Array.isArray(val) && (val as unknown[]).includes(row[col]);
     });
   }
@@ -165,13 +196,39 @@ class QueryBuilder {
 
 export type MemoryClient = {
   from: (table: string) => QueryBuilder;
+  rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: null }>;
   __store: MemoryStore;
 };
+
+let rpcSeq = 0;
 
 export function createMemoryClient(seed?: MemoryStore): MemoryClient {
   const store: MemoryStore = seed ?? new Map();
   return {
     from: (table: string) => new QueryBuilder(store, table),
+    // Minimal RPC shim. `record_domain_event` appends a domain_events row and
+    // returns its id, so code paths that emit domain events run end-to-end.
+    rpc: async (fn: string, args: Record<string, unknown>) => {
+      if (fn === 'record_domain_event') {
+        const events = store.get('domain_events') ?? [];
+        const idem = args.p_idempotency_key as string;
+        const existing = events.find((e) => e.idempotency_key === idem);
+        if (existing) return { data: existing.id, error: null };
+        const id = `evt-${++rpcSeq}`;
+        events.push({
+          id,
+          merchant_id: args.p_merchant_id,
+          event_type: args.p_event_type,
+          aggregate_type: args.p_aggregate_type,
+          aggregate_id: args.p_aggregate_id,
+          idempotency_key: idem,
+          payload: args.p_payload,
+        });
+        store.set('domain_events', events);
+        return { data: id, error: null };
+      }
+      return { data: null, error: null };
+    },
     __store: store,
   };
 }

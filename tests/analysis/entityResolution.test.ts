@@ -19,6 +19,7 @@ import {
   processProfilesForBatch,
   CustomerProfileRow,
 } from '@/lib/analysis/entityResolution';
+import { TABLES } from '@/lib/supabase/tables';
 
 // ---------------------------------------------------------------------------
 // Mock Supabase client builder
@@ -43,7 +44,7 @@ function createMockSupabase(options?: {
 
   const mockClient = {
     from: (table: string) => {
-      if (table === 'customer_profiles') {
+      if (table === TABLES.CUSTOMER_PROFILES) {
         return {
           // ---- SELECT (supports both old .single() and new bulk-overlaps path) ----
           select: (_cols: string) => {
@@ -421,7 +422,7 @@ describe('Entity Resolution', () => {
       let callCount = 0;
       const mockClient = {
         from: (table: string) => {
-          if (table === 'customer_profiles') {
+          if (table === TABLES.CUSTOMER_PROFILES) {
             return {
               select: (_cols: string) => {
                 const chain: any = {
@@ -496,7 +497,7 @@ describe('Entity Resolution', () => {
       let selectCall = 0;
       const mockClient = {
         from: (table: string) => {
-          if (table === 'customer_profiles') {
+          if (table === TABLES.CUSTOMER_PROFILES) {
             return {
               select: (_cols: string) => {
                 selectCall++;
@@ -862,7 +863,7 @@ describe('Entity Resolution', () => {
       // Build a mock where the bulk insert returns an error
       const failingClient = {
         from: (table: string) => {
-          if (table === 'customer_profiles') {
+          if (table === TABLES.CUSTOMER_PROFILES) {
             const emptySelectChain: any = {
               overlaps: () => emptySelectChain,
               or:       () => emptySelectChain,

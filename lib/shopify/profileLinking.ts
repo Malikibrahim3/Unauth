@@ -1,3 +1,14 @@
+/**
+ * LEGACY v1 — NOT part of live Shopify ingestion.
+ *
+ * `syncShopifyProfilesForShop` builds v1 `customer_profiles` rows, a table dropped
+ * in the v2 cutover. It is NOT imported by any app route, API route, webhook, or
+ * lib runtime path — live Shopify ingestion resolves identity through the v2
+ * identity resolver against `source_orders` / `source_customers` / `identities`.
+ * This file is retained only for the standalone repair/test scripts that still
+ * reference it (scripts/repair-shopify-customer-profiles.ts, setup-clean-shopper-test.ts)
+ * and will not function against the v2 schema. Do not wire it back into runtime.
+ */
 import { createHash } from 'crypto';
 import { normaliseEmail } from '@/lib/identity/normalise';
 import { createServiceClient } from '../supabase/server';

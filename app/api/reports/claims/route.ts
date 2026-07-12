@@ -3,6 +3,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
 import { buildClaimOpsMetrics } from '@/lib/claims/reporting';
+import { TABLES } from '@/lib/supabase/tables';
 
 function csvCell(value: unknown) {
   const text = String(value ?? '');
@@ -23,8 +24,18 @@ type OutcomeExportRow = {
   decision: string | null;
   outcome: string | null;
   amount_refunded: number | null;
+  amount_recovered: number | null;
+  recommended_payout_action: string | null;
+  followed_recommendation: boolean | null;
   decided_at: string | null;
   updated_at: string | null;
+};
+
+type FinancialExportRow = {
+  support_payout_case_id: string;
+  currency: string;
+  paid_minor: number;
+  recovered_minor: number;
 };
 
 export async function GET(request: NextRequest) {
@@ -46,7 +57,7 @@ export async function GET(request: NextRequest) {
     : new Date(Date.now() - (range === '7d' ? 7 : range === '90d' ? 90 : 30) * 86400000).toISOString();
 
   let claimsQuery = serviceClient
-    .from('claims')
+    .from(TABLES.MERCHANT_CLAIMS)
     .select('id,status,amount_at_risk,submitted_at,created_at,updated_at')
     .eq('merchant_id', ctx.merchantId);
   if (cutoff) claimsQuery = claimsQuery.gte('submitted_at', cutoff);
@@ -56,20 +67,41 @@ export async function GET(request: NextRequest) {
   const { data: outcomes } = claimRows.length > 0
     ? await serviceClient
       .from('claim_outcomes')
-      .select('claim_id,decision,outcome,amount_refunded,decided_at,updated_at')
+      .select('claim_id,decision,outcome,amount_refunded,amount_recovered,recommended_payout_action,followed_recommendation,decided_at,updated_at')
       .in('claim_id', claimRows.map((claim) => claim.id))
     : { data: [] as OutcomeExportRow[] };
+  const { data: financialSummaries } = claimRows.length > 0
+    ? await serviceClient
+      .from(TABLES.CASE_FINANCIAL_SUMMARIES)
+      .select('support_payout_case_id,currency,paid_minor,recovered_minor')
+      .eq('merchant_id', ctx.merchantId)
+      .in('support_payout_case_id', claimRows.map((claim) => claim.id))
+    : { data: [] };
+  const financialByCase = new Map<string, FinancialExportRow>(
+    ((financialSummaries ?? []) as FinancialExportRow[]).map((row) => [row.support_payout_case_id, row]),
+  );
+  const projectedOutcomes = (outcomes ?? []).map((row: OutcomeExportRow) => {
+    const financial = financialByCase.get(row.claim_id);
+    return {
+      ...row,
+      amount_refunded: financial ? financial.paid_minor / 100 : 0,
+      amount_recovered: financial ? financial.recovered_minor / 100 : 0,
+    };
+  });
 
   if (view === 'outcomes') {
     const claimStatusById = new Map(claimRows.map((claim) => [claim.id, claim.status]));
     const csv = [
-      ['claim_id', 'status', 'decision', 'outcome', 'amount_refunded', 'decided_at'].join(','),
-      ...(outcomes ?? []).map((row: OutcomeExportRow) => [
+      ['claim_id', 'status', 'decision', 'outcome', 'amount_refunded', 'amount_recovered', 'recommended_payout_action', 'followed_recommendation', 'decided_at'].join(','),
+      ...projectedOutcomes.map((row: OutcomeExportRow) => [
         row.claim_id,
         claimStatusById.get(row.claim_id) ?? '',
         row.decision ?? '',
         row.outcome ?? '',
         row.amount_refunded ?? '',
+        row.amount_recovered ?? '',
+        row.recommended_payout_action ?? '',
+        row.followed_recommendation ?? '',
         row.decided_at ?? row.updated_at ?? '',
       ].map(csvCell).join(',')),
     ].join('\n');
@@ -78,7 +110,7 @@ export async function GET(request: NextRequest) {
       ctx,
       action: 'export_audit',
       resourceType: 'report',
-      metadata: { view: 'outcomes', range, rowCount: (outcomes ?? []).length },
+      metadata: { view: 'outcomes', range, rowCount: projectedOutcomes.length },
     });
 
     return new NextResponse(csv, {
@@ -89,7 +121,7 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  const metrics = buildClaimOpsMetrics(claimRows, outcomes ?? []);
+  const metrics = buildClaimOpsMetrics(claimRows, projectedOutcomes);
   const rows = Object.entries(metrics).map(([metric, value]) => [metric, value]);
   const csv = [['metric', 'value'], ...rows].map((row) => row.map(csvCell).join(',')).join('\n');
 

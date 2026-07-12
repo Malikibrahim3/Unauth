@@ -1,8 +1,7 @@
 #!/bin/bash
 # Category 5 — Data integrity
 set -u
-DB="postgresql://postgres.lquvbikyvmbjbfffrlky@aws-0-eu-west-1.pooler.supabase.com:6543/postgres"
-export PGPASSWORD='Boyo19961996!uuu'
+source "$(dirname "$0")/db-env.sh"
 cd "$(dirname "$0")/../.."
 svc() { psql "$DB" -X -tA -c "$1" 2>&1; }
 OUT=scripts/v2-tests/results/cat5.tsv

@@ -1,10 +1,16 @@
 import type { Tier } from '@/lib/billing/tiers';
 
-const TIER_SET = new Set<string>(['free', 'pro', 'growth', 'scale', 'enterprise']);
+const TIER_SET = new Set<string>(['free', 'pro', 'growth', 'enterprise']);
 
-/** Legacy product tier strings → canonical billing tier. */
+/**
+ * Legacy / plan-layer strings → canonical billing tier.
+ * `scale` is retained as the internal PlanId for the top paid plan (matches the
+ * `plans` table + Stripe products), but the Tier model was simplified to 4 —
+ * so a `scale` plan resolves to the `enterprise` tier for gating and display.
+ */
 const LEGACY_TIER_MAP: Record<string, Tier> = {
   advanced: 'growth',
+  scale: 'enterprise',
 };
 
 /**

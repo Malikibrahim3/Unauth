@@ -27,7 +27,7 @@ describe('claims workflow client', () => {
   });
 
   it('submits outcome', async () => {
-    const res = await submitOutcome('c1', { decision: 'denied', outcome: 'suspected_fraud' });
+    const res = await submitOutcome('c1', { decision: 'denied', outcome: 'loss' });
     expect(res.message).toBe('Outcome saved');
   });
 

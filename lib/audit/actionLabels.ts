@@ -13,7 +13,7 @@ const ACTION_LABELS: Record<string, string> = {
   add_to_watchlist: 'Added to watchlist',
   remove_from_watchlist: 'Removed from watchlist',
   generate_evidence: 'Evidence package generated',
-  submit_fraud_feedback: 'Fraud feedback submitted',
+  submit_fraud_feedback: 'Claim feedback submitted',
   dismiss_transaction: 'Transaction dismissed',
   hide_job: 'Audit run hidden',
   bulk_delete: 'Bulk data deletion',

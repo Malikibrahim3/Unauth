@@ -42,9 +42,10 @@ export function ContextCreditsBadge() {
   const warn = usageRatio >= 0.8 && remaining > 0;
 
   return (
-    <div
+    <Link
+      href="/settings/billing"
       className="hidden md:flex flex-col items-end text-right leading-tight"
-      title="Monthly context credits reset at the end of your billing period."
+      title="Context credits are used each time Unauth assembles claim context from your connected sources. They reset at the end of your billing period — click to manage in Billing."
     >
       <span className="text-[11px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-tertiary)' }}>
         {credits.label}
@@ -56,10 +57,10 @@ export function ContextCreditsBadge() {
         {remaining} of {limit} remaining
       </span>
       {warn || low ? (
-        <Link href="/settings/billing" className="text-[11px] font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+        <span className="text-[11px] font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
           {low ? 'Upgrade or top up' : 'Top up or upgrade'}
-        </Link>
+        </span>
       ) : null}
-    </div>
+    </Link>
   );
 }

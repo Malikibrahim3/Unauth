@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
+import { PanelCard, uiTokens } from '@/components/ui';
 
 export function MetricCard({
   label,
@@ -15,12 +16,9 @@ export function MetricCard({
   icon?: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
 }) {
   return (
-    <div
-      className="flex flex-col justify-between rounded-[10px] border p-4"
-      style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
-    >
+    <PanelCard variant="app" className="flex flex-col justify-between p-4">
       <div className="flex items-start justify-between gap-2">
-        <p className="text-[10px] font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>{label}</p>
+        <p className={uiTokens.app.eyebrow}>{label}</p>
         {Icon ? <Icon className="h-4 w-4 shrink-0" style={{ color: 'var(--text-tertiary)' }} /> : null}
       </div>
       <div>
@@ -36,7 +34,7 @@ export function MetricCard({
           </p>
         ) : null}
       </div>
-    </div>
+    </PanelCard>
   );
 }
 
@@ -54,7 +52,7 @@ export function ModuleCard({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-[10px] border" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+    <PanelCard as="section" variant="app" className="overflow-hidden p-0">
       <div className="flex items-center justify-between border-b px-4 py-2.5" style={{ borderColor: 'var(--border)' }}>
         <div className="flex items-center gap-2">
           <Icon className="h-4 w-4" style={{ color: 'var(--text-tertiary)' }} />
@@ -67,6 +65,6 @@ export function ModuleCard({
         ) : null}
       </div>
       <div className="px-4 py-3">{children}</div>
-    </section>
+    </PanelCard>
   );
 }

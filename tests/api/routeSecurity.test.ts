@@ -8,18 +8,18 @@
  *    and cross-merchant profiles are never returned.
  * 2. /api/evidence/ce3-check — cross-merchant order IDs return ineligible,
  *    owned orders work correctly.
- * 3. /api/inbox/export — normal rows with match_status='none' are excluded.
- * 4. fetchMerchantReviewQueueRows helper — semantics match definition.
- * 5. Static guard — service-role routes must be auth-gated.
+ * 3. Retired legacy inbox routes remain absent.
+ * 4. Static guard — service-role routes must be auth-gated.
  */
 
 import path from 'path';
 import fs from 'fs';
-const { globSync } = require('glob');
+import { globSync } from 'glob';
 import {
   fetchMerchantReviewQueueRows,
   fetchReviewQueueProfileIds,
 } from '../../lib/supabase/merchantHelpers';
+import { TABLES } from '@/lib/supabase/tables';
 
 // ---------------------------------------------------------------------------
 // Helper: minimal Supabase mock
@@ -69,6 +69,12 @@ describe('Static security guard: service-role routes must be auth-gated', () => 
       'app/api/founding-merchant-applications/route.ts',
       'app/api/cron/purge-expired-audits/route.ts',
       'app/api/account/setup/route.ts',
+      // Intentionally public bootstrap script: returns merchant-scoped collector JS
+      // for a validated Shopify shop domain and no customer PII.
+      'app/api/shopify/collector-init/route.ts',
+      // Intentionally public browser ingestion endpoint. It accepts only hashed
+      // checkout/session signals, validates merchant/platform, and rate-limits by IP.
+      'app/api/checkout-signals/ingest/route.ts',
     ];
 
     for (const relPath of routeFiles) {
@@ -102,7 +108,10 @@ describe('Static security guard: service-role routes must be auth-gated', () => 
       // Routes legitimately protected by non-session mechanisms: public API key,
       // widget token, single-use signed download token, OAuth handshake, or cron
       // secret. These do not use auth.getUser()/requirePermission() but are gated.
-      const hasApiKeyAuth = content.includes('validateApiKey');
+      // `authenticateIngest` (lib/api/v1/ingest/auth.ts) wraps validateApiKey:
+      // it derives the merchant from the API key and returns a 401 NextResponse
+      // otherwise, so canonical-intake routes are API-key gated.
+      const hasApiKeyAuth = content.includes('validateApiKey') || content.includes('authenticateIngest');
       const hasWidgetAuth = content.includes('validateWidgetToken');
       const hasSignedTokenAuth =
         content.includes('parseAndVerifySignedToken') || content.includes('signedAccess');
@@ -150,13 +159,20 @@ describe('/api/customers/search — auth requirement', () => {
     expect(content).toContain('401');
   });
 
-  it('route file uses createScopedClient to scope results', () => {
+  it('scopes results to the caller merchant via owned profile IDs', () => {
     const content = fs.readFileSync(
       path.join(process.cwd(), 'app/api/customers/search/route.ts'),
       'utf-8'
     );
-    expect(content).toContain('createScopedClient');
+    // `identities` is a network-level table with no merchant_id, so scoping is
+    // done by resolving merchant-owned profile IDs (via the merchant-scoped
+    // findCustomerProfileIdsByText) and fetching ONLY those IDs — never an
+    // unscoped scan of identities.
+    expect(content).toContain('findCustomerProfileIdsByText');
     expect(content).toContain('ctx.merchantId');
+    expect(content).toContain(".in('id'");
+    // Must NOT run its own ilike/text scan against identities on user input.
+    expect(content).not.toMatch(/\.ilike\(/);
   });
 
   it('route returns 401 when user is null — verified via source analysis', () => {
@@ -182,30 +198,29 @@ describe('/api/customers/search — auth requirement', () => {
 // /api/evidence/ce3-check — cross-merchant order is rejected
 // ---------------------------------------------------------------------------
 describe('/api/evidence/ce3-check — merchant scoping', () => {
-  it('route file uses fetchMerchantScopedCustomerProfile', () => {
+  it('route delegates to the v2 evidence builder', () => {
     const content = fs.readFileSync(
       path.join(process.cwd(), 'app/api/evidence/ce3-check/route.ts'),
       'utf-8'
     );
-    expect(content).toContain('fetchMerchantScopedCustomerProfile');
+    expect(content).toContain('buildEvidencePackage');
   });
 
-  it('route file uses fetchMerchantScopedCustomerTransactions', () => {
+  it('v2 builder scopes customer reads by merchant_id', () => {
     const content = fs.readFileSync(
-      path.join(process.cwd(), 'app/api/evidence/ce3-check/route.ts'),
+      path.join(process.cwd(), 'lib/evidence/buildPackage.ts'),
       'utf-8'
     );
-    expect(content).toContain('fetchMerchantScopedCustomerTransactions');
+    expect(content).toContain(".eq('merchant_id', merchantId)");
   });
 
-  it('route file does NOT use .eq(merchant_id) on customer_profiles or audit_transactions', () => {
+  it('route file does not use dropped v1 customer/audit helpers', () => {
     const content = fs.readFileSync(
       path.join(process.cwd(), 'app/api/evidence/ce3-check/route.ts'),
       'utf-8'
     );
-    // Should not have legacy incorrect field usage
-    expect(content).not.toContain(".eq('merchant_id', ctx.merchantId)");
-    expect(content).not.toContain('.limit(500)');
+    expect(content).not.toContain('fetchMerchantScopedCustomerProfile');
+    expect(content).not.toContain('fetchMerchantScopedCustomerTransactions');
   });
 
   it('cross-merchant order ID returns ineligible — order not in merchant transactions', () => {
@@ -226,7 +241,7 @@ describe('/api/evidence/ce3-check — merchant scoping', () => {
 describe('fetchMerchantReviewQueueRows — review queue definition', () => {
   it('returns empty when merchant has no jobs', async () => {
     const mock = {
-      from: jest.fn((table: string) => {
+      from: jest.fn((_table: string) => {
         const c = makeChain({ data: [], error: null });
         c.eq = jest.fn().mockReturnThis();
         c.range = jest.fn().mockResolvedValue({ data: [], error: null });
@@ -246,7 +261,7 @@ describe('fetchMerchantReviewQueueRows — review queue definition', () => {
 
     const mock = {
       from: jest.fn((table: string) => {
-        if (table === 'processing_jobs') {
+        if (table === TABLES.PROCESSING_JOBS) {
           const c: any = { select: jest.fn().mockReturnThis(), eq: jest.fn().mockReturnThis(), range: jest.fn().mockResolvedValue({ data: [{ id: 'job-1' }], error: null }) };
           return c;
         }
@@ -270,12 +285,8 @@ describe('fetchMerchantReviewQueueRows — review queue definition', () => {
     expect(jobIdIn).toBeDefined();
     expect(jobIdIn![1]).toContain('job-1');
 
-    // Verify the review-queue inclusion filter (buildReviewableFilter) is
-    // applied. Review-worthiness is now the persisted, behaviour-gated
-    // `review_worthy` flag (real identity match AND suspicious behaviour),
-    // not identity grade alone — which over-flagged loyal repeat customers.
-    const hasReviewWorthyOr = orCalls.some((expr) => expr.includes('review_worthy'));
-    expect(hasReviewWorthyOr).toBe(true);
+    const hasConfidenceFilter = orCalls.some((expr) => expr.includes('identity_confidence_grade'));
+    expect(hasConfidenceFilter).toBe(true);
 
     // Verify dismissed_by_merchant is excluded
     const dismissedNot = notCalls.find(([col]) => col === 'dismissed_by_merchant');
@@ -296,7 +307,7 @@ describe('fetchMerchantReviewQueueRows — review queue definition', () => {
 
     const mock = {
       from: jest.fn((table: string) => {
-        if (table === 'processing_jobs') {
+        if (table === TABLES.PROCESSING_JOBS) {
           const c: any = { select: jest.fn().mockReturnThis(), eq: jest.fn().mockReturnThis(), range: jest.fn().mockResolvedValue({ data: [{ id: 'job-1' }], error: null }) };
           return c;
         }
@@ -324,7 +335,7 @@ describe('fetchMerchantReviewQueueRows — review queue definition', () => {
 
     const mock = {
       from: jest.fn((table: string) => {
-        if (table === 'processing_jobs') {
+        if (table === TABLES.PROCESSING_JOBS) {
           const c: any = { select: jest.fn().mockReturnThis(), eq: jest.fn().mockReturnThis(), range: jest.fn().mockResolvedValue({ data: [{ id: 'job-1' }], error: null }) };
           return c;
         }
@@ -355,60 +366,28 @@ describe('fetchMerchantReviewQueueRows — review queue definition', () => {
 // /api/inbox/export — correct population semantics
 // ---------------------------------------------------------------------------
 describe('/api/inbox/export — review population semantics', () => {
-  it('export route uses fetchMerchantReviewQueueRows', () => {
-    const content = fs.readFileSync(
-      path.join(process.cwd(), 'app/api/inbox/export/route.ts'),
-      'utf-8'
-    );
-    expect(content).toContain('fetchMerchantReviewQueueRows');
+  it('legacy inbox export route is retired', () => {
+    expect(fs.existsSync(path.join(process.cwd(), 'app/api/inbox/export/route.ts'))).toBe(false);
   });
 
-  it('export route does NOT use legacy match_score ordering', () => {
-    const content = fs.readFileSync(
-      path.join(process.cwd(), 'app/api/inbox/export/route.ts'),
-      'utf-8'
-    );
-    expect(content).not.toContain("order('match_score'");
+  it('legacy audit export route is retired', () => {
+    expect(fs.existsSync(path.join(process.cwd(), 'app/api/audit/[runId]/export/route.ts'))).toBe(false);
   });
 
-  it('export route does NOT use legacy risk_level filter', () => {
-    const content = fs.readFileSync(
-      path.join(process.cwd(), 'app/api/inbox/export/route.ts'),
-      'utf-8'
-    );
-    expect(content).not.toContain("in('risk_level'");
-    expect(content).not.toContain("risk_level");
+  it('current claims route remains the payout-control API', () => {
+    expect(fs.existsSync(path.join(process.cwd(), 'app/api/claims/route.ts'))).toBe(true);
   });
 });
 
 // ---------------------------------------------------------------------------
 // Inbox page — correct population semantics
 // ---------------------------------------------------------------------------
-describe('Inbox page — review population semantics', () => {
-  it('inbox page is a thin alias redirect to the canonical claims route', () => {
-    const content = fs.readFileSync(
-      path.join(process.cwd(), 'app/(app)/inbox/page.tsx'),
-      'utf-8'
-    );
-    expect(content).toContain("redirect('/claims')");
-    expect(content).not.toContain('fetchMerchantReviewQueueRows');
-  });
-});
-
 // ---------------------------------------------------------------------------
 // /api/inbox — query-backed inbox semantics
 // ---------------------------------------------------------------------------
 describe('/api/inbox — query-backed review queue', () => {
-  it('API route queries audit_transactions through the shared helper', () => {
-    const content = fs.readFileSync(
-      path.join(process.cwd(), 'app/api/inbox/route.ts'),
-      'utf-8'
-    );
-    expect(content).toContain('fetchMerchantReviewQueueRows');
-    expect(content).toContain('fetchReviewQueueProfileIds');
-    expect(content).toContain('requirePermission');
-    expect(content).not.toContain('inbox_items');
-    expect(content).not.toContain("from('inbox_items')");
+  it('legacy inbox API route is retired', () => {
+    expect(fs.existsSync(path.join(process.cwd(), 'app/api/inbox/route.ts'))).toBe(false);
   });
 
   it('profile lookup is scoped by owned audit/job ids', async () => {
@@ -448,15 +427,17 @@ describe('Customer detail page — linked identity privacy', () => {
     expect(content).not.toMatch(/\.from\s*\(\s*['"]fraud_identity_clusters['"]/);
   });
 
-  it('derives linked identity from merchant-owned transactions only', () => {
+  it('derives linked identity from merchant-owned source data only', () => {
     const content = fs.readFileSync(
       path.join(process.cwd(), 'app/(app)/customers/[id]/customerProfilePageLoad.ts'),
       'utf-8'
     );
-    // Must use fetchMerchantScopedCustomerTransactions (not raw cluster table)
-    expect(content).toContain('fetchMerchantScopedCustomerTransactions');
-    expect(content).toContain('if (transactionRows.length === 0');
-    expect(content).toContain("in('job_id', ownedJobIds)");
+    expect(content).toContain("from('source_customers')");
+    expect(content).toContain("from('source_orders')");
+    expect(content).toContain('.eq(\'merchant_id\', merchantId)');
+    expect(content).toContain('.in(\'source_customer_id\', identityCustomerIds)');
+    expect(content).not.toContain('fraud_identity_clusters');
+    expect(content).not.toContain('audit_transactions');
   });
 });
 
@@ -557,7 +538,7 @@ describe('fetchMerchantReviewQueueRows — null match_status regression', () => 
     const orCalls: string[] = [];
     const mock = {
       from: jest.fn((table: string) => {
-        if (table === 'processing_jobs') {
+        if (table === TABLES.PROCESSING_JOBS) {
           const c: any = { select: jest.fn().mockReturnThis(), eq: jest.fn().mockReturnThis(), range: jest.fn().mockResolvedValue({ data: [{ id: 'job-1' }], error: null }) };
           return c;
         }
@@ -584,11 +565,8 @@ describe('fetchMerchantReviewQueueRows — null match_status regression', () => 
     expect(rows[0].identity_confidence_grade).toBe('B');
     expect(rows[0].match_status).toBeNull();
 
-    // Inclusion is now driven by the persisted, behaviour-gated review_worthy
-    // flag — which is precomputed and independent of match_status, so a graded
-    // row with null match_status is handled correctly without a match_status OR.
-    const hasReviewWorthyOr = orCalls.some((expr) => expr.includes('review_worthy'));
-    expect(hasReviewWorthyOr).toBe(true);
+    const hasConfidenceFilter = orCalls.some((expr) => expr.includes('identity_confidence_grade'));
+    expect(hasConfidenceFilter).toBe(true);
   });
 
   it('row with match_status=none and null grade is excluded by .or() semantics', () => {
@@ -618,15 +596,7 @@ describe('fetchMerchantReviewQueueRows — null match_status regression', () => 
 // ---------------------------------------------------------------------------
 // Inbox page auth and permission guards
 // ---------------------------------------------------------------------------
-describe('Inbox page — auth and permission guards', () => {
-  it('inbox page redirects to the canonical claims route', () => {
-    const content = fs.readFileSync(
-      path.join(process.cwd(), 'app/(app)/inbox/page.tsx'),
-      'utf-8'
-    );
-    expect(content).toContain("redirect('/claims')");
-  });
-
+describe('Claims page — auth and permission guards', () => {
   it('claims page owns auth and VIEW_INBOX permission enforcement', () => {
     const content = fs.readFileSync(
       path.join(process.cwd(), 'app/(app)/claims/page.tsx'),
@@ -721,12 +691,16 @@ describe('next.config.js — image optimizer DoS mitigation', () => {
 // /api/customers/search — hostile input behavioral tests
 // ---------------------------------------------------------------------------
 describe('/api/customers/search — hostile input behavioral tests', () => {
-  it('route imports escapePostgrestFilterValue', () => {
+  it('delegates user-input search to the escaping helper (no raw scans)', () => {
     const content = fs.readFileSync(
       path.join(process.cwd(), 'app/api/customers/search/route.ts'),
       'utf-8'
     );
-    expect(content).toContain('escapePostgrestFilterValue');
+    // User input flows only through findCustomerProfileIdsByText, which escapes
+    // it via escapePostgrestFilterValue internally. The route itself performs no
+    // ilike/or scan on raw input, so injection is contained in the helper.
+    expect(content).toContain('findCustomerProfileIdsByText');
+    expect(content).not.toMatch(/\.ilike\(/);
   });
 
   it('route does NOT construct a raw .or() string from user input', () => {
@@ -853,7 +827,7 @@ function makeCountMock({
 
   const mock = {
     from: jest.fn((table: string) => {
-      if (table === 'processing_jobs') {
+      if (table === TABLES.PROCESSING_JOBS) {
         // Ownership-check chain: .select().eq('id', ...).eq('merchant_id', ...) resolves at second .eq()
         const chain: any = {
           select: jest.fn().mockReturnThis(),
@@ -904,7 +878,7 @@ describe('countReviewWorthyTransactions — behavioral tests', () => {
     const mock = makeCountMock({ jobsData: [{ id: 'job-1' }], gradedCount: 0, statusCount: 0 });
     await countReviewWorthyTransactions(mock as any, 'job-1', 'merchant-a');
     const fromCalls = (mock.from as jest.Mock).mock.calls.map(([t]: [string]) => t);
-    expect(fromCalls[0]).toBe('processing_jobs');
+    expect(fromCalls[0]).toBe(TABLES.PROCESSING_JOBS);
   });
 
   it('never calls .eq("merchant_id") on audit_transactions', async () => {
@@ -997,40 +971,6 @@ describe('countReviewWorthyTransactions — behavioral tests', () => {
     expect(src).toContain('true');
   });
 
-  it('process-csv-finalize route uses countReviewWorthyTransactions, not risk_level', () => {
-    const content = fs.readFileSync(
-      path.join(process.cwd(), 'app/api/process-csv-finalize/route.ts'),
-      'utf-8'
-    );
-    expect(content).toContain('countReviewWorthyTransactions');
-    expect(content).not.toContain(".in('risk_level'");
-    expect(content).not.toContain('.in("risk_level"');
-  });
-});
-
-// ---------------------------------------------------------------------------
-// CSV ingest — no invalid audit_transactions.merchant_id ownership queries
-// ---------------------------------------------------------------------------
-describe('CSV ingest — schema-safe transaction scoping', () => {
-  it('process-csv-job route does NOT query audit_transactions.merchant_id', () => {
-    const content = fs.readFileSync(
-      path.join(process.cwd(), 'app/api/process-csv-job/route.ts'),
-      'utf-8'
-    );
-    expect(content).not.toMatch(
-      /from\s*\(\s*['"]audit_transactions['"]\s*\)[\s\S]*?\.eq\s*\(\s*['"]merchant_id['"]\s*,\s*merchantId\s*\)/
-    );
-  });
-
-  it('process-csv-chunk route does NOT query audit_transactions.merchant_id', () => {
-    const content = fs.readFileSync(
-      path.join(process.cwd(), 'app/api/process-csv-chunk/route.ts'),
-      'utf-8'
-    );
-    expect(content).not.toMatch(
-      /from\s*\(\s*['"]audit_transactions['"]\s*\)[\s\S]*?\.eq\s*\(\s*['"]merchant_id['"]\s*,\s*merchantId\s*\)/
-    );
-  });
 });
 
 // ---------------------------------------------------------------------------
@@ -1046,15 +986,15 @@ describe('dashboard/page.tsx — review queue correctness', () => {
     expect(content).not.toContain('.neq("dismissed_by_merchant", true)');
   });
 
-  it('delegates review queue to countMerchantReviewQueueProfiles shared helper', () => {
+  it('delegates dashboard metrics to the payout dashboard helper', () => {
     const content = fs.readFileSync(
       path.join(process.cwd(), 'app/(app)/dashboard/page.tsx'),
       'utf-8'
     );
-    // Dashboard must use the shared helper rather than one-off inline query logic.
-    expect(content).toContain('countMerchantReviewQueueProfiles');
-    // The helper import must come from merchantHelpers.
-    expect(content).toContain('merchantHelpers');
+    // Dashboard must use the shared payout metrics helper rather than one-off inline query logic.
+    expect(content).toContain('loadPayoutDashboardMetrics');
+    expect(content).toContain('payoutDashboardMetrics');
+    expect(content).not.toContain('countMerchantReviewQueueProfiles');
   });
 
   it('shared helper uses .not("dismissed_by_merchant", "is", true) null-safe filter', () => {
@@ -1116,7 +1056,7 @@ function makeQueueProfilesMock({
 
   return {
     from: jest.fn((table: string) => {
-      if (table === 'processing_jobs') {
+      if (table === TABLES.PROCESSING_JOBS) {
         const callIdx = jobsCallIdx++;
         const chain: any = {
           select: jest.fn().mockReturnThis(),
@@ -1129,7 +1069,7 @@ function makeQueueProfilesMock({
         return chain;
       }
 
-      if (table === 'audit_transactions') {
+      if (table === TABLES.AUDIT_TRANSACTIONS) {
         // Determine whether this query is the graded clause or status clause.
         let mode: 'graded' | 'status' = 'graded';
         const chain: any = {
@@ -1245,7 +1185,7 @@ describe('countMerchantReviewQueueProfiles — behavioral tests', () => {
     const eqCalls: string[] = [];
     const mock = {
       from: jest.fn((table: string) => {
-        if (table === 'processing_jobs') {
+        if (table === TABLES.PROCESSING_JOBS) {
           // getMerchantOwnedJobIds now paginates via .eq().range()
           const chain: any = {
             select: jest.fn().mockReturnThis(),
@@ -1273,7 +1213,7 @@ describe('countMerchantReviewQueueProfiles — behavioral tests', () => {
 // ---------------------------------------------------------------------------
 // app/api/customers/[id]/route.ts — no .limit(1000) regression
 // ---------------------------------------------------------------------------
-describe('app/api/customers/[id]/route.ts — no fixed .limit(1000)', () => {
+describe('customer profile surfaces — no fixed .limit(1000)', () => {
   it('does NOT contain .limit(1000) in fetchDirectIdentityRows', () => {
     const content = fs.readFileSync(
       path.join(process.cwd(), 'app/api/customers/[id]/route.ts'),
@@ -1283,13 +1223,14 @@ describe('app/api/customers/[id]/route.ts — no fixed .limit(1000)', () => {
     expect(content).not.toContain('.limit(1000)');
   });
 
-  it('fetchDirectIdentityRows uses .range() pagination instead of .limit()', () => {
+  it('customer profile page uses bounded source-order reads instead of legacy audit pagination', () => {
     const content = fs.readFileSync(
-      path.join(process.cwd(), 'app/api/customers/[id]/route.ts'),
+      path.join(process.cwd(), 'app/(app)/customers/[id]/customerProfilePageLoad.ts'),
       'utf-8'
     );
-    // Paginated fetches use .range() — verify it is present in the fallback section.
-    expect(content).toContain('.range(offset');
+    expect(content).toContain("from('source_orders')");
+    expect(content).toContain('.limit(2000)');
+    expect(content).not.toContain('audit_transactions');
   });
 });
 
@@ -1306,32 +1247,36 @@ describe('/api/customers/search — partial name matching', () => {
     expect(content).not.toMatch(/\.contains\s*\(\s*['"]names['"]\s*,\s*\[q\]/);
   });
 
-  it('uses application-side partial name match (includes / toLowerCase)', () => {
+  it('supports partial matching via the merchant-scoped anchor-index helper', () => {
     const content = fs.readFileSync(
       path.join(process.cwd(), 'app/api/customers/search/route.ts'),
       'utf-8'
     );
-    expect(content).toContain('.includes(qLower)');
-    expect(content).toContain('.toLowerCase()');
+    // Partial (substring) matching is delegated to findCustomerProfileIdsByText,
+    // which runs an escaped `%q%` ilike over merchant-scoped identity anchors.
+    expect(content).toContain('findCustomerProfileIdsByText');
   });
 
-  it('still uses escapePostgrestFilterValue for email ilike — no raw interpolation', () => {
+  it('never interpolates raw user input into a query (escaping lives in the helper)', () => {
     const content = fs.readFileSync(
       path.join(process.cwd(), 'app/api/customers/search/route.ts'),
       'utf-8'
     );
-    expect(content).toContain('escapePostgrestFilterValue');
-    // Must not interpolate ${q} directly into ilike
+    // The route runs no ilike/or scan on user input; all text search flows
+    // through findCustomerProfileIdsByText, which escapes via
+    // escapePostgrestFilterValue internally.
     expect(content).not.toMatch(/ilike\s*\([^)]*\$\{q\}/);
+    expect(content).not.toMatch(/\.ilike\(/);
   });
 
-  it('merchant scoping via createScopedClient is preserved', () => {
+  it('preserves merchant scoping via caller-owned profile IDs', () => {
     const content = fs.readFileSync(
       path.join(process.cwd(), 'app/api/customers/search/route.ts'),
       'utf-8'
     );
-    expect(content).toContain('createScopedClient');
+    // Results are constrained to IDs the caller's merchant owns.
     expect(content).toContain('ctx.merchantId');
+    expect(content).toContain(".in('id'");
   });
 });
 
@@ -1417,12 +1362,13 @@ describe('dashboard/page.tsx — fail-closed and no silent zero', () => {
     expect(content).toMatch(/reviewQueue.*null/);
   });
 
-  it('renders "Unavailable" state when review queue count failed', () => {
+  it('renders an incomplete state when helpdesk-backed payout metrics are unavailable', () => {
     const content = fs.readFileSync(
       path.join(process.cwd(), 'app/(app)/dashboard/dashboardPageUtils.ts'),
       'utf-8'
     );
-    expect(content).toContain('Unavailable');
+    expect(content).toContain('Missing');
+    expect(content).toContain('Connect helpdesk');
   });
 
   it('handles permission denied — does NOT ignore denied return value', () => {

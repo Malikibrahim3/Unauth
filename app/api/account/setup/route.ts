@@ -3,12 +3,16 @@ import { createAdminClient, createClient, createServiceClient } from '@/lib/supa
 import { upsertMerchantForUser } from '@/lib/account/upsertMerchantForUser';
 import { getMerchantProfileById } from '@/lib/account/merchantProfile';
 import { resolveCallerContext } from '@/lib/permissions';
+import { setCategoryApplicability } from '@/lib/integrations/applicability';
 
 interface SetupBody {
   storeName?: string;
   platform?: string;
   monthlyOrderVolume?: string;
+  primaryLossConcern?: string;
   primaryFraudConcern?: string;
+  usesWms3pl?: boolean;
+  usesReturnsPlatform?: boolean;
   setupComplete?: boolean;
 }
 
@@ -59,7 +63,9 @@ export async function POST(request: NextRequest) {
         (user.user_metadata?.monthly_order_volume as string | undefined) ??
         null,
       primaryFraudConcern:
+        body.primaryLossConcern ??
         body.primaryFraudConcern ??
+        (user.user_metadata?.primary_loss_concern as string | undefined) ??
         (user.user_metadata?.primary_fraud_concern as string | undefined) ??
         null,
       setupComplete: body.setupComplete === true,
@@ -69,10 +75,37 @@ export async function POST(request: NextRequest) {
       ...(user.user_metadata ?? {}),
     };
 
+    const applicabilityWrites = [];
+    if (typeof body.usesWms3pl === 'boolean') {
+      applicabilityWrites.push(setCategoryApplicability({
+        client: serviceClient,
+        merchantId: merchant.id,
+        category: 'warehouse_3pl',
+        status: body.usesWms3pl ? 'applicable' : 'not_applicable',
+        setBy: user.id,
+      }));
+    }
+    if (typeof body.usesReturnsPlatform === 'boolean') {
+      applicabilityWrites.push(setCategoryApplicability({
+        client: serviceClient,
+        merchantId: merchant.id,
+        category: 'returns',
+        status: body.usesReturnsPlatform ? 'applicable' : 'not_applicable',
+        setBy: user.id,
+      }));
+    }
+    await Promise.all(applicabilityWrites);
+
     if (body.storeName !== undefined) metadataPatch.store_name = body.storeName;
     if (body.platform !== undefined) metadataPatch.platform = body.platform;
     if (body.monthlyOrderVolume !== undefined) metadataPatch.monthly_order_volume = body.monthlyOrderVolume;
-    if (body.primaryFraudConcern !== undefined) metadataPatch.primary_fraud_concern = body.primaryFraudConcern;
+    const primaryLossConcern = body.primaryLossConcern ?? body.primaryFraudConcern;
+    if (primaryLossConcern !== undefined) {
+      metadataPatch.primary_loss_concern = primaryLossConcern;
+      metadataPatch.primary_fraud_concern = primaryLossConcern;
+    }
+    if (body.usesWms3pl !== undefined) metadataPatch.uses_wms_3pl = body.usesWms3pl;
+    if (body.usesReturnsPlatform !== undefined) metadataPatch.uses_returns_platform = body.usesReturnsPlatform;
     metadataPatch.setup_complete = merchant.setup_complete;
 
     const metadataResult = await adminClient.auth.admin.updateUserById(user.id, {

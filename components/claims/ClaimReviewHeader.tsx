@@ -7,11 +7,22 @@ import {
 } from '@/components/claims/claimReviewLabels';
 import { formatClaimMoney, inputStyle } from '@/components/claims/claimReviewStyles';
 import { StatusPill, SlaBadge } from '@/components/claims/claimReviewPrimitives';
-import type { ClaimType } from '@/components/claims/claimReviewTypes';
 import type { ClaimReviewWorkbench } from '@/components/claims/claimReviewWorkbench';
+import { useBreadcrumbLabel } from '@/components/layout/BreadcrumbOverrideContext';
 
 export function ClaimReviewHeader({ wb }: { wb: ClaimReviewWorkbench }) {
   const { selectedClaim, history, claimId, customerName, customerProfileHref } = wb;
+
+  // Breadcrumb: show the human case reference (order ref) — or "<Claim type> claim" —
+  // instead of the raw case UUID from the URL.
+  const claimTypeLabel = selectedClaim?.claim_type
+    ? CLAIM_TYPE_LABELS[selectedClaim.claim_type] ?? 'Payout'
+    : 'Payout';
+  useBreadcrumbLabel(
+    selectedClaim
+      ? selectedClaim.shopify_order_id ?? selectedClaim.order_ref ?? `${claimTypeLabel} claim`
+      : null,
+  );
 
   return (
     <header
@@ -24,7 +35,7 @@ export function ClaimReviewHeader({ wb }: { wb: ClaimReviewWorkbench }) {
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
-                  {CLAIM_TYPE_LABELS[selectedClaim.claim_type as ClaimType] ?? selectedClaim.claim_type ?? 'Claim'}
+                  {(selectedClaim.claim_type ? CLAIM_TYPE_LABELS[selectedClaim.claim_type] ?? selectedClaim.claim_type : null) ?? 'Claim'}
                 </span>
                 <StatusPill status={selectedClaim.status} />
                 <SlaBadge claim={selectedClaim} />

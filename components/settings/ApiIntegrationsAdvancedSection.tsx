@@ -7,7 +7,6 @@ import {
   initialApiIntegrationsState,
 } from '@/components/settings/apiIntegrationsReducer';
 import type { ApiKeyRow } from '@/components/settings/apiIntegrationsTypes';
-import { ApiIntegrationsChromeSection } from '@/components/settings/ApiIntegrationsChromeSection';
 import {
   ApiKeysListSection,
 } from '@/components/settings/ApiIntegrationsKeyDialogs';
@@ -133,7 +132,7 @@ export default function ApiIntegrationsAdvancedSection() {
       <div>
         <h2 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Advanced &amp; optional</h2>
         <p className="mt-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
-          Browser tooling and API keys for custom integrations. Not required for the core Shopify + Gorgias workflow.
+          API keys for custom integrations. Not required for the core Shopify + Gorgias workflow.
         </p>
       </div>
 
@@ -149,7 +148,7 @@ export default function ApiIntegrationsAdvancedSection() {
         </p>
       ) : null}
 
-      <FeatureGate entitlement="SIGNAL_API" plan="enterprise">
+      <FeatureGate entitlement="LIVE_LOOKUP_API" plan="enterprise">
         <ApiKeysListSection
           keys={keys}
           loading={loading}
@@ -160,9 +159,7 @@ export default function ApiIntegrationsAdvancedSection() {
         />
       </FeatureGate>
 
-      <ApiIntegrationsChromeSection />
-
-      <ApiKeyCreateDialog
+<ApiKeyCreateDialog
         open={createModalOpen}
         state={state}
         onClose={closeCreateModal}

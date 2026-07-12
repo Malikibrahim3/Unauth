@@ -8,9 +8,19 @@ import {
 import { encryptZendeskApiCredentials } from '@/lib/support/zendesk/credentialCrypto';
 import { validateZendeskApiCredentials } from '@/lib/support/zendesk/zendeskApi';
 import {
+  generateZendeskWebhookSecret,
+  isZendeskWebhookSecretSufficientLength,
+} from '@/lib/support/zendesk/webhookSecret';
+import {
+  ZENDESK_SUPPORT_SECRET_SAVE_WARNING,
+  ZENDESK_SUPPORT_WEBHOOK_HEADER_NAME,
+  ZENDESK_SUPPORT_WEBHOOK_PATH,
+  ZENDESK_WEBHOOK_DOMAIN_QUERY_PARAM,
+  ZENDESK_WEBHOOK_SECRET_QUERY_PARAM,
   ZendeskCredentialsError,
   type ZendeskSupportConnectionSettings,
 } from '@/lib/support/zendesk/supportConnectionShared';
+import { env } from '@/lib/utils/env';
 
 type ZendeskConnectionDbRow = {
   id: string;
@@ -21,11 +31,14 @@ type ZendeskConnectionDbRow = {
   status: string;
   last_sync_at: string | null;
   last_error: string | null;
+  webhook_secret_hash: string | null;
+  webhook_secret_rotated_at: string | null;
   access_token_encrypted: string | null;
 };
 
+// v2 helpdesk_connections has webhook_secret_rotated_at only (no *_created_at in SELECT)
 const CONNECTION_SETTINGS_SELECT =
-  'id, merchant_id, provider_account_id, provider_account_name, provider_base_url, status, last_sync_at, last_error, access_token_encrypted';
+  'id, merchant_id, provider_account_id, provider_account_name, provider_base_url, status, last_sync_at, last_error, webhook_secret_hash, webhook_secret_rotated_at, access_token_encrypted';
 
 type ListableSupabase = {
   from: (table: string) => {
@@ -71,12 +84,37 @@ export function resolveZendeskConnectionIdentity(input: ZendeskSupportConnection
   };
 }
 
+export type BuildZendeskSupportWebhookUrlOptions = {
+  subdomain?: string | null;
+  webhookSecretPlaintext?: string | null;
+};
+
+export function buildZendeskSupportWebhookUrl(
+  options?: BuildZendeskSupportWebhookUrlOptions,
+): string {
+  const base = env.NEXT_PUBLIC_APP_URL.replace(/\/+$/, '');
+  const url = new URL(`${base}${ZENDESK_SUPPORT_WEBHOOK_PATH}`);
+  const subdomain = options?.subdomain?.trim();
+  if (subdomain) {
+    url.searchParams.set(
+      ZENDESK_WEBHOOK_DOMAIN_QUERY_PARAM,
+      normalizeZendeskSubdomain(subdomain),
+    );
+  }
+  const secret = options?.webhookSecretPlaintext?.trim();
+  if (secret) {
+    url.searchParams.set(ZENDESK_WEBHOOK_SECRET_QUERY_PARAM, secret);
+  }
+  return url.toString();
+}
+
 export function toZendeskSupportConnectionSettings(
   row: ZendeskConnectionDbRow,
 ): ZendeskSupportConnectionSettings {
   const {
     merchant_id: _merchantId,
     access_token_encrypted: _accessToken,
+    webhook_secret_hash: _hash,
     ...rest
   } = row;
 
@@ -89,6 +127,9 @@ export function toZendeskSupportConnectionSettings(
     last_sync_at: rest.last_sync_at,
     last_error: rest.last_error,
     zendesk_api_configured: Boolean(row.access_token_encrypted?.trim()),
+    webhook_secret_configured: Boolean(row.webhook_secret_hash?.trim()),
+    webhook_secret_rotated_at: rest.webhook_secret_rotated_at,
+    webhook_url: buildZendeskSupportWebhookUrl(),
   };
 }
 
@@ -133,17 +174,31 @@ async function validateAndEncryptCredentials(
   return encryptZendeskApiCredentials(credentials);
 }
 
+export type CreateZendeskSupportConnectionResult = {
+  connection: ZendeskSupportConnectionSettings;
+  webhook_secret_plaintext: string;
+  webhook_url: string;
+  header_name: string;
+  warning: string;
+  manual_webhook_setup: true;
+};
+
 export async function createMerchantZendeskSupportConnection(
   supabase: Parameters<typeof upsertZendeskSupportConnection>[0],
   merchantId: string,
   input: ZendeskSupportConnectionInput,
-): Promise<{ connection: ZendeskSupportConnectionSettings }> {
+): Promise<CreateZendeskSupportConnectionResult> {
   const parsed = zendeskSupportConnectionInputSchema.parse(input);
   const identity = resolveZendeskConnectionIdentity(parsed);
 
   const existing = await getMerchantZendeskSupportConnection(supabase, merchantId);
   if (existing?.status === 'active' && existing.zendesk_api_configured) {
     throw new Error('zendesk_connection_already_exists');
+  }
+
+  const webhookSecretPlaintext = generateZendeskWebhookSecret();
+  if (!isZendeskWebhookSecretSufficientLength(webhookSecretPlaintext)) {
+    throw new Error('generated_webhook_secret_invalid');
   }
 
   const accessTokenEncrypted = await validateAndEncryptCredentials(
@@ -160,6 +215,8 @@ export async function createMerchantZendeskSupportConnection(
     subdomain: identity.subdomain,
     status: 'active',
     last_error: null,
+    webhookSecretPlaintext,
+    rotateWebhookSecret: false,
     accessTokenEncrypted,
   });
 
@@ -168,7 +225,17 @@ export async function createMerchantZendeskSupportConnection(
     throw new Error('zendesk_connection_missing_after_upsert');
   }
 
-  return { connection };
+  return {
+    connection,
+    webhook_secret_plaintext: webhookSecretPlaintext,
+    webhook_url: buildZendeskSupportWebhookUrl({
+      subdomain: identity.subdomain,
+      webhookSecretPlaintext,
+    }),
+    header_name: ZENDESK_SUPPORT_WEBHOOK_HEADER_NAME,
+    warning: ZENDESK_SUPPORT_SECRET_SAVE_WARNING,
+    manual_webhook_setup: true,
+  };
 }
 
 export async function updateMerchantZendeskSupportConnection(

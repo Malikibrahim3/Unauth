@@ -37,9 +37,9 @@ export function CustomersFilterExpandedPanel({
 {/* ── Inline expanding filter panel ──────────────────────── */}
                 {/* Basic filters */}
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-            {/* Risk level */}
+            {/* Evidence match */}
             <div className="lg:col-span-3">
-              <label htmlFor="customers-filter-risk" className="block text-xs mb-1.5" style={{ color: 'var(--text-tertiary)' }}>Identity confidence</label>
+              <label htmlFor="customers-filter-risk" className="block text-xs mb-1.5" style={{ color: 'var(--text-tertiary)' }}>Evidence match</label>
               <select
                 id="customers-filter-risk"
                 value={searchParams.get('risk') ?? ''}
@@ -47,18 +47,18 @@ export function CustomersFilterExpandedPanel({
                 className="h-9 w-full rounded-md px-3 text-[13px] focus:outline-none"
                 style={{ background: 'var(--bg-inset)', border: '1px solid var(--border)', color: 'var(--text)' }}
               >
-                <option value="">All identity bands</option>
-                <option value="low">Light identity band</option>
-                <option value="medium">Moderate identity band</option>
-                <option value="high">Strong identity band</option>
-                <option value="critical">Very strong identity band</option>
+                <option value="">All match bands</option>
+                <option value="low">Light match band</option>
+                <option value="medium">Moderate match band</option>
+                <option value="high">Strong match band</option>
+                <option value="critical">Very strong match band</option>
               </select>
             </div>
 
             {/* Checkboxes */}
             <div className="lg:col-span-9 flex flex-wrap gap-x-5 gap-y-2 items-center pb-0.5">
               {[
-                { key: 'openClaims', label: 'Open claims for review' },
+                { key: 'openClaims', label: 'Open payout cases' },
                 { key: 'hasRefunds', label: 'Has refunds' },
                 { key: 'hasChargebacks', label: 'Has chargebacks' },
                 { key: 'manuallyReviewed', label: 'Manually reviewed' },
@@ -91,9 +91,9 @@ type="button"               onClick={() => setAdvancedOpen((v) => !v)}
             {advancedOpen && (
               <div className="mt-4 space-y-4">
 
-                {/* Identity */}
+                {/* Evidence context */}
                 <div>
-                  <p className="text-xs font-semibold mb-2" style={{ color: 'var(--text-secondary)' }}>Identity</p>
+                  <p className="text-xs font-semibold mb-2" style={{ color: 'var(--text-secondary)' }}>Evidence context</p>
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
                     {[
                       { key: 'ip', placeholder: labelFor('ip'), minLen: 4 },
@@ -119,11 +119,11 @@ type="button"               onClick={() => setAdvancedOpen((v) => !v)}
 
                 {/* Match confidence */}
                 <div>
-                  <p className="text-xs font-semibold mb-2" style={{ color: 'var(--text-secondary)' }}>Identity confidence</p>
+                  <p className="text-xs font-semibold mb-2" style={{ color: 'var(--text-secondary)' }}>Evidence match confidence</p>
                   <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 max-w-md">
                     <input
                       key={`riskMin-${searchParams.get('riskMin') ?? ''}`}
-                      type="number" min={0} max={100} aria-label="Minimum identity confidence"
+                      type="number" min={0} max={100} aria-label="Minimum evidence match confidence"
                       placeholder="Min (0)"
                       defaultValue={searchParams.get('riskMin') ?? ''}
                       onChange={(e) => makeDebounced('riskMin', 1)(e.target.value)}
@@ -133,7 +133,7 @@ type="button"               onClick={() => setAdvancedOpen((v) => !v)}
                     <span className="text-xs flex-shrink-0" style={{ color: 'var(--text-tertiary)' }}>–</span>
                     <input
                       key={`riskMax-${searchParams.get('riskMax') ?? ''}`}
-                      type="number" min={0} max={100} aria-label="Maximum identity confidence"
+                      type="number" min={0} max={100} aria-label="Maximum evidence match confidence"
                       placeholder="Max (100)"
                       defaultValue={searchParams.get('riskMax') ?? ''}
                       onChange={(e) => makeDebounced('riskMax', 1)(e.target.value)}
@@ -163,7 +163,6 @@ type="button"               onClick={() => setAdvancedOpen((v) => !v)}
                     ))}
                     {[
                       { label: 'Chargebacks ≥', key: 'chargebacksMin', min: 0, placeholder: 'e.g. 1' },
-                      { label: 'Merchants seen at ≥', key: 'merchantsMin', min: 1, placeholder: 'e.g. 2' },
                       { label: 'Fastest claim ≤ days', key: 'fastestClaimMax', min: 0, placeholder: 'e.g. 3' },
                     ].map(({ label, key, min, placeholder }) => (
                       <div key={label} className="space-y-1">
@@ -194,16 +193,16 @@ type="button"               onClick={() => setAdvancedOpen((v) => !v)}
                   </div>
                 </div>
 
-                {/* Identity signal */}
+                {/* Evidence signal */}
                 <div>
-                  <p className="text-xs font-semibold mb-2" style={{ color: 'var(--text-secondary)' }}>Identity signal</p>
-                  <label htmlFor="customers-filter-flag" className="sr-only">Identity signal</label>
+                  <p className="text-xs font-semibold mb-2" style={{ color: 'var(--text-secondary)' }}>Evidence signal</p>
+                  <label htmlFor="customers-filter-flag" className="sr-only">Evidence signal</label>
                   <input
                     id="customers-filter-flag"
                     key={searchParams.get('flag')}
                     type="search"
-                    aria-label="Identity signal"
-                    placeholder="e.g. rapid_refund, multi_merchant, velocity…"
+                    aria-label="Evidence signal"
+                    placeholder="e.g. repeated_inr, delivery_route, velocity..."
                     defaultValue={searchParams.get('flag') ?? ''}
                     onChange={(e) => makeDebounced('flag', 2)(e.target.value)}
                     className={inputCls}

@@ -7,6 +7,7 @@ export type ClaimsListView =
   | { kind: 'unassigned' }
   | { kind: 'snoozed' }
   | { kind: 'history' }
+  | { kind: 'workflow'; workflow: string }
   | { kind: 'status'; status: string }
   | { kind: 'sla'; sla: 'overdue' | 'approaching' };
 
@@ -14,6 +15,7 @@ export function resolveClaimsListView(input: {
   queue?: string | null;
   owner?: string | null;
   viewed?: string | null;
+  workflow?: string | null;
   status?: string | null;
   sla?: string | null;
 }): ClaimsListView {
@@ -21,6 +23,7 @@ export function resolveClaimsListView(input: {
   if (input.viewed === 'unread') return { kind: 'unread' };
   if (input.owner === 'me') return { kind: 'assigned_me' };
   if (input.owner === 'unassigned') return { kind: 'unassigned' };
+  if (input.workflow) return { kind: 'workflow', workflow: input.workflow };
   if (input.queue === 'snoozed') return { kind: 'snoozed' };
   if (input.queue === 'history') return { kind: 'history' };
   if (input.status) return { kind: 'status', status: input.status };
@@ -37,6 +40,15 @@ export function claimsListTotalForView(view: ClaimsListView, counts: ClaimQueueC
       return view.sla === 'overdue' ? counts.overdue : counts.active;
     case 'snoozed': return counts.snoozed;
     case 'history': return counts.resolved;
+    case 'workflow':
+      if (view.workflow === 'needs_evidence') return counts.awaitingEvidence;
+      if (view.workflow === 'awaiting_carrier') return counts.awaitingCarrier;
+      if (view.workflow === 'awaiting_3pl') return counts.awaiting3pl;
+      if (view.workflow === 'awaiting_supplier') return counts.awaitingSupplier;
+      if (view.workflow === 'ready_for_decision') return counts.readyForDecision;
+      if (view.workflow === 'manual_review') return counts.manualReview;
+      if (view.workflow === 'closed') return counts.closed;
+      return counts.active;
     case 'status':
       if (view.status === 'open') return counts.open;
       if (view.status === 'pending') return counts.awaitingInfo;
@@ -67,6 +79,18 @@ export function formatClaimsResultText(input: {
       return `${pagePart} deferred claim reviews`;
     case 'history':
       return `${pagePart} claims with recorded outcomes`;
+    case 'workflow': {
+      const labels: Record<string, string> = {
+        needs_evidence: 'cases needing evidence',
+        awaiting_carrier: 'cases awaiting carrier clarification',
+        awaiting_3pl: 'cases awaiting 3PL clarification',
+        awaiting_supplier: 'cases awaiting supplier clarification',
+        ready_for_decision: 'cases ready for payout decision',
+        manual_review: 'cases in manual review',
+        closed: 'closed payout cases',
+      };
+      return `${pagePart} ${labels[view.workflow] ?? view.workflow.replace(/_/g, ' ')}`;
+    }
     case 'sla':
       return `${pagePart} ${view.sla === 'approaching' ? 'claims approaching review threshold' : 'ageing unresolved claims'}`;
     case 'status': {

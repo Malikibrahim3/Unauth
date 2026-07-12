@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
+import { resolveCallerContext } from '@/lib/permissions';
 import { sendEmail } from '@/lib/email/send';
 import { buildFoundingMerchantApplicationNotification } from '@/lib/email/templates';
 
@@ -22,27 +23,30 @@ export async function POST(request: NextRequest) {
     typeof body?.monthlyRefundChargebackVolume === 'string' && body.monthlyRefundChargebackVolume.trim()
       ? body.monthlyRefundChargebackVolume.trim()
       : null;
-  const fraudProblem = typeof body?.fraudProblem === 'string' ? body.fraudProblem.trim() : '';
+  const postPurchaseLossProblem =
+    typeof body?.postPurchaseLossProblem === 'string'
+      ? body.postPurchaseLossProblem.trim()
+      : typeof body?.fraudProblem === 'string'
+        ? body.fraudProblem.trim()
+        : '';
   const agreedToTerms = body?.agreedToTerms === true;
 
-  if (!storeName || !monthlyOrderVolume || !fraudProblem || !agreedToTerms) {
+  if (!storeName || !monthlyOrderVolume || !postPurchaseLossProblem || !agreedToTerms) {
     return NextResponse.json({ error: 'Missing required application fields.' }, { status: 400 });
   }
 
-  const { data: merchant } = await supabase
-    .from(TABLES.MERCHANTS)
-    .select('id, name')
-    .eq('user_id', user.id)
-    .maybeSingle();
-
-  if (!merchant) {
+  // v2 tenancy: the merchants.user_id column was dropped at cutover. Resolve the
+  // caller's merchant server-side from active membership instead.
+  const ctx = await resolveCallerContext(serviceClient, user.id);
+  if (!ctx) {
     return NextResponse.json({ error: 'Merchant account not found.' }, { status: 404 });
   }
+  const merchantId = ctx.merchantId;
 
   const { data: completedAudit } = await serviceClient
     .from(TABLES.PROCESSING_JOBS)
     .select('id')
-    .eq('merchant_id', (merchant as { id: string }).id)
+    .eq('merchant_id', merchantId)
     .eq('status', 'completed')
     .limit(1)
     .maybeSingle();
@@ -56,12 +60,12 @@ export async function POST(request: NextRequest) {
   const { data: application, error: insertError } = await serviceClient
     .from('founding_merchant_applications' as any)
     .upsert({
-      merchant_id: (merchant as { id: string }).id,
+      merchant_id: merchantId,
       created_by_user_id: user.id,
       store_name: storeName,
       monthly_order_volume: monthlyOrderVolume,
       monthly_refund_chargeback_volume: monthlyRefundChargebackVolume,
-      fraud_problem: fraudProblem,
+      fraud_problem: postPurchaseLossProblem,
       agreed_to_terms_at: timestamp,
       updated_at: timestamp,
     } as never, { onConflict: 'merchant_id' })
@@ -76,7 +80,7 @@ export async function POST(request: NextRequest) {
     storeName,
     monthlyOrderVolume,
     monthlyRefundChargebackVolume,
-    fraudProblem,
+    fraudProblem: postPurchaseLossProblem,
     applicantEmail: user.email ?? 'Unknown',
   });
 

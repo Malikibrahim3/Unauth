@@ -1,0 +1,47 @@
+---
+description: Unauth product direction and MVP steering rules
+globs:
+  - "**/*"
+alwaysApply: true
+---
+# Unauth Direction
+
+Always treat `docs/product/MVP_STEERING.md` as the product source of truth.
+
+Also reference when needed:
+- `docs/product/PRODUCT_PRINCIPLES.md`
+- `docs/product/TERMINOLOGY.md`
+- `CLAUDE.md` (product direction + engineering rules)
+
+Unauth is a post-purchase loss accountability platform.
+
+The MVP is Shopify/Gorgias payout control + evidence checklist + merchant rules + attribution/recoverability + manual recovery cases + recovery board + partner rulebook v1.
+
+Do not frame Unauth primarily as a fraud/risk network.
+
+Do not use accusatory language like fraudster, bad actor, blacklist, guilty, caught, scammer, or cross-merchant accusation.
+
+Use operational language:
+- payout exposure
+- support payout case
+- evidence strength
+- merchant rule fired
+- recommended action
+- loss attribution
+- recoverability
+- recovery owner
+- prevention opportunity
+- policy leakage
+- partner accountability
+
+Merchant rules make recommendations. Unauth surfaces evidence and next actions.
+
+The Gorgias widget must stay compressed. It should be a 4-line decision card, not a full dashboard.
+
+Full investigation belongs in the Unauth case page.
+
+Recovery operation belongs in the recovery board.
+
+Partner recoverability rules belong in the partner rulebook.
+
+Do not overbuild automatic carrier claims, AI contract extraction, network benchmarks, WMS/ERP integrations, or full enterprise APIs until the MVP workflow is proven.

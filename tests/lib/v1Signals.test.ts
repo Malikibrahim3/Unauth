@@ -1,10 +1,16 @@
-import { crossMerchantSummary, humanizeFraudFlags } from '@/lib/api/v1/signals';
+import { crossMerchantSummary, humanizeClaimHistorySignals, humanizeFraudFlags } from '@/lib/api/v1/signals';
 
 describe('v1 signals', () => {
-  it('humanizes known fraud flags', () => {
-    const labels = humanizeFraudFlags(['inrAbuse', 'address_clustering']);
-    expect(labels).toContain('High INR velocity');
-    expect(labels).toContain('Address cluster detected');
+  it('humanizes known claim history signals', () => {
+    const labels = humanizeClaimHistorySignals(['inrAbuse', 'address_clustering']);
+    expect(labels).toContain('High item-not-received claim velocity');
+    expect(labels).toContain('Address cluster identified');
+  });
+
+  it('keeps the deprecated humanizeFraudFlags alias working', () => {
+    expect(humanizeFraudFlags(['inrAbuse'])).toEqual(
+      humanizeClaimHistorySignals(['inrAbuse'])
+    );
   });
 
   it('omits cross-merchant block below k-anonymity threshold', () => {

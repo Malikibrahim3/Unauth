@@ -220,6 +220,7 @@
     var cartCount = await detectCartCount();
     return {
       merchantId: config.merchantId,
+      collectorToken: config.token || null,
       visitorId: getVisitorId(),
       sessionId: getSessionId(),
       deviceFp: deviceFp,
@@ -349,6 +350,7 @@
         config = {
           merchantId: String(input.merchantId || ''),
           platform: String(input.platform || ''),
+          token: input.token ? String(input.token) : null,
           endpoint: input.endpoint || DEFAULT_ENDPOINT
         };
         startFlushTimer();

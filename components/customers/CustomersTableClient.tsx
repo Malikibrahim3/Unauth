@@ -1,104 +1,66 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
-import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
-import { riskLevelToNewGrade } from '@/lib/confidence';
-import CustomerIntelligenceDrawer from '@/components/customers/CustomerIntelligenceDrawer';
 import { DataTable } from '@/components/ui/DataTable';
-import { Tooltip } from '@/components/ui/Tooltip';
-
+import { PanelCard, StatusBadge } from '@/components/ui';
+import { formatCurrency } from '@/lib/utils/format';
 
 interface CustomerRow {
   id: string;
-  risk_score: number;
-  risk_level: string;
-  total_orders: number;
-  total_refund_claims: number;
-  total_merchants_seen_at: number;
-  refund_rate: number;
   primary_email: string | null;
   names: string[] | null;
-  last_seen: string;
-  investigation_status: string;
-  /** Number of source_customer records collapsed into this identity row (>= 1). */
-  linked_customer_count?: number;
-  /** Distinct emails across the collapsed records, for the "linked" tooltip. */
-  linked_emails?: string[] | null;
-}
-
-function linkedAliasEmails(p: CustomerRow): string[] {
-  return (p.linked_emails ?? []).filter((email) => email !== p.primary_email);
+  total_orders: number;
+  total_spent: number;
+  /** All-time payout case count for this customer. */
+  payout_cases_total: number;
+  /** Payout cases currently open (pending / open / escalated). */
+  payout_cases_open: number;
+  last_order_at: string | null;
 }
 
 interface CustomersTableClientProps {
   rows: CustomerRow[];
 }
 
-export default function CustomersTableClient({ rows }: CustomersTableClientProps) {
-  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+function formatDate(value: string | null): string {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+}
 
-  const openProfile = useCallback((profileId: string) => {
-    requestAnimationFrame(() => setSelectedProfileId(profileId));
-  }, []);
+function OpenCasesBadge({ count }: { count: number }) {
+  if (count <= 0) return null;
+  return (
+    <StatusBadge variant="held" className="px-1.5 py-0.5 text-[11px] font-semibold">
+      {count} open
+    </StatusBadge>
+  );
+}
+
+export default function CustomersTableClient({ rows }: CustomersTableClientProps) {
+  const router = useRouter();
+
+  const openProfile = (profileId: string) => {
+    router.push(`/customers/${profileId}`);
+  };
+
   const columns = [
     {
       key: 'customer',
       header: 'Customer',
-      render: (p: CustomerRow) => {
-        const aliases = linkedAliasEmails(p);
-        return (
-          <div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>
-                {p.names?.[0] ?? '-'}
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-mono" style={{ color: 'var(--text-secondary)' }}>{p.primary_email ?? '-'}</span>
-              {(p.linked_customer_count ?? 1) > 1 && (
-                <Tooltip
-                  content={
-                    aliases.length > 0
-                      ? `Same identity as: ${aliases.join(', ')}`
-                      : `${p.linked_customer_count} linked customer records resolve to this identity`
-                  }
-                >
-                  <span
-                    className="rounded-[3px] px-1 py-0.5 text-[10px] font-semibold leading-none"
-                    style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
-                  >
-                    +{(p.linked_customer_count ?? 1) - 1} linked
-                  </span>
-                </Tooltip>
-              )}
-            </div>
-          </div>
-        );
-      },
-    },
-    {
-      key: 'risk',
-      header: 'Identity confidence',
-      render: (p: CustomerRow) => <ConfidenceBadge grade={riskLevelToNewGrade(p.risk_level)} size="sm" />,
-    },
-    {
-      key: 'network',
-      header: 'Stores seen',
-      align: 'right' as const,
       render: (p: CustomerRow) => (
-        <Tooltip content="Distinct stores this identity has been seen at. 2+ means a cross-store linked identity.">
-          <span
-            className="num"
-            style={{
-              fontFamily: 'var(--font-mono)',
-              color: p.total_merchants_seen_at > 1 ? 'var(--accent)' : 'var(--text-secondary)',
-              fontWeight: p.total_merchants_seen_at > 1 ? 700 : 500,
-            }}
-          >
-            {p.total_merchants_seen_at}
-          </span>
-        </Tooltip>
+        <div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>
+              {p.names?.[0] ?? '-'}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-mono" style={{ color: 'var(--text-secondary)' }}>{p.primary_email ?? '-'}</span>
+          </div>
+        </div>
       ),
     },
     {
@@ -108,10 +70,36 @@ export default function CustomersTableClient({ rows }: CustomersTableClientProps
       render: (p: CustomerRow) => <span className="num" style={{ fontFamily: 'var(--font-mono)' }}>{p.total_orders}</span>,
     },
     {
-      key: 'refunds',
-      header: 'Refunds',
+      key: 'spent',
+      header: 'Total spent',
       align: 'right' as const,
-      render: (p: CustomerRow) => <span className="num" style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>{p.total_refund_claims}</span>,
+      render: (p: CustomerRow) => (
+        <span className="num" style={{ fontFamily: 'var(--font-mono)' }}>
+          {/* No currency field is tracked on source_customers.total_spent (raw Shopify aggregate); defaults to USD. */}
+          {p.total_spent > 0 ? formatCurrency(p.total_spent) : '—'}
+        </span>
+      ),
+    },
+    {
+      key: 'cases',
+      header: 'Payout cases',
+      align: 'right' as const,
+      render: (p: CustomerRow) => (
+        <span className="inline-flex items-center gap-1.5">
+          <OpenCasesBadge count={p.payout_cases_open} />
+          <span className="num" style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>
+            {p.payout_cases_total}
+          </span>
+        </span>
+      ),
+    },
+    {
+      key: 'lastOrder',
+      header: 'Last order',
+      align: 'right' as const,
+      render: (p: CustomerRow) => (
+        <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{formatDate(p.last_order_at)}</span>
+      ),
     },
     {
       key: 'open',
@@ -147,7 +135,6 @@ export default function CustomersTableClient({ rows }: CustomersTableClientProps
           getRowKey={(row) => row.id}
           onRowClick={(row) => openProfile(row.id)}
           rowTestId="customer-row"
-          selectedKey={selectedProfileId ?? undefined}
           density="relaxed"
         />
       </div>
@@ -155,51 +142,36 @@ export default function CustomersTableClient({ rows }: CustomersTableClientProps
       {/* ── Mobile card list (<sm) ───────────────────────────── */}
       <div className="sm:hidden space-y-3">
         {rows.map((p) => (
-          <button
+          <PanelCard
+            as="button"
             type="button"
             key={p.id}
-            className="p-4 w-full text-left cursor-pointer transition-colors"
-            style={{ background: 'var(--surface)', border: '1px solid var(--border-muted)' }}
+            variant="app"
+            className="w-full cursor-pointer p-4 text-left transition-colors"
             onClick={() => openProfile(p.id)}
           >
             <div className="flex items-start justify-between gap-2 mb-2">
               <div className="min-w-0">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{p.names?.[0] ?? '-'}</span>
-                  {(p.linked_customer_count ?? 1) > 1 && (
-                    <span
-                      className="rounded-[3px] px-1 py-0.5 text-[10px] font-semibold leading-none"
-                      style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
-                    >
-                      +{(p.linked_customer_count ?? 1) - 1} linked
-                    </span>
-                  )}
-                </div>
+                <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{p.names?.[0] ?? '-'}</span>
                 <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-secondary)' }}>{p.primary_email ?? '-'}</p>
               </div>
-              <ConfidenceBadge grade={riskLevelToNewGrade(p.risk_level)} size="sm" />
+              <OpenCasesBadge count={p.payout_cases_open} />
             </div>
             <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-secondary)' }}>
-              <span><span className="font-semibold font-mono" style={{ color: p.total_merchants_seen_at > 1 ? 'var(--accent)' : 'var(--text)' }}>{p.total_merchants_seen_at}</span> stores seen</span>
-              <span style={{ color: 'var(--border)' }}>·</span>
               <span><span className="font-semibold font-mono" style={{ color: 'var(--text)' }}>{p.total_orders}</span> orders</span>
               <span style={{ color: 'var(--border)' }}>·</span>
-              <span><span className="font-semibold font-mono" style={{ color: 'var(--text)' }}>{p.total_refund_claims}</span> refunds</span>
+              <span><span className="font-semibold font-mono" style={{ color: 'var(--text)' }}>{p.payout_cases_total}</span> payout cases</span>
+              <span style={{ color: 'var(--border)' }}>·</span>
+              <span>Last order {formatDate(p.last_order_at)}</span>
             </div>
             <div className="mt-3 flex justify-end text-xs font-semibold" style={{ color: 'var(--text)' }}>
               <span className="inline-flex items-center gap-1">
                 View <ArrowRight className="h-3 w-3" aria-hidden="true" />
               </span>
             </div>
-          </button>
+          </PanelCard>
         ))}
       </div>
-
-      <CustomerIntelligenceDrawer
-        profileId={selectedProfileId}
-        open={selectedProfileId !== null}
-        onClose={() => setSelectedProfileId(null)}
-      />
     </>
   );
 }

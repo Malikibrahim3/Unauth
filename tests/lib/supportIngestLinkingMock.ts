@@ -52,29 +52,78 @@ export function supportCaseIntakeTableWithLinking(options: {
   };
 }
 
+/**
+ * Builds a fully chainable PostgREST builder stub that resolves to the given
+ * terminal value. Every filter/refinement method (`.eq`, `.ilike`, `.or`,
+ * `.contains`, `.in`, `.limit`, `.order`, `.neq`, `.select`, `.update`,
+ * `.insert`, `.upsert`) returns the same builder so any chain shape is valid.
+ * Terminal calls (`.maybeSingle()`, `.single()`, awaiting via `.then`) resolve
+ * the supplied `{ data, error }`.
+ */
+function chainableBuilder(
+  terminal: { data: unknown; error: unknown },
+  singleTerminal?: { data: unknown; error: unknown }
+): any {
+  const single = singleTerminal ?? terminal;
+  const builder: any = {
+    select: () => builder,
+    insert: () => builder,
+    update: () => builder,
+    upsert: () => builder,
+    delete: () => builder,
+    eq: () => builder,
+    neq: () => builder,
+    in: () => builder,
+    or: () => builder,
+    ilike: () => builder,
+    contains: () => builder,
+    is: () => builder,
+    gt: () => builder,
+    gte: () => builder,
+    lt: () => builder,
+    lte: () => builder,
+    not: () => builder,
+    limit: () => builder,
+    order: () => builder,
+    range: () => builder,
+    maybeSingle: async () => terminal,
+    single: async () => single,
+    then: (onfulfilled: any, onrejected?: any) =>
+      Promise.resolve(terminal).then(onfulfilled, onrejected),
+  };
+  return builder;
+}
+
 export function supportLinkingLookupTables() {
+  // The v2 intake bridge (lib/support/intake/v2Bridge.ts) resolves the ticket's
+  // customer against `source_customers` (by helpdesk external_id, then email via
+  // ILIKE) and its order_ref against `source_orders` (by order_number/external_id
+  // via `.or(...)`). With no seeded rows these resolve to null → link_status
+  // 'unlinked', which is the expected "not found" path for these fixtures.
   return {
-    shopify_order_signals: {
-      select: () => ({
-        eq: () => Promise.resolve({ data: [], error: null }),
-      }),
-    },
-    customer_profile_identities: {
-      select: () => ({
-        eq: () => ({
-          eq: () => ({
-            eq: () => Promise.resolve({ data: [], error: null }),
-          }),
-        }),
-      }),
-    },
-    merchant_claims: {
-      select: () => ({
-        eq: () => ({
-          in: () => Promise.resolve({ data: [], error: null }),
-        }),
-      }),
-    },
+    source_customers: () =>
+      chainableBuilder(
+        { data: null, error: null },
+        { data: { id: '88888888-8888-4888-8888-888888888888' }, error: null }
+      ),
+    source_orders: () => chainableBuilder({ data: null, error: null }),
+    identity_signals: () => chainableBuilder({ data: [], error: null }),
+    identity_members: () => chainableBuilder({ data: [], error: null }),
+    // Claim creation path (ensureClaimForTicketV2): the existing-claim lookup
+    // (.maybeSingle) finds nothing, and the subsequent insert (.single) returns
+    // the new claim row. claim_events / claim_evidence inserts resolve cleanly.
+    [TABLES.MERCHANT_CLAIMS]: () =>
+      chainableBuilder(
+        { data: null, error: null },
+        { data: { id: '99999999-9999-4999-8999-999999999999' }, error: null }
+      ),
+    claim_events: () => chainableBuilder({ data: null, error: null }),
+    claim_evidence: () => chainableBuilder({ data: null, error: null }),
+    source_fulfillments: () => chainableBuilder({ data: null, error: null }),
+    // Legacy linking tables (kept for any pre-v2 callers still exercising them).
+    shopify_order_signals: () => chainableBuilder({ data: [], error: null }),
+    customer_profile_identities: () => chainableBuilder({ data: [], error: null }),
+    merchant_claims: () => chainableBuilder({ data: [], error: null }),
   };
 }
 
@@ -82,9 +131,7 @@ export function resolveSupportLinkingTable(
   table: string,
   linkingTables: ReturnType<typeof supportLinkingLookupTables>
 ): Record<string, unknown> | null {
-  if (table === 'shopify_order_signals') return linkingTables.shopify_order_signals;
-  if (table === 'customer_profile_identities') return linkingTables.customer_profile_identities;
-  if (table === 'merchant_claims') return linkingTables.merchant_claims;
   if (table === TABLES.SUPPORT_CASE_EVENTS) return null;
-  return null;
+  const factory = (linkingTables as Record<string, (() => Record<string, unknown>) | undefined>)[table];
+  return factory ? factory() : null;
 }

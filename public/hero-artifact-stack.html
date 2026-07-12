@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1186, initial-scale=1.0" />
+<title>Unauth — Loss accountability</title>
+<style>
+  :root{
+    --ink:#1d2027;
+    --ink-soft:rgba(29,32,39,.62);
+    --ink-faint:rgba(29,32,39,.42);
+    --line:rgba(20,24,31,.08);
+    --line-soft:rgba(20,24,31,.055);
+    --card:#fbfbfa;
+    --green:#1f9d57;
+    --amber:#c0820f;
+    --red:#c2453b;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+
+  html,body{
+    width:1186px;
+    height:648px;
+    background:transparent;
+    font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    text-rendering:geometricPrecision;
+    overflow:hidden;
+  }
+
+  .stage{
+    position:relative;
+    width:1186px;
+    height:648px;
+    overflow:hidden;
+  }
+
+  /* ── Cards ────────────────────────────────────────────── */
+  .card{
+    position:absolute;
+    width:466px;
+    height:620px;
+    border:1px solid var(--line);
+    border-radius:10px;
+    background:var(--card);
+    overflow:hidden;
+  }
+
+  .card.left{
+    left:100px;
+    top:168px;
+    opacity:.46;
+    filter:saturate(.85);
+    z-index:1;
+    box-shadow:0 24px 50px -30px rgba(23,28,36,.35);
+  }
+  .card.mid{
+    left:359px;
+    top:126px;
+    opacity:.72;
+    z-index:2;
+    box-shadow:0 26px 56px -30px rgba(23,28,36,.42), 0 2px 6px rgba(23,28,36,.035);
+  }
+  .card.front{
+    left:618px;
+    top:84px;
+    opacity:1;
+    z-index:3;
+    box-shadow:0 30px 64px -28px rgba(23,28,36,.5), 0 3px 10px rgba(23,28,36,.05);
+  }
+
+  .card-inner{padding:26px 26px 0}
+
+  /* ── Header ──────────────────────────────────────────── */
+  .head{
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .badge{
+    width:30px;
+    height:30px;
+    border-radius:50%;
+    display:grid;
+    place-items:center;
+    font-size:13px;
+    font-weight:700;
+    letter-spacing:-.02em;
+    flex:0 0 auto;
+  }
+  .badge.r{background:#fbe3da;color:#bb5235}
+  .badge.w{background:#e9eaec;color:#5a5e66}
+  .badge.c{background:#f3e6c8;color:#9a7a2e}
+
+  .title{
+    font-size:19px;
+    font-weight:600;
+    letter-spacing:-.025em;
+    color:var(--ink);
+  }
+  .tag{
+    margin-left:auto;
+    font-size:12px;
+    font-weight:500;
+    color:var(--ink-soft);
+    background:rgba(17,17,17,.05);
+    border:1px solid var(--line);
+    padding:4px 10px;
+    border-radius:999px;
+  }
+
+  /* ── Stats ───────────────────────────────────────────── */
+  .stats{
+    display:flex;
+    gap:36px;
+    margin-top:26px;
+  }
+  .stat .k{
+    font-size:12.5px;
+    color:var(--ink-faint);
+    letter-spacing:-.01em;
+  }
+  .stat .v{
+    margin-top:6px;
+    font-size:14px;
+    font-weight:500;
+    letter-spacing:-.02em;
+    color:var(--ink);
+  }
+  .v.green{color:var(--green)}
+  .v.red{color:var(--red)}
+
+  /* ── Sections ────────────────────────────────────────── */
+  .section{
+    margin-top:22px;
+  }
+  .slabel{
+    font-size:13px;
+    font-weight:600;
+    letter-spacing:-.02em;
+    color:var(--ink);
+    margin-bottom:6px;
+  }
+  .item{
+    display:flex;
+    align-items:center;
+    gap:11px;
+    height:33px;
+    font-size:13.5px;
+    letter-spacing:-.01em;
+    color:rgba(17,17,17,.8);
+  }
+  .item.muted{color:var(--ink-faint)}
+  .item .label{
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .item .meta{
+    margin-left:auto;
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size:12px;
+    color:var(--ink-faint);
+    flex:0 0 auto;
+  }
+
+  /* icons */
+  .ic{
+    width:16px;
+    height:16px;
+    flex:0 0 auto;
+    border-radius:50%;
+    position:relative;
+  }
+  /* hollow pending */
+  .ic.pending{
+    border:1.5px solid rgba(17,17,17,.28);
+  }
+  /* green check */
+  .ic.done{
+    border:1.5px solid var(--green);
+  }
+  .ic.done::after{
+    content:"";
+    position:absolute;
+    left:5px;top:2.5px;
+    width:3.5px;height:7px;
+    border-right:1.6px solid var(--green);
+    border-bottom:1.6px solid var(--green);
+    transform:rotate(40deg);
+  }
+  /* crosshair / traced */
+  .ic.trace{
+    border:1.5px solid rgba(17,17,17,.32);
+  }
+  .ic.trace::after{
+    content:"";
+    position:absolute;
+    left:50%;top:50%;
+    width:4px;height:4px;
+    border-radius:50%;
+    background:rgba(17,17,17,.32);
+    transform:translate(-50%,-50%);
+  }
+  .ic.trace.dim{border-color:rgba(17,17,17,.2)}
+  .ic.trace.dim::after{background:rgba(17,17,17,.2)}
+
+  /* warning glyph in meta */
+  .warn{
+    display:inline-grid;
+    place-items:center;
+    width:0;height:0;
+    border-left:5px solid transparent;
+    border-right:5px solid transparent;
+    border-bottom:9px solid var(--amber);
+    position:relative;
+  }
+
+  /* bottom fade so cards melt into the panel */
+  .fade{
+    position:absolute;
+    left:0;right:0;bottom:0;
+    height:150px;
+    background:linear-gradient(180deg, rgba(246,245,242,0) 0%, rgba(246,245,242,.9) 70%, #f6f5f2 100%);
+    z-index:5;
+    pointer-events:none;
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <!-- ── LEFT · Repeat Claims ── -->
+  <div class="card left">
+    <div class="card-inner">
+      <div class="head">
+        <span class="badge r">R</span>
+        <span class="title">Repeat Claims</span>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="k">Status</div><div class="v red">Payout Blocked</div></div>
+        <div class="stat"><div class="k">Exposure</div><div class="v">$4,180 absorbed</div></div>
+        <div class="stat"><div class="k">Open cases</div><div class="v">8</div></div>
+      </div>
+
+      <div class="section">
+        <div class="slabel">Money Kept</div>
+        <div class="item"><span class="ic pending"></span><span class="label">Reship stopped — address mismatch flagged</span></div>
+        <div class="item"><span class="ic pending"></span><span class="label">Refund blocked — 3rd claim in 90 days</span></div>
+      </div>
+      <div class="section">
+        <div class="slabel">Money Recovered</div>
+        <div class="item muted"><span class="ic trace dim"></span><span class="label">No recovery route — loss absorbed</span></div>
+      </div>
+      <div class="section">
+        <div class="slabel">Money Defended</div>
+        <div class="item"><span class="ic trace"></span><span class="label">Policy threshold documented</span></div>
+      </div>
+      <div class="section">
+        <div class="slabel">Money Traced</div>
+        <div class="item muted"><span class="ic trace dim"></span><span class="label">Loss owner: repeat claimant identified</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MID · Warehouse Error ── -->
+  <div class="card mid">
+    <div class="card-inner">
+      <div class="head">
+        <span class="badge w">W</span>
+        <span class="title">Warehouse Error</span>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="k">Status</div><div class="v">3PL Claim Filed</div></div>
+        <div class="stat"><div class="k">Exposure</div><div class="v">$6,820 at risk</div></div>
+        <div class="stat"><div class="k">Claims</div><div class="v">11</div></div>
+      </div>
+
+      <div class="section">
+        <div class="slabel">Money Kept</div>
+        <div class="item"><span class="ic pending"></span><span class="label">Refund held pending 3PL resolution</span></div>
+      </div>
+      <div class="section">
+        <div class="slabel">Money Recovered</div>
+        <div class="item"><span class="ic done"></span><span class="label">Fulfilment error confirmed — claim submitted</span></div>
+        <div class="item"><span class="ic done"></span><span class="label">3PL loss attributed — evidence attached</span></div>
+      </div>
+      <div class="section">
+        <div class="slabel">Money Defended</div>
+        <div class="item"><span class="ic trace"></span><span class="label">Dispute record assembled at decision time</span></div>
+      </div>
+      <div class="section">
+        <div class="slabel">Money Traced</div>
+        <div class="item muted"><span class="ic trace dim"></span><span class="label">Loss owner: 3PL · write-off prevented</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── FRONT · Carrier Loss ── -->
+  <div class="card front">
+    <div class="card-inner">
+      <div class="head">
+        <span class="badge c">C</span>
+        <span class="title">Carrier Loss</span>
+        <span class="tag">14 cases</span>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="k">Status</div><div class="v green">Recovery In Progress</div></div>
+        <div class="stat"><div class="k">Exposure</div><div class="v">$2,340 open</div></div>
+        <div class="stat"><div class="k">Open cases</div><div class="v">14</div></div>
+      </div>
+
+      <div class="section">
+        <div class="slabel">Money Kept</div>
+        <div class="item"><span class="ic pending"></span><span class="label">Auto-refund held pending carrier resolution</span><span class="meta"><span class="warn"></span>1d</span></div>
+      </div>
+      <div class="section">
+        <div class="slabel">Money Recovered</div>
+        <div class="item"><span class="ic done"></span><span class="label">USPS confirmed delivered — claim filed</span><span class="meta">2d</span></div>
+        <div class="item"><span class="ic done"></span><span class="label">Carrier loss attributed — evidence attached</span><span class="meta">2d</span></div>
+      </div>
+      <div class="section">
+        <div class="slabel">Money Defended</div>
+        <div class="item"><span class="ic trace"></span><span class="label">Dispute window tracked — 14 days remaining</span><span class="meta"><span class="warn"></span></span></div>
+      </div>
+      <div class="section">
+        <div class="slabel">Money Traced</div>
+        <div class="item muted"><span class="ic trace dim"></span><span class="label">Loss attributed to carrier · write-off prevented</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="fade"></div>
+</div>
+</body>
+</html>

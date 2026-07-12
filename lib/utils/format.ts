@@ -1,11 +1,98 @@
-const MERCHANT_DISPLAY_CURRENCY = 'USD';
 const MERCHANT_DISPLAY_LOCALE = 'en-US';
+const DEFAULT_CURRENCY = 'USD';
 
-const currencyFormatter = new Intl.NumberFormat(MERCHANT_DISPLAY_LOCALE, {
-  style: 'currency',
-  currency: MERCHANT_DISPLAY_CURRENCY,
-  minimumFractionDigits: 2,
-});
+const currencyFormatterCache = new Map<string, Intl.NumberFormat>();
+const currencySymbolCache = new Map<string, string>();
+
+function getCurrencyFormatter(currency: string): Intl.NumberFormat {
+  const code = currency.toUpperCase();
+  const cached = currencyFormatterCache.get(code);
+  if (cached) return cached;
+  let formatter: Intl.NumberFormat;
+  try {
+    formatter = new Intl.NumberFormat(MERCHANT_DISPLAY_LOCALE, {
+      style: 'currency',
+      currency: code,
+      minimumFractionDigits: 2,
+    });
+  } catch {
+    formatter = getCurrencyFormatter(DEFAULT_CURRENCY);
+  }
+  currencyFormatterCache.set(code, formatter);
+  return formatter;
+}
+
+/** Symbol for a currency code (e.g. 'GBP' → '£'). Cached; falls back to '$'. */
+export function currencySymbolFor(currency: string): string {
+  return getCurrencySymbol(currency);
+}
+
+function getCurrencySymbol(currency: string): string {
+  const code = currency.toUpperCase();
+  const cached = currencySymbolCache.get(code);
+  if (cached) return cached;
+  const symbol =
+    getCurrencyFormatter(code)
+      .formatToParts(0)
+      .find((part) => part.type === 'currency')?.value ?? '$';
+  currencySymbolCache.set(code, symbol);
+  return symbol;
+}
+
+/**
+ * Pick a display currency for an aggregate of rows: the most common non-null
+ * currency code among them, falling back to `fallback` (default USD).
+ */
+export function dominantCurrency(
+  rows: Array<{ currency?: string | null }>,
+  fallback = DEFAULT_CURRENCY,
+): string {
+  const counts = new Map<string, number>();
+  for (const row of rows) {
+    if (!row.currency) continue;
+    const code = row.currency.toUpperCase();
+    counts.set(code, (counts.get(code) ?? 0) + 1);
+  }
+  let best: string | null = null;
+  let bestCount = 0;
+  for (const [code, count] of counts) {
+    if (count > bestCount) {
+      best = code;
+      bestCount = count;
+    }
+  }
+  return best ?? fallback;
+}
+
+/**
+ * Sum a money field across rows without silently mixing currencies.
+ * Rows in the dominant currency are summed; rows in any other currency are
+ * excluded from `total` and counted in `mixedCount` so the UI can disclose
+ * them ("+ N cases in other currencies") instead of showing a wrong number.
+ * Rows with a null currency are treated as the dominant currency.
+ */
+export function sumSameCurrency<T>(
+  rows: T[],
+  getAmount: (row: T) => number | null | undefined,
+  getCurrency: (row: T) => string | null | undefined,
+  fallback = DEFAULT_CURRENCY,
+): { total: number; currency: string; mixedCount: number } {
+  const currency = dominantCurrency(
+    rows.map((row) => ({ currency: getCurrency(row) })),
+    fallback,
+  );
+  let total = 0;
+  let mixedCount = 0;
+  for (const row of rows) {
+    const rowCurrency = getCurrency(row)?.toUpperCase() ?? currency;
+    if (rowCurrency !== currency) {
+      mixedCount += 1;
+      continue;
+    }
+    total += getAmount(row) ?? 0;
+  }
+  return { total, currency, mixedCount };
+}
 
 const dateTimePartsFormatter = new Intl.DateTimeFormat(MERCHANT_DISPLAY_LOCALE, {
   day: '2-digit',
@@ -42,27 +129,28 @@ export function formatRiskScore(score: number | null | undefined): string {
   return Math.round(score).toString();
 }
 
-/** Merchant UI: always USD with US locale. */
-export function formatCurrency(amount: number, _currency = 'USD'): string {
-  return currencyFormatter.format(amount);
+/** Merchant UI: US locale, honouring the record's currency code (default USD). */
+export function formatCurrency(amount: number, currency = 'USD'): string {
+  return getCurrencyFormatter(currency).format(amount);
 }
 
-export function formatCurrencyCompact(amount: number, _currency = 'USD'): string {
+export function formatCurrencyCompact(amount: number, currency = 'USD'): string {
   const sign = amount < 0 ? '-' : '';
   const abs = Math.abs(amount);
+  const symbol = getCurrencySymbol(currency);
 
-  if (abs >= 1_000_000_000) return `${sign}$${Math.round(abs / 1_000_000_000)}B`;
-  if (abs >= 1_000_000) return `${sign}$${Math.round(abs / 1_000_000)}M`;
-  if (abs >= 1_000) return `${sign}$${Math.round(abs / 1_000)}k`;
-  if (abs >= 100) return `${sign}$${Math.round(abs)}`;
-  return `${sign}$${abs.toFixed(abs >= 10 ? 1 : 2).replace(/\.0+$/, '').replace(/(\.\d*[1-9])0+$/, '$1')}`;
+  if (abs >= 1_000_000_000) return `${sign}${symbol}${Math.round(abs / 1_000_000_000)}B`;
+  if (abs >= 1_000_000) return `${sign}${symbol}${Math.round(abs / 1_000_000)}M`;
+  if (abs >= 1_000) return `${sign}${symbol}${Math.round(abs / 1_000)}k`;
+  if (abs >= 100) return `${sign}${symbol}${Math.round(abs)}`;
+  return `${sign}${symbol}${abs.toFixed(abs >= 10 ? 1 : 2).replace(/\.0+$/, '').replace(/(\.\d*[1-9])0+$/, '$1')}`;
 }
 
 /** Null-safe currency formatter — returns '—' for null/undefined values. */
-export function formatCurrencyNullable(amount: number | string | null | undefined, _currency = 'USD'): string {
+export function formatCurrencyNullable(amount: number | string | null | undefined, currency = 'USD'): string {
   if (amount == null) return '—';
   const numericAmount = typeof amount === 'string' ? Number.parseFloat(amount) || 0 : amount;
-  return formatCurrency(numericAmount);
+  return formatCurrency(numericAmount, currency);
 }
 
 export function formatDate(date: Date | string): string {

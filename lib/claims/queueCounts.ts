@@ -1,4 +1,5 @@
 import { ACTIVE_CLAIM_STATUSES, FINAL_CLAIM_STATUSES, getClaimSlaState, type ClaimAgeInput } from './sla';
+import { TABLES } from '@/lib/supabase/tables';
 
 export type ClaimQueueCountRow = ClaimAgeInput & {
   status: string;
@@ -16,6 +17,12 @@ export type ClaimQueueCounts = {
   overdue: number;
   awaitingEvidence: number;
   awaitingInfo: number;
+  awaitingCarrier: number;
+  awaiting3pl: number;
+  awaitingSupplier: number;
+  readyForDecision: number;
+  manualReview: number;
+  closed: number;
   snoozed: number;
   escalated: number;
   resolved: number;
@@ -68,6 +75,12 @@ export function computeClaimQueueCounts(
     overdue: 0,
     awaitingEvidence: 0,
     awaitingInfo: 0,
+    awaitingCarrier: 0,
+    awaiting3pl: 0,
+    awaitingSupplier: 0,
+    readyForDecision: 0,
+    manualReview: 0,
+    closed: 0,
     snoozed: 0,
     escalated: 0,
     resolved: 0,
@@ -78,6 +91,7 @@ export function computeClaimQueueCounts(
   for (const row of rows) {
     if (isClaimInHistory(row)) {
       counts.resolved += 1;
+      counts.closed += 1;
       continue;
     }
     if (isClaimSnoozed(row, now)) {
@@ -91,11 +105,27 @@ export function computeClaimQueueCounts(
     if (!row.assigned_to) counts.unassigned += 1;
     if (currentUserId && row.assigned_to === currentUserId) counts.assignedToMe += 1;
     if (getClaimSlaState(row, now).state === 'overdue') counts.overdue += 1;
-    if (row.status === 'evidence_requested') counts.awaitingEvidence += 1;
-    if (row.status === 'pending') counts.awaitingInfo += 1;
+    if (
+      row.status === 'evidence_needed' ||
+      row.status === 'awaiting_customer_evidence' ||
+      row.status === 'evidence_requested'
+    ) counts.awaitingEvidence += 1;
+    if (
+      row.status === 'pending' ||
+      row.status === 'evidence_needed' ||
+      row.status === 'awaiting_customer_evidence' ||
+      row.status === 'awaiting_carrier_response' ||
+      row.status === 'awaiting_3pl_response' ||
+      row.status === 'awaiting_supplier_response'
+    ) counts.awaitingInfo += 1;
+    if (row.status === 'awaiting_carrier_response') counts.awaitingCarrier += 1;
+    if (row.status === 'awaiting_3pl_response') counts.awaiting3pl += 1;
+    if (row.status === 'awaiting_supplier_response') counts.awaitingSupplier += 1;
+    if (row.status === 'ready_for_decision' || row.status === 'open') counts.readyForDecision += 1;
+    if (row.status === 'manual_review' || row.status === 'escalated' || row.status === 'under_review') counts.manualReview += 1;
     if (row.status === 'escalated') counts.escalated += 1;
-    if (row.status === 'open') counts.open += 1;
-    if (row.status === 'under_review') counts.underReview += 1;
+    if (row.status === 'open' || row.status === 'ready_for_decision') counts.open += 1;
+    if (row.status === 'under_review' || row.status === 'manual_review') counts.underReview += 1;
   }
 
   return counts;
@@ -109,7 +139,7 @@ export function countClaimsFromRows(rows: ClaimQueueCountRow[], now = new Date()
 
 function activeClaimsCountQuery(serviceClient: any, merchantId: string, nowIso: string) {
   return serviceClient
-    .from('claims')
+    .from(TABLES.MERCHANT_CLAIMS)
     .select('id', { count: 'exact', head: true })
     .eq('merchant_id', merchantId)
     .in('status', [...ACTIVE_CLAIM_STATUSES])
@@ -118,7 +148,7 @@ function activeClaimsCountQuery(serviceClient: any, merchantId: string, nowIso: 
 
 function snoozedClaimsCountQuery(serviceClient: any, merchantId: string, nowIso: string) {
   return serviceClient
-    .from('claims')
+    .from(TABLES.MERCHANT_CLAIMS)
     .select('id', { count: 'exact', head: true })
     .eq('merchant_id', merchantId)
     .in('status', [...ACTIVE_CLAIM_STATUSES])
@@ -141,13 +171,16 @@ export async function fetchClaimQueueCounts(
     assignedRes,
     snoozedRes,
     resolvedRes,
-    pendingRes,
-    escalatedRes,
-    openRes,
+    awaitingEvidenceRes,
+    awaitingCarrierRes,
+    awaiting3plRes,
+    awaitingSupplierRes,
+    readyForDecisionRes,
+    manualReviewRes,
     slaRowsRes,
   ] = await Promise.all([
     serviceClient
-      .from('claims')
+      .from(TABLES.MERCHANT_CLAIMS)
       .select('id', { count: 'exact', head: true })
       .eq('merchant_id', merchantId),
     activeClaimsCountQuery(serviceClient, merchantId, nowIso),
@@ -158,15 +191,22 @@ export async function fetchClaimQueueCounts(
       : Promise.resolve({ count: 0 }),
     snoozedClaimsCountQuery(serviceClient, merchantId, nowIso),
     serviceClient
-      .from('claims')
+      .from(TABLES.MERCHANT_CLAIMS)
       .select('id', { count: 'exact', head: true })
       .eq('merchant_id', merchantId)
       .in('status', [...FINAL_CLAIM_STATUSES]),
-    activeClaimsCountQuery(serviceClient, merchantId, nowIso).eq('status', 'pending'),
-    activeClaimsCountQuery(serviceClient, merchantId, nowIso).eq('status', 'escalated'),
-    activeClaimsCountQuery(serviceClient, merchantId, nowIso).eq('status', 'open'),
+    activeClaimsCountQuery(serviceClient, merchantId, nowIso).in('status', [
+      'pending',
+      'evidence_needed',
+      'awaiting_customer_evidence',
+    ]),
+    activeClaimsCountQuery(serviceClient, merchantId, nowIso).eq('status', 'awaiting_carrier_response'),
+    activeClaimsCountQuery(serviceClient, merchantId, nowIso).eq('status', 'awaiting_3pl_response'),
+    activeClaimsCountQuery(serviceClient, merchantId, nowIso).eq('status', 'awaiting_supplier_response'),
+    activeClaimsCountQuery(serviceClient, merchantId, nowIso).in('status', ['ready_for_decision', 'open']),
+    activeClaimsCountQuery(serviceClient, merchantId, nowIso).in('status', ['manual_review', 'escalated']),
     serviceClient
-      .from('claims')
+      .from(TABLES.MERCHANT_CLAIMS)
       .select('status,submitted_at,created_at,updated_at,snoozed_until,first_viewed_at,assigned_to')
       .eq('merchant_id', merchantId)
       .in('status', [...ACTIVE_CLAIM_STATUSES]),
@@ -184,12 +224,21 @@ export async function fetchClaimQueueCounts(
     assignedToMe: assignedRes.count ?? 0,
     snoozed: snoozedRes.count ?? 0,
     resolved: resolvedRes.count ?? 0,
-    // 'evidence_requested' / 'under_review' are not v2 claim_status values.
-    awaitingEvidence: 0,
-    awaitingInfo: pendingRes.count ?? 0,
-    escalated: escalatedRes.count ?? 0,
-    open: openRes.count ?? 0,
-    underReview: 0,
+    awaitingEvidence: awaitingEvidenceRes.count ?? 0,
+    awaitingInfo:
+      (awaitingEvidenceRes.count ?? 0) +
+      (awaitingCarrierRes.count ?? 0) +
+      (awaiting3plRes.count ?? 0) +
+      (awaitingSupplierRes.count ?? 0),
+    awaitingCarrier: awaitingCarrierRes.count ?? 0,
+    awaiting3pl: awaiting3plRes.count ?? 0,
+    awaitingSupplier: awaitingSupplierRes.count ?? 0,
+    readyForDecision: readyForDecisionRes.count ?? 0,
+    manualReview: manualReviewRes.count ?? 0,
+    closed: resolvedRes.count ?? 0,
+    escalated: manualReviewRes.count ?? 0,
+    open: readyForDecisionRes.count ?? 0,
+    underReview: manualReviewRes.count ?? 0,
     overdue,
   };
 }

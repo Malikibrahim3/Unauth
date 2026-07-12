@@ -1,14 +1,39 @@
 import { gradeHeadline } from '@/lib/gorgias/widgetData';
 import type {
+  ClaimWidgetData,
   GorgiasClaimWidgetResult,
   NetworkStats,
   PrimaryReason,
   ThisStoreOrdersSource,
 } from '@/lib/gorgias/widgetData';
+import type { ConfidenceGrade } from '@/lib/engine/weights';
+import type { ScoreFactor } from '@/lib/engine/evidence/score';
 import { env } from '@/lib/utils/env';
+import { formatCurrency } from '@/lib/utils/format';
 import { buildGorgiasWidgetUnlockUrlSet } from '@/lib/gorgias/widgetUnlockUrls';
 import { GORGIAS_SETTINGS_INTEGRATIONS_PATH } from '@/lib/support/gorgias/supportConnectionShared';
 import { computeWidgetTrustSummary } from '@/lib/gorgias/widgetTrustSignals';
+import { CLAIM_TYPE_LABELS, type ClaimTypeValue } from '@/lib/claims/claimTypes';
+import type { RuleEvaluationResult } from '@/lib/rules-engine';
+import {
+  formatPayoutRecommendationRuleLine,
+  payoutRecommendationLabel,
+  resolvePayoutRecommendation,
+} from '@/lib/payouts/recommendation';
+import {
+  EVIDENCE_STRENGTH_LABELS,
+  LIKELY_OWNER_LABELS,
+  LOSS_ATTRIBUTION_DISPLAY,
+  RECOVERABILITY_LABELS,
+  REQUESTED_ACTION_LABELS,
+  type EvidenceChecklistResult,
+  type LossAttributionResult,
+  type Money,
+  type PayoutClaimType,
+  type PayoutExposure,
+  type RecoveryPath,
+  type SupportPayoutCase,
+} from '@/lib/payouts/types';
 
 /**
  * Flat root object — field paths must match buildGorgiasSidebarWidgetTemplate() exactly.
@@ -27,6 +52,10 @@ export type GorgiasWidgetJsonPayload = {
   recent_activity: string;
   /** CE 3.0 evidence indicator, or '—'. */
   ce3_evidence: string;
+  /** Cached evidence score headline, or a neutral withheld/insufficient message. */
+  evidence_summary: string;
+  /** Plain-text factor breakdown, or a short neutral message when unavailable. */
+  evidence_breakdown: string;
   /**
    * @deprecated Legacy Gorgias template field path `watchlisted`. Always data-safety copy,
    * never merchant watchlist state. Do not use for new product logic.
@@ -43,6 +72,14 @@ export type GorgiasWidgetJsonPayload = {
   recommendation: string;
   /** Which rule fired + matched conditions, or a neutral prompt/state. */
   recommendation_detail: string;
+  /** Money-first payout exposure summary, or '—'. Own-store data; not network-gated. */
+  payout_exposure: string;
+  /** Documentary evidence completeness (present/missing/strength), or '—'. */
+  evidence_checklist: string;
+  /** Advisory loss attribution + confidence + reasons, or '—'. Never a verdict. */
+  loss_attribution: string;
+  /** Lightweight recovery route (recoverability, owner, next step), or '—'. */
+  recovery_path: string;
   cta_label: string;
   cta_url: string;
   /** Browser-openable GET unlock links (Gorgias custom.links). */
@@ -73,19 +110,80 @@ export type GorgiasWidgetJsonOptions = {
 };
 
 /** True unless an explicit non-production diagnostic preview was requested. */
-export function useCreditGatedWidgetPreview(options?: GorgiasWidgetJsonOptions): boolean {
+export function isCreditGatedWidgetPreview(options?: GorgiasWidgetJsonOptions): boolean {
   return !(options?.allowDetailedPreview === true && process.env.NODE_ENV !== 'production');
 }
 
 const UNLOCK_LABELS = {
-  basic_unlock_label: 'View full context →',
-  full_unlock_label: 'View network context →',
-  evidence_unlock_label: 'View claim summary →',
+  basic_unlock_label: 'Open full case →',
+  full_unlock_label: 'Open full case →',
+  evidence_unlock_label: 'Open full case →',
 } as const;
 
 const NO_NETWORK_LABEL = 'No network history found';
 const NO_CROSS_STORE_LABEL = 'No cross-store history found';
 const NO_CLAIMS_LABEL = 'No prior claims on record';
+
+const EVIDENCE_LEVEL_LABELS: Record<string, string> = {
+  minimal: 'Minimal',
+  some: 'Some',
+  substantial: 'Substantial',
+  extensive: 'Extensive',
+};
+
+const WEAK_CONFIDENCE_CAVEAT = 'Identity match confidence is weak — treat with extra caution.';
+
+const EVIDENCE_DISPLAY_UNAVAILABLE = {
+  evidence_summary: '—',
+  evidence_breakdown: '—',
+} as const;
+
+const EVIDENCE_WITHHELD_DISPLAY = {
+  evidence_summary: 'Not enough network coverage to share',
+  evidence_breakdown: 'Network evidence is not shared below the coverage threshold.',
+} as const;
+
+/** Evidence score headline for the native Gorgias sidebar (display-only). */
+export function formatEvidenceSummary(
+  data: Pick<ClaimWidgetData, 'evidenceDisclosed' | 'evidenceScore' | 'evidenceLevel' | 'hasSufficientData'>,
+  confidenceGrade: ConfidenceGrade | null,
+): string {
+  let summary: string;
+  if (!data.evidenceDisclosed) {
+    summary = EVIDENCE_WITHHELD_DISPLAY.evidence_summary;
+  } else if (!data.hasSufficientData) {
+    summary = 'Not enough evidence yet';
+  } else {
+    const level = EVIDENCE_LEVEL_LABELS[data.evidenceLevel] ?? data.evidenceLevel;
+    summary = `Evidence: ${data.evidenceScore} · ${level}`;
+  }
+  if (confidenceGrade === 'weak') {
+    return `${summary} ${WEAK_CONFIDENCE_CAVEAT}`;
+  }
+  return summary;
+}
+
+/** Flattened score breakdown for the native Gorgias sidebar (display-only). */
+export function formatEvidenceBreakdown(
+  data: Pick<ClaimWidgetData, 'evidenceDisclosed' | 'hasSufficientData' | 'scoreBreakdown'>,
+): string {
+  if (!data.evidenceDisclosed) {
+    return EVIDENCE_WITHHELD_DISPLAY.evidence_breakdown;
+  }
+  if (!data.hasSufficientData || data.scoreBreakdown.length === 0) {
+    return 'Not enough evidence for a score breakdown.';
+  }
+  return data.scoreBreakdown.map((f: ScoreFactor) => `${f.label} ${f.points}/${f.max_points}`).join(' · ');
+}
+
+function evidenceDisplayFields(
+  data: ClaimWidgetData,
+): Pick<GorgiasWidgetJsonPayload, 'evidence_summary' | 'evidence_breakdown'> {
+  return {
+    evidence_summary: formatEvidenceSummary(data, data.confidenceGrade),
+    evidence_breakdown: formatEvidenceBreakdown(data),
+  };
+}
 
 type WidgetCorePayload = Omit<
   GorgiasWidgetJsonPayload,
@@ -97,6 +195,10 @@ type WidgetCorePayload = Omit<
   | 'evidence_unlock_label'
   | 'recommendation'
   | 'recommendation_detail'
+  | 'payout_exposure'
+  | 'evidence_checklist'
+  | 'loss_attribution'
+  | 'recovery_path'
 >;
 
 /**
@@ -105,9 +207,33 @@ type WidgetCorePayload = Omit<
  * recommendation is never Unauth's own judgment.
  */
 const RECOMMENDATION_DEFAULTS = {
-  recommendation: '—',
-  recommendation_detail: 'Set up fraud rules to get recommendations',
+  recommendation: 'Rule: —',
+  recommendation_detail: 'No payout case detected for this ticket yet.',
 } as const;
+
+/**
+ * Payout fields default to neutral here. The widget route overrides them from the
+ * resolved SupportPayoutCase when a claim is found. They are derived from
+ * own-store claim context only (no network signals), so they are not k-anon gated.
+ */
+const PAYOUT_DEFAULTS = {
+  payout_exposure: 'Case: No payout case detected for this ticket yet',
+  evidence_checklist: 'Evidence: —',
+  loss_attribution: '—',
+  recovery_path: 'Recovery: —',
+} as const;
+
+export function formatNoPayoutCaseFields(): Pick<
+  GorgiasWidgetJsonPayload,
+  'payout_exposure' | 'evidence_checklist' | 'recommendation' | 'recovery_path'
+> {
+  return {
+    payout_exposure: PAYOUT_DEFAULTS.payout_exposure,
+    evidence_checklist: PAYOUT_DEFAULTS.evidence_checklist,
+    recommendation: RECOMMENDATION_DEFAULTS.recommendation,
+    recovery_path: PAYOUT_DEFAULTS.recovery_path,
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Context helpers — order reference and neutral summary
@@ -202,9 +328,136 @@ function withUnlockFields(
 ): GorgiasWidgetJsonPayload {
   return {
     ...RECOMMENDATION_DEFAULTS,
+    ...PAYOUT_DEFAULTS,
     ...payload,
     ...UNLOCK_LABELS,
     ...unlockUrls(link),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Payout case — own-store payout exposure, evidence, attribution, recovery.
+// All factual/advisory; never a verdict. Plain ·-joined strings for native rows.
+// ---------------------------------------------------------------------------
+
+function formatMoney(m: Money): string {
+  return formatCurrency(m.amount, m.currency ?? undefined);
+}
+
+function humanizeKey(key: string): string {
+  return key.replace(/_/g, ' ');
+}
+
+function truncateList(items: string[], max = 3): string {
+  if (items.length <= max) return items.join(', ');
+  return `${items.slice(0, max).join(', ')} +${items.length - max} more`;
+}
+
+export function formatPayoutExposure(exposure: PayoutExposure): string {
+  if (exposure.total.amount <= 0 || exposure.components.length === 0) {
+    return 'Amount not available yet · open case in Unauth';
+  }
+  const parts = [`${formatMoney(exposure.total)} estimated payout exposure`];
+  if (exposure.reviewThreshold != null) {
+    parts.push(exposure.aboveReviewThreshold ? 'requires review' : 'within standard handling');
+  }
+  return parts.join(' · ');
+}
+
+function claimTypeLabel(claimType: PayoutClaimType | null): string {
+  if (!claimType) return 'Support payout case';
+  if (claimType in CLAIM_TYPE_LABELS) {
+    return CLAIM_TYPE_LABELS[claimType as ClaimTypeValue];
+  }
+  return humanizeKey(claimType);
+}
+
+/** Line 1 of the 4-line Gorgias decision card: claim type · requested action · amount at risk. */
+export function formatDecisionLine1(payoutCase: SupportPayoutCase): string {
+  const claimLabel = claimTypeLabel(payoutCase.claimType);
+  const action = REQUESTED_ACTION_LABELS[payoutCase.requestedAction.primary].toLowerCase();
+  if (payoutCase.exposure.total.amount <= 0) {
+    return `${claimLabel} · ${action} requested · amount TBD`;
+  }
+  return `${claimLabel} · ${action} requested · ${formatMoney(payoutCase.exposure.total)} at risk`;
+}
+
+const TRACKING_RELEVANT_CLAIM_TYPES = new Set(['item_not_received', 'missing_item', 'missing_parcel']);
+
+export function formatEvidenceChecklist(
+  evidence: EvidenceChecklistResult,
+  deliveryEvidenceLine?: string | null,
+): string {
+  const deliveryLine = deliveryEvidenceLine?.trim();
+  const includeDelivery = deliveryLine && evidence.claimType && TRACKING_RELEVANT_CLAIM_TYPES.has(evidence.claimType);
+
+  if (evidence.strength === 'missing') {
+    const base = 'Evidence: missing · no supporting evidence on file yet · request evidence';
+    return includeDelivery ? `${base} · ${deliveryLine}` : base;
+  }
+  const strengthLabel = EVIDENCE_STRENGTH_LABELS[evidence.strength].toLowerCase();
+  const present = evidence.items.filter((i) => i.state === 'present').map((i) => humanizeKey(i.key));
+  const missing = evidence.items.filter((i) => i.state === 'missing').map((i) => humanizeKey(i.key));
+  const parts = [`Evidence: ${strengthLabel}`];
+  if (includeDelivery) parts.push(deliveryLine!);
+  if (present.length > 0) parts.push(`present: ${truncateList(present)}`);
+  if (missing.length > 0) parts.push(`missing: ${truncateList(missing)}`);
+  return parts.join(' · ');
+}
+
+export function formatLossAttribution(attribution: LossAttributionResult): string {
+  const label = LOSS_ATTRIBUTION_DISPLAY[attribution.label];
+  const conf =
+    attribution.confidence === 'needs_more_evidence'
+      ? 'needs more evidence'
+      : `confidence: ${attribution.confidence}`;
+  const reasonText = attribution.reasons.slice(0, 2).map((r) => r.text).join('; ');
+  const parts = [label, conf];
+  if (reasonText) parts.push(reasonText);
+  return parts.join(' · ');
+}
+
+export function formatRecoveryPath(recovery: RecoveryPath): string {
+  const rec = RECOVERABILITY_LABELS[recovery.recoverability].toLowerCase();
+  const owner = LIKELY_OWNER_LABELS[recovery.likelyOwner].toLowerCase();
+  return `Recovery: ${rec} · ${recovery.suggestedNextAction} · owner ${owner} · Open case →`;
+}
+
+/** Builds the four native payout widget fields from a resolved SupportPayoutCase. */
+export function formatPayoutFields(
+  payoutCase: SupportPayoutCase,
+): Pick<GorgiasWidgetJsonPayload, 'payout_exposure' | 'evidence_checklist' | 'loss_attribution' | 'recovery_path'> {
+  return {
+    payout_exposure: formatDecisionLine1(payoutCase),
+    evidence_checklist: formatEvidenceChecklist(payoutCase.evidence, payoutCase.deliveryEvidenceLine),
+    loss_attribution: formatLossAttribution(payoutCase.attribution),
+    recovery_path: formatRecoveryPath(payoutCase.recovery),
+  };
+}
+
+/**
+ * Full 4-line Gorgias decision card when rule evaluation + payout case are both available.
+ */
+export function formatPayoutWidgetDecision(
+  evaluation: RuleEvaluationResult,
+  payoutCase: SupportPayoutCase,
+  ruleCount: number,
+): Pick<GorgiasWidgetJsonPayload, 'payout_exposure' | 'evidence_checklist' | 'recommendation' | 'recovery_path'> {
+  const recommendation = payoutCase.recommendation ?? resolvePayoutRecommendation(evaluation, payoutCase);
+  const fields = formatPayoutFields(payoutCase);
+  if (!recommendation) {
+    return {
+      payout_exposure: fields.payout_exposure,
+      evidence_checklist: fields.evidence_checklist,
+      recommendation: ruleCount === 0 ? 'Rule: —' : 'Rule: no merchant rule matched',
+      recovery_path: fields.recovery_path,
+    };
+  }
+  return {
+    payout_exposure: fields.payout_exposure,
+    evidence_checklist: fields.evidence_checklist,
+    recommendation: formatPayoutRecommendationRuleLine(recommendation),
+    recovery_path: fields.recovery_path,
   };
 }
 
@@ -213,45 +466,103 @@ function withUnlockFields(
 // ---------------------------------------------------------------------------
 
 const RECOMMENDATION_LABELS: Record<string, string> = {
-  approve: 'Approve',
+  approve: 'Approve payout',
   manual_review: 'Manual review',
-  deny: 'Deny',
+  deny: 'Deny under policy',
 };
 
 /**
- * Formats a rules-engine result into the two native widget fields.
- *
- * @param ruleCount number of active rules the merchant has configured. Used to
- *        distinguish "no rules configured" from "rules exist, none matched".
+ * Formats a rules-engine result into the Rule line of the 4-line decision card.
+ * When payoutCase is provided, uses steering-aligned recommendation vocabulary.
  */
 export function formatRecommendationFields(
   result: { recommendation: string; rule_name: string | null; justification_lines: string[] },
   ruleCount: number,
+  payoutCase?: SupportPayoutCase,
 ): Pick<GorgiasWidgetJsonPayload, 'recommendation' | 'recommendation_detail'> {
+  if (payoutCase) {
+    const resolved = payoutCase.recommendation ?? resolvePayoutRecommendation(
+      {
+        recommendation: result.recommendation as RuleEvaluationResult['recommendation'],
+        rule_id: null,
+        rule_name: result.rule_name,
+        matched_conditions: [],
+        justification: result.justification_lines.join(' · '),
+        justification_lines: result.justification_lines,
+      },
+      payoutCase,
+    );
+    if (resolved) {
+      return {
+        recommendation: formatPayoutRecommendationRuleLine(resolved),
+        recommendation_detail: `${resolved.explanation} · ${payoutRecommendationLabel(resolved.action)}`,
+      };
+    }
+  }
+
   if (result.recommendation === 'no_match') {
     if (ruleCount === 0) {
       return {
-        recommendation: 'No rules configured',
-        recommendation_detail: 'Set up fraud rules in Unauth to get recommendations',
+        recommendation: 'Rule: —',
+        recommendation_detail: 'Set up merchant rules in Unauth to get recommendations',
       };
     }
     return {
-      recommendation: 'No rule matched',
-      recommendation_detail: 'None of your configured rules matched this identity',
+      recommendation: 'Rule: no merchant rule matched',
+      recommendation_detail: 'None of your configured rules matched this case',
     };
   }
 
   const label = RECOMMENDATION_LABELS[result.recommendation] ?? result.recommendation;
-  const heading = result.rule_name ? `${label} · ${result.rule_name}` : label;
-  // justification_lines[0] is the "Rule … triggered" line; the rest are the
-  // matched conditions. Join with " · " for the single-line native text widget.
+  const ruleName = result.rule_name ?? 'default policy';
   const justification = result.justification_lines.length > 0
-    ? result.justification_lines.join(' · ')
-    : null;
-  const detail = justification
-    ? `${justification} · Based on your configured rules`
-    : 'Based on your configured rules';
-  return { recommendation: heading, recommendation_detail: detail };
+    ? result.justification_lines[0]
+  : null;
+  const ruleLine = justification
+    ? `Rule: ${ruleName} → ${label} · ${justification}`
+    : `Rule: ${ruleName} → ${label}`;
+  return {
+    recommendation: ruleLine,
+    recommendation_detail: 'Merchant rule recommendation — your team decides',
+  };
+}
+
+export type ClaimRecommendationUnavailableReason = 'not_found' | 'ambiguous' | 'eval_failed';
+
+/**
+ * Shown when a claim-like ticket cannot produce a claim-scoped recommendation.
+ * Never implies Approve / Manual review / Deny — identity context may still render.
+ */
+export function formatClaimRecommendationUnavailable(
+  reason: ClaimRecommendationUnavailableReason,
+  options?: { ruleCount?: number },
+): Pick<GorgiasWidgetJsonPayload, 'recommendation' | 'recommendation_detail'> {
+  if (reason === 'ambiguous') {
+    return {
+      recommendation: 'Claim recommendation unavailable',
+      recommendation_detail:
+        'Multiple possible claims were found for this ticket. Open Unauth to select the correct claim.',
+    };
+  }
+  if (reason === 'eval_failed') {
+    const ruleCount = options?.ruleCount;
+    if (ruleCount === 0) {
+      return {
+        recommendation: 'Rule: —',
+        recommendation_detail:
+          'Claim context was found, but rule evaluation failed. Set up merchant rules in Unauth to get recommendations.',
+      };
+    }
+    return {
+      recommendation: 'Recommendation could not be generated',
+      recommendation_detail: 'Claim context was found, but rule evaluation failed.',
+    };
+  }
+  return {
+    recommendation: 'Rule: —',
+    recommendation_detail:
+      'No payout case detected for this ticket yet. Open or create a payout case before applying a merchant rule.',
+  };
 }
 
 /** Case-scoped Gorgias tickets get credit unlock links; preview must not leak stats before unlock. */
@@ -323,20 +634,24 @@ function appUrl(path: string): string {
 }
 
 function baseCta(
-  profileUrl?: string | null,
+  _profileUrl?: string | null,
   link?: GorgiasWidgetLinkContext,
 ): Pick<GorgiasWidgetJsonPayload, 'cta_label' | 'cta_url'> {
-  const base = profileUrl?.trim() || appUrl('/customers');
+  const claimId = link?.claimId?.trim();
+  const base = appUrl('/claims');
   if (!link) {
-    return { cta_label: 'Open in Unauth →', cta_url: base };
+    return { cta_label: 'Open case →', cta_url: base };
   }
   const extras = ['source=gorgias'];
   if (link.ticketRef?.trim()) {
     extras.push(`ticket_id=${encodeURIComponent(link.ticketRef.trim())}`);
   }
-  const sep = base.includes('?') ? '&' : '?';
+  if (claimId) {
+    extras.push(`focus=${encodeURIComponent(claimId)}`);
+  }
+  const sep = '?';
   return {
-    cta_label: 'Open in Unauth →',
+    cta_label: 'Open case →',
     cta_url: `${base}${sep}${extras.join('&')}`,
   };
 }
@@ -347,15 +662,15 @@ function buildNetworkEvidenceField(
   showNetworkIntelligence: boolean,
 ): string {
   if (showNetworkIntelligence) {
-    if (ce3EvidenceAvailable) return 'CE 3.0 evidence available — documented cross-merchant history';
+    if (ce3EvidenceAvailable) return 'CE 3.0 evidence available from this store';
     if (network && network.merchantCount > 0) {
       const merchants = network.merchantCount === 1 ? 'merchant' : 'merchants';
       return `Seen at ${network.merchantCount} ${merchants} · no CE 3.0 evidence`;
     }
     return NO_CROSS_STORE_LABEL;
   }
-  if (network && network.merchantCount > 0) return 'Network signal available — upgrade to see details';
-  if (ce3EvidenceAvailable) return 'Cross-merchant evidence available — upgrade to access';
+  if (network && network.merchantCount > 0) return 'Additional identity context available';
+  if (ce3EvidenceAvailable) return 'Store order evidence available';
   return '—';
 }
 
@@ -384,6 +699,7 @@ export function claimWidgetToJson(
           primary_reason: '—',
           recent_activity: '—',
           ce3_evidence: '—',
+          ...EVIDENCE_WITHHELD_DISPLAY,
           watchlisted: 'Standard handling · no prior history found',
           order_context: buildOrderContext(link),
           context_summary: buildContextSummary(result, link, showNetworkIntelligence),
@@ -402,6 +718,7 @@ export function claimWidgetToJson(
           primary_reason: '—',
           recent_activity: '—',
           ce3_evidence: '—',
+          ...EVIDENCE_DISPLAY_UNAVAILABLE,
           watchlisted: '—',
           order_context: buildOrderContext(link),
           context_summary: buildContextSummary(result, link, showNetworkIntelligence),
@@ -420,6 +737,7 @@ export function claimWidgetToJson(
           primary_reason: '—',
           recent_activity: 'Reconnect in Unauth',
           ce3_evidence: '—',
+          ...EVIDENCE_DISPLAY_UNAVAILABLE,
           watchlisted: '—',
           order_context: buildOrderContext(link),
           context_summary: buildContextSummary(result, link, showNetworkIntelligence),
@@ -437,6 +755,7 @@ export function claimWidgetToJson(
         primary_reason: '—',
         recent_activity: '—',
         ce3_evidence: '—',
+        ...EVIDENCE_DISPLAY_UNAVAILABLE,
         watchlisted: '—',
         order_context: buildOrderContext(link),
         context_summary: buildContextSummary(result, link, showNetworkIntelligence),
@@ -474,6 +793,7 @@ export function claimWidgetToJson(
         primary_reason: '—',
         recent_activity: '—',
         ce3_evidence: '—',
+        ...evidenceDisplayFields(result.data),
         watchlisted: computeWidgetTrustSummary({
           orderCount: 0,
           claimCount: 0,
@@ -515,6 +835,7 @@ export function claimWidgetToJson(
       primary_reason: primaryReason,
       recent_activity: recentActivity,
       ce3_evidence: buildNetworkEvidenceField(ce3EvidenceAvailable, network, showNetworkIntelligence),
+      ...evidenceDisplayFields(result.data),
       watchlisted: computeWidgetTrustSummary({
         orderCount: thisStore.orderCount,
         claimCount: thisStore.claimCount,

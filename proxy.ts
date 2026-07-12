@@ -28,6 +28,55 @@ function isPhoneUserAgent(userAgent: string): boolean {
   return isPhone && !isTablet;
 }
 
+function legacyMvpRedirectTarget(pathname: string): string | null {
+  if (
+    pathname === '/lookup' ||
+    pathname.startsWith('/lookup/') ||
+    pathname === '/global' ||
+    pathname.startsWith('/global/') ||
+    pathname === '/watchlist' ||
+    pathname.startsWith('/watchlist/')
+  ) {
+    return '/customers';
+  }
+
+  if (
+    pathname === '/catches' ||
+    pathname.startsWith('/catches/') ||
+    pathname === '/chargebacks' ||
+    pathname.startsWith('/chargebacks/')
+  ) {
+    return '/claims';
+  }
+
+  if (pathname === '/store' || pathname.startsWith('/store/')) {
+    return '/dashboard';
+  }
+
+  if (pathname === '/audit' || pathname.startsWith('/audit/')) {
+    return '/dashboard';
+  }
+
+  if (
+    pathname === '/eval' ||
+    pathname.startsWith('/eval/') ||
+    pathname === '/network-metrics' ||
+    pathname.startsWith('/network-metrics/')
+  ) {
+    return '/dashboard';
+  }
+
+  if (
+    pathname === '/help/identity-matching' ||
+    pathname === '/help/confidence-grades' ||
+    pathname === '/help/how-it-works'
+  ) {
+    return '/help';
+  }
+
+  return null;
+}
+
 export async function proxy(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set(requestIdHeader, request.headers.get(requestIdHeader) ?? createRequestId());
@@ -47,7 +96,7 @@ export async function proxy(request: NextRequest) {
   const isMobileUnsupportedRoute = pathname === '/mobile-unsupported';
 
   // Public/marketing routes — always accessible on mobile.
-  // App routes (dashboard, upload, inbox, etc.) remain blocked.
+  // App routes (dashboard, claims, recoveries, etc.) remain blocked.
   const isMobileAllowedRoute =
     pathname === '/' ||
     pathname === '/landing' ||
@@ -77,6 +126,8 @@ export async function proxy(request: NextRequest) {
 
   const isAuthRoute =
     pathname.startsWith('/login') ||
+    pathname.startsWith('/signup') ||
+    pathname.startsWith('/reset') ||
     pathname.startsWith('/auth') ||
     pathname.startsWith('/callback');
 
@@ -130,6 +181,8 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith('/audit-demo/') ||
     pathname === '/demo' ||
     pathname === '/pricing' ||
+    pathname === '/signup' ||
+    pathname.startsWith('/reset') ||
     pathname === '/mobile-unsupported' ||
     pathname === '/legal' ||
     pathname.startsWith('/legal/');
@@ -142,11 +195,6 @@ export async function proxy(request: NextRequest) {
   if (!user && !isAuthRoute && !isApiRoute && !isPublicRoute) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
-    // Preserve signup intent: /signup → /login?signup=1 so the create-account
-    // toggle pre-opens on the login page.
-    if (pathname === '/signup') {
-      url.searchParams.set('signup', '1');
-    }
     const response = NextResponse.redirect(url);
     response.headers.set(requestIdHeader, requestHeaders.get(requestIdHeader)!);
     return response;
@@ -154,10 +202,22 @@ export async function proxy(request: NextRequest) {
 
   if (user && pathname === '/login') {
     const url = request.nextUrl.clone();
-    url.pathname = '/upload';
+    url.pathname = '/dashboard';
     const response = NextResponse.redirect(url);
     response.headers.set(requestIdHeader, requestHeaders.get(requestIdHeader)!);
     return response;
+  }
+
+  if (user && !isApiRoute) {
+    const redirectTarget = legacyMvpRedirectTarget(pathname);
+    if (redirectTarget) {
+      const url = request.nextUrl.clone();
+      url.pathname = redirectTarget;
+      url.search = '';
+      const response = NextResponse.redirect(url);
+      response.headers.set(requestIdHeader, requestHeaders.get(requestIdHeader)!);
+      return response;
+    }
   }
 
   if (user && isApiRoute) {
@@ -208,5 +268,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|html)$).*)'],
 };

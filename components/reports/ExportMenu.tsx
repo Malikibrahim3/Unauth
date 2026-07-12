@@ -45,7 +45,7 @@ export default function ExportMenu({ range }: ExportMenuProps) {
             className="px-3 pb-1 pt-1.5 text-xs font-bold uppercase tracking-wider"
             style={{ color: 'var(--text-tertiary)' }}
           >
-            Live reports - Shopify + helpdesk
+            Payout reports
           </p>
           <a
             role="menuitem"
@@ -54,8 +54,8 @@ export default function ExportMenu({ range }: ExportMenuProps) {
             style={{ color: 'var(--text)' }}
             onClick={() => setOpen(false)}
           >
-            Claims CSV
-            <span className="ml-1 opacity-60">- status, amounts, response signals</span>
+            Payout cases CSV
+            <span className="ml-1 opacity-60">- status, exposure, evidence state</span>
           </a>
           <a
             role="menuitem"
@@ -65,7 +65,7 @@ export default function ExportMenu({ range }: ExportMenuProps) {
             onClick={() => setOpen(false)}
           >
             Outcomes CSV
-            <span className="ml-1 opacity-60">- merchant responses, refunds</span>
+            <span className="ml-1 opacity-60">- decisions, refunds, recoveries</span>
           </a>
 
           <div className="my-1 border-t" style={{ borderColor: 'var(--border)' }} />

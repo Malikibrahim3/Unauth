@@ -8,11 +8,11 @@ import foundationStyles from '../landing/_components/foundation/foundation.modul
 export const metadata: Metadata = {
   title: 'Pricing | Unauth',
   description:
-    'Usage-based pricing for cross-merchant claim context, helpdesk evidence, and network intelligence. Start free — pay only for the context you use.',
+    'Usage-based pricing for post-purchase payout control, evidence checklists, merchant rules, and recovery workflow. Start free — pay for the operational context you use.',
   openGraph: {
     title: 'Pricing | Unauth',
     description:
-      'Usage-based pricing for cross-merchant claim context, helpdesk evidence, and network intelligence.',
+      'Pricing for payout control, evidence, merchant rules, and recovery operations inside Gorgias and Shopify.',
   },
 };
 

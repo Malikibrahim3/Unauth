@@ -1,5 +1,20 @@
-export const ACTIVE_CLAIM_STATUSES = ['pending', 'open', 'escalated'] as const;
+export const ACTIVE_CLAIM_STATUSES = [
+  'new',
+  'evidence_needed',
+  'awaiting_customer_evidence',
+  'awaiting_carrier_response',
+  'awaiting_3pl_response',
+  'awaiting_supplier_response',
+  'ready_for_decision',
+  'manual_review',
+  'decision_recorded',
+  'recovery_opened',
+  'pending',
+  'open',
+  'escalated',
+] as const;
 export const FINAL_CLAIM_STATUSES = [
+  'closed',
   'resolved_refunded',
   'resolved_won',
   'resolved_lost',

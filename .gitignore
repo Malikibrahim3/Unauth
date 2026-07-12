@@ -1,5 +1,6 @@
 node_modules/
 .next/
+next-env.d.ts
 .env.local
 *.tsbuildinfo
 .tmp_*
@@ -11,6 +12,7 @@ node_modules/
 build/
 .turbo/
 tests/.test-credentials.json
+tests/current/.auth/
 tests/support/.auth/
 tests/reports/
 tests/utils/csv-fixtures/

@@ -36,7 +36,9 @@ function missingFor(requires: Requires, connection: ConnectionState): 'helpdesk'
     if (connection.shopifyOnlyConnected) return 'helpdesk';
     return 'both';
   }
-  if (requires === 'helpdesk' && !connection.helpdesk) return 'both';
+  if (requires === 'helpdesk' && !connection.helpdesk) {
+    return connection.orderSourceConnected ? 'helpdesk' : 'both';
+  }
   return null;
 }
 
@@ -48,13 +50,13 @@ function GatePanel({ missing, pageName, pageDescription }: {
   const isDangerous = missing === 'helpdesk';
 
   const headline = isDangerous
-    ? `Shopify is connected — connect Gorgias to activate claim intelligence`
+    ? `Shopify is connected — connect Gorgias to activate ${pageName}`
     : `Connect Shopify + Gorgias to use ${pageName}`;
 
   const body = pageDescription ?? (
     isDangerous
-      ? `Connect Gorgias so your agents see claim context — order history, prior claims, and trust indicators — inside every support ticket.`
-      : `${pageName} requires Shopify for order data and Gorgias for claim history. Both are required to activate claim intelligence.`
+    ? `Connect Gorgias so your agents see claim context — order history, prior claims, and trust indicators — inside every support ticket.`
+      : `${pageName} requires Shopify for order data and Gorgias for support payout context. Both are required to activate evidence-backed payout control.`
   );
 
   return (

@@ -21,7 +21,7 @@ export default async function ZendeskIntegrationPage() {
     <SettingsPageShell
       eyebrow="Integrations"
       title="Zendesk"
-      subtitle="Show identity confidence and claims history on every support ticket."
+      subtitle="Show payout case context, evidence gaps, and recommendations on support tickets."
       breadcrumbs={[
         { label: 'Settings', href: '/settings/account' },
         { label: 'Integrations', href: '/settings/integrations' },

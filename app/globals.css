@@ -13,9 +13,9 @@
     --brand-rust:       #7B2D26;
     --brand-rust-hover: #5E2018;
     --brand-rust-soft:  #F4E6E0;
-    --action-ink:       #1C1008;
-    --action-ink-hover: #140B05;
-    --action-ink-soft:  #ECE5DC;
+    --action-ink:       #7B2D26;
+    --action-ink-hover: #5E2018;
+    --action-ink-soft:  #F4E6E0;
     --data-neutral:     #6B6560;
     --data-neutral-soft:#E7E0D8;
     --brand-paper:      #F6F5F3;
@@ -37,7 +37,7 @@
     --text-subtle:      #9A9088;
     --text-disabled:    #C2BAB0;
     --text-inverse:     #FFFFFF;
-    --text-link:        #7B2D26;
+    --text-link:        #A85040;
 
     /* Legacy aliases — retire usage over time */
     --text-primary:     var(--text);
@@ -166,12 +166,12 @@
     --icon:             #4A3F38;
     --icon-muted:       #9A8F87;
 
-    /* ── Brand accent (single) — primary action blue ── */
-    --accent:           var(--action-ink);
-    --accent-hover:     var(--action-ink-hover);
-    --accent-soft:      var(--action-ink-soft);
-    --accent-subtle:    var(--action-ink-soft);
-    --accent-soft-hover: color-mix(in srgb, var(--action-ink) 12%, transparent);
+    /* ── Brand accent (single) — primary rust accent ── */
+    --accent:           var(--brand-rust);
+    --accent-hover:     var(--brand-rust-hover);
+    --accent-soft:      var(--brand-rust-soft);
+    --accent-subtle:    var(--accent-50);
+    --accent-soft-hover: color-mix(in srgb, var(--brand-rust) 12%, transparent);
 
     /* ── Risk tiers (only valid semantic use of red/amber/green) ── */
     --risk-critical:    #9F1D1D;
@@ -541,34 +541,34 @@
      * ═════════════════════════════════════════════════════════════════════ */
 
     /* Surfaces */
-    --bg:               #F4F3F1;
+    --bg:               #FFFFFF;
     --surface:          #FFFFFF;
-    --surface-sunken:   #EFEDEB;
+    --surface-sunken:   #F7F7F7;
     --surface-overlay:  #FFFFFF;
-    --surface-hover:    #EDECEA;
+    --surface-hover:    #F6F6F6;
 
     /* Canonical surface aliases (backward compat) */
-    --surface-base:     #F4F3F1;
+    --surface-base:     #FFFFFF;
     --surface-raised:   #FFFFFF;
-    --surface-muted:    #EFEDEB;
+    --surface-muted:    #F7F7F7;
     --surface-input:    #FFFFFF;
-    --surface-border:   #E3DED8;
+    --surface-border:   #E8E8E8;
 
-    --bg-canvas:        #F4F3F1;
+    --bg-canvas:        #FFFFFF;
     --bg-surface:       #FFFFFF;
-    --bg-surface-alt:   #EFEDEB;
-    --bg-surface-sunk:  #ECEAE7;
-    --bg-hover:         #EDECEA;
+    --bg-surface-alt:   #FAFAFA;
+    --bg-surface-sunk:  #F7F7F7;
+    --bg-hover:         #F6F6F6;
     --bg-selected:      #F4E6E0;
-    --bg-subtle:        #EFEDEB;
-    --bg-muted:         #EFEDEB;
-    --bg-inset:         #F4F3F1;
+    --bg-subtle:        #FAFAFA;
+    --bg-muted:         #F7F7F7;
+    --bg-inset:         #FFFFFF;
 
     /* Borders */
-    --border:           #E3DED8;
-    --border-muted:     #EAE7E3;
-    --border-subtle:    #EAE7E3;
-    --border-default:   #E3DED8;
+    --border:           #E8E8E8;
+    --border-muted:     #EEEEEE;
+    --border-subtle:    #F1F1F1;
+    --border-default:   #E8E8E8;
     --border-strong:    #1A1814;
 
     /* Text — neutral warm-grey ink */
@@ -589,28 +589,28 @@
     --icon-muted:       #9A9088;
 
     /* Brand / Interactive — rust accent */
-    --accent:           #7B2D26;
-    --accent-hover:     #5E2018;
+    --accent:           #A85040;
+    --accent-hover:     #7B2D26;
     --accent-soft:      #F4E6E0;
     --accent-border:    #EBCBC2;
     --accent-subtle:    #FAF0EC;
     --accent-50:        #FAF0EC;
     --accent-100:       #F4E6E0;
     --accent-200:       #EBCBC2;
-    --accent-500:       #7B2D26;
-    --accent-600:       #6B251F;
+    --accent-500:       #A85040;
+    --accent-600:       #7B2D26;
     --accent-700:       #5E2018;
     --accent-fg-on-500: #FFFFFF;
-    --action-primary:      #7B2D26;
-    --action-primary-hover:#5E2018;
+    --action-primary:      #A85040;
+    --action-primary-hover:#7B2D26;
     --action-primary-soft: #F4E6E0;
-    --action-ink:          #7B2D26;
-    --action-ink-hover:    #5E2018;
+    --action-ink:          #A85040;
+    --action-ink-hover:    #7B2D26;
     --action-ink-soft:     #F4E6E0;
 
     /* Focus */
-    --focus-ring:       #7B2D26;
-    --shadow-focus:     0 0 0 3px rgba(123,45,38,0.22);
+    --focus-ring:       #A85040;
+    --shadow-focus:     0 0 0 3px rgba(168,80,64,0.22);
 
     /* Status — evidence semantics (green = evidence ready, amber = limited, red = severe only) */
     --success:          #18794E;
@@ -665,16 +665,16 @@
     --data-neutral:   #6B6560; --data-neutral-soft: #EFEDEB;
 
     /* Logo — near-black ink + rust dot */
-    --logo-ink: #1A1814; --logo-dot: #7B2D26;
+    --logo-ink: #1A1814; --logo-dot: #A85040;
 
     /* Brand rust */
-    --copper-bright: #7B2D26;
-    --copper-mid:    #5E2018;
+    --copper-bright: #A85040;
+    --copper-mid:    #7B2D26;
     --copper-dim:    #F4E6E0;
-    --copper-glow:   rgba(123,45,38,0.10);
+    --copper-glow:   rgba(168,80,64,0.10);
     --brand-ink:        #1A1814;
-    --brand-rust:       #7B2D26;
-    --brand-rust-hover: #5E2018;
+    --brand-rust:       #A85040;
+    --brand-rust-hover: #7B2D26;
     --brand-rust-soft:  #F4E6E0;
     --brand-paper:      #F4F3F1;
 
@@ -700,11 +700,11 @@
     --background: #F4F3F1; --foreground: #1A1814;
     --card: #FFFFFF; --card-foreground: #1A1814;
     --popover: #FFFFFF; --popover-foreground: #1A1814;
-    --primary: #7B2D26; --primary-foreground: #FFFFFF;
+    --primary: #A85040; --primary-foreground: #FFFFFF;
     --secondary: #EFEDEB; --secondary-foreground: #1A1814;
     --muted: #EFEDEB; --muted-foreground: #6B6560;
     --destructive: #CE2C31; --destructive-foreground: #FFFFFF;
-    --input: #E3DED8; --ring: #7B2D26;
+    --input: #E3DED8; --ring: #A85040;
 
     /* Font fallback chain */
     --font-serif: var(--font-dm-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;

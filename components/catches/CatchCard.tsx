@@ -17,7 +17,7 @@ function gradeToValue(g: IdentityCatchEvent['confidenceGrade']): ConfidenceGrade
 }
 
 function catchHref(event: IdentityCatchEvent): string | null {
-  if (event.evidencePackId) return `/chargebacks?pack=${event.evidencePackId}`;
+  if (event.evidencePackId) return '/claims';
   if (event.profileId) return `/customers/${event.profileId}`;
   if (event.claimId) return `/claims?highlight=${event.claimId}`;
   return null;

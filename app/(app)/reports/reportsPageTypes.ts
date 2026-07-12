@@ -1,11 +1,22 @@
-export const REPORTS_TABS = ['overview', 'csv', 'integration'] as const;
+export const REPORTS_TABS = ['overview', 'recovery'] as const;
 export type ReportsTab = (typeof REPORTS_TABS)[number];
 
 export type ClaimRow = {
   id: string;
   status: string;
   claim_type?: string | null;
+  currency?: string | null;
   amount_at_risk: number | null;
+  total_estimated_loss?: number | null;
+  refund_amount?: number | null;
+  replacement_item_value?: number | null;
+  replacement_shipping_cost?: number | null;
+  discount_amount?: number | null;
+  store_credit_amount?: number | null;
+  requested_action?: string | null;
+  recoverability?: string | null;
+  recovery_owner?: string | null;
+  recommended_payout_action?: string | null;
   submitted_at?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
@@ -31,6 +42,9 @@ export type SourcesCoverage = {
   supportCases: number;
   evidencePackages: number;
   auditTransactions: number;
+  recoveryCases: number;
+  partners: number;
+  partnerRules: number;
 };
 
 export type RunSummary = {
@@ -62,7 +76,41 @@ export type OutcomeRow = {
   decision: string | null;
   outcome: string | null;
   amount_refunded: number | null;
+  amount_recovered: number | null;
+  recommended_payout_action: string | null;
+  followed_recommendation: boolean | null;
   decided_at: string | null;
   created_at: string | null;
   updated_at: string | null;
+};
+
+export type RecoveryMetrics = {
+  totalCases: number;
+  openCases: number;
+  evidenceNeeded: number;
+  chaseDue: number;
+  submittedCases: number;
+  approvedCases: number;
+  rejectedCases: number;
+  recoveredAmount: number;
+  unrecoveredAmount: number;
+  openRecoveryValue: number;
+  estimatedRecoverableMax: number;
+  winRate: number;
+};
+
+export type RecoveryStatusBreakdown = Array<{
+  status: string;
+  label: string;
+  count: number;
+  value: number;
+}>;
+
+export type PartnerPerformanceRow = {
+  partnerId: string;
+  partnerName: string;
+  ownerType: string;
+  cases: number;
+  recoveredAmount: number;
+  openRecoveryValue: number;
 };

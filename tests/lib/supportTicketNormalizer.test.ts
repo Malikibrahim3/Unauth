@@ -465,13 +465,16 @@ describe('normalizer + store integration (mocked)', () => {
     const upsertInput = toSupportCaseIntakeUpsertInput(normalized);
 
     const { supabase: upsertClient, calls } = makeUpsertSupabase();
-    await upsertSupportCaseIntake(upsertClient, upsertInput);
+    const result = await upsertSupportCaseIntake(upsertClient, upsertInput);
 
     expect(calls).toHaveLength(1);
     const payload = calls[0].payload;
     expect(payload.customer_email).toBeUndefined();
     expect(payload.raw_payload).toBeUndefined();
-    expect(payload.customer_email_hash).toBe(normalized.customer_email_hash);
+    // v2 source_tickets row never persists the email hash; it is returned to the
+    // caller for the downstream identity-signal write.
+    expect(payload.customer_email_hash).toBeUndefined();
+    expect(result.customer_email_hash).toBe(normalized.customer_email_hash);
     expect(payload.raw_payload_hash).toBe(normalized.raw_payload_hash);
     expect(JSON.stringify(payload)).not.toContain('normalized@example.com');
 

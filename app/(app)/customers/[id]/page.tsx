@@ -5,17 +5,12 @@ import {
 } from '@/app/(app)/customers/[id]/customerProfilePageLoad';
 
 interface PageProps {
-  params: Promise<{ id: string }> | { id: string };
-  searchParams:
-    | Promise<CustomerProfileSearchParams>
-    | CustomerProfileSearchParams;
+  params: Promise<{ id: string }>;
+  searchParams: Promise<CustomerProfileSearchParams>;
 }
 
 export default async function CustomerProfilePage({ params, searchParams }: PageProps) {
-  const [resolvedParams, resolvedSearchParams] = await Promise.all([
-    Promise.resolve(params),
-    Promise.resolve(searchParams),
-  ]);
+  const [resolvedParams, resolvedSearchParams] = await Promise.all([params, searchParams]);
 
   const result = await loadCustomerProfilePage(resolvedParams.id, resolvedSearchParams);
 

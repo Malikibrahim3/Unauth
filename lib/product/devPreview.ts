@@ -6,7 +6,7 @@ export const DEV_TIER_COOKIE = 'unauth.dev.tier';
 export type DevPreviewCookieValue = 'dev' | Tier | 'advanced';
 
 export interface DevPreviewState {
-  /** The tier being previewed. `scale` when in dev/open mode. */
+  /** The tier being previewed. `enterprise` (top tier) when in dev/open mode. */
   tier: Tier;
   /** Whether product gates are being enforced in this preview session. */
   enforce: boolean;
@@ -14,13 +14,13 @@ export interface DevPreviewState {
 
 /**
  * Parse a raw cookie value into a DevPreviewState.
- * - 'dev'       → open mode (scale tier, no enforcement)
+ * - 'dev'       → open mode (enterprise tier, no enforcement)
  * - tier string → that tier with enforcement on
  * - anything else / absent → null (use env-var defaults)
  */
 export function parseDevPreviewCookie(raw: string | undefined): DevPreviewState | null {
   if (!raw) return null;
-  if (raw === 'dev') return { tier: 'scale', enforce: false };
+  if (raw === 'dev') return { tier: 'enterprise', enforce: false };
   const tier = normalizeTier(raw);
   if (tier) return { tier, enforce: true };
   return null;

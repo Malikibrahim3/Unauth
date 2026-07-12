@@ -3,6 +3,7 @@ import { TABLES } from '@/lib/supabase/tables';
 import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
+import { fetchMerchantScopedCustomerProfile } from '@/lib/supabase/merchantHelpers';
 import { writeActivityLog } from '@/lib/customers/activityLog';
 import { NextRequest, NextResponse } from 'next/server';
 import { withRequestLogging } from '@/lib/log';
@@ -40,20 +41,25 @@ async function PATCHHandler(
     );
   }
 
-  // Verify the customer profile belongs to this merchant
-  const { data: profile } = await scopedClient
-    .from(TABLES.CUSTOMER_PROFILES)
-    .select('id, investigation_status')
-    .eq('id', resolvedParams.id)
-    .maybeSingle();
+  // Verify the customer profile belongs to this merchant.
+  // `identities` is a network-level table with NO merchant_id column, so we
+  // cannot rely on the scoped client to isolate it — ownership must be proven
+  // by confirming this merchant has emitted an identity signal for one of the
+  // identity's member hashes. Without this, any authenticated user could mutate
+  // another tenant's identity by guessing its id.
+  const profile = await fetchMerchantScopedCustomerProfile(
+    serviceClient,
+    ctx.merchantId,
+    resolvedParams.id,
+  );
 
   if (!profile) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  const previousStatus = (profile as any).investigation_status ?? 'new';
+  const previousStatus = (profile.investigation_status as string | undefined) ?? 'new';
 
-  const { data, error } = await scopedClient
+  const { data, error } = await serviceClient
     .from(TABLES.CUSTOMER_PROFILES)
     .update({ investigation_status: body.status })
     .eq('id', resolvedParams.id)

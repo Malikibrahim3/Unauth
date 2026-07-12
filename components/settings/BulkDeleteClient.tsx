@@ -4,7 +4,7 @@ import { useState } from 'react';
 
 const OPTIONS = [
   { value: 'customer_notes', label: 'Customer notes' },
-  { value: 'watchlist', label: 'Watchlist entries' },
+  { value: 'watchlist', label: 'Legacy saved-case entries' },
 ];
 
 export default function BulkDeleteClient() {

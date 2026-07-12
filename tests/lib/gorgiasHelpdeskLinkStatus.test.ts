@@ -56,4 +56,12 @@ describe('evaluateGorgiasHelpdeskLink', () => {
       ),
     ).toBe(false);
   });
+
+  it('marks error status with auth failure as disconnected with reconnect guidance', () => {
+    const link = evaluateGorgiasHelpdeskLink(
+      baseConnection({ status: 'error', last_error: 'gorgias_api_auth_failed' }),
+    );
+    expect(link.state).toBe('disconnected');
+    expect(link.issues[0]).toContain('Reconnect Gorgias');
+  });
 });

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import type { ConnectionState } from '@/lib/connections/getConnectionState';
+import { useDemoMode } from './ConnectionStateContext';
 
 interface ConnectionPromptStripProps {
   connection: ConnectionState;
@@ -11,7 +12,10 @@ interface ConnectionPromptStripProps {
 }
 
 export function ConnectionPromptStrip({ connection, hasExistingProfiles }: ConnectionPromptStripProps) {
+  const isDemo = useDemoMode();
   if (connection.bothConnected) return null;
+  // Demo merchants already see the layout-level demo-data banner; avoid stacking a second one.
+  if (isDemo) return null;
 
   let message: string;
 
@@ -27,7 +31,7 @@ export function ConnectionPromptStrip({ connection, hasExistingProfiles }: Conne
       'Showing existing Shopify data. Reconnect Shopify and your helpdesk to keep this analysis current and add claim context.';
   } else {
     message =
-      'Connect Shopify and your helpdesk to see complete data. What\'s shown here is based on CSV imports only and may be incomplete.';
+      'Connect Shopify and your helpdesk to see complete claim context. Without connected sources, this view may be incomplete.';
   }
 
   return (

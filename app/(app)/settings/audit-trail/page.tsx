@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { ArrowLeft, History, ShieldCheck } from 'lucide-react';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import AuditTrailClient from '@/components/settings/AuditTrailClient';
 
@@ -16,7 +17,7 @@ export default async function AuditTrailPage() {
 
   const [{ data: teamRows }, { data: merchantRow }] = await Promise.all([
     serviceClient
-      .from('merchant_members' as any)
+      .from(TABLES.MERCHANT_MEMBERS)
       .select('user_id, invited_email, role, invite_status')
       .eq('merchant_id', ctx.merchantId)
       .eq('invite_status', 'active'),

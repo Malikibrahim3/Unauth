@@ -1,356 +1,318 @@
-// lib/evidence/buildPackage.ts
-// Assembles the full EvidencePackage from Supabase data.
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { randomUUID } from 'node:crypto';
+import { hashIdentifier } from '@/lib/identity/hash';
+import { normaliseAddress, normaliseEmail } from '@/lib/identity/normalise';
+import { TABLES } from '@/lib/supabase/tables';
+import { assessCE3Eligibility, type Ce3SignalHashes } from './ce3';
+import type { EvidencePackage } from './types';
 
-import type { SupabaseClient } from '@supabase/supabase-js'
-import { TABLES } from '@/lib/supabase/tables'
-import type { EvidencePackage } from './types'
-import { assessCE3Eligibility, extractCe3AcceptedHashes } from './ce3'
-import { normaliseEmail, normaliseAddress } from '@/lib/identity/normalise'
-import {
-  fetchMerchantScopedCustomerProfile,
-  fetchMerchantScopedCustomerTransactions,
-  getMerchantOwnedJobIds,
-} from '@/lib/supabase/merchantHelpers'
+const ENGINE_VERSION = '2.1-store-scoped';
 
-const ENGINE_VERSION = '2.0'
-
-/** audit_transactions has no currency column; use row hint if present, else USD. */
-function resolveEvidencePackageCurrency(disputedTx: Record<string, unknown>): string {
-  const raw = disputedTx.currency
-  if (typeof raw === 'string' && /^[A-Za-z]{3}$/.test(raw.trim())) {
-    return raw.trim().toUpperCase()
-  }
-  return 'USD'
-}
-
-// =============================================================================
-// Masking helpers — no plaintext PII in exported documents
-// =============================================================================
+type MerchantRow = { id: string; name?: string | null; business_name?: string | null };
+type CustomerRow = {
+  id: string;
+  email: string | null;
+  phone: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  account_created_at: string | null;
+  created_at: string;
+};
+type OrderRow = {
+  id: string;
+  external_id: string;
+  order_number: string | null;
+  source_customer_id: string | null;
+  email: string | null;
+  phone: string | null;
+  financial_status: string | null;
+  fulfillment_state: string | null;
+  total_price: number | string | null;
+  currency: string | null;
+  card_last4: string | null;
+  browser_ip: string | null;
+  shipping_address_id: string | null;
+  placed_at: string | null;
+  ingested_at: string | null;
+};
+type AddressRow = {
+  id: string;
+  line1: string | null;
+  line2: string | null;
+  city: string | null;
+  region: string | null;
+  postal_code: string | null;
+  country: string | null;
+  normalized_full: string | null;
+};
 
 export function maskEmail(email: string): string {
-  const atIdx = email.indexOf('@')
-  if (atIdx === -1) return '****'
-  const local = email.slice(0, atIdx)
-  const domain = email.slice(atIdx + 1)
-  if (local.length <= 2) return `${local[0]}****@${domain}`
-  return `${local[0]}****${local[local.length - 1]}@${domain}`
+  const atIdx = email.indexOf('@');
+  if (atIdx === -1) return '****';
+  const local = email.slice(0, atIdx);
+  const domain = email.slice(atIdx + 1);
+  if (local.length <= 2) return `${local[0] ?? '*'}****@${domain}`;
+  return `${local[0]}****${local[local.length - 1]}@${domain}`;
 }
 
 export function maskAddress(address: string): string {
-  const postcodeMatch = address.match(/[A-Z]{1,2}[0-9][0-9A-Z]?\s*[0-9][A-Z]{2}/i)
-  if (postcodeMatch) return `****, ${postcodeMatch[0]}`
-  // US ZIP
-  const zipMatch = address.match(/\b\d{5}(-\d{4})?\b/)
-  if (zipMatch) return `****, ${zipMatch[0]}`
-  return '****'
+  const postcodeMatch = address.match(/[A-Z]{1,2}[0-9][0-9A-Z]?\s*[0-9][A-Z]{2}/i);
+  if (postcodeMatch) return `****, ${postcodeMatch[0]}`;
+  const zipMatch = address.match(/\b\d{5}(-\d{4})?\b/);
+  if (zipMatch) return `****, ${zipMatch[0]}`;
+  return '****';
 }
 
 export function maskPhone(phone: string): string {
-  if (phone.length < 6) return '****'
-  return `${phone.slice(0, 3)}****${phone.slice(-3)}`
+  if (phone.length < 6) return '****';
+  return `${phone.slice(0, 3)}****${phone.slice(-3)}`;
 }
 
-// =============================================================================
-// Main function
-// =============================================================================
+function addressText(address: AddressRow | null): string | null {
+  if (!address) return null;
+  const value = [
+    address.line1,
+    address.line2,
+    address.city,
+    address.region,
+    address.postal_code,
+    address.country,
+  ].filter(Boolean).join(', ');
+  return value || null;
+}
 
-/**
- * Build a complete EvidencePackage for a disputed order.
- * Fetches all required data from Supabase using the service role client.
- */
+function orderDate(order: OrderRow): Date {
+  const value = order.placed_at ?? order.ingested_at ?? new Date().toISOString();
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? new Date() : date;
+}
+
+function friendlyOrderId(order: OrderRow): string {
+  return order.order_number ?? order.external_id ?? order.id;
+}
+
+function signalHashes(order: OrderRow, address: AddressRow | null): Ce3SignalHashes {
+  const normalizedAddress = address?.normalized_full ?? normaliseAddress(addressText(address) ?? '');
+  const normalizedEmail = normaliseEmail(order.email ?? '');
+  return {
+    accountLink: order.source_customer_id ? hashIdentifier(order.source_customer_id) : undefined,
+    ipCluster: order.browser_ip ? hashIdentifier(order.browser_ip) : undefined,
+    addressCluster: normalizedAddress ? hashIdentifier(normalizedAddress) : undefined,
+    deviceMatch: undefined,
+    emailVariant: normalizedEmail ? hashIdentifier(normalizedEmail) : undefined,
+    phoneMatch: order.phone ? hashIdentifier(order.phone) : undefined,
+  };
+}
+
+async function loadDisputedOrder(
+  service: SupabaseClient,
+  merchantId: string,
+  customerProfileId: string,
+  disputedOrderId: string,
+): Promise<OrderRow | null> {
+  const select = 'id, external_id, order_number, source_customer_id, email, phone, financial_status, fulfillment_state, total_price, currency, card_last4, browser_ip, shipping_address_id, placed_at, ingested_at';
+  const base = () => service
+    .from(TABLES.SOURCE_ORDERS)
+    .select(select)
+    .eq('merchant_id', merchantId)
+    .eq('source_customer_id', customerProfileId);
+
+  const { data: byId } = await base().eq('id', disputedOrderId).maybeSingle();
+  if (byId) return byId as OrderRow;
+
+  const { data: byExternalId } = await base().eq('external_id', disputedOrderId).maybeSingle();
+  if (byExternalId) return byExternalId as OrderRow;
+
+  const { data: byOrderNumber } = await base().eq('order_number', disputedOrderId).maybeSingle();
+  return (byOrderNumber as OrderRow | null) ?? null;
+}
+
 export async function buildEvidencePackage(
   merchantId: string,
   customerProfileId: string,
   disputedOrderId: string,
-  supabaseServiceRole: SupabaseClient,
-  legacyOwnerUserId?: string | null
+  service: SupabaseClient,
+  _legacyOwnerUserId?: string | null,
+  options?: { referenceNumber?: string },
 ): Promise<EvidencePackage> {
-  // -------------------------------------------------------------------------
-  // 1. Merchant name
-  // -------------------------------------------------------------------------
-  const { data: merchantRow } = await supabaseServiceRole
-    .from(TABLES.MERCHANTS)
-    .select('id, user_id, business_name, name')
-    .eq('id', merchantId)
-    .single() as unknown as { data: { id: string; user_id?: string; business_name?: string; name?: string } | null }
-
-  const merchantName =
-    (merchantRow as any)?.business_name ??
-    (merchantRow as any)?.name ??
-    'Merchant'
-
-  // -------------------------------------------------------------------------
-  // 2. Customer profile — verified to belong to this merchant
-  // -------------------------------------------------------------------------
-  const profileRow = await fetchMerchantScopedCustomerProfile(
-    supabaseServiceRole,
-    merchantId,
-    customerProfileId,
-    legacyOwnerUserId ?? merchantRow?.user_id ?? null
-  )
-  if (!profileRow) throw new Error(`Customer profile not found or not owned by merchant: ${customerProfileId}`)
-
-  // Cast to any for local use — all access is through merchant-scoped fetch above
-  const profile = profileRow as Record<string, any>
-
-  // -------------------------------------------------------------------------
-  // 3. All orders for this customer — scoped to merchant-owned jobs only
-  // -------------------------------------------------------------------------
-  const [txRows, ownedJobIds] = await Promise.all([
-    fetchMerchantScopedCustomerTransactions(
-      supabaseServiceRole,
-      merchantId,
-      customerProfileId,
-      profile,
-      { select: 'id,order_id,order_date,customer_email,customer_name,shipping_address,device_ip,card_last4,order_value,match_score,risk_level,signals_matched,ce3_signal_hashes,refund_claimed,refund_reason,processed_at,job_id' },
-    ),
-    getMerchantOwnedJobIds(supabaseServiceRole, merchantId),
+  const [{ data: merchantData }, { data: customerData }] = await Promise.all([
+    service.from(TABLES.MERCHANTS).select('id, name').eq('id', merchantId).maybeSingle(),
+    service
+      .from(TABLES.SOURCE_CUSTOMERS)
+      .select('id, email, phone, first_name, last_name, account_created_at, created_at')
+      .eq('id', customerProfileId)
+      .eq('merchant_id', merchantId)
+      .maybeSingle(),
   ]);
-  const allTxs = txRows;
-  const ownedJobIdSet = new Set(ownedJobIds);
 
-  // -------------------------------------------------------------------------
-  // 4. Identify disputed order — must belong to this merchant's jobs
-  // -------------------------------------------------------------------------
-  const disputedTx = allTxs.find(tx =>
-    (tx.id === disputedOrderId || tx.order_id === disputedOrderId) &&
-    ownedJobIdSet.has(tx.job_id as string),
-  )
-  if (!disputedTx) throw new Error(`Disputed order not found or not owned by merchant: ${disputedOrderId}`)
+  const merchant = merchantData as MerchantRow | null;
+  const customer = customerData as CustomerRow | null;
+  if (!merchant) throw new Error(`Merchant not found: ${merchantId}`);
+  if (!customer) throw new Error(`Customer not found or not owned by merchant: ${customerProfileId}`);
 
-  // Prefer the merchant-supplied order date; fall back to ingestion time only
-  // when order_date is absent (legacy rows ingested before order_date existed).
-  const txDate = (tx: Record<string, unknown>): string =>
-    (tx.order_date as string | null) ?? (tx.processed_at as string)
-
-  const disputedDate = new Date(txDate(disputedTx))
-
-  // -------------------------------------------------------------------------
-  // 5. Build identity evidence list
-  // -------------------------------------------------------------------------
-  const emailsPresent = (profile.emails ?? []) as string[]
-  const addressesPresent = (profile.addresses ?? []) as string[]
-  const phonesPresent = (profile.phones ?? []) as string[]
-  const ipsPresent = (profile.ips ?? []) as string[]
-  const cardsPresent = (profile.card_last4s ?? []) as string[]
-
-  // Earliest order date across the customer's history (real order dates, not
-  // ingestion time). Falls back to the profile's stored first_seen, then to the
-  // disputed order date.
-  const orderDateMs: number[] = [];
-  for (const tx of allTxs) {
-    const ms = new Date(txDate(tx)).getTime();
-    if (!Number.isNaN(ms)) orderDateMs.push(ms);
+  const disputedOrder = await loadDisputedOrder(service, merchantId, customerProfileId, disputedOrderId);
+  if (!disputedOrder) {
+    throw new Error(`Disputed order not found or not owned by merchant: ${disputedOrderId}`);
   }
-  const firstSeenDate =
-    orderDateMs.length > 0
-      ? new Date(Math.min(...orderDateMs))
-      : profile.first_seen
-        ? new Date(profile.first_seen as string)
-        : disputedDate
 
-  const identityEvidence: EvidencePackage['identityEvidence'] = []
+  const { data: orderData, error: orderError } = await service
+    .from(TABLES.SOURCE_ORDERS)
+    .select('id, external_id, order_number, source_customer_id, email, phone, financial_status, fulfillment_state, total_price, currency, card_last4, browser_ip, shipping_address_id, placed_at, ingested_at')
+    .eq('merchant_id', merchantId)
+    .eq('source_customer_id', customerProfileId)
+    .order('placed_at', { ascending: true })
+    .limit(2000);
+  if (orderError) throw new Error(`Customer order history failed: ${orderError.message}`);
 
-  for (const email of emailsPresent) {
-    const target = normaliseEmail(email)
+  const orders = (orderData ?? []) as OrderRow[];
+  const completeOrders = orders.some((order) => order.id === disputedOrder.id)
+    ? orders
+    : [...orders, disputedOrder].sort((a, b) => orderDate(a).getTime() - orderDate(b).getTime());
+
+  const addressIds = [...new Set(completeOrders.flatMap((order) => order.shipping_address_id ? [order.shipping_address_id] : []))];
+  const { data: addressData } = addressIds.length > 0
+    ? await service
+      .from(TABLES.SOURCE_ADDRESSES)
+      .select('id, line1, line2, city, region, postal_code, country, normalized_full')
+      .eq('merchant_id', merchantId)
+      .in('id', addressIds)
+    : { data: [] };
+  const addresses = new Map(((addressData ?? []) as AddressRow[]).map((address) => [address.id, address]));
+
+  const orderIds = completeOrders.map((order) => order.id);
+  const { data: claimData } = orderIds.length > 0
+    ? await service
+      .from(TABLES.MERCHANT_CLAIMS)
+      .select('source_order_id, claim_type, status')
+      .eq('merchant_id', merchantId)
+      .in('source_order_id', orderIds)
+    : { data: [] };
+  const claimedOrderIds = new Set(
+    ((claimData ?? []) as Array<{ source_order_id: string | null }>).flatMap((claim) =>
+      claim.source_order_id ? [claim.source_order_id] : [],
+    ),
+  );
+
+  const firstSeen = completeOrders.length > 0 ? orderDate(completeOrders[0]) : new Date(customer.created_at);
+  const primaryEmail = customer.email ?? disputedOrder.email;
+  const primaryPhone = customer.phone ?? disputedOrder.phone;
+  const disputedAddress = disputedOrder.shipping_address_id
+    ? addresses.get(disputedOrder.shipping_address_id) ?? null
+    : null;
+  const disputedAddressText = addressText(disputedAddress);
+
+  const identityEvidence: EvidencePackage['identityEvidence'] = [];
+  if (primaryEmail) {
+    const normalized = normaliseEmail(primaryEmail);
     identityEvidence.push({
       identifierType: 'Email address',
-      maskedValue: maskEmail(email),
-      firstSeen: firstSeenDate,
-      orderCount: allTxs.filter(
-        tx => normaliseEmail((tx.customer_email as string | null) ?? '') === target,
-      ).length,
-      ce3Accepted: false, // email is NOT a Visa CE3.0 core data element
-    })
+      maskedValue: maskEmail(primaryEmail),
+      firstSeen,
+      orderCount: completeOrders.filter((order) => normaliseEmail(order.email ?? '') === normalized).length,
+      ce3Accepted: false,
+    });
   }
-  for (const addr of addressesPresent.slice(0, 3)) {
-    const target = normaliseAddress(addr)
+  if (disputedAddressText) {
+    const normalized = disputedAddress?.normalized_full ?? normaliseAddress(disputedAddressText);
     identityEvidence.push({
       identifierType: 'Shipping address',
-      maskedValue: maskAddress(addr),
-      firstSeen: firstSeenDate,
-      orderCount: allTxs.filter(
-        tx => normaliseAddress((tx.shipping_address as string | null) ?? '') === target,
-      ).length,
+      maskedValue: maskAddress(disputedAddressText),
+      firstSeen,
+      orderCount: completeOrders.filter((order) => {
+        const address = order.shipping_address_id ? addresses.get(order.shipping_address_id) ?? null : null;
+        return (address?.normalized_full ?? normaliseAddress(addressText(address) ?? '')) === normalized;
+      }).length,
       ce3Accepted: true,
-    })
+    });
   }
-  for (const phone of phonesPresent) {
+  if (primaryPhone) {
     identityEvidence.push({
       identifierType: 'Phone number',
-      maskedValue: maskPhone(phone),
-      firstSeen: firstSeenDate,
-      orderCount: allTxs.length,
-      ce3Accepted: false, // phone is NOT a Visa CE3.0 core data element
-    })
+      maskedValue: maskPhone(primaryPhone),
+      firstSeen,
+      orderCount: completeOrders.filter((order) => order.phone === primaryPhone).length,
+      ce3Accepted: false,
+    });
   }
-  for (const ip of ipsPresent.slice(0, 2)) {
+  if (disputedOrder.browser_ip) {
     identityEvidence.push({
       identifierType: 'IP address',
-      maskedValue: ip.split('.').slice(0, 2).join('.') + '.**.**',
-      firstSeen: firstSeenDate,
-      orderCount: allTxs.filter(tx => tx.device_ip === ip).length,
+      maskedValue: disputedOrder.browser_ip.includes('.')
+        ? `${disputedOrder.browser_ip.split('.').slice(0, 2).join('.')}.*.*`
+        : '****',
+      firstSeen,
+      orderCount: completeOrders.filter((order) => order.browser_ip === disputedOrder.browser_ip).length,
       ce3Accepted: true,
-    })
+    });
   }
-  for (const card of cardsPresent) {
+  if (disputedOrder.card_last4) {
     identityEvidence.push({
       identifierType: 'Payment card (last 4)',
-      maskedValue: `•••• ${card}`,
-      firstSeen: firstSeenDate,
-      orderCount: allTxs.filter(tx => tx.card_last4 === card).length,
-      ce3Accepted: false, // card last4 is not a CE3.0 accepted signal (not a full fingerprint)
-    })
+      maskedValue: `**** ${disputedOrder.card_last4}`,
+      firstSeen,
+      orderCount: completeOrders.filter((order) => order.card_last4 === disputedOrder.card_last4).length,
+      ce3Accepted: false,
+    });
   }
 
-  // -------------------------------------------------------------------------
-  // 6. CE3.0 eligibility assessment
-  // -------------------------------------------------------------------------
-
-  const friendlyId = (tx: Record<string, unknown>): string =>
-    (tx.order_id as string | null) ?? (tx.id as string)
-
-  const disputedSignalHashes = extractCe3AcceptedHashes(disputedTx.ce3_signal_hashes)
-  const orderHistoryForCE3 = allTxs.map(tx => ({
-    order_id: friendlyId(tx),
-    order_date: txDate(tx),
-    refund_status: tx.refund_claimed ? 'full' : 'none',
-    signalHashes: extractCe3AcceptedHashes(tx.ce3_signal_hashes),
-    paymentCredential: (tx.card_last4 as string | null) ?? null,
-  }))
   const ce3 = assessCE3Eligibility(
-    friendlyId(disputedTx),
-    disputedDate,
-    disputedSignalHashes,
-    orderHistoryForCE3,
-    { disputedPaymentCredential: (disputedTx.card_last4 as string | null) ?? null }
-  )
+    friendlyOrderId(disputedOrder),
+    orderDate(disputedOrder),
+    signalHashes(disputedOrder, disputedAddress),
+    completeOrders.map((order) => ({
+      order_id: friendlyOrderId(order),
+      order_date: orderDate(order),
+      refund_status:
+        order.financial_status === 'refunded' || claimedOrderIds.has(order.id) ? 'full' : 'none',
+      signalHashes: signalHashes(
+        order,
+        order.shipping_address_id ? addresses.get(order.shipping_address_id) ?? null : null,
+      ),
+      paymentCredential: order.card_last4,
+    })),
+    { disputedPaymentCredential: disputedOrder.card_last4 },
+  );
 
-  // -------------------------------------------------------------------------
-  // 7. Cross-merchant snapshot (from customer profile)
-  // -------------------------------------------------------------------------
-  const totalMerchantsSeenAt: number = profile.total_merchants_seen_at ?? 1
-  const K_ANON_THRESHOLD = 3
+  const { data: refData } = options?.referenceNumber
+    ? { data: options.referenceNumber }
+    : await service.rpc('generate_evidence_reference');
+  const referenceNumber = typeof refData === 'string'
+    ? refData
+    : `UNAUTH-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${randomUUID().slice(0, 6).toUpperCase()}`;
 
-  const crossMerchant: EvidencePackage['crossMerchant'] =
-    totalMerchantsSeenAt >= K_ANON_THRESHOLD
-      ? {
-          satisfied: true,
-          merchantCount: totalMerchantsSeenAt,
-          networkOrderCount: profile.total_orders ?? allTxs.length,
-          networkRefundRate: Math.round((profile.refund_rate ?? 0) * 100),
-          networkInrRate: null as unknown as number,
-        }
-      : { satisfied: false }
-
-  // -------------------------------------------------------------------------
-  // 8. Merchant notes
-  // -------------------------------------------------------------------------
-  // Scope notes to this merchant. A customer_profile can be shared across
-  // merchants, so filtering by customer_profile_id alone would leak another
-  // merchant's notes into this merchant's evidence package.
-  const { data: noteRows } = await supabaseServiceRole
-    .from('customer_notes')
-    .select('body, created_at')
-    .eq('merchant_id', merchantId)
-    .eq('customer_profile_id', customerProfileId)
-    .eq('deleted_by_merchant', false)
-    .order('created_at', { ascending: false })
-    .limit(3) as unknown as { data: Array<{ body: string; created_at: string }> | null }
-
-  const merchantNotes =
-    (noteRows ?? []).flatMap(n => (n.body ? [n.body] : [])).join('\n\n') || undefined
-
-  // -------------------------------------------------------------------------
-  // 9. Reference number
-  // -------------------------------------------------------------------------
-  const { data: refData } = await supabaseServiceRole
-    .rpc('generate_evidence_reference') as unknown as { data: string | null }
-
-  const referenceNumber = refData ?? `UNAUTH-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-000001`
-
-  // -------------------------------------------------------------------------
-  // 10. Confidence grade
-  // -------------------------------------------------------------------------
-  const riskLevel: string = profile.risk_level ?? 'low'
-  const gradeMap: Record<string, EvidencePackage['confidenceGrade']> = {
-    critical: 'definite',
-    high: 'probable',
-    medium: 'possible',
-    low: 'weak',
-  }
-  const confidenceGrade = gradeMap[riskLevel] ?? 'weak'
-
-  // -------------------------------------------------------------------------
-  // 11. Build order history list
-  // -------------------------------------------------------------------------
-  const ce3QualifyingIds = new Set(ce3.priorTransactions.map(p => p.orderId))
-
-  const orderHistory: EvidencePackage['orderHistory'] = allTxs
-    .map(tx => {
-      const isDisputed = tx.id === disputedOrderId || tx.order_id === disputedOrderId
-      const refundClaimed: boolean = !!tx.refund_claimed
-      let outcome: string = 'completed'
-      if (isDisputed) outcome = 'disputed'
-      else if (refundClaimed) outcome = 'refunded'
-
-      // Time to claim
-      let timeToClaim: string | undefined
-      if (refundClaimed && tx.processed_at) {
-        // We don't have separate refund_date readily — skip for now
-      }
-
-      return {
-        orderId: friendlyId(tx),
-        date: new Date(txDate(tx)),
-        value: (tx.order_value ?? 0) as number,
-        outcome,
-        timeToClaim,
-        isDisputedOrder: isDisputed,
-        isCE3QualifyingTransaction: ce3QualifyingIds.has(friendlyId(tx)),
-      }
-    })
-    .sort((a, b) => a.date.getTime() - b.date.getTime())
-
-  // -------------------------------------------------------------------------
-  // 12. Customer shape
-  // -------------------------------------------------------------------------
-  const identifierTypesPresent: string[] = []
-  if (emailsPresent.length > 0) identifierTypesPresent.push('email address')
-  if (addressesPresent.length > 0) identifierTypesPresent.push('shipping address')
-  if (phonesPresent.length > 0) identifierTypesPresent.push('phone number')
-  if (ipsPresent.length > 0) identifierTypesPresent.push('IP address')
-  if (cardsPresent.length > 0) identifierTypesPresent.push('payment card')
-
-  const customer: EvidencePackage['customer'] = {
-    maskedEmail: emailsPresent[0] ? maskEmail(emailsPresent[0]) : '****',
-    maskedAddress: addressesPresent[0] ? maskAddress(addressesPresent[0]) : undefined,
-    maskedPhone: phonesPresent[0] ? maskPhone(phonesPresent[0]) : undefined,
-    paymentLast4: cardsPresent[0] ?? undefined,
-    identifierTypesPresent,
-  }
-
-  // -------------------------------------------------------------------------
-  // Return assembled package
-  // -------------------------------------------------------------------------
   return {
     referenceNumber,
     generatedAt: new Date(),
-    merchant: { name: merchantName, id: merchantId },
+    merchant: { id: merchantId, name: merchant.business_name ?? merchant.name ?? 'Merchant' },
     disputedOrder: {
-      orderId: ((disputedTx.order_id ?? disputedTx.id) as string),
-      orderDate: disputedDate,
-      orderValue: (disputedTx.order_value ?? 0) as number,
-      currency: resolveEvidencePackageCurrency(disputedTx),
-      outcome: 'disputed',
+      orderId: friendlyOrderId(disputedOrder),
+      orderDate: orderDate(disputedOrder),
+      orderValue: Number(disputedOrder.total_price ?? 0),
+      currency: disputedOrder.currency ?? 'USD',
+      outcome: disputedOrder.financial_status ?? disputedOrder.fulfillment_state ?? 'unknown',
     },
-    customer,
-    orderHistory,
+    customer: {
+      maskedEmail: primaryEmail ? maskEmail(primaryEmail) : 'Not available',
+      maskedAddress: disputedAddressText ? maskAddress(disputedAddressText) : undefined,
+      maskedPhone: primaryPhone ? maskPhone(primaryPhone) : undefined,
+      paymentLast4: disputedOrder.card_last4 ?? undefined,
+      identifierTypesPresent: identityEvidence.map((item) => item.identifierType),
+    },
+    orderHistory: completeOrders.map((order) => ({
+      orderId: friendlyOrderId(order),
+      date: orderDate(order),
+      value: Number(order.total_price ?? 0),
+      outcome:
+        order.financial_status === 'refunded' || claimedOrderIds.has(order.id)
+          ? 'refunded'
+          : order.financial_status ?? 'completed',
+      isDisputedOrder: order.id === disputedOrder.id,
+      isCE3QualifyingTransaction: ce3.priorTransactions.some((prior) => prior.orderId === friendlyOrderId(order)),
+    })),
     identityEvidence,
     ce3,
-    crossMerchant,
-    merchantNotes,
-    confidenceGrade,
+    crossMerchant: { satisfied: false },
+    confidenceGrade: 'weak',
     engineVersion: ENGINE_VERSION,
-  }
+  };
 }

@@ -5,30 +5,42 @@ import { getMerchantDataPresence } from '@/lib/supabase/getMerchantDataPresence'
 import { resolveMerchantSetupState } from '@/lib/connections/getMerchantSetupState';
 import { TABLES } from '@/lib/supabase/tables';
 import { requirePermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/permissions';
-import { getExposureAtRisk } from '@/lib/supabase/merchantHelpers';
 import { buildClaimOpsMetrics } from '@/lib/claims/reporting';
+import { listPartnerRecoveryRules, listPartners } from '@/lib/partners/store';
+import { listRecoveryCases } from '@/lib/recoveries/store';
+import { dominantCurrency } from '@/lib/utils/format';
 import { ReportsPageView } from '@/app/(app)/reports/ReportsPageView';
-import type { ClaimRow, ClaimTypeBreakdown, GradeBucket, OutcomeBreakdown, OutcomeRow, ReportsTab, RunSummary, SourcesCoverage, TxGradeRow } from '@/app/(app)/reports/reportsPageTypes';
+import type { ClaimRow, OutcomeRow, ReportsTab, SourcesCoverage } from '@/app/(app)/reports/reportsPageTypes';
 import {
-  GRADE_SAMPLE_LIMIT,
   buildClaimTypeBreakdown,
-  buildGradeBuckets,
-  buildMatchRateTrend,
   buildOutcomeBreakdown,
-  gradeFromTransaction,
+  buildPartnerPerformance,
+  buildRecoveryMetrics,
+  buildRecoveryStatusBreakdown,
+  buildRequestedActionBreakdown,
   liveSetupCta,
 } from '@/app/(app)/reports/reportsPageUtils';
 
-/**
- * v2 `claim_outcomes` has no `created_at` column (one row per claim, keyed on
- * decided_at/updated_at). Map onto the OutcomeRow shape the reporting helpers
- * expect, with created_at degraded to null.
- */
+type FinancialSummaryRow = {
+  support_payout_case_id: string;
+  currency: string;
+  exposed_minor: number;
+  paid_minor: number;
+  confirmed_loss_minor: number;
+  recoverable_minor: number;
+  recovered_minor: number;
+  prevented_minor: number;
+  written_off_minor: number;
+};
+
 function mapOutcomeRow(row: {
   claim_id: string;
   decision: string | null;
   outcome: string | null;
   amount_refunded: number | null;
+  amount_recovered: number | null;
+  recommended_payout_action: string | null;
+  followed_recommendation: boolean | null;
   decided_at: string | null;
   updated_at: string | null;
 }): OutcomeRow {
@@ -37,6 +49,9 @@ function mapOutcomeRow(row: {
     decision: row.decision,
     outcome: row.outcome,
     amount_refunded: row.amount_refunded,
+    amount_recovered: row.amount_recovered,
+    recommended_payout_action: row.recommended_payout_action,
+    followed_recommendation: row.followed_recommendation,
     decided_at: row.decided_at,
     updated_at: row.updated_at,
     created_at: null,
@@ -62,7 +77,7 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
     ? resolvedSearchParams.range
     : '30d';
   const rawTab = resolvedSearchParams.tab;
-  const activeTab: ReportsTab = rawTab === 'csv' || rawTab === 'integration' ? rawTab : 'overview';
+  const activeTab: ReportsTab = rawTab === 'recovery' || rawTab === 'integration' ? 'recovery' : 'overview';
 
   const cutoff = range === 'all'
     ? null
@@ -75,70 +90,86 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
     ? null
     : new Date(Date.now() - rangeMs * 86400000).toISOString();
 
-  const [{ data: runs }, exposureAtRisk] = await Promise.all([
-    serviceClient
-      .from(TABLES.PROCESSING_JOBS)
-      .select('id,created_at,total_rows,flagged_count,filename,status')
-      .eq('merchant_id', ctx.merchantId)
-      .eq('hidden_by_merchant', false)
-      .order('created_at', { ascending: false })
-      .limit(50),
-    getExposureAtRisk(serviceClient, ctx.merchantId),
-  ]);
-
-  const rows = (runs ?? []) as RunSummary[];
-  const jobIds = rows.map((row) => row.id);
-  const { data: txRows } = jobIds.length > 0
-    ? await serviceClient
-      .from(TABLES.AUDIT_TRANSACTIONS)
-      .select('identity_confidence_grade,match_status')
-      .in('job_id', jobIds)
-      .not('dismissed_by_merchant', 'is', true)
-      .limit(2000)
-    : { data: [] };
-
-  const gradeCounts: Record<GradeBucket, number> = {
-    definite: 0,
-    probable: 0,
-    possible: 0,
-    weak: 0,
-  };
-
-  for (const tx of ((txRows ?? []) as TxGradeRow[])) {
-    gradeCounts[gradeFromTransaction(tx)] += 1;
-  }
-
-  const totalRows = rows.reduce((sum, row) => sum + row.total_rows, 0);
-  const totalFlagged = rows.reduce((sum, row) => sum + (row.flagged_count ?? 0), 0);
-  const trend = rows.slice(0, 7).reverse();
-  const matchRateTrend = buildMatchRateTrend(trend);
-  const buckets = buildGradeBuckets(gradeCounts);
-
   let claimsQuery = serviceClient
-    .from('claims')
-    .select('id,status,claim_type,amount_at_risk,submitted_at,created_at,updated_at')
+    .from(TABLES.MERCHANT_CLAIMS)
+    .select([
+      'id',
+      'status',
+      'claim_type',
+      'currency',
+      'amount_at_risk',
+      'total_estimated_loss',
+      'refund_amount',
+      'replacement_item_value',
+      'replacement_shipping_cost',
+      'discount_amount',
+      'store_credit_amount',
+      'requested_action',
+      'recoverability',
+      'recovery_owner',
+      'recommended_payout_action',
+      'submitted_at',
+      'created_at',
+      'updated_at',
+    ].join(','))
     .eq('merchant_id', ctx.merchantId);
   if (cutoff) claimsQuery = claimsQuery.gte('submitted_at', cutoff);
 
   let priorClaimsQuery = serviceClient
-    .from('claims')
-    .select('id,status,claim_type,amount_at_risk,submitted_at,created_at,updated_at')
+    .from(TABLES.MERCHANT_CLAIMS)
+    .select('id,status,claim_type,currency,amount_at_risk,total_estimated_loss,requested_action,submitted_at,created_at,updated_at')
     .eq('merchant_id', ctx.merchantId);
   if (priorCutoff) priorClaimsQuery = priorClaimsQuery.gte('submitted_at', priorCutoff);
   if (priorEnd) priorClaimsQuery = priorClaimsQuery.lte('submitted_at', priorEnd);
 
-  const [claimsResult, priorClaimResult] = await Promise.all([
+  const [claimsResult, priorClaimResult, allRecoveryCases, partners, partnerRules, financialResult] = await Promise.all([
     claimsQuery.then((r: { error: unknown; data: ClaimRow[] | null }) => ({ data: r.error ? [] as ClaimRow[] : ((r.data ?? []) as ClaimRow[]) })),
     range === 'all' ? Promise.resolve({ data: [] as ClaimRow[] }) : priorClaimsQuery.then((r: { error: unknown; data: ClaimRow[] | null }) => ({ data: r.error ? [] as ClaimRow[] : ((r.data ?? []) as ClaimRow[]) })),
+    listRecoveryCases(serviceClient, ctx.merchantId).catch(() => []),
+    listPartners(serviceClient, ctx.merchantId).catch(() => []),
+    listPartnerRecoveryRules(serviceClient, ctx.merchantId).catch(() => []),
+    serviceClient
+      .from(TABLES.CASE_FINANCIAL_SUMMARIES)
+      .select('support_payout_case_id,currency,exposed_minor,paid_minor,confirmed_loss_minor,recoverable_minor,recovered_minor,prevented_minor,written_off_minor')
+      .eq('merchant_id', ctx.merchantId)
+      .then((result: { error: unknown; data: FinancialSummaryRow[] | null }) => ({ data: result.error ? [] as FinancialSummaryRow[] : (result.data ?? []) })),
   ]);
-  const claims = claimsResult.data;
+  const financialByCaseCurrency = new Map<string, FinancialSummaryRow>(
+    financialResult.data.map((row: FinancialSummaryRow) => [`${row.support_payout_case_id}:${row.currency.toUpperCase()}`, row]),
+  );
+  const withFinancialSummary = (claim: ClaimRow): ClaimRow => {
+    const currency = (claim.currency ?? 'USD').toUpperCase();
+    const summary = financialByCaseCurrency.get(`${claim.id}:${currency}`);
+    if (!summary) return claim;
+    return {
+      ...claim,
+      amount_at_risk: Number(summary.exposed_minor ?? 0) / 100,
+      total_estimated_loss: Number(summary.confirmed_loss_minor ?? 0) / 100,
+      refund_amount: Number(summary.paid_minor ?? 0) / 100,
+    };
+  };
+  const claims = claimsResult.data.map(withFinancialSummary);
   const priorClaims = priorClaimResult.data;
+  const ledgerRecoveryCases = allRecoveryCases.map((recoveryCase) => {
+    const currency = recoveryCase.currency.toUpperCase();
+    const summary = financialByCaseCurrency.get(`${recoveryCase.support_payout_case_id}:${currency}`);
+    return summary ? {
+      ...recoveryCase,
+      eligible_loss_amount: Number(summary.recoverable_minor ?? 0) / 100,
+      estimated_recoverable_min: Number(summary.recoverable_minor ?? 0) / 100,
+      estimated_recoverable_max: Number(summary.recoverable_minor ?? 0) / 100,
+      amount_recovered: Number(summary.recovered_minor ?? 0) / 100,
+    } : recoveryCase;
+  });
+  const recoveryCases = cutoff
+    ? ledgerRecoveryCases.filter((recoveryCase) => recoveryCase.created_at >= cutoff || recoveryCase.updated_at >= cutoff)
+    : ledgerRecoveryCases;
 
   const [outcomeResult, priorOutcomeResult] = await Promise.all([
     claims.length > 0
       ? serviceClient
         .from('claim_outcomes')
-        .select('claim_id,decision,outcome,amount_refunded,decided_at,updated_at')
+        .select('claim_id,decision,outcome,amount_refunded,amount_recovered,recommended_payout_action,followed_recommendation,decided_at,updated_at')
         .in('claim_id', claims.map((claim: ClaimRow) => claim.id))
         .then((r: {
           error: unknown;
@@ -147,6 +178,9 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
             decision: string | null;
             outcome: string | null;
             amount_refunded: number | null;
+            amount_recovered: number | null;
+            recommended_payout_action: string | null;
+            followed_recommendation: boolean | null;
             decided_at: string | null;
             updated_at: string | null;
           }> | null;
@@ -155,8 +189,8 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
     priorClaims.length > 0
       ? serviceClient
         .from('claim_outcomes')
-        .select('claim_id,decision,outcome,amount_refunded,decided_at,updated_at')
-        .in('claim_id', priorClaims.map((c: ClaimRow) => c.id))
+        .select('claim_id,decision,outcome,amount_refunded,amount_recovered,recommended_payout_action,followed_recommendation,decided_at,updated_at')
+        .in('claim_id', priorClaims.map((claim: ClaimRow) => claim.id))
         .then((r: {
           error: unknown;
           data: Array<{
@@ -164,20 +198,34 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
             decision: string | null;
             outcome: string | null;
             amount_refunded: number | null;
+            amount_recovered: number | null;
+            recommended_payout_action: string | null;
+            followed_recommendation: boolean | null;
             decided_at: string | null;
             updated_at: string | null;
           }> | null;
         }) => ({ data: r.error ? [] as OutcomeRow[] : ((r.data ?? []).map(mapOutcomeRow)) }))
       : Promise.resolve({ data: [] as OutcomeRow[] }),
   ]);
+  const currencyByCase = new Map(claimsResult.data.map((claim: ClaimRow) => [claim.id, (claim.currency ?? 'USD').toUpperCase()]));
+  const withFinancialOutcome = (outcome: OutcomeRow): OutcomeRow => {
+    const currency = currencyByCase.get(outcome.claim_id) ?? 'USD';
+    const summary = financialByCaseCurrency.get(`${outcome.claim_id}:${currency}`);
+    return summary
+      ? { ...outcome, amount_refunded: Number(summary.paid_minor ?? 0) / 100, amount_recovered: Number(summary.recovered_minor ?? 0) / 100 }
+      : outcome;
+  };
+  const outcomes = outcomeResult.data.map(withFinancialOutcome);
+  const priorOutcomes = priorOutcomeResult.data.map(withFinancialOutcome);
 
-  const claimMetrics = buildClaimOpsMetrics(claims, outcomeResult.data ?? []);
+  // Display currency for money KPIs/charts: most common case currency, then recovery-case currency.
+  const displayCurrency = dominantCurrency(claims, dominantCurrency(ledgerRecoveryCases));
+
+  const claimMetrics = buildClaimOpsMetrics(claims, outcomes);
   const priorMetrics = range === 'all'
     ? null
-    : buildClaimOpsMetrics(priorClaims, priorOutcomeResult.data ?? []);
-
-  const claimTypeBreakdown: ClaimTypeBreakdown = buildClaimTypeBreakdown(claims);
-  const outcomeBreakdown: OutcomeBreakdown = buildOutcomeBreakdown(outcomeResult.data ?? []);
+    : buildClaimOpsMetrics(priorClaims, priorOutcomes);
+  const recoveryMetrics = buildRecoveryMetrics(recoveryCases);
 
   const sourcesCoverage: SourcesCoverage = {
     customerProfiles: dataPresence.sources.customerProfiles,
@@ -185,14 +233,13 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
     supportCases: dataPresence.sources.supportCases,
     evidencePackages: dataPresence.sources.evidencePackages,
     auditTransactions: dataPresence.sources.auditTransactions,
+    recoveryCases: allRecoveryCases.length,
+    partners: partners.length,
+    partnerRules: partnerRules.length,
   };
 
-  const hasAnyData = dataPresence.hasAnyData;
+  const hasAnyData = dataPresence.hasAnyData || claims.length > 0 || allRecoveryCases.length > 0;
   const liveCta = liveSetupCta(connectionState);
-  const gradeSampled = (txRows ?? []).length >= GRADE_SAMPLE_LIMIT;
-  const analysedRows = (txRows ?? []).length;
-
-  const chartProps = { matchRateTrend, gradeSampled, analysedRows, buckets };
 
   return (
     <ReportsPageView
@@ -201,7 +248,6 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
       hasAnyData={hasAnyData}
       activeTab={activeTab}
       range={range}
-      csvCount={rows.length}
       tabPanel={{
         activeTab,
         overview: {
@@ -209,26 +255,23 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
           liveCta,
           claims,
           claimMetrics,
-          rows,
-          totalFlagged,
+          priorMetrics,
+          recoveryMetrics,
           range,
-          ...chartProps,
+          displayCurrency,
+          claimTypeBreakdown: buildClaimTypeBreakdown(claims),
+          requestedActionBreakdown: buildRequestedActionBreakdown(claims),
+          outcomeBreakdown: buildOutcomeBreakdown(outcomes),
+          sourcesCoverage,
         },
-        csv: {
-          rows,
-          totalRows,
-          totalFlagged,
-          ...chartProps,
-        },
-        live: {
+        recovery: {
           connectionState,
           liveCta,
           range,
-          claimMetrics,
-          priorMetrics,
-          exposureAtRisk,
-          claimTypeBreakdown,
-          outcomeBreakdown,
+          displayCurrency,
+          recoveryMetrics,
+          recoveryStatusBreakdown: buildRecoveryStatusBreakdown(recoveryCases),
+          partnerPerformance: buildPartnerPerformance(recoveryCases),
           sourcesCoverage,
         },
       }}

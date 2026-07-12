@@ -3,28 +3,43 @@
 import { SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { EmptyState } from '@/components/ui';
+import { DEFAULT_PAYOUT_RULES } from '@/lib/rules/payoutDefaults';
+import { ACTION_LABELS } from '@/lib/rules/summary';
 
 interface RulesEmptyStateProps {
   canManage: boolean;
-  onCreate: () => void;
+  onUseDefaults: () => void;
   onBrowseTemplates: () => void;
 }
 
-export function RulesEmptyState({ canManage, onCreate, onBrowseTemplates }: RulesEmptyStateProps) {
+export function RulesEmptyState({ canManage, onUseDefaults, onBrowseTemplates }: RulesEmptyStateProps) {
   return (
     <EmptyState
       icon={<SlidersHorizontal className="h-6 w-6" />}
-      title="No fraud rules yet"
-      description="Rules apply your own logic to Unauth's identity signals and surface a recommendation in the Gorgias widget. Unauth runs the math — you own the decision."
+      title="No rules yet"
+      description="Start from a template or add your first rule. Default payout rules apply until you create your own."
       action={
         canManage ? (
-          <div className="flex items-center justify-center gap-2">
-            <Button variant="primary" onClick={onCreate}>
-              Create your first rule
+          <div className="flex flex-col items-center justify-center gap-3">
+            <div className="flex flex-wrap justify-center gap-2">
+              {DEFAULT_PAYOUT_RULES.map((rule) => (
+                <span
+                  key={rule.name}
+                  className="rounded-[var(--radius-md)] border px-2.5 py-1 text-caption"
+                  style={{ borderColor: 'var(--border-muted)', color: 'var(--text-secondary)' }}
+                >
+                  {rule.name}: {ACTION_LABELS[rule.action]}
+                </span>
+              ))}
+            </div>
+            <div className="flex items-center justify-center gap-2">
+            <Button variant="primary" onClick={onUseDefaults}>
+              Use default payout rules
             </Button>
             <Button variant="secondary" onClick={onBrowseTemplates}>
               Use a template
             </Button>
+            </div>
           </div>
         ) : undefined
       }

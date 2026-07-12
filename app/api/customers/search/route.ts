@@ -1,12 +1,10 @@
-// TODO(product-gating): require CUSTOMER_SEARCH entitlement when ENFORCE_PRODUCT_GATES is enabled.
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
-import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
-import { escapePostgrestFilterValue } from '@/lib/supabase/merchantHelpers';
 import { withRequestLogging } from '@/lib/log';
 import { findCustomerProfileIdsByText } from '@/lib/customers/profileSearch';
+import { enforceEntitlement } from '@/lib/product/requireEntitlement';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,8 +21,11 @@ type CustomerSearchRow = {
  * Returns matching customer profiles for the command palette.
  *
  * SECURITY: requires authenticated user with VIEW_CUSTOMERS permission.
- * Results are scoped to the caller's merchantId via merchant_ids array membership.
- * No unauthenticated access, no cross-merchant profile exposure.
+ * Candidate profile IDs are resolved ONLY through findCustomerProfileIdsByText,
+ * which scopes by customer_profile_identities.merchant_id. Display rows are then
+ * fetched by those already-owned IDs. `identities` is a network-level table with
+ * no merchant_id column, so it is NEVER scanned unscoped here (doing so leaked
+ * cross-tenant profiles when the scoped-client proxy silently no-op'd on it).
  */
 async function GETHandler(req: NextRequest) {
   // ── Auth ──────────────────────────────────────────────────────────────────
@@ -37,7 +38,9 @@ async function GETHandler(req: NextRequest) {
   const serviceClient = createServiceClient();
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_CUSTOMERS);
   if (denied) return denied;
-  const scopedClient = createScopedClient(ctx.merchantId, serviceClient);
+
+  const gated = await enforceEntitlement(serviceClient, ctx.merchantId, 'CUSTOMER_SEARCH');
+  if (gated) return gated;
 
   // ── Input validation ──────────────────────────────────────────────────────
   const q = req.nextUrl.searchParams.get('q')?.trim() ?? '';
@@ -47,126 +50,30 @@ async function GETHandler(req: NextRequest) {
     return NextResponse.json({ results: [] });
   }
 
-  // Escape user input to prevent PostgREST filter injection via special chars.
-  const safeQ = escapePostgrestFilterValue(q);
-  const safeLike = `%${safeQ}%`;
-  const qLower = q.toLowerCase();
-
-  // ── Merchant-scoped search ─────────────────────────────────────────────────
-  // SECURITY: Always constrain to caller's merchantId via merchant_ids array.
-  // Use separate typed query methods instead of composing a raw .or() string
-  // to eliminate PostgREST filter-string injection.
-  //
-  const emailRes = await (scopedClient
-    .from(TABLES.CUSTOMER_PROFILES)
-    .select('id, names, primary_email, risk_level')
-    .ilike('primary_email', safeLike)
-    .order('risk_score', { ascending: false })
-    .limit(limit) as unknown as Promise<{
-      data: CustomerSearchRow[] | null;
-      error: { message: string } | null;
-    }>);
-
-  // Merge and deduplicate by id
-  const seen = new Set<string>();
-  const merged: CustomerSearchRow[] = [];
-  for (const row of emailRes.data ?? []) {
-    if (!seen.has(row.id)) {
-      seen.add(row.id);
-      merged.push(row);
-    }
-  }
-
+  // ── Merchant-scoped candidate resolution ────────────────────────────────────
+  // The ONLY source of candidate IDs is the merchant-scoped anchor index. This
+  // guarantees every returned profile is visible to the caller's merchant.
   const merchantFilter = `merchant_ids.cs.${JSON.stringify([ctx.merchantId])}`;
-  const identityMatchedIds = await findCustomerProfileIdsByText(serviceClient, {
+  const ownedProfileIds = await findCustomerProfileIdsByText(serviceClient, {
     merchantIds: [ctx.merchantId],
     merchantFilter,
     query: q,
     limit: 100,
   });
 
-  if (identityMatchedIds.length > 0 && merged.length < limit) {
-    const { data: identityProfiles } = await (scopedClient
-      .from(TABLES.CUSTOMER_PROFILES)
-      .select('id, names, primary_email, risk_level')
-      .in('id', identityMatchedIds)
-      .order('risk_score', { ascending: false })
-      .limit(limit) as unknown as Promise<{
-      data: CustomerSearchRow[] | null;
-      error: { message: string } | null;
-    }>);
-
-    for (const row of identityProfiles ?? []) {
-      if (seen.has(row.id)) continue;
-      seen.add(row.id);
-      merged.push(row);
-      if (merged.length >= limit) break;
-    }
+  if (ownedProfileIds.length === 0) {
+    return NextResponse.json({ results: [] });
   }
 
-  // Application-side partial name match — safe: q is never interpolated into
-  // a PostgREST filter string. We scan recency pages until we have enough
-  // distinct matches or hit a documented hard cap.
-  const PAGE = 500;
-  const MAX_SCAN = 5000;
-  let scanned = 0;
-  let namePoolError: { message: string } | null = null;
-  const scanNamePoolPage = async (offset: number): Promise<void> => {
-    if (scanned >= MAX_SCAN || merged.length >= limit || namePoolError) return;
+  // Fetch display fields ONLY for IDs already proven to belong to this merchant.
+  const { data } = await serviceClient
+    .from(TABLES.CUSTOMER_PROFILES)
+    .select('id, names, primary_email, risk_level')
+    .in('id', ownedProfileIds)
+    .order('risk_score', { ascending: false })
+    .limit(limit) as unknown as { data: CustomerSearchRow[] | null };
 
-    const { data, error } = await (scopedClient
-      .from(TABLES.CUSTOMER_PROFILES)
-      .select('id, names, primary_email, risk_level')
-      .order('last_seen', { ascending: false })
-      .range(offset, offset + PAGE - 1) as unknown as Promise<{
-      data: CustomerSearchRow[] | null;
-      error: { message: string } | null;
-    }>);
-
-    if (error) {
-      namePoolError = error;
-      return;
-    }
-
-    const page = data ?? [];
-    scanned += page.length;
-    for (const row of page) {
-      if (seen.has(row.id)) continue;
-      const matchesName = row.names?.some((name) =>
-        name.toLowerCase().includes(qLower)
-      );
-      if (!matchesName) continue;
-      seen.add(row.id);
-      merged.push(row);
-      if (merged.length >= limit) return;
-    }
-
-    if (page.length < PAGE) return;
-    return scanNamePoolPage(offset + PAGE);
-  };
-  if (merged.length < limit) {
-    await scanNamePoolPage(0);
-  }
-
-  if (emailRes.error && namePoolError) {
-    // Double fallback: email ilike only, already escaped above
-    const { data: fallback } = await scopedClient
-      .from(TABLES.CUSTOMER_PROFILES)
-      .select('id, names, primary_email, risk_level')
-      .ilike('primary_email', safeLike)
-      .order('risk_score', { ascending: false })
-      .limit(limit) as unknown as { data: CustomerSearchRow[] | null };
-
-    const results = (fallback ?? []).map((r: CustomerSearchRow) => ({
-      id: r.id,
-      name: r.names?.[0] ?? r.primary_email ?? 'Unknown',
-      email: r.primary_email,
-      risk_level: r.risk_level ?? 'low',
-    }));
-    return NextResponse.json({ results });
-  }
-
-  const results = merged.slice(0, limit).map((r) => ({
+  const results = (data ?? []).map((r) => ({
     id: r.id,
     name: r.names?.[0] ?? r.primary_email ?? 'Unknown',
     email: r.primary_email,

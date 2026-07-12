@@ -87,7 +87,7 @@ function SidebarInnerContent({
       tierFuture: route.future,
       showDevAccess: !enforceGates && Boolean(route.tier),
       badge: route.key === 'claims' ? claimsCount || undefined : undefined,
-      badgeTitle: route.key === 'claims' ? 'Open claims for review' : undefined,
+      badgeTitle: route.key === 'claims' ? 'Open payout cases for review' : undefined,
     })),
   }));
 

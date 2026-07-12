@@ -7,12 +7,9 @@ import { resolveDefaultAppPath } from '@/lib/permissions';
 import { shouldRequireOnboarding } from '@/lib/account/onboardingGate';
 import { ensureMerchantContextForUser } from '@/lib/account/ensureMerchantContext';
 import { getMerchantProfileById } from '@/lib/account/merchantProfile';
+import { getConnectionState } from '@/lib/connections/getConnectionState';
 
 export const dynamic = 'force-dynamic';
-
-type StoreConnectionRow = {
-  store_key: string | null;
-};
 
 export default async function OnboardingPage() {
   const supabase = createClient();
@@ -33,20 +30,40 @@ export default async function OnboardingPage() {
       .eq('merchant_id', ctx.merchantId)
       .limit(1)
     : Promise.resolve({ data: [] });
-  const shopifyPromise = ctx
+  const connectionPromise = ctx
+    ? getConnectionState(serviceClient, ctx.merchantId)
+    : Promise.resolve({
+        orderSourceConnected: false,
+        orderSourcePlatform: null,
+        orderSourceStoreKey: null,
+        shopify: false,
+        helpdesk: false,
+        helpdeskProvider: null,
+        bothConnected: false,
+        neitherConnected: true,
+        shopifyOnlyConnected: false,
+        helpdeskOnlyConnected: false,
+        shopDomain: null,
+        linkState: 'not_connected' as const,
+        trackingConnected: false,
+      });
+  const applicabilityPromise = ctx
     ? serviceClient
-      .from(TABLES.MERCHANT_SHOPIFY_CONNECTIONS)
-      .select('store_key')
+      .from(TABLES.CATEGORY_APPLICABILITY)
+      .select('category,status')
       .eq('merchant_id', ctx.merchantId)
-      .eq('platform', 'shopify')
-      .maybeSingle()
-    : Promise.resolve({ data: null });
+      .in('category', ['warehouse_3pl', 'returns'])
+    : Promise.resolve({ data: [] });
 
-  const [merchant, { data: jobs }, { data: shopifyConnection }] = await Promise.all([
+  const [merchant, { data: jobs }, connectionState, { data: applicabilityRows }] = await Promise.all([
     merchantPromise,
     jobsPromise,
-    shopifyPromise,
+    connectionPromise,
+    applicabilityPromise,
   ]);
+  const applicability = new Map(
+    ((applicabilityRows ?? []) as Array<{ category: string; status: string }>).map((row) => [row.category, row.status]),
+  );
 
   const setupComplete =
     merchant?.setup_complete === true || user.user_metadata?.setup_complete === true;
@@ -55,6 +72,8 @@ export default async function OnboardingPage() {
     hasMerchantContext: !!ctx,
     setupComplete,
     auditRunCount: (jobs ?? []).length,
+    shopifyConnected: connectionState.shopify,
+    helpdeskConnected: connectionState.helpdesk,
   })) {
     redirect(await resolveDefaultAppPath(serviceClient, user.id));
   }
@@ -71,11 +90,28 @@ export default async function OnboardingPage() {
       }
       initialPrimaryConcern={
         merchant?.primary_fraud_concern ??
+        (user.user_metadata?.primary_loss_concern as string | undefined) ??
         (user.user_metadata?.primary_fraud_concern as string | undefined) ??
         ''
       }
-      shopifyConnected={!!(shopifyConnection as StoreConnectionRow | null)?.store_key}
-      shopifyShopDomain={(shopifyConnection as StoreConnectionRow | null)?.store_key ?? ''}
+      initialUsesWms3pl={
+        applicability.get('warehouse_3pl') === 'not_applicable'
+          ? 'no'
+          : applicability.has('warehouse_3pl')
+            ? 'yes'
+            : ''
+      }
+      initialUsesReturnsPlatform={
+        applicability.get('returns') === 'not_applicable'
+          ? 'no'
+          : applicability.has('returns')
+            ? 'yes'
+            : ''
+      }
+      shopifyConnected={connectionState.shopify}
+      shopifyShopDomain={connectionState.shopDomain ?? ''}
+      helpdeskConnected={connectionState.helpdesk}
+      helpdeskProvider={connectionState.helpdeskProvider}
     />
   );
 }

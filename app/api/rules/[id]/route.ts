@@ -4,6 +4,7 @@ import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { TABLES } from '@/lib/supabase/tables';
 import { mapRuleRow, RULE_COLUMNS, updateRuleSchema } from '@/lib/rules/store';
 import { validateConditions } from '@/lib/rules/fields';
+import type { MerchantRule, RuleCondition } from '@/lib/rules-engine';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -33,13 +34,38 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     );
   }
 
-  if (parsed.data.conditions !== undefined) {
-    const conditionErrors = validateConditions(parsed.data.conditions);
+  const parsedConditions = parsed.data.conditions as RuleCondition[] | undefined;
+  if (parsedConditions !== undefined) {
+    const conditionErrors = validateConditions(parsedConditions);
     if (conditionErrors.length > 0) {
       return NextResponse.json({ error: conditionErrors[0]!.message }, { status: 422 });
     }
   }
 
+  const { data: currentRow, error: currentError } = await serviceClient
+    .from(TABLES.MERCHANT_RULES)
+    .select(RULE_COLUMNS)
+    .eq('id', id)
+    .eq('merchant_id', ctx.merchantId)
+    .maybeSingle();
+  if (currentError) {
+    return NextResponse.json({ error: 'Failed to load rule' }, { status: 500 });
+  }
+  if (!currentRow) {
+    return NextResponse.json({ error: 'Rule not found' }, { status: 404 });
+  }
+
+  const currentRule = mapRuleRow(currentRow as never);
+  const nextRule: MerchantRule = {
+    ...currentRule,
+    ...parsed.data,
+    description: parsed.data.description === undefined ? currentRule.description : parsed.data.description,
+    conditions: parsedConditions ?? currentRule.conditions,
+    action: parsed.data.action ?? currentRule.action,
+    condition_operator: parsed.data.condition_operator ?? currentRule.condition_operator,
+    is_active: parsed.data.is_active ?? currentRule.is_active,
+    priority: parsed.data.priority ?? currentRule.priority,
+  };
   const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
   for (const key of ['name', 'description', 'conditions', 'action', 'condition_operator', 'is_active', 'priority'] as const) {
     if (parsed.data[key] !== undefined) update[key] = parsed.data[key];
@@ -59,7 +85,6 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   if (!data) {
     return NextResponse.json({ error: 'Rule not found' }, { status: 404 });
   }
-
   return NextResponse.json({ rule: mapRuleRow(data as never) });
 }
 

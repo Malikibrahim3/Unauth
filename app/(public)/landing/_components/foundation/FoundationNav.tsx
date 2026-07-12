@@ -6,64 +6,10 @@ import { ChevronRight, Layers, Menu, X } from 'lucide-react';
 import { FL_NAV, FL_ROUTES } from '../../_lib/foundationContent';
 import styles from './foundation.module.css';
 
-type NavTheme = 'dark' | 'light';
-
-const NAV_PROBE_Y = 38;
-
-function resolveNavTheme(navRoot: HTMLElement | null): NavTheme {
-  const x = Math.round(window.innerWidth / 2);
-  const y = NAV_PROBE_Y;
-  const hit = document.elementFromPoint(x, y);
-
-  if (hit && !navRoot?.contains(hit)) {
-    let node = hit as HTMLElement | null;
-    while (node) {
-      const theme = node.dataset.navTheme;
-      if (theme === 'dark' || theme === 'light') return theme;
-      node = node.parentElement;
-    }
-  }
-
-  return 'light';
-}
-
-/**
- * Fixed pill navbar — theme follows the section behind it via data-nav-theme.
- */
 export default function FoundationNav() {
   const [open, setOpen] = useState(false);
-  const [onLightBg, setOnLightBg] = useState(false);
-  const pillRef = useRef<HTMLDivElement | null>(null);
   const toggleRef = useRef<HTMLButtonElement | null>(null);
   const firstLinkRef = useRef<HTMLAnchorElement | null>(null);
-
-  useEffect(() => {
-    let frame = 0;
-
-    const update = () => {
-      frame = 0;
-      setOnLightBg(resolveNavTheme(pillRef.current) === 'light');
-    };
-
-    const schedule = () => {
-      if (frame) return;
-      frame = window.requestAnimationFrame(update);
-    };
-
-    update();
-    window.addEventListener('scroll', schedule, { passive: true });
-    window.addEventListener('resize', schedule, { passive: true });
-
-    const observer = new MutationObserver(schedule);
-    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-nav-theme'] });
-
-    return () => {
-      window.removeEventListener('scroll', schedule);
-      window.removeEventListener('resize', schedule);
-      observer.disconnect();
-      if (frame) window.cancelAnimationFrame(frame);
-    };
-  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -80,14 +26,14 @@ export default function FoundationNav() {
 
   return (
     <>
-      <header className={`${styles.heroNavbar} ${onLightBg || open ? styles.heroNavbarLight : ''}`}>
-        <div ref={pillRef} className={styles.heroNavbarPill}>
-          <div className={styles.heroNavbarInner}>
-            <Link href="/landing" prefetch={false} aria-label="Unauth home" className={styles.heroNavLogoGroup}>
-              <Layers className={styles.heroNavLogoIcon} strokeWidth={2} aria-hidden />
-              <span className={styles.heroLogo}>Unauth</span>
-            </Link>
+      <header className={`${styles.heroNavbar} ${styles.heroNavbarLight}`}>
+        <div className={styles.heroNavbarInner}>
+          <Link href="/landing" prefetch={false} aria-label="Unauth home" className={styles.heroNavLogoGroup}>
+            <Layers className={styles.heroNavLogoIcon} strokeWidth={2} aria-hidden />
+            <span className={styles.heroLogo}>Unauth</span>
+          </Link>
 
+          <div className={styles.heroNavActions}>
             <nav aria-label="Primary" className={styles.heroNavCentre}>
               {FL_NAV.links.map((link) => (
                 <a key={link.label} href={link.href} className={styles.heroNavLink}>
@@ -125,7 +71,7 @@ export default function FoundationNav() {
       {open ? (
         <div
           id="fl-nav-sheet"
-          className={`${styles.heroNavSheet} ${onLightBg ? styles.heroNavSheetLight : ''}`}
+          className={`${styles.heroNavSheet} ${styles.heroNavSheetLight}`}
         >
           {FL_NAV.links.map((link, i) => (
             <a
@@ -146,7 +92,7 @@ export default function FoundationNav() {
           >
             {FL_NAV.signIn}
           </Link>
-          <div className={`mt-2 border-t pt-2 ${onLightBg ? 'border-[rgba(0,0,0,0.08)]' : 'border-[rgba(255,255,255,0.1)]'}`}>
+          <div className="mt-2 border-t border-[rgba(0,0,0,0.08)] pt-2">
             <Link
               href={FL_ROUTES.audit}
               prefetch={false}

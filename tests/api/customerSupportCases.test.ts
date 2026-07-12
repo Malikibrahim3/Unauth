@@ -64,7 +64,7 @@ describe('GET /api/customers/[id]/support-cases', () => {
 
     const response = await GET(
       new NextRequest(`http://localhost/api/customers/${PROFILE_ID}/support-cases`),
-      { params: { id: PROFILE_ID } }
+      { params: Promise.resolve({ id: PROFILE_ID }) }
     );
 
     expect(response.status).toBe(200);
@@ -79,7 +79,7 @@ describe('GET /api/customers/[id]/support-cases', () => {
 
     const response = await GET(
       new NextRequest(`http://localhost/api/customers/${PROFILE_ID}/support-cases`),
-      { params: { id: PROFILE_ID } }
+      { params: Promise.resolve({ id: PROFILE_ID }) }
     );
     const body = await response.text();
 
@@ -93,7 +93,7 @@ describe('GET /api/customers/[id]/support-cases', () => {
 
     const response = await GET(
       new NextRequest(`http://localhost/api/customers/${PROFILE_ID}/support-cases`),
-      { params: { id: PROFILE_ID } }
+      { params: Promise.resolve({ id: PROFILE_ID }) }
     );
 
     expect(response.status).toBe(404);

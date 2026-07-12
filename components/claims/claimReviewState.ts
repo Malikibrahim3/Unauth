@@ -1,10 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import {
   recordCustomerResponseCopied,
   assignClaim,
-  markClaimViewed,
+  fetchClaimDecision,
   reopenClaim,
   reverseClaimDecision,
   snoozeClaim,
@@ -17,9 +17,7 @@ import { buildCustomerResponse } from '@/lib/claims/customerResponses';
 import { claimHasEvidence } from '@/lib/claims/events';
 import { pickPriorityClaim } from '@/lib/claims/priority';
 import { ACTIVE_CLAIM_STATUSES, isFinalClaimStatus } from '@/lib/claims/sla';
-import { GRADE_LABELS } from '@/lib/utils/confidenceStyles';
-import { scoreToGrade } from '@/lib/engine/weights';
-import { saveClaimDraft, shouldAttemptClaimViewed } from '@/components/claims/claimReviewDraft';
+import { saveClaimDraft } from '@/components/claims/claimReviewDraft';
 import { CLAIM_TYPE_LABELS } from '@/components/claims/claimReviewLabels';
 import {
   buildMetadata,
@@ -76,7 +74,11 @@ function pickDraftFields(state: ClaimReviewState, claimId: string) {
   };
 }
 
-export function useClaimReviewWorkbench(profileId: string, initialClaimId?: string | null) {
+export function useClaimReviewWorkbench(
+  profileId: string,
+  sourceCustomerId: string | null,
+  initialClaimId?: string | null,
+) {
   const [state, dispatch] = useReducer(
     claimReviewReducer,
     { profileId, initialClaimId },
@@ -93,21 +95,18 @@ export function useClaimReviewWorkbench(profileId: string, initialClaimId?: stri
     dispatch({ type: 'patch', patch: patchValue });
   }, []);
 
-  const viewedAttemptedRef = useRef<Set<string> | null>(null);
-  if (viewedAttemptedRef.current === null) {
-    viewedAttemptedRef.current = new Set();
-  }
-
   const prevSelectedClaimIdForFormRef = useRef<string | null>(null);
-  const { data, reload: reloadCustomer } = useFetchJson<CustomerPayload>(`/api/customers/${profileId}`);
+  const encodedSourceCustomerId = sourceCustomerId ? encodeURIComponent(sourceCustomerId) : null;
+  const { data, reload: reloadCustomer } = useFetchJson<CustomerPayload>(
+    encodedSourceCustomerId ? `/api/customers/${encodedSourceCustomerId}` : null,
+  );
   const { data: shopifyPayload } = useFetchJson<{ orders?: Array<Record<string, unknown>> }>(
-    `/api/customers/${profileId}/shopify-orders`,
+    encodedSourceCustomerId ? `/api/customers/${encodedSourceCustomerId}/shopify-orders` : null,
   );
   const { data: claimsPayload, reload: reloadClaims } = useFetchJson<ClaimsPayload>(
     `/api/claims?profileId=${encodeURIComponent(profileId)}`,
   );
 
-  const shopifyOrders = shopifyPayload?.orders ?? [];
   const shops = claimsPayload?.shops ?? [];
   const shopDomain = state.shopDomain || claimsPayload?.activeShopDomain || '';
   const history = useMemo(() => claimsPayload?.claims ?? [], [claimsPayload?.claims]);
@@ -153,6 +152,74 @@ export function useClaimReviewWorkbench(profileId: string, initialClaimId?: stri
   );
   const resolvedActiveClaimId = selectedClaim?.id ?? effectiveClaimId;
 
+  const [decisionLoading, setDecisionLoading] = useState(false);
+  const [decisionError, setDecisionError] = useState<string | null>(null);
+  const [decisionData, setDecisionData] = useState<Record<string, unknown> | null>(null);
+  const [decisionStale, setDecisionStale] = useState(false);
+  const decisionDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const reloadDecision = useCallback(async (targetClaimId: string | null) => {
+    if (!targetClaimId) {
+      setDecisionData(null);
+      setDecisionError(null);
+      setDecisionLoading(false);
+      setDecisionStale(false);
+      return;
+    }
+    setDecisionLoading(true);
+    setDecisionError(null);
+    const result = await fetchClaimDecision(targetClaimId);
+    setDecisionLoading(false);
+    if (!result.ok) {
+      setDecisionError(result.message);
+      setDecisionData(null);
+      setDecisionStale(false);
+      return;
+    }
+    setDecisionData(result.data as Record<string, unknown>);
+    setDecisionStale(false);
+  }, []);
+
+  const scheduleReloadDecision = useCallback(
+    (targetClaimId: string) => {
+      if (decisionDebounceRef.current) clearTimeout(decisionDebounceRef.current);
+      setDecisionStale(true);
+      decisionDebounceRef.current = setTimeout(() => {
+        void reloadDecision(targetClaimId);
+      }, 400);
+    },
+    [reloadDecision],
+  );
+
+  const refreshRecommendation = useCallback(() => {
+    if (!resolvedActiveClaimId) return;
+    if (decisionDebounceRef.current) clearTimeout(decisionDebounceRef.current);
+    setDecisionStale(true);
+    void reloadDecision(resolvedActiveClaimId);
+  }, [resolvedActiveClaimId, reloadDecision]);
+
+  useEffect(() => {
+    return () => {
+      if (decisionDebounceRef.current) clearTimeout(decisionDebounceRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    setDecisionData(null);
+    setDecisionError(null);
+    setDecisionLoading(false);
+    setDecisionStale(Boolean(resolvedActiveClaimId));
+  }, [resolvedActiveClaimId]);
+
+  useEffect(() => {
+    if (!selectedClaim || !decisionData?.evaluatedAt || decisionLoading) return;
+    const claimUpdated = selectedClaim.updated_at ? Date.parse(selectedClaim.updated_at) : 0;
+    const evaluatedAt = Date.parse(String(decisionData.evaluatedAt));
+    if (Number.isFinite(claimUpdated) && Number.isFinite(evaluatedAt) && claimUpdated > evaluatedAt) {
+      setDecisionStale(true);
+    }
+  }, [decisionData, decisionLoading, selectedClaim]);
+
   const supportUrl = resolvedActiveClaimId
     ? `/api/claims/${encodeURIComponent(resolvedActiveClaimId)}/support-context`
     : null;
@@ -188,22 +255,6 @@ export function useClaimReviewWorkbench(profileId: string, initialClaimId?: stri
     saveClaimDraft(profileId, pickDraftFields(state, effectiveClaimId));
   }, [effectiveClaimId, profileId, state]);
 
-  useEffect(() => {
-    const claimRecord = selectedClaim;
-    if (!shouldAttemptClaimViewed(claimRecord?.id, claimRecord?.first_viewed_at, viewedAttemptedRef.current!)) {
-      return;
-    }
-    const selectedClaimId = claimRecord!.id;
-    viewedAttemptedRef.current!.add(selectedClaimId);
-    void markClaimViewed(selectedClaimId).then((result) => {
-      const msg = result.message.toLowerCase();
-      if (msg.includes('denied') || (msg.includes('failed') && !msg.includes('already'))) {
-        patch({ message: result.message, messageTone: 'error' });
-      }
-      void reloadClaims();
-    });
-  }, [patch, reloadClaims, selectedClaim]);
-
   const metadata = useMemo(() => buildMetadata(state.metaRows), [state.metaRows]);
   const effectiveOrderRef = manualMode ? state.manualOrderRef.trim() : effectiveSelectedOrderId;
   const duplicateClaim = useMemo(() => {
@@ -223,22 +274,19 @@ export function useClaimReviewWorkbench(profileId: string, initialClaimId?: stri
       : null;
   const resolvedDuplicateClaim = duplicateClaim && isFinalClaimStatus(duplicateClaim.status) ? duplicateClaim : null;
 
-  const riskScore = order?.fraudScore ?? data?.profile?.risk_score;
   const customerName =
     (data?.profile?.names as string[] | undefined)?.[0] ??
     (data?.profile?.customerName as string | undefined) ??
     (data?.profile?.name as string | undefined) ??
     'Customer';
-  const fraudFlags: string[] = (order?.fraudFlags as string[] | undefined) ?? (data?.profile?.fraud_flags as string[] | undefined) ?? [];
+  const behaviorSignals: string[] = (order?.fraudFlags as string[] | undefined) ?? (data?.profile?.fraud_flags as string[] | undefined) ?? [];
   const nextClaimAction = statusNextAction(selectedClaim, !!latestOutcome, responseRecorded);
   const primaryAction = useMemo(
     () => resolvePrimaryAction(selectedClaim, evidenceRecorded, !!latestOutcome, responseRecorded, claimIsClosed, effectiveClaimId),
     [selectedClaim, evidenceRecorded, latestOutcome, responseRecorded, claimIsClosed, effectiveClaimId],
   );
-  const identityPoints = identityEvidencePoints(data ?? null, order, fraudFlags);
+  const identityPoints = identityEvidencePoints(data ?? null, order, behaviorSignals);
   const busy = state.busy;
-  const riskNumeric = riskScore != null ? Math.max(0, Math.min(100, Math.round(Number(riskScore)))) : null;
-  const confidenceLabel = riskNumeric == null ? '—' : GRADE_LABELS[scoreToGrade(riskNumeric)];
   const withinStoreSignals = useMemo(() => {
     const linked = Array.isArray(data?.linkedAccounts) ? data.linkedAccounts : [];
     return linked.slice(0, 8).map((row, i) => ({
@@ -250,7 +298,6 @@ export function useClaimReviewWorkbench(profileId: string, initialClaimId?: stri
       key: `${row.entityType ?? 'signal'}-${i}`,
     }));
   }, [data?.linkedAccounts]);
-  const crossMerchantCount = Number(data?.profile?.total_merchants_seen_at ?? 1);
   const customerProfileHref = `/customers/${profileId}`;
 
   function showMsg(msg: string, tone: 'success' | 'error') {
@@ -357,6 +404,7 @@ export function useClaimReviewWorkbench(profileId: string, initialClaimId?: stri
     if (r.claimId) {
       setClaimId(r.claimId);
       saveClaimDraft(profileId, pickDraftFields(state, r.claimId));
+      scheduleReloadDecision(r.claimId);
     } else if (r.duplicateClaimId) {
       setClaimId(r.duplicateClaimId);
     }
@@ -389,8 +437,8 @@ export function useClaimReviewWorkbench(profileId: string, initialClaimId?: stri
         .then((res) => (res.ok ? res.json() : null))
         .catch(() => null);
       const nextClaim = next?.claims?.[0];
-      if (nextClaim?.customer_id) {
-        patch({ nextClaimHref: `/customers/${nextClaim.customer_id}/claims?claimId=${nextClaim.id}`, noMoreClaims: false });
+      if (nextClaim?.id) {
+        patch({ nextClaimHref: `/claims/${nextClaim.id}`, noMoreClaims: false });
       } else {
         patch({ nextClaimHref: null, noMoreClaims: true });
       }
@@ -398,6 +446,7 @@ export function useClaimReviewWorkbench(profileId: string, initialClaimId?: stri
       showMsg(r.message, 'error');
     }
     await refreshHistory();
+    scheduleReloadDecision(resolvedActiveClaimId);
   }
 
   async function onEvidence() {
@@ -419,6 +468,7 @@ export function useClaimReviewWorkbench(profileId: string, initialClaimId?: stri
       saveClaimDraft(profileId, pickDraftFields(state, resolvedActiveClaimId));
     }
     await refreshHistory();
+    scheduleReloadDecision(resolvedActiveClaimId);
   }
 
   async function onStatusChange() {
@@ -436,6 +486,7 @@ export function useClaimReviewWorkbench(profileId: string, initialClaimId?: stri
     showMsg(r.message, r.message.toLowerCase().includes('updated') ? 'success' : 'error');
     if (r.message.toLowerCase().includes('updated')) patch({ statusNote: '' });
     await refreshHistory();
+    scheduleReloadDecision(resolvedActiveClaimId);
   }
 
   async function onReopen() {
@@ -453,6 +504,7 @@ export function useClaimReviewWorkbench(profileId: string, initialClaimId?: stri
     showMsg(r.message, r.message.toLowerCase().includes('reopened') ? 'success' : 'error');
     if (r.message.toLowerCase().includes('reopened')) patch({ reopenNote: '' });
     await refreshHistory();
+    scheduleReloadDecision(resolvedActiveClaimId);
   }
 
   async function onReverse() {
@@ -474,6 +526,7 @@ export function useClaimReviewWorkbench(profileId: string, initialClaimId?: stri
     showMsg(r.message, r.message.toLowerCase().includes('reversed') ? 'success' : 'error');
     if (r.message.toLowerCase().includes('reversed')) patch({ reverseNote: '' });
     await refreshHistory();
+    scheduleReloadDecision(resolvedActiveClaimId);
   }
 
   async function onCopyCustomerResponse() {
@@ -558,14 +611,12 @@ export function useClaimReviewWorkbench(profileId: string, initialClaimId?: stri
     activeDuplicateClaim,
     resolvedDuplicateClaim,
     customerName,
-    fraudFlags,
+    behaviorSignals,
     nextClaimAction,
     primaryAction,
     identityPoints,
     busy,
-    confidenceLabel,
     withinStoreSignals,
-    crossMerchantCount,
     customerProfileHref,
     showMsg,
     handlePrimaryCta,
@@ -581,5 +632,11 @@ export function useClaimReviewWorkbench(profileId: string, initialClaimId?: stri
     onClearSnooze,
     refreshHistory,
     reloadCustomer,
+    decisionLoading,
+    decisionError,
+    decisionData,
+    decisionStale,
+    reloadDecision,
+    refreshRecommendation,
   };
 }

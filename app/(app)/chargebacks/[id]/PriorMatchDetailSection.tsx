@@ -1,5 +1,5 @@
 import { formatDate } from '@/lib/utils/format'
-import { Badge } from '@/components/ui'
+import { PanelCard, StatusBadge } from '@/components/ui'
 
 interface PriorMatchDetailSectionProps {
   matchSignals: string[]
@@ -11,15 +11,7 @@ export function PriorMatchDetailSection({
   matchedPriors,
 }: PriorMatchDetailSectionProps) {
   return (
-    <section
-      style={{
-        background: 'var(--surface)',
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--radius-md)',
-        boxShadow: 'var(--shadow-sm)',
-        padding: '20px 24px',
-      }}
-    >
+    <PanelCard as="section" variant="app" className="px-6 py-5" style={{ boxShadow: 'var(--shadow-sm)' }}>
       <h2
         className="text-heading-lg font-semibold mb-4"
         style={{ color: 'var(--text-primary)' }}
@@ -34,9 +26,9 @@ export function PriorMatchDetailSection({
           </div>
           <div className="flex flex-wrap gap-2">
             {matchSignals.map((signal) => (
-              <Badge key={signal} tone="success" variant="subtle" size="sm">
+              <StatusBadge key={signal} variant="cleared">
                 {signal}
-              </Badge>
+              </StatusBadge>
             ))}
           </div>
         </div>
@@ -49,13 +41,10 @@ export function PriorMatchDetailSection({
           </div>
           <div className="space-y-2">
             {matchedPriors.map((p) => (
-              <div
+              <PanelCard
                 key={p.orderId}
-                className="flex items-start justify-between rounded-md px-4 py-3"
-                style={{
-                  background: 'var(--surface-sunken)',
-                  border: '1px solid var(--border)',
-                }}
+                variant="appInset"
+                className="flex items-start justify-between px-4 py-3"
               >
                 <div className="flex-1 min-w-0">
                   <div className="font-mono font-semibold" style={{ fontSize: 13, color: 'var(--text-primary)' }}>
@@ -66,13 +55,13 @@ export function PriorMatchDetailSection({
                   </div>
                 </div>
                 <div className="ml-4 shrink-0">
-                  <Badge tone="info" variant="subtle" size="sm">+{p.daysPriorToDispute}d</Badge>
+                  <StatusBadge variant="held" dot={false}>+{p.daysPriorToDispute}d</StatusBadge>
                 </div>
-              </div>
+              </PanelCard>
             ))}
           </div>
         </div>
       )}
-    </section>
+    </PanelCard>
   )
 }

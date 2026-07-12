@@ -28,15 +28,11 @@ type SupportCaseRow = {
 function makeLinkingSupabase(options: {
   supportCase: SupportCaseRow;
   shopifyOrders?: Array<{
-    shopify_order_id: string;
+    external_id: string;
     order_number: string | null;
-    customer_id: string | null;
-    shop_domain: string;
-  }>;
-  auditOrders?: Array<{
-    order_id: string;
-    shop_domain: string;
-    merchant_id: string;
+    source_customer_id: string | null;
+    merchant_id?: string;
+    source?: string;
   }>;
   profileIdentities?: Array<{
     customer_profile_id: string;
@@ -95,14 +91,20 @@ function makeLinkingSupabase(options: {
         };
       }
 
-      if (table === 'shopify_order_signals') {
+      if (table === TABLES.AUDIT_TRANSACTIONS) {
         return {
           select: () => ({
-            eq: (_c: string, shopDomain: string) =>
-              Promise.resolve({
-                data: (options.shopifyOrders ?? []).filter((row) => row.shop_domain === shopDomain),
-                error: null,
-              }),
+            eq: (_c: string, merchantId: string) => ({
+              eq: (_c2: string, source: string) =>
+                Promise.resolve({
+                  data: (options.shopifyOrders ?? []).filter(
+                    (row) =>
+                      (row.merchant_id ?? MERCHANT_ID) === merchantId &&
+                      (row.source ?? 'shopify') === source
+                  ),
+                  error: null,
+                }),
+            }),
           }),
         };
       }
@@ -126,7 +128,7 @@ function makeLinkingSupabase(options: {
         };
       }
 
-      if (table === 'merchant_claims') {
+      if (table === TABLES.MERCHANT_CLAIMS) {
         return {
           select: () => ({
             eq: (_c: string, merchantId: string) => ({
@@ -135,27 +137,6 @@ function makeLinkingSupabase(options: {
                   (claim) => claim.merchant_id === merchantId
                 ),
                 error: null,
-              }),
-            }),
-          }),
-        };
-      }
-
-      if (table === TABLES.AUDIT_TRANSACTIONS) {
-        return {
-          select: () => ({
-            eq: (_c: string, merchantId: string) => ({
-              eq: (_c2: string, shopDomain: string) => ({
-                in: (_c3: string, orderIds: string[]) =>
-                  Promise.resolve({
-                    data: (options.auditOrders ?? []).filter(
-                      (row) =>
-                        row.merchant_id === merchantId &&
-                        row.shop_domain === shopDomain &&
-                        orderIds.includes(row.order_id)
-                    ),
-                    error: null,
-                  }),
               }),
             }),
           }),
@@ -232,10 +213,9 @@ describe('linkSupportCaseToCommerceContext', () => {
       supportCase: baseCase,
       shopifyOrders: [
         {
-          shopify_order_id: 'gid://shopify/Order/1007',
+          external_id: 'gid://shopify/Order/1007',
           order_number: '1007',
-          customer_id: 'shopify-cust-9',
-          shop_domain: SHOP_DOMAIN,
+          source_customer_id: 'shopify-cust-9',
         },
       ],
       profileIdentities: [
@@ -284,16 +264,14 @@ describe('linkSupportCaseToCommerceContext', () => {
       supportCase: baseCase,
       shopifyOrders: [
         {
-          shopify_order_id: 'gid://shopify/Order/1007',
+          external_id: 'gid://shopify/Order/1007',
           order_number: '1007',
-          customer_id: 'a',
-          shop_domain: SHOP_DOMAIN,
+          source_customer_id: 'a',
         },
         {
-          shopify_order_id: 'gid://shopify/Order/1007b',
+          external_id: 'gid://shopify/Order/1007b',
           order_number: '1007',
-          customer_id: 'b',
-          shop_domain: SHOP_DOMAIN,
+          source_customer_id: 'b',
         },
       ],
     });
@@ -314,10 +292,9 @@ describe('linkSupportCaseToCommerceContext', () => {
       supportCase: baseCase,
       shopifyOrders: [
         {
-          shopify_order_id: 'gid://shopify/Order/1007',
+          external_id: 'gid://shopify/Order/1007',
           order_number: '1007',
-          customer_id: 'shopify-cust-9',
-          shop_domain: SHOP_DOMAIN,
+          source_customer_id: 'shopify-cust-9',
         },
       ],
       profileIdentities: [
@@ -351,7 +328,7 @@ describe('linkSupportCaseToCommerceContext', () => {
     expect(mock.getSupportCase().merchant_claim_id).toBe(CLAIM_ID);
   });
 
-  it('links WooCommerce order from audit_transactions when shopify signals are empty', async () => {
+  it('returns not_found for non-Shopify order sources', async () => {
     const wooStore = 'https://woo.example.com';
     const mock = makeLinkingSupabase({
       supportCase: {
@@ -359,12 +336,13 @@ describe('linkSupportCaseToCommerceContext', () => {
         shop_domain: wooStore,
         order_ref: '4521',
       },
-      shopifyOrders: [],
-      auditOrders: [
+      shopifyOrders: [
         {
-          order_id: '4521',
-          shop_domain: wooStore,
+          external_id: '4521',
+          order_number: '4521',
+          source_customer_id: 'woo-customer-1',
           merchant_id: MERCHANT_ID,
+          source: 'woocommerce',
         },
       ],
       profileIdentities: [
@@ -381,9 +359,9 @@ describe('linkSupportCaseToCommerceContext', () => {
       merchantId: MERCHANT_ID,
     });
 
-    expect(result.link_status).toBe('linked');
-    expect(result.shopify_order_id).toBe('4521');
-    expect(result.customer_profile_id).toBe(PROFILE_ID);
+    expect(result.link_status).toBe('not_found');
+    expect(result.shopify_order_id).toBeNull();
+    expect(result.customer_profile_id).toBeNull();
   });
 
   it('does not expose raw email in link metadata', async () => {
@@ -391,10 +369,9 @@ describe('linkSupportCaseToCommerceContext', () => {
       supportCase: baseCase,
       shopifyOrders: [
         {
-          shopify_order_id: 'gid://shopify/Order/1007',
+          external_id: 'gid://shopify/Order/1007',
           order_number: '1007',
-          customer_id: null,
-          shop_domain: SHOP_DOMAIN,
+          source_customer_id: null,
         },
       ],
     });

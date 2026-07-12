@@ -23,7 +23,7 @@ export default function FoundingMerchantApplicationForm({ defaultStoreName }: { 
     storeName,
     monthlyOrderVolume,
     refundVolume,
-    fraudProblem,
+    lossProblem,
     agreed,
     loading,
     error,
@@ -34,7 +34,7 @@ export default function FoundingMerchantApplicationForm({ defaultStoreName }: { 
     event.preventDefault();
     dispatch({ type: 'patch', patch: { error: '' } });
 
-    if (!storeName.trim() || !monthlyOrderVolume || !fraudProblem.trim() || !agreed) {
+    if (!storeName.trim() || !monthlyOrderVolume || !lossProblem.trim() || !agreed) {
       dispatch({ type: 'patch', patch: { error: 'Please complete every required field.' } });
       return;
     }
@@ -48,7 +48,7 @@ export default function FoundingMerchantApplicationForm({ defaultStoreName }: { 
         storeName: storeName.trim(),
         monthlyOrderVolume,
         monthlyRefundChargebackVolume: refundVolume.trim() || null,
-        fraudProblem: fraudProblem.trim(),
+        postPurchaseLossProblem: lossProblem.trim(),
         agreedToTerms: agreed,
       }),
     });
@@ -120,11 +120,11 @@ export default function FoundingMerchantApplicationForm({ defaultStoreName }: { 
           />
         </Field>
 
-        <Field label="What fraud problem are you trying to solve?">
+        <Field label="What post-purchase loss problem are you trying to solve?">
           <textarea
-            value={fraudProblem}
-            onChange={(event) => dispatch({ type: 'patch', patch: { fraudProblem: event.target.value } })}
-            aria-label="What fraud problem are you trying to solve?"
+            value={lossProblem}
+            onChange={(event) => dispatch({ type: 'patch', patch: { lossProblem: event.target.value } })}
+            aria-label="What post-purchase loss problem are you trying to solve?"
             rows={3}
             required
             className="w-full rounded-[4px] border px-3 py-2 text-sm focus:outline-none"

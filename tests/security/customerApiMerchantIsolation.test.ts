@@ -31,24 +31,6 @@ describe('customer API merchant isolation', () => {
     source = fs.readFileSync(ROUTE_PATH, 'utf8');
   });
 
-  it('resolves ownedJobIds from processing_jobs before any transaction query', () => {
-    expect(source).toContain('ownedJobIds');
-    // Route uses the canonical TABLES constant (SSOT) rather than a string literal.
-    expect(source).toContain('from(TABLES.PROCESSING_JOBS)');
-    expect(source).toContain(".eq('merchant_id', ctx.merchantId)");
-  });
-
-  it('scopes customer_profile_audit_appearances through merchant-owned jobs', () => {
-    // Must filter appearances by audit_id (job_id) belonging to the merchant
-    expect(source).toContain("customer_profile_audit_appearances");
-    expect(source).toContain('.in(\'audit_id\', ownedJobIds)');
-  });
-
-  it('fetchDirectIdentityRows never queries without ownedJobIds filter', () => {
-    // The fallback path must also require job_id scoping
-    expect(source).toContain('.in(\'job_id\', ownedJobIds)');
-  });
-
   it('linked accounts are derived from merchant-owned transactions only, not cross-merchant clusters', () => {
     // The route must NOT read the global identity cluster graph table.
     // Linked identity signals must be derived from identityTimeline (merchant-owned transactions).
@@ -60,83 +42,33 @@ describe('customer API merchant isolation', () => {
     expect(source).not.toMatch(/entityValue:\s*member\.entity_value/);
   });
 
-  it('does not query audit_transactions with service role without merchant job scope', () => {
-    // There must be no audit_transactions query that doesn't include job_id scoping.
-    // Check that every occurrence of audit_transactions select is preceded by
-    // either .in('job_id', ...) or .in('id', transactionIds) + .in('job_id', ...)
-    const txQueries = source.match(/from\(TABLES\.AUDIT_TRANSACTIONS\)/g) ?? [];
-    expect(txQueries.length).toBeGreaterThan(0);
-    // All direct identity fetches must check ownedJobIds guard
-    expect(source).toContain('if (ownedJobIds.length === 0) return []');
+  it('does not expose cross-merchant raw PII from customer records', () => {
+    expect(source).not.toMatch(/primary_email.*network/i);
+    expect(source).not.toContain('fraud_identity_clusters');
   });
 });
 
-describe('CSV export injection protection', () => {
+describe('legacy audit CSV export retirement', () => {
   const EXPORT_PATH = path.resolve(
     process.cwd(),
     'app/api/audit/[runId]/export/route.ts'
   );
 
-  let exportSource: string;
-
-  beforeAll(() => {
-    exportSource = fs.readFileSync(EXPORT_PATH, 'utf8');
+  it('removes the legacy audit export route', () => {
+    expect(fs.existsSync(EXPORT_PATH)).toBe(false);
   });
 
-  it('exports all rows (not filtered to graded only)', () => {
-    expect(exportSource).not.toContain(".not('identity_confidence_grade', 'is', null)");
-    expect(exportSource).not.toContain(".in('risk_level'");
+  it('removes the legacy audit customer route', () => {
+    expect(fs.existsSync(path.resolve(process.cwd(), 'app/api/audit/[runId]/customer/route.ts'))).toBe(false);
   });
 
-  it('uses escapeCsvCell to neutralize formula injection', () => {
-    expect(exportSource).toContain('escapeCsvCell');
-    expect(exportSource).toContain("FORMULA_PREFIXES = ['=', '+', '-', '@'");
+  it('keeps formula-safe CSV escaping for current exports', () => {
+    const helpers = fs.readFileSync(path.resolve(process.cwd(), 'lib/supabase/merchantHelpers.ts'), 'utf8');
+    expect(helpers).toContain('escapeCsvCell');
+    expect(helpers).toContain('FORMULA_CHARS');
   });
 
-  it('orders export by id for deterministic pagination', () => {
-    expect(exportSource).toContain(".order('id', { ascending: true })");
-  });
-
-  it('tracks expectedTotalRows for completeness check', () => {
-    expect(exportSource).toContain('expectedTotalRows');
-    expect(exportSource).toContain('rows.length >= expectedTotalRows');
-  });
-});
-
-describe('upload dispatch serverless safety', () => {
-  const AUDIT_ROUTE_PATH = path.resolve(process.cwd(), 'app/api/audit/route.ts');
-
-  let auditSource: string;
-
-  beforeAll(() => {
-    auditSource = fs.readFileSync(AUDIT_ROUTE_PATH, 'utf8');
-  });
-
-  it('awaits dispatchChunk instead of fire-and-forget void', () => {
-    expect(auditSource).not.toContain('void dispatchChunk');
-    expect(auditSource).toContain('await dispatchChunk');
-  });
-
-  it('records dispatch failure on processing_jobs', () => {
-    expect(auditSource).toContain('Dispatch failed');
-    expect(auditSource).toContain('completeJob');
-  });
-});
-
-describe('progress route uses identity fields not legacy risk_level', () => {
-  const PROGRESS_PATH = path.resolve(
-    process.cwd(),
-    'app/api/audit/[runId]/progress/route.ts'
-  );
-
-  let progressSource: string;
-
-  beforeAll(() => {
-    progressSource = fs.readFileSync(PROGRESS_PATH, 'utf8');
-  });
-
-  it('counts flagged rows using identity_confidence_grade', () => {
-    expect(progressSource).toContain('identity_confidence_grade');
-    expect(progressSource).not.toContain(".in('risk_level'");
+  it('keeps the payout-case API as the current review surface', () => {
+    expect(fs.existsSync(path.resolve(process.cwd(), 'app/api/claims/route.ts'))).toBe(true);
   });
 });

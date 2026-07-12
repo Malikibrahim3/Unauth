@@ -1,22 +1,21 @@
 'use client';
 
-import { isFinalClaimStatus } from '@/lib/claims/sla';
-import { ClaimLifecycleStatusBar, RailSection } from '@/components/claims/claimReviewPrimitives';
+import { ClaimDecisionRecommendationCard, type ClaimDecisionPayload } from '@/components/claims/ClaimDecisionRecommendationCard';
 import { ClaimReviewEvidenceRail } from '@/components/claims/ClaimReviewEvidenceRail';
 import { ClaimReviewNextStepCard } from '@/components/claims/ClaimReviewNextStepCard';
+import { ClaimReviewManageCard } from '@/components/claims/ClaimReviewManageCard';
 import type { ClaimReviewWorkbench } from '@/components/claims/claimReviewWorkbench';
 
-export function ClaimReviewActionRail({ wb }: { wb: ClaimReviewWorkbench }) {
+export function ClaimReviewActionRail({ wb, canManage = false }: { wb: ClaimReviewWorkbench; canManage?: boolean }) {
   const {
-    selectedClaim,
     claimId,
-    claimIsClosed,
-    busy,
-    primaryAction,
     state,
     dispatch,
-    onStatusChange,
-    onReopen,
+    decisionLoading,
+    decisionError,
+    decisionData,
+    decisionStale,
+    refreshRecommendation,
   } = wb;
 
   return (
@@ -30,33 +29,20 @@ export function ClaimReviewActionRail({ wb }: { wb: ClaimReviewWorkbench }) {
 
       <ClaimReviewNextStepCard wb={wb} />
 
-      <ClaimReviewEvidenceRail wb={wb} />
+      <ClaimDecisionRecommendationCard
+        claimId={claimId || null}
+        loading={decisionLoading}
+        error={decisionError}
+        data={decisionData as ClaimDecisionPayload | null}
+        stale={decisionStale}
+        onRefresh={refreshRecommendation}
+        open={state.railOpen.recommendation ?? true}
+        onToggle={(id) => dispatch({ type: 'toggleRail', id })}
+      />
 
-      {selectedClaim && (
-        <RailSection
-          id="status"
-          title="Review status"
-          open={state.railOpen.status}
-          onToggle={(id) => dispatch({ type: 'toggleRail', id })}
-          highlighted={primaryAction.railSection === 'status'}
-        >
-          <ClaimLifecycleStatusBar
-            claimId={claimId}
-            busy={busy}
-            claimIsClosed={claimIsClosed}
-            statusToSet={state.statusToSet}
-            setStatusToSet={(status) => wb.patch({ statusToSet: status })}
-            statusNote={state.statusNote}
-            setStatusNote={(statusNote) => wb.patch({ statusNote })}
-            onStatusChange={onStatusChange}
-            reopenNote={state.reopenNote}
-            setReopenNote={(reopenNote) => wb.patch({ reopenNote })}
-            onReopen={onReopen}
-            canReopen={!!selectedClaim && isFinalClaimStatus(selectedClaim.status)}
-            submitIsPrimary={primaryAction.key === 'status' || primaryAction.key === 'reopen'}
-          />
-        </RailSection>
-      )}
+      <ClaimReviewManageCard wb={wb} canManage={canManage} />
+
+      <ClaimReviewEvidenceRail wb={wb} />
     </aside>
   );
 }

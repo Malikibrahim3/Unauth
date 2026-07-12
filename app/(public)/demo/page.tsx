@@ -37,7 +37,7 @@ function scenarioLabel(totalRows: number): string {
 }
 
 export const metadata = {
-  title: 'Demo | Unauth — Refund Abuse Intelligence',
+  title: 'Demo | Unauth — Claim Decision Context',
 };
 
 async function getDemoRuns(): Promise<DemoRun[]> {
@@ -66,14 +66,14 @@ export default async function DemoPage() {
           <div className="space-y-4">
             <h1 className="text-4xl font-bold leading-tight text-[var(--text)]">Unauth demo</h1>
             <p className="max-w-xl text-base leading-7 text-[var(--text-muted)]">
-              Explore the public audit walkthrough, then create a workspace when you are ready to test your own CSV.
+              Explore how Unauth assembles claim context, then create a workspace when you are ready to connect your store and helpdesk.
             </p>
             <div className="flex flex-wrap gap-3">
               <Link
-                href="/audit-demo"
+                href="/landing#claim-decision"
                 className="inline-block rounded-md bg-[var(--accent)] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[var(--accent-hover)]"
               >
-                Open audit demo →
+                See claim workflow →
               </Link>
               <Link
                 href="/login"
@@ -87,9 +87,9 @@ export default async function DemoPage() {
           <div className="rounded-md border p-5 shadow-sm" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
             <div className="grid gap-4 sm:grid-cols-3">
               {[
-                { label: 'Likely identities', value: '32' },
-                { label: 'Signal rate', value: '14.8%' },
-                { label: 'Evidence-ready', value: '7' },
+                { label: 'Claims reviewed', value: '32' },
+                { label: 'Evidence gaps', value: '14.8%' },
+                { label: 'Decision trails', value: '7' },
               ].map((item) => (
                 <div key={item.label}>
                   <p className="text-[11px] uppercase tracking-wide text-[var(--text-muted)]">{item.label}</p>
@@ -99,17 +99,17 @@ export default async function DemoPage() {
             </div>
 
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <SectionCard title="Pattern mix" description="Illustrative demo preview">
+              <SectionCard title="Claim pattern mix" description="Illustrative demo preview">
                 <AnalyticsDonutChart
                   data={[
-                    { label: 'Refund patterns', value: 48, color: 'var(--accent)' },
+                    { label: 'Refund requests', value: 48, color: 'var(--accent)' },
                     { label: 'Chargebacks', value: 20, color: 'var(--sev-probable, #C7762B)' },
                     { label: 'Repeat identities', value: 32, color: 'var(--sev-clear, #3E7A63)' },
                   ]}
                   height={180}
                 />
               </SectionCard>
-              <SectionCard title="Projected review load" description="How a seeded audit tends to ramp">
+              <SectionCard title="Projected review load" description="How connected claim context tends to ramp">
                 <AnalyticsBarChart
                   data={[
                     { label: 'Week 1', value: 14, color: 'var(--surface-border)' },
@@ -156,8 +156,8 @@ export default async function DemoPage() {
       {/* Permanent demo banner - non-dismissable */}
       <div className="sticky top-0 z-50 flex items-center justify-between gap-4 bg-[var(--warning-bg)] px-6 py-2.5">
         <p className="text-sm font-semibold text-[var(--warning)]">
-          You&rsquo;re viewing the Unauth demo on synthetic data. Sign up free to use it with your
-          own CSV.
+          You&rsquo;re viewing the Unauth demo on synthetic data. Sign up free to connect your
+          store and helpdesk.
         </p>
         <Link
           href="/login"
@@ -170,9 +170,9 @@ export default async function DemoPage() {
       <div className="mx-auto max-w-5xl px-6 py-10 space-y-8">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-[var(--text)]">Demo Merchant - Audit Runs</h1>
+            <h1 className="text-2xl font-bold text-[var(--text)]">Demo Merchant - Claim Context Runs</h1>
             <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
-              Synthetic ASOS-style order history only. Every identity, chargeback, and evidence
+              Synthetic merchant history only. Every identity, chargeback, and evidence
               package on this page is fictional and reset nightly.
             </p>
           </div>
@@ -180,16 +180,16 @@ export default async function DemoPage() {
             href="/login"
             className="rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--accent-hover)] transition-colors"
           >
-            Start with your own data →
+            Connect your own sources →
           </Link>
         </div>
 
         {/* Stats */}
         <div className="grid gap-4 md:grid-cols-4">
           {[
-            { label: 'Audit Runs', value: typedRuns.length.toLocaleString() },
+            { label: 'Context Runs', value: typedRuns.length.toLocaleString() },
             { label: 'Seeded Scenarios', value: `${seededScenarioCount}/3` },
-            { label: 'Transactions Analysed', value: totalTransactions.toLocaleString() },
+            { label: 'Records Analysed', value: totalTransactions.toLocaleString() },
             { label: 'Review Matches', value: totalFlagged.toLocaleString() },
           ].map(({ label, value }) => (
             <div
@@ -361,7 +361,7 @@ export default async function DemoPage() {
           <div>
             <h2 className="font-semibold text-[var(--text-primary)] text-lg">Ready to run it on your data?</h2>
             <p className="mt-1 text-sm text-[var(--info)]">
-              Upload your order CSV and get a full refund-abuse audit in minutes. Free to start.
+              Connect your store and helpdesk to review claims with order, ticket, evidence, and decision context.
             </p>
           </div>
           <Link

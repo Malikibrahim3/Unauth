@@ -7,13 +7,18 @@ export const ORDER_VOLUME_OPTIONS = [
 
 export type OrderVolumeValue = (typeof ORDER_VOLUME_OPTIONS)[number]['value'];
 
-export const FRAUD_CONCERN_OPTIONS = [
-  { value: 'refund_abuse', label: 'Refund abuse / INR claims' },
-  { value: 'chargebacks', label: 'Chargebacks' },
-  { value: 'account_takeover', label: 'Account takeover' },
-  { value: 'multi_accounting', label: 'Multi-accounting' },
-  { value: 'promo_abuse', label: 'Promo / voucher abuse' },
-  { value: 'all', label: 'All of the above' },
+export const LOSS_CONCERN_OPTIONS = [
+  { value: 'refund_abuse', label: 'Refund and reship leakage' },
+  { value: 'chargebacks', label: 'Chargeback losses' },
+  { value: 'account_takeover', label: 'Account takeover payouts' },
+  { value: 'multi_accounting', label: 'Repeat claim patterns' },
+  { value: 'promo_abuse', label: 'Promo and voucher leakage' },
+  { value: 'all', label: 'All post-purchase loss types' },
 ] as const;
 
-export type FraudConcernValue = (typeof FRAUD_CONCERN_OPTIONS)[number]['value'];
+export type LossConcernValue = (typeof LOSS_CONCERN_OPTIONS)[number]['value'];
+
+// Back-compat only: the database/user metadata column is still
+// primary_fraud_concern until the approved schema reconciliation lands.
+export const FRAUD_CONCERN_OPTIONS = LOSS_CONCERN_OPTIONS;
+export type FraudConcernValue = LossConcernValue;

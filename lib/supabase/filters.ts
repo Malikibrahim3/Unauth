@@ -10,15 +10,11 @@ import { FLAG_THRESHOLD } from '@/lib/engine/weights';
 /**
  * Returns the PostgREST filter for transactions that are review-worthy.
  *
- * "Review-worthy" = a real identity match AND suspicious behaviour. This is
- * persisted per-row as `review_worthy` (set by the worker and re-stitch paths,
- * and backfilled by migration), so a high-confidence identity match with NO
- * suspicious behaviour — e.g. a loyal repeat customer — is correctly excluded.
- * Gating on identity grade alone surfaced those customers (≈20% false-positive
- * rate on clean repeat customers); the behaviour gate removes that.
+ * Legacy compatibility filter for confidence-graded rows. The CSV worker's
+ * persisted review flag is intentionally no longer part of v2.
  */
 export function buildReviewableFilter(): string {
-  return `${COLUMNS.REVIEW_WORTHY}.eq.true`;
+  return `${COLUMNS.IDENTITY_CONFIDENCE_GRADE}.in.(probable,definite),match_status.in.(probable,definite)`;
 }
 
 /**
@@ -27,5 +23,5 @@ export function buildReviewableFilter(): string {
  * Does not change what FLAG_THRESHOLD is — only reads it.
  */
 export function buildRiskQueueFilter(): string {
-  return `${COLUMNS.REVIEW_WORTHY}.eq.true,risk_score.gte.${FLAG_THRESHOLD}`;
+  return `${buildReviewableFilter()},risk_score.gte.${FLAG_THRESHOLD}`;
 }

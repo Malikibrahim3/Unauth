@@ -3,9 +3,10 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
-import { ChevronRight, Menu, Search } from 'lucide-react';
+import { Bell, ChevronRight, Menu, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import CommandPalette from './CommandPalette';
+import { useBreadcrumbOverride } from './BreadcrumbOverrideContext';
 import { MerchantEnvChip } from './MerchantEnvChip';
 import { AvatarMenu } from './AvatarMenu';
 import { ContextCreditsBadge } from './ContextCreditsBadge';
@@ -23,8 +24,10 @@ interface AppHeaderProps {
   sidebarCollapsed?: boolean;
   /** Merchant name shown in the env chip left of search */
   merchantName?: string | null;
-  /** Deployment environment, e.g. 'production' | 'sandbox' */
+  /** Deployment environment, e.g. 'production' | 'preview' | 'development' */
   environment?: string;
+  /** Demo/sample tenant — surfaces a "Demo" pill instead of an env badge */
+  isDemo?: boolean;
   /** Authenticated user email for the avatar menu */
   userEmail?: string | null;
 }
@@ -40,6 +43,7 @@ export default function AppHeader({
   sidebarCollapsed,
   merchantName,
   environment,
+  isDemo,
   userEmail,
 }: AppHeaderProps) {
   const pathname = usePathname();
@@ -60,7 +64,13 @@ export default function AppHeader({
     return () => document.removeEventListener('keydown', onKeyDown);
   }, []);
   // Derive a simple breadcrumb from pathname when none is provided
-  const segments: BreadcrumbSegment[] = breadcrumbs ?? deriveFromPathname(pathname);
+  const overrideLabel = useBreadcrumbOverride();
+  const derived: BreadcrumbSegment[] = breadcrumbs ?? deriveFromPathname(pathname);
+  // Pages can override the current-page label (e.g. a case reference instead of a UUID).
+  const segments: BreadcrumbSegment[] =
+    overrideLabel && derived.length > 0
+      ? [...derived.slice(0, -1), { ...derived[derived.length - 1], label: overrideLabel }]
+      : derived;
 
   return (
     <header
@@ -159,7 +169,7 @@ export default function AppHeader({
       <ContextCreditsBadge />
 
       {/* MerchantEnvChip - left of search */}
-      <MerchantEnvChip merchantName={merchantName ?? null} environment={environment} />
+      <MerchantEnvChip merchantName={merchantName ?? null} environment={environment} isDemo={isDemo} />
 
       {/* ⌘K trigger */}
       <button
@@ -182,6 +192,15 @@ export default function AppHeader({
         <kbd className="hidden sm:inline font-mono text-xs opacity-60">⌘K</kbd>
       </button>
 
+      <Link
+        href="/notifications"
+        aria-label="Notifications"
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+        style={{ borderColor: 'var(--border)', background: 'var(--surface-sunken)' }}
+      >
+        <Bell size={14} aria-hidden="true" />
+      </Link>
+
       <AvatarMenu email={userEmail} />
 
       <CommandPalette isOpen={paletteOpen} onClose={closePalette} />
@@ -197,22 +216,26 @@ function deriveFromPathname(pathname: string): BreadcrumbSegment[] {
   const segmentMap: Record<string, string> = {
     dashboard:   'Dashboard',
     customers:   'Customers',
-    claims:      'Claims',
-    watchlist:   'Watchlist',
-    inbox:       'Claims',
-    store:       'Store overview',
-    reports:     'Analytics',
-    chargebacks: 'Evidence packages',
+    claims:      'Payout Control',
+    watchlist:   'Customer context',
+    inbox:       'Payout Control',
+    store:       'Dashboard',
+    reports:     'Reports',
+    notifications: 'Notifications',
+    recoveries:  'Recoveries',
+    partners:    'Partners',
+    rules:       'Rules',
+    chargebacks: 'Payout Control',
     onboarding:  'Onboarding',
     help:        'Help',
     settings:    'Settings',
-    audit:       'Audit results',
+    audit:       'Dashboard',
   };
   const pathMap: Record<string, string> = {
     'settings/audit-trail': 'Audit trail',
     'settings/data-privacy': 'Data & privacy',
-    chargebacks: 'Evidence packages',
-    'evidence-packages': 'Evidence packages',
+    chargebacks: 'Payout Control',
+    'evidence-packages': 'Payout Control',
   };
 
   const parts = pathname.split('/').filter(Boolean);

@@ -52,8 +52,8 @@ describe('identifierGraph', () => {
     });
   });
 
-  it('isV1IdentifierType rejects device_fingerprint before DB write path', () => {
-    expect(isV1IdentifierType('device_fingerprint')).toBe(false);
+  it('isV1IdentifierType accepts trusted internal device_fingerprint observations', () => {
+    expect(isV1IdentifierType('device_fingerprint')).toBe(true);
     expect(isV1IdentifierType('ip_hash')).toBe(false);
     expect(isV1IdentifierType('card_last4')).toBe(false);
     expect(isV1IdentifierType('normalized_email_hash')).toBe(true);

@@ -64,14 +64,14 @@ describe('customer semantics deprecation', () => {
     expect(content).toContain('watchlisted: false');
   });
 
-  it('customers overview exposes open claims quick filter and saved view', () => {
+  it('customers overview exposes open payout case quick filter and saved view', () => {
     const content = fs.readFileSync(
       path.join(process.cwd(), 'app/(app)/customers/CustomersOverviewPageView.tsx'),
       'utf-8',
     );
     expect(content).toContain('?openClaims=1');
-    expect(content).toContain('Open claims for review');
-    expect(content).toContain('Customers with open claims');
+    expect(content).toContain('Open payout cases');
+    expect(content).toContain('Customers with open cases');
     expect(content).not.toContain('watchlisted');
   });
 

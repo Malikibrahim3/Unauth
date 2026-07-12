@@ -140,11 +140,11 @@ export function UnauthNetworkHero() {
           <Reveal delay={340}>
             <div className="mt-8 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-6">
               <Link href={FL_ROUTES.audit} prefetch={false} className={styles.heroCtaPrimary}>
-                Get a Demo
+                Connect store and helpdesk
                 <ChevronRight size={16} aria-hidden />
               </Link>
-              <Link href="/landing#how-it-works" className={styles.heroCtaSecondary}>
-                See how it works
+              <Link href="/landing#claim-decision" className={styles.heroCtaSecondary}>
+                See claim decision demo
                 <ChevronRight size={16} aria-hidden />
               </Link>
             </div>

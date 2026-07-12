@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { listSupportCasesForClaimContext } from '@/lib/support/intake/supportCaseReadModel';
+import { TABLES } from '@/lib/supabase/tables';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,14 +25,14 @@ export async function GET(
   const { denied, ctx } = await requirePermission(
     serviceClient,
     user.id,
-    PERMISSIONS.SUBMIT_FRAUD_FEEDBACK
+    PERMISSIONS.SUBMIT_PAYOUT_DECISIONS
   );
   if (denied || !ctx?.merchantId) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 
   const { data: claim, error } = await serviceClient
-    .from('claims')
+    .from(TABLES.MERCHANT_CLAIMS)
     .select('id, merchant_id, source_order_id')
     .eq('id', claimId)
     .eq('merchant_id', ctx.merchantId)

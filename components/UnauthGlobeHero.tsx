@@ -46,7 +46,7 @@ export function UnauthGlobeHero() {
               id="fl-globe-hero-heading"
               className={`${styles.networkHeroHeading} max-[768px]:pr-14`}
             >
-              Every merchant makes the evidence and rules layer stronger.
+              Every merchant makes the claim decision layer stronger.
             </h2>
           </Reveal>
 

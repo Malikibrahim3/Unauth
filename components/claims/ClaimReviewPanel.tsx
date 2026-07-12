@@ -7,15 +7,20 @@ import { ClaimReviewFormSection } from '@/components/claims/ClaimReviewFormSecti
 import { ClaimReviewHeader } from '@/components/claims/ClaimReviewHeader';
 import { ClaimReviewToast } from '@/components/claims/ClaimReviewToast';
 import { CLAIM_REVIEW_PANEL_ROOT_STYLE } from '@/components/claims/claimReviewStyles';
+import { CaseComments } from '@/components/collaboration/CaseComments';
 
 export default function ClaimReviewPanel({
   profileId,
+  sourceCustomerId,
   initialClaimId,
+  canManage = false,
 }: {
   profileId: string;
+  sourceCustomerId: string | null;
   initialClaimId?: string | null;
+  canManage?: boolean;
 }) {
-  const wb = useClaimReviewWorkbench(profileId, initialClaimId);
+  const wb = useClaimReviewWorkbench(profileId, sourceCustomerId, initialClaimId);
 
   return (
     <div className="flex flex-col" style={CLAIM_REVIEW_PANEL_ROOT_STYLE}>
@@ -23,8 +28,9 @@ export default function ClaimReviewPanel({
       <ClaimReviewHeader wb={wb} />
       <div className="max-w-[1440px] mx-auto w-full grid grid-cols-1 min-[1100px]:grid-cols-[minmax(0,1fr)_400px] gap-6 p-4 md:p-6 items-start">
         <ClaimReviewContextColumn wb={wb} />
-        <ClaimReviewActionRail wb={wb} />
+        <ClaimReviewActionRail wb={wb} canManage={canManage} />
         <ClaimReviewFormSection wb={wb} />
+        {initialClaimId ? <CaseComments caseId={initialClaimId} canComment={canManage} /> : null}
       </div>
     </div>
   );

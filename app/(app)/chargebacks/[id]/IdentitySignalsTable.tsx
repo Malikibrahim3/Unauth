@@ -1,4 +1,4 @@
-import { Badge } from '@/components/ui'
+import { PanelCard, StatusBadge } from '@/components/ui'
 
 interface IdentitySignal {
   identifierType: string
@@ -12,15 +12,7 @@ interface IdentitySignalsTableProps {
 
 export function IdentitySignalsTable({ signals }: IdentitySignalsTableProps) {
   return (
-    <section
-      style={{
-        background: 'var(--surface)',
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--radius-md)',
-        boxShadow: 'var(--shadow-sm)',
-        padding: '20px 24px',
-      }}
-    >
+    <PanelCard as="section" variant="app" className="px-6 py-5" style={{ boxShadow: 'var(--shadow-sm)' }}>
       <h2
         className="text-heading-lg font-semibold mb-4"
         style={{ color: 'var(--text-primary)' }}
@@ -29,13 +21,10 @@ export function IdentitySignalsTable({ signals }: IdentitySignalsTableProps) {
       </h2>
       <div className="space-y-2">
         {signals.map((signal) => (
-          <div
+          <PanelCard
             key={`${signal.identifierType}-${signal.maskedValue}`}
-            className="flex items-center justify-between rounded-md border px-4 py-3"
-            style={{
-              background: 'var(--surface-sunken)',
-              borderColor: 'var(--border)',
-            }}
+            variant="appInset"
+            className="flex items-center justify-between px-4 py-3"
           >
             <div className="flex-1 min-w-0">
               <div className="text-caption font-semibold" style={{ color: 'var(--text-primary)' }}>
@@ -47,15 +36,15 @@ export function IdentitySignalsTable({ signals }: IdentitySignalsTableProps) {
             </div>
             {signal.ce3Accepted && (
               <div className="ml-4 shrink-0">
-                <Badge tone="success" variant="subtle" size="sm">Core Signal</Badge>
+                <StatusBadge variant="cleared">Core Signal</StatusBadge>
               </div>
             )}
-          </div>
+          </PanelCard>
         ))}
       </div>
       <p className="text-caption mt-4" style={{ color: 'var(--text-tertiary)' }}>
         Core signals are identity markers accepted under CE 3.0 rules for prior-order matching.
       </p>
-    </section>
+    </PanelCard>
   )
 }

@@ -40,7 +40,7 @@ describe('Gorgias widget unlock links', () => {
     expect(payload.basic_unlock_url).toContain('basic_context');
     expect(payload.full_unlock_url).toContain('full_context');
     expect(payload.evidence_unlock_url).toContain('evidence_summary');
-    expect(payload.basic_unlock_label).toContain('1 credit');
+    expect(payload.basic_unlock_label).toBe('Open full case →');
     expect(payload.basic_unlock_url).toContain('basic_context');
   });
 
@@ -88,7 +88,7 @@ describe('Gorgias widget unlock links', () => {
     expect(payload.identity).toContain('DEFINITE');
     expect(payload.orders).toContain('9');
     expect(payload.orders).not.toContain('20');
-    expect(payload.ce3_evidence).toContain('Network signal available');
+    expect(payload.ce3_evidence).toContain('Additional identity context available');
     expect(payload.primary_reason).toContain('Item not received');
     expect(payload.cta_url).toContain('source=gorgias');
     expect(payload.cta_url).toContain('ticket_id=T-1');
@@ -105,8 +105,13 @@ describe('Gorgias widget unlock links', () => {
   it('sidebar template uses safe card title and context row labels', () => {
     const template = buildGorgiasSidebarWidgetTemplate('https://app.unauth.test');
     expect(template.widgets[0].title).toBe(GORGIAS_SIDEBAR_CARD_TITLE);
-    expect(template.widgets[0].widgets[1].title).toBe(GORGIAS_SIDEBAR_ROW_LABELS.claims);
-    expect(template.widgets[0].widgets[3].title).toBe(GORGIAS_SIDEBAR_ROW_LABELS.claim_rate);
+    const rowTitles = template.widgets[0].widgets.map((w: { title: string }) => w.title);
+    expect(rowTitles).toEqual([
+      GORGIAS_SIDEBAR_ROW_LABELS.payout_exposure,
+      GORGIAS_SIDEBAR_ROW_LABELS.evidence_checklist,
+      GORGIAS_SIDEBAR_ROW_LABELS.recommendation,
+      GORGIAS_SIDEBAR_ROW_LABELS.recovery_path,
+    ]);
     const blob = JSON.stringify(template);
     expect(blob).not.toMatch(/Claims on record|Identity Intelligence/i);
   });

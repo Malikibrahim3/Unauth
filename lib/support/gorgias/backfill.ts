@@ -5,6 +5,10 @@ import { TABLES } from '@/lib/supabase/tables';
 import { fetchGorgiasTicketById } from '@/lib/support/gorgias/fetchTicket';
 import { getActiveGorgiasMerchantApiAccess } from '@/lib/support/gorgias/merchantApiAccess';
 import {
+  reconcileDeletedGorgiasTickets,
+} from '@/lib/support/gorgias/reconcileDeletedTickets';
+import { verifyGorgiasConnectionOrMarkReconnectRequired } from '@/lib/support/gorgias/verifyStoredCredentials';
+import {
   gorgiasApiBaseUrl,
   gorgiasApiRequest,
 } from '@/lib/support/gorgias/registerSidebarWidget';
@@ -29,6 +33,7 @@ export type GorgiasSupportBackfillResult = {
   ingested: number;
   skipped: number;
   errors: number;
+  orphans_reconciled?: { checked: number; marked_deleted: number };
 };
 
 export async function backfillGorgiasSupportCases(input: {
@@ -40,6 +45,24 @@ export async function backfillGorgiasSupportCases(input: {
   const access = await getActiveGorgiasMerchantApiAccess(input.supabase, input.merchantId);
   if (!access) {
     throw new Error('gorgias_api_access_missing');
+  }
+
+  const { data: connectionRow } = await input.supabase
+    .from(TABLES.SUPPORT_PROVIDER_CONNECTIONS)
+    .select('access_token_encrypted, provider_base_url')
+    .eq('id', input.providerConnectionId)
+    .maybeSingle();
+
+  if (connectionRow?.access_token_encrypted && connectionRow.provider_base_url) {
+    const verified = await verifyGorgiasConnectionOrMarkReconnectRequired({
+      supabase: input.supabase,
+      connectionId: input.providerConnectionId,
+      providerBaseUrl: connectionRow.provider_base_url,
+      accessTokenEncrypted: connectionRow.access_token_encrypted,
+    });
+    if (!verified) {
+      throw new Error('gorgias_api_auth_failed');
+    }
   }
 
   const cutoff = integrationBackfillSinceDate();
@@ -134,6 +157,12 @@ export async function backfillGorgiasSupportCases(input: {
     cursor = nextCursor;
   }
 
+  const orphansReconciled = await reconcileDeletedGorgiasTickets({
+    supabase: input.supabase,
+    merchantId: input.merchantId,
+    access,
+  });
+
   const now = new Date().toISOString();
   await input.supabase
     .from(TABLES.SUPPORT_PROVIDER_CONNECTIONS)
@@ -151,5 +180,6 @@ export async function backfillGorgiasSupportCases(input: {
     ingested,
     skipped,
     errors,
+    orphans_reconciled: orphansReconciled,
   };
 }

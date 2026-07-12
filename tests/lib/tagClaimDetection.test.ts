@@ -31,6 +31,15 @@ describe('tag-based claim detection', () => {
     });
   });
 
+  it('uses neutral payout-control default trigger tags', () => {
+    for (const platform of ['gorgias', 'zendesk', 'freshdesk', 'intercom'] as const) {
+      const defaults = getDefaultTagConfig(platform).claim_trigger_tags.join(' ').toLowerCase();
+      expect(defaults).toContain('refund');
+      expect(defaults).toContain('chargeback');
+      expect(defaults).not.toContain('fraud');
+    }
+  });
+
   it('updates status for an outcome tag', () => {
     expect(detectClaimFromTags(config, { tags: ['refund-issued'] })).toMatchObject({
       action: 'update_status',

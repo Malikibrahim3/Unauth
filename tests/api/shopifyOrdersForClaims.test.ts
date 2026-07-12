@@ -16,11 +16,41 @@ describe('shopify orders route for claims picker', () => {
     (createClient as jest.Mock).mockReturnValue({ auth: { getUser: jest.fn().mockResolvedValue({ data: { user: { id: 'u1' } } }) } });
     (requirePermission as jest.Mock).mockResolvedValue({ denied: null, ctx: { merchantId: 'm1', userId: 'u1' } });
     (fetchMerchantScopedCustomerProfile as jest.Mock).mockResolvedValue({ emails: ['a@b.com'] });
+    // v2: connection lives in store_connections, orders in source_orders.
     (createServiceClient as jest.Mock).mockReturnValue({
       from: (table: string) => {
-        if (table === 'merchant_shopify_connections') return { select: () => ({ eq: () => ({ eq: () => ({ limit: () => ({ maybeSingle: async () => ({ data: { shop_domain: 's.myshopify.com' }, error: null }) }) }) }) }) };
-        if (table === 'merchant_identities') return { select: () => ({ eq: () => ({ eq: () => ({ in: async () => ({ data: [{ source_id: 'o1', email: 'a@b.com' }], error: null }) }) }) }) };
-        if (table === 'shopify_order_signals') return { select: () => ({ eq: () => ({ in: () => ({ order: async () => ({ data: [{ shopify_order_id: 'o1', order_number: '1001', created_at_shopify: '2026-05-20T00:00:00Z', total_price: 49.99, currency: 'USD', financial_status: 'paid', fulfillment_status: 'fulfilled', cancelled_at: null }], error: null }) }) }) }) };
+        if (table === 'store_connections') {
+          const builder: Record<string, unknown> = {
+            select: () => builder,
+            eq: () => builder,
+            neq: () => builder,
+            limit: () => builder,
+            maybeSingle: async () => ({ data: { id: 'conn-1' }, error: null }),
+          };
+          return builder;
+        }
+        if (table === 'source_orders') {
+          const builder: Record<string, unknown> = {
+            select: () => builder,
+            eq: () => builder,
+            in: () => builder,
+            order: async () => ({
+              data: [{
+                external_id: 'o1',
+                order_number: '1001',
+                placed_at: '2026-05-20T00:00:00Z',
+                ingested_at: '2026-05-20T00:00:00Z',
+                total_price: 49.99,
+                currency: 'USD',
+                financial_status: 'paid',
+                fulfillment_state: 'fulfilled',
+                cancelled_at: null,
+              }],
+              error: null,
+            }),
+          };
+          return builder;
+        }
         return {};
       },
     });

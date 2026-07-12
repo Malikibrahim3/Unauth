@@ -17,6 +17,10 @@ import { normaliseEmail, emailRoot, normalisePhone } from '@/lib/identity/normal
 import { K_ANONYMITY_MIN } from '@/lib/engine/weights';
 import type { ConfidenceGrade } from '@/lib/engine/weights';
 
+// Launch is store-scoped. Keep the identity state machine available for a
+// future rollout, but do not read or disclose network aggregates.
+export const NETWORK_DISCLOSURE_ENABLED = false;
+
 export type IdentifierHash = { type: 'email' | 'email_root' | 'phone'; hash: string };
 
 export type NetworkIdentitySummary = {
@@ -81,6 +85,7 @@ export async function lookupNetworkIdentity(
   merchantId: string,
   hashes: IdentifierHash[],
 ): Promise<NetworkIdentitySummary | null> {
+  if (!NETWORK_DISCLOSURE_ENABLED) return null;
   if (hashes.length === 0) return null;
 
   const { data, error } = await service.rpc('lookup_network_identity', {
@@ -139,6 +144,7 @@ export async function lookupIdentityGradesByEmailHash(
   emailHashes: string[],
 ): Promise<Map<string, IdentityGradeBadge>> {
   const result = new Map<string, IdentityGradeBadge>();
+  if (!NETWORK_DISCLOSURE_ENABLED) return result;
   const hashes = Array.from(new Set(emailHashes.filter((h) => h.length > 0)));
   if (hashes.length === 0) return result;
 

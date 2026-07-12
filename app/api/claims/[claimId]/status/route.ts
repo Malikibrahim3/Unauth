@@ -2,22 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
-import { loadClaimForMerchant, updateClaimStatus } from '@/lib/claims/access';
-import { appendClaimEvent } from '@/lib/claims/events';
+import { loadClaimForMerchant } from '@/lib/claims/access';
+import { CANONICAL_CLAIM_STATUSES } from '@/lib/claims/statusMachine';
+import { CaseTransitionRejectedError, CaseVersionConflictError, transitionCase } from '@/lib/cases/transitionCase';
 
 const statusBodySchema = z.object({
-  status: z.enum([
-    'pending',
-    'open',
-    'escalated',
-    'resolved_refunded',
-    'resolved_won',
-    'resolved_lost',
-    'resolved_denied',
-    'resolved_exchanged',
-    'voided',
-    'stale',
-  ]),
+  status: z.enum(CANONICAL_CLAIM_STATUSES),
   note: z.string().trim().min(3),
 });
 
@@ -27,7 +17,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const serviceClient = createServiceClient();
-  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.SUBMIT_FRAUD_FEEDBACK);
+  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.SUBMIT_PAYOUT_DECISIONS);
   if (denied) return denied;
 
   const { claimId } = await params;
@@ -47,23 +37,22 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   try {
     const claim = loaded.claim!;
-    const updated = await updateClaimStatus(serviceClient, claim, ctx.merchantId, parsed.data.status);
-    await appendClaimEvent(serviceClient, {
-      claim_id: claimId,
-      merchant_id: ctx.merchantId,
-      event_type: parsed.data.status === 'escalated' ? 'escalation_added' : 'status_changed',
-      previous_status: claim.status,
-      new_status: parsed.data.status,
-      note: parsed.data.note,
-      actor_user_id: user.id,
-      triggered_by: 'merchant_manual',
-      metadata: { triggered_by: 'merchant_manual' },
+    const updated = await transitionCase(serviceClient, {
+      merchantId: ctx.merchantId,
+      caseId: claimId,
+      expectedVersion: claim.state_version ?? 1,
+      patch: { status: parsed.data.status },
+      reason: parsed.data.note,
+      actorUserId: user.id,
+      triggeredBy: 'merchant_manual',
+      eventType: 'case.updated',
     });
-    return NextResponse.json({ claim: { id: updated.id, status: updated.status } });
+    return NextResponse.json({ claim: { id: updated.caseId, status: updated.status, state_version: updated.newVersion } });
   } catch (err) {
-    if (err instanceof Error && err.message.startsWith('illegal_claim_status_transition:')) {
+    if (err instanceof CaseTransitionRejectedError) {
       return NextResponse.json({ error: 'Illegal claim status transition.' }, { status: 409 });
     }
+    if (err instanceof CaseVersionConflictError) return NextResponse.json({ error: 'Case was updated by another user. Refresh and try again.' }, { status: 409 });
     return NextResponse.json({ error: 'Failed to update claim status' }, { status: 500 });
   }
 }

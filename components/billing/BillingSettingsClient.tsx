@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { PanelCard } from '@/components/ui';
 import { PLANS, TOP_UP_CREDITS, TOP_UP_PRICE_GBP, type PlanId } from '@/lib/billing/plans';
 
 type BillingState = {
@@ -118,13 +119,14 @@ export default function BillingSettingsClient() {
       ? 'Custom'
       : state.priceGbp === 0
         ? 'Free'
-        : `£${state.priceGbp}/mo`;
+        : `$${state.priceGbp}/mo`;
 
   return (
     <div className="mx-auto max-w-2xl space-y-8 p-6">
       {toast && (
-        <div
-          className="rounded-md border px-4 py-3 text-sm"
+        <PanelCard
+          variant="app"
+          className="px-4 py-3 text-sm"
           style={{
             borderColor: toast.type === 'error' ? 'var(--risk-high)' : 'var(--accent)',
             background: 'var(--surface)',
@@ -132,12 +134,13 @@ export default function BillingSettingsClient() {
           role="status"
         >
           {toast.message}
-        </div>
+        </PanelCard>
       )}
 
       {state.status === 'grace_period' && (
-        <div
-          className="rounded-md border px-4 py-3 text-sm"
+        <PanelCard
+          variant="app"
+          className="px-4 py-3 text-sm"
           style={{ borderColor: 'var(--risk-high)', background: 'var(--surface)' }}
           role="alert"
         >
@@ -153,12 +156,13 @@ export default function BillingSettingsClient() {
           >
             Update billing
           </button>
-        </div>
+        </PanelCard>
       )}
 
       {state.status === 'past_due' && (
-        <div
-          className="rounded-md border px-4 py-3 text-sm"
+        <PanelCard
+          variant="app"
+          className="px-4 py-3 text-sm"
           style={{ borderColor: 'var(--risk-high)', background: 'var(--surface)' }}
           role="alert"
         >
@@ -171,7 +175,7 @@ export default function BillingSettingsClient() {
             Resubscribe
           </button>{' '}
           to restore Pro/Growth features.
-        </div>
+        </PanelCard>
       )}
 
       <section>
@@ -181,7 +185,7 @@ export default function BillingSettingsClient() {
         </p>
       </section>
 
-      <section className="rounded-md border p-5" style={{ borderColor: 'var(--border)' }}>
+      <PanelCard as="section" variant="app" className="p-5">
         <h2 className="text-sm font-semibold text-[var(--text-primary)]">Current plan</h2>
         <p className="mt-2 text-2xl font-semibold">{state.planName}</p>
         <p className="text-sm text-[var(--text-secondary)]">{priceLabel}</p>
@@ -201,9 +205,9 @@ export default function BillingSettingsClient() {
             Cancels on {formatDate(state.currentPeriodEnd)} — you&apos;ll move to Free after that.
           </p>
         )}
-      </section>
+      </PanelCard>
 
-      <section className="rounded-md border p-5" style={{ borderColor: 'var(--border)' }}>
+      <PanelCard as="section" variant="app" className="p-5">
         <h2 className="text-sm font-semibold text-[var(--text-primary)]">Network credits this cycle</h2>
         <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
           <div>
@@ -230,16 +234,16 @@ export default function BillingSettingsClient() {
             disabled={actionLoading === 'topup'}
             onClick={() => void runAction('topup')}
           >
-            Top up — £{TOP_UP_PRICE_GBP} for {TOP_UP_CREDITS} credits
+            Top up — ${TOP_UP_PRICE_GBP} for {TOP_UP_CREDITS} credits
           </button>
         )}
-      </section>
+      </PanelCard>
 
-      <section className="rounded-md border p-5 space-y-3" style={{ borderColor: 'var(--border)' }}>
+      <PanelCard as="section" variant="app" className="space-y-3 p-5">
         <h2 className="text-sm font-semibold text-[var(--text-primary)]">Change plan</h2>
         {state.planId === 'free' && (
           <PlanButton
-            label={`Upgrade to Pro — £${PLANS.pro.priceGbp}/mo`}
+            label={`Upgrade to Pro — $${PLANS.pro.priceGbp}/mo`}
             loading={actionLoading === 'checkout-pro'}
             onClick={() => void runAction('checkout', 'pro')}
           />
@@ -247,7 +251,7 @@ export default function BillingSettingsClient() {
         {state.planId === 'pro' && (
           <>
             <PlanButton
-              label={`Upgrade to Growth — £${PLANS.growth.priceGbp}/mo`}
+              label={`Upgrade to Growth — $${PLANS.growth.priceGbp}/mo`}
               loading={actionLoading === 'upgrade-growth'}
               onClick={() => void runAction('upgrade', 'growth')}
             />
@@ -288,9 +292,9 @@ export default function BillingSettingsClient() {
             onClick={() => void runAction('contact_scale')}
           />
         )}
-      </section>
+      </PanelCard>
 
-      <section className="rounded-md border p-5 space-y-3" style={{ borderColor: 'var(--border)' }}>
+      <PanelCard as="section" variant="app" className="space-y-3 p-5">
         <h2 className="text-sm font-semibold text-[var(--text-primary)]">Payment method</h2>
         <button
           type="button"
@@ -311,7 +315,7 @@ export default function BillingSettingsClient() {
                 Cancel plan
               </button>
             ) : (
-              <div className="rounded border p-3 text-sm" style={{ borderColor: 'var(--border)' }}>
+              <PanelCard variant="appInset" className="p-3 text-sm">
                 <p>
                   You&apos;ll keep access until {formatDate(state.currentPeriodEnd)}, then move to Free.
                 </p>
@@ -329,7 +333,7 @@ export default function BillingSettingsClient() {
                     Keep plan
                   </button>
                 </div>
-              </div>
+              </PanelCard>
             )}
           </>
         )}
@@ -343,7 +347,7 @@ export default function BillingSettingsClient() {
             Resume subscription
           </button>
         )}
-      </section>
+      </PanelCard>
     </div>
   );
 }
@@ -404,15 +408,15 @@ function BillingSettingsSkeleton() {
       </section>
 
       {/* Current plan */}
-      <section className="rounded-md border p-5 space-y-3" style={{ borderColor: 'var(--border)' }}>
+      <PanelCard as="section" variant="app" className="space-y-3 p-5">
         <SkeletonBlock className="h-4 w-24" />
         <SkeletonBlock className="h-8 w-32" />
         <SkeletonBlock className="h-4 w-20" />
         <SkeletonBlock className="h-3 w-48" />
-      </section>
+      </PanelCard>
 
       {/* Credits */}
-      <section className="rounded-md border p-5 space-y-3" style={{ borderColor: 'var(--border)' }}>
+      <PanelCard as="section" variant="app" className="space-y-3 p-5">
         <SkeletonBlock className="h-4 w-48" />
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
@@ -425,20 +429,20 @@ function BillingSettingsSkeleton() {
           </div>
         </div>
         <SkeletonBlock className="h-3 w-56" />
-      </section>
+      </PanelCard>
 
       {/* Change plan */}
-      <section className="rounded-md border p-5 space-y-3" style={{ borderColor: 'var(--border)' }}>
+      <PanelCard as="section" variant="app" className="space-y-3 p-5">
         <SkeletonBlock className="h-4 w-28" />
         <SkeletonBlock className="h-9 w-full" />
         <SkeletonBlock className="h-9 w-full" />
-      </section>
+      </PanelCard>
 
       {/* Payment */}
-      <section className="rounded-md border p-5 space-y-3" style={{ borderColor: 'var(--border)' }}>
+      <PanelCard as="section" variant="app" className="space-y-3 p-5">
         <SkeletonBlock className="h-4 w-36" />
         <SkeletonBlock className="h-4 w-48" />
-      </section>
+      </PanelCard>
     </div>
   );
 }

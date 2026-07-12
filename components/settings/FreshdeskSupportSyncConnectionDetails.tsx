@@ -3,6 +3,7 @@
 import { Check, CheckCircle2, Circle, Copy, RefreshCw, Unplug } from 'lucide-react';
 import type { FormEvent } from 'react';
 import Image from 'next/image';
+import { PanelCard, StatusBadge, statusBadgeVariantFor } from '@/components/ui';
 import { FreshdeskSupportSyncCreateForm } from '@/components/settings/FreshdeskSupportSyncCreateForm';
 import type { FreshdeskSupportSyncState } from '@/components/settings/freshdeskSupportSyncReducer';
 import {
@@ -30,28 +31,6 @@ type ChecklistItem = {
   ok: boolean;
 };
 
-function StatusBadge({ status }: { status: string }) {
-  const isActive = status === 'active';
-  const isDisabled = status === 'disabled';
-
-  return (
-    <span
-      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium"
-      style={{
-        background: isActive
-          ? 'color-mix(in srgb, var(--success) 12%, transparent)'
-          : isDisabled
-          ? 'color-mix(in srgb, var(--text-secondary) 12%, transparent)'
-          : 'color-mix(in srgb, var(--warning) 12%, transparent)',
-        color: isActive ? 'var(--success)' : isDisabled ? 'var(--text-secondary)' : 'var(--warning)',
-      }}
-    >
-      <span className="h-1.5 w-1.5 rounded-full bg-current" />
-      {isActive ? 'Connected' : isDisabled ? 'Disabled' : status}
-    </span>
-  );
-}
-
 function ChecklistRow({ item }: { item: ChecklistItem }) {
   return (
     <div className="flex items-center gap-3 py-2.5">
@@ -65,12 +44,9 @@ function ChecklistRow({ item }: { item: ChecklistItem }) {
       <span className="flex-1 text-sm" style={{ color: 'var(--text)' }}>
         {item.label}
       </span>
-      <span
-        className="text-xs font-medium"
-        style={{ color: item.ok ? 'var(--success)' : 'var(--text-secondary)' }}
-      >
+      <StatusBadge variant={item.ok ? 'cleared' : 'flagged'} className="px-2 py-0.5 text-xs font-medium">
         {item.status}
-      </span>
+      </StatusBadge>
     </div>
   );
 }
@@ -118,7 +94,9 @@ export function FreshdeskSupportSyncConnectionDetails({
             <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
               {freshdeskAccountLabel(connection)}
             </p>
-            <StatusBadge status={connection.status} />
+            <StatusBadge variant={statusBadgeVariantFor(connection.status)}>
+              {isActive ? 'Connected' : connection.status === 'disabled' ? 'Disabled' : connection.status}
+            </StatusBadge>
           </div>
           <p className="mt-0.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
             Last synced {formatFreshdeskWhen(connection.last_sync_at)}
@@ -127,10 +105,7 @@ export function FreshdeskSupportSyncConnectionDetails({
       </div>
 
       {/* Setup checklist */}
-      <div
-        className="rounded-xl border divide-y"
-        style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
-      >
+      <PanelCard variant="app" className="divide-y overflow-hidden p-0">
         <div className="px-4 py-2.5">
           <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
             Setup checklist
@@ -141,14 +116,11 @@ export function FreshdeskSupportSyncConnectionDetails({
             <ChecklistRow item={item} />
           </div>
         ))}
-      </div>
+      </PanelCard>
 
       {/* Webhook endpoint info when active */}
       {isActive ? (
-        <div
-          className="rounded-xl border p-4 space-y-2"
-          style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
-        >
+        <PanelCard variant="app" className="space-y-2 p-4">
           <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
             Webhook endpoint
           </p>
@@ -161,7 +133,7 @@ export function FreshdeskSupportSyncConnectionDetails({
           <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
             Add header <code className="font-mono">{FRESHDESK_SUPPORT_WEBHOOK_HEADER_NAME}</code> with your webhook secret to authenticate requests.
           </p>
-        </div>
+        </PanelCard>
       ) : null}
 
       {/* Danger zone */}
@@ -205,10 +177,7 @@ export function FreshdeskSupportSyncConnectionDetails({
 
       {/* Reconnect form when disabled */}
       {canManage && isDisabledOrError ? (
-        <div
-          className="space-y-4 rounded-xl border p-4"
-          style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
-        >
+        <PanelCard variant="app" className="space-y-4 p-4">
           <div>
             <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
               Reconnect Freshdesk
@@ -225,7 +194,7 @@ export function FreshdeskSupportSyncConnectionDetails({
             submitLabel="Reconnect"
             variant="reconnect"
           />
-        </div>
+        </PanelCard>
       ) : null}
     </div>
   );

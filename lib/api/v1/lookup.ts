@@ -37,7 +37,8 @@ type SearchRow = {
   id: string;
   primary_email: string | null;
   primary_phone: string | null;
-  fraud_flags: string[] | unknown;
+  /** Maps to the `fraud_flags` DB column (out of scope to rename here); unused in this module's output. */
+  claim_history_signals?: string[] | unknown;
   total_merchants_seen_at: number;
   total_refund_claims: number;
   total_chargebacks: number | null;

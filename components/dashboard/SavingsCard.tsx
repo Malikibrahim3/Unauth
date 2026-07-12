@@ -5,13 +5,13 @@
  *
  * Feature-flagged by FLAG_SAVINGS_CARD (default-off).
  *
- * Displays the conservative estimate of fraud value intercepted over the last
+ * Displays the conservative estimate of post-purchase loss value intercepted over the last
  * 30 days.  Methodology is displayed inline for transparency.
  *
  * Methodology (conservative):
  *   Sum of order_value for transactions where:
- *     - match_status IN ('confirmed_fraud', 'confirmed-fraud') OR
- *     - merchant_feedback = 'fraud'
+ *     - legacy confirmed-loss markers OR
+ *     - merchant feedback recorded as a confirmed loss
  *     - processed_at >= now() - interval '30 days'
  *     - merchant-scoped
  *
@@ -20,11 +20,12 @@
 
 import { Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { formatCurrency } from '@/lib/utils/format';
 import { useCountUp } from '@/hooks/useCountUp';
 
 export interface SavingsCardData {
-  confirmedFraudValue: number;   // sum over last 30d
-  confirmedFraudCount: number;
+  confirmedFraudValue: number;   // legacy field name; sum over last 30d
+  confirmedFraudCount: number;   // legacy field name
   currency: string;
   periodDays: number;
   lastUpdated: string; // ISO
@@ -36,19 +37,10 @@ interface SavingsCardProps {
   className?: string;
 }
 
-const savingsCurrencyFormatter = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-  maximumFractionDigits: 0,
-});
-
-function formatCurrency(value: number) {
-  return savingsCurrencyFormatter.format(value);
-}
-
 export function SavingsCard({ data, loading, className }: SavingsCardProps) {
+  const currency = data?.currency ?? 'USD';
   const animatedValue = useCountUp(data?.confirmedFraudValue ?? 0, {
-    format: (value) => formatCurrency(value),
+    format: (value) => formatCurrency(value, currency),
   });
 
   return (
@@ -87,7 +79,7 @@ export function SavingsCard({ data, loading, className }: SavingsCardProps) {
       {/* Sub-label */}
       {!loading && data && (
         <p className="text-small text-[var(--text-secondary)]">
-          {data.confirmedFraudCount.toLocaleString()} confirmed-fraud order
+          {data.confirmedFraudCount.toLocaleString()} confirmed loss case
           {data.confirmedFraudCount !== 1 ? 's' : ''} intercepted
         </p>
       )}
@@ -102,10 +94,10 @@ export function SavingsCard({ data, loading, className }: SavingsCardProps) {
         </summary>
         <p className="mt-[var(--space-2)] text-meta text-[var(--text-tertiary)] leading-relaxed">
           Conservative: sum of <code className="text-mono-sm">order_value</code> for
-          transactions with <code className="text-mono-sm">match_status = confirmed_fraud</code> or{' '}
-          <code className="text-mono-sm">merchant_feedback = fraud</code> over the last{' '}
+          transactions with legacy confirmed-loss markers or merchant feedback recorded as
+          confirmed loss over the last{' '}
           {data?.periodDays ?? 30} days. Only your merchant data is included.
-          Potential future fraud prevented is not counted.
+          Potential future loss prevented is not counted.
         </p>
       </details>
     </div>

@@ -2,7 +2,7 @@
 
 import { Save, Check } from 'lucide-react';
 import { Button, Input, Select, SectionCard } from '@/components/ui';
-import { ORDER_VOLUME_OPTIONS, FRAUD_CONCERN_OPTIONS } from '@/lib/constants/merchantProfile';
+import { ORDER_VOLUME_OPTIONS, LOSS_CONCERN_OPTIONS } from '@/lib/constants/merchantProfile';
 import type { AccountSettingsAction, AccountSettingsState } from '@/components/settings/accountSettingsReducer';
 
 type Props = {
@@ -63,16 +63,16 @@ export default function AccountProfileSection({ state, dispatch, onSave }: Props
         </div>
 
         <div>
-          <label htmlFor="account-fraud-concern" className="block text-xs font-semibold mb-1" style={{ color: 'var(--text)' }}>
+          <label htmlFor="account-loss-concern" className="block text-xs font-semibold mb-1" style={{ color: 'var(--text)' }}>
             Primary review focus
           </label>
           <Select
-            id="account-fraud-concern"
+            id="account-loss-concern"
             value={state.fraudConcern}
             onChange={(e) => dispatch({ type: 'patch', patch: { fraudConcern: e.target.value } })}
           >
             <option value="">Select…</option>
-            {FRAUD_CONCERN_OPTIONS.map((o) => (
+            {LOSS_CONCERN_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}
           </Select>

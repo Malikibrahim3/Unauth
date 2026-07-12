@@ -9,31 +9,31 @@ export function resolveCustomerActions(
 ): { primary: { label: string; href: string }; subtitle: string } {
   if (connection.bothConnected) {
     return {
-      primary: { label: 'Review queue', href: '/customers?risk=high&status=new' },
-      subtitle: 'Customer intelligence across your Shopify orders and helpdesk claims - identity confidence, claim history, and linked accounts.',
+      primary: { label: 'Open cases', href: '/claims' },
+      subtitle: 'Merchant-owned customer context for loss-case decisions - order history, claim history, prior outcomes, and evidence patterns.',
     };
   }
   if (connection.shopifyOnlyConnected) {
     return {
       primary: { label: 'Connect helpdesk', href: INTEGRATIONS_HREF },
-      subtitle: 'Customer intelligence from your Shopify orders. Connect your helpdesk to add claim history and dispute context.',
+      subtitle: 'Customer history from Shopify orders. Connect your helpdesk to add claim reasons, prior outcomes, and decision context.',
     };
   }
   if (connection.helpdeskOnlyConnected) {
     return {
       primary: { label: 'Connect Shopify', href: INTEGRATIONS_HREF },
-      subtitle: 'Customer intelligence from your helpdesk claims. Connect Shopify to add order and purchase context.',
+      subtitle: 'Customer claim history from your helpdesk. Connect Shopify to add order value, purchase history, and account context.',
     };
   }
   if (setupState === 'csv_only') {
     return {
       primary: { label: 'Connect Shopify and your helpdesk', href: INTEGRATIONS_HREF },
-      subtitle: 'Customer intelligence from your imported history. Connect Shopify and your helpdesk for live monitoring.',
+      subtitle: 'Customer and case history from your imported data. Connect Shopify and your helpdesk to keep the evidence memory current.',
     };
   }
   return {
     primary: { label: 'Reconnect sources', href: INTEGRATIONS_HREF },
-    subtitle: 'Customer intelligence from your existing data. Reconnect Shopify and your helpdesk to keep it current.',
+    subtitle: 'Customer history from existing merchant data. Reconnect Shopify and your helpdesk to keep case context current.',
   };
 }
 

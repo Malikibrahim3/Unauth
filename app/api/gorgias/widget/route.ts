@@ -1,7 +1,7 @@
-// TODO(product-gating): require HELPDESK_WIDGET entitlement when ENFORCE_PRODUCT_GATES is enabled.
 import { NextRequest, NextResponse } from 'next/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createServiceClient } from '@/lib/supabase/server';
+import { enforceEntitlement } from '@/lib/product/requireEntitlement';
 import { getClientIp } from '@/lib/ratelimit';
 import { type GorgiasClaimWidgetResult } from '@/lib/gorgias/widgetData';
 import { buildGorgiasClaimWidgetDataV2 as buildGorgiasClaimWidgetData } from '@/lib/gorgias/widgetDataV2';
@@ -10,14 +10,18 @@ import { getContextCreditSnapshot } from '@/lib/billing/contextCredits';
 import { TIER_ORDER } from '@/lib/billing/tiers';
 import {
   claimWidgetToJson,
+  formatClaimRecommendationUnavailable,
+  formatNoPayoutCaseFields,
+  formatPayoutWidgetDecision,
   formatRecommendationFields,
   type GorgiasWidgetJsonPayload,
   type GorgiasWidgetLinkContext,
   type GorgiasWidgetJsonOptions,
 } from '@/lib/gorgias/widgetJson';
-import { evaluateRules } from '@/lib/rules-engine';
-import { fetchActiveMerchantRules, writeRuleEvaluationAudit } from '@/lib/rules/store';
-import { widgetDataToSignals } from '@/lib/rules/widgetSignals';
+import { evaluateClaimDecision } from '@/lib/claims/decision/evaluate';
+import { inferWidgetTicketClaimLike } from '@/lib/claims/decision/claimLikeness';
+import { resolveClaimForTicketDecision } from '@/lib/claims/decision/resolveClaim';
+import { fetchActiveMerchantRules } from '@/lib/rules/store';
 import { env } from '@/lib/utils/env';
 import { gorgiasWidgetLog, gorgiasWidgetLogError } from '@/lib/gorgias/widgetLog';
 import { computeWidgetReviewLevel } from '@/lib/gorgias/widgetTrustSignals';
@@ -28,6 +32,7 @@ import { GORGIAS_WIDGET_TOKEN_HEADER } from '@/lib/support/gorgias/registerSideb
 import { isUsableWidgetEmailParam } from '@/lib/support/gorgias/ticketCustomerEmail';
 import { getMerchantGorgiasSupportConnection } from '@/lib/support/gorgias/settingsConnection';
 import { isGorgiasHelpdeskLinkedForWidget } from '@/lib/support/gorgias/helpdeskLinkStatus';
+import { TABLES } from '@/lib/supabase/tables';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -51,19 +56,25 @@ const GORGIAS_WIDGET_JSON_FALLBACK: GorgiasWidgetJsonPayload = {
   primary_reason: '—',
   recent_activity: '—',
   ce3_evidence: '—',
+  evidence_summary: '—',
+  evidence_breakdown: '—',
   watchlisted: '—',
   order_context: '—',
   context_summary: 'Context unavailable — check your Gorgias connection in Unauth settings',
   recommendation: '—',
   recommendation_detail: '—',
+  payout_exposure: '—',
+  evidence_checklist: '—',
+  loss_attribution: '—',
+  recovery_path: '—',
   cta_label: 'Open Unauth settings →',
   cta_url: `${process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') ?? ''}/settings/integrations/gorgias`,
   basic_unlock_url: '',
   full_unlock_url: '',
   evidence_unlock_url: '',
-  basic_unlock_label: 'View full context →',
-  full_unlock_label: 'View network context →',
-  evidence_unlock_label: 'View claim summary →',
+  basic_unlock_label: 'Open full case →',
+  full_unlock_label: 'Open full case →',
+  evidence_unlock_label: 'Open full case →',
 };
 
 type WidgetReturnContext = {
@@ -187,10 +198,15 @@ function returnJsonForResult(input: {
   linkContext?: GorgiasWidgetLinkContext;
   widgetJsonOptions?: GorgiasWidgetJsonOptions;
   recommendationFields?: Pick<GorgiasWidgetJsonPayload, 'recommendation' | 'recommendation_detail'>;
+  payoutFields?: Pick<
+    GorgiasWidgetJsonPayload,
+    'payout_exposure' | 'evidence_checklist' | 'recommendation' | 'recovery_path'
+  >;
 }): NextResponse {
   const body = {
     ...claimWidgetToJson(input.result, input.linkContext, input.widgetJsonOptions),
     ...(input.recommendationFields ?? {}),
+    ...(input.payoutFields ?? {}),
   };
   const status = input.status ?? 200;
   const state = input.result.ok ? 'ok' : input.result.kind;
@@ -302,6 +318,9 @@ export async function GET(request: NextRequest) {
 
     const service = createServiceClient();
 
+    const widgetGate = await enforceEntitlement(service, authResult.merchantId, 'HELPDESK_WIDGET');
+    if (widgetGate) return widgetGate;
+
     let gorgiasConnection = null;
     try {
       gorgiasConnection = await getMerchantGorgiasSupportConnection(service, authResult.merchantId);
@@ -365,6 +384,28 @@ export async function GET(request: NextRequest) {
       orderRef: orderRef || null,
     };
 
+    let linkedIdentityId: string | null = null;
+    if (ticketRef) {
+      const { data: ticket } = await service
+        .from(TABLES.SUPPORT_CASE_INTAKE)
+        .select('id')
+        .eq('merchant_id', authResult.merchantId)
+        .eq('external_id', ticketRef)
+        .maybeSingle();
+      if (ticket?.id) {
+        const { data: claim } = await service
+          .from(TABLES.MERCHANT_CLAIMS)
+          .select('identity_id')
+          .eq('merchant_id', authResult.merchantId)
+          .eq('source_ticket_id', ticket.id)
+          .not('identity_id', 'is', null)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        linkedIdentityId = (claim?.identity_id as string | null) ?? null;
+      }
+    }
+
     const { result, lookupDiagnostics } = await buildGorgiasClaimWidgetData(
       service,
       {
@@ -376,6 +417,7 @@ export async function GET(request: NextRequest) {
         rawEmail: email,
         rawName: isUnresolvedGorgiasVar(name) ? '' : name,
         orderId: orderRef,
+        linkedIdentityId,
       }
     );
 
@@ -410,33 +452,88 @@ export async function GET(request: NextRequest) {
     );
     gorgiasWidgetLog('widget_options', { showNetworkIntelligence: enrichedJsonOptions.showNetworkIntelligence });
 
-    // Recommendation layer — output of the MERCHANT'S OWN rules applied to
-    // Unauth's signals. Evaluated server-side and embedded in the native widget
-    // JSON (the Gorgias sidebar widget can't make a second fetch). Fails
-    // silently: any error leaves the neutral recommendation defaults in place
-    // so identity signals always render.
+    // Recommendation layer — claim-scoped when resolvable; identity fallback only
+    // for non-claim-like tickets. Claim-like tickets without a resolved claim show
+    // explicit unavailable copy instead of a misleading identity recommendation.
     let recommendationFields:
       | Pick<GorgiasWidgetJsonPayload, 'recommendation' | 'recommendation_detail'>
       | undefined;
+    let payoutFields:
+      | Pick<GorgiasWidgetJsonPayload, 'payout_exposure' | 'evidence_checklist' | 'recommendation' | 'recovery_path'>
+      | undefined;
     if (result.ok) {
       try {
-        const rules = await fetchActiveMerchantRules(service, authResult.merchantId);
-        const signals = widgetDataToSignals(result.data);
-        const evaluation = evaluateRules(signals, rules);
-        await writeRuleEvaluationAudit(service, {
+        const resolution = await resolveClaimForTicketDecision(service, {
           merchantId: authResult.merchantId,
-          claimId: null,
-          identityId: null,
-          signals,
-          rules,
-          result: evaluation,
+          ticketExternalId: ticketRef,
+          orderReference: orderRef || null,
+          allowEnsureClaim: false,
         });
-        recommendationFields = formatRecommendationFields(evaluation, rules.length);
-        gorgiasWidgetLog('rules_evaluated', {
-          recommendation: evaluation.recommendation,
-          ruleCount: rules.length,
-          ruleMatched: Boolean(evaluation.rule_id),
+
+        const claimLike = await inferWidgetTicketClaimLike(service, {
+          merchantId: authResult.merchantId,
+          ticketExternalId: ticketRef,
+          resolution,
         });
+
+        gorgiasWidgetLog('claim_resolution', {
+          status: resolution.status,
+          reason: resolution.reason,
+          claimId: resolution.claimId,
+          claimLike,
+          candidateCount: resolution.candidates?.length ?? 0,
+        });
+
+        if (resolution.status === 'resolved' && resolution.claimId) {
+          linkContext.claimId = resolution.claimId;
+          const claimEval = await evaluateClaimDecision({
+            client: service,
+            merchantId: authResult.merchantId,
+            claimId: resolution.claimId,
+            source: 'gorgias_widget',
+          });
+          if (claimEval) {
+            recommendationFields = formatRecommendationFields(
+              claimEval.evaluation,
+              claimEval.ruleCount,
+              claimEval.payoutCase,
+            );
+            payoutFields = formatPayoutWidgetDecision(
+              claimEval.evaluation,
+              claimEval.payoutCase,
+              claimEval.ruleCount,
+            );
+            gorgiasWidgetLog('rules_evaluated', {
+              recommendation: claimEval.evaluation.recommendation,
+              ruleCount: claimEval.ruleCount,
+              ruleMatched: Boolean(claimEval.evaluation.rule_id),
+              claimId: resolution.claimId,
+              auditStatus: claimEval.auditStatus,
+            });
+          } else {
+            const rules = await fetchActiveMerchantRules(service, authResult.merchantId);
+            recommendationFields = formatClaimRecommendationUnavailable('eval_failed', {
+              ruleCount: rules.length,
+            });
+            gorgiasWidgetLog('rules_evaluation_failed', { claimId: resolution.claimId, phase: 'claim_eval_null' });
+          }
+        } else if (resolution.status === 'ambiguous') {
+          recommendationFields = formatClaimRecommendationUnavailable('ambiguous');
+          payoutFields = formatNoPayoutCaseFields();
+        } else if (claimLike) {
+          recommendationFields = formatClaimRecommendationUnavailable('not_found');
+          payoutFields = formatNoPayoutCaseFields();
+        } else {
+          recommendationFields = formatClaimRecommendationUnavailable('not_found');
+          payoutFields = formatNoPayoutCaseFields();
+          gorgiasWidgetLog('rules_evaluated', {
+            recommendation: 'no_case',
+            ruleCount: 0,
+            ruleMatched: false,
+            claimId: null,
+            path: 'no_payout_case',
+          });
+        }
       } catch (evalErr) {
         gorgiasWidgetLogError('rules_evaluation_failed', evalErr);
       }
@@ -451,6 +548,7 @@ export async function GET(request: NextRequest) {
       linkContext,
       widgetJsonOptions: enrichedJsonOptions,
       recommendationFields,
+      payoutFields,
     });
   } catch (err) {
     gorgiasWidgetLogError('fatal_error', err);

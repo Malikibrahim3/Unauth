@@ -23,9 +23,9 @@ export default async function DataPrivacySettingsPage() {
       </p>
 
       <div className="mt-6 space-y-4">
-        <SectionCard title="How identity matching protects PII">
+        <SectionCard title="How payout-case data is scoped">
           <div className="mb-4 flex flex-wrap items-center gap-2">
-            <PrivacyBadge value="Privacy-safe graph" />
+            <PrivacyBadge value="Merchant-owned context" />
             <span
               className="inline-flex items-center rounded-sm border px-2 py-0.5 text-mono-sm"
               style={{
@@ -34,7 +34,7 @@ export default async function DataPrivacySettingsPage() {
                 color: 'var(--privacy-ink)',
               }}
             >
-              k&gt;=3
+              tenant scoped
             </span>
           </div>
           <div
@@ -45,19 +45,19 @@ export default async function DataPrivacySettingsPage() {
               color: 'var(--data-id)',
             }}
           >
-            raw identifier -&gt; normalise -&gt; HMAC-SHA256 (per-tenant salt) -&gt; privacy-safe graph
+            source record -&gt; normalise -&gt; tenant scope -&gt; support payout case context
           </div>
           <p className="mt-3 text-body-sm" style={{ color: 'var(--text-secondary)' }}>
-            Raw emails, addresses, and phone numbers never enter the cross-merchant graph.
-            Matching happens on salted hashes. Cohorts below the k-anonymity threshold of k=3 are never shown.
+            Customer identifiers are used to link merchant-owned orders, support tickets, evidence, decisions,
+            and outcomes to the correct payout case. Access remains scoped to your merchant workspace.
           </p>
         </SectionCard>
 
         <SectionCard title="Data scope">
           <p className="text-body-sm" style={{ color: 'var(--text-secondary)' }}>
-            Unauth processes order exports and Shopify sync data to support identity matching and claim
-            review for your store. Cross-merchant signals are aggregated
-            and anonymised before network comparison.
+            Unauth processes connected store, helpdesk, evidence, decision, and recovery data to support
+            payout-case review for your store. Customer history is supporting context for support decisions,
+            not a reusable denial list.
           </p>
         </SectionCard>
 

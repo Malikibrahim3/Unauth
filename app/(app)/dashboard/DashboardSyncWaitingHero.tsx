@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ShoppingBag, Headphones, Loader2 } from 'lucide-react';
 import type { ConnectionState } from '@/lib/connections/getConnectionState';
+import { PanelCard } from '@/components/ui';
 import { capitalize } from '@/app/(app)/dashboard/dashboardPageUtils';
 import { DashboardSyncRow } from '@/app/(app)/dashboard/DashboardSyncRow';
 
@@ -16,7 +17,7 @@ export function DashboardSyncWaitingHero({ connection }: { connection: Connectio
           sync. This usually completes within a few minutes of the first webhook.
         </p>
       </div>
-      <div className="rounded-md border p-5 space-y-3" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+      <PanelCard variant="app" className="space-y-3 p-5">
         <DashboardSyncRow
           label={
             connection.orderSourcePlatform === 'woocommerce'
@@ -37,7 +38,7 @@ export function DashboardSyncWaitingHero({ connection }: { connection: Connectio
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
           Waiting for first sync…
         </div>
-      </div>
+      </PanelCard>
       <div className="flex items-center gap-3">
         <Link href="/settings/integrations" className="btn-accent inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold">
           Check sync status

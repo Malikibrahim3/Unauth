@@ -4,24 +4,38 @@ import { BookOpen, HelpCircle, Info } from 'lucide-react';
 const ARTICLES = [
   {
     icon: Info,
-    title: 'How Unauth works',
+    title: 'Payout Control workflow',
     description:
-      'How identity analysis works, how orders are analysed over time, and how chargeback evidence is generated.',
-    href: '/help/how-it-works',
+      'Review support payout cases from the queue through evidence, merchant rules, recommendation, decision, and recovery.',
+    href: '/claims',
   },
   {
     icon: BookOpen,
-    title: 'Understanding confidence grades',
+    title: 'Merchant payout rules',
     description:
-      'What definite, probable, possible, and weak confidence grades mean, and how to action each one.',
-    href: '/help/confidence-grades',
+      'Configure policy checks for requested action, payout exposure, evidence gaps, prior case history, and recoverability.',
+    href: '/rules',
   },
   {
     icon: HelpCircle,
-    title: 'How identity matching works',
+    title: 'Recovery follow-up',
     description:
-      'How Unauth links customers across orders using device IDs, IP addresses and card fingerprints.',
-    href: '/help/identity-matching',
+      'Track recoverable losses, recovery owners, deadlines, required evidence, and partner outcomes.',
+    href: '/recoveries',
+  },
+  {
+    icon: BookOpen,
+    title: 'Yuma escalation setup',
+    description:
+      'Configure Yuma to hand post-purchase claim escalations to the Unauth Gate API.',
+    href: '/help/integrations/yuma',
+  },
+  {
+    icon: BookOpen,
+    title: 'Siena escalation setup',
+    description:
+      'Configure Siena escalation webhooks with the Unauth Gate API endpoint and bearer key.',
+    href: '/help/integrations/siena',
   },
 ];
 
@@ -38,7 +52,7 @@ export default function HelpIndexPage() {
         </Link>
         <h1 className="text-heading-lg" style={{ color: 'var(--text)' }}>Help &amp; Docs</h1>
         <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
-          Guides to get the most out of Unauth.
+          Payout-control guides and shortcuts for support operations.
         </p>
       </div>
 

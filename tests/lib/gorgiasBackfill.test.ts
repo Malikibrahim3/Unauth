@@ -14,6 +14,14 @@ jest.mock('@/lib/support/gorgias/fetchTicket', () => ({
   fetchGorgiasTicketById: jest.fn(),
 }));
 
+jest.mock('@/lib/support/gorgias/verifyStoredCredentials', () => ({
+  verifyGorgiasConnectionOrMarkReconnectRequired: jest.fn().mockResolvedValue(true),
+}));
+
+jest.mock('@/lib/support/gorgias/reconcileDeletedTickets', () => ({
+  reconcileDeletedGorgiasTickets: jest.fn().mockResolvedValue({ checked: 0, marked_deleted: 0 }),
+}));
+
 jest.mock('@/lib/support/intake/ingestSupportCase', () => ({
   ingestSupportCase: jest.fn(),
 }));
@@ -33,8 +41,19 @@ const { ingestSupportCase } = jest.requireMock('@/lib/support/intake/ingestSuppo
 function mockSupabase() {
   const updateEq = jest.fn().mockResolvedValue({ error: null });
   const update = jest.fn().mockReturnValue({ eq: updateEq });
+  const maybeSingle = jest.fn().mockResolvedValue({
+    data: {
+      access_token_encrypted: 'gorgias-api-credentials:token',
+      provider_base_url: 'https://acme.gorgias.com',
+    },
+    error: null,
+  });
+  const selectChain = {
+    eq: jest.fn().mockReturnThis(),
+    maybeSingle,
+  };
   return {
-    from: jest.fn().mockReturnValue({ update }),
+    from: jest.fn().mockReturnValue({ update, select: jest.fn().mockReturnValue(selectChain) }),
     updateEq,
   } as unknown as SupabaseClient;
 }

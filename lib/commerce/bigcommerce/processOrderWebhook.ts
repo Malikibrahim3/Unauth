@@ -4,7 +4,7 @@ import { normaliseAddress } from '@/lib/identity/normalise';
 import { emitIdentityObservations, type ObservationEntity } from '@/lib/identity/observations';
 import { resolveIdentitiesForKeys } from '@/lib/identity/resolver';
 import { fetchBigCommerceOrder, loadBigCommerceAccessToken } from '@/lib/commerce/bigcommerce/bigcommerceApi';
-import type { BigCommerceAddress, BigCommerceOrderPayload } from '@/lib/commerce/bigcommerce/bigcommerceOrderToCsvRow';
+import type { BigCommerceAddress, BigCommerceOrderPayload } from '@/lib/commerce/bigcommerce/orderTypes';
 import { linkCheckoutSignalsToOrder } from '@/lib/checkoutSignals/linkOrder';
 
 /**

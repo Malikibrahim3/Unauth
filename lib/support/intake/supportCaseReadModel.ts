@@ -18,8 +18,23 @@ export type PublicSupportCaseContext = {
   updated_at_provider: string | null;
 };
 
-const SAFE_CASE_COLUMNS =
-  'id, provider, external_case_id, external_url, case_status, claim_reason, customer_message_summary, agent_notes_summary, tags, link_status, shopify_order_id, order_ref, link_metadata, merchant_claim_id, updated_at_provider, provider_connection_id';
+// v2 source_tickets shape (post-cutover). Legacy intake columns
+// (external_case_id, case_status, claim_reason, link_status, merchant_claim_id)
+// no longer exist on the table; they are reconstructed in toPublicSupportCase.
+const SAFE_TICKET_COLUMNS =
+  'id, provider, external_id, external_url, status, subject, tags, linked_order_external_ids, connection_id, updated_at_provider, source_customer_id';
+
+type TicketRow = Record<string, unknown>;
+
+type QueryResult = Promise<{
+  data: TicketRow[] | null;
+  error: { message: string } | null;
+}>;
+
+type SingleResult = Promise<{
+  data: TicketRow | null;
+  error: { message: string } | null;
+}>;
 
 /** Human-facing ticket path for a provider, given a base origin and ticket id. */
 function humanTicketPath(provider: string, base: string, id: string): string | null {
@@ -79,44 +94,42 @@ function toHumanHelpdeskUrl(
   }
 }
 
+function firstLinkedOrderRef(row: TicketRow): string | null {
+  const linked = row.linked_order_external_ids;
+  if (Array.isArray(linked) && linked.length > 0 && typeof linked[0] === 'string') {
+    return linked[0];
+  }
+  return null;
+}
+
 function toPublicSupportCase(
-  row: Record<string, unknown>,
+  row: TicketRow,
   baseUrlByConnection: Map<string, string>,
+  merchantClaimId: string | null = null,
 ): PublicSupportCaseContext {
-  const connectionId =
-    typeof row.provider_connection_id === 'string' ? row.provider_connection_id : null;
+  const connectionId = typeof row.connection_id === 'string' ? row.connection_id : null;
   const baseUrl = connectionId ? baseUrlByConnection.get(connectionId) ?? null : null;
-  const linkMetadata =
-    row.link_metadata && typeof row.link_metadata === 'object' && !Array.isArray(row.link_metadata)
-      ? (row.link_metadata as Record<string, unknown>)
-      : {};
+  const orderRef = firstLinkedOrderRef(row);
 
   return {
     id: String(row.id),
     provider: String(row.provider),
-    external_case_id: String(row.external_case_id),
-    external_url: toHumanHelpdeskUrl(String(row.provider), row.external_url, row.external_case_id, baseUrl),
-    case_status: typeof row.case_status === 'string' ? row.case_status : null,
-    claim_reason: typeof row.claim_reason === 'string' ? row.claim_reason : null,
-    customer_message_summary:
-      typeof row.customer_message_summary === 'string' ? row.customer_message_summary : null,
-    agent_notes_summary:
-      typeof row.agent_notes_summary === 'string' ? row.agent_notes_summary : null,
+    external_case_id: String(row.external_id),
+    external_url: toHumanHelpdeskUrl(String(row.provider), row.external_url, row.external_id, baseUrl),
+    case_status: typeof row.status === 'string' ? row.status : null,
+    claim_reason: null,
+    customer_message_summary: typeof row.subject === 'string' ? row.subject : null,
+    agent_notes_summary: null,
     tags: Array.isArray(row.tags) ? row.tags : [],
-    link_status: typeof row.link_status === 'string' ? row.link_status : 'unlinked',
-    shopify_order_id: typeof row.shopify_order_id === 'string' ? row.shopify_order_id : null,
-    order_ref: typeof row.order_ref === 'string' ? row.order_ref : null,
-    claim_candidate: linkMetadata.claim_candidate === true,
-    merchant_claim_id:
-      typeof row.merchant_claim_id === 'string' ? row.merchant_claim_id : null,
+    link_status: merchantClaimId || orderRef ? 'linked' : 'unlinked',
+    shopify_order_id: null,
+    order_ref: orderRef,
+    claim_candidate: merchantClaimId != null,
+    merchant_claim_id: merchantClaimId,
     updated_at_provider:
       typeof row.updated_at_provider === 'string' ? row.updated_at_provider : null,
   };
 }
-
-type FilterClient = {
-  from: (table: string) => Record<string, unknown>;
-};
 
 type ConnectionBaseClient = {
   from: (table: string) => {
@@ -125,6 +138,22 @@ type ConnectionBaseClient = {
         data: Array<Record<string, unknown>> | null;
         error: { message: string } | null;
       }>;
+    };
+  };
+};
+
+type TicketListClient = {
+  from: (table: string) => {
+    select: (columns: string) => {
+      eq: (col: string, val: string) => {
+        eq: (col2: string, val2: string) => {
+          order: (col3: string, opts: { ascending: boolean }) => QueryResult;
+          maybeSingle: () => SingleResult;
+        };
+        contains: (col2: string, val2: unknown[]) => {
+          order: (col3: string, opts: { ascending: boolean }) => QueryResult;
+        };
+      };
     };
   };
 };
@@ -164,22 +193,12 @@ export async function listSupportCasesForCustomerProfile(
   merchantId: string,
   customerProfileId: string
 ): Promise<PublicSupportCaseContext[]> {
-  const client = supabase as FilterClient;
-  const { data, error } = await (client.from(TABLES.SUPPORT_CASE_INTAKE) as {
-    select: (columns: string) => {
-      eq: (col: string, val: string) => {
-        eq: (col2: string, val2: string) => {
-          order: (col3: string, opts: { ascending: boolean }) => Promise<{
-            data: Array<Record<string, unknown>> | null;
-            error: { message: string } | null;
-          }>;
-        };
-      };
-    };
-  })
-    .select(SAFE_CASE_COLUMNS)
+  const client = supabase as TicketListClient;
+  const { data, error } = await client
+    .from(TABLES.SUPPORT_CASE_INTAKE)
+    .select(SAFE_TICKET_COLUMNS)
     .eq('merchant_id', merchantId)
-    .eq('customer_profile_id', customerProfileId)
+    .eq('source_customer_id', customerProfileId)
     .order('updated_at_provider', { ascending: false });
 
   if (error) throw new Error(`list_support_cases_failed: ${error.message}`);
@@ -192,27 +211,31 @@ export async function listSupportCasesForMerchantClaim(
   merchantId: string,
   merchantClaimId: string
 ): Promise<PublicSupportCaseContext[]> {
-  const client = supabase as FilterClient;
-  const { data, error } = await (client.from(TABLES.SUPPORT_CASE_INTAKE) as {
-    select: (columns: string) => {
-      eq: (col: string, val: string) => {
-        eq: (col2: string, val2: string) => {
-          order: (col3: string, opts: { ascending: boolean }) => Promise<{
-            data: Array<Record<string, unknown>> | null;
-            error: { message: string } | null;
-          }>;
-        };
-      };
-    };
-  })
-    .select(SAFE_CASE_COLUMNS)
+  const client = supabase as TicketListClient;
+
+  // v2: the claim → ticket link lives on the payout case row.
+  const { data: claim, error: claimError } = await client
+    .from(TABLES.MERCHANT_CLAIMS)
+    .select('id, source_ticket_id')
+    .eq('id', merchantClaimId)
     .eq('merchant_id', merchantId)
-    .eq('merchant_claim_id', merchantClaimId)
+    .maybeSingle();
+
+  if (claimError) throw new Error(`list_claim_support_cases_failed: ${claimError.message}`);
+  const sourceTicketId =
+    claim && typeof claim.source_ticket_id === 'string' ? claim.source_ticket_id : null;
+  if (!sourceTicketId) return [];
+
+  const { data, error } = await client
+    .from(TABLES.SUPPORT_CASE_INTAKE)
+    .select(SAFE_TICKET_COLUMNS)
+    .eq('merchant_id', merchantId)
+    .eq('id', sourceTicketId)
     .order('updated_at_provider', { ascending: false });
 
   if (error) throw new Error(`list_claim_support_cases_failed: ${error.message}`);
   const baseUrls = await fetchConnectionBaseUrls(supabase, merchantId);
-  return (data ?? []).map((row) => toPublicSupportCase(row, baseUrls));
+  return (data ?? []).map((row) => toPublicSupportCase(row, baseUrls, merchantClaimId));
 }
 
 export async function listSupportCasesForClaimContext(
@@ -234,59 +257,31 @@ export async function listSupportCasesForClaimContext(
     if (linked.length > 0) return linked;
   }
 
-  const filters: string[] = [];
-  if (input.shopifyOrderId) {
-    filters.push(`shopify_order_id.eq.${input.shopifyOrderId}`);
-  }
-  if (input.orderRef) {
-    filters.push(`order_ref.eq.${input.orderRef}`);
-  }
-  if (filters.length === 0) return [];
+  // Fallback: tickets referencing the same order. v2 stores order references
+  // (without a leading '#') in linked_order_external_ids.
+  const refs = new Set<string>();
+  if (input.orderRef) refs.add(input.orderRef.replace(/^#/, ''));
+  if (input.shopifyOrderId) refs.add(String(input.shopifyOrderId));
+  if (refs.size === 0) return [];
 
-  const intakeQuery = (supabase as {
-    from: (table: string) => {
-      select: (columns: string) => {
-        eq: (col: string, val: string) => {
-          eq: (col2: string, val2: string) => {
-            or: (filter: string) => {
-              order: (
-                col3: string,
-                opts: { ascending: boolean }
-              ) => Promise<{
-                data: Array<Record<string, unknown>> | null;
-                error: { message: string } | null;
-              }>;
-            };
-          };
-          or: (filter: string) => {
-            order: (
-              col3: string,
-              opts: { ascending: boolean }
-            ) => Promise<{
-              data: Array<Record<string, unknown>> | null;
-              error: { message: string } | null;
-            }>;
-          };
-        };
-      };
-    };
-  }).from(TABLES.SUPPORT_CASE_INTAKE);
-
-  const { data, error } = input.shopDomain
-    ? await intakeQuery
-        .select(SAFE_CASE_COLUMNS)
-        .eq('merchant_id', merchantId)
-        .eq('shop_domain', input.shopDomain)
-        .or(filters.join(','))
-        .order('updated_at_provider', { ascending: false })
-    : await intakeQuery
-        .select(SAFE_CASE_COLUMNS)
-        .eq('merchant_id', merchantId)
-        .or(filters.join(','))
-        .order('updated_at_provider', { ascending: false });
-
-  if (error) throw new Error(`list_claim_context_support_cases_failed: ${error.message}`);
-
+  const client = supabase as TicketListClient;
   const baseUrls = await fetchConnectionBaseUrls(supabase, merchantId);
-  return (data ?? []).map((row) => toPublicSupportCase(row, baseUrls));
+  const byId = new Map<string, PublicSupportCaseContext>();
+
+  for (const ref of refs) {
+    const { data, error } = await client
+      .from(TABLES.SUPPORT_CASE_INTAKE)
+      .select(SAFE_TICKET_COLUMNS)
+      .eq('merchant_id', merchantId)
+      .contains('linked_order_external_ids', [ref])
+      .order('updated_at_provider', { ascending: false });
+
+    if (error) throw new Error(`list_claim_context_support_cases_failed: ${error.message}`);
+    for (const row of data ?? []) {
+      const mapped = toPublicSupportCase(row, baseUrls);
+      byId.set(mapped.id, mapped);
+    }
+  }
+
+  return [...byId.values()];
 }

@@ -1,0 +1,22 @@
+{
+  "id": "EXAMPLE-EVT-DISPUTE-4001",
+  "type": "dispute.created",
+  "occurred_at": "2026-07-20T08:00:00Z",
+  "source": {
+    "system": "custom_psp",
+    "account_id": "uk-payments",
+    "record_id": "DISPUTE-4001",
+    "record_url": "https://psp.example/disputes/DISPUTE-4001"
+  },
+  "schema_version": 1,
+  "data": {
+    "external_id": "DISPUTE-4001",
+    "order_external_id": "ORDER-1001",
+    "reason": "product_not_received",
+    "status": "needs_response",
+    "amount_minor": 8400,
+    "currency": "GBP",
+    "opened_at": "2026-07-20T08:00:00Z",
+    "evidence_due_at": "2026-07-27T08:00:00Z"
+  }
+}

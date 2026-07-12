@@ -9,9 +9,8 @@ const OPTIONS: { value: DevPreviewCookieValue; label: string; description: strin
   { value: 'dev', label: 'Dev mode', description: 'Everything open' },
   { value: 'free', label: 'Free', description: 'Own-store + metered checks' },
   { value: 'pro', label: 'Pro', description: 'Unlimited decisions' },
-  { value: 'growth', label: 'Growth', description: 'Network + APIs' },
-  { value: 'scale', label: 'Scale', description: 'Large ops' },
-  { value: 'enterprise', label: 'Enterprise', description: 'Signal API' },
+  { value: 'growth', label: 'Growth', description: 'Multi-store + reports' },
+  { value: 'enterprise', label: 'Enterprise', description: 'APIs + security review' },
 ];
 
 function writeTierCookie(value: DevPreviewCookieValue) {
@@ -23,7 +22,6 @@ function tierDotClass(value: DevPreviewCookieValue): string {
   if (value === 'free') return 'bg-emerald-500';
   if (value === 'pro') return 'bg-blue-500';
   if (value === 'growth' || value === 'advanced') return 'bg-purple-500';
-  if (value === 'scale') return 'bg-violet-400';
   if (value === 'enterprise') return 'bg-amber-500';
   return 'bg-[var(--text-tertiary)]';
 }

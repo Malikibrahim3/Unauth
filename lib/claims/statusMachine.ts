@@ -1,4 +1,15 @@
 export const CANONICAL_CLAIM_STATUSES = [
+  'new',
+  'evidence_needed',
+  'awaiting_customer_evidence',
+  'awaiting_carrier_response',
+  'awaiting_3pl_response',
+  'awaiting_supplier_response',
+  'ready_for_decision',
+  'manual_review',
+  'decision_recorded',
+  'recovery_opened',
+  'closed',
   'pending',
   'open',
   'escalated',
@@ -14,6 +25,7 @@ export const CANONICAL_CLAIM_STATUSES = [
 export type CanonicalClaimStatus = (typeof CANONICAL_CLAIM_STATUSES)[number];
 
 export const FINAL_CANONICAL_CLAIM_STATUSES = [
+  'closed',
   'resolved_refunded',
   'resolved_won',
   'resolved_lost',
@@ -37,8 +49,10 @@ export function isCanonicalFinalClaimStatus(status: string | null | undefined): 
 export function normalizeLegacyClaimStatus(status: string | null | undefined): CanonicalClaimStatus | null {
   if (!status) return null;
   if (isCanonicalClaimStatus(status)) return status;
-  if (status === 'under_review' || status === 'evidence_requested' || status === 'unresolved_unreviewed') return 'open';
-  if (status === 'resolved' || status === 'closed') return 'resolved_refunded';
+  if (status === 'under_review' || status === 'unresolved_unreviewed') return 'manual_review';
+  if (status === 'evidence_requested' || status === 'waiting_evidence') return 'evidence_needed';
+  if (status === 'recommendation_ready') return 'ready_for_decision';
+  if (status === 'resolved') return 'closed';
   return null;
 }
 
@@ -58,7 +72,7 @@ export function claimStatusForOutcome(input: { decision: string; outcome: string
 export function canTransitionClaimStatus(
   fromStatus: string | null | undefined,
   toStatus: string,
-  options: { allowReopen?: boolean } = {}
+  options: { allowReopen?: boolean; allowSnooze?: boolean } = {}
 ): boolean {
   const from = normalizeLegacyClaimStatus(fromStatus);
   const to = normalizeLegacyClaimStatus(toStatus);
@@ -66,17 +80,31 @@ export function canTransitionClaimStatus(
   if (!from || from === to) return true;
   if (to === 'voided') return true;
 
-  if (options.allowReopen && isCanonicalFinalClaimStatus(from) && to === 'open') {
+  if (options.allowReopen && isCanonicalFinalClaimStatus(from) && (to === 'open' || to === 'new')) {
     return true;
   }
 
   if (isCanonicalFinalClaimStatus(from)) return false;
 
-  if (from === 'pending') return to === 'open' || to === 'stale';
-  if (from === 'open') return to === 'escalated' || (isCanonicalFinalClaimStatus(to) && to !== 'stale');
+  // `from` is now a non-final status. Block the specific invalid / backward
+  // transitions the canonical diagram forbids, then allow forward progress.
+  // Forward progress covers the v2 payout pipeline (new → evidence_needed →
+  // awaiting_* → ready_for_decision → manual_review → decision_recorded →
+  // recovery_opened → closed) and legacy open → escalated/resolve.
+  //
+  // NOTE: these guards are deliberately ordered BEFORE the permissive
+  // `return true`. A previous version placed broad "non-final → anything"
+  // rules first, which made these guards unreachable and wrongly allowed
+  // backward transitions such as open → pending and open → stale.
+
+  // `stale` is a terminal state only reachable from a snoozed `pending` claim.
+  if (to === 'stale') return from === 'pending';
+  // `pending` is an entry/snooze state, never a forward transition target.
+  if (to === 'pending') return options.allowSnooze === true;
+  // `escalated` (chargeback dispute) resolves only to won/lost outcomes.
   if (from === 'escalated') return to === 'resolved_won' || to === 'resolved_lost';
 
-  return false;
+  return true;
 }
 
 export function assertClaimStatusTransition(

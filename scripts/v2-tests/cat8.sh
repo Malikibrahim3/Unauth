@@ -1,8 +1,7 @@
 #!/bin/bash
 # Category 8 — Widget integration (run after seed+resolve; app on :3000)
 set -u
-DB="postgresql://postgres.lquvbikyvmbjbfffrlky@aws-0-eu-west-1.pooler.supabase.com:6543/postgres"
-export PGPASSWORD='Boyo19961996!uuu'
+source "$(dirname "$0")/db-env.sh"
 cd "$(dirname "$0")/../.."
 S=scripts/v2-tests/state.json
 g() { python3 -c "import json;d=json.load(open('$S'));print(d$1)"; }

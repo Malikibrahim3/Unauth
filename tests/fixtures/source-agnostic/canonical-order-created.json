@@ -1,0 +1,45 @@
+{
+  "id": "EXAMPLE-EVT-ORDER-1001",
+  "type": "order.created",
+  "occurred_at": "2026-07-11T10:00:00Z",
+  "source": {
+    "system": "custom_oms",
+    "account_id": "uk-store",
+    "record_id": "ORDER-1001",
+    "record_url": "https://merchant.example/orders/ORDER-1001"
+  },
+  "schema_version": 1,
+  "data": {
+    "external_id": "ORDER-1001",
+    "order_number": "1001",
+    "currency": "GBP",
+    "total_minor": 8400,
+    "subtotal_minor": 8000,
+    "financial_status": "paid",
+    "fulfillment_status": "unfulfilled",
+    "placed_at": "2026-07-11T10:00:00Z",
+    "customer": {
+      "external_id": "CUST-500",
+      "email": "casey@example.com",
+      "name": "Casey Rivers",
+      "phone": "+441234567890"
+    },
+    "shipping_address": {
+      "line1": "12 Example Road",
+      "city": "London",
+      "postal_code": "E1 6AN",
+      "country_code": "GB"
+    },
+    "lines": [
+      {
+        "external_id": "LINE-1",
+        "sku": "EXAMPLE-SKU-A",
+        "title": "Example Jacket",
+        "quantity": 1,
+        "unit_price_minor": 8000,
+        "total_minor": 8000,
+        "currency": "GBP"
+      }
+    ]
+  }
+}

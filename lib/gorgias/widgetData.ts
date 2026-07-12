@@ -7,6 +7,9 @@ import {
 } from '@/lib/supabase/merchantHelpers';
 import { performV1Lookup, type LookupAuth } from '@/lib/api/v1/lookup';
 import type { ConfidenceGrade } from '@/lib/engine/weights';
+import type { ScoreFactor } from '@/lib/engine/evidence/score';
+import type { EvidenceLevel } from '@/lib/rules-engine';
+import { CANONICAL_CLAIM_TYPES } from '@/lib/claims/claimTypes';
 import { makeSignedToken, hashSignedToken } from '@/lib/api/signedAccess';
 import { env } from '@/lib/utils/env';
 import { gorgiasWidgetLog } from '@/lib/gorgias/widgetLog';
@@ -460,6 +463,23 @@ export type NetworkStats = {
   recentWindowDays: 90;
 };
 
+/** Canonical claim-type keys with a positive count in a claim_type_counts map. */
+export function canonicalClaimTypesFromCounts(counts: Record<string, number>): string[] {
+  return CANONICAL_CLAIM_TYPES.filter((t) => (counts[t] ?? 0) > 0);
+}
+
+/** Neutral rules-signal defaults when network evidence is withheld or unavailable. */
+export const WITHHELD_EVIDENCE_SIGNALS = {
+  evidenceDisclosed: false,
+  evidenceScore: 0,
+  evidenceLevel: 'minimal' as EvidenceLevel,
+  hasSufficientData: false,
+  scoreBreakdown: [] as ScoreFactor[],
+  scoringConfigVersion: null as string | null,
+  claimTypes: [] as string[],
+  isNetworkFlagged: false,
+};
+
 export type ClaimWidgetData = {
   /** Identity confidence grade — the PRIMARY element. Who the person is. */
   confidenceGrade: ConfidenceGrade | null;
@@ -478,6 +498,22 @@ export type ClaimWidgetData = {
   dataFreshAt: string;
   /** @deprecated Always false in payloads — template field retained for Gorgias compatibility. */
   watchlisted: boolean;
+  /**
+   * True when k-anonymity (lookup_network_identity) allows disclosing network
+   * evidence. When false, evidenceScore/Level/hasSufficientData are neutral
+   * placeholders — not a real computed zero.
+   */
+  evidenceDisclosed: boolean;
+  evidenceScore: number;
+  evidenceLevel: EvidenceLevel;
+  hasSufficientData: boolean;
+  /** Decomposed score factors; empty when withheld or no cached row. */
+  scoreBreakdown: ScoreFactor[];
+  scoringConfigVersion: string | null;
+  /** Canonical DB claim_type values for rules evaluation. */
+  claimTypes: string[];
+  /** True when any merchant_identity_state row has on_watchlist = true. */
+  isNetworkFlagged: boolean;
 };
 
 export type GorgiasClaimWidgetResult =
@@ -960,6 +996,8 @@ export function assembleClaimWidgetData(input: {
       profileUrl: profileUrl || '',
       dataFreshAt: summary?.updated_at ?? input.nowIso,
       watchlisted: input.watchlisted ?? false,
+      ...WITHHELD_EVIDENCE_SIGNALS,
+      claimTypes: [],
     },
   };
 }

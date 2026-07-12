@@ -3,7 +3,6 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/lib/supabase/tables';
 import { escapePostgrestFilterValue } from '@/lib/supabase/merchantHelpers';
 
-type ProfileIdRow = { id?: string | null };
 type IdentityProfileIdRow = { customer_profile_id?: string | null };
 
 function uniqueNonEmpty(values: Array<string | null | undefined>): string[] {
@@ -17,10 +16,18 @@ function uniqueNonEmpty(values: Array<string | null | undefined>): string[] {
 }
 
 /**
- * Merchant-scoped customer text search across profile primary_email and all
- * normalized identity anchors. This avoids PostgREST cast filters like
- * `emails::text.ilike`, which fail to parse and make the Customers page show
- * zero results for valid linked identities.
+ * Merchant-scoped customer text search across all normalized identity anchors.
+ *
+ * SECURITY: the ONLY tenant boundary here is customer_profile_identities.merchant_id.
+ * `identities` (TABLES.CUSTOMER_PROFILES) is a network-level table with no
+ * merchant_id column, so it must never be filtered by a `merchant_ids` predicate
+ * (that column does not exist post-v2 — the old primary_email query silently ran
+ * unscoped and could surface other merchants' profiles). Candidate IDs are
+ * derived solely from the merchant-scoped anchor table; callers fetch display
+ * rows by these already-owned IDs.
+ *
+ * `merchantFilter` is retained in the signature for call-site compatibility but
+ * is intentionally unused — do not reintroduce an unscoped `identities` scan.
  */
 export async function findCustomerProfileIdsByText(
   service: SupabaseClient,
@@ -41,24 +48,13 @@ export async function findCustomerProfileIdsByText(
   const safeLike = `%${escapePostgrestFilterValue(q)}%`;
   const ids = new Set<string>();
 
-  const [{ data: primaryEmailRows }, { data: identityRows }] = await Promise.all([
-    service
-      .from(TABLES.CUSTOMER_PROFILES)
-      .select('id')
-      .or(opts.merchantFilter)
-      .ilike('primary_email', safeLike)
-      .limit(limit) as unknown as Promise<{ data: ProfileIdRow[] | null; error: unknown }>,
-    service
-      .from(TABLES.CUSTOMER_PROFILE_IDENTITIES)
-      .select('customer_profile_id')
-      .in('merchant_id', merchantIds)
-      .ilike('identity_value', safeLike)
-      .limit(limit) as unknown as Promise<{ data: IdentityProfileIdRow[] | null; error: unknown }>,
-  ]);
+  const { data: identityRows } = (await service
+    .from(TABLES.CUSTOMER_PROFILE_IDENTITIES)
+    .select('customer_profile_id')
+    .in('merchant_id', merchantIds)
+    .ilike('identity_value', safeLike)
+    .limit(limit)) as unknown as { data: IdentityProfileIdRow[] | null; error: unknown };
 
-  for (const row of primaryEmailRows ?? []) {
-    if (row.id) ids.add(row.id);
-  }
   for (const row of identityRows ?? []) {
     if (row.customer_profile_id) ids.add(row.customer_profile_id);
   }

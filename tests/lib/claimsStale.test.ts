@@ -14,7 +14,7 @@ function makeClient(rows: any[]) {
           },
         };
       }
-      if (table !== 'merchant_claims') throw new Error(`unexpected table ${table}`);
+      if (table !== 'support_payout_cases') throw new Error(`unexpected table ${table}`);
       const filters: Array<(row: any) => boolean> = [];
       let updatePayload: any = null;
       const chain: any = {
@@ -73,9 +73,8 @@ describe('stale claim detection', () => {
     expect(client.state.events).toEqual([
       expect.objectContaining({
         claim_id: 'claim-old',
-        from_state: 'pending',
-        to_state: 'stale',
-        triggered_by: 'system_stale_job',
+        from_status: 'pending',
+        to_status: 'stale',
       }),
     ]);
   });

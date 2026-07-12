@@ -46,9 +46,9 @@ export function resolvePrimaryAction(
   if (!claimId) {
     return {
       key: 'save_claim',
-      label: 'Create claim record',
-      reason: 'Save claim details before adding evidence or recording a review outcome.',
-      cta: 'Create claim',
+      label: 'Waiting for source case',
+      reason: 'Connected order, helpdesk, payment, returns, or correspondence sources create case facts automatically.',
+      cta: 'Connect source',
       railSection: null,
     };
   }
@@ -64,46 +64,46 @@ export function resolvePrimaryAction(
   if (claimIsClosed) {
     return {
       key: 'reopen',
-      label: 'Reopen for review',
-      reason: 'This claim is archived. Reopen it to continue evidence review.',
-      cta: 'Reopen claim',
-      railSection: 'status',
+      label: 'Closed from source',
+      reason: 'This claim is closed. New source-backed events or matched correspondence can update future context.',
+      cta: 'View audit',
+      railSection: null,
     };
   }
   if (!hasEvidence) {
     return {
       key: 'evidence',
-      label: 'Add delivery evidence',
-      reason: 'Evidence on record helps the merchant decide with context.',
-      cta: 'Save evidence',
+      label: 'Collect source evidence',
+      reason: 'Missing evidence is collected from connected sources or kept unavailable with a reason.',
+      cta: 'View missing data',
       railSection: 'evidence',
     };
   }
   if (!hasDecision) {
     return {
       key: 'decision',
-      label: 'Record merchant outcome',
-      reason: 'Evidence is on record. Capture the merchant outcome for this claim.',
-      cta: 'Record merchant outcome',
-      railSection: 'decision',
+      label: 'Await source-backed outcome',
+      reason: 'Claim outcomes and dispute statuses sync from connected providers or matched correspondence.',
+      cta: 'View sources',
+      railSection: 'evidence',
     };
   }
   if (!responseRecorded) {
     return {
       key: 'response',
-      label: 'Copy customer response',
-      reason: 'Decision recorded. Send or log the customer-facing response.',
-      cta: 'Copy & record response',
+      label: 'Collect correspondence',
+      reason: 'External correspondence is ingested from connected channels and matched automatically.',
+      cta: 'View correspondence',
       railSection: 'response',
     };
   }
   if (!isFinalClaimStatus(claim.status)) {
     return {
       key: 'status',
-      label: 'Record review status',
-      reason: 'Outcome and response are recorded. Update the claim review status.',
-      cta: 'Update review status',
-      railSection: 'status',
+      label: 'Status sync pending',
+      reason: 'Status changes are applied only from source-backed events.',
+      cta: 'View audit',
+      railSection: null,
     };
   }
   return {
@@ -116,20 +116,29 @@ export function resolvePrimaryAction(
 }
 
 export function statusNextAction(claim: ClaimRecord | null, hasDecision: boolean, responseRecorded: boolean) {
-  if (!claim) return 'Select or save a claim';
-  if (claim.status === 'open') return 'Review evidence';
-  if (claim.status === 'pending' || claim.status === 'evidence_requested') return 'Check requested evidence';
+  if (!claim) return 'Select a source-backed case';
+  if (claim.status === 'new') return 'Triage source evidence';
+  if (claim.status === 'evidence_needed' || claim.status === 'awaiting_customer_evidence') return 'Request evidence';
+  if (
+    claim.status === 'awaiting_carrier_response' ||
+    claim.status === 'awaiting_3pl_response' ||
+    claim.status === 'awaiting_supplier_response'
+  ) return 'Wait for external clarification';
+  if (claim.status === 'ready_for_decision') return 'Record payout decision';
+  if (claim.status === 'manual_review') return 'Escalate internal review';
+  if (claim.status === 'open') return 'Review source evidence';
+  if (claim.status === 'pending' || claim.status === 'evidence_requested') return 'Check missing source data';
   if (claim.status === 'escalated') return 'Review high-evidence context';
-  if (!hasDecision) return 'Record merchant outcome';
-  if (!responseRecorded) return 'Record customer response';
+  if (!hasDecision) return 'Await source-backed outcome';
+  if (!responseRecorded) return 'Collect correspondence';
   if (isFinalClaimStatus(claim.status)) return 'Evidence review complete';
-  return 'Record review status';
+  return 'Await status sync';
 }
 
 export function identityEvidencePoints(
   data: { profile?: { emails?: unknown[]; addresses?: unknown[]; ips?: unknown[]; card_last4s?: unknown[] } } | null,
   order: { ip?: unknown } | null | undefined,
-  fraudFlags: string[],
+  behaviorSignals: string[],
 ) {
   const points: string[] = [];
   const emails = Array.isArray(data?.profile?.emails) ? data.profile.emails.length : 0;
@@ -140,12 +149,13 @@ export function identityEvidencePoints(
   if (addresses > 1) points.push(`${addresses} address variants`);
   if (ips > 1 || order?.ip) points.push('IP/device overlap');
   if (cards > 0) points.push('Payment card signal');
-  if (fraudFlags.length > 0) points.push(`${Math.min(fraudFlags.length, 5)} behaviour signals`);
+  if (behaviorSignals.length > 0) points.push(`${Math.min(behaviorSignals.length, 5)} behaviour signals`);
   return points.slice(0, 5);
 }
 
 export function defaultRailOpen(): Record<string, boolean> {
   return {
+    recommendation: true,
     ownership: false,
     status: false,
     snooze: false,
@@ -165,9 +175,17 @@ export function railOpenForClaim(selectedClaim: ClaimRecord | null): Record<stri
     evidence_count: selectedClaim.evidence_count,
     events: selectedClaim.events ?? [],
   });
-  const awaitingInfo = selectedClaim.status === 'pending' || selectedClaim.status === 'evidence_requested';
+  const awaitingInfo =
+    selectedClaim.status === 'pending' ||
+    selectedClaim.status === 'evidence_requested' ||
+    selectedClaim.status === 'evidence_needed' ||
+    selectedClaim.status === 'awaiting_customer_evidence' ||
+    selectedClaim.status === 'awaiting_carrier_response' ||
+    selectedClaim.status === 'awaiting_3pl_response' ||
+    selectedClaim.status === 'awaiting_supplier_response';
 
   return {
+    recommendation: true,
     ownership: false,
     status: awaitingInfo,
     snooze: awaitingInfo,
