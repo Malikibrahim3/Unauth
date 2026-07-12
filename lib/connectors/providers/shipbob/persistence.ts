@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { NormalizedRecord } from '@/lib/connectors/types';
+import type { SyncJobState } from '@/lib/connectors/syncEngine';
 
 type JobContext = { merchantId: string; connectionId: string | null; sourceAccountId: string | null };
 
@@ -127,4 +128,75 @@ export async function persistShipBobCanonicalRecord(
     }, { onConflict: 'merchant_id,source_account_id,external_id' });
     if (error) throw new Error(`shipbob_source_return_persist_failed:${error.message}`);
   }
+}
+
+/**
+ * Reflect a finished (or failed) sync-job run onto the merchant's ShipBob
+ * connection row. Without this the Integration Centre reads null
+ * last_sync_at/imported_record_count forever and renders "initial import
+ * pending" even after a successful import. An import that completes with zero
+ * business records is still a successful sync.
+ */
+export async function updateShipBobConnectionAfterSync(
+  client: SupabaseClient,
+  job: { merchant_id: string; connection_id: string | null },
+  state: SyncJobState,
+): Promise<void> {
+  if (!job.connection_id) return;
+  const now = new Date().toISOString();
+
+  if (state.status === 'completed') {
+    const { count } = await client
+      .from('source_records')
+      .select('id', { count: 'exact', head: true })
+      .eq('merchant_id', job.merchant_id)
+      .eq('connection_id', job.connection_id);
+    const { error } = await client
+      .from('merchant_integrations')
+      .update({
+        status: 'connected',
+        last_sync_at: now,
+        last_sync_completed_at: now,
+        last_successful_sync_at: now,
+        data_fresh_through: now,
+        imported_record_count: count ?? 0,
+        last_error: null,
+        last_error_code: null,
+        last_error_message: null,
+        last_error_at: null,
+        updated_at: now,
+      })
+      .eq('id', job.connection_id)
+      .eq('merchant_id', job.merchant_id);
+    if (error) throw new Error(`shipbob_connection_sync_update_failed:${error.message}`);
+    return;
+  }
+
+  if (state.status === 'running') {
+    // Page budget hit mid-import; the job continues on the next worker tick.
+    const { error } = await client
+      .from('merchant_integrations')
+      .update({ last_sync_started_at: now, updated_at: now })
+      .eq('id', job.connection_id)
+      .eq('merchant_id', job.merchant_id);
+    if (error) throw new Error(`shipbob_connection_sync_update_failed:${error.message}`);
+    return;
+  }
+
+  // failed | dead_letter | unsupported — keep the connection but record why the
+  // sync failed so the UI can show a merchant-readable failure state.
+  const code = state.status === 'unsupported' ? 'unsupported'
+    : state.status === 'dead_letter' ? `dead_letter:${state.lastErrorCode ?? 'unknown'}`
+    : state.lastErrorCode ?? 'sync_failed';
+  const { error } = await client
+    .from('merchant_integrations')
+    .update({
+      last_error_code: code,
+      last_error_message: `ShipBob sync failed (${code}).`,
+      last_error_at: now,
+      updated_at: now,
+    })
+    .eq('id', job.connection_id)
+    .eq('merchant_id', job.merchant_id);
+  if (error) throw new Error(`shipbob_connection_sync_update_failed:${error.message}`);
 }

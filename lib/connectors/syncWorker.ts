@@ -13,7 +13,9 @@ import { TABLES } from '@/lib/supabase/tables';
 import { getConnector } from '@/lib/connectors/registry';
 import { upsertSourceRecord } from '@/lib/sources/sourceRegistry';
 import { getIntegrationCredential } from '@/lib/integrations/auth';
-import { persistShipBobCanonicalRecord } from '@/lib/connectors/providers/shipbob/persistence';
+import { refreshShipBobCredentialsIfNeeded } from '@/lib/integrations/providers/shipbobOAuth';
+import { env } from '@/lib/utils/env';
+import { persistShipBobCanonicalRecord, updateShipBobConnectionAfterSync } from '@/lib/connectors/providers/shipbob/persistence';
 import { runSyncJobPage, type SyncJobKind, type SyncJobState } from '@/lib/connectors/syncEngine';
 import type { ConnectorAdapter, ConnectorContext, NormalizedRecord } from '@/lib/connectors/types';
 
@@ -93,7 +95,7 @@ export async function runSyncJob(
     merchantId: job.merchant_id,
     connectionId: job.connection_id,
     sourceAccountId: job.source_account_id,
-    credentials: await getIntegrationCredential(client, job.merchant_id, job.source ?? ''),
+    credentials: await resolveJobCredentials(client, job),
   };
   const persistRecord = opts.persistRecord ?? defaultPersistRecord(client, job);
   const maxPages = opts.maxPagesPerRun ?? 25;
@@ -111,7 +113,28 @@ export async function runSyncJob(
   const patch = mapStateToPatch(state, continuation);
   const { error } = await client.from(TABLES.PROCESSING_JOBS).update(patch).eq('id', job.id);
   if (error) throw new Error(`sync_job_persist_failed: ${error.message}`);
+  if (job.source === 'shipbob') {
+    // Reflect the run onto the connection row so the Integration Centre shows
+    // real import state (complete / no records / failed) instead of a
+    // permanent "initial import pending".
+    await updateShipBobConnectionAfterSync(client, job, state);
+  }
   return state;
+}
+
+/**
+ * Resolve credentials for a job, refreshing expiring OAuth tokens first.
+ * ShipBob access tokens live ~1 hour and the worker commonly runs later than
+ * that, so a stale token would fail every page with shipbob_auth_failed:401.
+ */
+async function resolveJobCredentials(client: SupabaseClient, job: SyncJobRow) {
+  if (job.source === 'shipbob' && env.SHIPBOB_OAUTH_CLIENT_ID && env.SHIPBOB_OAUTH_CLIENT_SECRET) {
+    return refreshShipBobCredentialsIfNeeded(client, job.merchant_id, {
+      clientId: env.SHIPBOB_OAUTH_CLIENT_ID,
+      clientSecret: env.SHIPBOB_OAUTH_CLIENT_SECRET,
+    });
+  }
+  return getIntegrationCredential(client, job.merchant_id, job.source ?? '');
 }
 
 function defaultPersistRecord(client: SupabaseClient, job: SyncJobRow) {

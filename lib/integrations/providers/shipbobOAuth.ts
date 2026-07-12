@@ -111,6 +111,76 @@ export async function exchangeShipBobOAuthCode(input: {
   return payload;
 }
 
+/**
+ * Refresh the stored ShipBob access token when it is expired or near expiry.
+ * ShipBob access tokens live ~1 hour; the initial import commonly runs later
+ * than that via the cron worker, so every sync path must call this first.
+ * Returns the (possibly refreshed) decrypted credential payload, or null when
+ * no ShipBob credential exists for the merchant.
+ */
+export async function refreshShipBobCredentialsIfNeeded(
+  client: SupabaseClient,
+  merchantId: string,
+  input: { clientId: string; clientSecret: string; now?: number },
+): Promise<Record<string, unknown> | null> {
+  const { data, error } = await client
+    .from('integration_credentials')
+    .select('encrypted_payload,expires_at')
+    .eq('merchant_id', merchantId)
+    .eq('provider_id', 'shipbob')
+    .maybeSingle();
+  if (error) throw new Error(`shipbob_credential_lookup_failed:${error.message}`);
+  if (!data?.encrypted_payload) return null;
+  const payload = decryptIntegrationCredentials(data.encrypted_payload);
+
+  const now = input.now ?? Date.now();
+  const expiresAtMs = data.expires_at ? Date.parse(data.expires_at) : null;
+  const skewMs = 5 * 60 * 1000;
+  const needsRefresh = expiresAtMs !== null && Number.isFinite(expiresAtMs) && expiresAtMs <= now + skewMs;
+  if (!needsRefresh) return payload;
+  const refreshToken = typeof payload.refreshToken === 'string' ? payload.refreshToken : null;
+  if (!refreshToken) return payload; // No refresh token — let the API call surface the 401.
+
+  const sandbox = payload.environment === 'sandbox';
+  const body = new URLSearchParams({
+    client_id: input.clientId,
+    client_secret: input.clientSecret,
+    grant_type: 'refresh_token',
+    refresh_token: refreshToken,
+  });
+  const response = await fetch(`${shipBobOAuthBaseUrl(sandbox)}/connect/token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body,
+    cache: 'no-store',
+  });
+  const token = await response.json().catch(() => ({}));
+  if (!response.ok || typeof token.access_token !== 'string') {
+    const errorCode = typeof token.error === 'string' ? token.error : 'no_error_code';
+    throw new Error(`shipbob_oauth_token_refresh_failed:${response.status}:${errorCode}`);
+  }
+
+  const nextPayload = {
+    ...payload,
+    accessToken: token.access_token,
+    ...(typeof token.refresh_token === 'string' ? { refreshToken: token.refresh_token } : {}),
+  };
+  const expiresAt = typeof token.expires_in === 'number'
+    ? new Date(now + token.expires_in * 1000).toISOString()
+    : null;
+  const { error: updateError } = await client
+    .from('integration_credentials')
+    .update({
+      encrypted_payload: encryptIntegrationCredentials(nextPayload),
+      expires_at: expiresAt,
+      updated_at: new Date(now).toISOString(),
+    })
+    .eq('merchant_id', merchantId)
+    .eq('provider_id', 'shipbob');
+  if (updateError) throw new Error(`shipbob_credential_refresh_persist_failed:${updateError.message}`);
+  return nextPayload;
+}
+
 export async function fetchShipBobChannel(input: { accessToken: string; sandbox: boolean }) {
   const response = await fetch(`${shipBobApiBaseUrl(input.sandbox)}/channel`, {
     headers: { Accept: 'application/json', Authorization: `Bearer ${input.accessToken}` },
@@ -216,22 +286,3 @@ export async function storeShipBobWebhookSecret(input: {
   if (updateError) throw new Error(`shipbob_webhook_secret_storage_failed:${updateError.message}`);
 }
 
-export async function enqueueShipBobInitialImport(input: {
-  client: SupabaseClient;
-  merchantId: string;
-  connectionId: string;
-  sourceAccountId: string;
-}) {
-  const { error } = await input.client.from('sync_jobs').insert({
-    merchant_id: input.merchantId,
-    connection_id: input.connectionId,
-    source_account_id: input.sourceAccountId,
-    source: 'shipbob',
-    job_kind: 'initial_import',
-    status: 'pending',
-    cursor: null,
-    next_attempt_at: new Date().toISOString(),
-    label: 'ShipBob initial import',
-  });
-  if (error && error.code !== '23505') throw new Error(`shipbob_initial_import_enqueue_failed:${error.message}`);
-}

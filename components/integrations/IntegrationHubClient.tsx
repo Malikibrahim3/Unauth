@@ -7,6 +7,7 @@ import { PanelCard, StatusBadge as SharedStatusBadge } from '@/components/ui';
 import { useFetchJson, useAsyncResource } from '@/lib/react/useFetchJson';
 import { fetchIntegrationConnectionStatus } from '@/components/settings/fetchIntegrationConnectionStatus';
 import type { EvidenceCapability, ProviderConnectionView } from '@/lib/integrations/types';
+import { SYNC_STATE_LABELS } from '@/lib/integrations/syncState';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -112,6 +113,7 @@ function ProviderCard({
   onConnect,
   onDisconnect,
   onSync,
+  onFetchEvidence,
   onUpload,
   busyId,
 }: {
@@ -119,6 +121,7 @@ function ProviderCard({
   onConnect: (p: UnifiedProvider) => void;
   onDisconnect: (p: UnifiedProvider) => void;
   onSync: (p: ProviderConnectionView) => void;
+  onFetchEvidence?: (p: ProviderConnectionView) => void;
   onUpload: (p: ProviderConnectionView) => void;
   busyId: string | null;
 }) {
@@ -176,8 +179,10 @@ function ProviderCard({
         </p>
       ) : null}
       {provider.connected && dyn ? (
-        <p className="mt-1 text-xs" style={{ color: 'var(--success)' }}>
-          {dyn.lastSyncAt ? `Last synced ${new Date(dyn.lastSyncAt).toLocaleDateString()}` : 'Connected · initial import pending'}
+        <p className="mt-1 text-xs" style={{ color: dyn.syncState === 'sync_failed' || dyn.syncState === 'attention_required' ? 'var(--warning)' : 'var(--success)' }}>
+          {dyn.syncState
+            ? `${SYNC_STATE_LABELS[dyn.syncState]}${dyn.syncState === 'import_complete' && dyn.importedRecordCount != null ? ` · ${dyn.importedRecordCount} records` : ''}${dyn.lastSyncAt ? ` · synced ${new Date(dyn.lastSyncAt).toLocaleDateString()}` : ''}`
+            : dyn.lastSyncAt ? `Last synced ${new Date(dyn.lastSyncAt).toLocaleDateString()}` : 'Connected · initial import pending'}
           {dyn.authMode === 'oauth' ? ' · OAuth' : ''}
         </p>
       ) : null}
@@ -252,7 +257,20 @@ function ProviderCard({
                   style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
                 >
                   <RefreshCw className="h-3.5 w-3.5" />
-                  Sync
+                  {provider.id === 'shipbob'
+                    ? dyn.syncState === 'sync_failed' || dyn.syncState === 'attention_required' ? 'Retry import' : 'Sync account'
+                    : 'Sync'}
+                </button>
+              ) : null}
+              {provider.id === 'shipbob' && dyn && onFetchEvidence ? (
+                <button
+                  type="button"
+                  onClick={() => onFetchEvidence(dyn)}
+                  disabled={busy}
+                  className="text-xs disabled:opacity-50"
+                  style={{ color: 'var(--text-secondary)' }}
+                >
+                  Fetch order evidence
                 </button>
               ) : null}
             </>
@@ -1733,6 +1751,38 @@ export default function IntegrationHubClient() {
     }
   }
 
+  // Account-level sync for ShipBob — full paginated import, distinct from the
+  // single-record evidence fetch in the modal. Also serves as the safe retry.
+  async function runShipBobAccountSync() {
+    setBusyId('shipbob');
+    try {
+      const result = await postJson('/api/integrations/shipbob/sync-account') as {
+        ran?: boolean; status?: string; reason?: string; importedRecords?: number | null; errorCode?: string | null;
+      };
+      if (result.ran === false) {
+        setToast(result.reason === 'job_already_running'
+          ? 'A ShipBob import is already running. Check back shortly.'
+          : 'ShipBob sync is queued and will run shortly.');
+      } else if (result.status === 'completed') {
+        setToast(`ShipBob sync complete. ${result.importedRecords ?? 0} records imported.`);
+      } else if (result.status === 'running') {
+        setToast('ShipBob import is running — large accounts continue in the background.');
+      } else {
+        setToast(`ShipBob sync failed${result.errorCode ? ` (${result.errorCode})` : ''}. Use Retry import to run it again.`);
+      }
+      reloadHub();
+    } catch (err) {
+      setToast(err instanceof Error ? err.message : 'ShipBob sync failed.');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  function handleSyncAction(provider: ProviderConnectionView) {
+    if (provider.id === 'shipbob') { void runShipBobAccountSync(); return; }
+    setSyncTarget(provider);
+  }
+
   async function submitSync(payload: Record<string, string>) {
     if (!syncTarget) return;
     setBusyId(syncTarget.id);
@@ -1774,7 +1824,8 @@ export default function IntegrationHubClient() {
   const cardProps = {
     onConnect: handleConnect,
     onDisconnect: handleDisconnect,
-    onSync: setSyncTarget,
+    onSync: handleSyncAction,
+    onFetchEvidence: setSyncTarget,
     onUpload: setUploadTarget,
     busyId,
   };

@@ -1,6 +1,10 @@
 {
   "crons": [
     {
+      "path": "/api/cron/process-sync-jobs",
+      "schedule": "*/5 * * * *"
+    },
+    {
       "path": "/api/cron/purge-expired-audits",
       "schedule": "0 3 * * *"
     },

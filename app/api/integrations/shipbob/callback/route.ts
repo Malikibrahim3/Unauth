@@ -9,11 +9,11 @@ import {
   fetchShipBobChannel,
   persistShipBobOAuthConnection,
   ensureShipBobWebhookSubscriptions,
-  enqueueShipBobInitialImport,
   openShipBobOAuthState,
   storeShipBobWebhookSecret,
   type ShipBobOAuthState,
 } from '@/lib/integrations/providers/shipbobOAuth';
+import { ensureShipBobSyncJob } from '@/lib/integrations/providers/shipbobSync';
 import {
   clearShipBobOAuthCookieOptions,
   shipBobOAuthCookie,
@@ -124,7 +124,8 @@ async function handleCallback(request: NextRequest) {
       console.error('ShipBob webhook subscription setup failed', { message: subscriptionError instanceof Error ? subscriptionError.message : 'unknown' });
       await serviceClient.from('merchant_integrations').update({ status: 'degraded', subscribed: false, webhook_status: 'missing' }).eq('id', persisted.connectionId);
     }
-    await enqueueShipBobInitialImport({ client: serviceClient, merchantId: context.merchantId, connectionId: persisted.connectionId, sourceAccountId: persisted.sourceAccountId });
+    // Idempotent: duplicate callbacks reuse the existing pending/running job.
+    await ensureShipBobSyncJob(serviceClient, { merchantId: context.merchantId, connectionId: persisted.connectionId, sourceAccountId: persisted.sourceAccountId });
     const response = redirect({ shipbob_connected: '1', ...(subscriptionHealthy ? {} : { shipbob_warning: 'webhook_subscription_failed' }) });
     response.cookies.set(shipBobOAuthCookie, '', clearShipBobOAuthCookieOptions());
     return response;

@@ -3,6 +3,7 @@ import { decryptBigCommerceOAuthCredentials } from '@/lib/commerce/credentialCry
 import { getCategoryApplicabilityMap, providerAppliesToMerchant } from '@/lib/integrations/applicability';
 import { getIntegrationProvider, INTEGRATION_PROVIDERS } from '@/lib/integrations/registry';
 import { decryptIntegrationCredentials, encryptIntegrationCredentials } from '@/lib/integrations/secrets';
+import { deriveSyncState } from '@/lib/integrations/syncState';
 import type {
   IntegrationConnectionStatus,
   IntegrationCredentialPayload,
@@ -17,6 +18,11 @@ type IntegrationRow = {
   provider_account_name: string | null;
   last_sync_at: string | null;
   last_error: string | null;
+  last_sync_started_at: string | null;
+  last_sync_completed_at: string | null;
+  last_successful_sync_at: string | null;
+  imported_record_count: number | null;
+  last_error_code: string | null;
 };
 
 function activeStatus(status: string | null | undefined): IntegrationConnectionStatus {
@@ -35,7 +41,7 @@ export async function getStoredIntegrationViews(
   const [{ data: integrationRows }, { data: shopifyRows }, { data: gorgiasRows }] = await Promise.all([
     client
       .from('merchant_integrations')
-      .select('provider_id,status,provider_account_id,provider_account_name,last_sync_at,last_error')
+      .select('provider_id,status,provider_account_id,provider_account_name,last_sync_at,last_error,last_sync_started_at,last_sync_completed_at,last_successful_sync_at,imported_record_count,last_error_code')
       .eq('merchant_id', merchantId),
     client
       .from('store_connections')
@@ -84,6 +90,19 @@ export async function getStoredIntegrationViews(
       lastSyncAt: row?.last_sync_at ?? null,
       lastError: row?.last_error ?? null,
       detail: row?.provider_account_name ?? row?.provider_account_id ?? null,
+      ...(row && activeStatus(row.status) !== 'not_connected'
+        ? {
+            syncState: deriveSyncState({
+              status: row.status,
+              lastSyncStartedAt: row.last_sync_started_at,
+              lastSyncCompletedAt: row.last_sync_completed_at,
+              lastSuccessfulSyncAt: row.last_successful_sync_at,
+              importedRecordCount: row.imported_record_count,
+              lastErrorCode: row.last_error_code,
+            }),
+            importedRecordCount: row.imported_record_count ?? null,
+          }
+        : {}),
     };
   });
 }

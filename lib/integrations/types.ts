@@ -154,6 +154,9 @@ export type ProviderConnectionView = IntegrationProvider & {
   lastSyncAt: string | null;
   lastError: string | null;
   detail: string | null;
+  /** Derived from real sync fields (see lib/integrations/syncState.ts). */
+  syncState?: import('@/lib/integrations/syncState').ConnectionSyncState;
+  importedRecordCount?: number | null;
 };
 
 export type MissingEvidenceReason =

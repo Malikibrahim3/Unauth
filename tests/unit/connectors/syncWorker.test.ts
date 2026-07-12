@@ -26,9 +26,16 @@ describe('mapStateToPatch', () => {
 
 function makeClient() {
   const updates: Array<{ patch: any; id: string }> = [];
+  // Credential lookup resolves to "no stored credential" — adapters under test
+  // do not authenticate.
+  const selectChain: any = {
+    eq: () => selectChain,
+    maybeSingle: async () => ({ data: null, error: null }),
+  };
   const client: any = {
     from: () => ({
       update: (patch: any) => ({ eq: async (_c: string, v: string) => { updates.push({ patch, id: v }); return { error: null }; } }),
+      select: () => selectChain,
     }),
     rpc: jest.fn(),
   };
