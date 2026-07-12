@@ -18,7 +18,6 @@ const envSchema = z.object({
   PUBLIC_INTAKE_MERCHANT_ID: z.string().uuid().optional(),
   VERCEL_ENV: z.string().optional(),
   FLAG_THRESHOLD: z.coerce.number().default(44),
-  INLINE_RESTITCH_MAX_ROWS: z.coerce.number().optional(),
   KV_REST_API_URL: z.string().url().optional(),
   KV_REST_API_TOKEN: z.string().min(1).optional(),
   SYNC_BACKGROUND_WRITES: z.string().optional(),
@@ -29,8 +28,6 @@ const envSchema = z.object({
   // 'true', CSV/manual ingest writes merchant_id and upserts on
   // (merchant_id, order_id, source) so re-uploads dedupe across jobs.
   AUDIT_TX_MERCHANT_DEDUP: z.string().optional(),
-  SUPABASE_DB_USAGE_LIMIT_MB: z.coerce.number().optional(),
-  SUPABASE_DB_USAGE_HEADROOM_MB: z.coerce.number().optional(),
   AUDIT_EMAIL_FROM: z.string().optional(),
   SHOPIFY_API_KEY: z.string().min(1).optional(),
   SHOPIFY_API_SECRET: z.string().min(1).optional(),
@@ -43,6 +40,10 @@ const envSchema = z.object({
   FRESHDESK_SUPPORT_ALLOW_GLOBAL_SECRET: z.string().optional(),
   FRESHDESK_SUPPORT_TEST_MERCHANT_ID: z.string().uuid().optional(),
   FRESHDESK_SUPPORT_ALLOW_ENV_MERCHANT: z.string().optional(),
+  ZENDESK_SUPPORT_WEBHOOK_SECRET: z.string().min(32).optional(),
+  ZENDESK_SUPPORT_ALLOW_GLOBAL_SECRET: z.string().optional(),
+  ZENDESK_SUPPORT_TEST_MERCHANT_ID: z.string().uuid().optional(),
+  ZENDESK_SUPPORT_ALLOW_ENV_MERCHANT: z.string().optional(),
   BIGCOMMERCE_CLIENT_ID: z.string().min(1).optional(),
   BIGCOMMERCE_CLIENT_SECRET: z.string().min(1).optional(),
   ENFORCE_PRODUCT_GATES: z.string().optional(),
@@ -57,6 +58,23 @@ const envSchema = z.object({
   STRIPE_PRICE_TOPUP: z.string().min(1).optional(),
   /** Internal notification for Scale "Contact us" requests. */
   BILLING_CONTACT_EMAIL: z.string().email().optional(),
+  /** Local/test-only secret for /api/test/e2e-auth — never set in production. */
+  E2E_AUTH_SECRET: z.string().min(16).optional(),
+  /** Fallback tracking-provider credentials (merchant-stored creds take priority). */
+  AFTERSHIP_API_KEY: z.string().min(1).optional(),
+  SHIPBOB_PAT: z.string().min(1).optional(),
+  SHIPBOB_SANDBOX: z.string().optional(),
+  SHIPBOB_OAUTH_CLIENT_ID: z.string().min(1).optional(),
+  SHIPBOB_OAUTH_CLIENT_SECRET: z.string().min(1).optional(),
+  /** Webhook URL notified when a warehouse pack-confirmation photo is uploaded. */
+  PACK_CONFIRMATION_NOTIFY_URL: z.string().url().optional(),
+  /** Absolute app URL shadow alias read by claim-gate/collector code paths. */
+  APP_URL: z.string().url().optional(),
+  /** Merchant id scoped to the public /demo page. */
+  NEXT_PUBLIC_DEMO_MERCHANT_ID: z.string().uuid().optional(),
+  SOURCE_AGNOSTIC_READS: z.string().optional(),
+  SOURCE_AGNOSTIC_WRITES: z.string().optional(),
+  SOURCE_AGNOSTIC_PILOT_MERCHANTS: z.string().optional(),
 }).superRefine((env, ctx) => {
   if (!env.NEXT_PUBLIC_SUPABASE_ANON_KEY && !env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) {
     ctx.addIssue({

@@ -1,6 +1,6 @@
 import {
   claimWidgetToJson,
-  useCreditGatedWidgetPreview,
+  isCreditGatedWidgetPreview,
   type GorgiasWidgetJsonOptions,
   type GorgiasWidgetLinkContext,
 } from '@/lib/gorgias/widgetJson';
@@ -105,7 +105,7 @@ function page(inner: string): string {
 export function renderGorgiasWidgetHtml(ctx: ClaimWidgetRenderContext): string {
   const { result, link, options } = ctx;
   const isDisconnected = !result.ok && result.kind === 'helpdesk_disconnected';
-  const creditGatedPreview = useCreditGatedWidgetPreview(options);
+  const creditGatedPreview = isCreditGatedWidgetPreview(options);
   const rowLabels = GORGIAS_SIDEBAR_ROW_LABELS;
 
   if (!result.ok && !creditGatedPreview) {
@@ -129,11 +129,10 @@ export function renderGorgiasWidgetHtml(ctx: ClaimWidgetRenderContext): string {
       <div class="grade">—</div>
       <table class="cmp">
         <tbody>
-          <tr><th>${escapeHtml(rowLabels.claims)}</th><td>—</td></tr>
-          <tr><th>${escapeHtml(rowLabels.orders)}</th><td>—</td></tr>
-          <tr><th>${escapeHtml(rowLabels.claim_rate)}</th><td>—</td></tr>
-          <tr><th>${escapeHtml(rowLabels.primary_reason)}</th><td>—</td></tr>
-          <tr><th>${escapeHtml(rowLabels.recent_activity)}</th><td>—</td></tr>
+          <tr><th>${escapeHtml(rowLabels.payout_exposure)}</th><td>—</td></tr>
+          <tr><th>${escapeHtml(rowLabels.evidence_checklist)}</th><td>—</td></tr>
+          <tr><th>${escapeHtml(rowLabels.recommendation)}</th><td>—</td></tr>
+          <tr><th>${escapeHtml(rowLabels.recovery_path)}</th><td>—</td></tr>
         </tbody>
       </table>
       ${ctaUrl ? `<a class="cta" href="${escapeHtml(ctaUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(ctaLabel)}</a>` : ''}

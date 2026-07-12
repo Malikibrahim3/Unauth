@@ -1,15 +1,30 @@
-import { FileSpreadsheet, Radio } from 'lucide-react';
-import { Badge } from '@/components/ui';
+import { FileSpreadsheet, FlaskConical, Radio } from 'lucide-react';
+import { StatusBadge } from '@/components/ui';
 
-/** Source tag shown on every report section so the two data lineages never blur together. */
-export function ReportsSourceTag({ source }: { source: 'csv' | 'live' }) {
-  return source === 'csv' ? (
-    <Badge tone="neutral" size="sm" className="gap-1">
-      <FileSpreadsheet className="h-3 w-3" /> CSV import
-    </Badge>
-  ) : (
-    <Badge tone="accent" size="sm" className="gap-1">
+/**
+ * Source tag shown on every report section so the data lineages never blur.
+ * - 'live'   → a real integration is connected and feeding this section.
+ * - 'sample' → existing/demo data with no live connection (never claim "Live").
+ * - 'csv'    → legacy CSV import lineage.
+ */
+export function ReportsSourceTag({ source }: { source: 'csv' | 'live' | 'sample' }) {
+  if (source === 'csv') {
+    return (
+      <StatusBadge variant="held" className="gap-1" dot={false}>
+        <FileSpreadsheet className="h-3 w-3" /> Legacy import
+      </StatusBadge>
+    );
+  }
+  if (source === 'sample') {
+    return (
+      <StatusBadge variant="held" className="gap-1" dot={false}>
+        <FlaskConical className="h-3 w-3" /> Sample data
+      </StatusBadge>
+    );
+  }
+  return (
+    <StatusBadge variant="cleared" className="gap-1">
       <Radio className="h-3 w-3" /> Live source
-    </Badge>
+    </StatusBadge>
   );
 }

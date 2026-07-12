@@ -29,16 +29,16 @@ export default function PartialSetupHero({ connection }: PartialSetupHeroProps) 
   const helpdeskDone = connection.helpdesk || connection.helpdeskOnlyConnected;
 
   const heading = shopifyDone
-    ? 'Connect Gorgias to activate claim intelligence in tickets'
+    ? 'Connect Gorgias to activate payout control in tickets'
     : helpdeskDone
       ? 'Connect Shopify to add order context'
       : 'Start with Shopify + Gorgias';
 
   const body = shopifyDone
-    ? 'Shopify is syncing. Connect Gorgias so your agents see claim context — order history, prior claims, and trust indicators — inside every ticket. Zendesk and Freshdesk also work.'
+    ? 'Shopify is syncing. Connect Gorgias so your agents see payout exposure, evidence, rules, and recovery routes inside every ticket. Zendesk and Freshdesk also work.'
     : helpdeskDone
-      ? 'Claim history is coming from your helpdesk. Shopify provides the order data that ties it all together. Without both, the picture is incomplete.'
-      : 'Shopify provides order data. Gorgias provides claim history. Both are required for claim rates, confidence grades, and evidence packages.';
+      ? 'Support cases are coming from your helpdesk. Shopify provides the order data that ties payout exposure and recovery context together.'
+      : 'Shopify provides order data. Gorgias provides support payout moments. Both are required for evidence-backed rules, attribution, and recovery chase-up.';
 
   const steps: Array<{ done: boolean; icon: React.ReactNode; label: string; sub: string }> = [
     {
@@ -51,7 +51,7 @@ export default function PartialSetupHero({ connection }: PartialSetupHeroProps) 
       done: helpdeskDone,
       icon: <HelpdeskMark />,
       label: 'Gorgias',
-      sub: helpdeskDone ? 'Connected — claims syncing' : 'Recommended · Zendesk and Freshdesk also supported',
+      sub: helpdeskDone ? 'Connected - payout cases syncing' : 'Recommended - Zendesk and Freshdesk also supported',
     },
   ];
 

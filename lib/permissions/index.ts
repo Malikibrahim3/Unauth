@@ -41,6 +41,7 @@ export const PERMISSIONS = {
   MANAGE_WATCHLIST:       'manage_watchlist',
   GENERATE_EVIDENCE:      'generate_evidence',
   SUBMIT_FRAUD_FEEDBACK:  'submit_fraud_feedback',
+  SUBMIT_PAYOUT_DECISIONS: 'submit_payout_decisions', // review/decide/record on support payout cases
   DISMISS_TRANSACTION:    'dismiss_transaction',
   HIDE_JOB:               'hide_job',
 
@@ -81,6 +82,7 @@ const ANALYST_PERMISSIONS: Permission[] = [
   PERMISSIONS.MANAGE_WATCHLIST,
   PERMISSIONS.GENERATE_EVIDENCE,
   PERMISSIONS.SUBMIT_FRAUD_FEEDBACK,
+  PERMISSIONS.SUBMIT_PAYOUT_DECISIONS,
   PERMISSIONS.DISMISS_TRANSACTION,
 ];
 
@@ -112,8 +114,8 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   view_audit:              'View Audit Results',
   view_customers:          'View Customer Profiles',
   view_lookup:             'View Lookup Page',
-  view_watchlist:          'View Watchlist',
-  view_chargebacks:        'View Chargebacks',
+  view_watchlist:          'View Legacy Customer Context',
+  view_chargebacks:        'View Evidence Packages',
   view_inbox:              'View Inbox / Alerts',
   view_saved:              'View Saved Reports',
   view_team:               'View Team Members',
@@ -124,9 +126,10 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   update_customer_status:  'Update Investigation Status',
   add_customer_note:       'Add Customer Notes',
   delete_customer_note:    'Delete Customer Notes',
-  manage_watchlist:        'Manage Watchlist',
+  manage_watchlist:        'Manage Legacy Saved Cases',
   generate_evidence:       'Generate Evidence Packages',
-  submit_fraud_feedback:   'Submit Fraud Feedback',
+  submit_fraud_feedback:   'Submit Claim Feedback',
+  submit_payout_decisions: 'Review & Decide Payout Cases',
   dismiss_transaction:     'Dismiss matched transactions',
   hide_job:                'Hide Upload Jobs',
   bulk_delete:             'Bulk Delete Data',
@@ -248,8 +251,6 @@ const DEFAULT_APP_DESTINATIONS: Array<{ permission: Permission; href: string }> 
   { permission: PERMISSIONS.VIEW_DASHBOARD, href: '/dashboard' },
   { permission: PERMISSIONS.VIEW_INBOX, href: '/claims' },
   { permission: PERMISSIONS.VIEW_CUSTOMERS, href: '/customers' },
-  { permission: PERMISSIONS.VIEW_CHARGEBACKS, href: '/chargebacks' },
-  { permission: PERMISSIONS.VIEW_WATCHLIST, href: '/watchlist' },
   { permission: PERMISSIONS.VIEW_SETTINGS, href: '/settings' },
 ];
 

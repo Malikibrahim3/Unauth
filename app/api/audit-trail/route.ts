@@ -15,6 +15,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { createScopedClient } from '@/lib/supabase/scoped';
+import { TABLES } from '@/lib/supabase/tables';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
 import { auditActionLabel, auditResourceSummary } from '@/lib/audit/actionLabels';
@@ -75,7 +76,7 @@ async function GETHandler(request: NextRequest) {
   }
 
   let claimEventQuery = service
-    .from('claim_events' as any)
+    .from('claim_events')
     .select('id,claim_id,merchant_id,event_type,previous_status,new_status,previous_decision,new_decision,previous_outcome,new_outcome,note,actor_user_id,metadata,created_at')
     .eq('merchant_id', ctx.merchantId)
     .order('created_at', { ascending: false })
@@ -96,17 +97,12 @@ async function GETHandler(request: NextRequest) {
   const claimHrefById = new Map<string, string>();
   if (claimIds.length > 0) {
     const { data: claimRows } = await service
-      .from('merchant_claims' as any)
-      .select('id,customer_id')
+      .from(TABLES.MERCHANT_CLAIMS)
+      .select('id')
       .eq('merchant_id', ctx.merchantId)
       .in('id', claimIds);
-    for (const claim of (claimRows ?? []) as Array<{ id: string; customer_id: string | null }>) {
-      claimHrefById.set(
-        claim.id,
-        claim.customer_id
-          ? `/customers/${claim.customer_id}/claims?claimId=${claim.id}`
-          : `/claims?claimId=${claim.id}`,
-      );
+    for (const claim of (claimRows ?? []) as Array<{ id: string }>) {
+      claimHrefById.set(claim.id, `/claims/${claim.id}`);
     }
   }
 
@@ -144,7 +140,7 @@ async function GETHandler(request: NextRequest) {
     const actorMap: Record<string, { email: string; role: string }> = {};
     if (actorIds.length > 0) {
       const { data: memberRows } = await service
-        .from('merchant_members' as never)
+        .from(TABLES.MERCHANT_MEMBERS)
         .select('user_id, invited_email, role')
         .eq('merchant_id', ctx.merchantId)
         .in('user_id', actorIds);

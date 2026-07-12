@@ -1,12 +1,5 @@
 'use client';
 
-import WatchlistStarButton from '@/components/audit/WatchlistStarButton';
-import {
-  gradeDotStyle,
-  signalSummary,
-  tierChipGradeClass,
-  tierLabel,
-} from '@/components/customers/customerIntelligenceDrawerUtils';
 import type { DrawerProfile } from '@/components/customers/customerIntelligenceDrawerUtils';
 import type { LinkedAccount } from '@/app/api/customers/[id]/route';
 
@@ -23,28 +16,26 @@ export function CustomerIntelligenceDrawerCaseCard({
   variantCount: number;
   displayName: string;
 }) {
-  const hasProfileId = Boolean(profile.id?.trim());
-  const summary = signalSummary(profile.risk_score, claimCount, variantCount);
+  void linkedAccounts;
+  void variantCount;
+  const summary =
+    claimCount > 0
+      ? `${claimCount} payout ${claimCount === 1 ? 'case' : 'cases'} on record for this customer context.`
+      : 'No payout cases are linked to this customer context yet.';
 
   const stats = [
     { label: 'ORDERS', value: profile.total_orders, hot: false },
-    { label: 'CLAIMS', value: claimCount || profile.total_refund_claims, hot: (claimCount || profile.total_refund_claims) > 1 },
+    { label: 'CASES', value: claimCount || profile.total_refund_claims, hot: (claimCount || profile.total_refund_claims) > 1 },
     { label: 'CHARGE.', value: profile.total_chargebacks, hot: profile.total_chargebacks > 1 },
-    { label: 'LINKED', value: linkedAccounts.length, hot: linkedAccounts.length > 1 },
+    { label: 'REFUNDS', value: profile.total_refund_claims, hot: profile.total_refund_claims > 1 },
   ];
 
   return (
     <div className="cid-case-card">
       <div className="cid-case-bar">
         <div className="flex items-center gap-2">
-          <span className="cid-grade-dot" style={gradeDotStyle(profile.risk_level)} aria-hidden="true" />
-          <span className="cid-overline">Customer review</span>
-        </div>
-        <div className="flex items-center gap-1.5 flex-wrap justify-end">
-          <span className={tierChipGradeClass(profile.risk_level)}>{tierLabel(profile.risk_level)}</span>
-          {hasProfileId ? (
-            <WatchlistStarButton />
-          ) : null}
+          <span className="cid-grade-dot" style={{ background: 'var(--accent)' }} aria-hidden="true" />
+          <span className="cid-overline">Customer context</span>
         </div>
       </div>
       <div className="cid-subject-block">
@@ -71,7 +62,7 @@ export function CustomerIntelligenceDrawerCaseCard({
       <div className="cid-signal-strip">
         <div className="min-w-0 flex-1">
           <div className="cid-overline" style={{ marginBottom: 1 }}>
-            Signal summary
+            Payout summary
           </div>
           <p className="cid-detail-label">{summary}</p>
         </div>

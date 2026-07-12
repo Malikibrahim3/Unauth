@@ -13,12 +13,17 @@ import {
 } from '@/lib/support/intake/store';
 import { extractCommerceSignals } from '@/lib/support/intake/commerceSignals';
 import {
-  captureTicketIdentitySignalsV2,
-  ensureClaimForTicketV2,
+  ensurePayoutCaseForTicketV2,
   linkTicketToCommerceV2,
+  linkTicketToSourceCustomerFromIntake,
 } from '@/lib/support/intake/v2Bridge';
+import {
+  attachIdentityToPayoutCase,
+  resolvePayoutCaseIdentity,
+} from '@/lib/support/intake/resolvePayoutCaseIdentity';
+import { SOURCE_DELETED_TICKET_STATUS } from '@/lib/support/gorgias/reconcileDeletedTickets';
 import type { ClaimType } from '@/lib/support/intake/classifyClaim';
-import { classifyClaimType } from '@/lib/support/intake/classifyClaim';
+import { classifyClaimType, detectIsClaim } from '@/lib/support/intake/classifyClaim';
 import {
   detectClaimFromTags,
   getMerchantClaimTagConfig,
@@ -53,6 +58,13 @@ export type SupportIngestSuccess = {
   link_status: 'linked' | 'unlinked';
   shopify_order_id: string | null;
   customer_profile_id: string | null;
+  // Payout-case-first fields (the canonical shape going forward).
+  support_payout_case_id: string | null;
+  case_reason: string | null;
+  is_payout_case: boolean;
+  requested_action: string | null;
+  payout_exposure: { amount: number; currency: string | null } | null;
+  // Legacy aliases retained during the staged rename.
   merchant_claim_id: string | null;
   is_claim: boolean;
   claim_type: ClaimType | null;
@@ -124,6 +136,34 @@ function applyClaimDetection(
   detection: ClaimDetectionResult
 ): void {
   if (detection.action !== 'create_or_confirm_claim') {
+    const fallbackClassification = classifyClaimType(
+      normalized.ticket_subject,
+      normalized.customer_message_summary,
+      normalized.claim_reason,
+      normalized.tags.join(' '),
+    );
+    const keywordClaim =
+      detectIsClaim(
+        normalized.ticket_subject,
+        normalized.customer_message_summary,
+        normalized.claim_reason,
+      ) ||
+      (fallbackClassification.confidence >= 0.45 &&
+        (fallbackClassification.claimType === 'INR' ||
+          (normalized.ticket_subject?.toLowerCase().includes('refund') ?? false)));
+
+    if (keywordClaim) {
+      normalized.is_claim = true;
+      normalized.claim_type = fallbackClassification.claimType;
+      normalized.claim_type_confidence = fallbackClassification.confidence;
+      normalized.detection_method = 'keyword_fallback';
+      normalized.trigger_tag = null;
+      normalized.trigger_tags = [];
+      normalized.requires_merchant_review = true;
+      normalized.keyword_matched = 'ticket_text';
+      return;
+    }
+
     normalized.is_claim = false;
     normalized.claim_type = null;
     normalized.claim_type_confidence = null;
@@ -136,9 +176,10 @@ function applyClaimDetection(
   }
 
   const classification = classifyClaimType(
+    normalized.ticket_subject,
     normalized.customer_message_summary,
     normalized.claim_reason,
-    normalized.tags.join(' ')
+    normalized.tags.join(' '),
   );
   normalized.is_claim = true;
   normalized.claim_type = classification.claimType;
@@ -152,6 +193,23 @@ function applyClaimDetection(
 
 function buildEventSummary(eventType: string, externalCaseId: string): string {
   return truncateSafeText(`${eventType} (${externalCaseId})`, 200);
+}
+
+function inferRequestedActionFromReason(reason: string | null): string | null {
+  switch (reason) {
+    case 'refund_request':
+    case 'return_request':
+    case 'dispute':
+      return 'refund';
+    case 'missing_parcel':
+      return 'reship';
+    case 'wrong_item':
+      return 'replacement';
+    case 'damaged_item':
+      return 'replacement';
+    default:
+      return null;
+  }
 }
 
 function truncateSafeText(text: string, maxLength: number): string {
@@ -242,6 +300,45 @@ export async function ingestSupportCase(
   }
   const supportCaseId = caseRow.id;
 
+  if (normalized.case_status === SOURCE_DELETED_TICKET_STATUS) {
+    return {
+      ok: true,
+      provider: normalized.provider,
+      merchant_id: parsed.merchant_id,
+      support_case_id: supportCaseId,
+      event_id: '',
+      external_case_id: normalized.external_case_id,
+      order_ref: normalized.order_ref,
+      claim_reason: normalized.claim_reason,
+      case_status: normalized.case_status,
+      link_status: 'unlinked',
+      shopify_order_id: null,
+      customer_profile_id: null,
+      support_payout_case_id: null,
+      case_reason: normalized.claim_reason,
+      is_payout_case: false,
+      requested_action: null,
+      payout_exposure: null,
+      merchant_claim_id: null,
+      is_claim: false,
+      claim_type: null,
+      claim_type_confidence: null,
+      detection_method: normalized.detection_method,
+      trigger_tag: normalized.trigger_tag,
+      requires_merchant_review: false,
+    };
+  }
+
+  await linkTicketToSourceCustomerFromIntake(supabase as SupabaseClient<Database>, {
+    merchantId: parsed.merchant_id,
+    ticketId: supportCaseId,
+    provider: parsed.provider,
+    connectionId: parsed.provider_connection_id ?? null,
+    customerEmail: normalized.customer_email ?? null,
+    customerName: normalized.customer_name ?? null,
+    rawTicket: parsed.raw,
+  });
+
   const eventRow = await appendSupportCaseEvent(client, {
     merchant_id: parsed.merchant_id,
     support_case_id: supportCaseId,
@@ -256,8 +353,10 @@ export async function ingestSupportCase(
       order_ref: normalized.order_ref,
       claim_reason: normalized.claim_reason,
       case_status: normalized.case_status,
-      event_idempotency: 'not_implemented',
     },
+    // Real idempotency is now enforced by source_ticket_events.event_idempotency_key
+    // (unique index); appendSupportCaseEvent derives it from the payload hash and
+    // returns the existing event on a replay.
     raw_payload_hash: normalized.raw_payload_hash,
   });
 
@@ -274,23 +373,29 @@ export async function ingestSupportCase(
   });
 
   const commerce = extractCommerceSignals(parsed.raw);
-  const identityIds = await captureTicketIdentitySignalsV2(supabase as SupabaseClient<Database>, {
+  const identityResolution = await resolvePayoutCaseIdentity(supabase as SupabaseClient<Database>, {
     merchantId: parsed.merchant_id,
     ticketId: supportCaseId,
-    provider: parsed.provider,
+    sourceOrderId: linkResult.source_order_id,
+    sourceCustomerId: linkResult.source_customer_id,
+    ticketEmail: normalized.customer_email ?? null,
     rawTicket: parsed.raw,
     observedAt: normalized.created_at_provider,
+    provider: parsed.provider,
     phone: commerce.identity.phone,
     shippingAddressRaw: commerce.identity.shipping_address,
     billingAddressRaw: commerce.identity.billing_address,
     ip: commerce.identity.ip_address,
   });
 
-  const claimId = await ensureClaimForTicketV2(supabase as SupabaseClient<Database>, {
+  const requestedAction = inferRequestedActionFromReason(normalized.claim_reason);
+  const payoutExposureAmount = commerce.order.refund_amount_requested ?? commerce.order.order_value;
+
+  const claimId = await ensurePayoutCaseForTicketV2(supabase as SupabaseClient<Database>, {
     merchantId: parsed.merchant_id,
     ticketId: supportCaseId,
     sourceOrderId: linkResult.source_order_id,
-    identityId: identityIds[0] ?? null,
+    identityId: identityResolution.identityId,
     isClaim: normalized.is_claim ?? false,
     claimType: normalized.claim_type ?? null,
     claimReason: normalized.claim_reason,
@@ -298,7 +403,23 @@ export async function ingestSupportCase(
     triggerTags: normalized.trigger_tags ?? [],
     requiresReview: normalized.requires_merchant_review ?? false,
     submittedAt: normalized.created_at_provider,
+    claimTypeConfidence: normalized.claim_type_confidence,
+    classifierClaimType: normalized.claim_type,
+    keywordMatched: normalized.keyword_matched,
+    requestedAction,
+    payoutExposureAmount,
+    payoutExposureCurrency: null,
+    ticketSubject: normalized.ticket_subject ?? null,
+    ticketStatus: normalized.case_status,
   });
+
+  if (claimId && identityResolution.identityId) {
+    await attachIdentityToPayoutCase(supabase as SupabaseClient<Database>, {
+      merchantId: parsed.merchant_id,
+      claimId,
+      identityId: identityResolution.identityId,
+    });
+  }
 
   return {
     ok: true,
@@ -313,6 +434,14 @@ export async function ingestSupportCase(
     link_status: linkResult.link_status,
     shopify_order_id: linkResult.shopify_order_id,
     customer_profile_id: null,
+    support_payout_case_id: claimId,
+    case_reason: normalized.claim_reason,
+    is_payout_case: Boolean(claimId),
+    requested_action: requestedAction,
+    payout_exposure:
+      payoutExposureAmount != null
+        ? { amount: payoutExposureAmount, currency: null }
+          : null,
     merchant_claim_id: claimId,
     is_claim: normalized.is_claim,
     claim_type: normalized.claim_type,

@@ -31,7 +31,7 @@ import {
   inferGorgiasEventType,
   ingestGorgiasSupportWebhook,
 } from '@/lib/support/gorgias/ingestWebhook';
-import { POST } from '@/app/api/gorgias/support-webhook/route';
+import { POST, resolveUnambiguousEmailOrder } from '@/app/api/gorgias/support-webhook/route';
 import type { GorgiasSupportConnectionRow } from '@/lib/support/gorgias/resolveConnection';
 import {
   resolveSupportLinkingTable,
@@ -116,32 +116,28 @@ function makeGorgiasWebhookSupabase(options?: {
   const linkingTables = supportLinkingLookupTables();
 
   const supabase = {
+    rpc: async () => ({ data: [], error: null }),
     from: (table: string) => {
       if (table === TABLES.MERCHANT_SHOPIFY_CONNECTIONS) {
+        const row = shopifyConnections[0];
+        const connectionRow = row
+          ? {
+              store_key: row.shop_domain,
+              status: row.active ? 'active' : 'disabled',
+              uninstalled_at: null,
+              credentials_encrypted: row.active ? 'encrypted-token' : null,
+              last_error: null,
+            }
+          : null;
+        const chain: any = {
+          eq: () => chain,
+          order: () => chain,
+          limit: () => chain,
+          maybeSingle: async () => ({ data: connectionRow, error: null }),
+          then: (resolve: (value: unknown) => void) => resolve({ data: shopifyConnections, error: null }),
+        };
         return {
-          select: () => ({
-            eq: (column: string, value: string | boolean) => ({
-              maybeSingle: async () => ({
-                data:
-                  shopifyConnections.find(
-                    (row) => row[column as 'merchant_id' | 'active'] === value
-                  ) ?? null,
-                error: null,
-              }),
-              eq: (column2: string, value2: string | boolean) => ({
-                order: () => ({
-                  limit: async () => ({
-                    data: shopifyConnections.filter(
-                      (row) =>
-                        row[column as 'merchant_id' | 'active'] === value &&
-                        row[column2 as 'merchant_id' | 'active'] === value2
-                    ),
-                    error: null,
-                  }),
-                }),
-              }),
-            }),
-          }),
+          select: () => chain,
         };
       }
 
@@ -214,6 +210,90 @@ function makeGorgiasWebhookSupabase(options?: {
             lastCasePayloads.push(payload);
           },
         });
+      }
+
+      if (table === 'store_connections') {
+        const chain: any = {
+          eq: () => chain,
+          order: () => chain,
+          limit: () => chain,
+          maybeSingle: async () => ({ data: null, error: null }),
+        };
+        return { select: () => chain };
+      }
+
+      if (table === 'source_customers') {
+        const chain: any = {
+          eq: () => chain,
+          ilike: () => chain,
+          limit: () => chain,
+          maybeSingle: async () => ({ data: null, error: null }),
+        };
+        return {
+          select: () => chain,
+          upsert: () => ({
+            select: () => ({
+              single: async () => ({
+                data: { id: '88888888-8888-4888-8888-888888888888' },
+                error: null,
+              }),
+            }),
+          }),
+        };
+      }
+
+      if (table === 'source_orders') {
+        const linkedOrder = {
+          id: '99999999-9999-4999-8999-000000001007',
+          external_id: '1007',
+          order_number: '1007',
+          source_customer_id: null,
+          email: 'shopper@example.com',
+        };
+        const chain: any = {
+          eq: () => chain,
+          or: () => chain,
+          order: () => chain,
+          limit: () => chain,
+          maybeSingle: async () => ({ data: linkedOrder, error: null }),
+          then: (resolve: (value: unknown) => void) => resolve({ data: [linkedOrder], error: null }),
+        };
+        return { select: () => chain };
+      }
+
+      if (table === TABLES.MERCHANT_CLAIMS || table === 'merchant_claims') {
+        const claimRow = { id: 'ffffffff-ffff-4fff-8fff-ffffffffffff' };
+        const selectChain: any = {
+          eq: () => selectChain,
+          order: () => selectChain,
+          limit: () => selectChain,
+          maybeSingle: async () => ({ data: null, error: null }),
+          then: (resolve: (value: unknown) => void) => resolve({ data: [], error: null }),
+        };
+        return {
+          select: () => selectChain,
+          insert: () => ({
+            select: () => ({
+              single: async () => ({ data: claimRow, error: null }),
+            }),
+          }),
+        };
+      }
+
+      if (table === 'claim_events' || table === 'claim_evidence') {
+        return {
+          insert: () => Promise.resolve({ error: null }),
+        };
+      }
+
+      if (table === 'source_fulfillments') {
+        const chain: any = {
+          eq: () => chain,
+          order: () => chain,
+          limit: () => chain,
+          maybeSingle: async () => ({ data: null, error: null }),
+        };
+        return { select: () => chain };
       }
 
       const linkingTable = resolveSupportLinkingTable(table, linkingTables);
@@ -451,8 +531,8 @@ describe('Gorgias support webhook', () => {
     expect(json.webhook_secret).toBeUndefined();
     expect(json.order_ref).toBe('1007');
     expect(json.claim_reason).toBe('refund_request');
-    expect(json.link_status).toBe('not_found');
-    expect(mock.lastCasePayload().provider_connection_id).toBe(CONNECTION_ID);
+    expect(json.link_status).toBe('linked');
+    expect(mock.lastCasePayload().connection_id).toBe(CONNECTION_ID);
     expect(JSON.stringify(json)).not.toContain('shopper@example.com');
   });
 
@@ -536,8 +616,13 @@ describe('Gorgias support webhook', () => {
     expect(json.claim_reason).toBe('refund_request');
     expect(json.is_claim).toBe(true);
     expect(json.claim_type).toBe('other');
-    expect(mock.lastCasePayload().customer_email_hash).toBeTruthy();
-    expect(mock.lastCasePayload().shop_domain).toBe('unauth-test.myshopify.com');
+    // The hydrated ticket persisted real content on the v2 source_tickets row:
+    // its external id and the extracted order ref, with only a hashed raw payload
+    // (no raw PII columns on the ticket row anymore).
+    expect(mock.lastCasePayload().external_id).toBe('g-500');
+    expect(mock.lastCasePayload().linked_order_external_ids).toEqual(['1007']);
+    expect(mock.lastCasePayload().raw_payload_hash).toMatch(/^[a-f0-9]{64}$/);
+    expect(mock.lastCasePayload().customer_email_hash).toBeUndefined();
   });
 
   it('marks the Gorgias connection revoked when ticket hydration gets 401', async () => {
@@ -691,7 +776,7 @@ describe('Gorgias support webhook', () => {
       })
     );
     expect(res.status).toBe(200);
-    expect(mock.lastCasePayload().provider_connection_id).toBeNull();
+    expect(mock.lastCasePayload().connection_id).toBeNull();
   });
 
   it('prefers connection routing over dev merchant header when both provided', async () => {
@@ -709,7 +794,7 @@ describe('Gorgias support webhook', () => {
     expect(mock.lastCasePayload().merchant_id).toBe(MERCHANT_ID);
   });
 
-  it('keeps one case row and appends two events for duplicate ticket', async () => {
+  it('keeps one case row and appends one event per ingest for duplicate ticket', async () => {
     const mock = makeGorgiasWebhookSupabase();
     createServiceClient.mockReturnValue(mock.supabase);
 
@@ -731,7 +816,8 @@ describe('Gorgias support webhook', () => {
     expect(first.status).toBe(200);
     expect(second.status).toBe(200);
     expect(mock.caseUpserts()).toBe(2);
-    expect(mock.eventInserts()).toBe(4);
+    // v2 intake writes a single source_ticket_events row per ingest.
+    expect(mock.eventInserts()).toBe(2);
   });
 
   it('accepts x-gorgias-webhook-secret header via direct handler', async () => {
@@ -772,9 +858,27 @@ describe('Gorgias support webhook', () => {
     ).toBe('ticket_updated');
   });
 
-  it('extracts wrapped ticket payloads', () => {
+  it('extracts wrapped ticket payloads and rejects tied email-order matches', async () => {
     const ticket = extractGorgiasTicketPayload({ ticket: gorgiasTicket });
     expect(ticket.id).toBe('g-500');
+
+    const tiedOrders = [
+      { id: 'order-a', external_id: 'A', order_number: 'A', placed_at: '2026-05-01T10:00:00Z', ingested_at: null },
+      { id: 'order-b', external_id: 'B', order_number: 'B', placed_at: '2026-05-01T10:00:00Z', ingested_at: null },
+    ];
+    const query = {
+      select() { return this; },
+      eq() { return this; },
+      ilike() { return this; },
+      order() { return this; },
+      limit() { return this; },
+      then(resolve: (value: { data: typeof tiedOrders; error: null }) => unknown) {
+        return Promise.resolve({ data: tiedOrders, error: null }).then(resolve);
+      },
+    };
+    const client = { from: () => query };
+    await expect(resolveUnambiguousEmailOrder(client as never, MERCHANT_ID, 'shopper@example.com'))
+      .resolves.toBeNull();
   });
 
   it('accepts connection-specific webhook secret', async () => {

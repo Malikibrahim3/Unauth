@@ -1,0 +1,28 @@
+{
+  "topic": "ticket-created",
+  "account_domain": "example-store.gorgias.com",
+  "webhook_id": "EXAMPLE-WH-TICKET-9001",
+  "payload": {
+    "id": 9001,
+    "subject": "Where is my order? #1001",
+    "channel": "email",
+    "status": "open",
+    "created_datetime": "2026-07-11T11:30:00Z",
+    "updated_datetime": "2026-07-11T11:30:00Z",
+    "customer": {
+      "id": 4400000001,
+      "email": "casey@example.com",
+      "name": "Casey Rivers"
+    },
+    "messages": [
+      {
+        "id": 12001,
+        "sender": { "email": "casey@example.com" },
+        "source": { "type": "email" },
+        "public": true,
+        "body_text": "Hi, my order #1001 was marked delivered but I never received it. Please help.",
+        "created_datetime": "2026-07-11T11:30:00Z"
+      }
+    ]
+  }
+}

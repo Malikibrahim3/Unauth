@@ -2,7 +2,10 @@ import type { TrendDataPoint } from '@/components/charts/WeeklyTrendChart';
 import type { GradeDistEntry } from '@/components/charts/GradeDistBar';
 import type { Database } from '@/lib/supabase/types';
 import { createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
+import { ACTIVE_CLAIM_STATUSES } from '@/lib/claims/sla';
 import { riskLevelToNewGrade } from '@/lib/confidence';
+import { formatCurrency } from '@/lib/utils/format';
 import type { ConnectionState } from '@/lib/connections/getConnectionState';
 import type { MerchantDataPresence } from '@/lib/supabase/getMerchantDataPresence';
 import type { MerchantSetupState } from '@/lib/connections/getMerchantSetupState';
@@ -57,13 +60,13 @@ export function buildConfig(state: MerchantSetupState, connection: ConnectionSta
   switch (state) {
     case 'shopify_only_with_data':
       return {
-        subtitle: 'Shopify orders are syncing. Connect Gorgias to add claim context to your tickets.',
+        subtitle: 'Shopify orders are syncing. Connect Gorgias to add payout control to your tickets.',
         primaryCta: { label: 'Connect Gorgias', href: integrations },
         secondaryCta: undefined,
         banner: {
           tone: 'incomplete',
-          title: 'Shopify connected — add Gorgias to activate claim intelligence',
-          body: 'Connect Gorgias so your agents see claim context inside every support ticket. Claim metrics will show as incomplete until Gorgias is connected.',
+          title: 'Shopify connected - add Gorgias to activate payout control',
+          body: 'Connect Gorgias so your agents see payout exposure, evidence, and recovery context inside every support ticket. Payout metrics will show as incomplete until Gorgias is connected.',
         },
       };
     case 'helpdesk_only_with_data':
@@ -89,7 +92,7 @@ export function buildConfig(state: MerchantSetupState, connection: ConnectionSta
       };
     case 'stale_existing_data':
       return {
-        subtitle: 'Showing your existing customer and order intelligence.',
+        subtitle: 'What is at risk, what needs action, and what came back.',
         primaryCta: { label: 'Reconnect sources', href: integrations },
         secondaryCta: undefined,
         banner: {
@@ -101,9 +104,9 @@ export function buildConfig(state: MerchantSetupState, connection: ConnectionSta
     case 'fully_connected_with_data':
     default:
       return {
-        subtitle: 'Claim intelligence across your Shopify orders and Gorgias tickets.',
+        subtitle: 'Payout exposure, recovery progress, and prevention insights across your support payouts.',
         primaryCta: connection.bothConnected
-          ? { label: 'Review queue', href: '/customers?risk=high&status=new' }
+          ? { label: 'Open payout control', href: '/claims' }
           : { label: 'Complete setup', href: integrations },
         banner: null,
       };
@@ -130,78 +133,81 @@ export function buildKpis(
   state: MerchantSetupState,
   connection: ConnectionState,
   presence: MerchantDataPresence,
-  metrics: { reviewQueue: number | null; claimsNeedingAction: number; totalPackages: number },
+  metrics: {
+    reviewQueue: number | null;
+    claimsNeedingAction: number;
+    totalPackages: number;
+    recoveryOpen: number;
+    chaseDue: number;
+    amountRecovered: number;
+    payoutExposureOpen: number;
+    displayCurrency: string;
+  },
 ): Kpi[] {
   const s = presence.sources;
-  const customers: Kpi = {
-    label: state === 'csv_only' ? 'Imported customers' : 'Customers monitored',
-    value: fmt(s.customerProfiles),
-    hint: s.customerProfiles > 0 ? 'Profiles across all sources' : 'Appears once data syncs',
-    icon: Users,
+  const fmtMoney = (n: number) => (n <= 0 ? '—' : formatCurrency(n, metrics.displayCurrency));
+
+  const openExposure: Kpi = {
+    label: 'Open payout exposure',
+    value: fmtMoney(metrics.payoutExposureOpen),
+    hint: metrics.payoutExposureOpen > 0 ? 'On open support payout cases' : 'No open exposure',
+    icon: Headphones,
   };
-  const orders: Kpi = {
-    label: 'Orders synced',
-    value: fmt(s.shopifyOrderSignals || s.auditTransactions),
-    hint: s.shopifyOrderSignals > 0 ? 'From Shopify' : s.auditTransactions > 0 ? 'From imports' : undefined,
-    icon: ShoppingBag,
-  };
-  const identityMatches: Kpi = {
-    label: 'Identity matches',
-    value: metrics.reviewQueue === null ? 'Unavailable' : fmt(metrics.reviewQueue),
-    hint: 'High-confidence linked identities',
-    icon: Users,
-  };
-  const evidence: Kpi = {
-    label: 'Evidence ready',
-    value: fmt(metrics.totalPackages),
-    hint: 'For dispute documentation',
+  // Show the real open-case count whenever payout cases exist — even on a demo /
+  // disconnected account (Option A). Only fall back to "Missing" when there is
+  // genuinely no case data AND no helpdesk connection to produce it.
+  const hasClaimData = metrics.claimsNeedingAction > 0;
+  const openClaims: Kpi = {
+    label: 'Open payout cases',
+    value: connection.helpdesk || hasClaimData ? fmt(metrics.claimsNeedingAction) : 'Missing',
+    hint: connection.helpdesk || hasClaimData ? 'Awaiting decision or evidence' : 'Connect helpdesk',
+    incomplete: !connection.helpdesk && !hasClaimData,
     icon: ShieldCheck,
   };
-  const reviewQueue: Kpi = {
-    label: 'Profiles with signals',
-    value: metrics.reviewQueue === null ? 'Unavailable' : fmt(metrics.reviewQueue),
-    hint: 'Identity evidence available',
+  const recoveryOpen: Kpi = {
+    label: 'Recovery cases open',
+    value: fmt(metrics.recoveryOpen),
+    hint: 'Recoverable losses in progress',
+    icon: Activity,
+  };
+  const chaseDue: Kpi = {
+    label: 'Chase due',
+    value: fmt(metrics.chaseDue),
+    hint: 'Recovery cases needing follow-up',
     icon: Search,
   };
-  const claims: Kpi = {
-    label: 'Open claims',
-    value: connection.helpdesk ? fmt(metrics.claimsNeedingAction) : 'Missing',
-    hint: connection.helpdesk ? 'With identity evidence' : 'Connect helpdesk to add claim history',
-    incomplete: !connection.helpdesk,
-    icon: Headphones,
+  const recovered: Kpi = {
+    label: 'Amount recovered',
+    value: fmtMoney(metrics.amountRecovered),
+    hint: 'Paid recovery outcomes',
+    icon: ShoppingBag,
   };
   const syncHealth: Kpi = {
     label: 'Sync health',
     value: connection.bothConnected ? 'Healthy' : connection.neitherConnected ? 'Offline' : 'Partial',
-    hint: connection.bothConnected ? 'Both sources connected' : 'One source missing',
+    hint: connection.bothConnected ? 'Shopify + helpdesk connected' : 'One source missing',
     incomplete: !connection.bothConnected,
     icon: Activity,
   };
 
   switch (state) {
     case 'shopify_only_with_data':
-      return [customers, orders, identityMatches, claims, evidence];
+      return [openExposure, openClaims, recoveryOpen, chaseDue, syncHealth];
     case 'helpdesk_only_with_data':
-      return [
-        { label: 'Claims tracked', value: fmt(s.merchantClaims + s.supportCases), hint: 'From your helpdesk', icon: Headphones },
-        claims,
-        customers,
-        { label: 'Order context', value: 'Missing', hint: 'Connect Shopify to add orders', incomplete: true, icon: ShoppingBag },
-        evidence,
-      ];
+      return [openClaims, openExposure, recoveryOpen, { label: 'Order context', value: 'Missing', hint: 'Connect Shopify', incomplete: true, icon: ShoppingBag }, syncHealth];
     case 'csv_only':
       return [
-        customers,
-        reviewQueue,
-        { label: 'Matched orders', value: fmt(s.auditTransactions), hint: 'From imports', icon: ShoppingBag },
-        evidence,
+        { label: 'Legacy profiles', value: fmt(s.customerProfiles), hint: 'From imported history', icon: Users },
+        { label: 'Matched orders', value: fmt(s.auditTransactions), hint: 'Legacy import only', icon: ShoppingBag },
+        openClaims,
+        recoveryOpen,
         { label: 'Live monitoring', value: 'Off', hint: 'Connect Shopify & helpdesk', incomplete: true, icon: Activity },
       ];
     case 'stale_existing_data':
-      return [customers, identityMatches, orders, evidence, syncHealth];
+      return [openExposure, openClaims, recoveryOpen, recovered, syncHealth];
     case 'fully_connected_with_data':
     default:
-      return [customers, reviewQueue, claims, evidence, syncHealth];
+      return [openExposure, openClaims, recoveryOpen, chaseDue, recovered];
   }
 }
 
@@ -244,11 +250,11 @@ export async function countEvidence(
 ): Promise<{ total: number; ce3Eligible: number }> {
   const [{ count: total }, { count: ce3Eligible }] = await Promise.all([
     serviceClient
-      .from('evidence_packages' as never)
+      .from(TABLES.EVIDENCE_PACKAGES)
       .select('id', { count: 'exact', head: true })
       .eq('merchant_id', merchantId),
     serviceClient
-      .from('evidence_packages' as never)
+      .from(TABLES.EVIDENCE_PACKAGES)
       .select('id', { count: 'exact', head: true })
       .eq('merchant_id', merchantId)
       .eq('ce3_eligible', true),
@@ -261,9 +267,9 @@ export async function countClaimsNeedingAction(
   merchantId: string,
 ): Promise<number> {
   const { count } = await serviceClient
-    .from('merchant_claims' as never)
+    .from(TABLES.MERCHANT_CLAIMS)
     .select('id', { count: 'exact', head: true })
     .eq('merchant_id', merchantId)
-    .in('status', ['open', 'under_review', 'evidence_requested', 'pending', 'escalated']);
+    .in('status', [...ACTIVE_CLAIM_STATUSES]);
   return count ?? 0;
 }

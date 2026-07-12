@@ -1,105 +1,100 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/client';
-import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
-import foundation from '@/app/(public)/landing/_components/foundation/foundation.module.css';
+import { Input } from '@/components/ui/Input';
+import { PanelCard } from '@/components/ui';
+import { createClient } from '@/lib/supabase/client';
+import { AuthError, authButtonStyle, authInputClassName } from '../AuthShell';
+
+function mapResetError(message: string): string {
+  const lower = message.toLowerCase();
+  if (lower.includes('invalid')) return 'Enter a valid email address.';
+  return 'We could not send a reset link. Please try again.';
+}
 
 export default function ResetPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
+  const supabase = useMemo(() => createClient(), []);
 
-  const supabase = createClient();
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     setLoading(true);
     setError('');
 
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
       redirectTo: `${window.location.origin}/reset/update`,
     });
 
     setLoading(false);
 
     if (resetError) {
-      setError(resetError.message);
-    } else {
-      setSent(true);
+      setError(mapResetError(resetError.message));
+      return;
     }
+
+    setSent(true);
+  }
+
+  if (sent) {
+    return (
+      <PanelCard as="section" variant="app" className="p-6">
+        <h1 className="text-3xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">Check your email</h1>
+        <p className="mt-4 text-base leading-7 text-[var(--text-secondary)]">
+          We&apos;ve sent a reset link to <span className="font-medium text-[var(--text-primary)]">{email.trim()}</span>.
+          It may take a minute to arrive.
+        </p>
+        <Link href="/login" className="mt-8 inline-flex text-sm font-medium text-[var(--accent)] underline-offset-4 hover:underline">
+          Back to sign in
+        </Link>
+      </PanelCard>
+    );
   }
 
   return (
-    <div className="w-full max-w-[420px]">
-      <div className="mb-7">
-        <p className={foundation.landingSectionEyebrow}>Account recovery</p>
-        <h1 className={foundation.landingSectionTitle} style={{ marginTop: '0.75rem' }}>
-          Reset your password
-        </h1>
-      </div>
-      <Card variant="raised" density="relaxed">
-        {sent ? (
-          <div
-            className="rounded-[var(--radius-md)] border px-4 py-4"
-            style={{
-              background: 'var(--sev-clear-fill)',
-              borderColor: 'color-mix(in srgb, var(--sev-clear) 45%, transparent)',
-            }}
-          >
-            <p className="text-meta" style={{ color: 'var(--ink-secondary)' }}>
-              Check your inbox — we&apos;ve sent a reset link to <strong>{email}</strong>.
-            </p>
-            <p className="text-meta mt-3" style={{ color: 'var(--ink-secondary)' }}>
-              <Link href="/login" className="font-medium" style={{ color: 'var(--sev-clear)' }}>
-                Back to sign in
-              </Link>
-            </p>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="reset-email" className="text-meta mb-1.5 block" style={{ color: 'var(--ink-secondary)' }}>
-                Email address
-              </label>
-              <Input
-                id="reset-email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                placeholder="you@company.com"
-              />
-            </div>
+    <PanelCard as="section" variant="app" className="p-6">
+      <h1 className="text-3xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">Reset your password</h1>
+      <p className="mt-4 text-base leading-7 text-[var(--text-secondary)]">Enter your email and we&apos;ll send you a reset link.</p>
 
-            {error ? (
-              <p className="text-meta" style={{ color: 'var(--sev-definite)' }}>
-                {error}
-              </p>
-            ) : null}
+      <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
+        <div>
+          <label htmlFor="reset-email" className="mb-2 block text-sm font-medium text-[var(--text-secondary)]">
+            Email
+          </label>
+          <Input
+            id="reset-email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            required
+            aria-describedby={error ? 'reset-email-error' : undefined}
+            className={authInputClassName}
+            placeholder="you@company.com"
+          />
+          <AuthError id="reset-email-error">{error}</AuthError>
+        </div>
 
-            <Button
-              type="submit"
-              size="lg"
-              disabled={loading || !email}
-              loading={loading}
-              className="w-full"
-            >
-              {loading ? 'Sending…' : 'Send reset link'}
-            </Button>
+        <Button
+          type="submit"
+          size="lg"
+          loading={loading}
+          disabled={loading}
+          className="w-full justify-center"
+          style={authButtonStyle}
+        >
+          {loading ? 'Sending reset link' : 'Send reset link'}
+        </Button>
+      </form>
 
-            <div className="text-center">
-              <Link href="/login" className="text-meta" style={{ color: 'var(--ink-secondary)' }}>
-                Back to sign in
-              </Link>
-            </div>
-          </form>
-        )}
-      </Card>
-    </div>
+      <Link href="/login" className="mt-6 inline-flex text-sm font-medium text-[var(--accent)] underline-offset-4 hover:underline">
+        Back to sign in
+      </Link>
+    </PanelCard>
   );
 }

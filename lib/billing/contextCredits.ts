@@ -59,7 +59,6 @@ export const PLAN_CONTEXT_CREDITS: Record<Tier, number | null> = {
   free: planCreditsFromTierConfig('free'),
   pro: planCreditsFromTierConfig('pro'),
   growth: planCreditsFromTierConfig('growth'),
-  scale: planCreditsFromTierConfig('scale'),
   enterprise: planCreditsFromTierConfig('enterprise'),
 };
 

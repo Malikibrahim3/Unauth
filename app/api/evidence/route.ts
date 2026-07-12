@@ -96,7 +96,7 @@ async function POSTHandler(request: NextRequest) {
       ctx.merchantId,
       customerProfileId,
       disputedOrderId,
-      serviceRole as any,
+      serviceRole,
       ctx.userId
     )
     // Attach any merchant notes from the form
@@ -163,11 +163,11 @@ async function POSTHandler(request: NextRequest) {
       reference_number:         pkg.referenceNumber,
       pdf_storage_path:         uploadError ? null : storagePath,
       narrative_summary:        narrative,
-      signal_snapshot:          pkg.identityEvidence as any,
-      cross_merchant_indicator: pkg.crossMerchant.satisfied,
+      signal_snapshot:          pkg.identityEvidence,
+      cross_merchant_indicator: false,
       ce3_eligible:             pkg.ce3.eligible,
-      ce3_qualifying_signals:   pkg.ce3.qualifyingSignals as any,
-      ce3_prior_transactions:   pkg.ce3.priorTransactions as any,
+      ce3_qualifying_signals:   pkg.ce3.qualifyingSignals,
+      ce3_prior_transactions:   pkg.ce3.priorTransactions,
       merchant_notes:           pkg.merchantNotes ?? null,
     })
     .select('id')
@@ -213,7 +213,7 @@ async function POSTHandler(request: NextRequest) {
     ctx,
     action: 'generate_evidence',
     resourceType: 'evidence_package',
-    resourceId: (inserted as any).id,
+    resourceId: packageId,
     metadata: { customerProfileId, disputedOrderId, referenceNumber: pkg.referenceNumber },
     ip,
   })
@@ -227,7 +227,7 @@ async function POSTHandler(request: NextRequest) {
   })
 
   return NextResponse.json({
-    packageId:   (inserted as any).id,
+    packageId,
     referenceNumber: pkg.referenceNumber,
     hasPriorMatchEvidence: pkg.ce3.eligible,
   })

@@ -19,7 +19,7 @@ export const PRO_CONTEXT_CREDIT_TOP_UP: ContextCreditTopUpOffer = {
   tier: 'pro',
   priceGbp: TOP_UP_PRICE_GBP,
   credits: TOP_UP_CREDITS,
-  label: `£${TOP_UP_PRICE_GBP} for ${TOP_UP_CREDITS} credits`,
+  label: `$${TOP_UP_PRICE_GBP} for ${TOP_UP_CREDITS} credits`,
   settingsPath: '/settings/billing',
 };
 

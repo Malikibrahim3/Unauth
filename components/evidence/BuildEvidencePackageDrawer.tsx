@@ -33,8 +33,9 @@ export function BuildEvidencePackageDrawer({
         showIntro={false}
         onCancel={onClose}
         onSuccess={(packageId) => {
+          void packageId;
           onClose();
-          router.push(`/chargebacks/${packageId}`);
+          router.push('/claims');
         }}
       />
     </Drawer>

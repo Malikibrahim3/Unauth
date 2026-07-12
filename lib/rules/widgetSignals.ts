@@ -2,15 +2,16 @@
  * lib/rules/widgetSignals.ts
  *
  * Maps the Gorgias widget's resolved claim context (ClaimWidgetData) into the
- * IdentitySignals shape the rules engine consumes.
+ * merchant-local signal shape the rules engine consumes.
  *
  * Some signals are not available in the widget context (order value, account
- * age, manual network flags). These map to neutral defaults (null / 0 / false)
- * so a condition referencing them simply does not match rather than throwing.
+ * age). These map to neutral defaults (null / 0 / false) so a condition
+ * referencing them simply does not match rather than throwing.
+ *
  */
 
 import type { ClaimWidgetData } from '@/lib/gorgias/widgetData';
-import type { ConfidenceGrade, IdentitySignals } from '@/lib/rules-engine';
+import type { IdentitySignals } from '@/lib/rules-engine';
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
@@ -31,22 +32,13 @@ export function widgetDataToSignals(
   data: ClaimWidgetData,
   nowMs: number = Date.now(),
 ): IdentitySignals {
-  const network = data.network;
-  const lastClaimAt = mostRecent(data.thisStore.lastClaimAt, network?.lastClaimAt ?? null);
+  const lastClaimAt = data.thisStore.lastClaimAt;
 
   return {
-    confidence_grade: (data.confidenceGrade ?? 'weak') as ConfidenceGrade,
-    network_claim_count: network?.claimCount ?? 0,
     merchant_claim_count: data.thisStore.claimCount,
     days_since_last_claim: daysSince(lastClaimAt, nowMs),
-    has_cross_merchant_identity: network ? network.merchantCount > 1 : false,
-    network_merchant_count: network?.merchantCount ?? 0,
-    // Canonical claim_type taxonomy is not surfaced in the widget context yet.
-    claim_types: [],
-    // Order value + account age are not resolved in the widget path.
+    claim_types: data.claimTypes,
     order_value_usd: null,
     account_age_days: null,
-    // No manual network-flag source in the widget context.
-    is_network_flagged: false,
   };
 }

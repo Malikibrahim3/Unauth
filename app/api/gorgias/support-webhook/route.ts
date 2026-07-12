@@ -15,6 +15,59 @@ import { nudgeGorgiasTicketWidgetRefreshBestEffort } from '@/lib/support/gorgias
 import { logGorgiasWebhookResult } from '@/lib/support/intake/webhookLog';
 import { enforceRateLimit, getClientIp, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
 import { createServiceClient } from '@/lib/supabase/server';
+import { evaluatePublicGate } from '@/lib/claim-gate/publicGate';
+import { resolveGorgiasTicketCustomerEmail } from '@/lib/support/gorgias/ticketCustomerEmail';
+import { matchOrder } from '@/lib/relationships/matchOrder';
+import type { SupabaseClient } from '@supabase/supabase-js';
+
+type GateOrderReference = {
+  id: string;
+  external_id: string;
+  order_number: string | null;
+  placed_at: string | null;
+  ingested_at: string | null;
+};
+
+export async function resolveUnambiguousEmailOrder(
+  client: SupabaseClient,
+  merchantId: string,
+  email: string,
+): Promise<GateOrderReference | null> {
+  // Route through the shared matcher so email → order matching is consistent
+  // everywhere. An email that matches several orders is `ambiguous` and yields
+  // no auto-anchor (§8 — never silently pick one). Only a single match anchors.
+  const result = await matchOrder(client, { merchantId, email });
+  if (result.status === 'ambiguous' || result.candidates.length !== 1) return null;
+  const orderId = result.candidates[0].entityId;
+
+  const { data, error } = await client
+    .from('source_orders')
+    .select('id,external_id,order_number,placed_at,ingested_at')
+    .eq('merchant_id', merchantId)
+    .eq('id', orderId)
+    .maybeSingle();
+  if (error) throw new Error(`gorgias_email_order_lookup_failed: ${error.message}`);
+  return (data as GateOrderReference | null) ?? null;
+}
+
+// Map a support-classified claim type to a claim-gate type. Returns null for
+// anything we can't confidently map, so the caller SKIPS auto gate-evaluation
+// and leaves the ticket for manual review — instead of silently forcing every
+// unrecognised claim into `item_not_received`.
+function gateClaimTypeFromSupport(value: string | null): string | null {
+  switch (value) {
+    case 'INR':
+      return 'item_not_received';
+    case 'damaged':
+      return 'damaged_item';
+    case 'wrong_item':
+      return 'wrong_item';
+    case 'not_as_described':
+      return 'missing_item';
+    default:
+      return null;
+  }
+}
 
 function safeWebhookRejectionContext(request: NextRequest, body: unknown): Record<string, unknown> {
   let ticket: Record<string, unknown> | null = null;
@@ -112,11 +165,63 @@ export async function POST(request: NextRequest) {
       is_claim: result.is_claim,
       claim_type: result.claim_type,
     });
+    const gateClaimType = gateClaimTypeFromSupport(result.claim_type);
+    const serviceClient = createServiceClient();
+    let gateOrderId = result.shopify_order_id;
+    let gateOrderName = result.order_ref;
+    if (result.is_claim && gateClaimType && !gateOrderId && !gateOrderName) {
+      const ticket = extractGorgiasTicketPayload(body);
+      const customerEmail = resolveGorgiasTicketCustomerEmail(ticket)?.normEmail ?? null;
+      if (customerEmail) {
+        try {
+          const emailOrder = await resolveUnambiguousEmailOrder(
+            serviceClient,
+            result.merchant_id,
+            customerEmail,
+          );
+          gateOrderId = emailOrder?.id ?? null;
+          gateOrderName = emailOrder?.order_number ?? emailOrder?.external_id ?? null;
+        } catch (lookupError) {
+          console.warn('Gorgias email order fallback skipped', {
+            merchant_id: result.merchant_id,
+            external_case_id: result.external_case_id,
+            message: lookupError instanceof Error ? lookupError.message : String(lookupError),
+          });
+        }
+      }
+    }
+    if (result.is_claim && gateClaimType && (gateOrderName || gateOrderId)) {
+      try {
+        await evaluatePublicGate({
+          client: serviceClient,
+          payload: {
+            merchantId: result.merchant_id,
+            platform: 'gorgias',
+            ticket_id: result.external_case_id,
+            order_id: gateOrderId,
+            order_name: gateOrderName,
+            claim_type: gateClaimType,
+            customer_message: result.claim_reason ?? 'Gorgias ticket matched a post-purchase claim pattern.',
+            requested_action: result.requested_action ?? 'unknown',
+            idempotency_key: `gorgias:${result.external_case_id}`,
+            source: 'gorgias_webhook',
+            apply_gorgias_hold: true,
+            force_existing_evaluation: true,
+          },
+        });
+      } catch (gateError) {
+        console.warn('Gorgias gate auto-evaluation skipped', {
+          merchant_id: result.merchant_id,
+          external_case_id: result.external_case_id,
+          message: gateError instanceof Error ? gateError.message : String(gateError),
+        });
+      }
+    }
     // Widget refresh nudge is best-effort: credential or API failures here
     // must never fail a webhook that already ingested successfully.
     try {
       const access = await getActiveGorgiasMerchantApiAccess(
-        createServiceClient(),
+        serviceClient,
         result.merchant_id
       );
       if (access) {

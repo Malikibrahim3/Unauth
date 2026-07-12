@@ -68,11 +68,6 @@ export function SidebarAside({
             onClick={onCloseMobile}
           >
             <UnauthLogo variant="auto" size={isCollapsed ? 9 : 22} />
-            {!isCollapsed && (
-              <span className="text-[15px] font-semibold text-[var(--text-primary)] leading-none">
-                Unauth
-              </span>
-            )}
           </Link>
           {!isCollapsed && (
             <button
@@ -111,7 +106,7 @@ export function SidebarAside({
               color: 'var(--warning)',
               border: '1px solid color-mix(in srgb, var(--warning) 25%, transparent)',
             }}
-            title="Setup incomplete — click to connect"
+            title="Connect your store and helpdesk to go live"
           >
             <span
               className="h-1.5 w-1.5 rounded-full shrink-0"
@@ -120,7 +115,7 @@ export function SidebarAside({
             />
             <span className="truncate">
               {!shopifyConnected && !helpdeskConnected
-                ? 'Setup incomplete'
+                ? 'Connect sources'
                 : !helpdeskConnected
                   ? 'Helpdesk not connected'
                   : 'Store not connected'}

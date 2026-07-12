@@ -1,11 +1,11 @@
 /**
  * lib/rules-engine.ts
  *
- * Merchant-configurable fraud rules engine.
+ * Merchant-configurable claim review rules engine.
  *
  * Unauth never makes its own judgment. The recommendation returned here is
- * purely the output of the merchant's own rules applied to Unauth's identity
- * signals. The merchant owns the decision. Unauth runs the math.
+ * purely the output of the merchant's own rules applied to the claim evidence
+ * and the merchant's own history. The merchant owns the decision.
  *
  * This module is pure (no IO). Persistence + auth live in lib/rules/store.ts;
  * the field/operator catalogue used for validation + UI lives in
@@ -35,19 +35,19 @@ export interface MerchantRule {
   condition_operator: ConditionOperator;
 }
 
-/** The resolved identity signals passed into the engine. */
+export type EvidenceLevel = 'minimal' | 'some' | 'substantial' | 'extensive';
+
+/** Merchant-local claim review signals passed into the engine. */
 export interface IdentitySignals {
-  confidence_grade: ConfidenceGrade;
-  network_claim_count: number;
   merchant_claim_count: number;
   days_since_last_claim: number | null;
-  has_cross_merchant_identity: boolean;
-  network_merchant_count: number;
   claim_types: string[];
   order_value_usd: number | null;
   account_age_days: number | null;
-  is_network_flagged: boolean;
 }
+
+/** Signals may include claim-specific extensions; engine reads by field name. */
+export type RuleSignals = IdentitySignals;
 
 export interface MatchedCondition extends RuleCondition {
   actual_value: unknown;
@@ -68,16 +68,43 @@ export interface RuleEvaluationResult {
 // ---------------------------------------------------------------------------
 
 export const FIELD_LABELS: Record<string, string> = {
-  confidence_grade: 'identity confidence',
-  network_claim_count: 'cross-network claim count',
-  merchant_claim_count: 'claim count at this store',
+  merchant_claim_count: 'claim count at this store (includes current claim)',
+  merchant_prior_claim_count: 'prior claims at this store (excludes current)',
   days_since_last_claim: 'days since last claim',
-  has_cross_merchant_identity: 'cross-merchant identity match',
-  network_merchant_count: 'number of merchants claimed at',
   claim_types: 'claim types',
   order_value_usd: 'order value',
   account_age_days: 'account age (days)',
-  is_network_flagged: 'network flag status',
+  is_network_flagged: 'identity is on the network watchlist',
+  // Current claim
+  claim_type: 'claim type',
+  amount_at_risk: 'amount at risk',
+  ticket_claim_type_confidence: 'ticket claim-type confidence',
+  // Delivery
+  delivery_status: 'delivery status',
+  days_since_delivery: 'days since delivery',
+  has_tracking: 'has tracking',
+  has_proof_of_delivery: 'has proof of delivery',
+  // Evidence on this claim
+  has_customer_evidence: 'has customer evidence',
+  evidence_items_count: 'evidence items on claim',
+  // Outcome history
+  merchant_same_type_claim_count: 'same-type claims at this store (includes current)',
+  merchant_prior_same_type_claim_count: 'prior same-type claims (excludes current)',
+  prior_approved_claims: 'prior approved claims',
+  prior_denied_claims: 'prior denied claims',
+  prior_escalated_claims: 'prior escalated claims',
+  prior_chargebacks_after_claims: 'prior chargebacks',
+  prior_loss_outcomes: 'prior loss outcomes',
+  prior_recovered_outcomes: 'prior recovered outcomes',
+  // Payout & recovery
+  total_estimated_loss: 'total estimated loss',
+  above_review_threshold: 'above merchant review threshold',
+  requested_action: 'requested action',
+  loss_attribution: 'loss attribution (advisory)',
+  loss_attribution_confidence: 'loss attribution confidence',
+  recoverability: 'recoverability',
+  likely_owner: 'likely loss owner',
+  evidence_strength: 'evidence strength',
 };
 
 export const OPERATOR_LABELS: Record<string, string> = {
@@ -99,13 +126,24 @@ export const OPERATOR_LABELS: Record<string, string> = {
 // ---------------------------------------------------------------------------
 
 export function evaluateRules(
-  signals: IdentitySignals,
+  signals: RuleSignals,
   rules: MerchantRule[],
 ): RuleEvaluationResult {
   // Sort by priority ascending (lower number = higher priority).
   const sorted = [...rules]
     .filter((r) => r.is_active)
     .sort((a, b) => a.priority - b.priority);
+
+  if (sorted.length === 0) {
+    return {
+      recommendation: 'no_match',
+      rule_id: null,
+      rule_name: null,
+      matched_conditions: [],
+      justification: 'No active claim review rules are configured.',
+      justification_lines: [],
+    };
+  }
 
   for (const rule of sorted) {
     const matched = evaluateRule(signals, rule);
@@ -128,12 +166,12 @@ export function evaluateRules(
     rule_id: null,
     rule_name: null,
     matched_conditions: [],
-    justification: 'No rules matched for this identity.',
+    justification: 'No claim review rules matched.',
     justification_lines: [],
   };
 }
 
-function evaluateRule(signals: IdentitySignals, rule: MerchantRule): MatchedCondition[] {
+function evaluateRule(signals: RuleSignals, rule: MerchantRule): MatchedCondition[] {
   const results: Array<MatchedCondition | null> = rule.conditions.map((condition) => {
     const actual = getSignalValue(signals, condition.field);
     const passes = evaluateCondition(condition, actual);
@@ -149,9 +187,10 @@ function evaluateRule(signals: IdentitySignals, rule: MerchantRule): MatchedCond
   return passed.length > 0 ? passed : [];
 }
 
-function getSignalValue(signals: IdentitySignals, field: string): unknown {
-  if (!Object.prototype.hasOwnProperty.call(signals, field)) return null;
-  return signals[field as keyof IdentitySignals] ?? null;
+function getSignalValue(signals: RuleSignals, field: string): unknown {
+  const bag = signals as IdentitySignals & Record<string, unknown>;
+  if (!Object.prototype.hasOwnProperty.call(bag, field)) return null;
+  return bag[field];
 }
 
 function isNumber(value: unknown): value is number {

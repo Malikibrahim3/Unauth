@@ -3,19 +3,75 @@ import { canRehydrateMerchantFromAuth } from '@/lib/account/ensureMerchantContex
 
 describe('shouldRequireOnboarding', () => {
   it('requires onboarding when there is no merchant context', () => {
-    expect(shouldRequireOnboarding({ hasMerchantContext: false, setupComplete: true, auditRunCount: 3 })).toBe(true);
+    expect(
+      shouldRequireOnboarding({
+        hasMerchantContext: false,
+        setupComplete: true,
+        auditRunCount: 3,
+        shopifyConnected: true,
+        helpdeskConnected: true,
+      }),
+    ).toBe(true);
   });
 
-  it('does not require onboarding for completed merchant setup', () => {
-    expect(shouldRequireOnboarding({ hasMerchantContext: true, setupComplete: true, auditRunCount: 0 })).toBe(false);
+  it('does not require onboarding for completed merchant setup with both connections', () => {
+    expect(
+      shouldRequireOnboarding({
+        hasMerchantContext: true,
+        setupComplete: true,
+        auditRunCount: 0,
+        shopifyConnected: true,
+        helpdeskConnected: true,
+      }),
+    ).toBe(false);
   });
 
   it('does not treat merchants with existing audit history as new users', () => {
-    expect(shouldRequireOnboarding({ hasMerchantContext: true, setupComplete: false, auditRunCount: 1 })).toBe(false);
+    expect(
+      shouldRequireOnboarding({
+        hasMerchantContext: true,
+        setupComplete: false,
+        auditRunCount: 1,
+        shopifyConnected: true,
+        helpdeskConnected: true,
+      }),
+    ).toBe(false);
   });
 
   it('requires onboarding only for merchants with incomplete setup and no audit history', () => {
-    expect(shouldRequireOnboarding({ hasMerchantContext: true, setupComplete: false, auditRunCount: 0 })).toBe(true);
+    expect(
+      shouldRequireOnboarding({
+        hasMerchantContext: true,
+        setupComplete: false,
+        auditRunCount: 0,
+        shopifyConnected: true,
+        helpdeskConnected: true,
+      }),
+    ).toBe(true);
+  });
+
+  it('requires onboarding when Shopify is not connected, even with setup complete', () => {
+    expect(
+      shouldRequireOnboarding({
+        hasMerchantContext: true,
+        setupComplete: true,
+        auditRunCount: 5,
+        shopifyConnected: false,
+        helpdeskConnected: true,
+      }),
+    ).toBe(true);
+  });
+
+  it('requires onboarding when no helpdesk is connected, even with setup complete', () => {
+    expect(
+      shouldRequireOnboarding({
+        hasMerchantContext: true,
+        setupComplete: true,
+        auditRunCount: 5,
+        shopifyConnected: true,
+        helpdeskConnected: false,
+      }),
+    ).toBe(true);
   });
 });
 

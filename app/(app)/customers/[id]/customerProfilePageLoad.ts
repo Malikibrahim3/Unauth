@@ -23,6 +23,8 @@ import {
 } from '@/lib/customers/identityNetwork';
 import { getEventStream } from '@/lib/analysis/customerIntelligence';
 import type { BehaviorRoadmapEvent } from '@/components/customers/BehaviorRoadmap';
+import type { EvidenceLevel, ScoreFactor } from '@/lib/engine/evidence/score';
+import type { ConfidenceGrade } from '@/lib/engine/weights';
 
 export type CustomerProfileSearchParams = {
   audit?: string;
@@ -86,6 +88,16 @@ export type MerchantSignalPill = {
   claimType: string;
 };
 
+/** Cached network evidence score for the customer profile badge (service-role fetch). */
+export type CustomerEvidenceDisplay = {
+  evidence_disclosed: boolean;
+  evidence_score: number;
+  evidence_level: EvidenceLevel;
+  has_sufficient_data: boolean;
+  score_breakdown: ScoreFactor[];
+  confidence_grade: ConfidenceGrade | null;
+};
+
 export type ClaimSummaryRow = {
   id: string;
   claim_type: string;
@@ -140,6 +152,7 @@ export type CustomerProfilePageViewProps = {
   openClaimCount: number;
   latestClaim: ClaimSummaryRow | null;
   merchantRefundRate: number;
+  evidenceDisplay: CustomerEvidenceDisplay | null;
 };
 
 type SourceCustomerRow = {
@@ -333,7 +346,7 @@ export async function loadCustomerProfilePage(
   let claimRows: ClaimRow[] = [];
   if (orderIds.length > 0) {
     const { data } = await svc
-      .from('claims')
+      .from(TABLES.MERCHANT_CLAIMS)
       .select('id, claim_type, status, source_order_id, reason_normalized, reason_raw, submitted_at, created_at, updated_at')
       .eq('merchant_id', merchantId)
       .in('source_order_id', orderIds)
@@ -367,6 +380,43 @@ export async function loadCustomerProfilePage(
       .eq('identity_id', identityId)
       .maybeSingle() as unknown as { data: { investigation_status: string } | null };
     investigationStatus = stateRow?.investigation_status;
+  }
+
+  // Network evidence score (service-role table; disclosed only when k-anon RPC matched).
+  let evidenceDisplay: CustomerEvidenceDisplay | null = null;
+  if (network) {
+    const { data: evidenceRow } = await svc
+      .from(TABLES.IDENTITY_EVIDENCE_SCORES)
+      .select('evidence_score, evidence_level, has_sufficient_data, score_breakdown')
+      .eq('identity_id', network.identityId)
+      .maybeSingle() as unknown as {
+        data: {
+          evidence_score: number;
+          evidence_level: string;
+          has_sufficient_data: boolean;
+          score_breakdown: unknown;
+        } | null;
+      };
+
+    evidenceDisplay = {
+      evidence_disclosed: true,
+      evidence_score: Number(evidenceRow?.evidence_score ?? 0),
+      evidence_level: (evidenceRow?.evidence_level ?? 'minimal') as EvidenceLevel,
+      has_sufficient_data: Boolean(evidenceRow?.has_sufficient_data),
+      score_breakdown: Array.isArray(evidenceRow?.score_breakdown)
+        ? (evidenceRow.score_breakdown as ScoreFactor[])
+        : [],
+      confidence_grade: network.confidenceGrade,
+    };
+  } else if (identityId || identifierHashes.length > 0) {
+    evidenceDisplay = {
+      evidence_disclosed: false,
+      evidence_score: 0,
+      evidence_level: 'minimal',
+      has_sufficient_data: false,
+      score_breakdown: [],
+      confidence_grade: null,
+    };
   }
 
   // ---------------------------------------------------------------------------
@@ -657,6 +707,7 @@ export async function loadCustomerProfilePage(
     openClaimCount,
     latestClaim,
     merchantRefundRate,
+    evidenceDisplay,
   };
 
   return { blocked: false, props };

@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
-import { loadClaimForMerchant, updateClaimSnooze } from '@/lib/claims/access';
-import { appendClaimEvent } from '@/lib/claims/events';
+import { loadClaimForMerchant } from '@/lib/claims/access';
+import { CaseVersionConflictError, transitionCase } from '@/lib/cases/transitionCase';
 
 const snoozeSchema = z.object({
   snoozed_until: z.string().datetime().nullable(),
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const serviceClient = createServiceClient();
-  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.SUBMIT_FRAUD_FEEDBACK);
+  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.SUBMIT_PAYOUT_DECISIONS);
   if (denied) return denied;
 
   const { claimId } = await params;
@@ -30,32 +30,29 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const claim = loaded.claim!;
   try {
-    const updated = await updateClaimSnooze(
-      serviceClient,
-      claim,
-      ctx.merchantId,
-      parsed.data.snoozed_until,
-      parsed.data.snoozed_until ? parsed.data.reason ?? null : null,
-    );
-    await appendClaimEvent(serviceClient, {
-      claim_id: claimId,
-      merchant_id: ctx.merchantId,
-      event_type: parsed.data.snoozed_until ? 'claim_snoozed' : 'claim_unsnoozed',
-      previous_status: claim.status,
-      new_status: updated.status ?? claim.status,
-      note: parsed.data.reason ?? null,
-      actor_user_id: user.id,
-      metadata: { snoozed_until: parsed.data.snoozed_until },
+    const snoozed = parsed.data.snoozed_until !== null;
+    const updated = await transitionCase(serviceClient, {
+      merchantId: ctx.merchantId,
+      caseId: claimId,
+      expectedVersion: claim.state_version ?? 1,
+      patch: snoozed ? { status: 'pending' } : {},
+      attributes: { snoozedUntil: parsed.data.snoozed_until },
+      reason: parsed.data.reason ?? null,
+      actorUserId: user.id,
+      eventType: 'case.updated',
+      claimEventType: snoozed ? 'claim_snoozed' : 'claim_unsnoozed',
+      eventPayload: { snoozed_until: parsed.data.snoozed_until },
+      allowSnooze: snoozed,
     });
     return NextResponse.json({
       claim: {
         id: claimId,
-        status: updated.status ?? claim.status,
-        snoozed_until: updated.snoozed_until ?? null,
-        snooze_reason: updated.snooze_reason ?? null,
+        status: updated.status,
+        snoozed_until: parsed.data.snoozed_until,
       },
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof CaseVersionConflictError) return NextResponse.json({ error: 'Case was updated by another user. Refresh and try again.' }, { status: 409 });
     return NextResponse.json({ error: 'Failed to update snooze' }, { status: 500 });
   }
 }

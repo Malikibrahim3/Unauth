@@ -36,4 +36,24 @@ describe('claim status machine', () => {
     expect(canTransitionClaimStatus('escalated', 'resolved_won')).toBe(true);
     expect(canTransitionClaimStatus('open', 'voided')).toBe(true);
   });
+
+  it('allows forward progress through the v2 payout pipeline', () => {
+    expect(canTransitionClaimStatus('open', 'manual_review')).toBe(true);
+    expect(canTransitionClaimStatus('new', 'evidence_needed')).toBe(true);
+    expect(canTransitionClaimStatus('evidence_needed', 'awaiting_carrier_response')).toBe(true);
+    expect(canTransitionClaimStatus('ready_for_decision', 'decision_recorded')).toBe(true);
+    expect(canTransitionClaimStatus('manual_review', 'recovery_opened')).toBe(true);
+    expect(canTransitionClaimStatus('open', 'resolved_refunded')).toBe(true);
+  });
+
+  it('blocks transitions back to the pending entry state', () => {
+    expect(canTransitionClaimStatus('manual_review', 'pending')).toBe(false);
+    expect(canTransitionClaimStatus('ready_for_decision', 'pending')).toBe(false);
+  });
+
+  it('treats final statuses as terminal except void or explicit reopen', () => {
+    expect(canTransitionClaimStatus('closed', 'manual_review')).toBe(false);
+    expect(canTransitionClaimStatus('resolved_refunded', 'voided')).toBe(true);
+    expect(canTransitionClaimStatus('recovery_opened', 'closed')).toBe(true);
+  });
 });

@@ -2,8 +2,7 @@
 # Full teardown of v2 test-suite data. Append-only triggers are disabled inside
 # a single transaction strictly to remove suite-created rows, then re-enabled.
 set -euo pipefail
-DB="postgresql://postgres.lquvbikyvmbjbfffrlky@aws-0-eu-west-1.pooler.supabase.com:6543/postgres"
-export PGPASSWORD='Boyo19961996!uuu'
+source "$(dirname "$0")/db-env.sh"
 cd "$(dirname "$0")/../.."
 S=scripts/v2-tests/state.json
 python3 -c "

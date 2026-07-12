@@ -77,7 +77,7 @@ export default function NextUpPanel({ claims, inboxCount }: NextUpPanelProps) {
             return (
               <Link
                 key={claim.id}
-                href={`/customers/${claim.customerId}/claims?claimId=${claim.id}`}
+                href={`/claims/${claim.id}`}
                 className="grid grid-cols-1 gap-3 border-b px-4 py-3 transition-colors hover:bg-[var(--surface-hover)] md:grid-cols-[minmax(0,1.4fr)_auto_auto]"
                 style={{ borderColor: 'var(--border-muted)' }}
               >

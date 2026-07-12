@@ -15,6 +15,37 @@ function parseNextLink(linkHeader: string | null): string | null {
   return null;
 }
 
+function retryAfterMs(value: string | null): number | null {
+  if (!value?.trim()) return null;
+  const seconds = Number(value);
+  if (Number.isFinite(seconds) && seconds >= 0) return seconds * 1000;
+  const dateMs = Date.parse(value);
+  if (!Number.isNaN(dateMs)) return Math.max(0, dateMs - Date.now());
+  return null;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+const MAX_RATE_LIMIT_RETRIES = 6;
+
+async function fetchWithRateLimitRetry(url: string, accessToken: string): Promise<Response> {
+  let res: Response;
+  for (let attempt = 0; ; attempt += 1) {
+    res = await fetch(url, {
+      headers: {
+        'X-Shopify-Access-Token': accessToken,
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-store',
+    });
+
+    if (res.status !== 429 || attempt >= MAX_RATE_LIMIT_RETRIES) return res;
+    await sleep(retryAfterMs(res.headers.get('retry-after')) ?? 2 ** attempt * 500);
+  }
+}
+
 async function fetchAllPages<T>(
   firstUrl: string,
   accessToken: string,
@@ -26,13 +57,7 @@ async function fetchAllPages<T>(
 
   while (nextUrl) {
     pages += 1;
-    const res = await fetch(nextUrl, {
-      headers: {
-        'X-Shopify-Access-Token': accessToken,
-        'Content-Type': 'application/json',
-      },
-      cache: 'no-store',
-    });
+    const res = await fetchWithRateLimitRetry(nextUrl, accessToken);
 
     if (!res.ok) {
       const body = await res.text();

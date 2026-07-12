@@ -1,0 +1,32 @@
+{
+  "description": "Two paid orders share one email with no order reference on the ticket. The matcher must return an ambiguous candidate set (never silently pick the newest).",
+  "ticket": {
+    "external_id": "TICKET-9100",
+    "customer_email": "jordan@example.com",
+    "order_reference": null,
+    "opened_at": "2026-07-15T09:00:00Z"
+  },
+  "orders": [
+    {
+      "external_id": "ORDER-2001",
+      "order_number": "2001",
+      "email": "jordan@example.com",
+      "total_minor": 5000,
+      "currency": "GBP",
+      "placed_at": "2026-07-01T10:00:00Z"
+    },
+    {
+      "external_id": "ORDER-2002",
+      "order_number": "2002",
+      "email": "jordan@example.com",
+      "total_minor": 12000,
+      "currency": "GBP",
+      "placed_at": "2026-07-14T10:00:00Z"
+    }
+  ],
+  "expected": {
+    "match_status": "ambiguous",
+    "candidate_external_ids": ["ORDER-2001", "ORDER-2002"],
+    "auto_linked": false
+  }
+}

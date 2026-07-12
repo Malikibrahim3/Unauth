@@ -68,10 +68,11 @@ export function CustomerProfilePageView(props: CustomerProfilePageViewProps) {
     openClaimCount,
     latestClaim,
     merchantRefundRate,
+    evidenceDisplay,
   } = props;
 
   return (
-    <PageConnectionGate requires="both" connection={connectionState} pageName="Customer profile" pageDescription="This profile shows order patterns and identity signals from Shopify, but claim data comes from your helpdesk. An incomplete profile can be misleading — you may see orders with no claim history, not because the customer is clean, but because claim data isn't syncing yet." hasData={true}>
+    <PageConnectionGate requires="both" connection={connectionState} pageName="Customer payout history" pageDescription="This profile shows customer order history and linked support payout cases from merchant-owned sources. An incomplete profile can be misleading - you may see orders with no case history when helpdesk data is not syncing yet." hasData={true}>
     <div className="mx-auto max-w-7xl px-3 py-5 sm:px-5">
       <CustomerProfilePageHero
         auditRunId={auditRunId}
@@ -97,6 +98,7 @@ export function CustomerProfilePageView(props: CustomerProfilePageViewProps) {
         identitySignalRows={identitySignalRows}
         gorgiasSource={gorgiasSource}
         gorgiasTicketId={gorgiasTicketId}
+        evidenceDisplay={evidenceDisplay}
       />
 
       {/*

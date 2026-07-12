@@ -5,6 +5,7 @@ import { withRequestLogging } from '@/lib/log';
 import { getConnectionState } from '@/lib/connections/getConnectionState';
 import { backfillGorgiasSupportCases } from '@/lib/support/gorgias/backfill';
 import { getMerchantGorgiasSupportConnection } from '@/lib/support/gorgias/settingsConnection';
+import { reconcilePayoutCasesFromTickets } from '@/lib/support/intake/reconcilePayoutCasesFromTickets';
 
 /** Allow large helpdesk backfills on Vercel (same pattern as Shopify sync-audit). */
 export const maxDuration = 300;
@@ -33,7 +34,11 @@ async function POSTHandler() {
       providerConnectionId: connection.id,
       shopDomain: orderSource.orderSourceStoreKey,
     });
-    return NextResponse.json({ ok: true, ...result });
+    const bridge = await reconcilePayoutCasesFromTickets({
+      supabase: service,
+      merchantId: ctx.merchantId,
+    });
+    return NextResponse.json({ ok: true, ...result, payout_case_bridge: bridge });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'gorgias_backfill_failed';
     return NextResponse.json({ error: message }, { status: 500 });

@@ -1,0 +1,49 @@
+/**
+ * Data-freshness indicator for source-derived records. Classifies how recently a
+ * record was synced from its source system so stale evidence is visible rather
+ * than silently trusted.
+ */
+export type FreshnessState = 'current' | 'stale' | 'unknown';
+
+const STALE_AFTER_MS = 24 * 60 * 60 * 1000; // 24h
+
+export function freshnessFromTimestamp(
+  lastSyncedAt: string | null | undefined,
+  nowMs: number,
+): FreshnessState {
+  if (!lastSyncedAt) return 'unknown';
+  const synced = Date.parse(lastSyncedAt);
+  if (Number.isNaN(synced)) return 'unknown';
+  return nowMs - synced > STALE_AFTER_MS ? 'stale' : 'current';
+}
+
+const STYLES: Record<FreshnessState, { color: string; label: string }> = {
+  current: { color: 'var(--success, #16a34a)', label: 'Up to date' },
+  stale: { color: 'var(--warning, #d97706)', label: 'Stale' },
+  unknown: { color: 'var(--text-tertiary, #9ca3af)', label: 'Unknown' },
+};
+
+export function FreshnessIndicator({
+  state,
+  label,
+  className,
+}: {
+  state: FreshnessState;
+  label?: string;
+  className?: string;
+}) {
+  const style = STYLES[state];
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 text-[11px] ${className ?? ''}`}
+      style={{ color: 'var(--text-tertiary)' }}
+      title={`Data freshness: ${style.label}`}
+    >
+      <span
+        aria-hidden
+        style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: style.color, display: 'inline-block' }}
+      />
+      {label ?? style.label}
+    </span>
+  );
+}

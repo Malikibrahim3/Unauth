@@ -4,15 +4,10 @@ import { useMemo } from 'react';
 import CaseSummaryStrip from '@/components/customers/CaseSummaryStrip';
 import { CustomerIntelligenceDrawerCaseCard } from '@/components/customers/CustomerIntelligenceDrawerCaseCard';
 import {
-  CustomerIntelligenceDrawerEvidenceCta,
   CustomerIntelligenceDrawerNarrativeSection,
   CustomerIntelligenceDrawerNotesSection,
-  CustomerIntelligenceDrawerStoredIdentity,
 } from '@/components/customers/CustomerIntelligenceDrawerFooter';
-import { getDrawerFooterProps } from '@/components/customers/customerIntelligenceDrawerUtils';
 import { CustomerIntelligenceDrawerHistorySection } from '@/components/customers/CustomerIntelligenceDrawerHistorySection';
-import { CustomerIntelligenceDrawerIdentitySection } from '@/components/customers/CustomerIntelligenceDrawerIdentitySection';
-import { CustomerIntelligenceDrawerReviewStatus } from '@/components/customers/CustomerIntelligenceDrawerReviewStatus';
 import { StatTile } from '@/components/customers/CustomerIntelligenceDrawerPrimitives';
 import { CustomerIntelligenceDrawerVerdict } from '@/components/customers/CustomerIntelligenceDrawerVerdict';
 import type { DrawerProfile } from '@/components/customers/customerIntelligenceDrawerUtils';
@@ -32,7 +27,6 @@ export function CustomerIntelligenceDrawerContent({
 }) {
   const { profile, orderHistory, identityTimeline, linkedAccounts, narrative } = panel;
   const drawerProfile = profile as DrawerProfile;
-  const variantCount = identityTimeline.filter((e) => e.isVariant).length;
   const totalOrderValue =
     Number(drawerProfile.commerce_total_value ?? 0) ||
     orderHistory.reduce((sum, o) => sum + (o.orderValue ?? 0), 0);
@@ -42,10 +36,7 @@ export function CustomerIntelligenceDrawerContent({
   ).length;
   const hasCleanRecord = claimCount === 0 && drawerProfile.total_chargebacks === 0;
   const displayName = drawerProfile.names[0] ?? drawerProfile.primary_email ?? 'Unknown customer';
-  const { hasProfileId, isEligibleForEvidence, disputedOrder, identitySignals } = getDrawerFooterProps(
-    drawerProfile,
-    orderHistory,
-  );
+  const hasProfileId = Boolean(drawerProfile.id?.trim());
 
   const density = useMemo(() => {
     const buckets = Array.from({ length: 12 }, () => 0);
@@ -67,44 +58,27 @@ export function CustomerIntelligenceDrawerContent({
           entityValue: acc.entityValue,
           confidence: acc.confidence,
         })),
-      }),
+      }).filter((event) => !['identity_change', 'watchlist_add', 'cross_merchant_signal'].includes(event.type)),
     [identityTimeline, linkedAccounts, orderHistory],
   );
 
-  function openEvidenceCompile() {
-    if (!hasProfileId) return;
-    dispatchUi({ type: 'open_evidence', orderId: disputedOrder?.transactionId });
-  }
+  void dispatchUi;
 
   return (
     <div>
       <CustomerIntelligenceDrawerVerdict
         profile={drawerProfile}
-        linkedCount={linkedAccounts.length}
-        variantCount={variantCount}
+        linkedCount={0}
+        variantCount={0}
         hasCleanRecord={hasCleanRecord}
       />
-      {(drawerProfile.sibling_count ?? 0) > 0 && (
-        <div
-          className="mt-3 flex items-start gap-2 rounded-md border px-3 py-2"
-          style={{ borderColor: 'var(--accent-border)', background: 'var(--accent-soft)' }}
-        >
-          <span className="text-xs leading-relaxed" style={{ color: 'var(--text)' }}>
-            <span className="font-semibold">
-              {drawerProfile.sibling_count} linked {drawerProfile.sibling_count === 1 ? 'account' : 'accounts'}
-            </span>{' '}
-            resolve to this identity — orders and totals below span all linked records.
-          </span>
-        </div>
-      )}
       <CustomerIntelligenceDrawerCaseCard
         profile={drawerProfile}
         linkedAccounts={linkedAccounts}
         claimCount={claimCount}
-        variantCount={variantCount}
+        variantCount={0}
         displayName={displayName}
       />
-      {hasProfileId ? <CustomerIntelligenceDrawerReviewStatus profile={drawerProfile} /> : null}
       <div className="grid grid-cols-3 gap-2 mt-3">
         <StatTile
           label="Total spend"
@@ -125,7 +99,7 @@ export function CustomerIntelligenceDrawerContent({
       <CustomerIntelligenceDrawerNarrativeSection
         narrative={narrative}
         hasCleanRecord={hasCleanRecord}
-        identitySignals={identitySignals}
+        identitySignals={[]}
       />
       {!hasCleanRecord ? (
         <CaseSummaryStrip
@@ -145,18 +119,7 @@ export function CustomerIntelligenceDrawerContent({
           roadmapEvents={roadmapEvents}
         />
       ) : null}
-      <CustomerIntelligenceDrawerIdentitySection
-        identityTimeline={identityTimeline}
-        linkedAccounts={linkedAccounts}
-        lastSeen={drawerProfile.last_seen}
-      />
-      <CustomerIntelligenceDrawerStoredIdentity profile={drawerProfile} />
       {hasProfileId ? <CustomerIntelligenceDrawerNotesSection profileId={drawerProfile.id} /> : null}
-      <CustomerIntelligenceDrawerEvidenceCta
-        hasProfileId={hasProfileId}
-        isEligibleForEvidence={isEligibleForEvidence}
-        onBuildEvidence={openEvidenceCompile}
-      />
     </div>
   );
 }

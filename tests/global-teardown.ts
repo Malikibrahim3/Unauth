@@ -23,6 +23,9 @@ async function globalTeardown(config: FullConfig) {
   )
 
   try {
+    if (credentials.merchantId) {
+      await supabase.from('merchants').delete().eq('id', credentials.merchantId)
+    }
     await supabase.auth.admin.deleteUser(credentials.userId)
     console.log('[Teardown] Test account deleted')
   } catch (err) {

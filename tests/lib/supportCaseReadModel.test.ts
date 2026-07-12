@@ -9,7 +9,7 @@ function makeListClient(
       select: () => ({
         // Connection base-url lookup: from(connections).select().eq() resolves directly.
         eq:
-          table === 'support_provider_connections'
+          table === 'helpdesk_connections'
             ? async () => ({ data: connections, error: null })
             : () => ({
                 eq: () => ({
@@ -27,7 +27,7 @@ describe('support case read model', () => {
       {
         id: 'case-1',
         provider: 'zendesk',
-        external_case_id: '99102',
+        external_id: '99102',
         external_url: 'https://acme.zendesk.com/api/v2/tickets/99102.json',
         tags: [],
         link_status: 'linked',
@@ -48,7 +48,7 @@ describe('support case read model', () => {
       {
         id: 'case-2',
         provider: 'gorgias',
-        external_case_id: '63091193',
+        external_id: '63091193',
         external_url: 'https://acme.gorgias.com/api/tickets/63091193',
         tags: [],
         link_status: 'linked',
@@ -69,9 +69,9 @@ describe('support case read model', () => {
       {
         id: 'case-3',
         provider: 'gorgias',
-        external_case_id: '63308351',
+        external_id: '63308351',
         external_url: '/api/tickets/63308351/',
-        provider_connection_id: 'conn-1',
+        connection_id: 'conn-1',
         tags: [],
         link_status: 'linked',
       },
@@ -92,9 +92,9 @@ describe('support case read model', () => {
       {
         id: 'case-4',
         provider: 'gorgias',
-        external_case_id: 'g-500',
+        external_id: 'g-500',
         external_url: '/api/tickets/g-500/',
-        provider_connection_id: null,
+        connection_id: null,
         tags: [],
         link_status: 'linked',
       },

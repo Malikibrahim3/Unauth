@@ -60,11 +60,27 @@ describe('app route registry', () => {
     expect(labels).toMatchInlineSnapshot(`
 [
   "Dashboard",
-  "Store overview",
+  "Work",
+  "Payout Control",
+  "Losses",
+  "Recoveries",
   "Customers",
-  "Claims",
+  "Rules and Flows",
+  "Integrations",
   "Reports",
 ]
 `);
+  });
+
+  it('keeps legacy identity/network routes out of command palette navigation', () => {
+    const hrefs = getCommandPaletteNavItems().map((item) => item.href);
+    expect(hrefs).not.toEqual(expect.arrayContaining([
+      '/lookup',
+      '/global',
+      '/watchlist',
+      '/catches',
+      '/chargebacks',
+      '/store',
+    ]));
   });
 });

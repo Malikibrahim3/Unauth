@@ -24,6 +24,16 @@ export type ObservationEntity = {
   /** provenance: exactly one layer-1 row */
   provenance: { orderId?: string; customerId?: string; ticketId?: string };
   source: 'shopify' | 'woocommerce' | 'bigcommerce' | 'gorgias' | 'zendesk' | 'freshdesk' | 'csv' | 'manual';
+  /**
+   * Account/connection scope for provider-issued external IDs. When two accounts
+   * of the same provider (e.g. two Shopify stores) reuse a customer/contact
+   * external ID, the platform_customer_id / helpdesk_contact_id namespace must
+   * distinguish them. Left undefined for single-account merchants keeps the
+   * historical `${source}:${id}` key byte-for-byte identical (no re-hash, no
+   * broken links). Phase 2's connection backfill supplies this and re-emits.
+   * This is an identity-KEY scoping seam only — no weight/threshold/cluster change.
+   */
+  sourceAccountKey?: string | null;
   observedAt?: string | null;
   email?: string | null;
   otherEmails?: Array<string | null> | null;
@@ -57,11 +67,16 @@ export function signalsForEntity(e: ObservationEntity): IdentitySignal[] {
   }
   if (e.shippingNormalized) sigs.push({ type: 'shipping_address', hash: hashIdentifier(e.shippingNormalized) });
   if (e.billingNormalized) sigs.push({ type: 'billing_address', hash: hashIdentifier(e.billingNormalized) });
+  // Account-scoped namespace: `source[:accountKey]:externalId`. When
+  // sourceAccountKey is absent the key is exactly `${source}:${id}` — identical
+  // to the pre-MVP+ value, so existing single-account identity links are
+  // preserved with no re-hash.
+  const scope = e.sourceAccountKey ? `${e.source}:${e.sourceAccountKey}` : e.source;
   if (e.platformCustomerExternalId) {
-    sigs.push({ type: 'platform_customer_id', hash: `${e.source}:${e.platformCustomerExternalId}` });
+    sigs.push({ type: 'platform_customer_id', hash: `${scope}:${e.platformCustomerExternalId}` });
   }
   if (e.helpdeskContactExternalId) {
-    sigs.push({ type: 'helpdesk_contact_id', hash: `${e.source}:${e.helpdeskContactExternalId}` });
+    sigs.push({ type: 'helpdesk_contact_id', hash: `${scope}:${e.helpdeskContactExternalId}` });
   }
   const seen = new Set<string>();
   return sigs.filter((s) => s.hash && !seen.has(`${s.type}|${s.hash}`) && Boolean(seen.add(`${s.type}|${s.hash}`)));

@@ -34,6 +34,9 @@ export function readGorgiasWebhookSecret(
 }
 
 export function isGorgiasGlobalWebhookSecretAllowed(): boolean {
+  // Hard block: production must use per-connection webhook secrets. No env flag
+  // may re-enable the shared global secret in production.
+  if (env.VERCEL_ENV === 'production') return false;
   if (env.GORGIAS_SUPPORT_ALLOW_GLOBAL_SECRET === 'true') return true;
   return !isGorgiasProductionIngestMode();
 }

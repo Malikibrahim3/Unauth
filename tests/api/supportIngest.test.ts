@@ -224,14 +224,19 @@ describe('POST /api/internal/support/ingest', () => {
     expect(json.external_case_id).toBe('99101');
     expect(json.order_ref).toBe('ORD-2025-00341');
     expect(json.claim_reason).toBe('missing_parcel');
-    expect(json.link_status).toBe('not_found');
+    expect(json.link_status).toBe('unlinked');
     expect(mock.caseUpserts()).toBe(1);
-    expect(mock.eventInserts()).toBe(2);
+    // v2 intake writes a single source_ticket_events row per ingest; the
+    // classification detail now rides on that one event (see store.ts).
+    expect(mock.eventInserts()).toBe(1);
 
     const casePayload = mock.lastCasePayload();
+    // Persisted v2 source_tickets row must never carry raw PII: no raw email,
+    // no raw payload. The hashed email is no longer stored on the ticket row
+    // (it lives on hashed identity signals), but the raw payload hash remains.
     expect(casePayload.customer_email).toBeUndefined();
     expect(casePayload.raw_payload).toBeUndefined();
-    expect(casePayload.customer_email_hash).toMatch(/^[a-f0-9]{64}$/);
+    expect(casePayload.customer_email_hash).toBeUndefined();
     expect(casePayload.raw_payload_hash).toMatch(/^[a-f0-9]{64}$/);
     expect(JSON.stringify(json)).not.toContain('buyer@example.com');
   });
@@ -246,7 +251,7 @@ describe('POST /api/internal/support/ingest', () => {
     expect(json.provider).toBe('gorgias');
     expect(json.order_ref).toBe('1007');
     expect(json.claim_reason).toBe('refund_request');
-    expect(json.link_status).toBe('not_found');
+    expect(json.link_status).toBe('unlinked');
   });
 
   it('keeps one case row on duplicate ticket but appends events', async () => {
@@ -264,7 +269,8 @@ describe('POST /api/internal/support/ingest', () => {
     const secondJson = await second.json();
     expect(firstJson.support_case_id).toBe(secondJson.support_case_id);
     expect(mock.caseUpserts()).toBe(2);
-    expect(mock.eventInserts()).toBe(4);
+    // One event per ingest → two ingests append exactly two distinct events.
+    expect(mock.eventInserts()).toBe(2);
     expect(firstJson.event_id).not.toBe(secondJson.event_id);
   });
 

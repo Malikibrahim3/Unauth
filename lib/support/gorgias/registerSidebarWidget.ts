@@ -118,22 +118,14 @@ export async function refreshGorgiasSidebarWidgetTemplate(input: {
 }
 
 /** Gorgias sidebar card title — shown to agents in the helpdesk. */
-export const GORGIAS_SIDEBAR_CARD_TITLE = 'Unauth claim context';
+export const GORGIAS_SIDEBAR_CARD_TITLE = 'Unauth payout decision';
 
 /** Row labels in buildGorgiasSidebarWidgetTemplate (must align with widget JSON field paths). */
 export const GORGIAS_SIDEBAR_ROW_LABELS = {
-  order_context: 'Order',
-  context_summary: 'Context',
-  recommendation: 'Recommendation',
-  recommendation_detail: 'Why this recommendation',
-  identity: 'Identity',
-  claims: 'Claim history',
-  orders: 'Orders',
-  claim_rate: 'Claim rate',
-  primary_reason: 'Primary reason',
-  recent_activity: 'Recent activity',
-  ce3_evidence: 'Network & evidence',
-  watchlisted: 'Review context',
+  payout_exposure: 'Case',
+  evidence_checklist: 'Evidence',
+  recommendation: 'Rule',
+  recovery_path: 'Recovery',
 } as const;
 
 export function buildGorgiasSidebarWidgetTemplate(appBaseUrl: string) {
@@ -164,18 +156,11 @@ export function buildGorgiasSidebarWidgetTemplate(appBaseUrl: string) {
           },
         },
         widgets: [
-          { path: 'order_context', title: labels.order_context, type: 'text' },
-          { path: 'context_summary', title: labels.context_summary, type: 'text' },
-          { path: 'identity', title: labels.identity, type: 'text' },
-          { path: 'claims', title: labels.claims, type: 'text' },
-          { path: 'orders', title: labels.orders, type: 'text' },
-          { path: 'claim_rate', title: labels.claim_rate, type: 'text' },
-          { path: 'primary_reason', title: labels.primary_reason, type: 'text' },
-          { path: 'recent_activity', title: labels.recent_activity, type: 'text' },
-          { path: 'ce3_evidence', title: labels.ce3_evidence, type: 'text' },
-          { path: 'watchlisted', title: labels.watchlisted, type: 'text' },
+          // Compressed 4-line payout decision card (see docs/product/MVP_STEERING.md §11).
+          { path: 'payout_exposure', title: labels.payout_exposure, type: 'text' },
+          { path: 'evidence_checklist', title: labels.evidence_checklist, type: 'text' },
           { path: 'recommendation', title: labels.recommendation, type: 'text' },
-          { path: 'recommendation_detail', title: labels.recommendation_detail, type: 'text' },
+          { path: 'recovery_path', title: labels.recovery_path, type: 'text' },
         ],
       },
     ],

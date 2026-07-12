@@ -31,6 +31,9 @@ export function readFreshdeskWebhookSecret(
 }
 
 export function isFreshdeskGlobalWebhookSecretAllowed(): boolean {
+  // Hard block: production must use per-connection webhook secrets. No env flag
+  // may re-enable the shared global secret in production.
+  if (env.VERCEL_ENV === 'production') return false;
   if (env.FRESHDESK_SUPPORT_ALLOW_GLOBAL_SECRET === 'true') return true;
   return !isFreshdeskProductionIngestMode();
 }

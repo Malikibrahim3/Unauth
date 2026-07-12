@@ -4,7 +4,7 @@
  */
 
 export const LANDING_BILLING_TRANSPARENCY =
-  'Every plan includes the Unauth widget, store context, and pseudonymous network context. Usage is controlled by monthly context credits, and raw cross-merchant customer data is never exposed.';
+  'Every plan includes the Unauth widget, store context, evidence checklists, merchant rules, and recovery workflow. Usage is controlled by monthly context credits, and raw customer data stays merchant-scoped.';
 
 export type LandingTierKey = 'unauth' | 'pro' | 'growth' | 'scale' | 'enterprise';
 
@@ -25,13 +25,13 @@ export const LANDING_TIER_CHART: readonly LandingTierChartEntry[] = [
   {
     key: 'unauth',
     name: 'Free',
-    tagline: 'Network participation with baseline access scaled to what you contribute',
-    price: '£0/month',
+    tagline: 'Baseline payout-control access for occasional case review',
+    price: '$0/month',
     priceNote: '100 context credits / month',
     features: [
       '100 context credits / month',
       'Widget and helpdesk presence',
-      'Store + pseudonymous network context via credits',
+      'Store context, evidence checklist, and payout case history via credits',
       'Limited history depth',
       'Limited evidence exports',
       'No API / bulk workflows',
@@ -41,29 +41,29 @@ export const LANDING_TIER_CHART: readonly LandingTierChartEntry[] = [
   {
     key: 'pro',
     name: 'Pro',
-    tagline: 'Single-store claim review with six months of network history',
-    price: '£99/month',
+    tagline: 'Single-store payout review with six months of case history',
+    price: '$249/month',
     priceNote: '1,000 context credits / month',
     features: [
       '1,000 context credits / month',
-      'Deeper store + pseudonymous network context',
+      'Deeper store context, payout rules, and evidence review',
       'Case Reports and standard exports',
-      'Six months of network history',
-      'Top-up: £15 for 200 credits (self-serve)',
+      'Six months of case history',
+      'Top-up: $15 for 200 credits (self-serve)',
     ],
     showOnPublicPricing: true,
   },
   {
     key: 'growth',
     name: 'Growth',
-    tagline: 'Multi-store operations with two years of network history and aggregate reporting',
-    price: '£399/month',
+    tagline: 'Multi-store payout operations with two years of case history and aggregate reporting',
+    price: '$599/month',
     priceNote: '5,000 context credits / month',
     features: [
       '5,000 context credits / month',
       'High-volume claim review',
       'Multi-store support (standard)',
-      'Twenty-four months of network history',
+      'Twenty-four months of case history',
       'Advanced aggregate reporting',
       'Priority support',
     ],
@@ -85,11 +85,11 @@ export const LANDING_TIER_CHART: readonly LandingTierChartEntry[] = [
   {
     key: 'enterprise',
     name: 'Enterprise / API',
-    tagline: 'PSPs, BNPLs, dispute-cos, fraud platforms',
+    tagline: 'PSPs, BNPLs, 3PLs, carriers, and dispute partners',
     price: 'Custom',
     features: [
-      'Privacy-preserving cross-rail signal API',
-      'Aggregate network analytics',
+      'Case-scoped payout and recovery API',
+      'Aggregate payout and recovery analytics',
       'Per-query pricing',
     ],
     showOnPublicPricing: false,
@@ -100,5 +100,5 @@ export const LANDING_PRICING_TIERS = LANDING_TIER_CHART.filter((t) => t.showOnPu
 
 export const LANDING_FAQ_ALWAYS_FREE = {
   q: 'Will it always be free?',
-  a: 'Free remains a real entry point for occasional claim review and network participation, but higher-volume teams will need more monthly context credits, history, controls, and support.',
+  a: 'Free remains a real entry point for occasional payout-case review, but higher-volume teams will need more monthly context credits, history, controls, and support.',
 } as const;

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 
 /**
  * Non-blocking banner shown on screens narrower than 1024px (Tailwind `lg` breakpoint).
@@ -25,14 +24,7 @@ export default function MobileOptimizationNotice() {
       aria-live="polite"
     >
       <p className="leading-snug">
-        This app is optimised for screens 1024 px and wider.{' '}
-        <Link
-          href="/audit"
-          className="font-semibold underline underline-offset-2 hover:opacity-80 transition-opacity"
-        >
-          Try the free CSV audit
-        </Link>{' '}
-        on smaller devices.
+        This app is optimised for screens 1024 px and wider. Claim review, evidence, and rule configuration work best on a larger display.
       </p>
       <button
         onClick={() => setDismissed(true)}

@@ -1,10 +1,11 @@
-import { after, NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import { buildFastContext } from '@/lib/engine/fastContext';
 import type { NormalisedOrder } from '@/lib/engine/types';
 import { canonicalizeEdgePair, type IdentifierRef } from '@/lib/identity/identifierGraph';
+import { verifyCollectorToken } from '@/lib/checkout/collectorToken';
 
 export const runtime = 'nodejs';
 
@@ -322,33 +323,6 @@ async function linkSignalToIdentityGraph(
   if (edgeError) throw new Error(`checkout_edge_upsert_failed: ${edgeError.message}`);
 }
 
-async function updateCrossMerchantDeviceHits(
-  supabase: ServiceClient,
-  signalId: string | undefined,
-  deviceFp: string | null,
-  merchantId: string
-): Promise<void> {
-  if (!signalId || !deviceFp) return;
-
-  const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
-  const { data, error } = await supabase
-    .from(TABLES.CHECKOUT_SIGNALS)
-    .select('merchant_id')
-    .eq('device_fp', deviceFp)
-    .neq('merchant_id', merchantId)
-    .gte('created_at', since)
-    .limit(1000);
-  if (error || !data?.length) return;
-
-  const otherMerchantCount = new Set(data.map((row: { merchant_id: string }) => row.merchant_id)).size;
-  if (otherMerchantCount <= 0) return;
-
-  await supabase.rpc('set_checkout_signal_cross_merchant_hits', {
-    p_signal_id: signalId,
-    p_hit_count: otherMerchantCount,
-  });
-}
-
 export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
 }
@@ -373,6 +347,16 @@ export async function POST(request: NextRequest) {
 
   const merchantId = await resolveMerchantId(supabase, body);
   if (!merchantId) return json({ ok: true });
+
+  // The merchantId is client-supplied. Require a signed collector token (minted
+  // by /api/shopify/collector-init) that binds this request to the resolved
+  // merchant, so arbitrary UUIDs cannot be used to poison another tenant's
+  // identity graph. Enforced whenever INTERNAL_HMAC_SECRET is set (always on
+  // preview + production per env.ts).
+  const collectorToken = text(body.collectorToken, 512);
+  if (!verifyCollectorToken(collectorToken, merchantId)) {
+    return json({ ok: false, error: 'invalid_collector_token' }, { status: 401 });
+  }
 
   const signal = parseSignalBody(body, merchantId);
   if (!signal) return json({ ok: false }, { status: 400 });
@@ -413,12 +397,6 @@ export async function POST(request: NextRequest) {
         message: error instanceof Error ? error.message : 'unknown',
       });
     }
-  }
-
-  if (signal.deviceFp) {
-    after(async () => {
-      await updateCrossMerchantDeviceHits(supabase, inserted?.id, signal.deviceFp, signal.merchantId);
-    });
   }
 
   return json({ ok: true });

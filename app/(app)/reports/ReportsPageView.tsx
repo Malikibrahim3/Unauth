@@ -1,7 +1,7 @@
 import { PageConnectionGate } from '@/components/connections/PageConnectionGate';
 import type { ConnectionState } from '@/lib/connections/getConnectionState';
 import type { MerchantSetupState } from '@/lib/connections/getMerchantSetupState';
-import { WorkbenchPage } from '@/components/ui';
+import { PanelCard, WorkbenchPage } from '@/components/ui';
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import ExportMenu from '@/components/reports/ExportMenu';
 import { ReportsTabBar } from '@/app/(app)/reports/ReportsTabBar';
@@ -14,7 +14,6 @@ export type ReportsPageViewProps = {
   hasAnyData: boolean;
   activeTab: ReportsTab;
   range: string;
-  csvCount: number;
   tabPanel: ReportsPageTabPanelProps;
 };
 
@@ -24,19 +23,18 @@ export function ReportsPageView({
   hasAnyData,
   activeTab,
   range,
-  csvCount,
   tabPanel,
 }: ReportsPageViewProps) {
   return (
-    <PageConnectionGate requires="both" connection={connectionState} pageName="Analytics" pageDescription="Analytics combines Shopify order data with helpdesk claim records. Without both connected, claim counts, dispute rates, and outcome summaries will be incomplete or zero." setupState={setupState} hasData={hasAnyData}>
+    <PageConnectionGate requires="both" connection={connectionState} pageName="Payout reports" pageDescription="Reports combine Shopify order data, helpdesk payout cases, evidence, decisions, and recoveries. Without both connected, exposure, recovery, and outcome summaries may be incomplete or zero." setupState={setupState} hasData={hasAnyData}>
     <WorkbenchPage
-      title="Analytics"
-      subtitle="Store and network intelligence from customer, order, claim, and source-case records."
+      title="Payout reports"
+      subtitle="Payout exposure, evidence gaps, agent decisions, recovery value, partner performance, and outcomes."
       navItems={WORKBENCH_NAV_ITEMS}
       activeNavKey="reports"
       actions={
         <div className="flex flex-wrap items-center gap-2">
-          <div className="inline-flex rounded-md border p-0.5" style={{ borderColor: 'var(--border)', background: 'var(--surface-sunken)' }}>
+          <PanelCard variant="appInset" className="inline-flex p-0.5">
             {['7d', '30d', '90d', 'all'].map((option) => (
               <a
                 key={option}
@@ -51,13 +49,13 @@ export function ReportsPageView({
                 {option}
               </a>
             ))}
-          </div>
+          </PanelCard>
           <ExportMenu range={range} />
         </div>
       }
       main={
         <>
-          <ReportsTabBar active={activeTab} range={range} csvCount={csvCount} />
+          <ReportsTabBar active={activeTab} range={range} />
           <ReportsPageTabPanel {...tabPanel} activeTab={activeTab} />
         </>
       }

@@ -55,11 +55,10 @@ function setupAuditService() {
               error: null,
             });
           }
-          if (table === 'merchant_claims') {
+          if (table === 'support_payout_cases') {
             return resolve({
               data: [{
                 id: 'claim-1',
-                customer_id: 'customer-1',
               }],
               error: null,
             });
@@ -91,7 +90,7 @@ describe('audit trail claim events', () => {
       action: 'claim_reopened',
       resource_type: 'claim',
       resource_id: 'claim-1',
-      resource_href: '/customers/customer-1/claims?claimId=claim-1',
+      resource_href: '/claims/claim-1',
       actor_user_id: 'user-1',
     })]));
   });

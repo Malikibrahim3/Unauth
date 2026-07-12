@@ -8,12 +8,12 @@ async function callVerify(url: string): Promise<VerifyResult> {
     const timeout = setTimeout(() => controller.abort(), 6000);
     const res = await fetch(url, { cache: 'no-store', signal: controller.signal });
     clearTimeout(timeout);
-    if (!res.ok) return { ok: true, inconclusive: true }; // verify endpoint itself errored — don't penalise
+    if (!res.ok) return { ok: false, inconclusive: true };
     const body = (await res.json()) as { ok?: boolean; inconclusive?: boolean };
-    if (body.inconclusive) return { ok: true, inconclusive: true };
+    if (body.inconclusive) return { ok: false, inconclusive: true };
     return { ok: body.ok === true };
   } catch {
-    return { ok: true, inconclusive: true }; // network error — don't false-alarm
+    return { ok: false, inconclusive: true };
   }
 }
 

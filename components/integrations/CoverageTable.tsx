@@ -1,0 +1,3 @@
+export function CoverageTable({ rows }: { rows: Array<{ category: string; status: string; recordCount: number }> }) {
+  return <div className="overflow-x-auto rounded-lg border bg-white"><table className="w-full text-sm"><thead><tr className="text-left"><th className="p-3">Data category</th><th className="p-3">Coverage</th><th className="p-3 text-right">Records</th></tr></thead><tbody>{rows.map((row) => <tr key={row.category} className="border-t"><td className="p-3 capitalize">{row.category.replaceAll('_', ' ')}</td><td className="p-3 capitalize">{row.status.replaceAll('_', ' ')}</td><td className="p-3 text-right tabular-nums">{row.recordCount.toLocaleString()}</td></tr>)}</tbody></table></div>;
+}

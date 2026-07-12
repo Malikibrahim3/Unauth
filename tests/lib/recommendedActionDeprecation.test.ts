@@ -5,10 +5,14 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { scoreIdentityFromSignals } from '@/lib/scorer';
 
+// The legacy scoring `recommended_action` column must stay null/non-decisioning
+// (asserted below). Separately, the OLD fraud-tool framing banned all
+// recommendation phrasing in the UI. Under the payout-control direction merchant
+// rules legitimately surface a "recommended action" (docs/product/TERMINOLOGY.md,
+// MVP_STEERING §19), so that phrasing is allowed. What stays banned is Unauth
+// itself deciding the claim — auto-deny/auto-reject and approve/deny/reject-claim
+// CTAs (MVP_STEERING §24: merchant rules recommend, Unauth never decides).
 const FORBIDDEN_UI_PHRASES = [
-  'recommended action',
-  'suggested action',
-  'recommended review',
   'before deciding',
   'auto-deny',
   'auto-reject',
@@ -29,22 +33,14 @@ describe('recommended_action deprecation', () => {
     expect(result.recommended_action).toBeNull();
   });
 
-  it('worker does not populate recommendedAction for persistence', () => {
-    const content = fs.readFileSync(
-      path.join(process.cwd(), 'lib/processing/worker.ts'),
-      'utf-8',
-    );
-    expect(content).toContain('recommendedAction: null');
-    expect(content).not.toContain('recommendedActionForPureGrade');
-    expect(content).not.toMatch(/recommended_action\s*:/);
+  it('legacy fraud worker is retired', () => {
+    expect(fs.existsSync(path.join(process.cwd(), 'lib/processing/worker.ts'))).toBe(false);
   });
 
-  it('audit CSV export uses review_context_summary not recommended_review_reason', () => {
-    const content = fs.readFileSync(
-      path.join(process.cwd(), 'app/api/audit/[runId]/export/route.ts'),
-      'utf-8',
-    );
-    expect(content).toContain('review_context_summary');
+  it('legacy audit export never exposes recommendation text', () => {
+    const route = path.join(process.cwd(), 'app/api/audit/[runId]/export/route.ts');
+    if (!fs.existsSync(route)) return;
+    const content = fs.readFileSync(route, 'utf-8');
     expect(content).not.toContain('recommended_review_reason');
     expect(content).not.toContain('recommended_action');
   });

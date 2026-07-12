@@ -49,7 +49,7 @@ export default function AccountSettingsPage() {
         body: JSON.stringify({
           storeName: state.storeName.trim(),
           monthlyOrderVolume: state.monthlyVolume || null,
-          primaryFraudConcern: state.fraudConcern || null,
+          primaryLossConcern: state.fraudConcern || null,
           setupComplete: state.merchant.setup_complete,
         }),
       });

@@ -1,6 +1,7 @@
 'use client';
 
 import { Check, Copy } from 'lucide-react';
+import { PanelCard } from '@/components/ui';
 import type { FreshdeskEphemeralSecret } from '@/components/settings/freshdeskSupportSyncReducer';
 
 type FreshdeskWebhookSetupPanelProps = {
@@ -19,13 +20,7 @@ export function FreshdeskWebhookSetupPanel({
   onDismiss,
 }: FreshdeskWebhookSetupPanelProps) {
   return (
-    <div
-      className="rounded-md border p-5 space-y-4"
-      style={{
-        borderColor: 'var(--border)',
-        background: 'var(--surface)',
-      }}
-    >
+    <PanelCard variant="app" className="space-y-4 p-5">
       <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>
         One-time webhook setup
       </p>
@@ -118,6 +113,6 @@ export function FreshdeskWebhookSetupPanel({
       >
         I saved the secret - hide this panel
       </button>
-    </div>
+    </PanelCard>
   );
 }

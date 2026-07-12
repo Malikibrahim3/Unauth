@@ -4,12 +4,13 @@
  * Verifies:
  *   1. Merchant scoping — only jobs owned by the target merchant are queried.
  *   2. Review-worthy filter — dismissed transactions are excluded.
- *   3. order_value accumulation (string NUMERIC from DB + JS number).
+ *   3. total_price accumulation (string NUMERIC from DB + JS number).
  *   4. Returns null on Supabase error (never returns 0 on failure).
  *   5. Returns 0 when merchant has no jobs.
  */
 
 import { getExposureAtRisk } from '@/lib/supabase/merchantHelpers';
+import { TABLES } from '@/lib/supabase/tables';
 
 // ---------------------------------------------------------------------------
 // Minimal SupabaseClient mock builder
@@ -64,7 +65,7 @@ function buildMockClient(
   let statusIdx = 0;
 
   const fromMock = jest.fn().mockImplementation((table: string) => {
-    if (table === 'processing_jobs') {
+    if (table === TABLES.PROCESSING_JOBS) {
       return makeQueryStub(() => jobsPages[jobsPageIdx++] ?? { data: [], error: null });
     }
     // audit_transactions: graded clause vs status-only clause, by filter.
@@ -105,7 +106,7 @@ describe('getExposureAtRisk', () => {
     );
     await getExposureAtRisk(client, MERCHANT_A);
     // Verify `.eq('merchant_id', MERCHANT_A)` was called
-    expect(client.from).toHaveBeenCalledWith('processing_jobs');
+    expect(client.from).toHaveBeenCalledWith(TABLES.PROCESSING_JOBS);
     const jobQuery = (client.from as jest.Mock).mock.results[0].value;
     expect(jobQuery.eq).toHaveBeenCalledWith('merchant_id', MERCHANT_A);
     // Ensure MERCHANT_B was never passed as merchant_id
@@ -116,12 +117,12 @@ describe('getExposureAtRisk', () => {
     expect(merchantIdArgs).not.toContain(MERCHANT_B);
   });
 
-  it('sums order_value from graded transactions (string NUMERIC)', async () => {
+  it('sums total_price from graded transactions (string NUMERIC)', async () => {
     const client = buildMockClient(
       [{ data: [{ id: 'job-1' }], error: null }, { data: [], error: null }],
       {
         graded: [
-          { data: [{ order_value: '100.50' }, { order_value: '49.50' }], error: null },
+          { data: [{ total_price: '100.50' }, { total_price: '49.50' }], error: null },
           { data: [], error: null },
         ],
         status: [
@@ -133,16 +134,16 @@ describe('getExposureAtRisk', () => {
     expect(result).toBeCloseTo(150.0, 2);
   });
 
-  it('sums order_value from both graded and status-only clauses without double-counting', async () => {
+  it('sums total_price from both graded and status-only clauses without double-counting', async () => {
     const client = buildMockClient(
       [{ data: [{ id: 'job-1' }], error: null }, { data: [], error: null }],
       {
         graded: [
-          { data: [{ order_value: 200 }], error: null },
+          { data: [{ total_price: 200 }], error: null },
           { data: [], error: null },
         ],
         status: [
-          { data: [{ order_value: '75.00' }], error: null },
+          { data: [{ total_price: '75.00' }], error: null },
           { data: [], error: null },
         ],
       },
@@ -151,12 +152,12 @@ describe('getExposureAtRisk', () => {
     expect(result).toBeCloseTo(275.0, 2);
   });
 
-  it('skips null order_value rows without erroring', async () => {
+  it('skips null total_price rows without erroring', async () => {
     const client = buildMockClient(
       [{ data: [{ id: 'job-1' }], error: null }, { data: [], error: null }],
       {
         graded: [
-          { data: [{ order_value: null }, { order_value: '50.00' }], error: null },
+          { data: [{ total_price: null }, { total_price: '50.00' }], error: null },
           { data: [], error: null },
         ],
         status: [{ data: [], error: null }],
@@ -192,7 +193,7 @@ describe('getExposureAtRisk', () => {
     const client = buildMockClient(
       [{ data: [{ id: ownedJobId }], error: null }, { data: [], error: null }],
       {
-        graded: [{ data: [{ order_value: '100' }], error: null }, { data: [], error: null }],
+        graded: [{ data: [{ total_price: '100' }], error: null }, { data: [], error: null }],
         status: [{ data: [], error: null }],
       },
     );
@@ -200,7 +201,7 @@ describe('getExposureAtRisk', () => {
     // Find audit_transactions calls and assert `.in('job_id', ...)` only includes owned IDs
     const allFromCalls: string[] = (client.from as jest.Mock).mock.calls.map(([t]: [string]) => t);
     const txCallIndices = allFromCalls
-      .map((t, i) => (t === 'audit_transactions' ? i : -1))
+      .map((t, i) => (t === TABLES.AUDIT_TRANSACTIONS ? i : -1))
       .filter((i) => i >= 0);
     for (const idx of txCallIndices) {
       const txQuery = (client.from as jest.Mock).mock.results[idx].value;

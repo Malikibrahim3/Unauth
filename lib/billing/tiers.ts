@@ -23,7 +23,7 @@ export function isBillingActive(): boolean {
   return process.env.BILLING_ACTIVE === 'true';
 }
 
-export type Tier = 'free' | 'pro' | 'growth' | 'scale' | 'enterprise';
+export type Tier = 'free' | 'pro' | 'growth' | 'enterprise';
 
 export type FeatureKey =
   // --- Core product surface (available across plans) ---
@@ -40,18 +40,14 @@ export type FeatureKey =
   | 'customer_search'
   | 'watchlist'
   | 'internal_notes'
-  | 'network_signal_enrichment'
-  | 'identity_graph'
   | 'lookup_api'
   | 'quick_score_api'
   | 'multi_store'
-  | 'csv_backfill_full'
   | 'advanced_reports'
   // --- Scale / Enterprise ---
   | 'custom_limits'
   | 'sla'
-  | 'security_review'
-  | 'signal_licensing_api';
+  | 'security_review';
 
 export interface TierLimits {
   contextCreditsPerMonth: number | 'custom';
@@ -74,15 +70,14 @@ export const TIER_ORDER: Record<Tier, number> = {
   free: 0,
   pro: 1,
   growth: 2,
-  scale: 3,
-  enterprise: 4,
+  enterprise: 3,
 };
 
 export const TIER_CONFIG: Record<Tier, TierEntitlements> = {
   free: {
     tier: 'free',
     label: 'Free',
-    tagline: 'Network participation with baseline access scaled to what you contribute',
+    tagline: 'Store-scoped payout review with the essentials for a small support team',
     priceMonthlyUsd: 0,
     features: {
       own_store_analytics: true,
@@ -96,7 +91,6 @@ export const TIER_CONFIG: Record<Tier, TierEntitlements> = {
       customer_dossier: true,
       customer_search: true,
       internal_notes: true,
-      network_signal_enrichment: true,
     },
     limits: {
       contextCreditsPerMonth: 100,
@@ -109,8 +103,8 @@ export const TIER_CONFIG: Record<Tier, TierEntitlements> = {
   pro: {
     tier: 'pro',
     label: 'Pro',
-    tagline: 'Single-store claim review with six months of network history',
-    priceMonthlyUsd: 99,
+    tagline: 'Single-store payout review with six months of claim history',
+    priceMonthlyUsd: 249,
     features: {
       own_store_analytics: true,
       chargeback_analytics: true,
@@ -124,7 +118,6 @@ export const TIER_CONFIG: Record<Tier, TierEntitlements> = {
       customer_dossier: true,
       customer_search: true,
       internal_notes: true,
-      network_signal_enrichment: true,
     },
     limits: {
       contextCreditsPerMonth: 1_000,
@@ -137,8 +130,8 @@ export const TIER_CONFIG: Record<Tier, TierEntitlements> = {
   growth: {
     tier: 'growth',
     label: 'Growth',
-    tagline: 'Multi-store operations with two years of network history and aggregate reporting',
-    priceMonthlyUsd: 399,
+    tagline: 'Multi-store payout operations with two years of history and advanced reporting',
+    priceMonthlyUsd: 599,
     features: {
       own_store_analytics: true,
       chargeback_analytics: true,
@@ -152,10 +145,7 @@ export const TIER_CONFIG: Record<Tier, TierEntitlements> = {
       customer_dossier: true,
       customer_search: true,
       internal_notes: true,
-      network_signal_enrichment: true,
-      identity_graph: true,
       multi_store: true,
-      csv_backfill_full: true,
       advanced_reports: true,
     },
     limits: {
@@ -166,10 +156,10 @@ export const TIER_CONFIG: Record<Tier, TierEntitlements> = {
       apiCallsPerMonth: 0,
     },
   },
-  scale: {
-    tier: 'scale',
-    label: 'Scale',
-    tagline: 'Embedded context infrastructure for high-volume teams',
+  enterprise: {
+    tier: 'enterprise',
+    label: 'Enterprise',
+    tagline: 'Embedded claim context for high-volume support teams, with API access and a security review',
     priceMonthlyUsd: 'custom',
     features: {
       own_store_analytics: true,
@@ -184,34 +174,10 @@ export const TIER_CONFIG: Record<Tier, TierEntitlements> = {
       customer_dossier: true,
       customer_search: true,
       internal_notes: true,
-      network_signal_enrichment: true,
-      identity_graph: true,
       lookup_api: true,
       quick_score_api: true,
       multi_store: true,
-      csv_backfill_full: true,
       advanced_reports: true,
-      custom_limits: true,
-      sla: true,
-      security_review: true,
-    },
-    limits: {
-      contextCreditsPerMonth: 'custom',
-      connectedStores: 'unlimited',
-      seats: 'unlimited',
-      historyDays: 'unlimited',
-      apiCallsPerMonth: 'unlimited',
-    },
-  },
-  enterprise: {
-    tier: 'enterprise',
-    label: 'Enterprise / API',
-    tagline: 'License the cross-rail signal',
-    priceMonthlyUsd: 'custom',
-    features: {
-      signal_licensing_api: true,
-      lookup_api: true,
-      quick_score_api: true,
       custom_limits: true,
       sla: true,
       security_review: true,
@@ -249,7 +215,7 @@ export function tierLabel(tier: Tier): string {
 
 /** Lowest tier that includes `feature`, for upgrade messaging. */
 export function minimumTierForFeature(feature: FeatureKey): Tier {
-  const ordered: Tier[] = ['free', 'pro', 'growth', 'scale', 'enterprise'];
+  const ordered: Tier[] = ['free', 'pro', 'growth', 'enterprise'];
   for (const tier of ordered) {
     if (can(tier, feature)) return tier;
   }

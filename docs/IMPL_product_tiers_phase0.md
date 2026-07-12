@@ -1,6 +1,8 @@
 # Implementation Doc — Product Tiers (Phase 0, Non-Enforcing) + CE 3.0 Copy Correction + Landing Repositioning
 
-**Status:** Ready to implement
+> **Superseded for product direction.** Use [`docs/product/MVP_STEERING.md`](product/MVP_STEERING.md) as the source of truth. This doc is retained for historical tier/entitlement implementation context only.
+
+**Status:** Superseded — historical reference
 **Phase:** 0 (dev mode — no enforcement, no billing, no checkout controls)
 **Date:** 2026-06-02
 

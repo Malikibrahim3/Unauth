@@ -9,6 +9,7 @@
 export const GORGIAS_SUPPORT_SECRET_HEADERS = [
   'x-unauth-gorgias-secret',
   'x-gorgias-webhook-secret',
+  'x-gorgias-secret',
 ] as const;
 
 export const GORGIAS_SUPPORT_WEBHOOK_PATH = '/api/gorgias/support-webhook';

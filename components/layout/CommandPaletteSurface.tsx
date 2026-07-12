@@ -32,7 +32,8 @@ export default function CommandPaletteSurface({ navItems, onClose, inputRef }: C
       )
     : navItems;
 
-  const totalItems = (state.query.trim() ? 1 : 0) + state.customerResults.length + filteredNav.length;
+  const nonCustomerUnified = state.unifiedResults.filter((result) => result.type !== 'customer');
+  const totalItems = (state.query.trim() ? 1 : 0) + state.customerResults.length + nonCustomerUnified.length + filteredNav.length;
 
   const scheduleSearch = useCallback((query: string) => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -50,9 +51,9 @@ export default function CommandPaletteSurface({ navItems, onClose, inputRef }: C
           if (searchGenerationRef.current !== generation) return;
           dispatch({ type: 'searchSuccess', ...results });
         })
-        .catch(() => {
+        .catch((error: unknown) => {
           if (searchGenerationRef.current !== generation) return;
-          dispatch({ type: 'searchClear' });
+          dispatch({ type: 'searchFailure', error: error instanceof Error ? error.message : 'Search is temporarily unavailable' });
         });
     }, 250);
   }, []);
@@ -102,7 +103,14 @@ export default function CommandPaletteSurface({ navItems, onClose, inputRef }: C
             handleCustomerSelect(state.customerResults[state.activeIdx - customerOffset]);
             return;
           }
-          const navOffset = customerOffset + state.customerResults.length;
+          const unifiedOffset = customerOffset + state.customerResults.length;
+          if (state.activeIdx < unifiedOffset + nonCustomerUnified.length) {
+            const result = nonCustomerUnified[state.activeIdx - unifiedOffset];
+            onClose();
+            router.push(result.href);
+            return;
+          }
+          const navOffset = unifiedOffset + nonCustomerUnified.length;
           const navItem = filteredNav[state.activeIdx - navOffset];
           if (navItem) handleSelect(navItem);
         } else {
@@ -118,10 +126,12 @@ export default function CommandPaletteSurface({ navItems, onClose, inputRef }: C
       state.activeIdx,
       state.query,
       state.customerResults,
+      nonCustomerUnified,
       handleSelect,
       handleCustomerSelect,
       handleSearchSubmit,
       onClose,
+      router,
       totalItems,
     ],
   );
@@ -130,6 +140,8 @@ export default function CommandPaletteSurface({ navItems, onClose, inputRef }: C
   const searchRowIdx = state.query.trim() ? globalIdx++ : -1;
   const customerStartIdx = globalIdx;
   globalIdx += state.customerResults.length;
+  const unifiedStartIdx = globalIdx;
+  globalIdx += nonCustomerUnified.length;
   const navStartIdx = globalIdx;
 
   return (
@@ -148,6 +160,7 @@ export default function CommandPaletteSurface({ navItems, onClose, inputRef }: C
         filteredNav={filteredNav}
         searchRowIdx={searchRowIdx}
         customerStartIdx={customerStartIdx}
+        unifiedStartIdx={unifiedStartIdx}
         navStartIdx={navStartIdx}
         dispatch={dispatch}
         onClose={onClose}

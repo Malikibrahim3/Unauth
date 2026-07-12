@@ -1,0 +1,25 @@
+{
+  "id": "EXAMPLE-EVT-TICKET-9001",
+  "type": "ticket.created",
+  "occurred_at": "2026-07-11T11:30:00Z",
+  "source": {
+    "system": "custom_helpdesk",
+    "account_id": "uk-support",
+    "record_id": "TICKET-9001",
+    "record_url": "https://merchant.example/support/TICKET-9001"
+  },
+  "schema_version": 1,
+  "data": {
+    "external_id": "TICKET-9001",
+    "subject": "Where is my order? 1001",
+    "channel": "email",
+    "status": "open",
+    "customer": {
+      "external_id": "CUST-500",
+      "email": "casey@example.com",
+      "name": "Casey Rivers"
+    },
+    "order_reference": "1001",
+    "opened_at": "2026-07-11T11:30:00Z"
+  }
+}

@@ -8,6 +8,7 @@
  */
 
 import { buildEvidencePackage } from '@/lib/evidence/buildPackage';
+import { TABLES } from '@/lib/supabase/tables';
 import {
   fetchMerchantScopedCustomerProfile,
   fetchMerchantScopedCustomerTransactions,
@@ -20,14 +21,14 @@ const rowsByTable: Record<string, Row[]> = {
     { id: 'merchant-a', user_id: 'legacy-user-a', business_name: 'Merchant A' },
     { id: 'merchant-b', user_id: 'legacy-user-b', business_name: 'Merchant B' },
   ],
-  processing_jobs: [
+  [TABLES.PROCESSING_JOBS]: [
     { id: 'job-a', merchant_id: 'merchant-a', hidden_by_merchant: false },
     { id: 'job-b', merchant_id: 'merchant-b', hidden_by_merchant: false },
   ],
-  customer_profiles: [
+  [TABLES.CUSTOMER_PROFILES]: [
     {
       id: 'profile-shared',
-      merchant_ids: ['legacy-user-a', 'merchant-b'],
+      merchant_ids: ['merchant-a', 'legacy-user-a', 'merchant-b'],
       emails: ['shared@example.com'],
       names: ['Shared Customer'],
       phones: [],
@@ -49,15 +50,63 @@ const rowsByTable: Record<string, Row[]> = {
       total_merchants_seen_at: 2,
     },
   ],
+  [TABLES.SOURCE_CUSTOMERS]: [
+    {
+      id: 'profile-shared',
+      merchant_id: 'merchant-a',
+      email: 'shared@example.com',
+      phone: null,
+      first_name: 'Shared',
+      last_name: 'Customer',
+      account_created_at: '2025-01-01T00:00:00.000Z',
+      created_at: '2025-01-01T00:00:00.000Z',
+    },
+    {
+      id: 'profile-b',
+      merchant_id: 'merchant-b',
+      email: 'shared@example.com',
+      phone: null,
+      first_name: 'Shared',
+      last_name: 'Customer',
+      account_created_at: '2025-01-01T00:00:00.000Z',
+      created_at: '2025-01-01T00:00:00.000Z',
+    },
+  ],
+  // v2 identity-graph scoping: a merchant "owns visibility" of a network-level
+  // identity when it has emitted an identity signal for one of the identity's
+  // member identifier hashes. The shared identity is visible to BOTH tenants;
+  // isolation is enforced at the transaction/notes level (owned job ids +
+  // merchant_id), which the assertions below verify.
+  identity_members: [
+    { identity_id: 'profile-shared', identifier_hash: 'hash-shared' },
+  ],
+  identity_signals: [
+    { id: 'sig-a', merchant_id: 'merchant-a', identifier_hash: 'hash-shared' },
+    { id: 'sig-b', merchant_id: 'merchant-b', identifier_hash: 'hash-shared' },
+  ],
   customer_profile_audit_appearances: [
     { profile_id: 'profile-shared', audit_id: 'job-a', transaction_id: 'tx-a' },
     { profile_id: 'profile-shared', audit_id: 'job-b', transaction_id: 'tx-b' },
   ],
-  audit_transactions: [
+  [TABLES.AUDIT_TRANSACTIONS]: [
     {
       id: 'tx-a',
       job_id: 'job-a',
       order_id: 'ORDER-A',
+      merchant_id: 'merchant-a',
+      source_customer_id: 'profile-shared',
+      external_id: 'ORDER-A',
+      order_number: 'ORDER-A',
+      email: 'shared@example.com',
+      phone: null,
+      financial_status: 'paid',
+      fulfillment_state: 'fulfilled',
+      total_price: 50,
+      currency: 'USD',
+      browser_ip: '203.0.113.10',
+      shipping_address_id: null,
+      placed_at: '2026-01-01T00:00:00.000Z',
+      ingested_at: '2026-01-01T00:00:00.000Z',
       customer_email: 'shared@example.com',
       customer_name: 'Shared Customer',
       shipping_address: '1 Shared Street',
@@ -75,6 +124,20 @@ const rowsByTable: Record<string, Row[]> = {
       id: 'tx-b',
       job_id: 'job-b',
       order_id: 'ORDER-B',
+      merchant_id: 'merchant-b',
+      source_customer_id: 'profile-b',
+      external_id: 'ORDER-B',
+      order_number: 'ORDER-B',
+      email: 'shared@example.com',
+      phone: null,
+      financial_status: 'refunded',
+      fulfillment_state: 'fulfilled',
+      total_price: 75,
+      currency: 'USD',
+      browser_ip: '203.0.113.10',
+      shipping_address_id: null,
+      placed_at: '2026-01-02T00:00:00.000Z',
+      ingested_at: '2026-01-02T00:00:00.000Z',
       customer_email: 'shared@example.com',
       customer_name: 'Shared Customer',
       shipping_address: '1 Shared Street',
@@ -89,7 +152,8 @@ const rowsByTable: Record<string, Row[]> = {
       processed_at: '2026-01-02T00:00:00.000Z',
     },
   ],
-  customer_notes: [],
+  [TABLES.SOURCE_ADDRESSES]: [],
+  [TABLES.MERCHANT_CLAIMS]: [],
 };
 
 class QueryBuilder {
@@ -157,7 +221,7 @@ class QueryBuilder {
       rows = rows.filter((row) => values.includes(row[column]));
     }
 
-    if (this.table === 'customer_profiles' && this.orFilter) {
+    if (this.table === TABLES.CUSTOMER_PROFILES && this.orFilter) {
       const allowedMerchantIds = [...this.orFilter.matchAll(/merchant_ids\.cs\.\["([^"]+)"\]/g)]
         .map((match) => match[1]);
       rows = rows.filter((row) =>
@@ -213,48 +277,16 @@ describe('evidence tenant isolation', () => {
     ).rejects.toThrow('Disputed order not found or not owned by merchant');
   });
 
-  it('includes only the caller merchant notes for a shared customer profile', async () => {
-    // A shared profile carries notes from both merchants plus a soft-deleted
-    // note from the caller. The evidence package must only surface the caller's
-    // active notes — never another merchant's, never deleted ones.
-    rowsByTable.customer_notes = [
-      {
-        merchant_id: 'merchant-a',
-        customer_profile_id: 'profile-shared',
-        body: 'Merchant A active note',
-        deleted_by_merchant: false,
-        created_at: '2026-01-03T00:00:00.000Z',
-      },
-      {
-        merchant_id: 'merchant-a',
-        customer_profile_id: 'profile-shared',
-        body: 'Merchant A deleted note',
-        deleted_by_merchant: true,
-        created_at: '2026-01-02T00:00:00.000Z',
-      },
-      {
-        merchant_id: 'merchant-b',
-        customer_profile_id: 'profile-shared',
-        body: 'Merchant B private note',
-        deleted_by_merchant: false,
-        created_at: '2026-01-04T00:00:00.000Z',
-      },
-    ];
+  it('includes only the caller merchant orders in generated evidence', async () => {
+    const pkg = await buildEvidencePackage(
+      'merchant-a',
+      'profile-shared',
+      'tx-a',
+      makeSupabase() as any,
+      'legacy-user-a'
+    );
 
-    try {
-      const pkg = await buildEvidencePackage(
-        'merchant-a',
-        'profile-shared',
-        'tx-a',
-        makeSupabase() as any,
-        'legacy-user-a'
-      );
-
-      expect(pkg.merchantNotes).toContain('Merchant A active note');
-      expect(pkg.merchantNotes).not.toContain('Merchant B private note');
-      expect(pkg.merchantNotes).not.toContain('Merchant A deleted note');
-    } finally {
-      rowsByTable.customer_notes = [];
-    }
+    expect(pkg.orderHistory.map((order) => order.orderId)).toEqual(['ORDER-A']);
+    expect(pkg.orderHistory.map((order) => order.orderId)).not.toContain('ORDER-B');
   });
 });

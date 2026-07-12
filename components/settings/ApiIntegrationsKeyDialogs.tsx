@@ -78,7 +78,7 @@ export function ApiKeysListSection({
         <p className="px-5 py-8 text-sm" style={{ color: 'var(--risk-critical)' }}>{keysError}</p>
       ) : keys.length === 0 ? (
         <p className="px-5 py-8 text-sm" style={{ color: 'var(--text-secondary)' }}>
-          No API keys yet. Create one for the Chrome extension or custom API integrations.
+          No API keys yet. Create one for custom API integrations.
         </p>
       ) : (
         <ul className="divide-y" style={{ borderColor: 'var(--border)' }}>

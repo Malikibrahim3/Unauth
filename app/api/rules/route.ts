@@ -4,6 +4,7 @@ import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { TABLES } from '@/lib/supabase/tables';
 import { createRuleSchema, mapRuleRow, RULE_COLUMNS } from '@/lib/rules/store';
 import { validateConditions } from '@/lib/rules/fields';
+import type { RuleCondition } from '@/lib/rules-engine';
 
 export async function GET() {
   const userClient = createClient();
@@ -54,6 +55,7 @@ export async function POST(request: NextRequest) {
   if (conditionErrors.length > 0) {
     return NextResponse.json({ error: conditionErrors[0]!.message }, { status: 422 });
   }
+  const parsedConditions = parsed.data.conditions as RuleCondition[];
 
   // Default priority = end of the merchant's list.
   let priority = parsed.data.priority;
@@ -74,7 +76,7 @@ export async function POST(request: NextRequest) {
       merchant_id: ctx.merchantId,
       name: parsed.data.name,
       description: parsed.data.description ?? null,
-      conditions: parsed.data.conditions,
+      conditions: parsedConditions,
       action: parsed.data.action,
       condition_operator: parsed.data.condition_operator,
       priority,

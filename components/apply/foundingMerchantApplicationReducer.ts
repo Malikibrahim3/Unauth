@@ -2,7 +2,7 @@ export type FoundingMerchantApplicationState = {
   storeName: string;
   monthlyOrderVolume: string;
   refundVolume: string;
-  fraudProblem: string;
+  lossProblem: string;
   agreed: boolean;
   loading: boolean;
   error: string;
@@ -18,7 +18,7 @@ export const initialFoundingMerchantApplicationState = (
   storeName: defaultStoreName,
   monthlyOrderVolume: '',
   refundVolume: '',
-  fraudProblem: '',
+  lossProblem: '',
   agreed: false,
   loading: false,
   error: '',

@@ -50,9 +50,9 @@ export function summarizeConditions(
 }
 
 export const ACTION_LABELS: Record<string, string> = {
-  approve: 'Approve',
-  manual_review: 'Manual Review',
-  deny: 'Deny',
+  approve: 'Approve payout',
+  manual_review: 'Manual review',
+  deny: 'Deny under policy',
 };
 
 export const ACTION_TONES: Record<string, 'success' | 'warning' | 'danger'> = {

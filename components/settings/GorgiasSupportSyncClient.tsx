@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useReducer, useRef, type FormEvent } from 'react';
+import { PanelCard } from '@/components/ui';
 import { useFetchJson } from '@/lib/react/useFetchJson';
 import { GorgiasSupportSyncCreateForm } from '@/components/settings/GorgiasSupportSyncCreateForm';
 import { GorgiasSupportSyncConnectionDetails } from '@/components/settings/GorgiasSupportSyncConnectionDetails';
@@ -189,8 +190,9 @@ export default function GorgiasSupportSyncClient({ canManage }: Props) {
   return (
     <div className="space-y-5">
       {state.message ? (
-        <div
-          className="rounded-xl border px-4 py-3 text-sm"
+        <PanelCard
+          variant="appInset"
+          className="px-4 py-3 text-sm"
           style={{
             borderColor:
               state.message.type === 'error'
@@ -208,7 +210,7 @@ export default function GorgiasSupportSyncClient({ canManage }: Props) {
           }}
         >
           {state.message.text}
-        </div>
+        </PanelCard>
       ) : null}
 
       {loading ? (

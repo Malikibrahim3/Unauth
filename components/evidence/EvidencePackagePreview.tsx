@@ -14,6 +14,7 @@
 
 import { useState } from 'react';
 import { FileText, Download, ExternalLink, Loader2, AlertCircle } from 'lucide-react';
+import { PanelCard } from '@/components/ui';
 
 interface EvidencePackagePreviewProps {
   packageId: string;
@@ -29,10 +30,7 @@ export function EvidencePackagePreview({ packageId, referenceNumber }: EvidenceP
   const pdfUrl = `/api/evidence/${packageId}/pdf`;
 
   return (
-    <div
-      className="border overflow-hidden"
-      style={{ background: 'var(--surface)', borderColor: 'var(--border-muted)', borderRadius: 4 }}
-    >
+    <PanelCard variant="app" className="overflow-hidden p-0">
       {/* Toolbar */}
       <div
         className="flex items-center justify-between px-4 py-3 gap-3"
@@ -136,6 +134,6 @@ export function EvidencePackagePreview({ packageId, referenceNumber }: EvidenceP
         <span>Generated evidence package</span>
         <span>{referenceNumber ?? 'Draft'}</span>
       </div>
-    </div>
+    </PanelCard>
   );
 }

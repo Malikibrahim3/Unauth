@@ -18,7 +18,7 @@ export const BUTTON_ICON_SIZES: Record<ButtonSize, string> = {
 };
 
 const BUTTON_VARIANT_CLASSES: Record<ButtonVariant, string> = {
-  primary: 'hover:bg-[var(--action-primary-hover)] active:bg-[var(--action-primary-hover)]',
+  primary: 'hover:bg-[var(--accent-hover)] active:bg-[var(--accent-hover)]',
   cta: 'hover:bg-[var(--accent-hover)] active:bg-[var(--accent-hover)]',
   secondary: 'hover:bg-[var(--surface-hover)] active:bg-[var(--surface-sunken)]',
   ghost: 'hover:bg-[var(--surface-hover)] active:bg-[var(--surface-sunken)]',

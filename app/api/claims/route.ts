@@ -4,30 +4,49 @@ import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { createClaimSchema, resolveSourceOrderId, upsertMerchantClaim } from '@/lib/claims/store';
 import { appendClaimEvent } from '@/lib/claims/events';
 import { ACTIVE_CLAIM_STATUSES, FINAL_CLAIM_STATUSES } from '@/lib/claims/sla';
+import { TABLES } from '@/lib/supabase/tables';
+import { CLAIM_EVIDENCE_ORIGIN_FILTER } from '@/lib/integrations/canonicalEvidence';
+import { toStoredClaimType } from '@/lib/payouts/taxonomy';
 
 type DuplicateClaimRow = {
   id: string;
   status: string;
   identity_id: string | null;
   source_order_id: string | null;
+  source_ticket_id: string | null;
+  claim_type: string | null;
   updated_at?: string | null;
 };
 
+/**
+ * One order can accrue multiple post-purchase payout events over time (e.g. an
+ * INR followed later by a damaged reship). We therefore do NOT dedupe on order
+ * alone. A duplicate is the same order + same case reason (claim_type) and, when
+ * both carry a helpdesk ticket, the same ticket. Different reasons or different
+ * tickets on one order are legitimately distinct payout cases.
+ */
 async function findDuplicateClaim(
   serviceClient: any,
   merchantId: string,
   sourceOrderId: string | null,
+  claimType: string | null,
+  sourceTicketId: string | null,
   currentClaimId?: string,
 ) {
   if (!sourceOrderId) return null;
   const { data, error } = await serviceClient
-    .from('claims')
-    .select('id,status,identity_id,source_order_id,updated_at')
+    .from(TABLES.MERCHANT_CLAIMS)
+    .select('id,status,identity_id,source_order_id,source_ticket_id,claim_type,updated_at')
     .eq('merchant_id', merchantId)
     .eq('source_order_id', sourceOrderId)
-    .limit(10);
+    .limit(20);
   if (error) return null;
-  const rows = ((data ?? []) as DuplicateClaimRow[]).filter((row) => row.id !== currentClaimId);
+  const rows = ((data ?? []) as DuplicateClaimRow[]).filter((row) => {
+    if (row.id === currentClaimId) return false;
+    if (claimType && row.claim_type && row.claim_type !== claimType) return false;
+    if (sourceTicketId && row.source_ticket_id && row.source_ticket_id !== sourceTicketId) return false;
+    return true;
+  });
 
   const active = rows.find((row) => (ACTIVE_CLAIM_STATUSES as readonly string[]).includes(row.status));
   if (active) return { kind: 'active' as const, row: active };
@@ -51,7 +70,7 @@ export async function GET(request: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const serviceClient = createServiceClient();
-  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.SUBMIT_FRAUD_FEEDBACK);
+  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.SUBMIT_PAYOUT_DECISIONS);
   if (denied) return denied;
 
   const profileId = request.nextUrl.searchParams.get('profileId');
@@ -65,7 +84,7 @@ export async function GET(request: NextRequest) {
   const orderColumn = sort === 'age' ? 'submitted_at' : 'updated_at';
   const ascending = sort === 'age';
   let query = serviceClient
-    .from('claims')
+    .from(TABLES.MERCHANT_CLAIMS)
     .select('id,identity_id,source_order_id,source_ticket_id,claim_type,status,detection_method,amount_at_risk,currency,submitted_at,created_at,updated_at,first_viewed_at,assigned_to,assigned_at,snoozed_until')
     .eq('merchant_id', ctx.merchantId)
     .order(orderColumn, { ascending })
@@ -126,9 +145,11 @@ export async function GET(request: NextRequest) {
     }
 
     const { data: evidenceRows } = await serviceClient
-      .from('claim_evidence')
+      .from('evidence_items')
       .select('claim_id')
-      .in('claim_id', claimIds);
+      .eq('merchant_id', ctx.merchantId)
+      .in('claim_id', claimIds)
+      .or(CLAIM_EVIDENCE_ORIGIN_FILTER);
     for (const row of evidenceRows ?? []) {
       evidenceCountByClaimId.set(row.claim_id, (evidenceCountByClaimId.get(row.claim_id) ?? 0) + 1);
     }
@@ -184,7 +205,7 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const serviceClient = createServiceClient();
-  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.SUBMIT_FRAUD_FEEDBACK);
+  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.SUBMIT_PAYOUT_DECISIONS);
   if (denied) return denied;
 
   let body: unknown;
@@ -213,7 +234,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Order not found for this merchant.' }, { status: 422 });
   }
 
-  const duplicate = await findDuplicateClaim(serviceClient, ctx.merchantId, sourceOrderId, parsed.data.id);
+  const duplicate = await findDuplicateClaim(
+    serviceClient,
+    ctx.merchantId,
+    sourceOrderId,
+    (parsed.data.case_reason ? toStoredClaimType(parsed.data.case_reason) : null) ?? parsed.data.claim_type ?? null,
+    parsed.data.source_ticket_id ?? null,
+    parsed.data.id,
+  );
   if (duplicate) {
     const duplicateCode =
       duplicate.kind === 'active' ? 'duplicate_active_claim' : 'duplicate_resolved_claim';

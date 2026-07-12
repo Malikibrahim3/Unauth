@@ -12,11 +12,13 @@ export async function fetchSearchResults(query: string): Promise<{
   const trimmed = query.trim();
   if (FLAG_COMMAND_CENTER) {
     const response = await fetch(`/api/search?q=${encodeURIComponent(trimmed)}&limit=6`);
-    const data = response.ok ? await response.json() as { results?: UnifiedResult[] } : { results: [] };
+    if (!response.ok) throw new Error('Search is temporarily unavailable');
+    const data = await response.json() as { results?: UnifiedResult[] };
     const unifiedResults = data.results ?? [];
     return { unifiedResults, customerResults: unifiedToCustomerResults(unifiedResults) };
   }
   const response = await fetch(`/api/customers/search?q=${encodeURIComponent(trimmed)}&limit=5`);
-  const data = response.ok ? await response.json() as { results?: CustomerResult[] } : { results: [] };
+  if (!response.ok) throw new Error('Search is temporarily unavailable');
+  const data = await response.json() as { results?: CustomerResult[] };
   return { unifiedResults: [], customerResults: data.results ?? [] };
 }

@@ -3,7 +3,7 @@ import { integrationBackfillSinceIso } from '@/lib/integrations/backfillWindow';
 import type { WooCommerceRestCredentials } from '@/lib/commerce/credentialCrypto';
 import { wooCommerceApiFetch } from '@/lib/commerce/woocommerce/woocommerceApi';
 import { processWooCommerceOrderWebhook } from '@/lib/commerce/woocommerce/processOrderWebhook';
-import type { WooCommerceOrderPayload } from '@/lib/commerce/woocommerce/woocommerceOrderToCsvRow';
+import type { WooCommerceOrderPayload } from '@/lib/commerce/woocommerce/orderTypes';
 
 const PAGE_SIZE = 100;
 

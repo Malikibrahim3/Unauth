@@ -10,7 +10,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ cl
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const serviceClient = createServiceClient();
-  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.SUBMIT_FRAUD_FEEDBACK);
+  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.SUBMIT_PAYOUT_DECISIONS);
   if (denied) return denied;
 
   const { claimId } = await params;

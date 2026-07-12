@@ -1,33 +1,17 @@
-import { woocommerceOrderToCsvRow } from '@/lib/commerce/woocommerce/woocommerceOrderToCsvRow';
+import fs from 'fs';
+import path from 'path';
 
-describe('woocommerceOrderToCsvRow', () => {
-  it('maps a minimal order with billing email', () => {
-    const row = woocommerceOrderToCsvRow(
-      {
-        id: 1001,
-        date_created: '2024-06-01T12:00:00',
-        total: '49.99',
-        currency: 'GBP',
-        status: 'processing',
-        billing: { email: 'buyer@example.com', phone: '+441234567890' },
-      },
-      null,
-    );
+const exists = (relativePath: string) => fs.existsSync(path.join(process.cwd(), relativePath));
+const read = (relativePath: string) => fs.readFileSync(path.join(process.cwd(), relativePath), 'utf8');
 
-    expect(row).toMatchObject({
-      order_id: '1001',
-      customer_email: 'buyer@example.com',
-      order_total: '49.99',
-      currency: 'GBP',
-    });
+describe('WooCommerce CSV adapter retirement', () => {
+  it('removes the WooCommerce-to-CSV adapter', () => {
+    expect(exists('lib/commerce/woocommerce/woocommerceOrderToCsvRow.ts')).toBe(false);
   });
 
-  it('returns null without email', () => {
-    expect(
-      woocommerceOrderToCsvRow(
-        { id: 1, date_created: '2024-06-01T12:00:00', billing: { email: '' } },
-        null,
-      ),
-    ).toBeNull();
+  it('keeps dormant v2 ingestion typed without the CSV adapter', () => {
+    expect(read('lib/commerce/woocommerce/processOrderWebhook.ts')).toContain(
+      "@/lib/commerce/woocommerce/orderTypes",
+    );
   });
 });

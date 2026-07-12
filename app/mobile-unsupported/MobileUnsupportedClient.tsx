@@ -27,16 +27,9 @@ export default function MobileUnsupportedClient() {
           Desktop works best
         </h1>
         <p className="mt-3 text-sm leading-6" style={{ color: 'var(--text-secondary)' }}>
-          Uploading audits and reviewing flagged customers needs a larger screen. You can still run the free CSV audit on your phone, or open Unauth on a computer.
+          Reviewing claims, evidence, and customer context works best on a larger screen. Open Unauth on a computer to use the full claim decision workspace.
         </p>
         <div className="mt-6 flex flex-col gap-3">
-          <Link
-            href="/audit"
-            className="inline-flex items-center justify-center rounded-md px-4 py-2.5 text-sm font-semibold"
-            style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
-          >
-            Run free audit on mobile
-          </Link>
           <button
             type="button"
             onClick={() => void copyDesktopLink()}

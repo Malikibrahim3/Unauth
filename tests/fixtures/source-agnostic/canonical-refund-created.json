@@ -1,0 +1,20 @@
+{
+  "id": "EXAMPLE-EVT-REFUND-3001",
+  "type": "refund.created",
+  "occurred_at": "2026-07-13T09:15:00Z",
+  "source": {
+    "system": "custom_oms",
+    "account_id": "uk-store",
+    "record_id": "REFUND-3001",
+    "record_url": "https://merchant.example/refunds/REFUND-3001"
+  },
+  "schema_version": 1,
+  "data": {
+    "external_id": "REFUND-3001",
+    "order_external_id": "ORDER-1001",
+    "reason": "item_not_received",
+    "amount_minor": 8400,
+    "currency": "GBP",
+    "refunded_at": "2026-07-13T09:15:00Z"
+  }
+}

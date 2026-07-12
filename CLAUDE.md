@@ -1,3 +1,104 @@
+# Unauth Product Direction
+
+Before making product, UI, copy, schema, rules, widget, claims, evidence, or recovery changes, read:
+
+- `docs/product/MVP_STEERING.md` — full product source of truth
+- `docs/product/PRODUCT_PRINCIPLES.md` — distilled principles
+- `docs/product/TERMINOLOGY.md` — preferred and avoided language
+
+Unauth is no longer primarily a cross-merchant fraud/risk network.
+
+Unauth is now a **post-purchase loss accountability platform** for ecommerce merchants.
+
+Core product sentence:
+
+> Control payouts. Recover where possible. Prevent where not.
+
+The MVP is:
+
+> A Shopify/Gorgias-based post-purchase payout-control system that creates support payout cases, shows a compressed 4-line agent decision card, applies merchant rules, tracks evidence, classifies attribution/recoverability, opens manual recovery cases where appropriate, and reports what was recovered, rejected, prevented, or leaked.
+
+## Strategic hierarchy
+
+The core product is not the Gorgias widget.
+
+The Gorgias widget is the front-line decision surface.
+
+The full product is:
+
+1. support payout cases;
+2. evidence checklist;
+3. merchant rules;
+4. attribution and recoverability;
+5. recovery cases;
+6. recovery board;
+7. partner rulebook;
+8. dashboards and prevention insights.
+
+## Language rules
+
+Use:
+
+- payout exposure;
+- support payout case;
+- evidence strength;
+- evidence missing;
+- merchant rule fired;
+- recommended action;
+- loss attribution;
+- recoverability;
+- recovery owner;
+- chase due;
+- prevention opportunity;
+- policy leakage;
+- partner accountability.
+
+Avoid:
+
+- fraudster;
+- bad actor;
+- blacklist;
+- guilty;
+- caught;
+- scammer;
+- cross-merchant accusation.
+
+Unauth should not make accusations or autonomous decisions.
+
+Merchant rules make recommendations. Unauth surfaces the evidence, matched rule, payout exposure, attribution, recoverability, and next action.
+
+## Gorgias widget rule
+
+The Gorgias widget should be treated as a compressed 4-line decision card:
+
+```txt
+[Claim type] · [Requested action] · [Amount at risk]
+Evidence: [key evidence present] · [key evidence missing]
+Rule: [merchant rule fired] → [recommendation]
+Recovery: [recoverability] · [next action] · Open case →
+```
+
+Do not turn the widget into a full dashboard.
+
+The full detail belongs in the Unauth case page.
+
+## Build priority
+
+When improving the product, prioritise:
+
+1. support payout case clarity;
+2. 4-line Gorgias widget;
+3. evidence checklist;
+4. rules-led recommendations;
+5. recovery cases;
+6. recovery board;
+7. partner rulebook v1;
+8. dashboard metrics.
+
+Do not overbuild automatic carrier claims, AI contract extraction, network benchmarks, WMS/ERP integrations, or full enterprise APIs until the MVP workflow is proven.
+
+---
+
 # CLAUDE.md — Contributor Guide for AI Assistants
 
 ## Ground Rules

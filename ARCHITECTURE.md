@@ -1,8 +1,10 @@
 # ARCHITECTURE.md — System Architecture Reference
 
+> **Product direction:** For what Unauth is building now, read [`docs/product/MVP_STEERING.md`](docs/product/MVP_STEERING.md). This file documents the technical architecture, including legacy CSV ingestion and identity scoring subsystems that predate the payout-control MVP.
+
 ## Overview
 
-Unauth is a Next.js App Router TypeScript application for fraud detection. It processes merchant transaction CSVs, clusters customer identities, and scores each order for fraud risk.
+Unauth is a Next.js App Router TypeScript application. The **current product focus** is post-purchase payout control and recovery (support payout cases, Gorgias widget, evidence, rules, recovery board). The codebase also contains legacy subsystems for CSV ingestion, identity clustering, and behavioral scoring used by tests, internal analysis, and historical merchant data.
 
 ---
 

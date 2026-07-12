@@ -21,8 +21,12 @@ export function evaluateGorgiasHelpdeskLink(
       state: 'disconnected',
       helpdeskLinked: false,
       widgetReady: false,
-      issues: connection?.status === 'error' && connection.last_error
-        ? [connection.last_error]
+      issues: connection?.status === 'error'
+        ? [
+            connection.last_error === 'gorgias_api_auth_failed'
+              ? 'Gorgias API credentials are invalid. Reconnect Gorgias to restore sync.'
+              : connection.last_error ?? 'Gorgias connection error',
+          ]
         : [],
     };
   }

@@ -5,47 +5,109 @@ type TenantScope =
   | { kind: 'column'; column: string }
   | { kind: 'jsonb-array'; column: string };
 
-export const TENANT_TABLES = [
-  'access_audit_log',
-  'audit_runs',
-  'csv_upload_queue',
-  'customer_activity_log',
-  'customer_notes',
-  'customer_profiles',
-  'evidence_packages',
-  'identity_false_positive_reports',
-  'identity_sightings',
-  'lookup_daily_counts',
-  'merchant_members',
-  'normalisation_learning',
-  'processing_jobs',
-  'transactions',
-  'user_action_log',
-  'user_permission_grants',
-  'watchlist_appearances',
-] as const;
-
-export type TenantTable = (typeof TENANT_TABLES)[number];
-
-const TENANT_SCOPES: Record<TenantTable, TenantScope> = {
-  access_audit_log: { kind: 'column', column: 'merchant_id' },
-  audit_runs: { kind: 'column', column: 'merchant_id' },
-  csv_upload_queue: { kind: 'column', column: 'merchant_id' },
-  customer_activity_log: { kind: 'column', column: 'merchant_id' },
-  customer_notes: { kind: 'column', column: 'merchant_id' },
-  customer_profiles: { kind: 'jsonb-array', column: 'merchant_ids' },
+/**
+ * TENANT SCOPING — v2 schema (post-cutover 2026-06-11)
+ * ----------------------------------------------------
+ * `createScopedClient` wraps the SERVICE-ROLE client, which bypasses RLS.
+ * It is therefore the last line of defence for tenant isolation on any query
+ * that runs through the service role. Every table a caller passes to
+ * `.from()` MUST be classified here as exactly one of:
+ *
+ *   1. COLUMN_SCOPES — has a `merchant_id` column. The proxy auto-injects
+ *      `.eq('merchant_id', merchantId)` on select/update/delete and sets
+ *      `merchant_id` on insert/upsert. Verified against supabase/full_schema.sql
+ *      + migrations (every entry below has a merchant_id column).
+ *
+ *   2. CALLER_SCOPED_TABLES — network-level tables that intentionally have NO
+ *      `merchant_id` column (`identities` and the identity graph, plus
+ *      `source_orders`, which is isolated via `job_id -> sync_jobs.merchant_id`).
+ *      The proxy CANNOT scope these with a simple filter, so it passes the
+ *      builder through UNCHANGED. Callers MUST prove ownership themselves
+ *      (e.g. via merchantHelpers: getMerchantOwnedJobIds / assertMerchantOwnsJob
+ *      / fetchMerchantScopedCustomerProfile). This is a documented contract,
+ *      not an accident.
+ *
+ *   3. ANYTHING ELSE — the proxy THROWS (fail-closed). Historically this map
+ *      listed v1 table names that no longer exist, so `scopeFor()` returned
+ *      null and the proxy silently ran UNSCOPED service-role queries across all
+ *      tenants. Failing closed makes that class of bug impossible: a mis-mapped
+ *      or new table name errors loudly instead of leaking.
+ */
+// Tables actually routed through createScopedClient today. Each has a verified
+// `merchant_id` column, so the proxy auto-injects the tenant filter. Keeping this
+// list to the tables the scoped client is genuinely used on (rather than every
+// merchant_id table in the schema) means the proxy scopes real call sites
+// correctly, unknown tables fail closed, and the static isolation guard in
+// tests/api/scopedClient.test.ts keeps its intended coverage. Add a table here
+// only when a route starts routing it through the scoped client.
+const COLUMN_SCOPES: Record<string, TenantScope> = {
+  merchant_users: { kind: 'column', column: 'merchant_id' },
+  sync_jobs: { kind: 'column', column: 'merchant_id' },
+  support_payout_cases: { kind: 'column', column: 'merchant_id' },
   evidence_packages: { kind: 'column', column: 'merchant_id' },
-  identity_false_positive_reports: { kind: 'column', column: 'reported_by_merchant_id' },
-  identity_sightings: { kind: 'column', column: 'merchant_id' },
-  lookup_daily_counts: { kind: 'column', column: 'merchant_id' },
-  merchant_members: { kind: 'column', column: 'merchant_id' },
-  normalisation_learning: { kind: 'column', column: 'merchant_id' },
-  processing_jobs: { kind: 'column', column: 'merchant_id' },
-  transactions: { kind: 'column', column: 'merchant_id' },
+  customer_notes: { kind: 'column', column: 'merchant_id' },
+  customer_activity_log: { kind: 'column', column: 'merchant_id' },
+  merchant_identity_state: { kind: 'column', column: 'merchant_id' },
+  // Verified live: both tables have a merchant_id column. Registered so the
+  // audit-trail and team-permissions routes stop failing closed at runtime.
   user_action_log: { kind: 'column', column: 'merchant_id' },
   user_permission_grants: { kind: 'column', column: 'merchant_id' },
-  watchlist_appearances: { kind: 'column', column: 'merchant_id' },
+  // ── Source-agnostic MVP+ foundation (Phase 1). Every table below has a
+  // verified merchant_id column. Registered here so any service-role code that
+  // reads/writes them on behalf of a single merchant is auto-scoped and the
+  // static route guard stays live. No existing route touches these yet, so this
+  // is purely additive. The inbox/outbox worker tables (ingestion_events,
+  // domain_events, domain_event_deliveries) are intentionally NOT listed: they
+  // are service-role/worker surfaces whose processing is cross-merchant per-row
+  // (the outbox worker claims deliveries across tenants) and whose merchant
+  // read path goes through RLS (is_merchant_member), not the scoped client. ──
+  source_accounts: { kind: 'column', column: 'merchant_id' },
+  source_records: { kind: 'column', column: 'merchant_id' },
+  entity_relationships: { kind: 'column', column: 'merchant_id' },
+  record_match_candidates: { kind: 'column', column: 'merchant_id' },
+  record_match_resolutions: { kind: 'column', column: 'merchant_id' },
+  case_financial_entries: { kind: 'column', column: 'merchant_id' },
+  case_financial_summaries: { kind: 'column', column: 'merchant_id' },
+  // ── Canonical entity model (Phase 3). All have a merchant_id column. ──
+  merchant_customers: { kind: 'column', column: 'merchant_id' },
+  source_order_lines: { kind: 'column', column: 'merchant_id' },
+  source_payments: { kind: 'column', column: 'merchant_id' },
+  source_transactions: { kind: 'column', column: 'merchant_id' },
+  source_replacements: { kind: 'column', column: 'merchant_id' },
+  source_shipments: { kind: 'column', column: 'merchant_id' },
+  source_tracking_events: { kind: 'column', column: 'merchant_id' },
+  source_returns: { kind: 'column', column: 'merchant_id' },
+  source_messages: { kind: 'column', column: 'merchant_id' },
+  ingestion_field_errors: { kind: 'column', column: 'merchant_id' },
 };
+
+/**
+ * Network-level / parent-scoped tables with NO merchant_id column. The proxy
+ * passes these through unchanged; the CALLER is responsible for proving
+ * ownership (see the contract note above). Adding a table here is an explicit,
+ * reviewable decision — never a silent fallback.
+ */
+const CALLER_SCOPED_TABLES: ReadonlySet<string> = new Set([
+  'merchants', // tenant identity IS the row id; callers filter by .eq('id', merchantId)
+  'identities',
+  'identity_profiles',
+  'identity_members',
+  'identity_identifiers',
+  'identity_edges',
+  'identity_resolution_events',
+  // NOTE: source_orders DOES have a populated merchant_id column (verified live:
+  // 5743/5743 non-null). It is kept caller-scoped for now only because 17 route
+  // files access it via the service role and read/insert it job-scoped; moving it
+  // to COLUMN_SCOPES tightens the static route guard across all of them and is a
+  // separate, reviewed tenancy pass (tracked for the source-agnostic cutover),
+  // not part of the additive Phase 1 foundation. Isolation today: RLS +
+  // job_id -> sync_jobs.merchant_id at call sites.
+  'source_orders',
+  'sync_job_chunks', // isolated via job_id -> sync_jobs.merchant_id
+  'claim_outcomes', // isolated via parent support_payout_cases
+]);
+
+export const TENANT_TABLES = Object.keys(COLUMN_SCOPES) as readonly string[];
 
 export type ScopedSupabaseClient = SupabaseClient & {
   readonly merchantId: string;
@@ -58,12 +120,6 @@ function normaliseMerchantId(merchantId: string | null | undefined): string {
     throw new Error('createScopedClient requires a merchantId');
   }
   return value;
-}
-
-function scopeFor(table: string): TenantScope | null {
-  return Object.prototype.hasOwnProperty.call(TENANT_SCOPES, table)
-    ? TENANT_SCOPES[table as TenantTable]
-    : null;
 }
 
 function withColumnTenant(row: Record<string, unknown>, column: string, merchantId: string) {
@@ -110,9 +166,7 @@ function applyTenantFilter(builder: any, scope: TenantScope, merchantId: string)
   return builder;
 }
 
-function wrapTableBuilder(builder: any, scope: TenantScope | null, merchantId: string): any {
-  if (!scope) return builder;
-
+function wrapTableBuilder(builder: any, scope: TenantScope, merchantId: string): any {
   return new Proxy(builder, {
     get(target, prop, receiver) {
       if (prop === 'select') {
@@ -151,7 +205,25 @@ export function createScopedClient(
       if (prop === 'from') {
         return (table: string) => {
           const builder = target.from(table as never);
-          return wrapTableBuilder(builder, scopeFor(table), scopedMerchantId);
+          const scope = Object.prototype.hasOwnProperty.call(COLUMN_SCOPES, table)
+            ? COLUMN_SCOPES[table]
+            : null;
+          if (scope) {
+            return wrapTableBuilder(builder, scope, scopedMerchantId);
+          }
+          if (CALLER_SCOPED_TABLES.has(table)) {
+            // Network-level table with no merchant_id — ownership must be proven
+            // by the caller. Passed through intentionally (see contract above).
+            return builder;
+          }
+          // Fail closed: never run an unscoped service-role query on an
+          // unclassified table.
+          throw new Error(
+            `createScopedClient: no tenant scope defined for table '${table}'. ` +
+              `Refusing to run an unscoped service-role query. Classify it in ` +
+              `COLUMN_SCOPES (has merchant_id) or CALLER_SCOPED_TABLES ` +
+              `(network-level, ownership proven at call site) in lib/supabase/scoped.ts.`
+          );
         };
       }
 

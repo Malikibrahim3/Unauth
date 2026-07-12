@@ -9,7 +9,7 @@ import {
 } from '@/lib/supabase/merchantHelpers';
 import { maskEmail, maskAddress, maskIdentifier } from '@/lib/privacy/mask';
 import { scoreToGrade, gradeToLetter, K_ANONYMITY_MIN } from '@/lib/engine/weights';
-import { humanizeFraudFlags, crossMerchantSummary } from '@/lib/api/v1/signals';
+import { humanizeClaimHistorySignals, crossMerchantSummary } from '@/lib/api/v1/signals';
 import { logPublicApiAccess } from '@/lib/api/v1/audit';
 import { env } from '@/lib/utils/env';
 
@@ -99,7 +99,10 @@ export async function performV1CustomerProfile(
   const emails = (Array.isArray(profile.emails) ? profile.emails : []) as string[];
   const addresses = (Array.isArray(profile.addresses) ? profile.addresses : []) as string[];
   const cards = (Array.isArray(profile.card_last4s) ? profile.card_last4s : []) as string[];
-  const flags = (Array.isArray(profile.fraud_flags) ? profile.fraud_flags : []) as string[];
+  // NOTE: `fraud_flags` is the underlying database column name (out of scope
+  // to rename here); the local name below is kept neutral per
+  // docs/product/TERMINOLOGY.md.
+  const claimHistorySignals = (Array.isArray(profile.fraud_flags) ? profile.fraud_flags : []) as string[];
 
   const riskScore = Number(profile.risk_score ?? 0);
   const confidence = scoreToGrade(riskScore);
@@ -128,7 +131,13 @@ export async function performV1CustomerProfile(
     ok: true,
     body: {
       profile_id: profileId,
+      // `risk_grade` is a deprecated alias kept for backward compatibility
+      // with existing external consumers of this field name. New
+      // integrations should read `confidence_grade` instead — same value,
+      // neutral naming per docs/product/TERMINOLOGY.md (this reflects
+      // identity/evidence confidence, not an accusation of risk).
       risk_grade: gradeToLetter(confidence),
+      confidence_grade: gradeToLetter(confidence),
       confidence,
       risk_score: Math.round(riskScore),
       investigation_status: String(profile.investigation_status ?? 'new'),
@@ -145,7 +154,7 @@ export async function performV1CustomerProfile(
         INR_claims: countInrClaims(transactions),
       },
       cross_merchant: crossMerchant,
-      signals: humanizeFraudFlags(flags),
+      signals: humanizeClaimHistorySignals(claimHistorySignals),
       profile_url: `${appBase}/customers/${profileId}`,
     },
   };

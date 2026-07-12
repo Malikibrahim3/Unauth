@@ -4,20 +4,29 @@ import { cn } from '@/lib/utils';
 
 interface MerchantEnvChipProps {
   merchantName: string | null;
-  /** e.g. 'production' | 'sandbox' | 'staging'. Defaults to 'production'. */
+  /** Real deployment environment, e.g. 'production' | 'preview' | 'development'. */
   environment?: string;
+  /** Demo/sample tenant — shown as a "Demo" pill (takes precedence over environment). */
+  isDemo?: boolean;
   className?: string;
 }
 
 /**
  * MerchantEnvChip — small badge shown left-of-search in AppHeader.
- * Displays the merchant name alongside an environment pill.
- * Per §5.3 of the Amplitude Core Design Amplification Plan.
+ * Displays the merchant name alongside an honest status pill:
+ * - Demo/sample tenants show a "Demo" pill.
+ * - Non-production deploys (preview/development) show the environment.
+ * - Production shows no pill — production is the default and a "prod" badge on
+ *   every page is noise (and was actively misleading on demo tenants).
  */
-export function MerchantEnvChip({ merchantName, environment = 'production', className }: MerchantEnvChipProps) {
+export function MerchantEnvChip({ merchantName, environment, isDemo, className }: MerchantEnvChipProps) {
   if (!merchantName) return null;
 
-  const isProd = environment === 'production';
+  const pill = isDemo
+    ? 'demo'
+    : environment && environment !== 'production'
+      ? environment.slice(0, 4)
+      : null;
 
   return (
     <div
@@ -27,25 +36,25 @@ export function MerchantEnvChip({ merchantName, environment = 'production', clas
         'select-none',
         className,
       )}
-      title={`${merchantName} · ${environment}`}
+      title={pill ? `${merchantName} · ${pill}` : merchantName}
     >
       {/* Merchant name */}
       <span className="text-caption font-medium text-[var(--text)] max-w-[120px] truncate">
         {merchantName}
       </span>
 
-      {/* Environment pill */}
-      <span
-        className={cn(
-          'inline-flex items-center rounded px-1 py-px',
-          'text-xs font-semibold uppercase leading-none tracking-wide',
-          isProd
-            ? 'bg-[var(--info-bg)] border border-[var(--info-bd)] text-[var(--info)]'
-            : 'bg-[var(--bg-subtle)] text-[var(--text-secondary)]',
-        )}
-      >
-        {isProd ? 'prod' : environment.slice(0, 4)}
-      </span>
+      {/* Status pill — only rendered for demo/non-production */}
+      {pill ? (
+        <span
+          className={cn(
+            'inline-flex items-center rounded px-1 py-px',
+            'text-xs font-semibold uppercase leading-none tracking-wide',
+            'bg-[var(--info-bg)] border border-[var(--info-bd)] text-[var(--info)]',
+          )}
+        >
+          {pill}
+        </span>
+      ) : null}
     </div>
   );
 }

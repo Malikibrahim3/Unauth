@@ -6,10 +6,6 @@ import { hashIdentifier } from '@/lib/identity/hash';
 import { buildEvidencePackage } from '@/lib/evidence/buildPackage';
 import { buildNarrative } from '@/lib/evidence/narrative';
 import { renderEvidencePDF } from '@/lib/evidence/pdf';
-import {
-  fetchMerchantScopedCustomerProfile,
-  getMerchantOwnedJobIds,
-} from '@/lib/supabase/merchantHelpers';
 import { enforceRateLimit, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
 import { logPublicApiAccess } from '@/lib/api/v1/audit';
 import { env } from '@/lib/utils/env';
@@ -61,12 +57,11 @@ async function resolveProfileIdByEmail(
   merchantId: string,
   normEmail: string
 ): Promise<string | null> {
-  const filters = `merchant_ids.cs.${JSON.stringify([merchantId])}`;
   const { data } = await service
-    .from(TABLES.CUSTOMER_PROFILES)
+    .from(TABLES.SOURCE_CUSTOMERS)
     .select('id')
-    .contains('emails', JSON.stringify([normEmail]))
-    .or(filters)
+    .eq('merchant_id', merchantId)
+    .ilike('email', normEmail)
     .limit(1)
     .maybeSingle() as unknown as { data: { id: string } | null };
   return data?.id ?? null;
@@ -78,45 +73,29 @@ async function resolveDisputedTransactionId(
   profileId: string,
   orderRef: string
 ): Promise<string | null> {
-  const jobIds = await getMerchantOwnedJobIds(service, merchantId);
-  if (jobIds.length === 0) return null;
-
-  const { data: byOrderId } = await service
-    .from(TABLES.AUDIT_TRANSACTIONS)
+  const base = () => service
+    .from(TABLES.SOURCE_ORDERS)
     .select('id')
-    .in('job_id', jobIds)
-    .eq('order_id', orderRef)
-    .limit(1)
-    .maybeSingle() as unknown as { data: { id: string } | null };
+    .eq('merchant_id', merchantId)
+    .eq('source_customer_id', profileId);
 
-  if (byOrderId?.id) return byOrderId.id;
-
-  const { data: byUuid } = await service
-    .from(TABLES.AUDIT_TRANSACTIONS)
-    .select('id')
-    .in('job_id', jobIds)
+  const { data: byUuid } = await base()
     .eq('id', orderRef)
     .limit(1)
     .maybeSingle() as unknown as { data: { id: string } | null };
-
   if (byUuid?.id) return byUuid.id;
 
-  const profile = await fetchMerchantScopedCustomerProfile(service, merchantId, profileId);
-  if (!profile) return null;
-
-  const emails = (Array.isArray(profile.emails) ? profile.emails : []) as string[];
-  if (emails.length === 0) return null;
-
-  const { data: fallback } = await service
-    .from(TABLES.AUDIT_TRANSACTIONS)
-    .select('id')
-    .in('job_id', jobIds)
-    .in('customer_email', emails)
-    .order('processed_at', { ascending: false })
+  const { data: byExternalId } = await base()
+    .eq('external_id', orderRef)
     .limit(1)
     .maybeSingle() as unknown as { data: { id: string } | null };
+  if (byExternalId?.id) return byExternalId.id;
 
-  return fallback?.id ?? null;
+  const { data: byOrderNumber } = await base()
+    .eq('order_number', orderRef)
+    .limit(1)
+    .maybeSingle() as unknown as { data: { id: string } | null };
+  return byOrderNumber?.id ?? null;
 }
 
 export async function performV1EvidenceCreate(

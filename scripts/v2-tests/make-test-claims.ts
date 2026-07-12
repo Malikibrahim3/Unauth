@@ -15,7 +15,7 @@ async function main() {
     { merchant_id: A, source_order_id: manifest.orders['v2t-g7-a'], claim_type: 'item_not_received', status: 'open', detection_method: 'manual', reason_raw: 'v2test claim A', amount_at_risk: 123.45, currency: 'USD' },
     { merchant_id: B, source_order_id: manifest.orders['v2t-g7-b'], claim_type: 'chargeback', status: 'open', detection_method: 'manual', reason_raw: 'v2test claim B', amount_at_risk: 67.89, currency: 'USD' },
   ];
-  const { data, error } = await sb.from('claims').insert(rows).select('id, merchant_id');
+  const { data, error } = await sb.from('support_payout_cases').insert(rows).select('id, merchant_id');
   if (error) fail('claims', error);
   manifest.claims = { A: data.find((r: any) => r.merchant_id === A)!.id, B: data.find((r: any) => r.merchant_id === B)!.id };
 

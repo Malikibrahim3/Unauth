@@ -1,6 +1,7 @@
 'use client';
 
 import { Check, Copy, AlertTriangle } from 'lucide-react';
+import { PanelCard } from '@/components/ui';
 import type { GorgiasEphemeralSecret, GorgiasSupportSyncState } from '@/components/settings/gorgiasSupportSyncReducer';
 import { GORGIAS_SUPPORT_WEBHOOK_HEADER_NAME } from '@/lib/support/gorgias/supportConnectionShared';
 
@@ -66,8 +67,9 @@ export function GorgiasWebhookSetupPanel({
   return (
     <div className="space-y-5">
       {/* Warning banner */}
-      <div
-        className="flex gap-3 rounded-xl border px-4 py-3"
+      <PanelCard
+        variant="appInset"
+        className="flex gap-3 px-4 py-3"
         style={{
           borderColor: 'color-mix(in srgb, var(--warning) 35%, var(--border))',
           background: 'color-mix(in srgb, var(--warning) 8%, var(--surface))',
@@ -82,13 +84,10 @@ export function GorgiasWebhookSetupPanel({
             {secret.warning} This secret is shown once — if you lose it, rotate it from the connection settings.
           </p>
         </div>
-      </div>
+      </PanelCard>
 
       {/* Credentials to copy */}
-      <div
-        className="rounded-xl border divide-y p-4 space-y-3"
-        style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
-      >
+      <PanelCard variant="app" className="divide-y p-4 space-y-3">
         <p className="text-xs font-semibold uppercase tracking-wider pb-3" style={{ color: 'var(--text-secondary)', borderColor: 'var(--border)' }}>
           Webhook credentials
         </p>
@@ -117,13 +116,10 @@ export function GorgiasWebhookSetupPanel({
             onCopy={onCopy}
           />
         </div>
-      </div>
+      </PanelCard>
 
       {/* Setup steps */}
-      <div
-        className="rounded-xl border divide-y"
-        style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
-      >
+      <PanelCard variant="app" className="divide-y p-0">
         <div className="px-4 py-2.5">
           <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
             How to configure in Gorgias
@@ -151,7 +147,7 @@ export function GorgiasWebhookSetupPanel({
             </p>
           </div>
         ))}
-      </div>
+      </PanelCard>
 
       <button
         type="button"

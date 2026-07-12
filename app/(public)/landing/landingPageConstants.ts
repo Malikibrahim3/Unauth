@@ -25,7 +25,7 @@ export const LANDING_PRODUCT_LADDER = LANDING_TIER_CHART.filter(
 export const LANDING_UPGRADE_LADDER = [
   {
     tier: 'Free',
-    copy: 'Join the network with useful day-one store context, helpdesk presence, and monthly context credits for occasional case review.',
+    copy: 'Start with day-one store context, helpdesk presence, and monthly context credits for occasional payout-case review.',
   },
   {
     tier: 'Pro',
@@ -42,7 +42,7 @@ export const LANDING_UPGRADE_LADDER = [
 ] as const;
 
 export const LANDING_GOOD_CUSTOMERS_COPY =
-  'Store context and pseudonymous network signals help teams review genuine cases faster without turning customers into permanent risk records. Unauth provides context, not decisions.';
+  'Store context, evidence checklists, and merchant rules help teams review genuine cases faster without turning customers into permanent risk records. Unauth provides context, not decisions.';
 
 export const LANDING_UNAUTH_WEDGE_COPY = {
   title: 'Unauth replaces the messy evidence workflow',
@@ -50,48 +50,44 @@ export const LANDING_UNAUTH_WEDGE_COPY = {
 };
 
 export const LANDING_PRIVACY_NETWORK_COPY =
-  'Privacy-preserving, merchant-scoped records and thresholded pseudonymous network intelligence (k-anonymity N≥3). Other merchants’ raw customer data is never exposed — only linked patterns strong enough to meet network thresholds.';
+  'Privacy-preserving, merchant-scoped records for support payout cases. Raw customer data stays inside the merchant workspace; Unauth surfaces evidence, policy context, and recovery workflow without reusable customer denial lists.';
 
 const FAQ_FEATURED = [
   LANDING_FAQ_ALWAYS_FREE,
   {
     q: 'What exactly is Unauth?',
-    a: 'Unauth is a context and intelligence network for claim and customer review. We link pseudonymous signals, surface case context for merchant review, and help support teams assemble evidence without making refund, fulfilment, account, or eligibility decisions.',
-  },
-  {
-    q: 'How do you get data from other merchants?',
-    a: "Merchants contribute anonymised, hashed identity signals to the shared identity network. Raw customer records stay merchant-scoped; cross-merchant views use aggregate, thresholded signals — not another store's customer list.",
+    a: 'Unauth is a post-purchase payout-control workflow for support teams. It turns refunds, reships, replacements, and chargeback-related tickets into support payout cases with evidence, merchant rules, recommendations, recovery tracking, and outcome reporting.',
   },
   {
     q: "Can you see my customers' data?",
-    a: "Your raw upload is processed inside your merchant workspace and is not exposed to other merchants. Network comparison uses HMAC-SHA256 identifiers, k-anonymity gates, and masked outputs so reports show relevant pseudonymous patterns without revealing another merchant's customer records.",
+    a: 'Your raw store and helpdesk data is processed inside your merchant workspace. Other merchants never receive your customer records, and payout decisions stay with your team.',
   },
   {
     q: 'Is this GDPR compliant?',
-    a: 'Unauth is designed around data minimisation, merchant-scoped processing, and hashed network signals. You should review the data processing documentation with your legal team before using live EU customer data.',
+    a: 'Unauth is designed around data minimisation, merchant-scoped processing, and case-level operational records. You should review the data processing documentation with your legal team before using live EU customer data.',
   },
   {
     q: 'Do I need to integrate anything?',
-    a: 'For live monitoring, yes: connect one order source and one helpdesk. CSV import is available for historical backfill or evaluation if you are not ready to connect yet.',
+    a: 'Yes: connect one order source and one helpdesk. Unauth backfills available order, ticket, claim, and outcome context from those connected systems.',
   },
   {
-    q: 'How long does an audit take?',
-    a: "Around 20 minutes for most datasets. Files with 50,000+ orders may take slightly longer. You don't need to stay on the page — results will be ready when you return.",
+    q: 'How long does setup take?',
+    a: "Most teams can connect a store and helpdesk in about fifteen minutes. Historical context depends on what those systems expose through their APIs.",
   },
 ] as const;
 
 const FAQ_MORE = [
   {
     q: 'How is this different from a reusable customer list?',
-    a: "Unauth is designed to answer case questions, not help build customer denial lists. Context unlocks are case-scoped, network data is pseudonymous, and raw cross-merchant customer records are never exposed.",
+    a: 'Unauth is designed to answer payout-case questions, not help build customer denial lists. Context is case-scoped, and raw customer records are not exposed between merchants.',
   },
   {
     q: 'What does a confidence grade actually mean?',
-    a: 'Identity confidence reflects how strongly available data points appear linked. It does not mean a customer should be approved, rejected, refunded, denied, blocked, or punished.',
+    a: 'Evidence confidence reflects how complete the case record is. It does not mean a customer should be approved, rejected, refunded, denied, blocked, or punished.',
   },
   {
     q: 'What do I actually get at the end?',
-    a: 'A reviewable record of store context, pseudonymous network context when available, and case-level evidence summaries or exports where your plan supports them.',
+    a: 'A reviewable support payout case with store context, evidence status, the matched merchant rule, a recommendation, recovery context, and outcome reporting where your plan supports it.',
   },
   {
     q: 'What is chargeback evidence assembly?',
@@ -103,7 +99,7 @@ const FAQ_MORE = [
   },
   {
     q: 'How does pricing work?',
-    a: 'Every plan includes the widget, store context, and pseudonymous network context. Free includes 100 monthly context credits (baseline access aligned with network participation), Pro includes 1,000, Growth includes 5,000, and Scale uses dedicated monthly volume agreed at onboarding.',
+    a: 'Every plan includes the widget, store context, evidence checklist, and payout workflow. Free includes 100 monthly context credits, Pro includes 1,000, Growth includes 5,000, and Scale uses dedicated monthly volume agreed at onboarding.',
   },
   {
     q: 'Who is Unauth for?',
@@ -111,7 +107,7 @@ const FAQ_MORE = [
   },
   {
     q: 'How do I get started?',
-    a: 'Connect your store or upload a CSV. No credit card required.',
+    a: 'Connect your store and helpdesk. No credit card required.',
   },
 ] as const;
 
@@ -125,7 +121,7 @@ export const HERO_SUBJECT_FIELDS = [
   { label: 'phone', rows: [['+44 7*** ***1184', 'primary'], ['+44 7*** ***2209', 'variant · 2 merchants']] },
   { label: 'ip / geo', rows: [['82.***.***.114', 'LDN · AS15169'], ['81.***.***.203', 'MAN · AS15169'], ['91.***.***.77', 'LDN · AS15169']] },
   { label: 'browser', rows: [['Safari 17 · iPhone', 'primary'], ['Chrome 124 · iPhone', 'observed once']] },
-  { label: 'delivery', rows: [['DPD · photo proof requested x3', ''], ['Royal Mail · no proof · 1 dispute']] },
+  { label: 'delivery', rows: [['Courier proof requested x3', ''], ['Order tracking unavailable · 1 dispute']] },
 ] as const;
 
 export function heroSubjectRowDelay(rowIndex: number): string {
@@ -139,12 +135,12 @@ export const heroActionDelay = heroNetworkDelay + 5 * 60 + 180;
 export const heroFooterDelay = heroActionDelay + 160;
 
 export const COMPARISON_ROWS = [
-  { cap: 'Resolves cross-merchant identity', a: 'no' as const, b: 'no' as const, c: 'yes' as const, note: 'linked across multiple merchants' },
-  { cap: 'Catches friendly fraud / INR cycles', a: 'no' as const, b: 'partial' as const, c: 'yes' as const, note: 'post-purchase patterns' },
-  { cap: 'Surfaces cross-merchant identity patterns', a: 'partial' as const, b: 'no' as const, c: 'yes' as const, note: 'thresholded network signals (k≥3 merchants)' },
+  { cap: 'Creates support payout cases from tickets', a: 'no' as const, b: 'partial' as const, c: 'yes' as const, note: 'helpdesk-native workflow' },
+  { cap: 'Tracks refunds, reships, and INR cycles', a: 'no' as const, b: 'partial' as const, c: 'yes' as const, note: 'post-purchase payout context' },
+  { cap: 'Surfaces evidence gaps and recovery routes', a: 'partial' as const, b: 'no' as const, c: 'yes' as const, note: 'evidence checklist + partner rulebook' },
   { cap: 'Explainable signals (no black box)', a: 'partial' as const, b: 'no' as const, c: 'yes' as const, note: 'every flag documented' },
   { cap: 'Generates representment-ready case file', a: 'no' as const, b: 'no' as const, c: 'yes' as const, note: 'chargeback evidence packet' },
-  { cap: 'CSV backfill available when integrations are not connected', a: 'no' as const, b: 'no' as const, c: 'yes' as const, note: 'historical import, optional' },
+  { cap: 'Backfills available context from connected systems', a: 'no' as const, b: 'no' as const, c: 'yes' as const, note: 'store + helpdesk history' },
   { cap: 'You keep the decline decision - no black box blocks', a: 'no' as const, b: 'no' as const, c: 'yes' as const, note: 'advises, never auto-blocks' },
   { cap: 'Context unlocks are case-scoped, not reusable customer surveillance', a: 'no' as const, b: 'no' as const, c: 'yes' as const, note: 'credits unlock review context for a case' },
   { cap: 'PII stays encrypted - never exposed in transit', a: 'no' as const, b: 'no' as const, c: 'yes' as const, note: 'client-side HMAC-SHA256' },
@@ -152,8 +148,8 @@ export const COMPARISON_ROWS = [
 
 export const COMPARISON_COLUMNS = [
   { name: 'Blocklists', sub: 'Flags repeat emails, IPs, or devices you have already seen', highlight: false, logo: false },
-  { name: 'Checkout scoring', sub: 'Scores orders at checkout to catch payment fraud before approval', highlight: false, logo: false },
-  { name: 'Unauth', sub: 'Claim confidence, evidence strength, and privacy-preserving network signals after checkout', highlight: true, logo: true },
+  { name: 'Checkout scoring', sub: 'Assesses payment risk before the claim exists', highlight: false, logo: false },
+  { name: 'Unauth', sub: 'Payout exposure, evidence strength, merchant rules, and recovery workflow after checkout', highlight: true, logo: true },
 ] as const;
 
 export const FOOTER_STYLES_ESPRESSO = {
