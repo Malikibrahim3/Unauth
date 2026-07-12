@@ -1636,7 +1636,8 @@ export default function IntegrationHubClient() {
     ];
     const message = messages.find(([key]) => params.has(key));
     if (!message) return;
-    setToast(message[1]);
+    const reason = params.get('shipbob_reason');
+    setToast(reason ? `${message[1]} (${reason})` : message[1]);
     reloadHub();
     window.history.replaceState({}, '', window.location.pathname);
   }, [reloadHub]);

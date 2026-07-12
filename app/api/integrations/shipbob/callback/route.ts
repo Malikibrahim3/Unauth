@@ -129,7 +129,15 @@ async function handleCallback(request: NextRequest) {
     response.cookies.set(shipBobOAuthCookie, '', clearShipBobOAuthCookieOptions());
     return response;
   } catch (error) {
-    console.error('ShipBob OAuth callback failed', { message: error instanceof Error ? error.message : 'unknown' });
-    return responseError('callback_failed');
+    const message = error instanceof Error ? error.message : 'unknown';
+    console.error('ShipBob OAuth callback failed', { message });
+    // Surface a sanitized failure slug in the redirect so the failing step is
+    // diagnosable from the browser URL without needing server log access. The
+    // messages are internal constants (e.g. shipbob_oauth_token_exchange_failed:400);
+    // sanitisation guards against DB error strings with free-form content.
+    const reason = message.toLowerCase().replace(/[^a-z0-9_:.-]+/g, '_').slice(0, 80);
+    const response = redirect({ shipbob_callback_failed: '1', shipbob_reason: reason });
+    response.cookies.set(shipBobOAuthCookie, '', clearShipBobOAuthCookieOptions());
+    return response;
   }
 }

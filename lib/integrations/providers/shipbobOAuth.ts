@@ -103,7 +103,10 @@ export async function exchangeShipBobOAuthCode(input: {
   });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok || typeof payload.access_token !== 'string') {
-    throw new Error(`shipbob_oauth_token_exchange_failed:${response.status}`);
+    // Include ShipBob's OAuth error code (invalid_grant, invalid_client, …) so
+    // the failing cause is diagnosable downstream, not just the HTTP status.
+    const errorCode = typeof payload.error === 'string' ? payload.error : 'no_error_code';
+    throw new Error(`shipbob_oauth_token_exchange_failed:${response.status}:${errorCode}`);
   }
   return payload;
 }
