@@ -1306,7 +1306,9 @@ export default function IntegrationHubClient() {
   const [uploadTarget, setUploadTarget] = useState<ProviderConnectionView | null>(null);
   const [expandOrderSource, setExpandOrderSource] = useState(false);
   const [expandHelpdesk, setExpandHelpdesk] = useState(false);
-  const [stackOpen, setStackOpen] = useState(false);
+  // Warehouse/3PL connectors are supported setup choices, so keep this section
+  // visible instead of hiding the only ShipBob entry behind an extra click.
+  const [stackOpen, setStackOpen] = useState(true);
   const [warehouseEditing, setWarehouseEditing] = useState(false);
   const [returnsEditing, setReturnsEditing] = useState(false);
   const [applicabilityBusy, setApplicabilityBusy] = useState<ApplicabilityCategory | null>(null);
