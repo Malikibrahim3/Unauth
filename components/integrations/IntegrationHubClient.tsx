@@ -1522,6 +1522,25 @@ export default function IntegrationHubClient() {
     return () => window.removeEventListener('message', handleMessage);
   }, [reloadSetup]);
 
+  // Surface the result of the ShipBob OAuth redirect instead of leaving the
+  // merchant to infer success from a silent page refresh.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const messages: Array<[string, string]> = [
+      ['shipbob_connected', 'ShipBob connected. Webhook coverage is being checked and the initial import has started.'],
+      ['shipbob_warning', 'ShipBob connected, but webhook setup needs attention. The connection remains visible as degraded.'],
+      ['shipbob_callback_failed', 'ShipBob authorisation could not be completed. Please try Connect ShipBob again.'],
+      ['shipbob_authorization_denied', 'ShipBob authorisation was cancelled or denied.'],
+      ['shipbob_invalid_state', 'ShipBob authorisation expired. Please start the connection again.'],
+      ['shipbob_misconfigured', 'ShipBob is not configured on the deployment yet.'],
+    ];
+    const message = messages.find(([key]) => params.has(key));
+    if (!message) return;
+    setToast(message[1]);
+    reloadHub();
+    window.history.replaceState({}, '', window.location.pathname);
+  }, [reloadHub]);
+
   // Sync processor selection from API once data loads (useState initial value is null before fetch)
   useEffect(() => {
     const saved = hubData?.paymentSetup?.processorSelection ?? null;
