@@ -6,7 +6,7 @@
  * (app/api/integrations/[provider]/sync).
  */
 import { ensureShipBobSyncJob, runShipBobAccountSync } from '@/lib/integrations/providers/shipbobSync';
-import { updateShipBobConnectionAfterSync } from '@/lib/connectors/providers/shipbob/persistence';
+import { persistShipBobCanonicalRecord, updateShipBobConnectionAfterSync } from '@/lib/connectors/providers/shipbob/persistence';
 import { deriveSyncState } from '@/lib/integrations/syncState';
 import type { SyncJobState } from '@/lib/connectors/syncEngine';
 
@@ -194,6 +194,48 @@ describe('updateShipBobConnectionAfterSync', () => {
     expect(row.last_error_code).toBe('shipbob_auth_failed:401');
     expect(row.last_error_message).toContain('shipbob_auth_failed:401');
     expect(row.status).toBe('connected'); // connection is kept; sync failed
+  });
+});
+
+describe('persistShipBobCanonicalRecord order enum mapping', () => {
+  function captureUpsert() {
+    const upserts: Record<string, unknown>[] = [];
+    const client = {
+      from: (table: string) => ({
+        upsert: (payload: Record<string, unknown>) => {
+          if (table === 'source_orders') upserts.push(payload);
+          return Promise.resolve({ error: null });
+        },
+        select: () => ({ eq: () => ({ eq: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null }) }) }) }) }),
+      }),
+    } as never;
+    return { client, upserts };
+  }
+  const jobCtx = { merchantId: 'm-1', connectionId: 'conn-1', sourceAccountId: 'acct-1' };
+  const orderRecord = (status: string) => ({
+    canonicalEntityType: 'order' as const,
+    sourceEntityType: 'order',
+    externalId: 'o-1',
+    data: { id: 'o-1', status },
+  });
+
+  it('maps ShipBob "Exception" to enum-legal values instead of failing the row', async () => {
+    const { client, upserts } = captureUpsert();
+    await persistShipBobCanonicalRecord(client, jobCtx, orderRecord('Exception'), 'sr-1');
+    expect(upserts[0].financial_status).toBe('unknown');
+    expect(upserts[0].fulfillment_state).toBe('failure');
+  });
+
+  it('maps operational statuses onto fulfillment_state, never financial_status', async () => {
+    const { client, upserts } = captureUpsert();
+    await persistShipBobCanonicalRecord(client, jobCtx, orderRecord('Fulfilled'), 'sr-1');
+    await persistShipBobCanonicalRecord(client, jobCtx, orderRecord('Processing'), 'sr-2');
+    await persistShipBobCanonicalRecord(client, jobCtx, orderRecord('Cancelled'), 'sr-3');
+    expect(upserts.map((u) => [u.financial_status, u.fulfillment_state])).toEqual([
+      ['unknown', 'fulfilled'],
+      ['unknown', 'unfulfilled'],
+      ['cancelled', 'unknown'],
+    ]);
   });
 });
 

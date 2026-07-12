@@ -15,6 +15,40 @@ function number(value: unknown): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+/**
+ * source_orders.financial_status / fulfillment_state are strict Postgres
+ * enums. ShipBob order statuses are operational (Processing, Fulfilled,
+ * Exception, …), not payment states — writing them raw violates the enum and
+ * fails the whole order row. Map explicitly and default to 'unknown'.
+ */
+function shipBobFinancialStatus(raw: Record<string, unknown>): string {
+  const status = text(raw.status)?.toLowerCase() ?? '';
+  return status === 'cancelled' || status === 'canceled' ? 'cancelled' : 'unknown';
+}
+
+function shipBobFulfillmentState(raw: Record<string, unknown>): string {
+  const status = (text(raw.fulfillment_status) ?? text(raw.status))?.toLowerCase() ?? '';
+  switch (status) {
+    case 'fulfilled':
+    case 'completed':
+    case 'shipped':
+      return 'fulfilled';
+    case 'partiallyfulfilled':
+    case 'partially_fulfilled':
+      return 'partial';
+    case 'exception':
+      return 'failure';
+    case 'processing':
+    case 'importreview':
+    case 'import_review':
+    case 'onhold':
+    case 'on_hold':
+      return 'unfulfilled';
+    default:
+      return 'unknown';
+  }
+}
+
 async function findOrderId(client: SupabaseClient, job: JobContext, externalId: string | null) {
   if (!externalId) return null;
   const { data } = await client.from('source_orders').select('id').eq('merchant_id', job.merchantId).eq('source', 'shipbob').eq('external_id', externalId).maybeSingle();
@@ -45,14 +79,18 @@ export async function persistShipBobCanonicalRecord(
   }
 
   if (record.sourceEntityType === 'order') {
+    // connection_id on source_orders FKs to store_connections (Shopify-era);
+    // ShipBob connections live in merchant_integrations, so writing that id
+    // violates the FK. ShipBob provenance is carried by source='shipbob' and
+    // the source_records row (whose connection_id does reference
+    // merchant_integrations).
     const { error } = await client.from('source_orders').upsert({
       merchant_id: job.merchantId,
       source: 'shipbob',
-      connection_id: job.connectionId,
       external_id: record.externalId,
       order_number: text(raw.reference_id) ?? text(raw.order_number),
-      financial_status: text(raw.status) ?? 'unknown',
-      fulfillment_state: text(raw.fulfillment_status) ?? text(raw.status) ?? 'unknown',
+      financial_status: shipBobFinancialStatus(raw),
+      fulfillment_state: shipBobFulfillmentState(raw),
       total_price: number(raw.total_price ?? raw.order_value),
       subtotal_price: number(raw.subtotal_price),
       currency: text(raw.currency),
