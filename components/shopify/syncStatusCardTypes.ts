@@ -9,6 +9,7 @@ export interface ShopifyStatus {
   linkState?: 'connected' | 'not_connected' | 'disconnected' | 'installed_unlinked';
   shopDomain?: string;
   lastOrderSyncedAt?: string | null;
+  lastSyncAt?: string | null;
   lastWebhookAt?: string | null;
   lastWebhookTopic?: string | null;
   lastWebhookStatus?: string | null;

@@ -70,9 +70,9 @@ function SyncStatusConnectedContent({
 
       <div className="grid grid-cols-2 gap-3 text-xs">
         <div>
-          <p style={{ color: 'var(--text-secondary)' }}>Last order synced</p>
+          <p style={{ color: 'var(--text-secondary)' }}>Last sync</p>
           <p className="font-medium mt-0.5" style={{ color: 'var(--text)' }}>
-            {status.lastOrderSyncedAt ? formatRelativeTime(status.lastOrderSyncedAt) : 'Never'}
+            {status.lastSyncAt ? formatRelativeTime(status.lastSyncAt) : 'Never'}
           </p>
         </div>
         <div>

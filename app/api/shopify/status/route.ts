@@ -47,7 +47,7 @@ export async function GET() {
       .maybeSingle(),
     serviceClient
       .from('store_connections')
-      .select('scopes')
+      .select('scopes,last_sync_at')
       .eq('merchant_id', merchantId)
       .eq('platform', 'shopify')
       .eq('store_key', shopDomain)
@@ -90,6 +90,7 @@ export async function GET() {
   const grantedScopes = Array.isArray(scopeResult.data?.scopes)
     ? scopeResult.data.scopes.map(String).filter(Boolean)
     : [];
+  const lastSyncAt = scopeResult.data?.last_sync_at ?? null;
   const lastWebhook = lastWebhookResult.data as { processed_at?: string; topic?: string | null; status?: string | null } | null;
   const recentWebhooks = ((recentWebhooksResult.data ?? []) as Array<{ processed_at?: string; topic?: string | null; status?: string | null }>)
     .filter((row) => row.processed_at)
@@ -100,6 +101,7 @@ export async function GET() {
     linkState: connection.linkState,
     shopDomain,
     lastOrderSyncedAt: lastOrder?.placed_at ?? lastOrder?.ingested_at ?? null,
+    lastSyncAt,
     lastWebhookAt: lastWebhook?.processed_at ?? null,
     lastWebhookTopic: lastWebhook?.topic ?? null,
     lastWebhookStatus: lastWebhook?.status ?? null,

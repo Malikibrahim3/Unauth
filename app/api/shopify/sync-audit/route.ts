@@ -58,6 +58,7 @@ export async function POST() {
       supabase: serviceClient,
       shopDomain,
       accessToken: credentials.access_token,
+      merchantId: ctx.merchantId,
     });
 
     shopifyDebugLog('sync_orders.complete', {
