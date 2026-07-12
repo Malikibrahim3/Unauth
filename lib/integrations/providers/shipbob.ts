@@ -8,7 +8,7 @@ export const shipbobProvider: IntegrationProvider = {
   buildStatus: 'partial',
   evidenceCapabilities: ['warehouse_pick_pack', 'warehouse_exception', 'three_pl_sla_claim_status'],
   capabilities: { readFulfilment: true, readWarehouseEvents: true, readClaimStatus: true },
-  requiredScopes: ['channels_read', 'orders_read', 'fulfillments_read', 'locations_read', 'returns_read', 'webhooks_read'],
+  requiredScopes: ['channels_read', 'orders_read', 'fulfillments_read', 'locations_read', 'returns_read', 'webhooks_read', 'webhooks_write'],
 };
 
 export type ShipBobOrder = {

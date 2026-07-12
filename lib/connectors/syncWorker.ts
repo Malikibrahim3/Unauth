@@ -12,6 +12,8 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/lib/supabase/tables';
 import { getConnector } from '@/lib/connectors/registry';
 import { upsertSourceRecord } from '@/lib/sources/sourceRegistry';
+import { getIntegrationCredential } from '@/lib/integrations/auth';
+import { persistShipBobCanonicalRecord } from '@/lib/connectors/providers/shipbob/persistence';
 import { runSyncJobPage, type SyncJobKind, type SyncJobState } from '@/lib/connectors/syncEngine';
 import type { ConnectorAdapter, ConnectorContext, NormalizedRecord } from '@/lib/connectors/types';
 
@@ -91,6 +93,7 @@ export async function runSyncJob(
     merchantId: job.merchant_id,
     connectionId: job.connection_id,
     sourceAccountId: job.source_account_id,
+    credentials: await getIntegrationCredential(client, job.merchant_id, job.source ?? ''),
   };
   const persistRecord = opts.persistRecord ?? defaultPersistRecord(client, job);
   const maxPages = opts.maxPagesPerRun ?? 25;
@@ -113,7 +116,7 @@ export async function runSyncJob(
 
 function defaultPersistRecord(client: SupabaseClient, job: SyncJobRow) {
   return async (record: NormalizedRecord): Promise<void> => {
-    await upsertSourceRecord(client, {
+    const sourceRecord = await upsertSourceRecord(client, {
       merchantId: job.merchant_id,
       connectionId: job.connection_id,
       sourceAccountId: job.source_account_id,
@@ -124,7 +127,15 @@ function defaultPersistRecord(client: SupabaseClient, job: SyncJobRow) {
       sourceUrl: record.sourceUrl ?? null,
       sourceCreatedAt: record.sourceCreatedAt ?? null,
       sourceUpdatedAt: record.sourceUpdatedAt ?? null,
+      sourceMetadata: { provider_payload: record.data },
     });
+    if (job.source === 'shipbob') {
+      await persistShipBobCanonicalRecord(client, {
+        merchantId: job.merchant_id,
+        connectionId: job.connection_id,
+        sourceAccountId: job.source_account_id,
+      }, record, (sourceRecord as { id?: string } | null)?.id ?? null);
+    }
   };
 }
 

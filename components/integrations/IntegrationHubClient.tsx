@@ -1342,10 +1342,11 @@ export default function IntegrationHubClient() {
       description: p.description ?? p.evidenceCapabilities.map((c) => c.replaceAll('_', ' ')).join(', '),
       logo: PROVIDER_LOGOS[p.id] ?? '/integrations/carrier-claims.svg',
       connected: p.buildStatus !== 'slot_only' && p.status === 'connected',
-      connectionIssue: p.status === 'connection_error' || p.status === 'error',
+      connectionIssue: p.status === 'connection_error' || p.status === 'error' || p.status === 'degraded' || p.status === 'revoked',
       detail: p.detail,
       comingSoon: p.buildStatus === 'slot_only',
       dynamic: p,
+      ...(p.id === 'shipbob' ? { href: '/api/integrations/shipbob/install?environment=sandbox' } : {}),
     };
   }
 

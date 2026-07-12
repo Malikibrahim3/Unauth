@@ -20,6 +20,8 @@ type IntegrationRow = {
 function activeStatus(status: string | null | undefined): IntegrationConnectionStatus {
   if (status === 'connected' || status === 'active') return 'connected';
   if (status === 'error' || status === 'connection_error') return 'connection_error';
+  if (status === 'degraded') return 'degraded';
+  if (status === 'revoked') return 'revoked';
   if (status === 'syncing' || status === 'disabled') return status;
   return 'not_connected';
 }

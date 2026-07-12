@@ -18,6 +18,8 @@ export type IntegrationConnectionStatus =
   | 'connected'
   | 'not_connected'
   | 'connection_error'
+  | 'degraded'
+  | 'revoked'
   | 'syncing'
   | 'disabled'
   /** Legacy database status, mapped to connection_error in new UI copy. */

@@ -2,6 +2,8 @@ import { createHash, randomBytes } from 'node:crypto';
 import { encryptIntegrationCredentials } from '@/lib/integrations/secrets';
 import { upsertConnection } from '@/lib/connectors/connectionStore';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { createShipBobSubscription, listShipBobSubscriptions, SHIPBOB_WEBHOOK_TOPICS, type ShipBobCredentials } from '@/lib/connectors/providers/shipbob/api';
+import { decryptIntegrationCredentials } from '@/lib/integrations/secrets';
 
 export const SHIPBOB_READ_SCOPES = [
   'openid',
@@ -11,6 +13,7 @@ export const SHIPBOB_READ_SCOPES = [
   'locations_read',
   'returns_read',
   'webhooks_read',
+  'webhooks_write',
   'offline_access',
 ] as const;
 
@@ -141,4 +144,61 @@ export async function persistShipBobOAuthConnection(input: {
   if (error) throw new Error(`shipbob_oauth_credential_persist_failed:${error.message}`);
 
   return { connectionId, sourceAccountId };
+}
+
+export async function ensureShipBobWebhookSubscriptions(input: {
+  client: SupabaseClient;
+  connectionId: string;
+  accessToken: string;
+  sandbox: boolean;
+  webhookUrl: string;
+}): Promise<{ healthy: boolean; subscriptionIds: string[]; webhookSecret?: string }> {
+  const credentials: ShipBobCredentials = { accessToken: input.accessToken, sandbox: input.sandbox };
+  const existing = await listShipBobSubscriptions(credentials);
+  const required = new Set(SHIPBOB_WEBHOOK_TOPICS);
+  const matching = existing.items.filter((subscription) => subscription.enabled !== false && subscription.url === input.webhookUrl && [...required].every((topic) => subscription.topics.includes(topic)));
+  if (matching.length > 0) {
+    return { healthy: true, subscriptionIds: matching.map((subscription) => subscription.id) };
+  }
+  const created = await createShipBobSubscription(credentials, {
+    url: input.webhookUrl,
+    topics: [...SHIPBOB_WEBHOOK_TOPICS],
+    description: 'Unauth ShipBob order and shipment updates',
+    secret: `whsec_${randomBytes(24).toString('base64')}`,
+  });
+  if (!created.secret) throw new Error('shipbob_webhook_secret_missing');
+  return { healthy: true, subscriptionIds: [created.id], webhookSecret: created.secret };
+}
+
+export async function storeShipBobWebhookSecret(input: {
+  client: SupabaseClient;
+  merchantId: string;
+  webhookSecret: string;
+}) {
+  const { data, error } = await input.client.from('integration_credentials').select('encrypted_payload').eq('merchant_id', input.merchantId).eq('provider_id', 'shipbob').maybeSingle();
+  if (error || !data?.encrypted_payload) throw new Error(`shipbob_webhook_secret_storage_lookup_failed:${error?.message ?? 'missing_credentials'}`);
+  const credentials = decryptIntegrationCredentials(data.encrypted_payload);
+  const encryptedPayload = encryptIntegrationCredentials({ ...credentials, webhookSecret: input.webhookSecret });
+  const { error: updateError } = await input.client.from('integration_credentials').update({ encrypted_payload: encryptedPayload, updated_at: new Date().toISOString() }).eq('merchant_id', input.merchantId).eq('provider_id', 'shipbob');
+  if (updateError) throw new Error(`shipbob_webhook_secret_storage_failed:${updateError.message}`);
+}
+
+export async function enqueueShipBobInitialImport(input: {
+  client: SupabaseClient;
+  merchantId: string;
+  connectionId: string;
+  sourceAccountId: string;
+}) {
+  const { error } = await input.client.from('sync_jobs').insert({
+    merchant_id: input.merchantId,
+    connection_id: input.connectionId,
+    source_account_id: input.sourceAccountId,
+    source: 'shipbob',
+    job_kind: 'initial_import',
+    status: 'pending',
+    cursor: null,
+    next_attempt_at: new Date().toISOString(),
+    label: 'ShipBob initial import',
+  });
+  if (error && error.code !== '23505') throw new Error(`shipbob_initial_import_enqueue_failed:${error.message}`);
 }

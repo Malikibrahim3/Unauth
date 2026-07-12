@@ -8,6 +8,9 @@ import {
   exchangeShipBobOAuthCode,
   fetchShipBobChannel,
   persistShipBobOAuthConnection,
+  ensureShipBobWebhookSubscriptions,
+  enqueueShipBobInitialImport,
+  storeShipBobWebhookSecret,
   type ShipBobOAuthState,
 } from '@/lib/integrations/providers/shipbobOAuth';
 import {
@@ -77,14 +80,34 @@ async function handleCallback(request: NextRequest) {
       sandbox: oauthState.sandbox,
     });
     const channel = await fetchShipBobChannel({ accessToken: token.access_token, sandbox: oauthState.sandbox });
-    await persistShipBobOAuthConnection({
+    const persisted = await persistShipBobOAuthConnection({
       client: serviceClient,
       merchantId: context.merchantId,
       token,
       channel,
       sandbox: oauthState.sandbox,
     });
-    const response = redirect({ shipbob_connected: '1' });
+    const webhookUrl = `${getAppUrl()}/api/integrations/shipbob/webhook?connectionId=${encodeURIComponent(persisted.connectionId)}`;
+    let subscriptionHealthy = false;
+    try {
+      const subscription = await ensureShipBobWebhookSubscriptions({
+        client: serviceClient,
+        connectionId: persisted.connectionId,
+        accessToken: token.access_token,
+        sandbox: oauthState.sandbox,
+        webhookUrl,
+      });
+      subscriptionHealthy = subscription.healthy;
+      if (subscription.webhookSecret) {
+        await storeShipBobWebhookSecret({ client: serviceClient, merchantId: context.merchantId, webhookSecret: subscription.webhookSecret });
+      }
+      await serviceClient.from('merchant_integrations').update({ subscribed: subscriptionHealthy, webhook_status: subscriptionHealthy ? 'healthy' : 'degraded' }).eq('id', persisted.connectionId);
+    } catch (subscriptionError) {
+      console.error('ShipBob webhook subscription setup failed', { message: subscriptionError instanceof Error ? subscriptionError.message : 'unknown' });
+      await serviceClient.from('merchant_integrations').update({ status: 'degraded', subscribed: false, webhook_status: 'missing' }).eq('id', persisted.connectionId);
+    }
+    await enqueueShipBobInitialImport({ client: serviceClient, merchantId: context.merchantId, connectionId: persisted.connectionId, sourceAccountId: persisted.sourceAccountId });
+    const response = redirect({ shipbob_connected: '1', ...(subscriptionHealthy ? {} : { shipbob_warning: 'webhook_subscription_failed' }) });
     response.cookies.set(shipBobOAuthCookie, '', clearShipBobOAuthCookieOptions());
     return response;
   } catch (error) {

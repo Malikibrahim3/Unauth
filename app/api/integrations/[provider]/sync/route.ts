@@ -139,7 +139,9 @@ export async function POST(
       });
     } else if (provider.id === 'shipbob') {
       const credentials = await getIntegrationCredential(serviceClient, ctx.merchantId, provider.id);
-      if (!credentials?.apiKey) return NextResponse.json({ error: 'ShipBob is not connected.' }, { status: 400 });
+      if (!credentials) return NextResponse.json({ error: 'ShipBob is not connected.' }, { status: 400 });
+      const token = credentials?.accessToken ?? credentials?.apiKey;
+      if (!token) return NextResponse.json({ error: 'ShipBob is not connected.' }, { status: 400 });
       const orderReference = await resolveOrderReference(
         serviceClient,
         ctx.merchantId,
@@ -151,17 +153,17 @@ export async function POST(
       }
       const shipbobOrder = await getOrderByReferenceId(
         orderReference,
-        String(credentials.apiKey),
-        credentials.sandbox === true,
-        typeof credentials.channelId === 'string' ? credentials.channelId : undefined,
+        String(token),
+        credentials.environment === 'sandbox' || credentials.sandbox === true,
+        typeof credentials.providerAccountId === 'string' ? credentials.providerAccountId : typeof credentials.channelId === 'string' ? credentials.channelId : undefined,
       );
       if (!shipbobOrder) {
         return NextResponse.json({ error: 'Order was not found in ShipBob.' }, { status: 404 });
       }
       const timelineGroups = await Promise.all(
-        shipbobOrder.shipments.map((shipment) => getShipmentTimeline(shipment.id, String(credentials.apiKey), credentials.sandbox === true)),
+        shipbobOrder.shipments.map((shipment) => getShipmentTimeline(shipment.id, String(token), credentials.environment === 'sandbox' || credentials.sandbox === true)),
       );
-      const returnOrder = await getReturnForOrder(shipbobOrder.id, String(credentials.apiKey), credentials.sandbox === true);
+      const returnOrder = await getReturnForOrder(shipbobOrder.id, String(token), credentials.environment === 'sandbox' || credentials.sandbox === true);
       normalized = mapShipBobFulfillmentToEvidence(shipbobOrder, timelineGroups.flat(), returnOrder, {
         merchantId: ctx.merchantId,
         supportPayoutCaseId: parsed.data.supportPayoutCaseId,
