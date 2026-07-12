@@ -89,6 +89,7 @@ const CURRENT_V2_MERCHANT_DELETE_TABLES: string[] = [
   'profile_view_tokens',
   'agreement_rule_evaluations',
   'accountability_events',
+  'case_exceptions',
   'work_tasks',
   'recovery_tasks',
   'evidence_links',
