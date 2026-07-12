@@ -13,6 +13,8 @@ import type {
 type IntegrationRow = {
   provider_id: string;
   status: IntegrationConnectionStatus | string | null;
+  provider_account_id: string | null;
+  provider_account_name: string | null;
   last_sync_at: string | null;
   last_error: string | null;
 };
@@ -33,7 +35,7 @@ export async function getStoredIntegrationViews(
   const [{ data: integrationRows }, { data: shopifyRows }, { data: gorgiasRows }] = await Promise.all([
     client
       .from('merchant_integrations')
-      .select('provider_id,status,last_sync_at,last_error')
+      .select('provider_id,status,provider_account_id,provider_account_name,last_sync_at,last_error')
       .eq('merchant_id', merchantId),
     client
       .from('store_connections')
@@ -81,7 +83,7 @@ export async function getStoredIntegrationViews(
       status: provider.buildStatus === 'slot_only' ? 'not_connected' : activeStatus(row?.status),
       lastSyncAt: row?.last_sync_at ?? null,
       lastError: row?.last_error ?? null,
-      detail: null,
+      detail: row?.provider_account_name ?? row?.provider_account_id ?? null,
     };
   });
 }

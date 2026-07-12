@@ -175,6 +175,12 @@ function ProviderCard({
           {provider.detail}
         </p>
       ) : null}
+      {provider.connected && dyn ? (
+        <p className="mt-1 text-xs" style={{ color: 'var(--success)' }}>
+          {dyn.lastSyncAt ? `Last synced ${new Date(dyn.lastSyncAt).toLocaleDateString()}` : 'Connected · initial import pending'}
+          {dyn.authMode === 'oauth' ? ' · OAuth' : ''}
+        </p>
+      ) : null}
       {provider.connectionIssue && !provider.connected ? (
         <p className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--warning)' }}>
           Connection lost. Reconnect to restore.
@@ -764,6 +770,8 @@ function SetupProgressChecklist({
   helpdeskDetail,
   trackingConnected,
   trackingName,
+  warehouseConnected,
+  warehouseName,
 }: {
   storeConnected: boolean;
   storeName: string | null;
@@ -773,7 +781,11 @@ function SetupProgressChecklist({
   helpdeskDetail: string | null;
   trackingConnected: boolean;
   trackingName: string | null;
+  warehouseConnected: boolean;
+  warehouseName: string | null;
 }) {
+  const completed = [storeConnected, helpdeskConnected, trackingConnected, warehouseConnected].filter(Boolean).length;
+
   function storeLine() {
     if (storeConnected && storeName) {
       const detail = storeDetail ? ` · ${storeDetail}` : '';
@@ -797,40 +809,59 @@ function SetupProgressChecklist({
     return '○ Tracking & proof — recommended, not connected yet';
   }
 
+  function warehouseLine() {
+    if (warehouseConnected && warehouseName) return `✓ Warehouse / 3PL — ${warehouseName} connected`;
+    return '○ Warehouse / 3PL — optional, not connected yet';
+  }
+
   return (
-    <div>
+    <div className="space-y-3">
       <div
-        className="rounded-xl border px-4 py-3"
+        className="rounded-2xl border px-5 py-4"
         style={{ borderColor: 'var(--border-muted)', background: 'var(--surface)' }}
       >
-        <ul className="space-y-2">
+        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Integration setup</p>
+            <p className="mt-0.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
+              Connect the systems Unauth needs, then use this page to monitor their health.
+            </p>
+          </div>
+          <span
+            className="rounded-full px-2.5 py-1 text-xs font-semibold"
+            style={{
+              background: completed >= 2 ? 'color-mix(in srgb, var(--success) 12%, transparent)' : 'var(--bg-inset)',
+              color: completed >= 2 ? 'var(--success)' : 'var(--text-secondary)',
+            }}
+          >
+            {completed}/4 sources connected
+          </span>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2">
           <ChecklistRow done={storeConnected} text={storeLine()} />
           <ChecklistRow done={helpdeskConnected} text={helpdeskLine()} />
           <ChecklistRow
             done={trackingConnected}
             text={trackingLine()}
             action={!trackingConnected ? (
-              <a
-                href="#tracking-proof"
-                className="shrink-0 text-xs font-medium underline underline-offset-2"
-                style={{ color: 'var(--warning)' }}
-              >
+              <a href="#tracking-proof" className="shrink-0 text-xs font-medium underline underline-offset-2" style={{ color: 'var(--warning)' }}>
                 Connect →
               </a>
             ) : null}
           />
-        </ul>
+          <ChecklistRow
+            done={warehouseConnected}
+            text={warehouseLine()}
+            action={!warehouseConnected ? (
+              <a href="#stack-setup" className="shrink-0 text-xs font-medium underline underline-offset-2" style={{ color: 'var(--text-secondary)' }}>
+                View →
+              </a>
+            ) : null}
+          />
+        </div>
       </div>
-      <p className="mt-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
-        Plus:{' '}
-        <a
-          href="#payments-disputes"
-          className="font-medium underline underline-offset-2"
-          style={{ color: 'var(--text-secondary)' }}
-        >
-          confirm your warehouse, returns, and payment setup below
-        </a>
-        .
+      <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+        Required for the payout gate: an order source and helpdesk. Tracking and warehouse connections add evidence and fulfilment context.
       </p>
     </div>
   );
@@ -1133,7 +1164,12 @@ function CategoryApplicabilityQuestion({
   // pending or editing: show the question
   return (
     <div className="space-y-3">
-      <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>{question}</p>
+      <div>
+        <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>{question}</p>
+        <p className="mt-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
+          Choose an answer to tailor the setup checklist. You can also connect the provider now.
+        </p>
+      </div>
       <div className="flex flex-wrap gap-2">
         <ApplicabilityChoiceButton onClick={onUseOne} disabled={busy}>
           {yesLabel}
@@ -1142,6 +1178,7 @@ function CategoryApplicabilityQuestion({
           {noLabel}
         </ApplicabilityChoiceButton>
       </div>
+      {children}
     </div>
   );
 }
@@ -1527,11 +1564,15 @@ export default function IntegrationHubClient() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const messages: Array<[string, string]> = [
-      ['shipbob_connected', 'ShipBob connected. Webhook coverage is being checked and the initial import has started.'],
       ['shipbob_warning', 'ShipBob connected, but webhook setup needs attention. The connection remains visible as degraded.'],
+      ['shipbob_connected', 'ShipBob connected. Webhook coverage is being checked and the initial import has started.'],
       ['shipbob_callback_failed', 'ShipBob authorisation could not be completed. Please try Connect ShipBob again.'],
       ['shipbob_authorization_denied', 'ShipBob authorisation was cancelled or denied.'],
       ['shipbob_invalid_state', 'ShipBob authorisation expired. Please start the connection again.'],
+      ['shipbob_unauthorized', 'You must be signed in to Unauth before connecting ShipBob.'],
+      ['shipbob_forbidden', 'Your Unauth account does not have permission to manage integrations.'],
+      ['shipbob_missing_merchant', 'Your Unauth workspace could not be resolved. Contact support before reconnecting ShipBob.'],
+      ['shipbob_missing_params', 'ShipBob did not return an authorisation code. Please try again.'],
       ['shipbob_misconfigured', 'ShipBob is not configured on the deployment yet.'],
     ];
     const message = messages.find(([key]) => params.has(key));
@@ -1682,6 +1723,7 @@ export default function IntegrationHubClient() {
   const connectedStore = orderSource.find((p) => p.connected && !p.comingSoon) ?? null;
   const connectedHelpdesk = helpdesk.find((p) => p.connected) ?? null;
   const connectedTracking = trackingProof.find((p) => p.connected) ?? null;
+  const connectedWarehouse = logistics.find((p) => p.connected) ?? null;
 
   if (hubLoading && providers.length === 0 && !setupStatus) {
     return (
@@ -1756,6 +1798,8 @@ export default function IntegrationHubClient() {
         helpdeskDetail={connectedHelpdesk?.detail ?? null}
         trackingConnected={trackingConnected}
         trackingName={connectedTracking?.name ?? null}
+        warehouseConnected={Boolean(connectedWarehouse)}
+        warehouseName={connectedWarehouse?.name ?? null}
       />
 
       {/* Required: Order source + Helpdesk */}
@@ -1885,7 +1929,7 @@ export default function IntegrationHubClient() {
         </section>
       ) : null}
 
-      {/* Warehouse, Returns, carrier claims — collapsed by default */}
+      {/* Warehouse, Returns, carrier claims */}
       {(logistics.length > 0 || returns.length > 0 || carrierClaims) ? (
         <section
           id="stack-setup"
@@ -1902,10 +1946,10 @@ export default function IntegrationHubClient() {
           >
             <div>
               <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
-                More sources, as your stack supports them
+                Warehouse & 3PL
               </p>
               <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                Warehouse, returns, and carrier claims — confirm whether these apply to your operation
+                Connect ShipBob when a warehouse or 3PL fulfils your orders. Returns and carrier claims are managed here when available.
               </p>
             </div>
             {stackOpen
