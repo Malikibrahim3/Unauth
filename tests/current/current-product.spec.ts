@@ -70,14 +70,25 @@ test.describe('current merchant experience', () => {
     await expect(page.getByRole('button', { name: 'Import valid rows' })).toBeEnabled();
   });
 
-  test('integration centre resolves health and preserves truthful source status', async ({ page }) => {
+  test('integration setup explains progress, readiness, source health, and trust boundaries', async ({ page }) => {
     await page.goto('/integrations');
-    await expect(page.getByText('Connection health', { exact: true })).toBeVisible();
-    await expect(page.getByText('Loading connection health…', { exact: true })).toHaveCount(0);
-    await expect(page.getByRole('link', { name: 'Shopify connection verified, current, and syncing Required' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Gorgias connection current with a healthy webhook Required' })).toBeVisible();
-    await expect(page.getByText('Shopify', { exact: true })).toBeVisible();
-    await expect(page.getByText('Gorgias', { exact: true })).toBeVisible();
+    await expect(page.getByText('Setup progress', { exact: true })).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText('Loading your setup…', { exact: true })).toHaveCount(0);
+    await expect(page.getByText('Your data sources', { exact: true })).toBeVisible();
+    await expect(page.getByText('Coverage map', { exact: true })).toBeVisible();
+    await expect(page.getByText(/required steps ready/)).toBeVisible();
+    await expect(page.getByText('Next recommended step', { exact: true })).toHaveCount(1);
+    const table = page.getByRole('table');
+    await expect(table.getByRole('columnheader', { name: 'Provider' })).toBeVisible();
+    await expect(table.getByRole('columnheader', { name: 'Issue' })).toBeVisible();
+    const shopifyRow = table.getByRole('row').filter({ hasText: 'Shopify' });
+    await expect(shopifyRow).toHaveCount(1);
+    await shopifyRow.getByRole('button').click();
+    await expect(page.getByText('Read-only data access', { exact: true })).toBeVisible();
+    await expect(page.getByText('What Unauth receives', { exact: true })).toBeVisible();
+    await expect(page.getByText('Unauth does not', { exact: true })).toBeVisible();
+    await expect(page.getByText(/You can sync, reconnect, or disconnect/)).toBeVisible();
+    await expectNoDocumentOverflow(page);
   });
 
   test('reports expose operational metrics and underlying-record navigation', async ({ page }) => {

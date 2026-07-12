@@ -12,6 +12,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { ensureMerchantContextForUser } from '@/lib/account/ensureMerchantContext';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { runShipBobAccountSync } from '@/lib/integrations/providers/shipbobSync';
+import { recordShipBobAudit } from '@/lib/integrations/providers/shipbobAudit';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -28,7 +29,7 @@ export async function POST() {
 
   const { data: connection, error } = await serviceClient
     .from('merchant_integrations')
-    .select('id,status')
+    .select('id,status,environment')
     .eq('merchant_id', context.merchantId)
     .eq('provider_id', 'shipbob')
     .maybeSingle();
@@ -45,6 +46,8 @@ export async function POST() {
     .maybeSingle();
 
   try {
+    const environment = connection.environment === 'sandbox' ? 'sandbox' : 'production';
+    await recordShipBobAudit(serviceClient, { merchantId: context.merchantId, actorUserId: user.id, connectionId: connection.id, environment, action: 'shipbob_manual_sync_requested', status: 'started' });
     const result = await runShipBobAccountSync(serviceClient, {
       merchantId: context.merchantId,
       connectionId: connection.id,
@@ -66,6 +69,12 @@ export async function POST() {
         lastSyncAt: updated?.last_sync_completed_at ?? null,
       });
     }
+    await recordShipBobAudit(serviceClient, {
+      merchantId: context.merchantId, actorUserId: user.id, connectionId: connection.id, environment,
+      action: result.state.status === 'completed' ? 'shipbob_manual_sync_completed' : 'shipbob_manual_sync_failed',
+      status: result.state.status === 'completed' ? 'completed' : 'failed',
+      metadata: { jobId: result.jobId, recordCount: updated?.imported_record_count ?? 0, failureCategory: result.state.lastErrorCode ?? undefined },
+    });
     return NextResponse.json({
       ok: result.state.status === 'completed' || result.state.status === 'running',
       ran: true,

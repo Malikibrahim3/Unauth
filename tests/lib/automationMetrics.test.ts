@@ -10,7 +10,8 @@ describe('automation metrics', () => {
       support_payout_cases: [{ id: 'c1' }, { id: 'c2' }],
       domain_events: [{ aggregate_id: 'c1', event_type: 'case.updated', actor_type: 'system' }, { aggregate_id: 'c1', event_type: 'case.exception_resolved', actor_type: 'user' }],
       case_exceptions: [{ confidence: 'probable', status: 'open', created_at: new Date().toISOString() }, { confidence: 'unknown', status: 'resolved', created_at: new Date().toISOString() }],
+      recovery_tasks: [{ status: 'open' }, { status: 'completed' }],
     }), 'm1');
-    expect(metrics).toMatchObject({ automaticOutcomes: 1, probableOutcomes: 1, unknownOutcomes: 1, unresolvedExceptions: 1, automationCompletionPercent: 50, averageMerchantInputsPerCase: 0.5 });
+    expect(metrics).toMatchObject({ automaticOutcomes: 1, probableOutcomes: 1, unknownOutcomes: 1, unresolvedExceptions: 1, recoveryTasks: 1, automationCompletionPercent: 50, averageMerchantInputsPerCase: 0.5 });
   });
 });

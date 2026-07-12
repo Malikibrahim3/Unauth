@@ -5,7 +5,6 @@ import { formatCurrencyNullable } from '@/lib/utils/format';
 import {
   ShoppingBag,
   Headphones,
-  Activity,
   ArrowRight,
   Upload,
   Repeat2,
@@ -19,6 +18,7 @@ import { MetricCard } from '@/app/(app)/dashboard/DashboardPagePrimitives';
 import { DashboardSyncRow } from '@/app/(app)/dashboard/DashboardSyncRow';
 import { capitalize } from '@/app/(app)/dashboard/dashboardPageUtils';
 import type { ActivityItem, DashboardConfig } from '@/app/(app)/dashboard/dashboardPageTypes';
+import SetupSummaryCard from '@/components/Onboarding/SetupSummaryCard';
 
 export type DashboardPageCockpitProps = {
   config: DashboardConfig;
@@ -51,6 +51,8 @@ export function DashboardPageCockpit(props: DashboardPageCockpitProps) {
   return (
     <div className="space-y-4 p-4 md:p-6">
       <TrackPageView event="Dashboard Viewed" />
+
+      <SetupSummaryCard />
 
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">

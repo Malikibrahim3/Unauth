@@ -15,6 +15,7 @@ import {
 } from '@/lib/integrations/providers/shipbobOAuth';
 import { ensureShipBobSyncJob } from '@/lib/integrations/providers/shipbobSync';
 import { getIntegrationCredential } from '@/lib/integrations/auth';
+import { recordShipBobAudit } from '@/lib/integrations/providers/shipbobAudit';
 import {
   clearShipBobOAuthCookieOptions,
   shipBobOAuthCookie,
@@ -50,18 +51,30 @@ export async function GET(request: NextRequest) { return handleCallback(request)
 export async function POST(request: NextRequest) { return handleCallback(request); }
 
 async function handleCallback(request: NextRequest) {
-  const responseError = (key: string) => {
+  const responseError = async (key: string) => {
     console.warn('shipbob_oauth_callback_rejected', {
       code: key,
       method: request.method,
       hasStateCookie: Boolean(request.cookies.get(shipBobOAuthCookie)?.value),
     });
+    if (oauthStateForAudit) {
+      try {
+        const auditClient = createServiceClient();
+        await recordShipBobAudit(auditClient, {
+          merchantId: oauthStateForAudit.merchantId!, actorUserId: oauthStateForAudit.userId,
+          environment: oauthStateForAudit.sandbox ? 'sandbox' : 'production',
+          action: 'shipbob_authorization_failed', status: 'failed', metadata: { failureCategory: key },
+        });
+      } catch { /* audit must never change OAuth error handling */ }
+    }
     const response = redirect({ [`shipbob_${key}`]: '1' });
     response.cookies.set(shipBobOAuthCookie, '', clearShipBobOAuthCookieOptions());
     return response;
   };
+  let oauthStateForAudit: ShipBobOAuthState | null = null;
   const { code, state, error } = await callbackParams(request);
   if (error) {
+    try { oauthStateForAudit = state ? openShipBobOAuthState(state) : null; } catch { oauthStateForAudit = null; }
     console.warn('shipbob_oauth_provider_error', { errorCategory: error.slice(0, 80) });
     return responseError('authorization_denied');
   }
@@ -73,10 +86,11 @@ async function handleCallback(request: NextRequest) {
     // browsers that discard the temporary OAuth cookie can still complete the
     // callback safely. The cookie fallback preserves in-flight legacy attempts.
     oauthState = openShipBobOAuthState(state);
+    oauthStateForAudit = oauthState;
   } catch {
     const rawCookie = request.cookies.get(shipBobOAuthCookie)?.value;
     if (!rawCookie) return responseError('invalid_state');
-    try { oauthState = JSON.parse(rawCookie) as ShipBobOAuthState; } catch { return responseError('invalid_state'); }
+    try { oauthState = JSON.parse(rawCookie) as ShipBobOAuthState; oauthStateForAudit = oauthState; } catch { return responseError('invalid_state'); }
     if (!oauthState.state || oauthState.state !== state || !oauthState.codeVerifier) return responseError('invalid_state');
   }
 
@@ -110,6 +124,16 @@ async function handleCallback(request: NextRequest) {
       channel,
       sandbox: oauthState.sandbox,
     });
+    const environment = oauthState.sandbox ? 'sandbox' : 'production';
+    await recordShipBobAudit(serviceClient, {
+      merchantId: context.merchantId, actorUserId: user.id, connectionId: persisted.connectionId,
+      environment, action: 'shipbob_connection_completed', status: 'completed',
+      metadata: { sourceAccountId: persisted.sourceAccountId },
+    });
+    if (persisted.reconnected) await recordShipBobAudit(serviceClient, {
+      merchantId: context.merchantId, actorUserId: user.id, connectionId: persisted.connectionId,
+      environment, action: 'shipbob_reconnected', status: 'completed', metadata: { sourceAccountId: persisted.sourceAccountId },
+    });
     const webhookUrl = `${getAppUrl()}/api/integrations/shipbob/webhook?connectionId=${encodeURIComponent(persisted.connectionId)}`;
     let subscriptionHealthy = false;
     try {
@@ -128,13 +152,22 @@ async function handleCallback(request: NextRequest) {
       if (subscription.webhookSecret) {
         await storeShipBobWebhookSecret({ client: serviceClient, merchantId: context.merchantId, webhookSecret: subscription.webhookSecret });
       }
+      await recordShipBobAudit(serviceClient, {
+        merchantId: context.merchantId, actorUserId: user.id, connectionId: persisted.connectionId,
+        environment, action: 'shipbob_webhook_subscription_created', status: 'completed',
+        metadata: { subscriptionCount: subscription.subscriptionIds.length },
+      });
       await serviceClient.from('merchant_integrations').update({ subscribed: subscriptionHealthy, webhook_status: subscriptionHealthy ? 'healthy' : 'degraded' }).eq('id', persisted.connectionId);
     } catch (subscriptionError) {
       console.error('ShipBob webhook subscription setup failed', { message: subscriptionError instanceof Error ? subscriptionError.message : 'unknown' });
       await serviceClient.from('merchant_integrations').update({ status: 'degraded', subscribed: false, webhook_status: 'missing' }).eq('id', persisted.connectionId);
     }
     // Idempotent: duplicate callbacks reuse the existing pending/running job.
-    await ensureShipBobSyncJob(serviceClient, { merchantId: context.merchantId, connectionId: persisted.connectionId, sourceAccountId: persisted.sourceAccountId });
+    const queued = await ensureShipBobSyncJob(serviceClient, { merchantId: context.merchantId, connectionId: persisted.connectionId, sourceAccountId: persisted.sourceAccountId });
+    if (queued.created && queued.job.job_kind === 'initial_import') await recordShipBobAudit(serviceClient, {
+      merchantId: context.merchantId, actorUserId: user.id, connectionId: persisted.connectionId,
+      environment, action: 'shipbob_initial_import_queued', status: 'queued', metadata: { jobId: queued.job.id },
+    });
     const response = redirect({ shipbob_connected: '1', ...(subscriptionHealthy ? {} : { shipbob_warning: 'webhook_subscription_failed' }) });
     response.cookies.set(shipBobOAuthCookie, '', clearShipBobOAuthCookieOptions());
     return response;

@@ -19,6 +19,7 @@ import {
 } from '@/app/(app)/dashboard/dashboardPageUtils';
 import type { ActivityItem } from '@/app/(app)/dashboard/dashboardPageTypes';
 import { loadPayoutDashboardMetrics } from '@/lib/dashboard/payoutDashboardMetrics';
+import SetupSummaryCard from '@/components/Onboarding/SetupSummaryCard';
 
 export default async function DashboardPage() {
   const supabase = createClient();
@@ -45,6 +46,7 @@ export default async function DashboardPage() {
     return (
       <div className="p-4 md:p-6">
         <TrackPageView event="Dashboard Viewed" />
+        <div className="mb-4"><SetupSummaryCard /></div>
         <EmptyDashboardHero />
       </div>
     );
@@ -54,6 +56,7 @@ export default async function DashboardPage() {
     return (
       <div className="p-4 md:p-6">
         <TrackPageView event="Dashboard Viewed" />
+        <div className="mb-4"><SetupSummaryCard /></div>
         <PartialSetupHero connection={connectionState} />
       </div>
     );
@@ -63,6 +66,7 @@ export default async function DashboardPage() {
     return (
       <div className="p-4 md:p-6">
         <TrackPageView event="Dashboard Viewed" />
+        <div className="mb-4"><SetupSummaryCard /></div>
         <DashboardSyncWaitingHero connection={connectionState} />
       </div>
     );

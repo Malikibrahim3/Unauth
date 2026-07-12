@@ -13,6 +13,8 @@ import {
   shipBobOAuthBaseUrl,
 } from '@/lib/integrations/providers/shipbobOAuth';
 import { shipBobOAuthCookie, shipBobOAuthCookieOptions } from '@/lib/integrations/shipbobOAuthCookies';
+import { requestedShipBobEnvironment } from '@/lib/integrations/providers/shipbobEnvironment';
+import { recordShipBobAudit } from '@/lib/integrations/providers/shipbobAudit';
 
 const REDIRECT_PATH = '/integrations';
 
@@ -39,15 +41,19 @@ export async function GET(request: NextRequest) {
   // merchant to ShipBob's sandbox. The query param remains as an explicit
   // per-request override for testing.
   const environmentOverride = request.nextUrl.searchParams.get('environment');
-  const sandbox = environmentOverride
-    ? environmentOverride !== 'production'
-    : env.SHIPBOB_SANDBOX === 'true';
+  const environment = requestedShipBobEnvironment({
+    requested: environmentOverride,
+    nodeEnv: process.env.NODE_ENV,
+    testMode: process.env.SHIPBOB_AUTHORIZED_TEST_MODE === 'true',
+  });
+  const sandbox = environment === 'sandbox';
   const oauthState = createShipBobOAuthState(sandbox);
   const stateToken = sealShipBobOAuthState({
     oauthState,
     merchantId: context.merchantId,
     userId: user.id,
   });
+  await recordShipBobAudit(serviceClient, { merchantId: context.merchantId, actorUserId: user.id, environment, action: 'shipbob_connection_started', status: 'started' });
   const redirectUri = `${getAppUrl()}/api/integrations/shipbob/callback`;
   const authorizeUrl = new URL(`${shipBobOAuthBaseUrl(sandbox)}/connect/authorize`);
   authorizeUrl.searchParams.set('client_id', clientId);

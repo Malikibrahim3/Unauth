@@ -4269,14 +4269,19 @@ export type Database = {
       }
       merchant_integrations: {
         Row: {
+          api_base_url_family: string | null
           auth_mode: string
+          authentication_mode: string | null
+          authorization_host: string | null
           capabilities_snapshot: Json
           category: string
+          connection_created_at: string | null
           connector_version: string | null
           created_at: string
           data_fresh_through: string | null
           disconnected_at: string | null
           display_name: string | null
+          environment: string | null
           granted_scopes: string[]
           id: string
           imported_record_count: number
@@ -4303,14 +4308,19 @@ export type Database = {
           writeback_enabled: boolean
         }
         Insert: {
+          api_base_url_family?: string | null
           auth_mode: string
+          authentication_mode?: string | null
+          authorization_host?: string | null
           capabilities_snapshot?: Json
           category: string
+          connection_created_at?: string | null
           connector_version?: string | null
           created_at?: string
           data_fresh_through?: string | null
           disconnected_at?: string | null
           display_name?: string | null
+          environment?: string | null
           granted_scopes?: string[]
           id?: string
           imported_record_count?: number
@@ -4337,14 +4347,19 @@ export type Database = {
           writeback_enabled?: boolean
         }
         Update: {
+          api_base_url_family?: string | null
           auth_mode?: string
+          authentication_mode?: string | null
+          authorization_host?: string | null
           capabilities_snapshot?: Json
           category?: string
+          connection_created_at?: string | null
           connector_version?: string | null
           created_at?: string
           data_fresh_through?: string | null
           disconnected_at?: string | null
           display_name?: string | null
+          environment?: string | null
           granted_scopes?: string[]
           id?: string
           imported_record_count?: number
@@ -5651,6 +5666,7 @@ export type Database = {
           connection_id: string | null
           created_at: string
           display_name: string | null
+          environment: string | null
           external_account_id: string | null
           id: string
           is_synthetic: boolean
@@ -5664,6 +5680,7 @@ export type Database = {
           connection_id?: string | null
           created_at?: string
           display_name?: string | null
+          environment?: string | null
           external_account_id?: string | null
           id?: string
           is_synthetic?: boolean
@@ -5677,6 +5694,7 @@ export type Database = {
           connection_id?: string | null
           created_at?: string
           display_name?: string | null
+          environment?: string | null
           external_account_id?: string | null
           id?: string
           is_synthetic?: boolean
@@ -5955,6 +5973,76 @@ export type Database = {
             columns: ["source_order_id"]
             isOneToOne: false
             referencedRelation: "source_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      source_locations: {
+        Row: {
+          address: Json
+          created_at: string
+          external_id: string
+          id: string
+          merchant_id: string
+          name: string | null
+          raw_metadata: Json
+          source_account_id: string | null
+          source_created_at: string | null
+          source_record_id: string | null
+          source_updated_at: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: Json
+          created_at?: string
+          external_id: string
+          id?: string
+          merchant_id: string
+          name?: string | null
+          raw_metadata?: Json
+          source_account_id?: string | null
+          source_created_at?: string | null
+          source_record_id?: string | null
+          source_updated_at?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: Json
+          created_at?: string
+          external_id?: string
+          id?: string
+          merchant_id?: string
+          name?: string | null
+          raw_metadata?: Json
+          source_account_id?: string | null
+          source_created_at?: string | null
+          source_record_id?: string | null
+          source_updated_at?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_locations_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_locations_source_account_id_fkey"
+            columns: ["source_account_id"]
+            isOneToOne: false
+            referencedRelation: "source_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_locations_source_record_id_fkey"
+            columns: ["source_record_id"]
+            isOneToOne: false
+            referencedRelation: "source_records"
             referencedColumns: ["id"]
           },
         ]
@@ -7952,7 +8040,7 @@ export type Database = {
         Row: {
           action: string
           actor_role: string
-          actor_user_id: string
+          actor_user_id: string | null
           created_at: string
           id: string
           merchant_id: string
@@ -7964,7 +8052,7 @@ export type Database = {
         Insert: {
           action: string
           actor_role: string
-          actor_user_id: string
+          actor_user_id?: string | null
           created_at?: string
           id?: string
           merchant_id: string
@@ -7976,7 +8064,7 @@ export type Database = {
         Update: {
           action?: string
           actor_role?: string
-          actor_user_id?: string
+          actor_user_id?: string | null
           created_at?: string
           id?: string
           merchant_id?: string
@@ -9067,6 +9155,7 @@ export type Database = {
         | "freshdesk"
         | "csv"
         | "manual"
+        | "shipbob"
       sync_job_status: "pending" | "running" | "completed" | "failed"
       ticket_channel:
         | "email"
@@ -9595,6 +9684,7 @@ export const Constants = {
         "freshdesk",
         "csv",
         "manual",
+        "shipbob",
       ],
       sync_job_status: ["pending", "running", "completed", "failed"],
       ticket_channel: [

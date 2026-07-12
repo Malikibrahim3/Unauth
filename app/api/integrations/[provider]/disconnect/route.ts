@@ -3,6 +3,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { requireIntegrationProvider } from '@/lib/integrations/registry';
 import { disconnectProviderConnection } from '@/lib/connectors/disconnect';
+import { recordShipBobAudit } from '@/lib/integrations/providers/shipbobAudit';
 
 export async function POST(
   _request: Request,
@@ -24,9 +25,23 @@ export async function POST(
 
   // Category-driven disconnect (no provider-id branching) + canonical mirror.
   try {
+    const { data: shipBobConnection } = provider.id === 'shipbob'
+      ? await serviceClient.from('merchant_integrations').select('id,environment').eq('merchant_id', ctx.merchantId).eq('provider_id', 'shipbob').maybeSingle()
+      : { data: null };
     await disconnectProviderConnection(serviceClient, ctx.merchantId, {
       id: provider.id,
       category: provider.category,
+    });
+    if (provider.id === 'shipbob') await recordShipBobAudit(serviceClient, {
+      merchantId: ctx.merchantId, actorUserId: user.id, connectionId: shipBobConnection?.id,
+      environment: shipBobConnection?.environment === 'sandbox' ? 'sandbox' : 'production',
+      action: 'shipbob_disconnected', status: 'completed',
+    });
+    if (provider.id === 'shipbob') await recordShipBobAudit(serviceClient, {
+      merchantId: ctx.merchantId, actorUserId: user.id, connectionId: shipBobConnection?.id,
+      environment: shipBobConnection?.environment === 'sandbox' ? 'sandbox' : 'production',
+      action: 'shipbob_webhook_subscription_removed', status: 'completed',
+      metadata: { cleanup: 'best_effort_disconnect_cleanup' },
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'disconnect_failed';

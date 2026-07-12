@@ -3,6 +3,7 @@ import { decryptIntegrationCredentials, encryptIntegrationCredentials } from '@/
 import { upsertConnection } from '@/lib/connectors/connectionStore';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createShipBobSubscription, deleteShipBobSubscription, listShipBobSubscriptions, SHIPBOB_WEBHOOK_TOPICS, type ShipBobCredentials } from '@/lib/connectors/providers/shipbob/api';
+import { shipBobEndpoints } from './shipbobEnvironment';
 
 export const SHIPBOB_READ_SCOPES = [
   'openid',
@@ -67,11 +68,11 @@ export function openShipBobOAuthState(token: string, now = Date.now()): ShipBobO
 }
 
 export function shipBobOAuthBaseUrl(sandbox: boolean): string {
-  return sandbox ? 'https://authstage.shipbob.com' : 'https://auth.shipbob.com';
+  return shipBobEndpoints(sandbox ? 'sandbox' : 'production').authorizationHost;
 }
 
 export function shipBobApiBaseUrl(sandbox: boolean): string {
-  return sandbox ? 'https://sandbox-api.shipbob.com/2026-01' : 'https://api.shipbob.com/2026-01';
+  return shipBobEndpoints(sandbox ? 'sandbox' : 'production').apiBaseUrl;
 }
 
 export async function exchangeShipBobOAuthCode(input: {
@@ -199,10 +200,12 @@ export async function persistShipBobOAuthConnection(input: {
   token: Awaited<ReturnType<typeof exchangeShipBobOAuthCode>>;
   channel: { id: string | number; name?: string; application_name?: string; scopes?: string[] };
   sandbox: boolean;
-}): Promise<{ connectionId: string; sourceAccountId: string }> {
+}): Promise<{ connectionId: string; sourceAccountId: string; reconnected: boolean }> {
   const channelId = String(input.channel.id);
   const scopes = input.token.scope?.split(/\s+/).filter(Boolean) ?? input.channel.scopes ?? [];
   const baseUrl = shipBobApiBaseUrl(input.sandbox);
+  const environment = input.sandbox ? 'sandbox' : 'production';
+  const { data: previousConnection } = await input.client.from('merchant_integrations').select('id,status').eq('merchant_id', input.merchantId).eq('provider_id', 'shipbob').eq('provider_account_id', channelId).maybeSingle();
   const { connectionId, sourceAccountId } = await upsertConnection(input.client, {
     merchantId: input.merchantId,
     providerId: 'shipbob',
@@ -224,6 +227,18 @@ export async function persistShipBobOAuthConnection(input: {
     },
     connectorVersion: 'shipbob-oauth-v1',
   });
+  const endpoints = shipBobEndpoints(environment);
+  const now = new Date().toISOString();
+  const { error: environmentError } = await input.client.from('merchant_integrations').update({
+    environment,
+    authorization_host: endpoints.authorizationHost,
+    api_base_url_family: endpoints.apiBaseUrl,
+    authentication_mode: 'oauth',
+    connection_created_at: now,
+  }).eq('id', connectionId).eq('merchant_id', input.merchantId);
+  if (environmentError) throw new Error(`shipbob_environment_persist_failed:${environmentError.message}`);
+  const { error: accountEnvironmentError } = await input.client.from('source_accounts').update({ environment }).eq('id', sourceAccountId).eq('merchant_id', input.merchantId);
+  if (accountEnvironmentError) throw new Error(`shipbob_source_environment_persist_failed:${accountEnvironmentError.message}`);
 
   // Preserve the stored webhookSecret across reconnects: the existing ShipBob
   // subscription is reused (no new secret is issued), so dropping it here
@@ -251,7 +266,12 @@ export async function persistShipBobOAuthConnection(input: {
     ...(existingWebhookSecret ? { webhookSecret: existingWebhookSecret } : {}),
     providerAccountId: channelId,
     providerAccountName: input.channel.name ?? input.channel.application_name ?? 'ShipBob',
-    environment: input.sandbox ? 'sandbox' : 'production',
+    environment,
+    authorizationHost: endpoints.authorizationHost,
+    apiBaseUrlFamily: endpoints.apiBaseUrl,
+    sourceAccountEnvironment: environment,
+    authenticationMode: 'oauth',
+    connectionCreatedAt: now,
   });
   const expiresAt = input.token.expires_in
     ? new Date(Date.now() + input.token.expires_in * 1000).toISOString()
@@ -267,7 +287,7 @@ export async function persistShipBobOAuthConnection(input: {
   }, { onConflict: 'merchant_id,provider_id' });
   if (error) throw new Error(`shipbob_oauth_credential_persist_failed:${error.message}`);
 
-  return { connectionId, sourceAccountId };
+  return { connectionId, sourceAccountId, reconnected: Boolean(previousConnection && previousConnection.status !== 'revoked') };
 }
 
 export async function ensureShipBobWebhookSubscriptions(input: {
@@ -317,4 +337,3 @@ export async function storeShipBobWebhookSecret(input: {
   const { error: updateError } = await input.client.from('integration_credentials').update({ encrypted_payload: encryptedPayload, updated_at: new Date().toISOString() }).eq('merchant_id', input.merchantId).eq('provider_id', 'shipbob');
   if (updateError) throw new Error(`shipbob_webhook_secret_storage_failed:${updateError.message}`);
 }
-

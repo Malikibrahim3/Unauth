@@ -18,6 +18,7 @@ import { env } from '@/lib/utils/env';
 import { persistShipBobCanonicalRecord, updateShipBobConnectionAfterSync } from '@/lib/connectors/providers/shipbob/persistence';
 import { runSyncJobPage, type SyncJobKind, type SyncJobState } from '@/lib/connectors/syncEngine';
 import type { ConnectorAdapter, ConnectorContext, NormalizedRecord } from '@/lib/connectors/types';
+import { recordShipBobAudit } from '@/lib/integrations/providers/shipbobAudit';
 
 export type SyncJobRow = {
   id: string;
@@ -118,6 +119,17 @@ export async function runSyncJob(
     // real import state (complete / no records / failed) instead of a
     // permanent "initial import pending".
     await updateShipBobConnectionAfterSync(client, job, state);
+    if (job.job_kind === 'initial_import' && (state.status === 'completed' || state.status === 'failed' || state.status === 'dead_letter')) {
+      const { data: connection } = await client.from('merchant_integrations').select('environment,imported_record_count').eq('id', job.connection_id).eq('merchant_id', job.merchant_id).maybeSingle();
+      const completed = state.status === 'completed';
+      await recordShipBobAudit(client, {
+        merchantId: job.merchant_id, connectionId: job.connection_id,
+        environment: connection?.environment === 'sandbox' ? 'sandbox' : 'production',
+        action: completed ? 'shipbob_initial_import_completed' : 'shipbob_initial_import_failed',
+        status: completed ? 'completed' : 'failed',
+        metadata: { jobId: job.id, recordCount: connection?.imported_record_count ?? 0, failureCategory: state.lastErrorCode ?? undefined },
+      });
+    }
   }
   return state;
 }
@@ -129,10 +141,15 @@ export async function runSyncJob(
  */
 async function resolveJobCredentials(client: SupabaseClient, job: SyncJobRow) {
   if (job.source === 'shipbob' && env.SHIPBOB_OAUTH_CLIENT_ID && env.SHIPBOB_OAUTH_CLIENT_SECRET) {
-    return refreshShipBobCredentialsIfNeeded(client, job.merchant_id, {
+    const credentials = await refreshShipBobCredentialsIfNeeded(client, job.merchant_id, {
       clientId: env.SHIPBOB_OAUTH_CLIENT_ID,
       clientSecret: env.SHIPBOB_OAUTH_CLIENT_SECRET,
     });
+    const { data: connection } = await client.from('merchant_integrations').select('environment').eq('id', job.connection_id).eq('merchant_id', job.merchant_id).maybeSingle();
+    const storedEnvironment = connection?.environment === 'sandbox' ? 'sandbox' : 'production';
+    const credentialEnvironment = credentials?.environment === 'sandbox' ? 'sandbox' : 'production';
+    if (storedEnvironment !== credentialEnvironment) throw new Error('shipbob_connection_environment_mismatch');
+    return { ...credentials, sandbox: storedEnvironment === 'sandbox', environment: storedEnvironment };
   }
   return getIntegrationCredential(client, job.merchant_id, job.source ?? '');
 }
