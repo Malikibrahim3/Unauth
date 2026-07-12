@@ -1593,6 +1593,33 @@ export default function IntegrationHubClient() {
   // Surface the result of the ShipBob OAuth redirect instead of leaving the
   // merchant to infer success from a silent page refresh.
   useEffect(() => {
+    // ShipBob's OpenID flow returns the authorization code in the URL *fragment*
+    // (#code=…&state=…) because the response also carries an id_token, which OIDC
+    // forces into the fragment. Fragments never reach the server, so the callback
+    // route sees no code and returns shipbob_missing_params. Harvest the code
+    // client-side and relay it to the server callback as query params so the
+    // token exchange can complete. This is mode-agnostic: if ShipBob ever returns
+    // the code in the query string, the server callback handles it directly and
+    // this branch is skipped.
+    const rawHash = window.location.hash.startsWith('#')
+      ? window.location.hash.slice(1)
+      : window.location.hash;
+    if (rawHash) {
+      const frag = new URLSearchParams(rawHash);
+      const fragCode = frag.get('code');
+      const fragState = frag.get('state');
+      const fragError = frag.get('error');
+      if ((fragCode && fragState) || fragError) {
+        const relay = new URL('/api/integrations/shipbob/callback', window.location.origin);
+        if (fragCode) relay.searchParams.set('code', fragCode);
+        if (fragState) relay.searchParams.set('state', fragState);
+        if (fragError) relay.searchParams.set('error', fragError);
+        // Clear the fragment first so it cannot linger in history after the relay.
+        window.location.replace(relay.toString());
+        return;
+      }
+    }
+
     const params = new URLSearchParams(window.location.search);
     const messages: Array<[string, string]> = [
       ['shipbob_warning', 'ShipBob connected, but webhook setup needs attention. The connection remains visible as degraded.'],
