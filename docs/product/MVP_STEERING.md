@@ -58,6 +58,104 @@ The MVP should make these events visible, structured, evidenced, and trackable.
 
 ---
 
+## Automation-First Operating Principle
+
+Unauth is an automation-first product. This is a core requirement, not an optional
+enhancement.
+
+Unauth must automatically create, update, reconcile, and financially close cases
+using connected source data wherever the required information is available. The
+merchant should not be asked to manually enter or confirm information that Unauth
+can reliably retrieve from a connected system.
+
+Read-only access does not mean a manual product. Unauth observes activity in
+connected systems without changing those systems, and keeps its own case, evidence,
+loss, and recovery records current from that activity.
+
+### What Unauth does for every relevant source event
+
+1. identify the related merchant, customer, order, and case;
+2. create a case if one does not already exist;
+3. connect the relevant ticket, refund, replacement, shipment, return, or dispute;
+4. collect available evidence;
+5. evaluate merchant rules;
+6. update the recommendation and case status;
+7. detect payouts, refunds, replacements, and other merchant actions;
+8. recalculate exposure, loss, recoverability, and final financial outcome;
+9. create or update recovery work where appropriate;
+10. update dashboards, reports, and customer history;
+11. preserve the change in the audit history.
+
+Examples:
+
+- a refund completed in the commerce platform automatically updates the related case;
+- a replacement order automatically connects to the original complaint where the
+  match is reliable;
+- a delivery-status change automatically updates the evidence and recommendation;
+- a dispute result automatically updates the final loss;
+- a return being received automatically updates the relevant payout case;
+- a recovery payment automatically updates the recovery record where it can be
+  reliably matched.
+
+### Automatic reconciliation
+
+Unauth does not rely only on live event notifications. It periodically compares its
+records with connected sources to find missed events, delayed updates, changed
+refund amounts, completed replacements, updated dispute outcomes, return-status
+changes, stale evidence, and cases that should now be financially closed.
+Reconciliation must be safe, repeatable, and protected against duplicate records or
+repeated financial updates.
+
+### Confidence-based automation
+
+Every automatic match resolves to one of three states:
+
+- **Confirmed** — the source directly proves the event or outcome (a matching refund
+  exists against the order; a dispute source reports the dispute was lost; tracking
+  reports the parcel delivered). Update the case automatically.
+- **Probable** — the evidence strongly indicates the outcome but carries uncertainty
+  (a replacement order with the same products appears shortly after the complaint; a
+  payment appears to match a recovery amount and reference). Create a provisional
+  match and place it in the exception queue for quick confirmation.
+- **Unknown** — connected sources do not provide enough information, or information
+  conflicts. Request focused merchant input.
+
+Never silently treat a probable or unknown outcome as a confirmed financial fact.
+
+### Exception queue
+
+There is one focused exception queue for situations that genuinely need merchant
+attention: unmatched refund, ambiguous replacement, conflicting financial values,
+customer/order matching uncertainty, missing recovery result, stale source data,
+responsibility requiring human judgement, unsupported external outcome, write-off
+reason, or merchant policy override. The merchant is asked only for the missing
+decision or confirmation — never to reconstruct the full case.
+
+### Manual input boundaries
+
+Manual input is limited to: resolving uncertain record matches; confirming inferred
+outcomes; recording subjective responsibility decisions; explaining policy
+overrides; supplying evidence unavailable from connected systems; recording outcomes
+from unsupported offline processes; and approving a final write-off reason. Manual
+case creation remains available as a fallback, but it is not the normal operating
+process.
+
+### Automation and permissions
+
+The MVP+ achieves automation primarily through limited read-only permissions, event
+notifications, scheduled synchronization, periodic reconciliation, source deep
+links, and imported files where direct integrations are unavailable. Unauth does not
+need permission to issue refunds, edit orders, send customer messages, or change
+external records in order to automate case creation, evidence collection, outcome
+tracking, and analytics. Write access and external actions remain optional
+later-stage capabilities.
+
+> The goal: Unauth maintains itself from connected source activity. Merchants
+> primarily review exceptions, make judgement-based decisions, and use the resulting
+> analytics — they do not manually update ordinary cases.
+
+---
+
 ## 4. What the MVP Is
 
 The MVP is made of five core layers:

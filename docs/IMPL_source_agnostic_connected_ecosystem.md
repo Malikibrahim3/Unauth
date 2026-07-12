@@ -40,6 +40,41 @@ The existing product direction remains authoritative everywhere else:
 - Money is stored as integer minor units plus ISO currency in all new canonical financial tables. Existing decimal columns remain compatibility fields until migrated.
 - A missing source, unsupported capability, missing permission, absent record, stale record, and failed sync are different states. Do not collapse them into `null` or “not connected.”
 
+### 0.25 Automation-first requirement (core, not optional)
+
+`docs/product/MVP_STEERING.md` → **Automation-First Operating Principle** is a core
+product requirement that governs this implementation. Automation is designed into
+the phases below, not bolted on at the end. Concretely:
+
+- Unauth must automatically create, update, reconcile, and financially close cases
+  from connected source activity wherever the required data is available. Manual
+  case creation and CSV import are **fallbacks**, not the default workflow.
+- Every ingested source event runs the full pipeline: identify merchant/customer/
+  order/case → create the case if absent → connect related records → collect
+  evidence → evaluate rules → update recommendation/status → detect merchant
+  actions (payout/refund/replacement) → recalculate exposure/loss/recoverability →
+  create/update recovery → update analytics/history → append audit.
+- Every automatic match resolves to **confirmed** (source proves it → apply
+  automatically), **probable** (strong but uncertain → provisional match in the
+  exception queue), or **unknown** (insufficient/conflicting → request focused
+  merchant input). Never treat probable/unknown as a confirmed financial fact.
+- Beyond live events, a scheduled **reconciliation** loop compares Unauth records
+  with connected sources to catch missed/delayed events, changed refund amounts,
+  completed replacements, updated dispute outcomes, return-status changes, stale
+  evidence, and cases that should now be financially closed — idempotently, with no
+  duplicate cases or repeated financial updates.
+- A single **exception queue** surfaces only what genuinely needs a human decision;
+  the merchant is asked only for the missing decision/confirmation, never to rebuild
+  a case. Success is measured by percentage of cases completed automatically and by
+  minimising merchant input per case.
+- This automation is achieved with read-only permissions, event notifications,
+  scheduled sync, periodic reconciliation, source deep links, and imported files.
+  Write-back/external actions stay optional, later-stage, and explicitly authorised.
+
+The requirement maps onto existing phases as annotated in each phase's **Automation
+requirements** note, plus the dedicated **Phase 12 — Reconciliation and exception
+operations**.
+
 ### 0.3 Implementation method
 
 Complete phases in order. At the end of every phase:
@@ -334,6 +369,21 @@ Do not run `db reset`, migration-history repair, destructive squash, or schema r
 ### Goal
 
 Add the shared foundation without moving existing production reads yet.
+
+### Automation requirements (Foundation)
+
+The foundation must make automation safe and idempotent from the start:
+
+- define the **confirmed / probable / unknown** match-confidence states as a shared
+  vocabulary usable by matching, finance, and recovery (e.g. a `match_confidence`
+  enum / column on match candidates and provisional links);
+- define **automatic reconciliation** behavior at the data layer: every source
+  record and event carries a stable external key + content hash so a re-observed
+  fact updates in place rather than duplicating;
+- ensure source events can be **safely replayed** without duplication — the domain
+  event outbox and delivery ledger use idempotency keys and unique constraints so
+  reprocessing a webhook or a reconciliation sweep never double-creates cases or
+  double-applies financial entries.
 
 ### Migration
 
@@ -792,6 +842,17 @@ For every fixture in Phase 0, snapshot the normalized record and source registry
 
 Make Unauth usable when Shopify or Gorgias is absent, without pretending these generic routes are full connectors.
 
+### Automation requirements (Source-independent intake)
+
+- The webhook and canonical entity-upsert API are the **automatic** intake path:
+  an ingested source event automatically creates or updates a case (see Phase 5/6
+  wiring), not just a raw record.
+- Treat **manual case creation and CSV import as fallback methods** for merchants
+  without a live integration or for backfilling history — not the default operating
+  workflow. UI copy and defaults must steer toward connected, automatic intake.
+- CSV and manual intake reuse the same idempotent upsert + matching path as
+  webhooks so re-imports reconcile instead of duplicating.
+
 ### 7.1 Canonical webhook intake
 
 Add:
@@ -976,6 +1037,18 @@ If an order reference resolves to exactly one record, create a confirmed relatio
 
 Make cross-system matching explicit, reviewable, and safe.
 
+### Automation requirements (Connected case experience)
+
+- Source activity **automatically connects related records** (ticket, order,
+  refund, replacement, shipment, return, dispute) to the case using the
+  confidence-scored matcher.
+- **Confirmed** matches link automatically; **probable** matches create a
+  provisional link routed to the exception queue (Phase 12) for one-click
+  confirmation; **unknown** matches request focused merchant input rather than
+  guessing.
+- A replacement order containing the same products shortly after a complaint is the
+  canonical **probable** case — link provisionally, never silently as confirmed.
+
 ### Files to add
 
 ```text
@@ -1064,6 +1137,14 @@ The panel must cover order, customer, ticket, messages, refund, replacement, ful
 ### Goal
 
 Make one case transition update every consumer through domain events and projections.
+
+### Automation requirements (Connected case experience — reactive projections)
+
+- The domain-event projections are what make the case **self-maintaining**: an
+  ingested delivery-status change, refund, or dispute result automatically refreshes
+  the case's evidence, recommendation, status, exposure, and audit history.
+- Projections are idempotent (keyed by event idempotency key) so live delivery and
+  reconciliation replays converge to the same state without double-counting money.
 
 ### Files to add
 
@@ -1213,6 +1294,19 @@ New reports must cohort by financial event `effective_at`, group by original cur
 ### Goal
 
 Remove competing business stores while preserving history.
+
+### Automation requirements (Loss and recovery loop)
+
+- Automatically **detect completed refunds and replacements** from source activity
+  and update the case's financial outcome.
+- Automatically **update confirmed loss** as source-of-truth financial facts arrive
+  (refund completed, dispute lost).
+- Automatically **identify recovery opportunities** when attribution points to an
+  external owner, and automatically **detect recovery outcomes** where a supported
+  source reports them (e.g. a matched recovery payment).
+- Automatically **financially close cases** where the available evidence is
+  conclusive; where it is only probable or conflicting, route to the exception queue
+  rather than closing silently.
 
 ### 10.1 Canonical evidence
 
@@ -1848,6 +1942,70 @@ Use pagination/cursors for timelines, search, tasks, notifications, and health i
 - Zendesk replacement scenario proves the case workflow works without Gorgias.
 - A custom/canonical order scenario proves the case workflow works without Shopify.
 - Event retry/dead-letter, stale-source, ambiguous-match, mixed-currency, and merchant-isolation tests pass.
+
+---
+
+## 14b. Phase 12 — Reconciliation and exception operations
+
+**Ordering:** depends on Phases 5–7 (matching, shared case state, finance) and the
+Phase 9 event/notification infra. Deliver it **before the Phase 11 production
+cutover is declared complete** — automatic self-maintenance is a launch requirement,
+not a post-launch add-on. It is numbered 12 only because Phases 8–11 already exist;
+it is not the last thing built.
+
+### Goal
+
+Make Unauth maintain itself from connected-source activity, so merchants primarily
+review exceptions and make judgement calls rather than updating ordinary cases.
+
+### 12.1 Scheduled reconciliation
+
+Build a scheduled reconciliation sweep (cron-triggered, merchant-scoped, resumable)
+that compares Unauth's records against connected sources to identify:
+
+- missed or delayed events (a source fact with no corresponding domain event);
+- changed financial outcomes (refund amount changed, dispute outcome updated);
+- completed replacements and received returns not yet reflected on the case;
+- stale evidence past its freshness window;
+- cases that should now be financially closed.
+
+Reconciliation reuses the same idempotent upsert + matching + projection path as
+live webhooks, so it can only converge state — never duplicate cases or re-apply
+financial entries. Each sweep records what it changed and what it deferred.
+
+### 12.2 Confidence-scored auto-apply vs. exception
+
+- **Confirmed** discrepancies are applied automatically (the projection runs).
+- **Probable** discrepancies create/refresh a provisional match and an exception.
+- **Unknown/conflicting** discrepancies create an exception requesting focused input.
+
+### 12.3 Exception queue
+
+One merchant-facing exception queue (backed by a canonical `case_exceptions` /
+provisional-match store) surfaces only items needing a human: unmatched refund,
+ambiguous replacement, conflicting financial values, customer/order match
+uncertainty, missing recovery result, stale source data, responsibility judgement,
+unsupported external outcome, write-off reason, merchant policy override. Each item
+carries the specific missing decision + one-click confirm/reject; confirming a
+probable match promotes it to confirmed and runs the normal projection.
+
+### 12.4 Automation metrics
+
+Expose, per merchant: percentage of cases created/updated/closed automatically,
+average merchant inputs required per case, exception volume by type, and
+reconciliation lag. These are the success measures for the automation-first
+principle.
+
+### Gate
+
+- A refund/dispute/return/replacement/recovery outcome changed directly in a source
+  is reflected on the case by reconciliation without a live event, exactly once.
+- Re-running reconciliation is a no-op (no duplicate cases, links, or financial
+  entries).
+- Probable matches never post as confirmed financial facts; they appear in the
+  exception queue.
+- The exception queue asks only for the missing decision, never a full rebuild.
+- Automation-completion percentage is measurable and reported.
 
 ---
 
