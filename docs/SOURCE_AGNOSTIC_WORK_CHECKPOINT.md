@@ -183,6 +183,31 @@ Still genuinely open (larger refactors or infra/ops — NOT yet done):
   data + an operational go decision).
 - Destructive legacy-table removal (separate owner-approved migration).
 
+## Automation-first — product decision + Phase 12 (2026-07-12)
+
+Automation-first is now a **core** requirement, documented and partly built:
+
+- `docs/product/MVP_STEERING.md` → "Automation-First Operating Principle" (product =
+  what Unauth is: self-maintaining from connected-source activity; confirmed/
+  probable/unknown match states; one exception queue; manual input as fallback).
+- `docs/IMPL_source_agnostic_connected_ecosystem.md` → §0.25 automation-first
+  requirement, per-phase "Automation requirements" notes (Phases 1/4/5/6/7), and a
+  new **Phase 12 — Reconciliation and exception operations** with its own gate.
+- **Built:** exception queue (`case_exceptions` table + `lib/exceptions/store.ts` +
+  `/api/ops/exceptions` [list] and `/api/ops/exceptions/[id]` [resolve/dismiss];
+  idempotent raise via dedup_key). Scheduled reconciliation (`lib/reconciliation/
+  reconcileMerchant.ts` + `/api/cron/reconcile`, CRON_SECRET-gated) with the first
+  detector (`detectUnmatchedRefunds`). Migration `20260712110000` applied live.
+
+Phase 12 remaining:
+- more reconciliation detectors (changed refund amount, completed replacement,
+  dispute-outcome change, return received, stale evidence, should-be-closed);
+- wire the record matcher's probable/ambiguous matches to raise queue exceptions
+  (confirming a probable match promotes it and runs the normal projection);
+- exception-queue UI (surface in Work + a dedicated view) and automation-completion
+  metrics (% auto-completed, inputs per case) in reports/dashboard;
+- schedule the reconcile cron in the deploy config.
+
 Then continue through Phases 9–11.
 
 `docs/IMPL_source_agnostic_connected_ecosystem.md`
