@@ -3,6 +3,7 @@ import ClaimReviewPanel from '@/components/claims/ClaimReviewPanel';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, hasPermission, requirePermission } from '@/lib/permissions';
 import { loadClaimForMerchant } from '@/lib/claims/access';
+import { resolveClaimSourceCustomerId } from '@/lib/claims/customerContext';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -33,8 +34,20 @@ export default async function SupportPayoutCasePage({ params }: Props) {
   // Managing a case (record decision/outcome, evidence, transitions, assignment)
   // requires the payout-decision permission; viewers get a read-only workbench.
   const canManage = await hasPermission(serviceClient, ctx, PERMISSIONS.SUBMIT_PAYOUT_DECISIONS);
+  const sourceCustomerId = await resolveClaimSourceCustomerId(
+    serviceClient as never,
+    ctx.merchantId,
+    loaded.claim.source_order_id ?? null,
+  );
 
   // The customer/identity is secondary context for the workbench. Identity-less
   // cases still render; the panel degrades gracefully when there is no profile.
-  return <ClaimReviewPanel profileId={loaded.claim.identity_id ?? ''} initialClaimId={claimId} canManage={canManage} />;
+  return (
+    <ClaimReviewPanel
+      profileId={loaded.claim.identity_id ?? ''}
+      sourceCustomerId={sourceCustomerId}
+      initialClaimId={claimId}
+      canManage={canManage}
+    />
+  );
 }

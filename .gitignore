@@ -12,6 +12,7 @@ next-env.d.ts
 build/
 .turbo/
 tests/.test-credentials.json
+tests/current/.auth/
 tests/support/.auth/
 tests/reports/
 tests/utils/csv-fixtures/

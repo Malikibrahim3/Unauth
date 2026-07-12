@@ -184,7 +184,7 @@ export async function getShopifyCredential(
 }
 
 export function assertLiveProvider(provider: IntegrationProvider): void {
-  if (provider.buildStatus !== 'live') {
+  if (provider.buildStatus === 'slot_only') {
     throw new Error('provider_is_slot_only');
   }
 }

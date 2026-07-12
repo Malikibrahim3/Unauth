@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { TABLES } from '../lib/supabase/tables'
 import fs from 'fs'
 import path from 'path'
+import { upsertMerchantForUser } from '../lib/account/upsertMerchantForUser'
 
 const TEST_MERCHANT = {
   email: `playwright-test-${Date.now()}@unauth-test-automation.com`,
@@ -30,7 +31,7 @@ async function globalSetup(config: FullConfig) {
 
   if (fs.existsSync(CREDENTIALS_PATH)) {
     const existing = JSON.parse(fs.readFileSync(CREDENTIALS_PATH, 'utf8'))
-    await cleanupTestAccount(supabase, existing.userId)
+    await cleanupTestAccount(supabase, existing.userId, existing.merchantId)
   }
 
   const { data: authData, error: authError } = await supabase.auth.admin.createUser({
@@ -39,7 +40,8 @@ async function globalSetup(config: FullConfig) {
     email_confirm: true,
     user_metadata: {
       is_test_account: true,
-      created_by: 'playwright'
+      created_by: 'playwright',
+      setup_complete: true,
     }
   })
 
@@ -49,25 +51,37 @@ async function globalSetup(config: FullConfig) {
 
   const userId = authData.user.id
 
-  const { error: merchantError } = await supabase
-    .from(TABLES.MERCHANTS)
-    .upsert({
-      user_id: userId,
-      name: TEST_MERCHANT.storeName,
-      monthly_order_volume: TEST_MERCHANT.monthlyVolume,
-      primary_fraud_concern: TEST_MERCHANT.primaryConcern,
-      setup_complete: true,
-      created_at: new Date().toISOString()
-    })
+  // Persist the auth identity immediately so teardown can recover even if merchant
+  // setup or browser seeding fails later in this hook.
+  fs.writeFileSync(CREDENTIALS_PATH, JSON.stringify({
+    email: TEST_MERCHANT.email,
+    password: TEST_MERCHANT.password,
+    userId,
+    storeName: TEST_MERCHANT.storeName
+  }, null, 2))
 
-  if (merchantError) {
-    throw new Error(`Failed to create merchant profile: ${merchantError.message}`)
+  let merchantId: string
+  try {
+    const merchant = await upsertMerchantForUser(supabase as never, {
+      userId,
+      email: TEST_MERCHANT.email,
+      storeName: TEST_MERCHANT.storeName,
+      monthlyOrderVolume: TEST_MERCHANT.monthlyVolume,
+      primaryFraudConcern: TEST_MERCHANT.primaryConcern,
+      setupComplete: true,
+    })
+    merchantId = merchant.id
+  } catch (error) {
+    await supabase.auth.admin.deleteUser(userId)
+    fs.unlinkSync(CREDENTIALS_PATH)
+    throw error
   }
 
   fs.writeFileSync(CREDENTIALS_PATH, JSON.stringify({
     email: TEST_MERCHANT.email,
     password: TEST_MERCHANT.password,
     userId,
+    merchantId,
     storeName: TEST_MERCHANT.storeName
   }, null, 2))
 
@@ -107,12 +121,15 @@ async function globalSetup(config: FullConfig) {
     await page.fill('#login-password', TEST_MERCHANT.password)
     await page.click('button[type="submit"]')
 
-    try {
-      await page.waitForURL('**/onboarding', { timeout: 5000 })
+    await page.waitForURL((url) => url.pathname !== '/login', { timeout: 30000 })
+    if (new URL(page.url()).pathname === '/onboarding') {
       await completeOnboarding(page)
-    } catch {}
+    }
 
-    await page.waitForURL(/\/(dashboard|upload|claims|customers)/, { timeout: 15000 })
+    if (!/\/(dashboard|integrations\/imports|claims|customers)/.test(page.url())) {
+      const alert = await page.locator('[role="alert"]').allTextContents()
+      throw new Error(`Unexpected post-login route ${page.url()}: ${alert.join(' | ')}`)
+    }
 
     try {
       const demoButton = page.locator('[data-testid="load-demo-button"]')
@@ -219,8 +236,9 @@ async function generateSeedEvidence(page: Page, baseURL: string) {
   }
 }
 
-async function cleanupTestAccount(supabase: any, userId: string) {
+async function cleanupTestAccount(supabase: any, userId: string, merchantId?: string) {
   try {
+    if (merchantId) await supabase.from(TABLES.MERCHANTS).delete().eq('id', merchantId)
     await supabase.auth.admin.deleteUser(userId)
   } catch (err) {
     console.warn('[Setup] Could not clean up previous test account:', err)

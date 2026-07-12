@@ -89,7 +89,7 @@ describe('integration registry', () => {
     expect(byId.fedex.buildStatus).toBe('live');
     expect(byId.document_upload.buildStatus).toBe('live');
     expect(byId.self_fulfillment_pack.buildStatus).toBe('live');
-    expect(byId.shipbob.buildStatus).toBe('live');
+    expect(byId.shipbob.buildStatus).toBe('partial');
     expect(byId.stripe.buildStatus).toBe('slot_only');
     expect(byId.gmail).toBeUndefined();
     expect(byId.amazon_marketplace).toBeUndefined();

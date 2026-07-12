@@ -149,14 +149,19 @@ export async function POST(
       if (!orderReference) {
         return NextResponse.json({ error: 'Order reference is required for ShipBob sync.' }, { status: 400 });
       }
-      const shipbobOrder = await getOrderByReferenceId(orderReference, String(credentials.apiKey));
+      const shipbobOrder = await getOrderByReferenceId(
+        orderReference,
+        String(credentials.apiKey),
+        credentials.sandbox === true,
+        typeof credentials.channelId === 'string' ? credentials.channelId : undefined,
+      );
       if (!shipbobOrder) {
         return NextResponse.json({ error: 'Order was not found in ShipBob.' }, { status: 404 });
       }
       const timelineGroups = await Promise.all(
-        shipbobOrder.shipments.map((shipment) => getShipmentTimeline(shipment.id, String(credentials.apiKey))),
+        shipbobOrder.shipments.map((shipment) => getShipmentTimeline(shipment.id, String(credentials.apiKey), credentials.sandbox === true)),
       );
-      const returnOrder = await getReturnForOrder(shipbobOrder.id, String(credentials.apiKey));
+      const returnOrder = await getReturnForOrder(shipbobOrder.id, String(credentials.apiKey), credentials.sandbox === true);
       normalized = mapShipBobFulfillmentToEvidence(shipbobOrder, timelineGroups.flat(), returnOrder, {
         merchantId: ctx.merchantId,
         supportPayoutCaseId: parsed.data.supportPayoutCaseId,

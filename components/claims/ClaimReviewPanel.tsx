@@ -11,14 +11,16 @@ import { CaseComments } from '@/components/collaboration/CaseComments';
 
 export default function ClaimReviewPanel({
   profileId,
+  sourceCustomerId,
   initialClaimId,
   canManage = false,
 }: {
   profileId: string;
+  sourceCustomerId: string | null;
   initialClaimId?: string | null;
   canManage?: boolean;
 }) {
-  const wb = useClaimReviewWorkbench(profileId, initialClaimId);
+  const wb = useClaimReviewWorkbench(profileId, sourceCustomerId, initialClaimId);
 
   return (
     <div className="flex flex-col" style={CLAIM_REVIEW_PANEL_ROOT_STYLE}>

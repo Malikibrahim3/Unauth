@@ -256,7 +256,7 @@ export async function assembleEvidencePack(input: AssembleEvidencePackInput): Pr
   }
 
   const connectedSources = views
-    .filter((view) => view.status === 'connected' && view.buildStatus === 'live')
+    .filter((view) => view.status === 'connected' && view.buildStatus !== 'slot_only')
     .map((view) => {
       const sourceItems = normalized.filter((item) => item.sourceProvider === view.id);
       return {

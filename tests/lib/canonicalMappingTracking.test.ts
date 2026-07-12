@@ -45,6 +45,24 @@ describe('ShipBob mapping', () => {
     expect(shipments[0].status).toBe('delivered');
   });
 
+  it('keeps nested tracking, service, and delivery timestamps from the current API shape', () => {
+    const { fulfilments, shipments } = mapShipBobOrder({
+      reference_id: 'ORDER-1002',
+      shipments: [{
+        id: 'sb-2',
+        status: 'Delivered',
+        actual_fulfillment_date: '2026-07-11T10:00:00-04:00',
+        delivery_date: '2026-07-12T15:00:00-04:00',
+        tracking: { tracking_number: 'TN2', carrier: 'UPS', carrier_service: 'Ground' },
+      }],
+    });
+    expect(fulfilments[0]).toMatchObject({ trackingNumber: 'TN2', carrier: 'UPS' });
+    expect(shipments[0]).toMatchObject({
+      trackingNumber: 'TN2', carrier: 'UPS', service: 'Ground',
+      shippedAt: '2026-07-11T14:00:00.000Z', deliveredAt: '2026-07-12T19:00:00.000Z',
+    });
+  });
+
   it('maps a return', () => {
     const { canonicalReturn } = mapShipBobReturn({ id: 'r-1', status: 'received', disposition: 'restock' }, 'ORDER-1001');
     expect(canonicalReturn).toMatchObject({ externalId: 'r-1', orderExternalId: 'ORDER-1001', status: 'received' });

@@ -34,19 +34,19 @@ export function mapShipBobOrder(order: Raw): {
       orderExternalId,
       status: toStringOrNull(s.status),
       sourceStatus: toStringOrNull(s.status),
-      trackingNumber: toStringOrNull(s.tracking_number),
-      carrier: toStringOrNull(s.carrier),
+      trackingNumber: toStringOrNull(s.tracking_number) ?? toStringOrNull((s.tracking as Raw | undefined)?.tracking_number),
+      carrier: toStringOrNull(s.carrier) ?? toStringOrNull((s.tracking as Raw | undefined)?.carrier),
     });
     shipments.push({
       externalId: shipmentId,
       orderExternalId,
-      trackingNumber: toStringOrNull(s.tracking_number),
-      carrier: toStringOrNull(s.carrier),
-      service: null,
+      trackingNumber: toStringOrNull(s.tracking_number) ?? toStringOrNull((s.tracking as Raw | undefined)?.tracking_number),
+      carrier: toStringOrNull(s.carrier) ?? toStringOrNull((s.tracking as Raw | undefined)?.carrier),
+      service: toStringOrNull(s.shipping_method) ?? toStringOrNull((s.tracking as Raw | undefined)?.carrier_service),
       status: mapCarrierShipmentStatus(toStringOrNull(s.status)),
       sourceStatus: toStringOrNull(s.status),
-      shippedAt: toIsoUtc(s.ship_date),
-      deliveredAt: null,
+      shippedAt: toIsoUtc(s.ship_date ?? s.actual_fulfillment_date),
+      deliveredAt: toIsoUtc(s.delivery_date),
     });
   }
 

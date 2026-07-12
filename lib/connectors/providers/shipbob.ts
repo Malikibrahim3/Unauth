@@ -5,6 +5,7 @@
  * canonical records; warehouse-accountability evidence is projected from those.
  */
 import { capability } from '@/lib/connectors/capabilities';
+import { verifyShipBobPat } from '@/lib/integrations/providers/shipbob';
 import type {
   ConnectorAdapter,
   ConnectorContext,
@@ -41,9 +42,24 @@ export const shipbobConnector: ConnectorAdapter = {
   },
 
   async testConnection(ctx: ConnectorContext): Promise<ConnectionTestResult> {
-    const token = ctx.credentials && typeof ctx.credentials.accessToken === 'string' ? ctx.credentials.accessToken : null;
+    const token = ctx.credentials && typeof (ctx.credentials.apiKey ?? ctx.credentials.accessToken) === 'string'
+      ? String(ctx.credentials.apiKey ?? ctx.credentials.accessToken)
+      : null;
     if (!token) return { ok: false, errorCode: 'test_connection_failed', message: 'Missing access token.' };
-    return { ok: true };
+    try {
+      const access = await verifyShipBobPat(
+        token,
+        ctx.credentials?.sandbox === true,
+        typeof ctx.credentials?.channelId === 'string' ? ctx.credentials.channelId : undefined,
+      );
+      return {
+        ok: true,
+        providerAccountId: access.channels[0]?.id ?? null,
+        providerAccountName: access.channels[0]?.name ?? null,
+      };
+    } catch {
+      return { ok: false, errorCode: 'test_connection_failed', message: 'ShipBob rejected the read-only connection test.' };
+    }
   },
 
   async initialImport(): Promise<SyncPage | UnsupportedResult> {

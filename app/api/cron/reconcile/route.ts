@@ -35,18 +35,38 @@ async function run(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   let totalRaised = 0;
-  const results: Array<{ merchantId: string; exceptionsRaised: number }> = [];
+  const results: Array<{ merchantId: string; exceptionsRaised: number; detectorFailures: number }> = [];
+  const failures: Array<{ merchantId: string; detector?: string; message: string }> = [];
   for (const merchant of (merchants ?? []) as Array<{ id: string }>) {
     try {
       const result = await reconcileMerchant(admin, merchant.id);
       totalRaised += result.exceptionsRaised;
-      if (result.exceptionsRaised > 0) results.push({ merchantId: merchant.id, exceptionsRaised: result.exceptionsRaised });
+      failures.push(...result.failures.map((failure) => ({ merchantId: merchant.id, ...failure })));
+      if (result.exceptionsRaised > 0 || result.failures.length > 0) {
+        results.push({
+          merchantId: merchant.id,
+          exceptionsRaised: result.exceptionsRaised,
+          detectorFailures: result.failures.length,
+        });
+      }
     } catch (cause) {
-      console.error('[reconcile] merchant sweep failed', { merchantId: merchant.id, message: cause instanceof Error ? cause.message : String(cause) });
+      const message = cause instanceof Error ? cause.message : String(cause);
+      failures.push({ merchantId: merchant.id, message });
+      console.error('[reconcile] merchant sweep failed', { merchantId: merchant.id, message });
     }
   }
   const lastMerchantId = merchants?.at(-1)?.id ?? null;
-  return NextResponse.json({ merchantsSwept: merchants?.length ?? 0, exceptionsRaised: totalRaised, results, nextCursor: !requestedMerchantId && (merchants?.length ?? 0) === MERCHANT_BATCH ? lastMerchantId : null });
+  return NextResponse.json(
+    {
+      merchantsSwept: merchants?.length ?? 0,
+      exceptionsRaised: totalRaised,
+      failureCount: failures.length,
+      failures,
+      results,
+      nextCursor: !requestedMerchantId && (merchants?.length ?? 0) === MERCHANT_BATCH ? lastMerchantId : null,
+    },
+    { status: failures.length > 0 ? 500 : 200 },
+  );
 }
 
 export async function GET(req: NextRequest) { return run(req); }

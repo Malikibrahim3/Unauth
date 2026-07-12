@@ -4,10 +4,15 @@ import Link from 'next/link';
 import { CheckCircle2, Circle, KeyRound } from 'lucide-react';
 import { useAsyncResource } from '@/lib/react/useFetchJson';
 import { fetchIntegrationConnectionStatus } from '@/components/settings/fetchIntegrationConnectionStatus';
+import {
+  hasGateReadyConnection,
+  type GateHealthConnection,
+} from '@/lib/integrations/gateReadiness';
 
 type ApiKeysBody = { keys?: Array<{ id: string; revoked_at?: string | null }> };
 type RulesBody = { rules?: Array<{ id: string; is_active?: boolean; active?: boolean; name?: string | null }> };
 type IntegrationsBody = { providers?: Array<{ id: string; status?: string | null }> };
+type HealthBody = { connections?: GateHealthConnection[] };
 
 async function fetchJson<T>(url: string): Promise<T> {
   const response = await fetch(url, { cache: 'no-store' });
@@ -48,6 +53,7 @@ export default function GateActivationChecklist() {
   const { data: keys } = useAsyncResource('gate-api-keys', () => fetchJson<ApiKeysBody>('/api/settings/api-keys'));
   const { data: rules } = useAsyncResource('gate-rules', () => fetchJson<RulesBody>('/api/rules'));
   const { data: integrations } = useAsyncResource('gate-integrations', () => fetchJson<IntegrationsBody>('/api/integrations'));
+  const { data: health } = useAsyncResource('gate-integration-health', () => fetchJson<HealthBody>('/api/integrations/health'));
 
   const hasApiKey = (keys?.keys ?? []).some((key) => !key.revoked_at);
   const hasDnrRule = (rules?.rules ?? []).some((rule) => {
@@ -59,9 +65,16 @@ export default function GateActivationChecklist() {
     ['aftership', 'ups', 'fedex', 'carrier_claims'].includes(provider.id) &&
     (provider.status === 'connected' || provider.status === 'syncing')
   );
+  const healthConnections = health?.connections ?? [];
+  const shopifyReady = Boolean(status?.shopify.connected) && hasGateReadyConnection(healthConnections, 'shopify');
+  const gorgiasReady = Boolean(status?.gorgias.connected) && hasGateReadyConnection(
+    healthConnections,
+    'gorgias',
+    { requireWebhook: true },
+  );
   const items = [
-    { done: Boolean(status?.shopify.connected), label: 'Shopify connected and syncing', href: '/settings/integrations/shopify' },
-    { done: Boolean(status?.gorgias.connected), label: 'Gorgias connected and webhook active', href: '/settings/integrations/gorgias' },
+    { done: shopifyReady, label: 'Shopify connection verified, current, and syncing', href: '/settings/integrations/shopify' },
+    { done: gorgiasReady, label: 'Gorgias connection current with a healthy webhook', href: '/settings/integrations/gorgias' },
     { done: hasTrackingSource, label: 'AfterShip or carrier tracking source connected', href: '/settings/integrations' },
     { done: hasDnrRule, label: 'At least one DNR review rule configured', href: '/rules' },
     { done: false, label: 'unauth-hold added to Gorgias AI Agent Handover Topics', href: '/settings/integrations/gorgias' },

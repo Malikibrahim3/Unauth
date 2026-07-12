@@ -18,6 +18,8 @@ const oauthCredentialSchema = z.object({
 
 const apiKeyCredentialSchema = z.object({
   apiKey: z.string().trim().min(8),
+  sandbox: z.boolean().optional().default(false),
+  channelId: z.string().trim().min(1).optional(),
   webhookSecret: z.string().trim().min(8).optional(),
 });
 
@@ -55,9 +57,10 @@ export async function POST(
     }
     try {
       if (provider.id === 'aftership') await verifyAfterShipApiKey(parsed.data.apiKey);
-      else await verifyShipBobPat(parsed.data.apiKey);
+      else await verifyShipBobPat(parsed.data.apiKey, parsed.data.sandbox, parsed.data.channelId);
       await saveIntegrationCredential(serviceClient, ctx.merchantId, provider, {
         apiKey: parsed.data.apiKey,
+        ...(provider.id === 'shipbob' ? { sandbox: parsed.data.sandbox, channelId: parsed.data.channelId ?? null } : {}),
         ...(provider.id === 'aftership' ? { webhookSecret: parsed.data.webhookSecret ?? null } : {}),
       });
       await upsertMerchantIntegration(serviceClient, ctx.merchantId, provider, 'connected', { lastError: null });

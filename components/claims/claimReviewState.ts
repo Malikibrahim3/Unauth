@@ -74,7 +74,11 @@ function pickDraftFields(state: ClaimReviewState, claimId: string) {
   };
 }
 
-export function useClaimReviewWorkbench(profileId: string, initialClaimId?: string | null) {
+export function useClaimReviewWorkbench(
+  profileId: string,
+  sourceCustomerId: string | null,
+  initialClaimId?: string | null,
+) {
   const [state, dispatch] = useReducer(
     claimReviewReducer,
     { profileId, initialClaimId },
@@ -92,9 +96,12 @@ export function useClaimReviewWorkbench(profileId: string, initialClaimId?: stri
   }, []);
 
   const prevSelectedClaimIdForFormRef = useRef<string | null>(null);
-  const { data, reload: reloadCustomer } = useFetchJson<CustomerPayload>(`/api/customers/${profileId}`);
+  const encodedSourceCustomerId = sourceCustomerId ? encodeURIComponent(sourceCustomerId) : null;
+  const { data, reload: reloadCustomer } = useFetchJson<CustomerPayload>(
+    encodedSourceCustomerId ? `/api/customers/${encodedSourceCustomerId}` : null,
+  );
   const { data: shopifyPayload } = useFetchJson<{ orders?: Array<Record<string, unknown>> }>(
-    `/api/customers/${profileId}/shopify-orders`,
+    encodedSourceCustomerId ? `/api/customers/${encodedSourceCustomerId}/shopify-orders` : null,
   );
   const { data: claimsPayload, reload: reloadClaims } = useFetchJson<ClaimsPayload>(
     `/api/claims?profileId=${encodeURIComponent(profileId)}`,

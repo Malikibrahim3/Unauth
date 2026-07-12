@@ -9,7 +9,11 @@ export type IntegrationCategory =
   | 'documents';
 
 export type IntegrationAuthMode = 'oauth' | 'api_key' | 'manual_upload';
-export type IntegrationBuildStatus = 'live' | 'slot_only';
+/**
+ * `partial` is connectable for its implemented read-only paths, but must not be
+ * presented as a full connector lifecycle (sync + webhook + reconciliation).
+ */
+export type IntegrationBuildStatus = 'live' | 'partial' | 'slot_only';
 export type IntegrationConnectionStatus =
   | 'connected'
   | 'not_connected'

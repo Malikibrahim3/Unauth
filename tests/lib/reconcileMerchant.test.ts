@@ -64,6 +64,29 @@ describe('reconciliation — unmatched refunds', () => {
     const result = await reconcileMerchant(client, MERCHANT);
     expect(result.merchantId).toBe(MERCHANT);
     expect(result.exceptionsRaised).toBe(1);
+    expect(result.failures).toEqual([]);
     expect(result.detectors.map((d) => d.detector)).toContain('unmatched_refunds');
+  });
+
+  it('reports detector failures without aborting the remaining sweep', async () => {
+    const error = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    const failingClient = makeClient({});
+    const originalFrom = failingClient.from.bind(failingClient);
+    (failingClient as unknown as { from: (table: string) => unknown }).from = (table: string) => {
+      if (table === 'source_refunds') {
+        const query = originalFrom(table) as unknown as Record<string, unknown>;
+        query.then = (resolve: (value: unknown) => unknown) => resolve({ data: null, error: { message: 'read unavailable' } });
+        return query;
+      }
+      return originalFrom(table);
+    };
+
+    const result = await reconcileMerchant(failingClient, MERCHANT);
+
+    expect(result.failures).toEqual(expect.arrayContaining([
+      expect.objectContaining({ detector: 'unmatched_refunds', message: expect.stringContaining('read unavailable') }),
+    ]));
+    expect(result.detectors.length).toBeGreaterThan(0);
+    error.mockRestore();
   });
 });

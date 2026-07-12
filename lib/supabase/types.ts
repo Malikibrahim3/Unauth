@@ -666,6 +666,132 @@ export type Database = {
           },
         ]
       }
+      case_comment_events: {
+        Row: {
+          actor_user_id: string | null
+          body_snapshot: string | null
+          comment_id: string
+          created_at: string
+          event_type: string
+          id: string
+          merchant_id: string
+        }
+        Insert: {
+          actor_user_id?: string | null
+          body_snapshot?: string | null
+          comment_id: string
+          created_at?: string
+          event_type: string
+          id?: string
+          merchant_id: string
+        }
+        Update: {
+          actor_user_id?: string | null
+          body_snapshot?: string | null
+          comment_id?: string
+          created_at?: string
+          event_type?: string
+          id?: string
+          merchant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_comment_events_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "case_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_comment_events_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      case_comments: {
+        Row: {
+          author_user_id: string | null
+          body: string
+          created_at: string
+          deleted_at: string | null
+          edited_at: string | null
+          evidence_item_id: string | null
+          id: string
+          merchant_id: string
+          recovery_case_id: string | null
+          rule_evaluation_id: string | null
+          support_payout_case_id: string
+          updated_at: string
+        }
+        Insert: {
+          author_user_id?: string | null
+          body: string
+          created_at?: string
+          deleted_at?: string | null
+          edited_at?: string | null
+          evidence_item_id?: string | null
+          id?: string
+          merchant_id: string
+          recovery_case_id?: string | null
+          rule_evaluation_id?: string | null
+          support_payout_case_id: string
+          updated_at?: string
+        }
+        Update: {
+          author_user_id?: string | null
+          body?: string
+          created_at?: string
+          deleted_at?: string | null
+          edited_at?: string | null
+          evidence_item_id?: string | null
+          id?: string
+          merchant_id?: string
+          recovery_case_id?: string | null
+          rule_evaluation_id?: string | null
+          support_payout_case_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_comments_evidence_item_id_fkey"
+            columns: ["evidence_item_id"]
+            isOneToOne: false
+            referencedRelation: "evidence_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_comments_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_comments_recovery_case_id_fkey"
+            columns: ["recovery_case_id"]
+            isOneToOne: false
+            referencedRelation: "recovery_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_comments_rule_evaluation_id_fkey"
+            columns: ["rule_evaluation_id"]
+            isOneToOne: false
+            referencedRelation: "rule_evaluations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_comments_support_payout_case_id_fkey"
+            columns: ["support_payout_case_id"]
+            isOneToOne: false
+            referencedRelation: "support_payout_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       case_decisions: {
         Row: {
           action: string | null
@@ -751,6 +877,90 @@ export type Database = {
           },
           {
             foreignKeyName: "case_decisions_support_payout_case_id_fkey"
+            columns: ["support_payout_case_id"]
+            isOneToOne: false
+            referencedRelation: "support_payout_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      case_exceptions: {
+        Row: {
+          assigned_at: string | null
+          assigned_to: string | null
+          confidence: string
+          context: Json
+          created_at: string
+          dedup_key: string
+          detail: string | null
+          exception_type: string
+          id: string
+          merchant_id: string
+          resolution: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          source_system: string | null
+          status: string
+          subject_entity_id: string | null
+          subject_entity_type: string | null
+          support_payout_case_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_to?: string | null
+          confidence?: string
+          context?: Json
+          created_at?: string
+          dedup_key: string
+          detail?: string | null
+          exception_type: string
+          id?: string
+          merchant_id: string
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          source_system?: string | null
+          status?: string
+          subject_entity_id?: string | null
+          subject_entity_type?: string | null
+          support_payout_case_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_to?: string | null
+          confidence?: string
+          context?: Json
+          created_at?: string
+          dedup_key?: string
+          detail?: string | null
+          exception_type?: string
+          id?: string
+          merchant_id?: string
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          source_system?: string | null
+          status?: string
+          subject_entity_id?: string | null
+          subject_entity_type?: string | null
+          support_payout_case_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_exceptions_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_exceptions_support_payout_case_id_fkey"
             columns: ["support_payout_case_id"]
             isOneToOne: false
             referencedRelation: "support_payout_cases"
@@ -1296,6 +1506,115 @@ export type Database = {
             foreignKeyName: "claim_outcomes_claim_id_fkey"
             columns: ["claim_id"]
             isOneToOne: true
+            referencedRelation: "support_payout_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comment_mentions: {
+        Row: {
+          comment_id: string
+          created_at: string
+          id: string
+          mentioned_user_id: string
+          merchant_id: string
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string
+          id?: string
+          mentioned_user_id: string
+          merchant_id: string
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string
+          id?: string
+          mentioned_user_id?: string
+          merchant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comment_mentions_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "case_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comment_mentions_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      connector_action_runs: {
+        Row: {
+          actor_user_id: string | null
+          capability_id: string
+          completed_at: string | null
+          connection_id: string
+          created_at: string
+          external_record_id: string
+          id: string
+          idempotency_key: string
+          merchant_id: string
+          payload: Json
+          result: Json
+          status: string
+          support_payout_case_id: string | null
+        }
+        Insert: {
+          actor_user_id?: string | null
+          capability_id: string
+          completed_at?: string | null
+          connection_id: string
+          created_at?: string
+          external_record_id: string
+          id?: string
+          idempotency_key: string
+          merchant_id: string
+          payload?: Json
+          result?: Json
+          status: string
+          support_payout_case_id?: string | null
+        }
+        Update: {
+          actor_user_id?: string | null
+          capability_id?: string
+          completed_at?: string | null
+          connection_id?: string
+          created_at?: string
+          external_record_id?: string
+          id?: string
+          idempotency_key?: string
+          merchant_id?: string
+          payload?: Json
+          result?: Json
+          status?: string
+          support_payout_case_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "connector_action_runs_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "merchant_integrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "connector_action_runs_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "connector_action_runs_support_payout_case_id_fkey"
+            columns: ["support_payout_case_id"]
+            isOneToOne: false
             referencedRelation: "support_payout_cases"
             referencedColumns: ["id"]
           },
@@ -3262,34 +3581,46 @@ export type Database = {
         Row: {
           approved_at: string | null
           approved_by: string | null
+          content_type: string | null
           created_at: string
           document_type: string
           extraction_status: string
           file_path: string
           id: string
+          malware_scan_status: string
           merchant_id: string
+          scan_completed_at: string | null
+          size_bytes: number | null
           updated_at: string
         }
         Insert: {
           approved_at?: string | null
           approved_by?: string | null
+          content_type?: string | null
           created_at?: string
           document_type: string
           extraction_status?: string
           file_path: string
           id?: string
+          malware_scan_status?: string
           merchant_id: string
+          scan_completed_at?: string | null
+          size_bytes?: number | null
           updated_at?: string
         }
         Update: {
           approved_at?: string | null
           approved_by?: string | null
+          content_type?: string | null
           created_at?: string
           document_type?: string
           extraction_status?: string
           file_path?: string
           id?: string
+          malware_scan_status?: string
           merchant_id?: string
+          scan_completed_at?: string | null
+          size_bytes?: number | null
           updated_at?: string
         }
         Relationships: [
@@ -4364,6 +4695,98 @@ export type Database = {
           },
         ]
       }
+      notification_preferences: {
+        Row: {
+          email_enabled: boolean
+          in_app_enabled: boolean
+          kind: string
+          merchant_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          email_enabled?: boolean
+          in_app_enabled?: boolean
+          kind: string
+          merchant_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          email_enabled?: boolean
+          in_app_enabled?: boolean
+          kind?: string
+          merchant_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_preferences_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          deduplication_key: string
+          domain_event_id: string | null
+          id: string
+          kind: string
+          merchant_id: string
+          read_at: string | null
+          recipient_user_id: string
+          target_href: string
+          title: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          deduplication_key: string
+          domain_event_id?: string | null
+          id?: string
+          kind: string
+          merchant_id: string
+          read_at?: string | null
+          recipient_user_id: string
+          target_href: string
+          title: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          deduplication_key?: string
+          domain_event_id?: string | null
+          id?: string
+          kind?: string
+          merchant_id?: string
+          read_at?: string | null
+          recipient_user_id?: string
+          target_href?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_domain_event_id_fkey"
+            columns: ["domain_event_id"]
+            isOneToOne: false
+            referencedRelation: "domain_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_claim_context: {
         Row: {
           created_at: string
@@ -4873,6 +5296,7 @@ export type Database = {
             | Database["public"]["Enums"]["recovery_case_status"]
             | null
           id: string
+          idempotency_key: string | null
           merchant_id: string
           metadata: Json
           note: string | null
@@ -4886,6 +5310,7 @@ export type Database = {
             | Database["public"]["Enums"]["recovery_case_status"]
             | null
           id?: string
+          idempotency_key?: string | null
           merchant_id: string
           metadata?: Json
           note?: string | null
@@ -4899,6 +5324,7 @@ export type Database = {
             | Database["public"]["Enums"]["recovery_case_status"]
             | null
           id?: string
+          idempotency_key?: string | null
           merchant_id?: string
           metadata?: Json
           note?: string | null
@@ -7753,6 +8179,171 @@ export type Database = {
             columns: ["support_payout_case_id"]
             isOneToOne: false
             referencedRelation: "support_payout_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_definitions: {
+        Row: {
+          active: boolean
+          conditions: Json
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          merchant_id: string
+          name: string
+          outputs: Json
+          trigger_event_type: string
+          updated_at: string
+          updated_by: string | null
+          version: number
+        }
+        Insert: {
+          active?: boolean
+          conditions?: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          merchant_id: string
+          name: string
+          outputs?: Json
+          trigger_event_type: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Update: {
+          active?: boolean
+          conditions?: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          merchant_id?: string
+          name?: string
+          outputs?: Json
+          trigger_event_type?: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_definitions_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_runs: {
+        Row: {
+          completed_at: string | null
+          domain_event_id: string
+          error: string | null
+          id: string
+          merchant_id: string
+          started_at: string
+          status: string
+          workflow_definition_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          domain_event_id: string
+          error?: string | null
+          id?: string
+          merchant_id: string
+          started_at?: string
+          status: string
+          workflow_definition_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          domain_event_id?: string
+          error?: string | null
+          id?: string
+          merchant_id?: string
+          started_at?: string
+          status?: string
+          workflow_definition_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_runs_domain_event_id_fkey"
+            columns: ["domain_event_id"]
+            isOneToOne: false
+            referencedRelation: "domain_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_runs_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_runs_workflow_definition_id_fkey"
+            columns: ["workflow_definition_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_definitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_step_runs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error: string | null
+          id: string
+          merchant_id: string
+          output_type: string
+          result: Json
+          status: string
+          step_index: number
+          workflow_run_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          merchant_id: string
+          output_type: string
+          result?: Json
+          status: string
+          step_index: number
+          workflow_run_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          merchant_id?: string
+          output_type?: string
+          result?: Json
+          status?: string
+          step_index?: number
+          workflow_run_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_step_runs_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_step_runs_workflow_run_id_fkey"
+            columns: ["workflow_run_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_runs"
             referencedColumns: ["id"]
           },
         ]

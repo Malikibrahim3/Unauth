@@ -1341,7 +1341,7 @@ export default function IntegrationHubClient() {
       name: p.name,
       description: p.description ?? p.evidenceCapabilities.map((c) => c.replaceAll('_', ' ')).join(', '),
       logo: PROVIDER_LOGOS[p.id] ?? '/integrations/carrier-claims.svg',
-      connected: p.buildStatus === 'live' && p.status === 'connected',
+      connected: p.buildStatus !== 'slot_only' && p.status === 'connected',
       connectionIssue: p.status === 'connection_error' || p.status === 'error',
       detail: p.detail,
       comingSoon: p.buildStatus === 'slot_only',

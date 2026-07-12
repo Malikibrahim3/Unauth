@@ -64,6 +64,8 @@ const envSchema = z.object({
   AFTERSHIP_API_KEY: z.string().min(1).optional(),
   SHIPBOB_PAT: z.string().min(1).optional(),
   SHIPBOB_SANDBOX: z.string().optional(),
+  SHIPBOB_OAUTH_CLIENT_ID: z.string().min(1).optional(),
+  SHIPBOB_OAUTH_CLIENT_SECRET: z.string().min(1).optional(),
   /** Webhook URL notified when a warehouse pack-confirmation photo is uploaded. */
   PACK_CONFIRMATION_NOTIFY_URL: z.string().url().optional(),
   /** Absolute app URL shadow alias read by claim-gate/collector code paths. */

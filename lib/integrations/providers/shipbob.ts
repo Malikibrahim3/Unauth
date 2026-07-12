@@ -4,10 +4,11 @@ export const shipbobProvider: IntegrationProvider = {
   id: 'shipbob',
   name: 'ShipBob',
   category: 'warehouse_3pl',
-  authMode: 'api_key',
-  buildStatus: 'live',
+  authMode: 'oauth',
+  buildStatus: 'partial',
   evidenceCapabilities: ['warehouse_pick_pack', 'warehouse_exception', 'three_pl_sla_claim_status'],
   capabilities: { readFulfilment: true, readWarehouseEvents: true, readClaimStatus: true },
+  requiredScopes: ['channels_read', 'orders_read', 'fulfillments_read', 'locations_read', 'returns_read', 'webhooks_read'],
 };
 
 export type ShipBobOrder = {
@@ -19,6 +20,7 @@ export type ShipBobOrder = {
     status: string;
     tracking_number?: string;
     carrier?: string;
+    service?: string;
     ship_date?: string;
     estimated_delivery?: string;
     package_material_weight?: number;
@@ -34,6 +36,25 @@ export type ShipBobOrder = {
     quantity: number;
   }>;
   raw: Record<string, any>;
+};
+
+export type ShipBobChannel = {
+  id: string;
+  name: string | null;
+};
+
+export type ShipBobLocation = {
+  id: string;
+  name: string | null;
+  active: boolean | null;
+  receivingEnabled: boolean | null;
+  shippingEnabled: boolean | null;
+  raw: Record<string, unknown>;
+};
+
+export type ShipBobReadAccess = {
+  channels: ShipBobChannel[];
+  locations: ShipBobLocation[];
 };
 
 export type ShipBobTimelineEvent = {
@@ -80,22 +101,23 @@ function numberValue(value: unknown): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-function shipBobHeaders(pat: string): HeadersInit {
+function shipBobHeaders(pat: string, channelId?: string): HeadersInit {
   return {
     Accept: 'application/json',
     'Content-Type': 'application/json',
     Authorization: `Bearer ${pat}`,
+    ...(channelId ? { shipbob_channel_id: channelId } : {}),
   };
 }
 
 async function shipBobRequest<T>(
   path: string,
-  options: { pat?: string; baseUrl?: string; sandbox?: boolean } = {},
+  options: { pat?: string; baseUrl?: string; sandbox?: boolean; channelId?: string } = {},
 ): Promise<T | null> {
   const pat = options.pat ?? shipBobPatFromEnv();
   const baseUrl = (options.baseUrl ?? shipBobBaseUrl(options.sandbox)).replace(/\/$/, '');
   const res = await fetch(`${baseUrl}${path.startsWith('/') ? path : `/${path}`}`, {
-    headers: shipBobHeaders(pat),
+    headers: shipBobHeaders(pat, options.channelId),
     cache: 'no-store',
   });
   if (res.status === 404) return null;
@@ -114,8 +136,33 @@ async function shipBobRequest<T>(
   return body as T;
 }
 
-export async function verifyShipBobPat(pat: string, sandbox?: boolean): Promise<void> {
-  await shipBobRequest<Record<string, unknown>>('/order?limit=1', { pat, sandbox });
+export async function verifyShipBobPat(pat: string, sandbox?: boolean, channelId?: string): Promise<ShipBobReadAccess> {
+  // These are read-only endpoints and validate both account access and the
+  // warehouse context Unauth needs before accepting a connection.
+  const [channelsBody, locationsBody, ordersBody] = await Promise.all([
+    shipBobRequest<unknown>('/channel', { pat, sandbox }),
+    shipBobRequest<unknown>('/location', { pat, sandbox }),
+    shipBobRequest<unknown>('/order?Limit=1', { pat, sandbox, channelId }),
+  ]);
+  // Retain the order probe so a token limited to metadata endpoints cannot be
+  // treated as a usable fulfillment connection.
+  void ordersBody;
+  const channels = Array.isArray(channelsBody) ? channelsBody : (channelsBody as any)?.items ?? [];
+  const locations = Array.isArray(locationsBody) ? locationsBody : (locationsBody as any)?.items ?? [];
+  return {
+    channels: channels.map((channel: Record<string, unknown>) => ({
+      id: firstString(channel.id) ?? '',
+      name: firstString(channel.name),
+    })).filter((channel: ShipBobChannel) => channel.id),
+    locations: locations.map((location: Record<string, unknown>) => ({
+      id: firstString(location.id) ?? '',
+      name: firstString(location.name),
+      active: typeof location.is_active === 'boolean' ? location.is_active : null,
+      receivingEnabled: typeof location.is_receiving_enabled === 'boolean' ? location.is_receiving_enabled : null,
+      shippingEnabled: typeof location.is_shipping_enabled === 'boolean' ? location.is_shipping_enabled : null,
+      raw: location,
+    })).filter((location: ShipBobLocation) => location.id),
+  };
 }
 
 function productFromRaw(product: Record<string, any>) {
@@ -136,9 +183,10 @@ function mapShipBobOrder(raw: Record<string, any>): ShipBobOrder {
     shipments: shipmentsRaw.map((shipment: Record<string, any>) => ({
       id: firstString(shipment.id, shipment.shipment_id) ?? '',
       status: firstString(shipment.status, shipment.shipment_status) ?? 'unknown',
-      ...(firstString(shipment.tracking_number, shipment.trackingNumber) ? { tracking_number: firstString(shipment.tracking_number, shipment.trackingNumber) } : {}),
-      ...(firstString(shipment.carrier, shipment.carrier_name) ? { carrier: firstString(shipment.carrier, shipment.carrier_name) } : {}),
-      ...(firstString(shipment.ship_date, shipment.shipDate) ? { ship_date: firstString(shipment.ship_date, shipment.shipDate) } : {}),
+      ...(firstString(shipment.tracking_number, shipment.trackingNumber, shipment.tracking?.tracking_number) ? { tracking_number: firstString(shipment.tracking_number, shipment.trackingNumber, shipment.tracking?.tracking_number) } : {}),
+      ...(firstString(shipment.carrier, shipment.carrier_name, shipment.tracking?.carrier) ? { carrier: firstString(shipment.carrier, shipment.carrier_name, shipment.tracking?.carrier) } : {}),
+      ...(firstString(shipment.shipping_method, shipment.tracking?.carrier_service) ? { service: firstString(shipment.shipping_method, shipment.tracking?.carrier_service) } : {}),
+      ...(firstString(shipment.ship_date, shipment.shipDate, shipment.actual_fulfillment_date) ? { ship_date: firstString(shipment.ship_date, shipment.shipDate, shipment.actual_fulfillment_date) } : {}),
       ...(firstString(shipment.estimated_delivery, shipment.estimatedDelivery) ? { estimated_delivery: firstString(shipment.estimated_delivery, shipment.estimatedDelivery) } : {}),
       ...(shipment.package_material_weight != null ? { package_material_weight: numberValue(shipment.package_material_weight) } : {}),
       products: (Array.isArray(shipment.products) ? shipment.products : []).map(productFromRaw),
@@ -173,10 +221,11 @@ export async function getOrderByReferenceId(
   referenceId: string,
   pat?: string,
   sandbox?: boolean,
+  channelId?: string,
 ): Promise<ShipBobOrder | null> {
   const ref = referenceId.trim();
   if (!ref) return null;
-  const body = await shipBobRequest<Record<string, any>>(`/order?reference_id=${encodeURIComponent(ref)}`, { pat, sandbox });
+  const body = await shipBobRequest<Record<string, any>>(`/order?ReferenceIds=${encodeURIComponent(ref)}&Limit=1`, { pat, sandbox, channelId });
   const order = Array.isArray(body?.orders)
     ? body.orders[0]
     : Array.isArray(body)

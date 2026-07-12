@@ -18,5 +18,5 @@ export default async function CustomerClaimReviewPage({ params, searchParams }: 
     redirect(`/claims/${claimId}`);
   }
 
-  return <ClaimReviewPanel profileId={id} initialClaimId={claimId} />;
+  return <ClaimReviewPanel profileId={id} sourceCustomerId={id} initialClaimId={claimId} />;
 }
