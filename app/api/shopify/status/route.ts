@@ -29,10 +29,9 @@ export async function GET() {
   const merchantId = ctx.merchantId;
 
   // v2: Shopify orders live in the merchant-scoped `source_orders` table
-  // (source='shopify'). The legacy signal/audit distinction collapses into a
-  // single store of ingested orders. Webhook delivery telemetry
-  // (`processed_webhooks`) has no v2 equivalent yet, so it degrades to null/zero.
-  const [countResult, lastOrderResult] = await Promise.all([
+  // (source='shopify'). Webhook delivery telemetry remains in the shared
+  // processed_webhooks table and is surfaced below from the active store key.
+  const [countResult, lastOrderResult, scopeResult, lastWebhookResult, failedWebhookResult, recentWebhooksResult] = await Promise.all([
     serviceClient
       .from('source_orders')
       .select('id', { count: 'exact', head: true })
@@ -46,6 +45,36 @@ export async function GET() {
       .order('placed_at', { ascending: false, nullsFirst: false })
       .limit(1)
       .maybeSingle(),
+    serviceClient
+      .from('store_connections')
+      .select('scopes')
+      .eq('merchant_id', merchantId)
+      .eq('platform', 'shopify')
+      .eq('store_key', shopDomain)
+      .order('installed_at', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    serviceClient
+      .from('processed_webhooks')
+      .select('processed_at,topic,status')
+      .eq('platform', 'shopify')
+      .eq('store_key', shopDomain)
+      .order('processed_at', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    serviceClient
+      .from('processed_webhooks')
+      .select('idempotency_key', { count: 'exact', head: true })
+      .eq('platform', 'shopify')
+      .eq('store_key', shopDomain)
+      .eq('status', 'failed'),
+    serviceClient
+      .from('processed_webhooks')
+      .select('processed_at,topic,status')
+      .eq('platform', 'shopify')
+      .eq('store_key', shopDomain)
+      .order('processed_at', { ascending: false })
+      .limit(5),
   ]);
 
   const lastOrder = lastOrderResult.data as { placed_at?: string | null; ingested_at?: string | null } | null;
@@ -58,21 +87,28 @@ export async function GET() {
     });
   }
   const orderCount = countResult.count ?? 0;
+  const grantedScopes = Array.isArray(scopeResult.data?.scopes)
+    ? scopeResult.data.scopes.map(String).filter(Boolean)
+    : [];
+  const lastWebhook = lastWebhookResult.data as { processed_at?: string; topic?: string | null; status?: string | null } | null;
+  const recentWebhooks = ((recentWebhooksResult.data ?? []) as Array<{ processed_at?: string; topic?: string | null; status?: string | null }>)
+    .filter((row) => row.processed_at)
+    .map((row) => ({ at: row.processed_at as string, topic: row.topic ?? null, status: row.status ?? 'unknown' }));
 
   return NextResponse.json({
     connected: true,
     linkState: connection.linkState,
     shopDomain,
     lastOrderSyncedAt: lastOrder?.placed_at ?? lastOrder?.ingested_at ?? null,
-    lastWebhookAt: null,
-    lastWebhookTopic: null,
-    lastWebhookStatus: null,
+    lastWebhookAt: lastWebhook?.processed_at ?? null,
+    lastWebhookTopic: lastWebhook?.topic ?? null,
+    lastWebhookStatus: lastWebhook?.status ?? null,
     orderCount,
     auditTransactionCount: orderCount,
     lastError: connection.lastError,
-    scopes: [...SHOPIFY_SCOPES],
+    scopes: grantedScopes,
     dataSources: ['Shopify live sync', 'Legacy historical context'],
-    webhookFailures: 0,
-    recentWebhooks: [],
+    webhookFailures: failedWebhookResult.count ?? 0,
+    recentWebhooks,
   });
 }

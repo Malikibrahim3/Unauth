@@ -1,5 +1,6 @@
+import { SHOPIFY_REST_API_VERSION } from '@/lib/shopify/apiVersion';
+
 const SHOPIFY_COLLECTOR_SRC = 'https://app.unauth.co/collector.js';
-const SHOPIFY_API_VERSION = '2024-01';
 
 type ShopifyScriptTagResponse = {
   script_tag?: {
@@ -13,7 +14,7 @@ async function createScriptTag(input: {
   src: string;
 }): Promise<string> {
   const response = await fetch(
-    `https://${input.shopDomain}/admin/api/${SHOPIFY_API_VERSION}/script_tags.json`,
+    `https://${input.shopDomain}/admin/api/${SHOPIFY_REST_API_VERSION}/script_tags.json`,
     {
       method: 'POST',
       headers: {

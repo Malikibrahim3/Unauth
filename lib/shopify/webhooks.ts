@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from 'crypto';
 import { getAppUrl } from '@/lib/utils/appUrl';
+import { SHOPIFY_REST_API_VERSION } from '@/lib/shopify/apiVersion';
 
 const WEBHOOK_TOPICS = [
   'orders/create',
@@ -8,8 +9,6 @@ const WEBHOOK_TOPICS = [
   'orders/cancelled',
   'fulfillments/create',
   'fulfillments/update',
-  'disputes/create',
-  'disputes/update',
   'app/uninstalled',
 ] as const;
 
@@ -34,10 +33,9 @@ export function verifyShopifyWebhookHmac(rawBody: string, providedHmac: string |
 export async function registerShopifyWebhooks(input: { shopDomain: string; accessToken: string }) {
   const { shopDomain, accessToken } = input;
   const address = `${getAppUrl()}/api/shopify/webhooks`;
-  const apiVersion = '2025-10';
   const existing = new Set<string>();
   try {
-    const listResponse = await fetch(`https://${shopDomain}/admin/api/${apiVersion}/webhooks.json?limit=250`, {
+    const listResponse = await fetch(`https://${shopDomain}/admin/api/${SHOPIFY_REST_API_VERSION}/webhooks.json?limit=250`, {
       headers: {
         'X-Shopify-Access-Token': accessToken,
         'Content-Type': 'application/json',
@@ -59,7 +57,7 @@ export async function registerShopifyWebhooks(input: { shopDomain: string; acces
   const results = await Promise.all(
     WEBHOOK_TOPICS.map(async (topic): Promise<WebhookRegistrationFailure | null> => {
       if (existing.has(`${topic}|${address}`)) return null;
-      const response = await fetch(`https://${shopDomain}/admin/api/${apiVersion}/webhooks.json`, {
+      const response = await fetch(`https://${shopDomain}/admin/api/${SHOPIFY_REST_API_VERSION}/webhooks.json`, {
         method: 'POST',
         headers: {
           'X-Shopify-Access-Token': accessToken,

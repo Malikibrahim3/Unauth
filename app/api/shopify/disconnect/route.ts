@@ -16,14 +16,30 @@ export async function POST(req: Request) {
   const { denied, ctx } = await requirePermission(service, user.id, PERMISSIONS.MANAGE_SETTINGS);
   if (denied) return denied;
 
+  const now = new Date().toISOString();
   const { error } = await service
     .from('store_connections')
-    .update({ status: 'revoked', uninstalled_at: new Date().toISOString() })
+    .update({ status: 'revoked', uninstalled_at: now, updated_at: now })
     .eq('merchant_id', ctx.merchantId)
     .eq('platform', 'shopify');
 
   if (error) {
     return NextResponse.json({ error: 'Failed to disconnect Shopify' }, { status: 500 });
+  }
+
+  const { error: canonicalError } = await service
+    .from('merchant_integrations')
+    .update({
+      status: 'revoked',
+      disconnected_at: now,
+      webhook_status: 'missing',
+      updated_at: now,
+    })
+    .eq('merchant_id', ctx.merchantId)
+    .eq('provider_id', 'shopify');
+
+  if (canonicalError) {
+    return NextResponse.json({ error: 'Failed to update Shopify integration status' }, { status: 500 });
   }
 
   logAction({

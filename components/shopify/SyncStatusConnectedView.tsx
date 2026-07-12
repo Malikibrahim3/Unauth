@@ -23,7 +23,8 @@ function SyncStatusConnectedContent({
   onOpenModal,
 }: Omit<SyncStatusConnectedViewProps, 'variant' | 'modalOpen' | 'onCloseModal'>) {
   const hasError = !!status.lastError;
-  const webhookHealthy = (status.webhookFailures ?? 0) === 0;
+  const webhookObserved = Boolean(status.lastWebhookAt);
+  const webhookHealthy = webhookObserved && (status.webhookFailures ?? 0) === 0;
   const scopes = status.scopes ?? [];
   const recentWebhooks = status.recentWebhooks ?? [];
 
@@ -87,9 +88,9 @@ function SyncStatusConnectedContent({
           <p style={{ color: 'var(--text-secondary)' }}>Webhook health</p>
           <p
             className="font-medium mt-0.5"
-            style={{ color: webhookHealthy ? 'var(--success)' : 'var(--risk-high)' }}
+            style={{ color: webhookHealthy ? 'var(--success)' : webhookObserved ? 'var(--risk-high)' : 'var(--text-secondary)' }}
           >
-            {webhookHealthy ? 'Healthy' : `${status.webhookFailures} failed`}
+            {webhookHealthy ? 'Healthy' : webhookObserved ? `${status.webhookFailures} failed` : 'Not verified'}
           </p>
         </div>
         <div>

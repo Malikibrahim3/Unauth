@@ -1,4 +1,5 @@
 import type { IntegrationProvider } from '@/lib/integrations/types';
+import { SHOPIFY_GRAPHQL_API_VERSION } from '@/lib/shopify/apiVersion';
 
 export const shopifyProvider: IntegrationProvider = {
   id: 'shopify',
@@ -33,8 +34,6 @@ export type ShopifyDisputeNode = {
   reasonDetails?: { reason?: string | null; networkReasonCode?: string | null } | null;
   order?: { id?: string | null; legacyResourceId?: string | number | null; name?: string | null } | null;
 };
-
-const SHOPIFY_GRAPHQL_API_VERSION = '2026-01';
 
 export async function fetchShopifyPaymentDisputes(input: {
   shopDomain: string;

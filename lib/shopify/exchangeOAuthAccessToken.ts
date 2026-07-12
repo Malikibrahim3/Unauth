@@ -30,3 +30,20 @@ export async function exchangeShopifyOAuthAccessToken(
     scope: typeof tokenPayload.scope === 'string' && tokenPayload.scope.trim() ? tokenPayload.scope : null,
   };
 }
+
+/** Read the scopes actually granted to the installed app, without logging the token. */
+export async function fetchShopifyGrantedScopes(
+  shop: string,
+  accessToken: string,
+): Promise<string[] | null> {
+  const response = await fetch(`https://${shop}/admin/oauth/access_scopes.json`, {
+    headers: { 'X-Shopify-Access-Token': accessToken, Accept: 'application/json' },
+    cache: 'no-store',
+  });
+  if (!response.ok) return null;
+  const payload = (await response.json()) as { access_scopes?: Array<{ handle?: unknown }> };
+  const scopes = (payload.access_scopes ?? [])
+    .map((scope) => (typeof scope.handle === 'string' ? scope.handle.trim() : ''))
+    .filter(Boolean);
+  return scopes;
+}

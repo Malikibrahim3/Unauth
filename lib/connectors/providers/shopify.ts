@@ -41,6 +41,9 @@ export const shopifyConnector: ConnectorAdapter = {
       capability('orders.sync', 'sync', { requiredScopes: ['read_orders'], description: 'Backfill/sync orders' }),
       capability('refunds.read', 'read', { requiredScopes: ['read_orders'], description: 'Read refunds' }),
       capability('fulfilments.read', 'read', { requiredScopes: ['read_fulfillments'], description: 'Read fulfilments' }),
+      // Shopify's disputes webhook topic requires the separate
+      // read_shopify_payments_disputes scope. It is intentionally not part of
+      // the pilot grant, so dispute ingestion remains a documented limitation.
       capability('disputes.read', 'read', { requiredScopes: ['read_shopify_payments_disputes'], description: 'Read payment disputes' }),
       capability('orders.subscribe', 'subscribe', { description: 'Order webhooks' }),
       // MVP+ boundary: automatic refund issuance stays unsupported.

@@ -25,6 +25,24 @@ type IntegrationRow = {
   last_error_code: string | null;
 };
 
+type ShopifyConnectionRow = {
+  platform: string | null;
+  store_key: string | null;
+  status: string | null;
+  last_sync_at: string | null;
+  last_error: string | null;
+  installed_at: string | null;
+};
+
+/** Pick the most recently installed Shopify connection for this merchant. */
+export function pickLatestShopifyConnection(rows: ShopifyConnectionRow[]): ShopifyConnectionRow | null {
+  return [...rows].sort((a, b) => {
+    const aTime = a.installed_at ? Date.parse(a.installed_at) : 0;
+    const bTime = b.installed_at ? Date.parse(b.installed_at) : 0;
+    return bTime - aTime;
+  })[0] ?? null;
+}
+
 function activeStatus(status: string | null | undefined): IntegrationConnectionStatus {
   if (status === 'connected' || status === 'active') return 'connected';
   if (status === 'error' || status === 'connection_error') return 'connection_error';
@@ -38,16 +56,17 @@ export async function getStoredIntegrationViews(
   client: SupabaseClient,
   merchantId: string,
 ): Promise<ProviderConnectionView[]> {
-  const [{ data: integrationRows }, { data: shopifyRows }, { data: gorgiasRows }] = await Promise.all([
+  const [{ data: integrationRows }, { data: shopifyRows }, { data: gorgiasRows }, shopifyOrders] = await Promise.all([
     client
       .from('merchant_integrations')
       .select('provider_id,status,provider_account_id,provider_account_name,last_sync_at,last_error,last_sync_started_at,last_sync_completed_at,last_successful_sync_at,imported_record_count,last_error_code')
       .eq('merchant_id', merchantId),
     client
       .from('store_connections')
-      .select('platform,store_key,status,last_sync_at,last_error')
+      .select('platform,store_key,status,last_sync_at,last_error,installed_at')
       .eq('merchant_id', merchantId)
       .eq('platform', 'shopify')
+      .order('installed_at', { ascending: false })
       .limit(1),
     client
       .from('helpdesk_connections')
@@ -55,13 +74,21 @@ export async function getStoredIntegrationViews(
       .eq('merchant_id', merchantId)
       .eq('provider', 'gorgias')
       .limit(1),
+    client
+      .from('source_orders')
+      .select('id', { count: 'exact', head: true })
+      .eq('merchant_id', merchantId)
+      .eq('source', 'shopify'),
   ]);
   const applicability = await getCategoryApplicabilityMap(client, merchantId);
 
   const integrationByProvider = new Map(
     ((integrationRows ?? []) as IntegrationRow[]).map((row) => [row.provider_id, row]),
   );
-  const shopify = shopifyRows?.[0] as any;
+  const shopify = pickLatestShopifyConnection((shopifyRows ?? []) as ShopifyConnectionRow[]);
+  const shopifyIntegration = ((integrationRows ?? []) as IntegrationRow[]).find(
+    (row) => row.provider_id === 'shopify' && row.provider_account_id === shopify?.store_key,
+  );
   const gorgias = gorgiasRows?.[0] as any;
 
   return INTEGRATION_PROVIDERS.filter((provider) => providerAppliesToMerchant(provider, applicability)).map((provider) => {
@@ -69,9 +96,22 @@ export async function getStoredIntegrationViews(
       return {
         ...provider,
         status: activeStatus(shopify?.status),
-        lastSyncAt: shopify?.last_sync_at ?? null,
-        lastError: shopify?.last_error ?? null,
+        lastSyncAt: shopify?.last_sync_at ?? shopifyIntegration?.last_sync_at ?? null,
+        lastError: shopify?.last_error ?? shopifyIntegration?.last_error ?? null,
         detail: shopify?.store_key ?? null,
+        importedRecordCount: shopifyOrders.count ?? shopifyIntegration?.imported_record_count ?? null,
+        ...(shopifyIntegration
+          ? {
+              syncState: deriveSyncState({
+                status: activeStatus(shopify?.status),
+                lastSyncStartedAt: shopifyIntegration.last_sync_started_at,
+                lastSyncCompletedAt: shopifyIntegration.last_sync_completed_at ?? shopify?.last_sync_at ?? null,
+                lastSuccessfulSyncAt: shopifyIntegration.last_successful_sync_at ?? shopify?.last_sync_at ?? null,
+                importedRecordCount: shopifyOrders.count ?? shopifyIntegration.imported_record_count,
+                lastErrorCode: shopifyIntegration.last_error_code,
+              }),
+            }
+          : {}),
       };
     }
     if (provider.id === 'gorgias') {
@@ -197,7 +237,9 @@ export async function getShopifyCredential(
     .select('store_key,credentials_encrypted,status')
     .eq('merchant_id', merchantId)
     .eq('platform', 'shopify')
-    .neq('status', 'revoked')
+    .eq('status', 'active')
+    .is('uninstalled_at', null)
+    .order('installed_at', { ascending: false })
     .limit(1)
     .maybeSingle();
   if (error) throw new Error(`shopify_connection_lookup_failed: ${error.message}`);

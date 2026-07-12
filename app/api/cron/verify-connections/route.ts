@@ -24,6 +24,7 @@ import {
   gorgiasApiRequest,
   GorgiasSidebarRegistrationError,
 } from '@/lib/support/gorgias/registerSidebarWidget';
+import { SHOPIFY_REST_API_VERSION } from '@/lib/shopify/apiVersion';
 
 export const maxDuration = 60;
 
@@ -58,7 +59,7 @@ async function verifyShopifyConnection(row: StoreRow): Promise<{ ok: boolean; re
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
-    const res = await fetch(`https://${row.store_key}/admin/api/2024-01/shop.json`, {
+    const res = await fetch(`https://${row.store_key}/admin/api/${SHOPIFY_REST_API_VERSION}/shop.json`, {
       headers: { 'X-Shopify-Access-Token': accessToken },
       cache: 'no-store',
       signal: controller.signal,

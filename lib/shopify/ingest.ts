@@ -659,6 +659,23 @@ export async function processShopifyWebhook(input: {
       })
       .eq('id', connection.id);
     if (error) throw new Error(`store_connection_uninstall_failed: ${error.message}`);
+    const { error: canonicalError } = await supabase
+      .from('merchant_integrations')
+      .update({
+        status: 'revoked',
+        disconnected_at: now,
+        webhook_status: 'missing',
+        updated_at: now,
+      })
+      .eq('merchant_id', connection.merchant_id)
+      .eq('provider_id', 'shopify')
+      .eq('provider_account_id', input.shopDomain);
+    if (canonicalError) {
+      console.error('Shopify canonical uninstall mirror failed', {
+        shopDomain: input.shopDomain,
+        message: canonicalError.message,
+      });
+    }
     return;
   }
 
@@ -691,5 +708,27 @@ export async function processShopifyWebhook(input: {
     await processCancellationTopic(supabase, connection.merchant_id, payload, now);
   } else if (input.topic === 'disputes/create' || input.topic === 'disputes/update' || input.topic === 'disputes/updated') {
     await processDisputeTopic(supabase, connection.merchant_id, payload, input.topic, now);
+  }
+
+  const { error: canonicalError } = await supabase
+    .from('merchant_integrations')
+    .update({
+      webhook_status: 'healthy',
+      webhook_last_received_at: now,
+      last_error: null,
+      last_error_code: null,
+      last_error_message: null,
+      last_error_at: null,
+      updated_at: now,
+    })
+    .eq('merchant_id', connection.merchant_id)
+    .eq('provider_id', 'shopify')
+    .eq('provider_account_id', input.shopDomain);
+  if (canonicalError) {
+    console.error('Shopify canonical webhook mirror failed', {
+      shopDomain: input.shopDomain,
+      topic: input.topic,
+      message: canonicalError.message,
+    });
   }
 }

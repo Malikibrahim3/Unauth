@@ -7,9 +7,8 @@ import { clearShopifyOAuthCookieOptions } from '@/lib/shopify/oauthCookies';
 import { resolveOAuthMerchantId } from '@/lib/shopify/resolveOAuthMerchantId';
 import { registerShopifyWebhooks } from '@/lib/shopify/webhooks';
 import { getAppUrl } from '@/lib/utils/appUrl';
-import { exchangeShopifyOAuthAccessToken } from '@/lib/shopify/exchangeOAuthAccessToken';
+import { exchangeShopifyOAuthAccessToken, fetchShopifyGrantedScopes } from '@/lib/shopify/exchangeOAuthAccessToken';
 import { persistShopifyOAuthConnection } from '@/lib/shopify/persistOAuthConnection';
-import { registerShopifyCollectorScriptTags } from '@/lib/shopify/collectorScripts';
 
 const SHOP_REGEX = /^[a-zA-Z0-9][a-zA-Z0-9-]*\.myshopify\.com$/;
 const INTEGRATIONS_PATH = '/settings/integrations';
@@ -169,6 +168,8 @@ export async function GET(request: NextRequest) {
     const accessToken = tokenExchange.accessToken;
     shopifyDebugLog('token_exchange.success', { tokenExchangeSuccess: true });
 
+    const grantedScopes = await fetchShopifyGrantedScopes(shop, accessToken).catch(() => null);
+
     const serviceClient = createServiceClient();
     const userClient = createClient();
     const merchantId = await resolveOAuthMerchantId(request, serviceClient, userClient);
@@ -177,7 +178,7 @@ export async function GET(request: NextRequest) {
     const persisted = await persistShopifyOAuthConnection(serviceClient, {
       shop,
       accessToken,
-      scope: tokenExchange.scope,
+      scope: grantedScopes?.join(',') ?? tokenExchange.scope,
       merchantId,
     });
 
@@ -205,6 +206,7 @@ export async function GET(request: NextRequest) {
       const identityResult = await backfillShopifyMerchantIdentities({
         shopDomain: shop,
         accessToken,
+        merchantId: persisted.merchantId,
         supabase: serviceClient,
       });
       shopifyDebugLog('backfill.identity.success', {
@@ -218,8 +220,6 @@ export async function GET(request: NextRequest) {
       console.error('Shopify identity backfill failed', { shop, message });
       shopifyDebugLog('backfill.identity.failed', { callbackShopDomain: shop, message });
     }
-
-    const connectedMerchantId = persisted.merchantId;
 
     shopifyDebugLog('webhook_registration.started', { callbackShopDomain: shop });
     let webhookRegistrationSuccess = true;
@@ -237,44 +237,12 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    let collectorRegistrationSuccess = true;
-    try {
-      const collectorTags = await registerShopifyCollectorScriptTags({
-        shopDomain: shop,
-        accessToken,
-      });
-      await serviceClient
-        .from('store_connections')
-        .update({
-          collector_metadata: {
-            shopify_collector_script_tag_id: collectorTags.collectorScriptTagId,
-            shopify_collector_init_script_tag_id: collectorTags.initScriptTagId,
-          },
-        })
-        .eq('platform', 'shopify')
-        .eq('store_key', shop);
-      await serviceClient
-        .from('merchants')
-        .update({
-          shopify_collector_script_tag_id: collectorTags.collectorScriptTagId,
-          shopify_collector_init_script_tag_id: collectorTags.initScriptTagId,
-        })
-        .eq('id', connectedMerchantId);
-    } catch (collectorError) {
-      collectorRegistrationSuccess = false;
-      shopifyDebugLog('collector_registration.failure', {
-        callbackShopDomain: shop,
-        message: collectorError instanceof Error ? collectorError.message : 'unknown',
-      });
-    }
-
     const successParams: Record<string, string> = {
       shopify_connected: '1',
       shop: shop,
     };
     if (!identityBackfillSuccess) successParams.shopify_warning = 'backfill_failed';
     if (!webhookRegistrationSuccess) successParams.shopify_warning = 'webhook_registration_failed';
-    if (!collectorRegistrationSuccess) successParams.shopify_warning = 'collector_registration_failed';
 
     const response = oauthCompleteResponse(successParams);
     clearOAuthCookies(response);

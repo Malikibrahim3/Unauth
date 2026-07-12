@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { decryptBigCommerceOAuthCredentials } from '@/lib/commerce/credentialCrypto';
+import { SHOPIFY_REST_API_VERSION } from '@/lib/shopify/apiVersion';
 
 export async function GET() {
   const userClient = createClient();
@@ -35,7 +36,7 @@ export async function GET() {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
-    const res = await fetch(`https://${row.store_key}/admin/api/2024-01/shop.json`, {
+    const res = await fetch(`https://${row.store_key}/admin/api/${SHOPIFY_REST_API_VERSION}/shop.json`, {
       headers: { 'X-Shopify-Access-Token': accessToken },
       cache: 'no-store',
       signal: controller.signal,

@@ -17,12 +17,10 @@ describe('registerShopifyWebhooks', () => {
     });
 
     const createCalls = (global.fetch as jest.Mock).mock.calls.filter((call) => call[1]?.method === 'POST');
-    expect(createCalls).toHaveLength(9);
+    expect(createCalls).toHaveLength(7);
     const bodies = createCalls.map((call) => JSON.parse(call[1].body));
     expect(bodies.map((body) => body.webhook.topic).sort()).toEqual([
       'app/uninstalled',
-      'disputes/create',
-      'disputes/update',
       'fulfillments/create',
       'fulfillments/update',
       'orders/cancelled',

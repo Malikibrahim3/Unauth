@@ -15,6 +15,6 @@ export const shopify = shopifyApi({
   apiSecretKey,
   scopes: [...SHOPIFY_SCOPES],
   hostName: 'unauth-pi.vercel.app',
-  apiVersion: ApiVersion.January25,
+  apiVersion: ApiVersion.October25,
   isEmbeddedApp: false,
 });

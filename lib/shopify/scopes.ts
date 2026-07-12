@@ -3,5 +3,5 @@ export const SHOPIFY_SCOPES = [
   'read_all_orders',
   'read_customers',
   'read_fulfillments',
-  'read_shopify_payments_disputes',
+  'read_shopify_payments_accounts',
 ] as const;

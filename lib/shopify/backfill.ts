@@ -1,5 +1,6 @@
 import { integrationBackfillSinceIso } from '@/lib/integrations/backfillWindow';
 import { processShopifyOrderPayload } from '@/lib/shopify/ingest';
+import { SHOPIFY_REST_API_VERSION } from '@/lib/shopify/apiVersion';
 
 type ShopifyOrder = Record<string, any> & { id?: string | number | null };
 
@@ -76,6 +77,7 @@ async function fetchAllPages<T>(
 export async function backfillShopifyMerchantIdentities(input: {
   shopDomain: string;
   accessToken: string;
+  merchantId?: string;
   supabase: any;
 }) {
   return backfillShopifyOrders(input);
@@ -84,13 +86,12 @@ export async function backfillShopifyMerchantIdentities(input: {
 export async function backfillShopifyOrders(input: {
   shopDomain: string;
   accessToken: string;
+  merchantId?: string;
   supabase: any;
 }) {
-  const { shopDomain, accessToken, supabase } = input;
+  const { shopDomain, accessToken, merchantId, supabase } = input;
   const createdAtMin = integrationBackfillSinceIso();
-  const apiVersion = '2025-10';
-
-  const base = `https://${shopDomain}/admin/api/${apiVersion}`;
+  const base = `https://${shopDomain}/admin/api/${SHOPIFY_REST_API_VERSION}`;
   const ordersUrl =
     `${base}/orders.json?status=any&limit=250&order=created_at%20asc&created_at_min=` +
     encodeURIComponent(createdAtMin);
@@ -148,6 +149,26 @@ export async function backfillShopifyOrders(input: {
     })
     .eq('platform', 'shopify')
     .eq('store_key', shopDomain);
+
+  if (merchantId) {
+    await supabase
+      .from('merchant_integrations')
+      .update({
+        status: errors > 0 ? 'degraded' : 'connected',
+        imported_record_count: orders.length,
+        last_sync_at: now,
+        last_sync_completed_at: now,
+        last_successful_sync_at: errors === 0 ? now : null,
+        last_error: errors > 0 ? `shopify_backfill_partial: ${errors} order(s) failed` : null,
+        last_error_code: errors > 0 ? 'shopify_backfill_partial' : null,
+        last_error_message: errors > 0 ? `${errors} order(s) failed` : null,
+        last_error_at: errors > 0 ? now : null,
+        updated_at: now,
+      })
+      .eq('merchant_id', merchantId)
+      .eq('provider_id', 'shopify')
+      .eq('provider_account_id', shopDomain);
+  }
 
   if (orders.length > 0 && ingested === 0 && errors > 0) {
     throw new Error(`shopify_backfill_failed: ${errors} order(s) failed`);
