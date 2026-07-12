@@ -119,6 +119,20 @@ export async function settleException(
   return { ok: true as const, exception: data };
 }
 
+export async function getException(client: SupabaseClient, merchantId: string, exceptionId: string) {
+  const { data, error } = await client
+    .from(TABLES.CASE_EXCEPTIONS)
+    .select('id,support_payout_case_id,exception_type,confidence,status,title,context')
+    .eq('merchant_id', merchantId)
+    .eq('id', exceptionId)
+    .maybeSingle();
+  if (error) throw new Error(`case_exception_get_failed: ${error.message}`);
+  return data as {
+    id: string; support_payout_case_id: string | null; exception_type: string;
+    confidence: string; status: string; title: string; context: Record<string, unknown> | null;
+  } | null;
+}
+
 export async function countOpenExceptions(client: SupabaseClient, merchantId: string): Promise<number> {
   const { count, error } = await client
     .from(TABLES.CASE_EXCEPTIONS)

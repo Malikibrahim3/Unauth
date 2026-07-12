@@ -2,16 +2,28 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
-import { settleException } from '@/lib/exceptions/store';
+import { resolveExceptionAction } from '@/lib/exceptions/resolveExceptionAction';
 
 export const dynamic = 'force-dynamic';
 
-const settleSchema = z.object({
-  status: z.enum(['resolved', 'dismissed']),
+const actionSchema = z.object({
+  action: z.enum(['confirm', 'reject', 'resolve', 'dismiss']),
+  selectedCandidateId: z.string().uuid().nullable().optional(),
   resolution: z.string().trim().max(2000).nullable().optional(),
 });
 
-/** POST — resolve or dismiss a single exception (the merchant's decision). */
+const STATUS_BY_REASON: Record<string, number> = {
+  not_found: 404,
+  already_settled: 409,
+  not_a_match_exception: 422,
+  candidate_required: 422,
+};
+
+/**
+ * POST — the merchant's decision on an exception. confirm/reject settle a match
+ * exception through resolveMatch (updating records, case, financials, audit);
+ * resolve/dismiss settle any exception.
+ */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const userClient = createClient();
@@ -22,16 +34,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.SUBMIT_PAYOUT_DECISIONS);
   if (denied || !ctx?.merchantId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-  const parsed = settleSchema.safeParse(await req.json().catch(() => null));
-  if (!parsed.success) return NextResponse.json({ error: 'Invalid resolution' }, { status: 400 });
+  const parsed = actionSchema.safeParse(await req.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json({ error: 'Invalid exception action' }, { status: 400 });
 
-  const result = await settleException(serviceClient, ctx.merchantId, id, {
-    status: parsed.data.status,
+  const result = await resolveExceptionAction(serviceClient, {
+    merchantId: ctx.merchantId,
+    exceptionId: id,
+    action: parsed.data.action,
+    selectedCandidateId: parsed.data.selectedCandidateId ?? null,
     resolution: parsed.data.resolution ?? null,
-    resolvedBy: user.id,
+    actorUserId: user.id,
   });
   if (!result.ok) {
-    return NextResponse.json({ error: result.reason }, { status: result.reason === 'not_found' ? 404 : 409 });
+    return NextResponse.json({ error: result.reason }, { status: STATUS_BY_REASON[result.reason ?? ''] ?? 422 });
   }
-  return NextResponse.json({ ok: true, exception: result.exception });
+  return NextResponse.json({ ok: true, exception: result.exception, matchStatus: result.matchStatus, settleStatus: result.settleStatus });
 }
