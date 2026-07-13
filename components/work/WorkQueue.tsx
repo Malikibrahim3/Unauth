@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { StatusBadge, PriorityChip } from "@/components/ui/StatusBadge";
 
 export type WorkQueueItem = {
   id: string;
@@ -321,7 +322,7 @@ export function WorkQueue({
       ) : (
         <>
           <div className="hidden overflow-x-auto rounded-lg border border-[var(--border)] bg-[var(--surface)] md:block">
-            <table className="w-full min-w-[1120px] border-collapse text-sm">
+            <table className="w-full min-w-[860px] border-collapse text-sm">
               <thead className="sticky top-0 bg-[var(--surface-sunken)] text-left text-xs text-[var(--text-secondary)]">
                 <tr>
                   <th
@@ -350,8 +351,6 @@ export function WorkQueue({
                     "Object",
                     "Status",
                     "Owner",
-                    "Source",
-                    "Blocker",
                     "Due / SLA",
                     "Actions",
                   ].map((heading) => (
@@ -383,14 +382,19 @@ export function WorkQueue({
                           />
                         ) : null}
                       </td>
-                      <td className="px-3 py-3 font-medium">
-                        {title(item.priority)}
+                      <td className="px-3 py-3">
+                        <PriorityChip value={item.priority} size="sm" />
                       </td>
-                      <td className="max-w-[280px] px-3 py-3">
+                      <td className="max-w-[320px] px-3 py-3">
                         <div className="font-medium">{item.title}</div>
                         {item.description ? (
                           <div className="mt-0.5 line-clamp-2 text-xs text-[var(--text-secondary)]">
                             {item.description}
+                          </div>
+                        ) : null}
+                        {item.blockingReason ? (
+                          <div className="mt-1 text-xs text-[var(--warning)]">
+                            Blocked: {item.blockingReason}
                           </div>
                         ) : null}
                       </td>
@@ -406,13 +410,11 @@ export function WorkQueue({
                           item.objectLabel
                         )}
                       </td>
-                      <td className="px-3 py-3">{title(item.status)}</td>
+                      <td className="px-3 py-3">
+                        <StatusBadge family="caseStatus" value={item.status} size="sm" />
+                      </td>
                       <td className="px-3 py-3">
                         {item.ownerUserId ? "Assigned" : title(item.ownerRole)}
-                      </td>
-                      <td className="px-3 py-3">{title(item.source)}</td>
-                      <td className="max-w-[200px] px-3 py-3 text-xs text-[var(--text-secondary)]">
-                        {item.blockingReason ?? "—"}
                       </td>
                       <td className={`px-3 py-3 text-xs ${due.className}`}>
                         {due.label}
@@ -450,10 +452,11 @@ export function WorkQueue({
                         />
                       ) : null}
                       <div className="min-w-0">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
-                          {title(item.priority)} · {title(item.status)}
-                        </p>
-                        <h3 className="mt-1 font-semibold">{item.title}</h3>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <PriorityChip value={item.priority} size="sm" />
+                          <StatusBadge family="caseStatus" value={item.status} size="sm" />
+                        </div>
+                        <h3 className="mt-1.5 font-semibold">{item.title}</h3>
                       </div>
                     </div>
                     <span className={`text-xs ${due.className}`}>
@@ -481,7 +484,6 @@ export function WorkQueue({
                     <span>
                       {item.ownerUserId ? "Assigned" : title(item.ownerRole)}
                     </span>
-                    <span>{title(item.source)}</span>
                   </div>
                   {item.blockingReason ? (
                     <p className="mt-2 text-xs text-[var(--warning)]">
@@ -498,8 +500,7 @@ export function WorkQueue({
         </>
       )}
       <p className="mt-3 text-xs text-[var(--text-secondary)]">
-        Showing {items.length} of {total} matching items. Results are server
-        filtered and paginated.
+        Showing {items.length} of {total}
       </p>
     </section>
   );

@@ -55,12 +55,16 @@ export const STATUS_TONES: Record<string, StatusTone> = {
   recoverable: 'success',
   resolved_refunded: 'success',
   resolved_exchanged: 'success',
+  completed: 'success',
   // danger — negative / overdue / blocked
   escalated: 'danger',
   overdue: 'danger',
   not_recoverable: 'danger',
   resolved_denied: 'danger',
   blocked: 'danger',
+  // work-task lifecycle extras
+  cancelled: 'neutral',
+  snoozed: 'neutral',
 };
 
 export function statusTone(value: string | null | undefined): StatusTone {

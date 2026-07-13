@@ -5,6 +5,8 @@ import { TABLES } from "@/lib/supabase/tables";
 import { WorkbenchPage } from "@/components/ui";
 import { WorkQueue, type WorkQueueItem } from "@/components/work/WorkQueue";
 import { countOpenExceptions, listExceptions } from "@/lib/exceptions/store";
+import { formatNumber } from "@/lib/utils/format";
+import { shortRef, hashId } from "@/lib/ui/displayRef";
 
 export const dynamic = "force-dynamic";
 type TaskRow = {
@@ -96,11 +98,11 @@ export default async function WorkPage({
             ? `/claims/${row.support_payout_case_id}`
             : null,
       objectLabel: row.recovery_case_id
-        ? "Recovery"
+        ? `Recovery ${hashId(row.recovery_case_id)}`
         : row.loss_case_id
-          ? "Loss"
+          ? `Loss ${hashId(row.loss_case_id)}`
           : row.support_payout_case_id
-            ? `Case ${row.support_payout_case_id.slice(0, 8)}`
+            ? shortRef(null, row.support_payout_case_id)
             : "Task",
       blockingReason: row.blocking_reason,
       source: row.source,
@@ -133,7 +135,7 @@ export default async function WorkPage({
       ? `/claims/${row.support_payout_case_id}`
       : null,
     objectLabel: row.support_payout_case_id
-      ? `Case ${row.support_payout_case_id.slice(0, 8)}`
+      ? shortRef(null, row.support_payout_case_id)
       : "Integration exception",
     blockingReason: row.exception_type.replaceAll("_", " "),
     source: row.source_system ?? "automation",
@@ -144,19 +146,18 @@ export default async function WorkPage({
     <WorkbenchPage
       eyebrow="Operations"
       title="Work"
-      subtitle="One queue for payout decisions, evidence tasks, recovery chases, and automation exceptions."
       kpiItems={[
         {
           label: "Matching work",
-          value: (
+          value: formatNumber(
             (taskResult.count ?? 0) +
-            (includeExceptions ? openExceptionCount : 0)
-          ).toLocaleString(),
-          hint: "Server-filtered view",
+              (includeExceptions ? openExceptionCount : 0),
+          ),
+          hint: "In this view",
         },
         {
           label: "Open exceptions",
-          value: openExceptionCount.toLocaleString(),
+          value: formatNumber(openExceptionCount),
           hint: "Merchant decisions required",
         },
       ]}
