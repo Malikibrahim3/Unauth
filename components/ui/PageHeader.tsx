@@ -1,14 +1,14 @@
-import { ChevronRight } from 'lucide-react';
-import { isValidElement, type ReactNode } from 'react';
-import Link from 'next/link';
-import { cn } from '@/lib/utils';
+import { ChevronRight } from "lucide-react";
+import { isValidElement, type ReactNode } from "react";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
 import {
   PAGE_EYEBROW_STYLE,
   PAGE_HEADER_STYLE,
   PAGE_SHELL_INNER_CLASS,
   PAGE_SUBTITLE_STYLE,
   PAGE_TITLE_STYLE,
-} from '@/components/ui/pageShellStyles';
+} from "@/components/ui/pageShellStyles";
 
 interface Breadcrumb {
   label: string;
@@ -56,19 +56,27 @@ export function PageHeader({
             <span
               key={crumb.href ?? crumb.label}
               className="flex items-center gap-1"
-              style={{ fontSize: 12, color: 'var(--text-tertiary)' }}
+              style={{ fontSize: 12, color: "var(--text-tertiary)" }}
             >
-              {i > 0 && <ChevronRight size={12} aria-hidden="true" style={{ opacity: 0.5 }} />}
+              {i > 0 && (
+                <ChevronRight
+                  size={12}
+                  aria-hidden="true"
+                  style={{ opacity: 0.5 }}
+                />
+              )}
               {crumb.href ? (
                 <Link
                   href={crumb.href}
                   className="hover:underline transition-colors"
-                  style={{ color: 'var(--text-secondary)' }}
+                  style={{ color: "var(--text-secondary)" }}
                 >
                   {crumb.label}
                 </Link>
               ) : (
-                <span style={{ color: 'var(--text-tertiary)' }}>{crumb.label}</span>
+                <span style={{ color: "var(--text-tertiary)" }}>
+                  {crumb.label}
+                </span>
               )}
             </span>
           ))}
@@ -84,9 +92,9 @@ export function PageHeader({
 
       {/* Title row */}
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="truncate" style={PAGE_TITLE_STYLE}>
+            <h1 className="break-words" style={PAGE_TITLE_STYLE}>
               {title}
             </h1>
             {statusBadge}
@@ -97,16 +105,17 @@ export function PageHeader({
             </p>
           )}
         </div>
-        {(primaryAction || (secondaryActions && secondaryActions.length > 0)) && (
+        {(primaryAction ||
+          (secondaryActions && secondaryActions.length > 0)) && (
           <div className="flex shrink-0 flex-wrap items-center gap-2">
             {secondaryActions?.map((action) => (
               <span
                 key={
                   isValidElement(action) && action.key != null
                     ? String(action.key)
-                    : typeof action === 'string'
+                    : typeof action === "string"
                       ? action
-                      : 'secondary-action'
+                      : "secondary-action"
                 }
               >
                 {action}
@@ -119,9 +128,7 @@ export function PageHeader({
 
       {/* Meta row */}
       {meta && (
-        <div className="mt-3 flex flex-wrap items-center gap-2.5">
-          {meta}
-        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-2.5">{meta}</div>
       )}
 
       {/* Metric slot */}
@@ -132,11 +139,7 @@ export function PageHeader({
       )}
 
       {/* Tabs row */}
-      {tabs && (
-        <div className="mt-6">
-          {tabs}
-        </div>
-      )}
+      {tabs && <div className="mt-6">{tabs}</div>}
     </header>
   );
 }

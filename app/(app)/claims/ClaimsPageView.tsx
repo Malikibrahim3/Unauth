@@ -6,8 +6,6 @@ import { WorkbenchPage, WorkbenchEmptyState, ButtonLink, PanelCard } from '@/com
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { dominantCurrency, formatCurrencyNullable } from '@/lib/utils/format';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
-import { AnalyticsDonutChart } from '@/components/analytics/AnalyticsDonutChart';
-import { AnalyticsHBarChart } from '@/components/analytics/AnalyticsHBarChart';
 import {
   CLAIM_TYPE_LABELS,
   humanizeEnumValue,
@@ -93,13 +91,7 @@ export function ClaimsPageView({
   page,
   totalPages,
 }: ClaimsPageViewProps) {
-  const statusDonut = [
-    { label: 'Open', value: queueCounts.active, color: 'var(--text-primary)' },
-    { label: 'Unread', value: queueCounts.unread, color: 'var(--warning)' },
-    { label: 'Overdue', value: queueCounts.overdue, color: 'var(--critical)' },
-    { label: 'Resolved', value: queueCounts.resolved, color: 'var(--success)' },
-  ].filter((item) => item.value > 0);
-  const claimTypeBars = Object.entries(
+  const claimTypeRows = Object.entries(
     claims.reduce<Record<string, number>>((acc, claim) => {
       acc[claim.claim_type] = (acc[claim.claim_type] ?? 0) + 1;
       return acc;
@@ -109,7 +101,6 @@ export function ClaimsPageView({
     .map(([claimType, value]) => ({
       label: CLAIM_TYPE_LABELS[claimType] ?? humanizeEnumValue(claimType),
       value,
-      color: 'var(--neutral)',
     }));
   // Display currency for aggregate KPIs: the most common case currency on record.
   const displayCurrency = dominantCurrency(recoveryMetricRows.length > 0 ? recoveryMetricRows : claims);
@@ -182,8 +173,8 @@ export function ClaimsPageView({
                   </Link>
                 ))}
               </div>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1.5">
+              <div className="flex w-full flex-wrap items-center justify-between gap-3 sm:w-auto sm:justify-start">
+                <div className="flex flex-wrap items-center gap-1.5">
                   {[
                     { label: 'Updated', href: `/claims${buildClaimsQueryString(sp, { sort: undefined, sla: undefined, page: '1' })}`, active: sort === 'updated' && !slaFilter },
                     { label: 'Oldest', href: `/claims${buildClaimsQueryString(sp, { sort: 'age', sla: undefined, page: '1' })}`, active: sort === 'age' && !slaFilter },
@@ -289,23 +280,49 @@ export function ClaimsPageView({
             )}
 
             <div className="grid gap-4 px-4 py-4 border-t lg:grid-cols-2" style={{ borderColor: 'var(--border-muted)' }}>
-              <PanelCard variant="app" className="p-4">
-                <p className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>Queue health</p>
-                <p className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                  Open, unread, overdue, and resolved payout case mix
-                </p>
-                <div className="mt-3">
-                  <AnalyticsDonutChart data={statusDonut} height={220} emptyLabel="No payout case mix yet" />
+              <PanelCard as="section" variant="app" className="p-4" aria-labelledby="queue-health-title">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p id="queue-health-title" className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>Queue health</p>
+                    <p className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>Counts stay actionable; no decorative chart or mixed denominator.</p>
+                  </div>
+                  <Link href="/work" className="text-xs font-semibold hover:underline" style={{ color: 'var(--accent)' }}>Open work queue →</Link>
                 </div>
+                <dl className="mt-3 divide-y" style={{ borderColor: 'var(--border-muted)' }}>
+                  {[
+                    { label: 'Open cases', value: queueCounts.active, href: '/claims' },
+                    { label: 'New evidence', value: queueCounts.unread, href: '/claims?viewed=unread' },
+                    { label: 'Ageing', value: queueCounts.overdue, href: '/claims?sla=overdue&sort=age' },
+                    { label: 'Ready for decision', value: queueCounts.readyForDecision, href: '/claims?workflow=ready_for_decision' },
+                  ].map((item) => (
+                    <div key={item.label} className="flex items-center justify-between gap-4 py-2.5 first:pt-0 last:pb-0">
+                      <dt className="text-xs" style={{ color: 'var(--text-secondary)' }}>{item.label}</dt>
+                      <dd className="flex items-center gap-3">
+                        <span className="font-mono text-sm font-semibold tabular-nums" style={{ color: 'var(--text-primary)' }}>{item.value}</span>
+                        <Link href={item.href} className="text-xs font-semibold hover:underline" style={{ color: 'var(--accent)' }}>Review</Link>
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
               </PanelCard>
-              <PanelCard variant="app" className="p-4">
-                <p className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>Current page request types</p>
-                <p className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                  Quick read on the support payout cases in this view
-                </p>
-                <div className="mt-3">
-                  <AnalyticsHBarChart data={claimTypeBars} yAxisWidth={110} emptyLabel="No request type data" />
-                </div>
+              <PanelCard as="section" variant="app" className="p-4" aria-labelledby="request-mix-title">
+                <p id="request-mix-title" className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>Request types in this page</p>
+                <p className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>A compact table preserves exact values and works with assistive technology.</p>
+                {claimTypeRows.length > 0 ? (
+                  <table className="mt-3 w-full text-xs">
+                    <caption className="sr-only">Payout request types on the current page</caption>
+                    <thead className="sr-only"><tr><th scope="col">Request type</th><th scope="col">Cases</th><th scope="col">Share</th></tr></thead>
+                    <tbody className="divide-y" style={{ borderColor: 'var(--border-muted)' }}>
+                      {claimTypeRows.map((item) => (
+                        <tr key={item.label}>
+                          <th scope="row" className="py-2.5 text-left font-medium" style={{ color: 'var(--text-secondary)' }}>{item.label}</th>
+                          <td className="py-2.5 text-right font-mono font-semibold tabular-nums" style={{ color: 'var(--text-primary)' }}>{item.value}</td>
+                          <td className="py-2.5 pl-4 text-right font-mono tabular-nums" style={{ color: 'var(--text-tertiary)' }}>{claims.length > 0 ? `${Math.round((item.value / claims.length) * 100)}%` : '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : <p className="mt-3 text-xs" style={{ color: 'var(--text-tertiary)' }}>No classified payout requests in this page.</p>}
               </PanelCard>
             </div>
           </div>

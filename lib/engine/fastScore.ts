@@ -2,7 +2,7 @@ import type { NormalisedOrder, SignalResult, ScoredOrder, ConfidenceGrade } from
 import { SIGNAL_WEIGHTS, FLAG_THRESHOLD, BROAD_OVERLAP_SIGNALS, STRONG_FRAUD_EVIDENCE_SIGNALS, STRONG_EVIDENCE_BY_SCORE, BEHAVIORAL_FRAUD_SIGNALS } from './weights';
 import type { FastScoringContext } from './fastContext';
 import { generateIdentityAlert, type IdentityClusterMap } from './identityMatching';
-import { normaliseEmail, normaliseIP, normaliseAddress, normaliseCard } from '../identity/normalise';
+import { normaliseEmail, normaliseIP } from '../identity/normalise';
 import { computeCrossMerchantSignal } from './signals/crossMerchant';
 import { formatCurrency } from '@/lib/utils/format';
 

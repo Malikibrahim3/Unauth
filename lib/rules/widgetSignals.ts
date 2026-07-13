@@ -22,12 +22,6 @@ function daysSince(iso: string | null, nowMs: number): number | null {
   return Math.max(0, Math.floor((nowMs - then) / MS_PER_DAY));
 }
 
-function mostRecent(a: string | null, b: string | null): string | null {
-  if (!a) return b;
-  if (!b) return a;
-  return Date.parse(a) >= Date.parse(b) ? a : b;
-}
-
 export function widgetDataToSignals(
   data: ClaimWidgetData,
   nowMs: number = Date.now(),

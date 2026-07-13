@@ -11,6 +11,7 @@ import {
   type RecoveryCaseStatus,
 } from '@/lib/recoveries/types';
 import { eventTypeForStatus, nextStatusPatch } from '@/lib/recoveries/status';
+import { recoverySoughtAmount, validateCumulativeRecovery } from '@/lib/recoveries/amounts';
 
 const recoveryCaseStatusSchema = z.enum(RECOVERY_CASE_STATUSES);
 const recoveryOwnerTypeSchema = z.enum(RECOVERY_OWNER_TYPES);
@@ -258,7 +259,11 @@ export async function updateRecoveryCaseStatus(
     status: input.status,
     ...nextStatusPatch(input.status),
   };
-  if (typeof input.amountRecovered === 'number') patch.amount_recovered = input.amountRecovered;
+  if (typeof input.amountRecovered === 'number') {
+    const sought = recoverySoughtAmount(existing);
+    validateCumulativeRecovery({ sought, previousRecovered: existing.amount_recovered ?? 0, nextRecovered: input.amountRecovered });
+    patch.amount_recovered = input.amountRecovered;
+  }
   if (typeof input.rejectionReason === 'string') patch.rejection_reason = input.rejectionReason;
 
   const { data, error } = await client

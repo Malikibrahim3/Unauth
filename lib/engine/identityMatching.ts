@@ -12,7 +12,7 @@
 import type { NormalisedOrder } from './types';
 import type { FastScoringContext } from './fastContext';
 import type { IdentityAlert } from './types';
-import { linkIdentities, type LinkerOrderInput, type LinkerSignal } from '../linker';
+import { linkIdentities, type LinkerOrderInput } from '../linker';
 import { extractRawIds, chooseAnchor, reasonsFromSignals } from './identityHelpers';
 
 interface IdentityCluster {

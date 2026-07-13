@@ -53,6 +53,7 @@ export const TABLES = {
   INGEST_RATE_LIMITS: 'ingest_rate_limits',
   IDENTITY_CATCH_EVENTS: 'identity_catch_events',
   MERCHANT_RULES: 'merchant_rules',
+  MERCHANT_RULE_VERSIONS: 'merchant_rule_versions',
   RULE_EVALUATIONS: 'rule_evaluations',
   DEFAULT_RULE_TEMPLATES: 'default_rule_templates',
   IDENTITY_EVIDENCE_SCORES: 'identity_evidence_scores',
@@ -108,6 +109,7 @@ export const TABLES = {
   SOURCE_SHIPMENTS: 'source_shipments',
   SOURCE_TRACKING_EVENTS: 'source_tracking_events',
   SOURCE_RETURNS: 'source_returns',
+  SOURCE_DISPUTES: 'source_disputes',
   SOURCE_MESSAGES: 'source_messages',
   INGESTION_FIELD_ERRORS: 'ingestion_field_errors',
   // ── Canonical operations model (Phase 7) ──

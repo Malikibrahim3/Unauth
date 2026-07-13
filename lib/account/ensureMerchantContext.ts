@@ -10,8 +10,9 @@ export function canRehydrateMerchantFromAuth(user: Pick<User, 'email' | 'user_me
 export async function ensureMerchantContextForUser(
   serviceClient: SupabaseClient,
   user: Pick<User, 'id' | 'email' | 'user_metadata'>,
+  selectedMerchantId?: string | null,
 ): Promise<CallerContext | null> {
-  const existingContext = await resolveCallerContext(serviceClient, user.id);
+  const existingContext = await resolveCallerContext(serviceClient, user.id, selectedMerchantId);
   if (existingContext) return existingContext;
 
   if (!canRehydrateMerchantFromAuth(user)) return null;

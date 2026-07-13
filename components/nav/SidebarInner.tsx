@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useFetchJson } from '@/lib/react/useFetchJson';
 import { cn } from '@/lib/utils';
 import { getSidebarNavItems } from '@/lib/navigation/appRoutes';
+import type { Permission } from '@/lib/permissions';
 import { parseProductGateEnv } from '@/lib/product/envFlags';
 import { SidebarAside } from '@/components/nav/SidebarAside';
 import type { NavItemView } from '@/components/nav/SidebarNavItem';
@@ -17,6 +18,7 @@ export interface SidebarProps {
   claimsCount?: number;
   shopifyConnected?: boolean;
   helpdeskConnected?: boolean;
+  permissions?: Permission[];
 }
 
 const STORAGE_KEY = 'unauth.sidebar.collapsed';
@@ -36,6 +38,7 @@ function SidebarInnerContent({
   claimsCount: initialClaimsCount = 0,
   shopifyConnected = false,
   helpdeskConnected = false,
+  permissions = [],
 }: SidebarProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -59,15 +62,13 @@ function SidebarInnerContent({
   const claimsCount = navCounts?.claimsCount ?? initialClaimsCount;
 
   function toggleCollapse() {
-    setCollapsed((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem(STORAGE_KEY, String(next));
-      } catch {
-        /* noop */
-      }
-      return next;
-    });
+    const next = !collapsed;
+    setCollapsed(next);
+    try {
+      localStorage.setItem(STORAGE_KEY, String(next));
+    } catch {
+      /* Storage may be unavailable in privacy-restricted browsers. */
+    }
   }
 
   async function handleSignOut() {
@@ -76,7 +77,7 @@ function SidebarInnerContent({
   }
 
   const enforceGates = parseProductGateEnv(process.env.NEXT_PUBLIC_ENFORCE_PRODUCT_GATES);
-  const groups = getSidebarNavItems().map((group) => ({
+  const groups = getSidebarNavItems(new Set(permissions)).map((group) => ({
     label: group.label,
     items: group.items.map((route): NavItemView => ({
       href: route.href,

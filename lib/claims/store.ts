@@ -17,6 +17,7 @@ import {
 } from '@/lib/payouts/taxonomy';
 import { transitionCase } from '@/lib/cases/transitionCase';
 import { upsertClaimEvidence } from '@/lib/integrations/canonicalEvidence';
+import { merchantDecisionSchema } from '@/lib/claims/decision/merchantDecision';
 
 const claimTypeSchema = z.enum(['missing_parcel', 'item_not_received', 'damaged', 'wrong_item', 'not_as_described', 'refund_request', 'chargeback', 'return_abuse', 'other']);
 const claimStatusSchema = z.enum(CANONICAL_CLAIM_STATUSES);
@@ -170,7 +171,7 @@ export const createOutcomeSchema = z.object({
   actor_user_id: z.string().uuid().optional(),
   recommended_payout_action: z.enum(PAYOUT_RECOMMENDATION_VALUES).nullable().optional(),
   followed_recommendation: z.boolean().nullable().optional(),
-});
+}).and(merchantDecisionSchema);
 
 export const createEvidenceItemSchema = z.object({
   id: z.string().uuid().optional(),

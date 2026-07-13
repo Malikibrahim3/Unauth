@@ -37,7 +37,7 @@ export function resolvePayoutRecommendation(
 ): PayoutRecommendationResult | null {
   if (evaluation.recommendation === 'no_match') return null;
 
-  const { evidence, recovery, attribution } = payoutCase;
+  const { evidence, recovery } = payoutCase;
   const ruleName = evaluation.rule_name;
   const ruleId = evaluation.rule_id;
   const workflow = derivePayoutWorkflow({

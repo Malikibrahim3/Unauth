@@ -1,11 +1,15 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { RailSection, ClaimLifecycleStatusBar, FieldLabel } from '@/components/claims/claimReviewPrimitives';
 import { btnStyle, inputStyle } from '@/components/claims/claimReviewStyles';
 import { EVIDENCE_TYPE_LABELS, EVIDENCE_SOURCE_LABELS } from '@/components/claims/claimReviewLabels';
 import type { Decision, Outcome, EvidenceType, EvidenceSource, ClaimStatus } from '@/components/claims/claimReviewTypes';
 import type { ClaimReviewWorkbench } from '@/components/claims/claimReviewWorkbench';
+import { Modal } from '@/components/ui/Modal';
+import { allowedOutcomes, decisionRequiresRationale, merchantDecisionSchema, type MerchantDecision } from '@/lib/claims/decision/merchantDecision';
+import { formatClaimMoney } from '@/components/claims/claimReviewStyles';
 
 // Merchant-selectable decisions/outcomes are an explicit neutral allowlist —
 // accusation vocabulary is deliberately excluded (see docs/product/TERMINOLOGY.md).
@@ -31,6 +35,8 @@ const OUTCOME_VERB: Record<string, string> = {
 };
 
 export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbench; canManage: boolean }) {
+  const [confirming, setConfirming] = useState(false);
+  const [confirmingReversal, setConfirmingReversal] = useState(false);
   const {
     claimId, state, patch, busy, dispatch, claimIsClosed,
     onOutcome, onEvidence, onAssignment, onSnooze, onClearSnooze, onReverse,
@@ -50,6 +56,11 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
   const recoveryCase = (decisionData?.recoveryCase as { id?: string } | null | undefined) ?? null;
   const hasOutcome = Boolean(latestOutcome);
   const disabled = busy || !claimId;
+  const validOutcomes = allowedOutcomes(state.decision as MerchantDecision);
+  const validation = merchantDecisionSchema.safeParse({ decision: state.decision, outcome: state.outcome, notes: state.notes });
+  const validationMessage = validation.success ? null : validation.error.issues[0]?.message ?? 'Check the decision details.';
+  const amount = wb.selectedClaim?.amount_at_risk ?? null;
+  const currency = wb.selectedClaim?.currency ?? null;
 
   return (
     <RailSection id="manage" title="Manage case" open={state.railOpen.manage ?? true} onToggle={(id) => dispatch({ type: 'toggleRail', id })}>
@@ -73,19 +84,24 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
         <div className="space-y-1.5">
           <FieldLabel htmlFor="manage-decision">Record decision &amp; outcome</FieldLabel>
           <select id="manage-decision" className="w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()}
-            value={state.decision} onChange={(e) => patch({ decision: e.target.value as Decision })} aria-label="Decision">
+            value={state.decision} onChange={(e) => {
+              const decision = e.target.value as Decision;
+              const outcomes = allowedOutcomes(decision as MerchantDecision);
+              patch({ decision, outcome: outcomes.includes(state.outcome as never) ? state.outcome : outcomes[0] as Outcome });
+            }} aria-label="Decision">
             {DECISION_OPTIONS.map((d) => <option key={d} value={d}>{DECISION_VERB[d] ?? d}</option>)}
           </select>
           <select className="w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()}
             value={state.outcome} onChange={(e) => patch({ outcome: e.target.value as Outcome })} aria-label="Outcome">
-            {OUTCOME_OPTIONS.map((o) => <option key={o} value={o}>{OUTCOME_VERB[o] ?? o}</option>)}
+            {OUTCOME_OPTIONS.filter((outcome) => validOutcomes.includes(outcome as never)).map((o) => <option key={o} value={o}>{OUTCOME_VERB[o] ?? o}</option>)}
           </select>
-          <input type="text" className="w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()}
-            placeholder="Decision note (optional)" value={state.notes} onChange={(e) => patch({ notes: e.target.value })} aria-label="Decision note" />
-          <button type="button" disabled={disabled}
-            onClick={() => { if (window.confirm('Record this decision and outcome? This updates the case financial state and is auditable.')) void onOutcome(); }}
+          <textarea className="min-h-20 w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()}
+            placeholder={decisionRequiresRationale(state.decision as MerchantDecision) ? 'Rationale (required)' : 'Decision rationale (optional)'} value={state.notes} onChange={(e) => patch({ notes: e.target.value })} aria-label="Decision rationale" />
+          {validationMessage ? <p role="alert" className="text-xs text-[var(--danger)]">{validationMessage}</p> : null}
+          <button type="button" disabled={disabled || !validation.success}
+            onClick={() => setConfirming(true)}
             className="w-full px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-60" style={btnStyle('primary')}>
-            Record decision
+            Review decision
           </button>
         </div>
 
@@ -124,6 +140,7 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
             setReopenNote={(note: string) => patch({ reopenNote: note })}
             onReopen={() => void onReopen()}
             canReopen={canManage}
+            currentStatus={wb.selectedClaim?.status ?? null}
           />
         </div>
 
@@ -154,8 +171,8 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
             </select>
             <input type="text" className="w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()}
               placeholder="Reason for reversal (required)" value={state.reverseNote} onChange={(e) => patch({ reverseNote: e.target.value })} aria-label="Reversal reason" />
-            <button type="button" disabled={disabled}
-              onClick={() => { if (window.confirm('Reverse the recorded decision? The prior decision is preserved in history.')) void onReverse(); }}
+            <button type="button" disabled={disabled || !state.reverseNote.trim()}
+              onClick={() => setConfirmingReversal(true)}
               className="w-full px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-60" style={btnStyle('secondary')}>
               Reverse decision
             </button>
@@ -169,6 +186,49 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
           </Link>
         ) : null}
       </div>
+      <Modal
+        open={confirming}
+        onClose={() => setConfirming(false)}
+        title="Record merchant decision"
+        description="This action is append-only and will be attributed to your account."
+        actions={[{
+          label: busy ? 'Recording…' : 'Record decision',
+          onClick: () => {
+            setConfirming(false);
+            void onOutcome();
+          },
+        }]}
+      >
+        <dl className="space-y-3 text-sm">
+          <div className="flex justify-between gap-4"><dt>Decision</dt><dd className="font-medium">{DECISION_VERB[state.decision] ?? state.decision}</dd></div>
+          <div className="flex justify-between gap-4"><dt>Recorded outcome</dt><dd className="font-medium">{OUTCOME_VERB[state.outcome] ?? state.outcome}</dd></div>
+          <div className="flex justify-between gap-4"><dt>Amount at risk</dt><dd className="font-mono font-medium">{amount == null ? 'Not available' : formatClaimMoney(amount, currency)}</dd></div>
+        </dl>
+        <div className="mt-4 rounded-md border border-[var(--border)] bg-[var(--surface-sunken)] p-3 text-xs text-[var(--text-secondary)]">
+          Financial ledger entries, and any resulting loss or recovery records, are created by the audited projection workflow. The source request itself is not modified automatically.
+        </div>
+      </Modal>
+      <Modal
+        open={confirmingReversal}
+        onClose={() => setConfirmingReversal(false)}
+        title="Reverse recorded decision"
+        description="The original decision remains in the immutable activity history."
+        actions={[{
+          label: 'Record reversal',
+          variant: 'danger',
+          onClick: () => {
+            setConfirmingReversal(false);
+            void onReverse();
+          },
+        }]}
+      >
+        <p className="text-sm text-[var(--text-secondary)]">
+          New decision: <strong className="text-[var(--text-primary)]">{DECISION_VERB[state.reverseDecision] ?? state.reverseDecision}</strong>
+        </p>
+        <p className="mt-2 text-sm text-[var(--text-secondary)]">
+          Rationale: {state.reverseNote.trim() || 'A rationale is required before recording a reversal.'}
+        </p>
+      </Modal>
     </RailSection>
   );
 }

@@ -17,7 +17,10 @@ const UNIFIED_GROUPS = [
   { type: 'case', label: 'Payout cases' },
   { type: 'ticket', label: 'Tickets' },
   { type: 'shipment', label: 'Shipments' },
-  { type: 'transaction', label: 'Transactions' },
+  { type: 'refund', label: 'Refunds' },
+  { type: 'return', label: 'Returns' },
+  { type: 'dispute', label: 'Disputes' },
+  { type: 'loss', label: 'Losses' },
   { type: 'recovery', label: 'Recoveries' },
 ] as const;
 
@@ -161,7 +164,7 @@ export function CommandPaletteResultsList({
           ) : null}
           {filteredNav.map((item, i) => (
             <button
-              key={item.href}
+              key={`${item.href}:${item.label}`}
               type="button"
               className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors"
               style={{ background: state.activeIdx === navStartIdx + i ? 'var(--bg-subtle)' : 'transparent' }}

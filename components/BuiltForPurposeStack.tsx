@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import Image from 'next/image';
 import { Box, Headphones, ShoppingBag, Truck } from 'lucide-react';
 import MobileCollapse from '@/app/(public)/landing/_components/foundation/MobileCollapse';

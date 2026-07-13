@@ -4,12 +4,14 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const TABS = [
-  { href: '/settings/account', label: 'Account' },
+  { href: '/settings/account', label: 'Workspace & account' },
   { href: '/settings/billing', label: 'Billing' },
   { href: '/settings/team', label: 'Team' },
-  { href: '/settings/platform', label: 'Platform' },
-  { href: '/settings/integrations', label: 'Integrations' },
+  { href: '/settings/platform', label: 'Financial & workflow defaults' },
+  { href: '/integrations', label: 'Connections' },
   { href: '/settings/agreements', label: 'Agreements' },
+  { href: '/settings/api-integrations', label: 'API access' },
+  { href: '/settings/notifications', label: 'Notifications' },
   { href: '/settings/data-privacy', label: 'Data & privacy' },
   { href: '/settings/audit-trail', label: 'Audit trail' },
 ] as const;
@@ -24,14 +26,15 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
         style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
       >
         <p className="t-label mb-3 px-2" style={{ color: 'var(--text-tertiary)' }}>Settings</p>
-        <nav className="space-y-1" aria-label="Settings">
+        <nav className="flex gap-1 overflow-x-auto pb-1 xl:block xl:space-y-1 xl:overflow-visible xl:pb-0" aria-label="Settings">
           {TABS.map((tab) => {
-            const active = pathname === tab.href;
+            const active = pathname === tab.href || pathname.startsWith(`${tab.href}/`);
             return (
               <Link
                 key={tab.href}
                 href={tab.href}
-                className="block rounded-[var(--radius-sm)] border px-3 py-2 text-sm transition-colors"
+                aria-current={active ? 'page' : undefined}
+                className="block shrink-0 whitespace-nowrap rounded-[var(--radius-sm)] border px-3 py-2 text-sm transition-colors xl:whitespace-normal"
                 style={{
                   borderColor: active ? 'var(--border)' : 'transparent',
                   background: active ? 'var(--surface)' : 'transparent',

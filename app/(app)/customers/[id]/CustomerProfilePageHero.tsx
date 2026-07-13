@@ -11,11 +11,6 @@ import type {
 } from '@/app/(app)/customers/[id]/customerProfilePageLoad';
 import type { ConfidenceGradeValue } from '@/lib/confidence';
 
-const DENSITY_WEEK_KEYS = [
-  'week-11', 'week-10', 'week-9', 'week-8', 'week-7', 'week-6',
-  'week-5', 'week-4', 'week-3', 'week-2', 'week-1', 'week-0',
-] as const;
-
 export type CustomerProfilePageHeroProps = {
   auditRunId: string | null;
   displayName: string;
@@ -69,7 +64,6 @@ export function CustomerProfilePageHero({
   gorgiasTicketId,
   evidenceDisplay,
 }: CustomerProfilePageHeroProps) {
-  const maxDensity = Math.max(...density, 1);
   const refundPct = totalOrderValue > 0 ? Math.min((totalRefundedValue / totalOrderValue) * 100, 100) : 0;
   const keptPct = 100 - refundPct;
   void profileGrade;
@@ -168,15 +162,15 @@ export function CustomerProfilePageHero({
             </div>
           </div>
 
-          <div className="grid gap-px overflow-hidden rounded-md border" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', borderColor: 'var(--border)', background: 'var(--border)' }}>
+          <div className="grid grid-cols-1 gap-px overflow-hidden rounded-md border sm:grid-cols-2" style={{ borderColor: 'var(--border)', background: 'var(--border)' }}>
             {([
               { label: 'Order value', text: formatCurrencyNullable(totalOrderValue), color: 'var(--text-primary)' },
               { label: 'Prior payout cases', text: merchantClaimCount.toLocaleString(), color: 'var(--text-primary)' },
               { label: 'Refunded', text: formatCurrencyNullable(totalRefundedValue), color: 'var(--text-primary)' },
               { label: 'Chargebacks', text: profile.total_chargebacks.toLocaleString(), color: 'var(--text-primary)' },
               { label: 'Last seen', text: formatDateMode(profile.last_seen, 'table'), color: 'var(--data-date)', mono: true },
-            ] as Array<{ label: string; text?: string; color?: string; mono?: boolean }>).map((metric) => (
-              <div key={metric.label} className="min-w-0 p-4" style={{ background: 'var(--surface)' }}>
+            ] as Array<{ label: string; text?: string; color?: string; mono?: boolean }>).map((metric, index) => (
+              <div key={metric.label} className={`min-w-0 p-4 ${index === 4 ? 'sm:col-span-2' : ''}`} style={{ background: 'var(--surface)' }}>
                 <p className="t-label" style={{ color: 'var(--text-tertiary)' }}>{metric.label}</p>
                 <p className={`mt-1 leading-tight font-semibold num ${metric.mono ? 'font-mono' : ''}`} style={{ color: metric.color, fontSize: 16, wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                   {metric.text}
@@ -185,27 +179,7 @@ export function CustomerProfilePageHero({
             ))}
           </div>
         </div>
-        <div className="flex h-10 items-center gap-4 border-t px-4" style={{ background: 'var(--border)', borderColor: 'var(--border)' }}>
-          <div
-            className="flex flex-1 items-end gap-0.5 cursor-help"
-            style={{ height: 28 }}
-            title="Activity timeline - each bar is one week of orders and payout cases in available merchant data"
-          >
-            {density.map((value, index) => {
-              const heightPct = value > 0 ? Math.max((value / maxDensity) * 100, 20) : 12;
-              return (
-                <span
-                  key={DENSITY_WEEK_KEYS[index]}
-                  className="flex-1 rounded-sm"
-                  style={{
-                    height: `${heightPct}%`,
-                    background: value > 0 ? 'var(--text-tertiary)' : 'var(--surface-sunken)',
-                    opacity: value > 0 ? 0.85 : 0.35,
-                  }}
-                />
-              );
-            })}
-          </div>
+        <div className="flex min-h-10 items-center justify-end border-t px-4" style={{ background: 'var(--surface-sunken)', borderColor: 'var(--border)' }}>
           <span className="t-mono whitespace-nowrap" style={{ color: 'var(--data-date)' }}>
             Last seen {formatDateMode(profile.last_seen, 'recent')}
           </span>
@@ -218,7 +192,6 @@ export function CustomerProfilePageHero({
             flaggedAt={profile.first_seen}
             orders={merchantOrderCount}
             exposure={totalOrderValue}
-            cadence={Math.min(5, Math.max(1, Math.ceil(merchantOrderCount / 3)))}
             lastSeen={profile.last_seen}
             density={density}
           />
@@ -251,20 +224,7 @@ export function CustomerProfilePageHero({
             </div>
             {totalOrderValue > 0 && (
               <div className="mt-3 pt-3 border-t" style={{ borderColor: 'var(--border-muted)' }}>
-                <div className="flex h-2 overflow-hidden rounded-full" style={{ background: 'var(--surface-sunken)' }}>
-                  <div style={{ width: `${keptPct}%`, background: 'var(--neutral)', flexShrink: 0 }} />
-                  <div style={{ width: `${refundPct}%`, background: 'var(--success)', flexShrink: 0 }} />
-                </div>
-                <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                  <div className="flex items-center gap-1">
-                    <span className="inline-block h-2 w-2 rounded-[2px] shrink-0" style={{ background: 'var(--neutral)' }} />
-                    <span className="text-caption" style={{ color: 'var(--text-tertiary)' }}>Kept {keptPct.toFixed(1)}%</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="inline-block h-2 w-2 rounded-[2px] shrink-0" style={{ background: 'var(--success)' }} />
-                    <span className="text-caption" style={{ color: 'var(--text-tertiary)' }}>Refunded {refundPct.toFixed(1)}%</span>
-                  </div>
-                </div>
+                <dl className="grid grid-cols-2 gap-2 text-caption"><div><dt style={{ color: 'var(--text-tertiary)' }}>Kept</dt><dd className="font-mono" style={{ color: 'var(--text)' }}>{formatCurrencyNullable(totalOrderValue - totalRefundedValue)} · {keptPct.toFixed(1)}%</dd></div><div><dt style={{ color: 'var(--text-tertiary)' }}>Refunded</dt><dd className="font-mono" style={{ color: 'var(--text)' }}>{formatCurrencyNullable(totalRefundedValue)} · {refundPct.toFixed(1)}%</dd></div></dl>
               </div>
             )}
           </PanelCard>

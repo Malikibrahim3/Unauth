@@ -2,16 +2,7 @@
  * Idempotently attaches delivery/tracking rows from source_fulfillments as claim
  * evidence for delivery-related claims. Safe to call on every context build.
  */
-import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ClaimDecisionContext } from '@/lib/claims/decision/types';
-
-const DELIVERY_CLAIM_TYPES = new Set([
-  'item_not_received',
-  'missing_parcel',
-  'damaged',
-  'wrong_item',
-  'not_as_described',
-]);
 
 type DeliverySlice = NonNullable<ClaimDecisionContext['delivery']>;
 

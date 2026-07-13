@@ -18,8 +18,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const loaded = await loadClaimForMerchant(serviceClient, claimId, ctx.merchantId);
   if (loaded.denied === 'not_found') return NextResponse.json({ error: 'Claim not found' }, { status: 404 });
   if (loaded.denied === 'forbidden') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  const claim = loaded.claim!;
-
   let body: unknown;
   try {
     body = await request.json();

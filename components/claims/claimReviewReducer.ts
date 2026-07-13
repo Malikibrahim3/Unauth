@@ -107,7 +107,7 @@ export function createClaimReviewInitialState(profileId: string, initialClaimId?
     manualOrderSource: readDraftField(draft, 'manualOrderSource', 'manual'),
     manualModeExplicit: readDraftField(draft, 'manualModeExplicit', false),
     orderValue: readDraftField(draft, 'orderValue', ''),
-    snoozeDays: '--surface-sunken',
+    snoozeDays: '3',
     snoozeReason: 'Awaiting carrier or customer evidence',
     shopDomain: '',
   };

@@ -111,3 +111,38 @@ export const QUICK_LIFECYCLE_STATUSES: Array<{ value: ClaimStatus; label: string
   { value: 'ready_for_decision', label: 'Ready for decision' },
   { value: 'manual_review', label: 'Manual review' },
 ];
+
+/**
+ * Operator-editable workflow states. Financial/final states are deliberately
+ * excluded: they are derived by the audited decision or recovery action, not
+ * picked from a generic status menu.
+ */
+export const OPERATOR_LIFECYCLE_STATUSES: Array<{ value: ClaimStatus; label: string }> = [
+  { value: 'new', label: 'New' },
+  ...QUICK_LIFECYCLE_STATUSES,
+];
+
+const LEGACY_STATUS_TARGET: Partial<Record<ClaimStatus, ClaimStatus>> = {
+  under_review: 'manual_review',
+  evidence_requested: 'evidence_needed',
+  resolved: 'closed',
+  open: 'ready_for_decision',
+  pending: 'evidence_needed',
+  escalated: 'manual_review',
+};
+
+export function normaliseClaimStatusForOperator(status: string | null | undefined): ClaimStatus {
+  const typed = (status ?? 'new') as ClaimStatus;
+  return LEGACY_STATUS_TARGET[typed] ?? typed;
+}
+
+/**
+ * Keep the current active state visible and expose only review-pipeline targets.
+ * Outcomes, recovery opening, closure and archival remain action-derived.
+ */
+export function operatorLifecycleOptions(currentStatus: string | null | undefined) {
+  const current = normaliseClaimStatusForOperator(currentStatus);
+  const options = OPERATOR_LIFECYCLE_STATUSES.filter((item) => item.value !== current);
+  const currentLabel = STATUS_LABELS[current] ?? 'Current state';
+  return [{ value: current, label: `${currentLabel} (current)` }, ...options];
+}

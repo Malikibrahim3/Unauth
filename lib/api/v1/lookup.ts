@@ -1,4 +1,3 @@
-// TODO(product-gating): require LIVE_LOOKUP_API entitlement when ENFORCE_PRODUCT_GATES is enabled.
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   normaliseEmail,

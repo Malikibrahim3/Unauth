@@ -14,8 +14,8 @@
  */
 
 import type { NormalisedOrder } from './types';
-import type { LinkerResult, LinkerSignal } from '../linker';
-import { extractRawIds, chooseAnchor, reasonsFromSignals } from './identityHelpers';
+import type { LinkerResult } from '../linker';
+import { chooseAnchor, reasonsFromSignals } from './identityHelpers';
 
 export interface IdentityCluster {
   clusterId: string;

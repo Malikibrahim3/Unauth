@@ -48,6 +48,7 @@ export interface IdentitySignals {
 
 /** Signals may include claim-specific extensions; engine reads by field name. */
 export type RuleSignals = IdentitySignals;
+export type RuleSignalBag = IdentitySignals | Record<string, unknown>;
 
 export interface MatchedCondition extends RuleCondition {
   actual_value: unknown;
@@ -126,7 +127,7 @@ export const OPERATOR_LABELS: Record<string, string> = {
 // ---------------------------------------------------------------------------
 
 export function evaluateRules(
-  signals: RuleSignals,
+  signals: RuleSignalBag,
   rules: MerchantRule[],
 ): RuleEvaluationResult {
   // Sort by priority ascending (lower number = higher priority).
@@ -171,7 +172,7 @@ export function evaluateRules(
   };
 }
 
-function evaluateRule(signals: RuleSignals, rule: MerchantRule): MatchedCondition[] {
+function evaluateRule(signals: RuleSignalBag, rule: MerchantRule): MatchedCondition[] {
   const results: Array<MatchedCondition | null> = rule.conditions.map((condition) => {
     const actual = getSignalValue(signals, condition.field);
     const passes = evaluateCondition(condition, actual);
@@ -187,8 +188,8 @@ function evaluateRule(signals: RuleSignals, rule: MerchantRule): MatchedConditio
   return passed.length > 0 ? passed : [];
 }
 
-function getSignalValue(signals: RuleSignals, field: string): unknown {
-  const bag = signals as IdentitySignals & Record<string, unknown>;
+function getSignalValue(signals: RuleSignalBag, field: string): unknown {
+  const bag = signals as Record<string, unknown>;
   if (!Object.prototype.hasOwnProperty.call(bag, field)) return null;
   return bag[field];
 }

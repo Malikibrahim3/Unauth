@@ -1,9 +1,10 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import { SourceBadge } from '@/components/sources/SourceBadge';
 import { FreshnessIndicator, type FreshnessState } from '@/components/sources/FreshnessIndicator';
-import { CaseContextDrawer } from '@/components/cases/CaseContextDrawer';
+import { formatMinorCurrencyNullable } from '@/lib/utils/format';
 
 export type LossLedgerRow = {
   id: string;
@@ -17,10 +18,15 @@ export type LossLedgerRow = {
   financialState: string;
   preventionOnly: boolean;
   writtenOff: boolean;
-  amountMinor: number | null;
+  realisedLossMinor: number | null;
+  estimatedLossMinor: number | null;
+  recoverableMinor: number | null;
+  recoveredMinor: number | null;
   currency: string | null;
   source: string | null;
   freshness: FreshnessState;
+  detailHref?: string;
+  derived?: boolean;
 };
 
 type ViewKey = 'confirmed' | 'estimated' | 'recoverable' | 'prevented' | 'written_off' | 'all';
@@ -37,13 +43,7 @@ const VIEWS: Array<{ key: ViewKey; label: string; match: (row: LossLedgerRow) =>
 // Fixed 'en-GB' locale so server and client render identical strings (avoids
 // hydration mismatches from Intl's default-locale variance).
 function formatMinor(minor: number | null, currency: string | null): string {
-  if (minor == null) return '—';
-  const amount = minor / 100;
-  try {
-    return new Intl.NumberFormat('en-GB', { style: 'currency', currency: currency ?? 'USD' }).format(amount);
-  } catch {
-    return `${amount.toFixed(2)} ${currency ?? ''}`.trim();
-  }
+  return formatMinorCurrencyNullable(minor, currency);
 }
 
 function titleCase(value: string | null): string {
@@ -53,7 +53,6 @@ function titleCase(value: string | null): string {
 
 export function LossLedger({ rows }: { rows: LossLedgerRow[] }) {
   const [view, setView] = useState<ViewKey>('all');
-  const [contextCaseId, setContextCaseId] = useState<string | null>(null);
   const counts = useMemo(() => {
     const map = {} as Record<ViewKey, number>;
     for (const v of VIEWS) map[v.key] = rows.filter(v.match).length;
@@ -68,6 +67,7 @@ export function LossLedger({ rows }: { rows: LossLedgerRow[] }) {
           const active = v.key === view;
           return (
             <button
+              type="button"
               key={v.key}
               role="tab"
               aria-selected={active}
@@ -98,22 +98,24 @@ export function LossLedger({ rows }: { rows: LossLedgerRow[] }) {
                 <th className="py-2 pr-4 font-medium">Attribution</th>
                 <th className="py-2 pr-4 font-medium">Owner</th>
                 <th className="py-2 pr-4 font-medium">Status</th>
-                <th className="py-2 pr-4 font-medium text-right">Exposure</th>
+                <th className="py-2 pr-4 font-medium text-right">Realised / estimated loss</th>
+                <th className="py-2 pr-4 font-medium text-right">Recoverable</th>
                 <th className="py-2 pr-4 font-medium">Source</th>
               </tr>
             </thead>
             <tbody>
               {visible.map((row) => (
-                <tr key={row.id} onClick={() => row.supportPayoutCaseId && setContextCaseId(row.supportPayoutCaseId)} className={row.supportPayoutCaseId ? 'cursor-pointer' : undefined} style={{ borderTop: '1px solid var(--border-subtle, rgba(0,0,0,0.08))' }}>
-                  <td className="py-2 pr-4" style={{ color: 'var(--text-primary)' }}>{titleCase(row.category)}</td>
+                <tr key={row.id} style={{ borderTop: '1px solid var(--border-subtle, rgba(0,0,0,0.08))' }}>
+                  <td className="py-2 pr-4" style={{ color: 'var(--text-primary)' }}><Link href={row.detailHref ?? `/losses/${row.id}`} className="font-medium underline underline-offset-2">{titleCase(row.category)}</Link>{row.derived ? <span className="ml-2 text-xs text-[var(--warning)]">Reconciliation pending</span> : null}</td>
                   <td className="py-2 pr-4" style={{ color: 'var(--text-secondary)' }}>{titleCase(row.attribution)}</td>
                   <td className="py-2 pr-4" style={{ color: 'var(--text-secondary)' }}>
                     {row.counterpartyName ?? titleCase(row.counterpartyType)}
                   </td>
                   <td className="py-2 pr-4" style={{ color: 'var(--text-secondary)' }}>{titleCase(row.status)}</td>
                   <td className="py-2 pr-4 text-right tabular-nums" style={{ color: 'var(--text-primary)' }}>
-                    {formatMinor(row.amountMinor, row.currency)}
+                    {formatMinor(row.realisedLossMinor ?? row.estimatedLossMinor, row.currency)}
                   </td>
+                  <td className="py-2 pr-4 text-right tabular-nums">{formatMinor(row.recoverableMinor, row.currency)}</td>
                   <td className="py-2 pr-4">
                     <div className="flex items-center gap-2">
                       <SourceBadge source={row.source} />
@@ -126,7 +128,6 @@ export function LossLedger({ rows }: { rows: LossLedgerRow[] }) {
           </table>
         </div>
       )}
-      {contextCaseId ? <CaseContextDrawer caseId={contextCaseId} onClose={() => setContextCaseId(null)} /> : null}
     </div>
   );
 }

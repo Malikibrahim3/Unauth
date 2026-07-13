@@ -38,7 +38,6 @@ import { createHash } from 'node:crypto';
 import {
   normaliseEmail,
   normalisePhone,
-  normaliseAddress as normaliseAddressFull,
   normaliseAddressTokens,
 } from '@/lib/identity/normalise';
 
@@ -570,7 +569,7 @@ function indexFrequency(idx: Map<string, string[]>, key: string | null | undefin
   return idx.get(key)?.length ?? 0;
 }
 
-function signalIndependenceGroup(family: LinkerSignal, tier: string): IndependenceGroup {
+function signalIndependenceGroup(family: LinkerSignal, _tier: string): IndependenceGroup {
   if (family === 'card') return 'payment';
   if (family === 'device' || family === 'ip') return 'network_device';
   if (family === 'shipping_address' || family === 'billing_address' || family === 'postcode') return 'location';

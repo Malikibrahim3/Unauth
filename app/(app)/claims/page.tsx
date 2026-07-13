@@ -1,5 +1,4 @@
 import { redirect } from 'next/navigation';
-// TODO(product-gating): require CLAIM_REVIEW_QUEUE entitlement when ENFORCE_PRODUCT_GATES is enabled.
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import { sumSameCurrency } from '@/lib/utils/format';
@@ -10,13 +9,9 @@ import { fetchClaimQueueCounts } from '@/lib/claims/queueCounts';
 import { claimsListTotalForView, formatClaimsResultText, resolveClaimsListView } from '@/lib/claims/claimsQueueUi';
 import { ClaimsPageView } from '@/app/(app)/claims/ClaimsPageView';
 import type { ClaimsFilterTab } from '@/app/(app)/claims/ClaimsPageView';
+import { merchantHasEntitlement } from '@/lib/product/requireEntitlement';
+import { buildClaimsQueryString } from '@/app/(app)/claims/claimsPageLogic';
 import {
-  buildClaimsQueryString,
-  claimNextAction,
-} from '@/app/(app)/claims/claimsPageLogic';
-import {
-  CLAIM_TYPE_LABELS,
-  DECISION_LABELS,
   type ClaimRow,
   type CustomerProfileSummary,
   type EvidencePackageRow,
@@ -102,6 +97,9 @@ export default async function ClaimsPage({
   const serviceClient = createServiceClient();
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_INBOX);
   if (denied) redirect('/dashboard');
+  if (!await merchantHasEntitlement(serviceClient, ctx.merchantId, 'CLAIM_REVIEW_QUEUE')) {
+    redirect('/settings/billing?required=CLAIM_REVIEW_QUEUE');
+  }
 
   const connectionState = await getConnectionState(serviceClient, ctx.merchantId);
 

@@ -656,6 +656,8 @@ async function clearSeed(merchantId) {
   const caseIds = (seededCases ?? []).map((row) => row.id);
 
   if (caseIds.length > 0) {
+    await checked('work_tasks', 'delete', supabase.from('work_tasks').delete().in('support_payout_case_id', caseIds));
+    await checked('loss_cases', 'delete', supabase.from('loss_cases').delete().in('support_payout_case_id', caseIds));
     await checked('recovery_cases', 'delete', supabase.from('recovery_cases').delete().in('support_payout_case_id', caseIds));
     await checked('claim_outcomes', 'delete', supabase.from('claim_outcomes').delete().in('claim_id', caseIds));
   }
@@ -931,6 +933,66 @@ function buildRecoveryRows(merchantId) {
   });
 }
 
+function lossCategory(casePlan) {
+  if (casePlan.claimType === 'chargeback') return 'chargeback_or_payment_dispute';
+  if (casePlan.claimType === 'damaged') return 'damaged_goods';
+  if (casePlan.claimType === 'wrong_item') return 'wrong_item_or_missing_item';
+  if (casePlan.lossAttribution?.includes('supplier')) return 'supplier_or_vendor_issue';
+  return 'delivery_loss';
+}
+
+function recoveryRoute(casePlan) {
+  const type = casePlan.recovery?.type;
+  if (type === 'carrier_claim') return 'carrier_claim';
+  if (type === 'warehouse_error') return 'internal_fulfilment_issue';
+  if (type === 'supplier_defect') return 'supplier_vendor_claim';
+  if (type === 'chargeback_evidence') return 'chargeback_evidence_pack';
+  return casePlan.recoverability === 'not_recoverable' ? 'not_recoverable' : 'needs_more_evidence';
+}
+
+function buildLossRows(merchantId) {
+  return CASES.filter((c) => c.outcome || c.recovery).map((c) => ({
+    id: uuid(`loss:${c.key}`), merchant_id: merchantId, support_payout_case_id: uuid(`case:${c.key}`),
+    order_id: uuid(`order:${c.key}`), helpdesk_ticket_id: uuid(`ticket:${c.key}`), case_category: lossCategory(c),
+    case_type: c.claimType, status: c.recovery ? 'collecting_evidence' : 'closed_unrecoverable',
+    counterparty_type: c.recovery?.owner === 'carrier' ? 'carrier' : c.recovery?.owner === 'supplier' ? 'supplier' : c.recovery?.owner === 'warehouse' ? 'warehouse' : 'internal_team',
+    recovery_route: recoveryRoute(c), source_confidence: c.confidence === 'high' ? 'source_verified' : 'partial_source_verified',
+    order_value_minor: Math.round(c.amount * 100), refund_value_minor: Math.round((c.outcome?.amountRefunded ?? 0) * 100),
+    estimated_recovery_minor: Math.round((c.recovery?.max ?? 0) * 100), approved_recovery_minor: Math.round((c.recovery?.recovered ?? 0) * 100),
+    currency: 'GBP', attribution: c.lossAttribution, recoverability: c.recoverability, prevention_only: !c.outcome,
+    financial_state: c.outcome ? 'confirmed' : 'estimated', evidence_completion_score: c.recovery?.status === 'evidence_needed' ? 50 : 100,
+    missing_evidence_count: c.recovery?.status === 'evidence_needed' ? 2 : 0, financial_entry_ids: [], source_metadata: { seed: SEED_TAG, sample_data: true },
+    created_at: daysAgoIso(Math.max(1, c.ticketDaysAgo - 2), 13), updated_at: daysAgoIso(1, 14),
+  }));
+}
+
+function buildWorkTaskRows(merchantId) {
+  return CASES.filter((c) => !c.status.startsWith('resolved_')).map((c, index) => ({
+    id: uuid(`task:${c.key}`), merchant_id: merchantId, support_payout_case_id: uuid(`case:${c.key}`),
+    loss_case_id: c.outcome || c.recovery ? uuid(`loss:${c.key}`) : null, recovery_case_id: c.recovery ? uuid(`recovery:${c.key}`) : null,
+    title: c.nextAction, description: c.nextActionReason, status: 'open', priority: index < 3 ? 'high' : 'medium',
+    due_at: index < 2 ? daysAgoIso(1, 16) : daysFromAnchorIso(2 + (index % 4), 16), owner_role: 'analyst', source: 'demo_seed',
+    source_metadata: { seed: SEED_TAG, sample_data: true }, created_at: daysAgoIso(Math.max(1, c.ticketDaysAgo - 1), 14), updated_at: daysAgoIso(1, 14),
+  }));
+}
+
+function buildCanonicalDecisionRows(merchantId) {
+  return CASES.filter((c) => c.outcome).map((c) => ({ id: uuid(`canonical-decision:${c.key}`), merchant_id: merchantId,
+    support_payout_case_id: uuid(`case:${c.key}`), decision: c.outcome.decision, action: c.requestedAction,
+    amount_minor: Math.round((c.outcome.amountRefunded ?? 0) * 100), currency: 'GBP', actor_type: 'demo_seed',
+    reason: `Sample merchant decision for ${c.subject}.`, recommendation_snapshot: { action: c.recommendedAction },
+    rule_snapshot: { name: c.ruleName, version: 1 }, followed_recommendation: c.outcome.followed,
+    idempotency_key: `${SEED_PREFIX}:decision:${c.key}`, effective_at: daysAgoIso(Math.max(1, c.ticketDaysAgo - 5), 15), recorded_at: daysAgoIso(Math.max(1, c.ticketDaysAgo - 5), 15) }));
+}
+
+function buildCanonicalOutcomeRows(merchantId) {
+  return CASES.filter((c) => c.outcome).map((c) => ({ id: uuid(`canonical-outcome:${c.key}`), merchant_id: merchantId,
+    support_payout_case_id: uuid(`case:${c.key}`), outcome_type: c.outcome.outcome,
+    amount_minor: Math.round((c.outcome.amountRefunded ?? c.outcome.amountRecovered ?? 0) * 100), currency: 'GBP', actor_type: 'demo_seed',
+    reason: `Sample operational outcome for ${c.subject}.`, metadata: { seed: SEED_TAG, sample_data: true },
+    idempotency_key: `${SEED_PREFIX}:outcome:${c.key}`, effective_at: daysAgoIso(Math.max(1, c.ticketDaysAgo - 4), 16), recorded_at: daysAgoIso(Math.max(1, c.ticketDaysAgo - 4), 16) }));
+}
+
 function buildPartnerRows(merchantId) {
   return PARTNERS.map((partner, index) => ({
     id: uuid(`partner:${partner.key}`),
@@ -985,6 +1047,12 @@ async function insertRows(table, rows) {
   console.log(`Inserted ${rows.length} ${table} rows.`);
 }
 
+async function insertImmutableRows(table, rows) {
+  if (rows.length === 0) return;
+  await checked(table, 'insert immutable', supabase.from(table).upsert(rows, { onConflict: 'id', ignoreDuplicates: true }));
+  console.log(`Ensured ${rows.length} immutable ${table} rows.`);
+}
+
 async function seed(merchantId) {
   await upsertRows('partners', buildPartnerRows(merchantId));
   await upsertRows('partner_recovery_rules', buildPartnerRuleRows(merchantId));
@@ -997,6 +1065,10 @@ async function seed(merchantId) {
   await upsertRows('support_payout_cases', buildCaseRows(merchantId));
   await upsertRows('claim_outcomes', buildOutcomeRows());
   await upsertRows('recovery_cases', buildRecoveryRows(merchantId));
+  await upsertRows('loss_cases', buildLossRows(merchantId));
+  await upsertRows('work_tasks', buildWorkTaskRows(merchantId));
+  await insertImmutableRows('case_decisions', buildCanonicalDecisionRows(merchantId));
+  await insertImmutableRows('case_outcomes', buildCanonicalOutcomeRows(merchantId));
 }
 
 (async () => {

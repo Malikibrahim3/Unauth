@@ -2,6 +2,7 @@ import { claimHasEvidence } from '@/lib/claims/events';
 import { getClaimSlaState, isFinalClaimStatus } from '@/lib/claims/sla';
 import type { ClaimReviewState } from '@/components/claims/claimReviewReducer';
 import { formatClaimMoney } from '@/components/claims/claimReviewStyles';
+import { normaliseClaimStatusForOperator } from '@/components/claims/claimReviewLabels';
 import type {
   ClaimRecord,
   ClaimType,
@@ -288,6 +289,6 @@ export function draftPatchFromClaim(claim: ClaimRecord, orderOptions: OrderOptio
   if (claim.amount_at_risk != null) patch.orderValue = String(claim.amount_at_risk);
   if (claim.latest_outcome?.decision) patch.decision = claim.latest_outcome.decision as Decision;
   if (claim.latest_outcome?.outcome) patch.outcome = claim.latest_outcome.outcome as Outcome;
-  if (claim.status) patch.statusToSet = claim.status as ClaimReviewState['statusToSet'];
+  if (claim.status) patch.statusToSet = normaliseClaimStatusForOperator(claim.status);
   return patch;
 }

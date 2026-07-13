@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode, useEffect, useRef } from 'react';
+import { type ReactNode, useEffect, useId, useRef } from 'react';
 import { X } from 'lucide-react';
 
 interface DrawerProps {
@@ -25,27 +25,35 @@ export function Drawer({
   'aria-label': ariaLabel,
 }: DrawerProps) {
   const drawerRef = useRef<HTMLDivElement>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+  const generatedId = useId();
+  const titleId = `object-preview-title-${generatedId.replaceAll(':', '')}`;
 
   useEffect(() => {
     if (!open) return;
+    returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const el = drawerRef.current;
     if (!el) return;
-    const focusable = el.querySelectorAll<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-    );
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
+    const getFocusable = () => el.querySelectorAll<HTMLElement>('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])');
     const trap = (e: KeyboardEvent) => {
       if (e.key !== 'Tab') return;
+      const focusable = getFocusable();
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!first || !last) { e.preventDefault(); el.focus(); return; }
       if (e.shiftKey) {
-        if (document.activeElement === first) { e.preventDefault(); last?.focus(); }
+        if (document.activeElement === first || document.activeElement === el) { e.preventDefault(); last.focus(); }
       } else {
-        if (document.activeElement === last) { e.preventDefault(); first?.focus(); }
+        if (document.activeElement === last) { e.preventDefault(); first.focus(); }
       }
     };
     document.addEventListener('keydown', trap);
-    first?.focus();
-    return () => document.removeEventListener('keydown', trap);
+    const initialTarget = getFocusable()[0] ?? el;
+    initialTarget.focus();
+    return () => {
+      document.removeEventListener('keydown', trap);
+      returnFocusRef.current?.focus({ preventScroll: true });
+    };
   }, [open]);
 
   useEffect(() => {
@@ -72,7 +80,8 @@ export function Drawer({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={ariaLabel ?? title ?? 'Panel'}
+      aria-label={title ? undefined : (ariaLabel ?? 'Panel')}
+      aria-labelledby={title ? titleId : undefined}
       className="fixed inset-0 flex justify-end"
       style={{ zIndex: 'var(--z-drawer)' as unknown as number }}
     >
@@ -87,6 +96,7 @@ export function Drawer({
       ) : null}
       <div
         ref={drawerRef}
+        tabIndex={-1}
         className="relative z-10 flex h-full max-h-full flex-col"
         style={{
           width: typeof width === 'number' ? `min(${width}px, 100vw)` : width,
@@ -108,11 +118,11 @@ export function Drawer({
               zIndex: 'var(--z-sticky)' as unknown as number,
             }}
           >
-            <h2 className="text-h3" style={{ color: 'var(--text-primary)' }}>{title}</h2>
+            <h2 id={titleId} className="text-h3" style={{ color: 'var(--text-primary)' }}>{title}</h2>
             <button
               type="button"
               onClick={onClose}
-              className="flex h-7 w-7 items-center justify-center rounded-[var(--radius-sm)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)] transition-colors"
+              className="flex h-11 w-11 items-center justify-center rounded-[var(--radius-sm)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)] transition-colors"
               aria-label="Close"
             >
               <X className="w-4 h-4" />

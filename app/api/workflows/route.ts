@@ -22,7 +22,7 @@ export async function POST(request: Request) {
   const parsed = workflowDefinitionSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: 'Invalid workflow', details: parsed.error.flatten() }, { status: 400 });
   const value = parsed.data;
-  const { data, error } = await client.from(TABLES.WORKFLOW_DEFINITIONS).insert({ merchant_id: ctx.merchantId, name: value.name, description: value.description ?? null, trigger_event_type: value.triggerEventType, conditions: value.conditions, outputs: value.outputs, active: value.active, version: 1, created_by: user.id, updated_by: user.id }).select().single();
+  const { data, error } = await client.from(TABLES.WORKFLOW_DEFINITIONS).insert({ merchant_id: ctx.merchantId, name: value.name, description: value.description ?? null, trigger_event_type: value.triggerEventType, conditions: value.conditions, outputs: value.outputs, active: false, status: 'draft', version: 1, created_by: user.id, updated_by: user.id }).select().single();
   if (error) return NextResponse.json({ error: error.code === '23505' ? 'A workflow with this name already exists' : error.message }, { status: error.code === '23505' ? 409 : 500 });
   return NextResponse.json({ workflow: data }, { status: 201 });
 }

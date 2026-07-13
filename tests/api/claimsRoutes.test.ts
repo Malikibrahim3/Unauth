@@ -363,7 +363,7 @@ describe('claims routes', () => {
     (upsertMerchantCaseOutcome as jest.Mock).mockResolvedValue({ id: 'o1', claim_id: 'c1', decision: 'denied', outcome: 'loss', amount_refunded: null, amount_recovered: null });
 
     const res = await outcomePost(
-      mkReq('http://localhost/api/claims/c1/outcome', { decision: 'denied', outcome: 'loss' }),
+      mkReq('http://localhost/api/claims/c1/outcome', { decision: 'denied', outcome: 'loss', notes: 'Request does not meet the documented payout policy.' }),
       { params: Promise.resolve({ claimId: '550e8400-e29b-41d4-a716-446655440000' }) }
     );
 

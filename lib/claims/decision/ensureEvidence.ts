@@ -1,5 +1,4 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { ClaimDecisionContext } from '@/lib/claims/decision/types';
 import { buildDeliveryFromFulfillment } from '@/lib/claims/decision/deliveryEvidence';
 import { insertClaimEvidence } from '@/lib/integrations/canonicalEvidence';
 

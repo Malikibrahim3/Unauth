@@ -816,7 +816,7 @@ export async function buildFastContext(
   // Shows both the query inputs and the matches so a 0 result is clearly
   // attributable to either "no values in batch", "no matches found", or
   // (post-2026-05) "reads partially failed and we silently fell back to []".
-  // eslint-disable-next-line no-console
+
   console.log(
     `[fastContext] inputs: emails=${allEmails.length} ips=${allIPs.length} addrs=${allAddresses.length} cards=${allCards.length} | ` +
     `hits: email=${historicalEmailMap.size} ip=${historicalIPMap.size} ` +

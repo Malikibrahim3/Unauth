@@ -1,146 +1,506 @@
-'use client';
+"use client";
 
-import { useMemo, useState } from 'react';
-import { CaseContextDrawer } from '@/components/cases/CaseContextDrawer';
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export type WorkQueueItem = {
   id: string;
+  kind: "task" | "exception";
   title: string;
   description: string | null;
   ownerRole: string | null;
+  ownerUserId: string | null;
   status: string;
   priority: string;
   dueAt: string | null;
+  createdAt: string | null;
   supportPayoutCaseId: string | null;
+  objectHref: string | null;
+  objectLabel: string;
   blockingReason: string | null;
+  source: string | null;
 };
 
-type TabKey = 'open' | 'in_progress' | 'blocked' | 'due_soon' | 'completed' | 'all';
+const VIEWS = [
+  ["open", "Open"],
+  ["mine", "My work"],
+  ["unassigned", "Unassigned"],
+  ["due-today", "Due today"],
+  ["blocked", "Blocked"],
+  ["evidence-needed", "Evidence needed"],
+  ["decision-needed", "Decision needed"],
+  ["integration-exceptions", "Integration exceptions"],
+  ["completed", "Completed"],
+] as const;
 
-const DUE_SOON_MS = 3 * 24 * 60 * 60 * 1000;
+const title = (value: string | null) =>
+  value
+    ? value
+        .replaceAll("_", " ")
+        .replace(/\b\w/g, (letter) => letter.toUpperCase())
+    : "—";
+const workDateFormatter = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric",
+  month: "short",
+  timeZone: "UTC",
+});
 
-const TABS: Array<{ key: TabKey; label: string; match: (t: WorkQueueItem, nowMs: number) => boolean }> = [
-  { key: 'open', label: 'Open', match: (t) => t.status === 'open' },
-  { key: 'in_progress', label: 'In progress', match: (t) => t.status === 'in_progress' },
-  { key: 'blocked', label: 'Blocked', match: (t) => t.status === 'blocked' },
-  {
-    key: 'due_soon',
-    label: 'Approaching deadline',
-    match: (t, nowMs) =>
-      t.status !== 'completed' && t.status !== 'cancelled' && t.dueAt != null &&
-      Date.parse(t.dueAt) - nowMs <= DUE_SOON_MS,
-  },
-  { key: 'completed', label: 'Completed', match: (t) => t.status === 'completed' },
-  { key: 'all', label: 'All', match: () => true },
-];
+const date = (value: string | null) =>
+  value && !Number.isNaN(Date.parse(value))
+    ? workDateFormatter.format(new Date(value))
+    : "—";
 
-function titleCase(value: string | null): string {
-  if (!value) return '—';
-  return value.split(/[_\s]+/).map((p) => (p ? p[0].toUpperCase() + p.slice(1) : p)).join(' ');
+function dueState(value: string | null) {
+  if (!value)
+    return { label: "No deadline", className: "text-[var(--text-tertiary)]" };
+  const due = Date.parse(value);
+  const remaining = due - Date.now();
+  if (remaining < 0)
+    return {
+      label: `Overdue · ${date(value)}`,
+      className: "text-[var(--danger)]",
+    };
+  if (remaining < 86400000)
+    return {
+      label: `Due today · ${date(value)}`,
+      className: "text-[var(--warning)]",
+    };
+  return { label: date(value), className: "text-[var(--text-secondary)]" };
 }
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+type WorkAction = "assign_to_me" | "start" | "complete" | "reopen" | "snooze";
 
-// Deterministic "13 Jul" formatting (UTC) — avoids server/client locale
-// hydration mismatches that Date.toLocaleDateString produces.
-function formatDue(dueAt: string | null): string {
-  if (!dueAt) return 'No due date';
-  const d = Date.parse(dueAt);
-  if (Number.isNaN(d)) return 'No due date';
-  const date = new Date(d);
-  return `${date.getUTCDate()} ${MONTHS[date.getUTCMonth()]}`;
-}
-
-const PRIORITY_COLOR: Record<string, string> = {
-  urgent: 'var(--danger, #dc2626)',
-  high: 'var(--warning, #d97706)',
-  medium: 'var(--text-secondary)',
-  low: 'var(--text-tertiary)',
-};
-
-export function WorkQueue({ items, nowMs }: { items: WorkQueueItem[]; nowMs: number }) {
-  const [tab, setTab] = useState<TabKey>('open');
-  const [contextCaseId, setContextCaseId] = useState<string | null>(null);
-  const counts = useMemo(() => {
-    const map = {} as Record<TabKey, number>;
-    for (const t of TABS) map[t.key] = items.filter((item) => t.match(item, nowMs)).length;
-    return map;
-  }, [items, nowMs]);
-  const visible = useMemo(
-    () => items.filter((item) => TABS.find((t) => t.key === tab)!.match(item, nowMs)),
-    [items, tab, nowMs],
+function WorkItemActions({
+  item,
+  busy,
+  onAction,
+}: {
+  item: WorkQueueItem;
+  busy: string | null;
+  onAction: (item: WorkQueueItem, action: WorkAction) => void;
+}) {
+  const disabled = busy?.startsWith(`${item.kind}:${item.id}:`) ?? false;
+  if (item.kind === "exception") {
+    return (
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => onAction(item, "assign_to_me")}
+        className="rounded border border-[var(--border)] px-2 py-1 text-xs font-medium disabled:opacity-50"
+      >
+        Assign to me
+      </button>
+    );
+  }
+  if (item.status === "completed") {
+    return (
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => onAction(item, "reopen")}
+        className="rounded border border-[var(--border)] px-2 py-1 text-xs font-medium disabled:opacity-50"
+      >
+        Reopen
+      </button>
+    );
+  }
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {!item.ownerUserId ? (
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => onAction(item, "assign_to_me")}
+          className="rounded border border-[var(--border)] px-2 py-1 text-xs font-medium disabled:opacity-50"
+        >
+          Assign
+        </button>
+      ) : null}
+      {item.status !== "in_progress" ? (
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => onAction(item, "start")}
+          className="rounded border border-[var(--border)] px-2 py-1 text-xs font-medium disabled:opacity-50"
+        >
+          Start
+        </button>
+      ) : null}
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => onAction(item, "snooze")}
+        className="rounded border border-[var(--border)] px-2 py-1 text-xs font-medium disabled:opacity-50"
+      >
+        Snooze 1d
+      </button>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => onAction(item, "complete")}
+        className="rounded bg-[var(--accent)] px-2 py-1 text-xs font-semibold text-white disabled:opacity-50"
+      >
+        Complete
+      </button>
+    </div>
   );
+}
+
+export function WorkQueue({
+  items,
+  total,
+  view,
+}: {
+  items: WorkQueueItem[];
+  total: number;
+  view: string;
+}) {
+  const router = useRouter();
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(() => new Set());
+  const selectableIds = items.reduce<string[]>((ids, item) => {
+    if (item.kind === "task") ids.push(item.id);
+    return ids;
+  }, []);
+
+  async function act(item: WorkQueueItem, action: WorkAction) {
+    setBusy(`${item.kind}:${item.id}:${action}`);
+    setError(null);
+    const endpoint =
+      item.kind === "task"
+        ? `/api/work-tasks/${item.id}`
+        : `/api/ops/exceptions/${item.id}`;
+    const method = "PATCH";
+    const body =
+      item.kind === "task"
+        ? {
+            action,
+            ...(action === "snooze"
+              ? { until: new Date(Date.now() + 86400000).toISOString() }
+              : {}),
+          }
+        : { assignToMe: true };
+    try {
+      const response = await fetch(endpoint, {
+        method,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error ?? "Action failed");
+      router.refresh();
+    } catch (actionError) {
+      setError(
+        actionError instanceof Error ? actionError.message : "Action failed",
+      );
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function bulkAct(
+    action: "assign_to_me" | "start" | "complete" | "snooze",
+  ) {
+    const ids = [...selected];
+    if (!ids.length) return;
+    setBusy(`bulk:${action}`);
+    setError(null);
+    try {
+      const response = await fetch("/api/work-tasks/bulk", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          ids,
+          action,
+          ...(action === "snooze"
+            ? { until: new Date(Date.now() + 86400000).toISOString() }
+            : {}),
+        }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error ?? "Bulk action failed");
+      setSelected(new Set());
+      router.refresh();
+    } catch (actionError) {
+      setError(
+        actionError instanceof Error
+          ? actionError.message
+          : "Bulk action failed",
+      );
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  function toggle(id: string) {
+    setSelected((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap gap-1" role="tablist" aria-label="Work views">
-        {TABS.map((t) => {
-          const active = t.key === tab;
-          return (
-            <button
-              key={t.key}
-              role="tab"
-              aria-selected={active}
-              onClick={() => setTab(t.key)}
-              className="rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
-              style={{
-                color: active ? 'var(--text-primary)' : 'var(--text-secondary)',
-                backgroundColor: active ? 'var(--surface-muted, rgba(0,0,0,0.06))' : 'transparent',
-              }}
-            >
-              {t.label}
-              <span className="ml-1.5" style={{ color: 'var(--text-tertiary)' }}>{counts[t.key]}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {visible.length === 0 ? (
-        <p className="py-8 text-center text-sm" style={{ color: 'var(--text-tertiary)' }}>
-          Nothing in this queue.
-        </p>
-      ) : (
-        <ul className="flex flex-col gap-2">
-          {visible.map((item) => {
-            const inner = (
-              <div
-                className="flex items-start justify-between gap-4 rounded-lg px-3 py-2.5"
-                style={{ border: '1px solid var(--border-subtle, rgba(0,0,0,0.08))' }}
+    <section aria-labelledby="work-queue-title">
+      <h2 id="work-queue-title" className="sr-only">
+        Work queue
+      </h2>
+      <nav
+        aria-label="Work views"
+        className="mb-4 flex gap-1 overflow-x-auto pb-1"
+      >
+        {VIEWS.map(([key, label]) => (
+          <Link
+            key={key}
+            href={`/work?view=${key}`}
+            aria-current={view === key ? "page" : undefined}
+            className="whitespace-nowrap rounded-md border px-3 py-2 text-sm font-medium"
+            style={{
+              background:
+                view === key ? "var(--surface-selected)" : "var(--surface)",
+              borderColor: "var(--border)",
+            }}
+          >
+            {label}
+          </Link>
+        ))}
+      </nav>
+      {error ? (
+        <div
+          role="alert"
+          className="mb-3 rounded border border-[var(--danger)] p-3 text-sm"
+        >
+          {error}
+        </div>
+      ) : null}
+      {selected.size ? (
+        <div
+          className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface-sunken)] p-3"
+          role="toolbar"
+          aria-label="Bulk task actions"
+        >
+          <span className="mr-auto text-sm font-semibold">
+            {selected.size} selected
+          </span>
+          {(["assign_to_me", "start", "snooze", "complete"] as const).map(
+            (action) => (
+              <button
+                key={action}
+                type="button"
+                disabled={busy?.startsWith("bulk:")}
+                onClick={() => bulkAct(action)}
+                className={`rounded-md border px-3 py-1.5 text-xs font-semibold disabled:opacity-50 ${action === "complete" ? "border-[var(--accent)] bg-[var(--accent)] text-white" : "border-[var(--border)] bg-[var(--surface)]"}`}
               >
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span
-                      aria-hidden
-                      style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: PRIORITY_COLOR[item.priority] ?? 'var(--text-tertiary)' }}
+                {action === "assign_to_me"
+                  ? "Assign to me"
+                  : action === "snooze"
+                    ? "Snooze 1 day"
+                    : title(action)}
+              </button>
+            ),
+          )}
+          <button
+            type="button"
+            onClick={() => setSelected(new Set())}
+            className="px-2 py-1.5 text-xs text-[var(--text-secondary)]"
+          >
+            Clear
+          </button>
+        </div>
+      ) : null}
+      {!items.length ? (
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-10 text-center">
+          <p className="font-medium">No work matches this view</p>
+          <p className="mt-1 text-sm text-[var(--text-secondary)]">
+            Choose another saved view or return when new work arrives.
+          </p>
+        </div>
+      ) : (
+        <>
+          <div className="hidden overflow-x-auto rounded-lg border border-[var(--border)] bg-[var(--surface)] md:block">
+            <table className="w-full min-w-[1120px] border-collapse text-sm">
+              <thead className="sticky top-0 bg-[var(--surface-sunken)] text-left text-xs text-[var(--text-secondary)]">
+                <tr>
+                  <th
+                    scope="col"
+                    className="border-b border-[var(--border)] px-3 py-2.5"
+                  >
+                    <input
+                      type="checkbox"
+                      aria-label="Select all tasks on this page"
+                      checked={
+                        selectableIds.length > 0 &&
+                        selectableIds.every((id) => selected.has(id))
+                      }
+                      onChange={() =>
+                        setSelected(
+                          selectableIds.every((id) => selected.has(id))
+                            ? new Set()
+                            : new Set(selectableIds),
+                        )
+                      }
                     />
-                    <span className="truncate text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{item.title}</span>
+                  </th>
+                  {[
+                    "Priority",
+                    "Next action",
+                    "Object",
+                    "Status",
+                    "Owner",
+                    "Source",
+                    "Blocker",
+                    "Due / SLA",
+                    "Actions",
+                  ].map((heading) => (
+                    <th
+                      key={heading}
+                      scope="col"
+                      className="border-b border-[var(--border)] px-3 py-2.5 font-medium"
+                    >
+                      {heading}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item) => {
+                  const due = dueState(item.dueAt);
+                  return (
+                    <tr
+                      key={`${item.kind}:${item.id}`}
+                      className="border-b border-[var(--border)] last:border-0 hover:bg-[var(--surface-hover)] focus-within:bg-[var(--surface-hover)]"
+                    >
+                      <td className="px-3 py-3">
+                        {item.kind === "task" ? (
+                          <input
+                            type="checkbox"
+                            aria-label={`Select ${item.title}`}
+                            checked={selected.has(item.id)}
+                            onChange={() => toggle(item.id)}
+                          />
+                        ) : null}
+                      </td>
+                      <td className="px-3 py-3 font-medium">
+                        {title(item.priority)}
+                      </td>
+                      <td className="max-w-[280px] px-3 py-3">
+                        <div className="font-medium">{item.title}</div>
+                        {item.description ? (
+                          <div className="mt-0.5 line-clamp-2 text-xs text-[var(--text-secondary)]">
+                            {item.description}
+                          </div>
+                        ) : null}
+                      </td>
+                      <td className="px-3 py-3">
+                        {item.objectHref ? (
+                          <Link
+                            className="font-medium underline underline-offset-2"
+                            href={`${item.objectHref}${item.objectHref.includes("?") ? "&" : "?"}returnTo=${encodeURIComponent(`/work?view=${view}`)}`}
+                          >
+                            {item.objectLabel}
+                          </Link>
+                        ) : (
+                          item.objectLabel
+                        )}
+                      </td>
+                      <td className="px-3 py-3">{title(item.status)}</td>
+                      <td className="px-3 py-3">
+                        {item.ownerUserId ? "Assigned" : title(item.ownerRole)}
+                      </td>
+                      <td className="px-3 py-3">{title(item.source)}</td>
+                      <td className="max-w-[200px] px-3 py-3 text-xs text-[var(--text-secondary)]">
+                        {item.blockingReason ?? "—"}
+                      </td>
+                      <td className={`px-3 py-3 text-xs ${due.className}`}>
+                        {due.label}
+                      </td>
+                      <td className="px-3 py-3">
+                        <WorkItemActions
+                          item={item}
+                          busy={busy}
+                          onAction={act}
+                        />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div className="space-y-3 md:hidden">
+            {items.map((item) => {
+              const due = dueState(item.dueAt);
+              return (
+                <article
+                  key={`${item.kind}:${item.id}`}
+                  className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-start gap-3">
+                      {item.kind === "task" ? (
+                        <input
+                          type="checkbox"
+                          className="mt-1"
+                          aria-label={`Select ${item.title}`}
+                          checked={selected.has(item.id)}
+                          onChange={() => toggle(item.id)}
+                        />
+                      ) : null}
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
+                          {title(item.priority)} · {title(item.status)}
+                        </p>
+                        <h3 className="mt-1 font-semibold">{item.title}</h3>
+                      </div>
+                    </div>
+                    <span className={`text-xs ${due.className}`}>
+                      {due.label}
+                    </span>
                   </div>
                   {item.description ? (
-                    <p className="mt-0.5 truncate text-xs" style={{ color: 'var(--text-secondary)' }}>{item.description}</p>
+                    <p className="mt-2 text-sm text-[var(--text-secondary)]">
+                      {item.description}
+                    </p>
                   ) : null}
+                  <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-[var(--text-secondary)]">
+                    <span>
+                      {item.objectHref ? (
+                        <Link
+                          className="underline"
+                          href={`${item.objectHref}${item.objectHref.includes("?") ? "&" : "?"}returnTo=${encodeURIComponent(`/work?view=${view}`)}`}
+                        >
+                          {item.objectLabel}
+                        </Link>
+                      ) : (
+                        item.objectLabel
+                      )}
+                    </span>
+                    <span>
+                      {item.ownerUserId ? "Assigned" : title(item.ownerRole)}
+                    </span>
+                    <span>{title(item.source)}</span>
+                  </div>
                   {item.blockingReason ? (
-                    <p className="mt-0.5 text-xs" style={{ color: 'var(--warning, #d97706)' }}>Blocked: {item.blockingReason}</p>
+                    <p className="mt-2 text-xs text-[var(--warning)]">
+                      Blocked: {item.blockingReason}
+                    </p>
                   ) : null}
-                </div>
-                <div className="flex shrink-0 flex-col items-end gap-0.5 text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                  <span>{titleCase(item.ownerRole)}</span>
-                  <span>{formatDue(item.dueAt)}</span>
-                </div>
-              </div>
-            );
-            return (
-              <li key={item.id}>
-                {item.supportPayoutCaseId ? (
-                  <button type="button" onClick={() => setContextCaseId(item.supportPayoutCaseId)} className="block w-full text-left">{inner}</button>
-                ) : (
-                  inner
-                )}
-              </li>
-            );
-          })}
-        </ul>
+                  <div className="mt-4">
+                    <WorkItemActions item={item} busy={busy} onAction={act} />
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </>
       )}
-      {contextCaseId ? <CaseContextDrawer caseId={contextCaseId} onClose={() => setContextCaseId(null)} /> : null}
-    </div>
+      <p className="mt-3 text-xs text-[var(--text-secondary)]">
+        Showing {items.length} of {total} matching items. Results are server
+        filtered and paginated.
+      </p>
+    </section>
   );
 }

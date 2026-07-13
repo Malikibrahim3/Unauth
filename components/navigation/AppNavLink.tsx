@@ -12,7 +12,7 @@ type AppNavLinkProps = ComponentProps<typeof Link> & {
 
 export default function AppNavLink({
   href,
-  active = false,
+  active: _active = false,
   onNavigate,
   onClick,
   className,

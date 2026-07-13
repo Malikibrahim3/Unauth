@@ -4,7 +4,6 @@ import { redactSensitiveData } from '@/lib/log/redactSensitiveData';
 const TRACES_SAMPLE_RATE = 0.1;
 const ERROR_SAMPLE_RATE = 1;
 
-let clientInitialised = false;
 let serverInitialised = false;
 
 function getEnvironment(): string {
@@ -34,15 +33,6 @@ function buildOptions() {
       return scrubEvent(event);
     },
   };
-}
-
-export function initSentryClient() {
-  if (clientInitialised || typeof window === 'undefined') {
-    return;
-  }
-
-  Sentry.init(buildOptions());
-  clientInitialised = true;
 }
 
 export function initSentryServer() {
@@ -90,25 +80,8 @@ export function captureServerException(error: unknown, context?: CaptureContext)
   });
 }
 
-export function captureClientException(error: unknown, context?: CaptureContext) {
-  initSentryClient();
-
-  if (!getDsn()) {
-    return;
-  }
-
-  Sentry.withScope((scope) => {
-    applyScope(scope, context);
-    Sentry.captureException(error);
-  });
-}
-
 export function captureSentryMessage(message: string, context?: CaptureContext) {
-  if (typeof window === 'undefined') {
-    initSentryServer();
-  } else {
-    initSentryClient();
-  }
+  initSentryServer();
 
   if (!getDsn()) {
     return;

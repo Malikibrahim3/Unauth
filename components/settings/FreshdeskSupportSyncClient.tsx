@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useReducer, useRef, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useReducer, useRef, useState, type FormEvent } from 'react';
 import { PanelCard } from '@/components/ui';
 import { useFetchJson } from '@/lib/react/useFetchJson';
 import { FreshdeskSupportSyncConnectionDetails } from '@/components/settings/FreshdeskSupportSyncConnectionDetails';
@@ -52,7 +52,7 @@ export default function FreshdeskSupportSyncClient({ canManage }: Props) {
     createInitialFreshdeskSupportSyncState
   );
   const [syncing, setSyncing] = useState(false);
-  const patch = (patchState: Partial<typeof state>) => dispatch({ type: 'patch', patch: patchState });
+  const patch = useCallback((patchState: Partial<typeof state>) => dispatch({ type: 'patch', patch: patchState }), []);
 
   const seededConnectionIdRef = useRef<string | null>(null);
   const connectionId = connection?.id ?? null;
@@ -66,7 +66,7 @@ export default function FreshdeskSupportSyncClient({ canManage }: Props) {
     if (loadError) {
       patch({ message: { type: 'error', text: loadError } });
     }
-  }, [loadError]);
+  }, [loadError, patch]);
 
   async function copyText(field: string, value: string) {
     await navigator.clipboard.writeText(value);

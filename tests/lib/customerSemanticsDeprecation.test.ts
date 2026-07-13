@@ -26,12 +26,13 @@ describe('customer semantics deprecation', () => {
     expect(content).toContain('openClaimsOnly');
   });
 
-  it('customers filter panel offers open claims filter not watchlist', () => {
+  it('canonical customer controls offer open claims rather than watchlist', () => {
     const content = fs.readFileSync(
-      path.join(process.cwd(), 'components/customers/CustomersFilterExpandedPanel.tsx'),
+      path.join(process.cwd(), 'app/(app)/customers/CustomersOverviewPageView.tsx'),
       'utf-8',
     );
-    expect(content).toContain('openClaims');
+    expect(content).toContain('?openClaims=1');
+    expect(content).toContain('Open payout cases');
     expect(content).not.toContain('watchlisted');
     expect(content).not.toContain('on_watchlist');
   });

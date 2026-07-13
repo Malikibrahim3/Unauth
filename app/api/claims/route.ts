@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
   const ascending = sort === 'age';
   let query = serviceClient
     .from(TABLES.MERCHANT_CLAIMS)
-    .select('id,identity_id,source_order_id,source_ticket_id,claim_type,status,detection_method,amount_at_risk,currency,submitted_at,created_at,updated_at,first_viewed_at,assigned_to,assigned_at,snoozed_until')
+    .select('id,identity_id,source_order_id,source_ticket_id,claim_type,status,detection_method,requested_action,amount_at_risk,currency,submitted_at,created_at,updated_at,first_viewed_at,assigned_to,assigned_at,snoozed_until')
     .eq('merchant_id', ctx.merchantId)
     .order(orderColumn, { ascending })
     .limit(pageSize);
@@ -182,6 +182,7 @@ export async function GET(request: NextRequest) {
         claim_type: c.claim_type,
         status: c.status,
         amount_at_risk: c.amount_at_risk,
+        requested_action: c.requested_action ?? 'unknown',
         currency: c.currency,
         submitted_at: c.submitted_at ?? null,
         created_at: c.created_at ?? null,

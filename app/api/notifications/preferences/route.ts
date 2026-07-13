@@ -10,7 +10,7 @@ async function auth() {
   const { data: { user } } = await userClient.auth.getUser();
   if (!user) return { response: NextResponse.json({ error: 'Unauthenticated' }, { status: 401 }) };
   const serviceClient = createServiceClient();
-  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_DASHBOARD);
+  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_INBOX);
   if (denied || !ctx?.merchantId) return { response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };
   return { user, serviceClient, ctx };
 }

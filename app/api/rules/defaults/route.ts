@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { TABLES } from '@/lib/supabase/tables';
-import { mapRuleRow, RULE_COLUMNS } from '@/lib/rules/store';
+import { mapRuleRow } from '@/lib/rules/store';
 import { DEFAULT_PAYOUT_RULES } from '@/lib/rules/payoutDefaults';
 
 export async function POST() {
@@ -31,7 +31,6 @@ export async function POST() {
   }
 
   const rows = DEFAULT_PAYOUT_RULES.map((rule, index) => ({
-    merchant_id: ctx.merchantId,
     name: rule.name,
     description: rule.description,
     conditions: rule.conditions,
@@ -40,13 +39,14 @@ export async function POST() {
     priority: index,
   }));
 
-  const { data, error } = await serviceClient
-    .from(TABLES.MERCHANT_RULES)
-    .insert(rows)
-    .select(RULE_COLUMNS);
+  const { data, error } = await (serviceClient as any).rpc('create_merchant_rule_draft_pack', {
+    p_merchant_id: ctx.merchantId,
+    p_actor_id: user.id,
+    p_rules: rows,
+  });
   if (error || !data) {
-    return NextResponse.json({ error: 'Failed to create default payout rules' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to create default payout rule drafts; no partial pack was kept' }, { status: 500 });
   }
 
-  return NextResponse.json({ rules: data.map((row: unknown) => mapRuleRow(row as never)) }, { status: 201 });
+  return NextResponse.json({ rules: data.map((entry: { rule: unknown }) => mapRuleRow(entry.rule as never)) }, { status: 201 });
 }

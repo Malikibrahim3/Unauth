@@ -5,7 +5,6 @@ import Link from 'next/link';
 import {
   ChevronRight,
   Network,
-  Fingerprint,
   ShieldCheck,
   Users,
   Share2,

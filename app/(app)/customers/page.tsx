@@ -1,28 +1,35 @@
-// TODO(product-gating): require CUSTOMER_SEARCH entitlement when ENFORCE_PRODUCT_GATES is enabled.
-import { createClient, createServiceClient } from '@/lib/supabase/server';
-import { TABLES } from '@/lib/supabase/tables';
-import { getConnectionState } from '@/lib/connections/getConnectionState';
-import { getMerchantDataPresence } from '@/lib/supabase/getMerchantDataPresence';
-import { resolveMerchantSetupState } from '@/lib/connections/getMerchantSetupState';
-import { redirect } from 'next/navigation';
-import { requirePermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/permissions';
-import { escapePostgrestFilterValue } from '@/lib/supabase/merchantHelpers';
-import { isOrderReferenceSearchTerm, orderReferenceIlike } from '@/lib/customers/orderSearch';
-import { hashIdentifier } from '@/lib/identity/hash';
-import { normaliseEmail } from '@/lib/identity/normalise';
-import { lookupIdentityGradesByEmailHash } from '@/lib/customers/identityNetwork';
-import type { IdentityGradeBadge } from '@/lib/customers/identityNetwork';
-import { CustomersOverviewPageView } from '@/app/(app)/customers/CustomersOverviewPageView';
-import { resolveCustomerActions } from '@/app/(app)/customers/customersOverviewPageUtils';
+import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { TABLES } from "@/lib/supabase/tables";
+import { getConnectionState } from "@/lib/connections/getConnectionState";
+import { getMerchantDataPresence } from "@/lib/supabase/getMerchantDataPresence";
+import { resolveMerchantSetupState } from "@/lib/connections/getMerchantSetupState";
+import { redirect } from "next/navigation";
+import {
+  requirePermission,
+  PERMISSIONS,
+  resolveDefaultAppPath,
+} from "@/lib/permissions";
+import { escapePostgrestFilterValue } from "@/lib/supabase/merchantHelpers";
+import {
+  isOrderReferenceSearchTerm,
+  orderReferenceIlike,
+} from "@/lib/customers/orderSearch";
+import { hashIdentifier } from "@/lib/identity/hash";
+import { normaliseEmail } from "@/lib/identity/normalise";
+import { lookupIdentityGradesByEmailHash } from "@/lib/customers/identityNetwork";
+import type { IdentityGradeBadge } from "@/lib/customers/identityNetwork";
+import { CustomersOverviewPageView } from "@/app/(app)/customers/CustomersOverviewPageView";
+import { resolveCustomerActions } from "@/app/(app)/customers/customersOverviewPageUtils";
+import { merchantHasEntitlement } from "@/lib/product/requireEntitlement";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 const DEFAULT_PAGE_SIZE = 25;
 
-const OPEN_CLAIM_STATUSES = ['pending', 'open', 'escalated'] as const;
-const CHARGEBACK_CLAIM_TYPE = 'chargeback';
+const OPEN_CLAIM_STATUSES = ["pending", "open", "escalated"] as const;
+const CHARGEBACK_CLAIM_TYPE = "chargeback";
 
 type SourceCustomerRow = {
   id: string;
@@ -41,19 +48,27 @@ type OrderAggRow = {
   id: string;
   source_customer_id: string | null;
   placed_at: string | null;
+  total_price: number | string | null;
+  currency: string | null;
 };
 
 function displayNames(row: SourceCustomerRow): string[] {
-  const name = [row.first_name, row.last_name].filter(Boolean).join(' ').trim();
+  const name = [row.first_name, row.last_name].filter(Boolean).join(" ").trim();
   return name ? [name] : [];
 }
 
 function fullName(row: SourceCustomerRow): string {
-  return [row.first_name, row.last_name].filter(Boolean).join(' ').trim();
+  return [row.first_name, row.last_name].filter(Boolean).join(" ").trim();
 }
 
-function uniqueNonEmptyStrings(values: Array<string | null | undefined>): string[] {
-  return Array.from(new Set(values.map((v) => v?.trim()).filter((v): v is string => Boolean(v))));
+function uniqueNonEmptyStrings(
+  values: Array<string | null | undefined>,
+): string[] {
+  return Array.from(
+    new Set(
+      values.map((v) => v?.trim()).filter((v): v is string => Boolean(v)),
+    ),
+  );
 }
 
 /**
@@ -74,12 +89,21 @@ export default async function CustomersOverviewPage({
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/login');
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
 
   const svc = createServiceClient();
-  const { denied, ctx } = await requirePermission(svc, user.id, PERMISSIONS.VIEW_CUSTOMERS);
+  const { denied, ctx } = await requirePermission(
+    svc,
+    user.id,
+    PERMISSIONS.VIEW_CUSTOMERS,
+  );
   if (denied) return redirect(await resolveDefaultAppPath(svc, user.id));
+  if (!(await merchantHasEntitlement(svc, ctx.merchantId, "CUSTOMER_SEARCH"))) {
+    redirect("/settings/billing?required=CUSTOMER_SEARCH");
+  }
 
   // Run connection state and search-param resolution in parallel — neither blocks the other.
   const [[connectionState, dataPresence], sp] = await Promise.all([
@@ -91,24 +115,31 @@ export default async function CustomersOverviewPage({
   ]);
   const setupState = resolveMerchantSetupState(connectionState, dataPresence);
 
-  const page = Math.max(1, parseInt(sp.page ?? '1', 10));
-  const requestedPageSize = parseInt(sp.pageSize ?? String(DEFAULT_PAGE_SIZE), 10);
-  const PAGE_SIZE = PAGE_SIZE_OPTIONS.includes(requestedPageSize as (typeof PAGE_SIZE_OPTIONS)[number])
+  const page = Math.max(1, parseInt(sp.page ?? "1", 10));
+  const requestedPageSize = parseInt(
+    sp.pageSize ?? String(DEFAULT_PAGE_SIZE),
+    10,
+  );
+  const PAGE_SIZE = PAGE_SIZE_OPTIONS.includes(
+    requestedPageSize as (typeof PAGE_SIZE_OPTIONS)[number],
+  )
     ? requestedPageSize
     : DEFAULT_PAGE_SIZE;
   const offset = (page - 1) * PAGE_SIZE;
 
   // Basic
-  const q               = sp.q?.trim() || sp.email?.trim() || '';
-  const hasRefunds      = sp.hasRefunds === '1';
-  const hasChargebacks  = sp.hasChargebacks === '1';
+  const q = sp.q?.trim() || sp.email?.trim() || "";
+  const hasRefunds = sp.hasRefunds === "1";
+  const hasChargebacks = sp.hasChargebacks === "1";
   /** Legacy query params — ignored (watchlist / review-status workflow retired). */
-  void (sp.watchlisted === '1');
+  void (sp.watchlisted === "1");
   void sp.risk;
   void sp.status;
-  const openClaimsOnly = sp.openClaims === '1';
-  const requestedSort = sp.sort ?? 'recent';
-  const sort = ['recent', 'orders', 'cases', 'name'].includes(requestedSort) ? requestedSort : 'recent';
+  const openClaimsOnly = sp.openClaims === "1";
+  const requestedSort = sp.sort ?? "recent";
+  const sort = ["recent", "orders", "cases", "name"].includes(requestedSort)
+    ? requestedSort
+    : "recent";
 
   // -------------------------------------------------------------------------
   // Customer ID pre-filters (search / claims-derived filters).
@@ -121,15 +152,21 @@ export default async function CustomersOverviewPage({
 
   if (isOrderReferenceSearch) {
     const ilike = orderReferenceIlike(q);
-    const { data: orderRows } = await svc
-      .from('source_orders')
-      .select('source_customer_id')
-      .eq('merchant_id', ctx.merchantId)
+    const { data: orderRows } = (await svc
+      .from("source_orders")
+      .select("source_customer_id")
+      .eq("merchant_id", ctx.merchantId)
       .or(`external_id.ilike.${ilike},order_number.ilike.${ilike}`)
-      .not('source_customer_id', 'is', null)
-      .limit(200) as unknown as { data: Array<{ source_customer_id: string | null }> | null };
+      .not("source_customer_id", "is", null)
+      .limit(200)) as unknown as {
+      data: Array<{ source_customer_id: string | null }> | null;
+    };
     restrictToCustomerIds = Array.from(
-      new Set((orderRows ?? []).flatMap((r) => (r.source_customer_id ? [r.source_customer_id] : []))),
+      new Set(
+        (orderRows ?? []).flatMap((r) =>
+          r.source_customer_id ? [r.source_customer_id] : [],
+        ),
+      ),
     );
   }
 
@@ -137,23 +174,32 @@ export default async function CustomersOverviewPage({
   if (claimFiltersActive) {
     let claimQuery = svc
       .from(TABLES.MERCHANT_CLAIMS)
-      .select('source_order_id, claim_type, status, source_orders!inner(source_customer_id)')
-      .eq('merchant_id', ctx.merchantId)
-      .not('source_order_id', 'is', null);
-    if (hasChargebacks && !hasRefunds) claimQuery = claimQuery.eq('claim_type', CHARGEBACK_CLAIM_TYPE);
-    if (openClaimsOnly) claimQuery = claimQuery.in('status', [...OPEN_CLAIM_STATUSES]);
-    const { data: claimRows } = await claimQuery.limit(2000) as unknown as {
-      data: Array<{ source_orders: { source_customer_id: string | null } | null }> | null;
+      .select(
+        "source_order_id, claim_type, status, source_orders!inner(source_customer_id)",
+      )
+      .eq("merchant_id", ctx.merchantId)
+      .not("source_order_id", "is", null);
+    if (hasChargebacks && !hasRefunds)
+      claimQuery = claimQuery.eq("claim_type", CHARGEBACK_CLAIM_TYPE);
+    if (openClaimsOnly)
+      claimQuery = claimQuery.in("status", [...OPEN_CLAIM_STATUSES]);
+    const { data: claimRows } = (await claimQuery.limit(2000)) as unknown as {
+      data: Array<{
+        source_orders: { source_customer_id: string | null } | null;
+      }> | null;
     };
     const claimCustomerIds = Array.from(
       new Set(
         (claimRows ?? []).flatMap((r) =>
-          r.source_orders?.source_customer_id ? [r.source_orders.source_customer_id] : [],
+          r.source_orders?.source_customer_id
+            ? [r.source_orders.source_customer_id]
+            : [],
         ),
       ),
     );
+    const claimCustomerIdSet = new Set(claimCustomerIds);
     restrictToCustomerIds = restrictToCustomerIds
-      ? restrictToCustomerIds.filter((id) => claimCustomerIds.includes(id))
+      ? restrictToCustomerIds.filter((id) => claimCustomerIdSet.has(id))
       : claimCustomerIds;
   }
 
@@ -175,37 +221,49 @@ export default async function CustomersOverviewPage({
   // confidence-related is rendered on this page.
   // -------------------------------------------------------------------------
   let scanQuery = svc
-    .from('source_customers')
-    .select('id, email, phone, first_name, last_name, orders_count, total_spent, account_created_at, created_at, updated_at')
-    .eq('merchant_id', ctx.merchantId);
+    .from("source_customers")
+    .select(
+      "id, email, phone, first_name, last_name, orders_count, total_spent, account_created_at, created_at, updated_at",
+    )
+    .eq("merchant_id", ctx.merchantId);
 
   if (q.length >= 2 && !isOrderReferenceSearch) {
     const safeLike = `%${escapePostgrestFilterValue(q)}%`;
-    scanQuery = scanQuery.or(`email.ilike.${safeLike},first_name.ilike.${safeLike},last_name.ilike.${safeLike}`);
+    scanQuery = scanQuery.or(
+      `email.ilike.${safeLike},first_name.ilike.${safeLike},last_name.ilike.${safeLike}`,
+    );
   }
   if (restrictToCustomerIds !== null) {
-    scanQuery = restrictToCustomerIds.length > 0
-      ? scanQuery.in('id', restrictToCustomerIds)
-      : scanQuery.eq('id', '00000000-0000-0000-0000-000000000000');
+    scanQuery =
+      restrictToCustomerIds.length > 0
+        ? scanQuery.in("id", restrictToCustomerIds)
+        : scanQuery.eq("id", "00000000-0000-0000-0000-000000000000");
   }
   // Most-recent-first so the cap, when hit, keeps the freshest records.
-  scanQuery = scanQuery.order('updated_at', { ascending: false }).limit(IDENTITY_GROUP_SCAN_CAP);
+  scanQuery = scanQuery
+    .order("updated_at", { ascending: false })
+    .limit(IDENTITY_GROUP_SCAN_CAP);
 
   // Gracefully fall back to empty results on any query error.
   // Server-level timeout is provided by the `maxDuration` export at the top of this file.
   // Note: Supabase query builders are thenable but do not implement .catch() — use try/catch.
   let scanned: SourceCustomerRow[] = [];
   try {
-    const result = await scanQuery as unknown as { data: SourceCustomerRow[] | null };
+    const result = (await scanQuery) as unknown as {
+      data: SourceCustomerRow[] | null;
+    };
     scanned = result.data ?? [];
   } catch {
     scanned = [];
   }
   if (scanned.length >= IDENTITY_GROUP_SCAN_CAP) {
-    console.warn('[customers] identity-group scan hit cap; grouping bounded to most-recent slice', {
-      merchantId: ctx.merchantId,
-      cap: IDENTITY_GROUP_SCAN_CAP,
-    });
+    console.warn(
+      "[customers] identity-group scan hit cap; grouping bounded to most-recent slice",
+      {
+        merchantId: ctx.merchantId,
+        cap: IDENTITY_GROUP_SCAN_CAP,
+      },
+    );
   }
 
   // Resolve each scanned customer to its network identity (own-signal + k-anon
@@ -215,11 +273,20 @@ export default async function CustomersOverviewPage({
     const norm = normaliseEmail(c.email);
     if (norm) emailHashByCustomer.set(c.id, hashIdentifier(norm));
   }
-  const gradeByEmailHash = new Map<string, IdentityGradeBadge>();
-  const distinctEmailHashes = Array.from(new Set([...emailHashByCustomer.values()]));
+  const distinctEmailHashes = Array.from(
+    new Set([...emailHashByCustomer.values()]),
+  );
+  const chunks: string[][] = [];
   for (let i = 0; i < distinctEmailHashes.length; i += 300) {
-    const chunk = distinctEmailHashes.slice(i, i + 300);
-    const map = await lookupIdentityGradesByEmailHash(svc, ctx.merchantId, chunk);
+    chunks.push(distinctEmailHashes.slice(i, i + 300));
+  }
+  const gradeByEmailHash = new Map<string, IdentityGradeBadge>();
+  const chunkResults = await Promise.all(
+    chunks.map((chunk) =>
+      lookupIdentityGradesByEmailHash(svc, ctx.merchantId, chunk),
+    ),
+  );
+  for (const map of chunkResults) {
     for (const [hash, badge] of map) gradeByEmailHash.set(hash, badge);
   }
 
@@ -228,7 +295,9 @@ export default async function CustomersOverviewPage({
   const groupsByKey = new Map<string, CustomerGroup>();
   for (const c of scanned) {
     const hash = emailHashByCustomer.get(c.id);
-    const identityId = hash ? gradeByEmailHash.get(hash)?.identityId : undefined;
+    const identityId = hash
+      ? gradeByEmailHash.get(hash)?.identityId
+      : undefined;
     const key = identityId ? `identity:${identityId}` : `solo:${c.id}`;
     let group = groupsByKey.get(key);
     if (!group) {
@@ -245,24 +314,75 @@ export default async function CustomersOverviewPage({
   // -------------------------------------------------------------------------
   const caseAggByCustomer = new Map<string, { total: number; open: number }>();
   try {
-    const { data: caseRows } = await svc
+    const { data: caseRows } = (await svc
       .from(TABLES.MERCHANT_CLAIMS)
-      .select('status, source_orders!inner(source_customer_id)')
-      .eq('merchant_id', ctx.merchantId)
-      .not('source_order_id', 'is', null)
-      .limit(CASE_AGG_LIMIT) as unknown as {
-        data: Array<{ status: string; source_orders: { source_customer_id: string | null } | null }> | null;
-      };
+      .select("status, source_orders!inner(source_customer_id)")
+      .eq("merchant_id", ctx.merchantId)
+      .not("source_order_id", "is", null)
+      .limit(CASE_AGG_LIMIT)) as unknown as {
+      data: Array<{
+        status: string;
+        source_orders: { source_customer_id: string | null } | null;
+      }> | null;
+    };
     for (const r of caseRows ?? []) {
       const customerId = r.source_orders?.source_customer_id;
       if (!customerId) continue;
       const agg = caseAggByCustomer.get(customerId) ?? { total: 0, open: 0 };
       agg.total += 1;
-      if ((OPEN_CLAIM_STATUSES as readonly string[]).includes(r.status)) agg.open += 1;
+      if ((OPEN_CLAIM_STATUSES as readonly string[]).includes(r.status))
+        agg.open += 1;
       caseAggByCustomer.set(customerId, agg);
     }
   } catch {
     // Case counts degrade to zero — the directory still renders.
+  }
+
+  // One merchant-wide order projection supplies both full-directory KPIs and
+  // page rows. This avoids trusting source_customers.orders_count, which may be
+  // stale or absent even when canonical source_orders exist.
+  const scannedCustomerIds = new Set(scanned.map((customer) => customer.id));
+  const ordersByCustomer = new Map<
+    string,
+    { count: number; last: string | null; totals: Map<string, number> }
+  >();
+  try {
+    const { data: orderRows } = (await svc
+      .from("source_orders")
+      .select("id, source_customer_id, placed_at, total_price, currency")
+      .eq("merchant_id", ctx.merchantId)
+      .limit(10000)) as unknown as { data: OrderAggRow[] | null };
+
+    for (const order of orderRows ?? []) {
+      if (
+        !order.source_customer_id ||
+        !scannedCustomerIds.has(order.source_customer_id)
+      )
+        continue;
+      const aggregate = ordersByCustomer.get(order.source_customer_id) ?? {
+        count: 0,
+        last: null,
+        totals: new Map<string, number>(),
+      };
+      aggregate.count += 1;
+      if (
+        order.placed_at &&
+        (!aggregate.last || order.placed_at > aggregate.last)
+      ) {
+        aggregate.last = order.placed_at;
+      }
+      const currency = order.currency?.trim().toUpperCase();
+      const amount = Number(order.total_price);
+      if (currency && Number.isFinite(amount)) {
+        aggregate.totals.set(
+          currency,
+          (aggregate.totals.get(currency) ?? 0) + amount,
+        );
+      }
+      ordersByCustomer.set(order.source_customer_id, aggregate);
+    }
+  } catch {
+    // Directory still renders with explicit unavailable values.
   }
 
   // Group-level meta for sorting + KPI aggregation.
@@ -274,9 +394,12 @@ export default async function CustomersOverviewPage({
     name: string;
     lastSeen: string;
   };
-  const metas: GroupMeta[] = groups.map((g) => {
-    const lastSeen = uniqueNonEmptyStrings(g.members.map((m) => m.updated_at)).sort().slice(-1)[0]
-      ?? g.members[0].updated_at;
+  const metas: GroupMeta[] = [];
+  for (const g of groups) {
+    const lastSeen =
+      uniqueNonEmptyStrings(g.members.map((m) => m.updated_at))
+        .sort()
+        .slice(-1)[0] ?? g.members[0].updated_at;
     let caseTotal = 0;
     let caseOpen = 0;
     for (const m of g.members) {
@@ -286,30 +409,48 @@ export default async function CustomersOverviewPage({
         caseOpen += agg.open;
       }
     }
-    const name = g.members.map(fullName).find((n) => n.length > 0)
-      ?? g.members.map((m) => m.email?.trim()).find((e): e is string => Boolean(e))
-      ?? '';
-    return {
+    const name =
+      g.members.map(fullName).find((n) => n.length > 0) ??
+      g.members
+        .map((m) => m.email?.trim())
+        .find((e): e is string => Boolean(e)) ??
+      "";
+    const meta = {
       group: g,
-      ordersCountSum: g.members.reduce((s, m) => s + (m.orders_count ?? 0), 0),
+      ordersCountSum: g.members.reduce((sum, member) => {
+        const actual = ordersByCustomer.get(member.id)?.count;
+        return sum + (actual ?? member.orders_count ?? 0);
+      }, 0),
       caseTotal,
       caseOpen,
       name,
       lastSeen,
     };
-  });
+    if (meta.ordersCountSum > 0 || meta.caseTotal > 0) metas.push(meta);
+  }
 
   switch (sort) {
-    case 'orders':
-      metas.sort((a, b) => b.ordersCountSum - a.ordersCountSum || b.lastSeen.localeCompare(a.lastSeen));
+    case "orders":
+      metas.sort(
+        (a, b) =>
+          b.ordersCountSum - a.ordersCountSum ||
+          b.lastSeen.localeCompare(a.lastSeen),
+      );
       break;
-    case 'cases':
-      metas.sort((a, b) => b.caseTotal - a.caseTotal || b.lastSeen.localeCompare(a.lastSeen));
+    case "cases":
+      metas.sort(
+        (a, b) =>
+          b.caseTotal - a.caseTotal || b.lastSeen.localeCompare(a.lastSeen),
+      );
       break;
-    case 'name':
-      metas.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }) || b.lastSeen.localeCompare(a.lastSeen));
+    case "name":
+      metas.sort(
+        (a, b) =>
+          a.name.localeCompare(b.name, undefined, { sensitivity: "base" }) ||
+          b.lastSeen.localeCompare(a.lastSeen),
+      );
       break;
-    case 'recent':
+    case "recent":
     default:
       metas.sort((a, b) => b.lastSeen.localeCompare(a.lastSeen));
   }
@@ -327,31 +468,11 @@ export default async function CustomersOverviewPage({
   // -------------------------------------------------------------------------
   // Per-page aggregates: own-store orders across each group's records.
   // -------------------------------------------------------------------------
-  const ordersByCustomer = new Map<string, { count: number; last: string | null }>();
-  const pageCustomerIds = pageMetas.flatMap((m) => m.group.members.map((c) => c.id));
-
-  if (pageCustomerIds.length > 0) {
-    const { data: orderRows } = await svc
-      .from('source_orders')
-      .select('id, source_customer_id, placed_at')
-      .eq('merchant_id', ctx.merchantId)
-      .in('source_customer_id', pageCustomerIds)
-      .limit(10000) as unknown as { data: OrderAggRow[] | null };
-
-    for (const order of orderRows ?? []) {
-      if (!order.source_customer_id) continue;
-      const agg = ordersByCustomer.get(order.source_customer_id) ?? { count: 0, last: null };
-      agg.count += 1;
-      if (order.placed_at && (!agg.last || order.placed_at > agg.last)) agg.last = order.placed_at;
-      ordersByCustomer.set(order.source_customer_id, agg);
-    }
-  }
-
   const rows = pageMetas.map((m) => {
     const members = m.group.members;
     let totalOrders = 0;
-    let totalSpent = 0;
     let lastOrderAt: string | null = null;
+    const totalsByCurrency = new Map<string, number>();
     // Representative record = the one with the most own-store orders (the face
     // of the merged row; its id drives the profile link).
     let representative = members[0];
@@ -360,21 +481,31 @@ export default async function CustomersOverviewPage({
       const orders = ordersByCustomer.get(c.id);
       const orderCount = Math.max(orders?.count ?? 0, c.orders_count ?? 0);
       totalOrders += orderCount;
-      const spent = typeof c.total_spent === 'string' ? parseFloat(c.total_spent) : c.total_spent;
-      if (typeof spent === 'number' && Number.isFinite(spent)) totalSpent += spent;
-      if (orders?.last && (!lastOrderAt || orders.last > lastOrderAt)) lastOrderAt = orders.last;
+      for (const [currency, amount] of orders?.totals ?? []) {
+        totalsByCurrency.set(
+          currency,
+          (totalsByCurrency.get(currency) ?? 0) + amount,
+        );
+      }
+      if (orders?.last && (!lastOrderAt || orders.last > lastOrderAt))
+        lastOrderAt = orders.last;
       if (orderCount > repOrderCount) {
         repOrderCount = orderCount;
         representative = c;
       }
     }
     const linkedNames = uniqueNonEmptyStrings(members.map(fullName));
+    const singleCurrencyTotal =
+      totalsByCurrency.size === 1 ? [...totalsByCurrency.entries()][0] : null;
     return {
       id: representative.id,
       primary_email: representative.email,
-      names: linkedNames.length > 0 ? linkedNames : displayNames(representative),
+      names:
+        linkedNames.length > 0 ? linkedNames : displayNames(representative),
       total_orders: totalOrders,
-      total_spent: totalSpent,
+      total_spent: singleCurrencyTotal?.[1] ?? 0,
+      total_spent_currency: singleCurrencyTotal?.[0] ?? null,
+      has_mixed_currency: totalsByCurrency.size > 1,
       payout_cases_total: m.caseTotal,
       payout_cases_open: m.caseOpen,
       last_order_at: lastOrderAt,
@@ -385,14 +516,20 @@ export default async function CustomersOverviewPage({
   const to = Math.min(offset + PAGE_SIZE, total);
   const noFilters = !q && !hasRefunds && !hasChargebacks && !openClaimsOnly;
 
-  const { primary: primaryAction } = resolveCustomerActions(setupState, connectionState);
+  const { primary: primaryAction } = resolveCustomerActions(
+    setupState,
+    connectionState,
+  );
 
   return (
     <CustomersOverviewPageView
       connectionState={connectionState}
       setupState={setupState}
       hasData={dataPresence.hasCustomerProfiles}
-      pageActions={{ primary: primaryAction, subtitle: 'Order, claim, and payout history for every customer.' }}
+      pageActions={{
+        primary: primaryAction,
+        subtitle: "Order, claim, and payout history for every customer.",
+      }}
       sp={sp}
       rows={rows}
       totalCount={total}

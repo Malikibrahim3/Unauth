@@ -4,30 +4,6 @@ import { TABLES } from './lib/supabase/tables';
 import { enforceRateLimit, getClientIp, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
 import { createRequestId, merchantIdHeader, requestIdHeader } from '@/lib/log';
 
-function isPhoneUserAgent(userAgent: string): boolean {
-  const ua = userAgent.toLowerCase();
-  const isTablet =
-    ua.includes('ipad') ||
-    ua.includes('tablet') ||
-    ua.includes('kindle') ||
-    ua.includes('silk') ||
-    ua.includes('playbook') ||
-    ua.includes('nexus 7') ||
-    ua.includes('nexus 9') ||
-    ua.includes('sm-t') ||
-    ua.includes('tab');
-
-  const isPhone =
-    ua.includes('iphone') ||
-    (ua.includes('android') && ua.includes('mobile')) ||
-    ua.includes('windows phone') ||
-    ua.includes('opera mini') ||
-    ua.includes('blackberry') ||
-    ua.includes('bb10');
-
-  return isPhone && !isTablet;
-}
-
 function legacyMvpRedirectTarget(pathname: string): string | null {
   if (
     pathname === '/lookup' ||
@@ -89,41 +65,6 @@ export async function proxy(request: NextRequest) {
   });
   const { pathname } = request.nextUrl;
   const isApiRoute = pathname.startsWith('/api');
-  const isAssetRoute =
-    pathname.startsWith('/_next/static') ||
-    pathname.startsWith('/_next/image') ||
-    pathname === '/favicon.ico';
-  const isMobileUnsupportedRoute = pathname === '/mobile-unsupported';
-
-  // Public/marketing routes — always accessible on mobile.
-  // App routes (dashboard, claims, recoveries, etc.) remain blocked.
-  const isMobileAllowedRoute =
-    pathname === '/' ||
-    pathname === '/landing' ||
-    pathname === '/audit-demo' ||
-    pathname.startsWith('/audit-demo/') ||
-    pathname === '/demo' ||
-    pathname === '/pricing' ||
-    pathname === '/apply' ||
-    pathname === '/signup' ||
-    pathname.startsWith('/audit') ||
-    pathname.startsWith('/legal') ||
-    pathname.startsWith('/login') ||
-    pathname.startsWith('/auth') ||
-    pathname.startsWith('/reset') ||
-    pathname.startsWith('/mobile-unsupported');
-
-  if (!isApiRoute && !isAssetRoute && !isMobileAllowedRoute) {
-    const userAgent = request.headers.get('user-agent') ?? '';
-    if (isPhoneUserAgent(userAgent)) {
-      const url = request.nextUrl.clone();
-      url.pathname = '/mobile-unsupported';
-      const response = NextResponse.redirect(url);
-      response.headers.set(requestIdHeader, requestHeaders.get(requestIdHeader)!);
-      return response;
-    }
-  }
-
   const isAuthRoute =
     pathname.startsWith('/login') ||
     pathname.startsWith('/signup') ||
@@ -213,22 +154,23 @@ export async function proxy(request: NextRequest) {
     if (redirectTarget) {
       const url = request.nextUrl.clone();
       url.pathname = redirectTarget;
-      url.search = '';
       const response = NextResponse.redirect(url);
       response.headers.set(requestIdHeader, requestHeaders.get(requestIdHeader)!);
+      response.headers.set('x-unauth-legacy-route', pathname);
+      response.headers.set('x-unauth-canonical-route', redirectTarget);
+      console.info('legacy_route_redirect', { from: pathname, to: redirectTarget, requestId: requestHeaders.get(requestIdHeader) });
       return response;
     }
   }
 
   if (user && isApiRoute) {
     try {
-      const { data: merchant } = await supabase
-        .from(TABLES.MERCHANTS)
-        .select('id')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      const selectedMerchantId = request.cookies.get('unauth_active_merchant')?.value;
+      let membershipQuery = supabase.from(TABLES.MERCHANT_MEMBERS).select('merchant_id').eq('user_id', user.id).eq('invite_status', 'active');
+      if (selectedMerchantId) membershipQuery = membershipQuery.eq('merchant_id', selectedMerchantId);
+      const { data: membership } = await membershipQuery.order('created_at', { ascending: true }).limit(1).maybeSingle();
 
-      const merchantId = (merchant as { id?: string } | null)?.id;
+      const merchantId = (membership as { merchant_id?: string } | null)?.merchant_id;
       if (merchantId) {
         requestHeaders.set(merchantIdHeader, merchantId);
         supabaseResponse = NextResponse.next({
@@ -248,11 +190,13 @@ export async function proxy(request: NextRequest) {
   }
 
   if (user && isInternalRoute) {
-    const { data: merchant } = await supabase
-      .from(TABLES.MERCHANTS)
-      .select('is_internal')
-      .eq('user_id', user.id)
-      .single();
+    const selectedMerchantId = request.cookies.get('unauth_active_merchant')?.value;
+    let membershipQuery = supabase.from(TABLES.MERCHANT_MEMBERS).select('merchant_id').eq('user_id', user.id).eq('invite_status', 'active');
+    if (selectedMerchantId) membershipQuery = membershipQuery.eq('merchant_id', selectedMerchantId);
+    const { data: membership } = await membershipQuery.limit(1).maybeSingle();
+    const { data: merchant } = membership?.merchant_id
+      ? await supabase.from(TABLES.MERCHANTS).select('is_internal').eq('id', membership.merchant_id).maybeSingle()
+      : { data: null };
 
     if (!merchant?.is_internal) {
       const url = request.nextUrl.clone();

@@ -26,7 +26,7 @@ export function ModuleCard({
   className,
 }: ModuleCardProps) {
   return (
-    <Card variant={variant} density="compact" className={cn('flex flex-col overflow-hidden', className)}>
+    <Card variant={variant} density={density} className={cn('flex flex-col overflow-hidden', className)}>
       <div
         className="flex items-center justify-between pb-[var(--space-2)] mb-[var(--space-2)]"
         style={{ borderBottom: '1px solid var(--border)' }}

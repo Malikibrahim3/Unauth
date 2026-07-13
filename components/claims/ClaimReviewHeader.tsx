@@ -34,9 +34,9 @@ export function ClaimReviewHeader({ wb }: { wb: ClaimReviewWorkbench }) {
           {selectedClaim ? (
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
-                  {(selectedClaim.claim_type ? CLAIM_TYPE_LABELS[selectedClaim.claim_type] ?? selectedClaim.claim_type : null) ?? 'Claim'}
-                </span>
+                <h1 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
+                  {(selectedClaim.claim_type ? CLAIM_TYPE_LABELS[selectedClaim.claim_type] ?? selectedClaim.claim_type : null) ?? 'Payout case'}
+                </h1>
                 <StatusPill status={selectedClaim.status} />
                 <SlaBadge claim={selectedClaim} />
                 {selectedClaim.amount_at_risk != null && (
@@ -44,6 +44,11 @@ export function ClaimReviewHeader({ wb }: { wb: ClaimReviewWorkbench }) {
                     {formatClaimMoney(selectedClaim.amount_at_risk, selectedClaim.currency)}
                   </span>
                 )}
+                <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                  Requested: {selectedClaim.requested_action
+                    ? selectedClaim.requested_action.replaceAll('_', ' ')
+                    : 'Not classified by source'}
+                </span>
               </div>
               <p className="mt-0.5 text-xs truncate" style={{ color: 'var(--text-secondary)' }}>
                 {selectedClaim.shopify_order_id ?? selectedClaim.order_ref ?? '-'}

@@ -1,35 +1,35 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import { globSync } from 'glob';
+import fs from "node:fs";
+import path from "node:path";
+import { globSync } from "glob";
 
-jest.mock('@/lib/supabase/server', () => ({
+jest.mock("@/lib/supabase/server", () => ({
   createClient: jest.fn(),
   createAdminClient: jest.fn(),
   createServiceClient: jest.fn(),
 }));
 
-jest.mock('@/lib/supabase/scoped', () => ({
+jest.mock("@/lib/supabase/scoped", () => ({
   createScopedClient: jest.fn(),
 }));
 
-jest.mock('@/lib/permissions', () => ({
+jest.mock("@/lib/permissions", () => ({
   PERMISSIONS: {
-    MANAGE_TEAM: 'manage_team',
-    VIEW_TEAM: 'view_team',
+    MANAGE_TEAM: "manage_team",
+    VIEW_TEAM: "view_team",
   },
   requirePermission: jest.fn(),
 }));
 
-jest.mock('@/lib/permissions/audit', () => ({
+jest.mock("@/lib/permissions/audit", () => ({
   logAction: jest.fn(),
 }));
 
-import { createClient, createServiceClient } from '@/lib/supabase/server';
-import { createScopedClient } from '@/lib/supabase/scoped';
-import { TABLES } from '@/lib/supabase/tables';
-import { requirePermission } from '@/lib/permissions';
-import { GET as getTeam } from '@/app/api/team/route';
-import { DELETE as deleteTeamMember } from '@/app/api/team/[memberId]/route';
+import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { createScopedClient } from "@/lib/supabase/scoped";
+import { TABLES } from "@/lib/supabase/tables";
+import { requirePermission } from "@/lib/permissions";
+import { GET as getTeam } from "@/app/api/team/route";
+import { DELETE as deleteTeamMember } from "@/app/api/team/[memberId]/route";
 
 type Row = Record<string, unknown>;
 
@@ -40,24 +40,27 @@ type QueryState = {
 };
 
 function makeQuery(state: QueryState, table: string) {
-  let operation: 'select' | 'update' | 'delete' = 'select';
+  let operation: "select" | "update" | "delete" = "select";
   let updatePayload: Row | null = null;
   const filters: Array<(row: Row) => boolean> = [];
 
   const tableRows = () => (state.rows[table] ??= []);
-  const matchingRows = () => tableRows().filter((row) => filters.every((filter) => filter(row)));
+  const matchingRows = () =>
+    tableRows().filter((row) => filters.every((filter) => filter(row)));
 
   const resolve = () => {
     const rows = matchingRows();
 
-    if (operation === 'update' && updatePayload) {
+    if (operation === "update" && updatePayload) {
       for (const row of rows) Object.assign(row, updatePayload);
       return { data: rows, error: null };
     }
 
-    if (operation === 'delete') {
+    if (operation === "delete") {
       state.hardDeleteTables.push(table);
-      state.rows[table] = tableRows().filter((row) => !filters.every((filter) => filter(row)));
+      state.rows[table] = tableRows().filter(
+        (row) => !filters.every((filter) => filter(row)),
+      );
       return { data: rows, error: null };
     }
 
@@ -66,17 +69,17 @@ function makeQuery(state: QueryState, table: string) {
 
   const chain: any = {
     select: jest.fn(() => {
-      operation = 'select';
+      operation = "select";
       return chain;
     }),
     update: jest.fn((payload: Row) => {
-      operation = 'update';
+      operation = "update";
       updatePayload = payload;
       state.updatePayloads.push({ table, payload });
       return chain;
     }),
     delete: jest.fn(() => {
-      operation = 'delete';
+      operation = "delete";
       return chain;
     }),
     eq: jest.fn((column: string, value: unknown) => {
@@ -88,11 +91,15 @@ function makeQuery(state: QueryState, table: string) {
       return chain;
     }),
     is: jest.fn((column: string, value: unknown) => {
-      filters.push((row) => (value === null ? row[column] == null : row[column] === value));
+      filters.push((row) =>
+        value === null ? row[column] == null : row[column] === value,
+      );
       return chain;
     }),
     in: jest.fn((column: string, values: unknown[]) => {
-      filters.push((row) => Array.isArray(values) && values.includes(row[column]));
+      filters.push(
+        (row) => Array.isArray(values) && values.includes(row[column]),
+      );
       return chain;
     }),
     limit: jest.fn(() => chain),
@@ -105,8 +112,10 @@ function makeQuery(state: QueryState, table: string) {
       const result = resolve();
       return { data: result.data[0] ?? null, error: result.error };
     }),
-    then: (onFulfilled: (value: { data: Row[]; error: null }) => unknown, onRejected?: (reason: unknown) => unknown) =>
-      Promise.resolve(resolve()).then(onFulfilled, onRejected),
+    then: (
+      onFulfilled: (value: { data: Row[]; error: null }) => unknown,
+      onRejected?: (reason: unknown) => unknown,
+    ) => Promise.resolve(resolve()).then(onFulfilled, onRejected),
   };
 
   return chain;
@@ -118,11 +127,11 @@ function makeSupabaseClient(state: QueryState) {
   };
 }
 
-describe('soft-delete compliance', () => {
+describe("soft-delete compliance", () => {
   let state: QueryState;
 
   beforeEach(() => {
-    jest.useFakeTimers().setSystemTime(new Date('2026-05-11T12:34:56.000Z'));
+    jest.useFakeTimers().setSystemTime(new Date("2026-05-11T12:34:56.000Z"));
 
     state = {
       hardDeleteTables: [],
@@ -130,16 +139,18 @@ describe('soft-delete compliance', () => {
       rows: {
         [TABLES.MERCHANT_MEMBERS]: [
           {
-            id: 'member-1',
-            merchant_id: 'merchant-1',
-            invited_email: 'analyst@example.com',
-            role: 'analyst',
-            invite_status: 'active',
-            created_at: '2026-05-10T09:00:00.000Z',
+            id: "member-1",
+            merchant_id: "merchant-1",
+            invited_email: "analyst@example.com",
+            role: "analyst",
+            invite_status: "active",
+            created_at: "2026-05-10T09:00:00.000Z",
             deleted_at: null,
           },
         ],
-        [TABLES.MERCHANTS]: [{ id: 'merchant-1', name: 'Demo Merchant', user_id: 'user-1' }],
+        [TABLES.MERCHANTS]: [
+          { id: "merchant-1", name: "Demo Merchant", user_id: "user-1" },
+        ],
       },
     };
 
@@ -148,14 +159,21 @@ describe('soft-delete compliance', () => {
 
     (createClient as jest.Mock).mockReturnValue({
       auth: {
-        getUser: jest.fn().mockResolvedValue({ data: { user: { id: 'user-1' } } }),
+        getUser: jest
+          .fn()
+          .mockResolvedValue({ data: { user: { id: "user-1" } } }),
       },
     });
     (createServiceClient as jest.Mock).mockReturnValue(serviceClient);
     (createScopedClient as jest.Mock).mockReturnValue(scopedClient);
     (requirePermission as jest.Mock).mockResolvedValue({
       denied: null,
-      ctx: { userId: 'user-1', merchantId: 'merchant-1', role: 'owner', memberId: null },
+      ctx: {
+        userId: "user-1",
+        merchantId: "merchant-1",
+        role: "owner",
+        memberId: null,
+      },
     });
   });
 
@@ -164,39 +182,38 @@ describe('soft-delete compliance', () => {
     jest.clearAllMocks();
   });
 
-  it('does not leave Supabase hard-delete calls in API routes', () => {
+  it("does not leave Supabase hard-delete calls in API routes", () => {
     // Routes where a hard delete is intentional and compliant — NOT a soft-delete
     // violation. Each was audited:
     //   • api-keys: rollback of a just-created key row when the dependent widget
     //     token insert fails (the row should never have existed).
     //   • account/delete: full account erasure (GDPR right-to-be-forgotten).
     //   • cron/purge-expired-audits: retention purge of expired audit data.
-    //   • rules/[id]: deletes a merchant-authored rule config row (not PII or an
-    //     audit record); rule removal is a hard delete by design, gated by
-    //     risk-score policy coverage checks before the delete runs.
     const INTENTIONAL_HARD_DELETE = new Set([
-      'app/api/settings/api-keys/route.ts',
-      'app/api/account/delete/route.ts',
-      'app/api/cron/purge-expired-audits/route.ts',
-      'app/api/rules/[id]/route.ts',
+      "app/api/settings/api-keys/route.ts",
+      "app/api/account/delete/route.ts",
+      "app/api/cron/purge-expired-audits/route.ts",
     ]);
-    const routeFiles = globSync('app/api/**/route.ts', { cwd: process.cwd() });
+    const routeFiles = globSync("app/api/**/route.ts", { cwd: process.cwd() });
     const violations = routeFiles.filter((routeFile) => {
       if (INTENTIONAL_HARD_DELETE.has(routeFile)) return false;
-      const source = fs.readFileSync(path.join(process.cwd(), routeFile), 'utf8');
+      const source = fs.readFileSync(
+        path.join(process.cwd(), routeFile),
+        "utf8",
+      );
       return /\.from\s*\([^;]*?\.delete\s*\(/s.test(source);
     });
 
     expect(violations).toEqual([]);
   });
 
-  it('soft-deletes a team member and excludes it from the team API response', async () => {
+  it("soft-deletes a team member and excludes it from the team API response", async () => {
     const deleteResponse = await deleteTeamMember(
-      new Request('http://localhost/api/team/member-1', {
-        method: 'DELETE',
-        headers: { 'x-forwarded-for': '203.0.113.10' },
+      new Request("http://localhost/api/team/member-1", {
+        method: "DELETE",
+        headers: { "x-forwarded-for": "203.0.113.10" },
       }) as any,
-      { params: Promise.resolve({ memberId: 'member-1' }) }
+      { params: Promise.resolve({ memberId: "member-1" }) },
     );
 
     expect(deleteResponse.status).toBe(200);
@@ -210,10 +227,12 @@ describe('soft-delete compliance', () => {
     expect(state.updatePayloads).toEqual([
       {
         table: TABLES.MERCHANT_MEMBERS,
-        payload: { invite_status: 'revoked' },
+        payload: { invite_status: "revoked" },
       },
     ]);
-    expect(state.rows[TABLES.MERCHANT_MEMBERS][0].invite_status).toBe('revoked');
+    expect(state.rows[TABLES.MERCHANT_MEMBERS][0].invite_status).toBe(
+      "revoked",
+    );
 
     const getResponse = await getTeam();
     expect(getResponse.status).toBe(200);

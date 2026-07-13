@@ -1,10 +1,11 @@
-import { labelFor } from '@/lib/copy/labels';
+import { labelFor } from "@/lib/copy/labels";
 
 export function labelize(value: string) {
   return labelFor(value);
 }
 
 export type RoadmapTransaction = {
+  source_order_id: string;
   order_id: string;
   processed_at: string;
   order_value: number | string | null;
@@ -26,27 +27,27 @@ export type RoadmapTransaction = {
 };
 
 export const CLAIM_TYPE_LABELS: Record<string, string> = {
-  missing_parcel: 'Missing parcel',
-  damaged: 'Damaged item',
-  wrong_item: 'Wrong item',
-  refund_request: 'Refund request',
-  chargeback: 'Chargeback',
-  return_abuse: 'Return abuse',
-  other: 'Other',
+  missing_parcel: "Missing parcel",
+  damaged: "Damaged item",
+  wrong_item: "Wrong item",
+  refund_request: "Refund request",
+  chargeback: "Chargeback",
+  return_abuse: "Return abuse",
+  other: "Other",
 };
 
 export const CLAIM_STATUS_LABELS: Record<string, string> = {
-  open: 'Open',
-  under_review: 'Under review',
-  evidence_requested: 'Evidence requested',
-  pending: 'Pending external evidence',
-  escalated: 'Escalated',
-  resolved: 'Resolved',
-  closed: 'Closed',
+  open: "Open",
+  under_review: "Under review",
+  evidence_requested: "Evidence requested",
+  pending: "Pending external evidence",
+  escalated: "Escalated",
+  resolved: "Resolved",
+  closed: "Closed",
 };
 
 export function firstArrayValue(value: unknown): string | null {
-  return Array.isArray(value) && typeof value[0] === 'string' && value[0].trim()
+  return Array.isArray(value) && typeof value[0] === "string" && value[0].trim()
     ? value[0].trim()
     : null;
 }

@@ -30,7 +30,7 @@ const SearchQuerySchema = z.object({
   page:  z.coerce.number().int().min(1).default(1),
 });
 
-type ResultType = 'customer' | 'order' | 'case' | 'ticket' | 'shipment' | 'transaction' | 'recovery';
+type ResultType = 'customer' | 'order' | 'case' | 'ticket' | 'shipment' | 'refund' | 'return' | 'dispute' | 'transaction' | 'loss' | 'recovery';
 
 /**
  * Resolve payout-case hrefs for a set of related order or ticket ids so ticket /
@@ -107,7 +107,7 @@ export async function GET(req: NextRequest) {
   // Accept the legacy 'evidence' type as an alias for 'cases'.
   const requested = parsed.data.types
     ? parsed.data.types.split(',').map((s) => s.trim()).map((t) => (t === 'evidence' ? 'cases' : t))
-    : ['customers', 'orders', 'cases', 'tickets', 'shipments', 'transactions', 'recoveries'];
+    : ['customers', 'orders', 'cases', 'tickets', 'shipments', 'refunds', 'returns', 'disputes', 'losses', 'recoveries'];
 
   const term = sanitizeIlike(q);
   if (!term) {
@@ -123,20 +123,20 @@ export async function GET(req: NextRequest) {
     try {
       const { data: customers } = await serviceClient
         .from('source_customers')
-        .select('id, email, first_name, last_name')
+        .select('id, merchant_customer_id, email, first_name, last_name')
         .eq('merchant_id', merchantId)
         .or(`email.ilike.${pattern},first_name.ilike.${pattern},last_name.ilike.${pattern}`)
         .limit(limit)
         .range(offset, offset + limit - 1);
 
-      for (const c of (customers as Array<{ id: string; email: string | null; first_name: string | null; last_name: string | null }> ?? [])) {
+      for (const c of (customers as Array<{ id: string; merchant_customer_id: string | null; email: string | null; first_name: string | null; last_name: string | null }> ?? [])) {
         const name = [c.first_name, c.last_name].filter(Boolean).join(' ').trim();
         results.push({
           type: 'customer',
           id: c.id,
           label: name || c.email || c.id,
           sublabel: name ? c.email ?? undefined : undefined,
-          href: `/customers/${c.id}`,
+          href: `/customers/${c.merchant_customer_id ?? c.id}`,
         });
       }
     } catch (error) {
@@ -181,7 +181,7 @@ export async function GET(req: NextRequest) {
             id: o.id,
             label: o.order_number ? `Order ${o.order_number}` : `Order ${o.id.slice(0, 8)}`,
             sublabel: o.total_price != null ? formatCurrency(o.total_price, o.currency ?? undefined) : o.email ?? undefined,
-            href: o.source_customer_id ? `/customers/${o.source_customer_id}` : '/claims',
+            href: `/orders/${o.id}`,
           });
         }
       }
@@ -240,7 +240,7 @@ export async function GET(req: NextRequest) {
           id: t.id,
           label: `Ticket ${t.external_id ?? t.id.slice(0, 8)}`,
           sublabel: t.subject ?? t.status ?? undefined,
-          href: '/claims',
+          href: `/tickets/${t.id}`,
         });
       }
     } catch (error) { console.error('Search tickets failed', error); }
@@ -264,7 +264,7 @@ export async function GET(req: NextRequest) {
           id: s.id,
           label: `Shipment ${s.tracking_number ?? s.id.slice(0, 8)}`,
           sublabel: [s.carrier, s.status].filter(Boolean).join(' · ') || undefined,
-          href: '/claims',
+          href: `/shipments/${s.id}`,
           _orderId: s.source_order_id ?? undefined,
         });
       }
@@ -294,6 +294,27 @@ export async function GET(req: NextRequest) {
         });
       }
     } catch (error) { console.error('Search transactions failed', error); }
+  }
+
+  const objectSearch = [
+    { requested: 'refunds', type: 'refund' as const, table: TABLES.SOURCE_REFUNDS, href: 'refunds', amount: true, select: 'id,external_id,amount,currency,ingested_at' },
+    { requested: 'returns', type: 'return' as const, table: TABLES.SOURCE_RETURNS, href: 'returns', amount: false, select: 'id,external_id,status,updated_at' },
+    { requested: 'disputes', type: 'dispute' as const, table: TABLES.SOURCE_DISPUTES, href: 'disputes', amount: true, select: 'id,external_id,status,amount,currency,ingested_at' },
+  ];
+  for (const object of objectSearch) {
+    if (!requested.includes(object.requested)) continue;
+    try {
+      const { data } = await serviceClient.from(object.table).select(object.select).eq('merchant_id', merchantId)
+        .or(isUuid(q) ? `id.eq.${q}` : `external_id.ilike.${pattern}`).limit(limit).range(offset, offset + limit - 1);
+      for (const row of (data as Array<Record<string, any>> ?? [])) results.push({ type: object.type, id: row.id, label: `${object.type[0].toUpperCase()}${object.type.slice(1)} ${row.external_id}`, sublabel: object.amount && row.amount != null && row.currency ? formatCurrency(row.amount, row.currency) : row.status ?? undefined, href: `/${object.href}/${row.id}` });
+    } catch (error) { console.error(`Search ${object.requested} failed`, error); }
+  }
+
+  if (requested.includes('losses') && isUuid(q)) {
+    try {
+      const { data } = await serviceClient.from(TABLES.LOSS_CASES).select('id,status,currency,realised_loss_minor').eq('merchant_id', merchantId).eq('id', q).limit(limit);
+      for (const row of (data as Array<Record<string, any>> ?? [])) results.push({ type: 'loss', id: row.id, label: `Loss ${row.id.slice(0, 8)}`, sublabel: row.realised_loss_minor != null && row.currency ? formatCurrency(row.realised_loss_minor / 100, row.currency) : row.status, href: `/losses/${row.id}` });
+    } catch (error) { console.error('Search losses failed', error); }
   }
 
   // Resolve case deep-links for ticket / shipment / transaction results.

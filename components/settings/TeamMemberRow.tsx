@@ -3,7 +3,6 @@
 import { Check, Clock, Trash2 } from 'lucide-react';
 import {
   formatTeamDate,
-  ROLE_LABELS,
   STATUS_LABELS,
   UI_ASSIGNABLE_ROLES,
   uiRoleForMember,

@@ -1,0 +1,11 @@
+'use client';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Modal } from '@/components/ui/Modal';
+
+export function LossActions({ lossId, canManage, writeOffAmount }: { lossId: string; canManage: boolean; writeOffAmount: string }) {
+  const router = useRouter(); const [open, setOpen] = useState(false); const [rationale, setRationale] = useState(''); const [error, setError] = useState<string | null>(null); const [busy, setBusy] = useState(false);
+  if (!canManage) return <p className="text-sm text-[var(--text-secondary)]">You have read-only access to this loss.</p>;
+  async function submit() { setBusy(true); setError(null); const response = await fetch(`/api/losses/${lossId}`, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'write_off', rationale, idempotencyKey: crypto.randomUUID() }) }); const body = await response.json(); if (!response.ok) { setError(body.error ?? 'Write-off failed'); setBusy(false); return; } setOpen(false); router.refresh(); }
+  return <><button type="button" onClick={() => setOpen(true)} className="rounded-md border border-[var(--danger)] px-3 py-2 text-sm font-medium text-[var(--danger)]">Write off loss</button>{error ? <p role="alert" className="mt-2 text-sm text-[var(--danger)]">{error}</p> : null}<Modal open={open} onClose={() => setOpen(false)} title="Write off outstanding recovery" description="This creates an append-only financial entry and closes the loss as unrecoverable." actions={[{ label: busy ? 'Writing off…' : 'Confirm write-off', variant: 'danger', disabled: busy || !rationale.trim(), onClick: () => void submit() }]}><p className="text-sm">Amount to write off: <strong className="font-mono">{writeOffAmount}</strong></p><label className="mt-4 block text-sm font-medium">Reason <span aria-hidden="true">*</span><textarea value={rationale} onChange={(event) => setRationale(event.target.value)} className="mt-1 min-h-24 w-full rounded-md border border-[var(--border)] bg-[var(--surface)] p-2" required /></label>{!rationale.trim() ? <p className="mt-1 text-xs text-[var(--text-secondary)]">A reason is required and is retained in activity history.</p> : null}</Modal></>;
+}

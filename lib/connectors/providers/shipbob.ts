@@ -8,7 +8,7 @@ import { capability } from '@/lib/connectors/capabilities';
 import { verifyShipBobPat } from '@/lib/integrations/providers/shipbob';
 import { deleteShipBobSubscription, listShipBobLocations, listShipBobOrders, listShipBobReturns, listShipBobSubscriptions, shipBobToken, type ShipBobCredentials } from '@/lib/connectors/providers/shipbob/api';
 import { getAppUrl } from '@/lib/utils/appUrl';
-import { mapShipBobOrder, mapShipBobReturn } from '@/lib/connectors/providers/shipbob/mappings';
+import { mapShipBobOrder } from '@/lib/connectors/providers/shipbob/mappings';
 import type {
   ConnectorAdapter,
   ConnectorContext,

@@ -166,8 +166,20 @@ export interface CallerContext {
  */
 export async function resolveCallerContext(
   serviceClient: SupabaseClient,
-  userId: string
+  userId: string,
+  selectedMerchantId?: string | null,
 ): Promise<CallerContext | null> {
+  let preferredMerchantId = selectedMerchantId ?? null;
+  if (!preferredMerchantId) {
+    try {
+      const { data } = await serviceClient.auth.admin.getUserById(userId);
+      preferredMerchantId = typeof data.user?.user_metadata?.active_merchant_id === 'string'
+        ? data.user.user_metadata.active_merchant_id
+        : null;
+    } catch {
+      // Test doubles and restricted clients may not expose the admin auth API.
+    }
+  }
   // v2 tenancy: ownership IS membership. merchant_users holds every
   // affiliation; a row with role='owner' is the account owner (the old
   // merchants.user_id column was dropped at the v2 cutover). memberId stays
@@ -192,6 +204,10 @@ export async function resolveCallerContext(
     .eq('invite_status', 'active');
 
   if (active && active.length > 0) {
+    const selected = preferredMerchantId
+      ? active.find((membership) => membership.merchant_id === preferredMerchantId)
+      : null;
+    if (selected) return toCtx(selected);
     const best = [...active].sort(
       (a, b) => (ROLE_RANK[b.role as Role] ?? -1) - (ROLE_RANK[a.role as Role] ?? -1)
     )[0];
@@ -221,6 +237,9 @@ export async function resolveCallerContext(
   // 3. No membership — onboarding is required.
   return null;
 }
+
+/** Cookie used by the authenticated shell to persist an explicitly selected membership. */
+export const ACTIVE_MERCHANT_COOKIE = 'unauth.active_merchant';
 
 /**
  * Checks whether a caller has a specific permission.

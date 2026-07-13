@@ -22,9 +22,9 @@ export const uiTokens = {
       espresso: '#1A1814',
     },
     status: {
-      blocked: { bg: '#FEE2E2', fg: '#DC2626', dot: '#DC2626', border: '#FECACA' },
-      flagged: { bg: '#FEF3C7', fg: '#D97706', dot: '#D97706', border: '#FDE68A' },
-      cleared: { bg: '#DCFCE7', fg: '#16A34A', dot: '#16A34A', border: '#BBF7D0' },
+      blocked: { bg: '#FEE2E2', fg: '#991B1B', dot: '#DC2626', border: '#FECACA' },
+      flagged: { bg: '#FEF3C7', fg: '#78350F', dot: '#D97706', border: '#FDE68A' },
+      cleared: { bg: '#DCFCE7', fg: '#166534', dot: '#16A34A', border: '#BBF7D0' },
       held: { bg: '#F4E6E0', fg: '#7B2D26', dot: '#A85040', border: 'rgba(168,80,64,0.16)' },
     },
     evidence: {

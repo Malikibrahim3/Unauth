@@ -10,6 +10,7 @@ import {
   toSupportPayoutCaseReason,
   toSupportPayoutCaseStatus,
 } from '@/lib/payouts/taxonomy';
+import { getCaseReadModel } from '@/lib/cases/readModel';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,6 +44,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ cla
   }
 
   const caseRow = loaded.claim;
+  const canonicalReadModel = await getCaseReadModel(serviceClient, ctx.merchantId, claimId);
 
   // Payout/recovery columns live on the same row but are not part of the
   // action-shaped ClaimForAction select, so read them directly.
@@ -120,6 +122,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ cla
   }
 
   return NextResponse.json({
+    canonical: canonicalReadModel,
     support_payout_case: {
       id: caseRow.id,
       status: toSupportPayoutCaseStatus(caseRow.status, !!recoveryCase),

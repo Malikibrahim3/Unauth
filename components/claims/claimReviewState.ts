@@ -395,7 +395,7 @@ export function useClaimReviewWorkbench(
       claim_type: state.claimType,
       customer_claim_reason: state.customerReason,
       normalized_reason: state.notes,
-      status: 'under_review',
+      status: 'manual_review',
       amount_at_risk: amountAtRisk,
       currency: amountAtRisk ? (orderCurrency ?? null) : null,
     });

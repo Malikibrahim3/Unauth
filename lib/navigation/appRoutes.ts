@@ -2,7 +2,6 @@ import type { LucideIcon } from 'lucide-react';
 import {
   Home,
   Users,
-  Star,
   HelpCircle,
   Settings,
   ShieldCheck,
@@ -38,7 +37,8 @@ export type AppRouteKey =
   | 'help'
   | 'global'
   | 'lookup'
-  | 'rules';
+  | 'rules'
+  | 'flows';
 
 export type AppRoute = {
   key: AppRouteKey;
@@ -68,8 +68,8 @@ export const APP_ROUTES = {
   dashboard: {
     key: 'dashboard',
     href: '/dashboard',
-    label: 'Dashboard',
-    pageTitle: 'Dashboard',
+    label: 'Overview',
+    pageTitle: 'Overview',
     permission: PERMISSIONS.VIEW_DASHBOARD,
     icon: Home,
     sidebar: true,
@@ -256,8 +256,8 @@ export const APP_ROUTES = {
   rules: {
     key: 'rules',
     href: '/rules',
-    label: 'Rules and Flows',
-    pageTitle: 'Rules and Flows',
+    label: 'Rules',
+    pageTitle: 'Rules',
     permission: PERMISSIONS.VIEW_SETTINGS,
     tier: 'pro',
     tierLabel: 'Rules',
@@ -266,6 +266,20 @@ export const APP_ROUTES = {
     workbench: true,
     commandPalette: true,
     commandDescription: 'Configure merchant-owned payout and recovery rules',
+  },
+  flows: {
+    key: 'flows',
+    href: '/flows',
+    label: 'Flows',
+    pageTitle: 'Flows',
+    permission: PERMISSIONS.VIEW_SETTINGS,
+    tier: 'pro',
+    tierLabel: 'Flows',
+    icon: GitBranch,
+    sidebar: true,
+    workbench: true,
+    commandPalette: true,
+    commandDescription: 'Configure bounded operational workflows and inspect runs',
   },
   lookup: {
     key: 'lookup',
@@ -298,15 +312,17 @@ export const COMMAND_PALETTE_FILTERS = [
 export const SIDEBAR_NAV_GROUPS: Array<{ label: string; routeKeys: AppRouteKey[] }> = [
   { label: 'Overview', routeKeys: ['dashboard', 'work'] },
   { label: 'Operations', routeKeys: ['claims', 'losses', 'recoveries', 'customers'] },
-  { label: 'Configure', routeKeys: ['rules', 'integrations'] },
+  { label: 'Configure', routeKeys: ['rules', 'flows', 'integrations'] },
   { label: 'Outcomes', routeKeys: ['reports'] },
 ];
 
-export function getSidebarNavItems(): Array<{ label: string; items: AppRoute[] }> {
+export function getSidebarNavItems(permissions?: ReadonlySet<Permission>): Array<{ label: string; items: AppRoute[] }> {
   return SIDEBAR_NAV_GROUPS.map((group) => ({
     label: group.label,
-    items: group.routeKeys.map((key) => APP_ROUTES[key] as AppRoute),
-  }));
+    items: group.routeKeys
+      .map((key) => APP_ROUTES[key] as AppRoute)
+      .filter((route) => !route.permission || !permissions || permissions.has(route.permission)),
+  })).filter((group) => group.items.length > 0);
 }
 
 export function getWorkbenchNavItems() {
@@ -322,10 +338,11 @@ export function getWorkbenchNavItems() {
   return items;
 }
 
-export function getCommandPaletteNavItems() {
+export function getCommandPaletteNavItems(permissions?: ReadonlySet<Permission>) {
   const items: Array<{ label: string; description: string; href: string }> = [];
   for (const r of Object.values(APP_ROUTES) as AppRoute[]) {
     if (!r.commandPalette) continue;
+    if (r.permission && permissions && !permissions.has(r.permission)) continue;
     items.push({
       label: r.key === 'dashboard' ? 'Payout overview' : r.label,
       description: r.commandDescription ?? r.label,

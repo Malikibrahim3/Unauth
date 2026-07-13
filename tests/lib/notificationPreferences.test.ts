@@ -40,7 +40,13 @@ describe('notification preferences', () => {
 
   it('upserts a preference for the caller', async () => {
     const client = makeClient([]);
-    await upsertNotificationPreference(client, MERCHANT, 'u1', { kind: 'mention', in_app_enabled: false, email_enabled: true });
-    expect(client.upserts[0]).toMatchObject({ merchant_id: MERCHANT, user_id: 'u1', kind: 'mention', in_app_enabled: false, email_enabled: true });
+    await upsertNotificationPreference(client, MERCHANT, 'u1', { kind: 'mention', in_app_enabled: false, email_enabled: false });
+    expect(client.upserts[0]).toMatchObject({ merchant_id: MERCHANT, user_id: 'u1', kind: 'mention', in_app_enabled: false, email_enabled: false });
+  });
+
+  it('rejects email opt-in until audited delivery exists', async () => {
+    const client = makeClient([]);
+    await expect(upsertNotificationPreference(client, MERCHANT, 'u1', { kind: 'mention', in_app_enabled: true, email_enabled: true } as never)).rejects.toThrow();
+    expect(client.upserts).toHaveLength(0);
   });
 });

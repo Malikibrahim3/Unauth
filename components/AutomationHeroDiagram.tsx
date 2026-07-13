@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
 import {
   MessageSquare,
   ShoppingCart,
@@ -154,7 +153,6 @@ function AnimatedBeam({
   delay?: number;
   duration?: number;
 }) {
-  const id = `beam-${Math.random().toString(36).slice(2, 8)}`;
   return (
     <>
       {/* static wire */}

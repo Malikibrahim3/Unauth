@@ -38,7 +38,7 @@ function PageSizeSelectInner({
     Number.parseInt(searchParams.get(pageSizeParam) ?? String(pageSize), 10) || pageSize;
 
   return (
-    <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
+    <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
       <span className="shrink-0">{label}</span>
       <div className="inline-flex shrink-0 overflow-hidden rounded-[4px] border" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
         {PAGE_SIZES.map((size) => {

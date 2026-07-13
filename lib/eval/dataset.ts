@@ -60,7 +60,7 @@ export function loadLabelledCsv(filePath: string): LabelledDataset {
       rawLabel === 'True';
 
     // Strip the label column — the engine must never see it.
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
     const { _label_is_fraud: _stripped, ...rowWithoutLabel } = raw;
 
     const cleaned = cleanRow(rowWithoutLabel as Record<string, unknown>);

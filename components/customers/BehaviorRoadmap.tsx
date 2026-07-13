@@ -42,43 +42,6 @@ const GLYPHS: Record<BehaviorRoadmapEventType, { symbol: string; color: string; 
   note_added: { symbol: '■', color: 'var(--text-tertiary)' },
 };
 
-function DensitySvg({ events }: { events: BehaviorRoadmapEvent[] }) {
-  const buckets = useMemo(() => {
-    const next = Array.from({ length: 18 }, () => ({ total: 0, high: 0 }));
-    for (const event of events) {
-      const diffDays = Math.floor((Date.now() - new Date(event.date).getTime()) / 86400000);
-      const index = Math.min(17, Math.max(0, 17 - Math.floor(diffDays / 5)));
-      next[index].total += 1;
-      if (event.type === 'chargeback_filed' || event.type === 'order_refunded' || event.tier === 'critical' || event.tier === 'high') {
-        next[index].high += 1;
-      }
-    }
-    return next;
-  }, [events]);
-  const max = Math.max(1, ...buckets.map((bucket) => bucket.total));
-
-  return (
-    <svg className="h-5 w-full" viewBox="0 0 180 20" preserveAspectRatio="none" aria-hidden="true">
-      {buckets.map((bucket, index) => {
-        const height = Math.max(2, (bucket.total / max) * 18);
-        const fill = bucket.total > 0 ? 'var(--text-tertiary)' : 'var(--surface-sunken)';
-        return (
-          <rect
-            key={index}
-            x={index * 10 + 1}
-            y={20 - height}
-            width="6"
-            height={height}
-            rx="1"
-            fill={fill}
-            opacity={bucket.total === 0 ? 0.18 : 0.9}
-          />
-        );
-      })}
-    </svg>
-  );
-}
-
 export default function BehaviorRoadmap({ events }: BehaviorRoadmapProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const patternTags = useMemo(() => {
@@ -97,12 +60,6 @@ export default function BehaviorRoadmap({ events }: BehaviorRoadmapProps) {
         <div className="flex items-center justify-between gap-3">
           <p className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>Order & claim history</p>
           <p className="t-mono" style={{ color: 'var(--text-secondary)' }}>{events.length} events</p>
-        </div>
-        <div
-          className="mt-2 cursor-help"
-          title="Event density over 90 days — each bar is a 5-day window of orders and claims"
-        >
-          <DensitySvg events={events} />
         </div>
         {patternTags.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1.5">

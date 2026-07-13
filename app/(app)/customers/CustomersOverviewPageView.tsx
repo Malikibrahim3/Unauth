@@ -71,7 +71,7 @@ export function CustomersOverviewPageView({
         </>
       }
       kpiItems={[
-        { label: 'Total customers', value: kpis.totalCustomers.toLocaleString(), hint: noFilters ? 'All merchant customers' : 'With current filters applied' },
+        { label: 'Total customers', value: kpis.totalCustomers.toLocaleString(), hint: noFilters ? 'Customers with orders or payout cases' : 'With current filters applied' },
         { label: 'Open payout cases', value: kpis.openCaseCustomers.toLocaleString(), hint: 'Customers with open cases' },
         { label: 'Past payout cases', value: kpis.pastCaseCustomers.toLocaleString(), hint: 'Customers with any case history' },
         { label: 'Total orders', value: kpis.totalOrders.toLocaleString(), hint: 'Across listed customers' },
@@ -147,11 +147,11 @@ export function CustomersOverviewPageView({
         />
       ) : (
         <>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
               {`Showing ${from}–${to} of ${totalCount.toLocaleString()} customers`}
             </p>
-            <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
+            <div className="flex flex-wrap items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
               <Suspense fallback={null}>
                 <PageSizeSelect pathname="/customers" pageSize={PAGE_SIZE} />
               </Suspense>

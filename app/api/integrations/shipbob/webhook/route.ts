@@ -5,6 +5,7 @@ import { enqueueIngestionEvent } from '@/lib/connectors/ingestionInbox';
 import { recordDomainEvent } from '@/lib/connectors/domainEvents';
 import { verifyShipBobWebhookSignature } from '@/lib/connectors/providers/shipbob/api';
 import { runShipBobAccountSync } from '@/lib/integrations/providers/shipbobSync';
+import { createScopedClient } from '@/lib/supabase/scoped';
 
 export const maxDuration = 60;
 
@@ -17,6 +18,7 @@ export async function POST(request: NextRequest) {
   const client = createServiceClient();
   const { data: connection, error } = await client.from('merchant_integrations').select('id,merchant_id,provider_id,status,provider_account_id,last_sync_completed_at').eq('id', connectionId).eq('provider_id', 'shipbob').maybeSingle();
   if (error || !connection || !['connected', 'syncing', 'degraded'].includes(connection.status)) return NextResponse.json({ error: 'connection_unavailable' }, { status: 404 });
+  const scopedClient = createScopedClient(connection.merchant_id, client);
   const credentials = await getIntegrationCredential(client, connection.merchant_id, 'shipbob');
   const secret = typeof credentials?.webhookSecret === 'string' ? credentials.webhookSecret : null;
   const rawBody = await request.text();
@@ -28,7 +30,12 @@ export async function POST(request: NextRequest) {
     signature: request.headers.get('webhook-signature'),
   })) return NextResponse.json({ error: 'invalid_signature' }, { status: 401 });
 
-  const payload = JSON.parse(rawBody) as Record<string, unknown>;
+  let payload: Record<string, unknown>;
+  try {
+    payload = JSON.parse(rawBody) as Record<string, unknown>;
+  } catch {
+    return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
+  }
   const eventId = request.headers.get('webhook-id') ?? `body:${Buffer.from(rawBody).toString('base64url').slice(0, 32)}`;
   const topic = request.headers.get('x-webhook-topic') ?? request.headers.get('shipbob-topic') ?? 'unknown';
   const enqueue = await enqueueIngestionEvent(client, {
@@ -63,7 +70,7 @@ export async function POST(request: NextRequest) {
   if (!recentlySynced) {
     after(async () => {
       try {
-        const { data: account } = await client.from('source_accounts').select('id').eq('merchant_id', connection.merchant_id).eq('connection_id', connectionId).maybeSingle();
+        const { data: account } = await scopedClient.from('source_accounts').select('id').eq('connection_id', connectionId).maybeSingle();
         await runShipBobAccountSync(client, { merchantId: connection.merchant_id, connectionId, sourceAccountId: account?.id ?? null });
       } catch (nudgeError) {
         // The daily worker remains the reconciliation backstop.

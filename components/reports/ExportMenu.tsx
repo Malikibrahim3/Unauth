@@ -54,8 +54,8 @@ export default function ExportMenu({ range }: ExportMenuProps) {
             style={{ color: 'var(--text)' }}
             onClick={() => setOpen(false)}
           >
-            Payout cases CSV
-            <span className="ml-1 opacity-60">- status, exposure, evidence state</span>
+            Financial bridge CSV
+            <span className="ml-1 opacity-60">- canonical metric, currency, value, case count</span>
           </a>
           <a
             role="menuitem"
@@ -64,8 +64,8 @@ export default function ExportMenu({ range }: ExportMenuProps) {
             style={{ color: 'var(--text)' }}
             onClick={() => setOpen(false)}
           >
-            Outcomes CSV
-            <span className="ml-1 opacity-60">- decisions, refunds, recoveries</span>
+            Loss causes CSV
+            <span className="ml-1 opacity-60">- category, currency, records, realised loss</span>
           </a>
 
           <div className="my-1 border-t" style={{ borderColor: 'var(--border)' }} />

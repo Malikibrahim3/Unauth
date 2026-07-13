@@ -1,11 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createServiceClient } from '@/lib/supabase/server';
-import { validateApiKey, isValidatedApiKey } from '@/lib/api/validateApiKey';
-import { performV1CustomerProfile } from '@/lib/api/v1/customers';
-import { v1OptionsResponse, withV1Cors } from '@/lib/api/v1/cors';
-import { withRequestLogging } from '@/lib/log';
+import { NextRequest, NextResponse } from "next/server";
+import { createServiceClient } from "@/lib/supabase/server";
+import { validateApiKey, isValidatedApiKey } from "@/lib/api/validateApiKey";
+import { performV1CustomerProfile } from "@/lib/api/v1/customers";
+import { v1OptionsResponse, withV1Cors } from "@/lib/api/v1/cors";
+import { withRequestLogging } from "@/lib/log";
+import { enforceEntitlement } from "@/lib/product/requireEntitlement";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export async function OPTIONS(request: NextRequest) {
   return v1OptionsResponse(request);
@@ -15,25 +16,33 @@ async function GETHandler(request: NextRequest) {
   const authResult = await validateApiKey(request);
   if (!isValidatedApiKey(authResult)) return withV1Cors(authResult, request);
 
-  const email = new URL(request.url).searchParams.get('email')?.trim() ?? '';
+  const service = createServiceClient();
+  const gated = await enforceEntitlement(
+    service,
+    authResult.merchantId,
+    "CUSTOMER_DOSSIER",
+  );
+  if (gated) return withV1Cors(gated, request);
+
+  const email = new URL(request.url).searchParams.get("email")?.trim() ?? "";
 
   const result = await performV1CustomerProfile(
-    createServiceClient(),
+    service,
     {
       merchantId: authResult.merchantId,
       apiKeyId: authResult.keyId,
       requestIp: authResult.requestIp,
     },
-    email
+    email,
   );
 
   if (!result.ok) {
     return withV1Cors(
       NextResponse.json({ error: result.error }, { status: result.status }),
-      request
+      request,
     );
   }
   return withV1Cors(NextResponse.json(result.body), request);
 }
 
-export const GET = withRequestLogging('/api/v1/customers', GETHandler);
+export const GET = withRequestLogging("/api/v1/customers", GETHandler);

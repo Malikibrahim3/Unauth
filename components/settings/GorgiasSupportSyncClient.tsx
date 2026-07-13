@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useReducer, useRef, type FormEvent } from 'react';
+import { useCallback, useEffect, useReducer, useRef, type FormEvent } from 'react';
 import { PanelCard } from '@/components/ui';
 import { useFetchJson } from '@/lib/react/useFetchJson';
 import { GorgiasSupportSyncCreateForm } from '@/components/settings/GorgiasSupportSyncCreateForm';
@@ -51,7 +51,7 @@ export default function GorgiasSupportSyncClient({ canManage }: Props) {
     loadError,
     createInitialGorgiasSupportSyncState,
   );
-  const patch = (patchState: Partial<typeof state>) => dispatch({ type: 'patch', patch: patchState });
+  const patch = useCallback((patchState: Partial<typeof state>) => dispatch({ type: 'patch', patch: patchState }), []);
 
   const seededConnectionIdRef = useRef<string | null>(null);
   const connectionId = connection?.id ?? null;
@@ -65,7 +65,7 @@ export default function GorgiasSupportSyncClient({ canManage }: Props) {
     if (loadError) {
       patch({ message: { type: 'error', text: loadError } });
     }
-  }, [loadError]);
+  }, [loadError, patch]);
 
   async function copyText(field: string, value: string) {
     await navigator.clipboard.writeText(value);

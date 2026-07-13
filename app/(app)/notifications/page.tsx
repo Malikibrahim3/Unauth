@@ -1,21 +1,54 @@
-import { redirect } from 'next/navigation';
-import { createClient, createServiceClient } from '@/lib/supabase/server';
-import { PERMISSIONS, requirePermission } from '@/lib/permissions';
-import { WorkbenchPage } from '@/components/ui';
-import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
-import { NotificationCentre, type NotificationItem } from '@/components/notifications/NotificationCentre';
-import { listNotifications } from '@/lib/notifications/store';
+import { redirect } from "next/navigation";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { PERMISSIONS, requirePermission } from "@/lib/permissions";
+import { WorkbenchPage } from "@/components/ui";
+import { WORKBENCH_NAV_ITEMS } from "@/components/workbench/workbenchNavItems";
+import {
+  NotificationCentre,
+  type NotificationItem,
+} from "@/components/notifications/NotificationCentre";
+import { listNotifications } from "@/lib/notifications/store";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export default async function NotificationsPage() {
   const userClient = createClient();
-  const { data: { user } } = await userClient.auth.getUser();
-  if (!user) redirect('/login');
+  const {
+    data: { user },
+  } = await userClient.auth.getUser();
+  if (!user) redirect("/login");
   const serviceClient = createServiceClient();
-  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_INBOX);
-  if (denied || !ctx) redirect('/dashboard');
-  const notifications = await listNotifications(serviceClient, ctx.merchantId, user.id) as NotificationItem[];
+  const { denied, ctx } = await requirePermission(
+    serviceClient,
+    user.id,
+    PERMISSIONS.VIEW_INBOX,
+  );
+  if (denied || !ctx) redirect("/dashboard");
+  const notifications = (await listNotifications(
+    serviceClient,
+    ctx.merchantId,
+    user.id,
+  )) as NotificationItem[];
   const unread = notifications.filter((item) => !item.read_at).length;
-  return <WorkbenchPage eyebrow="Work" title="Notifications" subtitle="Assignments, mentions, deadlines, recovery outcomes, and source health alerts that need your attention." navItems={WORKBENCH_NAV_ITEMS} kpiItems={[{ label: 'Unread', value: unread.toLocaleString(), hint: 'For your account' }, { label: 'All notifications', value: notifications.length.toLocaleString(), hint: 'Newest first' }]} main={<NotificationCentre initialNotifications={notifications} />} />;
+  return (
+    <WorkbenchPage
+      eyebrow="Work"
+      title="Notifications"
+      subtitle="Assignments, mentions, deadlines, recovery outcomes, and source health alerts that need your attention."
+      navItems={WORKBENCH_NAV_ITEMS}
+      kpiItems={[
+        {
+          label: "Unread",
+          value: unread.toLocaleString(),
+          hint: "For your account",
+        },
+        {
+          label: "All notifications",
+          value: notifications.length.toLocaleString(),
+          hint: "Newest first",
+        },
+      ]}
+      main={<NotificationCentre initialNotifications={notifications} />}
+    />
+  );
 }

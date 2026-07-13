@@ -133,21 +133,6 @@ const HARD_SIGNALS: LinkerSignal[] = ['card', 'phone', 'device', 'account'];
 const SOFT_SIGNALS: LinkerSignal[] = ['email', 'postcode', 'ip'];
 
 // ---------------------------------------------------------------------------
-// LANGUAGE RULES — ENFORCED IN EVERY OUTPUT STRING
-// ---------------------------------------------------------------------------
-
-const FORBIDDEN_WORDS = ['fraud', 'fraudulent', 'scammer', 'criminal', 'confirmed fraud'];
-const FORBIDDEN_WORD_PATTERNS = FORBIDDEN_WORDS.map((word) => new RegExp(word, 'gi'));
-
-function guardLanguage(text: string): string {
-  let safe = text;
-  for (const re of FORBIDDEN_WORD_PATTERNS) {
-    safe = safe.replace(re, 'unusual activity');
-  }
-  return safe;
-}
-
-// ---------------------------------------------------------------------------
 // UTILITY
 // ---------------------------------------------------------------------------
 

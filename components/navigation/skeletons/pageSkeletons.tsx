@@ -1,9 +1,19 @@
-import { Bone, MetricCardGridSkeleton, SectionCardSkeleton, TableSkeleton } from './primitives';
-import { WorkbenchPageSkeleton } from './WorkbenchPageSkeleton';
+import {
+  Bone,
+  MetricCardGridSkeleton,
+  SectionCardSkeleton,
+  TableSkeleton,
+} from "./primitives";
+import { WorkbenchPageSkeleton } from "./WorkbenchPageSkeleton";
 
 export function DashboardLoadingSkeleton() {
   return (
-    <div className="p-4 md:p-6 space-y-5 animate-pulse" aria-busy="true" aria-label="Loading dashboard">
+    <div
+      role="status"
+      className="p-4 md:p-6 space-y-5 animate-pulse"
+      aria-busy="true"
+      aria-label="Loading dashboard"
+    >
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0 space-y-2">
           <Bone className="h-8 w-36" />
@@ -20,7 +30,7 @@ export function DashboardLoadingSkeleton() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
         <section
           className="rounded-md border p-4 space-y-3"
-          style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
+          style={{ borderColor: "var(--border)", background: "var(--surface)" }}
         >
           <div className="flex items-center justify-between">
             <div className="space-y-1.5">
@@ -33,7 +43,7 @@ export function DashboardLoadingSkeleton() {
         </section>
         <section
           className="rounded-md border p-4 space-y-4"
-          style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
+          style={{ borderColor: "var(--border)", background: "var(--surface)" }}
         >
           <div className="space-y-2">
             <Bone className="h-3 w-24" />
@@ -50,11 +60,11 @@ export function DashboardLoadingSkeleton() {
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
         <section
           className="rounded-md border overflow-hidden"
-          style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
+          style={{ borderColor: "var(--border)", background: "var(--surface)" }}
         >
           <div
             className="flex items-center justify-between border-b px-4 py-2.5"
-            style={{ borderColor: 'var(--border)' }}
+            style={{ borderColor: "var(--border)" }}
           >
             <div className="space-y-1">
               <Bone className="h-4 w-28" />
@@ -66,7 +76,7 @@ export function DashboardLoadingSkeleton() {
             <div
               key={i}
               className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 border-b px-4 py-3"
-              style={{ borderColor: 'var(--border-muted)' }}
+              style={{ borderColor: "var(--border-muted)" }}
             >
               <div className="space-y-2">
                 <Bone className="h-4 w-48" />
@@ -82,7 +92,10 @@ export function DashboardLoadingSkeleton() {
             <div
               key={i}
               className="rounded-md border p-4 space-y-2"
-              style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
+              style={{
+                borderColor: "var(--border)",
+                background: "var(--surface)",
+              }}
             >
               <Bone className="h-4 w-36" />
               <Bone className="h-7 w-10" />
@@ -97,13 +110,18 @@ export function DashboardLoadingSkeleton() {
 
 export function StoreLoadingSkeleton() {
   return (
-    <div className="p-4 md:p-6 space-y-5 animate-pulse" aria-busy="true" aria-label="Loading store overview">
+    <div
+      role="status"
+      className="p-4 md:p-6 space-y-5 animate-pulse"
+      aria-busy="true"
+      aria-label="Loading store overview"
+    >
       <header
         className="rounded-md"
         style={{
-          background: 'var(--bg-canvas)',
-          borderBottom: '1px solid var(--border)',
-          padding: '16px 24px',
+          background: "var(--bg-canvas)",
+          borderBottom: "1px solid var(--border)",
+          padding: "16px 24px",
         }}
       >
         <Bone className="h-3 w-12 mb-2" />
@@ -125,7 +143,10 @@ export function StoreLoadingSkeleton() {
         <div className="space-y-5">
           <section
             className="rounded-md border p-4"
-            style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
+            style={{
+              borderColor: "var(--border)",
+              background: "var(--surface)",
+            }}
           >
             <Bone className="h-4 w-28 mb-1" />
             <Bone className="h-3 w-40 mb-3" />
@@ -134,7 +155,11 @@ export function StoreLoadingSkeleton() {
           <SectionCardSkeleton titleWidth="w-44">
             <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
               {[...Array(6)].map((_, i) => (
-                <div key={i} className="flex items-center gap-3 rounded-md border px-3 py-2.5" style={{ borderColor: 'var(--border-muted)' }}>
+                <div
+                  key={i}
+                  className="flex items-center gap-3 rounded-md border px-3 py-2.5"
+                  style={{ borderColor: "var(--border-muted)" }}
+                >
                   <Bone className="h-8 w-8 shrink-0 rounded-md" />
                   <div className="flex-1 space-y-1.5">
                     <Bone className="h-3 w-24" />
@@ -150,7 +175,10 @@ export function StoreLoadingSkeleton() {
             <div
               key={i}
               className="rounded-md border p-4 space-y-3"
-              style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
+              style={{
+                borderColor: "var(--border)",
+                background: "var(--surface)",
+              }}
             >
               <Bone className="h-4 w-32" />
               <Bone className="h-3 w-full" />
@@ -165,12 +193,17 @@ export function StoreLoadingSkeleton() {
 
 export function WatchlistLoadingSkeleton() {
   return (
-    <div className="p-4 md:p-6 space-y-5 animate-pulse" aria-busy="true" aria-label="Loading watchlist">
+    <div
+      role="status"
+      className="p-4 md:p-6 space-y-5 animate-pulse"
+      aria-busy="true"
+      aria-label="Loading watchlist"
+    >
       <header
         style={{
-          background: 'var(--bg-canvas)',
-          borderBottom: '1px solid var(--border)',
-          padding: '16px 24px',
+          background: "var(--bg-canvas)",
+          borderBottom: "1px solid var(--border)",
+          padding: "16px 24px",
         }}
       >
         <Bone className="h-3 w-28 mb-2" />
@@ -183,16 +216,19 @@ export function WatchlistLoadingSkeleton() {
         </div>
       </header>
 
-      <MetricCardGridSkeleton count={3} colsClassName="grid-cols-2 lg:grid-cols-3" />
+      <MetricCardGridSkeleton
+        count={3}
+        colsClassName="grid-cols-2 lg:grid-cols-3"
+      />
 
       <SectionCardSkeleton titleWidth="w-36">
         <TableSkeleton
           columns={[
-            { width: '30%' },
-            { width: '25%' },
-            { width: '15%' },
-            { width: '15%' },
-            { width: '15%' },
+            { width: "30%" },
+            { width: "25%" },
+            { width: "15%" },
+            { width: "15%" },
+            { width: "15%" },
           ]}
           rows={3}
         />
@@ -205,11 +241,11 @@ export function WatchlistLoadingSkeleton() {
         </div>
         <TableSkeleton
           columns={[
-            { width: 44, className: 'w-11' },
-            { width: '35%' },
-            { width: '20%' },
-            { width: '25%' },
-            { width: '15%', className: 'text-right' },
+            { width: 44, className: "w-11" },
+            { width: "35%" },
+            { width: "20%" },
+            { width: "25%" },
+            { width: "15%", className: "text-right" },
           ]}
           rows={6}
         />
@@ -224,7 +260,7 @@ export function CustomersLoadingSkeleton() {
       <div className="p-4 space-y-4">
         <div
           className="rounded-md border p-4 space-y-3"
-          style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
+          style={{ borderColor: "var(--border)", background: "var(--surface)" }}
         >
           <div className="flex justify-between gap-3">
             <Bone className="h-4 w-48" />
@@ -234,7 +270,7 @@ export function CustomersLoadingSkeleton() {
         </div>
         <div
           className="flex flex-wrap items-center gap-2 rounded-md border px-3 py-2"
-          style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
+          style={{ borderColor: "var(--border)", background: "var(--surface)" }}
         >
           <Bone className="h-3 w-12" />
           {[...Array(4)].map((_, i) => (
@@ -253,13 +289,13 @@ export function CustomersLoadingSkeleton() {
         </div>
         <TableSkeleton
           columns={[
-            { width: '28%' },
-            { width: '12%' },
-            { width: '10%' },
-            { width: '10%' },
-            { width: '12%' },
-            { width: '12%' },
-            { width: '10%' },
+            { width: "28%" },
+            { width: "12%" },
+            { width: "10%" },
+            { width: "10%" },
+            { width: "12%" },
+            { width: "12%" },
+            { width: "10%" },
           ]}
           rows={8}
         />
@@ -270,13 +306,19 @@ export function CustomersLoadingSkeleton() {
 
 export function ClaimsLoadingSkeleton() {
   return (
-    <WorkbenchPageSkeleton kpiCount={6} kpiColsClassName="grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+    <WorkbenchPageSkeleton
+      kpiCount={6}
+      kpiColsClassName="grid-cols-2 md:grid-cols-3 lg:grid-cols-6"
+    >
       <div className="p-4 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Bone className="h-3 w-32" />
           <Bone className="h-8 w-28" />
         </div>
-        <div className="flex flex-wrap gap-2 border-b pb-3" style={{ borderColor: 'var(--border-muted)' }}>
+        <div
+          className="flex flex-wrap gap-2 border-b pb-3"
+          style={{ borderColor: "var(--border-muted)" }}
+        >
           {[...Array(8)].map((_, i) => (
             <Bone key={i} className="h-7 w-24 rounded-full" />
           ))}
@@ -295,15 +337,15 @@ export function ClaimsLoadingSkeleton() {
             {},
             {},
             {},
-            { className: 'hidden xl:table-cell' },
+            { className: "hidden xl:table-cell" },
             { width: 150 },
-            { className: 'hidden xl:table-cell' },
-            { className: 'hidden lg:table-cell' },
-            { className: 'hidden lg:table-cell' },
+            { className: "hidden xl:table-cell" },
+            { className: "hidden lg:table-cell" },
+            { className: "hidden lg:table-cell" },
             {},
-            { className: 'hidden xl:table-cell' },
+            { className: "hidden xl:table-cell" },
             {},
-            { className: 'hidden lg:table-cell' },
+            { className: "hidden lg:table-cell" },
             { width: 72 },
           ]}
           rows={7}
@@ -318,16 +360,27 @@ export function ReportsLoadingSkeleton() {
     <WorkbenchPageSkeleton showActions kpiCount={0}>
       <div
         className="flex gap-1 border-b px-4"
-        style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
+        style={{ borderColor: "var(--border)", background: "var(--surface)" }}
       >
         {[...Array(3)].map((_, i) => (
-          <Bone key={i} className="h-10 w-28 mb-0 rounded-none" style={{ borderRadius: 4 }} />
+          <Bone
+            key={i}
+            className="h-10 w-28 mb-0 rounded-none"
+            style={{ borderRadius: 4 }}
+          />
         ))}
       </div>
       <div className="p-4 space-y-4">
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="rounded-md border p-4 space-y-2" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
+            <div
+              key={i}
+              className="rounded-md border p-4 space-y-2"
+              style={{
+                borderColor: "var(--border)",
+                background: "var(--surface)",
+              }}
+            >
               <Bone className="h-3 w-20" />
               <Bone className="h-7 w-14" />
             </div>
@@ -360,20 +413,23 @@ export function ChargebacksLoadingSkeleton() {
   return (
     <WorkbenchPageSkeleton showActionBar kpiCount={5}>
       <div>
-        <div className="border-b p-4 space-y-3" style={{ borderColor: 'var(--border)' }}>
+        <div
+          className="border-b p-4 space-y-3"
+          style={{ borderColor: "var(--border)" }}
+        >
           <Bone className="h-4 w-36" />
           <Bone className="h-16 w-full max-w-lg" />
           <Bone className="h-3 w-80" />
         </div>
         <TableSkeleton
           columns={[
-            { width: '12%' },
-            { width: '18%' },
-            { width: '14%' },
-            { width: '14%' },
-            { width: '12%' },
-            { width: '12%' },
-            { width: '18%' },
+            { width: "12%" },
+            { width: "18%" },
+            { width: "14%" },
+            { width: "14%" },
+            { width: "12%" },
+            { width: "12%" },
+            { width: "18%" },
           ]}
           rows={6}
         />
@@ -388,14 +444,17 @@ export function UploadLoadingSkeleton() {
       <div className="mx-auto w-full max-w-3xl p-4 space-y-6">
         <div
           className="rounded-[var(--radius-2)] px-5 py-4 space-y-2"
-          style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-muted)' }}
+          style={{
+            background: "var(--bg-subtle)",
+            border: "1px solid var(--border-muted)",
+          }}
         >
           <Bone className="h-5 w-64" />
           <Bone className="h-3 w-full" />
         </div>
         <div
           className="rounded-md border border-dashed p-10 flex flex-col items-center gap-4"
-          style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
+          style={{ borderColor: "var(--border)", background: "var(--surface)" }}
         >
           <Bone className="h-12 w-12 rounded-full" />
           <Bone className="h-4 w-48" />
@@ -405,7 +464,11 @@ export function UploadLoadingSkeleton() {
         <div className="space-y-3">
           <Bone className="h-4 w-32" />
           {[...Array(2)].map((_, i) => (
-            <div key={i} className="flex items-center justify-between rounded-md border px-4 py-3" style={{ borderColor: 'var(--border-muted)' }}>
+            <div
+              key={i}
+              className="flex items-center justify-between rounded-md border px-4 py-3"
+              style={{ borderColor: "var(--border-muted)" }}
+            >
               <div className="space-y-1.5">
                 <Bone className="h-4 w-40" />
                 <Bone className="h-3 w-24" />
@@ -434,14 +497,14 @@ function AuditHistoryTableSkeleton() {
   return (
     <TableSkeleton
       columns={[
-        { width: 44, className: 'w-11' },
-        { width: '22%' },
-        { width: '12%' },
-        { width: '18%' },
-        { width: '12%' },
-        { width: '10%', className: 'text-right' },
-        { width: '10%', className: 'text-right' },
-        { width: '14%' },
+        { width: 44, className: "w-11" },
+        { width: "22%" },
+        { width: "12%" },
+        { width: "18%" },
+        { width: "12%" },
+        { width: "10%", className: "text-right" },
+        { width: "10%", className: "text-right" },
+        { width: "14%" },
         { width: 48 },
       ]}
       rows={6}
@@ -451,14 +514,26 @@ function AuditHistoryTableSkeleton() {
 
 export function NetworkIntelligenceLoadingSkeleton() {
   return (
-    <div className="p-6 md:p-8 space-y-6 animate-pulse" aria-busy="true" aria-label="Loading network intelligence">
+    <div
+      role="status"
+      className="p-6 md:p-8 space-y-6 animate-pulse"
+      aria-busy="true"
+      aria-label="Loading network intelligence"
+    >
       <div className="space-y-2">
         <Bone className="h-7 w-52" />
         <Bone className="h-4 w-96 max-w-full" />
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="rounded-md border p-4 space-y-2" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
+          <div
+            key={i}
+            className="rounded-md border p-4 space-y-2"
+            style={{
+              borderColor: "var(--border)",
+              background: "var(--surface)",
+            }}
+          >
             <Bone className="h-3 w-28" />
             <Bone className="h-6 w-12" />
             <Bone className="h-3 w-20" />
@@ -476,7 +551,12 @@ export function NetworkIntelligenceLoadingSkeleton() {
 
 export function AuditDetailLoadingSkeleton() {
   return (
-    <div className="p-6 md:p-8 space-y-6 animate-pulse" aria-busy="true" aria-label="Loading audit">
+    <div
+      role="status"
+      className="p-6 md:p-8 space-y-6 animate-pulse"
+      aria-busy="true"
+      aria-label="Loading audit"
+    >
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-2">
           <Bone className="h-7 w-48" />
@@ -491,12 +571,12 @@ export function AuditDetailLoadingSkeleton() {
       <SectionCardSkeleton>
         <TableSkeleton
           columns={[
-            { width: '22%' },
-            { width: '16%' },
-            { width: '14%' },
-            { width: '14%' },
-            { width: '12%' },
-            { width: '12%' },
+            { width: "22%" },
+            { width: "16%" },
+            { width: "14%" },
+            { width: "14%" },
+            { width: "12%" },
+            { width: "12%" },
             { width: 80 },
           ]}
           rows={8}
@@ -507,7 +587,11 @@ export function AuditDetailLoadingSkeleton() {
 }
 
 /** Generic workbench table page skeleton — used for clusters, evidence, evidence-packages, audit-history, audits */
-export function TablePageLoadingSkeleton({ label = 'Loading' }: { label?: string }) {
+export function TablePageLoadingSkeleton({
+  label: _label = "Loading",
+}: {
+  label?: string;
+}) {
   return (
     <WorkbenchPageSkeleton showActionBar kpiCount={4}>
       <div className="p-4 space-y-3">
@@ -517,12 +601,12 @@ export function TablePageLoadingSkeleton({ label = 'Loading' }: { label?: string
         </div>
         <TableSkeleton
           columns={[
-            { width: '28%' },
-            { width: '16%' },
-            { width: '14%' },
-            { width: '14%' },
-            { width: '14%' },
-            { width: '14%' },
+            { width: "28%" },
+            { width: "16%" },
+            { width: "14%" },
+            { width: "14%" },
+            { width: "14%" },
+            { width: "14%" },
           ]}
           rows={8}
         />
@@ -566,14 +650,17 @@ export function SettingsListLoadingSkeleton() {
         {[...Array(5)].map((_, i) => (
           <div
             key={i}
-            className="flex items-center justify-between gap-4 rounded-md border px-4 py-3"
-            style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
+            className="flex flex-wrap items-center justify-between gap-4 rounded-md border px-4 py-3 sm:flex-nowrap"
+            style={{
+              borderColor: "var(--border)",
+              background: "var(--surface)",
+            }}
           >
-            <div className="flex items-center gap-3">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
               <Bone className="h-9 w-9 rounded-md shrink-0" />
-              <div className="space-y-1.5">
-                <Bone className="h-4 w-36" />
-                <Bone className="h-3 w-52" />
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <Bone className="h-4 w-36 max-w-full" />
+                <Bone className="h-3 w-52 max-w-full" />
               </div>
             </div>
             <Bone className="h-8 w-24 shrink-0" />
@@ -597,7 +684,10 @@ export function GraphLoadingSkeleton() {
           <div
             key={i}
             className="rounded-md border p-4 space-y-2"
-            style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
+            style={{
+              borderColor: "var(--border)",
+              background: "var(--surface)",
+            }}
           >
             <Bone className="h-3 w-24" />
             <Bone className="h-6 w-12" />

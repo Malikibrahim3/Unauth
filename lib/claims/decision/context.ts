@@ -5,7 +5,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/lib/supabase/tables';
 import type { ClaimDecisionContext } from '@/lib/claims/decision/types';
-import { buildDeliveryFromFulfillment } from '@/lib/claims/decision/deliveryEvidence';
 import {
   mergeDeliveryWithTrackingEvidence,
   parseAfterShipEvidenceRows,
@@ -66,15 +65,6 @@ const EMPTY_HISTORY: ClaimDecisionContext['history'] = {
   hasCrossMerchantIdentity: false,
   networkMerchantCount: 0,
   accountAgeDays: null,
-};
-
-const EMPTY_EVIDENCE: ClaimDecisionContext['evidence'] = {
-  totalEvidenceItems: 0,
-  customerEvidenceItems: 0,
-  deliveryEvidenceItems: 0,
-  merchantEvidenceItems: 0,
-  hasCustomerEvidence: false,
-  hasDeliveryEvidence: false,
 };
 
 export async function buildClaimDecisionContext(

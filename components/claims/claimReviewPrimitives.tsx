@@ -8,9 +8,10 @@ import {
   EVIDENCE_TYPE_LABELS,
   QUICK_LIFECYCLE_STATUSES,
   STATUS_LABELS,
+  operatorLifecycleOptions,
 } from '@/components/claims/claimReviewLabels';
 import { btnStyle, inputStyle } from '@/components/claims/claimReviewStyles';
-import type { ClaimRecord, ClaimStatus, EvidenceSource, EvidenceType } from '@/components/claims/claimReviewTypes';
+import type { ClaimRecord, ClaimStatus } from '@/components/claims/claimReviewTypes';
 
 export function StatusPill({ status }: { status: string }) {
   const label = STATUS_LABELS[status] ?? status;
@@ -111,6 +112,7 @@ export function ClaimLifecycleStatusBar({
   onReopen,
   canReopen,
   submitIsPrimary,
+  currentStatus,
 }: {
   claimId: string;
   busy: boolean;
@@ -125,6 +127,7 @@ export function ClaimLifecycleStatusBar({
   onReopen: () => void;
   canReopen: boolean;
   submitIsPrimary?: boolean;
+  currentStatus?: string | null;
 }) {
   if (claimIsClosed) {
     return (
@@ -165,7 +168,7 @@ export function ClaimLifecycleStatusBar({
           onChange={(e) => setStatusToSet(e.target.value as ClaimStatus)}
           aria-label="Claim lifecycle status"
         >
-          {(Object.entries(STATUS_LABELS) as [ClaimStatus, string][]).map(([value, label]) => (
+          {operatorLifecycleOptions(currentStatus).map(({ value, label }) => (
             <option key={value} value={value}>{label}</option>
           ))}
         </select>

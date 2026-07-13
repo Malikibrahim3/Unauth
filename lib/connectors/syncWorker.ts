@@ -31,6 +31,8 @@ export type SyncJobRow = {
   max_attempts: number | null;
   connection_id: string | null;
   source_account_id: string | null;
+  processed_rows?: number | null;
+  failed_rows?: number | null;
 };
 
 export type SyncJobDbPatch = {
@@ -39,12 +41,15 @@ export type SyncJobDbPatch = {
   attempts: number;
   next_attempt_at: string | null;
   last_error_code: string | null;
+  processed_rows: number;
+  failed_rows: number;
+  completed_at: string | null;
 };
 
 /** Map the engine's rich state onto the sync_jobs enum + fields. */
 export function mapStateToPatch(state: SyncJobState, continuation: boolean): SyncJobDbPatch {
   if (state.status === 'completed') {
-    return { status: 'completed', cursor: state.cursor, attempts: state.attempts, next_attempt_at: null, last_error_code: null };
+    return { status: 'completed', cursor: state.cursor, attempts: state.attempts, next_attempt_at: null, last_error_code: null, processed_rows: state.processedRecords ?? 0, failed_rows: state.failedRecords ?? 0, completed_at: new Date().toISOString() };
   }
   if (state.status === 'running') {
     // Page budget hit mid-job: persist as pending to resume next tick.
@@ -54,13 +59,16 @@ export function mapStateToPatch(state: SyncJobState, continuation: boolean): Syn
       attempts: state.attempts,
       next_attempt_at: continuation ? new Date().toISOString() : state.nextAttemptAt,
       last_error_code: null,
+      processed_rows: state.processedRecords ?? 0,
+      failed_rows: state.failedRecords ?? 0,
+      completed_at: null,
     };
   }
   // failed | dead_letter | unsupported all map to the enum's 'failed'.
   const code = state.status === 'unsupported' ? 'unsupported'
     : state.status === 'dead_letter' ? `dead_letter:${state.lastErrorCode ?? 'unknown'}`
     : state.lastErrorCode;
-  return { status: 'failed', cursor: state.cursor, attempts: state.attempts, next_attempt_at: state.nextAttemptAt, last_error_code: code };
+  return { status: 'failed', cursor: state.cursor, attempts: state.attempts, next_attempt_at: state.nextAttemptAt, last_error_code: code, processed_rows: state.processedRecords ?? 0, failed_rows: state.failedRecords ?? 0, completed_at: null };
 }
 
 function jobToState(job: SyncJobRow): SyncJobState {
@@ -71,6 +79,8 @@ function jobToState(job: SyncJobRow): SyncJobState {
     maxAttempts: job.max_attempts ?? 8,
     nextAttemptAt: null,
     lastErrorCode: null,
+    processedRecords: job.processed_rows ?? 0,
+    failedRecords: job.failed_rows ?? 0,
   };
 }
 

@@ -317,7 +317,7 @@ async function processRefundTopic(supabase: ServiceClient, merchantId: string, p
   if (error) throw new Error(`source_refund_upsert_failed: ${error.message}`);
 }
 
-async function processFulfillmentTopic(supabase: ServiceClient, merchantId: string, payload: any, rawBody: string) {
+async function processFulfillmentTopic(supabase: ServiceClient, merchantId: string, payload: any, _rawBody: string) {
   const orderExternalId = payload.order_id != null ? String(payload.order_id) : null;
   if (!orderExternalId) return;
   const order = await findOrderByExternalId(supabase, merchantId, orderExternalId);
@@ -440,7 +440,7 @@ export async function processWebhook(rawBody: string, shopDomain: string, topic:
   return processShopifyWebhook({ rawBody, shopDomain, topic, supabaseClient });
 }
 
-async function processWebhookLegacy(rawBody: string, shopDomain: string, topic: string, supabaseClient?: ServiceClient) {
+async function _processWebhookLegacy(rawBody: string, shopDomain: string, topic: string, supabaseClient?: ServiceClient) {
   const payload = JSON.parse(rawBody) as any;
   if (payload?.test === true) return;
   const now = new Date().toISOString();

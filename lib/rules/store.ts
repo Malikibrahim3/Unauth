@@ -13,24 +13,23 @@
  * never from the request body.
  */
 
-import type { SupabaseClient } from '@supabase/supabase-js';
-import { z } from 'zod';
-import { TABLES } from '@/lib/supabase/tables';
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { z } from "zod";
+import { TABLES } from "@/lib/supabase/tables";
 import {
   AUDIT_DEDUPE_WINDOW_MS,
   buildDedupeKey,
   hashRules,
   hashSignals,
-} from '@/lib/claims/decision/auditHashes';
+} from "@/lib/claims/decision/auditHashes";
 import {
   evaluateRules,
-  type IdentitySignals,
   type MerchantRule,
   type RuleAction,
   type RuleCondition,
   type RuleEvaluationResult,
   type RuleSignals,
-} from '@/lib/rules-engine';
+} from "@/lib/rules-engine";
 
 // ---------------------------------------------------------------------------
 // Request schemas
@@ -43,15 +42,15 @@ const conditionSchema = z.object({
   value: z.unknown(),
 });
 
-const actionSchema = z.enum(['approve', 'manual_review', 'deny']);
-const operatorSchema = z.enum(['and', 'or']);
+const actionSchema = z.enum(["approve", "manual_review", "deny"]);
+const operatorSchema = z.enum(["and", "or"]);
 
 export const createRuleSchema = z.object({
-  name: z.string().trim().min(1, 'Rule name is required').max(120),
+  name: z.string().trim().min(1, "Rule name is required").max(120),
   description: z.string().trim().max(500).nullish(),
   conditions: z.array(conditionSchema).default([]),
   action: actionSchema,
-  condition_operator: operatorSchema.default('and'),
+  condition_operator: operatorSchema.default("and"),
   priority: z.number().int().min(0).optional(),
 });
 
@@ -69,7 +68,9 @@ export const updateRuleSchema = z
 
 export const reorderSchema = z.object({
   order: z
-    .array(z.object({ id: z.string().uuid(), priority: z.number().int().min(0) }))
+    .array(
+      z.object({ id: z.string().uuid(), priority: z.number().int().min(0) }),
+    )
     .min(1),
 });
 
@@ -112,14 +113,16 @@ export function mapRuleRow(row: MerchantRuleRow): MerchantRule {
     description: row.description,
     is_active: row.is_active,
     priority: row.priority,
-    conditions: Array.isArray(row.conditions) ? (row.conditions as RuleCondition[]) : [],
+    conditions: Array.isArray(row.conditions)
+      ? (row.conditions as RuleCondition[])
+      : [],
     action: row.action as RuleAction,
-    condition_operator: row.condition_operator === 'or' ? 'or' : 'and',
+    condition_operator: row.condition_operator === "or" ? "or" : "and",
   };
 }
 
 const RULE_COLUMNS =
-  'id, merchant_id, name, description, is_active, priority, conditions, action, condition_operator, is_default_template, created_at, updated_at';
+  "id, merchant_id, name, description, is_active, priority, conditions, action, condition_operator, is_default_template, created_at, updated_at";
 
 export { RULE_COLUMNS };
 
@@ -134,9 +137,10 @@ export async function fetchActiveMerchantRules(
   const { data, error } = await client
     .from(TABLES.MERCHANT_RULES)
     .select(RULE_COLUMNS)
-    .eq('merchant_id', merchantId)
-    .eq('is_active', true)
-    .order('priority', { ascending: true });
+    .eq("merchant_id", merchantId)
+    .eq("is_active", true)
+    .is("archived_at", null)
+    .order("priority", { ascending: true });
   if (error) throw new Error(`Failed to load merchant rules: ${error.message}`);
   return (data ?? []).map((row) => mapRuleRow(row as MerchantRuleRow));
 }
@@ -171,7 +175,10 @@ interface RuleTraceEntry {
  * that rule can never change what a past evaluation is understood to have
  * matched against.
  */
-function buildRuleSnapshot(rules: MerchantRule[], winnerRuleId: string | null): MerchantRule | null {
+function buildRuleSnapshot(
+  rules: MerchantRule[],
+  winnerRuleId: string | null,
+): MerchantRule | null {
   if (!winnerRuleId) return null;
   return rules.find((r) => r.id === winnerRuleId) ?? null;
 }
@@ -191,7 +198,7 @@ function buildRulesTrace(
         rule_id: rule.id,
         rule_name: rule.name,
         priority: rule.priority,
-        matched: single.recommendation !== 'no_match',
+        matched: single.recommendation !== "no_match",
         is_winner: rule.id === winnerRuleId,
       };
     });
@@ -213,7 +220,11 @@ export async function writeRuleEvaluationAudit(
     result: RuleEvaluationResult;
   },
 ): Promise<void> {
-  const trace = buildRulesTrace(input.signals, input.rules, input.result.rule_id);
+  const trace = buildRulesTrace(
+    input.signals,
+    input.rules,
+    input.result.rule_id,
+  );
   const { error } = await client.from(TABLES.RULE_EVALUATIONS).insert({
     merchant_id: input.merchantId,
     claim_id: input.claimId ?? null,
@@ -225,11 +236,14 @@ export async function writeRuleEvaluationAudit(
     all_rules_evaluated: trace,
   });
   if (error) {
-    console.error('[rules-engine] failed to write rule_evaluations audit row', error.message);
+    console.error(
+      "[rules-engine] failed to write rule_evaluations audit row",
+      error.message,
+    );
   }
 }
 
-export type RuleAuditStatus = 'written' | 'deduped' | 'failed';
+export type RuleAuditStatus = "written" | "deduped" | "failed";
 
 export interface ClaimRuleEvaluationAuditInput {
   merchantId: string;
@@ -265,27 +279,31 @@ export async function writeClaimRuleEvaluationAudit(
   const since = new Date(Date.now() - AUDIT_DEDUPE_WINDOW_MS).toISOString();
   const { data: recent } = await client
     .from(TABLES.RULE_EVALUATIONS)
-    .select('id')
-    .eq('merchant_id', input.merchantId)
-    .eq('dedupe_key', dedupeKey)
-    .gte('evaluated_at', since)
+    .select("id")
+    .eq("merchant_id", input.merchantId)
+    .eq("dedupe_key", dedupeKey)
+    .gte("evaluated_at", since)
     .limit(1)
     .maybeSingle();
 
   if (recent?.id) {
-    return 'deduped';
+    return "deduped";
   }
 
-  const trace = buildRulesTrace(input.signals, input.rules, input.result.rule_id);
+  const trace = buildRulesTrace(
+    input.signals,
+    input.rules,
+    input.result.rule_id,
+  );
   const justificationSummary =
     input.result.justification_lines.length > 0
-      ? input.result.justification_lines.join(' · ')
+      ? input.result.justification_lines.join(" · ")
       : input.result.justification;
 
   const auditPayload = [
     ...trace,
     {
-      _kind: 'claim_evaluation_metadata',
+      _kind: "claim_evaluation_metadata",
       evaluation_source: input.evaluationSource,
       source_ticket_id: input.sourceTicketId ?? null,
       actor_id: input.actorId ?? null,
@@ -317,14 +335,17 @@ export async function writeClaimRuleEvaluationAudit(
     evaluated_at: evaluatedAt,
   });
   if (error) {
-    console.error('[rules-engine] failed to write claim rule_evaluations audit row', {
-      message: error.message,
-      claimId: input.claimId,
-      evaluationSource: input.evaluationSource,
-    });
-    return 'failed';
+    console.error(
+      "[rules-engine] failed to write claim rule_evaluations audit row",
+      {
+        message: error.message,
+        claimId: input.claimId,
+        evaluationSource: input.evaluationSource,
+      },
+    );
+    return "failed";
   }
-  return 'written';
+  return "written";
 }
 
 /**
@@ -338,6 +359,13 @@ export async function runRuleEvaluation(
 
   const rules = await fetchActiveMerchantRules(client, merchantId);
   const result = evaluateRules(signals, rules);
-  await writeRuleEvaluationAudit(client, { merchantId, claimId, identityId, signals, rules, result });
+  await writeRuleEvaluationAudit(client, {
+    merchantId,
+    claimId,
+    identityId,
+    signals,
+    rules,
+    result,
+  });
   return result;
 }

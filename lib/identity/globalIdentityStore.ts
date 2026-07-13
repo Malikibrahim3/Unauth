@@ -122,7 +122,6 @@ export async function persistGlobalIdentityGraph({
     return { attributesUpserted: 0, appearancesInserted: 0, crossMerchantAttributes: 0, gradeCounts, errors };
   }
 
-  const keys = unique(attrs.map((a) => `${a.type}:${a.value}`));
   const aggregate = new Map<string, AttributeInput & { orderIds: string[]; transactionIds: string[]; grade: Grade }>();
   for (const attr of attrs) {
     const key = `${attr.type}:${attr.value}`;

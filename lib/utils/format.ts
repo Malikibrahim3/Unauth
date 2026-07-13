@@ -1,11 +1,13 @@
+import { fromMinorUnits, normaliseCurrencyOrNull } from '@/lib/canonical/money';
+
 const MERCHANT_DISPLAY_LOCALE = 'en-US';
 const DEFAULT_CURRENCY = 'USD';
 
 const currencyFormatterCache = new Map<string, Intl.NumberFormat>();
 const currencySymbolCache = new Map<string, string>();
 
-function getCurrencyFormatter(currency: string): Intl.NumberFormat {
-  const code = currency.toUpperCase();
+function getCurrencyFormatter(currency: string | null | undefined): Intl.NumberFormat {
+  const code = normaliseCurrencyOrNull(currency) ?? DEFAULT_CURRENCY;
   const cached = currencyFormatterCache.get(code);
   if (cached) return cached;
   let formatter: Intl.NumberFormat;
@@ -27,8 +29,8 @@ export function currencySymbolFor(currency: string): string {
   return getCurrencySymbol(currency);
 }
 
-function getCurrencySymbol(currency: string): string {
-  const code = currency.toUpperCase();
+function getCurrencySymbol(currency: string | null | undefined): string {
+  const code = normaliseCurrencyOrNull(currency) ?? DEFAULT_CURRENCY;
   const cached = currencySymbolCache.get(code);
   if (cached) return cached;
   const symbol =
@@ -130,7 +132,7 @@ export function formatRiskScore(score: number | null | undefined): string {
 }
 
 /** Merchant UI: US locale, honouring the record's currency code (default USD). */
-export function formatCurrency(amount: number, currency = 'USD'): string {
+export function formatCurrency(amount: number, currency: string | null | undefined = DEFAULT_CURRENCY): string {
   return getCurrencyFormatter(currency).format(amount);
 }
 
@@ -147,10 +149,25 @@ export function formatCurrencyCompact(amount: number, currency = 'USD'): string 
 }
 
 /** Null-safe currency formatter — returns '—' for null/undefined values. */
-export function formatCurrencyNullable(amount: number | string | null | undefined, currency = 'USD'): string {
+export function formatCurrencyNullable(
+  amount: number | string | null | undefined,
+  currency: string | null | undefined = DEFAULT_CURRENCY,
+): string {
   if (amount == null) return '—';
   const numericAmount = typeof amount === 'string' ? Number.parseFloat(amount) || 0 : amount;
   return formatCurrency(numericAmount, currency);
+}
+
+/** Format integer minor units without assuming a two-decimal currency. */
+export function formatMinorCurrencyNullable(
+  minor: number | string | null | undefined,
+  currency: string | null | undefined,
+): string {
+  const currencyCode = normaliseCurrencyOrNull(currency);
+  if (minor == null || !currencyCode) return '—';
+  const numericMinor = typeof minor === 'string' ? Number.parseInt(minor, 10) : minor;
+  if (!Number.isFinite(numericMinor)) return '—';
+  return formatCurrency(fromMinorUnits(numericMinor, currencyCode), currencyCode);
 }
 
 export function formatDate(date: Date | string): string {

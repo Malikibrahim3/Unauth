@@ -5795,6 +5795,7 @@ export type Database = {
           last_name: string | null
           linked_platform_customer_external_id: string | null
           merchant_id: string
+          merchant_customer_id: string | null
           note: string | null
           orders_count: number | null
           other_emails: Json
@@ -5817,6 +5818,7 @@ export type Database = {
           last_name?: string | null
           linked_platform_customer_external_id?: string | null
           merchant_id: string
+          merchant_customer_id?: string | null
           note?: string | null
           orders_count?: number | null
           other_emails?: Json
@@ -5839,6 +5841,7 @@ export type Database = {
           last_name?: string | null
           linked_platform_customer_external_id?: string | null
           merchant_id?: string
+          merchant_customer_id?: string | null
           note?: string | null
           orders_count?: number | null
           other_emails?: Json
@@ -5851,6 +5854,13 @@ export type Database = {
           verified_email?: boolean | null
         }
         Relationships: [
+          {
+            foreignKeyName: "source_customers_merchant_customer_id_fkey"
+            columns: ["merchant_customer_id"]
+            isOneToOne: false
+            referencedRelation: "merchant_customers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "source_customers_merchant_id_fkey"
             columns: ["merchant_id"]

@@ -104,7 +104,7 @@ export function SidebarGroupLabel({ label, collapsed }: { label: string; collaps
     <div className="mt-4 mb-1 px-3">
       <span
         className="block leading-none uppercase"
-        style={{ fontSize: 10, fontWeight: 500, color: 'var(--text-tertiary)', letterSpacing: '0.10em' }}
+        style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-tertiary)', letterSpacing: '0.10em' }}
       >
         {label}
       </span>

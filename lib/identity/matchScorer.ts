@@ -299,7 +299,7 @@ function computeChangedDatapoints(
 ): string[] {
   const changed: string[] = [];
 
-  for (const [signal, rowVal] of rowValues.entries()) {
+  for (const signal of rowValues.keys()) {
     // Skip if already matched
     if (matchedSignals.has(signal)) continue;
 

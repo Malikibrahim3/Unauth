@@ -22,7 +22,6 @@ import { evaluateClaimDecision } from '@/lib/claims/decision/evaluate';
 import { inferWidgetTicketClaimLike } from '@/lib/claims/decision/claimLikeness';
 import { resolveClaimForTicketDecision } from '@/lib/claims/decision/resolveClaim';
 import { fetchActiveMerchantRules } from '@/lib/rules/store';
-import { env } from '@/lib/utils/env';
 import { gorgiasWidgetLog, gorgiasWidgetLogError } from '@/lib/gorgias/widgetLog';
 import { computeWidgetReviewLevel } from '@/lib/gorgias/widgetTrustSignals';
 import { GORGIAS_FRAME_HEADERS, renderGorgiasWidgetHtml } from '@/lib/gorgias/renderWidgetHtml';

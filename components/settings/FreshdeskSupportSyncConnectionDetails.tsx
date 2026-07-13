@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, CheckCircle2, Circle, Copy, RefreshCw, Unplug } from 'lucide-react';
+import { CheckCircle2, Circle, RefreshCw, Unplug } from 'lucide-react';
 import type { FormEvent } from 'react';
 import Image from 'next/image';
 import { PanelCard, StatusBadge, statusBadgeVariantFor } from '@/components/ui';

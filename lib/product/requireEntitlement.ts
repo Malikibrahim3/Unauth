@@ -34,3 +34,14 @@ export async function enforceEntitlement(
     { status: 403 },
   );
 }
+
+/** Server-page equivalent of enforceEntitlement. */
+export async function merchantHasEntitlement(
+  client: SupabaseClient,
+  merchantId: string,
+  entitlement: Entitlement,
+): Promise<boolean> {
+  if (!shouldEnforceProductGates()) return true;
+  const tier = await getMerchantTier(client, merchantId);
+  return hasEntitlement(tier, entitlement);
+}

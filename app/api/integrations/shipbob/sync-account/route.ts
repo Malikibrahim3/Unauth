@@ -13,6 +13,7 @@ import { ensureMerchantContextForUser } from '@/lib/account/ensureMerchantContex
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { runShipBobAccountSync } from '@/lib/integrations/providers/shipbobSync';
 import { recordShipBobAudit } from '@/lib/integrations/providers/shipbobAudit';
+import { createScopedClient } from '@/lib/supabase/scoped';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -26,6 +27,7 @@ export async function POST() {
   if (denied) return denied;
   const context = await ensureMerchantContextForUser(serviceClient, user);
   if (!context?.merchantId) return NextResponse.json({ error: 'Merchant context missing.' }, { status: 400 });
+  const scopedClient = createScopedClient(context.merchantId, serviceClient);
 
   const { data: connection, error } = await serviceClient
     .from('merchant_integrations')
@@ -38,10 +40,9 @@ export async function POST() {
     return NextResponse.json({ error: 'ShipBob is not connected.' }, { status: 400 });
   }
 
-  const { data: account } = await serviceClient
+  const { data: account } = await scopedClient
     .from('source_accounts')
     .select('id')
-    .eq('merchant_id', context.merchantId)
     .eq('connection_id', connection.id)
     .maybeSingle();
 

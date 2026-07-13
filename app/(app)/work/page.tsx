@@ -1,80 +1,174 @@
-import { redirect } from 'next/navigation';
-import Link from 'next/link';
-import { createClient, createServiceClient } from '@/lib/supabase/server';
-import { PERMISSIONS, requirePermission } from '@/lib/permissions';
-import { TABLES } from '@/lib/supabase/tables';
-import { WorkbenchPage } from '@/components/ui';
-import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
-import { WorkQueue, type WorkQueueItem } from '@/components/work/WorkQueue';
-import { ExceptionQueue } from '@/components/exceptions/ExceptionQueue';
-import { countOpenExceptions } from '@/lib/exceptions/store';
-import { AutomationCompletionCard } from '@/components/automation/AutomationCompletionCard';
+import { redirect } from "next/navigation";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { PERMISSIONS, requirePermission } from "@/lib/permissions";
+import { TABLES } from "@/lib/supabase/tables";
+import { WorkbenchPage } from "@/components/ui";
+import { WorkQueue, type WorkQueueItem } from "@/components/work/WorkQueue";
+import { countOpenExceptions, listExceptions } from "@/lib/exceptions/store";
 
-export const dynamic = 'force-dynamic';
-
-type WorkTaskRow = {
+export const dynamic = "force-dynamic";
+type TaskRow = {
   id: string;
   title: string;
   description: string | null;
   owner_role: string | null;
+  owner_user_id: string | null;
   status: string;
   priority: string;
   due_at: string | null;
+  created_at: string;
+  source: string;
   support_payout_case_id: string | null;
+  loss_case_id: string | null;
+  recovery_case_id: string | null;
   blocking_reason: string | null;
 };
 
-export default async function WorkPage() {
+export default async function WorkPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ view?: string; page?: string }>;
+}) {
   const userClient = createClient();
-  const { data: { user } } = await userClient.auth.getUser();
-  if (!user) redirect('/login');
-
+  const {
+    data: { user },
+  } = await userClient.auth.getUser();
+  if (!user) redirect("/login");
   const serviceClient = createServiceClient();
-  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_INBOX);
-  if (denied) redirect('/dashboard');
-
-  const { data } = await serviceClient
+  const { denied, ctx } = await requirePermission(
+    serviceClient,
+    user.id,
+    PERMISSIONS.VIEW_INBOX,
+  );
+  if (denied) redirect("/dashboard");
+  const params = await searchParams;
+  const view = params.view ?? "open";
+  const page = Math.max(1, Number(params.page) || 1);
+  const pageSize = 100;
+  let query = serviceClient
     .from(TABLES.WORK_TASKS)
-    .select('id,title,description,owner_role,status,priority,due_at,support_payout_case_id,blocking_reason')
-    .eq('merchant_id', ctx.merchantId)
-    .order('due_at', { ascending: true, nullsFirst: false })
-    .limit(500);
-  const rows = (data ?? []) as WorkTaskRow[];
-  const items: WorkQueueItem[] = rows.map((row) => ({
+    .select(
+      "id,title,description,owner_role,owner_user_id,status,priority,due_at,created_at,source,support_payout_case_id,loss_case_id,recovery_case_id,blocking_reason",
+      { count: "exact" },
+    )
+    .eq("merchant_id", ctx.merchantId)
+    .order("due_at", { ascending: true, nullsFirst: false });
+  if (view === "completed") query = query.eq("status", "completed");
+  else query = query.neq("status", "completed").neq("status", "cancelled");
+  if (view === "mine") query = query.eq("owner_user_id", user.id);
+  if (view === "unassigned") query = query.is("owner_user_id", null);
+  if (view === "blocked") query = query.eq("status", "blocked");
+  if (view === "evidence-needed")
+    query = query.ilike("blocking_reason", "%evidence%");
+  if (view === "decision-needed")
+    query = query.or("title.ilike.%decision%,blocking_reason.ilike.%decision%");
+  if (view === "due-today") {
+    const start = new Date();
+    start.setUTCHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setUTCDate(end.getUTCDate() + 1);
+    query = query
+      .gte("due_at", start.toISOString())
+      .lt("due_at", end.toISOString());
+  }
+  const taskResult =
+    view === "integration-exceptions"
+      ? { data: [], count: 0 }
+      : await query.range((page - 1) * pageSize, page * pageSize - 1);
+  const tasks: WorkQueueItem[] = ((taskResult.data ?? []) as TaskRow[]).map(
+    (row) => ({
+      id: row.id,
+      kind: "task",
+      title: row.title,
+      description: row.description,
+      ownerRole: row.owner_role,
+      ownerUserId: row.owner_user_id,
+      status: row.status,
+      priority: row.priority,
+      dueAt: row.due_at,
+      createdAt: row.created_at,
+      supportPayoutCaseId: row.support_payout_case_id,
+      objectHref: row.recovery_case_id
+        ? `/recoveries/${row.recovery_case_id}`
+        : row.loss_case_id
+          ? `/losses/${row.loss_case_id}`
+          : row.support_payout_case_id
+            ? `/claims/${row.support_payout_case_id}`
+            : null,
+      objectLabel: row.recovery_case_id
+        ? "Recovery"
+        : row.loss_case_id
+          ? "Loss"
+          : row.support_payout_case_id
+            ? `Case ${row.support_payout_case_id.slice(0, 8)}`
+            : "Task",
+      blockingReason: row.blocking_reason,
+      source: row.source,
+    }),
+  );
+  const includeExceptions =
+    view === "open" || view === "integration-exceptions";
+  const [openExceptionCount, exceptionRows] = await Promise.all([
+    countOpenExceptions(serviceClient, ctx.merchantId),
+    includeExceptions
+      ? listExceptions(serviceClient, ctx.merchantId, {
+          status: "open",
+          limit: pageSize,
+        })
+      : Promise.resolve([]),
+  ]);
+  const exceptions: WorkQueueItem[] = exceptionRows.map((row) => ({
     id: row.id,
+    kind: "exception",
     title: row.title,
-    description: row.description,
-    ownerRole: row.owner_role,
+    description: row.detail,
+    ownerRole: row.assigned_to ? "assigned" : null,
+    ownerUserId: row.assigned_to,
     status: row.status,
-    priority: row.priority,
-    dueAt: row.due_at,
+    priority: "high",
+    dueAt: null,
+    createdAt: row.created_at,
     supportPayoutCaseId: row.support_payout_case_id,
-    blockingReason: row.blocking_reason,
+    objectHref: row.support_payout_case_id
+      ? `/claims/${row.support_payout_case_id}`
+      : null,
+    objectLabel: row.support_payout_case_id
+      ? `Case ${row.support_payout_case_id.slice(0, 8)}`
+      : "Integration exception",
+    blockingReason: row.exception_type.replaceAll("_", " "),
+    source: row.source_system ?? "automation",
   }));
-
-  const open = items.filter((t) => t.status === 'open').length;
-  const blocked = items.filter((t) => t.status === 'blocked').length;
-  const completed = items.filter((t) => t.status === 'completed').length;
-  const openExceptions = await countOpenExceptions(serviceClient, ctx.merchantId);
-
+  const items =
+    view === "integration-exceptions" ? exceptions : [...tasks, ...exceptions];
   return (
     <WorkbenchPage
       eyebrow="Operations"
       title="Work"
-      subtitle="Every open task across payout cases, losses, and recoveries — with its owner, deadline, and what it's blocked on."
-      navItems={WORKBENCH_NAV_ITEMS}
-      activeNavKey="work"
+      subtitle="One queue for payout decisions, evidence tasks, recovery chases, and automation exceptions."
       kpiItems={[
-        { label: 'Open tasks', value: open.toLocaleString(), hint: 'Awaiting action' },
-        { label: 'Blocked', value: blocked.toLocaleString(), hint: 'Waiting on evidence or a decision' },
-        { label: 'Completed', value: completed.toLocaleString(), hint: 'Closed out' },
-        { label: 'Exceptions', value: openExceptions.toLocaleString(), hint: 'Focused merchant decisions' },
+        {
+          label: "Matching work",
+          value: (
+            (taskResult.count ?? 0) +
+            (includeExceptions ? openExceptionCount : 0)
+          ).toLocaleString(),
+          hint: "Server-filtered view",
+        },
+        {
+          label: "Open exceptions",
+          value: openExceptionCount.toLocaleString(),
+          hint: "Merchant decisions required",
+        },
       ]}
-      main={<div className="space-y-8"><AutomationCompletionCard /><WorkQueue items={items} nowMs={Date.now()} /><section><div className="mb-3 flex items-baseline justify-between"><h2 className="text-base font-semibold">Exception queue</h2><Link href="/exceptions" className="text-sm underline">Open queue</Link></div><ExceptionQueue compact /></section></div>}
-      footer={
-        <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-          Tasks are created by the accountability workflow and recovery routing. Completing a task records an outcome and, where money is recovered, updates the financial ledger.
-        </p>
+      main={
+        <WorkQueue
+          items={items}
+          total={
+            (taskResult.count ?? 0) +
+            (includeExceptions ? openExceptionCount : 0)
+          }
+          view={view}
+        />
       }
     />
   );

@@ -1,6 +1,6 @@
 import type { MatchedCondition, RuleEvaluationResult } from '@/lib/rules-engine';
 import { OPERATOR_LABELS } from '@/lib/rules-engine';
-import { PAYOUT_RECOMMENDATION_LABELS, payoutRecommendationLabel, resolvePayoutRecommendation } from '@/lib/payouts/recommendation';
+import { payoutRecommendationLabel, resolvePayoutRecommendation } from '@/lib/payouts/recommendation';
 import { ACTION_LABELS } from '@/lib/rules/summary';
 import type { SupportPayoutCase } from '@/lib/payouts/types';
 import { summarizeCondition } from '@/lib/rules/summary';

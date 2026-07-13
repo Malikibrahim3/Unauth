@@ -68,6 +68,9 @@ const COLUMN_SCOPES: Record<string, TenantScope> = {
   record_match_resolutions: { kind: 'column', column: 'merchant_id' },
   case_financial_entries: { kind: 'column', column: 'merchant_id' },
   case_financial_summaries: { kind: 'column', column: 'merchant_id' },
+  work_tasks: { kind: 'column', column: 'merchant_id' },
+  merchant_rule_versions: { kind: 'column', column: 'merchant_id' },
+  workflow_definitions: { kind: 'column', column: 'merchant_id' },
   // ── Canonical entity model (Phase 3). All have a merchant_id column. ──
   merchant_customers: { kind: 'column', column: 'merchant_id' },
   source_order_lines: { kind: 'column', column: 'merchant_id' },

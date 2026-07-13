@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { DM_Mono, Inter, Inter_Tight } from 'next/font/google';
-import SentryInit from '@/components/common/SentryInit';
 import ThemeBootstrap from '@/components/common/ThemeBootstrap';
 import ScrollToTop from '@/components/navigation/ScrollToTop';
 import './globals.css';
@@ -67,7 +66,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <body className="font-sans antialiased">
         <ThemeBootstrap />
-        <SentryInit />
         <ScrollToTop />
         {children}
       </body>

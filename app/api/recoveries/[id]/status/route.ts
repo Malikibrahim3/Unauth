@@ -9,9 +9,10 @@ import { RECOVERY_CASE_STATUSES } from '@/lib/recoveries/types';
 export const dynamic = 'force-dynamic';
 
 const actionSchema = z.object({
-  action: z.enum(['ready', 'submitted', 'chased', 'approved', 'rejected', 'paid', 'closed_unrecoverable']),
+  action: z.enum(['ready', 'submitted', 'chased', 'approved', 'partially_approved', 'rejected', 'appealed', 'paid', 'closed_unrecoverable']),
   note: z.string().trim().max(2_000).optional(),
   amountRecovered: z.number().finite().min(0).optional(),
+  externalReference: z.string().trim().max(240).optional(),
   idempotencyKey: z.string().trim().min(8).max(200),
 });
 
@@ -19,7 +20,9 @@ const actionStatus: Record<Exclude<z.infer<typeof actionSchema>['action'], 'chas
   ready: 'ready_to_submit',
   submitted: 'submitted',
   approved: 'approved',
+  partially_approved: 'partially_approved',
   rejected: 'rejected',
+  appealed: 'appealed',
   paid: 'paid',
   closed_unrecoverable: 'closed_unrecoverable',
 };
@@ -41,7 +44,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const parsed = actionSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: 'Invalid recovery action', details: parsed.error.flatten() }, { status: 400 });
 
-  const { action, note, amountRecovered, idempotencyKey } = parsed.data;
+  const { action, note, amountRecovered, externalReference, idempotencyKey } = parsed.data;
+  if (['submitted', 'rejected', 'appealed', 'closed_unrecoverable'].includes(action) && !note?.trim()) {
+    return NextResponse.json({ error: 'A note is required for this recovery action.' }, { status: 400 });
+  }
+  if (['partially_approved', 'paid'].includes(action) && amountRecovered == null) {
+    return NextResponse.json({ error: 'A cumulative recovered amount is required.' }, { status: 400 });
+  }
   if (action === 'chased') {
     const updated = await markRecoveryCaseChased(serviceClient, { merchantId: ctx.merchantId, recoveryCaseId: id, note, idempotencyKey });
     return NextResponse.json({ recoveryCase: updated });
@@ -52,9 +61,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     recoveryCaseId: id,
     status: actionStatus[action],
     note,
-    amountRecovered: action === 'paid' ? amountRecovered : undefined,
+    amountRecovered: action === 'paid' || action === 'partially_approved' ? amountRecovered : undefined,
+    rejectionReason: action === 'rejected' ? note : undefined,
     idempotencyKey,
   });
-  return NextResponse.json({ recoveryCase: updated });
+  return NextResponse.json({ recoveryCase: updated, externalReference: externalReference ?? null });
 
 }

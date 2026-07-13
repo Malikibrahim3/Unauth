@@ -8,6 +8,7 @@ import { getRecoveryCase } from '@/lib/recoveries/store';
 import { RECOVERY_STATUS_LABELS, RECOVERY_OWNER_LABELS, type RecoveryCaseEvent } from '@/lib/recoveries/types';
 import { RECOVERY_TYPE_LABELS } from '@/lib/partners/types';
 import { formatCurrencyNullable } from '@/lib/utils/format';
+import { recoveryOutstanding, recoverySoughtAmount } from '@/lib/recoveries/amounts';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,8 +45,18 @@ export default async function RecoveryDetailPage({ params }: Props) {
     .eq('recovery_case_id', id)
     .order('created_at', { ascending: false });
   const events = (eventRows ?? []) as RecoveryCaseEvent[];
+  const [{ data: correspondenceRows }, { data: taskRows }] = await Promise.all([
+    recovery.loss_case_id ? serviceClient.from(TABLES.EXTERNAL_CORRESPONDENCE).select('id,direction,channel,source_provider,source_record_id,subject,sent_at,received_at,source_url').eq('merchant_id', ctx.merchantId).eq('loss_case_id', recovery.loss_case_id).order('created_at', { ascending: false }) : Promise.resolve({ data: [] }),
+    serviceClient.from(TABLES.WORK_TASKS).select('id,title,status,priority,owner_user_id,due_at,blocking_reason').eq('merchant_id', ctx.merchantId).eq('recovery_case_id', id).order('updated_at', { ascending: false }),
+  ]);
 
   const missing = recovery.evidence_missing ?? [];
+  const sought = recoverySoughtAmount(recovery);
+  const recovered = recovery.amount_recovered ?? 0;
+  const writtenOff = recovery.status === 'closed_unrecoverable'
+    ? Math.max(0, sought - recovered)
+    : 0;
+  const outstanding = recoveryOutstanding({ sought, recovered, writtenOff });
 
   return (
     <WorkbenchPage
@@ -56,8 +67,9 @@ export default async function RecoveryDetailPage({ params }: Props) {
       activeNavKey="recoveries"
       kpiItems={[
         { label: 'Merchant loss', value: formatCurrencyNullable(recovery.merchant_loss_amount, recovery.currency) ?? '-', hint: 'Recorded loss' },
-        { label: 'Estimated recovery', value: formatCurrencyNullable(recovery.estimated_recoverable_max ?? null, recovery.currency) ?? '-', hint: 'Upper estimate' },
+        { label: 'Amount pursued', value: formatCurrencyNullable(sought, recovery.currency) ?? '-', hint: 'Bounded by the recovery estimate' },
         { label: 'Recovered', value: formatCurrencyNullable(recovery.amount_recovered ?? null, recovery.currency) ?? '-', hint: 'Synced outcome' },
+        { label: 'Outstanding', value: formatCurrencyNullable(outstanding, recovery.currency) ?? '-', hint: writtenOff > 0 ? 'Closed balance written off' : 'Pursued minus recovered' },
         { label: 'Evidence gaps', value: missing.length.toLocaleString(), hint: 'Missing items' },
       ]}
       main={
@@ -77,8 +89,8 @@ export default async function RecoveryDetailPage({ params }: Props) {
                 Open payout case →
               </a>
               {recovery.loss_case_id ? (
-                <a href="/losses" className="rounded-md px-2.5 py-1 no-underline" style={{ border: '1px solid var(--border-subtle, rgba(0,0,0,0.08))', color: 'var(--text-secondary)' }}>
-                  View loss ledger →
+                <a href={`/losses/${recovery.loss_case_id}`} className="rounded-md px-2.5 py-1 no-underline" style={{ border: '1px solid var(--border-subtle, rgba(0,0,0,0.08))', color: 'var(--text-secondary)' }}>
+                  Open linked loss →
                 </a>
               ) : null}
             </div>
@@ -96,6 +108,9 @@ export default async function RecoveryDetailPage({ params }: Props) {
               </ul>
             </section>
           ) : null}
+
+          <section className="rounded-lg p-4" style={{ border: '1px solid var(--border-subtle, rgba(0,0,0,0.08))' }}><h2 className="mb-3 text-sm font-semibold">Correspondence</h2>{(correspondenceRows ?? []).length ? <ul className="space-y-2">{(correspondenceRows ?? []).map((item: { id: string; direction: string; source_provider: string; source_record_id: string; subject: string | null; source_url: string | null }) => <li key={item.id} className="text-sm"><span className="font-medium capitalize">{item.direction}</span> · {item.source_provider} · {item.subject ?? item.source_record_id}{item.source_url ? <a className="ml-2 underline" href={item.source_url}>Source</a> : null}</li>)}</ul> : <p className="text-sm text-[var(--text-tertiary)]">No external correspondence is linked.</p>}</section>
+          <section className="rounded-lg p-4" style={{ border: '1px solid var(--border-subtle, rgba(0,0,0,0.08))' }}><h2 className="mb-3 text-sm font-semibold">Tasks</h2>{(taskRows ?? []).length ? <ul className="space-y-2">{(taskRows ?? []).map((task: { id: string; title: string; status: string; due_at: string | null }) => <li key={task.id} className="text-sm"><span className="font-medium">{task.title}</span> · {task.status.replaceAll('_', ' ')}{task.due_at ? ` · due ${task.due_at.slice(0, 10)}` : ''}</li>)}</ul> : <p className="text-sm text-[var(--text-tertiary)]">No recovery tasks are linked.</p>}</section>
 
           <section className="rounded-lg p-4" style={{ border: '1px solid var(--border-subtle, rgba(0,0,0,0.08))' }}>
             <h2 className="mb-3 text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Activity</h2>

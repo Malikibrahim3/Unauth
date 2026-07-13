@@ -33,7 +33,6 @@
  *   - BIN+last4 + postcode alone NEVER produces a cluster entry (no second anchor).
  */
 
-import { createHash } from 'node:crypto';
 import { normaliseEmail, normaliseAddress as normaliseAddressFull } from '@/lib/identity/normalise';
 import {
   deterministicClusterId,
@@ -56,9 +55,6 @@ import { hasValue } from './signals';
 
 /** Linker signals that are "strong" for expansion purposes (per spec). */
 const STRONG_SIGNALS = new Set<LinkerSignal>(['phone', 'device', 'account', 'email', 'card']);
-
-/** Linker signals that are "medium" for expansion purposes (per spec). */
-const MEDIUM_SIGNALS = new Set<LinkerSignal>(['ip', 'postcode']);
 
 /**
  * How many distinct order IDs must share an IP before we treat it as a

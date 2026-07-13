@@ -1,0 +1,5 @@
+import { evaluateRules, type MerchantRule, type RuleCondition, type RuleSignalBag } from '@/lib/rules-engine';
+export type RuleVersionStatus='draft'|'published'|'retired';
+export function requiredFields(conditions:RuleCondition[]):string[]{return [...new Set(conditions.map(c=>c.field))].sort()}
+export function findRuleConflicts(rule:Pick<MerchantRule,'id'|'priority'|'conditions'|'action'>,others:MerchantRule[]){return others.filter(other=>other.id!==rule.id&&other.priority===rule.priority&&JSON.stringify(other.conditions)===JSON.stringify(rule.conditions)&&other.action!==rule.action).map(other=>({ruleId:other.id,name:other.name,reason:'Same priority and conditions produce a different recommended action'}));}
+export function simulateRule(rule:MerchantRule,signals:RuleSignalBag){const result=evaluateRules(signals,[{...rule,is_active:true}]);return{matched:result.rule_id===rule.id,recommendedAction:result.recommendation,matchedConditions:result.matched_conditions,writesPerformed:0 as const};}

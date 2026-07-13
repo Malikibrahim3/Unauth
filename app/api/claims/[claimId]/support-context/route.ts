@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(
   _request: NextRequest,
-  context: { params: Promise<{ claimId: string }> | { claimId: string } }
+  context: { params: Promise<{ claimId: string }> }
 ) {
   const params = await context.params;
   const claimId = params.claimId;

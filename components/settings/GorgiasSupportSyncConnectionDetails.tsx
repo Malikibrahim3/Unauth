@@ -155,6 +155,11 @@ export function GorgiasSupportSyncConnectionDetails({
             <span className="truncate">{connection.webhook_url}</span>
             <button
               type="button"
+              aria-label={
+                state.copiedField === 'webhookUrlConnected'
+                  ? 'Webhook URL copied'
+                  : 'Copy webhook URL'
+              }
               onClick={() => onCopy('webhookUrlConnected', connection.webhook_url)}
               className="shrink-0 ml-2"
               style={{ color: 'var(--text-secondary)' }}

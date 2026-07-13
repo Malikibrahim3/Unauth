@@ -1,5 +1,5 @@
 import type { ContextCreditSnapshot, ContextUnlockType } from '@/lib/billing/contextCredits';
-import { canSelfServeTopUp, PLANS, TOP_UP_CREDITS, TOP_UP_PRICE_GBP, type PlanId } from '@/lib/billing/plans';
+import { canSelfServeTopUp, TOP_UP_CREDITS, TOP_UP_PRICE_GBP, type PlanId } from '@/lib/billing/plans';
 import type { Tier } from '@/lib/billing/tiers';
 
 /** Warn in widget / app when this share of the monthly allowance is consumed. */
@@ -65,7 +65,6 @@ export function buildCreditUsageWidgetFields(
   const topUp = getContextCreditTopUpOffer(snapshot.tier);
   const topUpUrl = topUp ? `${base}${topUp.settingsPath}?action=topup` : `${base}/#pricing`;
   const topUpLabel = topUp?.label ?? 'View upgrade options';
-  const planName = PLANS[snapshot.tier as PlanId]?.name ?? snapshot.tier;
 
   if (band === 'warning') {
     const totalPool = (snapshot.allowance ?? 1) + snapshot.topupRemaining;

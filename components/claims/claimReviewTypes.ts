@@ -118,6 +118,7 @@ export type ClaimRecord = {
   order_ref?: string | null;
   source_ticket_ref?: string | null;
   amount_at_risk?: number | null;
+  requested_action?: string | null;
   currency?: string | null;
   first_viewed_at?: string | null;
   assigned_to?: string | null;

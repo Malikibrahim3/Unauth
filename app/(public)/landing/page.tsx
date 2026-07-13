@@ -3,11 +3,7 @@ import FoundationNav from './_components/foundation/FoundationNav';
 import FoundationHero from './_components/foundation/FoundationHero';
 import FoundationHero2 from './_components/foundation/FoundationHero2';
 import {
-  AhaStrip,
   ClaimGateHero,
-  CustomerHistorySection,
-  MonthlyViewSection,
-  ProblemSection,
 } from './_components/OutcomeLandingBody';
 import FoundationFinalCta from './_components/foundation/FoundationFinalCta';
 import FoundationFooter from './_components/foundation/FoundationFooter';
@@ -15,10 +11,6 @@ import dynamic from 'next/dynamic';
 import foundationStyles from './_components/foundation/foundation.module.css';
 
 const UnauthLinearClaimHero = dynamic(() => import('@/components/UnauthLinearClaimHero'));
-const UnauthClaimsRoadmapSection = dynamic(() => import('@/components/UnauthClaimsRoadmapSection'));
-const UnauthClaimIntelligenceHero = dynamic(
-  () => import('@/components/UnauthClaimIntelligenceHero'),
-);
 
 export const metadata: Metadata = {
   title: 'Unauth — Post-Purchase Loss Recovery',

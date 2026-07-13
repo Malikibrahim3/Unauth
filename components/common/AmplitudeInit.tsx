@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useRef } from 'react';
-import { initAmplitude, identify } from '@/lib/analytics/amplitude';
+import { useEffect } from "react";
+import { initAmplitude, identify } from "@/lib/analytics/amplitude";
 
 interface Props {
   merchantId: string | null;
@@ -20,20 +20,12 @@ function ensureAmplitudeInitialized() {
   }
 }
 
-export default function AmplitudeInit({
-  merchantId,
-  accountTier,
-}: Props) {
-  const identifiedRef = useRef<string | null>(null);
-  ensureAmplitudeInitialized();
-
-  const identifyKey = merchantId ? `${merchantId}:${accountTier ?? ''}` : null;
-  if (identifyKey && identifiedRef.current !== identifyKey) {
-    identifiedRef.current = identifyKey;
-    identify(merchantId!, {
-      accountTier: accountTier ?? undefined,
-    });
-  }
+export default function AmplitudeInit({ merchantId, accountTier }: Props) {
+  useEffect(() => {
+    ensureAmplitudeInitialized();
+    if (!merchantId) return;
+    identify(merchantId, { accountTier: accountTier ?? undefined });
+  }, [accountTier, merchantId]);
 
   return null;
 }

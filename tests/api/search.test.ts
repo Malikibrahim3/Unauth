@@ -74,14 +74,14 @@ describe('GET /api/search (v2 unified search)', () => {
     ]));
   });
 
-  it('returns an order result and links to its customer', async () => {
+  it('returns an order result and links to the first-class order detail', async () => {
     setup({
       source_orders: [{ id: 'so-1', order_number: '1042', email: 'x@y.z', total_price: 120, currency: 'GBP', source_customer_id: 'sc-9' }],
     });
     const res = await GET(req('1042', '&types=orders'));
     const body = await res.json();
     expect(body.results).toEqual(expect.arrayContaining([
-      expect.objectContaining({ type: 'order', id: 'so-1', href: '/customers/sc-9' }),
+      expect.objectContaining({ type: 'order', id: 'so-1', href: '/orders/so-1' }),
     ]));
   });
 

@@ -1,12 +1,12 @@
-import { type CSSProperties, type ReactNode } from 'react';
-import { cn } from '@/lib/utils';
+import { type CSSProperties, type ReactNode } from "react";
+import { cn } from "@/lib/utils";
 
 interface SectionCardProps {
   title: string;
   description?: ReactNode;
   actions?: ReactNode;
   children: ReactNode;
-  density?: 'default' | 'compact';
+  density?: "default" | "compact";
   id?: string;
   className?: string;
   style?: CSSProperties;
@@ -17,53 +17,55 @@ export function SectionCard({
   description,
   actions,
   children,
-  density = 'default',
+  density = "default",
   id,
   className,
   style,
 }: SectionCardProps) {
-  const bodyPadding = density === 'compact' ? 'p-3' : 'p-4';
+  const bodyPadding = density === "compact" ? "p-3" : "p-4";
 
   return (
     <section
       id={id}
-      className={cn('overflow-hidden', className)}
+      className={cn("overflow-hidden", className)}
       style={{
-        background: 'var(--surface)',
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--radius-md)',
-        boxShadow: 'var(--shadow-1)',
+        background: "var(--surface)",
+        border: "1px solid var(--border)",
+        borderRadius: "var(--radius-md)",
+        boxShadow: "var(--shadow-1)",
         ...style,
       }}
     >
       {/* Header */}
       <div
-        className="flex items-center justify-between gap-3"
+        className="flex flex-wrap items-start justify-between gap-3 sm:items-center"
         style={{
-          borderBottom: '1px solid var(--border-muted)',
-          padding: 'var(--space-3) var(--space-4)',
+          borderBottom: "1px solid var(--border-muted)",
+          padding: "var(--space-3) var(--space-4)",
         }}
       >
-        <div>
-          <div className="text-h3" style={{ color: 'var(--text-primary)' }}>
+        <div className="min-w-0 flex-1">
+          <div className="text-h3" style={{ color: "var(--text-primary)" }}>
             {title}
           </div>
           {description && (
             <p
-              className="mt-1 truncate text-small"
-              style={{ color: 'var(--text-secondary)' }}
+              className="mt-1 text-small"
+              style={{ color: "var(--text-secondary)" }}
             >
               {description}
             </p>
           )}
         </div>
         {actions && (
-          <div className="flex items-center gap-2 shrink-0">{actions}</div>
+          <div className="flex max-w-full shrink-0 flex-wrap items-center gap-2">
+            {actions}
+          </div>
         )}
       </div>
 
       {/* Body */}
-      <div className={cn(bodyPadding, 'bg-[var(--surface)]')}>{children}</div>
+      <div className={cn(bodyPadding, "bg-[var(--surface)]")}>{children}</div>
     </section>
   );
 }

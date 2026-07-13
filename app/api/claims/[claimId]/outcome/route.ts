@@ -46,7 +46,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   const parsed = createOutcomeSchema.safeParse({ ...body as object, claim_id: claimId });
-  if (!parsed.success) return NextResponse.json({ error: 'Invalid outcome payload' }, { status: 400 });
+  if (!parsed.success) return NextResponse.json({ error: 'Invalid outcome payload', issues: parsed.error.flatten() }, { status: 400 });
 
   const { data: claimRecommendationRow } = await serviceClient
     .from(TABLES.MERCHANT_CLAIMS)
@@ -162,7 +162,25 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         });
       }
     }
-    return NextResponse.json({ outcome: { id: outcome.id, claim_id: outcome.claim_id, decision: outcome.decision, outcome: outcome.outcome } });
+    let consequenceRows = { financialEntries: [] as unknown[], lossCases: [] as unknown[], recoveryCases: [] as unknown[] };
+    try {
+      const [financialEntries, lossCases, recoveryCases] = await Promise.all([
+        serviceClient.from(TABLES.CASE_FINANCIAL_ENTRIES).select('id,state,amount_minor,currency,effective_at').eq('merchant_id', ctx.merchantId).eq('support_payout_case_id', claimId),
+        serviceClient.from(TABLES.LOSS_CASES).select('id,status,currency,order_value_minor,refund_value_minor,chargeback_value_minor,estimated_recovery_minor,financial_state').eq('merchant_id', ctx.merchantId).eq('support_payout_case_id', claimId),
+        serviceClient.from(TABLES.RECOVERY_CASES).select('id,status,merchant_loss_amount,eligible_loss_amount,amount_recovered,currency').eq('merchant_id', ctx.merchantId).eq('support_payout_case_id', claimId),
+      ]);
+      consequenceRows = { financialEntries: financialEntries.data ?? [], lossCases: lossCases.data ?? [], recoveryCases: recoveryCases.data ?? [] };
+    } catch (consequenceError) {
+      console.warn('claim_decision_consequence_read_failed', { claimId, merchantId: ctx.merchantId, consequenceError });
+    }
+    return NextResponse.json({
+      outcome: { id: outcome.id, claim_id: outcome.claim_id, decision: outcome.decision, outcome: outcome.outcome },
+      consequences: {
+        financial_entries: consequenceRows.financialEntries,
+        loss_cases: consequenceRows.lossCases,
+        recovery_cases: consequenceRows.recoveryCases,
+      },
+    });
   } catch (err) {
     if (err instanceof CaseTransitionRejectedError || err instanceof CaseVersionConflictError) {
       return NextResponse.json({ error: 'Illegal claim status transition.' }, { status: 409 });

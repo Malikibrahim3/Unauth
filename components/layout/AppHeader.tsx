@@ -10,6 +10,8 @@ import { useBreadcrumbOverride } from './BreadcrumbOverrideContext';
 import { MerchantEnvChip } from './MerchantEnvChip';
 import { AvatarMenu } from './AvatarMenu';
 import { ContextCreditsBadge } from './ContextCreditsBadge';
+import { WorkspaceSwitcher, type WorkspaceOption } from './WorkspaceSwitcher';
+import type { Permission } from '@/lib/permissions';
 
 export interface BreadcrumbSegment {
   label: string;
@@ -30,6 +32,10 @@ interface AppHeaderProps {
   isDemo?: boolean;
   /** Authenticated user email for the avatar menu */
   userEmail?: string | null;
+  workspaces?: WorkspaceOption[];
+  activeMerchantId?: string | null;
+  unreadCount?: number;
+  permissions?: Permission[];
 }
 
 /**
@@ -45,6 +51,10 @@ export default function AppHeader({
   environment,
   isDemo,
   userEmail,
+  workspaces = [],
+  activeMerchantId,
+  unreadCount = 0,
+  permissions = [],
 }: AppHeaderProps) {
   const pathname = usePathname();
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -169,7 +179,11 @@ export default function AppHeader({
       <ContextCreditsBadge />
 
       {/* MerchantEnvChip - left of search */}
-      <MerchantEnvChip merchantName={merchantName ?? null} environment={environment} isDemo={isDemo} />
+      {workspaces.length > 1 ? (
+        <WorkspaceSwitcher workspaces={workspaces} activeMerchantId={activeMerchantId ?? null} />
+      ) : (
+        <MerchantEnvChip merchantName={merchantName ?? null} environment={environment} isDemo={isDemo} />
+      )}
 
       {/* ⌘K trigger */}
       <button
@@ -194,16 +208,17 @@ export default function AppHeader({
 
       <Link
         href="/notifications"
-        aria-label="Notifications"
+        aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
         className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
         style={{ borderColor: 'var(--border)', background: 'var(--surface-sunken)' }}
       >
         <Bell size={14} aria-hidden="true" />
+        {unreadCount > 0 ? <span className="sr-only">{unreadCount} unread</span> : null}
       </Link>
 
       <AvatarMenu email={userEmail} />
 
-      <CommandPalette isOpen={paletteOpen} onClose={closePalette} />
+      <CommandPalette isOpen={paletteOpen} onClose={closePalette} permissions={permissions} />
     </header>
   );
 }

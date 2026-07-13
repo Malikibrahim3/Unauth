@@ -25,3 +25,15 @@ export async function markNotificationRead(client: SupabaseClient, merchantId: s
   if (error) throw new Error(`notification_read_update_failed: ${error.message}`);
   return data;
 }
+
+export async function markAllNotificationsRead(client: SupabaseClient, merchantId: string, userId: string) {
+  const readAt = new Date().toISOString();
+  const { data, error } = await client.from(TABLES.NOTIFICATIONS)
+    .update({ read_at: readAt })
+    .eq('merchant_id', merchantId)
+    .eq('recipient_user_id', userId)
+    .is('read_at', null)
+    .select('id');
+  if (error) throw new Error(`notifications_read_all_failed: ${error.message}`);
+  return { updated: data?.length ?? 0, readAt };
+}

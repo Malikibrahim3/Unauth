@@ -1,45 +1,5 @@
-import { Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { Button } from './Button';
-
-interface SkeletonProps {
-  className?: string;
-  style?: React.CSSProperties;
-}
-
-function Skeleton({ className, style }: SkeletonProps) {
-  return (
-    <div
-      className={cn('skeleton rounded-[var(--radius-1)]', className)}
-      style={style}
-      aria-hidden="true"
-    />
-  );
-}
-
-interface LoadingStateProps {
-  rows?: number;
-  className?: string;
-}
-
-/** Full-section loading placeholder using skeleton rows */
-function LoadingState({ rows = 6, className }: LoadingStateProps) {
-  return (
-    <div className={cn('space-y-[var(--space-3)] p-[var(--space-5)]', className)} aria-busy="true" aria-label="Loading…">
-      {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className="flex items-center gap-[var(--space-4)]">
-          <Skeleton className="w-8 h-8 rounded-full shrink-0" />
-          <div className="flex-1 space-y-[var(--space-2)]">
-            <Skeleton style={{ width: `${55 + (i % 3) * 15}%`, height: 14 }} />
-            <Skeleton style={{ width: `${35 + (i % 4) * 10}%`, height: 12 }} />
-          </div>
-          <Skeleton style={{ width: 60, height: 24 }} className="rounded-[var(--radius-1)]" />
-        </div>
-      ))}
-    </div>
-  );
-}
 
 interface ErrorBoundaryUIProps {
   error: Error & { digest?: string };
@@ -111,9 +71,4 @@ export function ErrorBoundaryUI({
       </div>
     </div>
   );
-}
-
-/** Inline spinner - buttons and row-level operations only */
-function Spinner({ size = 16, className }: { size?: number; className?: string }) {
-  return <Loader2 className={cn('animate-spin', className)} size={size} aria-hidden="true" />;
 }

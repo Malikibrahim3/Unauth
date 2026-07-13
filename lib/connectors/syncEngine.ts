@@ -32,6 +32,8 @@ export type SyncJobState = {
   maxAttempts: number;
   nextAttemptAt: string | null;
   lastErrorCode: string | null;
+  processedRecords?: number;
+  failedRecords?: number;
 };
 
 /** Deterministic exponential backoff in ms (jitter applied separately). */
@@ -153,15 +155,26 @@ export async function runSyncJobPage(
   if (page.failed.length > 0) {
     // Partial failure: retry without advancing the cursor past unreconciled data.
     return {
-      state: nextStateOnFailure(
-        prev,
-        `partial_page_failure:${page.failed.length}`,
-        clock.nowIso,
-        backoffWithJitter(prev.attempts + 1, clock.rand),
-      ),
+      state: {
+        ...nextStateOnFailure(
+          prev,
+          `partial_page_failure:${page.failed.length}`,
+          clock.nowIso,
+          backoffWithJitter(prev.attempts + 1, clock.rand),
+        ),
+        processedRecords: (prev.processedRecords ?? 0) + page.succeeded,
+        failedRecords: (prev.failedRecords ?? 0) + page.failed.length,
+      },
       page,
     };
   }
 
-  return { state: nextStateOnSuccess(prev, result), page };
+  return {
+    state: {
+      ...nextStateOnSuccess(prev, result),
+      processedRecords: (prev.processedRecords ?? 0) + page.succeeded,
+      failedRecords: prev.failedRecords ?? 0,
+    },
+    page,
+  };
 }

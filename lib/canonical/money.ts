@@ -25,9 +25,43 @@ export function normaliseCurrency(currency: string): string {
   return currency.trim().toUpperCase();
 }
 
+const intlWithSupportedValues = Intl as typeof Intl & {
+  supportedValuesOf?: (key: 'currency') => string[];
+};
+
+const SUPPORTED_CURRENCY_CODES = new Set(
+  intlWithSupportedValues.supportedValuesOf?.('currency') ?? [],
+);
+
+/**
+ * Return a usable ISO-4217 display code, or null for missing/source sentinel
+ * values. Presentation code must never pass an untrusted source value directly
+ * to Intl.NumberFormat.
+ */
+export function normaliseCurrencyOrNull(currency: unknown): string | null {
+  if (typeof currency !== 'string') return null;
+  const code = normaliseCurrency(currency);
+  if (!/^[A-Z]{3}$/.test(code) || code === 'XXX') return null;
+
+  if (SUPPORTED_CURRENCY_CODES.size > 0) {
+    return SUPPORTED_CURRENCY_CODES.has(code) ? code : null;
+  }
+
+  try {
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: code });
+    return code;
+  } catch {
+    return null;
+  }
+}
+
+export function isSupportedCurrency(currency: unknown): boolean {
+  return normaliseCurrencyOrNull(currency) !== null;
+}
+
 /** ISO minor-unit exponent for a currency (defaults to 2 for unknown codes). */
 export function minorUnitExponent(currency: string): number {
-  const code = normaliseCurrency(currency);
+  const code = normaliseCurrencyOrNull(currency) ?? normaliseCurrency(currency);
   return Object.prototype.hasOwnProperty.call(NON_DEFAULT_EXPONENTS, code)
     ? NON_DEFAULT_EXPONENTS[code]
     : DEFAULT_EXPONENT;

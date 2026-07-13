@@ -1,4 +1,5 @@
 import { bigCommerceApiFetch } from '@/lib/commerce/bigcommerce/bigcommerceApi';
+import { htmlSafeJson } from '@/lib/utils/htmlSafeJson';
 
 const COLLECTOR_SRC = 'https://app.unauth.co/collector.js';
 const INGEST_ENDPOINT = 'https://app.unauth.co/api/checkout-signals/ingest';
@@ -10,7 +11,7 @@ export async function registerBigCommerceCollectorScript(input: {
 }): Promise<string> {
   const html =
     `<script src="${COLLECTOR_SRC}" defer></script>` +
-    `<script>document.addEventListener('DOMContentLoaded',function(){window.UnauthCollector&&window.UnauthCollector.init({merchantId:${JSON.stringify(input.merchantId)},platform:"bigcommerce",endpoint:${JSON.stringify(INGEST_ENDPOINT)}});});</script>`;
+    `<script>document.addEventListener('DOMContentLoaded',function(){window.UnauthCollector&&window.UnauthCollector.init({merchantId:${htmlSafeJson(input.merchantId)},platform:"bigcommerce",endpoint:${htmlSafeJson(INGEST_ENDPOINT)}});});</script>`;
 
   const response = await bigCommerceApiFetch(
     input.storeHash,

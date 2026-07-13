@@ -6,29 +6,6 @@ import Reveal from './Reveal';
 import SectionHeader from './SectionHeader';
 import foundationStyles from './foundation/foundation.module.css';
 
-const recoveryCards = [
-  {
-    title: 'The carrier lost it → bill the carrier.',
-    body:
-      "Parcel lost in transit. No delivery scan. Exception on the route. That is the carrier's liability, not yours. Unauth flags it the moment the claim comes in, calculates the claim window before it closes, and assembles the evidence packet ready to file. The losses you have been quietly eating become money you go and collect.",
-  },
-  {
-    title: 'The warehouse shipped it wrong → bill the 3PL.',
-    body:
-      'Wrong item, short shipment, mismatch against what the order actually said. Unauth catches the discrepancy against your fulfilment records and documents it against the responsible party — so the refund you gave the customer becomes a recoverable case against whoever caused the error, not a loss you absorb silently.',
-  },
-  {
-    title: 'The same customer keeps claiming → you finally see the pattern.',
-    body:
-      "One customer filed item not received in January, March, and twice in May. To the agent picking up today's ticket, it looks like a first-time problem. They have no idea this is the fifth claim this quarter. Unauth puts that history in front of them before any refund goes out — how many claims, how recent, how many already paid. The serial claimant that no single agent could ever see becomes visible at the one moment it matters. The pattern stops. The money stays.",
-  },
-  {
-    title: 'Your own team is leaking it → see exactly where.',
-    body:
-      'An agent refunds outside policy. A goodwill exception quietly becomes the norm. One shift is tighter than another. Unauth surfaces every override — which agent, which claim, which rule they bypassed — so you can see, for the first time, how much your own process is costing you and exactly where it breaks down.',
-  },
-] as const;
-
 const monthlyRows = [
   {
     label: 'Carrier fault',
@@ -67,66 +44,6 @@ const problemRows = [
     title: 'Nothing to point to when it matters.',
     body:
       'A chargeback lands six weeks later. You cannot reconstruct what your team saw, which rule applied, or why money moved. You answer the dispute with nothing. The loss gets written off twice — once when you refunded, once when you lose the chargeback.',
-  },
-] as const;
-
-const gateSteps = [
-  {
-    id: '01',
-    title: 'A claim arrives in your helpdesk, exactly as it does today.',
-    body: '',
-    tag: undefined,
-  },
-  {
-    id: '02',
-    title: 'The gate checks it.',
-    body:
-      "Delivery proof, order value, this customer's full claim history with you, whether a carrier or warehouse recovery route is available, which of your rules apply.",
-    tag: undefined,
-  },
-  {
-    id: '03',
-    title: 'Safe claims pass straight through.',
-    body:
-      'First-time customer, low value, clean delivery? Cleared instantly. Your team and your AI handle it at full speed. Nothing slows down that should not.',
-    tag: 'Cleared',
-  },
-  {
-    id: '04',
-    title: 'Risky claims are held.',
-    body:
-      'Your AI agent is stopped from auto-refunding. The claim is routed to a human with the order, the delivery evidence, the customer\'s prior claim history, the exact rule that fired, who owns the loss, and the recovery case already assembled — in one screen, before anyone replies.',
-    tag: 'Held',
-  },
-  {
-    id: '05',
-    title: 'The outcome is recorded.',
-    body:
-      'Decision, evidence, loss owner, and recovery route documented permanently. Your ledger grows. Your chargeback defence is built. The pattern becomes visible.',
-    tag: 'Logged',
-  },
-] as const;
-
-const gateExamples = [
-  {
-    title: 'Lost in transit',
-    detail: 'No delivery scan, carrier exception flagged',
-    result: 'Held. Carrier owes this. Claim assembled — window closes in 6 days.',
-  },
-  {
-    title: 'Wrong item received',
-    detail: 'Order said SKU-A, warehouse shipped SKU-B',
-    result: 'Held. 3PL fault documented. Recovery case ready.',
-  },
-  {
-    title: 'Item not received',
-    detail: 'No delivery scan, first claim, low order value',
-    result: 'Cleared. Safe to auto-resolve.',
-  },
-  {
-    title: 'Item not received',
-    detail: 'Delivered with signature, 4th claim this quarter',
-    result: 'Held. Full claim history surfaced. Human review before any refund.',
   },
 ] as const;
 
@@ -263,29 +180,6 @@ export function AhaStrip() {
   );
 }
 
-function RecoverySection() {
-  return (
-    <section id="what-you-recover" className="mx-auto w-full max-w-[70rem] px-5 py-20 sm:px-8 md:py-28" data-nav-theme="light">
-      <Reveal>
-        <SectionHeader
-          eyebrow="Where the money comes back from"
-          headline="You&apos;ve been absorbing losses that belong to someone else."
-        />
-      </Reveal>
-      <div className="mt-12 grid gap-4 md:grid-cols-2">
-        {recoveryCards.map((item, index) => (
-          <Reveal key={item.title} delay={index * 70}>
-            <PanelCard as="article" variant="surface" className="md:px-6 md:py-6">
-              <h3 className="text-[1rem] font-semibold leading-snug text-[var(--ink-primary)]">{item.title}</h3>
-              <p className="mt-4 text-sm leading-relaxed text-[var(--ink-secondary)]">{item.body}</p>
-            </PanelCard>
-          </Reveal>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 export function MonthlyViewSection() {
   return (
     <section className="border-y border-[var(--border-subtle)] bg-[var(--surface-overlay)]" data-nav-theme="light">
@@ -385,78 +279,6 @@ export function CustomerHistorySection() {
             <p className="mt-5 text-sm leading-relaxed text-[var(--ink-secondary)]">
               The serial claimant that no single agent could ever see becomes visible at the one moment it matters. The pattern stops. The money stays.
             </p>
-          </PanelCard>
-        </Reveal>
-      </div>
-    </section>
-  );
-}
-
-function GateSection() {
-  return (
-    <section id="how-it-works" className="border-y border-[var(--border-subtle)] bg-[var(--surface-overlay)]" data-nav-theme="light">
-      <div className="mx-auto w-full max-w-[70rem] px-5 py-20 sm:px-8 md:py-28">
-        <Reveal>
-          <SectionHeader
-            eyebrow="How it works"
-            headline="None of this is possible after the fact. It only works if you catch the claim before it&apos;s paid."
-            body="You cannot recover a loss you have already refunded and forgotten. The evidence goes stale. The carrier's claim window closes. The pattern stays invisible. That is why Unauth is a gate — it stops every risky claim before the refund goes out, while the evidence is fresh, the window is open, and the money is still yours to keep or recover."
-          />
-        </Reveal>
-        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          {gateSteps.map((step, index) => (
-            <Reveal key={step.id} delay={index * 70}>
-              <PanelCard as="article" variant="surface" className="h-full">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="font-mono text-xs text-[var(--ink-tertiary)]">{step.id}</p>
-                  {step.tag ? (
-                    <span className="rounded-full border border-[var(--border-default)] px-2.5 py-1 font-mono text-[0.65rem] uppercase tracking-[0.14em] text-[var(--ink-tertiary)]">
-                      {step.tag}
-                    </span>
-                  ) : null}
-                </div>
-                <h3 className="mt-3 text-[1rem] font-semibold leading-snug text-[var(--ink-primary)]">
-                  {step.title}
-                </h3>
-                {step.body ? (
-                  <p className="mt-3 text-sm leading-relaxed text-[var(--ink-secondary)]">{step.body}</p>
-                ) : null}
-              </PanelCard>
-            </Reveal>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function AiBridgeSection() {
-  return (
-    <section className="border-y border-[var(--border-subtle)] bg-white" data-nav-theme="light">
-      <div className="mx-auto grid w-full max-w-[70rem] gap-12 px-5 py-20 sm:px-8 md:py-28 lg:grid-cols-[minmax(0,1fr)_26rem] lg:gap-16">
-        <div>
-          <Reveal>
-            <SectionHeader
-              eyebrow="Built for where support is going"
-              headline="The faster your AI resolves claims, the faster unrecovered money disappears."
-              body="Yuma, Siena, and Gorgias AI are built to close tickets fast. Not to stop and ask whether a £400 item-not-received claim from a repeat claimant should be auto-refunded — or whether the loss should be billed to the carrier instead. Every fast auto-refund on a carrier-lost parcel is money you will never claw back, because no one ever flagged whose fault it was. Unauth sits in front of the resolution. Turn your automation all the way up. The gate still catches the claims worth recovering and the ones that should never have been paid. You do not choose between speed and control. The gate is what lets you have both."
-            />
-          </Reveal>
-        </div>
-        <Reveal delay={120}>
-          <PanelCard variant="surface" className="p-5">
-            <p className="font-mono text-xs uppercase tracking-[0.12em] text-[var(--ink-tertiary)]">
-              Gate routing — live
-            </p>
-            <div className="mt-5 space-y-4">
-              {gateExamples.map((example) => (
-                <div key={example.title + example.detail} className="rounded-[var(--radius-md)] border border-[var(--border-subtle)] px-4 py-4">
-                  <p className="text-sm font-semibold text-[var(--ink-primary)]">{example.title}</p>
-                  <p className="mt-1 text-sm text-[var(--ink-secondary)]">{example.detail}</p>
-                  <p className="mt-3 font-medium text-[var(--ink-primary)]">{example.result}</p>
-                </div>
-              ))}
-            </div>
           </PanelCard>
         </Reveal>
       </div>

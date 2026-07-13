@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode } from 'react';
+import { type ReactNode, useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
@@ -9,6 +9,7 @@ interface ModalAction {
   label: string;
   onClick: () => void;
   variant?: 'primary' | 'secondary' | 'danger';
+  disabled?: boolean;
 }
 
 interface ModalProps {
@@ -44,6 +45,50 @@ export function Modal({
   'aria-label': ariaLabel,
   className,
 }: ModalProps) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const dialog = dialogRef.current;
+    const focusable = dialog?.querySelector<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    (focusable ?? dialog)?.focus();
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+      if (event.key !== 'Tab' || !dialog) return;
+      const controls = Array.from(dialog.querySelectorAll<HTMLElement>('button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])'));
+      if (controls.length === 0) {
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+      const first = controls[0];
+      const last = controls[controls.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+      returnFocusRef.current?.focus();
+    };
+  }, [open, onClose]);
+
   if (!open) return null;
 
   return (
@@ -58,8 +103,10 @@ export function Modal({
       onClick={closeOnBackdrop ? onClose : undefined}
     >
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
+        tabIndex={-1}
         aria-label={ariaLabel ?? title ?? 'Modal'}
         className={cn('rounded-[var(--radius-md)] overflow-hidden flex flex-col max-h-[90vh]', className)}
         style={{
@@ -89,6 +136,7 @@ export function Modal({
               )}
             </div>
             <button
+              type="button"
               onClick={onClose}
               className="p-1 rounded-md hover:bg-[var(--surface-hover)] transition-colors flex-shrink-0"
               aria-label="Close modal"
@@ -117,6 +165,7 @@ export function Modal({
                     key={action.label}
                     variant={action.variant ?? 'primary'}
                     onClick={action.onClick}
+                    disabled={action.disabled}
                   >
                     {action.label}
                   </Button>
