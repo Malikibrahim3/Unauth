@@ -24,7 +24,7 @@ import {
 import { summarizeConditions, ACTION_LABELS } from "@/lib/rules/summary";
 import type { MerchantRule, RuleCondition } from "@/lib/rules-engine";
 import { FIELD_DEFS_BY_NAME, FIELD_LABELS } from "@/lib/rules/fields";
-import { formatDate } from "@/lib/utils/format";
+import { formatDateTime } from "@/lib/utils/format";
 
 export type RuleVersionRecord = {
   id: string;
@@ -585,8 +585,8 @@ export function RuleVersionWorkbench({
               </StatusBadge>
               <span className="text-xs text-[var(--text-secondary)]">
                 {version.published_at
-                  ? `Published ${formatDate(version.published_at)}`
-                  : `Created ${formatDate(version.created_at)}`}
+                  ? `Published ${formatDateTime(version.published_at)}`
+                  : `Created ${formatDateTime(version.created_at)}`}
                 {version.supersedes_version_id ? " · rollback-derived" : ""}
               </span>
               {canManage && version.status !== "draft" ? (

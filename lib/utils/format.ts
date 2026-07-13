@@ -1,7 +1,13 @@
 import { fromMinorUnits, normaliseCurrencyOrNull } from '@/lib/canonical/money';
 
-const MERCHANT_DISPLAY_LOCALE = 'en-US';
+// Unambiguous day-month ordering for UK/EU merchants. Currency symbols are
+// unaffected by the display locale — they follow the row's own currency code.
+const MERCHANT_DISPLAY_LOCALE = 'en-GB';
+// USD is retained ONLY as a last-resort aggregate fallback (see dominantCurrency).
+// It must never be used to render a single row's money value — prefer a dash.
 const DEFAULT_CURRENCY = 'USD';
+
+const isDev = process.env.NODE_ENV !== 'production';
 
 const currencyFormatterCache = new Map<string, Intl.NumberFormat>();
 const currencySymbolCache = new Map<string, string>();
@@ -63,6 +69,12 @@ export function dominantCurrency(
       bestCount = count;
     }
   }
+  if (!best && isDev) {
+    console.warn(
+      `[format] dominantCurrency: no row carried a currency; falling back to ${fallback}. ` +
+        'Aggregate totals may show the wrong symbol — ensure rows carry a currency code.',
+    );
+  }
   return best ?? fallback;
 }
 
@@ -96,15 +108,6 @@ export function sumSameCurrency<T>(
   return { total, currency, mixedCount };
 }
 
-const dateTimePartsFormatter = new Intl.DateTimeFormat(MERCHANT_DISPLAY_LOCALE, {
-  day: '2-digit',
-  month: 'short',
-  year: 'numeric',
-  hour: '2-digit',
-  minute: '2-digit',
-  timeZone: 'UTC',
-});
-
 const dateTableFormatter = new Intl.DateTimeFormat(MERCHANT_DISPLAY_LOCALE, {
   year: 'numeric',
   month: '2-digit',
@@ -125,6 +128,54 @@ const dateShortFormatter = new Intl.DateTimeFormat(MERCHANT_DISPLAY_LOCALE, {
   year: 'numeric',
   timeZone: 'UTC',
 });
+
+// ── Canonical money renderers (WS0.1) ────────────────────────────────────────
+// These are the ONLY money formatters new code should reach for. They take
+// integer minor units and a currency code; they never guess a currency.
+// Unlike getCurrencyFormatter, these honour each currency's natural precision
+// (GBP/USD → 2 decimals, JPY → 0) rather than forcing two decimals.
+
+const moneyFormatterCache = new Map<string, Intl.NumberFormat>();
+
+function getMoneyFormatter(code: string): Intl.NumberFormat {
+  const cached = moneyFormatterCache.get(code);
+  if (cached) return cached;
+  const formatter = new Intl.NumberFormat(MERCHANT_DISPLAY_LOCALE, {
+    style: 'currency',
+    currency: code,
+  });
+  moneyFormatterCache.set(code, formatter);
+  return formatter;
+}
+
+/**
+ * Format integer minor units in the given currency. Currency is REQUIRED — this
+ * is the canonical single-value renderer. An unusable currency code is rendered
+ * without a symbol (never a guessed one) so a wrong symbol can never appear.
+ * "£214.50", "¥1,234"
+ */
+export function formatMoney(minor: number, currency: string): string {
+  const code = normaliseCurrencyOrNull(currency);
+  if (!code) {
+    // Never invent a symbol for an unknown code.
+    return Number.isFinite(minor) ? (minor / 100).toFixed(2) : '—';
+  }
+  return getMoneyFormatter(code).format(fromMinorUnits(minor, code));
+}
+
+/**
+ * Null-safe canonical renderer: returns '—' when the amount OR the currency is
+ * missing/invalid. Better a dash than the wrong symbol.
+ */
+export function formatMoneyOrDash(
+  minor?: number | null,
+  currency?: string | null,
+): string {
+  if (minor == null || !Number.isFinite(minor)) return '—';
+  const code = normaliseCurrencyOrNull(currency);
+  if (!code) return '—';
+  return getMoneyFormatter(code).format(fromMinorUnits(minor, code));
+}
 
 export function formatRiskScore(score: number | null | undefined): string {
   if (typeof score !== 'number' || Number.isNaN(score)) return '—';
@@ -170,12 +221,82 @@ export function formatMinorCurrencyNullable(
   return formatCurrency(fromMinorUnits(numericMinor, currencyCode), currencyCode);
 }
 
-export function formatDate(date: Date | string): string {
-  const d = typeof date === 'string' ? new Date(date) : date;
-  const parts = dateTimePartsFormatter.formatToParts(d);
+// ── Canonical date renderers (WS0.1) ─────────────────────────────────────────
+// §2.10: relative under 7 days, "14 Jun" same year, "14 Jun 2025" otherwise;
+// timestamps ("14 Jun, 09:42") only in audit/timeline contexts. Never US order,
+// never seconds, never ISO in the UI.
 
+const dayMonthFormatter = new Intl.DateTimeFormat(MERCHANT_DISPLAY_LOCALE, {
+  day: 'numeric',
+  month: 'short',
+  timeZone: 'UTC',
+});
+
+const dayMonthYearFormatter = new Intl.DateTimeFormat(MERCHANT_DISPLAY_LOCALE, {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
+
+const dateTimeFormatter = new Intl.DateTimeFormat(MERCHANT_DISPLAY_LOCALE, {
+  day: 'numeric',
+  month: 'short',
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: false,
+  timeZone: 'UTC',
+});
+
+const MS_PER_DAY = 86_400_000;
+
+function utcYear(d: Date): number {
+  return Number(
+    new Intl.DateTimeFormat('en-GB', { year: 'numeric', timeZone: 'UTC' }).format(d),
+  );
+}
+
+/**
+ * Smart list/inline date. Relative under 7 days ("just now" / "3h ago" / "2d
+ * ago"); otherwise "14 Jun" in the current year and "14 Jun 2025" for other
+ * years. No seconds, no time-of-day.
+ */
+export function formatDate(date: Date | string, now: Date | number = Date.now()): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  if (Number.isNaN(d.getTime())) return String(date);
+  const nowMs = now instanceof Date ? now.getTime() : now;
+  const nowDate = new Date(nowMs);
+  const diffMs = nowMs - d.getTime();
+
+  if (diffMs >= 0 && diffMs < 7 * MS_PER_DAY) {
+    const diffMin = Math.floor(diffMs / 60_000);
+    const diffHr = Math.floor(diffMin / 60);
+    const diffDay = Math.floor(diffHr / 24);
+    if (diffDay >= 1) return `${diffDay}d ago`;
+    if (diffHr >= 1) return `${diffHr}h ago`;
+    if (diffMin >= 1) return `${diffMin}m ago`;
+    return 'just now';
+  }
+
+  return utcYear(d) === utcYear(nowDate)
+    ? dayMonthFormatter.format(d)
+    : dayMonthYearFormatter.format(d);
+}
+
+/** Absolute day-month-year, always with the year. Tables/exports. "14 Jun 2026" */
+export function formatDateAbsolute(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  if (Number.isNaN(d.getTime())) return String(date);
+  return dayMonthYearFormatter.format(d);
+}
+
+/** Timestamp for timelines/audit only. "14 Jun, 09:42" */
+export function formatDateTime(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  if (Number.isNaN(d.getTime())) return String(date);
+  const parts = dateTimeFormatter.formatToParts(d);
   const lookup = Object.fromEntries(parts.map((part) => [part.type, part.value]));
-  return `${lookup.day} ${lookup.month} ${lookup.year}, ${lookup.hour}:${lookup.minute}`;
+  return `${lookup.day} ${lookup.month}, ${lookup.hour}:${lookup.minute}`;
 }
 
 export function formatDateMode(
@@ -206,7 +327,7 @@ export function formatDateMode(
     return 'just now';
   }
 
-  return formatDate(d);
+  return formatDateTime(d);
 }
 
 /** Short date format — day, month, year only. No time. */

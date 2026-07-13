@@ -38,8 +38,8 @@ export function DeliveryEvidenceCard({
           label="Status"
           value={delivery.status?.replace(/_/g, " ") ?? "—"}
         />
-        <Detail label="Last scan" value={formatDate(delivery.lastScanAt)} />
-        <Detail label="Delivered" value={formatDate(delivery.deliveredAt)} />
+        <Detail label="Last scan" value={formatDateTime(delivery.lastScanAt)} />
+        <Detail label="Delivered" value={formatDateTime(delivery.deliveredAt)} />
         <Detail
           label="Exceptions"
           value={
@@ -124,7 +124,7 @@ function CapabilityPill({
   );
 }
 
-function formatDate(iso: string | null): string {
+function formatDateTime(iso: string | null): string {
   if (!iso) return "—";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";

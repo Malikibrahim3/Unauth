@@ -230,19 +230,19 @@ export default function BillingSettingsClient() {
         <p className="text-sm text-[var(--text-secondary)]">{priceLabel}</p>
         {state.currentPeriodEnd && (
           <p className="mt-2 text-sm text-[var(--text-tertiary)]">
-            Next billing date: {formatDate(state.currentPeriodEnd)}
+            Next billing date: {formatDateTime(state.currentPeriodEnd)}
           </p>
         )}
         {state.downgradeToPlanId && (
           <p className="mt-2 text-sm" style={{ color: "var(--accent)" }}>
             Your plan will change to {state.downgradeToPlanName} on{" "}
-            {formatDate(state.currentPeriodEnd)}. You keep your current credits
+            {formatDateTime(state.currentPeriodEnd)}. You keep your current credits
             and features until then.
           </p>
         )}
         {state.cancelAtPeriodEnd && !state.downgradeToPlanId && (
           <p className="mt-2 text-sm text-[var(--text-secondary)]">
-            Cancels on {formatDate(state.currentPeriodEnd)} — you&apos;ll move
+            Cancels on {formatDateTime(state.currentPeriodEnd)} — you&apos;ll move
             to Free after that.
           </p>
         )}
@@ -272,7 +272,7 @@ export default function BillingSettingsClient() {
             ` · ${state.usedThisCycle} used of ${state.monthlyAllowance} monthly`}
         </p>
         <p className="mt-1 text-sm text-[var(--text-tertiary)]">
-          Cycle resets: {formatDate(state.cycleResetAt)}
+          Cycle resets: {formatDateTime(state.cycleResetAt)}
         </p>
         {state.canTopUp && (
           <button
@@ -374,7 +374,7 @@ export default function BillingSettingsClient() {
               <PanelCard variant="appInset" className="p-3 text-sm">
                 <p>
                   You&apos;ll keep access until{" "}
-                  {formatDate(state.currentPeriodEnd)}, then move to Free.
+                  {formatDateTime(state.currentPeriodEnd)}, then move to Free.
                 </p>
                 <div className="mt-2 flex gap-2">
                   <button
@@ -442,7 +442,7 @@ function PlanButton({
   );
 }
 
-function formatDate(iso: string | null): string {
+function formatDateTime(iso: string | null): string {
   if (!iso) return "—";
   return new Date(iso).toLocaleDateString("en-GB", {
     day: "numeric",

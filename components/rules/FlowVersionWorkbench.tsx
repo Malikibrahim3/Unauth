@@ -24,7 +24,7 @@ import {
   type FlowEditable,
   type FlowOutputDraft,
 } from "@/components/rules/FlowEditor";
-import { formatDate } from "@/lib/utils/format";
+import { formatDateTime } from "@/lib/utils/format";
 
 export type WorkflowVersionRecord = FlowEditable & {
   id: string;
@@ -506,8 +506,8 @@ export function FlowVersionWorkbench({
               </StatusBadge>
               <span className="text-xs text-[var(--text-secondary)]">
                 {version.published_at
-                  ? `Published ${formatDate(version.published_at)}`
-                  : `Created ${formatDate(version.created_at)}`}
+                  ? `Published ${formatDateTime(version.published_at)}`
+                  : `Created ${formatDateTime(version.created_at)}`}
               </span>
               {canManage && version.status !== "draft" ? (
                 <Button

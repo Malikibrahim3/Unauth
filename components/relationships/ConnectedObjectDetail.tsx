@@ -12,7 +12,7 @@ import type {
 } from "@/lib/relationships/objectSummary";
 import { PanelCard, StatusBadge } from "@/components/ui";
 import type { StatusBadgeVariant } from "@/components/ui/tokens";
-import { formatCurrencyNullable, formatDate } from "@/lib/utils/format";
+import { formatCurrencyNullable, formatDateTime } from "@/lib/utils/format";
 
 function label(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1).replaceAll("_", " ");
@@ -65,7 +65,7 @@ function factValue(item: ObjectFact) {
       : "Unavailable";
   if (item.kind === "date")
     return typeof item.value === "string"
-      ? formatDate(item.value)
+      ? formatDateTime(item.value)
       : "Unavailable";
   if (item.kind === "boolean")
     return item.value === true
@@ -194,7 +194,7 @@ export function ConnectedObjectDetail({
                         className="font-mono text-[11px] text-[var(--text-tertiary)]"
                         dateTime={item.at ?? undefined}
                       >
-                        {item.at ? formatDate(item.at) : "Time unavailable"}
+                        {item.at ? formatDateTime(item.at) : "Time unavailable"}
                       </time>
                     </div>
                     {item.detail ? (
@@ -276,7 +276,7 @@ export function ConnectedObjectDetail({
                   </dt>
                   <dd className="mt-1">
                     {object.provenance.lastSyncedAt
-                      ? formatDate(object.provenance.lastSyncedAt)
+                      ? formatDateTime(object.provenance.lastSyncedAt)
                       : "Timestamp unavailable"}
                   </dd>
                 </div>
@@ -323,7 +323,7 @@ export function ConnectedObjectDetail({
                     <dt className="text-[var(--text-tertiary)]">Row updated</dt>
                     <dd>
                       {object.updatedAt
-                        ? formatDate(object.updatedAt)
+                        ? formatDateTime(object.updatedAt)
                         : "Timestamp unavailable"}
                     </dd>
                   </div>
@@ -355,7 +355,7 @@ export function ConnectedObjectDetail({
                 </p>
                 <p className="mt-2 text-[11px] text-[var(--text-tertiary)]">
                   {label(item.provider)} · {label(item.type)}
-                  {item.occurredAt ? ` · ${formatDate(item.occurredAt)}` : ""}
+                  {item.occurredAt ? ` · ${formatDateTime(item.occurredAt)}` : ""}
                 </p>
                 {item.reference ? (
                   <p className="mt-1 break-all font-mono text-[11px] text-[var(--text-tertiary)]">

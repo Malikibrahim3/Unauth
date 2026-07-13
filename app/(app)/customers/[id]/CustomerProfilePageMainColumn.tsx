@@ -8,7 +8,7 @@ import { SectionCard } from "@/components/ui/SectionCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import {
   formatCurrencyNullable,
-  formatDate,
+  formatDateTime,
   formatDateMode,
 } from "@/lib/utils/format";
 import {
@@ -306,7 +306,7 @@ export function CustomerProfilePageMainColumn({
                     <p
                       className="text-caption"
                       style={{ color: "var(--text-tertiary)" }}
-                      title={formatDate(entry.created_at)}
+                      title={formatDateTime(entry.created_at)}
                     >
                       {formatDateMode(entry.created_at, "recent")}
                     </p>

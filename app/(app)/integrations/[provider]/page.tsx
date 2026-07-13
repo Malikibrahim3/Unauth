@@ -10,7 +10,7 @@ import { loadConnectorCatalogue } from "@/lib/connectors/catalogue";
 import { TABLES } from "@/lib/supabase/tables";
 import { ConnectionActions } from "@/components/integrations/ConnectionActions";
 import { PanelCard, StatusBadge } from "@/components/ui";
-import { formatDate } from "@/lib/utils/format";
+import { formatDateTime } from "@/lib/utils/format";
 
 export const dynamic = "force-dynamic";
 
@@ -180,7 +180,7 @@ export default async function ConnectionPage({
             </dt>
             <dd className="mt-1 text-sm font-medium">
               {item.lastSuccessfulSyncAt
-                ? formatDate(item.lastSuccessfulSyncAt)
+                ? formatDateTime(item.lastSuccessfulSyncAt)
                 : "No successful sync"}
             </dd>
           </PanelCard>
@@ -286,9 +286,9 @@ export default async function ConnectionPage({
                       {job.job_kind.replaceAll("_", " ")}
                     </p>
                     <p className="mt-1 text-xs text-[var(--text-tertiary)]">
-                      Started {formatDate(job.created_at)}
+                      Started {formatDateTime(job.created_at)}
                       {job.completed_at
-                        ? ` · completed ${formatDate(job.completed_at)}`
+                        ? ` · completed ${formatDateTime(job.completed_at)}`
                         : ""}
                     </p>
                   </div>
@@ -339,7 +339,7 @@ export default async function ConnectionPage({
                       "Source event needs retry or operator review."}
                   </p>
                   <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">
-                    {formatDate(issue.received_at)}
+                    {formatDateTime(issue.received_at)}
                   </p>
                 </PanelCard>
               ))}

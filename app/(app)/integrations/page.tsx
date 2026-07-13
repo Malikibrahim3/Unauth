@@ -11,7 +11,7 @@ import {
   type ConnectorCatalogueItem,
 } from "@/lib/connectors/catalogue";
 import { PanelCard, StatusBadge } from "@/components/ui";
-import { formatDate } from "@/lib/utils/format";
+import { formatDateTime } from "@/lib/utils/format";
 
 export const dynamic = "force-dynamic";
 
@@ -78,7 +78,7 @@ function ConnectorCard({ item }: { item: ConnectorCatalogueItem }) {
             </dt>
             <dd className="mt-1 text-xs font-medium">
               {item.lastSuccessfulSyncAt
-                ? formatDate(item.lastSuccessfulSyncAt)
+                ? formatDateTime(item.lastSuccessfulSyncAt)
                 : ACTIVE.has(item.status)
                   ? "Initial import pending"
                   : "No successful sync"}

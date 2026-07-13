@@ -1,7 +1,7 @@
 import { SectionCard } from '@/components/ui/SectionCard';
 import { MetricCard } from '@/components/ui/MetricCard';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { formatCurrencyNullable, formatDate } from '@/lib/utils/format';
+import { formatCurrencyNullable, formatDateTime } from '@/lib/utils/format';
 import { formatFiledDate } from '@/lib/claims/sla';
 import {
   CLAIM_STATUS_LABELS,
@@ -49,11 +49,11 @@ export function CustomerProfilePageSidebar({
           <div className="grid grid-cols-2 gap-3 text-caption">
             <div>
               <p style={{ color: 'var(--text-secondary)' }}>First seen</p>
-              <p className="font-medium" style={{ color: 'var(--text)' }}>{formatDate(profile.first_seen)}</p>
+              <p className="font-medium" style={{ color: 'var(--text)' }}>{formatDateTime(profile.first_seen)}</p>
             </div>
             <div>
               <p style={{ color: 'var(--text-secondary)' }}>Last seen</p>
-              <p className="font-medium" style={{ color: 'var(--text)' }}>{formatDate(profile.last_seen)}</p>
+              <p className="font-medium" style={{ color: 'var(--text)' }}>{formatDateTime(profile.last_seen)}</p>
             </div>
           </div>
         </div>

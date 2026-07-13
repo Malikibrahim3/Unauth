@@ -26,7 +26,7 @@ interface CustomersTableClientProps {
   rows: CustomerRow[];
 }
 
-function formatDate(value: string | null): string {
+function formatDateTime(value: string | null): string {
   if (!value) return "—";
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return "—";
@@ -144,7 +144,7 @@ export default function CustomersTableClient({
       align: "right" as const,
       render: (p: CustomerRow) => (
         <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
-          {formatDate(p.last_order_at)}
+          {formatDateTime(p.last_order_at)}
         </span>
       ),
     },
@@ -242,7 +242,7 @@ export default function CustomersTableClient({
                 payout cases
               </span>
               <span style={{ color: "var(--border)" }}>·</span>
-              <span>Last order {formatDate(p.last_order_at)}</span>
+              <span>Last order {formatDateTime(p.last_order_at)}</span>
             </div>
             <div
               className="mt-3 flex justify-end text-xs font-semibold"
