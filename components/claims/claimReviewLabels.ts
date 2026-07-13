@@ -16,26 +16,26 @@ export const CLAIM_TYPE_LABELS: Record<string, string> = {
 };
 
 export const DECISION_LABELS: Record<Decision, string> = {
-  approved: 'Merchant response recorded',
-  denied: 'Merchant response recorded',
-  escalated: 'Merchant response recorded',
-  partial_refund: 'Merchant response recorded',
-  full_refund: 'Merchant response recorded',
-  chargeback_disputed: 'Merchant response recorded',
-  blacklist: 'Merchant response recorded',
-  internal_watch: 'Merchant response recorded',
-  no_action: 'No action recorded',
+  approved: 'Approved',
+  denied: 'Denied under policy',
+  escalated: 'Escalated',
+  partial_refund: 'Partial refund',
+  full_refund: 'Full refund',
+  chargeback_disputed: 'Chargeback disputed',
+  blacklist: 'Watch internally',
+  internal_watch: 'Watch internally',
+  no_action: 'No action',
 };
 
 export const OUTCOME_LABELS: Record<Outcome, string> = {
-  loss: 'Merchant response recorded',
-  recovered: 'Merchant response recorded',
-  pending: 'Merchant response pending',
-  chargeback_won: 'Merchant response recorded',
-  chargeback_lost: 'Merchant response recorded',
-  customer_verified: 'Merchant response recorded',
-  suspected_fraud: 'Merchant response recorded',
-  legitimate: 'Merchant response recorded',
+  loss: 'Written off',
+  recovered: 'Recovered',
+  pending: 'Pending',
+  chargeback_won: 'Chargeback won',
+  chargeback_lost: 'Chargeback lost',
+  customer_verified: 'Customer verified',
+  suspected_fraud: 'Flagged for review',
+  legitimate: 'Cleared',
 };
 
 export const EVIDENCE_TYPE_LABELS: Record<EvidenceType, string> = {
