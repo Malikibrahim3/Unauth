@@ -44,7 +44,7 @@ export default async function DashboardPage({
     timezone,
   );
   return (
-    <main className="mx-auto w-full max-w-[1600px] space-y-6 p-4 md:p-6">
+    <div className="mx-auto w-full max-w-[1600px] space-y-6 p-4 md:p-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-[var(--text-title,1.25rem)] font-semibold" style={{ fontSize: "1.25rem" }}>Overview</h1>
@@ -87,6 +87,6 @@ export default async function DashboardPage({
         </Link>
       </nav>
       <IntelligenceReportView report={report} compact />
-    </main>
+    </div>
   );
 }

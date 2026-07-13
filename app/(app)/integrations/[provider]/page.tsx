@@ -80,7 +80,7 @@ export default async function ConnectionPage({
   const jobs = (jobsResult.data ?? []) as SyncJob[];
   const issues = (issuesResult.data ?? []) as IngestionIssue[];
   return (
-    <main className="mx-auto max-w-6xl space-y-6 p-4 md:p-6">
+    <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-6">
       <Link
         href="/integrations"
         className="text-sm font-semibold text-[var(--accent)]"
@@ -324,6 +324,6 @@ export default async function ConnectionPage({
           )}
         </section>
       </div>
-    </main>
+    </div>
   );
 }

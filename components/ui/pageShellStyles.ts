@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react';
 
 export const PAGE_SHELL_INNER_CLASS =
-  'mx-auto w-full max-w-[1600px] px-5 py-5 sm:px-6 sm:py-6 lg:px-8';
+  'mx-auto w-full max-w-[1680px] px-4 py-4 sm:px-6 sm:py-5 lg:px-8';
 
 export const PAGE_SHELL_HEADER_CLASS =
   'mx-auto flex w-full max-w-[1600px] flex-wrap items-start justify-between gap-4 px-5 py-5 sm:px-6 sm:py-6 lg:px-8';
@@ -9,10 +9,10 @@ export const PAGE_SHELL_HEADER_CLASS =
 // WS4.5: compact list-page title (20px/600), not a 40px marketing H1.
 export const PAGE_TITLE_STYLE: CSSProperties = {
   color: 'var(--text-primary)',
-  fontSize: '1.25rem',
-  fontWeight: 600,
-  lineHeight: 1.3,
-  letterSpacing: '-0.01em',
+  fontSize: 'clamp(1.5rem, 2vw, 1.875rem)',
+  fontWeight: 620,
+  lineHeight: 1.2,
+  letterSpacing: '-0.025em',
   fontFamily: 'var(--font-sans)',
 };
 

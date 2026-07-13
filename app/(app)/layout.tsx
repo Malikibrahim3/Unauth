@@ -30,6 +30,7 @@ import {
   PERMISSIONS,
   type Permission,
 } from "@/lib/permissions";
+import "./authenticated.css";
 
 export const dynamic = "force-dynamic";
 
@@ -220,7 +221,7 @@ export default async function AppLayout({
     <ToastProvider>
     <NavigationProvider>
       <DevPreviewProvider value={devPreview}>
-        <div className="flex h-screen overflow-hidden bg-[var(--surface-base)] text-[var(--text-primary)]">
+        <div className="ua-app flex h-screen overflow-hidden">
           <Sidebar
             merchantName={displayMerchantName ?? null}
             userEmail={user.email ?? ""}
@@ -236,7 +237,7 @@ export default async function AppLayout({
             primaryConcern={merchantProfile?.primary_fraud_concern ?? null}
           />
 
-          <div className="flex flex-1 flex-col overflow-hidden">
+          <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
             <BreadcrumbOverrideProvider>
               <AppHeader
                 merchantName={displayMerchantName ?? null}
@@ -259,7 +260,7 @@ export default async function AppLayout({
 
               <main
                 id="app-scroll-container"
-                className="flex-1 overflow-y-auto overflow-x-hidden"
+                className="ua-operational-scrollbar min-w-0 flex-1 overflow-y-auto overflow-x-hidden"
               >
                 <ConnectionStateProvider value={connectionState}>
                   <DemoModeProvider value={allDemo}>

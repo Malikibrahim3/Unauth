@@ -53,7 +53,7 @@ export default async function FlowDetail({
   const versions = (versionsResult.data ??
     []) as unknown as WorkflowVersionRecord[];
   return (
-    <main className="mx-auto max-w-6xl space-y-6 p-4 md:p-6">
+    <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           href="/flows"
@@ -83,6 +83,6 @@ export default async function FlowDetail({
         currentId={id}
         canManage={canManage}
       />
-    </main>
+    </div>
   );
 }

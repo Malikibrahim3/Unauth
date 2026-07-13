@@ -68,7 +68,7 @@ export function getButtonPresentation(
       paddingLeft: isLink ? undefined : sz.px,
       paddingRight: isLink ? undefined : sz.px,
       fontSize: sz.fontSize,
-      borderRadius: isLink ? undefined : 'var(--radius-md)',
+        borderRadius: isLink ? undefined : 'var(--radius-sm)',
       minWidth: isLink ? undefined : 'fit-content',
       ...buttonVariantStyle(variant),
       ...style,

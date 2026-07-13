@@ -85,15 +85,10 @@ export default function AppHeader({
   return (
     <header
       className={cn(
-        'sticky top-0 z-40 flex h-14 items-center gap-3',
+        'ua-app-header sticky top-0 z-40 flex h-12 items-center gap-3',
         'border-b pl-14 pr-4 md:px-4',
       )}
-      style={{
-        background: 'color-mix(in srgb, var(--surface-base) 92%, transparent)',
-        borderBottomColor: 'var(--border)',
-        backdropFilter: 'saturate(130%) blur(8px)',
-        WebkitBackdropFilter: 'saturate(130%) blur(8px)',
-      }}
+      style={{ borderBottomColor: 'var(--border)' }}
     >
       {/* Sidebar collapse toggle */}
       {onToggleSidebar && (
@@ -135,20 +130,6 @@ export default function AppHeader({
                   )}
                   aria-current={isLast ? 'page' : undefined}
                 >
-                  {isLast && (
-                    <span
-                      aria-hidden="true"
-                      style={{
-                        display: 'inline-block',
-                        width: 5,
-                        height: 5,
-                        borderRadius: 999,
-                        background: 'var(--text-tertiary)',
-                        marginRight: 7,
-                        verticalAlign: '1px',
-                      }}
-                    />
-                  )}
                   {seg.label}
                 </span>
               ) : (

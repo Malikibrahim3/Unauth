@@ -53,7 +53,7 @@ export function ConnectedObjectDetail({
 }) {
   const sourceUpdatedAt = object.provenance?.lastSyncedAt ?? object.updatedAt;
   return (
-    <main
+    <div
       className="mx-auto w-full max-w-6xl space-y-6 p-4 sm:p-6"
       data-testid="connected-object-detail"
     >
@@ -265,6 +265,6 @@ export function ConnectedObjectDetail({
           </PanelCard>
         )}
       </section>
-    </main>
+    </div>
   );
 }

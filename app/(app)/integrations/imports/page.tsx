@@ -35,7 +35,7 @@ export default async function ImportsPage() {
     .limit(20);
   if (error) throw new Error(`import_history_failed: ${error.message}`);
   return (
-    <main className="mx-auto max-w-5xl space-y-6 p-4 md:p-6">
+    <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-6">
       <Link
         href="/integrations"
         className="text-sm font-semibold text-[var(--accent)]"
@@ -54,6 +54,6 @@ export default async function ImportsPage() {
         </p>
       </header>
       <CanonicalCsvImportClient history={(data ?? []) as ImportHistoryItem[]} />
-    </main>
+    </div>
   );
 }

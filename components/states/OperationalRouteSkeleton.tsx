@@ -8,7 +8,7 @@ export function OperationalRouteSkeleton({
   detail?: boolean;
 }) {
   return (
-    <main
+    <div
       className="mx-auto w-full max-w-7xl space-y-5 p-4 sm:p-6"
       aria-busy="true"
       aria-label={title}
@@ -41,6 +41,6 @@ export function OperationalRouteSkeleton({
         </div>
       )}
       <span className="sr-only">{title}</span>
-    </main>
+    </div>
   );
 }

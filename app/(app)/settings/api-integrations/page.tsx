@@ -21,7 +21,7 @@ export default async function ApiIntegrationsPage() {
   if (denied) redirect("/settings/account");
 
   return (
-    <main className="mx-auto w-full max-w-5xl space-y-6 p-4 md:p-6">
+    <div className="mx-auto w-full max-w-5xl space-y-6 p-4 md:p-6">
       <header>
         <p className="text-sm text-[var(--text-secondary)]">Developer access</p>
         <h1 className="mt-1 text-2xl font-semibold">API access</h1>
@@ -32,6 +32,6 @@ export default async function ApiIntegrationsPage() {
         </p>
       </header>
       <ApiIntegrationsClient />
-    </main>
+    </div>
   );
 }

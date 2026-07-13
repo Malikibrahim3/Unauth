@@ -39,7 +39,7 @@ export const BADGE_LAYOUT_STYLE: Record<BadgeSize, CSSProperties> = {
 const CHIP_STYLES: Record<BadgeTone, { background: string; color: string; border: string }> = {
   neutral: { background: 'var(--surface-sunken)', color: 'var(--text-secondary)', border: 'var(--border)' },
   info: { background: 'var(--privacy-fill)', color: 'var(--privacy-ink)', border: 'var(--privacy-border)' },
-  accent: { background: 'var(--copper-glow)', color: 'var(--accent)', border: 'var(--accent-soft)' },
+  accent: { background: 'var(--surface-selected)', color: 'var(--text-primary)', border: 'var(--accent-border)' },
   success: { background: 'var(--sev-clear-fill)', color: 'var(--neutral)', border: 'var(--risk-low-bd)' },
   warning: { background: 'var(--sev-probable-fill)', color: 'var(--warning)', border: 'var(--risk-high-bd)' },
   danger: { background: 'var(--sev-definite-fill)', color: 'var(--risk-critical-fg)', border: 'var(--risk-critical-bd)' },

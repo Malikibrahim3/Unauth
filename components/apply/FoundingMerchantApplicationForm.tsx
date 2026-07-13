@@ -82,8 +82,8 @@ export default function FoundingMerchantApplicationForm({ defaultStoreName }: { 
   }
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-sm border px-8 py-10" style={{ background: 'var(--surface)', borderColor: 'var(--border-muted)' }}>
-      <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: '#7B2D26' }}>
+    <form onSubmit={handleSubmit} className="rounded-[var(--radius-lg)] border px-8 py-10" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+      <p className="text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: 'var(--text-tertiary)' }}>
         Tier 2
       </p>
       <h1 className="mt-3 text-3xl font-medium tracking-tight" style={{ color: 'var(--text)' }}>
@@ -101,7 +101,7 @@ export default function FoundingMerchantApplicationForm({ defaultStoreName }: { 
             onChange={(event) => dispatch({ type: 'patch', patch: { monthlyOrderVolume: event.target.value } })}
             required
             className="w-full rounded-[4px] border px-3 py-2 text-sm focus:outline-none"
-            style={{ ...FIELD_STYLE, background: '#FAF6EF', borderColor: '#D2C9B5', color: '#1A1814' }}
+            style={{ ...FIELD_STYLE, background: 'var(--surface-input)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
           >
             <option value="">Select range</option>
             <option value="<1k">&lt;1k</option>
@@ -128,7 +128,7 @@ export default function FoundingMerchantApplicationForm({ defaultStoreName }: { 
             rows={3}
             required
             className="w-full rounded-[4px] border px-3 py-2 text-sm focus:outline-none"
-            style={{ ...FIELD_STYLE, background: '#FAF6EF', borderColor: '#D2C9B5', color: '#1A1814' }}
+            style={{ ...FIELD_STYLE, background: 'var(--surface-input)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
           />
         </Field>
 
@@ -149,7 +149,7 @@ export default function FoundingMerchantApplicationForm({ defaultStoreName }: { 
       </div>
 
       {error ? (
-        <p className="mt-4 text-sm" style={{ color: '#7B2D26' }}>
+        <p className="mt-4 text-sm" role="alert" style={{ color: 'var(--risk-critical-fg)' }}>
           {error}
         </p>
       ) : null}
@@ -166,7 +166,7 @@ export default function FoundingMerchantApplicationForm({ defaultStoreName }: { 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: '#78889C' }}>
+      <span className="mb-2 block text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>
         {label}
       </span>
       {children}

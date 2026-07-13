@@ -40,7 +40,7 @@ export function SidebarAside({
   return (
     <aside
       className={cn(
-        'relative flex h-full flex-shrink-0 flex-col',
+        'ua-app-sidebar relative flex h-full flex-shrink-0 flex-col',
         'border-r border-[var(--border)]',
         isMobile
           ? 'w-72'
@@ -50,7 +50,6 @@ export function SidebarAside({
               isCollapsed ? 'w-14' : 'w-60',
             ),
       )}
-      style={{ background: 'var(--surface)' }}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
@@ -63,11 +62,11 @@ export function SidebarAside({
         <div className="flex w-full min-w-0 items-center justify-between gap-2">
           <Link
             href="/dashboard"
-            className="flex min-w-0 flex-shrink-0 items-center gap-2"
+            className="flex min-w-0 flex-shrink-0 items-center gap-2 py-0.5"
             title="Unauth"
             onClick={onCloseMobile}
           >
-            <UnauthLogo variant="auto" size={isCollapsed ? 9 : 22} />
+            <UnauthLogo variant="mono-dark" size={isCollapsed ? 9 : 22} />
           </Link>
           {!isCollapsed && (
             <button
@@ -88,8 +87,8 @@ export function SidebarAside({
 
         {!isCollapsed && merchantName ? (
           <div
-            className="w-full truncate rounded-sm px-2 py-1 text-xs font-medium leading-tight"
-            style={{ background: 'var(--surface)', color: 'var(--text-secondary)' }}
+            className="w-full truncate px-0.5 py-1 text-[11px] font-medium leading-tight"
+            style={{ color: 'var(--text-secondary)' }}
             title={merchantName}
           >
             {merchantName}
@@ -162,7 +161,7 @@ export function SidebarAside({
         )}
       >
         {!isCollapsed ? (
-          <div className="px-2 py-1 text-caption text-[var(--text-tertiary)] truncate">
+          <div className="px-2 py-1 text-[11px] text-[var(--text-tertiary)] truncate">
             {userEmail}
           </div>
         ) : null}

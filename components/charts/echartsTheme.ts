@@ -79,7 +79,11 @@ export const DARK_TOKENS: ThemeTokens = {
 /** Read live CSS variable values at runtime (client only). Falls back gracefully. */
 export function readCssTokens(): ThemeTokens {
   if (typeof window === 'undefined') return LIGHT_TOKENS;
-  const style = getComputedStyle(document.documentElement);
+  // Authenticated tokens are deliberately scoped away from the public site.
+  // Read from that scope when present so charts cannot fall back to landing
+  // colours declared on :root.
+  const tokenRoot = document.querySelector<HTMLElement>('.ua-app, .ua-auth-surface') ?? document.documentElement;
+  const style = getComputedStyle(tokenRoot);
   const get = (name: string) => style.getPropertyValue(name).trim();
   return {
     accent: get('--accent') || get('--text-primary') || LIGHT_TOKENS.accent,

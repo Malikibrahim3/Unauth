@@ -18,7 +18,7 @@ export const DATA_TABLE_HEADER_CELL_BASE: CSSProperties = {
   letterSpacing: '0',
   color: 'var(--text-tertiary)',
   padding: '0 var(--space-4)',
-  height: 42,
+  height: 36,
   whiteSpace: 'nowrap',
 };
 

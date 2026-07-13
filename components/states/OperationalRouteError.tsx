@@ -15,7 +15,7 @@ export function OperationalRouteError({
   fallbackHref?: string;
 }) {
   return (
-    <main className="mx-auto flex min-h-[55vh] w-full max-w-3xl items-center p-4 sm:p-6">
+    <div className="mx-auto flex min-h-[55vh] w-full max-w-3xl items-center p-4 sm:p-6">
       <section
         className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[var(--shadow-1)]"
         role="alert"
@@ -46,6 +46,6 @@ export function OperationalRouteError({
           </Link>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

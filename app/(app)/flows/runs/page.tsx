@@ -31,7 +31,7 @@ export default async function Runs({
   if (sp.workflow) q = q.eq("workflow_definition_id", sp.workflow);
   const runs = (await q).data ?? [];
   return (
-    <main className="mx-auto max-w-6xl space-y-5 p-4 md:p-6">
+    <div className="mx-auto max-w-6xl space-y-5 p-4 md:p-6">
       <Link href="/flows" className="text-sm text-[var(--accent)]">
         ← Flows
       </Link>
@@ -51,6 +51,6 @@ export default async function Runs({
         ))}
       </div>
       {!runs.length ? <p>No flow runs found for this scope.</p> : null}
-    </main>
+    </div>
   );
 }

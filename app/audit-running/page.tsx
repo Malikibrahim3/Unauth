@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import '../(app)/authenticated.css';
 
 export const metadata: Metadata = {
   title: 'Context backfill running | Unauth',
@@ -23,11 +24,8 @@ export default async function AuditRunningPage({ searchParams }: AuditRunningPag
   const email = resolvedSearchParams.email ?? user.email ?? 'your inbox';
 
   return (
-    <div
-      className="min-h-screen px-6 py-20 md:px-10"
-      style={{ background: '#F8F5EE', color: '#1A1814' }}
-    >
-      <div className="mx-auto max-w-2xl rounded-sm border px-8 py-10 md:px-10 md:py-12" style={{ background: '#FDFBF6', borderColor: '#D8D0BD' }}>
+    <div className="ua-auth-surface min-h-screen bg-[var(--surface-base)] px-6 py-20 text-[var(--text-primary)] md:px-10">
+      <div className="mx-auto max-w-2xl rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] px-8 py-10 md:px-10 md:py-12">
         <p
           style={{
             fontFamily: 'var(--font-dm-sans, sans-serif)',
@@ -35,7 +33,7 @@ export default async function AuditRunningPage({ searchParams }: AuditRunningPag
             fontWeight: 600,
             letterSpacing: '0.16em',
             textTransform: 'uppercase',
-            color: '#7B2D26',
+            color: 'var(--text-tertiary)',
             marginBottom: '14px',
           }}
         >
@@ -44,8 +42,8 @@ export default async function AuditRunningPage({ searchParams }: AuditRunningPag
         <h1
           style={{
             fontFamily: 'var(--font-dm-sans, sans-serif)',
-            fontSize: 'clamp(30px, 4vw, 46px)',
-            fontWeight: 500,
+            fontSize: 'clamp(28px, 4vw, 38px)',
+            fontWeight: 620,
             letterSpacing: '-0.025em',
             lineHeight: 1.05,
             marginBottom: '16px',
@@ -55,21 +53,21 @@ export default async function AuditRunningPage({ searchParams }: AuditRunningPag
         </h1>
         <p
           style={{
-            fontFamily: 'var(--font-serif, serif)',
-            fontSize: '18px',
+            fontFamily: 'var(--font-sans)',
+            fontSize: '16px',
             lineHeight: 1.6,
-            color: '#4A4640',
+            color: 'var(--text-secondary)',
             marginBottom: '20px',
           }}
         >
-          We&apos;ll email your results to <span style={{ color: '#1A1814' }}>{email}</span> when processing finishes. You can also check status in the app.
+          We&apos;ll email your results to <span style={{ color: 'var(--text-primary)' }}>{email}</span> when processing finishes. You can also check status in the app.
         </p>
         <p
           style={{
             fontFamily: 'var(--font-dm-sans, sans-serif)',
             fontSize: '14px',
             lineHeight: 1.6,
-            color: '#8A8472',
+            color: 'var(--text-tertiary)',
             margin: 0,
           }}
         >

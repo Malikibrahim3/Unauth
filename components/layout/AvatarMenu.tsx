@@ -63,7 +63,7 @@ export function AvatarMenu({ email, className }: AvatarMenuProps) {
         onClick={() => setOpen((v) => !v)}
         className={cn(
           'flex h-7 w-7 items-center justify-center rounded-full',
-          'bg-[var(--accent-500)] text-white',
+          'bg-[var(--action-primary)] text-[var(--text-inverse)]',
           'text-xs font-bold leading-none',
           'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
           'transition-opacity hover:opacity-90',

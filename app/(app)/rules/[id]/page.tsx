@@ -62,7 +62,7 @@ export default async function RuleDetail({
     versions[0]!;
 
   return (
-    <main className="mx-auto max-w-6xl space-y-6 p-4 md:p-6">
+    <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-6">
       <Link
         href="/rules"
         className="text-sm font-semibold text-[var(--accent)]"
@@ -86,6 +86,6 @@ export default async function RuleDetail({
         initialVersions={versions}
         canManage={canManage}
       />
-    </main>
+    </div>
   );
 }

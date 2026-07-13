@@ -147,7 +147,7 @@ export default function OnboardingClient({
         {/* Sidebar checklist */}
         <aside
           className="rounded-md border p-5"
-          style={{ background: 'var(--surface)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-md)' }}
+          style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
         >
           <div className="mb-6 flex items-start justify-between gap-3">
             <div>
@@ -172,8 +172,8 @@ export default function OnboardingClient({
                   onClick={() => reachable && dispatch({ type: 'patch', patch: { activeStep: index } })}
                   className="grid w-full grid-cols-[24px_minmax(0,1fr)_auto] items-center gap-3 rounded-md border p-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                   style={{
-                    background: active ? 'var(--copper-glow)' : 'var(--surface-sunken)',
-                    borderColor: active ? 'var(--accent)' : 'var(--border)',
+                    background: active ? 'var(--surface-selected)' : 'var(--surface-sunken)',
+                    borderColor: active ? 'var(--accent-border)' : 'var(--border)',
                   }}
                 >
                   <span className="flex h-6 w-6 items-center justify-center rounded-sm" style={{ background: done ? 'var(--sev-clear-fill)' : 'var(--surface-sunken)', color: done ? 'var(--neutral)' : 'var(--text-tertiary)' }}>
@@ -191,7 +191,7 @@ export default function OnboardingClient({
         </aside>
 
         {/* Step content */}
-        <section className="rounded-md border p-7" style={{ background: 'var(--surface)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-md)' }}>
+        <section className="rounded-md border p-7" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
           <div className="mb-6 flex items-start gap-3">
             <span className="flex h-10 w-10 items-center justify-center rounded-md" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>
               <CurrentIcon className="h-5 w-5" />
@@ -303,7 +303,7 @@ export default function OnboardingClient({
                     <a
                       href={`/api/shopify/install?shop=${encodeURIComponent(shopDomain.trim())}`}
                       className="inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-semibold gap-1.5"
-                      style={{ borderColor: 'var(--accent)', color: 'var(--accent)', background: 'var(--copper-glow)', whiteSpace: 'nowrap' }}
+                      style={{ borderColor: 'var(--accent)', color: 'var(--text-inverse)', background: 'var(--accent)', whiteSpace: 'nowrap' }}
                     >
                       <ShoppingBag className="h-4 w-4" />
                       Connect Shopify
@@ -350,7 +350,7 @@ export default function OnboardingClient({
                   <Link
                     href="/settings/integrations/gorgias"
                     className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold"
-                    style={{ background: 'var(--copper-glow)', borderColor: 'var(--accent)', border: '1px solid', color: 'var(--accent)' }}
+                    style={{ background: 'var(--accent)', borderColor: 'var(--accent)', border: '1px solid', color: 'var(--text-inverse)' }}
                   >
                     <Headphones className="h-4 w-4" />
                     Set up Gorgias integration

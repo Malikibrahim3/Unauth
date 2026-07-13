@@ -1,7 +1,9 @@
+import "../(app)/authenticated.css";
+
 export default function OnboardingRouteLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return children;
+  return <div className="ua-auth-surface min-h-screen">{children}</div>;
 }

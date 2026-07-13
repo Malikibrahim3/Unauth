@@ -71,7 +71,7 @@ export default async function ReportRecords({
   const rows = (result.data ?? []) as Array<Record<string, any>>;
   const total = result.count ?? 0;
   return (
-    <main className="mx-auto max-w-6xl space-y-5 p-4 md:p-6">
+    <div className="mx-auto max-w-6xl space-y-5 p-4 md:p-6">
       <Link
         className="text-sm font-medium text-[var(--accent)]"
         href={`/reports?range=${range}`}
@@ -156,6 +156,6 @@ export default async function ReportRecords({
           </Link>
         ) : null}
       </nav>
-    </main>
+    </div>
   );
 }

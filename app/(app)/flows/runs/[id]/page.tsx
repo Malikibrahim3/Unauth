@@ -41,7 +41,7 @@ export default async function Run({
         .order("step_index")
     ).data ?? [];
   return (
-    <main className="mx-auto max-w-5xl space-y-5 p-4 md:p-6">
+    <div className="mx-auto max-w-5xl space-y-5 p-4 md:p-6">
       <Link href="/flows/runs" className="text-sm text-[var(--accent)]">
         ← Run history
       </Link>
@@ -79,6 +79,6 @@ export default async function Run({
           </li>
         ))}
       </ol>
-    </main>
+    </div>
   );
 }

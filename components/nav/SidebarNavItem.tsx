@@ -39,7 +39,7 @@ export function SidebarNavItem({
       active={active}
       onNavigate={onNavigate}
       className={cn(
-        'group relative flex h-8 items-center gap-2.5 rounded-[6px] px-2.5',
+        'group relative flex h-8 items-center gap-2.5 rounded-[4px] px-2.5',
         'text-[13px] font-medium leading-none',
         'transition-all duration-150',
         'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
@@ -51,7 +51,7 @@ export function SidebarNavItem({
       style={
         active
           ? {
-              background: 'var(--accent-soft)',
+              background: 'var(--surface-selected)',
               color: 'var(--text-primary)'
             }
           : undefined
@@ -61,7 +61,7 @@ export function SidebarNavItem({
         className={cn(
           'h-4 w-4 flex-shrink-0',
           active
-            ? 'text-[var(--accent)]'
+            ? 'text-[var(--text-primary)]'
             : 'text-[var(--icon-muted)] group-hover:text-[var(--icon)]',
         )}
         aria-hidden="true"
@@ -77,7 +77,7 @@ export function SidebarNavItem({
               className={cn(
                 'inline-flex h-[18px] min-w-[18px] items-center justify-center',
                 'rounded-full px-1.5',
-                'bg-[var(--accent)] text-white',
+                'bg-[var(--text-primary)] text-[var(--text-inverse)]',
                 'text-[11px] font-semibold tabular-nums',
               )}
             >
@@ -89,7 +89,7 @@ export function SidebarNavItem({
 
       {collapsed && !!item.badge && item.badge > 0 && (
         <span
-          className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[var(--accent)]"
+          className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[var(--text-primary)]"
           title={item.badgeTitle ?? `${item.badge} items`}
           aria-label={item.badgeTitle ? `${item.badgeTitle}: ${item.badge}` : `${item.badge} items`}
         />
@@ -104,7 +104,7 @@ export function SidebarGroupLabel({ label, collapsed }: { label: string; collaps
     <div className="mt-4 mb-1 px-3">
       <span
         className="block leading-none uppercase"
-        style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-tertiary)', letterSpacing: '0.10em' }}
+        style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: '0.08em' }}
       >
         {label}
       </span>
