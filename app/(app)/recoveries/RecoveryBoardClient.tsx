@@ -139,8 +139,8 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
   return (
     <div>
       <p className="mb-3 text-xs" style={{ color: "var(--text-tertiary)" }}>
-        Card status and evidence completeness update from connected source sync,
-        matched correspondence, and provider status events.
+        Cards update automatically as your connected tools sync new evidence and
+        status.
       </p>
       {message ? (
         <p

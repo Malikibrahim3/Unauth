@@ -4,7 +4,7 @@ import { hasPermission, PERMISSIONS, requirePermission } from '@/lib/permissions
 import { TABLES } from '@/lib/supabase/tables';
 import { WorkbenchPage } from '@/components/ui';
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
-import { formatCurrencyNullable, sumSameCurrency } from '@/lib/utils/format';
+import { formatCurrencyNullable, formatNumber, sumSameCurrency } from '@/lib/utils/format';
 import { listRecoveryCases } from '@/lib/recoveries/store';
 import { RecoveryBoardClient } from '@/app/(app)/recoveries/RecoveryBoardClient';
 import type { RecoveryCase } from '@/lib/recoveries/types';
@@ -111,16 +111,16 @@ export default async function RecoveriesPage() {
       navItems={WORKBENCH_NAV_ITEMS}
       activeNavKey="recoveries"
       kpiItems={[
-        { label: 'Open recovery cases', value: openRecoveries.length.toLocaleString(), hint: 'Source-backed active cases' },
-        { label: 'Missing source data', value: missingSourceData.toLocaleString(), hint: 'Automatically calculated' },
-        { label: 'Needs correspondence', value: needsCorrespondence.toLocaleString(), hint: 'Generated requests only' },
-        { label: 'Estimated recovery', value: formatCurrencyNullable(estimatedRecoverable || null, currency) ?? '-', hint: `Source-derived upper estimate${mixedHint}` },
-        { label: 'Approved recovery', value: formatCurrencyNullable(recovered || null, currency) ?? '-', hint: `Synced outcome${mixedHint}` },
+        { label: 'Open recovery cases', value: formatNumber(openRecoveries.length), hint: 'Active cases' },
+        { label: 'Missing source data', value: formatNumber(missingSourceData), hint: 'Waiting on a connected source' },
+        { label: 'Needs correspondence', value: formatNumber(needsCorrespondence), hint: 'Draft chase requests' },
+        { label: 'Estimated recovery', value: formatCurrencyNullable(estimatedRecoverable || null, currency) ?? '—', hint: `Upper estimate${mixedHint}` },
+        { label: 'Approved recovery', value: formatCurrencyNullable(recovered || null, currency) ?? '—', hint: `Confirmed to date${mixedHint}` },
       ]}
       main={<RecoveryBoardClient recoveries={recoveries} canManage={canManage} />}
       footer={
         <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-          Recovery cases are created and updated by connected source data, matched correspondence, and provider status sync. Unavailable evidence is tracked as unavailable, not manually filled.
+          Cases update automatically as your connected tools sync new evidence and status. Missing evidence stays marked as missing until a source provides it.
         </p>
       }
     />
