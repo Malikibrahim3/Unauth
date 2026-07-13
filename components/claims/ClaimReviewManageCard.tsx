@@ -37,6 +37,9 @@ const OUTCOME_VERB: Record<string, string> = {
 export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbench; canManage: boolean }) {
   const [confirming, setConfirming] = useState(false);
   const [confirmingReversal, setConfirmingReversal] = useState(false);
+  // B5: a pristine form shows no red. Validation surfaces only once the operator
+  // has interacted with the decision fields (changed a select or touched notes).
+  const [decisionTouched, setDecisionTouched] = useState(false);
   const {
     claimId, state, patch, busy, dispatch, claimIsClosed,
     onOutcome, onEvidence, onAssignment, onSnooze, onClearSnooze, onReverse,
@@ -85,6 +88,7 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
           <FieldLabel htmlFor="manage-decision">Record decision &amp; outcome</FieldLabel>
           <select id="manage-decision" className="w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()}
             value={state.decision} onChange={(e) => {
+              setDecisionTouched(true);
               const decision = e.target.value as Decision;
               const outcomes = allowedOutcomes(decision as MerchantDecision);
               patch({ decision, outcome: outcomes.includes(state.outcome as never) ? state.outcome : outcomes[0] as Outcome });
@@ -92,16 +96,17 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
             {DECISION_OPTIONS.map((d) => <option key={d} value={d}>{DECISION_VERB[d] ?? d}</option>)}
           </select>
           <select className="w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()}
-            value={state.outcome} onChange={(e) => patch({ outcome: e.target.value as Outcome })} aria-label="Outcome">
+            value={state.outcome} onChange={(e) => { setDecisionTouched(true); patch({ outcome: e.target.value as Outcome }); }} aria-label="Outcome">
             {OUTCOME_OPTIONS.filter((outcome) => validOutcomes.includes(outcome as never)).map((o) => <option key={o} value={o}>{OUTCOME_VERB[o] ?? o}</option>)}
           </select>
           <textarea className="min-h-20 w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()}
-            placeholder={decisionRequiresRationale(state.decision as MerchantDecision) ? 'Rationale (required)' : 'Decision rationale (optional)'} value={state.notes} onChange={(e) => patch({ notes: e.target.value })} aria-label="Decision rationale" />
-          {validationMessage ? <p role="alert" className="text-xs text-[var(--danger)]">{validationMessage}</p> : null}
+            placeholder={decisionRequiresRationale(state.decision as MerchantDecision) ? 'Rationale (required)' : 'Decision rationale (optional)'} value={state.notes}
+            onChange={(e) => patch({ notes: e.target.value })} onBlur={() => setDecisionTouched(true)} aria-label="Decision rationale" />
+          {decisionTouched && validationMessage ? <p role="alert" className="text-xs text-[var(--danger)]">{validationMessage}</p> : null}
           <button type="button" disabled={disabled || !validation.success}
             onClick={() => setConfirming(true)}
             className="w-full px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-60" style={btnStyle('primary')}>
-            Review decision
+            Record decision
           </button>
         </div>
 
