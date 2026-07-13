@@ -3,7 +3,8 @@
 import { Check, CheckCircle2, Circle, Copy, RefreshCw, Unplug, AlertTriangle } from 'lucide-react';
 import type { FormEvent } from 'react';
 import Image from 'next/image';
-import { PanelCard, StatusBadge, statusBadgeVariantFor } from '@/components/ui';
+import { Badge, PanelCard } from '@/components/ui';
+import { StatusBadge } from '@/components/ui/StatusBadge';
 import { GorgiasSupportSyncCreateForm } from '@/components/settings/GorgiasSupportSyncCreateForm';
 import type { GorgiasSupportSyncState } from '@/components/settings/gorgiasSupportSyncReducer';
 import { formatGorgiasWhen, gorgiasAccountLabel } from '@/components/settings/gorgiasSupportSyncUtils';
@@ -40,9 +41,7 @@ function ChecklistRow({ item }: { item: ChecklistItem }) {
       <span className="flex-1 text-sm" style={{ color: 'var(--text)' }}>
         {item.label}
       </span>
-      <StatusBadge variant={item.ok ? 'cleared' : 'flagged'} className="px-2 py-0.5 text-xs font-medium">
-        {item.status}
-      </StatusBadge>
+      <Badge tone={item.ok ? 'success' : 'warning'} size="sm" dot>{item.status}</Badge>
     </div>
   );
 }
@@ -99,9 +98,7 @@ export function GorgiasSupportSyncConnectionDetails({
             <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
               {gorgiasAccountLabel(connection)}
             </p>
-            <StatusBadge variant={statusBadgeVariantFor(connection.status)}>
-              {isActive ? 'Connected' : connection.status === 'disabled' ? 'Disabled' : connection.status}
-            </StatusBadge>
+            <StatusBadge family="workflowStatus" value={isActive ? 'connected' : connection.status} />
           </div>
           <p className="mt-0.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
             Last synced {formatGorgiasWhen(connection.last_sync_at)}

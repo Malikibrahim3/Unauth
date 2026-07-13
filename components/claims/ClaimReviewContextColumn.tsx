@@ -1,7 +1,7 @@
 "use client";
 
 import { signalLabel } from "@/lib/copy/signalLabels";
-import { PanelCard, StatusBadge } from "@/components/ui";
+import { Badge, PanelCard } from "@/components/ui";
 import { claimEventLabel, claimEventSummary } from "@/lib/claims/events";
 import { formatClaimAge, formatFiledDate } from "@/lib/claims/sla";
 import SupportCaseContextList from "@/components/support/SupportCaseContextList";
@@ -11,7 +11,7 @@ import {
   OUTCOME_LABELS,
 } from "@/components/claims/claimReviewLabels";
 import { formatClaimMoney } from "@/components/claims/claimReviewStyles";
-import { formatDateTime } from "@/lib/utils/format";
+import { formatDate, formatDateTime } from "@/lib/utils/format";
 import { actorLabel } from "@/components/claims/claimReviewLogic";
 import {
   CaseIntelTile,
@@ -314,9 +314,7 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
         {behaviorSignals.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-1.5">
             {behaviorSignals.slice(0, 5).map((f) => (
-              <StatusBadge key={f} variant="flagged">
-                {signalLabel(f).short}
-              </StatusBadge>
+              <Badge key={f} tone="warning" size="sm">{signalLabel(f).short}</Badge>
             ))}
           </div>
         )}
@@ -330,9 +328,7 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
             </p>
             <div className="flex flex-wrap gap-1.5">
               {identityPoints.map((point) => (
-                <StatusBadge key={point} variant="held" dot={false}>
-                  {point}
-                </StatusBadge>
+                <Badge key={point} size="sm">{point}</Badge>
               ))}
             </div>
           </div>
@@ -374,15 +370,9 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
                     className="font-mono"
                     style={{ color: "var(--text-secondary)" }}
                   >
-                    {row.date
-                      ? new Date(row.date).toLocaleDateString("en-US", {
-                          timeZone: "UTC",
-                        })
-                      : "-"}
+                    {row.date ? formatDate(row.date) : "-"}
                   </span>
-                  <StatusBadge variant="held" dot={false}>
-                    {row.grade}
-                  </StatusBadge>
+                  <Badge size="sm">{row.grade}</Badge>
                 </span>
               </PanelCard>
             ))}

@@ -16,69 +16,7 @@ import {
   Video,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { type StatusBadgeVariant, type StepBadgeVariant, uiTokens } from './tokens';
-
-export function StatusBadge({
-  variant,
-  children,
-  className,
-  dot = true,
-}: {
-  variant: StatusBadgeVariant;
-  children?: ReactNode;
-  className?: string;
-  dot?: boolean;
-}) {
-  const tone = uiTokens.colors.status[variant];
-
-  return (
-    <span
-      className={cn(uiTokens.badge.base, className)}
-      style={{
-        background: tone.bg,
-        color: tone.fg,
-        boxShadow: `inset 0 0 0 1px ${tone.border}`,
-      }}
-    >
-      {dot ? (
-        <span aria-hidden="true" className={uiTokens.badge.dot} style={{ background: tone.dot }} />
-      ) : null}
-      {children ?? variant[0].toUpperCase() + variant.slice(1)}
-    </span>
-  );
-}
-
-export function statusBadgeVariantFor(value: string | null | undefined): StatusBadgeVariant {
-  const status = (value ?? '').toLowerCase();
-  if (
-    status.includes('block') ||
-    status.includes('deny') ||
-    status.includes('reject') ||
-    status.includes('overdue') ||
-    status.includes('error') ||
-    status.includes('disabled') ||
-    status.includes('unrecoverable')
-  ) {
-    return 'blocked';
-  }
-  if (
-    status.includes('clear') ||
-    status.includes('complete') ||
-    status.includes('connected') ||
-    status.includes('active') ||
-    status.includes('paid') ||
-    status.includes('resolved') ||
-    status.includes('closed') ||
-    status.includes('ready') ||
-    status.includes('approved')
-  ) {
-    return 'cleared';
-  }
-  if (status.includes('hold') || status.includes('manual') || status.includes('review')) {
-    return 'held';
-  }
-  return 'flagged';
-}
+import { type StepBadgeVariant, uiTokens } from './tokens';
 
 export function StepBadge({
   variant,

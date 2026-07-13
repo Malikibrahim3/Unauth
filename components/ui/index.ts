@@ -45,8 +45,10 @@ export { WorkbenchActionBar } from '@/components/workbench/WorkbenchActionBar';
 export { WorkbenchEmptyState } from '@/components/workbench/WorkbenchEmptyState';
 export { SettingsPageShell } from '@/components/settings/SettingsPageShell';
 export { MotionWrap } from './MotionWrap';
+export { StatusBadge, PriorityChip, STATUS_TONES, statusTone } from './StatusBadge';
+export type { StatusTone } from './StatusBadge';
 export { uiTokens } from './tokens';
-export type { StatusBadgeVariant, StepBadgeVariant } from './tokens';
+export type { StepBadgeVariant } from './tokens';
 export {
   EvidenceLine,
   KanbanBoard,
@@ -56,10 +58,8 @@ export {
   SectionBody,
   SectionEyebrow,
   SectionHeadline,
-  StatusBadge,
   StepBadge,
   TagPill,
   ThreadPanel,
-  statusBadgeVariantFor,
 } from './LandingPrimitives';
 export type { KanbanCardItem, KanbanColumnItem, ThreadPanelMessage } from './LandingPrimitives';

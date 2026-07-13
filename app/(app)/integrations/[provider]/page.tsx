@@ -9,7 +9,8 @@ import {
 import { loadConnectorCatalogue } from "@/lib/connectors/catalogue";
 import { TABLES } from "@/lib/supabase/tables";
 import { ConnectionActions } from "@/components/integrations/ConnectionActions";
-import { PanelCard, StatusBadge } from "@/components/ui";
+import { PanelCard } from "@/components/ui";
+import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatDateTime, formatNumber } from "@/lib/utils/format";
 
 export const dynamic = "force-dynamic";
@@ -31,24 +32,6 @@ type IngestionIssue = {
   last_error: string | null;
   received_at: string;
 };
-
-function statusVariant(
-  status: string,
-): "cleared" | "blocked" | "flagged" | "held" {
-  if (
-    ["connected", "import_complete", "completed", "supported"].includes(status)
-  )
-    return "cleared";
-  if (
-    ["error", "revoked", "failed", "dead_letter", "unsupported"].includes(
-      status,
-    )
-  )
-    return "blocked";
-  if (["attention_required", "importing", "running"].includes(status))
-    return "flagged";
-  return "held";
-}
 
 export default async function ConnectionPage({
   params,
@@ -96,9 +79,6 @@ export default async function ConnectionPage({
   ]);
   const jobs = (jobsResult.data ?? []) as SyncJob[];
   const issues = (issuesResult.data ?? []) as IngestionIssue[];
-  const statusLabel = item.status
-    .replaceAll("_", " ")
-    .replace(/^./, (character) => character.toUpperCase());
   return (
     <main className="mx-auto max-w-6xl space-y-6 p-4 md:p-6">
       <Link
@@ -117,9 +97,7 @@ export default async function ConnectionPage({
             {item.description}
           </p>
         </div>
-        <StatusBadge variant={statusVariant(item.status)} className="px-3 py-1">
-          {statusLabel}
-        </StatusBadge>
+        <StatusBadge family="workflowStatus" value={item.status === "import_complete" ? "connected" : item.status} />
       </header>
       {item.stage === "planned" ? (
         <PanelCard
@@ -229,9 +207,7 @@ export default async function ConnectionPage({
                   </th>
                   <td className="px-3 py-3 capitalize">{capability.level}</td>
                   <td className="px-3 py-3">
-                    <StatusBadge variant={statusVariant(capability.support)}>
-                      {capability.support}
-                    </StatusBadge>
+                    <StatusBadge family="workflowStatus" value={capability.support} size="sm" />
                   </td>
                   <td className="px-3 py-3 text-xs text-[var(--text-secondary)]">
                     {capability.scopes.join(", ") || "None"}
@@ -246,9 +222,7 @@ export default async function ConnectionPage({
             <PanelCard key={capability.id} variant="app" className="p-3">
               <div className="flex items-start justify-between gap-2">
                 <strong className="text-sm">{capability.description}</strong>
-                <StatusBadge variant={statusVariant(capability.support)}>
-                  {capability.support}
-                </StatusBadge>
+                <StatusBadge family="workflowStatus" value={capability.support} size="sm" />
               </div>
               <p className="mt-1 font-mono text-[11px] text-[var(--text-tertiary)]">
                 {capability.id}
@@ -293,9 +267,7 @@ export default async function ConnectionPage({
                     </p>
                   </div>
                   <div className="text-right">
-                    <StatusBadge variant={statusVariant(job.status)}>
-                      {job.status}
-                    </StatusBadge>
+                    <StatusBadge family="workflowStatus" value={job.status} size="sm" />
                     <p className="mt-1 font-mono text-xs">
                       {job.processed_rows ?? 0} processed ·{" "}
                       {job.failed_rows ?? 0} failed
@@ -330,9 +302,7 @@ export default async function ConnectionPage({
                     <strong className="text-sm">
                       {issue.event_type ?? "Ingestion event"}
                     </strong>
-                    <StatusBadge variant="blocked">
-                      {issue.status.replaceAll("_", " ")}
-                    </StatusBadge>
+                    <StatusBadge family="workflowStatus" value={issue.status} tone="danger" size="sm" />
                   </div>
                   <p className="mt-1 text-xs text-[var(--text-secondary)]">
                     {issue.last_error ??

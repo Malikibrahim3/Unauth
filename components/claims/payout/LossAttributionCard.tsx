@@ -1,12 +1,11 @@
 'use client';
 
 import {
-  ATTRIBUTION_CONFIDENCE_LABELS,
   LOSS_ATTRIBUTION_DISPLAY,
   type LossAttributionResult,
 } from '@/lib/payouts/types';
-import { PanelCard, StatusBadge } from '@/components/ui';
-import { confidenceTone } from '@/components/claims/payout/payoutCopy';
+import { PanelCard } from '@/components/ui';
+import { StatusBadge } from '@/components/ui/StatusBadge';
 
 export function LossAttributionCard({ attribution }: { attribution: LossAttributionResult }) {
   const isUnknown =
@@ -18,9 +17,7 @@ export function LossAttributionCard({ attribution }: { attribution: LossAttribut
         <p className="text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>
           Loss attribution (advisory)
         </p>
-        <StatusBadge variant={confidenceVariant(confidenceTone(attribution.confidence))}>
-          {ATTRIBUTION_CONFIDENCE_LABELS[attribution.confidence]}
-        </StatusBadge>
+        <StatusBadge family="confidence" value={attribution.confidence} />
       </div>
 
       <p className="font-semibold text-base" style={{ color: 'var(--text)' }}>
@@ -45,10 +42,4 @@ export function LossAttributionCard({ attribution }: { attribution: LossAttribut
       )}
     </PanelCard>
   );
-}
-
-function confidenceVariant(tone: ReturnType<typeof confidenceTone>) {
-  if (tone === 'success') return 'cleared';
-  if (tone === 'warning') return 'flagged';
-  return 'held';
 }

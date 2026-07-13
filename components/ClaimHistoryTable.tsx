@@ -1,4 +1,4 @@
-import { StatusBadge as SharedStatusBadge } from "@/components/ui";
+import { StatusBadge } from "@/components/ui/StatusBadge";
 
 type Status = "BLOCKED" | "FLAGGED" | "CLEARED";
 
@@ -52,12 +52,6 @@ const rowTint: Record<Status, string> = {
   BLOCKED: "bg-red-500/[0.05]",
   FLAGGED: "bg-amber-500/[0.04]",
   CLEARED: "",
-};
-
-const statusVariant: Record<Status, "blocked" | "flagged" | "cleared"> = {
-  BLOCKED: "blocked",
-  FLAGGED: "flagged",
-  CLEARED: "cleared",
 };
 
 export default function ClaimHistoryTable() {
@@ -143,9 +137,11 @@ export default function ClaimHistoryTable() {
 
                 {/* STATUS */}
                 <td className="px-5 py-[14px] pr-6">
-                  <SharedStatusBadge variant={statusVariant[row.status]}>
-                    {row.status}
-                  </SharedStatusBadge>
+                  <StatusBadge
+                    family="workflowStatus"
+                    value={row.status === "BLOCKED" ? "blocked" : row.status === "FLAGGED" ? "review" : "complete"}
+                    size="sm"
+                  />
                 </td>
               </tr>
             ))}

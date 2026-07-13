@@ -2,35 +2,25 @@
 
 import type { ReactNode } from 'react';
 import { getClaimSlaState } from '@/lib/claims/sla';
-import { PanelCard, StatusBadge, statusBadgeVariantFor } from '@/components/ui';
+import { PanelCard } from '@/components/ui';
+import { StatusBadge } from '@/components/ui/StatusBadge';
 import {
   EVIDENCE_SOURCE_LABELS,
   EVIDENCE_TYPE_LABELS,
   QUICK_LIFECYCLE_STATUSES,
-  STATUS_LABELS,
   operatorLifecycleOptions,
 } from '@/components/claims/claimReviewLabels';
 import { btnStyle, inputStyle } from '@/components/claims/claimReviewStyles';
 import type { ClaimRecord, ClaimStatus } from '@/components/claims/claimReviewTypes';
 
 export function StatusPill({ status }: { status: string }) {
-  const label = STATUS_LABELS[status] ?? status;
-  return <StatusBadge variant={statusBadgeVariantFor(status)}>{label}</StatusBadge>;
+  return <StatusBadge family="caseStatus" value={status} />;
 }
-
-const SLA_DISPLAY_LABEL: Record<string, string> = {
-  Overdue: 'Ageing',
-  'Approaching SLA': 'Approaching threshold',
-  Resolved: 'Outcome recorded',
-  Normal: 'Within threshold',
-  'SLA unknown': 'Age unknown',
-};
 
 export function SlaBadge({ claim }: { claim: ClaimRecord }) {
   const sla = getClaimSlaState(claim);
-  const label = SLA_DISPLAY_LABEL[sla.label] ?? sla.label;
-  const variant = sla.state === 'overdue' ? 'blocked' : sla.state === 'approaching' ? 'flagged' : sla.state === 'resolved' ? 'cleared' : 'held';
-  return <StatusBadge variant={variant}>{label}</StatusBadge>;
+  const value = sla.state === 'overdue' || sla.state === 'approaching' || sla.state === 'resolved' ? sla.state : 'normal';
+  return <StatusBadge family="workflowStatus" value={value} />;
 }
 
 export function FieldLabel({ children, htmlFor }: { children: ReactNode; htmlFor?: string }) {

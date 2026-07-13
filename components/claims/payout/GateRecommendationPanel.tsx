@@ -3,27 +3,14 @@
 import type { EvidenceStrength } from '@/lib/claim-gate/evidenceStrength';
 import type { GateRecommendation } from '@/lib/claim-gate/buildRecommendation';
 import { formatCurrency } from '@/lib/utils/format';
-import { PanelCard, StatusBadge } from '@/components/ui';
+import { PanelCard } from '@/components/ui';
+import { StatusBadge } from '@/components/ui/StatusBadge';
 
 /**
  * Renders the deterministic gate recommendation in neutral plain English.
  * Mirrors the Gorgias internal note — no raw scores, no accusatory language.
  * The merchant's rules make the recommendation; Unauth surfaces the reasoning.
  */
-
-const STRENGTH_LABELS: Record<EvidenceStrength, string> = {
-  strong: 'Strong',
-  partial: 'Partial',
-  weak: 'Weak',
-  insufficient: 'Insufficient',
-};
-
-const STRENGTH_VARIANT: Record<EvidenceStrength, 'blocked' | 'flagged' | 'cleared' | 'held'> = {
-  strong: 'cleared',
-  partial: 'flagged',
-  weak: 'flagged',
-  insufficient: 'held',
-};
 
 export function GateRecommendationPanel({ recommendation }: { recommendation: GateRecommendation | null }) {
   if (!recommendation) return null;
@@ -38,9 +25,7 @@ export function GateRecommendationPanel({ recommendation }: { recommendation: Ga
         <h3 className="text-body font-semibold" style={{ color: 'var(--text-primary)' }}>
           Review gate
         </h3>
-        <StatusBadge variant={held ? 'flagged' : 'cleared'}>
-          {held ? 'Hold' : 'Proceed'}
-        </StatusBadge>
+        <StatusBadge family="workflowStatus" value={held ? 'hold' : 'proceed'} />
       </div>
 
       <div>
@@ -80,9 +65,7 @@ export function GateRecommendationPanel({ recommendation }: { recommendation: Ga
         <span className="text-caption" style={{ color: 'var(--text-secondary)' }}>
           Evidence:
         </span>
-        <StatusBadge variant={STRENGTH_VARIANT[strength]}>
-          {STRENGTH_LABELS[strength]}
-        </StatusBadge>
+        <StatusBadge family="evidenceStrength" value={strength} size="sm" />
         <span className="text-caption" style={{ color: 'var(--text-tertiary)' }}>
           {recommendation.reasoning.evidence_strength_explanation}
         </span>

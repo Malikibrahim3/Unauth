@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  PAYOUT_CASE_NEXT_ACTION_LABELS,
   PAYOUT_CASE_STATUS_LABELS,
   PAYOUT_DECISION_STATE_LABELS,
   REQUESTED_ACTION_LABELS,
@@ -9,7 +8,8 @@ import {
   type CaseClarificationRequest,
   type SupportPayoutCase,
 } from '@/lib/payouts/types';
-import { PanelCard, StatusBadge } from '@/components/ui';
+import { Badge, PanelCard } from '@/components/ui';
+import { StatusBadge } from '@/components/ui/StatusBadge';
 import { PAYOUT_DISCLAIMER } from '@/components/claims/payout/payoutCopy';
 import { humanizeEvidenceKey } from '@/components/claims/payout/payoutCopy';
 import { formatCurrency } from '@/lib/utils/format';
@@ -98,9 +98,7 @@ function PayoutWorkflowSummary({
             {payoutCase.nextActionReason}
           </p>
         </div>
-        <StatusBadge variant="held">
-          {PAYOUT_CASE_NEXT_ACTION_LABELS[payoutCase.nextAction]}
-        </StatusBadge>
+        <StatusBadge family="workflowStatus" value={payoutCase.nextAction} />
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -168,9 +166,7 @@ function EvidencePillGroup({
       {items.length > 0 ? (
         <div className="mt-2 flex flex-wrap gap-1.5">
           {items.slice(0, 8).map((item) => (
-            <StatusBadge key={item} variant="held" dot={false}>
-              {item}
-            </StatusBadge>
+            <Badge key={item} size="sm">{item}</Badge>
           ))}
         </div>
       ) : (
@@ -197,9 +193,7 @@ function ClarificationRequestList({ requests }: { requests: CaseClarificationReq
             <p className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
               {request.target_name ?? request.target_type.toUpperCase()}
             </p>
-            <StatusBadge variant="held" dot={false}>
-              {request.status.replace(/_/g, ' ')}
-            </StatusBadge>
+            <StatusBadge family="workflowStatus" value={request.status} size="sm" />
           </div>
           <p className="mt-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
             {request.request_summary}

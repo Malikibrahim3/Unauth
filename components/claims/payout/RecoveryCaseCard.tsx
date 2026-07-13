@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { ExternalLink, RefreshCw } from "lucide-react";
-import { Button, PanelCard, StatusBadge } from "@/components/ui";
-import { formatCurrencyNullable } from "@/lib/utils/format";
+import { Badge, Button, PanelCard } from "@/components/ui";
+import { formatCurrencyNullable, formatDate } from "@/lib/utils/format";
 import { RECOVERY_TYPE_LABELS } from "@/lib/partners/types";
 import {
   RECOVERY_OWNER_LABELS,
@@ -14,12 +14,7 @@ import type { SupportPayoutCase } from "@/lib/payouts/types";
 
 function dateLabel(value: string | null | undefined) {
   if (!value) return "No date set";
-  return new Date(value).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    timeZone: "UTC",
-  });
+  return formatDate(value);
 }
 
 export function RecoveryCaseCard({
@@ -122,20 +117,14 @@ export function RecoveryCaseCard({
             </div>
           </div>
           <div className="mt-3 flex flex-wrap gap-1.5">
-            <StatusBadge variant="held" dot={false}>
-              {RECOVERY_TYPE_LABELS[recoveryCase.recovery_type]}
-            </StatusBadge>
-            <StatusBadge
-              variant={recoveryCase.evidence_complete ? "cleared" : "flagged"}
-            >
+            <Badge size="sm">{RECOVERY_TYPE_LABELS[recoveryCase.recovery_type]}</Badge>
+            <Badge tone={recoveryCase.evidence_complete ? "success" : "warning"} size="sm" dot>
               {recoveryCase.evidence_complete
                 ? "Evidence complete"
                 : `${recoveryCase.evidence_missing.length} missing`}
-            </StatusBadge>
+            </Badge>
             {recoveryCase.partner?.name ? (
-              <StatusBadge variant="held" dot={false}>
-                {recoveryCase.partner.name}
-              </StatusBadge>
+              <Badge size="sm">{recoveryCase.partner.name}</Badge>
             ) : null}
           </div>
           {recoveryCase.evidence_missing.length > 0 ? (
@@ -148,9 +137,7 @@ export function RecoveryCaseCard({
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {recoveryCase.evidence_missing.map((item) => (
-                  <StatusBadge key={item} variant="held" dot={false}>
-                    {item.replaceAll("_", " ")}
-                  </StatusBadge>
+                  <Badge key={item} size="sm">{item.replaceAll("_", " ")}</Badge>
                 ))}
               </div>
             </div>
@@ -194,9 +181,7 @@ export function RecoveryCaseCard({
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {recovery.requiredEvidence.map((item) => (
-                  <StatusBadge key={item} variant="held" dot={false}>
-                    {item.replaceAll("_", " ")}
-                  </StatusBadge>
+                  <Badge key={item} size="sm">{item.replaceAll("_", " ")}</Badge>
                 ))}
               </div>
             </div>

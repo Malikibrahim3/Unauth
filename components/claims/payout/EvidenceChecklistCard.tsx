@@ -1,12 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import {
-  EVIDENCE_STRENGTH_LABELS,
-  type EvidenceChecklistResult,
-} from '@/lib/payouts/types';
-import { PanelCard, StatusBadge } from '@/components/ui';
-import { strengthTone } from '@/components/claims/payout/payoutCopy';
+import type { EvidenceChecklistResult } from '@/lib/payouts/types';
+import { PanelCard } from '@/components/ui';
+import { StatusBadge } from '@/components/ui/StatusBadge';
 import { useConnectionState } from '@/components/connections/ConnectionStateContext';
 
 // Claim types for which delivery / tracking evidence is a meaningful gap.
@@ -46,9 +43,7 @@ export function EvidenceChecklistCard({
         <p className="text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>
           Evidence on file
         </p>
-        <StatusBadge variant={strengthVariant(strengthTone(evidence.strength))}>
-          {EVIDENCE_STRENGTH_LABELS[evidence.strength]}
-        </StatusBadge>
+        <StatusBadge family="evidenceStrength" value={evidence.strength} />
       </div>
 
       {evidence.items.length === 0 ? (
@@ -131,10 +126,4 @@ export function EvidenceChecklistCard({
       )}
     </PanelCard>
   );
-}
-
-function strengthVariant(tone: ReturnType<typeof strengthTone>) {
-  if (tone === 'success') return 'cleared';
-  if (tone === 'warning') return 'flagged';
-  return 'held';
 }

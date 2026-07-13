@@ -15,9 +15,8 @@ import {
   Button,
   Modal,
   PanelCard,
-  StatusBadge,
-  statusBadgeVariantFor,
 } from "@/components/ui";
+import { StatusBadge } from "@/components/ui/StatusBadge";
 import {
   FlowEditor,
   type FlowDraftPayload,
@@ -325,11 +324,7 @@ export function FlowVersionWorkbench({
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <StatusBadge variant={statusBadgeVariantFor(display.status)}>
-                {display.status === "published" && !display.active
-                  ? "Paused"
-                  : display.status}
-              </StatusBadge>
+              <StatusBadge family="workflowStatus" value={display.status === "published" && !display.active ? "paused" : display.status} />
               <span className="font-mono text-xs text-[var(--text-tertiary)]">
                 v{display.version}
               </span>
@@ -499,11 +494,7 @@ export function FlowVersionWorkbench({
               <strong className="font-mono text-sm">
                 Version {version.version}
               </strong>
-              <StatusBadge variant={statusBadgeVariantFor(version.status)}>
-                {version.status === "published" && !version.active
-                  ? "paused"
-                  : version.status}
-              </StatusBadge>
+              <StatusBadge family="workflowStatus" value={version.status === "published" && !version.active ? "paused" : version.status} size="sm" />
               <span className="text-xs text-[var(--text-secondary)]">
                 {version.published_at
                   ? `Published ${formatDateTime(version.published_at)}`

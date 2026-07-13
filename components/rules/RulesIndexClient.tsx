@@ -7,9 +7,8 @@ import Link from "next/link";
 import {
   Button,
   PanelCard,
-  StatusBadge,
-  statusBadgeVariantFor,
 } from "@/components/ui";
+import { StatusBadge } from "@/components/ui/StatusBadge";
 import {
   RuleBuilderDrawer,
   type RuleDraftPayload,
@@ -126,13 +125,12 @@ export function RulesIndexClient({
                   </p>
                 </div>
                 <div className="flex items-center justify-between gap-3 sm:justify-end">
-                  <StatusBadge
-                    variant={statusBadgeVariantFor(rule.currentStatus)}
-                  >
-                    {rule.hasDraft && rule.publishedVersion
-                      ? `Draft over v${rule.publishedVersion}`
-                      : rule.currentStatus}
-                  </StatusBadge>
+                  <div className="flex flex-col items-end gap-1">
+                    <StatusBadge family="workflowStatus" value={rule.currentStatus} size="sm" />
+                    {rule.hasDraft && rule.publishedVersion ? (
+                      <span className="text-[11px] text-[var(--text-tertiary)]">Draft over v{rule.publishedVersion}</span>
+                    ) : null}
+                  </div>
                   <span aria-hidden="true" className="text-[var(--accent)]">
                     →
                   </span>

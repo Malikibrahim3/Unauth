@@ -10,53 +10,12 @@ import type {
   ObjectFact,
   ObjectSummary,
 } from "@/lib/relationships/objectSummary";
-import { PanelCard, StatusBadge } from "@/components/ui";
-import type { StatusBadgeVariant } from "@/components/ui/tokens";
+import { PanelCard } from "@/components/ui";
+import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatCurrencyNullable, formatDateTime, formatNumber } from "@/lib/utils/format";
 
 function label(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1).replaceAll("_", " ");
-}
-function statusVariant(value: string | null | undefined): StatusBadgeVariant {
-  const status = (value ?? "").toLowerCase();
-  if (
-    [
-      "block",
-      "deny",
-      "reject",
-      "overdue",
-      "error",
-      "disabled",
-      "unrecoverable",
-      "failed",
-      "stale",
-    ].some((part) => status.includes(part))
-  )
-    return "blocked";
-  if (
-    [
-      "clear",
-      "complete",
-      "connected",
-      "active",
-      "paid",
-      "resolved",
-      "closed",
-      "ready",
-      "approved",
-      "fresh",
-      "current",
-      "high",
-    ].some((part) => status.includes(part))
-  )
-    return "cleared";
-  if (
-    ["hold", "manual", "review", "medium", "pending"].some((part) =>
-      status.includes(part),
-    )
-  )
-    return "held";
-  return "flagged";
 }
 function factValue(item: ObjectFact) {
   if (item.kind === "money")
@@ -100,10 +59,10 @@ export function ConnectedObjectDetail({
           </Link>
         ) : (
           <Link
-            href="/customers"
+            href={`/${object.type.replace(/_.*$/, "")}s`}
             className="text-sm font-semibold text-[var(--accent)]"
           >
-            ← Customers
+            ← {label(object.type)}s
           </Link>
         )}
         {object.provenance?.sourceUrl ? (
@@ -126,13 +85,7 @@ export function ConnectedObjectDetail({
           <h1 className="break-all text-2xl font-semibold text-[var(--text-primary)]">
             {object.reference}
           </h1>
-          {object.state ? (
-            <StatusBadge variant={statusVariant(object.state)}>
-              {label(object.state)}
-            </StatusBadge>
-          ) : (
-            <StatusBadge variant="held">State unavailable</StatusBadge>
-          )}
+          <StatusBadge family="workflowStatus" value={object.state ?? "unknown"} />
         </div>
         <p className="mt-2 max-w-3xl text-sm text-[var(--text-secondary)]">
           Object-specific facts below preserve the connected source’s values.
@@ -250,11 +203,7 @@ export function ConnectedObjectDetail({
                       Freshness
                     </dt>
                     <dd className="mt-1">
-                      <StatusBadge
-                        variant={statusVariant(object.provenance.freshness)}
-                      >
-                        {label(object.provenance.freshness)}
-                      </StatusBadge>
+                      <StatusBadge family="workflowStatus" value={object.provenance.freshness} size="sm" />
                     </dd>
                   </div>
                   <div>
@@ -262,11 +211,7 @@ export function ConnectedObjectDetail({
                       Sync state
                     </dt>
                     <dd className="mt-1">
-                      <StatusBadge
-                        variant={statusVariant(object.provenance.syncState)}
-                      >
-                        {label(object.provenance.syncState)}
-                      </StatusBadge>
+                      <StatusBadge family="workflowStatus" value={object.provenance.syncState} size="sm" />
                     </dd>
                   </div>
                 </div>
@@ -346,9 +291,7 @@ export function ConnectedObjectDetail({
               <PanelCard key={item.id} variant="app" className="p-3">
                 <div className="flex items-start justify-between gap-2">
                   <strong className="text-sm">{item.title}</strong>
-                  <StatusBadge variant={statusVariant(item.confidence)}>
-                    {label(item.confidence)}
-                  </StatusBadge>
+                  <StatusBadge family="confidence" value={item.confidence} size="sm" />
                 </div>
                 <p className="mt-1 text-xs text-[var(--text-secondary)]">
                   {item.summary}
@@ -400,9 +343,7 @@ export function ConnectedObjectDetail({
                   </span>
                   <span className="flex shrink-0 items-center gap-2 text-xs">
                     {connected.state ? (
-                      <StatusBadge variant={statusVariant(connected.state)}>
-                        {label(connected.state)}
-                      </StatusBadge>
+                      <StatusBadge family="workflowStatus" value={connected.state} size="sm" />
                     ) : null}
                     <span className="text-[var(--accent)]">Open →</span>
                   </span>

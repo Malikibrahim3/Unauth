@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button, PanelCard, SectionCard, StatusBadge } from "@/components/ui";
+import { Button, PanelCard, SectionCard } from "@/components/ui";
+import { StatusBadge } from "@/components/ui/StatusBadge";
 import {
   DEFAULT_PLATFORM_SETTINGS,
   type PlatformSettings,
@@ -130,7 +131,7 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
               defaults.
             </p>
           </div>
-          <StatusBadge variant="held">View only</StatusBadge>
+          <StatusBadge family="workflowStatus" value="view_only" size="sm" />
         </PanelCard>
       ) : null}
       {loading ? (

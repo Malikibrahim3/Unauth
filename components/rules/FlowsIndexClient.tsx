@@ -8,9 +8,8 @@ import {
   Button,
   Modal,
   PanelCard,
-  StatusBadge,
-  statusBadgeVariantFor,
 } from "@/components/ui";
+import { StatusBadge } from "@/components/ui/StatusBadge";
 import {
   FlowEditor,
   type FlowDraftPayload,
@@ -131,16 +130,10 @@ export function FlowsIndexClient({
                 </div>
                 <div className="flex items-center justify-between gap-3 sm:justify-end">
                   <StatusBadge
-                    variant={statusBadgeVariantFor(
-                      flow.active ? "active" : flow.status,
-                    )}
-                  >
-                    {flow.hasDraft && flow.publishedVersion
-                      ? `Draft over v${flow.publishedVersion}`
-                      : flow.status === "published" && !flow.active
-                        ? "Paused"
-                        : flow.status}
-                  </StatusBadge>
+                    family="workflowStatus"
+                    value={flow.status === "published" && !flow.active ? "paused" : flow.active ? "active" : flow.status}
+                    size="sm"
+                  />
                   <span className="font-mono text-xs text-[var(--text-tertiary)]">
                     v{flow.version}
                   </span>

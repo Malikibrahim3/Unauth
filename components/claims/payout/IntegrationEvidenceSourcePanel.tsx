@@ -1,7 +1,8 @@
 'use client';
 
 import type { EvidencePack } from '@/lib/integrations/types';
-import { PanelCard, StatusBadge } from '@/components/ui';
+import { PanelCard } from '@/components/ui';
+import { StatusBadge } from '@/components/ui/StatusBadge';
 
 function labelSummary(summary: string) {
   if (summary.toLowerCase().includes('attempted') && summary.toLowerCase().includes('not available')) {
@@ -42,7 +43,7 @@ export function IntegrationEvidenceSourcePanel({
             <PanelCard key={source.providerId} as="li" variant="appInset" className="p-3 text-sm">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-semibold" style={{ color: 'var(--text)' }}>{source.providerName}</span>
-                <StatusBadge variant="cleared">Connected</StatusBadge>
+                <StatusBadge family="workflowStatus" value="connected" size="sm" />
               </div>
               <p className="mt-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
                 {summaries.length > 0 ? summaries.map(labelSummary).join(' · ') : 'Connected, no matching evidence found for this case yet'}

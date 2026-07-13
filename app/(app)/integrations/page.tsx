@@ -10,32 +10,14 @@ import {
   loadConnectorCatalogue,
   type ConnectorCatalogueItem,
 } from "@/lib/connectors/catalogue";
-import { PanelCard, StatusBadge } from "@/components/ui";
+import { PanelCard } from "@/components/ui";
+import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatDateTime, formatNumber } from "@/lib/utils/format";
 
 export const dynamic = "force-dynamic";
 
 const ACTIVE = new Set(["connected", "import_complete", "importing"]);
 const ATTENTION = new Set(["error", "attention_required", "revoked"]);
-
-function statusLabel(status: string) {
-  if (status === "import_complete") return "Connected";
-  if (status === "attention_required") return "Needs attention";
-  return status
-    .replaceAll("_", " ")
-    .replace(/^./, (character) => character.toUpperCase());
-}
-
-function statusVariant(
-  status: string,
-): "cleared" | "blocked" | "flagged" | "held" {
-  if (["connected", "import_complete", "supported"].includes(status))
-    return "cleared";
-  if (["error", "revoked", "failed", "unsupported"].includes(status))
-    return "blocked";
-  if (["attention_required", "importing"].includes(status)) return "flagged";
-  return "held";
-}
 
 function ConnectorCard({ item }: { item: ConnectorCatalogueItem }) {
   return (
@@ -56,9 +38,7 @@ function ConnectorCard({ item }: { item: ConnectorCatalogueItem }) {
               {item.category.replaceAll("_", " ")}
             </p>
           </div>
-          <StatusBadge variant={statusVariant(item.status)}>
-            {statusLabel(item.status)}
-          </StatusBadge>
+          <StatusBadge family="workflowStatus" value={item.status === "import_complete" ? "connected" : item.status} />
         </div>
         <p className="mt-3 min-h-10 text-xs leading-relaxed text-[var(--text-secondary)]">
           {item.description}

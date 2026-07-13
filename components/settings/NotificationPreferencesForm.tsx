@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { Bell, MailX } from "lucide-react";
-import { PanelCard, StatusBadge } from "@/components/ui";
+import { PanelCard } from "@/components/ui";
+import { StatusBadge } from "@/components/ui/StatusBadge";
 import type { NotificationKind } from "@/lib/collaboration/notificationPreferences";
 
 const KINDS: Array<{
@@ -133,7 +134,7 @@ export function NotificationPreferencesForm({ initial }: { initial: Pref[] }) {
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 className="text-sm font-semibold">{item.label}</h2>
                   {isSaving ? (
-                    <StatusBadge variant="held">Saving</StatusBadge>
+                    <StatusBadge family="workflowStatus" value="saving" size="sm" />
                   ) : null}
                 </div>
                 <p className="mt-1 text-xs leading-relaxed text-[var(--text-secondary)]">

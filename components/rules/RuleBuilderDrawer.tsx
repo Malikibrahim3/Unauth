@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { AlertTriangle, Plus } from 'lucide-react';
-import { Button, Drawer, Input, PanelCard, StatusBadge } from '@/components/ui';
+import { Button, Drawer, Input, PanelCard } from '@/components/ui';
 import type { ConditionOperator, MerchantRule, RuleAction, RuleCondition } from '@/lib/rules-engine';
 import { RULE_FIELDS } from '@/lib/rules/fields';
 import { ACTION_LABELS, ACTION_TONES, summarizeConditions } from '@/lib/rules/summary';
@@ -238,22 +238,15 @@ export function RuleBuilderDrawer({
           <p className="mt-2 text-body-sm" style={{ color: 'var(--text-primary)' }}>
             If {preview}
           </p>
-          <div className="mt-3">
-            <StatusBadge variant={ruleActionVariant(action)}>
-              Recommend {ACTION_LABELS[action]}
-            </StatusBadge>
-          </div>
+          <p className="mt-3 text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+            Recommended: {ACTION_LABELS[action]}
+          </p>
         </PanelCard>
       </div>
     </Drawer>
   );
 }
 
-function ruleActionVariant(action: RuleAction) {
-  if (action === 'approve') return 'cleared';
-  if (action === 'deny') return 'blocked';
-  return 'flagged';
-}
 
 function Field({
   label,

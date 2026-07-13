@@ -3,7 +3,8 @@
 import { CheckCircle2, Circle, RefreshCw, Unplug } from 'lucide-react';
 import type { FormEvent } from 'react';
 import Image from 'next/image';
-import { PanelCard, StatusBadge, statusBadgeVariantFor } from '@/components/ui';
+import { Badge, PanelCard } from '@/components/ui';
+import { StatusBadge } from '@/components/ui/StatusBadge';
 import { FreshdeskSupportSyncCreateForm } from '@/components/settings/FreshdeskSupportSyncCreateForm';
 import type { FreshdeskSupportSyncState } from '@/components/settings/freshdeskSupportSyncReducer';
 import {
@@ -44,9 +45,7 @@ function ChecklistRow({ item }: { item: ChecklistItem }) {
       <span className="flex-1 text-sm" style={{ color: 'var(--text)' }}>
         {item.label}
       </span>
-      <StatusBadge variant={item.ok ? 'cleared' : 'flagged'} className="px-2 py-0.5 text-xs font-medium">
-        {item.status}
-      </StatusBadge>
+      <Badge tone={item.ok ? 'success' : 'warning'} size="sm" dot>{item.status}</Badge>
     </div>
   );
 }
@@ -94,9 +93,7 @@ export function FreshdeskSupportSyncConnectionDetails({
             <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
               {freshdeskAccountLabel(connection)}
             </p>
-            <StatusBadge variant={statusBadgeVariantFor(connection.status)}>
-              {isActive ? 'Connected' : connection.status === 'disabled' ? 'Disabled' : connection.status}
-            </StatusBadge>
+            <StatusBadge family="workflowStatus" value={isActive ? 'connected' : connection.status} />
           </div>
           <p className="mt-0.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
             Last synced {formatFreshdeskWhen(connection.last_sync_at)}

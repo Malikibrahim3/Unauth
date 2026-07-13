@@ -3,8 +3,8 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { DataTable } from "@/components/ui/DataTable";
-import { PanelCard, StatusBadge } from "@/components/ui";
-import { formatCurrency } from "@/lib/utils/format";
+import { Badge, PanelCard } from "@/components/ui";
+import { formatCurrency, formatDate } from "@/lib/utils/format";
 import { CustomerPreviewDrawer } from "@/components/customers/CustomerPreviewDrawer";
 
 interface CustomerRow {
@@ -26,27 +26,10 @@ interface CustomersTableClientProps {
   rows: CustomerRow[];
 }
 
-function formatDateTime(value: string | null): string {
-  if (!value) return "—";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("en-US", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    timeZone: "UTC",
-  });
-}
-
 function OpenCasesBadge({ count }: { count: number }) {
   if (count <= 0) return null;
   return (
-    <StatusBadge
-      variant="held"
-      className="px-1.5 py-0.5 text-[11px] font-semibold"
-    >
-      {count} open
-    </StatusBadge>
+    <Badge tone="warning" size="sm" dot>{count} open</Badge>
   );
 }
 
@@ -144,7 +127,7 @@ export default function CustomersTableClient({
       align: "right" as const,
       render: (p: CustomerRow) => (
         <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
-          {formatDateTime(p.last_order_at)}
+          {p.last_order_at ? formatDate(p.last_order_at) : "—"}
         </span>
       ),
     },
@@ -242,7 +225,7 @@ export default function CustomersTableClient({
                 payout cases
               </span>
               <span style={{ color: "var(--border)" }}>·</span>
-              <span>Last order {formatDateTime(p.last_order_at)}</span>
+              <span>Last order {p.last_order_at ? formatDate(p.last_order_at) : "—"}</span>
             </div>
             <div
               className="mt-3 flex justify-end text-xs font-semibold"

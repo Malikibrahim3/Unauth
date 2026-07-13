@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { PanelCard, StatusBadge } from '@/components/ui';
+import { Badge, PanelCard } from '@/components/ui';
 import { formatCurrencyNullable, formatDateMode } from '@/lib/utils/format';
 import { labelFor } from '@/lib/copy/labels';
 
@@ -64,7 +64,7 @@ export default function BehaviorRoadmap({ events }: BehaviorRoadmapProps) {
         {patternTags.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1.5">
             {patternTags.map((tag) => (
-              <StatusBadge key={tag} variant="held" dot={false}>{tag}</StatusBadge>
+              <Badge key={tag} size="sm">{tag}</Badge>
             ))}
           </div>
         )}

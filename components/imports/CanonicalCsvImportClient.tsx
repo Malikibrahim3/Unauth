@@ -4,11 +4,11 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, FileSpreadsheet, Upload } from "lucide-react";
 import {
+  Badge,
   Button,
   PanelCard,
-  StatusBadge,
-  statusBadgeVariantFor,
 } from "@/components/ui";
+import { StatusBadge } from "@/components/ui/StatusBadge";
 
 const DATASETS = ["orders", "refunds", "customers"] as const;
 type Dataset = (typeof DATASETS)[number];
@@ -265,9 +265,9 @@ export function CanonicalCsvImportClient({
                 never persisted.
               </p>
             </div>
-            <StatusBadge variant={mappedCount > 0 ? "cleared" : "held"}>
+            <Badge tone={mappedCount > 0 ? "success" : "neutral"} dot>
               {mappedCount} of {headers.length} mapped
-            </StatusBadge>
+            </Badge>
           </div>
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
             {headers.map((header) => (
@@ -444,9 +444,7 @@ export function CanonicalCsvImportClient({
                     {job.processed_rows ?? 0}/{job.total_rows ?? 0} imported ·{" "}
                     {job.failed_rows ?? 0} invalid
                   </span>
-                  <StatusBadge variant={statusBadgeVariantFor(job.status)}>
-                    {job.status}
-                  </StatusBadge>
+                  <StatusBadge family="workflowStatus" value={job.status} size="sm" />
                 </div>
               </div>
             ))}

@@ -120,6 +120,58 @@ const workPriority: Record<string, string> = {
   low: 'Low',
 };
 
+// Shared operational vocabulary for surfaces whose lifecycle is not tied to a
+// single database table. Keeping these values here prevents each integration,
+// import and rules screen from inventing its own casing and wording.
+const workflowStatus: Record<string, string> = {
+  active: 'Active',
+  inactive: 'Inactive',
+  enabled: 'Enabled',
+  disabled: 'Disabled',
+  connected: 'Connected',
+  disconnected: 'Not connected',
+  complete: 'Complete',
+  completed: 'Complete',
+  failed: 'Failed',
+  error: 'Error',
+  processing: 'Processing',
+  queued: 'Queued',
+  running: 'Running',
+  paused: 'Paused',
+  published: 'Active',
+  archived: 'Archived',
+  review: 'Needs review',
+  approaching: 'Approaching threshold',
+  overdue: 'Ageing',
+  resolved: 'Outcome recorded',
+  normal: 'Within threshold',
+  unknown: 'Not yet assessed',
+  saving: 'Saving',
+  view_only: 'View only',
+  supported: 'Supported',
+  unsupported: 'Unavailable',
+  hold: 'Hold',
+  proceed: 'Proceed',
+};
+
+const evidenceStrength: Record<string, string> = {
+  strong: 'Strong',
+  partial: 'Partial',
+  weak: 'Weak',
+  insufficient: 'Insufficient',
+  needs_more_evidence: 'Needs more evidence',
+};
+
+const confidence: Record<string, string> = {
+  high: 'High confidence',
+  medium: 'Medium confidence',
+  low: 'Low confidence',
+  confirmed: 'Confirmed',
+  probable: 'Probable',
+  ambiguous: 'Needs review',
+  unmatched: 'Unmatched',
+};
+
 const MAPS = {
   caseStatus,
   requestedAction,
@@ -132,6 +184,9 @@ const MAPS = {
   attribution,
   recoveryRoute: attribution,
   workPriority,
+  workflowStatus,
+  evidenceStrength,
+  confidence,
   claimType: CLAIM_TYPE_LABELS as Record<string, string>,
 } as const;
 

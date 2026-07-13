@@ -1,6 +1,6 @@
 'use client';
 
-import { StatusBadge } from '@/components/ui';
+import { Badge } from '@/components/ui';
 import { RailSection } from '@/components/claims/claimReviewPrimitives';
 import type { ClaimReviewWorkbench } from '@/components/claims/claimReviewWorkbench';
 
@@ -21,7 +21,7 @@ export function ClaimReviewEvidenceRail({ wb }: { wb: ClaimReviewWorkbench }) {
         open={state.railOpen.evidence}
         onToggle={(id) => dispatch({ type: 'toggleRail', id })}
         badge={evidenceRecorded ? (
-          <StatusBadge variant="cleared">On record</StatusBadge>
+          <Badge tone="success" size="sm" dot>On record</Badge>
         ) : undefined}
       >
         {!claimId ? (
@@ -46,7 +46,7 @@ export function ClaimReviewEvidenceRail({ wb }: { wb: ClaimReviewWorkbench }) {
         open={state.railOpen.response}
         onToggle={(id) => dispatch({ type: 'toggleRail', id })}
         badge={responseRecorded ? (
-          <StatusBadge variant="cleared">Source reply</StatusBadge>
+          <Badge tone="success" size="sm" dot>Source reply</Badge>
         ) : undefined}
       >
         <div className="space-y-2 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>

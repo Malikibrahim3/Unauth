@@ -6,7 +6,7 @@ import type { MerchantSetupState } from '@/lib/connections/getMerchantSetupState
 import CustomersTableClient from '@/components/customers/CustomersTableClient';
 import { CustomersPageWorkbench } from '@/app/(app)/customers/CustomersPageWorkbench';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
-import { ButtonLink, PanelCard, StatusBadge, WorkbenchEmptyState } from '@/components/ui';
+import { Badge, ButtonLink, PanelCard, WorkbenchEmptyState } from '@/components/ui';
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { FilterChip } from '@/app/(app)/customers/CustomersOverviewFilterChip';
 import { buildRemoveHref, customersListHref } from '@/app/(app)/customers/customersOverviewPageUtils';
@@ -95,9 +95,9 @@ export function CustomersOverviewPageView({
               href={href}
               className="transition-opacity hover:opacity-80"
             >
-              <StatusBadge variant={highlight ? 'held' : 'cleared'} className="px-2.5 py-1 text-xs font-medium" dot={highlight}>
+              <Badge tone={highlight ? 'warning' : 'neutral'} size="sm" dot={highlight}>
                 {label}
-              </StatusBadge>
+              </Badge>
             </Link>
           ))}
           {!connectionState.helpdesk && (

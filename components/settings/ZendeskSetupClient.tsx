@@ -4,7 +4,8 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { CheckCircle2, Download, ExternalLink } from 'lucide-react';
 import Image from 'next/image';
-import { PanelCard, StatusBadge } from '@/components/ui';
+import { PanelCard } from '@/components/ui';
+import { StatusBadge } from '@/components/ui/StatusBadge';
 import HelpdeskSidebarPreview from '@/components/settings/HelpdeskSidebarPreview';
 import ZendeskSupportSyncClient from '@/components/settings/ZendeskSupportSyncClient';
 import {
@@ -130,9 +131,7 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
               Zendesk
             </p>
             {!statusLoading ? (
-              <StatusBadge variant={allDone ? 'cleared' : sidebarVerified ? 'flagged' : 'held'}>
-                {allDone ? 'Connected' : sidebarVerified ? 'Partial setup' : 'Not connected'}
-              </StatusBadge>
+              <StatusBadge family="workflowStatus" value={allDone ? 'connected' : sidebarVerified ? 'partial_setup' : 'disconnected'} />
             ) : null}
           </div>
           {allDone ? (

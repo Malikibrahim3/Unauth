@@ -12,18 +12,14 @@ import { StatusPill, SlaPill } from "@/app/(app)/claims/claimsPageUi";
 import {
   EvidenceLine,
   PanelCard,
-  StatusBadge,
-  statusBadgeVariantFor,
 } from "@/components/ui";
+import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatCurrencyNullable } from "@/lib/utils/format";
 import { formatClaimAge, formatFiledDate } from "@/lib/claims/sla";
 import {
   LIKELY_OWNER_LABELS,
   LOSS_ATTRIBUTION_DISPLAY,
-  PAYOUT_CASE_NEXT_ACTION_LABELS,
   PAYOUT_CASE_STATUS_LABELS,
-  RECOVERABILITY_LABELS,
-  RECOVERY_STATE_LABELS,
 } from "@/lib/payouts/types";
 import { humanizeEvidenceKey } from "@/components/claims/payout/payoutCopy";
 import {
@@ -73,15 +69,6 @@ function workflowStatusLabel(status: string): string {
     ] ??
     STATUS_META[status]?.label ??
     humanizeEnumValue(status)
-  );
-}
-
-function nextActionLabel(action: string | null | undefined): string | null {
-  if (!action) return null;
-  return (
-    PAYOUT_CASE_NEXT_ACTION_LABELS[
-      action as keyof typeof PAYOUT_CASE_NEXT_ACTION_LABELS
-    ] ?? humanizeEnumValue(action)
   );
 }
 
@@ -210,14 +197,7 @@ export function ClaimsQueueClient({
                 <StatusPill status={c.status} />
                 <SlaPill claim={c} />
                 {c.recoverability && (
-                  <StatusBadge
-                    variant={statusBadgeVariantFor(c.recoverability)}
-                    className="px-1.5 py-0.5 text-[11px] font-medium"
-                  >
-                    {RECOVERABILITY_LABELS[
-                      c.recoverability as keyof typeof RECOVERABILITY_LABELS
-                    ] ?? c.recoverability}
-                  </StatusBadge>
+                  <StatusBadge family="recoverability" value={c.recoverability} size="sm" />
                 )}
               </div>
             </button>
@@ -394,29 +374,12 @@ function ClaimDetailPanel({
           {ops.reviewState}
         </p>
         <div className="mt-2 flex flex-wrap gap-1.5">
-          <StatusBadge
-            variant={statusBadgeVariantFor(ops.evidenceStatus)}
-            className="px-2 py-0.5 text-[11px] font-medium"
-          >
-            {ops.evidenceStatus}
-          </StatusBadge>
+          <StatusBadge family="workflowStatus" value={ops.evidenceStatus} size="sm" />
           {claim.next_action && (
-            <StatusBadge
-              variant={statusBadgeVariantFor(claim.next_action)}
-              className="px-2 py-0.5 text-[11px] font-medium"
-            >
-              {nextActionLabel(claim.next_action)}
-            </StatusBadge>
+            <StatusBadge family="workflowStatus" value={claim.next_action} size="sm" />
           )}
           {claim.recovery_state && (
-            <StatusBadge
-              variant={statusBadgeVariantFor(claim.recovery_state)}
-              className="px-2 py-0.5 text-[11px] font-medium"
-            >
-              {RECOVERY_STATE_LABELS[
-                claim.recovery_state as keyof typeof RECOVERY_STATE_LABELS
-              ] ?? claim.recovery_state}
-            </StatusBadge>
+            <StatusBadge family="recoveryStatus" value={claim.recovery_state} size="sm" />
           )}
         </div>
         <Link
@@ -443,14 +406,7 @@ function ClaimDetailPanel({
               Recovery chase-up
             </p>
             {claim.recoverability && (
-              <StatusBadge
-                variant={statusBadgeVariantFor(claim.recoverability)}
-                className="px-2 py-0.5 text-caption font-semibold"
-              >
-                {RECOVERABILITY_LABELS[
-                  claim.recoverability as keyof typeof RECOVERABILITY_LABELS
-                ] ?? claim.recoverability}
-              </StatusBadge>
+              <StatusBadge family="recoverability" value={claim.recoverability} size="sm" />
             )}
           </div>
           <div className="space-y-2 px-4 py-3">

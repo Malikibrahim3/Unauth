@@ -3,18 +3,17 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
+  Badge,
   Modal,
   PanelCard,
-  StatusBadge,
-  statusBadgeVariantFor,
 } from "@/components/ui";
+import { StatusBadge } from "@/components/ui/StatusBadge";
 import { CaseContextDrawer } from "@/components/cases/CaseContextDrawer";
-import { formatCurrencyNullable } from "@/lib/utils/format";
+import { formatCurrencyNullable, formatDate } from "@/lib/utils/format";
 import { recoverySoughtAmount } from "@/lib/recoveries/amounts";
 import { RECOVERY_TYPE_LABELS } from "@/lib/partners/types";
 import {
   RECOVERY_OWNER_LABELS,
-  RECOVERY_STATUS_LABELS,
   type RecoveryCase,
 } from "@/lib/recoveries/types";
 import { RECOVERY_BOARD_COLUMNS } from "@/lib/recoveries/status";
@@ -80,12 +79,7 @@ const ACTIONS: Array<{
 ];
 
 function dateLabel(value: string | null) {
-  if (!value) return "No date";
-  return new Date(value).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    timeZone: "UTC",
-  });
+  return value ? formatDate(value) : "No date";
 }
 
 export function RecoveryBoardClient({ recoveries, canManage }: Props) {
@@ -173,13 +167,7 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
                 >
                   {column.label}
                 </p>
-                <StatusBadge
-                  variant="held"
-                  className="px-2 py-0.5 text-[11px] font-mono"
-                  dot={false}
-                >
-                  {rows.length}
-                </StatusBadge>
+                <Badge size="sm">{rows.length}</Badge>
               </div>
               <div className="space-y-2 p-2">
                 {rows.length === 0 ? (
@@ -219,12 +207,7 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
                               {RECOVERY_OWNER_LABELS[item.owner_type]}
                             </p>
                           </div>
-                          <StatusBadge
-                            variant={statusBadgeVariantFor(item.status)}
-                            className="shrink-0 px-2 py-0.5 text-[11px]"
-                          >
-                            {RECOVERY_STATUS_LABELS[item.status]}
-                          </StatusBadge>
+                          <StatusBadge family="recoveryStatus" value={item.status} size="sm" className="shrink-0" />
                         </div>
                         <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
                           <div>
@@ -273,23 +256,13 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
                           </div>
                         </div>
                         <div className="mt-3 flex flex-wrap gap-1.5">
-                          <StatusBadge
-                            variant={
-                              item.evidence_complete ? "cleared" : "flagged"
-                            }
-                            className="px-2 py-0.5 text-[11px]"
-                          >
+                          <Badge tone={item.evidence_complete ? "success" : "warning"} size="sm" dot>
                             {item.evidence_complete
                               ? "Evidence complete"
                               : `${item.evidence_missing.length} evidence missing`}
-                          </StatusBadge>
+                          </Badge>
                           {item.partner?.name ? (
-                            <StatusBadge
-                              variant="held"
-                              className="px-2 py-0.5 text-[11px]"
-                            >
-                              {item.partner.name}
-                            </StatusBadge>
+                            <Badge size="sm">{item.partner.name}</Badge>
                           ) : null}
                           <button
                             type="button"
