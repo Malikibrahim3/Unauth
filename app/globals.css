@@ -1422,7 +1422,7 @@
     --ua-logo-ink: var(--logo-ink);
     --ua-logo-dot: var(--logo-dot);
     --ua-logo-dot-size: 2.5px;
-    --ua-logo-dot-gap: 0.18em;
+    --ua-logo-dot-gap: 0.03em;
     display: inline-flex;
     align-items: baseline;
     font-family: var(--font-serif);
@@ -1457,7 +1457,7 @@
     flex-shrink: 0;
     border-radius: 9999px;
     background: var(--ua-logo-dot);
-    transform: translateY(-0.08em);
+    transform: translateY(0);
   }
   .ua-mark.primary {
     --ua-logo-ink: #1C1612;
@@ -1476,8 +1476,8 @@
     --ua-logo-dot: #F4F0E8;
   }
   .ua-mark.nav {
-    --ua-logo-dot-size: 2.5px;
-    --ua-logo-dot-gap: 0.18em;
+    --ua-logo-dot-size: 3px;
+    --ua-logo-dot-gap: 0.03em;
     font-size: 22px;
   }
   .ua-mark.s12 {

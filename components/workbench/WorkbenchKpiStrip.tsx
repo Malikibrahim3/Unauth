@@ -28,12 +28,14 @@ export function WorkbenchKpiStrip({ items, colsClassName = 'grid-cols-2 md:grid-
         >
           <p className="text-overline truncate" style={{ color: 'var(--text-tertiary)' }}>{item.label}</p>
           <p
-            className="text-mono-lg mt-1 num truncate"
+            className="mt-1 truncate"
             style={{
-              color: String(item.value).includes('£') || String(item.value).includes('$')
-                ? 'var(--data-currency)'
-                : 'var(--text-primary)',
-              letterSpacing: '0',
+              color: 'var(--text-primary)',
+              fontFamily: 'var(--font-sans)',
+              fontSize: 20,
+              fontWeight: 600,
+              lineHeight: 1.2,
+              fontVariantNumeric: 'tabular-nums',
             }}
           >
             {item.value}

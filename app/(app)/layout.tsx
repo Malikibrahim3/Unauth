@@ -188,12 +188,26 @@ export default async function AppLayout({
   const merchantName = merchantProfile?.name ?? null;
   const connectedStoreKey =
     connectionState.orderSourceStoreKey ?? connectionState.shopDomain;
-  const displayMerchantName = connectedStoreKey
+  const rawDisplayMerchantName = connectedStoreKey
     ? (connectedStoreKey
         .replace(/^www\./i, "")
         .split(".")[0]
         ?.replace(/[-_]/g, " ") ?? merchantName)
     : merchantName;
+  // WS6.5: workspace label is Title-cased ("Elara and Co"), never raw lowercase.
+  const WORKSPACE_MINOR_WORDS = new Set([
+    "and", "or", "of", "the", "for", "to", "a", "an", "at", "by", "in", "on", "&",
+  ]);
+  const displayMerchantName = rawDisplayMerchantName
+    ? rawDisplayMerchantName
+        .split(/\s+/)
+        .map((word, index) => {
+          const lower = word.toLowerCase();
+          if (index > 0 && WORKSPACE_MINOR_WORDS.has(lower)) return lower;
+          return word.charAt(0).toUpperCase() + word.slice(1);
+        })
+        .join(" ")
+    : rawDisplayMerchantName;
 
   // Dev preview — read the tier cookie so the context is consistent with getMerchantProductPlan.
   const isProduction = process.env.VERCEL_ENV === "production";

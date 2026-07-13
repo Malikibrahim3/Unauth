@@ -6,13 +6,14 @@ export const PAGE_SHELL_INNER_CLASS =
 export const PAGE_SHELL_HEADER_CLASS =
   'mx-auto flex w-full max-w-[1600px] flex-wrap items-start justify-between gap-4 px-5 py-5 sm:px-6 sm:py-6 lg:px-8';
 
+// WS4.5: compact list-page title (20px/600), not a 40px marketing H1.
 export const PAGE_TITLE_STYLE: CSSProperties = {
   color: 'var(--text-primary)',
-  fontSize: '2rem',
+  fontSize: '1.25rem',
   fontWeight: 600,
-  lineHeight: 1.1,
-  letterSpacing: '0',
-  fontFamily: 'var(--font-display)',
+  lineHeight: 1.3,
+  letterSpacing: '-0.01em',
+  fontFamily: 'var(--font-sans)',
 };
 
 export const PAGE_SUBTITLE_STYLE: CSSProperties = {
