@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { SourceBadge } from '@/components/sources/SourceBadge';
 import { FreshnessIndicator, type FreshnessState } from '@/components/sources/FreshnessIndicator';
 import { formatMinorCurrencyNullable } from '@/lib/utils/format';
+import { label } from '@/lib/ui/labels';
 
 export type LossLedgerRow = {
   id: string;
@@ -46,10 +47,6 @@ function formatMinor(minor: number | null, currency: string | null): string {
   return formatMinorCurrencyNullable(minor, currency);
 }
 
-function titleCase(value: string | null): string {
-  if (!value) return '—';
-  return value.split(/[_\s]+/).map((p) => (p ? p[0].toUpperCase() + p.slice(1) : p)).join(' ');
-}
 
 export function LossLedger({ rows }: { rows: LossLedgerRow[] }) {
   const [view, setView] = useState<ViewKey>('all');
@@ -106,12 +103,12 @@ export function LossLedger({ rows }: { rows: LossLedgerRow[] }) {
             <tbody>
               {visible.map((row) => (
                 <tr key={row.id} style={{ borderTop: '1px solid var(--border-subtle, rgba(0,0,0,0.08))' }}>
-                  <td className="py-2 pr-4" style={{ color: 'var(--text-primary)' }}><Link href={row.detailHref ?? `/losses/${row.id}`} className="font-medium underline underline-offset-2">{titleCase(row.category)}</Link>{row.derived ? <span className="ml-2 text-xs text-[var(--warning)]">Reconciliation pending</span> : null}</td>
-                  <td className="py-2 pr-4" style={{ color: 'var(--text-secondary)' }}>{titleCase(row.attribution)}</td>
+                  <td className="py-2 pr-4" style={{ color: 'var(--text-primary)' }}><Link href={row.detailHref ?? `/losses/${row.id}`} className="font-medium underline underline-offset-2">{label('lossCategory', row.category)}</Link>{row.derived ? <span className="ml-2 text-xs text-[var(--warning)]">Reconciliation pending</span> : null}</td>
+                  <td className="py-2 pr-4" style={{ color: 'var(--text-secondary)' }}>{row.attribution ? label('attribution', row.attribution) : '—'}</td>
                   <td className="py-2 pr-4" style={{ color: 'var(--text-secondary)' }}>
-                    {row.counterpartyName ?? titleCase(row.counterpartyType)}
+                    {row.counterpartyName ?? (row.counterpartyType ? label('counterparty', row.counterpartyType) : '—')}
                   </td>
-                  <td className="py-2 pr-4" style={{ color: 'var(--text-secondary)' }}>{titleCase(row.status)}</td>
+                  <td className="py-2 pr-4" style={{ color: 'var(--text-secondary)' }}>{label('lossStatus', row.status)}</td>
                   <td className="py-2 pr-4 text-right tabular-nums" style={{ color: 'var(--text-primary)' }}>
                     {formatMinor(row.realisedLossMinor ?? row.estimatedLossMinor, row.currency)}
                   </td>
