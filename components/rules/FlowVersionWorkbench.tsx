@@ -536,7 +536,7 @@ export function FlowVersionWorkbench({
         open={testOpen}
         onClose={() => setTestOpen(false)}
         title="Test event"
-        description="Enter structured sample values for the fields this flow reads. Test mode performs zero writes."
+        description="Try this flow with sample values. Nothing changes until you publish."
         actions={[
           {
             label: busy === "test" ? "Testing…" : "Run test",

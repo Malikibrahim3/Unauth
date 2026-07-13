@@ -197,7 +197,7 @@ export function FlowEditor({
           </label>
         </div>
         <label className="mt-4 block text-xs font-semibold text-[var(--text-secondary)]">
-          Operator-facing description
+          Description (shown to your team)
           <textarea
             className="mt-1 min-h-20 w-full rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)]"
             value={description}
@@ -509,22 +509,25 @@ function ActionEditor({
             <option value="high">High</option>
             <option value="urgent">Urgent</option>
           </select>
-          <Input
-            aria-label={`Action ${index + 1} due hours`}
-            type="number"
-            min={1}
-            max={8760}
-            value={output.dueInHours ?? ""}
-            onChange={(event) =>
-              update({
-                ...output,
-                dueInHours: event.target.value
-                  ? Number(event.target.value)
-                  : undefined,
-              })
-            }
-            placeholder="Due hours"
-          />
+          <label className="text-xs font-medium text-[var(--text-secondary)]">
+            Due in (hours)
+            <Input
+              className="mt-1"
+              aria-label={`Action ${index + 1} due hours`}
+              type="number"
+              min={1}
+              max={8760}
+              value={output.dueInHours ?? ""}
+              onChange={(event) =>
+                update({
+                  ...output,
+                  dueInHours: event.target.value
+                    ? Number(event.target.value)
+                    : undefined,
+                })
+              }
+            />
+          </label>
         </div>
       ) : output.type === "request_evidence" ? (
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -546,17 +549,20 @@ function ActionEditor({
           />
         </div>
       ) : output.type === "set_deadline" ? (
-        <Input
-          className="mt-3 max-w-xs"
-          aria-label={`Action ${index + 1} deadline hours`}
-          type="number"
-          min={1}
-          max={8760}
-          value={output.dueInHours}
-          onChange={(event) =>
-            update({ ...output, dueInHours: Number(event.target.value) })
-          }
-        />
+        <label className="mt-3 block max-w-xs text-xs font-medium text-[var(--text-secondary)]">
+          Deadline (hours)
+          <Input
+            className="mt-1"
+            aria-label={`Action ${index + 1} deadline hours`}
+            type="number"
+            min={1}
+            max={8760}
+            value={output.dueInHours}
+            onChange={(event) =>
+              update({ ...output, dueInHours: Number(event.target.value) })
+            }
+          />
+        </label>
       ) : (
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
           <Input

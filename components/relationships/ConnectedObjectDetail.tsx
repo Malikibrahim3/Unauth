@@ -4,7 +4,6 @@ import {
   ExternalLink,
   FileCheck2,
   Link2,
-  Radio,
 } from "lucide-react";
 import type {
   ObjectFact,
@@ -17,6 +16,14 @@ import { formatCurrencyNullable, formatDateTime, formatNumber } from "@/lib/util
 function label(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1).replaceAll("_", " ");
 }
+const OBJECT_ROUTES = {
+  order: "/orders",
+  ticket: "/tickets",
+  shipment: "/shipments",
+  refund: "/refunds",
+  return: "/returns",
+  dispute: "/disputes",
+} as const;
 function factValue(item: ObjectFact) {
   if (item.kind === "money")
     return typeof item.value === "number"
@@ -44,6 +51,7 @@ export function ConnectedObjectDetail({
   object: ObjectSummary;
   returnTo?: string;
 }) {
+  const sourceUpdatedAt = object.provenance?.lastSyncedAt ?? object.updatedAt;
   return (
     <main
       className="mx-auto w-full max-w-6xl space-y-6 p-4 sm:p-6"
@@ -59,7 +67,7 @@ export function ConnectedObjectDetail({
           </Link>
         ) : (
           <Link
-            href={`/${object.type.replace(/_.*$/, "")}s`}
+            href={OBJECT_ROUTES[object.type]}
             className="text-sm font-semibold text-[var(--accent)]"
           >
             ← {label(object.type)}s
@@ -79,7 +87,7 @@ export function ConnectedObjectDetail({
       </div>
       <header className="border-b border-[var(--border-muted)] pb-5">
         <p className="text-sm text-[var(--text-secondary)]">
-          {label(object.type)} source record
+          {label(object.type)} record
         </p>
         <div className="mt-1 flex flex-wrap items-center gap-3">
           <h1 className="break-all text-2xl font-semibold text-[var(--text-primary)]">
@@ -87,11 +95,6 @@ export function ConnectedObjectDetail({
           </h1>
           <StatusBadge family="workflowStatus" value={object.state ?? "unknown"} />
         </div>
-        <p className="mt-2 max-w-3xl text-sm text-[var(--text-secondary)]">
-          Object-specific facts below preserve the connected source’s values.
-          Unavailable fields stay explicit and are never inferred from a
-          different record.
-        </p>
       </header>
       <section aria-labelledby="object-facts-heading">
         <h2 id="object-facts-heading" className="text-base font-semibold">
@@ -169,113 +172,15 @@ export function ConnectedObjectDetail({
           )}
         </section>
         <section aria-labelledby="object-provenance-heading">
-          <div className="flex items-center gap-2">
-            <Radio className="h-4 w-4" />
-            <h2
-              id="object-provenance-heading"
-              className="text-base font-semibold"
-            >
-              Provenance and freshness
-            </h2>
-          </div>
-          <PanelCard variant="app" className="mt-3 p-4">
-            {object.provenance ? (
-              <dl className="space-y-3 text-sm">
-                <div>
-                  <dt className="text-xs text-[var(--text-tertiary)]">
-                    Source system
-                  </dt>
-                  <dd className="mt-1 font-medium">
-                    {label(object.provenance.sourceSystem)}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-xs text-[var(--text-tertiary)]">
-                    External ID
-                  </dt>
-                  <dd className="mt-1 break-all font-mono text-xs">
-                    {object.provenance.externalId}
-                  </dd>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <dt className="text-xs text-[var(--text-tertiary)]">
-                      Freshness
-                    </dt>
-                    <dd className="mt-1">
-                      <StatusBadge family="workflowStatus" value={object.provenance.freshness} size="sm" />
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-xs text-[var(--text-tertiary)]">
-                      Sync state
-                    </dt>
-                    <dd className="mt-1">
-                      <StatusBadge family="workflowStatus" value={object.provenance.syncState} size="sm" />
-                    </dd>
-                  </div>
-                </div>
-                <div>
-                  <dt className="text-xs text-[var(--text-tertiary)]">
-                    Last synced
-                  </dt>
-                  <dd className="mt-1">
-                    {object.provenance.lastSyncedAt
-                      ? formatDateTime(object.provenance.lastSyncedAt)
-                      : "Timestamp unavailable"}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-xs text-[var(--text-tertiary)]">
-                    Connector version
-                  </dt>
-                  <dd className="mt-1 font-mono text-xs">
-                    {object.provenance.connectorVersion ?? "Not recorded"}
-                  </dd>
-                </div>
-                {object.provenance.payloadHash ? (
-                  <div>
-                    <dt className="text-xs text-[var(--text-tertiary)]">
-                      Payload integrity
-                    </dt>
-                    <dd className="mt-1 break-all font-mono text-[11px]">
-                      {object.provenance.payloadHash}
-                    </dd>
-                  </div>
-                ) : null}
-              </dl>
-            ) : (
-              <div>
-                <p className="text-sm font-medium">Canonical row present</p>
-                <p className="mt-1 text-xs text-[var(--text-secondary)]">
-                  The source registry has no matching provenance row, so
-                  connector version and freshness cannot be claimed.
-                </p>
-                <dl className="mt-3 space-y-2 text-xs">
-                  <div>
-                    <dt className="text-[var(--text-tertiary)]">Source ID</dt>
-                    <dd className="break-all font-mono">
-                      {object.sourceId ?? "Not supplied"}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-[var(--text-tertiary)]">
-                      Observed provider
-                    </dt>
-                    <dd>{object.provider ?? "Imported source record"}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-[var(--text-tertiary)]">Row updated</dt>
-                    <dd>
-                      {object.updatedAt
-                        ? formatDateTime(object.updatedAt)
-                        : "Timestamp unavailable"}
-                    </dd>
-                  </div>
-                </dl>
-              </div>
-            )}
-          </PanelCard>
+          <h2 id="object-provenance-heading" className="text-base font-semibold">
+            Data source
+          </h2>
+          <p className="mt-3 rounded-lg border border-[var(--border-muted)] bg-[var(--surface-sunken)] p-4 text-sm text-[var(--text-secondary)]">
+            From {label(object.provenance?.sourceSystem ?? object.provider ?? "imported data")}
+            {sourceUpdatedAt
+              ? ` · updated ${formatDateTime(sourceUpdatedAt)}`
+              : " · update time unavailable"}
+          </p>
         </section>
       </div>
       <section aria-labelledby="object-evidence-heading">
@@ -313,8 +218,7 @@ export function ConnectedObjectDetail({
             variant="appInset"
             className="mt-3 p-4 text-sm text-[var(--text-secondary)]"
           >
-            No typed evidence items are connected through this object’s payout
-            cases.
+            No evidence linked yet.
           </PanelCard>
         )}
       </section>

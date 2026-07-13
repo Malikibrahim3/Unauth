@@ -13,6 +13,7 @@ import {
 import { PanelCard } from "@/components/ui";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatDateTime, formatNumber } from "@/lib/utils/format";
+import { getConnectionState } from "@/lib/connections/getConnectionState";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +36,9 @@ function ConnectorCard({ item }: { item: ConnectorCatalogueItem }) {
               {item.name}
             </h3>
             <p className="mt-1 text-xs capitalize text-[var(--text-tertiary)]">
-              {item.category.replaceAll("_", " ")}
+              {item.category === "warehouse_3pl"
+                ? "Warehouse / 3PL"
+                : item.category.replaceAll("_", " ")}
             </p>
           </div>
           <StatusBadge family="workflowStatus" value={item.status === "import_complete" ? "connected" : item.status} />
@@ -48,7 +51,7 @@ function ConnectorCard({ item }: { item: ConnectorCatalogueItem }) {
             <dt className="text-[11px] uppercase tracking-wide text-[var(--text-tertiary)]">
               Imported
             </dt>
-            <dd className="mt-1 font-mono text-sm font-semibold tabular-nums">
+            <dd className="mt-1 text-sm font-semibold tabular-nums">
               {formatNumber(item.importedRecords)}
             </dd>
           </div>
@@ -94,7 +97,15 @@ export default async function IntegrationsPage() {
     PERMISSIONS.VIEW_SETTINGS,
   );
   if (denied || !ctx) redirect(await resolveDefaultAppPath(service, user.id));
-  const catalogue = await loadConnectorCatalogue(service, ctx.merchantId);
+  const [catalogueRows, connectionState] = await Promise.all([
+    loadConnectorCatalogue(service, ctx.merchantId),
+    getConnectionState(service, ctx.merchantId),
+  ]);
+  const catalogue = catalogueRows.map((item) => {
+    const isOrderSource = item.id === connectionState.orderSourcePlatform;
+    const isHelpdesk = item.id === connectionState.helpdeskProvider;
+    return isOrderSource || isHelpdesk ? { ...item, status: "connected" } : item;
+  });
   const connected = catalogue.filter((item) => ACTIVE.has(item.status));
   const attention = catalogue.filter((item) => ATTENTION.has(item.status));
   const manual = catalogue.filter(
@@ -180,7 +191,7 @@ export default async function IntegrationsPage() {
           <dt className="text-xs text-[var(--text-secondary)]">
             Connected providers
           </dt>
-          <dd className="mt-1 font-mono text-2xl font-semibold">
+          <dd className="mt-1 text-2xl font-semibold tabular-nums">
             {connected.length}
           </dd>
         </PanelCard>
@@ -188,7 +199,7 @@ export default async function IntegrationsPage() {
           <dt className="text-xs text-[var(--text-secondary)]">
             Imported records
           </dt>
-          <dd className="mt-1 font-mono text-2xl font-semibold">
+          <dd className="mt-1 text-2xl font-semibold tabular-nums">
             {formatNumber(imported)}
           </dd>
         </PanelCard>
@@ -196,7 +207,7 @@ export default async function IntegrationsPage() {
           <dt className="text-xs text-[var(--text-secondary)]">
             Covered categories
           </dt>
-          <dd className="mt-1 font-mono text-2xl font-semibold">
+          <dd className="mt-1 text-2xl font-semibold tabular-nums">
             {categories}
           </dd>
         </PanelCard>
@@ -213,7 +224,7 @@ export default async function IntegrationsPage() {
                 className="text-base font-semibold"
               >
                 {group.title}{" "}
-                <span className="font-mono text-xs text-[var(--text-tertiary)]">
+                <span className="text-xs tabular-nums text-[var(--text-tertiary)]">
                   {group.items.length}
                 </span>
               </h2>

@@ -99,6 +99,10 @@ export default function OnboardingClient({
   const maxReachableStep = !shopifyConnected ? 1 : !helpdeskConnected ? 2 : 3;
 
   async function saveProfileAndContinue() {
+    if (!storeName.trim() || !platform || !annualVolume || !primaryConcern) {
+      dispatch({ type: 'patch', patch: { error: 'Complete the store name, platform, order volume, and primary concern before continuing.' } });
+      return;
+    }
     dispatch({ type: 'patch', patch: { loading: true, error: '' } });
     const response = await fetch('/api/account/setup', {
       method: 'POST',
@@ -135,6 +139,9 @@ export default function OnboardingClient({
         <p className={foundation.landingSectionLead} style={{ marginTop: '0.75rem', maxWidth: '52ch' }}>
           A few quick steps to bring payout control into every support ticket.
         </p>
+        <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-[var(--surface-sunken)]" aria-label={`Setup progress: step ${activeStep + 1} of ${STEPS.length}`}>
+          <div className="h-full rounded-full bg-[var(--accent)] transition-[width] duration-150" style={{ width: `${((activeStep + 1) / STEPS.length) * 100}%` }} />
+        </div>
       </div>
       <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-[360px_minmax(0,1fr)]">
         {/* Sidebar checklist */}

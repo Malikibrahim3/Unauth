@@ -163,10 +163,7 @@ function LoginPageInner() {
           className="font-medium text-[var(--accent)] underline-offset-4 hover:underline"
         >
           Reset it
-        </Link>
-      </p>
-      <p className="mt-4 text-sm text-[var(--text-secondary)]">
-        Don&apos;t have an account?{" "}
+        </Link>{" "}· Don&apos;t have an account?{" "}
         <Link
           href="/signup"
           className="font-medium text-[var(--accent)] underline-offset-4 hover:underline"

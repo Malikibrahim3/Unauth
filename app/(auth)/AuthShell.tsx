@@ -36,6 +36,6 @@ export const authButtonStyle = {
   background: 'var(--accent)',
   color: '#FFFFFF',
   borderColor: 'var(--accent)',
-  borderRadius: 'var(--radius-full)',
+  borderRadius: 'var(--radius-md)',
   boxShadow: 'var(--landing-shadow-cta)',
 } as const;

@@ -105,8 +105,7 @@ export function NotificationPreferencesForm({ initial }: { initial: Pref[] }) {
         <div>
           <h2 className="text-sm font-semibold">In-app delivery</h2>
           <p className="mt-1 text-xs text-[var(--text-secondary)]">
-            Preferences are recipient-scoped. Muted events are still retained in
-            the auditable domain-event stream but do not create an inbox item.
+            Choose which case updates appear in your notification inbox.
           </p>
         </div>
       </PanelCard>
@@ -171,9 +170,8 @@ export function NotificationPreferencesForm({ initial }: { initial: Pref[] }) {
             Email delivery is not enabled
           </h2>
           <p className="mt-1 text-xs text-[var(--text-secondary)]">
-            The product currently guarantees recipient-scoped in-app delivery
-            only. Email controls will appear after a retryable delivery worker
-            and delivery audit are available.
+            Email notifications are coming later. Your in-app preferences stay
+            active in the meantime.
           </p>
         </div>
       </PanelCard>

@@ -100,11 +100,11 @@ export default function HelpIndexPage() {
           <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
             Email us at{' '}
             <a
-              href="mailto:support@unauth.co"
+              href="mailto:support@unauth.app"
               className="underline underline-offset-2"
               style={{ color: 'var(--text)' }}
             >
-              support@unauth.co
+              support@unauth.app
             </a>{' '}
             and we&apos;ll get back to you within one business day.
           </p>

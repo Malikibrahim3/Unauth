@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import {
   formatMoneyOrDash,
   formatDateTime,
+  formatDateAbsolute,
   formatDateMode,
 } from "@/lib/utils/format";
 import {
@@ -68,7 +69,7 @@ function CompactTransactionList({
       {transactions.slice(0, 25).map((tx) => (
         <tr key={tx.order_id} className="hover:bg-[var(--surface-hover)]">
           <td className="px-3 py-3"><Link href={`/orders/${tx.source_order_id}`} className="font-mono text-xs font-semibold underline-offset-2 hover:underline">{tx.order_id}</Link></td>
-          <td className="px-3 py-3 text-[var(--text-secondary)]">{formatDateMode(tx.processed_at, "table")}</td>
+          <td className="px-3 py-3 text-[var(--text-secondary)]">{formatDateAbsolute(tx.processed_at)}</td>
           <td className="px-3 py-3">{compactTransactionTitle(tx)}</td>
           <td className="px-3 py-3 text-right font-semibold tabular-nums">{formatMoneyOrDash(Math.round((Number(tx.order_value) || 0) * 100), tx.currency)}</td>
         </tr>

@@ -82,9 +82,8 @@ export default async function FlowsPage() {
         <p className="text-sm text-[var(--text-secondary)]">Configuration</p>
         <h1 className="mt-1 text-2xl font-semibold">Flows</h1>
         <p className="mt-1 max-w-3xl text-sm text-[var(--text-secondary)]">
-          Build event-triggered routing for tasks, evidence, deadlines and
-          notifications. Test runs perform zero writes; publication enables only
-          future matching events.
+          Route tasks, evidence, deadlines, and notifications. Test safely —
+          nothing changes until you publish.
         </p>
       </header>
       <FlowsIndexClient flows={flows} canManage={canManage} />

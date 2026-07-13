@@ -7,8 +7,9 @@ import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { getRecoveryCase } from '@/lib/recoveries/store';
 import { RECOVERY_STATUS_LABELS, RECOVERY_OWNER_LABELS, type RecoveryCaseEvent } from '@/lib/recoveries/types';
 import { RECOVERY_TYPE_LABELS } from '@/lib/partners/types';
-import { formatCurrencyNullable, formatNumber } from '@/lib/utils/format';
+import { formatCurrencyNullable, formatDateAbsolute, formatDateTime, formatNumber } from '@/lib/utils/format';
 import { recoveryOutstanding, recoverySoughtAmount } from '@/lib/recoveries/amounts';
+import { humanise, label } from '@/lib/ui/labels';
 
 export const dynamic = 'force-dynamic';
 
@@ -80,8 +81,8 @@ export default async function RecoveryDetailPage({ params }: Props) {
               <Row label="Status" value={RECOVERY_STATUS_LABELS[recovery.status] ?? recovery.status} />
               <Row label="Owner" value={RECOVERY_OWNER_LABELS[recovery.owner_type] ?? recovery.owner_type} />
               <Row label="Type" value={RECOVERY_TYPE_LABELS[recovery.recovery_type] ?? recovery.recovery_type} />
-              <Row label="Deadline" value={recovery.deadline_at ? recovery.deadline_at.slice(0, 10) : '—'} />
-              <Row label="Next chase" value={recovery.next_chase_at ? recovery.next_chase_at.slice(0, 10) : '—'} />
+              <Row label="Deadline" value={recovery.deadline_at ? formatDateAbsolute(recovery.deadline_at) : '—'} />
+              <Row label="Next chase" value={recovery.next_chase_at ? formatDateAbsolute(recovery.next_chase_at) : '—'} />
               <Row label="Evidence complete" value={recovery.evidence_complete ? 'Yes' : 'No'} />
             </div>
             <div className="mt-4 flex flex-wrap gap-3 text-xs">
@@ -102,7 +103,7 @@ export default async function RecoveryDetailPage({ params }: Props) {
               <ul className="flex flex-wrap gap-1.5">
                 {missing.map((key) => (
                   <li key={key} className="rounded-md px-2 py-0.5 text-xs" style={{ backgroundColor: 'var(--surface-muted, rgba(0,0,0,0.04))', color: 'var(--text-secondary)' }}>
-                    {key.replaceAll('_', ' ')}
+                    {humanise(key)}
                   </li>
                 ))}
               </ul>
@@ -110,7 +111,7 @@ export default async function RecoveryDetailPage({ params }: Props) {
           ) : null}
 
           <section className="rounded-lg p-4" style={{ border: '1px solid var(--border-subtle, rgba(0,0,0,0.08))' }}><h2 className="mb-3 text-sm font-semibold">Correspondence</h2>{(correspondenceRows ?? []).length ? <ul className="space-y-2">{(correspondenceRows ?? []).map((item: { id: string; direction: string; source_provider: string; source_record_id: string; subject: string | null; source_url: string | null }) => <li key={item.id} className="text-sm"><span className="font-medium capitalize">{item.direction}</span> · {item.source_provider} · {item.subject ?? item.source_record_id}{item.source_url ? <a className="ml-2 underline" href={item.source_url}>Source</a> : null}</li>)}</ul> : <p className="text-sm text-[var(--text-tertiary)]">No external correspondence is linked.</p>}</section>
-          <section className="rounded-lg p-4" style={{ border: '1px solid var(--border-subtle, rgba(0,0,0,0.08))' }}><h2 className="mb-3 text-sm font-semibold">Tasks</h2>{(taskRows ?? []).length ? <ul className="space-y-2">{(taskRows ?? []).map((task: { id: string; title: string; status: string; due_at: string | null }) => <li key={task.id} className="text-sm"><span className="font-medium">{task.title}</span> · {task.status.replaceAll('_', ' ')}{task.due_at ? ` · due ${task.due_at.slice(0, 10)}` : ''}</li>)}</ul> : <p className="text-sm text-[var(--text-tertiary)]">No recovery tasks are linked.</p>}</section>
+          <section className="rounded-lg p-4" style={{ border: '1px solid var(--border-subtle, rgba(0,0,0,0.08))' }}><h2 className="mb-3 text-sm font-semibold">Tasks</h2>{(taskRows ?? []).length ? <ul className="space-y-2">{(taskRows ?? []).map((task: { id: string; title: string; status: string; due_at: string | null }) => <li key={task.id} className="text-sm"><span className="font-medium">{task.title}</span> · {label('workflowStatus', task.status)}{task.due_at ? ` · due ${formatDateAbsolute(task.due_at)}` : ''}</li>)}</ul> : <p className="text-sm text-[var(--text-tertiary)]">No recovery tasks are linked.</p>}</section>
 
           <section className="rounded-lg p-4" style={{ border: '1px solid var(--border-subtle, rgba(0,0,0,0.08))' }}>
             <h2 className="mb-3 text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Activity</h2>
@@ -121,13 +122,13 @@ export default async function RecoveryDetailPage({ params }: Props) {
                 {events.map((event) => (
                   <li key={event.id} className="flex items-start justify-between gap-3 text-sm">
                     <span style={{ color: 'var(--text-primary)' }}>
-                      {event.event_type.replaceAll('_', ' ')}
+                      {label('workflowStatus', event.event_type)}
                       {event.from_status && event.to_status ? (
-                        <span style={{ color: 'var(--text-tertiary)' }}> · {event.from_status} → {event.to_status}</span>
+                        <span style={{ color: 'var(--text-tertiary)' }}> · {label('recoveryStatus', event.from_status)} → {label('recoveryStatus', event.to_status)}</span>
                       ) : null}
                       {event.note ? <span style={{ color: 'var(--text-secondary)' }}> — {event.note}</span> : null}
                     </span>
-                    <span className="shrink-0 text-xs" style={{ color: 'var(--text-tertiary)' }}>{event.created_at.slice(0, 10)}</span>
+                    <span className="shrink-0 text-xs" style={{ color: 'var(--text-tertiary)' }}>{formatDateTime(event.created_at)}</span>
                   </li>
                 ))}
               </ul>

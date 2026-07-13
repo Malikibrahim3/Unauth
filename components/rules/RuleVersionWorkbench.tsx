@@ -78,6 +78,35 @@ function valueChanged(a: unknown, b: unknown) {
 
 const UNAVAILABLE = "__unavailable__";
 
+const OPERATOR_COPY: Record<RuleCondition["operator"], string> = {
+  eq: "is",
+  neq: "is not",
+  in: "is one of",
+  not_in: "is not one of",
+  gt: "is greater than",
+  gte: "is at least",
+  lt: "is less than",
+  lte: "is at most",
+  contains: "contains",
+  not_contains: "does not contain",
+  contains_any: "contains any of",
+  exists: "is present",
+};
+
+function readableCondition(condition: RuleCondition): string {
+  const field = FIELD_LABELS[condition.field] ?? condition.field.replaceAll("_", " ");
+  const definition = FIELD_DEFS_BY_NAME[condition.field];
+  const values = (Array.isArray(condition.value) ? condition.value : [condition.value])
+    .filter((value) => value !== null && value !== undefined)
+    .map((value) => {
+      const option = definition?.options?.find((candidate) => candidate.value === value);
+      return `“${option?.label ?? String(value).replaceAll("_", " ")}”`;
+    });
+  const comparison = condition.operator === "exists" ? "" : ` ${values.join(", ")}`;
+  const operator = OPERATOR_COPY[condition.operator] ?? condition.operator.replaceAll("_", " ");
+  return `If ${field.toLowerCase()} ${operator}${comparison}`;
+}
+
 function matchingSampleValue(condition: RuleCondition): string {
   const def = FIELD_DEFS_BY_NAME[condition.field];
   const value = condition.value;
@@ -480,15 +509,7 @@ export function RuleVersionWorkbench({
                 <span className="font-mono text-xs text-[var(--text-tertiary)]">
                   {index + 1}
                 </span>
-                <span className="text-sm">
-                  <strong>{condition.field.replaceAll("_", " ")}</strong>{" "}
-                  {String(condition.operator).replaceAll("_", " ")}{" "}
-                  <span className="font-mono">
-                    {Array.isArray(condition.value)
-                      ? condition.value.join(", ")
-                      : String(condition.value ?? "present")}
-                  </span>
-                </span>
+                <span className="text-sm">{readableCondition(condition)}</span>
               </li>
             ))}
           </ol>
@@ -618,7 +639,7 @@ export function RuleVersionWorkbench({
         open={simulationOpen}
         onClose={() => setSimulationOpen(false)}
         title="Simulate rule"
-        description="Use a synthetic case. Simulation performs zero writes."
+        description="Try this rule on a sample case. Nothing changes until you publish."
         actions={[
           {
             label: busy === "simulate" ? "Testing…" : "Run simulation",
