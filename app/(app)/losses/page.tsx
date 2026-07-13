@@ -6,7 +6,7 @@ import { WorkbenchPage } from '@/components/ui';
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { LossLedger, type LossLedgerRow } from '@/components/losses/LossLedger';
 import { freshnessFromTimestamp } from '@/components/sources/FreshnessIndicator';
-import { formatCurrencyNullable, sumSameCurrency } from '@/lib/utils/format';
+import { formatCurrencyNullable, formatNumber, sumSameCurrency } from '@/lib/utils/format';
 import { recoverySoughtAmount } from '@/lib/recoveries/amounts';
 
 export const dynamic = 'force-dynamic';
@@ -143,20 +143,19 @@ export default async function LossesPage() {
     <WorkbenchPage
       eyebrow="Operations"
       title="Losses"
-      subtitle="The canonical loss ledger: what's confirmed, what's estimated, what's recoverable, what was prevented, and what's been written off — with attribution and source."
       navItems={WORKBENCH_NAV_ITEMS}
       activeNavKey="losses"
       kpiItems={[
-        { label: 'Loss records', value: rows.length.toLocaleString(), hint: derivedRows.length ? `${canonicalRows.length} canonical · ${derivedRows.length} awaiting reconciliation` : 'Canonical loss_cases' },
-        { label: 'Realised / estimated loss', value: formatCurrencyNullable(exposure.total || null, exposure.currency) ?? '-', hint: `Ledger-derived; excludes written-off${mixedHint}` },
-        { label: 'Recoverable', value: recoverable.toLocaleString(), hint: 'Eligible to chase' },
-        { label: 'Prevented', value: prevented.toLocaleString(), hint: 'Prevention-only outcomes' },
-        { label: 'Written off', value: writtenOff.toLocaleString(), hint: 'Closed unrecoverable' },
+        { label: 'Loss records', value: formatNumber(rows.length), hint: derivedRows.length ? `${canonicalRows.length} recorded · ${derivedRows.length} awaiting reconciliation` : 'All recorded losses' },
+        { label: 'Realised / estimated loss', value: formatCurrencyNullable(exposure.total || null, exposure.currency) ?? '—', hint: `Excludes written-off${mixedHint}` },
+        { label: 'Recoverable', value: formatNumber(recoverable), hint: 'Eligible to chase' },
+        { label: 'Prevented', value: formatNumber(prevented), hint: 'Prevention-only outcomes' },
+        { label: 'Written off', value: formatNumber(writtenOff), hint: 'Closed unrecoverable' },
       ]}
       main={<LossLedger rows={rows} />}
       footer={
         <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-          Loss records are classified by the accountability workflow. Alternate attributions are retained as candidates without double-counting the loss.
+          Each loss is attributed to one recovery owner. Other possible owners are kept as candidates so the loss is never counted twice.
         </p>
       }
     />
