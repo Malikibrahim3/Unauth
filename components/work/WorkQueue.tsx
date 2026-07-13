@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { StatusBadge, PriorityChip } from "@/components/ui/StatusBadge";
+import { RowActionsMenu, type RowAction } from "@/components/ui/RowActionsMenu";
 
 export type WorkQueueItem = {
   id: string;
@@ -82,70 +83,22 @@ function WorkItemActions({
   onAction: (item: WorkQueueItem, action: WorkAction) => void;
 }) {
   const disabled = busy?.startsWith(`${item.kind}:${item.id}:`) ?? false;
+  const actions: RowAction[] = [];
   if (item.kind === "exception") {
-    return (
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={() => onAction(item, "assign_to_me")}
-        className="rounded border border-[var(--border)] px-2 py-1 text-xs font-medium disabled:opacity-50"
-      >
-        Assign to me
-      </button>
-    );
+    actions.push({ label: "Assign to me", onSelect: () => onAction(item, "assign_to_me"), disabled });
+  } else if (item.status === "completed") {
+    actions.push({ label: "Reopen", onSelect: () => onAction(item, "reopen"), disabled });
+  } else {
+    if (!item.ownerUserId) {
+      actions.push({ label: "Assign to me", onSelect: () => onAction(item, "assign_to_me"), disabled });
+    }
+    if (item.status !== "in_progress") {
+      actions.push({ label: "Start", onSelect: () => onAction(item, "start"), disabled });
+    }
+    actions.push({ label: "Snooze 1 day", onSelect: () => onAction(item, "snooze"), disabled });
+    actions.push({ label: "Complete", onSelect: () => onAction(item, "complete"), disabled });
   }
-  if (item.status === "completed") {
-    return (
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={() => onAction(item, "reopen")}
-        className="rounded border border-[var(--border)] px-2 py-1 text-xs font-medium disabled:opacity-50"
-      >
-        Reopen
-      </button>
-    );
-  }
-  return (
-    <div className="flex flex-wrap gap-1.5">
-      {!item.ownerUserId ? (
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={() => onAction(item, "assign_to_me")}
-          className="rounded border border-[var(--border)] px-2 py-1 text-xs font-medium disabled:opacity-50"
-        >
-          Assign
-        </button>
-      ) : null}
-      {item.status !== "in_progress" ? (
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={() => onAction(item, "start")}
-          className="rounded border border-[var(--border)] px-2 py-1 text-xs font-medium disabled:opacity-50"
-        >
-          Start
-        </button>
-      ) : null}
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={() => onAction(item, "snooze")}
-        className="rounded border border-[var(--border)] px-2 py-1 text-xs font-medium disabled:opacity-50"
-      >
-        Snooze 1d
-      </button>
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={() => onAction(item, "complete")}
-        className="rounded bg-[var(--accent)] px-2 py-1 text-xs font-semibold text-white disabled:opacity-50"
-      >
-        Complete
-      </button>
-    </div>
-  );
+  return <RowActionsMenu actions={actions} label={`Actions for ${item.title}`} disabled={disabled} />;
 }
 
 export function WorkQueue({

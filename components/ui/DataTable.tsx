@@ -3,6 +3,7 @@
 import { ChevronDown, ChevronsUpDown, ChevronUp } from "lucide-react";
 import { type ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { RowActionsMenu, type RowAction } from "@/components/ui/RowActionsMenu";
 import {
   DATA_TABLE_EMPTY_STYLE,
   DATA_TABLE_HEAD_ROW_STYLE,
@@ -38,6 +39,8 @@ interface DataTableProps<T> {
   emptyState?: ReactNode;
   /** Applied to each body row when `onRowClick` is set (e.g. Playwright `customer-row`). */
   rowTestId?: string;
+  /** Per-row action menu (WS4.2). Renders a hover/focus-revealed `⋯` menu in a trailing column. */
+  rowActions?: (row: T) => RowAction[];
 }
 
 const ROW_HEIGHT: Record<TableDensity, number> = {
@@ -132,8 +135,10 @@ export function DataTable<T>({
   className,
   emptyState,
   rowTestId,
+  rowActions,
 }: DataTableProps<T>) {
   const rowH = ROW_HEIGHT[density];
+  const totalCols = columns.length + (rowActions ? 1 : 0);
 
   return (
     <div
@@ -173,14 +178,19 @@ export function DataTable<T>({
                 )}
               </th>
             ))}
+            {rowActions ? (
+              <th scope="col" style={headerCellStyle({ key: "__actions", header: "", render: () => null, align: "right" } as Column<unknown>, false)}>
+                <span className="sr-only">Actions</span>
+              </th>
+            ) : null}
           </tr>
         </thead>
         <tbody>
           {loading ? (
-            <SkeletonRows count={6} cols={columns.length} />
+            <SkeletonRows count={6} cols={totalCols} />
           ) : rows.length === 0 ? (
             <tr>
-              <td colSpan={columns.length}>
+              <td colSpan={totalCols}>
                 {emptyState ?? (
                   <div
                     className="flex items-center justify-center"
@@ -251,6 +261,14 @@ export function DataTable<T>({
                       {col.render(row)}
                     </td>
                   ))}
+                  {rowActions ? (
+                    <td
+                      style={{ padding: "0 var(--space-3)", verticalAlign: "middle", textAlign: "right", width: 48 }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <RowActionsMenu actions={rowActions(row)} />
+                    </td>
+                  ) : null}
                 </tr>
               );
             })
