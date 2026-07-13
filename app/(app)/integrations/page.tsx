@@ -11,7 +11,7 @@ import {
   type ConnectorCatalogueItem,
 } from "@/lib/connectors/catalogue";
 import { PanelCard, StatusBadge } from "@/components/ui";
-import { formatDateTime } from "@/lib/utils/format";
+import { formatDateTime, formatNumber } from "@/lib/utils/format";
 
 export const dynamic = "force-dynamic";
 
@@ -69,7 +69,7 @@ function ConnectorCard({ item }: { item: ConnectorCatalogueItem }) {
               Imported
             </dt>
             <dd className="mt-1 font-mono text-sm font-semibold tabular-nums">
-              {item.importedRecords.toLocaleString()}
+              {formatNumber(item.importedRecords)}
             </dd>
           </div>
           <div>
@@ -209,7 +209,7 @@ export default async function IntegrationsPage() {
             Imported records
           </dt>
           <dd className="mt-1 font-mono text-2xl font-semibold">
-            {imported.toLocaleString()}
+            {formatNumber(imported)}
           </dd>
         </PanelCard>
         <PanelCard variant="appInset" className="p-4">

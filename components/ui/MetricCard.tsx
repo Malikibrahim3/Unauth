@@ -4,6 +4,7 @@ import { ArrowDown, ArrowUp, Minus } from 'lucide-react';
 import { type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { useCountUp } from '@/hooks/useCountUp';
+import { formatNumber } from '@/lib/utils/format';
 
 interface DeltaProps {
   value: number;
@@ -40,7 +41,7 @@ export function MetricCard({ label, value, delta, hint, icon, density = 'default
   const padding = isHero ? 'var(--space-5)' : density === 'compact' ? 'var(--space-3)' : 'var(--space-4)';
   const numericValue = typeof value === 'number' ? value : null;
   const animatedValue = useCountUp(numericValue ?? 0, {
-    format: (next) => Math.round(next).toLocaleString('en-US'),
+    format: (next) => formatNumber(Math.round(next)),
   });
   const displayValue = numericValue !== null ? animatedValue : value;
 

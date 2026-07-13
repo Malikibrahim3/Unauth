@@ -1,5 +1,5 @@
 import { Loader2 } from 'lucide-react';
-import { formatRelativeTime } from '@/lib/utils/format';
+import { formatNumber, formatRelativeTime } from '@/lib/utils/format';
 import { SyncStatusConnectModal } from '@/components/shopify/SyncStatusConnectModal';
 import { SyncStatusScopesList } from '@/components/shopify/SyncStatusScopesList';
 import type { ShopifyStatus, SyncStatusVariant } from '@/components/shopify/syncStatusCardTypes';
@@ -33,9 +33,9 @@ function SyncStatusConnectedContent({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-            {status.orderCount?.toLocaleString() ?? '-'} orders synced
+            {status.orderCount != null ? formatNumber(status.orderCount) : '-'} orders synced
             {typeof status.auditTransactionCount === 'number'
-              ? ` · ${status.auditTransactionCount.toLocaleString()} scored`
+              ? ` · ${formatNumber(status.auditTransactionCount)} scored`
               : ''}{' '}
             · read-only
           </p>

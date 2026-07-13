@@ -4,18 +4,11 @@ import {
   FRESHDESK_SUPPORT_SECRET_SAVE_WARNING,
   FRESHDESK_SUPPORT_WEBHOOK_HEADER_NAME,
 } from '@/lib/support/freshdesk/supportConnectionShared';
-
-const freshdeskWhenFormatter = new Intl.DateTimeFormat('en-US', {
-  month: 'short',
-  day: 'numeric',
-  year: 'numeric',
-  hour: '2-digit',
-  minute: '2-digit',
-});
+import { formatDateTime } from '@/lib/utils/format';
 
 export function formatFreshdeskWhen(value: string | null) {
   if (!value) return 'Never';
-  return freshdeskWhenFormatter.format(new Date(value));
+  return formatDateTime(value);
 }
 
 export function freshdeskAccountLabel(connection: {

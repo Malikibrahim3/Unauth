@@ -7,6 +7,7 @@ import {
   ZENDESK_CONNECT_CREDENTIALS_ERROR_CODE,
   type ZendeskSupportConnectionSettings,
 } from "@/lib/support/zendesk/supportConnectionShared";
+import { formatDateTime } from "@/lib/utils/format";
 
 type Props = {
   canManage: boolean;
@@ -173,9 +174,7 @@ export default function ZendeskSupportSyncClient({ canManage }: Props) {
               {connection.last_sync_at ? (
                 <p style={{ color: "var(--text-secondary)" }}>
                   Last sync:{" "}
-                  {new Date(connection.last_sync_at).toLocaleString("en-US", {
-                    timeZone: "UTC",
-                  })}
+                  {formatDateTime(connection.last_sync_at)}
                 </p>
               ) : (
                 <p style={{ color: "var(--text-secondary)" }}>

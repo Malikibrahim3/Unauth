@@ -11,6 +11,7 @@ import {
   OUTCOME_LABELS,
 } from "@/components/claims/claimReviewLabels";
 import { formatClaimMoney } from "@/components/claims/claimReviewStyles";
+import { formatDateTime } from "@/lib/utils/format";
 import { actorLabel } from "@/components/claims/claimReviewLogic";
 import {
   CaseIntelTile,
@@ -434,9 +435,7 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
                   className="text-xs"
                   style={{ color: "var(--text-secondary)" }}
                 >
-                  {new Date(latestOutcome.updated_at).toLocaleString("en-US", {
-                    timeZone: "UTC",
-                  })}
+                  {formatDateTime(latestOutcome.updated_at)}
                 </p>
               )}
             </div>
@@ -536,10 +535,7 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
                       >
                         <p>
                           {event.created_at
-                            ? new Date(event.created_at).toLocaleString(
-                                "en-US",
-                                { timeZone: "UTC" },
-                              )
+                            ? formatDateTime(event.created_at)
                             : "-"}
                         </p>
                         {event.actor_user_id && (

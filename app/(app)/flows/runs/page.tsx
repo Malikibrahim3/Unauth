@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { PERMISSIONS, requirePermission } from "@/lib/permissions";
 import { TABLES } from "@/lib/supabase/tables";
+import { formatDateTime } from "@/lib/utils/format";
 export default async function Runs({
   searchParams,
 }: {
@@ -44,7 +45,7 @@ export default async function Runs({
           >
             <span className="font-mono text-xs">{r.id}</span>
             <span>{r.status}</span>
-            <span>{new Date(r.started_at).toLocaleString()}</span>
+            <span>{formatDateTime(r.started_at)}</span>
             <span>{r.error ? "Failed — inspect" : "Inspect →"}</span>
           </Link>
         ))}

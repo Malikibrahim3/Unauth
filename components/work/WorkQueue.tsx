@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { StatusBadge, PriorityChip } from "@/components/ui/StatusBadge";
 import { RowActionsMenu, type RowAction } from "@/components/ui/RowActionsMenu";
+import { formatDateAbsolute } from "@/lib/utils/format";
 
 export type WorkQueueItem = {
   id: string;
@@ -42,15 +43,9 @@ const title = (value: string | null) =>
         .replaceAll("_", " ")
         .replace(/\b\w/g, (letter) => letter.toUpperCase())
     : "—";
-const workDateFormatter = new Intl.DateTimeFormat("en-GB", {
-  day: "numeric",
-  month: "short",
-  timeZone: "UTC",
-});
-
 const date = (value: string | null) =>
   value && !Number.isNaN(Date.parse(value))
-    ? workDateFormatter.format(new Date(value))
+    ? formatDateAbsolute(value)
     : "—";
 
 function dueState(value: string | null) {

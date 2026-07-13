@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import type { EChartsOption } from 'echarts';
 import { EChartWrapper } from './EChartWrapper';
 import { readCssTokens, gradeColors, baseTooltip } from '@/components/charts/echartsTheme';
+import { formatNumber } from '@/lib/utils/format';
 
 export interface DonutSlice {
   label: string;
@@ -30,7 +31,7 @@ export function AnalyticsDonutChart({
 }: AnalyticsDonutChartProps) {
   const option = useMemo((): EChartsOption => {
     const t = readCssTokens();
-    const fmt = valueFormatter ?? ((n: number) => n.toLocaleString());
+    const fmt = valueFormatter ?? ((n: number) => formatNumber(n));
     const palette = gradePalette ? gradeColors(t) : [t.accent, t.sev_clear, t.sev_probable, t.sev_neutral, t.sev_weak];
     const total = data.reduce((s, d) => s + d.value, 0);
 

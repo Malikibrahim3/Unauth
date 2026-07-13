@@ -15,6 +15,7 @@ import { AnalyticsBarChart } from '@/components/analytics/AnalyticsBarChart';
 import { AnalyticsDonutChart } from '@/components/analytics/AnalyticsDonutChart';
 import { AnalyticsLineChart } from '@/components/analytics/AnalyticsLineChart';
 import { SectionCard } from '@/components/ui';
+import { formatNumber } from '@/lib/utils/format';
 
 const DEMO_MERCHANT_ID = process.env.NEXT_PUBLIC_DEMO_MERCHANT_ID;
 
@@ -187,10 +188,10 @@ export default async function DemoPage() {
         {/* Stats */}
         <div className="grid gap-4 md:grid-cols-4">
           {[
-            { label: 'Context Runs', value: typedRuns.length.toLocaleString() },
+            { label: 'Context Runs', value: formatNumber(typedRuns.length) },
             { label: 'Seeded Scenarios', value: `${seededScenarioCount}/3` },
-            { label: 'Records Analysed', value: totalTransactions.toLocaleString() },
-            { label: 'Review Matches', value: totalFlagged.toLocaleString() },
+            { label: 'Records Analysed', value: formatNumber(totalTransactions) },
+            { label: 'Review Matches', value: formatNumber(totalFlagged) },
           ].map(({ label, value }) => (
             <div
               key={label}
@@ -273,7 +274,7 @@ export default async function DemoPage() {
                     {seeded ? 'Seeded' : 'Pending'}
                   </span>
                 </div>
-                <p className="mt-2 text-xs text-[var(--text-muted)]">{scenario.rows.toLocaleString()} rows</p>
+                <p className="mt-2 text-xs text-[var(--text-muted)]">{formatNumber(scenario.rows)} rows</p>
                 <p className="mt-3 text-sm leading-6 text-[var(--text-muted)]">{scenario.body}</p>
               </div>
             );
@@ -287,7 +288,7 @@ export default async function DemoPage() {
           <AnalyticsBarChart
             data={scenarioBars}
             height={240}
-            valueFormatter={(n) => n.toLocaleString()}
+            valueFormatter={(n) => formatNumber(n)}
             emptyLabel="No review data yet"
           />
         </SectionCard>
@@ -320,10 +321,10 @@ export default async function DemoPage() {
                     {run.filename}
                   </td>
                   <td className="px-4 py-3 text-right font-mono text-[var(--text)]">
-                    {run.total_rows.toLocaleString()}
+                    {formatNumber(run.total_rows)}
                   </td>
                   <td className="px-4 py-3 text-right font-mono text-[var(--text)]">
-                    {(run.flagged_count ?? 0).toLocaleString()}
+                    {formatNumber(run.flagged_count ?? 0)}
                   </td>
                   <td className="px-4 py-3 text-xs text-[var(--text-muted)]">
                     {new Date(run.created_at).toLocaleDateString('en-US', {

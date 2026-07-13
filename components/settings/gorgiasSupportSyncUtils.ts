@@ -5,18 +5,11 @@ import {
   type GorgiasSidebarWidgetSetupResult,
   type GorgiasSupportConnectionSettings,
 } from '@/lib/support/gorgias/supportConnectionShared';
-
-const gorgiasWhenFormatter = new Intl.DateTimeFormat('en-US', {
-  month: 'short',
-  day: 'numeric',
-  year: 'numeric',
-  hour: '2-digit',
-  minute: '2-digit',
-});
+import { formatDateTime } from '@/lib/utils/format';
 
 export function formatGorgiasWhen(value: string | null) {
   if (!value) return 'Never';
-  return gorgiasWhenFormatter.format(new Date(value));
+  return formatDateTime(value);
 }
 
 export function gorgiasAccountLabel(connection: GorgiasSupportConnectionSettings) {

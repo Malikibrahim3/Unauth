@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Drawer } from "@/components/ui/Drawer";
-import { formatCurrencyNullable } from "@/lib/utils/format";
+import { formatCurrencyNullable, formatDateTime } from "@/lib/utils/format";
 
 type Preview = {
   customer: {
@@ -158,9 +158,7 @@ export function CustomerPreviewDrawer({
               <p className="text-xs text-[var(--text-secondary)]">
                 Fresh as of{" "}
                 {customer.asOf
-                  ? new Date(customer.asOf).toLocaleString("en-US", {
-                      timeZone: "UTC",
-                    })
+                  ? formatDateTime(customer.asOf)
                   : "unknown"}
               </p>
             </div>
@@ -253,9 +251,7 @@ export function CustomerPreviewDrawer({
                         <span className="capitalize">
                           {item.type} {item.reference}
                           <small className="block text-[var(--text-secondary)]">
-                            {new Date(item.at).toLocaleString("en-US", {
-                              timeZone: "UTC",
-                            })}
+                            {formatDateTime(item.at)}
                           </small>
                         </span>
                         <span>{amount(item.amount, item.currency)}</span>
@@ -287,9 +283,7 @@ export function CustomerPreviewDrawer({
                         ? "Verified contact"
                         : "Contact not verified"}{" "}
                       · synced{" "}
-                      {new Date(source.asOf).toLocaleString("en-US", {
-                        timeZone: "UTC",
-                      })}
+                      {formatDateTime(source.asOf)}
                     </small>
                   </li>
                 ))}

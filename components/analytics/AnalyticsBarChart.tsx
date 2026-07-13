@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import type { EChartsOption } from 'echarts';
 import { EChartWrapper } from './EChartWrapper';
 import { readCssTokens, baseAxisLabel, baseSplitLine, baseTooltip } from '@/components/charts/echartsTheme';
+import { formatNumber } from '@/lib/utils/format';
 
 export interface BarEntry {
   label: string;
@@ -29,7 +30,7 @@ export function AnalyticsBarChart({
   const option = useMemo((): EChartsOption => {
     const t = readCssTokens();
     const c = defaultColor ?? t.data_neutral;
-    const fmt = valueFormatter ?? ((n: number) => n.toLocaleString());
+    const fmt = valueFormatter ?? ((n: number) => formatNumber(n));
 
     if (!data || data.length === 0) {
       return {

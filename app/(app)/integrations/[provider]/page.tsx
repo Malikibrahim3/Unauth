@@ -10,7 +10,7 @@ import { loadConnectorCatalogue } from "@/lib/connectors/catalogue";
 import { TABLES } from "@/lib/supabase/tables";
 import { ConnectionActions } from "@/components/integrations/ConnectionActions";
 import { PanelCard, StatusBadge } from "@/components/ui";
-import { formatDateTime } from "@/lib/utils/format";
+import { formatDateTime, formatNumber } from "@/lib/utils/format";
 
 export const dynamic = "force-dynamic";
 
@@ -171,7 +171,7 @@ export default async function ConnectionPage({
               Imported objects
             </dt>
             <dd className="mt-1 font-mono text-sm font-semibold">
-              {item.importedRecords.toLocaleString()}
+              {formatNumber(item.importedRecords)}
             </dd>
           </PanelCard>
           <PanelCard variant="appInset" className="p-3">

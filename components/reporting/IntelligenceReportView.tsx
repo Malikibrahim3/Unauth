@@ -6,7 +6,7 @@ import type {
 } from "@/lib/reporting/intelligence";
 import { REPORT_DEFINITIONS } from "@/lib/reporting/intelligence";
 import { normaliseCurrencyOrNull } from "@/lib/canonical/money";
-import { formatMinorCurrencyNullable } from "@/lib/utils/format";
+import { formatDateTime, formatMinorCurrencyNullable } from "@/lib/utils/format";
 
 function money(minor: number, currency: string) {
   return formatMinorCurrencyNullable(minor, currency);
@@ -120,7 +120,7 @@ export function IntelligenceReportView({
             </p>
           </div>
           <p className="text-xs text-[var(--text-secondary)]">
-            Generated {new Date(report.generatedAt).toLocaleString()}
+            Generated {formatDateTime(report.generatedAt)}
           </p>
         </div>
         {!report.reconciliation.ok ? (
@@ -253,7 +253,7 @@ export function IntelligenceReportView({
                   </td>
                   <td className="py-3 text-right">
                     {r.latestAt
-                      ? new Date(r.latestAt).toLocaleString()
+                      ? formatDateTime(r.latestAt)
                       : "No records"}
                   </td>
                 </tr>

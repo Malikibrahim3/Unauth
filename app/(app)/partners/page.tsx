@@ -5,6 +5,7 @@ import { WorkbenchPage } from '@/components/ui';
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { listPartnerRecoveryRules, listPartners } from '@/lib/partners/store';
 import { PartnerRulebookClient } from '@/app/(app)/partners/PartnerRulebookClient';
+import { formatNumber } from '@/lib/utils/format';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,10 +32,10 @@ export default async function PartnersPage() {
       navItems={WORKBENCH_NAV_ITEMS}
       activeNavKey="partners"
       kpiItems={[
-        { label: 'Partners', value: partners.length.toLocaleString(), hint: 'Configured owners' },
-        { label: 'Active rules', value: rules.filter((rule) => rule.active).length.toLocaleString(), hint: 'Used for recovery estimates' },
-        { label: 'Default rules', value: rules.filter((rule) => !rule.partner_id).length.toLocaleString(), hint: 'Apply without a specific partner' },
-        { label: 'Evidence routes', value: new Set(rules.flatMap((rule) => rule.required_evidence)).size.toLocaleString(), hint: 'Unique required evidence items' },
+        { label: 'Partners', value: formatNumber(partners.length), hint: 'Configured owners' },
+        { label: 'Active rules', value: formatNumber(rules.filter((rule) => rule.active).length), hint: 'Used for recovery estimates' },
+        { label: 'Default rules', value: formatNumber(rules.filter((rule) => !rule.partner_id).length), hint: 'Apply without a specific partner' },
+        { label: 'Evidence routes', value: formatNumber(new Set(rules.flatMap((rule) => rule.required_evidence)).size), hint: 'Unique required evidence items' },
       ]}
       main={<PartnerRulebookClient partners={partners} rules={rules} canManage={canManage} />}
     />

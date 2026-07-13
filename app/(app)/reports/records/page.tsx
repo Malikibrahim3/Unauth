@@ -9,6 +9,7 @@ import {
 import { TABLES } from "@/lib/supabase/tables";
 import { parseReportRange, reportCutoff } from "@/lib/reporting/intelligence";
 import { merchantHasEntitlement } from "@/lib/product/requireEntitlement";
+import { formatDateTime, formatNumber } from "@/lib/utils/format";
 export const dynamic = "force-dynamic";
 export default async function ReportRecords({
   searchParams,
@@ -82,7 +83,7 @@ export default async function ReportRecords({
           {value.replaceAll("_", " ") || kind} records
         </h1>
         <p className="mt-1 text-sm text-[var(--text-secondary)]">
-          {total.toLocaleString()} exact matching records ·{" "}
+          {formatNumber(total)} exact matching records ·{" "}
           {range === "all" ? "all time" : range}{" "}
           {sp.currency ? `· ${sp.currency.toUpperCase()}` : ""}
         </p>
@@ -129,7 +130,7 @@ export default async function ReportRecords({
                     : "—"}
                 </td>
                 <td className="text-right">
-                  {new Date(r.updated_at).toLocaleString()}
+                  {formatDateTime(r.updated_at)}
                 </td>
               </tr>
             ))}

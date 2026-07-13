@@ -6,6 +6,7 @@ import {
   customerNotesReducer,
   initialCustomerNotesState,
 } from '@/components/audit/customerNotesReducer';
+import { formatDateAbsolute } from '@/lib/utils/format';
 
 interface Note {
   id: string;
@@ -17,15 +18,8 @@ interface CustomerNotesProps {
   customerProfileId: string;
 }
 
-const noteDateFormatter = new Intl.DateTimeFormat('en-US', {
-  day: 'numeric',
-  month: 'short',
-  year: 'numeric',
-  timeZone: 'UTC',
-});
-
 function formatNoteDate(d: string) {
-  return noteDateFormatter.format(new Date(d));
+  return formatDateAbsolute(d);
 }
 
 export default function CustomerNotes({ customerProfileId }: CustomerNotesProps) {

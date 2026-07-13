@@ -12,7 +12,7 @@ import type {
 } from "@/lib/relationships/objectSummary";
 import { PanelCard, StatusBadge } from "@/components/ui";
 import type { StatusBadgeVariant } from "@/components/ui/tokens";
-import { formatCurrencyNullable, formatDateTime } from "@/lib/utils/format";
+import { formatCurrencyNullable, formatDateTime, formatNumber } from "@/lib/utils/format";
 
 function label(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1).replaceAll("_", " ");
@@ -74,7 +74,7 @@ function factValue(item: ObjectFact) {
         ? "No"
         : "Unavailable";
   if (item.kind === "number" && typeof item.value === "number")
-    return item.value.toLocaleString();
+    return formatNumber(item.value);
   return String(item.value ?? "Unavailable").replaceAll("_", " ");
 }
 

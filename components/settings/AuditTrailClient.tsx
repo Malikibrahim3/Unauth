@@ -10,6 +10,7 @@ import {
 } from "@/lib/audit/actionLabels";
 import { SectionCard } from "@/components/ui";
 import { useFetchJson } from "@/lib/react/useFetchJson";
+import { formatDateTime } from "@/lib/utils/format";
 
 type AuditRow = {
   id: string;
@@ -40,14 +41,8 @@ const RESOURCE_FILTERS = [
   { value: "report", label: "Reports" },
 ];
 
-const auditTrailTimestampFormatter = new Intl.DateTimeFormat("en-US", {
-  dateStyle: "medium",
-  timeStyle: "short",
-  timeZone: "UTC",
-});
-
 function formatTimestamp(value: string) {
-  return auditTrailTimestampFormatter.format(new Date(value));
+  return formatDateTime(value);
 }
 
 function rowSummary(row: AuditRow): string {

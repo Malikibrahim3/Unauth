@@ -10,6 +10,7 @@ import { ButtonLink, PanelCard, StatusBadge, WorkbenchEmptyState } from '@/compo
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { FilterChip } from '@/app/(app)/customers/CustomersOverviewFilterChip';
 import { buildRemoveHref, customersListHref } from '@/app/(app)/customers/customersOverviewPageUtils';
+import { formatNumber } from '@/lib/utils/format';
 
 export type CustomerOverviewRow = Parameters<typeof CustomersTableClient>[0]['rows'][number];
 
@@ -71,10 +72,10 @@ export function CustomersOverviewPageView({
         </>
       }
       kpiItems={[
-        { label: 'Total customers', value: kpis.totalCustomers.toLocaleString(), hint: noFilters ? 'Customers with orders or payout cases' : 'With current filters applied' },
-        { label: 'Open payout cases', value: kpis.openCaseCustomers.toLocaleString(), hint: 'Customers with open cases' },
-        { label: 'Past payout cases', value: kpis.pastCaseCustomers.toLocaleString(), hint: 'Customers with any case history' },
-        { label: 'Total orders', value: kpis.totalOrders.toLocaleString(), hint: 'Across listed customers' },
+        { label: 'Total customers', value: formatNumber(kpis.totalCustomers), hint: noFilters ? 'Customers with orders or payout cases' : 'With current filters applied' },
+        { label: 'Open payout cases', value: formatNumber(kpis.openCaseCustomers), hint: 'Customers with open cases' },
+        { label: 'Past payout cases', value: formatNumber(kpis.pastCaseCustomers), hint: 'Customers with any case history' },
+        { label: 'Total orders', value: formatNumber(kpis.totalOrders), hint: 'Across listed customers' },
       ]}
       main={
         <div className="p-4 space-y-4">
@@ -149,7 +150,7 @@ export function CustomersOverviewPageView({
         <>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-              {`Showing ${from}–${to} of ${totalCount.toLocaleString()} customers`}
+              {`Showing ${from}–${to} of ${formatNumber(totalCount)} customers`}
             </p>
             <div className="flex flex-wrap items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
               <Suspense fallback={null}>

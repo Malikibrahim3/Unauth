@@ -7,7 +7,7 @@ import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { getRecoveryCase } from '@/lib/recoveries/store';
 import { RECOVERY_STATUS_LABELS, RECOVERY_OWNER_LABELS, type RecoveryCaseEvent } from '@/lib/recoveries/types';
 import { RECOVERY_TYPE_LABELS } from '@/lib/partners/types';
-import { formatCurrencyNullable } from '@/lib/utils/format';
+import { formatCurrencyNullable, formatNumber } from '@/lib/utils/format';
 import { recoveryOutstanding, recoverySoughtAmount } from '@/lib/recoveries/amounts';
 
 export const dynamic = 'force-dynamic';
@@ -70,7 +70,7 @@ export default async function RecoveryDetailPage({ params }: Props) {
         { label: 'Amount pursued', value: formatCurrencyNullable(sought, recovery.currency) ?? '-', hint: 'Bounded by the recovery estimate' },
         { label: 'Recovered', value: formatCurrencyNullable(recovery.amount_recovered ?? null, recovery.currency) ?? '-', hint: 'Synced outcome' },
         { label: 'Outstanding', value: formatCurrencyNullable(outstanding, recovery.currency) ?? '-', hint: writtenOff > 0 ? 'Closed balance written off' : 'Pursued minus recovered' },
-        { label: 'Evidence gaps', value: missing.length.toLocaleString(), hint: 'Missing items' },
+        { label: 'Evidence gaps', value: formatNumber(missing.length), hint: 'Missing items' },
       ]}
       main={
         <div className="flex flex-col gap-6">

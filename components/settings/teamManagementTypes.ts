@@ -1,3 +1,5 @@
+import { formatDateTime } from '@/lib/utils/format';
+
 export type TeamRole = 'owner' | 'admin' | 'analyst' | 'viewer';
 export type InviteStatus = 'pending' | 'active' | 'revoked';
 
@@ -54,16 +56,9 @@ export const STATUS_LABELS: Record<InviteStatus, string> = {
   revoked: 'Revoked',
 };
 
-const teamDateFormatter = new Intl.DateTimeFormat('en-US', {
-  month: 'short',
-  day: 'numeric',
-  hour: '2-digit',
-  minute: '2-digit',
-});
-
 export function formatTeamDate(value: string | null) {
   if (!value) return 'Not accepted yet';
-  return teamDateFormatter.format(new Date(value));
+  return formatDateTime(value);
 }
 
 export function uiRoleForMember(role: TeamRole): (typeof UI_ASSIGNABLE_ROLES)[number] {

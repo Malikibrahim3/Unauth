@@ -4,7 +4,7 @@ import { PageConnectionGate } from '@/components/connections/PageConnectionGate'
 import type { ConnectionState } from '@/lib/connections/getConnectionState';
 import { WorkbenchPage, WorkbenchEmptyState, ButtonLink, PanelCard } from '@/components/ui';
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
-import { dominantCurrency, formatCurrencyNullable } from '@/lib/utils/format';
+import { dominantCurrency, formatCurrencyNullable, formatNumber } from '@/lib/utils/format';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
 import {
   CLAIM_TYPE_LABELS,
@@ -114,9 +114,9 @@ export function ClaimsPageView({
       navItems={WORKBENCH_NAV_ITEMS}
       activeNavKey="claims"
       kpiItems={[
-        { label: 'Open payout cases', value: queueCounts.active.toLocaleString(), hint: 'Refunds, reships, replacements' },
-        { label: 'New evidence', value: queueCounts.unread.toLocaleString(), hint: 'Arrived since last visit' },
-        { label: 'Ready for decision', value: queueCounts.readyForDecision.toLocaleString(), hint: 'Evidence complete' },
+        { label: 'Open payout cases', value: formatNumber(queueCounts.active), hint: 'Refunds, reships, replacements' },
+        { label: 'New evidence', value: formatNumber(queueCounts.unread), hint: 'Arrived since last visit' },
+        { label: 'Ready for decision', value: formatNumber(queueCounts.readyForDecision), hint: 'Evidence complete' },
         { label: 'Payout exposure', value: formatCurrencyNullable(totalAtRisk || null, displayCurrency), hint: 'All cases' },
       ]}
       footer={

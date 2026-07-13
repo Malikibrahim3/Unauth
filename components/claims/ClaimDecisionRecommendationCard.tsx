@@ -2,6 +2,7 @@
 
 import type { FormattedClaimDecision } from "@/lib/claims/decision/format";
 import { RailSection } from "@/components/claims/claimReviewPrimitives";
+import { formatDateTime } from "@/lib/utils/format";
 
 export type ClaimDecisionPayload = {
   formatted: FormattedClaimDecision;
@@ -160,9 +161,7 @@ export function ClaimDecisionRecommendationCard({
               style={{ color: "var(--text-tertiary)" }}
             >
               Evaluated{" "}
-              {new Date(data.evaluatedAt).toLocaleString("en-US", {
-                timeZone: "UTC",
-              })}
+              {formatDateTime(data.evaluatedAt)}
             </p>
           )}
 

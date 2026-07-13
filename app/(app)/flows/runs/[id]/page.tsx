@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { PERMISSIONS, requirePermission } from "@/lib/permissions";
 import { TABLES } from "@/lib/supabase/tables";
+import { formatDateTime } from "@/lib/utils/format";
 export default async function Run({
   params,
 }: {
@@ -56,7 +57,7 @@ export default async function Run({
         </div>
         <div>
           <dt>Started</dt>
-          <dd>{new Date(run.started_at).toLocaleString()}</dd>
+          <dd>{formatDateTime(run.started_at)}</dd>
         </div>
       </dl>
       {run.error ? (

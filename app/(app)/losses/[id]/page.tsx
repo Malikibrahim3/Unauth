@@ -9,26 +9,18 @@ import {
 import { DetailPageShell } from "@/components/workbench/DetailPageShell";
 import { getLossReadModel } from "@/lib/losses/readModel";
 import { LossActions } from "@/components/losses/LossActions";
+import { formatDateTime, formatMoneyOrDash } from "@/lib/utils/format";
+import { label as enumLabel } from "@/lib/ui/labels";
+import { hashId } from "@/lib/ui/displayRef";
 
 export const dynamic = "force-dynamic";
-const lossMoneyFormatters = new Map<string, Intl.NumberFormat>();
 const money = (
   minor: number | null | undefined,
   currency: string | null | undefined,
-) => {
-  if (minor == null) return "—";
-  const code = currency ?? "GBP";
-  let formatter = lossMoneyFormatters.get(code);
-  if (!formatter) {
-    formatter = new Intl.NumberFormat("en-GB", {
-      style: "currency",
-      currency: code,
-    });
-    lossMoneyFormatters.set(code, formatter);
-  }
-  return formatter.format(minor / 100);
-};
-const label = (value: string | null | undefined) =>
+) => formatMoneyOrDash(minor, currency);
+// Humanise fields that have no dedicated label family (evidence types, source
+// providers, confidence, financial state, event types).
+const humaniseField = (value: string | null | undefined) =>
   value
     ? value
         .replaceAll("_", " ")
@@ -72,11 +64,11 @@ export default async function LossDetailPage({
       backHref="/losses"
       backLabel="Losses"
       eyebrow="Loss"
-      title={`${label(model.loss.case_category)} · ${id.slice(0, 8)}`}
-      subtitle={`${label(model.loss.status)} · ${label(model.loss.source_confidence)}`}
+      title={`${enumLabel("lossCategory", model.loss.case_category)} · ${hashId(id)}`}
+      subtitle={`${enumLabel("lossStatus", model.loss.status)} · ${humaniseField(model.loss.source_confidence)}`}
       statusBadge={
         <span className="rounded-md border border-[var(--border)] px-2 py-1 text-xs">
-          {label(model.loss.financial_state)}
+          {humaniseField(model.loss.financial_state)}
         </span>
       }
       actions={
@@ -137,13 +129,13 @@ export default async function LossDetailPage({
             <p className="mt-3 text-sm">
               <strong>Primary:</strong>{" "}
               {primary
-                ? `${label(primary.attribution)} · ${primary.accountable_party_name ?? label(primary.accountable_party_type)}`
-                : label(model.loss.attribution)}
+                ? `${enumLabel("attribution", primary.attribution)} · ${primary.accountable_party_name ?? enumLabel("counterparty", primary.accountable_party_type)}`
+                : enumLabel("attribution", model.loss.attribution)}
             </p>
             <p className="mt-1 text-sm text-[var(--text-secondary)]">
               Confidence:{" "}
               {primary?.confidence == null
-                ? label(model.loss.source_confidence)
+                ? humaniseField(model.loss.source_confidence)
                 : `${Math.round(primary.confidence * 100)}%`}
             </p>
             {alternatives.length ? (
@@ -152,9 +144,9 @@ export default async function LossDetailPage({
                 <ul className="mt-2 space-y-2">
                   {alternatives.map((candidate) => (
                     <li key={candidate.id} className="text-sm">
-                      {label(candidate.attribution)} ·{" "}
+                      {enumLabel("attribution", candidate.attribution)} ·{" "}
                       {candidate.accountable_party_name ??
-                        label(candidate.accountable_party_type)}{" "}
+                        enumLabel("counterparty", candidate.accountable_party_type)}{" "}
                       <span className="text-[var(--text-secondary)]">
                         (candidate only; not added to loss totals)
                       </span>
@@ -185,7 +177,7 @@ export default async function LossDetailPage({
                   href={`/recoveries/${recovery.id}`}
                   className="rounded-md border border-[var(--border)] px-3 py-2 text-sm"
                 >
-                  Recovery {recovery.id.slice(0, 8)}
+                  Recovery {hashId(recovery.id)}
                 </Link>
               ))}
             </div>
@@ -198,9 +190,9 @@ export default async function LossDetailPage({
               {model.evidence.map((item) => (
                 <li key={item.id} className="py-3 text-sm">
                   <span className="font-medium">
-                    {label(item.evidence_type)}
+                    {humaniseField(item.evidence_type)}
                   </span>{" "}
-                  · {label(item.source_provider)} ·{" "}
+                  · {humaniseField(item.source_provider)} ·{" "}
                   {item.source_verified
                     ? "Source verified"
                     : "Not source verified"}
@@ -225,11 +217,9 @@ export default async function LossDetailPage({
             <ol className="mt-3 space-y-3">
               {model.events.map((event) => (
                 <li key={event.id} className="text-sm">
-                  <span className="font-medium">{label(event.event_type)}</span>{" "}
+                  <span className="font-medium">{humaniseField(event.event_type)}</span>{" "}
                   <time className="text-[var(--text-secondary)]">
-                    {new Date(event.created_at).toLocaleString("en-GB", {
-                      timeZone: "UTC",
-                    })}
+                    {formatDateTime(event.created_at)}
                   </time>
                 </li>
               ))}

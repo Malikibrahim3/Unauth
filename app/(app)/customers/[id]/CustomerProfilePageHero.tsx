@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { ArrowLeft, Info, ReceiptText, ShieldCheck } from 'lucide-react';
 import CaseSummaryStrip from '@/components/customers/CaseSummaryStrip';
 import { PanelCard } from '@/components/ui';
-import { formatCurrencyNullable, formatDateMode } from '@/lib/utils/format';
+import { formatCurrencyNullable, formatDateMode, formatNumber } from '@/lib/utils/format';
 import { FLAG_EXPERIENCE_POLISH_V1 } from '@/lib/flags';
 import type {
   CustomerEvidenceDisplay,
@@ -135,11 +135,11 @@ export function CustomerProfilePageHero({
             ) : (
               <p className="mt-3 text-body-sm" style={{ color: 'var(--text-primary)' }}>
                 <span className="font-semibold">This store:</span>{' '}
-                {merchantClaimCount.toLocaleString()} of {merchantOrderCount.toLocaleString()} orders had claims
+                {formatNumber(merchantClaimCount)} of {formatNumber(merchantOrderCount)} orders had claims
                 {merchantOrderCount > 0 ? ` (${localClaimRatePct.toFixed(1)}%)` : ''}
                 <span style={{ color: 'var(--text-tertiary)' }}> · </span>
                 <span className="font-semibold">Merchant-wide:</span>{' '}
-                {profile.total_chargebacks.toLocaleString()} chargeback{profile.total_chargebacks === 1 ? '' : 's'}
+                {formatNumber(profile.total_chargebacks)} chargeback{profile.total_chargebacks === 1 ? '' : 's'}
               </p>
             )}
             <p className="mt-2 t-mono break-all" style={{ color: 'var(--data-id)' }}>
@@ -165,9 +165,9 @@ export function CustomerProfilePageHero({
           <div className="grid grid-cols-1 gap-px overflow-hidden rounded-md border sm:grid-cols-2" style={{ borderColor: 'var(--border)', background: 'var(--border)' }}>
             {([
               { label: 'Order value', text: formatCurrencyNullable(totalOrderValue), color: 'var(--text-primary)' },
-              { label: 'Prior payout cases', text: merchantClaimCount.toLocaleString(), color: 'var(--text-primary)' },
+              { label: 'Prior payout cases', text: formatNumber(merchantClaimCount), color: 'var(--text-primary)' },
               { label: 'Refunded', text: formatCurrencyNullable(totalRefundedValue), color: 'var(--text-primary)' },
-              { label: 'Chargebacks', text: profile.total_chargebacks.toLocaleString(), color: 'var(--text-primary)' },
+              { label: 'Chargebacks', text: formatNumber(profile.total_chargebacks), color: 'var(--text-primary)' },
               { label: 'Last seen', text: formatDateMode(profile.last_seen, 'table'), color: 'var(--data-date)', mono: true },
             ] as Array<{ label: string; text?: string; color?: string; mono?: boolean }>).map((metric, index) => (
               <div key={metric.label} className={`min-w-0 p-4 ${index === 4 ? 'sm:col-span-2' : ''}`} style={{ background: 'var(--surface)' }}>
@@ -211,11 +211,11 @@ export function CustomerProfilePageHero({
             <div className="grid grid-cols-2 gap-y-1.5 text-caption">
               <span style={{ color: 'var(--text-secondary)' }}>Orders</span>
               <span className="font-mono text-right" style={{ color: 'var(--text)' }}>
-                {merchantOrderCount.toLocaleString()} ({localOrderSharePct.toFixed(1)}%)
+                {formatNumber(merchantOrderCount)} ({localOrderSharePct.toFixed(1)}%)
               </span>
               <span style={{ color: 'var(--text-secondary)' }}>Claims</span>
               <span className="font-mono text-right" style={{ color: 'var(--text)' }}>
-                {merchantClaimCount.toLocaleString()} ({localClaimRatePct.toFixed(1)}%)
+                {formatNumber(merchantClaimCount)} ({localClaimRatePct.toFixed(1)}%)
               </span>
               <span style={{ color: 'var(--text-secondary)' }}>Order value</span>
               <span className="font-mono text-right" style={{ color: 'var(--text)' }}>{formatCurrencyNullable(totalOrderValue)}</span>
@@ -233,15 +233,15 @@ export function CustomerProfilePageHero({
             <div className="grid grid-cols-2 gap-y-1.5 text-caption">
               <span style={{ color: 'var(--text-secondary)' }}>Merchant orders</span>
               <span className="font-mono text-right" style={{ color: 'var(--text)' }}>
-                {merchantOrderCount.toLocaleString()}
+                {formatNumber(merchantOrderCount)}
               </span>
               <span style={{ color: 'var(--text-secondary)' }}>Prior payout cases</span>
               <span className="font-mono text-right" style={{ color: 'var(--text)' }}>
-                {merchantClaimCount.toLocaleString()}
+                {formatNumber(merchantClaimCount)}
               </span>
               <span style={{ color: 'var(--text-secondary)' }}>Chargebacks</span>
               <span className="font-mono text-right" style={{ color: 'var(--text)' }}>
-                {profile.total_chargebacks.toLocaleString()}
+                {formatNumber(profile.total_chargebacks)}
               </span>
               <span style={{ color: 'var(--text-secondary)' }}>First seen → last seen</span>
               <span className="font-mono text-right" style={{ color: 'var(--text)' }}>

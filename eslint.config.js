@@ -15,6 +15,19 @@ const RAW_TW_COLOR_MESSAGE =
   "Use design-token CSS variables via custom utility classes instead. " +
   "Raw color classes are allowed in components/internal/.";
 
+// WS0.4 — one renderer per data type. Direct Intl/toLocaleString formatting in
+// app/** and components/** is a defect: use the canonical helpers in
+// @/lib/utils/format (formatMoney/formatMoneyOrDash, formatNumber, formatDate/
+// formatDateAbsolute/formatDateTime) and the enum label layer in @/lib/ui/labels.
+const NO_INLINE_INTL_SELECTOR =
+  'NewExpression[callee.object.name="Intl"][callee.property.name=/^(NumberFormat|DateTimeFormat)$/]';
+const NO_INLINE_INTL_MESSAGE =
+  "Do not construct Intl.NumberFormat/DateTimeFormat here. Use the canonical formatters in @/lib/utils/format (formatMoney/formatMoneyOrDash/formatNumber/formatDate/formatDateAbsolute/formatDateTime).";
+const NO_TO_LOCALE_STRING_SELECTOR =
+  'CallExpression[callee.property.name="toLocaleString"]';
+const NO_TO_LOCALE_STRING_MESSAGE =
+  "Do not call .toLocaleString() directly. Use formatNumber() (counts), formatMoney/formatMoneyOrDash (money) or formatDate*/formatDateTime (dates) from @/lib/utils/format.";
+
 /** @type {import('eslint').Linter.Config[]} */
 module.exports = [
   // Next.js core-web-vitals + typescript flat configs
@@ -88,6 +101,20 @@ module.exports = [
           selector: RAW_TW_COLOR_SELECTOR_TEMPLATE,
           message: RAW_TW_COLOR_MESSAGE,
         },
+        { selector: NO_INLINE_INTL_SELECTOR, message: NO_INLINE_INTL_MESSAGE },
+        { selector: NO_TO_LOCALE_STRING_SELECTOR, message: NO_TO_LOCALE_STRING_MESSAGE },
+      ],
+    },
+  },
+
+  // WS0.4 — ban inline Intl/toLocaleString formatting in app/** (route + page code)
+  {
+    files: ["app/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        { selector: NO_INLINE_INTL_SELECTOR, message: NO_INLINE_INTL_MESSAGE },
+        { selector: NO_TO_LOCALE_STRING_SELECTOR, message: NO_TO_LOCALE_STRING_MESSAGE },
       ],
     },
   },

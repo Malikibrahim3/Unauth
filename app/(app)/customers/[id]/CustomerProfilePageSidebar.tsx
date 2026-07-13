@@ -1,7 +1,7 @@
 import { SectionCard } from '@/components/ui/SectionCard';
 import { MetricCard } from '@/components/ui/MetricCard';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { formatCurrencyNullable, formatDateTime } from '@/lib/utils/format';
+import { formatCurrencyNullable, formatDateTime, formatNumber } from '@/lib/utils/format';
 import { formatFiledDate } from '@/lib/claims/sla';
 import {
   CLAIM_STATUS_LABELS,
@@ -63,7 +63,7 @@ export function CustomerProfilePageSidebar({
         {latestClaim ? (
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
-              <MetricCard label="Open disputes" value={openClaimCount.toLocaleString()} density="compact" />
+              <MetricCard label="Open disputes" value={formatNumber(openClaimCount)} density="compact" />
               <MetricCard label="Latest status" value={CLAIM_STATUS_LABELS[latestClaim.status] ?? latestClaim.status} density="compact" />
             </div>
             <div className="rounded-md border p-3" style={{ borderColor: 'var(--border-muted)', background: 'var(--bg-inset)' }}>
