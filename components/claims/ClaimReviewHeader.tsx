@@ -9,19 +9,21 @@ import { formatClaimMoney, inputStyle } from '@/components/claims/claimReviewSty
 import { StatusPill, SlaBadge } from '@/components/claims/claimReviewPrimitives';
 import type { ClaimReviewWorkbench } from '@/components/claims/claimReviewWorkbench';
 import { useBreadcrumbLabel } from '@/components/layout/BreadcrumbOverrideContext';
+import { caseDisplay } from '@/lib/ui/displayRef';
+import { label } from '@/lib/ui/labels';
 
 export function ClaimReviewHeader({ wb }: { wb: ClaimReviewWorkbench }) {
   const { selectedClaim, history, claimId, customerName, customerProfileHref } = wb;
 
-  // Breadcrumb: show the human case reference (order ref) — or "<Claim type> claim" —
-  // instead of the raw case UUID from the URL.
-  const claimTypeLabel = selectedClaim?.claim_type
-    ? CLAIM_TYPE_LABELS[selectedClaim.claim_type] ?? 'Payout'
-    : 'Payout';
+  // Breadcrumb (WS2): "<Customer> · <ref>" — never the raw case UUID from the URL.
   useBreadcrumbLabel(
     selectedClaim
-      ? selectedClaim.shopify_order_id ?? selectedClaim.order_ref ?? `${claimTypeLabel} claim`
-      : null,
+      ? caseDisplay({
+          customer_name: customerName,
+          ref: selectedClaim.shopify_order_id ?? selectedClaim.order_ref ?? null,
+          id: selectedClaim.id,
+        })
+      : customerName || null,
   );
 
   return (
@@ -46,7 +48,7 @@ export function ClaimReviewHeader({ wb }: { wb: ClaimReviewWorkbench }) {
                 )}
                 <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
                   Requested: {selectedClaim.requested_action
-                    ? selectedClaim.requested_action.replaceAll('_', ' ')
+                    ? label('requestedAction', selectedClaim.requested_action)
                     : 'Not classified by source'}
                 </span>
               </div>
