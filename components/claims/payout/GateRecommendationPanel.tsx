@@ -13,7 +13,16 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
  */
 
 export function GateRecommendationPanel({ recommendation }: { recommendation: GateRecommendation | null }) {
-  if (!recommendation) return null;
+  if (!recommendation) {
+    return (
+      <PanelCard as="section" variant="app" className="p-4">
+        <h3 className="text-body font-semibold" style={{ color: 'var(--text-primary)' }}>Recommendation</h3>
+        <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
+          No merchant rule matched this case yet. Review the evidence and record your decision.
+        </p>
+      </PanelCard>
+    );
+  }
 
   const held = recommendation.decision === 'hold';
   const strength = recommendation.reasoning.evidence_strength;

@@ -34,6 +34,7 @@ export function humanise(value: string): string {
 }
 
 const caseStatus: Record<string, string> = {
+  new: 'New',
   open: 'Open',
   pending: 'Pending review',
   evidence_needed: 'Evidence needed',

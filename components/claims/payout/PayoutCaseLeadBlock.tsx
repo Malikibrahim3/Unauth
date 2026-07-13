@@ -32,12 +32,14 @@ export function PayoutCaseLeadBlock({
   delivery,
   loading,
   stale,
+  showEvidence = true,
 }: {
   payoutCase: SupportPayoutCase | null | undefined;
   recoveryCase?: RecoveryCase | null;
   delivery?: import('@/lib/claims/decision/types').ClaimDecisionContext['delivery'];
   loading?: boolean;
   stale?: boolean;
+  showEvidence?: boolean;
 }) {
   if (!payoutCase) {
     if (!loading) return null;
@@ -59,9 +61,8 @@ export function PayoutCaseLeadBlock({
           Case context changed - payout exposure may be outdated.
         </p>
       )}
-      <PayoutWorkflowSummary payoutCase={payoutCase} recoveryCase={recoveryCase ?? null} />
       <PayoutExposureCard exposure={payoutCase.exposure} requestedActionLabel={requestedActionLabel} />
-      <EvidenceChecklistCard evidence={payoutCase.evidence} delivery={delivery ?? null} />
+      {showEvidence ? <EvidenceChecklistCard evidence={payoutCase.evidence} delivery={delivery ?? null} /> : null}
       {payoutCase.claimType === 'item_not_received' || payoutCase.claimType === 'missing_item' ? (
         <DeliveryEvidenceCard delivery={delivery ?? null} />
       ) : null}
@@ -71,108 +72,6 @@ export function PayoutCaseLeadBlock({
         {PAYOUT_DISCLAIMER}
       </p>
     </div>
-  );
-}
-
-function PayoutWorkflowSummary({
-  payoutCase,
-  recoveryCase,
-}: {
-  payoutCase: SupportPayoutCase;
-  recoveryCase: RecoveryCase | null;
-}) {
-  const present = payoutCase.evidence.items.filter((item) => item.state === 'present');
-  const missing = payoutCase.evidence.items.filter((item) => item.state !== 'present');
-
-  return (
-    <PanelCard as="section" variant="app" className="p-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-caption font-semibold uppercase tracking-wide" style={{ color: 'var(--text-tertiary)', letterSpacing: '0.06em' }}>
-            Payout workflow
-          </p>
-          <h2 className="mt-1 text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
-            {PAYOUT_CASE_STATUS_LABELS[payoutCase.status]}
-          </h2>
-          <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
-            {payoutCase.nextActionReason}
-          </p>
-        </div>
-        <StatusBadge family="workflowStatus" value={payoutCase.nextAction} />
-      </div>
-
-      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <WorkflowFact label="Requested action" value={REQUESTED_ACTION_LABELS[payoutCase.requestedAction.primary]} />
-        <WorkflowFact label="Payout exposure" value={formatCurrency(payoutCase.exposure.total.amount, payoutCase.exposure.total.currency ?? undefined)} />
-        <WorkflowFact label="Decision state" value={PAYOUT_DECISION_STATE_LABELS[payoutCase.payoutDecisionState]} />
-        <WorkflowFact label="Recovery" value={RECOVERY_STATE_LABELS[payoutCase.recoveryState]} />
-      </div>
-
-      <div className="mt-4 grid gap-3 lg:grid-cols-2">
-        <EvidencePillGroup title="Evidence present" items={present.map((item) => item.label)} empty="No expected evidence on file yet." />
-        <EvidencePillGroup title="Evidence missing" items={missing.map((item) => item.label)} empty="No evidence gaps flagged." />
-      </div>
-
-      <div className="mt-4 grid gap-3 lg:grid-cols-2">
-        <PanelCard variant="appInset" className="p-3">
-          <p className="text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>Clarification requests</p>
-          <ClarificationRequestList requests={payoutCase.clarificationRequests} />
-        </PanelCard>
-        <PanelCard variant="appInset" className="p-3">
-          <p className="text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>Agent decision and recovery</p>
-          <div className="mt-2 space-y-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
-            <p>
-              <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>Agent decision: </span>
-              {payoutCase.agentDecision ?? 'Not recorded'}
-            </p>
-            <p>
-              <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>Recovery opportunity: </span>
-              {payoutCase.recovery.suggestedNextAction}
-            </p>
-            <p>
-              <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>Linked recovery case: </span>
-              {recoveryCase
-                ? `${recoveryCase.id.slice(0, 8)} · ${RECOVERY_STATUS_LABELS[recoveryCase.status] ?? recoveryCase.status}`
-                : 'None'}
-            </p>
-          </div>
-        </PanelCard>
-      </div>
-    </PanelCard>
-  );
-}
-
-function WorkflowFact({ label, value }: { label: string; value: string }) {
-  return (
-    <PanelCard variant="appInset" className="p-3">
-      <p className="text-caption" style={{ color: 'var(--text-tertiary)' }}>{label}</p>
-      <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{value}</p>
-    </PanelCard>
-  );
-}
-
-function EvidencePillGroup({
-  title,
-  items,
-  empty,
-}: {
-  title: string;
-  items: string[];
-  empty: string;
-}) {
-  return (
-    <PanelCard variant="appInset" className="p-3">
-      <p className="text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>{title}</p>
-      {items.length > 0 ? (
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {items.slice(0, 8).map((item) => (
-            <Badge key={item} size="sm">{item}</Badge>
-          ))}
-        </div>
-      ) : (
-        <p className="mt-2 text-xs" style={{ color: 'var(--text-tertiary)' }}>{empty}</p>
-      )}
-    </PanelCard>
   );
 }
 

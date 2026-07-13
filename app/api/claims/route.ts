@@ -74,6 +74,7 @@ export async function GET(request: NextRequest) {
   if (denied) return denied;
 
   const profileId = request.nextUrl.searchParams.get('profileId');
+  const claimId = request.nextUrl.searchParams.get('claimId');
   const orderId = request.nextUrl.searchParams.get('orderId');
   const statusFilter = request.nextUrl.searchParams.get('status');
   const queue = request.nextUrl.searchParams.get('queue');
@@ -90,7 +91,9 @@ export async function GET(request: NextRequest) {
     .order(orderColumn, { ascending })
     .limit(pageSize);
 
-  if (profileId) query = query.eq('identity_id', profileId);
+  if (profileId && claimId) query = query.or(`identity_id.eq.${profileId},id.eq.${claimId}`);
+  else if (profileId) query = query.eq('identity_id', profileId);
+  else if (claimId) query = query.eq('id', claimId);
   if (orderId) {
     const sourceOrderId = await resolveSourceOrderId(serviceClient, ctx.merchantId, orderId);
     if (!sourceOrderId) return NextResponse.json({ claims: [] });

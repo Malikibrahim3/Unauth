@@ -23,6 +23,7 @@ import { PayoutCaseLeadBlock } from "@/components/claims/payout/PayoutCaseLeadBl
 import { RecoveryCaseCard } from "@/components/claims/payout/RecoveryCaseCard";
 import { IntegrationEvidenceSourcePanel } from "@/components/claims/payout/IntegrationEvidenceSourcePanel";
 import { GateRecommendationPanel } from "@/components/claims/payout/GateRecommendationPanel";
+import { EvidenceChecklistCard } from "@/components/claims/payout/EvidenceChecklistCard";
 import type { ClaimReviewWorkbench } from "@/components/claims/claimReviewWorkbench";
 import type { ClaimDecisionContext } from "@/lib/claims/decision/types";
 import type {
@@ -68,25 +69,26 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
   const gateRecommendation =
     (decisionData?.context as ClaimDecisionContext | undefined)?.claim
       .gateRecommendation ?? null;
+  const delivery = (
+    decisionData?.context as
+      | { delivery?: ClaimDecisionContext["delivery"] }
+      | undefined
+  )?.delivery ?? null;
 
   return (
     <div className="space-y-4 min-w-0 order-1 min-[1100px]:col-start-1 min-[1100px]:row-start-1">
+      {payoutCase ? (
+        <EvidenceChecklistCard evidence={payoutCase.evidence} delivery={delivery} />
+      ) : null}
+      <GateRecommendationPanel recommendation={gateRecommendation} />
       <PayoutCaseLeadBlock
         payoutCase={payoutCase}
         recoveryCase={recoveryCase}
-        delivery={
-          (
-            decisionData?.context as
-              | {
-                  delivery?: import("@/lib/claims/decision/types").ClaimDecisionContext["delivery"];
-                }
-              | undefined
-          )?.delivery ?? null
-        }
+        delivery={delivery}
         loading={decisionLoading}
         stale={decisionStale}
+        showEvidence={false}
       />
-      <GateRecommendationPanel recommendation={gateRecommendation} />
       <IntegrationEvidenceSourcePanel evidencePack={evidencePack} />
       {selectedClaim ? (
         <RecoveryCaseCard
@@ -96,289 +98,16 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
           onRefresh={refreshRecommendation}
         />
       ) : null}
-      <PanelCard as="section" variant="app" className="p-4">
-        <p
-          className="text-caption font-semibold mb-3"
-          style={{ color: "var(--text-secondary)" }}
-        >
-          Claim evidence context
-        </p>
-        {selectedClaim ? (
-          <>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
-              <CaseIntelTile label="Claim">
-                <p className="font-semibold">
-                  {CLAIM_TYPE_LABELS[selectedClaim.claim_type as ClaimType] ??
-                    selectedClaim.claim_type}
-                </p>
-                <p
-                  className="text-xs mt-1 line-clamp-2"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  {selectedClaim.customer_claim_reason ||
-                    "No customer reason recorded"}
-                </p>
-              </CaseIntelTile>
-              <CaseIntelTile label="Source">
-                <p className="font-mono text-xs">
-                  {selectedClaim.shopify_order_id ??
-                    selectedClaim.order_ref ??
-                    "-"}
-                </p>
-                <p
-                  className="text-xs mt-1"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  Ticket{" "}
-                  {selectedClaim.source_ticket_ref
-                    ? `#${selectedClaim.source_ticket_ref}`
-                    : "not linked"}
-                </p>
-                <p className="font-semibold mt-1">
-                  {selectedClaim.amount_at_risk != null
-                    ? formatClaimMoney(
-                        selectedClaim.amount_at_risk,
-                        selectedClaim.currency,
-                      )
-                    : "-"}
-                </p>
-              </CaseIntelTile>
-              <CaseIntelTile label="Status">
-                <div className="flex flex-wrap gap-1">
-                  <StatusPill status={selectedClaim.status} />
-                  <SlaBadge claim={selectedClaim} />
-                </div>
-                <p
-                  className="text-xs mt-1"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  {formatClaimAge(selectedClaim)} ·{" "}
-                  {formatFiledDate(selectedClaim)}
-                </p>
-              </CaseIntelTile>
-              <CaseIntelTile label="Evidence">
-                <p
-                  className="font-semibold"
-                  style={{
-                    color: evidenceRecorded ? "var(--success)" : "var(--text)",
-                  }}
-                >
-                  {evidenceRecorded ? "On record" : "Missing"}
-                </p>
-                <p
-                  className="text-xs mt-1"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  {evidenceRecorded
-                    ? "Source-backed evidence available"
-                    : "Waiting on connected source data"}
-                </p>
-              </CaseIntelTile>
-              <CaseIntelTile label="Review state">
-                <p className="font-semibold">
-                  {selectedClaim.first_viewed_at
-                    ? "Needs review"
-                    : "New evidence"}
-                </p>
-                <p
-                  className="text-xs mt-1"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  {selectedClaim.first_viewed_at
-                    ? `Reviewed ${new Date(selectedClaim.first_viewed_at).toLocaleDateString("en-US", { timeZone: "UTC" })}`
-                    : "Not yet reviewed"}
-                </p>
-              </CaseIntelTile>
-              <CaseIntelTile label="Outcome">
-                {latestOutcome ? (
-                  <>
-                    <p className="font-semibold text-xs leading-tight">
-                      {DECISION_LABELS[latestOutcome.decision as Decision] ??
-                        latestOutcome.decision}
-                    </p>
-                    <p
-                      className="text-xs mt-1"
-                      style={{ color: "var(--text-secondary)" }}
-                    >
-                      {OUTCOME_LABELS[latestOutcome.outcome as Outcome] ??
-                        latestOutcome.outcome}
-                    </p>
-                  </>
-                ) : (
-                  <p style={{ color: "var(--text-secondary)" }}>Not recorded</p>
-                )}
-              </CaseIntelTile>
-            </div>
-            {selectedClaim.normalized_reason && (
-              <p
-                className="text-xs rounded-md px-3 py-2"
-                style={{
-                  background: "var(--bg-inset)",
-                  color: "var(--text-secondary)",
-                }}
-              >
-                <span
-                  className="font-semibold"
-                  style={{ color: "var(--text)" }}
-                >
-                  Internal notes:{" "}
-                </span>
-                {selectedClaim.normalized_reason}
-              </p>
-            )}
-          </>
-        ) : (
-          <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-            No claim selected. Expand Edit claim details at the bottom of this
-            column to create one.
+      {history.length > 1 ? (
+        <PanelCard as="aside" variant="appInset" className="border-[var(--warning-bd)] p-3">
+          <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+            {history.length} previous payout cases for this customer
           </p>
-        )}
-      </PanelCard>
-
-      <PanelCard variant="app" className="p-4">
-        <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p
-              className="text-caption font-semibold"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              Customer payout context
-            </p>
-            <p
-              className="mt-1 text-xs max-w-2xl"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              Prior merchant-owned records can help the agent understand payout
-              history. Unauth shows context; the merchant owns the action.
-            </p>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-          <div>
-            <p
-              className="text-xs mb-0.5"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              Triggered rules
-            </p>
-            <p
-              className="font-semibold text-lg"
-              style={{ color: "var(--text)" }}
-            >
-              {formattedDecision?.ruleName ? 1 : 0}
-            </p>
-          </div>
-          <div>
-            <p
-              className="text-xs mb-0.5"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              Related records
-            </p>
-            <p
-              className="font-semibold text-base"
-              style={{ color: "var(--text)" }}
-            >
-              {data?.linkedAccounts?.length ?? "-"}
-            </p>
-          </div>
-          <div>
-            <p
-              className="text-xs mb-0.5"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              Refund/fulfilment
-            </p>
-            <p
-              className="font-semibold text-base"
-              style={{ color: "var(--text)" }}
-            >
-              {String(order?.refundStatus ?? "-")}
-            </p>
-          </div>
-          <div>
-            <p
-              className="text-xs mb-0.5"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              Previous claims
-            </p>
-            <p
-              className="font-semibold text-base"
-              style={{ color: "var(--text)" }}
-            >
-              {history.length}
-            </p>
-          </div>
-        </div>
-        {behaviorSignals.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {behaviorSignals.slice(0, 5).map((f) => (
-              <Badge key={f} tone="warning" size="sm">{signalLabel(f).short}</Badge>
-            ))}
-          </div>
-        )}
-        {identityPoints.length > 0 && (
-          <div className="mt-3">
-            <p
-              className="text-xs font-semibold mb-1.5"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              Matching data points
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {identityPoints.map((point) => (
-                <Badge key={point} size="sm">{point}</Badge>
-              ))}
-            </div>
-          </div>
-        )}
-      </PanelCard>
-
-      <PanelCard as="section" variant="app" className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <p
-            className="text-caption font-semibold"
-            style={{ color: "var(--text-secondary)" }}
-          >
-            Store-owned claim history
-          </p>
-          <span
-            className="text-xs font-semibold"
-            style={{ color: "var(--text)" }}
-          >
-            Store-scoped
-          </span>
-        </div>
-        {withinStoreSignals.length === 0 ? (
-          <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-            No additional store-scoped identity variants found yet.
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {withinStoreSignals.map((row) => (
-              <PanelCard
-                key={row.key}
-                variant="appInset"
-                className="grid grid-cols-1 gap-2 p-2.5 text-xs md:grid-cols-[1fr_1fr_1fr_auto]"
-              >
-                <span className="font-semibold capitalize">{row.signal}</span>
-                <span>{row.detail}</span>
-                <span>{row.reason}</span>
-                <span className="inline-flex items-center gap-2">
-                  <span
-                    className="font-mono"
-                    style={{ color: "var(--text-secondary)" }}
-                  >
-                    {row.date ? formatDate(row.date) : "-"}
-                  </span>
-                  <Badge size="sm">{row.grade}</Badge>
-                </span>
-              </PanelCard>
-            ))}
-          </div>
-        )}
-      </PanelCard>
+          <a href={`${wb.customerProfileHref}#cases`} className="mt-1 inline-block text-xs font-semibold text-[var(--accent)]">
+            View case history →
+          </a>
+        </PanelCard>
+      ) : null}
 
       {selectedClaim && latestOutcome && (
         <PanelCard as="section" variant="app" className="p-4">

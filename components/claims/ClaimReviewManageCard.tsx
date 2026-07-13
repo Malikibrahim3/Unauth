@@ -48,7 +48,7 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
 
   if (!canManage) {
     return (
-      <RailSection id="manage" title="Manage case" open={state.railOpen.manage ?? false} onToggle={(id) => dispatch({ type: 'toggleRail', id })}>
+      <RailSection id="manage" title="Record decision" open={state.railOpen.manage ?? false} onToggle={(id) => dispatch({ type: 'toggleRail', id })}>
         <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
           You have read-only access. Recording decisions, evidence, and transitions requires the payout-decision permission.
         </p>
@@ -66,10 +66,10 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
   const currency = wb.selectedClaim?.currency ?? null;
 
   return (
-    <RailSection id="manage" title="Manage case" open={state.railOpen.manage ?? true} onToggle={(id) => dispatch({ type: 'toggleRail', id })}>
-      <div className="space-y-4">
+    <RailSection id="manage" title="Record decision" open={state.railOpen.manage ?? true} onToggle={(id) => dispatch({ type: 'toggleRail', id })}>
+      <div className="flex flex-col gap-4">
         {/* Ownership */}
-        <div className="space-y-1.5">
+        <div className="order-2 space-y-1.5">
           <FieldLabel>Ownership</FieldLabel>
           <div className="flex gap-1.5">
             <button type="button" disabled={disabled} onClick={() => void onAssignment('assign_to_me')}
@@ -84,7 +84,7 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
         </div>
 
         {/* Record decision + outcome */}
-        <div className="space-y-1.5">
+        <div className="order-1 space-y-1.5">
           <FieldLabel htmlFor="manage-decision">Record decision &amp; outcome</FieldLabel>
           <select id="manage-decision" className="w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()}
             value={state.decision} onChange={(e) => {
@@ -110,6 +110,9 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
           </button>
         </div>
 
+        <details className="order-3 rounded-md border border-[var(--border-muted)] p-3">
+          <summary className="cursor-pointer text-xs font-semibold text-[var(--text-secondary)]">Manage evidence and lifecycle</summary>
+          <div className="mt-3 space-y-4">
         {/* Add evidence */}
         <div className="space-y-1.5">
           <FieldLabel htmlFor="manage-evidence-type">Add evidence</FieldLabel>
@@ -190,6 +193,9 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
             Open recovery case →
           </Link>
         ) : null}
+          </div>
+        </details>
+        <a href="#source-case-details" className="order-4 text-xs font-semibold text-[var(--accent)]">View source data</a>
       </div>
       <Modal
         open={confirming}

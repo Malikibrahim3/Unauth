@@ -104,7 +104,7 @@ export function useClaimReviewWorkbench(
     encodedSourceCustomerId ? `/api/customers/${encodedSourceCustomerId}/shopify-orders` : null,
   );
   const { data: claimsPayload, reload: reloadClaims } = useFetchJson<ClaimsPayload>(
-    `/api/claims?profileId=${encodeURIComponent(profileId)}`,
+    `/api/claims?profileId=${encodeURIComponent(profileId)}${initialClaimId ? `&claimId=${encodeURIComponent(initialClaimId)}` : ''}`,
   );
 
   const shops = claimsPayload?.shops ?? [];
@@ -207,9 +207,9 @@ export function useClaimReviewWorkbench(
   useEffect(() => {
     setDecisionData(null);
     setDecisionError(null);
-    setDecisionLoading(false);
-    setDecisionStale(Boolean(resolvedActiveClaimId));
-  }, [resolvedActiveClaimId]);
+    setDecisionStale(false);
+    void reloadDecision(resolvedActiveClaimId || null);
+  }, [reloadDecision, resolvedActiveClaimId]);
 
   useEffect(() => {
     if (!selectedClaim || !decisionData?.evaluatedAt || decisionLoading) return;

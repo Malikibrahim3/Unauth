@@ -21,6 +21,7 @@ export function ClaimReviewFormSection({ wb }: { wb: ClaimReviewWorkbench }) {
 
   return (
     <PanelCard
+      id="source-case-details"
       as="section"
       variant="app"
       className="order-3 min-w-0 overflow-hidden p-0 min-[1100px]:col-start-1 min-[1100px]:row-start-2"
@@ -30,7 +31,7 @@ export function ClaimReviewFormSection({ wb }: { wb: ClaimReviewWorkbench }) {
         onClick={() => patch({ claimFormOpen: !claimFormOpen })}
         className="w-full flex items-center justify-between px-4 py-2.5 text-left"
       >
-        <span className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>{claimId ? 'Source case details' : 'Connected source intake'}</span>
+        <span className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>{claimId ? 'Edit claim details' : 'Connected source intake'}</span>
         <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{claimFormOpen ? '▲' : '▼'}</span>
       </button>
       {claimFormOpen && (
