@@ -1,6 +1,5 @@
 'use client';
 
-import type { EvidenceStrength } from '@/lib/claim-gate/evidenceStrength';
 import type { GateRecommendation } from '@/lib/claim-gate/buildRecommendation';
 import { formatCurrency } from '@/lib/utils/format';
 import { PanelCard } from '@/components/ui';

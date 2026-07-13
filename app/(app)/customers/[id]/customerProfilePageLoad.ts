@@ -28,6 +28,7 @@ import type { BehaviorRoadmapEvent } from "@/components/customers/BehaviorRoadma
 import type { EvidenceLevel, ScoreFactor } from "@/lib/engine/evidence/score";
 import type { ConfidenceGrade } from "@/lib/engine/weights";
 import { merchantHasEntitlement } from "@/lib/product/requireEntitlement";
+import { dominantCurrency } from "@/lib/utils/format";
 
 export type CustomerProfileSearchParams = {
   audit?: string;
@@ -138,6 +139,7 @@ export type CustomerProfilePageViewProps = {
   isEligibleForEvidence: boolean;
   totalOrderValue: number;
   totalRefundedValue: number;
+  displayCurrency: string;
   merchantsSeen: number;
   profileWideOrders: number;
   localOrderSharePct: number;
@@ -182,6 +184,7 @@ type SourceOrderRow = {
   email: string | null;
   phone: string | null;
   total_price: number | string | null;
+  currency: string | null;
   card_last4: string | null;
   browser_ip: string | null;
   source: string | null;
@@ -379,7 +382,7 @@ export async function loadCustomerProfilePage(
   const { data: orderRows } = (await svc
     .from("source_orders")
     .select(
-      "id, external_id, order_number, source_customer_id, email, phone, total_price, card_last4, browser_ip, source, placed_at, shipping_address_id",
+      "id, external_id, order_number, source_customer_id, email, phone, total_price, currency, card_last4, browser_ip, source, placed_at, shipping_address_id",
     )
     .eq("merchant_id", merchantId)
     .in("source_customer_id", identityCustomerIds)
@@ -585,6 +588,7 @@ export async function loadCustomerProfilePage(
       order_id: order.order_number ?? order.external_id,
       processed_at: order.placed_at ?? customer.created_at,
       order_value: order.total_price,
+      currency: order.currency,
       customer_email: order.email ?? customer.email,
       via_email: viaEmail,
       customer_name: customerName || null,
@@ -726,6 +730,7 @@ export async function loadCustomerProfilePage(
   const totalRefundedValue = transactions
     .filter((tx) => tx.refund_claimed || tx.chargeback_filed)
     .reduce((sum, tx) => sum + (Number(tx.order_value) || 0), 0);
+  const displayCurrency = dominantCurrency(orders, 'GBP');
   const merchantRefundRate =
     merchantOrderCount > 0
       ? Math.round((merchantClaimCount / merchantOrderCount) * 100)
@@ -854,6 +859,7 @@ export async function loadCustomerProfilePage(
     isEligibleForEvidence,
     totalOrderValue,
     totalRefundedValue,
+    displayCurrency,
     merchantsSeen,
     profileWideOrders,
     localOrderSharePct,

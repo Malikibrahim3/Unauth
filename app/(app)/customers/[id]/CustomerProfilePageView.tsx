@@ -1,7 +1,6 @@
 import { PageConnectionGate } from '@/components/connections/PageConnectionGate';
 import { CustomerProfilePageHero } from '@/app/(app)/customers/[id]/CustomerProfilePageHero';
 import { CustomerProfilePageMainColumn } from '@/app/(app)/customers/[id]/CustomerProfilePageMainColumn';
-import { CustomerProfilePageSidebar } from '@/app/(app)/customers/[id]/CustomerProfilePageSidebar';
 import type {
   CustomerProfileBlockedReason,
   CustomerProfilePageViewProps,
@@ -48,6 +47,7 @@ export function CustomerProfilePageView(props: CustomerProfilePageViewProps) {
     isEligibleForEvidence,
     totalOrderValue,
     totalRefundedValue,
+    displayCurrency,
     merchantsSeen,
     profileWideOrders,
     localOrderSharePct,
@@ -66,8 +66,6 @@ export function CustomerProfilePageView(props: CustomerProfilePageViewProps) {
     merchantSignalPills,
     activityLog,
     openClaimCount,
-    latestClaim,
-    merchantRefundRate,
     evidenceDisplay,
   } = props;
 
@@ -88,6 +86,7 @@ export function CustomerProfilePageView(props: CustomerProfilePageViewProps) {
         isEligibleForEvidence={isEligibleForEvidence}
         totalOrderValue={totalOrderValue}
         totalRefundedValue={totalRefundedValue}
+        displayCurrency={displayCurrency}
         merchantsSeen={merchantsSeen}
         profileWideOrders={profileWideOrders}
         localOrderSharePct={localOrderSharePct}
@@ -110,7 +109,7 @@ export function CustomerProfilePageView(props: CustomerProfilePageViewProps) {
         5. Grid is [1fr 380px] — main content gets majority width.
         6. Section order: summary → context → detail → action.
       */}
-      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_380px] gap-[var(--space-6)]">
+      <div className="grid grid-cols-1 gap-[var(--space-6)]">
         <CustomerProfilePageMainColumn
           profile={profile}
           profileGrade={profileGrade}
@@ -125,16 +124,6 @@ export function CustomerProfilePageView(props: CustomerProfilePageViewProps) {
           merchantSignalPills={merchantSignalPills}
           linkedAccounts={linkedAccounts}
           activityLog={activityLog}
-        />
-        <CustomerProfilePageSidebar
-          profile={profile}
-          merchantOrderCount={merchantOrderCount}
-          merchantClaimCount={merchantClaimCount}
-          totalOrderValue={totalOrderValue}
-          totalRefundedValue={totalRefundedValue}
-          merchantRefundRate={merchantRefundRate}
-          openClaimCount={openClaimCount}
-          latestClaim={latestClaim}
         />
       </div>
     </div>

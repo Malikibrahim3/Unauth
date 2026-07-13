@@ -1,13 +1,12 @@
-import { Activity, ShieldCheck } from "lucide-react";
+import { Activity } from "lucide-react";
 import Link from "next/link";
 import CustomerNotes from "@/components/audit/CustomerNotes";
 import CustomerSupportCasesSection from "@/components/customers/CustomerSupportCasesSection";
-import BehaviorRoadmap from "@/components/customers/BehaviorRoadmap";
 import { PanelCard } from "@/components/ui";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import {
-  formatCurrencyNullable,
+  formatMoneyOrDash,
   formatDateTime,
   formatDateMode,
 } from "@/lib/utils/format";
@@ -62,87 +61,20 @@ function CompactTransactionList({
   }
 
   return (
-    <ol className="space-y-2">
+    <div className="overflow-x-auto rounded-md border border-[var(--border)]">
+      <table className="w-full min-w-[560px] text-left text-sm">
+        <thead className="bg-[var(--surface-sunken)] text-[11px] uppercase tracking-wide text-[var(--text-tertiary)]"><tr><th className="px-3 py-2">Order</th><th className="px-3 py-2">Date</th><th className="px-3 py-2">Outcome</th><th className="px-3 py-2 text-right">Amount</th></tr></thead>
+        <tbody className="divide-y divide-[var(--border-muted)]">
       {transactions.slice(0, 25).map((tx) => (
-        <PanelCard
-          as="li"
-          key={tx.order_id}
-          variant="appInset"
-          className="px-4 py-3"
-        >
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p
-                className="text-body-sm font-semibold"
-                style={{ color: "var(--text)" }}
-              >
-                {compactTransactionTitle(tx)}
-              </p>
-              <p
-                className="mt-0.5 font-mono text-caption"
-                style={{ color: "var(--text-secondary)" }}
-              >
-                <Link
-                  href={`/orders/${tx.source_order_id}`}
-                  className="underline underline-offset-2 hover:text-[var(--accent)]"
-                >
-                  {tx.order_id}
-                </Link>
-              </p>
-            </div>
-            <div className="text-right">
-              <p
-                className="num text-body-sm font-semibold"
-                style={{ color: "var(--text)" }}
-              >
-                {formatCurrencyNullable(Number(tx.order_value) || null)}
-              </p>
-              <p
-                className="text-caption"
-                style={{ color: "var(--text-secondary)" }}
-              >
-                {formatDateMode(tx.processed_at, "table")}
-              </p>
-            </div>
-          </div>
-          {(tx.refund_claimed || tx.chargeback_filed) && (
-            <p
-              className="mt-2 text-caption"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              {tx.refund_reason ||
-                tx.chargeback_reason_code ||
-                "Reason not provided"}
-            </p>
-          )}
-        </PanelCard>
+        <tr key={tx.order_id} className="hover:bg-[var(--surface-hover)]">
+          <td className="px-3 py-3"><Link href={`/orders/${tx.source_order_id}`} className="font-mono text-xs font-semibold underline-offset-2 hover:underline">{tx.order_id}</Link></td>
+          <td className="px-3 py-3 text-[var(--text-secondary)]">{formatDateMode(tx.processed_at, "table")}</td>
+          <td className="px-3 py-3">{compactTransactionTitle(tx)}</td>
+          <td className="px-3 py-3 text-right font-semibold tabular-nums">{formatMoneyOrDash(Math.round((Number(tx.order_value) || 0) * 100), tx.currency)}</td>
+        </tr>
       ))}
-    </ol>
-  );
-}
-
-function ConnectedOrderLinks({
-  transactions,
-}: {
-  transactions: RoadmapTransaction[];
-}) {
-  if (transactions.length === 0) return null;
-  return (
-    <div className="mt-4 border-t border-[var(--border)] pt-4">
-      <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
-        Connected orders
-      </h3>
-      <div className="mt-2 flex flex-wrap gap-2">
-        {transactions.slice(0, 25).map((transaction) => (
-          <Link
-            key={transaction.source_order_id}
-            href={`/orders/${transaction.source_order_id}`}
-            className="rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-2 font-mono text-xs font-semibold underline-offset-2 hover:border-[var(--accent)] hover:underline"
-          >
-            {transaction.order_id}
-          </Link>
-        ))}
-      </div>
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -162,75 +94,31 @@ export function CustomerProfilePageMainColumn({
   linkedAccounts,
   activityLog,
 }: CustomerProfilePageMainColumnProps) {
-  const payoutRoadmapEvents = roadmapEvents.filter(
-    (event) =>
-      !["identity_change", "watchlist_add", "cross_merchant_signal"].includes(
-        event.type,
-      ),
-  );
-
   void profile;
   void profileGrade;
+  void hasCleanRecord;
   void merchantOrderCount;
   void identitySignals;
   void identityTimeline;
   void variantCount;
   void merchantSignalPills;
   void linkedAccounts;
+  void roadmapEvents;
+  void merchantNarrative;
 
   return (
     <div className="min-w-0 space-y-[var(--space-5)]">
-      {!hasCleanRecord && (
-        <SectionCard
-          title="Order & payout history"
-          description="Chronological order, refund, reship, chargeback, and payout-case events from merchant-owned data."
-        >
-          <PanelCard
-            variant="appInset"
-            className="mb-[var(--space-5)] p-[var(--space-4)]"
-          >
-            <div className="flex items-start gap-3">
-              <ShieldCheck
-                className="mt-0.5 h-4 w-4 shrink-0"
-                style={{ color: "var(--text-secondary)" }}
-              />
-              <p
-                className="text-body-sm leading-relaxed"
-                style={{ color: "var(--text)" }}
-              >
-                {merchantNarrative}
-              </p>
-            </div>
-          </PanelCard>
+      <SectionCard title="Orders" description="Recent orders from this store.">
+        <CompactTransactionList transactions={transactions} />
+      </SectionCard>
 
-          {payoutRoadmapEvents.length > 0 ? (
-            <BehaviorRoadmap events={payoutRoadmapEvents} />
-          ) : (
-            <CompactTransactionList transactions={transactions} />
-          )}
-          <ConnectedOrderLinks transactions={transactions} />
-        </SectionCard>
-      )}
-
-      {hasCleanRecord && (
-        <SectionCard
-          title="Order & payout history"
-          description="Merchant-owned history for this customer."
-        >
-          <EmptyState
-            title="No payout cases yet"
-            description="Orders and payout cases will appear here as connected sources sync."
-          />
-        </SectionCard>
-      )}
-
-      <CustomerSupportCasesSection profileId={profile.id} />
+      <div id="cases"><CustomerSupportCasesSection profileId={profile.id} /></div>
 
       <SectionCard title="Merchant notes">
         <CustomerNotes customerProfileId={profile.id} />
       </SectionCard>
 
-      <SectionCard title="Activity">
+      <SectionCard title="Timeline">
         {activityLog.length === 0 ? (
           <EmptyState
             title="No activity yet"
@@ -238,7 +126,7 @@ export function CustomerProfilePageMainColumn({
           />
         ) : (
           <ol className="space-y-3">
-            {activityLog.map((entry) => {
+            {activityLog.filter((entry) => entry.event_type !== 'claim_viewed').map((entry) => {
               const d = entry.event_data;
               const destinationStatus = [d.to_status, d.to, d.new_status].find(
                 (value): value is string =>

@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Drawer } from "@/components/ui/Drawer";
-import { formatCurrencyNullable, formatDateTime } from "@/lib/utils/format";
+import { StatusBadge } from "@/components/ui/StatusBadge";
+import { formatCurrencyNullable, formatDate, formatDateAbsolute } from "@/lib/utils/format";
 
 type Preview = {
   customer: {
@@ -11,6 +12,8 @@ type Preview = {
     name: string;
     email: string | null;
     asOf: string | null;
+    firstSeen: string | null;
+    stats: { orders: number; payoutCases: number; refundRate: number; chargebacks: number };
     sources: Array<{
       provider: string;
       externalId: string;
@@ -104,13 +107,14 @@ export function CustomerPreviewDrawer({
       aria-label="Customer preview"
       footer={
         customer ? (
-          <div className="flex gap-3 p-4">
+          <div className="flex w-full gap-2 p-4">
             <Link
-              className="font-semibold text-[var(--accent)]"
+              className="flex-1 rounded-md bg-[var(--accent)] px-3 py-2 text-center text-sm font-semibold text-white"
               href={`/customers/${customer.id}?return=${encodeURIComponent(returnUrl)}`}
             >
-              Open full customer profile
+              Open full profile
             </Link>
+            {customer.openCases.length === 1 ? <Link className="rounded-md border border-[var(--border)] px-3 py-2 text-sm font-semibold" href={customer.openCases[0].href}>Open case</Link> : null}
           </div>
         ) : undefined
       }
@@ -147,39 +151,27 @@ export function CustomerPreviewDrawer({
 
         {customer ? (
           <>
-            <div>
-              <p className="break-all text-sm">
-                {customer.email ?? "Contact restricted or unavailable"}
-              </p>
-              <p className="mt-1 text-xs text-[var(--text-secondary)]">
-                Customer ID{" "}
-                <span className="break-all font-mono">{customer.id}</span>
-              </p>
-              <p className="text-xs text-[var(--text-secondary)]">
-                Fresh as of{" "}
-                {customer.asOf
-                  ? formatDateTime(customer.asOf)
-                  : "unknown"}
-              </p>
+            <div className="flex items-center gap-3">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--surface-sunken)] text-sm font-semibold text-[var(--text-primary)]">
+                {customer.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'C'}
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-sm">{customer.email ?? "Contact unavailable"}</p>
+                <p className="mt-0.5 text-xs text-[var(--text-secondary)]">First seen {customer.firstSeen ? formatDateAbsolute(customer.firstSeen) : 'date unavailable'}</p>
+              </div>
             </div>
 
-            {customer.attention.length ? (
-              <section>
-                <h3 className="font-semibold">Needs attention</h3>
-                <ul className="mt-2 space-y-2">
-                  {customer.attention.map((item) => (
-                    <li key={`${item.href}:${item.text}`}>
-                      <Link className="text-[var(--accent)]" href={item.href}>
-                        {item.text} →
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            ) : null}
+            <dl className="grid grid-cols-4 gap-px overflow-hidden rounded-md border border-[var(--border)] bg-[var(--border)]">
+              {[
+                ['Orders', customer.stats.orders],
+                ['Payout cases', customer.stats.payoutCases],
+                ['Refund rate', `${customer.stats.refundRate}%`],
+                ['Chargebacks', customer.stats.chargebacks],
+              ].map(([name, value]) => <div key={name} className="min-w-0 bg-[var(--surface)] p-2 text-center"><dt className="truncate text-[10px] text-[var(--text-tertiary)]">{name}</dt><dd className="mt-1 text-sm font-semibold tabular-nums">{value}</dd></div>)}
+            </dl>
 
             <section>
-              <h3 className="font-semibold">Financial and customer summary</h3>
+              <h3 className="font-semibold">Order value</h3>
               {customer.totalsByCurrency.length ? (
                 <dl className="mt-2 space-y-2">
                   {customer.totalsByCurrency.map((total) => (
@@ -211,7 +203,7 @@ export function CustomerPreviewDrawer({
             </section>
 
             <section>
-              <h3 className="font-semibold">Open work and cases</h3>
+              <h3 className="font-semibold">Open cases</h3>
               {customer.openCases.length ? (
                 <ul className="mt-2 divide-y divide-[var(--border-muted)]">
                   {customer.openCases.map((item) => (
@@ -222,9 +214,7 @@ export function CustomerPreviewDrawer({
                       >
                         <span>
                           {item.reference}
-                          <small className="block text-[var(--text-secondary)]">
-                            {item.state}
-                          </small>
+                          <small className="mt-1 block"><StatusBadge family="caseStatus" value={item.state} size="sm" /></small>
                         </span>
                         <span>{amount(item.amount, item.currency)}</span>
                       </Link>
@@ -239,7 +229,7 @@ export function CustomerPreviewDrawer({
             </section>
 
             <section>
-              <h3 className="font-semibold">Recent connected records</h3>
+              <h3 className="font-semibold">Recent orders</h3>
               {customer.recent.length ? (
                 <ul className="mt-2 divide-y divide-[var(--border-muted)]">
                   {customer.recent.map((item) => (
@@ -248,10 +238,10 @@ export function CustomerPreviewDrawer({
                         href={item.href}
                         className="flex justify-between gap-3 py-3"
                       >
-                        <span className="capitalize">
+                        <span>
                           {item.type} {item.reference}
                           <small className="block text-[var(--text-secondary)]">
-                            {formatDateTime(item.at)}
+                            {formatDate(item.at)}
                           </small>
                         </span>
                         <span>{amount(item.amount, item.currency)}</span>
@@ -266,29 +256,6 @@ export function CustomerPreviewDrawer({
               )}
             </section>
 
-            <section>
-              <h3 className="font-semibold">Source identities</h3>
-              <ul className="mt-2 space-y-2">
-                {customer.sources.map((source) => (
-                  <li
-                    key={`${source.provider}:${source.externalId}`}
-                    className="text-sm"
-                  >
-                    <span className="font-medium">{source.provider}</span> ·{" "}
-                    <span className="break-all font-mono">
-                      {source.externalId}
-                    </span>
-                    <small className="block text-[var(--text-secondary)]">
-                      {source.verified
-                        ? "Verified contact"
-                        : "Contact not verified"}{" "}
-                      · synced{" "}
-                      {formatDateTime(source.asOf)}
-                    </small>
-                  </li>
-                ))}
-              </ul>
-            </section>
           </>
         ) : null}
       </div>

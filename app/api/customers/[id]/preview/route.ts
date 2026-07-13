@@ -4,6 +4,7 @@ import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { TABLES } from '@/lib/supabase/tables';
 import { normaliseCurrencyOrNull } from '@/lib/canonical/money';
 import { enforceEntitlement } from '@/lib/product/requireEntitlement';
+import { label } from '@/lib/ui/labels';
 
 type SourceCustomer = Record<string, unknown> & {
   id: string;
@@ -123,6 +124,17 @@ export async function GET(
       .filter(Boolean)
       .sort()
       .at(-1) ?? String(canonical.updated_at ?? '');
+  const firstSeen = orderRows
+    .map((order) => String(order.updated_at ?? ''))
+    .filter(Boolean)
+    .sort()
+    .at(0) ?? sources.map((source) => source.updated_at).filter(Boolean).sort().at(0) ?? null;
+  const openCases = cases.filter((claim) =>
+    ['new', 'open', 'pending', 'evidence_needed', 'awaiting_customer_evidence', 'awaiting_carrier_response', 'ready_for_decision', 'manual_review', 'escalated'].includes(String(claim.status)),
+  );
+  const refundCases = cases.filter((claim) =>
+    ['refund_request', 'resolved_refunded'].includes(String(claim.claim_type)) || String(claim.status) === 'resolved_refunded',
+  ).length;
 
   return NextResponse.json({
     version: 2,
@@ -131,6 +143,13 @@ export async function GET(
       name: String(canonical.display_name || 'Unnamed customer'),
       email: canonical.email ? String(canonical.email) : null,
       asOf: asOf || null,
+      firstSeen,
+      stats: {
+        orders: orderRows.length,
+        payoutCases: cases.length,
+        refundRate: orderRows.length > 0 ? Math.round((refundCases / orderRows.length) * 100) : 0,
+        chargebacks: cases.filter((claim) => String(claim.claim_type) === 'chargeback').length,
+      },
       sources: sources.map((source) => ({
         provider: source.source,
         externalId: source.external_id,
@@ -141,21 +160,20 @@ export async function GET(
       })),
       totalsByCurrency: [...totals].map(([currency, value]) => ({ currency, ...value })),
       unavailableCurrencyOrders,
-      attention: cases
-        .filter((claim) => ['open', 'pending', 'escalated'].includes(String(claim.status)))
+      attention: openCases
         .map((claim) => ({
-          text: `Open ${String(claim.claim_type || 'payout').replaceAll('_', ' ')} request`,
+          text: `Open ${label('claimType', String(claim.claim_type || 'other'))} case`,
           href: `/claims/${claim.id}`,
         })),
-      openCases: cases.map((claim) => ({
+      openCases: openCases.map((claim) => ({
         id: String(claim.id),
-        reference: String(claim.claim_type || 'Payout case').replaceAll('_', ' '),
+        reference: label('claimType', String(claim.claim_type || 'other')),
         state: String(claim.status),
         amount: claim.amount_at_risk == null ? null : Number(claim.amount_at_risk),
         currency: normaliseCurrencyOrNull(claim.currency),
         href: `/claims/${claim.id}`,
       })),
-      recent: orderRows.slice(0, 10).map((order) => ({
+      recent: orderRows.slice(0, 5).map((order) => ({
         type: 'order',
         reference: String(order.order_number || order.id),
         amount: order.total_price == null ? null : Number(order.total_price),

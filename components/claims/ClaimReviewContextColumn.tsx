@@ -1,23 +1,14 @@
 "use client";
 
-import { signalLabel } from "@/lib/copy/signalLabels";
-import { Badge, PanelCard } from "@/components/ui";
+import { PanelCard } from "@/components/ui";
 import { claimEventLabel, claimEventSummary } from "@/lib/claims/events";
-import { formatClaimAge, formatFiledDate } from "@/lib/claims/sla";
 import SupportCaseContextList from "@/components/support/SupportCaseContextList";
 import {
-  CLAIM_TYPE_LABELS,
   DECISION_LABELS,
   OUTCOME_LABELS,
 } from "@/components/claims/claimReviewLabels";
-import { formatClaimMoney } from "@/components/claims/claimReviewStyles";
-import { formatDate, formatDateTime } from "@/lib/utils/format";
+import { formatDateTime } from "@/lib/utils/format";
 import { actorLabel } from "@/components/claims/claimReviewLogic";
-import {
-  CaseIntelTile,
-  StatusPill,
-  SlaBadge,
-} from "@/components/claims/claimReviewPrimitives";
 import { ClaimReviewHistoryTable } from "@/components/claims/ClaimReviewHistoryTable";
 import { PayoutCaseLeadBlock } from "@/components/claims/payout/PayoutCaseLeadBlock";
 import { RecoveryCaseCard } from "@/components/claims/payout/RecoveryCaseCard";
@@ -26,11 +17,7 @@ import { GateRecommendationPanel } from "@/components/claims/payout/GateRecommen
 import { EvidenceChecklistCard } from "@/components/claims/payout/EvidenceChecklistCard";
 import type { ClaimReviewWorkbench } from "@/components/claims/claimReviewWorkbench";
 import type { ClaimDecisionContext } from "@/lib/claims/decision/types";
-import type {
-  ClaimType,
-  Decision,
-  Outcome,
-} from "@/components/claims/claimReviewTypes";
+import type { Decision, Outcome } from "@/components/claims/claimReviewTypes";
 import type { EvidencePack } from "@/lib/integrations/types";
 import type { SupportPayoutCase } from "@/lib/payouts/types";
 import type { RecoveryCase } from "@/lib/recoveries/types";
@@ -40,14 +27,8 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
     selectedClaim,
     latestOutcome,
     previousOutcome,
-    evidenceRecorded,
     selectedClaimEvents,
     history,
-    data,
-    order,
-    behaviorSignals,
-    identityPoints,
-    withinStoreSignals,
     supportCases,
     state,
     patch,
@@ -64,8 +45,6 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
     (decisionData?.recoveryCase as RecoveryCase | null | undefined) ?? null;
   const evidencePack =
     (decisionData?.evidencePack as EvidencePack | null | undefined) ?? null;
-  const formattedDecision = decisionData?.formatted as
-    { ruleName?: string | null } | undefined;
   const gateRecommendation =
     (decisionData?.context as ClaimDecisionContext | undefined)?.claim
       .gateRecommendation ?? null;
