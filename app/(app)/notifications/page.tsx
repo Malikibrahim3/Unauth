@@ -3,6 +3,7 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { PERMISSIONS, requirePermission } from "@/lib/permissions";
 import { WorkbenchPage } from "@/components/ui";
 import { WORKBENCH_NAV_ITEMS } from "@/components/workbench/workbenchNavItems";
+import { formatNumber } from "@/lib/utils/format";
 import {
   NotificationCentre,
   type NotificationItem,
@@ -34,20 +35,23 @@ export default async function NotificationsPage() {
     <WorkbenchPage
       eyebrow="Work"
       title="Notifications"
-      subtitle="Assignments, mentions, deadlines, recovery outcomes, and source health alerts that need your attention."
       navItems={WORKBENCH_NAV_ITEMS}
-      kpiItems={[
-        {
-          label: "Unread",
-          value: unread.toLocaleString(),
-          hint: "For your account",
-        },
-        {
-          label: "All notifications",
-          value: notifications.length.toLocaleString(),
-          hint: "Newest first",
-        },
-      ]}
+      kpiItems={
+        notifications.length === 0
+          ? undefined
+          : [
+              {
+                label: "Unread",
+                value: formatNumber(unread),
+                hint: "For your account",
+              },
+              {
+                label: "All notifications",
+                value: formatNumber(notifications.length),
+                hint: "Newest first",
+              },
+            ]
+      }
       main={<NotificationCentre initialNotifications={notifications} />}
     />
   );

@@ -184,8 +184,8 @@ export default async function IntegrationsPage() {
           <p className="text-sm text-[var(--text-secondary)]">Configuration</p>
           <h1 className="mt-1 text-2xl font-semibold">Integrations</h1>
           <p className="mt-1 max-w-3xl text-sm text-[var(--text-secondary)]">
-            One provider contract for capability, account, freshness, provenance
-            and runtime health. Unsupported writes stay visibly unsupported.
+            Connect your store, helpdesk, and carriers. We&apos;ll tell you when
+            data stops flowing.
           </p>
         </div>
         <Link
