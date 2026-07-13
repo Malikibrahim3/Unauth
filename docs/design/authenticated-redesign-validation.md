@@ -95,4 +95,10 @@ These limitations do not leave an authenticated surface on the old visual system
 
 ## 12. Production deployment
 
-Pending final focused commits, push to `main`, explicit Vercel production deployment, alias confirmation, and representative production browser checks. This section must be updated with the final commit and production URL before release is declared complete.
+The authenticated redesign application source was committed at `85962f08` and fast-forwarded to remote `main` on 13 July 2026. An explicit Vercel production deployment completed with `READY` status:
+
+- Deployment: `dpl_7tb4ABwXvnt9P91nCpZvwBtJidaV`
+- Immutable URL: `https://unauth-jcayn579x-malik-ibrahims-projects-e316e061.vercel.app`
+- Stable production alias: `https://unauth-pi.vercel.app`
+
+Production HTTP verification returned `200` for the landing and login destinations. An unauthenticated request to `/dashboard` correctly resolved to `/login`, confirming the production auth boundary. A real in-app browser walkthrough verified the rendered landing landmark/content and the redirected sign-in form. This documentation-only release record is committed and deployed after the tested application source; the stable alias is rechecked against that final deployment before completion.
