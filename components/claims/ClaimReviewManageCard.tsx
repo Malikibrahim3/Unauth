@@ -197,7 +197,7 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
         title="Record merchant decision"
         description="This action is append-only and will be attributed to your account."
         actions={[{
-          label: busy ? 'Recording…' : 'Record decision',
+          label: busy ? 'Recording…' : 'Confirm & record',
           onClick: () => {
             setConfirming(false);
             void onOutcome();

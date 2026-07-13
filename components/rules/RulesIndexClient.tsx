@@ -14,6 +14,7 @@ import {
   RuleBuilderDrawer,
   type RuleDraftPayload,
 } from "@/components/rules/RuleBuilderDrawer";
+import { useToast } from "@/components/ui/Toast";
 
 export type RuleIndexRecord = {
   id: string;
@@ -37,6 +38,7 @@ export function RulesIndexClient({
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const toast = useToast();
 
   async function createRule(payload: RuleDraftPayload) {
     setError(null);
@@ -49,6 +51,7 @@ export function RulesIndexClient({
       const body = await response.json();
       if (!response.ok)
         throw new Error(body.error ?? "Rule draft could not be created");
+      toast({ title: "Rule saved as draft", description: "Opening it so you can add conditions.", tone: "success" });
       router.push(`/rules/${body.rule.id}`);
       router.refresh();
       return true;
@@ -142,9 +145,8 @@ export function RulesIndexClient({
         <PanelCard variant="app" className="p-10 text-center">
           <h2 className="text-base font-semibold">No payout rules yet</h2>
           <p className="mx-auto mt-2 max-w-xl text-sm text-[var(--text-secondary)]">
-            Create a draft, simulate it against a synthetic case, inspect
-            conflicts, then publish explicitly. Rules recommend; they never
-            execute payouts.
+            Write a rule, try it on a sample case, then publish when it looks
+            right. Rules recommend; they never execute payouts.
           </p>
           {canManage ? (
             <Button

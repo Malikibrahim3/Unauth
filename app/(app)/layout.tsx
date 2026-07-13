@@ -18,6 +18,7 @@ import {
   DemoModeProvider,
 } from "@/components/connections/ConnectionStateContext";
 import { NavigationProvider } from "@/components/navigation/NavigationProvider";
+import { ToastProvider } from "@/components/ui/Toast";
 import { DevPreviewProvider } from "@/components/product/DevPreviewContext";
 import {
   DEV_TIER_COOKIE,
@@ -216,6 +217,7 @@ export default async function AppLayout({
     : getDevPreviewFromCookieValue(cookieStore.get(DEV_TIER_COOKIE)?.value);
 
   return (
+    <ToastProvider>
     <NavigationProvider>
       <DevPreviewProvider value={devPreview}>
         <div className="flex h-screen overflow-hidden bg-[var(--surface-base)] text-[var(--text-primary)]">
@@ -270,5 +272,6 @@ export default async function AppLayout({
         </div>
       </DevPreviewProvider>
     </NavigationProvider>
+    </ToastProvider>
   );
 }

@@ -60,7 +60,7 @@ describe('ClaimReviewManageCard', () => {
     const { wb } = makeWorkbench();
     render(<ClaimReviewManageCard wb={wb} canManage />);
     expect(screen.getByRole('button', { name: /Assign to me/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^Review decision$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Record decision$/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Add evidence/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Snooze$/i })).toBeInTheDocument();
   });
@@ -75,16 +75,16 @@ describe('ClaimReviewManageCard', () => {
   it('shows consequences before recording a decision, then calls onOutcome', () => {
     const { wb, handlers } = makeWorkbench();
     render(<ClaimReviewManageCard wb={wb} canManage />);
-    fireEvent.click(screen.getByRole('button', { name: /^Review decision$/i }));
-    expect(screen.getByRole('dialog', { name: /Record merchant decision/i })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /^Record decision$/i }));
+    expect(screen.getByRole('dialog', { name: /Record merchant decision/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /^Confirm & record$/i }));
     expect(handlers.onOutcome).toHaveBeenCalled();
   });
 
   it('does not record a decision when confirmation is cancelled', () => {
     const { wb, handlers } = makeWorkbench();
     render(<ClaimReviewManageCard wb={wb} canManage />);
-    fireEvent.click(screen.getByRole('button', { name: /^Review decision$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^Record decision$/i }));
     fireEvent.click(screen.getByRole('button', { name: /^Cancel$/i }));
     expect(handlers.onOutcome).not.toHaveBeenCalled();
   });

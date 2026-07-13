@@ -47,10 +47,10 @@ export default async function DashboardPage({
     <main className="mx-auto w-full max-w-[1600px] space-y-6 p-4 md:p-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold">Overview</h1>
+          <h1 className="text-[var(--text-title,1.25rem)] font-semibold" style={{ fontSize: "1.25rem" }}>Overview</h1>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">
-            Executive value bridge and operational attention from canonical
-            merchant records.
+            What you&apos;re owed, what you&apos;ve recovered, and what needs a
+            decision.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
