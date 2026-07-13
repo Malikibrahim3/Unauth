@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { ArrowUpRight, CalendarDays, CircleDollarSign, ReceiptText, ShieldCheck, TriangleAlert } from "lucide-react";
 import { Drawer } from "@/components/ui/Drawer";
+import { Badge } from "@/components/ui/Badge";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatCurrencyNullable, formatDate, formatDateAbsolute } from "@/lib/utils/format";
 
@@ -13,7 +15,8 @@ type Preview = {
     email: string | null;
     asOf: string | null;
     firstSeen: string | null;
-    stats: { orders: number; payoutCases: number; refundRate: number; chargebacks: number };
+    lastOrderAt: string | null;
+    stats: { orders: number; payoutCases: number; caseRate: number; chargebacks: number };
     sources: Array<{
       provider: string;
       externalId: string;
@@ -25,6 +28,7 @@ type Preview = {
       orders: number;
       value: number;
     }>;
+    openExposureByCurrency: Array<{ currency: string; value: number }>;
     unavailableCurrencyOrders: number;
     attention: Array<{ text: string; href: string }>;
     openCases: Array<{
@@ -42,6 +46,9 @@ type Preview = {
       currency: string | null;
       at: string;
       href: string;
+      caseCount: number;
+      caseType: string | null;
+      caseState: string | null;
     }>;
   };
 };
@@ -119,7 +126,7 @@ export function CustomerPreviewDrawer({
         ) : undefined
       }
     >
-      <div className="space-y-6 p-5" aria-live="polite">
+      <div className="space-y-5 p-5" aria-live="polite">
         {state.loading ? (
           <div
             role="status"
@@ -151,38 +158,46 @@ export function CustomerPreviewDrawer({
 
         {customer ? (
           <>
-            <div className="flex items-center gap-3">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--surface-sunken)] text-sm font-semibold text-[var(--text-primary)]">
+            <div className="rounded-lg border border-[var(--border-muted)] bg-[var(--surface-sunken)] p-4">
+              <div className="flex items-center gap-3">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--surface)] text-sm font-semibold text-[var(--text-primary)] shadow-sm ring-1 ring-[var(--border)]">
                 {customer.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'C'}
               </span>
-              <div className="min-w-0">
-                <p className="truncate text-sm">{customer.email ?? "Contact unavailable"}</p>
-                <p className="mt-0.5 text-xs text-[var(--text-secondary)]">First seen {customer.firstSeen ? formatDateAbsolute(customer.firstSeen) : 'date unavailable'}</p>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">{customer.email ?? "Contact unavailable"}</p>
+                <p className="mt-1 flex items-center gap-1.5 text-xs text-[var(--text-secondary)]"><CalendarDays className="h-3.5 w-3.5" aria-hidden="true" /> Customer since {customer.firstSeen ? formatDateAbsolute(customer.firstSeen) : 'date unavailable'}</p>
               </div>
+              {customer.openCases.length ? <Badge tone="warning" size="sm" dot>{customer.openCases.length} open</Badge> : <Badge tone="success" size="sm" dot>No open cases</Badge>}
+              </div>
+              <p className="mt-3 border-t border-[var(--border-muted)] pt-3 text-xs leading-5 text-[var(--text-secondary)]">
+                {customer.stats.orders === 0
+                  ? "No store orders are linked to this customer yet."
+                  : `${customer.stats.orders} store order${customer.stats.orders === 1 ? '' : 's'}${customer.lastOrderAt ? `, most recently ${formatDate(customer.lastOrderAt)}` : ''}. ${customer.stats.payoutCases === 0 ? 'No payout case history.' : `${customer.stats.payoutCases} payout case${customer.stats.payoutCases === 1 ? '' : 's'} across their order history.`}`}
+              </p>
             </div>
 
-            <dl className="grid grid-cols-4 gap-px overflow-hidden rounded-md border border-[var(--border)] bg-[var(--border)]">
+            <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {[
                 ['Orders', customer.stats.orders],
-                ['Payout cases', customer.stats.payoutCases],
-                ['Refund rate', `${customer.stats.refundRate}%`],
+                ['Case history', customer.stats.payoutCases],
+                ['Case rate', `${customer.stats.caseRate}%`],
                 ['Chargebacks', customer.stats.chargebacks],
-              ].map(([name, value]) => <div key={name} className="min-w-0 bg-[var(--surface)] p-2 text-center"><dt className="truncate text-[10px] text-[var(--text-tertiary)]">{name}</dt><dd className="mt-1 text-sm font-semibold tabular-nums">{value}</dd></div>)}
+              ].map(([name, value]) => <div key={name} className="min-w-0 rounded-md border border-[var(--border-muted)] bg-[var(--surface)] p-3"><dt className="truncate text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">{name}</dt><dd className="mt-1 text-lg font-semibold tabular-nums">{value}</dd></div>)}
             </dl>
 
-            <section>
-              <h3 className="font-semibold">Order value</h3>
+            <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
+              <div className="flex items-center gap-2"><CircleDollarSign className="h-4 w-4 text-[var(--text-secondary)]" aria-hidden="true" /><h3 className="font-semibold">Store financials</h3></div>
               {customer.totalsByCurrency.length ? (
-                <dl className="mt-2 space-y-2">
+                <dl className="mt-3 space-y-3">
                   {customer.totalsByCurrency.map((total) => (
                     <div
                       key={total.currency}
                       className="flex justify-between gap-4"
                     >
-                      <dt>
-                        {total.orders} orders · {total.currency}
+                      <dt className="text-sm text-[var(--text-secondary)]">
+                        Lifetime order value<br /><span className="text-xs">{total.orders} orders · {amount(total.value / Math.max(total.orders, 1), total.currency)} average</span>
                       </dt>
-                      <dd className="tabular-nums">
+                      <dd className="font-semibold tabular-nums">
                         {amount(total.value, total.currency)}
                       </dd>
                     </div>
@@ -200,51 +215,57 @@ export function CustomerPreviewDrawer({
                   because currency is unavailable.
                 </p>
               ) : null}
+              {customer.openExposureByCurrency.length ? (
+                <div className="mt-3 border-t border-[var(--border-muted)] pt-3">
+                  {customer.openExposureByCurrency.map((item) => <div key={item.currency} className="flex items-center justify-between gap-3 text-sm"><span className="inline-flex items-center gap-1.5 text-[var(--warning)]"><TriangleAlert className="h-3.5 w-3.5" aria-hidden="true" /> Open case exposure</span><strong className="tabular-nums">{amount(item.value, item.currency)}</strong></div>)}
+                </div>
+              ) : null}
             </section>
 
-            <section>
-              <h3 className="font-semibold">Open cases</h3>
+            <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
+              <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-[var(--text-secondary)]" aria-hidden="true" /><h3 className="font-semibold">Payout cases requiring attention</h3></div>{customer.openCases.length ? <Badge tone="warning" size="sm">Action needed</Badge> : null}</div>
               {customer.openCases.length ? (
                 <ul className="mt-2 divide-y divide-[var(--border-muted)]">
                   {customer.openCases.map((item) => (
                     <li key={item.id}>
                       <Link
                         href={item.href}
-                        className="flex justify-between gap-3 py-3"
+                        className="flex items-center justify-between gap-3 py-3 hover:text-[var(--accent)]"
                       >
                         <span>
                           {item.reference}
                           <small className="mt-1 block"><StatusBadge family="caseStatus" value={item.state} size="sm" /></small>
                         </span>
-                        <span>{amount(item.amount, item.currency)}</span>
+                        <span className="inline-flex items-center gap-2 font-medium">{amount(item.amount, item.currency)}<ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" /></span>
                       </Link>
                     </li>
                   ))}
                 </ul>
               ) : (
                 <p className="mt-2 text-sm text-[var(--text-secondary)]">
-                  No payout cases were found.
+                  Nothing needs attention. This customer has no open payout cases.
                 </p>
               )}
             </section>
 
-            <section>
-              <h3 className="font-semibold">Recent orders</h3>
+            <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
+              <div className="flex items-center gap-2"><ReceiptText className="h-4 w-4 text-[var(--text-secondary)]" aria-hidden="true" /><h3 className="font-semibold">Recent store activity</h3></div>
               {customer.recent.length ? (
                 <ul className="mt-2 divide-y divide-[var(--border-muted)]">
                   {customer.recent.map((item) => (
                     <li key={item.href}>
                       <Link
                         href={item.href}
-                        className="flex justify-between gap-3 py-3"
+                        className="flex items-center justify-between gap-3 py-3"
                       >
-                        <span>
-                          {item.type} {item.reference}
-                          <small className="block text-[var(--text-secondary)]">
+                        <span className="min-w-0">
+                          <span className="font-medium">Order {item.reference}</span>
+                          <small className="mt-0.5 block text-[var(--text-secondary)]">
                             {formatDate(item.at)}
                           </small>
+                          {item.caseState ? <small className="mt-1 block"><StatusBadge family="caseStatus" value={item.caseState} size="sm" /></small> : null}
                         </span>
-                        <span>{amount(item.amount, item.currency)}</span>
+                        <span className="text-right"><strong className="block tabular-nums">{amount(item.amount, item.currency)}</strong>{item.caseType ? <small className="mt-1 block text-[var(--text-secondary)]">{item.caseType}</small> : <small className="mt-1 block text-[var(--text-tertiary)]">No payout case</small>}</span>
                       </Link>
                     </li>
                   ))}

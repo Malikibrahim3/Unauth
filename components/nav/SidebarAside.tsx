@@ -66,7 +66,7 @@ export function SidebarAside({
             title="Unauth"
             onClick={onCloseMobile}
           >
-            <UnauthLogo variant="mono-dark" size={isCollapsed ? 9 : 22} />
+            <UnauthLogo variant="mono-dark" size={isCollapsed ? 9 : 28} />
           </Link>
           {!isCollapsed && (
             <button
@@ -86,12 +86,11 @@ export function SidebarAside({
         </div>
 
         {!isCollapsed && merchantName ? (
-          <div
-            className="w-full truncate px-0.5 py-1 text-[11px] font-medium leading-tight"
-            style={{ color: 'var(--text-secondary)' }}
-            title={merchantName}
-          >
-            {merchantName}
+          <div className="flex w-full items-center gap-2 rounded-md border border-white/70 bg-white/55 px-2 py-1.5 shadow-[var(--shadow-xs)]" title={merchantName}>
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--surface-selected)] text-[10px] font-bold text-[var(--brand-deep)]">
+              {merchantName.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase()}
+            </span>
+            <span className="min-w-0 truncate text-[11px] font-semibold leading-tight text-[var(--text-secondary)]">{merchantName}</span>
           </div>
         ) : null}
 

@@ -94,7 +94,7 @@ export const uiTokens = {
   },
   app: {
     card:
-      'rounded-[var(--radius-lg)] border bg-[var(--surface)] shadow-[var(--shadow-1)]',
+      'rounded-[var(--radius-lg)] border bg-[var(--surface)] shadow-[var(--shadow-md)]',
     cardMuted:
       'rounded-[var(--radius-lg)] border bg-[var(--surface-sunken)] shadow-none',
     cardInset:

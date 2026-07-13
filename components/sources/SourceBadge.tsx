@@ -1,4 +1,5 @@
 import { getIntegrationProvider } from '@/lib/integrations/registry';
+import { ProviderLogo } from '@/components/identity/ProviderLogo';
 
 /**
  * Source-agnostic provenance badge. Renders the human name of whichever system
@@ -29,7 +30,7 @@ export function sourceLabel(source: string | null | undefined): string {
 export function SourceBadge({ source, className }: { source: string | null | undefined; className?: string }) {
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium ${className ?? ''}`}
+      className={`inline-flex items-center gap-1.5 rounded-md py-0.5 pr-2 text-[11px] font-medium ${className ?? ''}`}
       style={{
         color: 'var(--text-secondary)',
         backgroundColor: 'var(--surface-muted, rgba(0,0,0,0.04))',
@@ -37,6 +38,7 @@ export function SourceBadge({ source, className }: { source: string | null | und
       }}
       title={`Source: ${sourceLabel(source)}`}
     >
+      <ProviderLogo provider={source} name={sourceLabel(source)} size="xs" />
       {sourceLabel(source)}
     </span>
   );

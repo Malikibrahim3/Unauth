@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Clock3, ReceiptText } from "lucide-react";
 import { DataTable } from "@/components/ui/DataTable";
 import { Badge, PanelCard } from "@/components/ui";
 import { formatCurrency, formatDate } from "@/lib/utils/format";
@@ -33,6 +33,17 @@ function OpenCasesBadge({ count }: { count: number }) {
   );
 }
 
+function customerInitials(row: CustomerRow) {
+  const source = row.names?.[0] || row.primary_email || "Customer";
+  return source
+    .split(/\s+|@/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+}
+
 export default function CustomersTableClient({
   rows,
 }: CustomersTableClientProps) {
@@ -58,22 +69,17 @@ export default function CustomersTableClient({
       key: "customer",
       header: "Customer",
       render: (p: CustomerRow) => (
-        <div>
-          <div className="flex items-center gap-1.5">
-            <span
-              className="text-sm font-medium"
-              style={{ color: "var(--text)" }}
-            >
-              {p.names?.[0] ?? "-"}
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span
-              className="text-xs font-mono"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              {p.primary_email ?? "-"}
-            </span>
+        <div className="flex items-center gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--surface-sunken)] text-xs font-semibold text-[var(--text-primary)] ring-1 ring-[var(--border-muted)]">
+            {customerInitials(p)}
+          </span>
+          <div className="min-w-0">
+            <div className="truncate text-sm font-semibold text-[var(--text)]">
+              {p.names?.[0] ?? "Unnamed customer"}
+            </div>
+            <div className="truncate text-xs text-[var(--text-secondary)]">
+              {p.primary_email ?? "Contact unavailable"}
+            </div>
           </div>
         </div>
       ),
@@ -83,9 +89,10 @@ export default function CustomersTableClient({
       header: "Orders",
       align: "right" as const,
       render: (p: CustomerRow) => (
-        <span className="num" style={{ fontFamily: "var(--font-mono)" }}>
-          {p.total_orders}
-        </span>
+        <div className="text-right">
+          <div className="num font-semibold" style={{ fontFamily: "var(--font-mono)" }}>{p.total_orders}</div>
+          <div className="mt-0.5 text-[11px] text-[var(--text-tertiary)]">completed in store</div>
+        </div>
       ),
     },
     {
@@ -93,13 +100,20 @@ export default function CustomersTableClient({
       header: "Total spent",
       align: "right" as const,
       render: (p: CustomerRow) => (
-        <span className="num" style={{ fontFamily: "var(--font-mono)" }}>
-          {p.has_mixed_currency
-            ? "Mixed currencies"
-            : p.total_spent_currency && p.total_spent > 0
-              ? formatCurrency(p.total_spent, p.total_spent_currency)
-              : "—"}
-        </span>
+        <div className="text-right">
+          <div className="num font-semibold" style={{ fontFamily: "var(--font-mono)" }}>
+            {p.has_mixed_currency
+              ? "Mixed currencies"
+              : p.total_spent_currency && p.total_spent > 0
+                ? formatCurrency(p.total_spent, p.total_spent_currency)
+                : "—"}
+          </div>
+          {!p.has_mixed_currency && p.total_spent_currency && p.total_orders > 0 ? (
+            <div className="mt-0.5 text-[11px] text-[var(--text-tertiary)]">
+              {formatCurrency(p.total_spent / p.total_orders, p.total_spent_currency)} avg. order
+            </div>
+          ) : null}
+        </div>
       ),
     },
     {
@@ -107,18 +121,15 @@ export default function CustomersTableClient({
       header: "Payout cases",
       align: "right" as const,
       render: (p: CustomerRow) => (
-        <span className="inline-flex items-center gap-1.5">
-          <OpenCasesBadge count={p.payout_cases_open} />
-          <span
-            className="num"
-            style={{
-              fontFamily: "var(--font-mono)",
-              color: "var(--text-secondary)",
-            }}
-          >
-            {p.payout_cases_total}
+        <div className="flex flex-col items-end gap-1">
+          <span className="inline-flex items-center gap-1.5">
+            <OpenCasesBadge count={p.payout_cases_open} />
+            <span className="num font-semibold" style={{ fontFamily: "var(--font-mono)" }}>{p.payout_cases_total}</span>
           </span>
-        </span>
+          <span className="text-[11px] text-[var(--text-tertiary)]">
+            {p.total_orders > 0 ? `${Math.round((p.payout_cases_total / p.total_orders) * 100)}% of orders` : "No order baseline"}
+          </span>
+        </div>
       ),
     },
     {
@@ -126,8 +137,9 @@ export default function CustomersTableClient({
       header: "Last order",
       align: "right" as const,
       render: (p: CustomerRow) => (
-        <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
-          {p.last_order_at ? formatDate(p.last_order_at) : "—"}
+        <span className="inline-flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
+          <Clock3 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" aria-hidden="true" />
+          {p.last_order_at ? formatDate(p.last_order_at) : "No order date"}
         </span>
       ),
     },
@@ -184,8 +196,10 @@ export default function CustomersTableClient({
             className="w-full cursor-pointer p-4 text-left transition-colors"
             onClick={() => setPreview(p.id)}
           >
-            <div className="flex items-start justify-between gap-2 mb-2">
-              <div className="min-w-0">
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--surface-sunken)] text-xs font-semibold ring-1 ring-[var(--border-muted)]">{customerInitials(p)}</span>
+                <div className="min-w-0">
                 <span
                   className="text-sm font-semibold"
                   style={{ color: "var(--text)" }}
@@ -198,40 +212,21 @@ export default function CustomersTableClient({
                 >
                   {p.primary_email ?? "-"}
                 </p>
+                </div>
               </div>
               <OpenCasesBadge count={p.payout_cases_open} />
             </div>
-            <div
-              className="flex items-center gap-3 text-xs"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              <span>
-                <span
-                  className="font-semibold font-mono"
-                  style={{ color: "var(--text)" }}
-                >
-                  {p.total_orders}
-                </span>{" "}
-                orders
-              </span>
-              <span style={{ color: "var(--border)" }}>·</span>
-              <span>
-                <span
-                  className="font-semibold font-mono"
-                  style={{ color: "var(--text)" }}
-                >
-                  {p.payout_cases_total}
-                </span>{" "}
-                payout cases
-              </span>
-              <span style={{ color: "var(--border)" }}>·</span>
-              <span>Last order {p.last_order_at ? formatDate(p.last_order_at) : "—"}</span>
+            <div className="grid grid-cols-3 gap-px overflow-hidden rounded-md border border-[var(--border-muted)] bg-[var(--border-muted)] text-xs">
+              <div className="bg-[var(--surface)] p-2"><span className="block font-semibold text-[var(--text)]">{p.total_orders}</span><span className="text-[var(--text-tertiary)]">Orders</span></div>
+              <div className="bg-[var(--surface)] p-2"><span className="block font-semibold text-[var(--text)]">{p.payout_cases_total}</span><span className="text-[var(--text-tertiary)]">Cases</span></div>
+              <div className="bg-[var(--surface)] p-2"><span className="block truncate font-semibold text-[var(--text)]">{p.last_order_at ? formatDate(p.last_order_at) : "—"}</span><span className="text-[var(--text-tertiary)]">Last order</span></div>
             </div>
             <div
               className="mt-3 flex justify-end text-xs font-semibold"
               style={{ color: "var(--text)" }}
             >
               <span className="inline-flex items-center gap-1">
+                <ReceiptText className="h-3.5 w-3.5" aria-hidden="true" />
                 View <ArrowRight className="h-3 w-3" aria-hidden="true" />
               </span>
             </div>

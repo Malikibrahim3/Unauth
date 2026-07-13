@@ -45,7 +45,7 @@ export default async function DashboardPage({
   );
   return (
     <div className="mx-auto w-full max-w-[1600px] space-y-6 p-4 md:p-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
+      <header className="flex flex-wrap items-end justify-between gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-xs)] md:p-6">
         <div>
           <h1 className="text-[var(--text-title,1.25rem)] font-semibold" style={{ fontSize: "1.25rem" }}>Overview</h1>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">
@@ -68,7 +68,7 @@ export default async function DashboardPage({
           </Link>
         </div>
       </header>
-      <nav aria-label="Overview period" className="flex flex-wrap gap-2">
+      <nav aria-label="Overview period" className="flex flex-wrap gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-1.5 shadow-[var(--shadow-xs)] w-fit">
         {REPORT_RANGES.map((r) => (
           <Link
             key={r}

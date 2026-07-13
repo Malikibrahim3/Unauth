@@ -111,3 +111,15 @@ test('seeded dynamic record routes use the new system', async ({ page }) => {
     await test.step(destination, async () => expectAuthenticatedSystem(page, destination));
   }
 });
+
+test('visual enrichment preserves provider identity and focal hierarchy', async ({ page }) => {
+  await page.goto('/integrations', { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('img[src*="shopify"]')).toBeVisible();
+  await expect(page.locator('img[src*="gorgias"]')).toBeVisible();
+  await expect(page.locator('img[src*="shipbob"]')).toBeVisible();
+  await expect(page.locator('.ua-focal-panel')).not.toHaveCount(0);
+
+  await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('.ua-metric-card')).not.toHaveCount(0);
+  await expect(page.locator('.ua-panel-header')).not.toHaveCount(0);
+});

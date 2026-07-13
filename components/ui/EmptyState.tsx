@@ -77,13 +77,20 @@ export function EmptyState({
         className,
       )}
     >
-      {icon && (
+      {icon ? (
         <span
-          className="mb-[var(--space-4)] w-6 h-6"
-          style={{ color: 'var(--text-tertiary)' }}
+          className="ua-empty-visual mb-[var(--space-4)] flex h-14 w-14 items-center justify-center rounded-xl"
+          style={{ color: 'var(--brand-deep)' }}
           aria-hidden="true"
         >
           {icon}
+        </span>
+      ) : (
+        <span className="ua-empty-visual mb-[var(--space-4)] grid h-14 w-14 grid-cols-2 place-content-center gap-1 rounded-xl" aria-hidden="true">
+          <span className="h-2 w-2 rounded-sm bg-[var(--brand-signal)]" />
+          <span className="h-2 w-2 rounded-sm bg-[var(--brand-deep)]" />
+          <span className="h-2 w-2 rounded-sm bg-[var(--accent-border)]" />
+          <span className="h-2 w-2 rounded-sm bg-[var(--text-tertiary)]" />
         </span>
       )}
       <h3 className="text-h2" style={{ color: 'var(--text-primary)' }}>

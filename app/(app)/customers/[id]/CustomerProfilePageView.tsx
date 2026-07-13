@@ -42,6 +42,7 @@ export function CustomerProfilePageView(props: CustomerProfilePageViewProps) {
     profileGrade,
     hasCleanRecord,
     merchantClaimCount,
+    merchantChargebackCount,
     merchantOrderCount,
     localClaimRatePct,
     isEligibleForEvidence,
@@ -79,6 +80,7 @@ export function CustomerProfilePageView(props: CustomerProfilePageViewProps) {
         profileGrade={profileGrade}
         hasCleanRecord={hasCleanRecord}
         merchantClaimCount={merchantClaimCount}
+        merchantChargebackCount={merchantChargebackCount}
         merchantOrderCount={merchantOrderCount}
         localClaimRatePct={localClaimRatePct}
         viewToken={viewToken}

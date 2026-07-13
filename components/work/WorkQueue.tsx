@@ -3,7 +3,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Inbox } from "lucide-react";
 import { StatusBadge, PriorityChip } from "@/components/ui/StatusBadge";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { SourceMark } from "@/components/identity/ProviderLogo";
 import { RowActionsMenu, type RowAction } from "@/components/ui/RowActionsMenu";
 import { formatDateAbsolute } from "@/lib/utils/format";
 
@@ -261,11 +264,12 @@ export function WorkQueue({
         </div>
       ) : null}
       {!items.length ? (
-        <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-10 text-center">
-          <p className="font-medium">No work matches this view</p>
-          <p className="mt-1 text-sm text-[var(--text-secondary)]">
-            Choose another saved view or return when new work arrives.
-          </p>
+        <div className="ua-section-panel overflow-hidden rounded-lg">
+          <EmptyState
+            icon={<Inbox />}
+            title="No work matches this view"
+            description="Choose another saved view or return when new work arrives. New cases and integration exceptions will appear here automatically."
+          />
         </div>
       ) : (
         <>
@@ -318,7 +322,7 @@ export function WorkQueue({
                   return (
                     <tr
                       key={`${item.kind}:${item.id}`}
-                      className="border-b border-[var(--border)] last:border-0 hover:bg-[var(--surface-hover)] focus-within:bg-[var(--surface-hover)]"
+                      className="ua-table-row border-b border-[var(--border)] last:border-0 hover:bg-[var(--surface-hover)] focus-within:bg-[var(--surface-hover)]"
                     >
                       <td className="px-3 py-3">
                         {item.kind === "task" ? (
@@ -333,7 +337,10 @@ export function WorkQueue({
                       <td className="px-3 py-3">
                         <PriorityChip value={item.priority} size="sm" />
                       </td>
-                      <td className="max-w-[320px] px-3 py-3">
+                      <td className="max-w-[340px] px-3 py-3">
+                        <div className="flex items-start gap-2.5">
+                          <SourceMark source={item.source} compact />
+                          <div className="min-w-0">
                         <div className="font-medium">{item.title}</div>
                         {item.description ? (
                           <div className="mt-0.5 line-clamp-2 text-xs text-[var(--text-secondary)]">
@@ -345,6 +352,8 @@ export function WorkQueue({
                             Blocked: {item.blockingReason}
                           </div>
                         ) : null}
+                          </div>
+                        </div>
                       </td>
                       <td className="px-3 py-3">
                         {item.objectHref ? (
@@ -362,7 +371,12 @@ export function WorkQueue({
                         <StatusBadge family="caseStatus" value={item.status} size="sm" />
                       </td>
                       <td className="px-3 py-3">
-                        {item.ownerUserId ? "Assigned" : title(item.ownerRole)}
+                        <span className="inline-flex items-center gap-2">
+                          <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface-selected)] text-[10px] font-bold text-[var(--brand-deep)]">
+                            {(item.ownerUserId ? "A" : title(item.ownerRole).slice(0, 2)).toUpperCase()}
+                          </span>
+                          <span>{item.ownerUserId ? "Assigned" : title(item.ownerRole)}</span>
+                        </span>
                       </td>
                       <td className={`px-3 py-3 text-xs ${due.className}`}>
                         {due.label}
@@ -404,7 +418,10 @@ export function WorkQueue({
                           <PriorityChip value={item.priority} size="sm" />
                           <StatusBadge family="caseStatus" value={item.status} size="sm" />
                         </div>
-                        <h3 className="mt-1.5 font-semibold">{item.title}</h3>
+                        <div className="mt-1.5 flex items-center gap-2">
+                          <SourceMark source={item.source} compact />
+                          <h3 className="font-semibold">{item.title}</h3>
+                        </div>
                       </div>
                     </div>
                     <span className={`text-xs ${due.className}`}>

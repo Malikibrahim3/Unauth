@@ -141,10 +141,10 @@ export function ClaimsQueueClient({
                 padding: "11px 14px",
                 borderColor: "var(--border-muted)",
                 background: isSelected
-                  ? "color-mix(in srgb, var(--accent) 7%, var(--surface))"
+                  ? "color-mix(in srgb, var(--brand-signal) 13%, var(--surface))"
                   : "transparent",
                 borderLeft: isSelected
-                  ? "2px solid var(--accent)"
+                  ? "2px solid var(--brand-deep)"
                   : "2px solid transparent",
               }}
             >
@@ -296,13 +296,13 @@ function ClaimDetailPanel({
         variant="appInset"
         className="px-4 py-3"
         style={{
-          background: "var(--info-bg)",
-          borderColor: "var(--info-bd)",
+          background: "color-mix(in srgb, var(--brand-signal-soft) 58%, var(--surface))",
+          borderColor: "var(--accent-border)",
         }}
       >
         <p
           className="text-caption font-semibold uppercase tracking-wide mb-0.5"
-          style={{ color: "var(--info)", letterSpacing: "0.06em" }}
+          style={{ color: "var(--brand-deep)", letterSpacing: "0.06em" }}
         >
           Workflow
         </p>
@@ -374,12 +374,12 @@ function ClaimDetailPanel({
           {ops.reviewState}
         </p>
         <div className="mt-2 flex flex-wrap gap-1.5">
-          <StatusBadge family="workflowStatus" value={ops.evidenceStatus} size="sm" />
+          <StatusBadge family="workflowStatus" value={ops.evidenceStatus} tone="neutral" size="sm" />
           {claim.next_action && (
-            <StatusBadge family="workflowStatus" value={claim.next_action} size="sm" />
+            <StatusBadge family="workflowStatus" value={claim.next_action} tone="neutral" size="sm" />
           )}
           {claim.recovery_state && (
-            <StatusBadge family="recoveryStatus" value={claim.recovery_state} size="sm" />
+            <StatusBadge family="recoveryStatus" value={claim.recovery_state} tone="neutral" size="sm" />
           )}
         </div>
         <Link
@@ -481,7 +481,7 @@ function ClaimDetailPanel({
           <div className="flex items-center gap-2">
             <ShieldCheck
               className="h-3.5 w-3.5"
-              style={{ color: "var(--privacy-ink)" }}
+              style={{ color: "var(--brand-deep)" }}
             />
             <p
               className="text-caption font-semibold uppercase tracking-wide"

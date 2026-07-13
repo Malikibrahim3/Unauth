@@ -16,9 +16,9 @@ interface CardProps {
 
 const CARD_STYLES: Record<CardVariant, CSSProperties> = {
   raised: {
-    background: 'var(--surface)',
-    border: '1px solid var(--border)',
-    boxShadow: 'none',
+    background: 'var(--surface-raised)',
+    border: '1px solid color-mix(in srgb, var(--border) 88%, var(--text-primary))',
+    boxShadow: 'var(--shadow-md)',
   },
   overlay: {
     background: 'var(--surface)',

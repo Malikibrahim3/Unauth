@@ -10,137 +10,143 @@
   color-scheme: light;
 
   /* Surfaces */
-  --bg: #f7f7f4;
-  --bg-canvas: #f7f7f4;
+  --bg: #f5f6f8;
+  --bg-canvas: #f5f6f8;
   --bg-surface: #ffffff;
-  --bg-surface-alt: #f3f3ef;
-  --bg-surface-sunk: #efefeb;
-  --bg-subtle: #f3f3ef;
-  --bg-muted: #efefeb;
-  --bg-inset: #f7f7f4;
-  --bg-hover: #eeeeea;
-  --bg-selected: #eef2d8;
+  --bg-surface-alt: #f1f2f4;
+  --bg-surface-sunk: #eff1f4;
+  --bg-subtle: #f1f2f4;
+  --bg-muted: #eff1f4;
+  --bg-inset: #f7f8fa;
+  --bg-hover: #eceef2;
+  --bg-selected: #e7ecff;
   --surface: #ffffff;
-  --surface-base: #f7f7f4;
+  --surface-base: #f5f6f8;
   --surface-raised: #ffffff;
   --surface-overlay: #ffffff;
-  --surface-muted: #f3f3ef;
-  --surface-sunken: #f3f3ef;
-  --surface-hover: #eeeeea;
-  --surface-selected: #eef2d8;
-  --surface-subtle: #f3f3ef;
+  --surface-muted: #f1f2f4;
+  --surface-sunken: #eff1f4;
+  --surface-hover: #eceef2;
+  --surface-selected: #e7ecff;
+  --surface-subtle: #f1f2f4;
   --surface-input: #ffffff;
-  --surface-border: #dfdfda;
+  --surface-border: #dde1e6;
 
   /* Ink */
-  --text: #171816;
-  --text-primary: #171816;
-  --text-secondary: #62635e;
-  --text-tertiary: #898a84;
-  --text-muted: #62635e;
-  --text-subtle: #898a84;
-  --text-disabled: #b7b8b2;
-  --text-inverse: #fbfbf8;
-  --text-link: #354c19;
-  --ink-primary: #171816;
-  --ink-secondary: #62635e;
-  --ink-tertiary: #898a84;
-  --ink-inverse: #fbfbf8;
-  --icon: #4f504b;
-  --icon-muted: #858680;
+  --text: #17191c;
+  --text-primary: #17191c;
+  --text-secondary: #5f6672;
+  --text-tertiary: #858c96;
+  --text-muted: #5f6672;
+  --text-subtle: #858c96;
+  --text-disabled: #b3b8c1;
+  --text-inverse: #ffffff;
+  --text-link: #3157d5;
+  --ink-primary: #17191c;
+  --ink-secondary: #5f6672;
+  --ink-tertiary: #858c96;
+  --ink-inverse: #ffffff;
+  --icon: #4f5661;
+  --icon-muted: #858c96;
 
   /* Lines */
-  --border: #dfdfda;
-  --border-muted: #e8e8e3;
-  --border-subtle: #ecece7;
-  --border-default: #dfdfda;
-  --border-strong: #a7a8a1;
+  --border: #dde1e6;
+  --border-muted: #e7e9ed;
+  --border-subtle: #eceef1;
+  --border-default: #dde1e6;
+  --border-strong: #a7adb7;
 
-  /* Action and selection. The interface is not predominantly green. */
-  --accent: #171816;
-  --accent-hover: #2d2e2a;
-  --accent-soft: #eef2d8;
-  --accent-border: #d8dfae;
-  --accent-subtle: #f4f6e8;
-  --accent-fg-on-500: #fbfbf8;
-  --action-primary: #171816;
-  --action-primary-hover: #2d2e2a;
-  --action-primary-soft: #eef2d8;
-  --action-ink: #354c19;
-  --action-ink-hover: #253610;
-  --action-ink-soft: #eef2d8;
-  --primary: #171816;
-  --primary-foreground: #fbfbf8;
-  --secondary: #f3f3ef;
-  --secondary-foreground: #171816;
+  /* Graphite + cobalt: one brand hue for action, focus, and selection. */
+  --accent: #3157d5;
+  --accent-hover: #2949b8;
+  --accent-soft: #eef2ff;
+  --accent-border: #cbd5ff;
+  --accent-subtle: #f4f6ff;
+  --brand-signal: #3157d5;
+  --brand-signal-soft: #eef2ff;
+  --brand-deep: #2949b8;
+  --accent-fg-on-500: #ffffff;
+  --action-primary: #3157d5;
+  --action-primary-hover: #2949b8;
+  --action-primary-soft: #eef2ff;
+  --action-ink: #3157d5;
+  --action-ink-hover: #2949b8;
+  --action-ink-soft: #eef2ff;
+  --primary: #3157d5;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f2f4;
+  --secondary-foreground: #17191c;
 
-  /* Semantic colour */
-  --success: #26734d;
-  --success-fg: #26734d;
-  --success-bg: #eaf5ee;
-  --success-soft: #eaf5ee;
-  --success-bd: #c7e3d1;
-  --success-border: #c7e3d1;
-  --warning: #8a6200;
-  --warning-fg: #8a6200;
-  --warning-bg: #fbf3dc;
-  --warning-soft: #fbf3dc;
-  --warning-bd: #ead7a1;
-  --warning-border: #ead7a1;
-  --critical: #b4232d;
-  --critical-soft: #fbeaec;
-  --critical-border: #efc3c7;
-  --risk-critical: #b4232d;
-  --risk-critical-fg: #b4232d;
-  --risk-critical-bg: #fbeaec;
-  --risk-critical-bd: #efc3c7;
-  --risk-critical-line: #d98189;
-  --risk-high: #9a5700;
-  --risk-high-fg: #9a5700;
-  --risk-high-bg: #fbf0df;
-  --risk-high-bd: #ead1aa;
-  --risk-high-line: #cf9c53;
-  --risk-medium: #806400;
-  --risk-medium-fg: #806400;
-  --risk-medium-bg: #f7f3df;
-  --risk-medium-bd: #ddd3a1;
-  --risk-medium-line: #bdae66;
-  --risk-low: #26734d;
-  --risk-low-fg: #26734d;
-  --risk-low-bg: #eaf5ee;
-  --risk-low-bd: #c7e3d1;
-  --risk-low-line: #76ad8c;
-  --risk-none: #6c6d67;
-  --risk-none-bg: #f0f0ec;
-  --risk-none-bd: #ddddda;
-  --info: #356483;
-  --info-fg: #356483;
-  --info-bg: #eaf2f7;
-  --info-bd: #c8dce8;
-  --info-line: #8fb4ca;
-  --neutral: #62635e;
-  --neutral-soft: #f0f0ec;
-  --neutral-border: #ddddda;
-  --danger: #b4232d;
-  --danger-fg: #b4232d;
-  --danger-bg: #fbeaec;
-  --watchlist: #356483;
-  --watchlist-bg: #eaf2f7;
-  --watchlist-bd: #c8dce8;
-  --sev-definite: #26734d;
-  --sev-definite-fill: #eaf5ee;
-  --sev-probable: #8a6200;
-  --sev-probable-fill: #fbf3dc;
-  --sev-possible: #6c6d67;
-  --sev-possible-fill: #f0f0ec;
-  --sev-neutral: #6c6d67;
-  --sev-neutral-fill: #f0f0ec;
-  --sev-clear: #26734d;
-  --sev-clear-fill: #eaf5ee;
-  --data-neutral: #62635e;
-  --gauge-from: #26734d;
-  --gauge-mid: #8a6200;
-  --gauge-to: #b4232d;
+  /* Semantic colour is literal and sparse; it never substitutes for brand. */
+  --success: #18794e;
+  --success-fg: #18794e;
+  --success-bg: #eaf6ef;
+  --success-soft: #eaf6ef;
+  --success-bd: #b9dfc9;
+  --success-border: #b9dfc9;
+  --warning: #946200;
+  --warning-fg: #946200;
+  --warning-bg: #fff7d6;
+  --warning-soft: #fff7d6;
+  --warning-bd: #ead58a;
+  --warning-border: #ead58a;
+  --critical: #c0362c;
+  --critical-soft: #ffefed;
+  --critical-border: #efbbb6;
+  --risk-critical: #c0362c;
+  --risk-critical-fg: #c0362c;
+  --risk-critical-bg: #ffefed;
+  --risk-critical-bd: #efbbb6;
+  --risk-critical-line: #dc7d75;
+  --risk-high: #b44d12;
+  --risk-high-fg: #b44d12;
+  --risk-high-bg: #fff1e8;
+  --risk-high-bd: #efc3a7;
+  --risk-high-line: #d78b5c;
+  --risk-medium: #946200;
+  --risk-medium-fg: #946200;
+  --risk-medium-bg: #fff7d6;
+  --risk-medium-bd: #ead58a;
+  --risk-medium-line: #c9a83f;
+  --risk-low: #18794e;
+  --risk-low-fg: #18794e;
+  --risk-low-bg: #eaf6ef;
+  --risk-low-bd: #b9dfc9;
+  --risk-low-line: #70ad8b;
+  --risk-none: #69717d;
+  --risk-none-bg: #f1f2f4;
+  --risk-none-bd: #d9dde3;
+  --info: #3157d5;
+  --info-fg: #3157d5;
+  --info-bg: #eef2ff;
+  --info-bd: #cbd5ff;
+  --info-line: #899ff0;
+  --privacy-ink: #3157d5;
+  --privacy-fill: #eef2ff;
+  --privacy-border: #cbd5ff;
+  --neutral: #5f6672;
+  --neutral-soft: #f1f2f4;
+  --neutral-border: #d9dde3;
+  --danger: #c0362c;
+  --danger-fg: #c0362c;
+  --danger-bg: #ffefed;
+  --watchlist: #3157d5;
+  --watchlist-bg: #eef2ff;
+  --watchlist-bd: #cbd5ff;
+  --sev-definite: #18794e;
+  --sev-definite-fill: #eaf6ef;
+  --sev-probable: #946200;
+  --sev-probable-fill: #fff7d6;
+  --sev-possible: #69717d;
+  --sev-possible-fill: #f1f2f4;
+  --sev-neutral: #69717d;
+  --sev-neutral-fill: #f1f2f4;
+  --sev-clear: #18794e;
+  --sev-clear-fill: #eaf6ef;
+  --data-neutral: #5f6672;
+  --gauge-from: #18794e;
+  --gauge-mid: #946200;
+  --gauge-to: #c0362c;
 
   /* Geometry and depth */
   --radius-xs: 3px;
@@ -157,14 +163,14 @@
   --radius-pill: 9999px;
   --shadow-xs: 0 1px 2px rgba(23, 24, 22, 0.04);
   --shadow-sm: 0 1px 2px rgba(23, 24, 22, 0.05);
-  --shadow-md: none;
+  --shadow-md: 0 1px 2px rgba(23, 24, 22, 0.06), 0 8px 24px rgba(23, 24, 22, 0.035);
   --shadow-lg: 0 12px 30px rgba(23, 24, 22, 0.12);
   --shadow-xl: 0 20px 48px rgba(23, 24, 22, 0.16);
   --shadow-overlay: 0 18px 48px rgba(23, 24, 22, 0.16);
   --shadow-drawer: -14px 0 40px rgba(23, 24, 22, 0.14);
   --shadow-modal: 0 20px 60px rgba(23, 24, 22, 0.18);
-  --focus-ring: #4d6a22;
-  --shadow-focus: 0 0 0 3px rgba(77, 106, 34, 0.22);
+  --focus-ring: #456ce5;
+  --shadow-focus: 0 0 0 3px rgba(49, 87, 213, 0.22);
 
   /* Density */
   --button-height-sm: 30px;
@@ -183,10 +189,14 @@
   font-feature-settings: "ss01" 1, "cv11" 1;
 }
 
+.ua-app main {
+  background: var(--surface-base);
+}
+
 .ua-app ::selection,
 .ua-auth-surface ::selection {
-  background: #dfe7b7;
-  color: #171816;
+  background: #cbd5ff;
+  color: #17191c;
 }
 
 .ua-app :where(button, a, input, select, textarea, [tabindex]):focus-visible,
@@ -198,6 +208,17 @@
 .ua-app :where(input, select, textarea) {
   border-color: var(--border-default);
   background: var(--surface-input);
+  box-shadow: inset 0 1px 2px rgba(23, 24, 22, .035);
+}
+
+.ua-app :where(button, a) {
+  transition-property: color, background-color, border-color, box-shadow, transform;
+  transition-duration: 140ms;
+  transition-timing-function: ease;
+}
+
+.ua-app :where(button):active:not(:disabled) {
+  transform: translateY(1px);
 }
 
 .ua-app :where(table) {
@@ -220,21 +241,86 @@
 }
 
 .ua-app .ua-app-sidebar {
-  background: #f1f1ed;
+  background: linear-gradient(180deg, #f4f5f7 0%, #eff1f4 100%);
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, .72);
 }
 
 .ua-app .ua-app-header {
-  background: rgba(247, 247, 244, .94);
+  background: rgba(245, 246, 248, .94);
   backdrop-filter: saturate(115%) blur(12px);
 }
 
-/* The public wordmark retains its warm brand treatment. Inside the product,
- * the mark is deliberately monochrome so no landing-page accent leaks into
- * the operational shell. */
 .ua-app .ua-mark,
 .ua-auth-surface .ua-mark {
-  --ua-logo-ink: #171816;
-  --ua-logo-dot: #171816;
+  --ua-logo-ink: #17191c;
+  --ua-logo-dot: var(--brand-signal);
+}
+
+.ua-identity-tile {
+  overflow: hidden;
+  border: 1px solid rgba(23, 25, 28, .1);
+  border-radius: 9px;
+  background: linear-gradient(145deg, #fff 0%, #f3f5fb 100%);
+  color: var(--brand-deep);
+  box-shadow: 0 1px 2px rgba(23, 25, 28, .08), 0 5px 14px rgba(23, 25, 28, .05);
+}
+
+.ua-focal-panel {
+  border: 1px solid rgba(23, 24, 22, .12);
+  background: rgba(255, 255, 255, .94);
+  box-shadow: var(--shadow-md);
+}
+
+.ua-section-panel {
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, .82);
+  box-shadow: var(--shadow-xs);
+}
+
+.ua-panel-header {
+  background: var(--surface-muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.ua-metric-card {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.ua-metric-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--metric-accent, var(--brand-signal));
+}
+
+.ua-table-row {
+  position: relative;
+}
+
+.ua-table-row::before {
+  content: '';
+  position: absolute;
+  inset: 9px auto 9px 0;
+  width: 2px;
+  border-radius: 999px;
+  background: transparent;
+  transition: background-color 120ms ease;
+}
+
+.ua-table-row:hover::before,
+.ua-table-row:focus-within::before {
+  background: var(--brand-signal);
+}
+
+.ua-empty-visual {
+  background:
+    radial-gradient(circle at 50% 25%, rgba(49, 87, 213, .16), transparent 45%),
+    linear-gradient(145deg, #fafbff, #eef2ff);
+  border: 1px solid var(--accent-border);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.8);
 }
 
 .ua-app .ua-operational-scrollbar {

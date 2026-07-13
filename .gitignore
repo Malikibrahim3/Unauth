@@ -34,3 +34,6 @@ final-report.md
 supabase/.temp/
 
 .vercel
+
+# Local backup archives
+backup-*.tar.gz

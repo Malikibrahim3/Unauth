@@ -32,13 +32,13 @@ export function SectionCard({
         background: "var(--surface)",
         border: "1px solid var(--border)",
         borderRadius: "var(--radius-md)",
-        boxShadow: "var(--shadow-1)",
+        boxShadow: "var(--shadow-md)",
         ...style,
       }}
     >
       {/* Header */}
       <div
-        className="flex flex-wrap items-start justify-between gap-3 sm:items-center"
+        className="ua-panel-header flex flex-wrap items-start justify-between gap-3 sm:items-center"
         style={{
           borderBottom: "1px solid var(--border-muted)",
           padding: "var(--space-3) var(--space-4)",

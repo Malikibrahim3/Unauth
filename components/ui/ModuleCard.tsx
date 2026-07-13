@@ -32,7 +32,7 @@ export function ModuleCard({
         style={{ borderBottom: '1px solid var(--border)' }}
       >
         <div className="flex items-center gap-2">
-          <Icon className="h-4 w-4" style={{ color: 'var(--text-tertiary)' }} />
+          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[var(--surface-selected)] text-[var(--brand-deep)]"><Icon className="h-4 w-4" /></span>
           <p className="text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>{title}</p>
         </div>
         {href && (

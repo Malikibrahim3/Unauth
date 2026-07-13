@@ -46,7 +46,7 @@ export default async function ReportsPage({
   );
   return (
     <div className="mx-auto w-full max-w-[1600px] space-y-6 p-4 md:p-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
+      <header className="flex flex-wrap items-end justify-between gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-xs)] md:p-6">
         <div>
           <h1 className="text-2xl font-semibold">Reports</h1>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">
@@ -54,7 +54,7 @@ export default async function ReportsPage({
           </p>
         </div>
         <div
-          className="flex flex-wrap items-center gap-2"
+          className="flex flex-wrap items-center gap-1 rounded-lg border border-[var(--border)] bg-white/70 p-1.5 shadow-[var(--shadow-xs)]"
           aria-label="Report scope"
         >
           {REPORT_RANGES.map((r) => (

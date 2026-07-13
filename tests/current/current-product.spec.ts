@@ -177,6 +177,6 @@ test.describe("current merchant experience", () => {
       page.getByText("Source coverage", { exact: true }).first(),
     ).toBeVisible();
     await expect(page.locator("main canvas")).toHaveCount(0);
-    await expect(page.locator("main svg")).toHaveCount(0);
+    await expect(page.locator("main .recharts-wrapper")).toHaveCount(0);
   });
 });

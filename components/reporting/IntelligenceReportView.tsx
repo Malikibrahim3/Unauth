@@ -8,6 +8,8 @@ import { REPORT_DEFINITIONS } from "@/lib/reporting/intelligence";
 import { normaliseCurrencyOrNull } from "@/lib/canonical/money";
 import { formatDateTime, formatMinorCurrencyNullable } from "@/lib/utils/format";
 import { DashboardCharts } from "@/components/reporting/DashboardCharts";
+import { ArrowDownToLine, RotateCcw, ShieldCheck, TriangleAlert } from "lucide-react";
+import type { CSSProperties } from "react";
 
 function money(minor: number, currency: string) {
   return formatMinorCurrencyNullable(minor, currency);
@@ -16,12 +18,12 @@ function money(minor: number, currency: string) {
 function currencyLabel(currency: string) {
   return normaliseCurrencyOrNull(currency) ?? "Currency unavailable";
 }
-const STEPS: Array<[keyof MoneyBridge, string, string]> = [
-  ["requestedMinor", "Payout exposure", "Requested in this period"],
-  ["recoveredMinor", "Recovered", "Received and reconciled"],
-  ["preventedMinor", "Prevented", "Not paid after review"],
-  ["realisedLossMinor", "Realised loss", "Ledger-confirmed merchant loss"],
-];
+const STEPS = [
+  { key: "requestedMinor", label: "Payout exposure", definition: "Requested in this period", icon: TriangleAlert, accent: "var(--warning)" },
+  { key: "recoveredMinor", label: "Recovered", definition: "Received and reconciled", icon: RotateCcw, accent: "var(--success)" },
+  { key: "preventedMinor", label: "Prevented", definition: "Not paid after review", icon: ShieldCheck, accent: "var(--info)" },
+  { key: "realisedLossMinor", label: "Realised loss", definition: "Ledger-confirmed merchant loss", icon: ArrowDownToLine, accent: "var(--danger)" },
+] satisfies Array<{ key: keyof MoneyBridge; label: string; definition: string; icon: typeof TriangleAlert; accent: string }>;
 function RankedTable({
   title,
   description,
@@ -135,13 +137,15 @@ export function IntelligenceReportView({
                     {b.caseIds.length} underlying cases →
                   </Link>
                 </div>
-                <dl className="mt-2 grid border-y border-[var(--border-muted)] sm:grid-cols-2 lg:grid-cols-4">
-                  {STEPS.map(([key, label, definition]) => (
+                <dl className="ua-focal-panel mt-2 grid overflow-hidden rounded-[var(--radius-lg)] sm:grid-cols-2 lg:grid-cols-4">
+                  {STEPS.map(({ key, label, definition, icon: Icon, accent }) => (
                     <div
                       key={key}
-                      className="min-h-24 border-b border-[var(--border-muted)] p-3 sm:border-r"
+                      className="ua-metric-card min-h-28 border-b border-[var(--border-muted)] p-4 sm:border-r"
+                      style={{ '--metric-accent': accent } as CSSProperties}
                     >
-                      <dt className="text-sm text-[var(--text-secondary)]">
+                      <dt className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                        <span className="flex h-7 w-7 items-center justify-center rounded-md" style={{ background: `color-mix(in srgb, ${accent} 12%, white)`, color: accent }}><Icon size={14} aria-hidden="true" /></span>
                         {label}
                       </dt>
                       <dd className="mt-1 text-xl font-semibold tabular-nums">
@@ -170,12 +174,12 @@ export function IntelligenceReportView({
       {compact ? <DashboardCharts report={report} /> : null}
       <section className="border-t border-[var(--border-muted)] pt-5">
         <h2 className="text-lg font-semibold">Needs attention</h2>
-        <div className="mt-3 divide-y divide-[var(--border-muted)] rounded-lg border border-[var(--border)] bg-[var(--surface)]">
+        <div className="ua-section-panel mt-3 divide-y divide-[var(--border-muted)] overflow-hidden rounded-lg">
           {report.operations.slice(0, compact ? 4 : 8).map((row) => (
             <Link
               key={row.key}
               href={row.href}
-              className="flex items-center justify-between gap-4 p-3 hover:bg-[var(--surface-hover)]"
+              className="ua-table-row flex items-center justify-between gap-4 p-3.5 hover:bg-[var(--surface-hover)]"
             >
               <span className="text-sm">{row.label}</span>
               <span className="text-sm font-semibold tabular-nums text-[var(--accent)]">View {row.count} {row.count === 1 ? 'case' : 'cases'} →</span>

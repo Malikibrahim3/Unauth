@@ -11,7 +11,7 @@ export function ClaimReviewNextStepCard({ wb }: { wb: ClaimReviewWorkbench }) {
 
   return (
     <>
-      <div className="rounded-md px-4 py-3 border" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
+      <div className="ua-focal-panel overflow-hidden rounded-lg px-4 py-4" style={{ borderColor: 'var(--accent-border)', background: 'linear-gradient(145deg, var(--brand-signal-soft), var(--surface) 52%)' }}>
         <p className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--text-secondary)' }}>Evidence status</p>
         <p className="text-sm font-semibold leading-snug" style={{ color: 'var(--text)' }}>{primaryAction.label}</p>
         <p className="text-xs mt-1 mb-3 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{primaryAction.reason}</p>

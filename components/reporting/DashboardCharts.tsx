@@ -4,6 +4,7 @@ import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Too
 import type { ValueType } from 'recharts/types/component/DefaultTooltipContent';
 import type { IntelligenceReport } from '@/lib/reporting/intelligence';
 import { formatMoney } from '@/lib/utils/format';
+import { ChartNoAxesCombined } from 'lucide-react';
 
 export function DashboardCharts({ report }: { report: IntelligenceReport }) {
   const bridge = report.bridges[0];
@@ -60,5 +61,23 @@ export function DashboardCharts({ report }: { report: IntelligenceReport }) {
 }
 
 function ChartCard({ title, empty, children }: { title: string; empty: boolean; children: React.ReactNode }) {
-  return <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4"><h2 className="text-sm font-semibold">{title}</h2>{empty ? <p className="mt-8 text-sm text-[var(--text-secondary)]">No data in this period.</p> : <div className="mt-3">{children}</div>}</div>;
+  return (
+    <div className="ua-section-panel min-h-[270px] overflow-hidden rounded-lg">
+      <div className="ua-panel-header flex items-center gap-2 px-4 py-3">
+        <ChartNoAxesCombined size={15} className="text-[var(--brand-deep)]" aria-hidden="true" />
+        <h2 className="text-sm font-semibold">{title}</h2>
+      </div>
+      {empty ? (
+        <div className="p-4">
+          <div className="ua-empty-visual flex h-28 items-end gap-2 rounded-lg px-5 pb-4" aria-hidden="true">
+            {[32, 50, 39, 68, 48, 82, 61].map((height, index) => (
+              <span key={index} className="flex-1 rounded-t-sm bg-[var(--accent-border)] opacity-70" style={{ height }} />
+            ))}
+          </div>
+          <p className="mt-3 text-sm font-medium">Waiting for activity in this period</p>
+          <p className="mt-1 text-xs leading-relaxed text-[var(--text-secondary)]">Connected case and ledger events will populate this view without estimated or synthetic values.</p>
+        </div>
+      ) : <div className="p-4 pt-1">{children}</div>}
+    </div>
+  );
 }

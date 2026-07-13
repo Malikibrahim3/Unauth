@@ -14,6 +14,7 @@ import { caseDisplay } from '@/lib/ui/displayRef';
 import { label } from '@/lib/ui/labels';
 import { formatDateAbsolute } from '@/lib/utils/format';
 import { RowActionsMenu } from '@/components/ui/RowActionsMenu';
+import { ShieldCheck } from 'lucide-react';
 
 export function ClaimReviewHeader({ wb }: { wb: ClaimReviewWorkbench }) {
   const router = useRouter();
@@ -32,11 +33,15 @@ export function ClaimReviewHeader({ wb }: { wb: ClaimReviewWorkbench }) {
 
   return (
     <header
-      className="border-b px-4 py-4 md:px-6"
+      className="border-b px-4 py-5 md:px-6"
       style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
     >
       <div className="max-w-[1440px] mx-auto flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
+        <div className="flex min-w-0 items-start gap-3.5">
+          <span className="ua-identity-tile flex h-11 w-11 items-center justify-center text-sm font-bold text-[var(--brand-deep)]">
+            {customerName ? customerName.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase() : <ShieldCheck size={20} aria-hidden="true" />}
+          </span>
+          <div className="min-w-0">
           {selectedClaim ? (
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
@@ -45,12 +50,12 @@ export function ClaimReviewHeader({ wb }: { wb: ClaimReviewWorkbench }) {
                 </h1>
                 <StatusPill status={selectedClaim.status} />
               </div>
-              <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                <span>{caseDisplay({ customer_name: customerName, ref: selectedClaim.shopify_order_id ?? selectedClaim.order_ref, id: selectedClaim.id })}</span>
-                {selectedClaim.amount_at_risk != null && selectedClaim.currency ? <><span>·</span><span className="tabular-nums">{formatClaimMoney(selectedClaim.amount_at_risk, selectedClaim.currency)}</span></> : null}
-                <span>·</span><span>Requested: {selectedClaim.requested_action && selectedClaim.requested_action !== 'unknown' ? label('requestedAction', selectedClaim.requested_action) : 'Not specified'}</span>
-                {selectedClaim.created_at || selectedClaim.submitted_at ? <><span>·</span><span>Opened {formatDateAbsolute(selectedClaim.created_at ?? selectedClaim.submitted_at ?? '')}</span></> : null}
-              </p>
+              <p className="mt-1 text-sm font-medium text-[var(--text-secondary)]">{caseDisplay({ customer_name: customerName, ref: selectedClaim.shopify_order_id ?? selectedClaim.order_ref, id: selectedClaim.id })}</p>
+              <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-[var(--text-secondary)]">
+                {selectedClaim.amount_at_risk != null && selectedClaim.currency ? <span className="rounded-full border border-[var(--border)] bg-white/80 px-2.5 py-1 font-semibold tabular-nums text-[var(--text-primary)]">{formatClaimMoney(selectedClaim.amount_at_risk, selectedClaim.currency)} at risk</span> : null}
+                <span className="rounded-full border border-[var(--border)] bg-white/80 px-2.5 py-1">Requested: {selectedClaim.requested_action && selectedClaim.requested_action !== 'unknown' ? label('requestedAction', selectedClaim.requested_action) : 'Not specified'}</span>
+                {selectedClaim.created_at || selectedClaim.submitted_at ? <span className="rounded-full border border-[var(--border)] bg-white/80 px-2.5 py-1">Opened {formatDateAbsolute(selectedClaim.created_at ?? selectedClaim.submitted_at ?? '')}</span> : null}
+              </div>
             </div>
           ) : (
             <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Evidence review</span>
@@ -70,6 +75,7 @@ export function ClaimReviewHeader({ wb }: { wb: ClaimReviewWorkbench }) {
               ))}
             </select>
           ) : null}
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Link href={customerProfileHref} className="px-3 py-1.5 rounded-[6px] text-xs font-semibold" style={{ border: '1px solid var(--border)', color: 'var(--text-primary)' }}>

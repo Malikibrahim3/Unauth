@@ -40,7 +40,6 @@ export const STATUS_TONES: Record<string, StatusTone> = {
   collecting_evidence: 'info',
   ready_to_submit: 'info',
   ready_for_decision: 'info',
-  manual_review: 'info',
   submitted: 'info',
   investigation: 'info',
   recovery_opened: 'info',
@@ -70,6 +69,7 @@ export const STATUS_TONES: Record<string, StatusTone> = {
   probable: 'warning',
   review: 'warning',
   hold: 'warning',
+  manual_review: 'warning',
   // success — positive terminal
   paid: 'success',
   approved: 'success',

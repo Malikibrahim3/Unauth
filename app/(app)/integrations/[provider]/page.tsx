@@ -12,6 +12,7 @@ import { ConnectionActions } from "@/components/integrations/ConnectionActions";
 import { PanelCard } from "@/components/ui";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatDateTime, formatNumber } from "@/lib/utils/format";
+import { ProviderLogo } from "@/components/identity/ProviderLogo";
 
 export const dynamic = "force-dynamic";
 
@@ -87,8 +88,10 @@ export default async function ConnectionPage({
       >
         ← Integrations
       </Link>
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
+      <header className="flex flex-wrap items-start justify-between gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-xs)] md:p-6">
+        <div className="flex min-w-0 items-start gap-4">
+          <ProviderLogo provider={item.id} name={item.name} size="lg" />
+          <div>
           <p className="text-sm capitalize text-[var(--text-secondary)]">
             {item.category.replaceAll("_", " ")} · {item.stage}
           </p>
@@ -96,6 +99,7 @@ export default async function ConnectionPage({
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-secondary)]">
             {item.description}
           </p>
+          </div>
         </div>
         <StatusBadge family="workflowStatus" value={item.status === "import_complete" ? "connected" : item.status} />
       </header>
@@ -135,7 +139,7 @@ export default async function ConnectionPage({
           Connection health
         </h2>
         <dl className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <PanelCard variant="appInset" className="p-3">
+          <PanelCard variant="app" className="ua-metric-card p-3">
             <dt className="text-xs text-[var(--text-tertiary)]">Account</dt>
             <dd className="mt-1 truncate text-sm font-medium">
               {item.account ??
@@ -144,7 +148,7 @@ export default async function ConnectionPage({
                   : "Not connected")}
             </dd>
           </PanelCard>
-          <PanelCard variant="appInset" className="p-3">
+          <PanelCard variant="app" className="ua-metric-card p-3">
             <dt className="text-xs text-[var(--text-tertiary)]">
               Imported objects
             </dt>
@@ -152,7 +156,7 @@ export default async function ConnectionPage({
               {formatNumber(item.importedRecords)}
             </dd>
           </PanelCard>
-          <PanelCard variant="appInset" className="p-3">
+          <PanelCard variant="app" className="ua-metric-card p-3">
             <dt className="text-xs text-[var(--text-tertiary)]">
               Last successful sync
             </dt>
@@ -162,7 +166,7 @@ export default async function ConnectionPage({
                 : "No successful sync"}
             </dd>
           </PanelCard>
-          <PanelCard variant="appInset" className="p-3">
+          <PanelCard variant="app" className="ua-metric-card p-3">
             <dt className="text-xs text-[var(--text-tertiary)]">
               Granted scopes
             </dt>
