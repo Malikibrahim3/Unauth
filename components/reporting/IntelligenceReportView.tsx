@@ -7,6 +7,7 @@ import type {
 import { REPORT_DEFINITIONS } from "@/lib/reporting/intelligence";
 import { normaliseCurrencyOrNull } from "@/lib/canonical/money";
 import { formatDateTime, formatMinorCurrencyNullable } from "@/lib/utils/format";
+import { DashboardCharts } from "@/components/reporting/DashboardCharts";
 
 function money(minor: number, currency: string) {
   return formatMinorCurrencyNullable(minor, currency);
@@ -16,22 +17,10 @@ function currencyLabel(currency: string) {
   return normaliseCurrencyOrNull(currency) ?? "Currency unavailable";
 }
 const STEPS: Array<[keyof MoneyBridge, string, string]> = [
-  ["requestedMinor", "Requested exposure", "Amount requested by customers"],
-  ["paidMinor", "Customer compensation", "Paid or issued compensation"],
-  [
-    "preventedMinor",
-    "Prevented payout",
-    "Recorded merchant decision prevented payout",
-  ],
-  ["realisedLossMinor", "Realised loss", "Ledger-confirmed merchant loss"],
-  ["recoverableMinor", "Recoverable", "Supported for a recovery route"],
+  ["requestedMinor", "Payout exposure", "Requested in this period"],
   ["recoveredMinor", "Recovered", "Received and reconciled"],
-  [
-    "outstandingMinor",
-    "Outstanding",
-    "Recoverable less recovered and written off",
-  ],
-  ["writtenOffMinor", "Written off", "Recovery closed without receipt"],
+  ["preventedMinor", "Prevented", "Not paid after review"],
+  ["realisedLossMinor", "Realised loss", "Ledger-confirmed merchant loss"],
 ];
 function RankedTable({
   title,
@@ -111,12 +100,10 @@ export function IntelligenceReportView({
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 id="bridge-title" className="text-lg font-semibold">
-              Financial value bridge
+              Value this period
             </h2>
             <p className="mt-1 text-sm text-[var(--text-secondary)]">
-              Canonical case financial summaries ·{" "}
-              {report.range === "all" ? "all time" : `last ${report.range}`} ·{" "}
-              {report.timezone}
+              {report.range === "all" ? "All time" : `Last ${report.range}`}
             </p>
           </div>
           <p className="text-xs text-[var(--text-secondary)]">
@@ -158,7 +145,11 @@ export function IntelligenceReportView({
                         {label}
                       </dt>
                       <dd className="mt-1 text-xl font-semibold tabular-nums">
-                        {money(b[key] as number, b.currency)}
+                        {b[key] === 0
+                          ? key === "requestedMinor"
+                            ? "Nothing outstanding"
+                            : "Nothing recorded"
+                          : money(b[key] as number, b.currency)}
                       </dd>
                       <dd className="mt-1 text-xs text-[var(--text-secondary)]">
                         {definition}
@@ -176,22 +167,18 @@ export function IntelligenceReportView({
           </p>
         )}
       </section>
+      {compact ? <DashboardCharts report={report} /> : null}
       <section className="border-t border-[var(--border-muted)] pt-5">
         <h2 className="text-lg font-semibold">Needs attention</h2>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-3 divide-y divide-[var(--border-muted)] rounded-lg border border-[var(--border)] bg-[var(--surface)]">
           {report.operations.slice(0, compact ? 4 : 8).map((row) => (
             <Link
               key={row.key}
               href={row.href}
-              className="border border-[var(--border)] p-3"
+              className="flex items-center justify-between gap-4 p-3 hover:bg-[var(--surface-hover)]"
             >
-              <span className="block text-sm capitalize">{row.label}</span>
-              <strong className="mt-1 block text-2xl tabular-nums">
-                {row.count}
-              </strong>
-              <span className="text-xs text-[var(--accent)]">
-                Open matching records →
-              </span>
+              <span className="text-sm">{row.label}</span>
+              <span className="text-sm font-semibold tabular-nums text-[var(--accent)]">View {row.count} {row.count === 1 ? 'case' : 'cases'} →</span>
             </Link>
           ))}
         </div>
@@ -201,19 +188,19 @@ export function IntelligenceReportView({
           </p>
         ) : null}
       </section>
-      <RankedTable
+      {!compact ? <RankedTable
         title="Loss causes"
         description="Realised loss grouped by normalised request reason. Categories describe recorded causes, not causal inference."
         rows={report.causes.slice(0, compact ? 5 : 20)}
         empty="No realised-loss cause records were found in this period."
-      />
-      <RankedTable
+      /> : null}
+      {!compact ? <RankedTable
         title="Recovery performance"
         description="Reconciled recovered value grouped by recovery state."
         rows={report.recoveries.slice(0, compact ? 5 : 20)}
         empty="No recovery records were updated in this period."
-      />
-      <section className="border-t border-[var(--border-muted)] pt-5">
+      /> : null}
+      {!compact ? <section className="border-t border-[var(--border-muted)] pt-5">
         <h2 className="text-lg font-semibold">Source coverage</h2>
         <p className="mt-1 text-sm text-[var(--text-secondary)]">
           Object counts and freshness from imported records; fresh means updated
@@ -261,7 +248,7 @@ export function IntelligenceReportView({
             </tbody>
           </table>
         </div>
-      </section>
+      </section> : null}
       {!compact ? (
         <section className="border-t border-[var(--border-muted)] pt-5">
           <h2 className="text-lg font-semibold">Report definitions</h2>

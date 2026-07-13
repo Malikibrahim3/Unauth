@@ -58,7 +58,7 @@ export default async function DashboardPage({
             href="/work"
             className="min-h-10 rounded bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white"
           >
-            Open Work
+            Open work
           </Link>
           <Link
             href="/claims?sort=value"

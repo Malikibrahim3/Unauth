@@ -20,9 +20,9 @@ describe("payout-control reports contract", () => {
 
     const combined = `${page}\n${view}\n${model}`;
     expect(combined).toContain("Reports");
-    expect(combined).toContain("Financial value bridge");
-    expect(combined).toContain("Requested exposure");
-    expect(combined).toContain("Prevented payout");
+    expect(combined).toContain("Value this period");
+    expect(combined).toContain("Payout exposure");
+    expect(combined).toContain("Prevented");
     expect(combined).toContain("Realised loss");
     expect(combined).toContain("Recovery performance");
     expect(combined).toContain("Source coverage");
@@ -32,15 +32,17 @@ describe("payout-control reports contract", () => {
     expect(combined).not.toContain("Identity signal match rate");
   });
 
-  it("uses exact drillable tables instead of decorative charts", () => {
+  it("keeps exact drillable tables alongside the dashboard charts", () => {
     const view = read("components/reporting/IntelligenceReportView.tsx");
+    const charts = read("components/reporting/DashboardCharts.tsx");
 
     expect(view).toContain("<table");
     expect(view).toContain("underlying cases");
     expect(view).toContain("Inspect →");
-    expect(view).not.toContain("<canvas");
-    expect(view).not.toContain("<svg");
-    expect(view).not.toContain("recharts");
+    expect(charts).toContain("recharts");
+    expect(charts).toContain("Exposure and recovered");
+    expect(charts).toContain("Loss causes");
+    expect(charts).toContain("Recovery funnel");
   });
 
   it("rolls payout exposure and requested actions into report breakdowns", () => {
