@@ -64,9 +64,11 @@ test.describe("current merchant experience", () => {
     expect(href).toBeTruthy();
     await page.goto(href!);
     await expect(
-      page.getByText("Claim evidence context", { exact: true }),
+      page.getByText("Evidence on file", { exact: true }),
     ).toBeVisible();
-    await expect(page.getByText("Manage case", { exact: true })).toBeVisible();
+    await expect(
+      page.getByText("Manage evidence and lifecycle", { exact: true }),
+    ).toBeVisible();
     await expect(
       page.getByRole("region", { name: "Case comments" }),
     ).toBeVisible();
@@ -163,10 +165,10 @@ test.describe("current merchant experience", () => {
       page.getByRole("heading", { level: 1, name: "Reports" }),
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { level: 2, name: "Financial value bridge" }),
+      page.getByRole("heading", { level: 2, name: "Value this period" }),
     ).toBeVisible();
     await expect(
-      page.getByText("Requested exposure", { exact: true }).first(),
+      page.getByText("Payout exposure", { exact: true }).first(),
     ).toBeVisible();
     await expect(
       page.getByRole("heading", { level: 2, name: "Recovery performance" }),
