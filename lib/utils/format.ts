@@ -177,6 +177,18 @@ export function formatMoneyOrDash(
   return getMoneyFormatter(code).format(fromMinorUnits(minor, code));
 }
 
+const integerFormatter = new Intl.NumberFormat(MERCHANT_DISPLAY_LOCALE);
+
+/**
+ * Canonical count/number renderer — deterministic en-GB thousands separators
+ * (no runtime-locale drift, no hydration mismatch). Use for every count, not
+ * `.toLocaleString()`. Returns '—' for null/undefined/non-finite.
+ */
+export function formatNumber(value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(value)) return '—';
+  return integerFormatter.format(value);
+}
+
 export function formatRiskScore(score: number | null | undefined): string {
   if (typeof score !== 'number' || Number.isNaN(score)) return '—';
   return Math.round(score).toString();
