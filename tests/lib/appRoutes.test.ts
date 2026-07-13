@@ -73,8 +73,9 @@ describe("app route registry", () => {
   "Customers",
   "Rules",
   "Flows",
-  "Integrations",
   "Reports",
+  "Integrations",
+  "Settings",
 ]
 `);
   });
@@ -90,6 +91,15 @@ describe("app route registry", () => {
         "/chargebacks",
         "/store",
       ]),
+    );
+  });
+
+  it("keeps recovery-partner configuration out of merchant discovery", () => {
+    expect(getWorkbenchNavItems().map((item) => item.href)).not.toContain(
+      "/partners",
+    );
+    expect(getCommandPaletteNavItems().map((item) => item.href)).not.toContain(
+      "/partners",
     );
   });
 });

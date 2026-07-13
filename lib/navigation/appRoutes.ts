@@ -166,9 +166,11 @@ export const APP_ROUTES = {
     tierLabel: 'Rules',
     icon: Handshake,
     sidebar: false,
-    workbench: true,
-    commandPalette: true,
-    commandDescription: 'Configure carriers, 3PLs, suppliers, and recovery rules',
+    // Compatibility route for existing recovery configuration. Recovery parties
+    // belong to the loss/recovery workflow, not a competing merchant module.
+    workbench: false,
+    commandPalette: false,
+    commandDescription: 'Legacy recovery-partner configuration',
   },
   watchlist: {
     key: 'watchlist',
@@ -229,6 +231,7 @@ export const APP_ROUTES = {
     pageTitle: 'Settings',
     permission: PERMISSIONS.VIEW_SETTINGS,
     icon: Settings,
+    sidebar: true,
     commandPalette: true,
     commandDescription: 'Account and team settings',
   },
@@ -310,10 +313,10 @@ export const COMMAND_PALETTE_FILTERS = [
 ] as const;
 
 export const SIDEBAR_NAV_GROUPS: Array<{ label: string; routeKeys: AppRouteKey[] }> = [
-  { label: 'Overview', routeKeys: ['dashboard', 'work'] },
-  { label: 'Operations', routeKeys: ['claims', 'losses', 'recoveries', 'customers'] },
-  { label: 'Configure', routeKeys: ['rules', 'flows', 'integrations'] },
-  { label: 'Outcomes', routeKeys: ['reports'] },
+  { label: 'Overview', routeKeys: ['dashboard'] },
+  { label: 'Work', routeKeys: ['work', 'claims', 'losses', 'recoveries', 'customers'] },
+  { label: 'Configure', routeKeys: ['rules', 'flows'] },
+  { label: 'Reports and setup', routeKeys: ['reports', 'integrations', 'settings'] },
 ];
 
 export function getSidebarNavItems(permissions?: ReadonlySet<Permission>): Array<{ label: string; items: AppRoute[] }> {
