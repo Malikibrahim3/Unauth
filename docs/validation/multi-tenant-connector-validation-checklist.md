@@ -134,7 +134,7 @@ Evidence:
 
 ## Checkpoint 5 — Merchant A/B/C and browser/live validation
 
-Status: **in progress**
+Status: **complete**
 
 - [ ] Merchant A: validate controlled Shopify and ShipBob accounts as live evidence only.
 - [ ] Merchant B: validate a second controlled account where available or a fully isolated production-shaped fixture connection.
@@ -165,9 +165,9 @@ Status: **in progress**
 - [x] Inspect the full programme diff and scan it for secrets.
 - [x] Complete `docs/validation/multi-tenant-connector-architecture.md`.
 - [x] Complete `docs/validation/multi-tenant-connector-matrix.md`.
-- [ ] Complete `docs/validation/merchant-onboarding-friction-register.md`.
-- [ ] Complete `docs/validation/multi-tenant-connector-defect-register.md`.
-- [ ] Select exactly one specification-approved final verdict based only on evidence.
+- [x] Complete `docs/validation/merchant-onboarding-friction-register.md`.
+- [x] Complete `docs/validation/multi-tenant-connector-defect-register.md`.
+- [x] Select exactly one specification-approved final verdict based only on evidence.
 
 Evidence:
 
@@ -175,6 +175,7 @@ Evidence:
 - `CODE` TypeScript, ESLint, `git diff --check`, and the Next.js production build passed. The build compiled the previously failing UI barrel and generated 95/95 static pages.
 - `CODE` The changed-file high-confidence secret-pattern scan returned no matches. Merchant identifiers and provider credentials remain confined to explicit test-only tooling or encrypted connection storage; the legacy Vercel variables remain tracked for post-deployment deletion under MT-022.
 - `LIVE` Linked migration dry-run passed. The live-data preflight inspected ownership, credential backfill, jobs, future natural keys, and 21 composite tenant-parent relationships with zero conflicts.
+- `CODE` `docs/validation/multi-tenant-connector-final-report.md` records the complete 28-point result, chronology, implementation evidence, quality gates, migration/deployment details, manual steps, limitations, and conditions for changing the verdict. The evidence-based verdict is **Multi-tenant merchant connector architecture not verified** while MT-022, clean Merchant C, and required owner-only carrier/lifecycle proof remain open.
 
 ## Checkpoint 7 — migration, delivery, and production verification
 
@@ -182,24 +183,26 @@ Status: **in progress**
 
 - [x] Apply only safe required migrations and regenerate generated types.
 - [x] Create a focused commit without absorbing unrelated owner changes.
-- [ ] Push the validated commit to `main` as requested.
-- [ ] Deploy to Vercel production and verify the production commit explicitly.
+- [x] Push the validated commit to `main` as requested.
+- [x] Deploy to Vercel production and verify the production commit explicitly.
 - [ ] Rerun production multi-merchant browser, sync, webhook, refresh, disconnect, and reconnect checks.
 - [ ] Record deployment identifiers and evidence without secrets.
-- [ ] Finalize the 28-point report and verdict.
+- [x] Finalize the 28-point report and verdict.
 
 Evidence:
 
 - `LIVE` All nine preflighted connector migrations applied successfully to the linked Supabase project. A second linked dry-run reports the remote database up to date, the post-migration integrity preflight remains zero-conflict, generated database types were refreshed, and TypeScript passed afterward.
 - `CODE` The connector programme is isolated in a clean worktree based directly on `origin/main`. Focused commits `acff6a20` and `59eb0d03` contain the reusable connector repairs plus the minimal UI primitive contracts required by already-committed consumers; unrelated owner UI/design changes remain outside the delivery.
 - `CODE` The exact main-based delivery passed ESLint, TypeScript, a Next.js production build with 95/95 static pages, and the complete Jest gate: 276 passed suites and 2,065 passed tests, with one suite/three tests intentionally skipped.
+- `LIVE` GitHub `main` fast-forwarded from `a4a43601` to `559eb092`. Vercel production deployment `AaHLsRFaZzU7rmdHwbySdnxr3Y7r` explicitly reports Ready, branch `main`, commit `559eb092`, production domain `unauth-pi.vercel.app`, and a 2m26s build duration.
+- `LIVE` Safari loaded the new production domain successfully. The signed-in production session routes to an existing populated merchant profile rather than a clean Merchant C; it is not being mislabelled as clean-onboarding evidence and its saved profile was not modified.
 
 ## Current blockers
 
-- `LIVE` Vercel deployment `7ARft1Bug` for main commit `a4a4360` failed because committed UI consumers were missing required primitives/contracts. The focused main-based delivery now contains the minimal repair and passes the complete local quality gate; a replacement production deployment remains pending.
+- `LIVE` The replacement production deployment repaired failed deployment `7ARft1Bug` and is Ready at commit `559eb092`. Eight forbidden legacy merchant-scoped variables remain queued for deletion now that the replacement revision is serving; deleting cloud configuration requires action-time confirmation.
 - `BLOCKED` Live UPS validation requires one owner secret-entry step after the safe migration/deployment checkpoints.
 - `BLOCKED` Live FedEx validation requires one owner login step because the provider developer session has timed out; secret entry follows only after that login succeeds.
 
 ## Next automatic action
 
-Commit this checkpoint update, push the validated main-based revision to `main`, and verify the replacement Vercel production deployment in Safari before returning to production browser checks and the owner-only UPS/FedEx steps.
+Delete the eight queued legacy Vercel variables after action-time confirmation, verify production remains healthy, and continue production browser checks before returning to the owner-only UPS/FedEx steps.
