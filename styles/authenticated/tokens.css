@@ -1,0 +1,313 @@
+/*
+ * Authenticated design tokens — surfaces, ink, borders, brand/accent,
+ * geometry (radius/shadow/focus), density (control heights).
+ *
+ * Relocated verbatim from app/(app)/authenticated.css (no values changed).
+ * Semantic/status/risk tokens live in status.css. Type-role tokens live in
+ * typography.css. See styles/authenticated/README.md for the --ua-* alias
+ * contract and why both naming schemes coexist during the migration.
+ */
+.ua-app,
+.ua-auth-surface {
+  color-scheme: light;
+
+  /* Surfaces */
+  --bg: #f5f6f8;
+  --bg-canvas: #f5f6f8;
+  --bg-surface: #ffffff;
+  --bg-surface-alt: #f1f2f4;
+  --bg-surface-sunk: #eff1f4;
+  --bg-subtle: #f1f2f4;
+  --bg-muted: #eff1f4;
+  --bg-inset: #f7f8fa;
+  --bg-hover: #eceef2;
+  --bg-selected: #e7ecff;
+  --surface: #ffffff;
+  --surface-base: #f5f6f8;
+  --surface-raised: #ffffff;
+  --surface-overlay: #ffffff;
+  --surface-muted: #f1f2f4;
+  --surface-sunken: #eff1f4;
+  --surface-hover: #eceef2;
+  --surface-selected: #e7ecff;
+  --surface-subtle: #f1f2f4;
+  --surface-input: #ffffff;
+  --surface-border: #dde1e6;
+
+  /* Ink */
+  --text: #17191c;
+  --text-primary: #17191c;
+  --text-secondary: #5f6672;
+  --text-tertiary: #858c96;
+  --text-muted: #5f6672;
+  --text-subtle: #858c96;
+  --text-disabled: #b3b8c1;
+  --text-inverse: #ffffff;
+  --text-link: #3157d5;
+  --ink-primary: #17191c;
+  --ink-secondary: #5f6672;
+  --ink-tertiary: #858c96;
+  --ink-inverse: #ffffff;
+  --icon: #4f5661;
+  --icon-muted: #858c96;
+
+  /* Lines */
+  --border: #dde1e6;
+  --border-muted: #e7e9ed;
+  --border-subtle: #eceef1;
+  --border-default: #dde1e6;
+  --border-strong: #a7adb7;
+
+  /* Graphite + cobalt: one brand hue for action, focus, and selection. */
+  --accent: #3157d5;
+  --accent-hover: #2949b8;
+  --accent-soft: #eef2ff;
+  --accent-border: #cbd5ff;
+  --accent-subtle: #f4f6ff;
+  --brand-signal: #3157d5;
+  --brand-signal-soft: #eef2ff;
+  --brand-deep: #2949b8;
+  --accent-fg-on-500: #ffffff;
+  --action-primary: #3157d5;
+  --action-primary-hover: #2949b8;
+  --action-primary-soft: #eef2ff;
+  --action-ink: #3157d5;
+  --action-ink-hover: #2949b8;
+  --action-ink-soft: #eef2ff;
+  --primary: #3157d5;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f2f4;
+  --secondary-foreground: #17191c;
+
+  /* Geometry and depth */
+  --radius-xs: 3px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
+  --radius-1: 3px;
+  --radius-2: 4px;
+  --radius-3: 6px;
+  --radius-4: 8px;
+  --radius: 6px;
+  --radius-full: 9999px;
+  --radius-pill: 9999px;
+  --shadow-xs: 0 1px 2px rgba(23, 24, 22, 0.04);
+  --shadow-sm: 0 1px 2px rgba(23, 24, 22, 0.05);
+  --shadow-md: 0 1px 2px rgba(23, 24, 22, 0.06), 0 8px 24px rgba(23, 24, 22, 0.035);
+  --shadow-lg: 0 12px 30px rgba(23, 24, 22, 0.12);
+  --shadow-xl: 0 20px 48px rgba(23, 24, 22, 0.16);
+  --shadow-overlay: 0 18px 48px rgba(23, 24, 22, 0.16);
+  --shadow-drawer: -14px 0 40px rgba(23, 24, 22, 0.14);
+  --shadow-modal: 0 20px 60px rgba(23, 24, 22, 0.18);
+  --focus-ring: #456ce5;
+  --shadow-focus: 0 0 0 3px rgba(49, 87, 213, 0.22);
+
+  /* Density */
+  --button-height-sm: 30px;
+  --button-height-md: 34px;
+  --button-height-lg: 38px;
+  --input-height: 36px;
+
+  /* ════════════════════════════════════════════════════════════════════
+   * --ua-* authoritative alias layer (additive — introduced by the design-
+   * system consolidation, forwarding to the existing values above so
+   * nothing visually changes). Declared once here; dark-mode values flow
+   * through automatically because each alias forwards to a base variable
+   * that IS redeclared in the dark block below — var() resolves against
+   * the nearest declaration of the referenced property at use time, not
+   * at declaration time, so no dark-mode duplication is needed.
+   * ════════════════════════════════════════════════════════════════════ */
+
+  /* Surfaces */
+  --ua-canvas: var(--surface-base);
+  --ua-surface-primary: var(--surface);
+  --ua-surface-secondary: var(--surface-muted);
+  --ua-surface-muted: var(--surface-muted);
+  --ua-surface-hover: var(--surface-hover);
+  --ua-surface-selected: var(--surface-selected);
+  --ua-surface-inverse: var(--text-primary);
+  --ua-surface-disabled: var(--surface-muted);
+
+  /* Action / brand — not in the prompt's minimum contract, but Button,
+   * ModuleCard, and EmptyState all reference the brand accent directly, so
+   * it needs a --ua-* home too. */
+  --ua-accent: var(--accent);
+  --ua-accent-hover: var(--accent-hover);
+  --ua-accent-fg: var(--accent-fg-on-500);
+  --ua-accent-soft: var(--accent-soft);
+  --ua-accent-border: var(--accent-border);
+  --ua-brand-signal: var(--brand-signal);
+  --ua-brand-deep: var(--brand-deep);
+
+  /* Text */
+  --ua-text-primary: var(--text-primary);
+  --ua-text-secondary: var(--text-secondary);
+  --ua-text-tertiary: var(--text-tertiary);
+  --ua-text-disabled: var(--text-disabled);
+  --ua-text-inverse: var(--text-inverse);
+  --ua-text-link: var(--text-link);
+
+  /* Borders */
+  --ua-border-subtle: var(--border-subtle);
+  --ua-border-default: var(--border-default);
+  --ua-border-strong: var(--border-strong);
+  --ua-border-focus: var(--focus-ring);
+  --ua-border-critical: var(--critical-border);
+
+  /* Radius — deliberately small set. No component invents a one-off radius.
+   * NOTE: current components disagree with each other (Button/FilterChip use
+   * --radius-sm/4px; Input/Select/Card/MetricCard/Modal/DataTable use
+   * --radius-md/6px; PanelCard's app-variant uses --radius-lg/8px). Each
+   * alias below forwards to what its OWN canonical consumer already uses —
+   * see the migration register for the button-vs-input and Card-vs-PanelCard
+   * radius mismatches, which are real, pre-existing, and deferred to the
+   * craft pass rather than silently unified here. */
+  --ua-radius-none: 0px;
+  --ua-radius-sm: var(--radius-sm);
+  --ua-radius-control: var(--radius-sm);
+  --ua-radius-input: var(--radius-md);
+  --ua-radius-card: var(--radius-md);
+  --ua-radius-overlay: var(--radius-md);
+  --ua-radius-pill: var(--radius-full);
+
+  /* Shadows */
+  --ua-shadow-none: none;
+  --ua-shadow-subtle: var(--shadow-xs);
+  --ua-shadow-card: var(--shadow-md);
+  --ua-shadow-overlay: var(--shadow-overlay);
+  --ua-shadow-drawer: var(--shadow-drawer);
+  --ua-shadow-modal: var(--shadow-modal);
+  --ua-shadow-toast: var(--shadow-lg);
+
+  /* Control dimensions */
+  --ua-control-height-sm: var(--button-height-sm);
+  --ua-control-height-md: var(--button-height-md);
+  --ua-control-height-lg: var(--button-height-lg);
+  --ua-control-height-input: var(--input-height);
+  --ua-control-padding-x-sm: var(--space-2);
+  --ua-control-padding-x-md: var(--space-4);
+  --ua-control-padding-x-lg: var(--space-5);
+
+  /* Spacing — prompt's {0,1,2,3,4,5,6,8,10,12,16} scale mapped onto the
+   * existing sequential --space-0..11 scale by matching pixel value (the
+   * existing scale and the requested naming diverge above 24px: existing
+   * --space-7=32px lines up with the requested "8" step, --space-8=40px
+   * with "10", --space-9=48px with "12", --space-10=64px with "16").
+   *
+   * WARNING for anyone migrating a component: --ua-space-N is NOT always
+   * var(--space-N) — they agree for N=0..6 but diverge above that (e.g.
+   * --ua-space-8 is var(--space-7)/32px, NOT var(--space-8)/40px). A
+   * same-numeral find/replace of var(--space-8) → var(--ua-space-8) would
+   * silently shrink it. This is why component migration in this pass left
+   * every existing --space-N reference above 6 untouched rather than risk
+   * a mismatched swap — see the migration register. */
+  --ua-space-0: var(--space-0);
+  --ua-space-1: var(--space-1);
+  --ua-space-2: var(--space-2);
+  --ua-space-3: var(--space-3);
+  --ua-space-4: var(--space-4);
+  --ua-space-5: var(--space-5);
+  --ua-space-6: var(--space-6);
+  --ua-space-8: var(--space-7);
+  --ua-space-10: var(--space-8);
+  --ua-space-12: var(--space-9);
+  --ua-space-16: var(--space-10);
+
+  /* Motion */
+  --ua-duration-fast: var(--duration-fast);
+  --ua-duration-normal: var(--duration-base);
+  --ua-ease-standard: var(--ease-standard);
+
+  /* Layers — forwarding to the existing, already-shared, non-duplicated
+   * z-index scale in app/globals.css (not moved; it isn't broken). */
+  --ua-z-header: var(--z-sticky);
+  --ua-z-sidebar: var(--z-base);
+  --ua-z-dropdown: var(--z-dropdown);
+  --ua-z-drawer: var(--z-drawer);
+  --ua-z-modal: var(--z-modal);
+  --ua-z-toast: var(--z-toast);
+}
+
+:root[data-theme="dark"] .ua-app,
+:root[data-theme="dark"] .ua-auth-surface {
+  color-scheme: dark;
+
+  --bg: #111315;
+  --bg-canvas: #111315;
+  --bg-surface: #181b1e;
+  --bg-surface-alt: #1d2024;
+  --bg-surface-sunk: #0d0f11;
+  --bg-subtle: #1d2024;
+  --bg-muted: #1d2024;
+  --bg-inset: #15181b;
+  --bg-hover: #23272b;
+  --bg-selected: #202b4d;
+  --surface: #181b1e;
+  --surface-base: #111315;
+  --surface-raised: #181b1e;
+  --surface-overlay: #202328;
+  --surface-muted: #1d2024;
+  --surface-sunken: #0d0f11;
+  --surface-hover: #23272b;
+  --surface-selected: #202b4d;
+  --surface-subtle: #1d2024;
+  --surface-input: #15181b;
+  --surface-border: #30353b;
+
+  --text: #f1f3f5;
+  --text-primary: #f1f3f5;
+  --text-secondary: #b0b6bf;
+  --text-tertiary: #858d98;
+  --text-muted: #b0b6bf;
+  --text-subtle: #858d98;
+  --text-disabled: #626a75;
+  --text-inverse: #111315;
+  --text-link: #9fb3ff;
+  --ink-primary: #f1f3f5;
+  --ink-secondary: #b0b6bf;
+  --ink-tertiary: #858d98;
+  --ink-inverse: #111315;
+  --icon: #c2c7ce;
+  --icon-muted: #858d98;
+
+  --border: #30353b;
+  --border-muted: #292e34;
+  --border-subtle: #24292e;
+  --border-default: #30353b;
+  --border-strong: #555d68;
+
+  --accent: #8fa7ff;
+  --accent-hover: #b1c0ff;
+  --accent-soft: #202b4d;
+  --accent-border: #3b4f83;
+  --accent-subtle: #18213a;
+  --brand-signal: #8fa7ff;
+  --brand-signal-soft: #202b4d;
+  --brand-deep: #b1c0ff;
+  --accent-fg-on-500: #10131b;
+  --action-primary: #8fa7ff;
+  --action-primary-hover: #b1c0ff;
+  --action-primary-soft: #202b4d;
+  --action-ink: #9fb3ff;
+  --action-ink-hover: #c1ccff;
+  --action-ink-soft: #202b4d;
+  --primary: #8fa7ff;
+  --primary-foreground: #10131b;
+  --secondary: #23272b;
+  --secondary-foreground: #f1f3f5;
+
+  --focus-ring: #9fb3ff;
+  --shadow-focus: 0 0 0 3px rgba(143, 167, 255, .28);
+
+  --background: var(--surface-base);
+  --foreground: var(--text-primary);
+  --card: var(--surface);
+  --card-foreground: var(--text-primary);
+  --popover: var(--surface-overlay);
+  --popover-foreground: var(--text-primary);
+  --muted: var(--surface-muted);
+  --muted-foreground: var(--text-secondary);
+  --input: var(--border-default);
+  --ring: var(--focus-ring);
+}

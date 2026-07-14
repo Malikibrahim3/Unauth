@@ -1,4 +1,4 @@
-import "../(app)/authenticated.css";
+import "../../styles/authenticated/index.css";
 
 export default function OnboardingRouteLayout({
   children,

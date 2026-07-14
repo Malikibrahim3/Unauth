@@ -1,0 +1,11 @@
+/*
+ * Shared responsive overrides. Relocated verbatim from
+ * app/(app)/authenticated.css. Page-specific responsive exceptions do not
+ * belong here — only global layout contracts.
+ */
+@media (max-width: 767px) {
+  .ua-app {
+    --button-height-md: 38px;
+    --input-height: 40px;
+  }
+}

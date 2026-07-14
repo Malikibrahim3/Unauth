@@ -1,0 +1,23 @@
+/*
+ * Unauth authenticated design system — single entry point.
+ * ---------------------------------------------------------
+ * This is the only visual authority for signed-in product surfaces
+ * (`.ua-app` / `.ua-auth-surface`). Public/landing tokens intentionally
+ * remain in app/globals.css and are not inherited here.
+ *
+ * Import this file — and only this file — from an authenticated route
+ * entry point. Do not import individual files below directly; do not add a
+ * second authenticated stylesheet entry point.
+ *
+ * See README.md for the component taxonomy and the --ua-* token contract.
+ */
+@import "./tokens.css";
+@import "./foundations.css";
+@import "./typography.css";
+@import "./surfaces.css";
+@import "./controls.css";
+@import "./status.css";
+@import "./tables.css";
+@import "./overlays.css";
+@import "./states.css";
+@import "./responsive.css";

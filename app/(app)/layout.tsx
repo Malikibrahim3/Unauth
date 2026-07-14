@@ -30,7 +30,7 @@ import {
   PERMISSIONS,
   type Permission,
 } from "@/lib/permissions";
-import "./authenticated.css";
+import "../../styles/authenticated/index.css";
 
 export const dynamic = "force-dynamic";
 

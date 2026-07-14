@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import '../(app)/authenticated.css';
+import '../../styles/authenticated/index.css';
 
 export const metadata: Metadata = {
   title: 'Context backfill running | Unauth',

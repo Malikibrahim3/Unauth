@@ -1,0 +1,23 @@
+/*
+ * Base visual contract for interactive controls (inputs, buttons, links).
+ * Relocated verbatim from app/(app)/authenticated.css. Component-level
+ * variants (Button primary/secondary/ghost/danger, Input, Select) are
+ * implemented in components/ui/*.tsx and consume these same tokens — see
+ * docs/design/authenticated-component-migration-register.md for their
+ * current --ua-* alias adoption status.
+ */
+.ua-app :where(input, select, textarea) {
+  border-color: var(--border-default);
+  background: var(--surface-input);
+  box-shadow: inset 0 1px 2px rgba(23, 24, 22, .035);
+}
+
+.ua-app :where(button, a) {
+  transition-property: color, background-color, border-color, box-shadow, transform;
+  transition-duration: 140ms;
+  transition-timing-function: ease;
+}
+
+.ua-app :where(button):active:not(:disabled) {
+  transform: translateY(1px);
+}
