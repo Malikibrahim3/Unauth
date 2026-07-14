@@ -28,6 +28,10 @@ describe('ShipBob form-post callback', () => {
     expect(source).toContain('userId: callbackUserId');
   });
 
+  it('converts the provider form POST into a browser GET redirect', () => {
+    expect(source).toContain('NextResponse.redirect(url, 303)');
+  });
+
   it('still checks the initiating user permission for the transaction merchant', () => {
     expect(source).toContain('callbackUserId,\n      transaction.merchantId,');
     expect(source).toContain('PERMISSIONS.MANAGE_SETTINGS');

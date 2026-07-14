@@ -26,7 +26,10 @@ export const maxDuration = 60;
 function redirect(params: Record<string, string>): NextResponse {
   const url = new URL('/integrations', getAppUrl());
   for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
-  return NextResponse.redirect(url);
+  // The provider returns a form_post. A 307 would preserve that POST across
+  // the application redirect (and eventually hit /login with POST); 303 is the
+  // OAuth-safe POST/Redirect/GET transition.
+  return NextResponse.redirect(url, 303);
 }
 
 async function callbackParams(request: NextRequest): Promise<{ code: string | null; state: string | null; error: string | null }> {
