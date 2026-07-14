@@ -192,3 +192,24 @@ There are two independent scoring paths. Do not conflate them.
 
 - `no-restricted-imports`: `scoreToGrade` must come from `@/lib/engine/weights`, not `@/lib/utils/riskStyles`.
 - `no-restricted-imports`: `CONFIDENCE_THRESHOLDS` must come from `@/lib/engine/weights`, not `@/lib/utils/confidenceStyles`.
+
+---
+
+## Authenticated Design System (binding)
+
+`styles/authenticated/` is the sole source of truth for every visual value used by `app/(app)/**` and the authenticated-consumed parts of `components/**`. Read `styles/authenticated/README.md` before touching authenticated styling.
+
+1. All authenticated design values come from `styles/authenticated/`. Do not invent a new colour, radius, shadow, or control height locally.
+2. Pages may compose primitives but may not invent new visual systems.
+3. Hardcoded authenticated colours are prohibited except documented data-visualisation and provider-brand exceptions (see the README's "Exception mechanism").
+4. New radii, shadows, and control heights require a design-system change (a new `--ua-*` token), not a local class or inline value.
+5. Status badges and filter chips are separate component types — a status badge is non-interactive; a filter chip is.
+6. Interactive controls must not be styled as non-interactive statuses.
+7. Buttons use the shared `Button`/`ButtonLink` components.
+8. Authenticated tables use the shared `DataTable` contract.
+9. Marketing tokens (`--landing-*`, `--fl-*`, `components/ui/tokens.ts`, `components/ui/LandingPrimitives.tsx`) must not be imported into new authenticated code.
+10. Public landing styles must remain isolated from the authenticated scope, and vice versa.
+11. New component variants require documentation in `styles/authenticated/README.md`.
+12. Accessibility and visible focus states are mandatory on every interactive control.
+13. A page may not introduce one-off colours, pills, cards, typography, or shadows for aesthetic preference.
+14. `npm run lint:authenticated-design` must pass before completing any authenticated styling change.
