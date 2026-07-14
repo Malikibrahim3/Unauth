@@ -31,8 +31,8 @@ export function SectionCard({
       style={{
         background: "var(--surface)",
         border: "1px solid var(--border)",
-        borderRadius: "var(--radius-md)",
-        boxShadow: "var(--shadow-md)",
+        borderRadius: "var(--ua-radius-card)",
+        boxShadow: "var(--ua-shadow-card)",
         ...style,
       }}
     >

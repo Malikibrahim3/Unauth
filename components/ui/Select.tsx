@@ -14,10 +14,10 @@ export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSel
           className,
         )}
         style={{
-          height: 'var(--input-height)',
+          height: 'var(--ua-control-height-input)',
           background: 'var(--surface-sunken)',
           border: '1px solid var(--border)',
-          borderRadius: 'var(--radius-md)',
+          borderRadius: 'var(--ua-radius-input)',
           color: 'var(--text-primary)',
           paddingRight: 32,
           ...style,

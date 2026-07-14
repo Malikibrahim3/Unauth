@@ -83,7 +83,7 @@ export function Drawer({
       aria-label={title ? undefined : (ariaLabel ?? 'Panel')}
       aria-labelledby={title ? titleId : undefined}
       className="fixed inset-0 flex justify-end"
-      style={{ zIndex: 'var(--z-drawer)' as unknown as number }}
+      style={{ zIndex: 'var(--ua-z-drawer)' as unknown as number }}
     >
       {closeOnBackdrop ? (
         <button
@@ -102,7 +102,7 @@ export function Drawer({
           width: typeof width === 'number' ? `min(${width}px, 100vw)` : width,
           background: 'var(--surface)',
           borderLeft: '1px solid var(--border-muted)',
-          boxShadow: 'var(--shadow-drawer)',
+          boxShadow: 'var(--ua-shadow-drawer)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -115,14 +115,14 @@ export function Drawer({
               background: 'var(--surface)',
               position: 'sticky',
               top: 0,
-              zIndex: 'var(--z-sticky)' as unknown as number,
+              zIndex: 'var(--ua-z-header)' as unknown as number,
             }}
           >
             <h2 id={titleId} className="text-h3" style={{ color: 'var(--text-primary)' }}>{title}</h2>
             <button
               type="button"
               onClick={onClose}
-              className="flex h-11 w-11 items-center justify-center rounded-[var(--radius-sm)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)] transition-colors"
+              className="flex h-11 w-11 items-center justify-center rounded-[var(--ua-radius-control)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)] transition-colors"
               aria-label="Close"
             >
               <X className="w-4 h-4" />

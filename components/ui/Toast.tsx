@@ -61,7 +61,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext.Provider value={value}>
       {children}
       <div
-        className="pointer-events-none fixed bottom-4 right-4 z-[var(--z-toast)] flex w-[min(360px,calc(100vw-2rem))] flex-col gap-2"
+        className="pointer-events-none fixed bottom-4 right-4 z-[var(--ua-z-toast)] flex w-[min(360px,calc(100vw-2rem))] flex-col gap-2"
         role="region"
         aria-label="Notifications"
       >
@@ -70,7 +70,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             key={item.id}
             role="status"
             aria-live="polite"
-            className="ua-toast pointer-events-auto flex items-start gap-2.5 rounded-lg border bg-[var(--surface)] p-3 shadow-[var(--shadow-lg)]"
+            className="ua-toast pointer-events-auto flex items-start gap-2.5 rounded-lg border bg-[var(--surface)] p-3 shadow-[var(--ua-shadow-toast)]"
             style={{ borderColor: "var(--border)", borderLeft: `3px solid ${TONE[item.tone].border}` }}
           >
             <span className="mt-0.5 shrink-0">{TONE[item.tone].icon}</span>

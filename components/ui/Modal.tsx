@@ -98,7 +98,7 @@ export function Modal({
       style={{
         background: 'color-mix(in srgb, var(--text-primary) 44%, transparent)',
         backdropFilter: 'blur(4px)',
-        zIndex: 'var(--z-modal)' as unknown as number,
+        zIndex: 'var(--ua-z-modal)' as unknown as number,
       }}
       onClick={closeOnBackdrop ? onClose : undefined}
     >
@@ -108,11 +108,11 @@ export function Modal({
         aria-modal="true"
         tabIndex={-1}
         aria-label={ariaLabel ?? title ?? 'Modal'}
-        className={cn('rounded-[var(--radius-md)] overflow-hidden flex flex-col max-h-[90vh]', className)}
+        className={cn('rounded-[var(--ua-radius-overlay)] overflow-hidden flex flex-col max-h-[90vh]', className)}
         style={{
           background: 'var(--surface)',
           border: '1px solid var(--border)',
-          boxShadow: 'var(--shadow-modal)',
+          boxShadow: 'var(--ua-shadow-modal)',
           width: MODAL_WIDTHS[size],
           maxWidth: 'calc(100vw - 32px)',
         }}

@@ -143,7 +143,7 @@ export function DataTable<T>({
   return (
     <div
       className={cn(
-        "w-full overflow-x-auto rounded-[var(--radius-md)] border bg-[var(--surface)]",
+        "w-full overflow-x-auto rounded-[var(--ua-radius-card)] border bg-[var(--surface)]",
         className,
       )}
       style={{ borderColor: "var(--border)", boxShadow: "none" }}

@@ -38,14 +38,14 @@ export function EmptyState({
           style={{ color: 'var(--text)' }}
         >
           {icon ? (
-            <span aria-hidden="true" className="shrink-0" style={{ color: 'var(--accent)' }}>
+            <span aria-hidden="true" className="shrink-0" style={{ color: 'var(--ua-accent)' }}>
               {icon}
             </span>
           ) : (
             <span
               aria-hidden="true"
               className="h-1.5 w-1.5 shrink-0 rounded-full"
-              style={{ background: 'var(--accent)' }}
+              style={{ background: 'var(--ua-accent)' }}
             />
           )}
           {title}
@@ -80,17 +80,17 @@ export function EmptyState({
       {icon ? (
         <span
           className="ua-empty-visual mb-[var(--space-4)] flex h-14 w-14 items-center justify-center rounded-xl"
-          style={{ color: 'var(--brand-deep)' }}
+          style={{ color: 'var(--ua-brand-deep)' }}
           aria-hidden="true"
         >
           {icon}
         </span>
       ) : (
         <span className="ua-empty-visual mb-[var(--space-4)] grid h-14 w-14 grid-cols-2 place-content-center gap-1 rounded-xl" aria-hidden="true">
-          <span className="h-2 w-2 rounded-sm bg-[var(--brand-signal)]" />
-          <span className="h-2 w-2 rounded-sm bg-[var(--brand-deep)]" />
-          <span className="h-2 w-2 rounded-sm bg-[var(--accent-border)]" />
-          <span className="h-2 w-2 rounded-sm bg-[var(--text-tertiary)]" />
+          <span className="h-2 w-2 rounded-sm bg-[var(--ua-brand-signal)]" />
+          <span className="h-2 w-2 rounded-sm bg-[var(--ua-brand-deep)]" />
+          <span className="h-2 w-2 rounded-sm bg-[var(--ua-accent-border)]" />
+          <span className="h-2 w-2 rounded-sm bg-[var(--ua-text-tertiary)]" />
         </span>
       )}
       <h3 className="text-h2" style={{ color: 'var(--text-primary)' }}>

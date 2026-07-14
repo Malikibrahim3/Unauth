@@ -18,12 +18,12 @@ const CARD_STYLES: Record<CardVariant, CSSProperties> = {
   raised: {
     background: 'var(--surface-raised)',
     border: '1px solid color-mix(in srgb, var(--border) 88%, var(--text-primary))',
-    boxShadow: 'var(--shadow-md)',
+    boxShadow: 'var(--ua-shadow-card)',
   },
   overlay: {
     background: 'var(--surface)',
     border: '1px solid var(--border)',
-    boxShadow: 'var(--shadow-overlay)',
+    boxShadow: 'var(--ua-shadow-overlay)',
   },
   flat: {
     background: 'var(--surface)',
@@ -48,7 +48,7 @@ export function Card({
   const padding = CARD_PADDING[density];
   return (
     <div
-      className={cn('rounded-[var(--radius-md)]', className)}
+      className={cn('rounded-[var(--ua-radius-card)]', className)}
       style={{
         ...CARD_STYLES[variant],
         padding,

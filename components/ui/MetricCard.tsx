@@ -51,9 +51,9 @@ export function MetricCard({ label, value, delta, hint, icon, density = 'default
       style={{
         background: 'var(--surface)',
         border: '1px solid var(--border)',
-        borderRadius: 'var(--radius-md)',
+        borderRadius: 'var(--ua-radius-card)',
         padding,
-        boxShadow: 'var(--shadow-md)',
+        boxShadow: 'var(--ua-shadow-card)',
       }}
     >
       <div className="flex items-start justify-between gap-2">

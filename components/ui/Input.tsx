@@ -13,10 +13,10 @@ export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputE
         className,
       )}
       style={{
-        height: 'var(--input-height)',
+        height: 'var(--ua-control-height-input)',
         background: 'var(--surface-sunken)',
         border: '1px solid var(--border)',
-        borderRadius: 'var(--radius-md)',
+        borderRadius: 'var(--ua-radius-input)',
         color: 'var(--text-primary)',
         ...style,
       }}
