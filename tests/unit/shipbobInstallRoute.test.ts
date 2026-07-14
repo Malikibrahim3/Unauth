@@ -16,3 +16,20 @@ describe('ShipBob install route', () => {
     expect(source).toContain('environment,');
   });
 });
+
+describe('ShipBob form-post callback', () => {
+  const source = readFileSync(
+    join(process.cwd(), 'app/api/integrations/shipbob/callback/route.ts'),
+    'utf8',
+  );
+
+  it('uses the sealed initiating user when SameSite cookies are absent', () => {
+    expect(source).toContain("request.method === 'POST' ? oauthState.userId : null");
+    expect(source).toContain('userId: callbackUserId');
+  });
+
+  it('still checks the initiating user permission for the transaction merchant', () => {
+    expect(source).toContain('callbackUserId,\n      transaction.merchantId,');
+    expect(source).toContain('PERMISSIONS.MANAGE_SETTINGS');
+  });
+});

@@ -92,8 +92,15 @@ async function handleCallback(request: NextRequest) {
     const userClient = createClient();
     const serviceClient = createServiceClient();
     const { data: { user } } = await userClient.auth.getUser();
-    if (!user) return responseError('unauthorized');
-    if (oauthState.userId && oauthState.userId !== user.id) return responseError('identity_mismatch');
+    // ShipBob's hybrid OAuth response uses form_post. Browsers intentionally
+    // omit SameSite=Lax session cookies on that cross-site POST, so recover the
+    // initiating user only from our HMAC-sealed, short-lived state. The
+    // one-time transaction and current merchant permission are both verified
+    // below before any credential is persisted.
+    const callbackUserId = user?.id
+      ?? (request.method === 'POST' ? oauthState.userId : null);
+    if (!callbackUserId) return responseError('unauthorized');
+    if (oauthState.userId && oauthState.userId !== callbackUserId) return responseError('identity_mismatch');
     if (!env.SHIPBOB_OAUTH_CLIENT_ID || !env.SHIPBOB_OAUTH_CLIENT_SECRET) return responseError('misconfigured');
 
     const redirectUri = `${getAppUrl()}/api/integrations/shipbob/callback`;
@@ -101,7 +108,7 @@ async function handleCallback(request: NextRequest) {
     try {
       transaction = await consumeOAuthConnectionTransaction(serviceClient, {
         state,
-        userId: user.id,
+        userId: callbackUserId,
         providerId: 'shipbob',
         callbackUrl: redirectUri,
       });
@@ -111,7 +118,7 @@ async function handleCallback(request: NextRequest) {
     if (oauthState.merchantId !== transaction.merchantId) return responseError('identity_mismatch');
     const { denied, ctx: context } = await requirePermissionForMerchant(
       serviceClient,
-      user.id,
+      callbackUserId,
       transaction.merchantId,
       PERMISSIONS.MANAGE_SETTINGS,
     );
@@ -132,7 +139,7 @@ async function handleCallback(request: NextRequest) {
     if (channels.length > 1) {
       const selectionId = await createPendingAccountSelection(serviceClient, {
         merchantId: context.merchantId,
-        userId: user.id,
+        userId: callbackUserId,
         providerId: 'shipbob',
         environment: oauthState.sandbox ? 'sandbox' : 'production',
         accounts: channels.map((channel) => ({
@@ -150,7 +157,7 @@ async function handleCallback(request: NextRequest) {
     const completed = await completeShipBobConnection({
       client: serviceClient,
       merchantId: context.merchantId,
-      userId: user.id,
+      userId: callbackUserId,
       token,
       channel: channels[0]!,
       sandbox: oauthState.sandbox,
