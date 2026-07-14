@@ -58,7 +58,7 @@ export function DeliveryEvidenceCard({
           state={
             delivery.deliveryPhotoAvailable
               ? "present"
-              : delivery.afterShipConnected
+              : delivery.carrierDirectConnected
                 ? "unavailable"
                 : "unknown"
           }
@@ -68,7 +68,7 @@ export function DeliveryEvidenceCard({
           state={
             delivery.signatureAvailable
               ? "present"
-              : delivery.afterShipConnected
+              : delivery.carrierDirectConnected
                 ? "unavailable"
                 : "unknown"
           }

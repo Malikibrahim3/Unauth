@@ -22,7 +22,7 @@ import type { ClaimGateConnections, ClaimGateEvidence } from '@/lib/claim-gate/t
 export type EvidenceDimension = 'present' | 'missing' | 'unavailable';
 
 export type ClaimEvidenceState = {
-  // Delivery (carrier tracking — AfterShip)
+  // Delivery (direct UPS/FedEx carrier tracking)
   delivery_status: EvidenceDimension; // did the carrier report a status?
   delivery_scan: EvidenceDimension; // is there a delivered scan?
   proof_of_delivery: EvidenceDimension; // POD photo/signature present?

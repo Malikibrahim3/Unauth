@@ -11,7 +11,9 @@ describe('connector registry', () => {
   it('resolves registered connectors by id', () => {
     expect(getConnector('shopify')?.manifest.id).toBe('shopify');
     expect(getConnector('gorgias')?.manifest.id).toBe('gorgias');
-    expect(isConnectorRegistered('aftership')).toBe(true);
+    expect(isConnectorRegistered('ups')).toBe(true);
+    expect(isConnectorRegistered('fedex')).toBe(true);
+    expect(isConnectorRegistered('aftership')).toBe(false);
   });
 
   it('returns null / false for unknown providers', () => {
@@ -34,6 +36,6 @@ describe('connector registry', () => {
     const all = listConnectors().map((c) => c.manifest.id);
     const visible = launchVisibleConnectors().map((c) => c.manifest.id);
     expect(visible.every((id) => all.includes(id))).toBe(true);
-    expect(all).toEqual(expect.arrayContaining(['shopify', 'gorgias', 'aftership', 'shipbob', 'document_upload']));
+    expect(all).toEqual(expect.arrayContaining(['shopify', 'gorgias', 'ups', 'fedex', 'shipbob', 'document_upload']));
   });
 });

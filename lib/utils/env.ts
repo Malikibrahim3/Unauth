@@ -60,8 +60,11 @@ const envSchema = z.object({
   BILLING_CONTACT_EMAIL: z.string().email().optional(),
   /** Local/test-only secret for /api/test/e2e-auth — never set in production. */
   E2E_AUTH_SECRET: z.string().min(16).optional(),
-  /** Fallback tracking-provider credentials (merchant-stored creds take priority). */
-  AFTERSHIP_API_KEY: z.string().min(1).optional(),
+  /** Optional local credentials for direct carrier API smoke tests. */
+  UPS_CLIENT_ID: z.string().min(1).optional(),
+  UPS_CLIENT_SECRET: z.string().min(1).optional(),
+  FEDEX_CLIENT_ID: z.string().min(1).optional(),
+  FEDEX_CLIENT_SECRET: z.string().min(1).optional(),
   SHIPBOB_PAT: z.string().min(1).optional(),
   SHIPBOB_SANDBOX: z.string().optional(),
   SHIPBOB_OAUTH_CLIENT_ID: z.string().min(1).optional(),

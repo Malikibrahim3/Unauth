@@ -59,7 +59,7 @@ export function buildDeliveryFromFulfillment(row: {
     daysSinceDelivery,
     trackingProvider: null,
     trackingProviderConnected: false,
-    afterShipConnected: false,
+    carrierDirectConnected: false,
     scanCount: 0,
     lastScanAt: null,
     exceptionCount: 0,

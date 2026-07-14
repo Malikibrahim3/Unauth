@@ -12,10 +12,12 @@ import {
   loadConnectorCatalogue,
   type ConnectorCatalogueItem,
 } from "@/lib/connectors/catalogue";
-import { StatusBadge } from "@/components/ui/StatusBadge";
+import { LiveConnectionStatus } from "@/components/integrations/LiveConnectionStatus";
 import { formatDateTime, formatNumber } from "@/lib/utils/format";
 import { getConnectionState } from "@/lib/connections/getConnectionState";
+import { verifyMerchantLiveConnections } from "@/lib/connections/liveVerification";
 import { ProviderLogo } from "@/components/identity/ProviderLogo";
+import { humanise } from "@/lib/ui/labels";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +27,7 @@ const ATTENTION = new Set(["error", "attention_required", "revoked"]);
 function categoryLabel(category: string) {
   return category === "warehouse_3pl"
     ? "Warehouse / 3PL"
-    : category.replaceAll("_", " ");
+    : humanise(category);
 }
 
 function ConnectorRow({ item }: { item: ConnectorCatalogueItem }) {
@@ -45,7 +47,7 @@ function ConnectorRow({ item }: { item: ConnectorCatalogueItem }) {
         </div>
       </div>
       <div>
-        <StatusBadge family="workflowStatus" value={item.status === "import_complete" ? "connected" : item.status} />
+        <LiveConnectionStatus provider={item.id} initialStatus={item.status} />
       </div>
       <div className="min-w-0">
         <p className="line-clamp-2 text-xs leading-relaxed text-[var(--text-secondary)]">
@@ -90,14 +92,39 @@ export default async function IntegrationsPage() {
     PERMISSIONS.VIEW_SETTINGS,
   );
   if (denied || !ctx) redirect(await resolveDefaultAppPath(service, user.id));
-  const [catalogueRows, connectionState] = await Promise.all([
+  const [catalogueRows, connectionState, liveHealth] = await Promise.all([
     loadConnectorCatalogue(service, ctx.merchantId),
     getConnectionState(service, ctx.merchantId),
+    verifyMerchantLiveConnections(service, ctx.merchantId),
   ]);
   const catalogue = catalogueRows.map((item) => {
     const isOrderSource = item.id === connectionState.orderSourcePlatform;
     const isHelpdesk = item.id === connectionState.helpdeskProvider;
-    return isOrderSource || isHelpdesk ? { ...item, status: "connected" } : item;
+    const health = item.id === "shopify" && isOrderSource
+      ? liveHealth.shopify
+      : item.id === "gorgias" && isHelpdesk
+        ? liveHealth.gorgias
+        : null;
+    if (!health) {
+      const liveCheckExpected = (item.id === "shopify" && isOrderSource) || (item.id === "gorgias" && isHelpdesk);
+      return liveCheckExpected
+        ? { ...item, status: "attention_required", lastError: "Live verification is unavailable. We will retry automatically." }
+        : isOrderSource || isHelpdesk
+          ? { ...item, status: "connected" }
+          : item;
+    }
+
+    const status = health.status === "verified"
+      ? "connected"
+      : health.status === "failed"
+        ? "error"
+        : "attention_required";
+    const liveError = health.status === "verified"
+      ? null
+      : health.status === "failed"
+        ? `Live verification failed${health.reason ? `: ${health.reason}` : ". Reconnect this integration."}`
+        : "Live verification could not be completed. We will retry automatically.";
+    return { ...item, status, lastError: liveError };
   });
   const connected = catalogue.filter((item) => ACTIVE.has(item.status));
   const attention = catalogue.filter((item) => ATTENTION.has(item.status));

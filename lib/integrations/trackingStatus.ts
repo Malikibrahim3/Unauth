@@ -1,11 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/lib/supabase/tables';
 
-// Provider IDs that provide delivery-proof evidence (tracking + direct carrier proof).
-// AfterShip is category 'tracking'; UPS/FedEx are category 'carrier'.
-// All three count as a "tracking source" for the purposes of the nudge banner and
-// per-case delivery-evidence gap.
-export const TRACKING_PROVIDER_IDS = ['aftership', 'ups', 'fedex'] as const;
+// Direct carrier providers that provide tracking and delivery-proof evidence.
+export const TRACKING_PROVIDER_IDS = ['ups', 'fedex'] as const;
 
 /**
  * Returns true if at least one tracking/carrier provider is connected for the

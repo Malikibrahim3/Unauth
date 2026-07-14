@@ -1,6 +1,6 @@
 /**
  * The single connector contract. Every source provider (Shopify, Gorgias,
- * AfterShip, ShipBob, document upload, and future connectors) implements this
+ * UPS, FedEx, ShipBob, document upload, and future connectors) implements this
  * interface, so generic routes/runtime never branch on provider IDs.
  *
  * Provider adapter modules are WRAPPERS around existing proven OAuth/API/

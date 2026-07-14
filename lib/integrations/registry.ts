@@ -1,4 +1,3 @@
-import { aftershipProvider } from '@/lib/integrations/providers/aftership';
 import { carrierClaimsProvider } from '@/lib/integrations/providers/carrierClaims';
 import { documentUploadProvider } from '@/lib/integrations/providers/documentUpload';
 import { fedexProvider } from '@/lib/integrations/providers/fedex';
@@ -13,7 +12,6 @@ import type { IntegrationBuildStatus, IntegrationCategory, IntegrationProvider }
 export const INTEGRATION_PROVIDERS: IntegrationProvider[] = [
   shopifyProvider,
   gorgiasProvider,
-  aftershipProvider,
   upsProvider,
   fedexProvider,
   documentUploadProvider,

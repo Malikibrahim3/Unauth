@@ -6,7 +6,7 @@ import { buildClaimDecisionContext } from '@/lib/claims/decision/context';
 import { ensureClaimDecisionEvidence } from '@/lib/claims/decision/ensureEvidence';
 import { claimDecisionContextToSignals } from '@/lib/claims/decision/signals';
 import type { ClaimDecisionContext, ClaimDecisionEvaluationSource } from '@/lib/claims/decision/types';
-import { syncAfterShipEvidenceForCase } from '@/lib/integrations/syncAfterShipEvidence';
+import { syncCarrierEvidenceForCase } from '@/lib/integrations/syncCarrierEvidence';
 import { buildSupportPayoutCase } from '@/lib/payouts/supportPayoutCase';
 import { resolvePayoutRecommendation } from '@/lib/payouts/recommendation';
 import { derivePayoutWorkflow, withWorkflow } from '@/lib/payouts/workflow';
@@ -99,7 +99,7 @@ export async function evaluateClaimDecision(input: {
         source: 'pre_evaluation',
       });
       if (DELIVERY_CLAIM_TYPES_FOR_TRACKING_SYNC.has((claimRow.claim_type as string) ?? '')) {
-        await syncAfterShipEvidenceForCase({
+        await syncCarrierEvidenceForCase({
           client: input.client,
           merchantId: input.merchantId,
           supportPayoutCaseId: input.claimId,

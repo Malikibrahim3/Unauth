@@ -3,13 +3,14 @@ import { FileUp, PlugZap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const PROVIDER_LOGOS: Record<string, string> = {
-  aftership: '/integrations/aftership.svg',
   bigcommerce: '/integrations/bigcommerce.svg',
   document_upload: '/integrations/document-upload.svg',
   freshdesk: '/integrations/freshdesk.png',
+  fedex: '/integrations/fedex.svg',
   gorgias: '/integrations/gorgias.png',
   shipbob: '/integrations/shipbob.svg',
   shopify: '/integrations/shopify.svg',
+  ups: '/integrations/ups.svg',
   woocommerce: '/integrations/woocommerce.svg',
   zendesk: '/integrations/zendesk.svg',
 };
@@ -18,7 +19,6 @@ const SOURCE_ALIASES: Record<string, string> = {
   helpdesk: 'gorgias',
   shop: 'shopify',
   store: 'shopify',
-  tracking: 'aftership',
   warehouse: 'shipbob',
 };
 

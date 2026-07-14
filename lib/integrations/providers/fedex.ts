@@ -2,13 +2,13 @@ import type { IntegrationProvider, IntegrationCredentialPayload } from '@/lib/in
 
 export const fedexProvider: IntegrationProvider = {
   id: 'fedex',
-  name: 'FedEx (direct)',
+  name: 'FedEx',
   category: 'carrier',
   authMode: 'oauth',
   buildStatus: 'live',
-  description: 'Attempts to retrieve FedEx signature or delivery photo when captured for the shipment.',
-  evidenceCapabilities: ['delivery_photo', 'signature'],
-  capabilities: { readAttachments: true },
+  description: 'Direct FedEx tracking, scan history, delivery status, signature proof, and delivery imagery when available.',
+  evidenceCapabilities: ['tracking_number', 'tracking_events', 'delivery_status', 'delivery_photo', 'signature'],
+  capabilities: { readTracking: true, readAttachments: true },
 };
 
 function fedexBaseUrl(environment: string | undefined): string {

@@ -72,13 +72,13 @@ describe('reconcileRequestedActions', () => {
 });
 
 describe('buildEvidenceChecklist', () => {
-  it('marks tracking/POD present and unavailable photo/signature when AfterShip is active for INR', () => {
+  it('marks tracking/POD present and unavailable photo/signature when UPS is active for INR', () => {
     const res = buildEvidenceChecklist(makeContext({
       delivery: {
         ...makeContext().delivery!,
-        afterShipConnected: true,
+        carrierDirectConnected: true,
         trackingProviderConnected: true,
-        trackingProvider: 'aftership',
+        trackingProvider: 'ups',
       },
     }), 'item_not_received');
     const byKey = Object.fromEntries(res.items.map((i) => [i.key, i.state]));

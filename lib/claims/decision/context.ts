@@ -7,7 +7,7 @@ import { TABLES } from '@/lib/supabase/tables';
 import type { ClaimDecisionContext } from '@/lib/claims/decision/types';
 import {
   mergeDeliveryWithTrackingEvidence,
-  parseAfterShipEvidenceRows,
+  parseCarrierEvidenceRows,
   type TrackingEvidenceRow,
 } from '@/lib/integrations/trackingEvidenceSlice';
 import { getStoredIntegrationViews } from '@/lib/integrations/auth';
@@ -17,6 +17,14 @@ const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
 const CUSTOMER_EVIDENCE_TYPES = new Set(['customer_message', 'support_ticket']);
 const DELIVERY_EVIDENCE_TYPES = new Set(['tracking', 'proof_of_delivery', 'return_label', 'warehouse_scan']);
+
+function directCarrier(company: string | null | undefined, trackingNumber: string | null): 'ups' | 'fedex' | null {
+  const value = company?.trim().toLowerCase() ?? '';
+  if (value.includes('ups') || /^1Z[A-Z0-9]{16}$/i.test(trackingNumber ?? '')) return 'ups';
+  if (value.includes('fedex') || value.includes('federal express')) return 'fedex';
+  if (/^\d{12,22}$/.test(trackingNumber ?? '')) return 'fedex';
+  return null;
+}
 
 function daysSince(iso: string | null, nowMs: number = Date.now()): number | null {
   if (!iso) return null;
@@ -129,7 +137,7 @@ export async function buildClaimDecisionContext(
       .from('evidence_items')
       .select('evidence_type, summary, structured_value, source_created_at, source_record_id, source_system, source_metadata')
       .eq('merchant_id', merchantId)
-      .eq('source_system', 'aftership')
+      .in('source_system', ['ups', 'fedex'])
       .eq('claim_id', claimId),
     getStoredIntegrationViews(client, merchantId).then((views) => ({ data: views, error: null })),
     client
@@ -149,23 +157,27 @@ export async function buildClaimDecisionContext(
 
   let delivery: ClaimDecisionContext['delivery'] = null;
   const integrationViews = integrationViewsRes.data ?? [];
-  const afterShipConnected = integrationViews.some(
-    (view) => view.id === 'aftership' && view.status === 'connected',
+  const trackingNumber = fulfillmentRes.data?.tracking_number?.trim() ?? null;
+  const carrierProvider = directCarrier(fulfillmentRes.data?.tracking_company, trackingNumber);
+  const carrierConnected = carrierProvider != null && integrationViews.some(
+    (view) => view.id === carrierProvider && view.status === 'connected',
   );
-  const shopifyTrackingNumber = fulfillmentRes.data?.tracking_number?.trim() ?? null;
-  let afterShipRows = ((integrationEvidenceRes.data ?? []) as any[]).map(providerShapeFromCanonical) as TrackingEvidenceRow[];
-  if (afterShipRows.length === 0 && shopifyTrackingNumber) {
+  let carrierRows = ((integrationEvidenceRes.data ?? []) as any[])
+    .map(providerShapeFromCanonical) as TrackingEvidenceRow[];
+  carrierRows = carrierRows.filter((row) => row.source_provider === carrierProvider);
+  if (carrierRows.length === 0 && trackingNumber && carrierProvider) {
     const { data: byTracking } = await client
       .from('evidence_items')
       .select('evidence_type, summary, structured_value, source_created_at, source_record_id, source_system, source_metadata')
       .eq('merchant_id', merchantId)
-      .eq('source_system', 'aftership')
-      .eq('source_record_id', shopifyTrackingNumber);
-    afterShipRows = ((byTracking ?? []) as any[]).map(providerShapeFromCanonical) as TrackingEvidenceRow[];
+      .eq('source_system', carrierProvider)
+      .eq('source_record_id', trackingNumber);
+    carrierRows = ((byTracking ?? []) as any[]).map(providerShapeFromCanonical) as TrackingEvidenceRow[];
   }
-  const trackingSlice = parseAfterShipEvidenceRows(afterShipRows, {
-    afterShipConnected,
-    shopifyTrackingNumber,
+  const trackingSlice = parseCarrierEvidenceRows(carrierRows, {
+    provider: carrierProvider,
+    providerConnected: carrierConnected,
+    trackingNumber,
   });
   delivery = mergeDeliveryWithTrackingEvidence(fulfillmentRes.data, trackingSlice);
 

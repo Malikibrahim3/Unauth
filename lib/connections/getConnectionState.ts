@@ -21,7 +21,7 @@ export type ConnectionState = {
   helpdeskOnlyConnected: boolean;
   shopDomain: string | null;
   linkState: ShopifyLinkState;
-  /** True when at least one tracking/carrier provider (AfterShip, UPS, FedEx) is connected. */
+  /** True when at least one direct carrier provider (UPS or FedEx) is connected. */
   trackingConnected: boolean;
 };
 

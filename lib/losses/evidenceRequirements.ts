@@ -226,8 +226,8 @@ const SOURCE_PLAN: Record<string, EvidenceSourcePlan> = {
   },
   tracking_timeline: {
     whyItMatters: 'Shows carrier scan history, delivery exceptions, and timeline gaps.',
-    likelySourceProvider: 'aftership',
-    connectorRequired: 'tracking',
+    likelySourceProvider: 'carrier_api',
+    connectorRequired: 'carrier',
     counterpartyType: 'carrier',
     clarificationShouldBeRequested: false,
     blockedWithoutIt: true,
@@ -354,8 +354,8 @@ const SOURCE_PLAN: Record<string, EvidenceSourcePlan> = {
   },
   return_tracking: {
     whyItMatters: 'Shows return shipment movement and delivery to the warehouse.',
-    likelySourceProvider: 'aftership',
-    connectorRequired: 'tracking',
+    likelySourceProvider: 'carrier_api',
+    connectorRequired: 'carrier',
     counterpartyType: 'carrier',
     clarificationShouldBeRequested: false,
     blockedWithoutIt: true,

@@ -447,7 +447,7 @@ export type SupportPayoutCase = {
   nextAction: PayoutCaseNextAction;
   nextActionReason: string;
   evidence: EvidenceChecklistResult;
-  /** Concise AfterShip / Shopify delivery evidence summary for INR widget and case UI. */
+  /** Concise direct-carrier / Shopify delivery evidence summary for INR widget and case UI. */
   deliveryEvidenceLine: string;
   attribution: LossAttributionResult;
   clarificationRequests: CaseClarificationRequest[];

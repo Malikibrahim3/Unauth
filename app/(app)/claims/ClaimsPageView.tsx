@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { PageConnectionGate } from '@/components/connections/PageConnectionGate';
 import type { ConnectionState } from '@/lib/connections/getConnectionState';
-import { WorkbenchPage, WorkbenchEmptyState, ButtonLink, PanelCard } from '@/components/ui';
+import { WorkbenchPage, EmptyState, ButtonLink, Card, DataTableServer, FilterChip, SegmentedControl } from '@/components/ui';
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { dominantCurrency, formatCurrencyNullable, formatNumber } from '@/lib/utils/format';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
@@ -104,13 +104,44 @@ export function ClaimsPageView({
     }));
   // Display currency for aggregate KPIs: the most common case currency on record.
   const displayCurrency = dominantCurrency(recoveryMetricRows.length > 0 ? recoveryMetricRows : claims);
+  const emptyDescription = listView.kind === 'unread'
+    ? 'No payout cases with new evidence right now.'
+    : listView.kind === 'workflow' && listView.workflow === 'needs_evidence'
+      ? 'No payout cases needing evidence right now.'
+      : listView.kind === 'workflow' && listView.workflow === 'awaiting_carrier'
+        ? 'No payout cases awaiting carrier clarification right now.'
+        : listView.kind === 'workflow' && listView.workflow === 'awaiting_3pl'
+          ? 'No payout cases awaiting 3PL clarification right now.'
+          : listView.kind === 'workflow' && listView.workflow === 'awaiting_supplier'
+            ? 'No payout cases awaiting supplier clarification right now.'
+            : listView.kind === 'workflow' && listView.workflow === 'ready_for_decision'
+              ? 'No payout cases ready for decision right now.'
+              : listView.kind === 'workflow' && listView.workflow === 'manual_review'
+                ? 'No payout cases in manual review right now.'
+                : listView.kind === 'workflow' && listView.workflow === 'closed'
+                  ? 'No closed payout cases yet.'
+                  : listView.kind === 'history'
+                    ? 'No payout cases with recorded outcomes yet.'
+                    : listView.kind === 'snoozed'
+                      ? 'No deferred payout cases right now.'
+                      : listView.kind === 'assigned_me'
+                        ? 'No assigned payout cases right now.'
+                        : listView.kind === 'unassigned'
+                          ? 'No payout cases needing review right now.'
+                          : slaFilter === 'overdue'
+                            ? 'No ageing payout cases in this view.'
+                            : listView.kind === 'status' && listView.status === 'open'
+                              ? 'No payout cases with a policy match right now.'
+                              : listView.kind === 'status' && listView.status === 'pending'
+                                ? 'No payout cases waiting on source data right now.'
+                                : listView.kind === 'status' && listView.status === 'escalated'
+                                  ? 'No payout cases with strong identity evidence right now.'
+                                  : 'No payout cases match this filter.';
 
   return (
-    <PageConnectionGate requires="helpdesk" connection={connectionState} pageName="Payout Control" pageDescription="Connect Gorgias or Zendesk so Unauth can detect support payout moments, assemble evidence, apply merchant rules, and route recoverable losses." hasData={queueCounts.total > 0}>
+    <PageConnectionGate requires="helpdesk" connection={connectionState} pageName="Payout Control" pageDescription="Connect Gorgias or Zendesk so Unauth can create payout cases, assemble evidence, and apply your rules." hasData={queueCounts.total > 0}>
     <WorkbenchPage
-      eyebrow="Support payout control"
       title="Payout Control"
-      subtitle="Review support payout cases, check evidence, and record decisions — one queue."
       navItems={WORKBENCH_NAV_ITEMS}
       activeNavKey="claims"
       kpiItems={[
@@ -126,26 +157,10 @@ export function ClaimsPageView({
       }
       main={
         isEmpty ? (
-          <WorkbenchEmptyState
+          <EmptyState
             title="No payout cases yet"
-            description="Once support tickets or commerce events arrive, this workspace will show payout exposure, merchant-rule outcomes, attribution, recoverability, and partner chase-up lanes."
-            action={
-              <div className="grid gap-3 md:grid-cols-3">
-                {[
-                  { title: 'Payout detected', body: 'Refund, reship, replacement, discount, or store-credit request.' },
-                  { title: 'Evidence checked', body: 'Order, tracking, customer history, policy, and rule context.' },
-                  { title: 'Recovery routed', body: 'Carrier, 3PL, warehouse, supplier, merchant, or unknown owner.' },
-                ].map((item) => (
-                  <PanelCard key={item.title} variant="appInset" className="p-3">
-                    <p className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>{item.title}</p>
-                    <p className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>{item.body}</p>
-                  </PanelCard>
-                ))}
-                <Link href="/settings/integrations" className="text-caption font-semibold hover:underline md:col-span-3" style={{ color: 'var(--accent)' }}>
-                  Connect support and commerce sources
-                </Link>
-              </div>
-            }
+            description="Connect a support source to create payout cases from customer conversations."
+            action={<ButtonLink href="/settings/integrations" size="md">Connect support source</ButtonLink>}
           />
         ) : (
           <div>
@@ -157,43 +172,26 @@ export function ClaimsPageView({
                 aria-label="Payout case filters"
               >
                 {filterTabs.map((tab) => (
-                  <Link
+                  <FilterChip
                     key={tab.label}
                     href={tab.href}
-                    role="tab"
-                    aria-selected={tab.active}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-[6px] text-xs font-medium transition-colors"
-                    style={{
-                      background: tab.active ? 'var(--accent)' : 'var(--surface-sunken)',
-                      color: tab.active ? 'white' : 'var(--text-secondary)',
-                    }}
+                    active={tab.active}
+                    count={tab.count}
                   >
                     {tab.label}
-                    <span className="font-mono tabular-nums">{tab.count}</span>
-                  </Link>
+                  </FilterChip>
                 ))}
               </div>
               <div className="flex w-full flex-wrap items-center justify-between gap-3 sm:w-auto sm:justify-start">
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {[
-                    { label: 'Updated', href: `/claims${buildClaimsQueryString(sp, { sort: undefined, sla: undefined, page: '1' })}`, active: sort === 'updated' && !slaFilter },
-                    { label: 'Oldest', href: `/claims${buildClaimsQueryString(sp, { sort: 'age', sla: undefined, page: '1' })}`, active: sort === 'age' && !slaFilter },
-                    { label: 'Ageing first', href: `/claims${buildClaimsQueryString(sp, { sla: 'overdue', sort: 'age', page: '1' })}`, active: slaFilter === 'overdue' },
-                  ].map((item) => (
-                    <Link
-                      key={item.label}
-                      href={item.href}
-                      className="px-2.5 py-1 rounded-[6px] text-xs font-medium"
-                      style={{
-                        background: item.active ? 'var(--surface-sunken)' : 'transparent',
-                        color: item.active ? 'var(--text-primary)' : 'var(--text-tertiary)',
-                        border: item.active ? '1px solid var(--border)' : '1px solid transparent',
-                      }}
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
-                </div>
+                <SegmentedControl
+                  aria-label="Sort payout cases"
+                  value={slaFilter === 'overdue' ? 'ageing' : sort === 'age' ? 'oldest' : 'updated'}
+                  items={[
+                    { value: 'updated', label: 'Updated', href: `/claims${buildClaimsQueryString(sp, { sort: undefined, sla: undefined, page: '1' })}` },
+                    { value: 'oldest', label: 'Oldest', href: `/claims${buildClaimsQueryString(sp, { sort: 'age', sla: undefined, page: '1' })}` },
+                    { value: 'ageing', label: 'Ageing first', href: `/claims${buildClaimsQueryString(sp, { sla: 'overdue', sort: 'age', page: '1' })}` },
+                  ]}
+                />
                 <Suspense fallback={<span className="text-xs" style={{ color: 'var(--text-secondary)' }}>Rows…</span>}>
                   <PageSizeSelect pathname="/claims" pageSize={pageSize} />
                 </Suspense>
@@ -201,46 +199,10 @@ export function ClaimsPageView({
             </div>
 
             {claims.length === 0 ? (
-              <div
-                className="py-16 text-center"
-                style={{ color: 'var(--text-secondary)' }}
-              >
-                <p className="text-sm">
-                  {listView.kind === 'unread'
-                    ? 'No payout cases with new evidence right now.'
-                    : listView.kind === 'workflow' && listView.workflow === 'needs_evidence'
-                      ? 'No payout cases needing evidence right now.'
-                    : listView.kind === 'workflow' && listView.workflow === 'awaiting_carrier'
-                      ? 'No payout cases awaiting carrier clarification right now.'
-                    : listView.kind === 'workflow' && listView.workflow === 'awaiting_3pl'
-                      ? 'No payout cases awaiting 3PL clarification right now.'
-                    : listView.kind === 'workflow' && listView.workflow === 'awaiting_supplier'
-                      ? 'No payout cases awaiting supplier clarification right now.'
-                    : listView.kind === 'workflow' && listView.workflow === 'ready_for_decision'
-                      ? 'No payout cases ready for decision right now.'
-                    : listView.kind === 'workflow' && listView.workflow === 'manual_review'
-                      ? 'No payout cases in manual review right now.'
-                    : listView.kind === 'workflow' && listView.workflow === 'closed'
-                      ? 'No closed payout cases yet.'
-                    : listView.kind === 'history'
-                      ? 'No payout cases with recorded outcomes yet.'
-                      : listView.kind === 'snoozed'
-                        ? 'No deferred payout cases right now.'
-                        : listView.kind === 'assigned_me'
-                          ? 'No payout cases in this view.'
-                          : listView.kind === 'unassigned'
-                            ? 'No payout cases needing review right now.'
-                            : slaFilter === 'overdue'
-                              ? 'No ageing payout cases in this view.'
-                              : listView.kind === 'status' && listView.status === 'open'
-                                ? 'No payout cases with a policy match right now.'
-                                : listView.kind === 'status' && listView.status === 'pending'
-                                  ? 'No payout cases waiting on source data right now.'
-                                  : listView.kind === 'status' && listView.status === 'escalated'
-                                    ? 'No payout cases with high evidence density right now.'
-                                    : 'No payout cases match this filter.'}
-                </p>
-                {queueFilter === 'active' && (
+              <EmptyState
+                variant="compact"
+                title={emptyDescription}
+                action={queueFilter === 'active' ? (
                   <Link
                     href="/claims?queue=history"
                     className="mt-2 inline-block text-xs font-semibold hover:underline"
@@ -248,8 +210,8 @@ export function ClaimsPageView({
                   >
                     View recorded outcomes
                   </Link>
-                )}
-              </div>
+                ) : undefined}
+              />
             ) : (
               <ClaimsQueueClient
                 claims={claims}
@@ -280,13 +242,13 @@ export function ClaimsPageView({
             )}
 
             <div className="grid gap-4 px-4 py-4 border-t lg:grid-cols-2" style={{ borderColor: 'var(--border-muted)' }}>
-              <PanelCard as="section" variant="app" className="p-4" aria-labelledby="queue-health-title">
+              <Card unstyled as="section" variant="flat" className="p-4" aria-labelledby="queue-health-title">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p id="queue-health-title" className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>Queue health</p>
-                    <p className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>Counts stay actionable; no decorative chart or mixed denominator.</p>
+                    <p className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>Open work, new evidence, ageing and decisions.</p>
                   </div>
-                  <Link href="/work" className="text-xs font-semibold hover:underline" style={{ color: 'var(--accent)' }}>Open work queue</Link>
+                  <Link href="/work" className="text-xs font-semibold hover:underline" style={{ color: 'var(--text-link)' }}>Open work queue</Link>
                 </div>
                 <dl className="mt-3 divide-y" style={{ borderColor: 'var(--border-muted)' }}>
                   {[
@@ -298,32 +260,29 @@ export function ClaimsPageView({
                     <div key={item.label} className="flex items-center justify-between gap-4 py-2.5 first:pt-0 last:pb-0">
                       <dt className="text-xs" style={{ color: 'var(--text-secondary)' }}>{item.label}</dt>
                       <dd className="flex items-center gap-3">
-                        <span className="font-mono text-sm font-semibold tabular-nums" style={{ color: 'var(--text-primary)' }}>{item.value}</span>
-                        <Link href={item.href} className="text-xs font-semibold hover:underline" style={{ color: 'var(--accent)' }}>Review</Link>
+                        <span className="text-sm font-semibold tabular-nums" style={{ color: 'var(--text-primary)' }}>{item.value}</span>
+                        <Link href={item.href} className="text-xs font-semibold hover:underline" style={{ color: 'var(--text-link)' }}>Review</Link>
                       </dd>
                     </div>
                   ))}
                 </dl>
-              </PanelCard>
-              <PanelCard as="section" variant="app" className="p-4" aria-labelledby="request-mix-title">
-                <p id="request-mix-title" className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>Request types in this page</p>
-                <p className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>A compact table preserves exact values and works with assistive technology.</p>
+              </Card>
+              <Card unstyled as="section" variant="flat" className="p-4" aria-labelledby="request-mix-title">
+                <p id="request-mix-title" className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>Request types</p>
                 {claimTypeRows.length > 0 ? (
-                  <table className="mt-3 w-full text-xs">
-                    <caption className="sr-only">Payout request types on the current page</caption>
-                    <thead className="sr-only"><tr><th scope="col">Request type</th><th scope="col">Cases</th><th scope="col">Share</th></tr></thead>
-                    <tbody className="divide-y" style={{ borderColor: 'var(--border-muted)' }}>
-                      {claimTypeRows.map((item) => (
-                        <tr key={item.label}>
-                          <th scope="row" className="py-2.5 text-left font-medium" style={{ color: 'var(--text-secondary)' }}>{item.label}</th>
-                          <td className="py-2.5 text-right font-mono font-semibold tabular-nums" style={{ color: 'var(--text-primary)' }}>{item.value}</td>
-                          <td className="py-2.5 pl-4 text-right font-mono tabular-nums" style={{ color: 'var(--text-tertiary)' }}>{claims.length > 0 ? `${Math.round((item.value / claims.length) * 100)}%` : '—'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  <DataTableServer
+                    className="mt-3 border-0"
+                    rows={claimTypeRows}
+                    getRowKey={(item) => item.label}
+                    density="compact"
+                    columns={[
+                      { key: 'type', header: 'Request type', render: (item) => <span className="font-medium text-[var(--text-secondary)]">{item.label}</span> },
+                      { key: 'cases', header: 'Cases', align: 'right' as const, render: (item) => <span className="font-semibold tabular-nums">{item.value}</span> },
+                      { key: 'share', header: 'Share', align: 'right' as const, render: (item) => <span className="tabular-nums text-[var(--text-tertiary)]">{claims.length > 0 ? `${Math.round((item.value / claims.length) * 100)}%` : '—'}</span> },
+                    ]}
+                  />
                 ) : <p className="mt-3 text-xs" style={{ color: 'var(--text-tertiary)' }}>No classified payout requests in this page.</p>}
-              </PanelCard>
+              </Card>
             </div>
           </div>
         )

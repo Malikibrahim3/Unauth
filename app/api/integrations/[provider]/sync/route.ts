@@ -9,13 +9,11 @@ import {
   upsertMerchantIntegration,
 } from '@/lib/integrations/auth';
 import {
-  mapAfterShipTrackingToEvidence,
   mapCarrierProofToEvidence,
   mapShipBobFulfillmentToEvidence,
   mapShopifyDisputeToEvidence,
 } from '@/lib/integrations/evidenceMapper';
 import { writeCanonicalEvidence } from '@/lib/integrations/canonicalEvidence';
-import { fetchAfterShipTracking } from '@/lib/integrations/providers/aftership';
 import { fetchFedExDeliveryProof } from '@/lib/integrations/providers/fedex';
 import { fetchShopifyPaymentDisputes } from '@/lib/integrations/providers/shopify';
 import { fetchUpsDeliveryProof } from '@/lib/integrations/providers/ups';
@@ -128,17 +126,6 @@ export async function POST(
           finalized_at: dispute.finalizedOn ?? null,
         }, { onConflict: 'merchant_id,external_id' });
       }
-    } else if (provider.id === 'aftership') {
-      const credentials = await getIntegrationCredential(serviceClient, ctx.merchantId, provider.id);
-      if (!credentials?.apiKey) return NextResponse.json({ error: 'AfterShip is not connected.' }, { status: 400 });
-      const trackingNumber = await resolveTrackingNumber(serviceClient, ctx.merchantId, parsed.data.orderId, parsed.data.trackingNumber);
-      if (!trackingNumber) return NextResponse.json({ error: 'Tracking number is required for AfterShip sync.' }, { status: 400 });
-      const tracking = await fetchAfterShipTracking({ apiKey: String(credentials.apiKey), trackingNumber });
-      normalized = mapAfterShipTrackingToEvidence(tracking, {
-        merchantId: ctx.merchantId,
-        supportPayoutCaseId: parsed.data.supportPayoutCaseId,
-        now,
-      });
     } else if (provider.id === 'shipbob') {
       // ShipBob OAuth tokens live ~1 hour — refresh before use or this fetch
       // starts failing an hour after the merchant connects.

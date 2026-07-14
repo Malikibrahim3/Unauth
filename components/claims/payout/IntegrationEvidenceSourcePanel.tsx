@@ -1,7 +1,7 @@
 'use client';
 
 import type { EvidencePack } from '@/lib/integrations/types';
-import { PanelCard } from '@/components/ui';
+import { Card } from '@/components/ui';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 
 function labelSummary(summary: string) {
@@ -21,7 +21,7 @@ export function IntegrationEvidenceSourcePanel({
   if (connected.length === 0) return null;
 
   return (
-    <PanelCard as="section" variant="app" className="p-4">
+    <Card unstyled as="section" variant="flat" className="p-4">
       <div className="mb-3 flex items-center justify-between gap-3">
         <p className="text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>
           Connected evidence sources
@@ -40,7 +40,7 @@ export function IntegrationEvidenceSourcePanel({
             ...attemptedUnavailable.map((item) => item.message),
           ];
           return (
-            <PanelCard key={source.providerId} as="li" variant="appInset" className="p-3 text-sm">
+            <Card unstyled key={source.providerId} as="li" variant="inset" className="p-3 text-sm">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-semibold" style={{ color: 'var(--text)' }}>{source.providerName}</span>
                 <StatusBadge family="workflowStatus" value="connected" size="sm" />
@@ -48,10 +48,10 @@ export function IntegrationEvidenceSourcePanel({
               <p className="mt-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
                 {summaries.length > 0 ? summaries.map(labelSummary).join(' · ') : 'Connected, no matching evidence found for this case yet'}
               </p>
-            </PanelCard>
+            </Card>
           );
         })}
       </ul>
-    </PanelCard>
+    </Card>
   );
 }

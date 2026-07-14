@@ -18,7 +18,7 @@ export type TrackingEvidenceRow = {
 };
 
 export type TrackingProviderSlice = {
-  provider: 'aftership' | 'ups' | 'fedex' | null;
+  provider: 'ups' | 'fedex' | null;
   connected: boolean;
   status: string | null;
   tag: string | null;
@@ -52,7 +52,7 @@ function parseDate(...values: unknown[]): string | null {
   return null;
 }
 
-function parseAfterShipStatus(tag: string | null): string {
+function parseCarrierStatus(tag: string | null): string {
   if (!tag) return 'unknown';
   const normalized = tag.toLowerCase();
   if (normalized.includes('deliver')) return 'delivered';
@@ -83,23 +83,28 @@ export function emptyTrackingProviderSlice(provider: TrackingProviderSlice['prov
   };
 }
 
-export function parseAfterShipEvidenceRows(
+export function parseCarrierEvidenceRows(
   rows: TrackingEvidenceRow[],
   input: {
-    afterShipConnected: boolean;
-    shopifyTrackingNumber: string | null;
+    provider: 'ups' | 'fedex' | null;
+    providerConnected: boolean;
+    trackingNumber: string | null;
   },
 ): TrackingProviderSlice {
-  const slice = emptyTrackingProviderSlice('aftership');
-  slice.connected = input.afterShipConnected;
-  slice.provider = 'aftership';
-  slice.trackingNumber = input.shopifyTrackingNumber;
+  const slice = emptyTrackingProviderSlice(input.provider);
+  slice.connected = input.providerConnected;
+  slice.provider = input.provider;
+  slice.trackingNumber = input.trackingNumber;
 
-  if (!input.shopifyTrackingNumber) {
+  if (!input.trackingNumber) {
     slice.gap = 'no_tracking_number';
     return slice;
   }
-  if (!input.afterShipConnected) {
+  if (!input.provider) {
+    slice.gap = 'carrier_unsupported';
+    return slice;
+  }
+  if (!input.providerConnected) {
     slice.gap = 'provider_not_connected';
     return slice;
   }
@@ -162,7 +167,7 @@ export function mergeDeliveryWithTrackingEvidence(
     daysSinceDelivery: null,
     trackingProvider: null,
     trackingProviderConnected: false,
-    afterShipConnected: false,
+    carrierDirectConnected: false,
     scanCount: 0,
     lastScanAt: null,
     exceptionCount: 0,
@@ -175,9 +180,9 @@ export function mergeDeliveryWithTrackingEvidence(
 
   const trackingNumber = base.trackingNumber ?? tracking.trackingNumber;
   const hasTracking = Boolean(trackingNumber);
-  const afterShipStatus = tracking.trackingFound ? parseAfterShipStatus(tracking.status) : null;
-  const status = afterShipStatus && afterShipStatus !== 'unknown'
-    ? afterShipStatus
+  const carrierStatus = tracking.trackingFound ? parseCarrierStatus(tracking.status) : null;
+  const status = carrierStatus && carrierStatus !== 'unknown'
+    ? carrierStatus
     : base.status;
   const deliveredAt = tracking.deliveredAt ?? base.deliveredAt;
   const carrier = tracking.carrier ?? base.carrier;
@@ -206,7 +211,7 @@ export function mergeDeliveryWithTrackingEvidence(
     daysSinceDelivery,
     trackingProvider: tracking.provider,
     trackingProviderConnected: tracking.connected,
-    afterShipConnected: tracking.connected && tracking.provider === 'aftership',
+    carrierDirectConnected: tracking.connected && tracking.provider != null,
     scanCount: tracking.scanCount,
     lastScanAt: tracking.lastScanAt,
     exceptionCount: tracking.exceptionCount,
@@ -236,7 +241,7 @@ export function formatDeliveryEvidenceLine(delivery: DeliverySlice | null): stri
     return 'Delivery evidence: No tracking number on Shopify order';
   }
   if (delivery.trackingGap === 'tracking_not_found') {
-    return 'Delivery evidence: Tracking not found in AfterShip';
+    return 'Delivery evidence: Tracking not found by the connected carrier';
   }
   if (delivery.trackingGap === 'carrier_unsupported') {
     return 'Delivery evidence: Carrier unsupported by tracking provider';

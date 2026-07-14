@@ -26,18 +26,18 @@ function buildProbeSnapshot(context: ClaimDecisionContext): ProbeSnapshot {
   const { delivery, evidence, order } = context;
   const delivered =
     delivery?.status === 'delivered' || delivery?.hasProofOfDelivery === true;
-  const afterShipActive = delivery?.afterShipConnected === true;
+  const carrierDirectActive = delivery?.carrierDirectConnected === true;
   const trackingProviderConnected = delivery?.trackingProviderConnected === true;
 
-  const deliveryPhotoState: EvidenceItemState = afterShipActive
-    ? 'unavailable'
-    : delivery?.deliveryPhotoAvailable
-      ? 'present'
+  const deliveryPhotoState: EvidenceItemState = delivery?.deliveryPhotoAvailable
+    ? 'present'
+    : carrierDirectActive
+      ? 'unavailable'
       : 'not_tracked';
-  const signatureState: EvidenceItemState = afterShipActive
-    ? 'unavailable'
-    : delivery?.signatureAvailable
-      ? 'present'
+  const signatureState: EvidenceItemState = delivery?.signatureAvailable
+    ? 'present'
+    : carrierDirectActive
+      ? 'unavailable'
       : 'not_tracked';
   const gpsState: EvidenceItemState = trackingProviderConnected && delivery?.gpsSupported === false
     ? 'unavailable'
@@ -74,8 +74,8 @@ function buildProbeSnapshot(context: ClaimDecisionContext): ProbeSnapshot {
 function probeReason(key: string, state: EvidenceItemState, delivery: ClaimDecisionContext['delivery']): string {
   if (state === 'present') return 'On file';
   if (state === 'unavailable') {
-    if (key === 'delivery_photo') return 'Not provided by AfterShip for this provider';
-    if (key === 'signature') return 'Not provided by AfterShip for this provider';
+    if (key === 'delivery_photo') return 'Not available from the carrier for this shipment';
+    if (key === 'signature') return 'Not available from the carrier for this shipment';
     if (key === 'gps') return 'Unsupported by connected tracking providers';
     return 'Not collectible from this provider';
   }
@@ -87,7 +87,7 @@ function probeReason(key: string, state: EvidenceItemState, delivery: ClaimDecis
     return 'Tracking provider not connected';
   }
   if (key === 'tracking' && delivery?.trackingGap === 'tracking_not_found') {
-    return 'Tracking not found in AfterShip';
+    return 'Tracking not found by the connected carrier';
   }
   return 'Not on file';
 }

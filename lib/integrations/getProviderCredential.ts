@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { getIntegrationCredential } from '@/lib/integrations/auth';
 import { createServiceClient } from '@/lib/supabase/server';
 
-type SupportedProvider = 'aftership' | 'shipbob';
+type SupportedProvider = 'shipbob';
 
 function stringCredential(value: unknown): string | null {
   return typeof value === 'string' && value.trim() ? value.trim() : null;

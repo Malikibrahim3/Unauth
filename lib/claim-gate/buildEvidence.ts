@@ -7,7 +7,10 @@ import type {
   ClaimGateFulfillmentEvidence,
   ClaimGateShipBobEvidence,
 } from '@/lib/claim-gate/types';
-import { getTracking, type AfterShipTracking } from '@/lib/integrations/providers/aftership';
+import { getIntegrationCredential } from '@/lib/integrations/auth';
+import { exchangeFedExClientCredentials, fetchFedExDeliveryProof } from '@/lib/integrations/providers/fedex';
+import { exchangeUpsClientCredentials, fetchUpsDeliveryProof } from '@/lib/integrations/providers/ups';
+import type { IntegrationCredentialPayload } from '@/lib/integrations/types';
 import {
   getOrderByReferenceId,
   getReturnForOrder,
@@ -227,14 +230,56 @@ function isDelivered(status: string): boolean {
   return status.toLowerCase().includes('delivered');
 }
 
-function afterShipEvidence(tracking: AfterShipTracking, fallbackCarrier: string): ClaimGateFulfillmentEvidence {
-  const carrier = tracking.slug && tracking.slug !== 'unknown' ? tracking.slug : fallbackCarrier;
-  const deliveryScanPresent = isDelivered(tracking.current_status);
-  const exception = tracking.checkpoints.find((checkpoint) =>
-    checkpoint.tag.toLowerCase().includes('exception')
-  );
-  const claimWindow = claimDeadline(tracking.delivery_timestamp, carrier);
-  const podPresent = Boolean(tracking.proof_of_delivery);
+type DirectCarrier = 'ups' | 'fedex';
+
+function directCarrier(company: string | null, trackingNumber: string): DirectCarrier | null {
+  const normalized = company?.toLowerCase() ?? '';
+  if (normalized.includes('ups') || /^1Z[A-Z0-9]{16}$/i.test(trackingNumber)) return 'ups';
+  if (normalized.includes('fedex') || normalized.includes('federal express')) return 'fedex';
+  if (/^\d{12,22}$/.test(trackingNumber)) return 'fedex';
+  return null;
+}
+
+function carrierPayloadEvidence(
+  provider: DirectCarrier,
+  payload: Record<string, any>,
+  trackingNumber: string,
+): ClaimGateFulfillmentEvidence {
+  const details = provider === 'ups'
+    ? (() => {
+        const shipment = payload.trackResponse?.shipment?.[0] ?? {};
+        const pkg = shipment.package?.[0] ?? {};
+        const events = Array.isArray(pkg.activity) ? pkg.activity : [];
+        const latest = events[0] ?? {};
+        return {
+          status: stringValue(pkg.currentStatus?.description ?? pkg.currentStatus?.code) ?? 'Status unavailable',
+          events,
+          deliveryTime: stringValue(pkg.deliveryDate?.[0]?.date ?? latest.date),
+          lastMessage: stringValue(latest.status?.description ?? latest.location?.address?.city) ?? 'No scan message returned',
+          lastTime: stringValue(latest.gmtDate ?? latest.date) ?? new Date().toISOString(),
+          podUrl: stringValue(pkg.deliveryInformation?.signature?.image ?? pkg.signatureImage),
+          podType: stringValue(pkg.deliveryInformation?.signature?.type) ?? undefined,
+        };
+      })()
+    : (() => {
+        const result = payload.output?.completeTrackResults?.[0]?.trackResults?.[0] ?? {};
+        const events = Array.isArray(result.scanEvents) ? result.scanEvents : [];
+        const latest = events[0] ?? {};
+        const dates = Array.isArray(result.dateAndTimes) ? result.dateAndTimes : [];
+        return {
+          status: stringValue(result.latestStatusDetail?.description ?? result.latestStatusDetail?.code) ?? 'Status unavailable',
+          events,
+          deliveryTime: stringValue(dates.find((entry: any) => entry.type === 'ACTUAL_DELIVERY')?.dateTime),
+          lastMessage: stringValue(latest.eventDescription ?? latest.derivedStatus) ?? 'No scan message returned',
+          lastTime: stringValue(latest.date ?? latest.dateTime) ?? new Date().toISOString(),
+          podUrl: stringValue(result.deliveryDetails?.signatureProofOfDeliveryUrl),
+          podType: stringValue(result.deliveryDetails?.signedByName) ? 'signature' : undefined,
+        };
+      })();
+  const deliveryScanPresent = isDelivered(details.status);
+  const exception = details.events.find((event: any) => /exception|failed|delay/i.test(JSON.stringify(event)));
+  const claimWindow = claimDeadline(details.deliveryTime, provider);
+  const podPresent = Boolean(details.podUrl || details.podType);
   const evidenceStrength: ClaimGateFulfillmentEvidence['evidence_strength'] =
     exception || !deliveryScanPresent
       ? 'weak'
@@ -243,22 +288,22 @@ function afterShipEvidence(tracking: AfterShipTracking, fallbackCarrier: string)
         : 'moderate';
 
   return {
-    tracking_number: tracking.tracking_number,
-    carrier,
-    carrier_identified_via: tracking.slug && tracking.slug !== fallbackCarrier ? 'aftership_slug' : 'source_fulfillments',
-    current_status: tracking.current_status,
+    tracking_number: trackingNumber,
+    carrier: provider,
+    carrier_identified_via: provider === 'ups' ? 'ups_api' : 'fedex_api',
+    current_status: details.status,
     delivery_scan_present: deliveryScanPresent,
-    ...(tracking.delivery_timestamp ? { delivery_timestamp: tracking.delivery_timestamp } : {}),
+    ...(details.deliveryTime ? { delivery_timestamp: details.deliveryTime } : {}),
     pod_present: podPresent,
-    ...(tracking.proof_of_delivery?.url ? { pod_url: tracking.proof_of_delivery.url } : {}),
-    ...(tracking.proof_of_delivery?.type ? { pod_type: tracking.proof_of_delivery.type } : {}),
-    last_checkpoint_message: tracking.last_checkpoint.message,
-    last_checkpoint_time: tracking.last_checkpoint.checkpoint_time,
+    ...(details.podUrl ? { pod_url: details.podUrl } : {}),
+    ...(details.podType ? { pod_type: details.podType } : {}),
+    last_checkpoint_message: details.lastMessage,
+    last_checkpoint_time: details.lastTime,
     exception_present: Boolean(exception),
-    ...(exception ? { exception_reason: exception.message } : {}),
+    ...(exception ? { exception_reason: stringValue((exception as any).eventDescription) ?? 'Carrier exception reported' } : {}),
     carrier_claim_window_open: claimWindow.open,
     ...(claimWindow.deadline ? { carrier_claim_deadline: claimWindow.deadline } : {}),
-    tracking_source: 'aftership',
+    tracking_source: provider,
     evidence_strength: evidenceStrength,
   };
 }
@@ -309,72 +354,57 @@ async function writeIntegrationEvidence(input: {
   }
 }
 
-async function fetchAfterShipEvidence(input: {
+async function fetchCarrierEvidence(input: {
   client: SupabaseClient;
   merchantId: string;
   shipments: Array<Record<string, unknown>>;
-  apiKey: string | null;
+  credentials: Partial<Record<DirectCarrier, IntegrationCredentialPayload | null>>;
 }): Promise<{ evidence: ClaimGateFulfillmentEvidence[]; fetched: boolean }> {
-  const apiKey = input.apiKey;
-  if (!apiKey) return { evidence: [], fetched: false };
   const evidence: ClaimGateFulfillmentEvidence[] = [];
   let fetched = false;
   for (const shipment of input.shipments) {
     const trackingNumber = stringValue(shipment.tracking_number);
     if (!trackingNumber) continue;
-    const carrier = stringValue(shipment.tracking_company) ?? 'default';
+    const provider = directCarrier(stringValue(shipment.tracking_company), trackingNumber);
+    if (!provider) continue;
+    const credentials = input.credentials[provider];
+    if (!credentials?.clientId || !credentials.clientSecret) continue;
     try {
-      const tracking = await getTracking(trackingNumber, carrier, apiKey);
+      const token = provider === 'ups'
+        ? await exchangeUpsClientCredentials({
+            clientId: credentials.clientId,
+            clientSecret: credentials.clientSecret,
+            environment: credentials.environment,
+          })
+        : await exchangeFedExClientCredentials({
+            clientId: credentials.clientId,
+            clientSecret: credentials.clientSecret,
+            environment: credentials.environment,
+          });
+      const refreshed = { ...credentials, accessToken: token.accessToken };
+      const payload = provider === 'ups'
+        ? await fetchUpsDeliveryProof({ credentials: refreshed, trackingNumber })
+        : await fetchFedExDeliveryProof({ credentials: refreshed, trackingNumber });
       fetched = true;
-      if (!tracking) {
-        const fallback: ClaimGateFulfillmentEvidence = {
-          tracking_number: trackingNumber,
-          carrier,
-          carrier_identified_via: 'source_fulfillments',
-          current_status: 'Tracking not found',
-          delivery_scan_present: false,
-          pod_present: false,
-          last_checkpoint_message: 'Tracking not found in AfterShip',
-          last_checkpoint_time: new Date().toISOString(),
-          exception_present: false,
-          carrier_claim_window_open: false,
-          tracking_source: 'aftership',
-          evidence_strength: 'weak',
-        };
-        evidence.push(fallback);
-        await writeIntegrationEvidence({
-          client: input.client,
-          merchantId: input.merchantId,
-          sourceProvider: 'aftership',
-          sourceCategory: 'tracking',
-          evidenceType: 'tracking',
-          title: 'AfterShip tracking',
-          summary: fallback.last_checkpoint_message,
-          confidence: 'low',
-          value: fallback,
-          rawReference: { tracking_number: trackingNumber, not_found: true },
-          stableKey: trackingNumber,
-        });
-        continue;
-      }
-      const mapped = afterShipEvidence(tracking, carrier);
+      const mapped = carrierPayloadEvidence(provider, payload, trackingNumber);
       evidence.push(mapped);
       await writeIntegrationEvidence({
         client: input.client,
         merchantId: input.merchantId,
-        sourceProvider: 'aftership',
-        sourceCategory: 'tracking',
+        sourceProvider: provider,
+        sourceCategory: 'carrier',
         evidenceType: 'tracking',
-        title: 'AfterShip tracking',
+        title: `${provider === 'ups' ? 'UPS' : 'FedEx'} tracking`,
         summary: `${mapped.current_status}: ${mapped.last_checkpoint_message}`,
         confidence: mapped.evidence_strength === 'strong' ? 'high' : mapped.evidence_strength === 'moderate' ? 'medium' : 'low',
         value: mapped,
-        rawReference: tracking.raw,
+        rawReference: payload,
         occurredAt: mapped.delivery_timestamp ?? mapped.last_checkpoint_time,
         stableKey: trackingNumber,
       });
     } catch (error) {
-      console.warn('claim_gate_aftership_lookup_failed', {
+      console.warn('claim_gate_carrier_lookup_failed', {
+        provider,
         trackingNumber,
         message: error instanceof Error ? error.message : String(error),
       });
@@ -495,18 +525,24 @@ export async function buildEvidence(input: {
   // explicit. A null credential means the source is not connected — the gate
   // cannot speak to that dimension and must say so, rather than treating an
   // empty result as "no evidence found".
-  const [aftershipKey, shipbobPat] = await Promise.all([
-    getProviderCredential(input.merchantId, 'aftership', 'AFTERSHIP_API_KEY', input.client),
+  const [upsCredentials, fedexCredentials, shipbobPat] = await Promise.all([
+    getIntegrationCredential(input.client, input.merchantId, 'ups'),
+    getIntegrationCredential(input.client, input.merchantId, 'fedex'),
     getProviderCredential(input.merchantId, 'shipbob', 'SHIPBOB_PAT', input.client),
   ]);
-  const [aftershipResult, shipbobResult] = await Promise.all([
-    fetchAfterShipEvidence({ client: input.client, merchantId: input.merchantId, shipments, apiKey: aftershipKey }),
+  const [carrierResult, shipbobResult] = await Promise.all([
+    fetchCarrierEvidence({
+      client: input.client,
+      merchantId: input.merchantId,
+      shipments,
+      credentials: { ups: upsCredentials, fedex: fedexCredentials },
+    }),
     fetchShipBobEvidence({ client: input.client, merchantId: input.merchantId, order, pat: shipbobPat }),
   ]);
-  const fulfillmentEvidence = aftershipResult.evidence;
+  const fulfillmentEvidence = carrierResult.evidence;
   const shipbobEvidenceResult = shipbobResult.evidence;
   const connections = {
-    carrier_tracking: aftershipResult.fetched,
+    carrier_tracking: carrierResult.fetched,
     warehouse: shipbobResult.fetched,
     helpdesk: Boolean(ticket),
   };

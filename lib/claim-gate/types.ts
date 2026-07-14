@@ -50,7 +50,7 @@ export type ClaimGateEvidenceSummary = {
 export type ClaimGateFulfillmentEvidence = {
   tracking_number: string;
   carrier: string;
-  carrier_identified_via: 'source_fulfillments' | 'aftership_slug';
+  carrier_identified_via: 'source_fulfillments' | 'ups_api' | 'fedex_api';
   current_status: string;
   delivery_scan_present: boolean;
   delivery_timestamp?: string;
@@ -63,7 +63,7 @@ export type ClaimGateFulfillmentEvidence = {
   exception_reason?: string;
   carrier_claim_window_open: boolean;
   carrier_claim_deadline?: string;
-  tracking_source: 'aftership';
+  tracking_source: 'ups' | 'fedex';
   evidence_strength: 'strong' | 'moderate' | 'weak';
 };
 
@@ -92,7 +92,7 @@ export type ClaimGateShipBobEvidence = {
  * (source not connected, so the gate cannot speak to that dimension at all).
  */
 export type ClaimGateConnections = {
-  /** AfterShip — detailed delivery scans, proof of delivery, carrier claim windows. */
+  /** Direct UPS/FedEx APIs — delivery scans, proof of delivery, and claim windows. */
   carrier_tracking: boolean;
   /** ShipBob — warehouse pick/pack records, SKU verification. */
   warehouse: boolean;

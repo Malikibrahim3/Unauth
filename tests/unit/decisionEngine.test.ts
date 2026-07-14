@@ -41,7 +41,7 @@ function fulfillment(overrides: Partial<ClaimGateFulfillmentEvidence> = {}): Cla
   return {
     tracking_number: 'TRK-1',
     carrier: 'royal-mail',
-    carrier_identified_via: 'aftership_slug',
+    carrier_identified_via: 'ups_api',
     current_status: 'Delivered',
     delivery_scan_present: true,
     pod_present: true,
@@ -50,7 +50,7 @@ function fulfillment(overrides: Partial<ClaimGateFulfillmentEvidence> = {}): Cla
     exception_present: false,
     carrier_claim_window_open: true,
     carrier_claim_deadline: '2026-07-14',
-    tracking_source: 'aftership',
+    tracking_source: 'ups',
     evidence_strength: 'strong',
     ...overrides,
   };
