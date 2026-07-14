@@ -120,6 +120,8 @@ test('visual enrichment preserves provider identity and focal hierarchy', async 
   await expect(page.locator('.ua-focal-panel')).not.toHaveCount(0);
 
   await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('.ua-metric-card')).not.toHaveCount(0);
-  await expect(page.locator('.ua-panel-header')).not.toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'Value this period' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Payout performance charts' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Exposure and recovered' }).first()).toBeVisible();
+  await expect(page.getByText('View chart data').first()).toBeVisible();
 });

@@ -5,11 +5,10 @@ import path from 'node:path';
 const EVIDENCE_DIR = path.join(
   process.cwd(),
   'design-evidence',
-  '2026-07-13-authenticated-redesign',
+  '2026-07-14-authenticated-craft-completion',
 );
 
 async function capture(page: Page, name: string) {
-  if (fs.existsSync(path.join(EVIDENCE_DIR, `${name}.png`))) return;
   await expect(page.locator('.ua-app, .ua-auth-surface')).toBeVisible({ timeout: 20_000 });
   const masks = [
     page.locator('aside').getByText(/\S+@\S+/),
@@ -27,7 +26,6 @@ async function capture(page: Page, name: string) {
 }
 
 async function visitAndCapture(page: Page, route: string, name: string) {
-  if (fs.existsSync(path.join(EVIDENCE_DIR, `${name}.png`))) return;
   await page.goto(route, { waitUntil: 'domcontentloaded' });
   await capture(page, name);
 }
@@ -56,12 +54,13 @@ test('capture the final authenticated visual evidence set', async ({ page }) => 
   for (const [route, name] of routes) await visitAndCapture(page, route, name);
 
   let caseHref: string | null = null;
-  if (!fs.existsSync(path.join(EVIDENCE_DIR, '04-case-detail.png'))) {
-    await page.goto('/claims');
-    caseHref = await page.locator('main a[href^="/claims/"]').first().getAttribute('href');
-    expect(caseHref).toBeTruthy();
-    await visitAndCapture(page, caseHref!, '04-case-detail');
-  }
+  await page.goto('/claims');
+  caseHref = await page.locator('main a[href^="/claims/"]').first().getAttribute('href');
+  expect(caseHref).toBeTruthy();
+  await page.goto(caseHref!, { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('main h1').first()).not.toHaveText('Payout case', { timeout: 20_000 });
+  await expect(page.getByText('Loading payout exposure…')).toHaveCount(0, { timeout: 20_000 });
+  await capture(page, '04-case-detail');
 
   if (!caseHref) {
     await page.goto('/claims');
@@ -91,6 +90,8 @@ test('capture the final authenticated visual evidence set', async ({ page }) => 
 
   await page.setViewportSize({ width: 1024, height: 900 });
   await visitAndCapture(page, '/dashboard', '22-tablet-overview');
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await visitAndCapture(page, '/dashboard', '25-laptop-overview');
   await page.setViewportSize({ width: 390, height: 844 });
   await visitAndCapture(page, '/dashboard', '23-mobile-overview');
   // Force a fresh document so overlay state from the command-palette evidence
@@ -98,4 +99,10 @@ test('capture the final authenticated visual evidence set', async ({ page }) => 
   await page.goto('/dashboard?evidence=mobile-nav');
   await page.getByRole('button', { name: 'Open navigation' }).click();
   await capture(page, '24-mobile-navigation');
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/settings/account');
+  await page.getByRole('button', { name: 'Dark', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Dark', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await visitAndCapture(page, '/dashboard', '26-dark-overview');
 });
