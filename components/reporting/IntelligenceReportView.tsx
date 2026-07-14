@@ -8,8 +8,6 @@ import { REPORT_DEFINITIONS } from "@/lib/reporting/intelligence";
 import { normaliseCurrencyOrNull } from "@/lib/canonical/money";
 import { formatDateTime, formatMinorCurrencyNullable } from "@/lib/utils/format";
 import { DashboardCharts } from "@/components/reporting/DashboardCharts";
-import { ArrowDownToLine, RotateCcw, ShieldCheck, TriangleAlert } from "lucide-react";
-import type { CSSProperties } from "react";
 
 function money(minor: number, currency: string) {
   return formatMinorCurrencyNullable(minor, currency);
@@ -19,11 +17,11 @@ function currencyLabel(currency: string) {
   return normaliseCurrencyOrNull(currency) ?? "Currency unavailable";
 }
 const STEPS = [
-  { key: "requestedMinor", label: "Payout exposure", definition: "Requested in this period", icon: TriangleAlert, accent: "var(--warning)" },
-  { key: "recoveredMinor", label: "Recovered", definition: "Received and reconciled", icon: RotateCcw, accent: "var(--success)" },
-  { key: "preventedMinor", label: "Prevented", definition: "Not paid after review", icon: ShieldCheck, accent: "var(--info)" },
-  { key: "realisedLossMinor", label: "Realised loss", definition: "Ledger-confirmed merchant loss", icon: ArrowDownToLine, accent: "var(--danger)" },
-] satisfies Array<{ key: keyof MoneyBridge; label: string; definition: string; icon: typeof TriangleAlert; accent: string }>;
+  { key: "requestedMinor", label: "Payout exposure", definition: "Requested in this period" },
+  { key: "recoveredMinor", label: "Recovered", definition: "Received and reconciled" },
+  { key: "preventedMinor", label: "Prevented", definition: "Not paid after review" },
+  { key: "realisedLossMinor", label: "Realised loss", definition: "Ledger-confirmed merchant loss" },
+] satisfies Array<{ key: keyof MoneyBridge; label: string; definition: string }>;
 function RankedTable({
   title,
   description,
@@ -47,7 +45,6 @@ function RankedTable({
                 <th className="py-2 font-medium">Category</th>
                 <th className="py-2 text-right font-medium">Records</th>
                 <th className="py-2 text-right font-medium">Value</th>
-                <th className="py-2 text-right font-medium">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -56,11 +53,8 @@ function RankedTable({
                   key={`${r.key}:${r.currency}`}
                   className="border-b border-[var(--border-muted)]"
                 >
-                  <th
-                    scope="row"
-                    className="py-3 text-left font-medium capitalize"
-                  >
-                    {r.label}
+                  <th scope="row" className="py-3 text-left font-medium">
+                    <Link className="text-[var(--text-primary)] hover:text-[var(--accent)]" href={r.href}>{r.label}</Link>
                   </th>
                   <td className="py-3 text-right tabular-nums">{r.count}</td>
                   <td className="py-3 text-right tabular-nums">
@@ -68,14 +62,6 @@ function RankedTable({
                     <span className="text-xs text-[var(--text-secondary)]">
                       {currencyLabel(r.currency)}
                     </span>
-                  </td>
-                  <td className="py-3 text-right">
-                    <Link
-                      className="font-medium text-[var(--accent)]"
-                      href={r.href}
-                    >
-                      Inspect →
-                    </Link>
                   </td>
                 </tr>
               ))}
@@ -128,27 +114,23 @@ export function IntelligenceReportView({
           <div className="mt-4 space-y-5">
             {report.bridges.map((b) => (
               <div key={b.currency}>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <h3 className="font-semibold">{b.currency}</h3>
                   <Link
                     href={`/claims?range=${report.range}&currency=${b.currency}`}
                     className="text-sm font-medium text-[var(--accent)]"
                   >
-                    {b.caseIds.length} underlying cases →
+                    {b.caseIds.length} underlying {b.caseIds.length === 1 ? "case" : "cases"}
                   </Link>
                 </div>
-                <dl className="ua-focal-panel mt-2 grid overflow-hidden rounded-[var(--radius-lg)] sm:grid-cols-2 lg:grid-cols-4">
-                  {STEPS.map(({ key, label, definition, icon: Icon, accent }) => (
+                <dl className="mt-2 grid overflow-hidden border-y border-[var(--border)] sm:grid-cols-2 lg:grid-cols-4">
+                  {STEPS.map(({ key, label, definition }, index) => (
                     <div
                       key={key}
-                      className="ua-metric-card min-h-28 border-b border-[var(--border-muted)] p-4 sm:border-r"
-                      style={{ '--metric-accent': accent } as CSSProperties}
+                      className={`min-h-24 py-4 sm:px-4 ${index > 0 ? "border-t border-[var(--border-muted)] sm:border-l sm:border-t-0" : ""}`}
                     >
-                      <dt className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                        <span className="flex h-7 w-7 items-center justify-center rounded-md" style={{ background: `color-mix(in srgb, ${accent} 12%, white)`, color: accent }}><Icon size={14} aria-hidden="true" /></span>
-                        {label}
-                      </dt>
-                      <dd className="mt-1 text-xl font-semibold tabular-nums">
+                      <dt className="text-xs font-medium text-[var(--text-secondary)]">{label}</dt>
+                      <dd className="mt-2 text-xl font-semibold tabular-nums">
                         {b[key] === 0
                           ? key === "requestedMinor"
                             ? "Nothing outstanding"
@@ -171,7 +153,7 @@ export function IntelligenceReportView({
           </p>
         )}
       </section>
-      {compact ? <DashboardCharts report={report} /> : null}
+      <DashboardCharts report={report} />
       <section className="border-t border-[var(--border-muted)] pt-5">
         <h2 className="text-lg font-semibold">Needs attention</h2>
         <div className="ua-section-panel mt-3 divide-y divide-[var(--border-muted)] overflow-hidden rounded-lg">
@@ -182,7 +164,7 @@ export function IntelligenceReportView({
               className="ua-table-row flex items-center justify-between gap-4 p-3.5 hover:bg-[var(--surface-hover)]"
             >
               <span className="text-sm">{row.label}</span>
-              <span className="text-sm font-semibold tabular-nums text-[var(--accent)]">View {row.count} {row.count === 1 ? 'case' : 'cases'} →</span>
+              <span className="text-sm font-semibold tabular-nums text-[var(--accent)]">{row.count} {row.count === 1 ? 'case' : 'cases'}</span>
             </Link>
           ))}
         </div>
@@ -204,55 +186,6 @@ export function IntelligenceReportView({
         rows={report.recoveries.slice(0, compact ? 5 : 20)}
         empty="No recovery records were updated in this period."
       /> : null}
-      {!compact ? <section className="border-t border-[var(--border-muted)] pt-5">
-        <h2 className="text-lg font-semibold">Source coverage</h2>
-        <p className="mt-1 text-sm text-[var(--text-secondary)]">
-          Object counts and freshness from imported records; fresh means updated
-          within 48 hours.
-        </p>
-        <div className="mt-3 overflow-x-auto">
-          <table className="w-full min-w-[600px] text-sm">
-            <thead>
-              <tr className="border-b border-[var(--border)] text-left text-[var(--text-secondary)]">
-                <th className="py-2">Object</th>
-                <th className="py-2 text-right">Inspected</th>
-                <th className="py-2 text-right">Fresh</th>
-                <th className="py-2 text-right">Stale</th>
-                <th className="py-2 text-right">Latest source update</th>
-              </tr>
-            </thead>
-            <tbody>
-              {report.coverage.map((r) => (
-                <tr
-                  key={r.objectType}
-                  className="border-b border-[var(--border-muted)]"
-                >
-                  <th scope="row" className="py-3 text-left">
-                    <Link
-                      className="font-medium text-[var(--accent)]"
-                      href={r.href}
-                    >
-                      {r.objectType}
-                    </Link>
-                  </th>
-                  <td className="py-3 text-right tabular-nums">{r.records}</td>
-                  <td className="py-3 text-right tabular-nums">
-                    {r.freshRecords}
-                  </td>
-                  <td className="py-3 text-right tabular-nums">
-                    {r.staleRecords}
-                  </td>
-                  <td className="py-3 text-right">
-                    {r.latestAt
-                      ? formatDateTime(r.latestAt)
-                      : "No records"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section> : null}
       {!compact ? (
         <section className="border-t border-[var(--border-muted)] pt-5">
           <h2 className="text-lg font-semibold">Report definitions</h2>

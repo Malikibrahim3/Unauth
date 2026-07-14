@@ -39,22 +39,22 @@ export default async function ReportsPage({
   const range = parseReportRange(sp.range);
   const timezone = sp.timezone && sp.timezone.length < 80 ? sp.timezone : "UTC";
   const report = await loadIntelligenceReport(
-    svc as any,
+    svc,
     ctx.merchantId,
     range,
     timezone,
   );
   return (
     <div className="mx-auto w-full max-w-[1600px] space-y-6 p-4 md:p-6">
-      <header className="flex flex-wrap items-end justify-between gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-xs)] md:p-6">
+      <header className="flex flex-wrap items-end justify-between gap-4 border-b border-[var(--border)] pb-5">
         <div>
-          <h1 className="text-2xl font-semibold">Reports</h1>
+          <h1 className="text-2xl font-semibold tracking-[-0.02em]">Reports</h1>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">
-            Defined, reconciled and drillable payout-control intelligence.
+            Reconciled payout, loss, and recovery performance.
           </p>
         </div>
         <div
-          className="flex flex-wrap items-center gap-1 rounded-lg border border-[var(--border)] bg-white/70 p-1.5 shadow-[var(--shadow-xs)]"
+          className="flex flex-wrap items-center gap-1 rounded-[var(--radius-md)] bg-[var(--surface-muted)] p-1"
           aria-label="Report scope"
         >
           {REPORT_RANGES.map((r) => (
@@ -62,7 +62,7 @@ export default async function ReportsPage({
               key={r}
               aria-current={r === range ? "page" : undefined}
               href={`/reports?range=${r}&timezone=${encodeURIComponent(timezone)}`}
-              className={`min-h-10 rounded border px-3 py-2 text-sm ${r === range ? "border-[var(--accent)] text-[var(--accent)]" : "border-[var(--border)]"}`}
+              className={`min-h-8 rounded-[var(--radius-sm)] px-3 py-1.5 text-sm font-medium ${r === range ? "bg-[var(--surface)] text-[var(--text-primary)] shadow-[var(--shadow-xs)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
             >
               {r === "all" ? "All time" : r}
             </Link>
