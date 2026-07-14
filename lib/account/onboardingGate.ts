@@ -7,20 +7,19 @@ interface OnboardingGateInput {
 }
 
 /**
- * App access requires a merchant context and an order source. Helpdesk setup is
- * optional: merchants must be able to enter the app to connect carriers,
- * warehouses, documents, or a different support provider without a healthy
- * Gorgias connection.
+ * App access requires a merchant context and a completed profile (or retained
+ * audit history). Connector choice is intentionally not a gate: merchants
+ * must be able to enter Integrations and choose Shopify, ShipBob, a carrier,
+ * documents, or another supported source as their first connection.
  */
 export function shouldRequireOnboarding({
   hasMerchantContext,
   setupComplete,
   auditRunCount,
-  shopifyConnected,
+  shopifyConnected: _shopifyConnected,
   helpdeskConnected: _helpdeskConnected,
 }: OnboardingGateInput): boolean {
   if (!hasMerchantContext) return true;
-  if (!shopifyConnected) return true;
   if (setupComplete === true) return false;
   return (auditRunCount ?? 0) === 0;
 }
