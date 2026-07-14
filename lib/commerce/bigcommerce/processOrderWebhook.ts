@@ -133,6 +133,8 @@ export async function processBigCommerceOrderWebhook(input: {
     .select('id, merchant_id, credentials_encrypted')
     .eq('platform', 'bigcommerce')
     .eq('store_key', storeHash)
+    .eq('status', 'active')
+    .is('uninstalled_at', null)
     .maybeSingle();
   if (connectionError) throw new Error(`store_connection_lookup_failed: ${connectionError.message}`);
   if (!connection) {
@@ -171,14 +173,14 @@ export async function processBigCommerceOrderWebhook(input: {
       first_name: billing?.first_name ?? null,
       last_name: billing?.last_name ?? null,
       updated_at: now,
-    }, { onConflict: 'merchant_id,source,external_id' }).select('id').single();
+    }, { onConflict: 'merchant_id,source,connection_id,external_id' }).select('id').single();
     if (error) throw new Error(`source_customer_upsert_failed: ${error.message}`);
     customerId = customerRow.id;
   }
 
   const { data: existing, error: lookupError } = await supabase.from('source_orders')
     .select('id, shipping_address_id, billing_address_id')
-    .eq('merchant_id', merchantId).eq('source', 'bigcommerce').eq('external_id', externalId)
+    .eq('merchant_id', merchantId).eq('source', 'bigcommerce').eq('connection_id', connection.id).eq('external_id', externalId)
     .maybeSingle();
   if (lookupError) throw new Error(`source_order_lookup_failed: ${lookupError.message}`);
 
@@ -230,13 +232,14 @@ export async function processBigCommerceOrderWebhook(input: {
     placed_at: order.date_created ?? now,
     raw_payload_hash: crypto.createHash('sha256').update(rawBody, 'utf8').digest('hex'),
     updated_at: now,
-  }, { onConflict: 'merchant_id,source,external_id' }).select('id').single();
+  }, { onConflict: 'merchant_id,source,connection_id,source_account_id,external_id' }).select('id').single();
   if (error) throw new Error(`source_order_upsert_failed: ${error.message}`);
 
   // hashed identity observations + resolution
   const entities: ObservationEntity[] = [{
     provenance: { orderId: orderRow.id },
     source: 'bigcommerce',
+    sourceAccountKey: connection.id,
     observedAt: order.date_created ?? now,
     email,
     phone,

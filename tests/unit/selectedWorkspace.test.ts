@@ -1,4 +1,4 @@
-import { resolveCallerContext } from '@/lib/permissions';
+import { PERMISSIONS, requirePermissionForMerchant, resolveCallerContext } from '@/lib/permissions';
 
 function serviceWithMemberships(rows: Array<{ id: string; merchant_id: string; role: string }>) {
   const query = {
@@ -23,5 +23,16 @@ describe('selected workspace resolution', () => {
   it('ignores forged workspace ids and safely falls back to an active membership', async () => {
     const context = await resolveCallerContext(serviceWithMemberships(memberships), 'user-1', 'not-a-membership');
     expect(context).toMatchObject({ merchantId: 'merchant-owner', role: 'owner' });
+  });
+
+  it('never falls back when an OAuth callback requires an exact merchant', async () => {
+    const result = await requirePermissionForMerchant(
+      serviceWithMemberships(memberships),
+      'user-1',
+      'not-a-membership',
+      PERMISSIONS.MANAGE_SETTINGS,
+    );
+    expect(result.denied?.status).toBe(403);
+    expect(result.ctx).toBeNull();
   });
 });

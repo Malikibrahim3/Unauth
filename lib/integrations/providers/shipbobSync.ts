@@ -22,13 +22,21 @@ const STUCK_LEASE_SECONDS = 300;
 
 type JobStatusRow = SyncJobRow & { started_at: string | null; next_attempt_at: string | null };
 
-async function findLatestJob(client: SupabaseClient, merchantId: string): Promise<JobStatusRow | null> {
-  const { data, error } = await client
+async function findLatestJob(
+  client: SupabaseClient,
+  input: { merchantId: string; connectionId: string; sourceAccountId: string | null },
+): Promise<JobStatusRow | null> {
+  let query = client
     .from('sync_jobs')
     .select('id,merchant_id,job_kind,source,status,cursor,attempts,max_attempts,connection_id,source_account_id,started_at,next_attempt_at')
-    .eq('merchant_id', merchantId)
+    .eq('merchant_id', input.merchantId)
     .eq('source', SHIPBOB)
-    .in('job_kind', ['initial_import', 'incremental_sync'])
+    .eq('connection_id', input.connectionId)
+    .in('job_kind', ['initial_import', 'incremental_sync']);
+  query = input.sourceAccountId
+    ? query.eq('source_account_id', input.sourceAccountId)
+    : query.is('source_account_id', null);
+  const { data, error } = await query
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -45,7 +53,7 @@ export async function ensureShipBobSyncJob(
   client: SupabaseClient,
   input: { merchantId: string; connectionId: string; sourceAccountId: string | null },
 ): Promise<{ job: JobStatusRow; created: boolean }> {
-  const existing = await findLatestJob(client, input.merchantId);
+  const existing = await findLatestJob(client, input);
   if (existing && existing.status !== 'completed') return { job: existing, created: false };
 
   // First import runs the full initial_import; later manual syncs re-walk the
@@ -69,7 +77,7 @@ export async function ensureShipBobSyncJob(
   if (error) {
     // Unique-violation race: another request inserted concurrently — reuse it.
     if (error.code === '23505') {
-      const raced = await findLatestJob(client, input.merchantId);
+      const raced = await findLatestJob(client, input);
       if (raced) return { job: raced, created: false };
     }
     throw new Error(`shipbob_sync_job_create_failed:${error.message}`);
@@ -114,6 +122,8 @@ export async function runShipBobAccountSync(
     .from('sync_jobs')
     .update({ status: 'running', started_at: new Date(now).toISOString(), last_error_code: null, updated_at: new Date(now).toISOString() })
     .eq('id', job.id)
+    .eq('merchant_id', input.merchantId)
+    .eq('connection_id', input.connectionId)
     .eq('status', job.status)
     .select('id,merchant_id,job_kind,source,status,cursor,attempts,max_attempts,connection_id,source_account_id')
     .maybeSingle();

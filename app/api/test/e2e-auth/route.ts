@@ -3,7 +3,6 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { createAdminClient } from '@/lib/supabase/server';
 import {
-  E2E_MERCHANT_ID,
   isE2eTestAuthEnabled,
   validateE2eAuthRequest,
 } from '@/lib/e2e/testAuth';
@@ -17,6 +16,7 @@ async function resolveMerchantOwnerEmail(merchantId: string): Promise<string | n
     .select('user_id')
     .eq('merchant_id', merchantId)
     .eq('invite_status', 'active')
+    .eq('role', 'owner')
     .limit(1)
     .maybeSingle();
 
@@ -40,10 +40,10 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = request.nextUrl;
   const secret = searchParams.get('secret');
-  const merchantId = searchParams.get('merchant_id') ?? E2E_MERCHANT_ID;
+  const merchantId = searchParams.get('merchant_id');
   const redirectTo = searchParams.get('redirect') ?? '/claims';
 
-  if (!validateE2eAuthRequest({ secret, merchantId })) {
+  if (!merchantId || !validateE2eAuthRequest({ secret, merchantId })) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 

@@ -1,9 +1,10 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { saveIntegrationCredential, getIntegrationCredential, upsertMerchantIntegration } from '@/lib/integrations/auth';
+import { resolveActiveIntegrationConnectionId, upsertMerchantIntegration } from '@/lib/integrations/auth';
 import { writeCanonicalEvidence } from '@/lib/integrations/canonicalEvidence';
 import { mapCarrierProofToEvidence } from '@/lib/integrations/evidenceMapper';
-import { exchangeFedExClientCredentials, fedexProvider, fetchFedExDeliveryProof } from '@/lib/integrations/providers/fedex';
-import { exchangeUpsClientCredentials, fetchUpsDeliveryProof, upsProvider } from '@/lib/integrations/providers/ups';
+import { fedexProvider, fetchFedExDeliveryProof } from '@/lib/integrations/providers/fedex';
+import { fetchUpsDeliveryProof, upsProvider } from '@/lib/integrations/providers/ups';
+import { refreshCarrierCredentials } from '@/lib/integrations/providers/carrierCredentials';
 
 type CarrierId = 'ups' | 'fedex';
 
@@ -52,32 +53,19 @@ export async function syncCarrierEvidenceForCase(input: {
   }
 
   const provider = shipment.provider === 'ups' ? upsProvider : fedexProvider;
-  const credentials = await getIntegrationCredential(input.client, input.merchantId, shipment.provider);
+  const connectionId = await resolveActiveIntegrationConnectionId(input.client, input.merchantId, shipment.provider);
+  const credentials = connectionId
+    ? await refreshCarrierCredentials(input.client, { merchantId: input.merchantId, connectionId, providerId: shipment.provider })
+    : null;
   if (!credentials?.clientId || !credentials?.clientSecret) {
     return { ok: false, reason: 'not_connected', message: `${provider.name} is not connected.` };
   }
 
   const now = new Date().toISOString();
   try {
-    const token = shipment.provider === 'ups'
-      ? await exchangeUpsClientCredentials({
-          clientId: String(credentials.clientId),
-          clientSecret: String(credentials.clientSecret),
-          environment: credentials.environment === 'sandbox' ? 'sandbox' : 'production',
-        })
-      : await exchangeFedExClientCredentials({
-          clientId: String(credentials.clientId),
-          clientSecret: String(credentials.clientSecret),
-          environment: credentials.environment === 'sandbox' ? 'sandbox' : 'production',
-        });
-    const refreshed = { ...credentials, accessToken: token.accessToken };
-    await saveIntegrationCredential(input.client, input.merchantId, provider, refreshed, {
-      scopes: ['tracking', 'proof_of_delivery'],
-      expiresAt: token.expiresAt,
-    });
     const payload = shipment.provider === 'ups'
-      ? await fetchUpsDeliveryProof({ credentials: refreshed, trackingNumber: shipment.trackingNumber })
-      : await fetchFedExDeliveryProof({ credentials: refreshed, trackingNumber: shipment.trackingNumber });
+      ? await fetchUpsDeliveryProof({ credentials, trackingNumber: shipment.trackingNumber })
+      : await fetchFedExDeliveryProof({ credentials, trackingNumber: shipment.trackingNumber });
     const evidence = mapCarrierProofToEvidence(shipment.provider, payload, {
       merchantId: input.merchantId,
       supportPayoutCaseId: input.supportPayoutCaseId,
@@ -86,13 +74,14 @@ export async function syncCarrierEvidenceForCase(input: {
     });
     await writeCanonicalEvidence(input.client, evidence);
     await upsertMerchantIntegration(input.client, input.merchantId, provider, 'connected', {
+      connectionId: connectionId!,
       lastSyncAt: now,
       lastError: null,
     });
     return { ok: true, provider: shipment.provider, evidenceItems: evidence.length, trackingNumber: shipment.trackingNumber };
   } catch (error) {
     const message = error instanceof Error ? error.message : `${shipment.provider}_sync_failed`;
-    await upsertMerchantIntegration(input.client, input.merchantId, provider, 'error', { lastError: message });
+    if (connectionId) await upsertMerchantIntegration(input.client, input.merchantId, provider, 'error', { connectionId, lastError: message });
     return { ok: false, reason: 'sync_failed', message };
   }
 }

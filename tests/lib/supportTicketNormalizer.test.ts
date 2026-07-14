@@ -23,7 +23,7 @@ const CONNECTION_ID = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
 const baseContext: NormalizeSupportTicketContext = {
   merchant_id: MERCHANT_ID,
   provider_connection_id: CONNECTION_ID,
-  shop_domain: 'unauth-test.myshopify.com',
+  shop_domain: 'merchant-a.myshopify.com',
   provider_base_url: 'https://acme.zendesk.com',
 };
 

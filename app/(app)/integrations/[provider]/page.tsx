@@ -62,10 +62,20 @@ export default async function ConnectionPage({
     (candidate) => candidate.id === provider,
   );
   if (!item) notFound();
-  const liveHealth = provider === "shopify" || provider === "gorgias"
+  const liveHealth = provider === "shopify"
+    || provider === "gorgias"
+    || provider === "shipbob"
+    || provider === "ups"
+    || provider === "fedex"
     ? await verifyMerchantLiveConnections(service, ctx.merchantId)
     : null;
-  const liveResult = provider === "shopify" ? liveHealth?.shopify : liveHealth?.gorgias;
+  const liveResult = provider === "shopify"
+    ? liveHealth?.shopify
+    : provider === "gorgias"
+      ? liveHealth?.gorgias
+      : provider === "shipbob" || provider === "ups" || provider === "fedex"
+        ? liveHealth?.[provider]
+        : null;
   if (liveResult) {
     item.status = liveResult.status === "verified"
       ? "connected"

@@ -64,13 +64,40 @@ export async function upsertCommerceStoreConnection(
   if (input.scopes !== undefined) {
     upsertRow.scopes = input.scopes ?? [];
   }
-  const { data, error } = await supabase
+  const { data: existing, error: lookupError } = await supabase
     .from(STORE_CONNECTIONS_TABLE)
-    .upsert(upsertRow, { onConflict: 'platform,store_key' })
-    .select('*')
-    .single();
+    .select('id,merchant_id')
+    .eq('platform', input.platform)
+    .eq('store_key', input.store_key)
+    .limit(1)
+    .maybeSingle();
+  if (lookupError) {
+    throw new Error(`store_connection_ownership_lookup_failed: ${lookupError.message}`);
+  }
+  if (existing && existing.merchant_id !== input.merchant_id) {
+    throw new Error('provider_account_already_owned_by_another_merchant');
+  }
+
+  const { merchant_id: _merchantId, ...storeUpdate } = upsertRow;
+  const result = existing
+    ? await supabase
+        .from(STORE_CONNECTIONS_TABLE)
+        .update(storeUpdate)
+        .eq('id', existing.id)
+        .eq('merchant_id', input.merchant_id)
+        .select('*')
+        .single()
+    : await supabase
+        .from(STORE_CONNECTIONS_TABLE)
+        .insert(upsertRow)
+        .select('*')
+        .single();
+  const { data, error } = result;
 
   if (error || !data) {
+    if (error?.code === '23505') {
+      throw new Error('provider_account_already_owned_or_provider_policy_conflict');
+    }
     throw new Error(`upsert_commerce_store_connection_failed: ${error?.message ?? 'unknown'}`);
   }
 

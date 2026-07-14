@@ -29,9 +29,10 @@ import {
 } from '@/lib/shopify/identity';
 import { buildShopifyOrderSignalRow } from '@/lib/shopify/orderSignals';
 import { syncShopifyProfilesForShop } from '@/lib/shopify/profileLinking';
+import { requiredControlledAccountEnv } from '@/scripts/e2e/controlledAccountEnv';
 
-const MERCHANT_ID = 'af070af9-df1a-46ba-89f8-29409926ef61';
-const SHOP_DOMAIN = process.env.SHOPIFY_STORE_DOMAIN || 'unauth-test.myshopify.com';
+const MERCHANT_ID = requiredControlledAccountEnv('E2E_MERCHANT_ID');
+const SHOP_DOMAIN = requiredControlledAccountEnv('E2E_SHOPIFY_STORE_DOMAIN');
 const ADMIN_TOKEN = process.env.SHOPIFY_ADMIN_API_TOKEN || '';
 const SUPPORT_INBOX = 'mvr4w50490yo6z7l@email.gorgias.com';
 

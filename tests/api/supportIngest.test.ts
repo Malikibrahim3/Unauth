@@ -119,7 +119,7 @@ const zendeskBody = {
   merchant_id: MERCHANT_ID,
   provider: 'zendesk' as const,
   event_type: 'ticket_created',
-  shop_domain: 'unauth-test.myshopify.com',
+  shop_domain: 'merchant-a.myshopify.com',
   raw: {
     id: 99101,
     subject: 'Missing parcel ORD-2025-00341',

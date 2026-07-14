@@ -6,15 +6,15 @@ import { config as loadEnv } from 'dotenv';
 loadEnv({ path: '.env.local' });
 
 import { createServiceClient } from '@/lib/supabase/server';
+import { requiredControlledAccountEnv } from '@/scripts/e2e/controlledAccountEnv';
 import { getContextCreditSnapshot } from '@/lib/billing/contextCredits';
 import { hashWidgetToken } from '@/lib/api/widgetTokens';
 import { gorgiasApiBaseUrl, gorgiasApiRequest } from '@/lib/support/gorgias/registerSidebarWidget';
 
-const MERCHANT_ID =
-  process.env.E2E_MERCHANT_ID?.trim() || 'af070af9-df1a-46ba-89f8-29409926ef61';
+const MERCHANT_ID = requiredControlledAccountEnv('E2E_MERCHANT_ID');
 const TICKET_ID = process.argv[2]?.trim() || '63291904';
 const SHOPPER_EMAIL = process.argv[3]?.trim() || 'simeonmurray123@gmail.com';
-const INTEGRATION_ID = Number(process.env.GORGIAS_WIDGET_INTEGRATION_ID ?? '104747');
+const INTEGRATION_ID = Number(requiredControlledAccountEnv('E2E_GORGIAS_WIDGET_INTEGRATION_ID'));
 
 const APP = (process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000').replace(/\/$/, '');
 

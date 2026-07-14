@@ -2,9 +2,9 @@ import { normalizeShopInput } from '@/lib/shopify/normalizeShopInput';
 
 describe('normalizeShopInput', () => {
   describe('admin.shopify.com URLs', () => {
-    it('accepts admin.shopify.com/store/unauth-test', () => {
-      expect(normalizeShopInput('admin.shopify.com/store/unauth-test')).toEqual({
-        domain: 'unauth-test.myshopify.com',
+    it('accepts admin.shopify.com/store/merchant-a', () => {
+      expect(normalizeShopInput('admin.shopify.com/store/merchant-a')).toEqual({
+        domain: 'merchant-a.myshopify.com',
         error: null,
       });
     });
@@ -31,9 +31,9 @@ describe('normalizeShopInput', () => {
   });
 
   describe('.myshopify.com URLs', () => {
-    it('accepts unauth-test.myshopify.com', () => {
-      expect(normalizeShopInput('unauth-test.myshopify.com')).toEqual({
-        domain: 'unauth-test.myshopify.com',
+    it('accepts merchant-a.myshopify.com', () => {
+      expect(normalizeShopInput('merchant-a.myshopify.com')).toEqual({
+        domain: 'merchant-a.myshopify.com',
         error: null,
       });
     });

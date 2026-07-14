@@ -3,8 +3,9 @@ loadEnv({ path: '.env.local' });
 import { createClient } from '@supabase/supabase-js';
 import { decryptGorgiasApiCredentials } from '@/lib/support/gorgias/credentialCrypto';
 import { gorgiasApiBaseUrl, gorgiasApiRequest } from '@/lib/support/gorgias/registerSidebarWidget';
+import { requiredControlledAccountEnv } from '@/scripts/e2e/controlledAccountEnv';
 
-const MERCHANT = 'af070af9-df1a-46ba-89f8-29409926ef61';
+const MERCHANT = requiredControlledAccountEnv('E2E_MERCHANT_ID');
 const APP = process.env.E2E_WIDGET_APP_URL ?? 'https://unauth-pi.vercel.app';
 
 async function main() {

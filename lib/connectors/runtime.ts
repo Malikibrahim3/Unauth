@@ -29,6 +29,9 @@ export function resolveCapabilityAvailability(
     if (capability.support === 'unsupported') {
       return { availability: 'unsupported', reason: 'Connector does not support this capability.' };
     }
+    if (DEGRADED_STATUSES.has(health.status)) {
+      return { availability: 'degraded', reason: `Connection status is '${health.status}'.` };
+    }
     const missingScopes = capability.requiredScopes.filter((s) => !health.grantedScopes.includes(s));
     if (missingScopes.length > 0) {
       return {
@@ -38,9 +41,6 @@ export function resolveCapabilityAvailability(
     }
     if (WRITE_LEVELS.has(capability.level) && !health.writebackEnabled) {
       return { availability: 'merchant_disabled', reason: 'Merchant write-back is disabled.' };
-    }
-    if (DEGRADED_STATUSES.has(health.status)) {
-      return { availability: 'degraded', reason: `Connection status is '${health.status}'.` };
     }
     return { availability: 'enabled', reason: 'Available.' };
   };

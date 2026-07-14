@@ -67,7 +67,7 @@ const baseArgs = [
   '--webhook-secret',
   secret,
   '--shop-domain',
-  'unauth-test.myshopify.com',
+  'merchant-a.myshopify.com',
   '--order-ref',
   '1007',
 ];
@@ -80,7 +80,7 @@ const wrong = runFixture(
     '--webhook-secret',
     'wrong-secret-value-32chars-minimum',
     '--shop-domain',
-    'unauth-test.myshopify.com',
+    'merchant-a.myshopify.com',
     '--order-ref',
     '1007',
   ],

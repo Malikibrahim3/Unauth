@@ -109,7 +109,7 @@ function makeGorgiasWebhookSupabase(options?: {
   const shopifyConnections = options?.shopifyConnections ?? [
     {
       merchant_id: MERCHANT_ID,
-      shop_domain: 'unauth-test.myshopify.com',
+      shop_domain: 'merchant-a.myshopify.com',
       active: true,
     },
   ];

@@ -6,6 +6,11 @@ import { recordDomainEvent } from '@/lib/connectors/domainEvents';
 import { verifyShipBobWebhookSignature } from '@/lib/connectors/providers/shipbob/api';
 import { runShipBobAccountSync } from '@/lib/integrations/providers/shipbobSync';
 import { createScopedClient } from '@/lib/supabase/scoped';
+import {
+  shipBobDomainEventType,
+  shipBobWebhookEventId,
+  shipBobWebhookIdempotencyKey,
+} from '@/lib/integrations/providers/shipbobWebhook';
 
 export const maxDuration = 60;
 
@@ -19,7 +24,7 @@ export async function POST(request: NextRequest) {
   const { data: connection, error } = await client.from('merchant_integrations').select('id,merchant_id,provider_id,status,provider_account_id,last_sync_completed_at').eq('id', connectionId).eq('provider_id', 'shipbob').maybeSingle();
   if (error || !connection || !['connected', 'syncing', 'degraded'].includes(connection.status)) return NextResponse.json({ error: 'connection_unavailable' }, { status: 404 });
   const scopedClient = createScopedClient(connection.merchant_id, client);
-  const credentials = await getIntegrationCredential(client, connection.merchant_id, 'shipbob');
+  const credentials = await getIntegrationCredential(client, connection.merchant_id, 'shipbob', { connectionId: connection.id });
   const secret = typeof credentials?.webhookSecret === 'string' ? credentials.webhookSecret : null;
   const rawBody = await request.text();
   if (!secret || !verifyShipBobWebhookSignature({
@@ -36,8 +41,13 @@ export async function POST(request: NextRequest) {
   } catch {
     return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
   }
-  const eventId = request.headers.get('webhook-id') ?? `body:${Buffer.from(rawBody).toString('base64url').slice(0, 32)}`;
+  const eventId = shipBobWebhookEventId(rawBody, request.headers.get('webhook-id'));
   const topic = request.headers.get('x-webhook-topic') ?? request.headers.get('shipbob-topic') ?? 'unknown';
+  const idempotencyKey = shipBobWebhookIdempotencyKey(
+    connection.provider_account_id,
+    connectionId,
+    eventId,
+  );
   const enqueue = await enqueueIngestionEvent(client, {
     merchantId: connection.merchant_id,
     connectionId,
@@ -45,21 +55,32 @@ export async function POST(request: NextRequest) {
     sourceAccountRef: connection.provider_account_id,
     providerEventId: eventId,
     eventType: topic,
-    idempotencyKey: `shipbob:${connection.provider_account_id ?? connectionId}:${eventId}`,
+    idempotencyKey,
     payload: { topic, event_id: eventId, payload },
   });
   if (enqueue.status === 'conflict') return NextResponse.json({ error: enqueue.reason }, { status: 409 });
   if (enqueue.duplicate) return NextResponse.json({ ok: true, duplicate: true });
+  const domainEventType = shipBobDomainEventType(topic);
+  if (!domainEventType) {
+    await client.from('ingestion_events').update({ status: 'ignored' })
+      .eq('id', enqueue.ingestionEventId)
+      .eq('merchant_id', connection.merchant_id)
+      .eq('connection_id', connectionId);
+    return NextResponse.json({ ok: true, ignored: true }, { status: 202 });
+  }
   await recordDomainEvent(client, {
     merchantId: connection.merchant_id,
     connectionId,
     ingestionEventId: enqueue.ingestionEventId,
-    eventType: topic === 'order.shipment.delivered' ? 'shipment.delivered' : 'shipment.updated',
+    eventType: domainEventType,
     aggregateType: 'shipbob_webhook',
-    idempotencyKey: `shipbob:webhook:${eventId}`,
+    idempotencyKey: `shipbob:webhook:${idempotencyKey}`,
     payload: { topic, event_id: eventId },
   });
-  await client.from('merchant_integrations').update({ webhook_last_received_at: new Date().toISOString(), webhook_status: 'healthy', last_error: null }).eq('id', connectionId);
+  await client.from('merchant_integrations')
+    .update({ webhook_last_received_at: new Date().toISOString(), webhook_status: 'healthy', last_error: null })
+    .eq('id', connectionId)
+    .eq('merchant_id', connection.merchant_id);
 
   // Nudge an incremental sync after responding, so the change this webhook
   // announces reaches canonical records without waiting for the daily worker
@@ -70,11 +91,16 @@ export async function POST(request: NextRequest) {
   if (!recentlySynced) {
     after(async () => {
       try {
-        const { data: account } = await scopedClient.from('source_accounts').select('id').eq('connection_id', connectionId).maybeSingle();
+        const { data: account } = await scopedClient.from('source_accounts')
+          .select('id')
+          .eq('merchant_id', connection.merchant_id)
+          .eq('connection_id', connectionId)
+          .maybeSingle();
         await runShipBobAccountSync(client, { merchantId: connection.merchant_id, connectionId, sourceAccountId: account?.id ?? null });
       } catch (nudgeError) {
         // The daily worker remains the reconciliation backstop.
-        console.warn('shipbob_webhook_sync_nudge_failed', { message: nudgeError instanceof Error ? nudgeError.message : 'unknown' });
+        const category = nudgeError instanceof Error ? nudgeError.message.split(':', 1)[0] : 'unknown';
+        console.warn('shipbob_webhook_sync_nudge_failed', { category });
       }
     });
   }

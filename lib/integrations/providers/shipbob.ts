@@ -75,14 +75,8 @@ export type ShipBobReturn = {
   raw: Record<string, any>;
 };
 
-function shipBobPatFromEnv(): string {
-  const pat = process.env.SHIPBOB_PAT?.trim();
-  if (!pat) throw new Error('shipbob_pat_missing: set SHIPBOB_PAT');
-  return pat;
-}
-
 function shipBobBaseUrl(sandbox?: boolean): string {
-  const isSandbox = sandbox ?? process.env.SHIPBOB_SANDBOX === 'true';
+  const isSandbox = sandbox === true;
   return isSandbox
     ? 'https://sandbox-api.shipbob.com/2026-01'
     : 'https://api.shipbob.com/2026-01';
@@ -114,7 +108,8 @@ async function shipBobRequest<T>(
   path: string,
   options: { pat?: string; baseUrl?: string; sandbox?: boolean; channelId?: string } = {},
 ): Promise<T | null> {
-  const pat = options.pat ?? shipBobPatFromEnv();
+  const pat = options.pat?.trim();
+  if (!pat) throw new Error('shipbob_merchant_credential_missing');
   const baseUrl = (options.baseUrl ?? shipBobBaseUrl(options.sandbox)).replace(/\/$/, '');
   const res = await fetch(`${baseUrl}${path.startsWith('/') ? path : `/${path}`}`, {
     headers: shipBobHeaders(pat, options.channelId),
@@ -122,7 +117,7 @@ async function shipBobRequest<T>(
   });
   if (res.status === 404) return null;
   if (res.status === 401 || res.status === 403) {
-    throw new Error('shipbob_auth_failed: check SHIPBOB_PAT');
+    throw new Error('shipbob_auth_failed');
   }
   if (res.status === 429) {
     const retryAfter = res.headers.get('retry-after');

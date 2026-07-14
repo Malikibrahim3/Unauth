@@ -34,6 +34,8 @@ export async function processBigCommerceRefundWebhook(input: {
     .select('id, merchant_id, credentials_encrypted')
     .eq('platform', 'bigcommerce')
     .eq('store_key', storeHash)
+    .eq('status', 'active')
+    .is('uninstalled_at', null)
     .maybeSingle();
   if (connectionError) throw new Error(`store_connection_lookup_failed: ${connectionError.message}`);
   if (!connection) {
@@ -49,6 +51,7 @@ export async function processBigCommerceRefundWebhook(input: {
     .select('id, total_price')
     .eq('merchant_id', connection.merchant_id)
     .eq('source', 'bigcommerce')
+    .eq('connection_id', connection.id)
     .eq('external_id', orderIdStr)
     .maybeSingle();
   if (orderError) throw new Error(`source_order_lookup_failed: ${orderError.message}`);

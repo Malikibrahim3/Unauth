@@ -123,12 +123,16 @@ function addressParts(a: ShopifyAddress | null | undefined) {
 async function resolveStoreConnection(supabase: ServiceClient, shopDomain: string) {
   const { data, error } = await supabase
     .from('store_connections')
-    .select('id, merchant_id, status')
+    .select('id, merchant_id, status, uninstalled_at')
     .eq('platform', 'shopify')
     .eq('store_key', shopDomain)
     .maybeSingle();
   if (error) throw new Error(`store_connection_lookup_failed: ${error.message}`);
   return data ?? null;
+}
+
+function isActiveStoreConnection(connection: { status: string | null; uninstalled_at: string | null }): boolean {
+  return connection.status === 'active' && connection.uninstalled_at == null;
 }
 
 async function insertAddress(
@@ -182,7 +186,7 @@ async function upsertSourceCustomer(
         tags: tagsToArray(c.tags),
         updated_at: now,
       },
-      { onConflict: 'merchant_id,source,external_id' },
+      { onConflict: 'merchant_id,source,connection_id,external_id' },
     )
     .select('id')
     .single();
@@ -190,12 +194,18 @@ async function upsertSourceCustomer(
   return data.id;
 }
 
-async function findOrderByExternalId(supabase: ServiceClient, merchantId: string, externalId: string) {
+async function findOrderByExternalId(
+  supabase: ServiceClient,
+  merchantId: string,
+  connectionId: string,
+  externalId: string,
+) {
   const { data, error } = await supabase
     .from('source_orders')
     .select('id, shipping_address_id, billing_address_id')
     .eq('merchant_id', merchantId)
     .eq('source', 'shopify')
+    .eq('connection_id', connectionId)
     .eq('external_id', externalId)
     .maybeSingle();
   if (error) throw new Error(`source_order_lookup_failed: ${error.message}`);
@@ -212,7 +222,7 @@ async function processOrderTopic(
 ) {
   const externalId = String(payload.id);
   const customerId = await upsertSourceCustomer(supabase, merchantId, connectionId, payload, now);
-  const existing = await findOrderByExternalId(supabase, merchantId, externalId);
+  const existing = await findOrderByExternalId(supabase, merchantId, connectionId, externalId);
 
   let shippingId = existing?.shipping_address_id ?? null;
   let billingId = existing?.billing_address_id ?? null;
@@ -292,7 +302,7 @@ async function processOrderTopic(
         raw_payload_hash: crypto.createHash('sha256').update(rawBody, 'utf8').digest('hex'),
         updated_at: now,
       },
-      { onConflict: 'merchant_id,source,external_id' },
+      { onConflict: 'merchant_id,source,connection_id,source_account_id,external_id' },
     )
     .select('id')
     .single();
@@ -302,6 +312,7 @@ async function processOrderTopic(
     {
       provenance: { orderId: orderRow.id },
       source: 'shopify',
+      sourceAccountKey: connectionId,
       observedAt: payload.created_at ?? now,
       email,
       phone,
@@ -317,6 +328,7 @@ async function processOrderTopic(
     entities.push({
       provenance: { customerId },
       source: 'shopify',
+      sourceAccountKey: connectionId,
       observedAt: payload.customer.created_at ?? null,
       email: payload.customer.email ?? email,
       phone: payload.customer.phone ?? phone,
@@ -341,12 +353,13 @@ function detectRefundType(payload: Record<string, any>, refundedAmount: number):
 async function processRefundTopic(
   supabase: ServiceClient,
   merchantId: string,
+  connectionId: string,
   payload: Record<string, any>,
   rawBody: string,
 ) {
   const orderExternalId = payload.order_id != null ? String(payload.order_id) : null;
   if (!orderExternalId) return;
-  const order = await findOrderByExternalId(supabase, merchantId, orderExternalId);
+  const order = await findOrderByExternalId(supabase, merchantId, connectionId, orderExternalId);
   if (!order) return;
   const refundedAmount = Number(
     payload.transactions?.reduce((sum: number, tx: any) => {
@@ -378,7 +391,7 @@ async function processRefundTopic(
     eventType: 'refund.created',
     aggregateType: 'refund',
     aggregateId: refund?.id ?? null,
-    idempotencyKey: `shopify:refund:${String(payload.id)}`,
+    idempotencyKey: `shopify:refund:${connectionId}:${String(payload.id)}`,
     payload: {
       source_order_id: order.id,
       amount_minor: Number.isFinite(refundedAmount) ? Math.round(refundedAmount * 100) : null,
@@ -394,11 +407,12 @@ async function processRefundTopic(
 async function processFulfillmentTopic(
   supabase: ServiceClient,
   merchantId: string,
+  connectionId: string,
   payload: Record<string, any>,
 ) {
   const orderExternalId = payload.order_id != null ? String(payload.order_id) : null;
   if (!orderExternalId) return;
-  const order = await findOrderByExternalId(supabase, merchantId, orderExternalId);
+  const order = await findOrderByExternalId(supabase, merchantId, connectionId, orderExternalId);
   if (!order) return;
   const { error } = await supabase
     .from('source_fulfillments')
@@ -454,6 +468,7 @@ function mapDisputeStatusToClaimStatus(status: unknown): 'escalated' | 'resolved
 async function processDisputeTopic(
   supabase: ServiceClient,
   merchantId: string,
+  connectionId: string,
   payload: Record<string, any>,
   topic: string,
   now: string,
@@ -465,7 +480,7 @@ async function processDisputeTopic(
         ? String(payload.order.id)
         : null;
   if (!orderExternalId || payload.id == null) return;
-  const order = await findOrderByExternalId(supabase, merchantId, orderExternalId);
+  const order = await findOrderByExternalId(supabase, merchantId, connectionId, orderExternalId);
 
   const { error: de } = await supabase
     .from('source_disputes')
@@ -482,7 +497,7 @@ async function processDisputeTopic(
         initiated_at: payload.created_at ?? null,
         finalized_at: payload.finalized_on ?? null,
       },
-      { onConflict: 'merchant_id,external_id' },
+      { onConflict: 'merchant_id,source_order_id,external_id' },
     );
   if (de) throw new Error(`source_dispute_upsert_failed: ${de.message}`);
 
@@ -548,12 +563,13 @@ async function processDisputeTopic(
 async function processCancellationTopic(
   supabase: ServiceClient,
   merchantId: string,
+  connectionId: string,
   payload: Record<string, any>,
   now: string,
 ) {
   const externalId = payload?.id != null ? String(payload.id) : null;
   if (!externalId) return;
-  const order = await findOrderByExternalId(supabase, merchantId, externalId);
+  const order = await findOrderByExternalId(supabase, merchantId, connectionId, externalId);
   if (!order) return;
   const { error } = await supabase
     .from('source_orders')
@@ -588,6 +604,7 @@ async function processCancellationTopic(
 async function ingestEmbeddedOrderChildren(
   supabase: ServiceClient,
   merchantId: string,
+  connectionId: string,
   orderPayload: Record<string, any>,
 ) {
   const orderId = orderPayload.id != null ? String(orderPayload.id) : null;
@@ -596,14 +613,14 @@ async function ingestEmbeddedOrderChildren(
   for (const refund of refunds) {
     if (!refund || typeof refund !== 'object') continue;
     const payload = { ...refund, order_id: (refund as Record<string, unknown>).order_id ?? orderId, order: orderPayload };
-    await processRefundTopic(supabase, merchantId, payload, JSON.stringify(payload));
+    await processRefundTopic(supabase, merchantId, connectionId, payload, JSON.stringify(payload));
   }
 
   const fulfillments = Array.isArray(orderPayload.fulfillments) ? orderPayload.fulfillments : [];
   for (const fulfillment of fulfillments) {
     if (!fulfillment || typeof fulfillment !== 'object') continue;
     const payload = { ...fulfillment, order_id: (fulfillment as Record<string, unknown>).order_id ?? orderId };
-    await processFulfillmentTopic(supabase, merchantId, payload);
+    await processFulfillmentTopic(supabase, merchantId, connectionId, payload);
   }
 }
 
@@ -620,6 +637,9 @@ export async function processShopifyOrderPayload(input: {
     console.warn('Shopify order for unknown store skipped', { shopDomain: input.shopDomain });
     return { ingested: false, merchantId: null, connectionId: null };
   }
+  if (!isActiveStoreConnection(connection)) {
+    return { ingested: false, merchantId: connection.merchant_id, connectionId: connection.id };
+  }
   if (input.payload?.id == null) {
     return { ingested: false, merchantId: connection.merchant_id, connectionId: connection.id };
   }
@@ -627,7 +647,7 @@ export async function processShopifyOrderPayload(input: {
   const rawBody = input.rawBody ?? JSON.stringify(input.payload);
   await processOrderTopic(input.supabase, connection.merchant_id, connection.id, input.payload, rawBody, now);
   if (input.ingestEmbeddedResources) {
-    await ingestEmbeddedOrderChildren(input.supabase, connection.merchant_id, input.payload);
+    await ingestEmbeddedOrderChildren(input.supabase, connection.merchant_id, connection.id, input.payload);
   }
   return { ingested: true, merchantId: connection.merchant_id, connectionId: connection.id };
 }
@@ -679,10 +699,19 @@ export async function processShopifyWebhook(input: {
     return;
   }
 
+  if (!isActiveStoreConnection(connection)) {
+    console.warn('Shopify webhook for inactive store skipped', {
+      shopDomain: input.shopDomain,
+      topic: input.topic,
+      status: connection.status,
+    });
+    return;
+  }
+
   if (input.topic === 'orders/create' || input.topic === 'orders/updated') {
     if (payload?.id == null) return;
     await processOrderTopic(supabase, connection.merchant_id, connection.id, payload, input.rawBody, now);
-    await ingestEmbeddedOrderChildren(supabase, connection.merchant_id, payload);
+    await ingestEmbeddedOrderChildren(supabase, connection.merchant_id, connection.id, payload);
     const visitorId = extractUnauthVisitorId(payload);
     if (visitorId) {
       try {
@@ -701,13 +730,13 @@ export async function processShopifyWebhook(input: {
       }
     }
   } else if (input.topic === 'refunds/create') {
-    await processRefundTopic(supabase, connection.merchant_id, payload, input.rawBody);
+    await processRefundTopic(supabase, connection.merchant_id, connection.id, payload, input.rawBody);
   } else if (input.topic === 'fulfillments/create' || input.topic === 'fulfillments/update') {
-    await processFulfillmentTopic(supabase, connection.merchant_id, payload);
+    await processFulfillmentTopic(supabase, connection.merchant_id, connection.id, payload);
   } else if (input.topic === 'orders/cancelled') {
-    await processCancellationTopic(supabase, connection.merchant_id, payload, now);
+    await processCancellationTopic(supabase, connection.merchant_id, connection.id, payload, now);
   } else if (input.topic === 'disputes/create' || input.topic === 'disputes/update' || input.topic === 'disputes/updated') {
-    await processDisputeTopic(supabase, connection.merchant_id, payload, input.topic, now);
+    await processDisputeTopic(supabase, connection.merchant_id, connection.id, payload, input.topic, now);
   }
 
   const { error: canonicalError } = await supabase

@@ -36,6 +36,14 @@ describe('runtime capability availability', () => {
     expect(r.availability).toBe('degraded');
   });
 
+  it('reports a revoked connection as degraded before considering stale scopes', () => {
+    const r = resolveCapabilityAvailability(
+      capability('orders.read', 'read', { requiredScopes: ['read_orders'] }),
+      { status: 'revoked', grantedScopes: [], writebackEnabled: false },
+    );
+    expect(r.availability).toBe('degraded');
+  });
+
   it('is unsupported when the connector declares no support', () => {
     const r = resolveCapabilityAvailability(
       capability('refund.issue', 'act', { support: 'unsupported' }),

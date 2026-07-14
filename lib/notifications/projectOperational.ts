@@ -6,6 +6,7 @@ import {
   type NotificationRequest,
 } from "@/lib/notifications/project";
 import { formatCurrencyNullable } from "@/lib/utils/format";
+import { publicConnectionErrorMessage } from "@/lib/integrations/publicErrors";
 
 type ProjectionSummary = {
   requested: number;
@@ -98,7 +99,7 @@ export async function projectOperationalNotifications(
       client
         .from(TABLES.MERCHANT_INTEGRATIONS)
         .select(
-          "id,provider_id,status,last_error_message,last_error,last_error_at,updated_at",
+          "id,provider_id,status,last_error_code,last_error_message,last_error,last_error_at,updated_at",
         )
         .eq("merchant_id", merchantId)
         .in("status", ["error", "revoked", "attention_required"])
@@ -216,10 +217,11 @@ export async function projectOperationalNotifications(
             .replace(/^./, (character: string) =>
               character.toUpperCase(),
             )} connection needs attention`,
-          body:
-            integration.last_error_message ??
-            integration.last_error ??
-            "The connection is no longer healthy. Review credentials and retry the import.",
+          body: publicConnectionErrorMessage(
+            integration.last_error_code,
+            integration.last_error_message,
+            integration.last_error,
+          ) ?? "The connection is no longer healthy. Review credentials and retry the import.",
           target_href: `/integrations/${integration.provider_id}`,
           deduplication_key: `connection-health:${integration.id}:${integration.status}:${integration.last_error_at ?? integration.updated_at}`,
         },

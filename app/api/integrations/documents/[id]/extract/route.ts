@@ -21,7 +21,7 @@ export async function POST(
     .eq('id', id)
     .eq('merchant_id', ctx.merchantId)
     .maybeSingle();
-  if (lookupError) return NextResponse.json({ error: lookupError.message }, { status: 500 });
+  if (lookupError) return NextResponse.json({ error: 'Document lookup failed.', code: 'document_lookup_failed' }, { status: 500 });
   if (!document) return NextResponse.json({ error: 'Document not found.' }, { status: 404 });
   if (document.malware_scan_status !== 'clean' || document.extraction_status === 'quarantined') {
     return NextResponse.json({ error: 'Document extraction is blocked until malware scanning reports clean.' }, { status: 409 });
@@ -34,7 +34,7 @@ export async function POST(
     .eq('merchant_id', ctx.merchantId)
     .select('id,document_type,file_path,extraction_status,approved_at')
     .single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: 'Document extraction request failed.', code: 'document_extraction_request_failed' }, { status: 500 });
 
   return NextResponse.json({
     document: data,

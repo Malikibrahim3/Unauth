@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'node:crypto';
 import { z } from 'zod';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
@@ -54,18 +55,38 @@ export async function POST(
       return NextResponse.json({ error: 'Valid API credentials are required.' }, { status: 400 });
     }
     try {
-      await verifyShipBobPat(parsed.data.apiKey, parsed.data.sandbox, parsed.data.channelId);
+      const access = await verifyShipBobPat(parsed.data.apiKey, parsed.data.sandbox, parsed.data.channelId);
+      if (!parsed.data.channelId && access.channels.length > 1) {
+        return NextResponse.json({
+          error: 'account_selection_required',
+          accounts: access.channels.map(({ id, name }) => ({ id, name })),
+        }, { status: 409 });
+      }
+      const selected = parsed.data.channelId
+        ? access.channels.find((channel) => channel.id === parsed.data.channelId)
+        : access.channels[0];
+      if (!selected) {
+        return NextResponse.json({ error: 'Selected ShipBob channel is not available.' }, { status: 400 });
+      }
+      const environment = parsed.data.sandbox ? 'sandbox' : 'production';
+      const connectionId = await upsertMerchantIntegration(serviceClient, ctx.merchantId, provider, 'connected', {
+        providerAccountId: selected.id,
+        providerAccountName: selected.name ?? 'ShipBob',
+        environment,
+        grantedScopes: provider.requiredScopes,
+        lastError: null,
+      });
       await saveIntegrationCredential(serviceClient, ctx.merchantId, provider, {
         apiKey: parsed.data.apiKey,
         sandbox: parsed.data.sandbox,
-        channelId: parsed.data.channelId ?? null,
-      });
-      await upsertMerchantIntegration(serviceClient, ctx.merchantId, provider, 'connected', { lastError: null });
+        channelId: selected.id,
+        providerAccountId: selected.id,
+        environment,
+      }, { connectionId, scopes: provider.requiredScopes });
       return NextResponse.json({ ok: true, provider: provider.id, status: 'connected' });
     } catch (error) {
-      const message = error instanceof Error ? error.message : `${provider.id}_connect_failed`;
-      await upsertMerchantIntegration(serviceClient, ctx.merchantId, provider, 'error', { lastError: message });
-      return NextResponse.json({ error: message }, { status: 400 });
+      const code = error instanceof Error ? error.message.split(':', 1)[0] : `${provider.id}_connect_failed`;
+      return NextResponse.json({ error: code }, { status: 400 });
     }
   }
   if (provider.id !== 'ups' && provider.id !== 'fedex') {
@@ -91,6 +112,15 @@ export async function POST(
           environment: parsed.data.environment,
         });
 
+    const accountReference = parsed.data.accountNumber
+      ?? `client_${crypto.createHash('sha256').update(`${provider.id}:${parsed.data.clientId}`).digest('hex').slice(0, 24)}`;
+    const connectionId = await upsertMerchantIntegration(serviceClient, ctx.merchantId, provider, 'connected', {
+      providerAccountId: accountReference,
+      providerAccountName: parsed.data.accountNumber ?? provider.name,
+      environment: parsed.data.environment,
+      grantedScopes: ['tracking', 'proof_of_delivery'],
+      lastError: null,
+    });
     await saveIntegrationCredential(serviceClient, ctx.merchantId, provider, {
       clientId: parsed.data.clientId,
       clientSecret: parsed.data.clientSecret,
@@ -98,14 +128,13 @@ export async function POST(
       environment: parsed.data.environment,
       accessToken: token.accessToken,
     }, {
+      connectionId,
       scopes: ['tracking', 'proof_of_delivery'],
       expiresAt: token.expiresAt,
     });
-    await upsertMerchantIntegration(serviceClient, ctx.merchantId, provider, 'connected', { lastError: null });
     return NextResponse.json({ ok: true, provider: provider.id, status: 'connected' });
   } catch (error) {
-    const message = error instanceof Error ? error.message : `${provider.id}_connect_failed`;
-    await upsertMerchantIntegration(serviceClient, ctx.merchantId, provider, 'error', { lastError: message });
-    return NextResponse.json({ error: message }, { status: 400 });
+    const code = error instanceof Error ? error.message.split(':', 1)[0] : `${provider.id}_connect_failed`;
+    return NextResponse.json({ error: code }, { status: 400 });
   }
 }

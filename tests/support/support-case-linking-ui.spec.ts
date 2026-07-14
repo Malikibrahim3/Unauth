@@ -99,15 +99,15 @@ test.describe('Support case linking UI', () => {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          shops: ['unauth-test.myshopify.com'],
-          activeShopDomain: 'unauth-test.myshopify.com',
+          shops: ['merchant-a.myshopify.com'],
+          activeShopDomain: 'merchant-a.myshopify.com',
           claims: [
             {
               id: CLAIM_ID,
               claim_type: 'missing_parcel',
               status: 'under_review',
               shopify_order_id: '16848379281777',
-              shop_domain: 'simeon-murray-store.myshopify.com',
+              shop_domain: 'merchant-b.myshopify.com',
             },
           ],
         }),

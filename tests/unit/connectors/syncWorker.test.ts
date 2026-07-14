@@ -34,7 +34,17 @@ function makeClient() {
   };
   const client: any = {
     from: () => ({
-      update: (patch: any) => ({ eq: async (_c: string, v: string) => { updates.push({ patch, id: v }); return { error: null }; } }),
+      update: (patch: any) => {
+        const filters: Array<[string, string]> = [];
+        const chain: any = {
+          eq: (column: string, value: string) => { filters.push([column, value]); return chain; },
+          then: (resolve: (value: { error: null }) => unknown) => {
+            updates.push({ patch, id: filters.find(([column]) => column === 'id')?.[1] ?? '' });
+            return Promise.resolve({ error: null }).then(resolve);
+          },
+        };
+        return chain;
+      },
       select: () => selectChain,
     }),
     rpc: jest.fn(),
@@ -108,5 +118,22 @@ describe('runDueSyncJobs', () => {
     const adapter = adapterYielding([{ records: [], nextCursor: null, hasMore: false }]);
     const results = await runDueSyncJobs(client, { resolveAdapter: () => adapter });
     expect(results).toEqual([{ jobId: 'job-1', status: 'completed' }]);
+  });
+
+  it('continues with another merchant connection when one claimed job throws', async () => {
+    const { client, updates } = makeClient();
+    const second = { ...job, id: 'job-2', merchant_id: 'm-2', connection_id: 'c-2', source_account_id: 'a-2' };
+    client.rpc = jest.fn(async () => ({ data: [job, second], error: null }));
+    const failing = adapterYielding([{ records: [], nextCursor: null, hasMore: false }]);
+    failing.initialImport = async () => { throw new Error('provider_timeout:private-detail'); };
+    const healthy = adapterYielding([{ records: [], nextCursor: null, hasMore: false }]);
+    const results = await runDueSyncJobs(client, {
+      resolveAdapter: (candidate) => candidate.id === 'job-1' ? failing : healthy,
+    });
+    expect(results).toEqual([
+      { jobId: 'job-1', status: 'failed' },
+      { jobId: 'job-2', status: 'completed' },
+    ]);
+    expect(updates.find(({ id }) => id === 'job-1')?.patch.last_error_code).toBe('provider_timeout');
   });
 });

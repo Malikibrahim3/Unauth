@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { TABLES } from '@/lib/supabase/tables';
 import { POST } from '@/app/api/gorgias/support-webhook/route';
 import { createMemoryClient, rowsOf, type MemoryClient } from '@/tests/lib/supabaseMemoryClient';
+import { GORGIAS_SUPPORT_WEBHOOK_HEADER_NAME } from '@/lib/support/gorgias/supportConnectionShared';
 
 jest.mock('@/lib/supabase/server', () => ({
   createServiceClient: jest.fn(),
@@ -22,7 +23,11 @@ describe('POST /api/gorgias/support-webhook — webhook_logs', () => {
   });
 
   it('returns 400 and logs a validation_error for invalid JSON', async () => {
-    const request = new NextRequest(URL, { method: 'POST', body: 'not-json{' });
+    const request = new NextRequest(URL, {
+      method: 'POST',
+      headers: { [GORGIAS_SUPPORT_WEBHOOK_HEADER_NAME]: 'test-secret-present' },
+      body: 'not-json{',
+    });
     const response = await POST(request);
 
     expect(response.status).toBe(400);
@@ -39,7 +44,11 @@ describe('POST /api/gorgias/support-webhook — webhook_logs', () => {
   });
 
   it('returns 400 and logs a validation_error for a malformed ticket payload', async () => {
-    const request = new NextRequest(URL, { method: 'POST', body: JSON.stringify({ ticket: {} }) });
+    const request = new NextRequest(URL, {
+      method: 'POST',
+      headers: { [GORGIAS_SUPPORT_WEBHOOK_HEADER_NAME]: 'test-secret-present' },
+      body: JSON.stringify({ ticket: {} }),
+    });
     const response = await POST(request);
 
     expect(response.status).toBe(400);

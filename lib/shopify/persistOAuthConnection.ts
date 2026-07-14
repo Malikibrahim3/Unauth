@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { encryptBigCommerceOAuthCredentials } from '@/lib/commerce/credentialCrypto';
+import { upsertConnection } from '@/lib/connectors/connectionStore';
 
 /**
  * Persist a Shopify OAuth connection into the v2 `store_connections` table.
@@ -45,23 +46,40 @@ export async function persistShopifyOAuthConnection(
     ? params.scope.split(',').map((scope) => scope.trim()).filter(Boolean)
     : [];
 
-  const { error } = await serviceClient
+  const storeValues = {
+    store_url: `https://${params.shop}`,
+    status: 'active',
+    credentials_encrypted: credentialsEncrypted,
+    scopes,
+    uninstalled_at: null,
+    last_error: null,
+    updated_at: now,
+  };
+  const { data: existingStore, error: lookupError } = await serviceClient
     .from('store_connections')
-    .upsert(
-      {
+    .select('id,merchant_id')
+    .eq('platform', 'shopify')
+    .eq('store_key', params.shop)
+    .limit(1)
+    .maybeSingle();
+  if (lookupError) {
+    return { ok: false, error: 'connection_failed', message: lookupError.message };
+  }
+  if (existingStore && existingStore.merchant_id !== params.merchantId) {
+    return { ok: false, error: 'connection_failed', message: 'provider_account_already_owned_by_another_merchant' };
+  }
+  const { error } = existingStore
+    ? await serviceClient
+        .from('store_connections')
+        .update(storeValues)
+        .eq('id', existingStore.id)
+        .eq('merchant_id', params.merchantId)
+    : await serviceClient.from('store_connections').insert({
         merchant_id: params.merchantId,
         platform: 'shopify',
         store_key: params.shop,
-        store_url: `https://${params.shop}`,
-        status: 'active',
-        credentials_encrypted: credentialsEncrypted,
-        scopes,
-        uninstalled_at: null,
-        last_error: null,
-        updated_at: now,
-      },
-      { onConflict: 'platform,store_key' },
-    );
+        ...storeValues,
+      });
 
   if (error) {
     return { ok: false, error: 'connection_failed', message: error.message };
@@ -71,35 +89,41 @@ export async function persistShopifyOAuthConnection(
   // commerce-specific credential row. Without this mirror, a successful
   // Shopify OAuth flow can still appear disconnected in the main Integrations
   // view because that view reads merchant_integrations.
-  const { error: canonicalError } = await serviceClient
-    .from('merchant_integrations')
-    .upsert(
-      {
-        merchant_id: params.merchantId,
-        provider_id: 'shopify',
-        category: 'commerce',
-        auth_mode: 'oauth',
+  try {
+    const { connectionId } = await upsertConnection(serviceClient, {
+      merchantId: params.merchantId,
+      providerId: 'shopify',
+      category: 'commerce',
+      authMode: 'oauth',
+      status: 'connected',
+      providerAccountId: params.shop,
+      providerAccountName: params.shop,
+      providerBaseUrl: `https://${params.shop}`,
+      displayName: params.shop,
+      grantedScopes: scopes,
+      connectorVersion: '2026-01',
+      environment: 'production',
+    });
+    const { error: metadataError } = await serviceClient
+      .from('merchant_integrations')
+      .update({
         authentication_mode: 'oauth',
-        status: 'connected',
-        provider_account_id: params.shop,
-        provider_account_name: params.shop,
-        provider_base_url: `https://${params.shop}`,
-        display_name: params.shop,
-        granted_scopes: scopes,
-        connector_version: '2026-01',
         connection_created_at: now,
         disconnected_at: null,
         last_error: null,
         last_error_code: null,
         last_error_message: null,
         last_error_at: null,
-        updated_at: now,
-      },
-      { onConflict: 'merchant_id,provider_id,provider_account_id' },
-    );
-
-  if (canonicalError) {
-    return { ok: false, error: 'connection_failed', message: canonicalError.message };
+      })
+      .eq('id', connectionId)
+      .eq('merchant_id', params.merchantId);
+    if (metadataError) throw metadataError;
+  } catch (canonicalError) {
+    return {
+      ok: false,
+      error: 'connection_failed',
+      message: canonicalError instanceof Error ? canonicalError.message : 'canonical_connection_failed',
+    };
   }
 
   return { ok: true, merchantId: params.merchantId };

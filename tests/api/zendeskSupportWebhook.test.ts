@@ -85,7 +85,7 @@ function makeZendeskWebhookSupabase(options?: {
                   column === 'merchant_id' && value === MERCHANT_ID
                     ? {
                         merchant_id: MERCHANT_ID,
-                        shop_domain: 'unauth-test.myshopify.com',
+                        shop_domain: 'merchant-a.myshopify.com',
                         active: true,
                       }
                     : null,
@@ -97,7 +97,7 @@ function makeZendeskWebhookSupabase(options?: {
                     data: [
                       {
                         merchant_id: MERCHANT_ID,
-                        shop_domain: 'unauth-test.myshopify.com',
+                        shop_domain: 'merchant-a.myshopify.com',
                         active: true,
                       },
                     ],

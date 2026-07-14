@@ -1,5 +1,4 @@
 import {
-  E2E_MERCHANT_ID,
   isE2eTestAuthEnabled,
   validateE2eAuthRequest,
   validateE2eMerchantId,
@@ -7,11 +6,17 @@ import {
 import { buildEvidenceChecklist } from '@/lib/payouts/evidenceChecklist';
 import type { ClaimDecisionContext } from '@/lib/claims/decision/types';
 
+const FIXTURE_MERCHANT_ID = '00000000-0000-4000-8000-000000000001';
+
 describe('E2E test auth guard', () => {
   const original = { ...process.env };
 
   afterEach(() => {
     process.env = { ...original };
+  });
+
+  beforeEach(() => {
+    process.env.E2E_MERCHANT_ID = FIXTURE_MERCHANT_ID;
   });
 
   it('is disabled on production deploys', () => {
@@ -30,7 +35,7 @@ describe('E2E test auth guard', () => {
   });
 
   it('only allows the canonical E2E merchant', () => {
-    expect(validateE2eMerchantId(E2E_MERCHANT_ID)).toBe(true);
+    expect(validateE2eMerchantId(FIXTURE_MERCHANT_ID)).toBe(true);
     expect(validateE2eMerchantId('00000000-0000-4000-8000-000000000099')).toBe(false);
   });
 
@@ -39,13 +44,13 @@ describe('E2E test auth guard', () => {
     expect(
       validateE2eAuthRequest({
         secret: 'local-only-secret-1234',
-        merchantId: E2E_MERCHANT_ID,
+        merchantId: FIXTURE_MERCHANT_ID,
       }),
     ).toBe(true);
     expect(
       validateE2eAuthRequest({
         secret: 'wrong',
-        merchantId: E2E_MERCHANT_ID,
+        merchantId: FIXTURE_MERCHANT_ID,
       }),
     ).toBe(false);
   });
@@ -53,7 +58,7 @@ describe('E2E test auth guard', () => {
 
 function makeShopifyGorgiasContext(): ClaimDecisionContext {
   return {
-    merchantId: E2E_MERCHANT_ID,
+    merchantId: FIXTURE_MERCHANT_ID,
     claim: {
       id: '361dd765-8451-428d-9562-d490b1e13c68',
       type: 'item_not_received',

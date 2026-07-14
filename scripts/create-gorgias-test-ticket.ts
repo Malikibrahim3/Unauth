@@ -16,10 +16,11 @@ loadEnv({ path: '.env.local' });
 import { createServiceClient } from '@/lib/supabase/server';
 import { getActiveGorgiasMerchantApiAccess } from '@/lib/support/gorgias/merchantApiAccess';
 import { gorgiasApiBaseUrl, gorgiasApiRequest } from '@/lib/support/gorgias/registerSidebarWidget';
+import { requiredControlledAccountEnv } from '@/scripts/e2e/controlledAccountEnv';
 
-const MERCHANT_ID = 'af070af9-df1a-46ba-89f8-29409926ef61';
+const MERCHANT_ID = requiredControlledAccountEnv('E2E_MERCHANT_ID');
 const SHOPPER_EMAIL = 'simeonmurray123@gmail.com';
-const SUPPORT_INBOX = 'mvr4w50490yo6z7l@email.gorgias.com'; // channel 104593 "Unauth Support"
+const SUPPORT_INBOX = requiredControlledAccountEnv('E2E_GORGIAS_SUPPORT_INBOX');
 const SUBJECT = 'Order #1008 not received';
 const BODY = "Hi, I still haven't received order #1008. I'd like a refund please.";
 

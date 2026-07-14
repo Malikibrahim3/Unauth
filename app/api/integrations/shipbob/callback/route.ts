@@ -1,25 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
-import { ensureMerchantContextForUser } from '@/lib/account/ensureMerchantContext';
-import { PERMISSIONS, requirePermission } from '@/lib/permissions';
+import { PERMISSIONS, requirePermissionForMerchant } from '@/lib/permissions';
 import { getAppUrl } from '@/lib/utils/appUrl';
 import { env } from '@/lib/utils/env';
 import {
   exchangeShipBobOAuthCode,
-  fetchShipBobChannel,
-  persistShipBobOAuthConnection,
-  ensureShipBobWebhookSubscriptions,
+  fetchShipBobChannels,
   openShipBobOAuthState,
-  storeShipBobWebhookSecret,
   type ShipBobOAuthState,
 } from '@/lib/integrations/providers/shipbobOAuth';
-import { ensureShipBobSyncJob } from '@/lib/integrations/providers/shipbobSync';
-import { getIntegrationCredential } from '@/lib/integrations/auth';
 import { recordShipBobAudit } from '@/lib/integrations/providers/shipbobAudit';
+import { consumeOAuthConnectionTransaction } from '@/lib/integrations/oauthTransactions';
+import { createPendingAccountSelection } from '@/lib/integrations/pendingAccountSelection';
+import { completeShipBobConnection } from '@/lib/integrations/providers/shipbobCompletion';
 import {
   clearShipBobOAuthCookieOptions,
   shipBobOAuthCookie,
 } from '@/lib/integrations/shipbobOAuthCookies';
+import { safeConnectionErrorCode } from '@/lib/integrations/publicErrors';
 
 // Token exchange + channel lookup + webhook subscription is a multi-call
 // chain against ShipBob; the platform default duration can cut it off.
@@ -75,23 +73,19 @@ async function handleCallback(request: NextRequest) {
   const { code, state, error } = await callbackParams(request);
   if (error) {
     try { oauthStateForAudit = state ? openShipBobOAuthState(state) : null; } catch { oauthStateForAudit = null; }
-    console.warn('shipbob_oauth_provider_error', { errorCategory: error.slice(0, 80) });
+    console.warn('shipbob_oauth_provider_error', {
+      errorCategory: safeConnectionErrorCode(error) ?? 'provider_authorization_error',
+    });
     return responseError('authorization_denied');
   }
   if (!code || !state) return responseError('missing_params');
 
   let oauthState: ShipBobOAuthState;
   try {
-    // The encrypted state carries the PKCE verifier and merchant binding, so
-    // browsers that discard the temporary OAuth cookie can still complete the
-    // callback safely. The cookie fallback preserves in-flight legacy attempts.
     oauthState = openShipBobOAuthState(state);
     oauthStateForAudit = oauthState;
   } catch {
-    const rawCookie = request.cookies.get(shipBobOAuthCookie)?.value;
-    if (!rawCookie) return responseError('invalid_state');
-    try { oauthState = JSON.parse(rawCookie) as ShipBobOAuthState; oauthStateForAudit = oauthState; } catch { return responseError('invalid_state'); }
-    if (!oauthState.state || oauthState.state !== state || !oauthState.codeVerifier) return responseError('invalid_state');
+    return responseError('invalid_state');
   }
 
   try {
@@ -100,14 +94,32 @@ async function handleCallback(request: NextRequest) {
     const { data: { user } } = await userClient.auth.getUser();
     if (!user) return responseError('unauthorized');
     if (oauthState.userId && oauthState.userId !== user.id) return responseError('identity_mismatch');
-    const { denied } = await requirePermission(serviceClient, user.id, PERMISSIONS.MANAGE_SETTINGS);
-    if (denied) return responseError('forbidden');
-    const context = await ensureMerchantContextForUser(serviceClient, user);
-    if (!context?.merchantId) return responseError('missing_merchant');
-    if (oauthState.merchantId && oauthState.merchantId !== context.merchantId) return responseError('identity_mismatch');
     if (!env.SHIPBOB_OAUTH_CLIENT_ID || !env.SHIPBOB_OAUTH_CLIENT_SECRET) return responseError('misconfigured');
 
     const redirectUri = `${getAppUrl()}/api/integrations/shipbob/callback`;
+    let transaction;
+    try {
+      transaction = await consumeOAuthConnectionTransaction(serviceClient, {
+        state,
+        userId: user.id,
+        providerId: 'shipbob',
+        callbackUrl: redirectUri,
+      });
+    } catch {
+      return responseError('invalid_or_replayed_state');
+    }
+    if (oauthState.merchantId !== transaction.merchantId) return responseError('identity_mismatch');
+    const { denied, ctx: context } = await requirePermissionForMerchant(
+      serviceClient,
+      user.id,
+      transaction.merchantId,
+      PERMISSIONS.MANAGE_SETTINGS,
+    );
+    if (denied) return responseError('forbidden');
+    if ((oauthState.sandbox ? 'sandbox' : 'production') !== transaction.environment) {
+      return responseError('environment_mismatch');
+    }
+
     const token = await exchangeShipBobOAuthCode({
       code,
       codeVerifier: oauthState.codeVerifier,
@@ -116,69 +128,40 @@ async function handleCallback(request: NextRequest) {
       redirectUri,
       sandbox: oauthState.sandbox,
     });
-    const channel = await fetchShipBobChannel({ accessToken: token.access_token, sandbox: oauthState.sandbox });
-    const persisted = await persistShipBobOAuthConnection({
+    const channels = await fetchShipBobChannels({ accessToken: token.access_token, sandbox: oauthState.sandbox });
+    if (channels.length > 1) {
+      const selectionId = await createPendingAccountSelection(serviceClient, {
+        merchantId: context.merchantId,
+        userId: user.id,
+        providerId: 'shipbob',
+        environment: oauthState.sandbox ? 'sandbox' : 'production',
+        accounts: channels.map((channel) => ({
+          id: String(channel.id),
+          name: channel.name ?? channel.application_name ?? null,
+        })),
+        credentialPayload: token,
+      });
+      const selectionUrl = new URL('/integrations/shipbob/select', getAppUrl());
+      selectionUrl.searchParams.set('selection', selectionId);
+      const response = NextResponse.redirect(selectionUrl);
+      response.cookies.set(shipBobOAuthCookie, '', clearShipBobOAuthCookieOptions());
+      return response;
+    }
+    const completed = await completeShipBobConnection({
       client: serviceClient,
       merchantId: context.merchantId,
+      userId: user.id,
       token,
-      channel,
+      channel: channels[0]!,
       sandbox: oauthState.sandbox,
     });
-    const environment = oauthState.sandbox ? 'sandbox' : 'production';
-    await recordShipBobAudit(serviceClient, {
-      merchantId: context.merchantId, actorUserId: user.id, connectionId: persisted.connectionId,
-      environment, action: 'shipbob_connection_completed', status: 'completed',
-      metadata: { sourceAccountId: persisted.sourceAccountId },
-    });
-    if (persisted.reconnected) await recordShipBobAudit(serviceClient, {
-      merchantId: context.merchantId, actorUserId: user.id, connectionId: persisted.connectionId,
-      environment, action: 'shipbob_reconnected', status: 'completed', metadata: { sourceAccountId: persisted.sourceAccountId },
-    });
-    const webhookUrl = `${getAppUrl()}/api/integrations/shipbob/webhook?connectionId=${encodeURIComponent(persisted.connectionId)}`;
-    let subscriptionHealthy = false;
-    try {
-      // Reuse an existing subscription only if we still hold its signing
-      // secret; otherwise it must be replaced or verification 401s forever.
-      const storedCredentials = await getIntegrationCredential(serviceClient, context.merchantId, 'shipbob');
-      const subscription = await ensureShipBobWebhookSubscriptions({
-        client: serviceClient,
-        connectionId: persisted.connectionId,
-        accessToken: token.access_token,
-        sandbox: oauthState.sandbox,
-        webhookUrl,
-        hasStoredSecret: typeof storedCredentials?.webhookSecret === 'string',
-      });
-      subscriptionHealthy = subscription.healthy;
-      if (subscription.webhookSecret) {
-        await storeShipBobWebhookSecret({ client: serviceClient, merchantId: context.merchantId, webhookSecret: subscription.webhookSecret });
-      }
-      await recordShipBobAudit(serviceClient, {
-        merchantId: context.merchantId, actorUserId: user.id, connectionId: persisted.connectionId,
-        environment, action: 'shipbob_webhook_subscription_created', status: 'completed',
-        metadata: { subscriptionCount: subscription.subscriptionIds.length },
-      });
-      await serviceClient.from('merchant_integrations').update({ subscribed: subscriptionHealthy, webhook_status: subscriptionHealthy ? 'healthy' : 'degraded' }).eq('id', persisted.connectionId);
-    } catch (subscriptionError) {
-      console.error('ShipBob webhook subscription setup failed', { message: subscriptionError instanceof Error ? subscriptionError.message : 'unknown' });
-      await serviceClient.from('merchant_integrations').update({ status: 'degraded', subscribed: false, webhook_status: 'missing' }).eq('id', persisted.connectionId);
-    }
-    // Idempotent: duplicate callbacks reuse the existing pending/running job.
-    const queued = await ensureShipBobSyncJob(serviceClient, { merchantId: context.merchantId, connectionId: persisted.connectionId, sourceAccountId: persisted.sourceAccountId });
-    if (queued.created && queued.job.job_kind === 'initial_import') await recordShipBobAudit(serviceClient, {
-      merchantId: context.merchantId, actorUserId: user.id, connectionId: persisted.connectionId,
-      environment, action: 'shipbob_initial_import_queued', status: 'queued', metadata: { jobId: queued.job.id },
-    });
-    const response = redirect({ shipbob_connected: '1', ...(subscriptionHealthy ? {} : { shipbob_warning: 'webhook_subscription_failed' }) });
+    const response = redirect({ shipbob_connected: '1', ...(completed.subscriptionHealthy ? {} : { shipbob_warning: 'webhook_subscription_failed' }) });
     response.cookies.set(shipBobOAuthCookie, '', clearShipBobOAuthCookieOptions());
     return response;
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'unknown';
-    console.error('ShipBob OAuth callback failed', { message });
-    // Surface a sanitized failure slug in the redirect so the failing step is
-    // diagnosable from the browser URL without needing server log access. The
-    // messages are internal constants (e.g. shipbob_oauth_token_exchange_failed:400);
-    // sanitisation guards against DB error strings with free-form content.
-    const reason = message.toLowerCase().replace(/[^a-z0-9_:.-]+/g, '_').slice(0, 80);
+    const reason = safeConnectionErrorCode(error instanceof Error ? error.message : null)
+      ?? 'shipbob_callback_failed';
+    console.error('ShipBob OAuth callback failed', { category: reason });
     const response = redirect({ shipbob_callback_failed: '1', shipbob_reason: reason });
     response.cookies.set(shipBobOAuthCookie, '', clearShipBobOAuthCookieOptions());
     return response;

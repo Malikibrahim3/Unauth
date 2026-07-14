@@ -2,7 +2,12 @@ import crypto from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { ensureMerchantContextForUser } from '@/lib/account/ensureMerchantContext';
-import { PERMISSIONS, requirePermission } from '@/lib/permissions';
+import {
+  ACTIVE_MERCHANT_COOKIE,
+  PERMISSIONS,
+  requirePermissionForMerchant,
+} from '@/lib/permissions';
+import { beginOAuthConnectionTransaction } from '@/lib/integrations/oauthTransactions';
 import { getAppUrl } from '@/lib/utils/appUrl';
 import { env } from '@/lib/utils/env';
 import {
@@ -31,15 +36,19 @@ export async function GET(request: NextRequest) {
   const serviceClient = createServiceClient();
   const { data: { user } } = await userClient.auth.getUser();
   if (!user) return redirect(request, 'shipbob_unauthorized');
-  const { denied } = await requirePermission(serviceClient, user.id, PERMISSIONS.MANAGE_SETTINGS);
-  if (denied) return redirect(request, 'shipbob_forbidden');
-  const context = await ensureMerchantContextForUser(serviceClient, user);
+  const selectedMerchantId = request.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value ?? null;
+  const context = await ensureMerchantContextForUser(serviceClient, user, selectedMerchantId);
   if (!context?.merchantId) return redirect(request, 'shipbob_missing_merchant');
+  const { denied } = await requirePermissionForMerchant(
+    serviceClient,
+    user.id,
+    context.merchantId,
+    PERMISSIONS.MANAGE_SETTINGS,
+  );
+  if (denied) return redirect(request, 'shipbob_forbidden');
 
-  // Environment comes from deployment config (SHIPBOB_SANDBOX), not the
-  // browser: a hardcoded client-side query param would send every real
-  // merchant to ShipBob's sandbox. The query param remains as an explicit
-  // per-request override for testing.
+  // Environment is a connection choice and is sealed into the transaction;
+  // it is never taken from a deployment-wide merchant default.
   const environmentOverride = request.nextUrl.searchParams.get('environment');
   const environment = requestedShipBobEnvironment({
     requested: environmentOverride,
@@ -53,8 +62,17 @@ export async function GET(request: NextRequest) {
     merchantId: context.merchantId,
     userId: user.id,
   });
-  await recordShipBobAudit(serviceClient, { merchantId: context.merchantId, actorUserId: user.id, environment, action: 'shipbob_connection_started', status: 'started' });
   const redirectUri = `${getAppUrl()}/api/integrations/shipbob/callback`;
+  await beginOAuthConnectionTransaction(serviceClient, {
+    state: stateToken,
+    merchantId: context.merchantId,
+    userId: user.id,
+    providerId: 'shipbob',
+    environment,
+    callbackUrl: redirectUri,
+    providerAccountHint: null,
+  });
+  await recordShipBobAudit(serviceClient, { merchantId: context.merchantId, actorUserId: user.id, environment, action: 'shipbob_connection_started', status: 'started' });
   const authorizeUrl = new URL(`${shipBobOAuthBaseUrl(sandbox)}/connect/authorize`);
   authorizeUrl.searchParams.set('client_id', clientId);
   authorizeUrl.searchParams.set('response_type', 'code');

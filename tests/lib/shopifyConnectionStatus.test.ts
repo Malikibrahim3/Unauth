@@ -35,7 +35,7 @@ describe('getShopifyConnectionStatus', () => {
     const status = await getShopifyConnectionStatus(
       makeSupabase({
         connection: {
-          store_key: 'unauth-test.myshopify.com',
+          store_key: 'merchant-a.myshopify.com',
           status: 'active',
           uninstalled_at: null,
           credentials_encrypted: 'token',
@@ -46,7 +46,7 @@ describe('getShopifyConnectionStatus', () => {
     expect(status).toEqual({
       connected: true,
       linkState: 'connected',
-      shopDomain: 'unauth-test.myshopify.com',
+      shopDomain: 'merchant-a.myshopify.com',
       lastError: null,
     });
   });
@@ -64,7 +64,7 @@ describe('getShopifyConnectionStatus', () => {
     const status = await getShopifyConnectionStatus(
       makeSupabase({
         connection: {
-          store_key: 'unauth-test.myshopify.com',
+          store_key: 'merchant-a.myshopify.com',
           status: 'inactive',
           uninstalled_at: '2026-05-27T00:00:00Z',
           credentials_encrypted: 'token',
@@ -73,14 +73,14 @@ describe('getShopifyConnectionStatus', () => {
       'merchant-1',
     );
     expect(status.linkState).toBe('disconnected');
-    expect(status.shopDomain).toBe('unauth-test.myshopify.com');
+    expect(status.shopDomain).toBe('merchant-a.myshopify.com');
   });
 
   it('returns installed_unlinked when token exists but connection inactive without uninstall', async () => {
     const status = await getShopifyConnectionStatus(
       makeSupabase({
         connection: {
-          store_key: 'unauth-test.myshopify.com',
+          store_key: 'merchant-a.myshopify.com',
           status: 'inactive',
           uninstalled_at: null,
           credentials_encrypted: 'token',
@@ -104,7 +104,7 @@ describe('getShopifyConnectionStatus', () => {
     const status = await getShopifyConnectionStatus(
       makeSupabase({
         connection: {
-          store_key: 'unauth-test.myshopify.com',
+          store_key: 'merchant-a.myshopify.com',
           status: 'active',
           uninstalled_at: null,
           credentials_encrypted: null,

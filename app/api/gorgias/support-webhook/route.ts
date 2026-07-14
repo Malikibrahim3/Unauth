@@ -142,6 +142,19 @@ export async function POST(request: NextRequest) {
   );
   if (limited) return limited;
 
+  // A request with no presented connection secret can never authenticate.
+  // Reject it before account discovery or payload validation so unauthenticated
+  // callers cannot use response ordering to probe registered account identity.
+  if (!readGorgiasWebhookSecret(request.headers, searchParams)) {
+    await logGorgiasWebhookResult({
+      provider: 'gorgias',
+      status: 'validation_error',
+      http_status: 401,
+      error: 'unauthorized',
+    });
+    return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 });
+  }
+
   let body: unknown;
   try {
     body = await request.json();

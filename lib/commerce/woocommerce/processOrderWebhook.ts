@@ -88,6 +88,8 @@ async function resolveStoreConnection(supabase: SupabaseClient, storeKey: string
     .select('id, merchant_id')
     .eq('platform', 'woocommerce')
     .eq('store_key', storeKey)
+    .eq('status', 'active')
+    .is('uninstalled_at', null)
     .maybeSingle();
   if (error) throw new Error(`store_connection_lookup_failed: ${error.message}`);
   return data ?? null;
@@ -144,14 +146,14 @@ export async function processWooCommerceOrderWebhook(input: {
       first_name: payload.billing?.first_name ?? null,
       last_name: payload.billing?.last_name ?? null,
       updated_at: now,
-    }, { onConflict: 'merchant_id,source,external_id' }).select('id').single();
+    }, { onConflict: 'merchant_id,source,connection_id,external_id' }).select('id').single();
     if (error) throw new Error(`source_customer_upsert_failed: ${error.message}`);
     customerId = data.id;
   }
 
   const { data: existing, error: lookupError } = await supabase.from('source_orders')
     .select('id, shipping_address_id, billing_address_id')
-    .eq('merchant_id', merchantId).eq('source', 'woocommerce').eq('external_id', externalId)
+    .eq('merchant_id', merchantId).eq('source', 'woocommerce').eq('connection_id', connection.id).eq('external_id', externalId)
     .maybeSingle();
   if (lookupError) throw new Error(`source_order_lookup_failed: ${lookupError.message}`);
 
@@ -204,13 +206,14 @@ export async function processWooCommerceOrderWebhook(input: {
     placed_at: payload.date_created ?? now,
     raw_payload_hash: crypto.createHash('sha256').update(rawBody, 'utf8').digest('hex'),
     updated_at: now,
-  }, { onConflict: 'merchant_id,source,external_id' }).select('id').single();
+  }, { onConflict: 'merchant_id,source,connection_id,source_account_id,external_id' }).select('id').single();
   if (error) throw new Error(`source_order_upsert_failed: ${error.message}`);
 
   // hashed identity observations + resolution
   const entities: ObservationEntity[] = [{
     provenance: { orderId: orderRow.id },
     source: 'woocommerce',
+    sourceAccountKey: connection.id,
     observedAt: payload.date_created ?? now,
     email,
     phone,

@@ -26,11 +26,14 @@ loadEnv({ path: '.env.local' });
 // Override email/order via argv: `… diagnose-customer-sync.ts <email> [#order]`
 // or env DIAG_EMAIL / DIAG_ORDER.
 const TARGET = {
-  email: process.argv[2]?.trim() || process.env.DIAG_EMAIL?.trim() || 'simeonmurray123@gmail.com',
-  shopDomain: 'unauth-test.myshopify.com',
-  orderName: process.argv[3]?.trim() || process.env.DIAG_ORDER?.trim() || '#1008',
-  gorgiasIntegrationId: '104747',
+  email: process.argv[2]?.trim() || process.env.DIAG_EMAIL?.trim() || '',
+  shopDomain: process.env.E2E_SHOPIFY_STORE_DOMAIN?.trim() || '',
+  orderName: process.argv[3]?.trim() || process.env.DIAG_ORDER?.trim() || '',
+  gorgiasIntegrationId: process.env.E2E_GORGIAS_WIDGET_INTEGRATION_ID?.trim() || '',
 };
+if (Object.values(TARGET).some((value) => !value)) {
+  throw new Error('DIAG_EMAIL, DIAG_ORDER, E2E_SHOPIFY_STORE_DOMAIN, and E2E_GORGIAS_WIDGET_INTEGRATION_ID are required');
+}
 
 // ---- env (names only logged, never values) ---------------------------------
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';

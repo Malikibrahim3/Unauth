@@ -8,10 +8,38 @@ export type ShipBobAuditAction =
   | 'shipbob_manual_sync_requested' | 'shipbob_manual_sync_completed' | 'shipbob_manual_sync_failed'
   | 'shipbob_webhook_subscription_created' | 'shipbob_webhook_subscription_removed';
 
-const FORBIDDEN = /token|secret|authorization.?code|payload/i;
+const SAFE_METADATA_KEYS = new Set([
+  'provider',
+  'environment',
+  'status',
+  'sourceAccountId',
+  'subscriptionCount',
+  'jobId',
+  'recordCount',
+  'failureCategory',
+  'cleanup',
+]);
 
 export function safeShipBobAuditMetadata(metadata: Record<string, unknown>) {
-  return Object.fromEntries(Object.entries(metadata).filter(([key]) => !FORBIDDEN.test(key)));
+  const safe: Record<string, string | number | boolean | null> = {};
+  for (const [key, value] of Object.entries(metadata)) {
+    if (!SAFE_METADATA_KEYS.has(key)) continue;
+    if (typeof value === 'number' || typeof value === 'boolean' || value === null) {
+      safe[key] = value;
+      continue;
+    }
+    if (typeof value !== 'string') continue;
+    if (key === 'failureCategory') {
+      const category = value.trim().match(/^([a-z][a-z0-9]*(?:[_-][a-z0-9]+)+)(?=[:\s(]|$)/i)?.[1]
+        ?.toLowerCase()
+        .replaceAll('-', '_')
+        .slice(0, 80);
+      safe[key] = category || 'integration_error';
+      continue;
+    }
+    safe[key] = value.slice(0, 160);
+  }
+  return safe;
 }
 
 export async function recordShipBobAudit(client: SupabaseClient, input: {

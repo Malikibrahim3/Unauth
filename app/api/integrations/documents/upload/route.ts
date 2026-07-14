@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
       contentType: file.type || 'application/octet-stream',
       upsert: false,
     });
-  if (uploadError) return NextResponse.json({ error: uploadError.message }, { status: 500 });
+  if (uploadError) return NextResponse.json({ error: 'Document upload failed.', code: 'document_upload_failed' }, { status: 500 });
 
   const { data: document, error: documentError } = await serviceClient
     .from(TABLES.INTEGRATION_DOCUMENTS)
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
     })
     .select('id,document_type,file_path,extraction_status,approved_at,created_at')
     .single();
-  if (documentError) return NextResponse.json({ error: documentError.message }, { status: 500 });
+  if (documentError) return NextResponse.json({ error: 'Document registration failed.', code: 'document_registration_failed' }, { status: 500 });
 
   const provider = requireIntegrationProvider('document_upload');
   await upsertMerchantIntegration(serviceClient, ctx.merchantId, provider, 'connected', { lastError: null });

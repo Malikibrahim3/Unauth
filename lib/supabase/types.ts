@@ -109,6 +109,13 @@ export type Database = {
             foreignKeyName: "accountability_events_claim_id_fkey"
             columns: ["claim_id"]
             isOneToOne: false
+            referencedRelation: "reporting_case_dimensions"
+            referencedColumns: ["support_payout_case_id"]
+          },
+          {
+            foreignKeyName: "accountability_events_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
             referencedRelation: "support_payout_cases"
             referencedColumns: ["id"]
           },
@@ -249,6 +256,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "agreement_rules"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreement_rule_evaluations_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "reporting_case_dimensions"
+            referencedColumns: ["support_payout_case_id"]
           },
           {
             foreignKeyName: "agreement_rule_evaluations_claim_id_fkey"
@@ -661,6 +675,13 @@ export type Database = {
             foreignKeyName: "case_clarification_requests_support_payout_case_id_fkey"
             columns: ["support_payout_case_id"]
             isOneToOne: false
+            referencedRelation: "reporting_case_dimensions"
+            referencedColumns: ["support_payout_case_id"]
+          },
+          {
+            foreignKeyName: "case_clarification_requests_support_payout_case_id_fkey"
+            columns: ["support_payout_case_id"]
+            isOneToOne: false
             referencedRelation: "support_payout_cases"
             referencedColumns: ["id"]
           },
@@ -787,6 +808,13 @@ export type Database = {
             foreignKeyName: "case_comments_support_payout_case_id_fkey"
             columns: ["support_payout_case_id"]
             isOneToOne: false
+            referencedRelation: "reporting_case_dimensions"
+            referencedColumns: ["support_payout_case_id"]
+          },
+          {
+            foreignKeyName: "case_comments_support_payout_case_id_fkey"
+            columns: ["support_payout_case_id"]
+            isOneToOne: false
             referencedRelation: "support_payout_cases"
             referencedColumns: ["id"]
           },
@@ -879,6 +907,13 @@ export type Database = {
             foreignKeyName: "case_decisions_support_payout_case_id_fkey"
             columns: ["support_payout_case_id"]
             isOneToOne: false
+            referencedRelation: "reporting_case_dimensions"
+            referencedColumns: ["support_payout_case_id"]
+          },
+          {
+            foreignKeyName: "case_decisions_support_payout_case_id_fkey"
+            columns: ["support_payout_case_id"]
+            isOneToOne: false
             referencedRelation: "support_payout_cases"
             referencedColumns: ["id"]
           },
@@ -958,6 +993,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "merchants"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_exceptions_support_payout_case_id_fkey"
+            columns: ["support_payout_case_id"]
+            isOneToOne: false
+            referencedRelation: "reporting_case_dimensions"
+            referencedColumns: ["support_payout_case_id"]
           },
           {
             foreignKeyName: "case_exceptions_support_payout_case_id_fkey"
@@ -1056,6 +1098,13 @@ export type Database = {
             foreignKeyName: "case_financial_entries_support_payout_case_id_fkey"
             columns: ["support_payout_case_id"]
             isOneToOne: false
+            referencedRelation: "reporting_case_dimensions"
+            referencedColumns: ["support_payout_case_id"]
+          },
+          {
+            foreignKeyName: "case_financial_entries_support_payout_case_id_fkey"
+            columns: ["support_payout_case_id"]
+            isOneToOne: false
             referencedRelation: "support_payout_cases"
             referencedColumns: ["id"]
           },
@@ -1132,6 +1181,13 @@ export type Database = {
             foreignKeyName: "case_financial_summaries_support_payout_case_id_fkey"
             columns: ["support_payout_case_id"]
             isOneToOne: false
+            referencedRelation: "reporting_case_dimensions"
+            referencedColumns: ["support_payout_case_id"]
+          },
+          {
+            foreignKeyName: "case_financial_summaries_support_payout_case_id_fkey"
+            columns: ["support_payout_case_id"]
+            isOneToOne: false
             referencedRelation: "support_payout_cases"
             referencedColumns: ["id"]
           },
@@ -1200,6 +1256,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "case_outcomes"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_outcomes_support_payout_case_id_fkey"
+            columns: ["support_payout_case_id"]
+            isOneToOne: false
+            referencedRelation: "reporting_case_dimensions"
+            referencedColumns: ["support_payout_case_id"]
           },
           {
             foreignKeyName: "case_outcomes_support_payout_case_id_fkey"
@@ -1395,6 +1458,13 @@ export type Database = {
             foreignKeyName: "claim_events_claim_id_fkey"
             columns: ["claim_id"]
             isOneToOne: false
+            referencedRelation: "reporting_case_dimensions"
+            referencedColumns: ["support_payout_case_id"]
+          },
+          {
+            foreignKeyName: "claim_events_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
             referencedRelation: "support_payout_cases"
             referencedColumns: ["id"]
           },
@@ -1442,6 +1512,13 @@ export type Database = {
           storage_path?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "claim_evidence_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "reporting_case_dimensions"
+            referencedColumns: ["support_payout_case_id"]
+          },
           {
             foreignKeyName: "claim_evidence_claim_id_fkey"
             columns: ["claim_id"]
@@ -1502,6 +1579,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "claim_outcomes_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: true
+            referencedRelation: "reporting_case_dimensions"
+            referencedColumns: ["support_payout_case_id"]
+          },
           {
             foreignKeyName: "claim_outcomes_claim_id_fkey"
             columns: ["claim_id"]
@@ -1610,6 +1694,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "merchants"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "connector_action_runs_support_payout_case_id_fkey"
+            columns: ["support_payout_case_id"]
+            isOneToOne: false
+            referencedRelation: "reporting_case_dimensions"
+            referencedColumns: ["support_payout_case_id"]
           },
           {
             foreignKeyName: "connector_action_runs_support_payout_case_id_fkey"
@@ -1997,6 +2088,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "domain_event_deliveries_event_merchant_fkey"
+            columns: ["domain_event_id", "merchant_id"]
+            isOneToOne: false
+            referencedRelation: "domain_events"
+            referencedColumns: ["id", "merchant_id"]
+          },
+          {
             foreignKeyName: "domain_event_deliveries_merchant_id_fkey"
             columns: ["merchant_id"]
             isOneToOne: false
@@ -2075,11 +2173,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "domain_events_connection_merchant_fkey"
+            columns: ["connection_id", "merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchant_integrations"
+            referencedColumns: ["id", "merchant_id"]
+          },
+          {
             foreignKeyName: "domain_events_ingestion_event_id_fkey"
             columns: ["ingestion_event_id"]
             isOneToOne: false
             referencedRelation: "ingestion_events"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "domain_events_ingestion_merchant_fkey"
+            columns: ["ingestion_event_id", "merchant_id"]
+            isOneToOne: false
+            referencedRelation: "ingestion_events"
+            referencedColumns: ["id", "merchant_id"]
           },
           {
             foreignKeyName: "domain_events_merchant_id_fkey"
@@ -2094,6 +2206,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "source_records"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "domain_events_source_record_merchant_fkey"
+            columns: ["source_record_id", "merchant_id"]
+            isOneToOne: false
+            referencedRelation: "source_records"
+            referencedColumns: ["id", "merchant_id"]
           },
         ]
       }
@@ -2303,6 +2422,13 @@ export type Database = {
             foreignKeyName: "evidence_items_claim_id_fkey"
             columns: ["claim_id"]
             isOneToOne: false
+            referencedRelation: "reporting_case_dimensions"
+            referencedColumns: ["support_payout_case_id"]
+          },
+          {
+            foreignKeyName: "evidence_items_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
             referencedRelation: "support_payout_cases"
             referencedColumns: ["id"]
           },
@@ -2405,6 +2531,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "source_tickets"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evidence_links_support_payout_case_id_fkey"
+            columns: ["support_payout_case_id"]
+            isOneToOne: false
+            referencedRelation: "reporting_case_dimensions"
+            referencedColumns: ["support_payout_case_id"]
           },
           {
             foreignKeyName: "evidence_links_support_payout_case_id_fkey"
@@ -2785,6 +2918,9 @@ export type Database = {
           id: string
           last_error: string | null
           last_sync_at: string | null
+          last_verification_error: string | null
+          last_verification_status: string | null
+          last_verified_at: string | null
           merchant_id: string
           provider: Database["public"]["Enums"]["helpdesk_kind"]
           provider_account_id: string | null
@@ -2805,6 +2941,9 @@ export type Database = {
           id?: string
           last_error?: string | null
           last_sync_at?: string | null
+          last_verification_error?: string | null
+          last_verification_status?: string | null
+          last_verified_at?: string | null
           merchant_id: string
           provider: Database["public"]["Enums"]["helpdesk_kind"]
           provider_account_id?: string | null
@@ -2825,6 +2964,9 @@ export type Database = {
           id?: string
           last_error?: string | null
           last_sync_at?: string | null
+          last_verification_error?: string | null
+          last_verification_status?: string | null
+          last_verified_at?: string | null
           merchant_id?: string
           provider?: Database["public"]["Enums"]["helpdesk_kind"]
           provider_account_id?: string | null
@@ -2955,6 +3097,13 @@ export type Database = {
           submitted_identifier_hash?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "identity_catch_events_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "reporting_case_dimensions"
+            referencedColumns: ["support_payout_case_id"]
+          },
           {
             foreignKeyName: "identity_catch_events_claim_id_fkey"
             columns: ["claim_id"]
@@ -3448,6 +3597,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "ingestion_events_connection_merchant_fkey"
+            columns: ["connection_id", "merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchant_integrations"
+            referencedColumns: ["id", "merchant_id"]
+          },
+          {
             foreignKeyName: "ingestion_events_merchant_id_fkey"
             columns: ["merchant_id"]
             isOneToOne: false
@@ -3522,7 +3678,7 @@ export type Database = {
       }
       integration_credentials: {
         Row: {
-          connection_id: string | null
+          connection_id: string
           created_at: string
           encrypted_payload: string
           expires_at: string | null
@@ -3535,7 +3691,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          connection_id?: string | null
+          connection_id: string
           created_at?: string
           encrypted_payload: string
           expires_at?: string | null
@@ -3548,7 +3704,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          connection_id?: string | null
+          connection_id?: string
           created_at?: string
           encrypted_payload?: string
           expires_at?: string | null
@@ -3567,6 +3723,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "merchant_integrations"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integration_credentials_connection_merchant_fkey"
+            columns: ["connection_id", "merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchant_integrations"
+            referencedColumns: ["id", "merchant_id"]
           },
           {
             foreignKeyName: "integration_credentials_merchant_id_fkey"
@@ -3686,6 +3849,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "merchants"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integration_evidence_items_support_payout_case_id_fkey"
+            columns: ["support_payout_case_id"]
+            isOneToOne: false
+            referencedRelation: "reporting_case_dimensions"
+            referencedColumns: ["support_payout_case_id"]
           },
           {
             foreignKeyName: "integration_evidence_items_support_payout_case_id_fkey"
@@ -4022,6 +4192,13 @@ export type Database = {
             foreignKeyName: "loss_cases_support_payout_case_id_fkey"
             columns: ["support_payout_case_id"]
             isOneToOne: false
+            referencedRelation: "reporting_case_dimensions"
+            referencedColumns: ["support_payout_case_id"]
+          },
+          {
+            foreignKeyName: "loss_cases_support_payout_case_id_fkey"
+            columns: ["support_payout_case_id"]
+            isOneToOne: false
             referencedRelation: "support_payout_cases"
             referencedColumns: ["id"]
           },
@@ -4077,6 +4254,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "loss_sources_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "reporting_case_dimensions"
+            referencedColumns: ["support_payout_case_id"]
+          },
           {
             foreignKeyName: "loss_sources_claim_id_fkey"
             columns: ["claim_id"]
@@ -4293,6 +4477,9 @@ export type Database = {
           last_sync_at: string | null
           last_sync_completed_at: string | null
           last_sync_started_at: string | null
+          last_verification_error: string | null
+          last_verification_status: string | null
+          last_verified_at: string | null
           merchant_id: string
           next_scheduled_sync_at: string | null
           provider_account_id: string | null
@@ -4332,6 +4519,9 @@ export type Database = {
           last_sync_at?: string | null
           last_sync_completed_at?: string | null
           last_sync_started_at?: string | null
+          last_verification_error?: string | null
+          last_verification_status?: string | null
+          last_verified_at?: string | null
           merchant_id: string
           next_scheduled_sync_at?: string | null
           provider_account_id?: string | null
@@ -4371,6 +4561,9 @@ export type Database = {
           last_sync_at?: string | null
           last_sync_completed_at?: string | null
           last_sync_started_at?: string | null
+          last_verification_error?: string | null
+          last_verification_status?: string | null
+          last_verified_at?: string | null
           merchant_id?: string
           next_scheduled_sync_at?: string | null
           provider_account_id?: string | null
@@ -4395,9 +4588,89 @@ export type Database = {
           },
         ]
       }
+      merchant_rule_versions: {
+        Row: {
+          action: string
+          condition_operator: string
+          conditions: Json
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          merchant_id: string
+          merchant_rule_id: string
+          name: string
+          priority: number
+          published_at: string | null
+          published_by: string | null
+          status: string
+          supersedes_version_id: string | null
+          version: number
+        }
+        Insert: {
+          action: string
+          condition_operator?: string
+          conditions?: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          merchant_id: string
+          merchant_rule_id: string
+          name: string
+          priority?: number
+          published_at?: string | null
+          published_by?: string | null
+          status: string
+          supersedes_version_id?: string | null
+          version: number
+        }
+        Update: {
+          action?: string
+          condition_operator?: string
+          conditions?: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          merchant_id?: string
+          merchant_rule_id?: string
+          name?: string
+          priority?: number
+          published_at?: string | null
+          published_by?: string | null
+          status?: string
+          supersedes_version_id?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "merchant_rule_versions_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "merchant_rule_versions_merchant_rule_id_fkey"
+            columns: ["merchant_rule_id"]
+            isOneToOne: false
+            referencedRelation: "merchant_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "merchant_rule_versions_supersedes_version_id_fkey"
+            columns: ["supersedes_version_id"]
+            isOneToOne: false
+            referencedRelation: "merchant_rule_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       merchant_rules: {
         Row: {
           action: string
+          archived_at: string | null
           condition_operator: string
           conditions: Json
           created_at: string
@@ -4412,6 +4685,7 @@ export type Database = {
         }
         Insert: {
           action: string
+          archived_at?: string | null
           condition_operator?: string
           conditions?: Json
           created_at?: string
@@ -4426,6 +4700,7 @@ export type Database = {
         }
         Update: {
           action?: string
+          archived_at?: string | null
           condition_operator?: string
           conditions?: Json
           created_at?: string
@@ -4802,6 +5077,56 @@ export type Database = {
           },
         ]
       }
+      oauth_connection_transactions: {
+        Row: {
+          callback_url: string
+          consumed_at: string | null
+          created_at: string
+          environment: string
+          expires_at: string
+          id: string
+          merchant_id: string
+          provider_account_hint: string | null
+          provider_id: string
+          state_hash: string
+          user_id: string
+        }
+        Insert: {
+          callback_url: string
+          consumed_at?: string | null
+          created_at?: string
+          environment: string
+          expires_at: string
+          id?: string
+          merchant_id: string
+          provider_account_hint?: string | null
+          provider_id: string
+          state_hash: string
+          user_id: string
+        }
+        Update: {
+          callback_url?: string
+          consumed_at?: string | null
+          created_at?: string
+          environment?: string
+          expires_at?: string
+          id?: string
+          merchant_id?: string
+          provider_account_hint?: string | null
+          provider_id?: string
+          state_hash?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oauth_connection_transactions_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_claim_context: {
         Row: {
           created_at: string
@@ -5078,6 +5403,53 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "partners_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pending_provider_account_selections: {
+        Row: {
+          accounts: Json
+          consumed_at: string | null
+          created_at: string
+          encrypted_payload: string
+          environment: string
+          expires_at: string
+          id: string
+          merchant_id: string
+          provider_id: string
+          user_id: string
+        }
+        Insert: {
+          accounts: Json
+          consumed_at?: string | null
+          created_at?: string
+          encrypted_payload: string
+          environment: string
+          expires_at: string
+          id?: string
+          merchant_id: string
+          provider_id: string
+          user_id: string
+        }
+        Update: {
+          accounts?: Json
+          consumed_at?: string | null
+          created_at?: string
+          encrypted_payload?: string
+          environment?: string
+          expires_at?: string
+          id?: string
+          merchant_id?: string
+          provider_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pending_provider_account_selections_merchant_id_fkey"
             columns: ["merchant_id"]
             isOneToOne: false
             referencedRelation: "merchants"
@@ -5477,6 +5849,13 @@ export type Database = {
             foreignKeyName: "recovery_cases_support_payout_case_id_fkey"
             columns: ["support_payout_case_id"]
             isOneToOne: false
+            referencedRelation: "reporting_case_dimensions"
+            referencedColumns: ["support_payout_case_id"]
+          },
+          {
+            foreignKeyName: "recovery_cases_support_payout_case_id_fkey"
+            columns: ["support_payout_case_id"]
+            isOneToOne: false
             referencedRelation: "support_payout_cases"
             referencedColumns: ["id"]
           },
@@ -5541,6 +5920,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "recovery_tasks_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "reporting_case_dimensions"
+            referencedColumns: ["support_payout_case_id"]
+          },
           {
             foreignKeyName: "recovery_tasks_claim_id_fkey"
             columns: ["claim_id"]
@@ -5623,6 +6009,13 @@ export type Database = {
           source_ticket_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "rule_evaluations_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "reporting_case_dimensions"
+            referencedColumns: ["support_payout_case_id"]
+          },
           {
             foreignKeyName: "rule_evaluations_claim_id_fkey"
             columns: ["claim_id"]
@@ -5712,6 +6105,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "source_accounts_connection_merchant_fkey"
+            columns: ["connection_id", "merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchant_integrations"
+            referencedColumns: ["id", "merchant_id"]
+          },
+          {
             foreignKeyName: "source_accounts_merchant_id_fkey"
             columns: ["merchant_id"]
             isOneToOne: false
@@ -5794,8 +6194,8 @@ export type Database = {
           id: string
           last_name: string | null
           linked_platform_customer_external_id: string | null
-          merchant_id: string
           merchant_customer_id: string | null
+          merchant_id: string
           note: string | null
           orders_count: number | null
           other_emails: Json
@@ -5817,8 +6217,8 @@ export type Database = {
           id?: string
           last_name?: string | null
           linked_platform_customer_external_id?: string | null
-          merchant_id: string
           merchant_customer_id?: string | null
+          merchant_id: string
           note?: string | null
           orders_count?: number | null
           other_emails?: Json
@@ -5840,8 +6240,8 @@ export type Database = {
           id?: string
           last_name?: string | null
           linked_platform_customer_external_id?: string | null
-          merchant_id?: string
           merchant_customer_id?: string | null
+          merchant_id?: string
           note?: string | null
           orders_count?: number | null
           other_emails?: Json
@@ -5979,6 +6379,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "source_fulfillments_order_merchant_fkey"
+            columns: ["source_order_id", "merchant_id"]
+            isOneToOne: false
+            referencedRelation: "source_orders"
+            referencedColumns: ["id", "merchant_id"]
+          },
+          {
             foreignKeyName: "source_fulfillments_source_order_id_fkey"
             columns: ["source_order_id"]
             isOneToOne: false
@@ -6035,11 +6442,25 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "source_locations_account_merchant_fkey"
+            columns: ["source_account_id", "merchant_id"]
+            isOneToOne: false
+            referencedRelation: "source_accounts"
+            referencedColumns: ["id", "merchant_id"]
+          },
+          {
             foreignKeyName: "source_locations_merchant_id_fkey"
             columns: ["merchant_id"]
             isOneToOne: false
             referencedRelation: "merchants"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_locations_record_merchant_fkey"
+            columns: ["source_record_id", "merchant_id"]
+            isOneToOne: false
+            referencedRelation: "source_records"
+            referencedColumns: ["id", "merchant_id"]
           },
           {
             foreignKeyName: "source_locations_source_account_id_fkey"
@@ -6254,6 +6675,7 @@ export type Database = {
           referring_site: string | null
           shipping_address_id: string | null
           source: Database["public"]["Enums"]["signal_source"]
+          source_account_id: string | null
           source_customer_id: string | null
           source_name: string | null
           subtotal_price: number | null
@@ -6301,6 +6723,7 @@ export type Database = {
           referring_site?: string | null
           shipping_address_id?: string | null
           source: Database["public"]["Enums"]["signal_source"]
+          source_account_id?: string | null
           source_customer_id?: string | null
           source_name?: string | null
           subtotal_price?: number | null
@@ -6348,6 +6771,7 @@ export type Database = {
           referring_site?: string | null
           shipping_address_id?: string | null
           source?: Database["public"]["Enums"]["signal_source"]
+          source_account_id?: string | null
           source_customer_id?: string | null
           source_name?: string | null
           subtotal_price?: number | null
@@ -6358,6 +6782,13 @@ export type Database = {
           user_agent?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "source_orders_account_merchant_fkey"
+            columns: ["source_account_id", "merchant_id"]
+            isOneToOne: false
+            referencedRelation: "source_accounts"
+            referencedColumns: ["id", "merchant_id"]
+          },
           {
             foreignKeyName: "source_orders_billing_address_id_fkey"
             columns: ["billing_address_id"]
@@ -6398,6 +6829,13 @@ export type Database = {
             columns: ["shipping_address_id"]
             isOneToOne: false
             referencedRelation: "source_addresses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_orders_source_account_id_fkey"
+            columns: ["source_account_id"]
+            isOneToOne: false
+            referencedRelation: "source_accounts"
             referencedColumns: ["id"]
           },
           {
@@ -6580,11 +7018,25 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "source_records_account_merchant_fkey"
+            columns: ["source_account_id", "merchant_id"]
+            isOneToOne: false
+            referencedRelation: "source_accounts"
+            referencedColumns: ["id", "merchant_id"]
+          },
+          {
             foreignKeyName: "source_records_connection_id_fkey"
             columns: ["connection_id"]
             isOneToOne: false
             referencedRelation: "merchant_integrations"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_records_connection_merchant_fkey"
+            columns: ["connection_id", "merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchant_integrations"
+            referencedColumns: ["id", "merchant_id"]
           },
           {
             foreignKeyName: "source_records_merchant_id_fkey"
@@ -6753,6 +7205,13 @@ export type Database = {
             foreignKeyName: "source_replacements_support_payout_case_id_fkey"
             columns: ["support_payout_case_id"]
             isOneToOne: false
+            referencedRelation: "reporting_case_dimensions"
+            referencedColumns: ["support_payout_case_id"]
+          },
+          {
+            foreignKeyName: "source_replacements_support_payout_case_id_fkey"
+            columns: ["support_payout_case_id"]
+            isOneToOne: false
             referencedRelation: "support_payout_cases"
             referencedColumns: ["id"]
           },
@@ -6821,11 +7280,32 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "source_returns_account_merchant_fkey"
+            columns: ["source_account_id", "merchant_id"]
+            isOneToOne: false
+            referencedRelation: "source_accounts"
+            referencedColumns: ["id", "merchant_id"]
+          },
+          {
             foreignKeyName: "source_returns_merchant_id_fkey"
             columns: ["merchant_id"]
             isOneToOne: false
             referencedRelation: "merchants"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_returns_order_merchant_fkey"
+            columns: ["source_order_id", "merchant_id"]
+            isOneToOne: false
+            referencedRelation: "source_orders"
+            referencedColumns: ["id", "merchant_id"]
+          },
+          {
+            foreignKeyName: "source_returns_record_merchant_fkey"
+            columns: ["source_record_id", "merchant_id"]
+            isOneToOne: false
+            referencedRelation: "source_records"
+            referencedColumns: ["id", "merchant_id"]
           },
           {
             foreignKeyName: "source_returns_source_account_id_fkey"
@@ -6847,6 +7327,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "source_records"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_returns_support_payout_case_id_fkey"
+            columns: ["support_payout_case_id"]
+            isOneToOne: false
+            referencedRelation: "reporting_case_dimensions"
+            referencedColumns: ["support_payout_case_id"]
           },
           {
             foreignKeyName: "source_returns_support_payout_case_id_fkey"
@@ -6917,11 +7404,39 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "source_shipments_account_merchant_fkey"
+            columns: ["source_account_id", "merchant_id"]
+            isOneToOne: false
+            referencedRelation: "source_accounts"
+            referencedColumns: ["id", "merchant_id"]
+          },
+          {
+            foreignKeyName: "source_shipments_fulfillment_merchant_fkey"
+            columns: ["source_fulfillment_id", "merchant_id"]
+            isOneToOne: false
+            referencedRelation: "source_fulfillments"
+            referencedColumns: ["id", "merchant_id"]
+          },
+          {
             foreignKeyName: "source_shipments_merchant_id_fkey"
             columns: ["merchant_id"]
             isOneToOne: false
             referencedRelation: "merchants"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_shipments_order_merchant_fkey"
+            columns: ["source_order_id", "merchant_id"]
+            isOneToOne: false
+            referencedRelation: "source_orders"
+            referencedColumns: ["id", "merchant_id"]
+          },
+          {
+            foreignKeyName: "source_shipments_record_merchant_fkey"
+            columns: ["source_record_id", "merchant_id"]
+            isOneToOne: false
+            referencedRelation: "source_records"
+            referencedColumns: ["id", "merchant_id"]
           },
           {
             foreignKeyName: "source_shipments_source_account_id_fkey"
@@ -7294,6 +7809,9 @@ export type Database = {
           installed_at: string
           last_error: string | null
           last_sync_at: string | null
+          last_verification_error: string | null
+          last_verification_status: string | null
+          last_verified_at: string | null
           merchant_id: string
           platform: Database["public"]["Enums"]["platform_kind"]
           scopes: Json
@@ -7311,6 +7829,9 @@ export type Database = {
           installed_at?: string
           last_error?: string | null
           last_sync_at?: string | null
+          last_verification_error?: string | null
+          last_verification_status?: string | null
+          last_verified_at?: string | null
           merchant_id: string
           platform: Database["public"]["Enums"]["platform_kind"]
           scopes?: Json
@@ -7328,6 +7849,9 @@ export type Database = {
           installed_at?: string
           last_error?: string | null
           last_sync_at?: string | null
+          last_verification_error?: string | null
+          last_verification_status?: string | null
+          last_verified_at?: string | null
           merchant_id?: string
           platform?: Database["public"]["Enums"]["platform_kind"]
           scopes?: Json
@@ -7553,6 +8077,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "identities"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_case_intake_merchant_claim_id_fkey"
+            columns: ["merchant_claim_id"]
+            isOneToOne: false
+            referencedRelation: "reporting_case_dimensions"
+            referencedColumns: ["support_payout_case_id"]
           },
           {
             foreignKeyName: "support_case_intake_merchant_claim_id_fkey"
@@ -7973,11 +8504,25 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "sync_jobs_account_merchant_fkey"
+            columns: ["source_account_id", "merchant_id"]
+            isOneToOne: false
+            referencedRelation: "source_accounts"
+            referencedColumns: ["id", "merchant_id"]
+          },
+          {
             foreignKeyName: "sync_jobs_connection_id_fkey"
             columns: ["connection_id"]
             isOneToOne: false
             referencedRelation: "merchant_integrations"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sync_jobs_connection_merchant_fkey"
+            columns: ["connection_id", "merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchant_integrations"
+            referencedColumns: ["id", "merchant_id"]
           },
           {
             foreignKeyName: "sync_jobs_merchant_id_fkey"
@@ -8276,6 +8821,13 @@ export type Database = {
             foreignKeyName: "work_tasks_support_payout_case_id_fkey"
             columns: ["support_payout_case_id"]
             isOneToOne: false
+            referencedRelation: "reporting_case_dimensions"
+            referencedColumns: ["support_payout_case_id"]
+          },
+          {
+            foreignKeyName: "work_tasks_support_payout_case_id_fkey"
+            columns: ["support_payout_case_id"]
+            isOneToOne: false
             referencedRelation: "support_payout_cases"
             referencedColumns: ["id"]
           },
@@ -8292,6 +8844,9 @@ export type Database = {
           merchant_id: string
           name: string
           outputs: Json
+          published_at: string | null
+          published_by: string | null
+          status: string
           trigger_event_type: string
           updated_at: string
           updated_by: string | null
@@ -8307,6 +8862,9 @@ export type Database = {
           merchant_id: string
           name: string
           outputs?: Json
+          published_at?: string | null
+          published_by?: string | null
+          status?: string
           trigger_event_type: string
           updated_at?: string
           updated_by?: string | null
@@ -8322,6 +8880,9 @@ export type Database = {
           merchant_id?: string
           name?: string
           outputs?: Json
+          published_at?: string | null
+          published_by?: string | null
+          status?: string
           trigger_event_type?: string
           updated_at?: string
           updated_by?: string | null
@@ -8501,6 +9062,38 @@ export type Database = {
           },
         ]
       }
+      reporting_case_dimensions: {
+        Row: {
+          claim_type: Database["public"]["Enums"]["claim_type"] | null
+          confirmed_loss_minor: number | null
+          currency: string | null
+          financial_updated_at: string | null
+          loss_attribution:
+            | Database["public"]["Enums"]["loss_attribution"]
+            | null
+          merchant_id: string | null
+          paid_minor: number | null
+          period_at: string | null
+          prevented_minor: number | null
+          reason_normalized: string | null
+          recoverable_minor: number | null
+          recovered_minor: number | null
+          recovery_owner: Database["public"]["Enums"]["recovery_owner"] | null
+          requested_minor: number | null
+          status: Database["public"]["Enums"]["claim_status"] | null
+          support_payout_case_id: string | null
+          written_off_minor: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claims_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       add_merchant_topup_credits: {
@@ -8516,9 +9109,51 @@ export type Database = {
         Args: { p_job_id: string }
         Returns: boolean
       }
+      archive_merchant_rule: {
+        Args: { p_actor_id: string; p_merchant_id: string; p_rule_id: string }
+        Returns: Json
+      }
       begin_processing_job_chunk: {
         Args: { p_chunk_index: number; p_job_id: string }
         Returns: string
+      }
+      bulk_transition_work_tasks: {
+        Args: {
+          p_action: string
+          p_merchant_id: string
+          p_task_ids: string[]
+          p_until?: string
+          p_user_id: string
+        }
+        Returns: {
+          blocking_reason: string | null
+          completed_at: string | null
+          completed_by: string | null
+          completion_outcome: Json | null
+          created_at: string
+          description: string | null
+          domain_event_id: string | null
+          due_at: string | null
+          id: string
+          loss_case_id: string | null
+          merchant_id: string
+          owner_role: string | null
+          owner_user_id: string | null
+          priority: string
+          recovery_case_id: string | null
+          source: string
+          source_metadata: Json
+          status: string
+          support_payout_case_id: string | null
+          title: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "work_tasks"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       claim_domain_event_deliveries: {
         Args: {
@@ -8661,8 +9296,34 @@ export type Database = {
         }
         Returns: Json
       }
+      create_merchant_rule_draft: {
+        Args: {
+          p_action: string
+          p_actor_id: string
+          p_condition_operator: string
+          p_conditions: Json
+          p_description: string
+          p_merchant_id: string
+          p_name: string
+          p_priority: number
+        }
+        Returns: Json
+      }
+      create_merchant_rule_draft_pack: {
+        Args: { p_actor_id: string; p_merchant_id: string; p_rules: Json }
+        Returns: Json
+      }
       deduct_merchant_credits: {
         Args: { p_credits: number; p_merchant_id: string }
+        Returns: Json
+      }
+      discard_merchant_rule_draft: {
+        Args: {
+          p_actor_id: string
+          p_merchant_id: string
+          p_rule_id: string
+          p_version_id: string
+        }
         Returns: Json
       }
       fail_domain_event_delivery: {
@@ -8724,6 +9385,18 @@ export type Database = {
       next_pending_processing_chunk_index: {
         Args: { p_job_id: string }
         Returns: number
+      }
+      publish_merchant_rule_version: {
+        Args: { p_actor_id: string; p_merchant_id: string; p_rule_id: string }
+        Returns: Json
+      }
+      publish_workflow_definition: {
+        Args: {
+          p_actor_id: string
+          p_merchant_id: string
+          p_workflow_id: string
+        }
+        Returns: Json
       }
       purge_merchant_source_agnostic: {
         Args: { p_merchant_id: string }
@@ -8787,6 +9460,10 @@ export type Database = {
           p_total_chunks: number
         }
         Returns: undefined
+      }
+      reorder_merchant_rules: {
+        Args: { p_actor_id: string; p_merchant_id: string; p_order: Json }
+        Returns: Json
       }
       reset_merchant_monthly_credits: {
         Args: {

@@ -9,9 +9,10 @@ loadEnv({ path: '.env.local' });
 import { createServiceClient } from '@/lib/supabase/server';
 import { getActiveGorgiasMerchantApiAccess } from '@/lib/support/gorgias/merchantApiAccess';
 import { gorgiasApiBaseUrl, gorgiasApiRequest } from '@/lib/support/gorgias/registerSidebarWidget';
+import { requiredControlledAccountEnv } from '@/scripts/e2e/controlledAccountEnv';
 
-const MERCHANT_ID = 'af070af9-df1a-46ba-89f8-29409926ef61';
-const WIDGET_INTEGRATION_ID = '104747';
+const MERCHANT_ID = requiredControlledAccountEnv('E2E_MERCHANT_ID');
+const WIDGET_INTEGRATION_ID = requiredControlledAccountEnv('E2E_GORGIAS_WIDGET_INTEGRATION_ID');
 
 const redactToken = (s: string) =>
   s.replace(/((?:wt|token|widget_token)=)[^&"'\s]+/gi, '$1***');

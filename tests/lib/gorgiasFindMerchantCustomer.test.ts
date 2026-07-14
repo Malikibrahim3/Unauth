@@ -3,7 +3,7 @@ import path from 'path';
 import { findMerchantCustomerByEmail } from '@/lib/gorgias/findMerchantCustomerByEmail';
 import { claimWidgetToJson } from '@/lib/gorgias/widgetJson';
 
-const KNOWN_MERCHANT_ID = 'af070af9-df1a-46ba-89f8-29409926ef61';
+const KNOWN_MERCHANT_ID = '00000000-0000-4000-8000-000000000001';
 const KNOWN_EMAIL = 'simeonmurray123@gmail.com';
 
 function makeSupabase(

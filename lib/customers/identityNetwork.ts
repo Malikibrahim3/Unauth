@@ -328,6 +328,51 @@ export async function resolveIdentitySiblingCustomers(
   return { identityId, customerIds: siblings.map((s) => s.id), siblings };
 }
 
+/**
+ * Reverse lookup for deep links that only have an identity_id (e.g. a claim's
+ * identity_id used as `/customers/[id]`). Picks a representative merchant-owned
+ * source_customers row so the profile page can load and resolve the rest of
+ * the identity network from there.
+ */
+export async function resolveRepresentativeCustomerIdForIdentity(
+  service: SupabaseClient,
+  merchantId: string,
+  identityId: string,
+): Promise<string | null> {
+  const { data: memberRows } = await service
+    .from('identity_members')
+    .select('identifier_hash')
+    .eq('identity_id', identityId) as unknown as { data: Array<{ identifier_hash: string }> | null };
+  const hashes = Array.from(new Set((memberRows ?? []).map((m) => m.identifier_hash)));
+  if (hashes.length === 0) return null;
+
+  const orderIds = new Set<string>();
+  for (let i = 0; i < hashes.length; i += 200) {
+    const { data: sigs } = await service
+      .from('identity_signals')
+      .select('source_customer_id, source_order_id')
+      .eq('merchant_id', merchantId)
+      .in('identifier_hash', hashes.slice(i, i + 200)) as unknown as {
+        data: Array<{ source_customer_id: string | null; source_order_id: string | null }> | null;
+      };
+    for (const s of sigs ?? []) {
+      if (s.source_customer_id) return s.source_customer_id;
+      if (s.source_order_id) orderIds.add(s.source_order_id);
+    }
+  }
+
+  for (const orderId of orderIds) {
+    const { data: order } = await service
+      .from('source_orders')
+      .select('source_customer_id')
+      .eq('id', orderId)
+      .maybeSingle() as unknown as { data: { source_customer_id: string | null } | null };
+    if (order?.source_customer_id) return order.source_customer_id;
+  }
+
+  return null;
+}
+
 export async function resolveIdentityIdForCustomer(
   service: SupabaseClient,
   merchantId: string,

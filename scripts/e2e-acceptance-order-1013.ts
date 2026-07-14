@@ -1,6 +1,6 @@
 /**
  * Controlled E2E acceptance: Shopify order #1013 + Gorgias ticket → payout case → widget.
- * E2E merchant only. Mutates only af070af9-df1a-46ba-89f8-29409926ef61.
+ * Controlled E2E merchant only. Requires E2E_MERCHANT_ID; no tenant default.
  */
 import { config as loadEnv } from 'dotenv';
 loadEnv({ path: '.env.local' });
@@ -18,8 +18,9 @@ import { TABLES } from '@/lib/supabase/tables';
 import { resolveClaimForTicketDecision } from '@/lib/claims/decision/resolveClaim';
 import { evaluateClaimDecision } from '@/lib/claims/decision/evaluate';
 import { formatPayoutWidgetDecision, formatRecommendationFields } from '@/lib/gorgias/widgetJson';
+import { requiredControlledAccountEnv } from '@/scripts/e2e/controlledAccountEnv';
 
-const MERCHANT_ID = 'af070af9-df1a-46ba-89f8-29409926ef61';
+const MERCHANT_ID = requiredControlledAccountEnv('E2E_MERCHANT_ID');
 const CUSTOMER_EMAIL = 'simsorsno3@icloud.com';
 const CUSTOMER_NAME = 'simon murphy';
 const ORDER_NUMBER = '1013';

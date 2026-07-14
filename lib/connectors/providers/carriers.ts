@@ -42,8 +42,12 @@ function carrierConnector(providerId: 'ups' | 'fedex', name: 'UPS' | 'FedEx'): C
         if (providerId === 'ups') await exchangeUpsClientCredentials(input);
         else await exchangeFedExClientCredentials(input);
         return { ok: true };
-      } catch (error) {
-        return { ok: false, errorCode: 'test_connection_failed', message: error instanceof Error ? error.message : `${providerId}_oauth_failed` };
+      } catch {
+        return {
+          ok: false,
+          errorCode: 'test_connection_failed',
+          message: `${name} credentials were rejected or the provider is temporarily unavailable.`,
+        };
       }
     },
     async initialImport(): Promise<SyncPage | UnsupportedResult> { return RUNTIME_PENDING; },

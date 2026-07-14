@@ -43,7 +43,7 @@ export async function POST(
     .eq('id', id)
     .eq('merchant_id', ctx.merchantId)
     .maybeSingle();
-  if (lookupError) return NextResponse.json({ error: lookupError.message }, { status: 500 });
+  if (lookupError) return NextResponse.json({ error: 'Document lookup failed.', code: 'document_lookup_failed' }, { status: 500 });
   if (!document) return NextResponse.json({ error: 'Document not found.' }, { status: 404 });
 
   const now = new Date().toISOString();
@@ -58,14 +58,14 @@ export async function POST(
     }, { onConflict: 'merchant_id,document_id' })
     .select('*')
     .single();
-  if (termsError) return NextResponse.json({ error: termsError.message }, { status: 500 });
+  if (termsError) return NextResponse.json({ error: 'Partner terms could not be saved.', code: 'partner_terms_save_failed' }, { status: 500 });
 
   const { error: docError } = await serviceClient
     .from('integration_documents')
     .update({ extraction_status: 'approved', approved_at: now, approved_by: user.id })
     .eq('id', id)
     .eq('merchant_id', ctx.merchantId);
-  if (docError) return NextResponse.json({ error: docError.message }, { status: 500 });
+  if (docError) return NextResponse.json({ error: 'Document approval could not be saved.', code: 'document_approval_failed' }, { status: 500 });
 
   const evidence = mapApprovedPartnerTermsToEvidence(terms, {
     merchantId: ctx.merchantId,
@@ -73,9 +73,8 @@ export async function POST(
   });
   try {
     await writeCanonicalEvidence(serviceClient, evidence);
-  } catch (evidenceError) {
-    const message = evidenceError instanceof Error ? evidenceError.message : 'canonical_evidence_write_failed';
-    return NextResponse.json({ error: message }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: 'Approved evidence could not be saved.', code: 'canonical_evidence_write_failed' }, { status: 500 });
   }
 
   return NextResponse.json({ terms, evidence_items: evidence.length });

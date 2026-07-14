@@ -161,7 +161,7 @@ describe('GET /api/claims/[claimId]/support-context', () => {
       id: CLAIM_ID,
       merchant_id: OTHER_MERCHANT_ID,
       shopify_order_id: '16848379281777',
-      shop_domain: 'unauth-test.myshopify.com',
+      shop_domain: 'merchant-a.myshopify.com',
     });
 
     const response = await GET(

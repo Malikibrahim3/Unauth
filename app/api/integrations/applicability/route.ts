@@ -33,8 +33,7 @@ export async function POST(request: NextRequest) {
       setBy: user.id,
     });
     return NextResponse.json({ ok: true });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Could not save applicability.';
-    return NextResponse.json({ error: message }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: 'Could not save applicability.', code: 'applicability_save_failed' }, { status: 500 });
   }
 }

@@ -202,6 +202,7 @@ export async function loadWooCommerceCredentialsForStore(
     .eq('platform', 'woocommerce')
     .eq('store_key', storeKey)
     .eq('status', 'active')
+    .is('uninstalled_at', null)
     .maybeSingle();
 
   if (error) {

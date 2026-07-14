@@ -27,11 +27,14 @@ import { ingestSupportCase } from '@/lib/support/intake/ingestSupportCase';
 import { TABLES } from '@/lib/supabase/tables';
 
 const TARGET = {
-  merchantId: 'af070af9-df1a-46ba-89f8-29409926ef61',
+  merchantId: process.env.E2E_MERCHANT_ID?.trim() ?? '',
   // Ticket id may be overridden via argv[2] or REPROCESS_TICKET_ID.
-  ticketId: process.argv[2]?.trim() || process.env.REPROCESS_TICKET_ID?.trim() || '63091193',
-  shopDomain: 'unauth-test.myshopify.com',
+  ticketId: process.argv[2]?.trim() || process.env.REPROCESS_TICKET_ID?.trim() || '',
+  shopDomain: process.env.E2E_SHOPIFY_STORE_DOMAIN?.trim() || '',
 };
+if (!TARGET.merchantId || !TARGET.ticketId || !TARGET.shopDomain) {
+  throw new Error('E2E_MERCHANT_ID, REPROCESS_TICKET_ID, and E2E_SHOPIFY_STORE_DOMAIN are required');
+}
 
 const maskHash = (h: string | null) => (h ? `${h.slice(0, 8)}…(${h.length})` : '(none)');
 

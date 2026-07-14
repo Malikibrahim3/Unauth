@@ -13,8 +13,9 @@ loadEnv({ path: '.env.local' });
 import { createServiceClient } from '@/lib/supabase/server';
 import { getActiveGorgiasMerchantApiAccess } from '@/lib/support/gorgias/merchantApiAccess';
 import { fetchGorgiasTicketById } from '@/lib/support/gorgias/fetchTicket';
+import { requiredControlledAccountEnv } from '@/scripts/e2e/controlledAccountEnv';
 
-const MERCHANT_ID = 'af070af9-df1a-46ba-89f8-29409926ef61';
+const MERCHANT_ID = requiredControlledAccountEnv('E2E_MERCHANT_ID');
 const TICKET_ID = process.argv[2]?.trim() || '63091193';
 
 const len = (v: unknown) => (typeof v === 'string' ? v.length : v == null ? 'null' : typeof v);

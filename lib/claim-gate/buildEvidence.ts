@@ -7,9 +7,10 @@ import type {
   ClaimGateFulfillmentEvidence,
   ClaimGateShipBobEvidence,
 } from '@/lib/claim-gate/types';
-import { getIntegrationCredential } from '@/lib/integrations/auth';
-import { exchangeFedExClientCredentials, fetchFedExDeliveryProof } from '@/lib/integrations/providers/fedex';
-import { exchangeUpsClientCredentials, fetchUpsDeliveryProof } from '@/lib/integrations/providers/ups';
+import { getIntegrationCredential, resolveActiveIntegrationConnectionId } from '@/lib/integrations/auth';
+import { fetchFedExDeliveryProof } from '@/lib/integrations/providers/fedex';
+import { fetchUpsDeliveryProof } from '@/lib/integrations/providers/ups';
+import { refreshCarrierCredentials } from '@/lib/integrations/providers/carrierCredentials';
 import type { IntegrationCredentialPayload } from '@/lib/integrations/types';
 import {
   getOrderByReferenceId,
@@ -19,8 +20,9 @@ import {
   type ShipBobReturn,
   type ShipBobTimelineEvent,
 } from '@/lib/integrations/providers/shipbob';
-import { getProviderCredential } from '@/lib/integrations/getProviderCredential';
 import { stableEvidenceId } from '@/lib/integrations/stableEvidenceId';
+import { refreshShipBobCredentialsIfNeeded } from '@/lib/integrations/providers/shipbobOAuth';
+import { env } from '@/lib/utils/env';
 
 const DEFAULT_CURRENCY = 'GBP';
 const CARRIER_CLAIM_WINDOWS_DAYS: Record<string, number> = {
@@ -368,23 +370,11 @@ async function fetchCarrierEvidence(input: {
     const provider = directCarrier(stringValue(shipment.tracking_company), trackingNumber);
     if (!provider) continue;
     const credentials = input.credentials[provider];
-    if (!credentials?.clientId || !credentials.clientSecret) continue;
+    if (!credentials?.accessToken) continue;
     try {
-      const token = provider === 'ups'
-        ? await exchangeUpsClientCredentials({
-            clientId: credentials.clientId,
-            clientSecret: credentials.clientSecret,
-            environment: credentials.environment,
-          })
-        : await exchangeFedExClientCredentials({
-            clientId: credentials.clientId,
-            clientSecret: credentials.clientSecret,
-            environment: credentials.environment,
-          });
-      const refreshed = { ...credentials, accessToken: token.accessToken };
       const payload = provider === 'ups'
-        ? await fetchUpsDeliveryProof({ credentials: refreshed, trackingNumber })
-        : await fetchFedExDeliveryProof({ credentials: refreshed, trackingNumber });
+        ? await fetchUpsDeliveryProof({ credentials, trackingNumber })
+        : await fetchFedExDeliveryProof({ credentials, trackingNumber });
       fetched = true;
       const mapped = carrierPayloadEvidence(provider, payload, trackingNumber);
       evidence.push(mapped);
@@ -433,14 +423,16 @@ async function fetchShipBobEvidence(input: {
   client: SupabaseClient;
   merchantId: string;
   order: Record<string, unknown> | null;
-  pat: string | null;
+  credentials: IntegrationCredentialPayload | null;
 }): Promise<{ evidence: ClaimGateShipBobEvidence | null; fetched: boolean }> {
-  const pat = input.pat;
-  if (!pat) return { evidence: null, fetched: false };
+  const token = stringValue(input.credentials?.accessToken) ?? stringValue(input.credentials?.apiKey);
+  if (!token) return { evidence: null, fetched: false };
+  const sandbox = input.credentials?.environment === 'sandbox' || input.credentials?.sandbox === true;
+  const channelId = stringValue(input.credentials?.providerAccountId) ?? stringValue(input.credentials?.channelId) ?? undefined;
   const reference = stringValue(input.order?.order_number) ?? stringValue(input.order?.external_id);
   if (!reference) return { evidence: null, fetched: false };
   try {
-    const order = await getOrderByReferenceId(reference, pat);
+    const order = await getOrderByReferenceId(reference, token, sandbox, channelId);
     if (!order) {
       const empty = shipBobEvidence(null, [], null);
       await writeIntegrationEvidence({
@@ -458,9 +450,9 @@ async function fetchShipBobEvidence(input: {
       });
       return { evidence: empty, fetched: true };
     }
-    const timelineGroups = await Promise.all(order.shipments.map((shipment) => getShipmentTimeline(shipment.id, pat)));
+    const timelineGroups = await Promise.all(order.shipments.map((shipment) => getShipmentTimeline(shipment.id, token, sandbox)));
     const timelines = timelineGroups.flat();
-    const returnOrder = await getReturnForOrder(order.id, pat);
+    const returnOrder = await getReturnForOrder(order.id, token, sandbox);
     const mapped = shipBobEvidence(order, timelines, returnOrder);
     await writeIntegrationEvidence({
       client: input.client,
@@ -525,11 +517,28 @@ export async function buildEvidence(input: {
   // explicit. A null credential means the source is not connected — the gate
   // cannot speak to that dimension and must say so, rather than treating an
   // empty result as "no evidence found".
-  const [upsCredentials, fedexCredentials, shipbobPat] = await Promise.all([
-    getIntegrationCredential(input.client, input.merchantId, 'ups'),
-    getIntegrationCredential(input.client, input.merchantId, 'fedex'),
-    getProviderCredential(input.merchantId, 'shipbob', 'SHIPBOB_PAT', input.client),
+  const [upsConnectionId, fedexConnectionId, shipbobConnectionId] = await Promise.all([
+    resolveActiveIntegrationConnectionId(input.client, input.merchantId, 'ups'),
+    resolveActiveIntegrationConnectionId(input.client, input.merchantId, 'fedex'),
+    resolveActiveIntegrationConnectionId(input.client, input.merchantId, 'shipbob'),
   ]);
+  const [upsCredentials, fedexCredentials] = await Promise.all([
+    upsConnectionId
+      ? refreshCarrierCredentials(input.client, { merchantId: input.merchantId, connectionId: upsConnectionId, providerId: 'ups' })
+      : null,
+    fedexConnectionId
+      ? refreshCarrierCredentials(input.client, { merchantId: input.merchantId, connectionId: fedexConnectionId, providerId: 'fedex' })
+      : null,
+  ]);
+  const shipbobCredentials = shipbobConnectionId
+    ? env.SHIPBOB_OAUTH_CLIENT_ID && env.SHIPBOB_OAUTH_CLIENT_SECRET
+      ? await refreshShipBobCredentialsIfNeeded(input.client, input.merchantId, {
+          connectionId: shipbobConnectionId,
+          clientId: env.SHIPBOB_OAUTH_CLIENT_ID,
+          clientSecret: env.SHIPBOB_OAUTH_CLIENT_SECRET,
+        })
+      : await getIntegrationCredential(input.client, input.merchantId, 'shipbob', { connectionId: shipbobConnectionId })
+    : null;
   const [carrierResult, shipbobResult] = await Promise.all([
     fetchCarrierEvidence({
       client: input.client,
@@ -537,7 +546,7 @@ export async function buildEvidence(input: {
       shipments,
       credentials: { ups: upsCredentials, fedex: fedexCredentials },
     }),
-    fetchShipBobEvidence({ client: input.client, merchantId: input.merchantId, order, pat: shipbobPat }),
+    fetchShipBobEvidence({ client: input.client, merchantId: input.merchantId, order, credentials: shipbobCredentials }),
   ]);
   const fulfillmentEvidence = carrierResult.evidence;
   const shipbobEvidenceResult = shipbobResult.evidence;

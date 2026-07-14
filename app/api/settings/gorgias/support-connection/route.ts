@@ -20,6 +20,7 @@ import {
 import { evaluateGorgiasHelpdeskLink } from '@/lib/support/gorgias/helpdeskLinkStatus';
 import { backfillGorgiasSupportCases } from '@/lib/support/gorgias/backfill';
 import { getConnectionState } from '@/lib/connections/getConnectionState';
+import { safeConnectionErrorCode } from '@/lib/integrations/publicErrors';
 
 function scheduleGorgiasBackfill(
   service: ReturnType<typeof createServiceClient>,
@@ -39,7 +40,8 @@ function scheduleGorgiasBackfill(
       console.error('Gorgias historical ticket backfill failed', {
         merchantId,
         connectionId,
-        message: err instanceof Error ? err.message : 'unknown',
+        category: safeConnectionErrorCode(err instanceof Error ? err.message : null)
+          ?? 'gorgias_backfill_failed',
       });
     }
   });
@@ -61,9 +63,8 @@ async function GETHandler() {
     const connection = await getMerchantGorgiasSupportConnection(service, ctx.merchantId);
     const link = evaluateGorgiasHelpdeskLink(connection);
     return NextResponse.json({ connection, link });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Failed to load Gorgias connection';
-    return NextResponse.json({ error: message }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: 'Failed to load Gorgias connection.', code: 'gorgias_connection_load_failed' }, { status: 500 });
   }
 }
 
@@ -158,8 +159,7 @@ async function POSTHandler(req: NextRequest) {
     if (err instanceof Error && err.message === 'gorgias_connection_already_exists') {
       return NextResponse.json({ error: 'Gorgias connection already exists' }, { status: 409 });
     }
-    const message = err instanceof Error ? err.message : 'Failed to save Gorgias connection';
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to save Gorgias connection.', code: 'gorgias_connection_save_failed' }, { status: 500 });
   }
 }
 

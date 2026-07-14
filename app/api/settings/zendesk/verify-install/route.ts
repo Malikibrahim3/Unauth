@@ -23,9 +23,8 @@ async function POSTHandler() {
       status: 'active',
     });
     return NextResponse.json({ ok: true, connected: true });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Failed to verify Zendesk install';
-    return NextResponse.json({ error: message }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: 'Failed to verify Zendesk install.', code: 'zendesk_install_verification_failed' }, { status: 500 });
   }
 }
 

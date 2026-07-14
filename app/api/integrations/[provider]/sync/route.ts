@@ -6,6 +6,7 @@ import {
   assertLiveProvider,
   getIntegrationCredential,
   getShopifyCredential,
+  resolveActiveIntegrationConnectionId,
   upsertMerchantIntegration,
 } from '@/lib/integrations/auth';
 import {
@@ -25,7 +26,9 @@ import {
 import { requireIntegrationProvider } from '@/lib/integrations/registry';
 import { refreshShipBobCredentialsIfNeeded } from '@/lib/integrations/providers/shipbobOAuth';
 import { env } from '@/lib/utils/env';
+import { refreshCarrierCredentials } from '@/lib/integrations/providers/carrierCredentials';
 import type { NormalizedEvidenceItem } from '@/lib/integrations/types';
+import { safeConnectionErrorCode } from '@/lib/integrations/publicErrors';
 
 const syncSchema = z.object({
   supportPayoutCaseId: z.string().uuid().optional(),
@@ -87,6 +90,11 @@ export async function POST(
   const parsed = syncSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: 'Invalid sync payload.' }, { status: 400 });
 
+  const activeConnectionId = await resolveActiveIntegrationConnectionId(
+    serviceClient,
+    ctx.merchantId,
+    provider.id,
+  );
   try {
     const now = new Date().toISOString();
     let normalized: NormalizedEvidenceItem[] = [];
@@ -109,6 +117,7 @@ export async function POST(
             .select('id')
             .eq('merchant_id', ctx.merchantId)
             .eq('source', 'shopify')
+            .eq('connection_id', shopify.connectionId)
             .eq('external_id', externalOrderId)
             .maybeSingle();
           sourceOrderId = order?.id ?? null;
@@ -124,17 +133,20 @@ export async function POST(
           status: dispute.status ?? null,
           initiated_at: dispute.initiatedAt ?? null,
           finalized_at: dispute.finalizedOn ?? null,
-        }, { onConflict: 'merchant_id,external_id' });
+        }, { onConflict: 'merchant_id,source_order_id,external_id' });
       }
     } else if (provider.id === 'shipbob') {
       // ShipBob OAuth tokens live ~1 hour — refresh before use or this fetch
       // starts failing an hour after the merchant connects.
       const credentials = env.SHIPBOB_OAUTH_CLIENT_ID && env.SHIPBOB_OAUTH_CLIENT_SECRET
-        ? await refreshShipBobCredentialsIfNeeded(serviceClient, ctx.merchantId, {
-            clientId: env.SHIPBOB_OAUTH_CLIENT_ID,
-            clientSecret: env.SHIPBOB_OAUTH_CLIENT_SECRET,
-          })
-        : await getIntegrationCredential(serviceClient, ctx.merchantId, provider.id);
+        ? activeConnectionId
+          ? await refreshShipBobCredentialsIfNeeded(serviceClient, ctx.merchantId, {
+              connectionId: activeConnectionId,
+              clientId: env.SHIPBOB_OAUTH_CLIENT_ID,
+              clientSecret: env.SHIPBOB_OAUTH_CLIENT_SECRET,
+            })
+          : null
+        : await getIntegrationCredential(serviceClient, ctx.merchantId, provider.id, { connectionId: activeConnectionId });
       if (!credentials) return NextResponse.json({ error: 'ShipBob is not connected.' }, { status: 400 });
       const token = credentials?.accessToken ?? credentials?.apiKey;
       if (!token) return NextResponse.json({ error: 'ShipBob is not connected.' }, { status: 400 });
@@ -166,7 +178,13 @@ export async function POST(
         now,
       });
     } else if (provider.id === 'ups' || provider.id === 'fedex') {
-      const credentials = await getIntegrationCredential(serviceClient, ctx.merchantId, provider.id);
+      const credentials = activeConnectionId
+        ? await refreshCarrierCredentials(serviceClient, {
+            merchantId: ctx.merchantId,
+            connectionId: activeConnectionId,
+            providerId: provider.id,
+          })
+        : null;
       if (!credentials?.accessToken) return NextResponse.json({ error: `${provider.name} is not connected.` }, { status: 400 });
       const trackingNumber = await resolveTrackingNumber(serviceClient, ctx.merchantId, parsed.data.orderId, parsed.data.trackingNumber);
       if (!trackingNumber) return NextResponse.json({ error: 'Tracking number is required for carrier proof sync.' }, { status: 400 });
@@ -185,13 +203,20 @@ export async function POST(
 
     await writeCanonicalEvidence(serviceClient, normalized);
     await upsertMerchantIntegration(serviceClient, ctx.merchantId, provider, 'connected', {
+      ...(activeConnectionId ? { connectionId: activeConnectionId } : {}),
       lastSyncAt: now,
       lastError: null,
     });
     return NextResponse.json({ ok: true, provider: provider.id, evidence_items: normalized.length });
   } catch (error) {
-    const message = error instanceof Error ? error.message : `${provider.id}_sync_failed`;
-    await upsertMerchantIntegration(serviceClient, ctx.merchantId, provider, 'error', { lastError: message });
-    return NextResponse.json({ error: message }, { status: 500 });
+    const code = safeConnectionErrorCode(error instanceof Error ? error.message : null)
+      ?? `${provider.id}_sync_failed`;
+    if (activeConnectionId) {
+      await upsertMerchantIntegration(serviceClient, ctx.merchantId, provider, 'error', {
+        connectionId: activeConnectionId,
+        lastError: code,
+      });
+    }
+    return NextResponse.json({ error: `Failed to sync ${provider.name}.`, code }, { status: 500 });
   }
 }

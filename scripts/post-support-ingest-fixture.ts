@@ -42,7 +42,7 @@ function fixtureForProvider(provider: string, merchantId: string) {
       merchant_id: merchantId,
       provider: 'gorgias',
       event_type: 'ticket_updated',
-      shop_domain: 'unauth-test.myshopify.com',
+      shop_domain: 'fixture-shop.myshopify.com',
       raw: {
         id: 'fixture-gorgias-1007',
         uri: 'https://acme.gorgias.com/app/ticket/1007',
@@ -61,7 +61,7 @@ function fixtureForProvider(provider: string, merchantId: string) {
     merchant_id: merchantId,
     provider: 'zendesk',
     event_type: 'ticket_created',
-    shop_domain: 'unauth-test.myshopify.com',
+    shop_domain: 'fixture-shop.myshopify.com',
     raw: {
       id: 88001,
       subject: 'Missing parcel ORD-2025-00341',
