@@ -62,7 +62,7 @@ describe('shouldRequireOnboarding', () => {
     ).toBe(true);
   });
 
-  it('requires onboarding when no helpdesk is connected, even with setup complete', () => {
+  it('allows a completed Shopify merchant to add other integrations before helpdesk setup', () => {
     expect(
       shouldRequireOnboarding({
         hasMerchantContext: true,
@@ -71,7 +71,7 @@ describe('shouldRequireOnboarding', () => {
         shopifyConnected: true,
         helpdeskConnected: false,
       }),
-    ).toBe(true);
+    ).toBe(false);
   });
 });
 
