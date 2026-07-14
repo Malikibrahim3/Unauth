@@ -7,7 +7,7 @@ const TABS = [
   { href: '/settings/account', label: 'Workspace & account' },
   { href: '/settings/billing', label: 'Billing' },
   { href: '/settings/team', label: 'Team' },
-  { href: '/settings/platform', label: 'Financial & workflow defaults' },
+  { href: '/settings/platform', label: 'Defaults' },
   { href: '/integrations', label: 'Connections' },
   { href: '/settings/agreements', label: 'Agreements' },
   { href: '/settings/api-integrations', label: 'API access' },

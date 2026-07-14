@@ -33,7 +33,7 @@ export default async function Runs({
   return (
     <div className="mx-auto max-w-6xl space-y-5 p-4 md:p-6">
       <Link href="/flows" className="text-sm text-[var(--accent)]">
-        ← Flows
+        Flows
       </Link>
       <h1 className="text-2xl font-semibold">Flow runs</h1>
       <div className="divide-y border-y">
@@ -46,7 +46,7 @@ export default async function Runs({
             <span className="font-mono text-xs">{r.id}</span>
             <span>{r.status}</span>
             <span>{formatDateTime(r.started_at)}</span>
-            <span>{r.error ? "Failed — inspect" : "Inspect →"}</span>
+            <span>{r.error ? "Failed — inspect" : "Inspect"}</span>
           </Link>
         ))}
       </div>

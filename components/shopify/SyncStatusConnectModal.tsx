@@ -151,7 +151,7 @@ export function SyncStatusConnectModal({
               style={{ background: 'var(--accent)', color: 'white' }}
               data-testid="shopify-connect-submit"
             >
-              Continue to Shopify →
+              Continue to Shopify
             </button>
           </div>
         </form>

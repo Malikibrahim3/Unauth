@@ -144,7 +144,7 @@ function SyncStatusConnectedContent({
           style={{ color: 'var(--text-secondary)' }}
           data-testid="reconnect-shopify"
         >
-          {hasError ? 'Reconnect to fix sync error →' : 'Re-authorize connection'}
+          {hasError ? 'Reconnect to fix sync error' : 'Re-authorize connection'}
         </button>
       </div>
     </>

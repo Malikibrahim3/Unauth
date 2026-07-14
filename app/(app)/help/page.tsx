@@ -48,7 +48,7 @@ export default function HelpIndexPage() {
           className="inline-flex items-center gap-1.5 text-caption mb-4 hover:underline"
           style={{ color: 'var(--text-secondary)' }}
         >
-          ← Dashboard
+          Dashboard
         </Link>
         <h1 className="text-heading-lg" style={{ color: 'var(--text)' }}>Help &amp; Docs</h1>
         <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
@@ -85,7 +85,7 @@ export default function HelpIndexPage() {
               className="text-caption font-semibold hover:underline flex-shrink-0 mt-0.5"
               style={{ color: 'var(--text)' }}
             >
-              Read →
+              Read
             </Link>
           </div>
         ))}

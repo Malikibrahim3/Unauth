@@ -384,7 +384,7 @@ export default function OnboardingClient({
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link href="/settings/integrations" className="t-caption hover:underline" style={{ color: 'var(--text-tertiary)' }}>
-                  Manage integrations →
+                  Manage integrations
                 </Link>
               </div>
             </div>

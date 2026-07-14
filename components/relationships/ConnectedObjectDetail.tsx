@@ -63,14 +63,14 @@ export function ConnectedObjectDetail({
             href={returnTo}
             className="text-sm font-semibold text-[var(--accent)]"
           >
-            ← Return to previous task
+            Return to previous task
           </Link>
         ) : (
           <Link
             href={OBJECT_ROUTES[object.type]}
             className="text-sm font-semibold text-[var(--accent)]"
           >
-            ← {label(object.type)}s
+            {label(object.type)}s
           </Link>
         )}
         {object.provenance?.sourceUrl ? (
@@ -249,7 +249,7 @@ export function ConnectedObjectDetail({
                     {connected.state ? (
                       <StatusBadge family="workflowStatus" value={connected.state} size="sm" />
                     ) : null}
-                    <span className="text-[var(--accent)]">Open →</span>
+                    <span className="text-[var(--accent)]">Open</span>
                   </span>
                 </Link>
               </li>

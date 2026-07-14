@@ -20,7 +20,7 @@ interface SettingsPageShellProps {
 export function SettingsPageShell({
   title,
   subtitle,
-  eyebrow = 'Settings',
+  eyebrow,
   breadcrumbs,
   primaryAction,
   secondaryActions,
@@ -29,20 +29,13 @@ export function SettingsPageShell({
   children,
   className,
 }: SettingsPageShellProps) {
-  const resolvedBreadcrumbs =
-    breadcrumbs ??
-    [
-      { label: 'Settings', href: '/settings/account' },
-      { label: title },
-    ];
-
   return (
     <div className={cn('min-w-0', className)}>
       <PageHeader
         eyebrow={eyebrow}
         title={title}
         subtitle={subtitle}
-        breadcrumbs={resolvedBreadcrumbs}
+        breadcrumbs={breadcrumbs}
         primaryAction={primaryAction}
         secondaryActions={secondaryActions}
         meta={meta}
@@ -56,7 +49,7 @@ export function SettingsPageShell({
             <h2 className="mt-3 text-sm font-semibold">Workspace controls</h2>
             <p className="mt-1 text-xs leading-relaxed text-[var(--text-secondary)]">Changes are scoped to this workspace. Sensitive actions and configuration updates remain available in the audit trail.</p>
           </div>
-          <Link href="/help" className="flex items-center gap-2 rounded-lg border border-[var(--border)] bg-white/60 px-3 py-2.5 text-xs font-semibold text-[var(--text-secondary)] hover:bg-white">
+          <Link href="/help" className="flex items-center gap-2 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-xs font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]">
             <HelpCircle size={15} aria-hidden="true" />
             Settings help
           </Link>

@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Menu } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
@@ -161,9 +161,5 @@ function SidebarInnerContent({
 }
 
 export function SidebarInner(props: SidebarProps) {
-  return (
-    <Suspense fallback={<div className="hidden md:block w-16 shrink-0" aria-hidden="true" />}>
-      <SidebarInnerContent {...props} />
-    </Suspense>
-  );
+  return <SidebarInnerContent {...props} />;
 }

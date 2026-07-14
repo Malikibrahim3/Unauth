@@ -140,7 +140,7 @@ export function EvidencePackageFormFields({
       className="text-xs hover:underline"
       style={{ color: "var(--text-secondary)" }}
     >
-      ← Cancel
+      Cancel
     </Link>
   );
 

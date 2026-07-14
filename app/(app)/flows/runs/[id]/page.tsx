@@ -43,7 +43,7 @@ export default async function Run({
   return (
     <div className="mx-auto max-w-5xl space-y-5 p-4 md:p-6">
       <Link href="/flows/runs" className="text-sm text-[var(--accent)]">
-        ← Run history
+        Run history
       </Link>
       <h1 className="text-2xl font-semibold">Flow run</h1>
       <dl className="grid gap-3 sm:grid-cols-3">

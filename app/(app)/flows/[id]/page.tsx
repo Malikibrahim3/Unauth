@@ -59,13 +59,13 @@ export default async function FlowDetail({
           href="/flows"
           className="text-sm font-semibold text-[var(--accent)]"
         >
-          ← Flows
+          Flows
         </Link>
         <Link
           href={`/flows/runs?workflow=${id}`}
           className="text-sm font-semibold text-[var(--accent)]"
         >
-          Run history →
+          Run history
         </Link>
       </div>
       <header>

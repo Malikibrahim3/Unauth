@@ -111,7 +111,7 @@ export default async function DataPrivacySettingsPage() {
             className="mt-3 inline-block text-sm font-semibold hover:underline"
             style={{ color: "var(--accent)" }}
           >
-            View audit trail →
+            View audit trail
           </Link>
         </SectionCard>
 

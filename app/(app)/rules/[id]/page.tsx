@@ -67,7 +67,7 @@ export default async function RuleDetail({
         href="/rules"
         className="text-sm font-semibold text-[var(--accent)]"
       >
-        ← Rules
+        Rules
       </Link>
       <header>
         <p className="text-sm text-[var(--text-secondary)]">

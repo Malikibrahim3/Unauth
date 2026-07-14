@@ -76,7 +76,7 @@ export default async function ReportRecords({
         className="text-sm font-medium text-[var(--accent)]"
         href={`/reports?range=${range}`}
       >
-        ← Return to reports
+        Return to reports
       </Link>
       <header>
         <h1 className="text-2xl font-semibold capitalize">
@@ -143,7 +143,7 @@ export default async function ReportRecords({
           <Link
             href={`?${new URLSearchParams({ ...sp, page: String(page - 1) } as Record<string, string>)}`}
           >
-            ← Previous
+            Previous
           </Link>
         ) : (
           <span />
@@ -152,7 +152,7 @@ export default async function ReportRecords({
           <Link
             href={`?${new URLSearchParams({ ...sp, page: String(page + 1) } as Record<string, string>)}`}
           >
-            Next →
+            Next
           </Link>
         ) : null}
       </nav>

@@ -86,7 +86,7 @@ export default async function ConnectionPage({
         href="/integrations"
         className="text-sm font-semibold text-[var(--accent)]"
       >
-        ← Integrations
+        Integrations
       </Link>
       <header className="flex flex-wrap items-start justify-between gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-xs)] md:p-6">
         <div className="flex min-w-0 items-start gap-4">
@@ -249,7 +249,7 @@ export default async function ConnectionPage({
               href="/integrations/imports"
               className="text-xs font-semibold text-[var(--accent)]"
             >
-              Import records →
+              Import records
             </Link>
           </div>
           {jobs.length ? (

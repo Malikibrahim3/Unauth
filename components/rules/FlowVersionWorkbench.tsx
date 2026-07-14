@@ -21,9 +21,11 @@ import {
   FlowEditor,
   type FlowDraftPayload,
   type FlowEditable,
+  type FlowConditionDraft,
   type FlowOutputDraft,
 } from "@/components/rules/FlowEditor";
 import { formatDateTime } from "@/lib/utils/format";
+import { FIELD_DEFS_BY_NAME, FIELD_LABELS } from "@/lib/rules/fields";
 
 export type WorkflowVersionRecord = FlowEditable & {
   id: string;
@@ -59,6 +61,24 @@ function actionSummary(output: FlowOutputDraft) {
   if (output.type === "set_deadline")
     return `Set deadline to ${output.dueInHours}h`;
   return `Request ${output.kind.replaceAll("_", " ")} notification “${output.title}”`;
+}
+
+const OPERATOR_COPY: Record<FlowConditionDraft["operator"], string> = {
+  eq: "is",
+  neq: "is not",
+  in: "is one of",
+  exists: "is present",
+};
+
+function readableCondition(condition: FlowConditionDraft): string {
+  const field = FIELD_LABELS[condition.field] ?? condition.field.replaceAll("_", " ");
+  const definition = FIELD_DEFS_BY_NAME[condition.field];
+  const values = (Array.isArray(condition.value) ? condition.value : [condition.value])
+    .filter((value) => value !== null && value !== undefined)
+    .map((value) => definition?.options?.find((option) => option.value === value)?.label ?? String(value).replaceAll("_", " "));
+  return condition.operator === "exists"
+    ? `${field} ${OPERATOR_COPY[condition.operator]}`
+    : `${field} ${OPERATOR_COPY[condition.operator]} ${values.join(", ")}`;
 }
 
 function withOccurrenceKeys<T>(items: T[], serialize: (item: T) => string) {
@@ -400,8 +420,8 @@ export function FlowVersionWorkbench({
           <ol className="mt-4 space-y-3">
             <li className="rounded-md border border-[var(--border-muted)] bg-[var(--surface-sunken)] p-3">
               <strong className="text-sm">1. Trigger</strong>
-              <p className="mt-1 font-mono text-xs text-[var(--text-secondary)]">
-                {display.trigger_event_type}
+              <p className="mt-1 text-xs text-[var(--text-secondary)]">
+                {display.trigger_event_type.replaceAll("_", " ")}
               </p>
             </li>
             <li className="rounded-md border border-[var(--border-muted)] bg-[var(--surface-sunken)] p-3">
@@ -413,15 +433,7 @@ export function FlowVersionWorkbench({
                     (condition) =>
                       `${condition.field}:${condition.operator}:${JSON.stringify(condition.value)}`,
                   ).map(({ item: condition, key }) => (
-                    <li key={key}>
-                      <span className="font-mono">{condition.field}</span>{" "}
-                      {condition.operator}{" "}
-                      {condition.operator === "exists"
-                        ? "present"
-                        : Array.isArray(condition.value)
-                          ? condition.value.join(", ")
-                          : String(condition.value)}
-                    </li>
+                    <li key={key}>{readableCondition(condition)}</li>
                   ))}
                 </ul>
               ) : (
@@ -551,7 +563,7 @@ export function FlowVersionWorkbench({
                 key={condition.field}
                 className="text-xs font-semibold text-[var(--text-secondary)]"
               >
-                <span className="font-mono">{condition.field}</span>
+                <span>{FIELD_LABELS[condition.field] ?? condition.field.replaceAll("_", " ")}</span>
                 <input
                   className="mt-1 w-full rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm"
                   value={sampleValues[condition.field] ?? ""}

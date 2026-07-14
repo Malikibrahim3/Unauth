@@ -72,7 +72,6 @@ function ConnectorRow({ item }: { item: ConnectorCatalogueItem }) {
       </p>
       <span className="text-right text-[var(--text-tertiary)]">
         <span className="sr-only">View connection</span>
-        <span aria-hidden="true">→</span>
       </span>
     </Link>
   );
@@ -227,7 +226,7 @@ export default async function IntegrationsPage() {
                 {group.description}
               </p>
               <p className="mt-1 text-[11px] font-medium text-[var(--brand-deep)] md:hidden">
-                Swipe for coverage and freshness →
+                Swipe for coverage and freshness
               </p>
               </div>
             </div>
