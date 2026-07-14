@@ -47,13 +47,13 @@ export function MetricCard({ label, value, delta, hint, icon, density = 'default
 
   return (
     <div
-      className={cn('group', className)}
+      className={cn('ua-metric-card group', className)}
       style={{
         background: 'var(--surface)',
         border: '1px solid var(--border)',
-        borderRadius: 'var(--radius-md)',
+        borderRadius: 'var(--ua-radius-card)',
         padding,
-        boxShadow: 'var(--shadow-1)',
+        boxShadow: 'var(--ua-shadow-card)',
       }}
     >
       <div className="flex items-start justify-between gap-2">
@@ -68,7 +68,7 @@ export function MetricCard({ label, value, delta, hint, icon, density = 'default
           {label}
         </span>
         {icon && (
-          <span style={{ color: 'var(--icon-muted)', flexShrink: 0 }} className="w-4 h-4">
+          <span style={{ color: 'var(--brand-deep)', flexShrink: 0 }} className="ua-identity-tile flex h-8 w-8 items-center justify-center">
             {icon}
           </span>
         )}

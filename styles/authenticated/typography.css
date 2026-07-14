@@ -1,0 +1,57 @@
+/*
+ * Type roles. Font stacks relocated verbatim from app/(app)/authenticated.css.
+ * --ua-text-* role tokens are new, but each maps to a real, currently-used
+ * value (pageShellStyles.ts's PAGE_TITLE_STYLE, and the existing
+ * .text-h2/.text-h3/.text-body/.text-small/.text-caption/.text-meta utility
+ * classes in app/globals.css:1055-1062) — no new visual language invented.
+ */
+.ua-app,
+.ua-auth-surface {
+  --font-sans: var(--font-dm-sans), Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: var(--font-bricolage), var(--font-dm-sans), Inter, sans-serif;
+
+  --ua-font-sans: var(--font-sans);
+  --ua-font-mono: var(--font-mono);
+
+  /* Page title — matches components/ui/pageShellStyles.ts PAGE_TITLE_STYLE */
+  --ua-text-page-title-size: clamp(1.5rem, 2vw, 1.875rem);
+  --ua-text-page-title-weight: 620;
+  --ua-text-page-title-leading: 1.2;
+  --ua-text-page-title-tracking: -0.025em;
+
+  /* Section title — matches .text-h2 */
+  --ua-text-section-title-size: 16px;
+  --ua-text-section-title-weight: 600;
+  --ua-text-section-title-leading: 24px;
+  --ua-text-section-title-tracking: -0.005em;
+
+  /* Card / panel title — matches .text-h3 (SectionCard header) */
+  --ua-text-card-title-size: 14px;
+  --ua-text-card-title-weight: 600;
+  --ua-text-card-title-leading: 20px;
+  --ua-text-card-title-tracking: 0;
+
+  /* Body — matches .text-body */
+  --ua-text-body-size: 14px;
+  --ua-text-body-weight: 400;
+  --ua-text-body-leading: 20px;
+  --ua-text-body-tracking: 0;
+
+  /* Small — matches .text-small (SectionCard body, EmptyState description) */
+  --ua-text-small-size: 13px;
+  --ua-text-small-weight: 400;
+  --ua-text-small-leading: 18px;
+  --ua-text-small-tracking: 0;
+
+  /* Caption — matches .text-caption */
+  --ua-text-caption-size: 12px;
+  --ua-text-caption-weight: 500;
+  --ua-text-caption-leading: 16px;
+  --ua-text-caption-tracking: 0.005em;
+
+  /* Micro / eyebrow — matches .text-meta */
+  --ua-text-micro-size: 12px;
+  --ua-text-micro-weight: 500;
+  --ua-text-micro-leading: 16px;
+  --ua-text-micro-tracking: 0.02em;
+}

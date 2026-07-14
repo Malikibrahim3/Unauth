@@ -1,10 +1,10 @@
 /**
  * POST /api/cron/verify-connections
  *
- * Runs daily at 2 AM UTC via Vercel cron. For every merchant with an active
- * store or helpdesk connection, makes a live API call to verify the
- * credentials are still valid. When a connection fails, updates status='error'
- * and last_error in the DB so the UI immediately reflects the broken state.
+ * Runs daily at 2 AM UTC via Vercel cron. For every merchant with a configured
+ * Shopify or Gorgias connection, makes a live API call to verify the
+ * credentials are still valid. The same probe also runs on integration page
+ * loads while a merchant is active; this cron is the free-plan safety net.
  *
  * Combined with page-load verification, broken tokens are caught within
  * 24 hours by cron and immediately on any subsequent page view.
@@ -15,16 +15,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
 import { env } from '@/lib/utils/env';
-import { decryptBigCommerceOAuthCredentials } from '@/lib/commerce/credentialCrypto';
 import {
-  decryptGorgiasApiCredentials,
-} from '@/lib/support/gorgias/credentialCrypto';
-import {
-  gorgiasApiBaseUrl,
-  gorgiasApiRequest,
-  GorgiasSidebarRegistrationError,
-} from '@/lib/support/gorgias/registerSidebarWidget';
-import { SHOPIFY_REST_API_VERSION } from '@/lib/shopify/apiVersion';
+  persistLiveVerification,
+  verifyGorgiasConnection,
+  verifyShopifyConnection,
+  type GorgiasVerificationRow,
+  type ShopifyVerificationRow,
+} from '@/lib/connections/liveVerification';
 
 export const maxDuration = 60;
 
@@ -35,6 +32,7 @@ type StoreRow = {
   credentials_encrypted: string | null;
   platform: string | null;
   status: string | null;
+  uninstalled_at: string | null;
 };
 
 type HelpdeskRow = {
@@ -45,60 +43,6 @@ type HelpdeskRow = {
   access_token_encrypted: string | null;
   status: string | null;
 };
-
-async function verifyShopifyConnection(row: StoreRow): Promise<{ ok: boolean; reason?: string }> {
-  if (!row.credentials_encrypted || !row.store_key) return { ok: false, reason: 'missing_credentials' };
-
-  let accessToken: string;
-  try {
-    accessToken = decryptBigCommerceOAuthCredentials(row.credentials_encrypted).access_token;
-  } catch {
-    return { ok: false, reason: 'decrypt_failed' };
-  }
-
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
-    const res = await fetch(`https://${row.store_key}/admin/api/${SHOPIFY_REST_API_VERSION}/shop.json`, {
-      headers: { 'X-Shopify-Access-Token': accessToken },
-      cache: 'no-store',
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
-
-    if (res.ok) return { ok: true };
-    if (res.status === 401 || res.status === 403) return { ok: false, reason: 'token_revoked' };
-    if (res.status >= 500) return { ok: true }; // Shopify-side error, not our token
-    return { ok: false, reason: `shopify_${res.status}` };
-  } catch {
-    // Network timeout/error — treat as inconclusive, don't mark as broken
-    return { ok: true };
-  }
-}
-
-async function verifyGorgiasConnection(row: HelpdeskRow): Promise<{ ok: boolean; reason?: string }> {
-  if (!row.access_token_encrypted || !row.provider_base_url) return { ok: false, reason: 'missing_credentials' };
-
-  let credentials: { email: string; api_key: string };
-  try {
-    credentials = decryptGorgiasApiCredentials(row.access_token_encrypted);
-  } catch {
-    return { ok: false, reason: 'decrypt_failed' };
-  }
-
-  const apiBaseUrl = gorgiasApiBaseUrl(row.provider_base_url);
-  try {
-    await gorgiasApiRequest<unknown>(apiBaseUrl, '/users/me', credentials, { method: 'GET' });
-    return { ok: true };
-  } catch (err) {
-    if (err instanceof GorgiasSidebarRegistrationError) {
-      if (err.status === 401 || err.status === 403) return { ok: false, reason: 'credentials_revoked' };
-      if (err.status >= 500) return { ok: true }; // Gorgias-side error
-    }
-    // Network error — inconclusive
-    return { ok: true };
-  }
-}
 
 export async function POST(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
@@ -112,49 +56,37 @@ export async function POST(request: NextRequest) {
   // --- Store connections (Shopify, WooCommerce, BigCommerce) ---
   const { data: storeRows } = await sc
     .from('store_connections')
-    .select('id, merchant_id, store_key, credentials_encrypted, platform, status')
-    .eq('status', 'active')
+    .select('id, merchant_id, store_key, credentials_encrypted, platform, status, uninstalled_at')
     .eq('platform', 'shopify') // Only Shopify has live token verification today
+    .in('status', ['active', 'error'])
     .limit(500);
 
   results.shopify = { checked: 0, failed: 0 };
   for (const row of (storeRows ?? []) as StoreRow[]) {
     results.shopify.checked++;
-    const { ok, reason } = await verifyShopifyConnection(row);
-    if (!ok && reason && reason !== 'inconclusive') {
+    const result = await verifyShopifyConnection(row as ShopifyVerificationRow);
+    if (result.status === 'failed') {
       results.shopify.failed++;
-      await sc
-        .from('store_connections')
-        .update({
-          status: 'error',
-          last_error: `verification_failed: ${reason}`,
-        })
-        .eq('id', row.id);
     }
+    await persistLiveVerification(sc, 'store_connections', row.id, row.status, result);
   }
 
   // --- Helpdesk connections (Gorgias) ---
   const { data: helpdeskRows } = await sc
     .from('helpdesk_connections')
     .select('id, merchant_id, provider, provider_base_url, access_token_encrypted, status')
-    .eq('status', 'active')
     .eq('provider', 'gorgias')
+    .in('status', ['active', 'error'])
     .limit(500);
 
   results.gorgias = { checked: 0, failed: 0 };
   for (const row of (helpdeskRows ?? []) as HelpdeskRow[]) {
     results.gorgias.checked++;
-    const { ok, reason } = await verifyGorgiasConnection(row);
-    if (!ok && reason && reason !== 'inconclusive') {
+    const result = await verifyGorgiasConnection(row as GorgiasVerificationRow);
+    if (result.status === 'failed') {
       results.gorgias.failed++;
-      await sc
-        .from('helpdesk_connections')
-        .update({
-          status: 'error',
-          last_error: `verification_failed: ${reason}`,
-        })
-        .eq('id', row.id);
     }
+    await persistLiveVerification(sc, 'helpdesk_connections', row.id, row.status, result);
   }
 
   console.log('[verify-connections] done', results);

@@ -2,13 +2,13 @@ import type { IntegrationProvider, IntegrationCredentialPayload } from '@/lib/in
 
 export const upsProvider: IntegrationProvider = {
   id: 'ups',
-  name: 'UPS (direct)',
+  name: 'UPS',
   category: 'carrier',
   authMode: 'oauth',
   buildStatus: 'live',
-  description: 'Attempts to retrieve UPS signature or delivery photo when captured for the shipment.',
-  evidenceCapabilities: ['delivery_photo', 'signature'],
-  capabilities: { readAttachments: true },
+  description: 'Direct UPS tracking, scan history, delivery status, signature, and photo proof when available.',
+  evidenceCapabilities: ['tracking_number', 'tracking_events', 'delivery_status', 'delivery_photo', 'signature'],
+  capabilities: { readTracking: true, readAttachments: true },
 };
 
 function upsBaseUrl(environment: string | undefined): string {

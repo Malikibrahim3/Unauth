@@ -1,0 +1,65 @@
+/*
+ * Canvas, base text rendering, selection, focus treatment, reduced motion,
+ * and other shared structural defaults. Relocated verbatim from
+ * app/(app)/authenticated.css.
+ */
+.ua-app {
+  min-height: 100vh;
+  background: var(--surface-base);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01" 1, "cv11" 1;
+}
+
+.ua-app main {
+  background: var(--surface-base);
+}
+
+.ua-app ::selection,
+.ua-auth-surface ::selection {
+  background: #cbd5ff;
+  color: #17191c;
+}
+
+.ua-app :where(button, a, input, select, textarea, [tabindex]):focus-visible,
+.ua-auth-surface :where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.ua-app .ua-mark,
+.ua-auth-surface .ua-mark {
+  --ua-logo-ink: #17191c;
+  --ua-logo-dot: var(--brand-signal);
+}
+
+.ua-app .ua-operational-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #c9cac3 transparent;
+}
+
+:root[data-theme="dark"] .ua-app .ua-mark,
+:root[data-theme="dark"] .ua-auth-surface .ua-mark {
+  --ua-logo-ink: var(--text-primary);
+  --ua-logo-dot: var(--brand-signal);
+}
+
+:root[data-theme="dark"] .ua-app ::selection,
+:root[data-theme="dark"] .ua-auth-surface ::selection {
+  background: var(--accent-border);
+  color: var(--text-primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ua-app *,
+  .ua-app *::before,
+  .ua-app *::after,
+  .ua-auth-surface *,
+  .ua-auth-surface *::before,
+  .ua-auth-surface *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}

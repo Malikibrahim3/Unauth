@@ -58,15 +58,20 @@ function hasGap(evidence: EvidenceChecklistResult, key: string): boolean {
 
 function gapLabels(evidence: EvidenceChecklistResult, keys: string[]): string[] {
   const keySet = new Set(keys);
-  return evidence.items
+  return uniqueLabels(evidence.items
     .filter((item) => keySet.has(item.key) && itemGap(item))
-    .map((item) => item.label);
+    .map((item) => item.label));
 }
 
 function missingEvidenceLabels(evidence: EvidenceChecklistResult): string[] {
-  return evidence.items
+  return uniqueLabels(evidence.items
     .filter((item) => itemGap(item))
-    .map((item) => item.label);
+    .map((item) => item.label));
+}
+
+/** Merge evidence emitted by multiple rules without duplicating merchant-facing rows. */
+function uniqueLabels(labels: string[]): string[] {
+  return Array.from(new Set(labels.map((label) => label.trim()).filter(Boolean))).slice(0, 5);
 }
 
 function isEvidenceIncomplete(evidence: EvidenceChecklistResult): boolean {

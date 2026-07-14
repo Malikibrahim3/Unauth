@@ -1,38 +1,9 @@
-import { mapAfterShipTracking } from '@/lib/connectors/providers/aftership/mappings';
 import { mapShipBobOrder, mapShipBobReturn } from '@/lib/connectors/providers/shipbob/mappings';
 import {
   resolveParentByExternalId,
   requireParentOrDefer,
   DeferredReconciliation,
 } from '@/lib/connectors/reconciliation';
-
-describe('AfterShip tracking mapping', () => {
-  it('maps a shipment + tracking events, mapping status and keeping source_status', () => {
-    const { shipment, trackingEvents } = mapAfterShipTracking({
-      tracking_number: 'EX123456789GB',
-      slug: 'royal-mail',
-      current_status: 'InTransit',
-      delivery_timestamp: '2026-07-12T14:05:00+00:00',
-      checkpoints: [
-        { tag: 'InfoReceived', message: 'Shipment created', location: 'London', checkpoint_time: '2026-07-11T18:00:00Z' },
-        { tag: 'Delivered', message: 'Delivered', location: 'London', checkpoint_time: '2026-07-12T14:05:00Z' },
-      ],
-    });
-    expect(shipment?.status).toBe('in_transit');
-    expect(shipment?.sourceStatus).toBe('InTransit');
-    expect(shipment?.carrier).toBe('royal-mail');
-    expect(trackingEvents).toHaveLength(2);
-    expect(trackingEvents[1].status).toBe('delivered');
-    expect(trackingEvents[1].sourceStatus).toBe('Delivered');
-    expect(trackingEvents[0].eventAt).toBe('2026-07-11T18:00:00.000Z');
-  });
-
-  it('does not invent GPS or fabricate a delivered timestamp', () => {
-    const { shipment } = mapAfterShipTracking({ tracking_number: 'T1', current_status: 'InTransit', checkpoints: [] });
-    expect(shipment?.deliveredAt).toBeNull();
-    expect(JSON.stringify(shipment)).not.toMatch(/lat|lng|gps/i);
-  });
-});
 
 describe('ShipBob mapping', () => {
   it('maps order shipments to fulfilments + shipments', () => {

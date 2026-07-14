@@ -26,7 +26,7 @@ export default function ClaimReviewPanel({
     <div className="flex flex-col" style={CLAIM_REVIEW_PANEL_ROOT_STYLE}>
       <ClaimReviewToast wb={wb} />
       <ClaimReviewHeader wb={wb} />
-      <div className="max-w-[1440px] mx-auto w-full grid grid-cols-1 min-[1100px]:grid-cols-[minmax(0,1fr)_400px] gap-6 p-4 md:p-6 items-start">
+      <div className="max-w-[1440px] mx-auto w-full grid grid-cols-1 min-[1100px]:grid-cols-[minmax(0,1fr)_410px] gap-6 p-4 md:p-6 items-start">
         <ClaimReviewContextColumn wb={wb} />
         <ClaimReviewActionRail wb={wb} canManage={canManage} />
         <ClaimReviewFormSection wb={wb} />

@@ -51,9 +51,9 @@ export function RailSection({
   return (
     <PanelCard
       variant="app"
-      className="overflow-hidden p-0"
+      className={`overflow-hidden p-0 ${id === 'manage' ? 'ua-focal-panel' : ''}`}
       style={{
-        borderColor: highlighted ? 'var(--text-primary)' : 'var(--border-muted)',
+        borderColor: highlighted ? 'var(--text-primary)' : id === 'manage' ? 'var(--accent-border)' : 'var(--border-muted)',
         boxShadow: highlighted ? '0 0 0 1px var(--text-primary)' : undefined,
       }}
     >
@@ -61,7 +61,7 @@ export function RailSection({
         type="button"
         onClick={() => onToggle(id)}
         className="w-full flex items-center justify-between px-3 py-2 text-left"
-        style={{ background: 'var(--surface)' }}
+        style={{ background: id === 'manage' ? 'linear-gradient(90deg, var(--brand-signal-soft), var(--surface))' : 'var(--surface)' }}
         aria-expanded={open}
       >
         <span className="flex items-center gap-1.5 min-w-0">

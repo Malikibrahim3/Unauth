@@ -61,8 +61,8 @@ describe('disconnectProviderConnection', () => {
 
   it('other category → disconnectIntegration + canonical mirror', async () => {
     const { client, updates } = makeClient();
-    await disconnectProviderConnection(client, M, { id: 'aftership', category: 'tracking' });
-    expect(disconnectIntegration).toHaveBeenCalledWith(client, M, 'aftership');
+    await disconnectProviderConnection(client, M, { id: 'ups', category: 'carrier' });
+    expect(disconnectIntegration).toHaveBeenCalledWith(client, M, 'ups');
     expect(updates.find((u) => u.table === 'merchant_integrations')?.patch.disconnected_at).toBeTruthy();
   });
 });

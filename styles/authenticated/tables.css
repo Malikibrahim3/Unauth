@@ -1,0 +1,24 @@
+/*
+ * Table shell/header/row base rules. Relocated verbatim from
+ * app/(app)/authenticated.css. The shared table component is
+ * components/ui/DataTable.tsx — see the migration register for the 9
+ * hand-rolled <table> implementations that don't yet consume it.
+ */
+.ua-app :where(table) {
+  font-variant-numeric: tabular-nums;
+}
+
+.ua-app :where(th) {
+  color: var(--text-tertiary);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .01em;
+}
+
+.ua-app :where(tbody tr) {
+  transition: background-color 120ms ease;
+}
+
+.ua-app :where(tbody tr:hover) {
+  background: var(--surface-hover);
+}

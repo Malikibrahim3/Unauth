@@ -2,6 +2,24 @@
 
 Initial inventory frozen: 2026-07-13
 
+> **Craft verification recertified 2026-07-14.** The reopened gate is closed by `docs/design/authenticated-craft-completion-validation.md`. Fresh representative screenshots are indexed at `design-evidence/2026-07-14-authenticated-craft-completion/README.md`; the automated route evidence is `tests/current/authenticated-redesign.spec.ts` (9/9 across desktop, tablet and mobile). The stable surface IDs below remain unchanged.
+
+## 2026-07-14 evidence map
+
+| Manifest family | Exact fresh evidence |
+|---|---|
+| Shell, Overview, charts, theme, responsive | `01-shell-overview.png`, `22-tablet-overview.png`, `23-mobile-overview.png`, `24-mobile-navigation.png`, `25-laptop-overview.png`, `26-dark-overview.png` |
+| Work, payout queue, case, exceptions | `02-work.png`, `03-payout-control.png`, `04-case-detail.png`, `05-exceptions.png` |
+| Loss and recovery | `06-losses.png`, `07-recovery.png` |
+| Customers, detail and drawer | `08-customers.png`, `09-customer-detail.png`, `18-customer-drawer.png` |
+| Rules and flows | `10-rules.png`, `11-flows.png` |
+| Reports | `12-reports.png` |
+| Integrations and setup | `13-integrations.png`, `16-setup-progress.png`, `17-object-detail.png` |
+| Settings and notifications | `14-settings.png`, `15-notifications.png` |
+| Modal, empty, error and asynchronous states | `16-setup-progress.png`, `19-command-modal.png`, `20-empty-state.png`, `21-error-state.png` |
+
+All paths above are relative to `design-evidence/2026-07-14-authenticated-craft-completion/`. Every route row below additionally has fresh DOM, containment, authenticated-scope, and legacy-colour evidence from the 67-route matrix at 1440×900, 1024×900 and 390×844.
+
 ## Initial counts
 
 | Category | Count | Discovery method |
@@ -125,7 +143,7 @@ All routes below inherit the new authenticated token scope. Redirect-only routes
 
 ## Independent second inventory
 
-The post-implementation inventory was performed from the filesystem again, without reusing the initial route array. It scanned `app/(app)`, `app/onboarding`, and `app/audit-running` for `page.tsx`, normalized dynamic segments, and compared every result with this manifest.
+The post-implementation inventory was repeated on 14 July after the craft-completion edits, without reusing the initial route array. It scanned `app/(app)`, `app/onboarding`, and `app/audit-running` for `page.tsx`, normalized dynamic segments, and compared every result with this manifest.
 
 | Result | Count |
 |---|---:|

@@ -6,9 +6,9 @@ const BUTTON_BASE =
   'inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-colors duration-[var(--duration-fast)] focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed select-none';
 
 const BUTTON_SIZES: Record<ButtonSize, { height: string; px: string; fontSize: number }> = {
-  sm: { height: 'var(--button-height-sm)', px: 'var(--space-2)', fontSize: 12 },
-  md: { height: 'var(--button-height-md)', px: 'var(--space-4)', fontSize: 13 },
-  lg: { height: 'var(--button-height-lg)', px: 'var(--space-5)', fontSize: 14 },
+  sm: { height: 'var(--ua-control-height-sm)', px: 'var(--ua-control-padding-x-sm)', fontSize: 12 },
+  md: { height: 'var(--ua-control-height-md)', px: 'var(--ua-control-padding-x-md)', fontSize: 13 },
+  lg: { height: 'var(--ua-control-height-lg)', px: 'var(--ua-control-padding-x-lg)', fontSize: 14 },
 };
 
 export const BUTTON_ICON_SIZES: Record<ButtonSize, string> = {
@@ -18,8 +18,8 @@ export const BUTTON_ICON_SIZES: Record<ButtonSize, string> = {
 };
 
 const BUTTON_VARIANT_CLASSES: Record<ButtonVariant, string> = {
-  primary: 'hover:bg-[var(--accent-hover)] active:bg-[var(--accent-hover)]',
-  cta: 'hover:bg-[var(--accent-hover)] active:bg-[var(--accent-hover)]',
+  primary: 'hover:bg-[var(--ua-accent-hover)] active:bg-[var(--ua-accent-hover)]',
+  cta: 'hover:bg-[var(--ua-accent-hover)] active:bg-[var(--ua-accent-hover)]',
   secondary: 'hover:bg-[var(--surface-hover)] active:bg-[var(--surface-sunken)]',
   ghost: 'hover:bg-[var(--surface-hover)] active:bg-[var(--surface-sunken)]',
   danger: 'hover:opacity-90 active:opacity-80',
@@ -30,16 +30,16 @@ function buttonVariantStyle(variant: ButtonVariant): CSSProperties {
   switch (variant) {
     case 'primary':
       return {
-        background: 'var(--accent)',
+        background: 'var(--ua-accent)',
         color: 'white',
-        border: '1px solid var(--accent)',
+        border: '1px solid var(--ua-accent)',
       };
     // Lime brand CTA — sparing: marketing CTAs, "New X" marquee actions.
     case 'cta':
       return {
-        background: 'var(--accent)',
-        color: 'var(--accent-fg-on-500)',
-        border: '1px solid var(--accent)',
+        background: 'var(--ua-accent)',
+        color: 'var(--ua-accent-fg)',
+        border: '1px solid var(--ua-accent)',
         fontWeight: 600,
       };
     case 'secondary':
@@ -68,7 +68,7 @@ export function getButtonPresentation(
       paddingLeft: isLink ? undefined : sz.px,
       paddingRight: isLink ? undefined : sz.px,
       fontSize: sz.fontSize,
-        borderRadius: isLink ? undefined : 'var(--radius-sm)',
+        borderRadius: isLink ? undefined : 'var(--ua-radius-control)',
       minWidth: isLink ? undefined : 'fit-content',
       ...buttonVariantStyle(variant),
       ...style,

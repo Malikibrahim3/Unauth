@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import type { EvidenceChecklistResult } from '@/lib/payouts/types';
-import { PanelCard } from '@/components/ui';
+import { Card } from '@/components/ui';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { useConnectionState } from '@/components/connections/ConnectionStateContext';
 
@@ -34,11 +34,11 @@ export function EvidenceChecklistCard({
   const gapMessage = delivery?.trackingGap === 'no_tracking_number'
     ? 'No tracking number on Shopify order.'
     : delivery?.trackingGap === 'tracking_not_found'
-      ? 'Tracking not found in AfterShip.'
+      ? 'Tracking not found by the connected carrier.'
       : 'Tracking data is unavailable for this case.';
 
   return (
-    <PanelCard as="section" variant="app" className="p-4">
+    <Card unstyled as="section" variant="flat" className="p-4">
       <div className="flex items-center justify-between mb-3">
         <p className="text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>
           Evidence on file
@@ -92,8 +92,8 @@ export function EvidenceChecklistCard({
 
       {/* Delivery evidence gap — shown when tracking is not connected on INR-type cases */}
       {showDeliveryGap ? (
-        <PanelCard
-          variant="appInset"
+        <Card unstyled
+          variant="inset"
           className="mt-3 flex items-start gap-2 px-3 py-2.5 text-xs"
           style={{
             borderColor: 'color-mix(in srgb, var(--warning) 25%, var(--border))',
@@ -113,10 +113,10 @@ export function EvidenceChecklistCard({
               className="font-medium underline underline-offset-2"
               style={{ color: 'var(--warning)' }}
             >
-              Connect a tracking source →
+              Connect a tracking source
             </Link>
           </span>
-        </PanelCard>
+        </Card>
       ) : null}
 
       {hasMissing && !showDeliveryGap && (
@@ -124,6 +124,6 @@ export function EvidenceChecklistCard({
           Missing items weaken the case — request evidence from the customer or carrier before paying out.
         </p>
       )}
-    </PanelCard>
+    </Card>
   );
 }

@@ -12,14 +12,15 @@ import type { ConnectorAdapter } from '@/lib/connectors/types';
 import { connectorNotRegistered } from '@/lib/connectors/errors';
 import { shopifyConnector } from '@/lib/connectors/providers/shopify';
 import { gorgiasConnector } from '@/lib/connectors/providers/gorgias';
-import { aftershipConnector } from '@/lib/connectors/providers/aftership';
+import { fedexConnector, upsConnector } from '@/lib/connectors/providers/carriers';
 import { shipbobConnector } from '@/lib/connectors/providers/shipbob';
 import { documentUploadConnector } from '@/lib/connectors/providers/documentUpload';
 
 const ADAPTERS: ConnectorAdapter[] = [
   shopifyConnector,
   gorgiasConnector,
-  aftershipConnector,
+  upsConnector,
+  fedexConnector,
   shipbobConnector,
   documentUploadConnector,
 ];

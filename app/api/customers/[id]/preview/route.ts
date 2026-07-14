@@ -5,6 +5,7 @@ import { TABLES } from '@/lib/supabase/tables';
 import { normaliseCurrencyOrNull } from '@/lib/canonical/money';
 import { enforceEntitlement } from '@/lib/product/requireEntitlement';
 import { label } from '@/lib/ui/labels';
+import { isActiveClaimStatus } from '@/lib/claims/sla';
 
 type SourceCustomer = Record<string, unknown> & {
   id: string;
@@ -86,7 +87,7 @@ export async function GET(
   const orderRows = sourceIds.length
     ? ((await svc
         .from(TABLES.SOURCE_ORDERS)
-        .select('id,order_number,total_price,currency,updated_at')
+        .select('id,order_number,total_price,currency,placed_at,updated_at')
         .eq('merchant_id', ctx.merchantId)
         .in('source_customer_id', sourceIds)
         .order('updated_at', { ascending: false })
@@ -97,11 +98,11 @@ export async function GET(
   const cases = orderIds.length
     ? ((await svc
         .from(TABLES.MERCHANT_CLAIMS)
-        .select('id,status,claim_type,amount_at_risk,currency,updated_at')
+        .select('id,status,claim_type,source_order_id,amount_at_risk,currency,updated_at')
         .eq('merchant_id', ctx.merchantId)
         .in('source_order_id', orderIds.slice(0, 2000))
         .order('updated_at', { ascending: false })
-        .limit(20)).data as Record<string, unknown>[] | null) ?? []
+        .limit(2000)).data as Record<string, unknown>[] | null) ?? []
     : [];
 
   const totals = new Map<string, { orders: number; value: number }>();
@@ -125,16 +126,33 @@ export async function GET(
       .sort()
       .at(-1) ?? String(canonical.updated_at ?? '');
   const firstSeen = orderRows
-    .map((order) => String(order.updated_at ?? ''))
+    .map((order) => String(order.placed_at ?? order.updated_at ?? ''))
     .filter(Boolean)
     .sort()
     .at(0) ?? sources.map((source) => source.updated_at).filter(Boolean).sort().at(0) ?? null;
-  const openCases = cases.filter((claim) =>
-    ['new', 'open', 'pending', 'evidence_needed', 'awaiting_customer_evidence', 'awaiting_carrier_response', 'ready_for_decision', 'manual_review', 'escalated'].includes(String(claim.status)),
-  );
-  const refundCases = cases.filter((claim) =>
-    ['refund_request', 'resolved_refunded'].includes(String(claim.claim_type)) || String(claim.status) === 'resolved_refunded',
-  ).length;
+  const openCases = cases.filter((claim) => isActiveClaimStatus(String(claim.status)));
+  const ordersWithCases = new Set(
+    cases.map((claim) => String(claim.source_order_id ?? '')).filter(Boolean),
+  ).size;
+  const latestOrderAt = orderRows
+    .map((order) => String(order.placed_at ?? order.updated_at ?? ''))
+    .filter(Boolean)
+    .sort()
+    .at(-1) ?? null;
+  const openExposure = new Map<string, number>();
+  for (const claim of openCases) {
+    const currency = normaliseCurrencyOrNull(claim.currency);
+    const value = Number(claim.amount_at_risk ?? 0);
+    if (currency && Number.isFinite(value)) {
+      openExposure.set(currency, (openExposure.get(currency) ?? 0) + value);
+    }
+  }
+  const claimsByOrder = new Map<string, Record<string, unknown>[]>();
+  for (const claim of cases) {
+    const orderId = String(claim.source_order_id ?? '');
+    if (!orderId) continue;
+    claimsByOrder.set(orderId, [...(claimsByOrder.get(orderId) ?? []), claim]);
+  }
 
   return NextResponse.json({
     version: 2,
@@ -144,10 +162,11 @@ export async function GET(
       email: canonical.email ? String(canonical.email) : null,
       asOf: asOf || null,
       firstSeen,
+      lastOrderAt: latestOrderAt,
       stats: {
         orders: orderRows.length,
         payoutCases: cases.length,
-        refundRate: orderRows.length > 0 ? Math.round((refundCases / orderRows.length) * 100) : 0,
+        caseRate: orderRows.length > 0 ? Math.round((ordersWithCases / orderRows.length) * 100) : 0,
         chargebacks: cases.filter((claim) => String(claim.claim_type) === 'chargeback').length,
       },
       sources: sources.map((source) => ({
@@ -159,6 +178,7 @@ export async function GET(
         asOf: source.updated_at,
       })),
       totalsByCurrency: [...totals].map(([currency, value]) => ({ currency, ...value })),
+      openExposureByCurrency: [...openExposure].map(([currency, value]) => ({ currency, value })),
       unavailableCurrencyOrders,
       attention: openCases
         .map((claim) => ({
@@ -173,14 +193,20 @@ export async function GET(
         currency: normaliseCurrencyOrNull(claim.currency),
         href: `/claims/${claim.id}`,
       })),
-      recent: orderRows.slice(0, 5).map((order) => ({
+      recent: orderRows.slice(0, 6).map((order) => {
+        const orderCases = claimsByOrder.get(String(order.id)) ?? [];
+        const latestCase = orderCases[0];
+        return ({
         type: 'order',
         reference: String(order.order_number || order.id),
         amount: order.total_price == null ? null : Number(order.total_price),
         currency: normaliseCurrencyOrNull(order.currency),
-        at: String(order.updated_at),
+        at: String(order.placed_at ?? order.updated_at),
         href: `/orders/${order.id}`,
-      })),
+        caseCount: orderCases.length,
+        caseType: latestCase ? label('claimType', String(latestCase.claim_type || 'other')) : null,
+        caseState: latestCase ? String(latestCase.status) : null,
+      })}),
     },
   });
 }

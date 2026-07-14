@@ -156,7 +156,7 @@ export default function FoundingMerchantApplicationForm({ defaultStoreName }: { 
 
       <div className="mt-8">
         <Button type="submit" size="lg" loading={loading}>
-          Submit application →
+          Submit application
         </Button>
       </div>
     </form>

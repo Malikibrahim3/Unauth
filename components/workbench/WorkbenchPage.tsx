@@ -71,7 +71,7 @@ export function WorkbenchPage({
       <section>
         <header
           className={PAGE_SHELL_INNER_CLASS}
-          style={PAGE_HEADER_STYLE}
+          style={{ ...PAGE_HEADER_STYLE, background: 'var(--surface)' }}
         >
           {eyebrow ? (
             <div className="mb-2" style={PAGE_EYEBROW_STYLE}>

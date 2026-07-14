@@ -48,7 +48,7 @@ export function makeContext(overrides: DeepPartial<ClaimDecisionContext> = {}): 
       daysSinceDelivery: 9,
       trackingProvider: null,
       trackingProviderConnected: false,
-      afterShipConnected: false,
+      carrierDirectConnected: false,
       scanCount: 0,
       lastScanAt: null,
       exceptionCount: 0,

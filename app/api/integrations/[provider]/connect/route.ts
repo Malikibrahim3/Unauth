@@ -6,7 +6,6 @@ import { assertLiveProvider, saveIntegrationCredential, upsertMerchantIntegratio
 import { requireIntegrationProvider } from '@/lib/integrations/registry';
 import { exchangeFedExClientCredentials } from '@/lib/integrations/providers/fedex';
 import { exchangeUpsClientCredentials } from '@/lib/integrations/providers/ups';
-import { verifyAfterShipApiKey } from '@/lib/integrations/providers/aftership';
 import { verifyShipBobPat } from '@/lib/integrations/providers/shipbob';
 
 const oauthCredentialSchema = z.object({
@@ -20,7 +19,6 @@ const apiKeyCredentialSchema = z.object({
   apiKey: z.string().trim().min(8),
   sandbox: z.boolean().optional().default(false),
   channelId: z.string().trim().min(1).optional(),
-  webhookSecret: z.string().trim().min(8).optional(),
 });
 
 export async function POST(
@@ -49,19 +47,18 @@ export async function POST(
     await upsertMerchantIntegration(serviceClient, ctx.merchantId, provider, 'connected', { lastError: null });
     return NextResponse.json({ ok: true, provider: provider.id, status: 'connected' });
   }
-  if (provider.id === 'aftership' || provider.id === 'shipbob') {
+  if (provider.id === 'shipbob') {
     const body = await request.json().catch(() => ({}));
     const parsed = apiKeyCredentialSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: 'Valid API credentials are required.' }, { status: 400 });
     }
     try {
-      if (provider.id === 'aftership') await verifyAfterShipApiKey(parsed.data.apiKey);
-      else await verifyShipBobPat(parsed.data.apiKey, parsed.data.sandbox, parsed.data.channelId);
+      await verifyShipBobPat(parsed.data.apiKey, parsed.data.sandbox, parsed.data.channelId);
       await saveIntegrationCredential(serviceClient, ctx.merchantId, provider, {
         apiKey: parsed.data.apiKey,
-        ...(provider.id === 'shipbob' ? { sandbox: parsed.data.sandbox, channelId: parsed.data.channelId ?? null } : {}),
-        ...(provider.id === 'aftership' ? { webhookSecret: parsed.data.webhookSecret ?? null } : {}),
+        sandbox: parsed.data.sandbox,
+        channelId: parsed.data.channelId ?? null,
       });
       await upsertMerchantIntegration(serviceClient, ctx.merchantId, provider, 'connected', { lastError: null });
       return NextResponse.json({ ok: true, provider: provider.id, status: 'connected' });

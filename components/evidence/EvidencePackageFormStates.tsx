@@ -89,7 +89,7 @@ export function EvidencePackageFormEmptyOrders({
         </button>
       ) : (
         <Link href={`/customers/${profileId}`} className="text-sm hover:underline" style={{ color: 'var(--accent)' }}>
-          ← Return to profile
+          Return to profile
         </Link>
       )}
     </div>

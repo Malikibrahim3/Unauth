@@ -42,9 +42,9 @@ export type ClaimDecisionContext = {
     hasTracking: boolean;
     hasProofOfDelivery: boolean;
     daysSinceDelivery: number | null;
-    trackingProvider: 'aftership' | 'ups' | 'fedex' | null;
+    trackingProvider: 'ups' | 'fedex' | null;
     trackingProviderConnected: boolean;
-    afterShipConnected: boolean;
+    carrierDirectConnected: boolean;
     scanCount: number;
     lastScanAt: string | null;
     exceptionCount: number;

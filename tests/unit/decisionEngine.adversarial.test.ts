@@ -47,7 +47,7 @@ function mkFulfillment(overrides: Partial<ClaimGateFulfillmentEvidence> = {}): C
   return {
     tracking_number: 'TRK-TEST-001',
     carrier: 'evri',
-    carrier_identified_via: 'aftership_slug',
+    carrier_identified_via: 'ups_api',
     current_status: 'In Transit',
     delivery_scan_present: true,
     pod_present: false,
@@ -56,7 +56,7 @@ function mkFulfillment(overrides: Partial<ClaimGateFulfillmentEvidence> = {}): C
     exception_present: false,
     carrier_claim_window_open: true,
     carrier_claim_deadline: '2026-07-08',
-    tracking_source: 'aftership',
+    tracking_source: 'ups',
     evidence_strength: 'moderate',
     ...overrides,
   };
@@ -123,7 +123,7 @@ describe('adversarial decision engine', () => {
   // -------------------------------------------------------------------------
   // Scenario 1 — Lost in transit, high value
   //
-  // Real-world: AfterShip shows "Exception: parcel delayed" 12 days ago, no
+  // Real-world: UPS shows "Exception: parcel delayed" 12 days ago, no
   // delivered scan, order value £200. A carrier claim is typically the
   // strongest avenue — this is NOT a limitation, it is a recovery route.
   //
@@ -434,7 +434,7 @@ describe('adversarial decision engine', () => {
   // -------------------------------------------------------------------------
   // Scenario 7 — Everything unavailable (no integrations)
   //
-  // Real-world: merchant has only Shopify + Gorgias. No AfterShip, no ShipBob.
+  // Real-world: merchant has only Shopify + Gorgias. No carrier API, no ShipBob.
   // The engine cannot assess delivery or fulfilment — it must say so honestly.
   // -------------------------------------------------------------------------
   it('Scenario 7 — no integrations: insufficient strength, honest limitations', () => {
@@ -478,7 +478,7 @@ describe('adversarial decision engine', () => {
   // -------------------------------------------------------------------------
   // Scenario 8 — Conflicting evidence
   //
-  // Real-world: AfterShip reports delivered + POD. ShipBob shows the shipment
+  // Real-world: UPS reports delivered + POD. ShipBob shows the shipment
   // was never dispatched from the warehouse (exception: cancelled at warehouse).
   // This is a genuine human-review conflict — the engine must surface BOTH
   // facts without resolving them into a false verdict.

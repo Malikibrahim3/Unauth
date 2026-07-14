@@ -16,12 +16,12 @@ function money(minor: number, currency: string) {
 function currencyLabel(currency: string) {
   return normaliseCurrencyOrNull(currency) ?? "Currency unavailable";
 }
-const STEPS: Array<[keyof MoneyBridge, string, string]> = [
-  ["requestedMinor", "Payout exposure", "Requested in this period"],
-  ["recoveredMinor", "Recovered", "Received and reconciled"],
-  ["preventedMinor", "Prevented", "Not paid after review"],
-  ["realisedLossMinor", "Realised loss", "Ledger-confirmed merchant loss"],
-];
+const STEPS = [
+  { key: "requestedMinor", label: "Payout exposure", definition: "Requested in this period" },
+  { key: "recoveredMinor", label: "Recovered", definition: "Received and reconciled" },
+  { key: "preventedMinor", label: "Prevented", definition: "Not paid after review" },
+  { key: "realisedLossMinor", label: "Realised loss", definition: "Ledger-confirmed merchant loss" },
+] satisfies Array<{ key: keyof MoneyBridge; label: string; definition: string }>;
 function RankedTable({
   title,
   description,
@@ -45,7 +45,6 @@ function RankedTable({
                 <th className="py-2 font-medium">Category</th>
                 <th className="py-2 text-right font-medium">Records</th>
                 <th className="py-2 text-right font-medium">Value</th>
-                <th className="py-2 text-right font-medium">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -54,11 +53,8 @@ function RankedTable({
                   key={`${r.key}:${r.currency}`}
                   className="border-b border-[var(--border-muted)]"
                 >
-                  <th
-                    scope="row"
-                    className="py-3 text-left font-medium capitalize"
-                  >
-                    {r.label}
+                  <th scope="row" className="py-3 text-left font-medium">
+                    <Link className="text-[var(--text-primary)] hover:text-[var(--accent)]" href={r.href}>{r.label}</Link>
                   </th>
                   <td className="py-3 text-right tabular-nums">{r.count}</td>
                   <td className="py-3 text-right tabular-nums">
@@ -66,14 +62,6 @@ function RankedTable({
                     <span className="text-xs text-[var(--text-secondary)]">
                       {currencyLabel(r.currency)}
                     </span>
-                  </td>
-                  <td className="py-3 text-right">
-                    <Link
-                      className="font-medium text-[var(--accent)]"
-                      href={r.href}
-                    >
-                      Inspect →
-                    </Link>
                   </td>
                 </tr>
               ))}
@@ -126,25 +114,23 @@ export function IntelligenceReportView({
           <div className="mt-4 space-y-5">
             {report.bridges.map((b) => (
               <div key={b.currency}>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <h3 className="font-semibold">{b.currency}</h3>
                   <Link
                     href={`/claims?range=${report.range}&currency=${b.currency}`}
                     className="text-sm font-medium text-[var(--accent)]"
                   >
-                    {b.caseIds.length} underlying cases →
+                    {b.caseIds.length} underlying {b.caseIds.length === 1 ? "case" : "cases"}
                   </Link>
                 </div>
-                <dl className="mt-2 grid border-y border-[var(--border-muted)] sm:grid-cols-2 lg:grid-cols-4">
-                  {STEPS.map(([key, label, definition]) => (
+                <dl className="mt-2 grid overflow-hidden border-y border-[var(--border)] sm:grid-cols-2 lg:grid-cols-4">
+                  {STEPS.map(({ key, label, definition }, index) => (
                     <div
                       key={key}
-                      className="min-h-24 border-b border-[var(--border-muted)] p-3 sm:border-r"
+                      className={`min-h-24 py-4 sm:px-4 ${index > 0 ? "border-t border-[var(--border-muted)] sm:border-l sm:border-t-0" : ""}`}
                     >
-                      <dt className="text-sm text-[var(--text-secondary)]">
-                        {label}
-                      </dt>
-                      <dd className="mt-1 text-xl font-semibold tabular-nums">
+                      <dt className="text-xs font-medium text-[var(--text-secondary)]">{label}</dt>
+                      <dd className="mt-2 text-xl font-semibold tabular-nums">
                         {b[key] === 0
                           ? key === "requestedMinor"
                             ? "Nothing outstanding"
@@ -167,18 +153,18 @@ export function IntelligenceReportView({
           </p>
         )}
       </section>
-      {compact ? <DashboardCharts report={report} /> : null}
+      <DashboardCharts report={report} />
       <section className="border-t border-[var(--border-muted)] pt-5">
         <h2 className="text-lg font-semibold">Needs attention</h2>
-        <div className="mt-3 divide-y divide-[var(--border-muted)] rounded-lg border border-[var(--border)] bg-[var(--surface)]">
+        <div className="ua-section-panel mt-3 divide-y divide-[var(--border-muted)] overflow-hidden rounded-lg">
           {report.operations.slice(0, compact ? 4 : 8).map((row) => (
             <Link
               key={row.key}
               href={row.href}
-              className="flex items-center justify-between gap-4 p-3 hover:bg-[var(--surface-hover)]"
+              className="ua-table-row flex items-center justify-between gap-4 p-3.5 hover:bg-[var(--surface-hover)]"
             >
               <span className="text-sm">{row.label}</span>
-              <span className="text-sm font-semibold tabular-nums text-[var(--accent)]">View {row.count} {row.count === 1 ? 'case' : 'cases'} →</span>
+              <span className="text-sm font-semibold tabular-nums text-[var(--accent)]">{row.count} {row.count === 1 ? 'case' : 'cases'}</span>
             </Link>
           ))}
         </div>
@@ -200,55 +186,6 @@ export function IntelligenceReportView({
         rows={report.recoveries.slice(0, compact ? 5 : 20)}
         empty="No recovery records were updated in this period."
       /> : null}
-      {!compact ? <section className="border-t border-[var(--border-muted)] pt-5">
-        <h2 className="text-lg font-semibold">Source coverage</h2>
-        <p className="mt-1 text-sm text-[var(--text-secondary)]">
-          Object counts and freshness from imported records; fresh means updated
-          within 48 hours.
-        </p>
-        <div className="mt-3 overflow-x-auto">
-          <table className="w-full min-w-[600px] text-sm">
-            <thead>
-              <tr className="border-b border-[var(--border)] text-left text-[var(--text-secondary)]">
-                <th className="py-2">Object</th>
-                <th className="py-2 text-right">Inspected</th>
-                <th className="py-2 text-right">Fresh</th>
-                <th className="py-2 text-right">Stale</th>
-                <th className="py-2 text-right">Latest source update</th>
-              </tr>
-            </thead>
-            <tbody>
-              {report.coverage.map((r) => (
-                <tr
-                  key={r.objectType}
-                  className="border-b border-[var(--border-muted)]"
-                >
-                  <th scope="row" className="py-3 text-left">
-                    <Link
-                      className="font-medium text-[var(--accent)]"
-                      href={r.href}
-                    >
-                      {r.objectType}
-                    </Link>
-                  </th>
-                  <td className="py-3 text-right tabular-nums">{r.records}</td>
-                  <td className="py-3 text-right tabular-nums">
-                    {r.freshRecords}
-                  </td>
-                  <td className="py-3 text-right tabular-nums">
-                    {r.staleRecords}
-                  </td>
-                  <td className="py-3 text-right">
-                    {r.latestAt
-                      ? formatDateTime(r.latestAt)
-                      : "No records"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section> : null}
       {!compact ? (
         <section className="border-t border-[var(--border-muted)] pt-5">
           <h2 className="text-lg font-semibold">Report definitions</h2>

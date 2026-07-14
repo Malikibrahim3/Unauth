@@ -199,12 +199,9 @@ export async function assembleEvidencePack(input: AssembleEvidencePackInput): Pr
     });
   }
 
-  for (const provider of ['aftership', 'ups', 'fedex']) {
+  for (const provider of ['ups', 'fedex']) {
     if (!hasConnected(views, provider)) {
-      const capability =
-        provider === 'aftership' ? 'tracking_events' :
-        'delivery_photo';
-      missingEvidence.push(missing(views, provider, capability, 'not_connected', `${views.find((view) => view.id === provider)?.name ?? provider} is not connected.`));
+      missingEvidence.push(missing(views, provider, 'delivery_photo', 'not_connected', `${views.find((view) => view.id === provider)?.name ?? provider} is not connected.`));
     }
   }
 

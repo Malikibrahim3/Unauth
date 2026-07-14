@@ -1,0 +1,25 @@
+---
+description: Authenticated design system rules — styles/authenticated/ is the sole source of truth for signed-in product styling
+globs:
+  - "app/(app)/**"
+  - "app/onboarding/**"
+  - "app/audit-running/**"
+  - "components/**"
+  - "styles/authenticated/**"
+alwaysApply: true
+---
+# Authenticated Design System
+
+`styles/authenticated/` is the sole source of truth for every visual value used by the authenticated (signed-in) product. Read `styles/authenticated/README.md` before touching authenticated styling.
+
+- All authenticated design values (colour, radius, shadow, spacing, control height, typography) come from `styles/authenticated/`. Never invent a new one locally.
+- Pages compose primitives; they do not invent new visual systems.
+- Hardcoded authenticated colours, arbitrary `rounded-[...]` radii, and arbitrary inline shadows are prohibited except the documented data-visualisation / provider-brand exceptions in the README, and are enforced by `npm run lint:authenticated-design`.
+- Status badges (`StatusBadge`) and filter chips are separate component types — one is non-interactive, one is interactive. Do not style one as the other.
+- Buttons use `Button`/`ButtonLink`. Authenticated tables use `DataTable`.
+- Marketing tokens (`--landing-*`, `--fl-*`, `components/ui/tokens.ts`, `components/ui/LandingPrimitives.tsx`) must not be imported into new authenticated code, and authenticated tokens must not leak into public landing pages.
+- New component variants get documented in `styles/authenticated/README.md`.
+- Visible focus states are mandatory on every interactive control.
+- `npm run lint:authenticated-design` must pass before completing any authenticated styling change.
+
+See `docs/design/authenticated-style-system-audit.md` and `docs/design/authenticated-component-migration-register.md` for the full rationale, known mismatches, and what's still in progress.

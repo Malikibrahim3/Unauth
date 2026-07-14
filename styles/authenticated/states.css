@@ -1,0 +1,19 @@
+/*
+ * Loading / skeleton / empty / stale / partial / unavailable / error /
+ * disabled states.
+ *
+ * There is no authenticated.css content to relocate here. State visuals
+ * currently live in component TSX rather than shared CSS:
+ *   - components/ui/EmptyState.tsx (canonical empty state, migrated to
+ *     --ua-* aliases as part of this pass)
+ *   - components/ui/LoadingState.tsx (in practice only exports
+ *     ErrorBoundaryUI — an error-state component, not a loading spinner)
+ *   - components/navigation/skeletons/* (route-level loading.tsx skeletons,
+ *     ~18 consumers)
+ *   - components/states/OperationalRouteSkeleton.tsx (~17 consumers)
+ *   - components/ui/DataTable.tsx's own SkeletonRows
+ * These three skeleton systems share no tokens or component today — see
+ * docs/design/authenticated-component-migration-register.md. Unifying them
+ * is deferred; this file documents the gap rather than inventing a new,
+ * fourth skeleton system.
+ */

@@ -27,7 +27,7 @@ export default async function PlatformSettingsPage() {
   );
   return (
     <SettingsPageShell
-      title="Financial & workflow defaults"
+      title="Defaults"
       subtitle="Reporting, matching, financial, workflow, and connection policy defaults."
     >
       <PlatformSettingsClient canManage={canManage} />

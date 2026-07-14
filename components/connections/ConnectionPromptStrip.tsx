@@ -57,7 +57,7 @@ export function ConnectionPromptStrip({ connection, hasExistingProfiles }: Conne
         className="shrink-0 text-sm font-semibold whitespace-nowrap hover:opacity-80 transition-opacity"
         style={{ color: 'var(--accent)' }}
       >
-        Complete setup →
+        Complete setup
       </Link>
     </div>
   );

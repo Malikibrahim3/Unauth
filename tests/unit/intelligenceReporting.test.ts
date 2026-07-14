@@ -1,4 +1,4 @@
-import { aggregateMoneyBridges, parseReportRange, reportCutoff, REPORT_DEFINITIONS } from '@/lib/reporting/intelligence';
+import { aggregateMoneyBridges, buildReportTrend, parseReportRange, reportCutoff, REPORT_DEFINITIONS } from '@/lib/reporting/intelligence';
 
 describe('intelligence reporting contracts',()=>{
  it('never combines currencies and calculates outstanding from canonical categories',()=>{
@@ -10,6 +10,25 @@ describe('intelligence reporting contracts',()=>{
   expect(result.map(x=>x.currency)).toEqual(['GBP','USD']);
   expect(result[0]).toMatchObject({requestedMinor:12000,paidMinor:5000,recoverableMinor:4000,recoveredMinor:1250,writtenOffMinor:500,outstandingMinor:2250});
  expect(result[1].requestedMinor).toBe(9000);
+ });
+ it('builds dated chart series for every currency without combining totals',()=>{
+  const result=buildReportTrend(
+   [
+    {id:'a',submitted_at:'2026-07-01T12:00:00Z'},
+    {id:'b',submitted_at:'2026-07-01T14:00:00Z'},
+    {id:'c',submitted_at:'2026-07-02T09:00:00Z'},
+   ],
+   [
+    {support_payout_case_id:'a',currency:'GBP',requested_minor:1000,recovered_minor:200},
+    {support_payout_case_id:'b',currency:'USD',requested_minor:3000,recovered_minor:0},
+    {support_payout_case_id:'c',currency:'GBP',requested_minor:500,recovered_minor:100},
+   ],
+  );
+  expect(result).toEqual([
+   {currency:'GBP',date:'2026-07-01',exposureMinor:1000,recoveredMinor:200},
+   {currency:'GBP',date:'2026-07-02',exposureMinor:500,recoveredMinor:100},
+   {currency:'USD',date:'2026-07-01',exposureMinor:3000,recoveredMinor:0},
+  ]);
  });
  it('quarantines invalid source currencies instead of crashing or mixing them',()=>{
   const result=aggregateMoneyBridges([

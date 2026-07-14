@@ -111,3 +111,17 @@ test('seeded dynamic record routes use the new system', async ({ page }) => {
     await test.step(destination, async () => expectAuthenticatedSystem(page, destination));
   }
 });
+
+test('visual enrichment preserves provider identity and focal hierarchy', async ({ page }) => {
+  await page.goto('/integrations', { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('img[src*="shopify"]')).toBeVisible();
+  await expect(page.locator('img[src*="gorgias"]')).toBeVisible();
+  await expect(page.locator('img[src*="shipbob"]')).toBeVisible();
+  await expect(page.locator('.ua-focal-panel')).not.toHaveCount(0);
+
+  await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
+  await expect(page.getByRole('region', { name: 'Value this period' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Payout performance charts' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Exposure and recovered' }).first()).toBeVisible();
+  await expect(page.getByText('View chart data').first()).toBeVisible();
+});

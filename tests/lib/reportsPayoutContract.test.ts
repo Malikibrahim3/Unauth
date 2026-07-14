@@ -37,12 +37,15 @@ describe("payout-control reports contract", () => {
     const charts = read("components/reporting/DashboardCharts.tsx");
 
     expect(view).toContain("<table");
-    expect(view).toContain("underlying cases");
-    expect(view).toContain("Inspect →");
+    expect(view).toContain("underlying");
+    expect(view).toContain('b.caseIds.length === 1 ? "case" : "cases"');
     expect(charts).toContain("recharts");
     expect(charts).toContain("Exposure and recovered");
     expect(charts).toContain("Loss causes");
-    expect(charts).toContain("Recovery funnel");
+    expect(charts).toContain("Recovery progression");
+    expect(charts).toContain("View chart data");
+    expect(charts).not.toContain("monotone");
+    expect(charts).not.toContain("Recovery funnel");
   });
 
   it("rolls payout exposure and requested actions into report breakdowns", () => {

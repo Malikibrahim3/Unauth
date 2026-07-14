@@ -57,6 +57,9 @@ export function SidebarNavItem({
           : undefined
       }
     >
+      {active ? (
+        <span className="absolute inset-y-1.5 left-0 w-0.5 rounded-r-full bg-[var(--brand-deep)]" aria-hidden="true" />
+      ) : null}
       <Icon
         className={cn(
           'h-4 w-4 flex-shrink-0',

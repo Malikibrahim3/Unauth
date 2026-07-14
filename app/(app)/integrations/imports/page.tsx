@@ -40,7 +40,7 @@ export default async function ImportsPage() {
         href="/integrations"
         className="text-sm font-semibold text-[var(--accent)]"
       >
-        ← Integrations
+        Integrations
       </Link>
       <header>
         <p className="text-sm text-[var(--text-secondary)]">

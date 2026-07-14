@@ -3,7 +3,7 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { PERMISSIONS, requirePermission } from "@/lib/permissions";
 import { TABLES } from "@/lib/supabase/tables";
 import { WorkbenchPage } from "@/components/ui";
-import { WorkQueue, type WorkQueueItem } from "@/components/work/WorkQueue";
+import { WorkQueue, type WorkQueueItem, type WorkViewCounts } from "@/components/work/WorkQueue";
 import { countOpenExceptions, listExceptions } from "@/lib/exceptions/store";
 import { formatNumber } from "@/lib/utils/format";
 import { shortRef, hashId } from "@/lib/ui/displayRef";
@@ -119,6 +119,37 @@ export default async function WorkPage({
         })
       : Promise.resolve([]),
   ]);
+  const { data: countRowsData } = await serviceClient
+    .from(TABLES.WORK_TASKS)
+    .select("status,owner_user_id,due_at,blocking_reason,title")
+    .eq("merchant_id", ctx.merchantId)
+    .limit(10000);
+  const countRows = (countRowsData ?? []) as Array<{
+    status: string;
+    owner_user_id: string | null;
+    due_at: string | null;
+    blocking_reason: string | null;
+    title: string;
+  }>;
+  const activeRows = countRows.filter((row) => row.status !== "completed" && row.status !== "cancelled");
+  const todayStart = new Date();
+  todayStart.setUTCHours(0, 0, 0, 0);
+  const todayEnd = new Date(todayStart);
+  todayEnd.setUTCDate(todayEnd.getUTCDate() + 1);
+  const viewCounts: WorkViewCounts = {
+    open: activeRows.length + openExceptionCount,
+    mine: activeRows.filter((row) => row.owner_user_id === user.id).length,
+    unassigned: activeRows.filter((row) => !row.owner_user_id).length,
+    "due-today": activeRows.filter((row) => {
+      const due = row.due_at ? Date.parse(row.due_at) : Number.NaN;
+      return Number.isFinite(due) && due >= todayStart.getTime() && due < todayEnd.getTime();
+    }).length,
+    blocked: activeRows.filter((row) => row.status === "blocked").length,
+    "evidence-needed": activeRows.filter((row) => row.blocking_reason?.toLowerCase().includes("evidence")).length,
+    "decision-needed": activeRows.filter((row) => `${row.title} ${row.blocking_reason ?? ""}`.toLowerCase().includes("decision")).length,
+    "integration-exceptions": openExceptionCount,
+    completed: countRows.filter((row) => row.status === "completed").length,
+  };
   const exceptions: WorkQueueItem[] = exceptionRows.map((row) => ({
     id: row.id,
     kind: "exception",
@@ -169,6 +200,7 @@ export default async function WorkPage({
             (includeExceptions ? openExceptionCount : 0)
           }
           view={view}
+          viewCounts={viewCounts}
         />
       }
     />

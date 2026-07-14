@@ -40,13 +40,23 @@ const caseStatus: Record<string, string> = {
   evidence_needed: 'Evidence needed',
   awaiting_customer_evidence: 'Waiting on customer',
   awaiting_carrier_response: 'Waiting on carrier',
+  awaiting_3pl_response: 'Waiting on 3PL',
+  awaiting_supplier_response: 'Waiting on supplier',
   ready_for_decision: 'Ready for decision',
   manual_review: 'Manual review',
+  decision_recorded: 'Decision recorded',
   escalated: 'Escalated',
+  blocked: 'Blocked',
   recovery_opened: 'Recovery opened',
+  closed: 'Closed',
+  resolved: 'Resolved',
   resolved_refunded: 'Refunded',
+  resolved_won: 'Resolved — recovered',
+  resolved_lost: 'Resolved — loss recorded',
   resolved_exchanged: 'Exchanged',
   resolved_denied: 'Denied',
+  voided: 'Voided',
+  stale: 'Needs review',
 };
 
 const requestedAction: Record<string, string> = {

@@ -1,6 +1,6 @@
 # Authenticated redesign defect register
 
-Updated: 2026-07-13
+Updated: 2026-07-14
 
 | ID | Severity | Surface | Finding | Resolution | Status |
 |---|---|---|---|---|---|
@@ -17,5 +17,13 @@ Updated: 2026-07-13
 | DEF-011 | Medium | Integrations responsive table | The grouped connection table's min-content width could be mistaken for page overflow at tablet/mobile sizes. | Added zero-min-width containment to the application flex chain and retained deliberate table-local horizontal scrolling; page body width remains pinned to the viewport. | Fixed |
 | DEF-012 | Medium | Page landmarks | Several route views rendered their own `main` inside the shell's page landmark, producing nested main landmarks. | Consolidated the authenticated landmark at the shell scroll container and changed route-level wrappers to neutral `div` containers. | Fixed |
 | DEF-013 | Medium | Legacy test contract | Critical tests still expected superseded report/case labels after the information architecture changed. | Updated assertions to the equivalent new semantic content while preserving workflow, data, drill-down, and interaction coverage. | Fixed |
+| DEF-014 | High | Authenticated theme | **Confirmed:** the visible appearance control selected dark, but `.ua-app` forced light-scoped values. | Added authenticated dark selectors and a neutral dark token set; verified through the real Settings control. Evidence: `26-dark-overview.png`. | Fixed |
+| DEF-015 | High | Dashboard / Reports | **Confirmed:** equal template cards, smoothed/default charts, a faux funnel, fake empty bars and a guessed GBP fallback violated the reporting contract. | Rebuilt the chart system with separate-currency bridges, linear trend, ranked causes, reconciled recovery ledger, explicit states and accessible tables. Evidence: `01-shell-overview.png`, `12-reports.png`. | Fixed |
+| DEF-016 | High | Case workspace | **Confirmed:** a viewer could open the server-rendered route but the client case-list read required decision-write permission, leaving identity/history unresolved and payout exposure apparently loading forever. | GET now uses inbox-read permission; mutations retain decision-write checks. Evidence: `04-case-detail.png`. | Fixed |
+| DEF-017 | Medium | Work | **Confirmed:** filters lacked counts, generic descriptions repeated, and only small links opened rows. | Added canonical per-view counts, deduped boilerplate, honest owner labels and guarded pointer/keyboard row navigation. Evidence: `02-work.png`. | Fixed |
+| DEF-018 | Medium | Settings / shell | **Confirmed:** duplicate page hierarchy, hardcoded white panels and a hidden narrow sidebar loading spacer weakened the authenticated shell. | Simplified headings, tokenized settings help and added a semantic full-sidebar skeleton. Evidence: `14-settings.png`; loading chrome additionally verified during the live development transition. | Fixed |
+| DEF-019 | Medium | Customers | **Confirmed:** directory and drawer used different definitions of “open”, producing 3 versus 4 open cases for the same customer. | Both now use canonical active-case statuses; case count copy no longer implies one case per order. Evidence: `08-customers.png`, `18-customer-drawer.png`. | Fixed |
+| DEF-020 | Low | Case demo classification | **Data-specific:** the initially inspected record looked unclassified while its async context was still loading. A controlled wait resolved it to a populated case. | Evidence capture now waits for populated identity and payout exposure rather than treating the transitional state as the final UI. Evidence: `04-case-detail.png`. | Closed |
+| DEF-021 | Low | Account profile | **Not reproducible:** support contact already used `support@unauth.app`; form controls load through the account setup resource. | No speculative data change made. Settings hierarchy and states remain covered by `14-settings.png`. | Closed |
 
-No unresolved critical or high design defect remains in this register.
+No unresolved critical or high design defect remains in this register. The 14 July classifications were reproduced at controlled viewports and the exact evidence paths are relative to `design-evidence/2026-07-14-authenticated-craft-completion/`.

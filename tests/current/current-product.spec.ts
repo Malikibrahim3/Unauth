@@ -177,6 +177,8 @@ test.describe("current merchant experience", () => {
       page.getByText("Source coverage", { exact: true }).first(),
     ).toBeVisible();
     await expect(page.locator("main canvas")).toHaveCount(0);
-    await expect(page.locator("main svg")).toHaveCount(0);
+    await expect(page.locator("main .recharts-wrapper")).not.toHaveCount(0);
+    await expect(page.getByRole("region", { name: "Payout performance charts" })).toBeVisible();
+    await expect(page.getByText("View chart data").first()).toBeVisible();
   });
 });

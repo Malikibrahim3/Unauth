@@ -9,20 +9,20 @@ describe('merchant setup progress', () => {
     expect(progress([], { activeRules: 0, paymentConfirmed: false }).percent).toBe(0);
     expect(progress([provider('shopify', 'commerce')]).completed).toBe(3);
     expect(progress([provider('shopify', 'commerce'), provider('gorgias', 'helpdesk')]).completed).toBe(4);
-    expect(progress([provider('shopify', 'commerce'), provider('gorgias', 'helpdesk'), provider('aftership', 'tracking')]).complete).toBe(true);
+    expect(progress([provider('shopify', 'commerce'), provider('gorgias', 'helpdesk'), provider('ups', 'carrier')]).complete).toBe(true);
   });
   it('does not let optional documents block completion', () => {
-    const result = progress([provider('shopify', 'commerce'), provider('gorgias', 'helpdesk'), provider('aftership', 'tracking')]);
+    const result = progress([provider('shopify', 'commerce'), provider('gorgias', 'helpdesk'), provider('ups', 'carrier')]);
     expect(result.total).toBe(5);
     expect(result.complete).toBe(true);
   });
   it('requires a warehouse only when merchant applicability says so', () => {
-    const sources = [provider('shopify', 'commerce'), provider('gorgias', 'helpdesk'), provider('aftership', 'tracking')];
+    const sources = [provider('shopify', 'commerce'), provider('gorgias', 'helpdesk'), provider('ups', 'carrier')];
     expect(progress(sources, { warehouseRequired: true }).complete).toBe(false);
     expect(progress([...sources, provider('shipbob', 'warehouse_3pl')], { warehouseRequired: true }).complete).toBe(true);
   });
   it.each(['stale', 'sync_failed', 'attention_required'] as const)('does not count a %s required source as complete', (syncState) => {
-    const result = progress([provider('shopify', 'commerce', 'connected', syncState), provider('gorgias', 'helpdesk'), provider('aftership', 'tracking')]);
+    const result = progress([provider('shopify', 'commerce', 'connected', syncState), provider('gorgias', 'helpdesk'), provider('ups', 'carrier')]);
     expect(result.complete).toBe(false);
     expect(result.requirements.find((item) => item.key === 'commerce')).toMatchObject({ complete: false, broken: true });
   });
@@ -32,7 +32,7 @@ describe('merchant setup progress', () => {
     expect(rows[0].status).toBe('connected');
   });
   it('keeps merchant calculations isolated by input', () => {
-    const merchantA = progress([provider('shopify', 'commerce'), provider('gorgias', 'helpdesk'), provider('aftership', 'tracking')]);
+    const merchantA = progress([provider('shopify', 'commerce'), provider('gorgias', 'helpdesk'), provider('ups', 'carrier')]);
     const merchantB = progress([]);
     expect(merchantA.complete).toBe(true);
     expect(merchantB.completed).toBe(2);

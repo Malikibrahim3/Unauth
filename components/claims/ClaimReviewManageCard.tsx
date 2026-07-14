@@ -190,7 +190,7 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
         {/* Recovery */}
         {recoveryCase?.id ? (
           <Link href={`/recoveries/${recoveryCase.id}`} className="block w-full text-center px-3 py-1.5 rounded-md text-xs font-semibold no-underline" style={btnStyle('secondary')}>
-            Open recovery case →
+            Open recovery case
           </Link>
         ) : null}
           </div>

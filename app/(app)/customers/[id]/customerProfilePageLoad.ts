@@ -134,6 +134,7 @@ export type CustomerProfilePageViewProps = {
   profileGrade: ConfidenceGradeValue;
   hasCleanRecord: boolean;
   merchantClaimCount: number;
+  merchantChargebackCount: number;
   merchantOrderCount: number;
   localClaimRatePct: number;
   isEligibleForEvidence: boolean;
@@ -854,6 +855,7 @@ export async function loadCustomerProfilePage(
     profileGrade,
     hasCleanRecord,
     merchantClaimCount,
+    merchantChargebackCount: merchantChargebacks,
     merchantOrderCount,
     localClaimRatePct,
     isEligibleForEvidence,

@@ -1,0 +1,140 @@
+/*
+ * Semantic / status / risk / severity / gauge tokens.
+ * Relocated verbatim from app/(app)/authenticated.css (no values changed).
+ * "Semantic colour is literal and sparse; it never substitutes for brand."
+ */
+.ua-app,
+.ua-auth-surface {
+  --success: #18794e;
+  --success-fg: #18794e;
+  --success-bg: #eaf6ef;
+  --success-soft: #eaf6ef;
+  --success-bd: #b9dfc9;
+  --success-border: #b9dfc9;
+  --warning: #946200;
+  --warning-fg: #946200;
+  --warning-bg: #fff7d6;
+  --warning-soft: #fff7d6;
+  --warning-bd: #ead58a;
+  --warning-border: #ead58a;
+  --critical: #c0362c;
+  --critical-soft: #ffefed;
+  --critical-border: #efbbb6;
+  --risk-critical: #c0362c;
+  --risk-critical-fg: #c0362c;
+  --risk-critical-bg: #ffefed;
+  --risk-critical-bd: #efbbb6;
+  --risk-critical-line: #dc7d75;
+  --risk-high: #b44d12;
+  --risk-high-fg: #b44d12;
+  --risk-high-bg: #fff1e8;
+  --risk-high-bd: #efc3a7;
+  --risk-high-line: #d78b5c;
+  --risk-medium: #946200;
+  --risk-medium-fg: #946200;
+  --risk-medium-bg: #fff7d6;
+  --risk-medium-bd: #ead58a;
+  --risk-medium-line: #c9a83f;
+  --risk-low: #18794e;
+  --risk-low-fg: #18794e;
+  --risk-low-bg: #eaf6ef;
+  --risk-low-bd: #b9dfc9;
+  --risk-low-line: #70ad8b;
+  --risk-none: #69717d;
+  --risk-none-bg: #f1f2f4;
+  --risk-none-bd: #d9dde3;
+  --info: #3157d5;
+  --info-fg: #3157d5;
+  --info-bg: #eef2ff;
+  --info-bd: #cbd5ff;
+  --info-line: #899ff0;
+  --privacy-ink: #3157d5;
+  --privacy-fill: #eef2ff;
+  --privacy-border: #cbd5ff;
+  --neutral: #5f6672;
+  --neutral-soft: #f1f2f4;
+  --neutral-border: #d9dde3;
+  --danger: #c0362c;
+  --danger-fg: #c0362c;
+  --danger-bg: #ffefed;
+  --watchlist: #3157d5;
+  --watchlist-bg: #eef2ff;
+  --watchlist-bd: #cbd5ff;
+  --sev-definite: #18794e;
+  --sev-definite-fill: #eaf6ef;
+  --sev-probable: #946200;
+  --sev-probable-fill: #fff7d6;
+  --sev-possible: #69717d;
+  --sev-possible-fill: #f1f2f4;
+  --sev-neutral: #69717d;
+  --sev-neutral-fill: #f1f2f4;
+  --sev-clear: #18794e;
+  --sev-clear-fill: #eaf6ef;
+  --data-neutral: #5f6672;
+  --gauge-from: #18794e;
+  --gauge-mid: #946200;
+  --gauge-to: #c0362c;
+
+  /* --ua-* authoritative semantic aliases (see tokens.css for the
+   * alias-forwarding mechanism — dark values flow through automatically). */
+  --ua-success: var(--success);
+  --ua-success-bg: var(--success-bg);
+  --ua-success-border: var(--success-border);
+  --ua-warning: var(--warning);
+  --ua-warning-bg: var(--warning-bg);
+  --ua-warning-border: var(--warning-border);
+  --ua-critical: var(--critical);
+  --ua-critical-bg: var(--critical-soft);
+  --ua-critical-border: var(--critical-border);
+  --ua-info: var(--info);
+  --ua-info-bg: var(--info-bg);
+  --ua-info-border: var(--info-bd);
+}
+
+:root[data-theme="dark"] .ua-app,
+:root[data-theme="dark"] .ua-auth-surface {
+  --success: #65c99a;
+  --success-fg: #72d4a6;
+  --success-bg: #153226;
+  --success-soft: #153226;
+  --success-bd: #2f684e;
+  --success-border: #2f684e;
+  --warning: #edc66b;
+  --warning-fg: #f3cf7a;
+  --warning-bg: #352b15;
+  --warning-soft: #352b15;
+  --warning-bd: #685728;
+  --warning-border: #685728;
+  --critical: #ff8d84;
+  --critical-soft: #3d1e1c;
+  --critical-border: #75403c;
+  --danger: #ff8d84;
+  --danger-fg: #ff9b93;
+  --danger-bg: #3d1e1c;
+  --info: #9fb3ff;
+  --info-fg: #aebeff;
+  --info-bg: #202b4d;
+  --info-bd: #3b4f83;
+  --neutral: #b0b6bf;
+  --neutral-soft: #23272b;
+  --neutral-border: #3a4048;
+  --risk-critical: #ff8d84;
+  --risk-critical-fg: #ff9b93;
+  --risk-critical-bg: #3d1e1c;
+  --risk-critical-bd: #75403c;
+  --risk-high: #f2a46f;
+  --risk-high-fg: #f2a46f;
+  --risk-high-bg: #3b281d;
+  --risk-high-bd: #6f4b33;
+  --risk-medium: #edc66b;
+  --risk-medium-fg: #f3cf7a;
+  --risk-medium-bg: #352b15;
+  --risk-medium-bd: #685728;
+  --risk-low: #65c99a;
+  --risk-low-fg: #72d4a6;
+  --risk-low-bg: #153226;
+  --risk-low-bd: #2f684e;
+  --risk-none: #b0b6bf;
+  --risk-none-bg: #23272b;
+  --risk-none-bd: #3a4048;
+}

@@ -1,4 +1,4 @@
-import { PAGE_SHELL_INNER_CLASS, PAGE_SECTION_DIVIDER_STYLE } from '@/components/ui/pageShellStyles';
+import { PAGE_SHELL_INNER_CLASS } from '@/components/ui/pageShellStyles';
 import { type ReactNode } from 'react';
 
 export interface WorkbenchKpiItem {
@@ -14,12 +14,12 @@ interface WorkbenchKpiStripProps {
 
 export function WorkbenchKpiStrip({ items, colsClassName = 'grid-cols-2 md:grid-cols-5' }: WorkbenchKpiStripProps) {
   return (
-    <div className={PAGE_SHELL_INNER_CLASS} style={PAGE_SECTION_DIVIDER_STYLE}>
-      <div className={`grid ${colsClassName}`}>
+    <div className={PAGE_SHELL_INNER_CLASS}>
+      <div className={`ua-focal-panel grid overflow-hidden rounded-[var(--radius-lg)] ${colsClassName}`}>
       {items.map((item, idx) => (
         <div
           key={item.label}
-          className="min-w-0 py-3 pr-4 md:py-4 md:pr-6"
+          className="ua-metric-card min-w-0 px-4 py-3 md:px-5 md:py-4"
           style={{
             borderRightColor: 'var(--border)',
             borderRightWidth: idx === items.length - 1 ? 0 : 1,

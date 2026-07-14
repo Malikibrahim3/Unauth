@@ -56,7 +56,7 @@ function SupportCaseCards({ cases }: { cases: PublicSupportCaseContext[] }) {
                   className="text-xs underline"
                   style={{ color: 'var(--accent)' }}
                 >
-                  Open in {PROVIDER_LABELS[supportCase.provider] ?? supportCase.provider} →
+                  Open in {PROVIDER_LABELS[supportCase.provider] ?? supportCase.provider}
                 </a>
               ) : null}
             </div>

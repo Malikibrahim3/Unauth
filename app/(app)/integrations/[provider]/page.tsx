@@ -7,11 +7,13 @@ import {
   requirePermission,
 } from "@/lib/permissions";
 import { loadConnectorCatalogue } from "@/lib/connectors/catalogue";
+import { verifyMerchantLiveConnections } from "@/lib/connections/liveVerification";
 import { TABLES } from "@/lib/supabase/tables";
 import { ConnectionActions } from "@/components/integrations/ConnectionActions";
-import { PanelCard } from "@/components/ui";
+import { Card, DataTableServer } from "@/components/ui";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatDateTime, formatNumber } from "@/lib/utils/format";
+import { ProviderLogo } from "@/components/identity/ProviderLogo";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +34,11 @@ type IngestionIssue = {
   last_error: string | null;
   received_at: string;
 };
+
+function humanizeLabel(value: string | null | undefined): string {
+  const text = String(value ?? "").replaceAll("_", " ").trim();
+  return text ? text.charAt(0).toUpperCase() + text.slice(1) : "Unknown";
+}
 
 export default async function ConnectionPage({
   params,
@@ -55,6 +62,25 @@ export default async function ConnectionPage({
     (candidate) => candidate.id === provider,
   );
   if (!item) notFound();
+  const liveHealth = provider === "shopify" || provider === "gorgias"
+    ? await verifyMerchantLiveConnections(service, ctx.merchantId)
+    : null;
+  const liveResult = provider === "shopify" ? liveHealth?.shopify : liveHealth?.gorgias;
+  if (liveResult) {
+    item.status = liveResult.status === "verified"
+      ? "connected"
+      : liveResult.status === "failed"
+        ? "error"
+        : "attention_required";
+    item.lastError = liveResult.status === "failed"
+      ? `Live verification failed${liveResult.reason ? `: ${liveResult.reason}` : ". Reconnect this integration."}`
+      : liveResult.status === "inconclusive"
+        ? "Live verification could not be completed. We will retry automatically."
+        : null;
+  } else if (liveHealth && item.status === "connected") {
+    item.status = "attention_required";
+    item.lastError = "Live verification is unavailable. We will retry automatically.";
+  }
   const [canManage, jobsResult, issuesResult] = await Promise.all([
     hasPermission(service, ctx, PERMISSIONS.MANAGE_SETTINGS),
     service
@@ -85,29 +111,32 @@ export default async function ConnectionPage({
         href="/integrations"
         className="text-sm font-semibold text-[var(--accent)]"
       >
-        ← Integrations
+        Integrations
       </Link>
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
+      <header className="flex flex-wrap items-start justify-between gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-xs)] md:p-6">
+        <div className="flex min-w-0 items-start gap-4">
+          <ProviderLogo provider={item.id} name={item.name} size="lg" />
+          <div>
           <p className="text-sm capitalize text-[var(--text-secondary)]">
-            {item.category.replaceAll("_", " ")} · {item.stage}
+            {humanizeLabel(item.category)} · {humanizeLabel(item.stage)}
           </p>
           <h1 className="mt-1 text-2xl font-semibold">{item.name}</h1>
           <p className="mt-1 max-w-2xl text-sm text-[var(--text-secondary)]">
             {item.description}
           </p>
+          </div>
         </div>
         <StatusBadge family="workflowStatus" value={item.status === "import_complete" ? "connected" : item.status} />
       </header>
       {item.stage === "planned" ? (
-        <PanelCard
-          variant="appInset"
+        <Card unstyled
+          variant="inset"
           className="p-4 text-sm text-[var(--text-secondary)]"
         >
           This connector is planned. Capability rows document scope, but
           credential and sync controls remain unavailable until verification is
           complete.
-        </PanelCard>
+        </Card>
       ) : (
         <ConnectionActions
           providerId={item.id}
@@ -117,9 +146,9 @@ export default async function ConnectionPage({
         />
       )}
       {item.lastError ? (
-        <PanelCard
+        <Card unstyled
           as="section"
-          variant="app"
+          variant="flat"
           className="border-[var(--danger)] p-4"
         >
           <h2 className="text-sm font-semibold text-[var(--danger)]">
@@ -128,14 +157,14 @@ export default async function ConnectionPage({
           <p role="alert" className="mt-1 text-sm text-[var(--text-secondary)]">
             {item.lastError}
           </p>
-        </PanelCard>
+        </Card>
       ) : null}
       <section aria-labelledby="connection-health-title">
         <h2 id="connection-health-title" className="text-base font-semibold">
           Connection health
         </h2>
         <dl className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <PanelCard variant="appInset" className="p-3">
+          <Card unstyled variant="flat" className="ua-metric-card p-3">
             <dt className="text-xs text-[var(--text-tertiary)]">Account</dt>
             <dd className="mt-1 truncate text-sm font-medium">
               {item.account ??
@@ -143,16 +172,16 @@ export default async function ConnectionPage({
                   ? `${item.connectionCount} connected account${item.connectionCount === 1 ? "" : "s"}`
                   : "Not connected")}
             </dd>
-          </PanelCard>
-          <PanelCard variant="appInset" className="p-3">
+          </Card>
+          <Card unstyled variant="flat" className="ua-metric-card p-3">
             <dt className="text-xs text-[var(--text-tertiary)]">
               Imported objects
             </dt>
             <dd className="mt-1 font-mono text-sm font-semibold">
               {formatNumber(item.importedRecords)}
             </dd>
-          </PanelCard>
-          <PanelCard variant="appInset" className="p-3">
+          </Card>
+          <Card unstyled variant="flat" className="ua-metric-card p-3">
             <dt className="text-xs text-[var(--text-tertiary)]">
               Last successful sync
             </dt>
@@ -161,8 +190,8 @@ export default async function ConnectionPage({
                 ? formatDateTime(item.lastSuccessfulSyncAt)
                 : "No successful sync"}
             </dd>
-          </PanelCard>
-          <PanelCard variant="appInset" className="p-3">
+          </Card>
+          <Card unstyled variant="flat" className="ua-metric-card p-3">
             <dt className="text-xs text-[var(--text-tertiary)]">
               Granted scopes
             </dt>
@@ -171,7 +200,7 @@ export default async function ConnectionPage({
                 ? `${item.scopes.length} recorded`
                 : "None recorded"}
             </dd>
-          </PanelCard>
+          </Card>
         </dl>
       </section>
       <section aria-labelledby="capability-matrix-title">
@@ -184,42 +213,38 @@ export default async function ConnectionPage({
             Unsupported autonomous payout actions remain blocked.
           </p>
         </div>
-        <div className="mt-3 hidden overflow-x-auto rounded-lg border border-[var(--border)] md:block">
-          <table className="w-full min-w-[680px] text-sm">
-            <thead className="bg-[var(--surface-sunken)]">
-              <tr>
-                <th className="px-3 py-2 text-left">Capability</th>
-                <th className="px-3 py-2 text-left">Level</th>
-                <th className="px-3 py-2 text-left">Support</th>
-                <th className="px-3 py-2 text-left">Required scopes</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--border-muted)]">
-              {item.capabilities.map((capability) => (
-                <tr key={capability.id}>
-                  <th scope="row" className="px-3 py-3 text-left">
-                    <span className="font-medium">
-                      {capability.description}
-                    </span>
-                    <small className="mt-1 block font-mono text-[11px] text-[var(--text-tertiary)]">
-                      {capability.id}
-                    </small>
-                  </th>
-                  <td className="px-3 py-3 capitalize">{capability.level}</td>
-                  <td className="px-3 py-3">
-                    <StatusBadge family="workflowStatus" value={capability.support} size="sm" />
-                  </td>
-                  <td className="px-3 py-3 text-xs text-[var(--text-secondary)]">
-                    {capability.scopes.join(", ") || "None"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="mt-3 hidden md:block">
+          <DataTableServer
+            rows={item.capabilities}
+            getRowKey={(capability) => capability.id}
+            density="compact"
+            columns={[
+              {
+                key: "capability",
+                header: "Capability",
+                render: (capability) => <div><span className="font-medium">{capability.description}</span><small className="mt-1 block font-mono text-[11px] text-[var(--text-tertiary)]">{capability.id}</small></div>,
+              },
+              {
+                key: "level",
+                header: "Level",
+                render: (capability) => <span className="capitalize">{capability.level}</span>,
+              },
+              {
+                key: "support",
+                header: "Support",
+                render: (capability) => <StatusBadge family="workflowStatus" value={capability.support} size="sm" />,
+              },
+              {
+                key: "scopes",
+                header: "Required scopes",
+                render: (capability) => <span className="text-xs text-[var(--text-secondary)]">{capability.scopes.join(", ") || "None"}</span>,
+              },
+            ]}
+          />
         </div>
         <div className="mt-3 grid gap-2 md:hidden">
           {item.capabilities.map((capability) => (
-            <PanelCard key={capability.id} variant="app" className="p-3">
+            <Card unstyled key={capability.id} variant="flat" className="p-3">
               <div className="flex items-start justify-between gap-2">
                 <strong className="text-sm">{capability.description}</strong>
                 <StatusBadge family="workflowStatus" value={capability.support} size="sm" />
@@ -231,7 +256,7 @@ export default async function ConnectionPage({
                 {capability.level} · scopes:{" "}
                 {capability.scopes.join(", ") || "none"}
               </p>
-            </PanelCard>
+            </Card>
           ))}
         </div>
       </section>
@@ -245,7 +270,7 @@ export default async function ConnectionPage({
               href="/integrations/imports"
               className="text-xs font-semibold text-[var(--accent)]"
             >
-              Import records →
+              Import records
             </Link>
           </div>
           {jobs.length ? (
@@ -256,8 +281,8 @@ export default async function ConnectionPage({
                   className="grid gap-2 px-3 py-3 sm:grid-cols-[1fr_auto]"
                 >
                   <div>
-                    <p className="text-sm font-medium capitalize">
-                      {job.job_kind.replaceAll("_", " ")}
+                    <p className="text-sm font-medium">
+                      {humanizeLabel(job.job_kind)}
                     </p>
                     <p className="mt-1 text-xs text-[var(--text-tertiary)]">
                       Started {formatDateTime(job.created_at)}
@@ -282,12 +307,12 @@ export default async function ConnectionPage({
               ))}
             </div>
           ) : (
-            <PanelCard
-              variant="appInset"
+            <Card unstyled
+              variant="inset"
               className="mt-3 p-4 text-sm text-[var(--text-secondary)]"
             >
               No account-level import runs recorded for this provider.
-            </PanelCard>
+            </Card>
           )}
         </section>
         <section aria-labelledby="ingestion-issues-title">
@@ -297,10 +322,10 @@ export default async function ConnectionPage({
           {issues.length ? (
             <ul className="mt-3 space-y-2">
               {issues.map((issue) => (
-                <PanelCard key={issue.id} as="li" variant="app" className="p-3">
+                <Card unstyled key={issue.id} as="li" variant="flat" className="p-3">
                   <div className="flex items-start justify-between gap-2">
                     <strong className="text-sm">
-                      {issue.event_type ?? "Ingestion event"}
+                      {humanizeLabel(issue.event_type ?? "Ingestion event")}
                     </strong>
                     <StatusBadge family="workflowStatus" value={issue.status} tone="danger" size="sm" />
                   </div>
@@ -311,16 +336,16 @@ export default async function ConnectionPage({
                   <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">
                     {formatDateTime(issue.received_at)}
                   </p>
-                </PanelCard>
+                </Card>
               ))}
             </ul>
           ) : (
-            <PanelCard
-              variant="appInset"
+            <Card unstyled
+              variant="inset"
               className="mt-3 p-4 text-sm text-[var(--text-secondary)]"
             >
               No failed or dead-letter ingestion events for this connection.
-            </PanelCard>
+            </Card>
           )}
         </section>
       </div>

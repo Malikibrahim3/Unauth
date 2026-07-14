@@ -9,10 +9,14 @@ import { label, type LabelFamily } from '@/lib/ui/labels';
 export type StatusTone = 'neutral' | 'info' | 'warning' | 'success' | 'danger';
 
 const TONE_STYLE: Record<StatusTone, { bg: string; fg: string; bd: string }> = {
-  neutral: { bg: 'var(--surface-sunken)', fg: 'var(--text-secondary)', bd: 'var(--border)' },
-  info: { bg: 'var(--info-bg)', fg: 'var(--info)', bd: 'var(--info-bd)' },
-  warning: { bg: 'var(--warning-bg)', fg: 'var(--warning)', bd: 'var(--warning-bd)' },
-  success: { bg: 'var(--success-bg)', fg: 'var(--success)', bd: 'var(--success-bd)' },
+  neutral: { bg: 'var(--surface-sunken)', fg: 'var(--ua-text-secondary)', bd: 'var(--border)' },
+  info: { bg: 'var(--ua-info-bg)', fg: 'var(--ua-info)', bd: 'var(--ua-info-border)' },
+  warning: { bg: 'var(--ua-warning-bg)', fg: 'var(--ua-warning)', bd: 'var(--ua-warning-border)' },
+  success: { bg: 'var(--ua-success-bg)', fg: 'var(--ua-success)', bd: 'var(--ua-success-border)' },
+  // NOTE: danger intentionally stays on the risk-critical-* family, not
+  // --ua-critical* — --critical and --risk-critical-fg (etc.) are equal in
+  // light mode but diverge in dark mode; forcing this onto --ua-critical*
+  // would be a real dark-mode colour regression, not a no-op alias swap.
   danger: { bg: 'var(--risk-critical-bg)', fg: 'var(--risk-critical-fg)', bd: 'var(--risk-critical-bd)' },
 };
 
@@ -40,7 +44,6 @@ export const STATUS_TONES: Record<string, StatusTone> = {
   collecting_evidence: 'info',
   ready_to_submit: 'info',
   ready_for_decision: 'info',
-  manual_review: 'info',
   submitted: 'info',
   investigation: 'info',
   recovery_opened: 'info',
@@ -70,6 +73,7 @@ export const STATUS_TONES: Record<string, StatusTone> = {
   probable: 'warning',
   review: 'warning',
   hold: 'warning',
+  manual_review: 'warning',
   // success — positive terminal
   paid: 'success',
   approved: 'success',
@@ -139,7 +143,7 @@ export function StatusBadge({ family, value, tone, size = 'md', className }: Sta
         fontWeight: 500,
         lineHeight: 1,
         whiteSpace: 'nowrap',
-        borderRadius: 'var(--radius-full)',
+        borderRadius: 'var(--ua-radius-pill)',
         background: t.bg,
         color: t.fg,
         border: `1px solid ${t.bd}`,

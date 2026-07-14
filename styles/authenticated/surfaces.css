@@ -1,0 +1,44 @@
+/*
+ * Cards, panels, metric surfaces, side rails, detail blocks. Relocated
+ * verbatim from app/(app)/authenticated.css.
+ */
+.ua-app .ua-app-sidebar {
+  background: var(--surface-muted);
+}
+
+.ua-app .ua-app-header {
+  background: color-mix(in srgb, var(--surface-base) 94%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+.ua-identity-tile {
+  overflow: hidden;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--brand-deep);
+}
+
+.ua-focal-panel {
+  border: 1px solid var(--border-default);
+  background: var(--surface);
+}
+
+.ua-section-panel {
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.ua-panel-header {
+  background: var(--surface-muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.ua-metric-card {
+  background: var(--surface);
+}
+
+.ua-empty-visual {
+  background: var(--surface-muted);
+  border: 1px solid var(--border-default);
+}

@@ -4,7 +4,6 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { assertLiveProvider, saveIntegrationCredential, upsertMerchantIntegration } from '@/lib/integrations/auth';
 import { requireIntegrationProvider } from '@/lib/integrations/registry';
-import { verifyAfterShipApiKey } from '@/lib/integrations/providers/aftership';
 import { verifyShipBobPat } from '@/lib/integrations/providers/shipbob';
 
 const apiKeySchema = z.object({
@@ -21,7 +20,7 @@ export async function POST(
   const { provider: providerId } = await params;
   const provider = requireIntegrationProvider(providerId);
   assertLiveProvider(provider);
-  const supportedApiKeyProviders = new Set(['aftership', 'shipbob']);
+  const supportedApiKeyProviders = new Set(['shipbob']);
   if (provider.authMode !== 'api_key' || !supportedApiKeyProviders.has(provider.id)) {
     return NextResponse.json({ error: 'API-key connection is not supported for this provider.' }, { status: 400 });
   }
@@ -41,15 +40,11 @@ export async function POST(
   }
 
   try {
-    if (provider.id === 'aftership') {
-      await verifyAfterShipApiKey(parsed.data.apiKey);
-    } else if (provider.id === 'shipbob') {
-      await verifyShipBobPat(parsed.data.apiKey, parsed.data.sandbox, parsed.data.channelId);
-    }
+    await verifyShipBobPat(parsed.data.apiKey, parsed.data.sandbox, parsed.data.channelId);
     await saveIntegrationCredential(serviceClient, ctx.merchantId, provider, {
       apiKey: parsed.data.apiKey,
-      ...(provider.id === 'aftership' ? { webhookSecret: parsed.data.webhookSecret ?? null } : {}),
-      ...(provider.id === 'shipbob' ? { sandbox: parsed.data.sandbox, channelId: parsed.data.channelId ?? null } : {}),
+      sandbox: parsed.data.sandbox,
+      channelId: parsed.data.channelId ?? null,
     });
     await upsertMerchantIntegration(serviceClient, ctx.merchantId, provider, 'connected', { lastError: null });
     return NextResponse.json({ ok: true, provider: provider.id, status: 'connected' });

@@ -285,93 +285,49 @@ export function mapShopifyDisputeToEvidence(
   ];
 }
 
-export function mapAfterShipTrackingToEvidence(
-  tracking: Record<string, any>,
-  input: BaseMapInput,
-): NormalizedEvidenceItem[] {
-  const trackingNumber = firstString(tracking.tracking_number, tracking.trackingNumber);
-  const carrier = firstString(tracking.slug, tracking.carrier, tracking.courier_slug, tracking.courier) ?? 'Carrier';
-  const status = firstString(tracking.tag, tracking.delivery_status, tracking.status, tracking.subtag_message);
-  const checkpoints = Array.isArray(tracking.checkpoints)
-    ? tracking.checkpoints
-    : Array.isArray(tracking.events)
-      ? tracking.events
-      : [];
-  const exceptionEvents = checkpoints.filter((event: any) => {
-    const tag = String(event.tag ?? event.subtag ?? event.message ?? '').toLowerCase();
-    return tag.includes('exception') || tag.includes('failed') || tag.includes('delay');
-  });
-
-  const items: NormalizedEvidenceItem[] = [];
-  if (trackingNumber) {
-    items.push(createEvidence({
-      ...input,
-      sourceProvider: 'aftership',
-      evidenceType: 'tracking_number',
-      title: 'Tracking number',
-      summary: `${carrier} ${trackingNumber}`,
-      value: trackingNumber,
-      rawReference: firstString(tracking.id, trackingNumber),
-    }));
-  }
-  if (status) {
-    items.push(createEvidence({
-      ...input,
-      sourceProvider: 'aftership',
-      evidenceType: 'delivery_status',
-      title: 'Tracking status',
-      summary: status,
-      value: status,
-      occurredAt: firstDate(tracking.updated_at, tracking.delivered_at, tracking.shipment_delivery_date),
-      rawReference: firstString(tracking.id, trackingNumber),
-    }));
-  }
-  items.push(createEvidence({
-    ...input,
-    sourceProvider: 'aftership',
-    evidenceType: 'tracking_events',
-    title: 'Tracking event history',
-    summary: `${checkpoints.length} tracking event(s)${exceptionEvents.length ? `, ${exceptionEvents.length} exception event(s)` : ''}`,
-    value: checkpoints.length,
-    confidence: checkpoints.length > 0 ? 'high' : 'medium',
-    occurredAt: firstDate(tracking.shipment_delivery_date, tracking.delivered_at, tracking.expected_delivery, tracking.updated_at),
-    rawReference: firstString(tracking.id, trackingNumber),
-  }));
-  items.push(createEvidence({
-    ...input,
-    sourceProvider: 'aftership',
-    evidenceType: 'delivery_photo',
-    title: 'Delivery photo',
-    summary: 'Not provided by AfterShip for this shipment',
-    value: null,
-    confidence: 'medium',
-    rawReference: firstString(tracking.id, trackingNumber),
-  }));
-  items.push(createEvidence({
-    ...input,
-    sourceProvider: 'aftership',
-    evidenceType: 'signature',
-    title: 'Signature on delivery',
-    summary: 'Not provided by AfterShip for this shipment',
-    value: null,
-    confidence: 'medium',
-    rawReference: firstString(tracking.id, trackingNumber),
-  }));
-  return items;
-}
-
 function extractProofValues(providerId: 'ups' | 'fedex', payload: Record<string, any>) {
-  const json = JSON.stringify(payload);
+  const fedexImages = Array.isArray(payload.output?.completeTrackResults?.[0]?.trackResults?.[0]?.availableImages)
+    ? payload.output.completeTrackResults[0].trackResults[0].availableImages
+    : [];
+  const hasFedexImage = (term: string) =>
+    fedexImages.some((image: unknown) => String(image ?? '').toLowerCase().includes(term));
   const signature =
     firstString(payload.signature, payload.signatureImage, payload.signature_image, payload.output?.signatureName) ??
-    (json.toLowerCase().includes('signature') ? 'signature referenced' : null);
+    (providerId === 'fedex' && hasFedexImage('signature') ? 'signature proof available' : null);
   const photo =
     firstString(payload.deliveryPhoto, payload.delivery_photo, payload.photo, payload.image, payload.output?.deliveryPhoto) ??
-    (json.toLowerCase().includes('picture proof') || json.toLowerCase().includes('deliveryphoto') ? 'delivery photo referenced' : null);
+    (providerId === 'fedex' && (hasFedexImage('photo') || hasFedexImage('picture')) ? 'delivery photo available' : null);
   return {
     providerName: getIntegrationProvider(providerId)?.name ?? providerId,
     signature,
     photo,
+  };
+}
+
+function carrierTrackingDetails(providerId: 'ups' | 'fedex', payload: Record<string, any>) {
+  if (providerId === 'ups') {
+    const shipment = payload.trackResponse?.shipment?.[0] ?? {};
+    const pkg = shipment.package?.[0] ?? {};
+    const events = Array.isArray(pkg.activity) ? pkg.activity : [];
+    const status = firstString(pkg.currentStatus?.description, pkg.currentStatus?.code, shipment.currentStatus?.description);
+    const lastEvent = events[0] ?? {};
+    return {
+      status,
+      events,
+      occurredAt: firstDate(lastEvent.date, lastEvent.time, pkg.deliveryDate?.[0]?.date),
+      estimatedAt: firstDate(pkg.deliveryTime?.endTime, pkg.deliveryDate?.[0]?.date),
+    };
+  }
+  const result = payload.output?.completeTrackResults?.[0]?.trackResults?.[0] ?? {};
+  const events = Array.isArray(result.scanEvents) ? result.scanEvents : [];
+  const dates = Array.isArray(result.dateAndTimes) ? result.dateAndTimes : [];
+  const actualDelivery = dates.find((entry: any) => entry.type === 'ACTUAL_DELIVERY')?.dateTime;
+  const estimatedDelivery = dates.find((entry: any) => String(entry.type ?? '').includes('ESTIMATED'))?.dateTime;
+  return {
+    status: firstString(result.latestStatusDetail?.description, result.latestStatusDetail?.code),
+    events,
+    occurredAt: firstDate(actualDelivery, events[0]?.date, events[0]?.dateTime),
+    estimatedAt: firstDate(estimatedDelivery, result.estimatedDeliveryTimeWindow?.window?.ends),
   };
 }
 
@@ -382,7 +338,43 @@ export function mapCarrierProofToEvidence(
 ): NormalizedEvidenceItem[] {
   const proof = extractProofValues(providerId, payload);
   const reference = firstString(input.trackingNumber, payload.trackingNumber, payload.trackResponse?.shipment?.[0]?.package?.[0]?.trackingNumber);
+  const tracking = carrierTrackingDetails(providerId, payload);
+  const exceptionCount = tracking.events.filter((event: any) => {
+    const value = JSON.stringify(event).toLowerCase();
+    return value.includes('exception') || value.includes('failed') || value.includes('delay');
+  }).length;
   return [
+    createEvidence({
+      ...input,
+      sourceProvider: providerId,
+      evidenceType: 'tracking_number',
+      title: `${proof.providerName} tracking number`,
+      summary: `${proof.providerName} ${reference ?? 'tracking reference unavailable'}`,
+      value: reference ?? null,
+      rawReference: reference,
+    }),
+    createEvidence({
+      ...input,
+      sourceProvider: providerId,
+      evidenceType: 'delivery_status',
+      title: `${proof.providerName} delivery status`,
+      summary: tracking.status ?? 'Status unavailable',
+      value: tracking.status ?? null,
+      confidence: tracking.status ? 'high' : 'medium',
+      occurredAt: tracking.occurredAt ?? tracking.estimatedAt ?? undefined,
+      rawReference: reference,
+    }),
+    createEvidence({
+      ...input,
+      sourceProvider: providerId,
+      evidenceType: 'tracking_events',
+      title: `${proof.providerName} tracking event history`,
+      summary: `${tracking.events.length} tracking event(s)${exceptionCount ? `, ${exceptionCount} exception event(s)` : ''}`,
+      value: tracking.events.length,
+      confidence: tracking.events.length > 0 ? 'high' : 'medium',
+      occurredAt: tracking.occurredAt ?? undefined,
+      rawReference: reference,
+    }),
     createEvidence({
       ...input,
       sourceProvider: providerId,

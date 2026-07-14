@@ -1,0 +1,18 @@
+/*
+ * Modal / drawer / popover / dropdown / command menu / tooltip / toast.
+ *
+ * There is no authenticated.css content to relocate here — overlay
+ * components (components/ui/Modal.tsx, Drawer.tsx, Tooltip.tsx,
+ * components/layout/CommandPalette*, components/ui/Toast.tsx) implement
+ * their own styling directly in TSX using the tokens in tokens.css
+ * (--ua-shadow-overlay/-drawer/-modal, --ua-radius-overlay, --ua-z-*).
+ * Z-index values are intentionally NOT duplicated here — they already
+ * live once, shared and non-conflicting, in app/globals.css (--z-sticky,
+ * --z-dropdown, --z-drawer, --z-modal, --z-toast).
+ *
+ * Known gap (see docs/design/authenticated-style-system-audit.md, section
+ * on the "AUTHENTICATED APP UI REBUILD" globals.css block): Toast's
+ * notification container currently renders as a DOM sibling of `.ua-app`
+ * rather than a descendant, so it does not inherit this scope's tokens
+ * today. Not fixed in this pass — flagged as a follow-up.
+ */

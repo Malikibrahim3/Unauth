@@ -70,7 +70,7 @@ export function resolvePayoutRecommendation(
 export function formatPayoutRecommendationRuleLine(result: PayoutRecommendationResult): string {
   const label = payoutRecommendationLabel(result.action);
   const rule = result.ruleName ?? 'merchant policy';
-  return `Rule: ${rule} → ${label}`;
+  return `Rule: ${rule}. ${label}`;
 }
 
 /** Compare a recorded merchant outcome to the recommendation active at decision time. */

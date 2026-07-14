@@ -160,6 +160,7 @@ export async function upsertMerchantIntegration(
       {
         merchant_id: merchantId,
         provider_id: provider.id,
+        provider_account_id: null,
         category: provider.category,
         status,
         auth_mode: provider.authMode,
@@ -167,7 +168,7 @@ export async function upsertMerchantIntegration(
         last_error: fields.lastError ?? null,
         updated_at: new Date().toISOString(),
       },
-      { onConflict: 'merchant_id,provider_id' },
+      { onConflict: 'merchant_id,provider_id,provider_account_id' },
     );
   if (error) throw new Error(`merchant_integration_upsert_failed: ${error.message}`);
 }

@@ -17,7 +17,7 @@ export default function YumaIntegrationGuidePage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-8">
       <Link href="/help" className="text-caption hover:underline" style={{ color: 'var(--text-secondary)' }}>
-        ← Help
+        Help
       </Link>
       <div>
         <h1 className="text-heading-lg" style={{ color: 'var(--text)' }}>Yuma escalation setup</h1>

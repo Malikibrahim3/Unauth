@@ -87,11 +87,11 @@ export default async function RecoveryDetailPage({ params }: Props) {
             </div>
             <div className="mt-4 flex flex-wrap gap-3 text-xs">
               <a href={`/claims/${recovery.support_payout_case_id}`} className="rounded-md px-2.5 py-1 no-underline" style={{ border: '1px solid var(--border-subtle, rgba(0,0,0,0.08))', color: 'var(--text-secondary)' }}>
-                Open payout case →
+                Open payout case
               </a>
               {recovery.loss_case_id ? (
                 <a href={`/losses/${recovery.loss_case_id}`} className="rounded-md px-2.5 py-1 no-underline" style={{ border: '1px solid var(--border-subtle, rgba(0,0,0,0.08))', color: 'var(--text-secondary)' }}>
-                  Open linked loss →
+                  Open linked loss
                 </a>
               ) : null}
             </div>
