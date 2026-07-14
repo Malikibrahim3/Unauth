@@ -1,17 +1,21 @@
 'use client';
 
-import { type ReactNode, type CSSProperties } from 'react';
+import { type ReactNode, type CSSProperties, type ElementType } from 'react';
 import { cn } from '@/lib/utils';
 
-export type CardVariant = 'raised' | 'overlay' | 'flat';
+export type CardVariant = 'raised' | 'overlay' | 'flat' | 'muted' | 'inset' | 'plain';
 export type CardDensity = 'compact' | 'default' | 'relaxed';
 
 interface CardProps {
   children: ReactNode;
   variant?: CardVariant;
   density?: CardDensity;
+  as?: ElementType;
+  /** Use when the caller owns the content padding, as with a table shell. */
+  unstyled?: boolean;
   className?: string;
   style?: CSSProperties;
+  [key: string]: unknown;
 }
 
 const CARD_STYLES: Record<CardVariant, CSSProperties> = {
@@ -30,6 +34,21 @@ const CARD_STYLES: Record<CardVariant, CSSProperties> = {
     border: '1px solid var(--border)',
     boxShadow: 'none',
   },
+  muted: {
+    background: 'var(--surface-sunken)',
+    border: '1px solid var(--border-muted)',
+    boxShadow: 'none',
+  },
+  inset: {
+    background: 'var(--surface-sunken)',
+    border: '1px solid var(--border-muted)',
+    boxShadow: 'none',
+  },
+  plain: {
+    background: 'transparent',
+    border: '0',
+    boxShadow: 'none',
+  },
 };
 
 const CARD_PADDING: Record<CardDensity, string> = {
@@ -42,20 +61,24 @@ export function Card({
   children,
   variant = 'raised',
   density = 'default',
+  as: Component = 'div',
+  unstyled = false,
   className,
   style,
+  ...props
 }: CardProps) {
   const padding = CARD_PADDING[density];
   return (
-    <div
+    <Component
       className={cn('rounded-[var(--ua-radius-card)]', className)}
       style={{
         ...CARD_STYLES[variant],
-        padding,
+        ...(unstyled ? {} : { padding }),
         ...style,
       }}
+      {...props}
     >
       {children}
-    </div>
+    </Component>
   );
 }
