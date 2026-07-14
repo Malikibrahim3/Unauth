@@ -25,7 +25,7 @@ import { listSupportCasesForCustomerProfile } from '@/lib/support/intake/support
 import { GET } from '@/app/api/customers/[id]/support-cases/route';
 
 const PROFILE_ID = '6ac24686-2fd4-4a27-9eb3-cb1751a9548c';
-const MERCHANT_ID = 'af070af9-df1a-46ba-89f8-29409926ef61';
+const MERCHANT_ID = '00000000-0000-4000-8000-000000000001';
 
 const linkedCase = {
   id: '6f5b78fb-2757-4989-a949-4b6b2bb64864',

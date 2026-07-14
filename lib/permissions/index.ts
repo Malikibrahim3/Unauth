@@ -343,3 +343,40 @@ export async function requirePermission(
 
   return { denied: null, ctx };
 }
+
+/**
+ * Authorizes an exact merchant selected before an external callback. This must
+ * be used whenever a merchant identifier comes from protected server state;
+ * falling back to the caller's highest-role/default workspace could attach a
+ * provider account to the wrong tenant.
+ */
+export async function requirePermissionForMerchant(
+  serviceClient: SupabaseClient,
+  userId: string,
+  merchantId: string,
+  permission: Permission,
+): Promise<{ denied: NextResponse; ctx: null } | { denied: null; ctx: CallerContext }> {
+  const ctx = await resolveCallerContext(serviceClient, userId, merchantId);
+
+  if (!ctx || ctx.merchantId !== merchantId) {
+    return {
+      denied: NextResponse.json(
+        { error: 'Forbidden — the selected merchant affiliation is not active.' },
+        { status: 403 },
+      ),
+      ctx: null,
+    };
+  }
+
+  if (!(await hasPermission(serviceClient, ctx, permission))) {
+    return {
+      denied: NextResponse.json(
+        { error: `Forbidden — you do not have the '${permission}' permission.` },
+        { status: 403 },
+      ),
+      ctx: null,
+    };
+  }
+
+  return { denied: null, ctx };
+}

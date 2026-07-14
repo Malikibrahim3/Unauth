@@ -11,9 +11,6 @@
 import fs from 'node:fs';
 import { createClient } from '@supabase/supabase-js';
 
-const ACCOUNT_EMAIL = 'simeonmurray123@gmail.com';
-const SHOP_DOMAIN = 'simeon-murray-store.myshopify.com';
-
 function readEnv() {
   const envPath = '.env.local';
   const raw = fs.existsSync(envPath) ? fs.readFileSync(envPath, 'utf8') : '';
@@ -25,6 +22,12 @@ function readEnv() {
 }
 
 readEnv();
+
+const ACCOUNT_EMAIL = process.env.E2E_MERCHANT_EMAIL;
+const SHOP_DOMAIN = process.env.E2E_SHOPIFY_STORE_DOMAIN;
+if (!ACCOUNT_EMAIL || !SHOP_DOMAIN) {
+  throw new Error('E2E_MERCHANT_EMAIL and E2E_SHOPIFY_STORE_DOMAIN are required');
+}
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

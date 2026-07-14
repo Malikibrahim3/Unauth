@@ -37,8 +37,30 @@ jest.mock('@/lib/shopify/collectorScripts', () => ({
   })),
 }));
 
-jest.mock('@/lib/shopify/resolveOAuthMerchantId', () => ({
-  resolveOAuthMerchantId: jest.fn(),
+jest.mock('@/lib/integrations/oauthTransactions', () => ({
+  beginOAuthConnectionTransaction: jest.fn(async () => 'ledger-state'),
+  consumeOAuthConnectionTransaction: jest.fn(async () => ({
+    merchantId: 'merchant-1',
+    userId: 'user-1',
+    providerId: 'shopify',
+    environment: 'production',
+    callbackUrl: 'http://localhost:3000/api/shopify/callback',
+    providerAccountHint: 'merchant-a.myshopify.com',
+    expiresAt: new Date(Date.now() + 60_000).toISOString(),
+  })),
+}));
+
+jest.mock('@/lib/permissions', () => ({
+  ACTIVE_MERCHANT_COOKIE: 'unauth.active_merchant',
+  PERMISSIONS: { MANAGE_SETTINGS: 'manage_settings' },
+  requirePermissionForMerchant: jest.fn(async (_client, userId, merchantId) => ({
+    denied: null,
+    ctx: { userId, merchantId, role: 'owner', memberId: null },
+  })),
+}));
+
+jest.mock('@/lib/shopify/persistOAuthConnection', () => ({
+  persistShopifyOAuthConnection: jest.fn(async (_client, input) => ({ ok: true, merchantId: input.merchantId })),
 }));
 
 const { createClient, createServiceClient } = jest.requireMock('@/lib/supabase/server') as {
@@ -48,9 +70,12 @@ const { createClient, createServiceClient } = jest.requireMock('@/lib/supabase/s
 const { ensureMerchantContextForUser } = jest.requireMock('@/lib/account/ensureMerchantContext') as {
   ensureMerchantContextForUser: jest.Mock;
 };
-const { resolveOAuthMerchantId } = jest.requireMock('@/lib/shopify/resolveOAuthMerchantId') as {
-  resolveOAuthMerchantId: jest.Mock;
+const { beginOAuthConnectionTransaction, consumeOAuthConnectionTransaction } = jest.requireMock('@/lib/integrations/oauthTransactions') as {
+  beginOAuthConnectionTransaction: jest.Mock;
+  consumeOAuthConnectionTransaction: jest.Mock;
 };
+const { requirePermissionForMerchant } = jest.requireMock('@/lib/permissions') as { requirePermissionForMerchant: jest.Mock };
+const { persistShopifyOAuthConnection } = jest.requireMock('@/lib/shopify/persistOAuthConnection') as { persistShopifyOAuthConnection: jest.Mock };
 const { backfillShopifyMerchantIdentities } = jest.requireMock('@/lib/shopify/backfill') as {
   backfillShopifyMerchantIdentities: jest.Mock;
 };
@@ -98,8 +123,14 @@ describe('Shopify OAuth routes', () => {
     createClient.mockReturnValue({
       auth: { getUser: async () => ({ data: { user: { id: 'user-1', email: 'a@b.com', user_metadata: {} } } }) },
     });
+    createServiceClient.mockReturnValue({});
     ensureMerchantContextForUser.mockResolvedValue({ merchantId: 'merchant-1' });
-    resolveOAuthMerchantId.mockResolvedValue('merchant-1');
+    consumeOAuthConnectionTransaction.mockResolvedValue({
+      merchantId: 'merchant-1', userId: 'user-1', providerId: 'shopify', environment: 'production',
+      callbackUrl: 'http://localhost:3000/api/shopify/callback', providerAccountHint: 'merchant-a.myshopify.com',
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+    });
+    persistShopifyOAuthConnection.mockResolvedValue({ ok: true, merchantId: 'merchant-1' });
     global.fetch = jest.fn(async () => ({
       ok: true,
       json: async () => ({ access_token: 'shop-token' }),
@@ -120,15 +151,22 @@ describe('Shopify OAuth routes', () => {
       expect(new URL(location).searchParams.get('redirect_uri')).toBe(
         'http://localhost:3000/api/shopify/callback',
       );
+      expect(beginOAuthConnectionTransaction).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+        merchantId: 'merchant-1',
+        userId: 'user-1',
+        providerId: 'shopify',
+        callbackUrl: 'http://localhost:3000/api/shopify/callback',
+        providerAccountHint: 'unauth-test.myshopify.com',
+      }));
     });
 
-    it('accepts unauth-test.myshopify.com unchanged', async () => {
+    it('accepts merchant-a.myshopify.com unchanged', async () => {
       const req = new NextRequest(
-        'http://localhost:3000/api/shopify/install?shop=unauth-test.myshopify.com',
+        'http://localhost:3000/api/shopify/install?shop=merchant-a.myshopify.com',
       );
       const res = await installGET(req);
       const location = res.headers.get('location') ?? '';
-      expect(location).toContain('https://unauth-test.myshopify.com/admin/oauth/authorize');
+      expect(location).toContain('https://merchant-a.myshopify.com/admin/oauth/authorize');
     });
 
     it('redirects invalid shop input to integrations with shopify_error', async () => {
@@ -141,29 +179,12 @@ describe('Shopify OAuth routes', () => {
   });
 
   describe('callback route', () => {
-    it('upserts store_connections with status active and returns integrations success', async () => {
-      const upserts: Array<{ table: string; values: Record<string, unknown> }> = [];
-      createServiceClient.mockReturnValue({
-        from: (table: string) => ({
-          upsert: async (values: Record<string, unknown>) => {
-            upserts.push({ table, values });
-            return { error: null };
-          },
-          update: () => {
-            // Both store_connections (.eq.eq) and merchants (.eq) update chains
-            // must resolve to { error: null }; eq is chainable and thenable.
-            const chain: Record<string, unknown> = {
-              eq: () => chain,
-              then: (resolve: (v: { error: null }) => unknown) => resolve({ error: null }),
-            };
-            return chain;
-          },
-        }),
-      });
+    it('consumes tenant-bound state before persisting and returns integrations success', async () => {
+      createServiceClient.mockReturnValue({});
 
       const state = 'state-abc';
       const params = buildOAuthCallbackParams({
-        shop: 'unauth-test.myshopify.com',
+        shop: 'merchant-a.myshopify.com',
         code: 'auth-code',
         state,
         secret: 'test-api-secret',
@@ -178,23 +199,29 @@ describe('Shopify OAuth routes', () => {
       const res = await callbackGET(req);
       expect(res.status).toBe(200);
       expect(await extractFallbackHref(res)).toBe(
-        'http://localhost:3000/settings/integrations?shopify_connected=1&shop=unauth-test.myshopify.com',
+        'http://localhost:3000/settings/integrations?shopify_connected=1&shop=merchant-a.myshopify.com',
       );
 
-      const connectionUpsert = upserts.find((row) => row.table === 'store_connections');
-      expect(connectionUpsert?.values).toMatchObject({
-        merchant_id: 'merchant-1',
-        platform: 'shopify',
-        store_key: 'unauth-test.myshopify.com',
-        status: 'active',
-        uninstalled_at: null,
+      expect(consumeOAuthConnectionTransaction).toHaveBeenCalledWith(expect.anything(), {
+        state,
+        userId: 'user-1',
+        providerId: 'shopify',
+        callbackUrl: 'http://localhost:3000/api/shopify/callback',
+        providerAccountId: 'merchant-a.myshopify.com',
       });
+      expect(requirePermissionForMerchant).toHaveBeenCalledWith(
+        expect.anything(), 'user-1', 'merchant-1', 'manage_settings',
+      );
+      expect(persistShopifyOAuthConnection).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+        merchantId: 'merchant-1',
+        shop: 'merchant-a.myshopify.com',
+      }));
       expect(backfillShopifyMerchantIdentities).toHaveBeenCalled();
     });
 
     it('redirects to integrations with shopify_error when OAuth state is invalid', async () => {
       const params = buildOAuthCallbackParams({
-        shop: 'unauth-test.myshopify.com',
+        shop: 'merchant-a.myshopify.com',
         code: 'auth-code',
         state: 'expected-state',
         secret: 'test-api-secret',
@@ -212,17 +239,13 @@ describe('Shopify OAuth routes', () => {
       );
     });
 
-    it('redirects with missing_merchant when merchant cannot be resolved', async () => {
-      resolveOAuthMerchantId.mockResolvedValue(null);
-      createServiceClient.mockReturnValue({
-        from: () => ({
-          upsert: async () => ({ error: null }),
-        }),
-      });
+    it('rejects a replay before token exchange or persistence', async () => {
+      consumeOAuthConnectionTransaction.mockRejectedValueOnce(new Error('oauth_transaction_invalid_expired_or_replayed'));
+      createServiceClient.mockReturnValue({});
 
       const state = 'state-no-merchant';
       const params = buildOAuthCallbackParams({
-        shop: 'unauth-test.myshopify.com',
+        shop: 'merchant-a.myshopify.com',
         code: 'auth-code',
         state,
         secret: 'test-api-secret',
@@ -236,8 +259,9 @@ describe('Shopify OAuth routes', () => {
 
       const res = await callbackGET(req);
       expect(await extractFallbackHref(res)).toBe(
-        'http://localhost:3000/settings/integrations?shopify_error=missing_merchant',
+        'http://localhost:3000/settings/integrations?shopify_error=invalid_or_replayed_state',
       );
+      expect(persistShopifyOAuthConnection).not.toHaveBeenCalled();
     });
   });
 });
@@ -257,7 +281,7 @@ describe('Shopify connected UI status source', () => {
             limit: () => builder,
             maybeSingle: async () => ({
               data: {
-                store_key: 'unauth-test.myshopify.com',
+                store_key: 'merchant-a.myshopify.com',
                 status: 'active',
                 uninstalled_at: null,
                 credentials_encrypted: 'enc-token',
@@ -274,6 +298,6 @@ describe('Shopify connected UI status source', () => {
     const status = await getShopifyConnectionStatus(serviceClient as never, 'merchant-1');
     expect(status.connected).toBe(true);
     expect(status.linkState).toBe('connected');
-    expect(status.shopDomain).toBe('unauth-test.myshopify.com');
+    expect(status.shopDomain).toBe('merchant-a.myshopify.com');
   });
 });

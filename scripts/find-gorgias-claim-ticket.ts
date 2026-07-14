@@ -16,8 +16,9 @@ loadEnv({ path: '.env.local' });
 import { createServiceClient } from '@/lib/supabase/server';
 import { getActiveGorgiasMerchantApiAccess } from '@/lib/support/gorgias/merchantApiAccess';
 import { gorgiasApiBaseUrl, gorgiasApiRequest } from '@/lib/support/gorgias/registerSidebarWidget';
+import { requiredControlledAccountEnv } from '@/scripts/e2e/controlledAccountEnv';
 
-const MERCHANT_ID = 'af070af9-df1a-46ba-89f8-29409926ef61';
+const MERCHANT_ID = requiredControlledAccountEnv('E2E_MERCHANT_ID');
 const WINDOW_HOURS = 24;
 const LIST_LIMIT = 30;
 

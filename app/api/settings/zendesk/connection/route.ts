@@ -19,6 +19,7 @@ import {
   ZENDESK_CONNECT_CREDENTIALS_ERROR_CODE,
   ZendeskCredentialsError,
 } from '@/lib/support/zendesk/supportConnectionShared';
+import { safeConnectionErrorCode } from '@/lib/integrations/publicErrors';
 
 async function GETHandler() {
   const userClient = createClient();
@@ -39,9 +40,8 @@ async function GETHandler() {
       link,
       connected: link.helpdeskLinked,
     });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Failed to load Zendesk connection';
-    return NextResponse.json({ error: message }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: 'Failed to load Zendesk connection.', code: 'zendesk_connection_load_failed' }, { status: 500 });
   }
 }
 
@@ -102,7 +102,8 @@ async function POSTHandler(req: NextRequest) {
         console.error('Zendesk historical ticket backfill failed', {
           merchantId,
           connectionId,
-          message: err instanceof Error ? err.message : 'unknown',
+          category: safeConnectionErrorCode(err instanceof Error ? err.message : null)
+            ?? 'zendesk_backfill_failed',
         });
       }
     });
@@ -123,8 +124,7 @@ async function POSTHandler(req: NextRequest) {
     if (err instanceof Error && err.message === 'zendesk_connection_already_exists') {
       return NextResponse.json({ error: 'Zendesk connection already exists' }, { status: 409 });
     }
-    const message = err instanceof Error ? err.message : 'Failed to save Zendesk connection';
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to save Zendesk connection.', code: 'zendesk_connection_save_failed' }, { status: 500 });
   }
 }
 

@@ -18,6 +18,9 @@ export function requestedShipBobEnvironment(input: {
   nodeEnv?: string;
   testMode?: boolean;
 }): ShipBobEnvironment {
-  if (input.requested === 'sandbox' && (input.nodeEnv !== 'production' || input.testMode === true)) return 'sandbox';
+  // Environment is selected for this connection and then sealed into OAuth
+  // state/persisted on the connection. Deployment variables never choose a
+  // merchant's provider environment.
+  if (input.requested === 'sandbox') return 'sandbox';
   return 'production';
 }

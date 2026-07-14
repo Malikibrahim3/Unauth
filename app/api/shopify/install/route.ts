@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import crypto from "crypto";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { ensureMerchantContextForUser } from "@/lib/account/ensureMerchantContext";
+import { beginOAuthConnectionTransaction } from "@/lib/integrations/oauthTransactions";
+import {
+  ACTIVE_MERCHANT_COOKIE,
+  PERMISSIONS,
+  requirePermissionForMerchant,
+} from "@/lib/permissions";
 import { shopifyDebugLog } from "@/lib/shopify/debugLog";
 import {
   clearShopifyOAuthCookieOptions,
@@ -11,6 +16,7 @@ import { normalizeShopInput } from "@/lib/shopify/normalizeShopInput";
 import { getAppUrl } from "@/lib/utils/appUrl";
 import { SHOPIFY_SCOPES } from "@/lib/shopify/scopes";
 import { htmlSafeJson } from "@/lib/utils/htmlSafeJson";
+import { safeConnectionErrorCode } from "@/lib/integrations/publicErrors";
 
 const INTEGRATIONS_URL = "/settings/integrations";
 
@@ -104,8 +110,43 @@ export async function GET(request: NextRequest) {
       return oauthCompleteResponse({ shopify_error: "misconfigured" });
     }
 
-    const state = crypto.randomBytes(16).toString("hex");
     const redirectUri = `${appUrl.replace(/\/$/, "")}/api/shopify/callback`;
+
+    const supabase = createClient();
+    const serviceClient = createServiceClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return oauthCompleteResponse({ shopify_error: "unauthorized" });
+    }
+    const selectedMerchantId = request.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value ?? null;
+    const merchantContext = await ensureMerchantContextForUser(
+      serviceClient,
+      user,
+      selectedMerchantId,
+    );
+    if (!merchantContext) {
+      return oauthCompleteResponse({ shopify_error: "missing_merchant" });
+    }
+    const authorization = await requirePermissionForMerchant(
+      serviceClient,
+      user.id,
+      merchantContext.merchantId,
+      PERMISSIONS.MANAGE_SETTINGS,
+    );
+    if (authorization.denied) {
+      return oauthCompleteResponse({ shopify_error: "forbidden" });
+    }
+
+    const state = await beginOAuthConnectionTransaction(serviceClient, {
+      merchantId: merchantContext.merchantId,
+      userId: user.id,
+      providerId: "shopify",
+      environment: "production",
+      callbackUrl: redirectUri,
+      providerAccountHint: shop,
+    });
     const scope = SHOPIFY_SCOPES.join(",");
     const installUrl = new URL(`https://${shop}/admin/oauth/authorize`);
     installUrl.searchParams.set("client_id", apiKey);
@@ -125,48 +166,16 @@ export async function GET(request: NextRequest) {
       shopifyOAuthCookieOptions(600),
     );
 
-    const supabase = createClient();
-    const serviceClient = createServiceClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (user) {
-      const ctx = await ensureMerchantContextForUser(serviceClient, user);
-      if (ctx?.merchantId) {
-        response.cookies.set(
-          "shopify_oauth_merchant_id",
-          ctx.merchantId,
-          shopifyOAuthCookieOptions(600),
-        );
-        shopifyDebugLog("shopify.install.merchant_cookie_set", {
-          hasMerchantId: true,
-        });
-      } else {
-        shopifyDebugLog("shopify.install.merchant_cookie_set", {
-          hasMerchantId: false,
-        });
-      }
-    } else {
-      shopifyDebugLog("shopify.install.merchant_cookie_set", {
-        hasMerchantId: false,
-        reason: "no_user",
-      });
-    }
-
     return response;
   } catch (error) {
     console.error("Shopify install route failed", {
-      message: error instanceof Error ? error.message : String(error),
+      category: safeConnectionErrorCode(error instanceof Error ? error.message : null)
+        ?? "shopify_install_failed",
       shop,
     });
     const response = oauthCompleteResponse({ shopify_error: "install_failed" });
     response.cookies.set(
       "shopify_oauth_state",
-      "",
-      clearShopifyOAuthCookieOptions(),
-    );
-    response.cookies.set(
-      "shopify_oauth_merchant_id",
       "",
       clearShopifyOAuthCookieOptions(),
     );

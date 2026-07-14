@@ -62,13 +62,13 @@ describe('shopify profile linking', () => {
 
   it('creates profile + shopify_order_id mapping for fresh order-only sync', async () => {
     const supabase: any = makeSupabase({
-      merchant_shopify_connections:[{merchant_id:'af070af9-df1a-46ba-89f8-29409926ef61',shop_domain:'unauth-test.myshopify.com',active:true}],
-      merchant_identities:[{shop_domain:'unauth-test.myshopify.com',source:'order',source_id:'1779820021334',email:null,phone:null,shipping_address:null,billing_address:null,customer_id:null}],
-      shopify_order_signals:[{shop_domain:'unauth-test.myshopify.com',shopify_order_id:'1779820021334',customer_id:null,risk_level:null,risk_recommendation:null,refunds_count:0,created_at_shopify:'2026-05-26T18:27:02.411Z'}],
+      merchant_shopify_connections:[{merchant_id:'00000000-0000-4000-8000-000000000001',shop_domain:'merchant-a.myshopify.com',active:true}],
+      merchant_identities:[{shop_domain:'merchant-a.myshopify.com',source:'order',source_id:'1779820021334',email:null,phone:null,shipping_address:null,billing_address:null,customer_id:null}],
+      shopify_order_signals:[{shop_domain:'merchant-a.myshopify.com',shopify_order_id:'1779820021334',customer_id:null,risk_level:null,risk_recommendation:null,refunds_count:0,created_at_shopify:'2026-05-26T18:27:02.411Z'}],
       customer_profiles:[],
       customer_profile_identities:[],
     });
-    const result = await syncShopifyProfilesForShop({ shopDomain: 'unauth-test.myshopify.com', supabase, onlyOrderIds: ['1779820021334'] });
+    const result = await syncShopifyProfilesForShop({ shopDomain: 'merchant-a.myshopify.com', supabase, onlyOrderIds: ['1779820021334'] });
     expect(result.profilesCreated).toBe(1);
     expect(supabase._state.customer_profile_identities.some((r: any) => r.identity_type === 'shopify_order_id' && r.identity_value === '1779820021334')).toBe(true);
   });

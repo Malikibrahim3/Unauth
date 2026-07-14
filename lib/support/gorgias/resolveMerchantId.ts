@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { env } from '@/lib/utils/env';
+import { isLocalSupportFallbackRuntime } from '@/lib/support/devFallback';
 
 export const GORGIAS_MERCHANT_ID_HEADER = 'x-unauth-merchant-id';
 
@@ -22,13 +23,7 @@ export function isGorgiasDevMerchantFallbackAllowed(
 ): boolean {
   const nodeEnv = options.nodeEnv ?? process.env.NODE_ENV;
   const vercelEnv = options.vercelEnv ?? env.VERCEL_ENV;
-  return (
-    options.allowEnvMerchantInProduction === true ||
-    env.GORGIAS_SUPPORT_ALLOW_ENV_MERCHANT === 'true' ||
-    nodeEnv === 'development' ||
-    nodeEnv === 'test' ||
-    vercelEnv === 'development'
-  );
+  return isLocalSupportFallbackRuntime({ nodeEnv, vercelEnv });
 }
 
 export function isGorgiasProductionIngestMode(options: ResolveGorgiasDevMerchantOptions = {}): boolean {
@@ -61,7 +56,7 @@ export function resolveGorgiasDevMerchantFallback(
   const testMerchantId =
     options.testMerchantId !== undefined
       ? options.testMerchantId
-      : env.GORGIAS_SUPPORT_TEST_MERCHANT_ID ?? null;
+      : null;
 
   if (!testMerchantId) {
     return { error: 'missing' };

@@ -8,7 +8,7 @@ import { createAdminClient } from '@/lib/supabase/server';
 import { reconcileMerchant } from '@/lib/reconciliation/reconcileMerchant';
 import { GET } from '@/app/api/cron/reconcile/route';
 
-const MERCHANT_ID = 'af070af9-df1a-46ba-89f8-29409926ef61';
+const MERCHANT_ID = '00000000-0000-4000-8000-000000000001';
 
 function merchantClient(rows: Array<{ id: string }>) {
   const query: Record<string, jest.Mock | ((resolve: (value: unknown) => unknown) => unknown)> = {};

@@ -36,9 +36,8 @@ async function POSTHandler() {
       shopDomain: orderSource.orderSourceStoreKey,
     });
     return NextResponse.json({ ok: true, ...result });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'freshdesk_backfill_failed';
-    return NextResponse.json({ error: message }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: 'Freshdesk sync failed.', code: 'freshdesk_backfill_failed' }, { status: 500 });
   }
 }
 

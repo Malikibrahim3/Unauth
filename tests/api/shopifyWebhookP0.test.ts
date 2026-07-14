@@ -174,6 +174,18 @@ describe('shopify webhook p0', () => {
     expect(writes).toHaveLength(0);
   });
 
+  it('webhook for a revoked store is acknowledged without ingesting records', async () => {
+    const orderUpserts: any[] = [];
+    const supabase = makeSupabase({
+      store_connections: {
+        maybeSingleData: { ...CONNECTION, status: 'revoked', uninstalled_at: new Date().toISOString() },
+      },
+      source_orders: { onUpsert: (payload) => orderUpserts.push(payload) },
+    });
+    await processWebhook('{"id":1}', 'unit-test.myshopify.com', 'orders/create', supabase as any);
+    expect(orderUpserts).toHaveLength(0);
+  });
+
   it('duplicate completed webhook is short-circuited at claim time', async () => {
     const supabase = makeSupabase({
       processed_webhooks: processedWebhooks('completed'),
@@ -234,7 +246,7 @@ describe('shopify webhook p0', () => {
     expect(payload.source).toBe('shopify');
     expect(payload.email).toBe('ok@test.com');
     expect(payload.raw_payload_hash).toMatch(/^[a-f0-9]{64}$/);
-    expect(opts.onConflict).toBe('merchant_id,source,external_id');
+    expect(opts.onConflict).toBe('merchant_id,source,connection_id,source_account_id,external_id');
   });
 
   it('successful orders/updated upserts a source_orders row and finalizes completed', async () => {

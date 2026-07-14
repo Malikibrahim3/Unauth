@@ -2,7 +2,7 @@
  * POST /api/cron/verify-connections
  *
  * Runs daily at 2 AM UTC via Vercel cron. For every merchant with a configured
- * Shopify or Gorgias connection, makes a live API call to verify the
+ * Shopify, Gorgias, ShipBob, UPS, or FedEx connection, makes a live API call to verify the
  * credentials are still valid. The same probe also runs on integration page
  * loads while a merchant is active; this cron is the free-plan safety net.
  *
@@ -18,8 +18,10 @@ import { env } from '@/lib/utils/env';
 import {
   persistLiveVerification,
   verifyGorgiasConnection,
+  verifyMerchantIntegrationConnection,
   verifyShopifyConnection,
   type GorgiasVerificationRow,
+  type MerchantIntegrationVerificationRow,
   type ShopifyVerificationRow,
 } from '@/lib/connections/liveVerification';
 
@@ -43,6 +45,8 @@ type HelpdeskRow = {
   access_token_encrypted: string | null;
   status: string | null;
 };
+
+type MerchantIntegrationRow = MerchantIntegrationVerificationRow;
 
 export async function POST(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
@@ -68,7 +72,7 @@ export async function POST(request: NextRequest) {
     if (result.status === 'failed') {
       results.shopify.failed++;
     }
-    await persistLiveVerification(sc, 'store_connections', row.id, row.status, result);
+    await persistLiveVerification(sc, 'store_connections', row.merchant_id, row.id, row.status, result);
   }
 
   // --- Helpdesk connections (Gorgias) ---
@@ -86,7 +90,33 @@ export async function POST(request: NextRequest) {
     if (result.status === 'failed') {
       results.gorgias.failed++;
     }
-    await persistLiveVerification(sc, 'helpdesk_connections', row.id, row.status, result);
+    await persistLiveVerification(sc, 'helpdesk_connections', row.merchant_id, row.id, row.status, result);
+  }
+
+  // --- Canonical merchant integrations (ShipBob, UPS, FedEx) ---
+  const { data: integrationRows } = await sc
+    .from('merchant_integrations')
+    .select('id,merchant_id,provider_id,provider_account_id,environment,status')
+    .in('provider_id', ['shipbob', 'ups', 'fedex'])
+    .in('status', ['connected', 'active', 'degraded', 'error'])
+    .limit(500);
+
+  for (const providerId of ['shipbob', 'ups', 'fedex'] as const) {
+    results[providerId] = { checked: 0, failed: 0 };
+  }
+  for (const row of (integrationRows ?? []) as MerchantIntegrationRow[]) {
+    const providerResults = results[row.provider_id];
+    providerResults.checked++;
+    const result = await verifyMerchantIntegrationConnection(sc, row);
+    if (result.status === 'failed') providerResults.failed++;
+    await persistLiveVerification(
+      sc,
+      'merchant_integrations',
+      row.merchant_id,
+      row.id,
+      row.status,
+      result,
+    );
   }
 
   console.log('[verify-connections] done', results);

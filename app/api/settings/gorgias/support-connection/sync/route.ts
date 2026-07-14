@@ -39,9 +39,8 @@ async function POSTHandler() {
       merchantId: ctx.merchantId,
     });
     return NextResponse.json({ ok: true, ...result, payout_case_bridge: bridge });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'gorgias_backfill_failed';
-    return NextResponse.json({ error: message }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: 'Gorgias sync failed.', code: 'gorgias_backfill_failed' }, { status: 500 });
   }
 }
 

@@ -50,20 +50,25 @@ describe('child-before-parent reconciliation', () => {
   }
 
   it('resolves a parent that has been ingested', async () => {
-    const res = await resolveParentByExternalId(client({ canonical_entity_id: 'o-1', canonical_entity_type: 'order' }), 'm', 'order', 'ORDER-1');
+    const res = await resolveParentByExternalId(client({ canonical_entity_id: 'o-1', canonical_entity_type: 'order' }), 'm', 'order', 'ORDER-1', { connectionId: 'conn-a' });
     expect(res).toEqual({ found: true, canonicalEntityId: 'o-1', canonicalEntityType: 'order' });
   });
 
   it('reports not-found when the parent is absent', async () => {
-    const res = await resolveParentByExternalId(client(null), 'm', 'order', 'ORDER-1');
+    const res = await resolveParentByExternalId(client(null), 'm', 'order', 'ORDER-1', { connectionId: 'conn-a' });
     expect(res).toEqual({ found: false });
   });
 
+  it('refuses a merchant-only lookup that could collide across connections', async () => {
+    await expect(resolveParentByExternalId(client(null), 'm', 'order', 'ORDER-1', {}))
+      .rejects.toThrow('reconciliation_scope_required');
+  });
+
   it('requireParentOrDefer throws DeferredReconciliation for a missing parent (never discards)', async () => {
-    await expect(requireParentOrDefer(client(null), 'm', 'order', 'ORDER-1')).rejects.toBeInstanceOf(DeferredReconciliation);
+    await expect(requireParentOrDefer(client(null), 'm', 'order', 'ORDER-1', { connectionId: 'conn-a' })).rejects.toBeInstanceOf(DeferredReconciliation);
   });
 
   it('requireParentOrDefer returns null when the child has no parent reference', async () => {
-    expect(await requireParentOrDefer(client(null), 'm', 'order', null)).toBeNull();
+    expect(await requireParentOrDefer(client(null), 'm', 'order', null, { connectionId: 'conn-a' })).toBeNull();
   });
 });

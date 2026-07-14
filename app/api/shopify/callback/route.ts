@@ -4,11 +4,13 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { backfillShopifyMerchantIdentities } from '@/lib/shopify/backfill';
 import { shopifyDebugLog } from '@/lib/shopify/debugLog';
 import { clearShopifyOAuthCookieOptions } from '@/lib/shopify/oauthCookies';
-import { resolveOAuthMerchantId } from '@/lib/shopify/resolveOAuthMerchantId';
 import { registerShopifyWebhooks } from '@/lib/shopify/webhooks';
 import { getAppUrl } from '@/lib/utils/appUrl';
 import { exchangeShopifyOAuthAccessToken, fetchShopifyGrantedScopes } from '@/lib/shopify/exchangeOAuthAccessToken';
 import { persistShopifyOAuthConnection } from '@/lib/shopify/persistOAuthConnection';
+import { consumeOAuthConnectionTransaction } from '@/lib/integrations/oauthTransactions';
+import { PERMISSIONS, requirePermissionForMerchant } from '@/lib/permissions';
+import { safeConnectionErrorCode } from '@/lib/integrations/publicErrors';
 
 const SHOP_REGEX = /^[a-zA-Z0-9][a-zA-Z0-9-]*\.myshopify\.com$/;
 const INTEGRATIONS_PATH = '/settings/integrations';
@@ -102,7 +104,6 @@ function oauthCompleteResponse(params: Record<string, string>): NextResponse {
 
 function clearOAuthCookies(response: NextResponse): void {
   response.cookies.set('shopify_oauth_state', '', clearShopifyOAuthCookieOptions());
-  response.cookies.set('shopify_oauth_merchant_id', '', clearShopifyOAuthCookieOptions());
 }
 
 export async function GET(request: NextRequest) {
@@ -153,6 +154,41 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const serviceClient = createServiceClient();
+    const userClient = createClient();
+    const { data: { user } } = await userClient.auth.getUser();
+    if (!user) {
+      const response = oauthCompleteResponse({ shopify_error: 'unauthorized' });
+      clearOAuthCookies(response);
+      return response;
+    }
+    const redirectUri = `${getAppUrl().replace(/\/$/, '')}/api/shopify/callback`;
+    let transaction;
+    try {
+      transaction = await consumeOAuthConnectionTransaction(serviceClient, {
+        state,
+        userId: user.id,
+        providerId: 'shopify',
+        callbackUrl: redirectUri,
+        providerAccountId: shop,
+      });
+    } catch {
+      const response = oauthCompleteResponse({ shopify_error: 'invalid_or_replayed_state' });
+      clearOAuthCookies(response);
+      return response;
+    }
+    const authorization = await requirePermissionForMerchant(
+      serviceClient,
+      user.id,
+      transaction.merchantId,
+      PERMISSIONS.MANAGE_SETTINGS,
+    );
+    if (authorization.denied) {
+      const response = oauthCompleteResponse({ shopify_error: 'forbidden' });
+      clearOAuthCookies(response);
+      return response;
+    }
+
     shopifyDebugLog('token_exchange.started', { callbackShopDomain: shop });
     const tokenExchange = await exchangeShopifyOAuthAccessToken(shop, code, apiKey, apiSecret);
     if (!tokenExchange.ok) {
@@ -170,10 +206,8 @@ export async function GET(request: NextRequest) {
 
     const grantedScopes = await fetchShopifyGrantedScopes(shop, accessToken).catch(() => null);
 
-    const serviceClient = createServiceClient();
-    const userClient = createClient();
-    const merchantId = await resolveOAuthMerchantId(request, serviceClient, userClient);
-    shopifyDebugLog('callback.merchant_resolved', { hasMerchantId: Boolean(merchantId) });
+    const merchantId = transaction.merchantId;
+    shopifyDebugLog('callback.merchant_resolved', { hasMerchantId: true });
 
     const persisted = await persistShopifyOAuthConnection(serviceClient, {
       shop,
@@ -216,9 +250,10 @@ export async function GET(request: NextRequest) {
       });
     } catch (backfillError) {
       identityBackfillSuccess = false;
-      const message = backfillError instanceof Error ? backfillError.message : 'unknown';
-      console.error('Shopify identity backfill failed', { shop, message });
-      shopifyDebugLog('backfill.identity.failed', { callbackShopDomain: shop, message });
+      const category = safeConnectionErrorCode(backfillError instanceof Error ? backfillError.message : null)
+        ?? 'shopify_identity_backfill_failed';
+      console.error('Shopify identity backfill failed', { shop, category });
+      shopifyDebugLog('backfill.identity.failed', { callbackShopDomain: shop, category });
     }
 
     shopifyDebugLog('webhook_registration.started', { callbackShopDomain: shop });
@@ -233,7 +268,8 @@ export async function GET(request: NextRequest) {
       webhookRegistrationSuccess = false;
       shopifyDebugLog('webhook_registration.failure', {
         webhookRegistrationSuccess: false,
-        message: webhookError instanceof Error ? webhookError.message : 'unknown',
+        category: safeConnectionErrorCode(webhookError instanceof Error ? webhookError.message : null)
+          ?? 'shopify_webhook_registration_failed',
       });
     }
 
@@ -249,7 +285,8 @@ export async function GET(request: NextRequest) {
     return response;
   } catch (error) {
     console.error('Shopify OAuth callback failed', {
-      message: error instanceof Error ? error.message : String(error),
+      category: safeConnectionErrorCode(error instanceof Error ? error.message : null)
+        ?? 'shopify_callback_failed',
       shop,
     });
     const response = oauthCompleteResponse({ shopify_error: 'callback_failed' });

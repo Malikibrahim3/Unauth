@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
-import { getActiveGorgiasMerchantApiAccess } from '@/lib/support/gorgias/merchantApiAccess';
-import { gorgiasApiBaseUrl, gorgiasApiRequest, GorgiasSidebarRegistrationError } from '@/lib/support/gorgias/registerSidebarWidget';
+import {
+  persistLiveVerification,
+  verifyGorgiasConnection,
+  type GorgiasVerificationRow,
+} from '@/lib/connections/liveVerification';
 
 export async function GET() {
   const userClient = createClient();
@@ -13,23 +16,25 @@ export async function GET() {
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_INBOX);
   if (denied) return denied;
 
-  const access = await getActiveGorgiasMerchantApiAccess(serviceClient, ctx.merchantId);
-  if (!access) {
+  const { data: row } = await serviceClient
+    .from('helpdesk_connections')
+    .select('id,provider_base_url,access_token_encrypted,status')
+    .eq('merchant_id', ctx.merchantId)
+    .eq('provider', 'gorgias')
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!row) {
     return NextResponse.json({ ok: false, reason: 'not_connected' });
   }
 
-  const apiBaseUrl = gorgiasApiBaseUrl(access.providerBaseUrl);
-
-  try {
-    await gorgiasApiRequest<unknown>(apiBaseUrl, '/users/me', access.credentials, { method: 'GET' });
+  const result = await verifyGorgiasConnection(row as GorgiasVerificationRow);
+  await persistLiveVerification(serviceClient, 'helpdesk_connections', ctx.merchantId, row.id, row.status, result);
+  if (result.status === 'verified') {
     return NextResponse.json({ ok: true });
-  } catch (err) {
-    if (err instanceof GorgiasSidebarRegistrationError) {
-      if (err.status === 401 || err.status === 403) {
-        return NextResponse.json({ ok: false, reason: 'credentials_revoked' });
-      }
-      return NextResponse.json({ ok: false, reason: 'api_error', inconclusive: true });
-    }
-    return NextResponse.json({ ok: false, reason: 'network_error', inconclusive: true });
   }
+  if (result.status === 'inconclusive') {
+    return NextResponse.json({ ok: false, reason: result.reason ?? 'network_error', inconclusive: true });
+  }
+  return NextResponse.json({ ok: false, reason: result.reason ?? 'credentials_revoked' });
 }

@@ -34,7 +34,7 @@ async function main(): Promise<void> {
     : 'live-link-verify';
   const shopDomain = process.argv.includes('--shop-domain')
     ? process.argv[process.argv.indexOf('--shop-domain') + 1]
-    : 'unauth-test.myshopify.com';
+    : 'fixture-shop.myshopify.com';
   const ticketId = process.argv.includes('--ticket-id')
     ? process.argv[process.argv.indexOf('--ticket-id') + 1]
     : `g-live-${Date.now()}`;

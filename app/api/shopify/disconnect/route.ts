@@ -3,6 +3,8 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
 import { getClientIp } from '@/lib/ratelimit';
+import { disconnectProviderConnection } from '@/lib/connectors/disconnect';
+import { resolveActiveIntegrationConnectionId } from '@/lib/integrations/auth';
 
 export async function POST(req: Request) {
   const ip = getClientIp(req.headers);
@@ -16,37 +18,22 @@ export async function POST(req: Request) {
   const { denied, ctx } = await requirePermission(service, user.id, PERMISSIONS.MANAGE_SETTINGS);
   if (denied) return denied;
 
-  const now = new Date().toISOString();
-  const { error } = await service
-    .from('store_connections')
-    .update({ status: 'revoked', uninstalled_at: now, updated_at: now })
-    .eq('merchant_id', ctx.merchantId)
-    .eq('platform', 'shopify');
-
-  if (error) {
+  const connectionId = await resolveActiveIntegrationConnectionId(service, ctx.merchantId, 'shopify');
+  if (!connectionId) return NextResponse.json({ error: 'Shopify is not connected.' }, { status: 400 });
+  try {
+    await disconnectProviderConnection(service, ctx.merchantId, {
+      id: 'shopify',
+      category: 'commerce',
+    }, connectionId);
+  } catch {
     return NextResponse.json({ error: 'Failed to disconnect Shopify' }, { status: 500 });
-  }
-
-  const { error: canonicalError } = await service
-    .from('merchant_integrations')
-    .update({
-      status: 'revoked',
-      disconnected_at: now,
-      webhook_status: 'missing',
-      updated_at: now,
-    })
-    .eq('merchant_id', ctx.merchantId)
-    .eq('provider_id', 'shopify');
-
-  if (canonicalError) {
-    return NextResponse.json({ error: 'Failed to update Shopify integration status' }, { status: 500 });
   }
 
   logAction({
     ctx,
     action: 'disconnect_shopify',
     resourceType: 'store_connection',
-    resourceId: ctx.merchantId,
+    resourceId: connectionId,
     metadata: { platform: 'shopify' },
     ip,
   });

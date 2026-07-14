@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
-import { decryptBigCommerceOAuthCredentials } from '@/lib/commerce/credentialCrypto';
-import { SHOPIFY_REST_API_VERSION } from '@/lib/shopify/apiVersion';
+import {
+  persistLiveVerification,
+  verifyShopifyConnection,
+  type ShopifyVerificationRow,
+} from '@/lib/connections/liveVerification';
 
 export async function GET() {
   const userClient = createClient();
@@ -15,41 +18,24 @@ export async function GET() {
 
   const { data: row } = await serviceClient
     .from('store_connections')
-    .select('credentials_encrypted, store_key, status')
+    .select('id,credentials_encrypted,store_key,status,uninstalled_at')
     .eq('merchant_id', ctx.merchantId)
     .eq('platform', 'shopify')
     .order('installed_at', { ascending: false })
     .limit(1)
     .maybeSingle();
 
-  if (!row || row.status !== 'active' || !row.credentials_encrypted || !row.store_key) {
+  if (!row) {
     return NextResponse.json({ ok: false, reason: 'not_connected' });
   }
 
-  let accessToken: string;
-  try {
-    accessToken = decryptBigCommerceOAuthCredentials(row.credentials_encrypted).access_token;
-  } catch {
-    return NextResponse.json({ ok: false, reason: 'decrypt_failed' });
+  const result = await verifyShopifyConnection(row as ShopifyVerificationRow);
+  await persistLiveVerification(serviceClient, 'store_connections', ctx.merchantId, row.id, row.status, result);
+  if (result.status === 'verified') {
+    return NextResponse.json({ ok: true });
   }
-
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
-    const res = await fetch(`https://${row.store_key}/admin/api/${SHOPIFY_REST_API_VERSION}/shop.json`, {
-      headers: { 'X-Shopify-Access-Token': accessToken },
-      cache: 'no-store',
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
-
-    if (res.ok) return NextResponse.json({ ok: true });
-    if (res.status === 401 || res.status === 403) {
-      return NextResponse.json({ ok: false, reason: 'token_revoked' });
-    }
-    return NextResponse.json({ ok: false, reason: `shopify_${res.status}` });
-  } catch {
-    // Network error or timeout — don't false-alarm; treat as inconclusive
-    return NextResponse.json({ ok: false, reason: 'network_error', inconclusive: true });
+  if (result.status === 'inconclusive') {
+    return NextResponse.json({ ok: false, reason: result.reason ?? 'network_error', inconclusive: true });
   }
+  return NextResponse.json({ ok: false, reason: result.reason ?? 'token_revoked' });
 }

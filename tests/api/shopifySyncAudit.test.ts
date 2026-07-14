@@ -56,7 +56,7 @@ describe('Shopify manual sync route', () => {
     requirePermission.mockResolvedValue({ denied: null, ctx: { merchantId: 'merchant-1' } });
     getShopifyConnectionStatus.mockResolvedValue({
       connected: true,
-      shopDomain: 'unauth-test.myshopify.com',
+      shopDomain: 'merchant-a.myshopify.com',
     });
   });
 
@@ -66,7 +66,7 @@ describe('Shopify manual sync route', () => {
     expect(response.status).toBe(200);
     expect(backfillShopifyMerchantIdentities).toHaveBeenCalledWith({
       supabase: expect.anything(),
-      shopDomain: 'unauth-test.myshopify.com',
+      shopDomain: 'merchant-a.myshopify.com',
       accessToken: 'shop-token',
       merchantId: 'merchant-1',
     });

@@ -2,7 +2,7 @@ import { resolveGorgiasTicketCustomerEmail } from '@/lib/support/gorgias/ticketC
 import { normalizeGorgiasTicket } from '@/lib/support/intake/normalizeTicket';
 import { hashSupportEmail } from '@/lib/support/intake/store';
 
-const merchantId = 'af070af9-df1a-46ba-89f8-29409926ef61';
+const merchantId = '00000000-0000-4000-8000-000000000001';
 
 describe('resolveGorgiasTicketCustomerEmail', () => {
   it('prefers non-agent message sender over ticket.customer (support inbox)', () => {
@@ -55,7 +55,7 @@ describe('normalizeGorgiasTicket claim detection', () => {
     const normalized = normalizeGorgiasTicket(raw, {
       merchant_id: merchantId,
       provider_connection_id: null,
-      shop_domain: 'unauth-test.myshopify.com',
+      shop_domain: 'merchant-a.myshopify.com',
     });
 
     expect(normalized.order_ref).toBe('1008');

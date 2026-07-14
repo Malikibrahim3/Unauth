@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { syncShopifyProfilesForShop } from '@/lib/shopify/profileLinking';
 
-const SHOP_DOMAIN = 'unauth-test.myshopify.com';
+const SHOP_DOMAIN = process.env.E2E_SHOPIFY_STORE_DOMAIN?.trim();
+if (!SHOP_DOMAIN) throw new Error('E2E_SHOPIFY_STORE_DOMAIN is required');
 
 async function main() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

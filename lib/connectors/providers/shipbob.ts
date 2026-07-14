@@ -74,10 +74,20 @@ export const shipbobConnector: ConnectorAdapter = {
         credentials.sandbox,
         credentials.channelId,
       );
+      const selectedId = credentials.providerAccountId ?? credentials.channelId ?? null;
+      if (!selectedId && access.channels.length > 1) {
+        return { ok: false, errorCode: 'account_selection_required', message: 'Select a ShipBob channel.' };
+      }
+      const selected = selectedId
+        ? access.channels.find((channel) => channel.id === selectedId)
+        : access.channels[0];
+      if (!selected) {
+        return { ok: false, errorCode: 'test_connection_failed', message: 'The selected ShipBob channel is unavailable.' };
+      }
       return {
         ok: true,
-        providerAccountId: access.channels[0]?.id ?? null,
-        providerAccountName: access.channels[0]?.name ?? null,
+        providerAccountId: selected.id,
+        providerAccountName: selected.name,
       };
     } catch {
       return { ok: false, errorCode: 'test_connection_failed', message: 'ShipBob rejected the read-only connection test.' };

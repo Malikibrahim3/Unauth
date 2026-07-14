@@ -6,14 +6,15 @@ import { config as loadEnv } from 'dotenv';
 loadEnv({ path: '.env.local' });
 
 import { createClient } from '@supabase/supabase-js';
-import { E2E_MERCHANT_ID } from '@/lib/e2e/testAuth';
 import { TABLES } from '@/lib/supabase/tables';
 import { backfillPayoutCaseIdentitiesForMerchant } from '@/lib/support/intake/resolvePayoutCaseIdentity';
+import { requiredControlledAccountEnv } from '@/scripts/e2e/controlledAccountEnv';
 
-const TARGET_CASE_ID = process.argv[2] ?? '361dd765-8451-428d-9562-d490b1e13c68';
+const TARGET_CASE_ID = process.argv[2] ?? requiredControlledAccountEnv('E2E_CASE_ID');
 
 async function main() {
-  const merchantId = process.env.E2E_MERCHANT_ID?.trim() || E2E_MERCHANT_ID;
+  const merchantId = process.env.E2E_MERCHANT_ID?.trim();
+  if (!merchantId) throw new Error('E2E_MERCHANT_ID is required');
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,

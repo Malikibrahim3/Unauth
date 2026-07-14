@@ -39,14 +39,19 @@ export async function resolveParentByExternalId(
   merchantId: string,
   sourceEntityType: string,
   externalId: string,
+  scope: { connectionId?: string | null; sourceAccountId?: string | null },
 ): Promise<ParentLookupResult> {
-  const { data, error } = await client
+  if (!scope.connectionId && !scope.sourceAccountId) throw new Error('reconciliation_scope_required');
+  let query = client
     .from(TABLES.SOURCE_RECORDS)
     .select('canonical_entity_id, canonical_entity_type')
     .eq('merchant_id', merchantId)
     .eq('source_entity_type', sourceEntityType)
     .eq('external_id', externalId)
-    .not('canonical_entity_id', 'is', null)
+    .not('canonical_entity_id', 'is', null);
+  if (scope.connectionId) query = query.eq('connection_id', scope.connectionId);
+  if (scope.sourceAccountId) query = query.eq('source_account_id', scope.sourceAccountId);
+  const { data, error } = await query
     .limit(1)
     .maybeSingle();
 
@@ -65,9 +70,10 @@ export async function requireParentOrDefer(
   merchantId: string,
   sourceEntityType: string,
   externalId: string | null | undefined,
+  scope: { connectionId?: string | null; sourceAccountId?: string | null },
 ): Promise<string | null> {
   if (!externalId) return null; // no parent reference on this child — nothing to defer on
-  const result = await resolveParentByExternalId(client, merchantId, sourceEntityType, externalId);
+  const result = await resolveParentByExternalId(client, merchantId, sourceEntityType, externalId, scope);
   if (!result.found) throw new DeferredReconciliation(sourceEntityType, externalId);
   return result.canonicalEntityId;
 }

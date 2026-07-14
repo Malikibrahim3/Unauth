@@ -122,13 +122,14 @@ export async function exchangeShipBobOAuthCode(input: {
 export async function refreshShipBobCredentialsIfNeeded(
   client: SupabaseClient,
   merchantId: string,
-  input: { clientId: string; clientSecret: string; now?: number },
+  input: { connectionId: string; clientId: string; clientSecret: string; now?: number },
 ): Promise<Record<string, unknown> | null> {
   const { data, error } = await client
     .from('integration_credentials')
     .select('encrypted_payload,expires_at')
     .eq('merchant_id', merchantId)
     .eq('provider_id', 'shipbob')
+    .eq('connection_id', input.connectionId)
     .maybeSingle();
   if (error) throw new Error(`shipbob_credential_lookup_failed:${error.message}`);
   if (!data?.encrypted_payload) return null;
@@ -177,12 +178,13 @@ export async function refreshShipBobCredentialsIfNeeded(
       updated_at: new Date(now).toISOString(),
     })
     .eq('merchant_id', merchantId)
-    .eq('provider_id', 'shipbob');
+    .eq('provider_id', 'shipbob')
+    .eq('connection_id', input.connectionId);
   if (updateError) throw new Error(`shipbob_credential_refresh_persist_failed:${updateError.message}`);
   return nextPayload;
 }
 
-export async function fetchShipBobChannel(input: { accessToken: string; sandbox: boolean }) {
+export async function fetchShipBobChannels(input: { accessToken: string; sandbox: boolean }) {
   const response = await fetch(`${shipBobApiBaseUrl(input.sandbox)}/channel`, {
     headers: { Accept: 'application/json', Authorization: `Bearer ${input.accessToken}` },
     cache: 'no-store',
@@ -190,8 +192,18 @@ export async function fetchShipBobChannel(input: { accessToken: string; sandbox:
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(`shipbob_channel_lookup_failed:${response.status}`);
   const channels = Array.isArray(payload) ? payload : payload.items;
-  if (!Array.isArray(channels) || !channels[0]?.id) throw new Error('shipbob_channel_missing');
-  return channels[0] as { id: string | number; name?: string; application_name?: string; scopes?: string[] };
+  if (!Array.isArray(channels)) throw new Error('shipbob_channel_missing');
+  const discovered = channels.flatMap((channel: Record<string, unknown>) => {
+    if (typeof channel?.id !== 'string' && typeof channel?.id !== 'number') return [];
+    return [{
+      id: channel.id,
+      ...(typeof channel.name === 'string' ? { name: channel.name } : {}),
+      ...(typeof channel.application_name === 'string' ? { application_name: channel.application_name } : {}),
+      ...(Array.isArray(channel.scopes) ? { scopes: channel.scopes.filter((scope): scope is string => typeof scope === 'string') } : {}),
+    }];
+  });
+  if (discovered.length === 0) throw new Error('shipbob_channel_missing');
+  return discovered;
 }
 
 export async function persistShipBobOAuthConnection(input: {
@@ -226,6 +238,7 @@ export async function persistShipBobOAuthConnection(input: {
       sandbox: input.sandbox,
     },
     connectorVersion: 'shipbob-oauth-v1',
+    environment,
   });
   const endpoints = shipBobEndpoints(environment);
   const now = new Date().toISOString();
@@ -249,6 +262,7 @@ export async function persistShipBobOAuthConnection(input: {
     .select('encrypted_payload')
     .eq('merchant_id', input.merchantId)
     .eq('provider_id', 'shipbob')
+    .eq('connection_id', connectionId)
     .maybeSingle();
   if (existingCredential?.encrypted_payload) {
     try {
@@ -284,10 +298,14 @@ export async function persistShipBobOAuthConnection(input: {
     scopes,
     expires_at: expiresAt,
     updated_at: new Date().toISOString(),
-  }, { onConflict: 'merchant_id,provider_id' });
+  }, { onConflict: 'connection_id' });
   if (error) throw new Error(`shipbob_oauth_credential_persist_failed:${error.message}`);
 
-  return { connectionId, sourceAccountId, reconnected: Boolean(previousConnection && previousConnection.status !== 'revoked') };
+  return {
+    connectionId,
+    sourceAccountId,
+    reconnected: Boolean(previousConnection && ['revoked', 'not_connected', 'disabled'].includes(previousConnection.status)),
+  };
 }
 
 export async function ensureShipBobWebhookSubscriptions(input: {
@@ -328,12 +346,13 @@ export async function ensureShipBobWebhookSubscriptions(input: {
 export async function storeShipBobWebhookSecret(input: {
   client: SupabaseClient;
   merchantId: string;
+  connectionId: string;
   webhookSecret: string;
 }) {
-  const { data, error } = await input.client.from('integration_credentials').select('encrypted_payload').eq('merchant_id', input.merchantId).eq('provider_id', 'shipbob').maybeSingle();
+  const { data, error } = await input.client.from('integration_credentials').select('encrypted_payload').eq('merchant_id', input.merchantId).eq('provider_id', 'shipbob').eq('connection_id', input.connectionId).maybeSingle();
   if (error || !data?.encrypted_payload) throw new Error(`shipbob_webhook_secret_storage_lookup_failed:${error?.message ?? 'missing_credentials'}`);
   const credentials = decryptIntegrationCredentials(data.encrypted_payload);
   const encryptedPayload = encryptIntegrationCredentials({ ...credentials, webhookSecret: input.webhookSecret });
-  const { error: updateError } = await input.client.from('integration_credentials').update({ encrypted_payload: encryptedPayload, updated_at: new Date().toISOString() }).eq('merchant_id', input.merchantId).eq('provider_id', 'shipbob');
+  const { error: updateError } = await input.client.from('integration_credentials').update({ encrypted_payload: encryptedPayload, updated_at: new Date().toISOString() }).eq('merchant_id', input.merchantId).eq('provider_id', 'shipbob').eq('connection_id', input.connectionId);
   if (updateError) throw new Error(`shipbob_webhook_secret_storage_failed:${updateError.message}`);
 }

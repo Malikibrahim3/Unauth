@@ -35,8 +35,7 @@ async function POSTHandler(req: Request) {
     if (err instanceof Error && err.message === 'gorgias_connection_not_found') {
       return NextResponse.json({ error: 'Gorgias connection not found' }, { status: 404 });
     }
-    const message = err instanceof Error ? err.message : 'Failed to disable Gorgias connection';
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to disable Gorgias connection.', code: 'gorgias_disconnect_failed' }, { status: 500 });
   }
 }
 

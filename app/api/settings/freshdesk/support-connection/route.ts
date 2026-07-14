@@ -18,6 +18,7 @@ import {
   FRESHDESK_CONNECT_CREDENTIALS_ERROR,
   FRESHDESK_CONNECT_CREDENTIALS_ERROR_CODE,
 } from '@/lib/support/freshdesk/supportConnectionShared';
+import { safeConnectionErrorCode } from '@/lib/integrations/publicErrors';
 
 function scheduleFreshdeskBackfill(
   service: ReturnType<typeof createServiceClient>,
@@ -37,7 +38,8 @@ function scheduleFreshdeskBackfill(
       console.error('Freshdesk historical ticket backfill failed', {
         merchantId,
         connectionId,
-        message: err instanceof Error ? err.message : 'unknown',
+        category: safeConnectionErrorCode(err instanceof Error ? err.message : null)
+          ?? 'freshdesk_backfill_failed',
       });
     }
   });
@@ -57,9 +59,8 @@ async function GETHandler() {
   try {
     const connection = await getMerchantFreshdeskSupportConnection(service, ctx.merchantId);
     return NextResponse.json({ connection });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Failed to load Freshdesk connection';
-    return NextResponse.json({ error: message }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: 'Failed to load Freshdesk connection.', code: 'freshdesk_connection_load_failed' }, { status: 500 });
   }
 }
 
@@ -149,8 +150,7 @@ async function POSTHandler(req: NextRequest) {
     if (err instanceof Error && err.message === 'freshdesk_connection_already_exists') {
       return NextResponse.json({ error: 'Freshdesk connection already exists' }, { status: 409 });
     }
-    const message = err instanceof Error ? err.message : 'Failed to save Freshdesk connection';
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to save Freshdesk connection.', code: 'freshdesk_connection_save_failed' }, { status: 500 });
   }
 }
 

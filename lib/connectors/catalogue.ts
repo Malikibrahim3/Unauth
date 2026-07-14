@@ -1,6 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { listConnectors } from '@/lib/connectors/registry';
 import { TABLES } from '@/lib/supabase/tables';
+import { publicConnectionErrorMessage } from '@/lib/integrations/publicErrors';
+import { resolveConnectorCapabilities } from '@/lib/connectors/runtime';
 
 export type ConnectorCatalogueItem = {
   id: string;
@@ -16,7 +18,7 @@ export type ConnectorCatalogueItem = {
   lastError: string | null;
   importedRecords: number;
   scopes: string[];
-  capabilities: Array<{ id: string; level: string; support: string; scopes: string[]; description: string }>;
+  capabilities: Array<{ id: string; level: string; support: string; scopes: string[]; description: string; availability: string; availabilityReason: string }>;
   connectEnabled: boolean;
 };
 
@@ -28,23 +30,30 @@ type ConnectionRow = {
   last_successful_sync_at: string | null;
   last_error_message: string | null;
   last_error: string | null;
+  last_error_code: string | null;
   imported_record_count: number | null;
   granted_scopes: string[] | null;
+  writeback_enabled: boolean | null;
   updated_at: string;
 };
 
 const STATUS_RANK: Record<string, number> = {
-  connected: 7,
-  import_complete: 6,
-  importing: 5,
-  attention_required: 4,
-  error: 3,
+  connected: 10,
+  active: 10,
+  import_complete: 9,
+  syncing: 8,
+  importing: 8,
+  pending: 7,
+  degraded: 6,
+  attention_required: 6,
+  error: 5,
+  connection_error: 5,
   revoked: 2,
   disabled: 1,
   not_connected: 0,
 };
 
-function primaryConnection(rows: ConnectionRow[]): ConnectionRow | null {
+export function primaryConnection(rows: ConnectionRow[]): ConnectionRow | null {
   return [...rows].sort((left, right) => {
     const status = (STATUS_RANK[right.status] ?? -1) - (STATUS_RANK[left.status] ?? -1);
     if (status !== 0) return status;
@@ -55,7 +64,7 @@ function primaryConnection(rows: ConnectionRow[]): ConnectionRow | null {
 
 export async function loadConnectorCatalogue(client: SupabaseClient, merchantId: string): Promise<ConnectorCatalogueItem[]> {
   const { data, error } = await client.from(TABLES.MERCHANT_INTEGRATIONS)
-    .select('id,provider_id,status,provider_account_name,last_successful_sync_at,last_error_message,last_error,imported_record_count,granted_scopes,updated_at')
+    .select('id,provider_id,status,provider_account_name,last_successful_sync_at,last_error_code,last_error_message,last_error,imported_record_count,granted_scopes,writeback_enabled,updated_at')
     .eq('merchant_id', merchantId);
   if (error) throw new Error(`connector_catalogue_failed: ${error.message}`);
   const grouped = new Map<string, ConnectionRow[]>();
@@ -77,10 +86,14 @@ export async function loadConnectorCatalogue(client: SupabaseClient, merchantId:
       connectionCount: rows.filter((row) => !['not_connected', 'revoked', 'disabled'].includes(row.status)).length,
       account: primary?.provider_account_name ?? null,
       lastSuccessfulSyncAt: primary?.last_successful_sync_at ?? null,
-      lastError: primary?.last_error_message ?? primary?.last_error ?? null,
-      importedRecords: rows.reduce((sum, row) => sum + Number(row.imported_record_count ?? 0), 0),
-      scopes: [...new Set(rows.flatMap((row) => row.granted_scopes ?? []))],
-      capabilities: manifest.capabilities.map((capability) => ({ id: capability.id, level: capability.level, support: capability.support, scopes: capability.requiredScopes, description: capability.description })),
+      lastError: publicConnectionErrorMessage(primary?.last_error_code, primary?.last_error_message, primary?.last_error),
+      importedRecords: Number(primary?.imported_record_count ?? 0),
+      scopes: [...new Set(primary?.granted_scopes ?? [])],
+      capabilities: resolveConnectorCapabilities(manifest.capabilities, {
+        status: primary?.status ?? 'not_connected',
+        grantedScopes: primary?.granted_scopes ?? [],
+        writebackEnabled: primary?.writeback_enabled === true,
+      }).map((capability) => ({ id: capability.id, level: capability.level, support: capability.support, scopes: capability.requiredScopes, description: capability.description, availability: capability.availability, availabilityReason: capability.availabilityReason })),
       connectEnabled: manifest.launchVisible && stage !== 'planned',
     };
   });

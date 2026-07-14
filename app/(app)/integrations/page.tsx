@@ -104,9 +104,13 @@ export default async function IntegrationsPage() {
       ? liveHealth.shopify
       : item.id === "gorgias" && isHelpdesk
         ? liveHealth.gorgias
-        : null;
+        : item.id === "shipbob" || item.id === "ups" || item.id === "fedex"
+          ? liveHealth[item.id]
+          : null;
     if (!health) {
-      const liveCheckExpected = (item.id === "shopify" && isOrderSource) || (item.id === "gorgias" && isHelpdesk);
+      const liveCheckExpected = (item.id === "shopify" && isOrderSource)
+        || (item.id === "gorgias" && isHelpdesk)
+        || ((item.id === "shipbob" || item.id === "ups" || item.id === "fedex") && ACTIVE.has(item.status));
       return liveCheckExpected
         ? { ...item, status: "attention_required", lastError: "Live verification is unavailable. We will retry automatically." }
         : isOrderSource || isHelpdesk

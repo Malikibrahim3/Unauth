@@ -9,13 +9,14 @@ import {
 } from '@/lib/commerce/bigcommerce/oauthCookies';
 import { registerBigCommerceWebhooks } from '@/lib/commerce/bigcommerce/registerWebhooks';
 import { registerBigCommerceCollectorScript } from '@/lib/commerce/bigcommerce/collectorScript';
-import { resolveBigCommerceOAuthMerchantId } from '@/lib/commerce/bigcommerce/resolveOAuthMerchantId';
 import { getAppUrl } from '@/lib/utils/appUrl';
 import { logAction } from '@/lib/permissions/audit';
-import { PERMISSIONS, requirePermission, resolveCallerContext } from '@/lib/permissions';
+import { PERMISSIONS, requirePermissionForMerchant } from '@/lib/permissions';
+import { consumeOAuthConnectionTransaction } from '@/lib/integrations/oauthTransactions';
 import { getClientIp } from '@/lib/ratelimit';
 import { backfillBigCommerceOrders } from '@/lib/commerce/bigcommerce/backfill';
 import { TABLES } from '@/lib/supabase/tables';
+import { safeConnectionErrorCode } from '@/lib/integrations/publicErrors';
 
 const INTEGRATIONS_PATH = '/settings/integrations/bigcommerce';
 
@@ -30,7 +31,6 @@ function integrationsRedirect(params: Record<string, string>): NextResponse {
 
 function clearOAuthCookies(response: NextResponse): void {
   response.cookies.set('bigcommerce_oauth_state', '', clearBigCommerceOAuthCookieOptions());
-  response.cookies.set('bigcommerce_oauth_merchant_id', '', clearBigCommerceOAuthCookieOptions());
 }
 
 export async function GET(request: NextRequest) {
@@ -65,15 +65,32 @@ export async function GET(request: NextRequest) {
       return response;
     }
 
-    const { denied } = await requirePermission(serviceClient, user.id, PERMISSIONS.MANAGE_SETTINGS);
+    const appUrl = getAppUrl();
+    const redirectUri = `${appUrl.replace(/\/$/, '')}/api/bigcommerce/callback`;
+    let transaction;
+    try {
+      transaction = await consumeOAuthConnectionTransaction(serviceClient, {
+        state,
+        userId: user.id,
+        providerId: 'bigcommerce',
+        callbackUrl: redirectUri,
+      });
+    } catch {
+      const response = integrationsRedirect({ bigcommerce_error: 'invalid_or_replayed_state' });
+      clearOAuthCookies(response);
+      return response;
+    }
+    const { denied, ctx } = await requirePermissionForMerchant(
+      serviceClient,
+      user.id,
+      transaction.merchantId,
+      PERMISSIONS.MANAGE_SETTINGS,
+    );
     if (denied) {
       const response = integrationsRedirect({ bigcommerce_error: 'forbidden' });
       clearOAuthCookies(response);
       return response;
     }
-
-    const appUrl = getAppUrl();
-    const redirectUri = `${appUrl.replace(/\/$/, '')}/api/bigcommerce/callback`;
 
     const tokenExchange = await exchangeBigCommerceOAuthAccessToken({
       code,
@@ -87,17 +104,11 @@ export async function GET(request: NextRequest) {
       return response;
     }
 
-    const merchantId = await resolveBigCommerceOAuthMerchantId(
-      request,
-      serviceClient,
-      userClient,
-    );
-
     const persisted = await persistBigCommerceOAuthConnection(serviceClient, {
       storeHash,
       accessToken: tokenExchange.token.access_token,
       scope: tokenExchange.token.scope ?? null,
-      merchantId,
+      merchantId: transaction.merchantId,
     });
 
     if (!persisted.ok) {
@@ -108,19 +119,14 @@ export async function GET(request: NextRequest) {
       return response;
     }
 
-    if (user) {
-      const ctx = await resolveCallerContext(serviceClient, user.id);
-      if (ctx) {
-        logAction({
-          ctx,
-          action: 'connect_bigcommerce',
-          resourceType: 'commerce_store_connection',
-          resourceId: persisted.connectionId,
-          metadata: { store_key: storeHash },
-          ip: getClientIp(request.headers),
-        });
-      }
-    }
+    logAction({
+      ctx,
+      action: 'connect_bigcommerce',
+      resourceType: 'commerce_store_connection',
+      resourceId: persisted.connectionId,
+      metadata: { store_key: storeHash },
+      ip: getClientIp(request.headers),
+    });
 
     let webhookWarning = false;
     try {
@@ -130,10 +136,9 @@ export async function GET(request: NextRequest) {
       });
       if (webhookResult.failed.length > 0) {
         webhookWarning = true;
-        const summary = webhookResult.failed.map((f) => `${f.scope}: ${f.error}`).join('; ');
         await serviceClient
           .from(TABLES.MERCHANT_SHOPIFY_CONNECTIONS)
-          .update({ last_error: `webhook_register_partial: ${summary.slice(0, 500)}` } as never)
+          .update({ last_error: 'webhook_register_partial' } as never)
           .eq('merchant_id', persisted.merchantId)
           .eq('platform', 'bigcommerce')
           .eq('store_key', storeHash);
@@ -142,7 +147,8 @@ export async function GET(request: NextRequest) {
       webhookWarning = true;
       console.error('BigCommerce webhook registration failed', {
         storeHash,
-        message: webhookError instanceof Error ? webhookError.message : 'unknown',
+        category: safeConnectionErrorCode(webhookError instanceof Error ? webhookError.message : null)
+          ?? 'bigcommerce_webhook_registration_failed',
       });
     }
 
@@ -169,7 +175,8 @@ export async function GET(request: NextRequest) {
       collectorWarning = true;
       console.error('BigCommerce collector script registration failed', {
         storeHash,
-        message: collectorError instanceof Error ? collectorError.message : 'unknown',
+        category: safeConnectionErrorCode(collectorError instanceof Error ? collectorError.message : null)
+          ?? 'bigcommerce_collector_registration_failed',
       });
     }
 
@@ -186,7 +193,8 @@ export async function GET(request: NextRequest) {
         console.error('BigCommerce historical order backfill failed', {
           storeHash,
           merchantId: connectedMerchantId,
-          message: err instanceof Error ? err.message : 'unknown',
+          category: safeConnectionErrorCode(err instanceof Error ? err.message : null)
+            ?? 'bigcommerce_backfill_failed',
         });
       }
     });
@@ -203,7 +211,8 @@ export async function GET(request: NextRequest) {
     return response;
   } catch (error) {
     console.error('BigCommerce OAuth callback failed', {
-      message: error instanceof Error ? error.message : String(error),
+      category: safeConnectionErrorCode(error instanceof Error ? error.message : null)
+        ?? 'bigcommerce_callback_failed',
       storeHash,
     });
     const response = integrationsRedirect({ bigcommerce_error: 'callback_failed' });

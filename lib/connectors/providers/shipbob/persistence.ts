@@ -15,6 +15,11 @@ function number(value: unknown): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function safeSyncErrorCode(value: string | null | undefined, fallback = 'sync_failed'): string {
+  const category = value?.split(':', 1)[0].replace(/[^a-z0-9_-]/gi, '_').slice(0, 80);
+  return category || fallback;
+}
+
 /**
  * source_orders.financial_status / fulfillment_state are strict Postgres
  * enums. ShipBob order statuses are operational (Processing, Fulfilled,
@@ -51,7 +56,11 @@ function shipBobFulfillmentState(raw: Record<string, unknown>): string {
 
 async function findOrderId(client: SupabaseClient, job: JobContext, externalId: string | null) {
   if (!externalId) return null;
-  const { data } = await client.from('source_orders').select('id').eq('merchant_id', job.merchantId).eq('source', 'shipbob').eq('external_id', externalId).maybeSingle();
+  let query = client.from('source_orders').select('id').eq('merchant_id', job.merchantId).eq('source', 'shipbob').eq('external_id', externalId);
+  query = job.sourceAccountId
+    ? query.eq('source_account_id', job.sourceAccountId)
+    : query.is('source_account_id', null);
+  const { data } = await query.maybeSingle();
   return data?.id ?? null;
 }
 
@@ -87,6 +96,7 @@ export async function persistShipBobCanonicalRecord(
     const { error } = await client.from('source_orders').upsert({
       merchant_id: job.merchantId,
       source: 'shipbob',
+      source_account_id: job.sourceAccountId,
       external_id: record.externalId,
       order_number: text(raw.reference_id) ?? text(raw.order_number),
       financial_status: shipBobFinancialStatus(raw),
@@ -100,13 +110,17 @@ export async function persistShipBobCanonicalRecord(
       cancel_reason: text(raw.cancel_reason),
       raw_payload_hash: sourceRecordId,
       updated_at: new Date().toISOString(),
-    }, { onConflict: 'merchant_id,source,external_id' });
+    }, { onConflict: 'merchant_id,source,connection_id,source_account_id,external_id' });
     if (error) throw new Error(`shipbob_source_order_persist_failed:${error.message}`);
     return;
   }
 
   const order = raw.order && typeof raw.order === 'object' ? raw.order as Record<string, unknown> : null;
-  const orderExternalId = text(raw.orderExternalId) ?? text(order?.id ?? order?.order_id);
+  // source_orders.external_id stores ShipBob's internal order id. The mapped
+  // orderExternalId is the merchant reference used for cross-provider
+  // reconciliation, so prefer the embedded provider id for canonical parent
+  // linkage and retain the reference only as a webhook/legacy fallback.
+  const orderExternalId = text(order?.id ?? order?.order_id) ?? text(raw.orderExternalId);
   const sourceOrderId = await findOrderId(client, job, orderExternalId);
 
   if (record.sourceEntityType === 'fulfilment') {
@@ -224,8 +238,8 @@ export async function updateShipBobConnectionAfterSync(
   // failed | dead_letter | unsupported — keep the connection but record why the
   // sync failed so the UI can show a merchant-readable failure state.
   const code = state.status === 'unsupported' ? 'unsupported'
-    : state.status === 'dead_letter' ? `dead_letter:${state.lastErrorCode ?? 'unknown'}`
-    : state.lastErrorCode ?? 'sync_failed';
+    : state.status === 'dead_letter' ? `dead_letter:${safeSyncErrorCode(state.lastErrorCode, 'unknown')}`
+    : safeSyncErrorCode(state.lastErrorCode);
   const { error } = await client
     .from('merchant_integrations')
     .update({

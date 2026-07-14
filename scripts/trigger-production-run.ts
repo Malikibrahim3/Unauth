@@ -82,11 +82,11 @@ async function main() {
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const merchantId = process.env.PUBLIC_INTAKE_MERCHANT_ID || process.env.BENCH_MERCHANT_ID;
+  const merchantId = process.env.BENCH_MERCHANT_ID;
   const appOrigin = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
   if (!url || !key) throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
-  if (!merchantId) throw new Error('Missing PUBLIC_INTAKE_MERCHANT_ID or BENCH_MERCHANT_ID');
+  if (!merchantId) throw new Error('Missing BENCH_MERCHANT_ID');
 
   const fileName = path.basename(csvPath);
   if (dryRun && !resumeJobId) {

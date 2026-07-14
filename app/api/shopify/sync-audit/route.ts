@@ -5,6 +5,7 @@ import { decryptBigCommerceOAuthCredentials } from '@/lib/commerce/credentialCry
 import { backfillShopifyMerchantIdentities } from '@/lib/shopify/backfill';
 import { getShopifyConnectionStatus } from '@/lib/shopify/connectionStatus';
 import { shopifyDebugLog } from '@/lib/shopify/debugLog';
+import { safeConnectionErrorCode } from '@/lib/integrations/publicErrors';
 
 /** Allow large Shopify backfills on Vercel (same as CSV processing routes). */
 export const maxDuration = 300;
@@ -39,7 +40,7 @@ export async function POST() {
     .maybeSingle();
 
   if (connectionError) {
-    return NextResponse.json({ error: `Shopify connection lookup failed: ${connectionError.message}` }, { status: 500 });
+    return NextResponse.json({ error: 'Shopify connection lookup failed.', code: 'shopify_connection_lookup_failed' }, { status: 500 });
   }
   if (!storeConnection?.credentials_encrypted) {
     return NextResponse.json({ error: 'Shopify credentials are missing. Reconnect Shopify.' }, { status: 400 });
@@ -73,7 +74,8 @@ export async function POST() {
       ...result,
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'shopify_order_sync_failed';
-    return NextResponse.json({ error: message }, { status: 500 });
+    const code = safeConnectionErrorCode(err instanceof Error ? err.message : null)
+      ?? 'shopify_order_sync_failed';
+    return NextResponse.json({ error: 'Shopify order sync failed.', code }, { status: 500 });
   }
 }

@@ -94,7 +94,7 @@ export async function POST(request: Request) {
       payment_processor_selection: body.processorSelection,
     },
   });
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: 'Could not save payment processor selection.', code: 'processor_selection_save_failed' }, { status: 500 });
 
   return NextResponse.json({ ok: true });
 }

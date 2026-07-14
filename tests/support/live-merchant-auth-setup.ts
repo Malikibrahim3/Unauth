@@ -5,8 +5,6 @@ import fs from 'fs';
 import path from 'path';
 import { TABLES } from '../../lib/supabase/tables';
 
-const LIVE_MERCHANT_EMAIL = 'simeonmurray123@gmail.com';
-const LIVE_MERCHANT_ID = 'af070af9-df1a-46ba-89f8-29409926ef61';
 const AUTH_DIR = path.join(__dirname, '.auth');
 const STORAGE_PATH = path.join(AUTH_DIR, 'live-merchant.json');
 
@@ -39,29 +37,31 @@ function loadEnvLocal(): void {
 export default async function liveMerchantAuthSetup(_config: FullConfig): Promise<void> {
   loadEnvLocal();
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const liveMerchantId = process.env.E2E_MERCHANT_ID?.trim();
+  const liveMerchantEmail = process.env.E2E_MERCHANT_EMAIL?.trim();
   const supabaseAnonKey =
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error('Missing Supabase URL or anon key for walkthrough auth');
+  if (!supabaseUrl || !supabaseAnonKey || !liveMerchantId || !liveMerchantEmail) {
+    throw new Error('Supabase public configuration, E2E_MERCHANT_ID, and E2E_MERCHANT_EMAIL are required');
   }
 
   const admin = createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
     auth: { persistSession: false },
   });
 
-  if (process.env.WALKTHROUGH_NO_RESET !== '1') {
+  if (process.env.WALKTHROUGH_RESET_GORGIAS === '1') {
     await admin
       .from(TABLES.SUPPORT_PROVIDER_CONNECTIONS)
       .delete()
-      .eq('merchant_id', LIVE_MERCHANT_ID)
+      .eq('merchant_id', liveMerchantId)
       .eq('provider', 'gorgias');
   }
 
   const { data: link, error: linkError } = await admin.auth.admin.generateLink({
     type: 'magiclink',
-    email: LIVE_MERCHANT_EMAIL,
+    email: liveMerchantEmail,
   });
 
   if (linkError || !link.properties?.hashed_token) {

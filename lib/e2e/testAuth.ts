@@ -3,10 +3,13 @@
  * Never enabled on production deploys.
  */
 
-/** Canonical E2E Shopify + Gorgias merchant used by acceptance scripts. */
-export const E2E_MERCHANT_ID = 'af070af9-df1a-46ba-89f8-29409926ef61';
-
-const ALLOWED_MERCHANT_IDS = new Set([E2E_MERCHANT_ID]);
+function allowedMerchantIds(): Set<string> {
+  const configured = [
+    process.env.E2E_MERCHANT_ID,
+    ...(process.env.E2E_ALLOWED_MERCHANT_IDS?.split(',') ?? []),
+  ].map((value) => value?.trim()).filter((value): value is string => Boolean(value));
+  return new Set(configured);
+}
 
 export function isE2eTestAuthEnabled(): boolean {
   // This route mints a full OWNER session from a single static secret. It must
@@ -27,7 +30,7 @@ export function validateE2eAuthSecret(secret: string | null | undefined): boolea
 
 export function validateE2eMerchantId(merchantId: string | null | undefined): boolean {
   if (!merchantId?.trim()) return false;
-  return ALLOWED_MERCHANT_IDS.has(merchantId.trim());
+  return allowedMerchantIds().has(merchantId.trim());
 }
 
 export function validateE2eAuthRequest(input: {

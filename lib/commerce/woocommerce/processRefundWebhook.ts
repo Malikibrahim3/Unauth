@@ -54,6 +54,8 @@ export async function processWooCommerceRefundWebhook(input: {
     .select('id, merchant_id')
     .eq('platform', 'woocommerce')
     .eq('store_key', storeKey)
+    .eq('status', 'active')
+    .is('uninstalled_at', null)
     .maybeSingle();
   if (connectionError) throw new Error(`store_connection_lookup_failed: ${connectionError.message}`);
   if (!connection) {
@@ -66,6 +68,7 @@ export async function processWooCommerceRefundWebhook(input: {
     .select('id, total_price')
     .eq('merchant_id', connection.merchant_id)
     .eq('source', 'woocommerce')
+    .eq('connection_id', connection.id)
     .eq('external_id', orderExternalId)
     .maybeSingle();
   if (orderError) throw new Error(`source_order_lookup_failed: ${orderError.message}`);

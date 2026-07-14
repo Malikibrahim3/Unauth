@@ -8,12 +8,13 @@ loadEnv({ path: '.env.local' });
 import { chromium } from 'playwright';
 import { createClient } from '@supabase/supabase-js';
 import { evaluateClaimDecision } from '@/lib/claims/decision/evaluate';
+import { requiredControlledAccountEnv } from '@/scripts/e2e/controlledAccountEnv';
 
-const MERCHANT_ID = 'af070af9-df1a-46ba-89f8-29409926ef61';
-const CASE_ID = '361dd765-8451-428d-9562-d490b1e13c68';
-const TICKET_ID = '67818375';
-const ORDER_NUMBER = '1013';
-const CUSTOMER_EMAIL = 'simsorsno3@icloud.com';
+const MERCHANT_ID = requiredControlledAccountEnv('E2E_MERCHANT_ID');
+const CASE_ID = requiredControlledAccountEnv('E2E_CASE_ID');
+const TICKET_ID = requiredControlledAccountEnv('E2E_TICKET_ID');
+const ORDER_NUMBER = requiredControlledAccountEnv('E2E_ORDER_NUMBER');
+const CUSTOMER_EMAIL = requiredControlledAccountEnv('E2E_CUSTOMER_EMAIL');
 const APP = (process.env.E2E_APP_URL ?? 'http://localhost:3000').replace(/\/$/, '');
 const E2E_AUTH_SECRET = process.env.E2E_AUTH_SECRET ?? '';
 

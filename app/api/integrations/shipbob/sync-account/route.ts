@@ -9,7 +9,6 @@
  */
 import { NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
-import { ensureMerchantContextForUser } from '@/lib/account/ensureMerchantContext';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { runShipBobAccountSync } from '@/lib/integrations/providers/shipbobSync';
 import { recordShipBobAudit } from '@/lib/integrations/providers/shipbobAudit';
@@ -23,17 +22,17 @@ export async function POST() {
   const serviceClient = createServiceClient();
   const { data: { user } } = await userClient.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const { denied } = await requirePermission(serviceClient, user.id, PERMISSIONS.MANAGE_SETTINGS);
+  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.MANAGE_SETTINGS);
   if (denied) return denied;
-  const context = await ensureMerchantContextForUser(serviceClient, user);
-  if (!context?.merchantId) return NextResponse.json({ error: 'Merchant context missing.' }, { status: 400 });
-  const scopedClient = createScopedClient(context.merchantId, serviceClient);
+  const scopedClient = createScopedClient(ctx.merchantId, serviceClient);
 
   const { data: connection, error } = await serviceClient
     .from('merchant_integrations')
     .select('id,status,environment')
-    .eq('merchant_id', context.merchantId)
+    .eq('merchant_id', ctx.merchantId)
     .eq('provider_id', 'shipbob')
+    .in('status', ['pending', 'connected', 'degraded', 'syncing'])
+    .limit(2)
     .maybeSingle();
   if (error) return NextResponse.json({ error: 'Connection lookup failed.' }, { status: 500 });
   if (!connection || connection.status === 'not_connected' || connection.status === 'revoked') {
@@ -48,9 +47,9 @@ export async function POST() {
 
   try {
     const environment = connection.environment === 'sandbox' ? 'sandbox' : 'production';
-    await recordShipBobAudit(serviceClient, { merchantId: context.merchantId, actorUserId: user.id, connectionId: connection.id, environment, action: 'shipbob_manual_sync_requested', status: 'started' });
+    await recordShipBobAudit(serviceClient, { merchantId: ctx.merchantId, actorUserId: user.id, connectionId: connection.id, environment, action: 'shipbob_manual_sync_requested', status: 'started' });
     const result = await runShipBobAccountSync(serviceClient, {
-      merchantId: context.merchantId,
+      merchantId: ctx.merchantId,
       connectionId: connection.id,
       sourceAccountId: account?.id ?? null,
     });
@@ -71,7 +70,7 @@ export async function POST() {
       });
     }
     await recordShipBobAudit(serviceClient, {
-      merchantId: context.merchantId, actorUserId: user.id, connectionId: connection.id, environment,
+      merchantId: ctx.merchantId, actorUserId: user.id, connectionId: connection.id, environment,
       action: result.state.status === 'completed' ? 'shipbob_manual_sync_completed' : 'shipbob_manual_sync_failed',
       status: result.state.status === 'completed' ? 'completed' : 'failed',
       metadata: { jobId: result.jobId, recordCount: updated?.imported_record_count ?? 0, failureCategory: result.state.lastErrorCode ?? undefined },
@@ -85,8 +84,8 @@ export async function POST() {
       lastSyncAt: updated?.last_sync_completed_at ?? null,
     }, { status: result.state.status === 'completed' || result.state.status === 'running' ? 200 : 502 });
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'shipbob_account_sync_failed';
-    console.error('ShipBob account sync failed', { message });
-    return NextResponse.json({ error: 'ShipBob account sync failed.', code: message.slice(0, 80) }, { status: 500 });
+    const category = err instanceof Error ? err.message.split(':', 1)[0] : 'shipbob_account_sync_failed';
+    console.error('ShipBob account sync failed', { category });
+    return NextResponse.json({ error: 'ShipBob account sync failed.', code: 'shipbob_account_sync_failed' }, { status: 500 });
   }
 }

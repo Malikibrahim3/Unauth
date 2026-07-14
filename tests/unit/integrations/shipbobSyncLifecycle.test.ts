@@ -191,8 +191,9 @@ describe('updateShipBobConnectionAfterSync', () => {
       { status: 'failed', cursor: null, attempts: 2, maxAttempts: 8, nextAttemptAt: new Date().toISOString(), lastErrorCode: 'shipbob_auth_failed:401' },
     );
     const row = tables.merchant_integrations.rows[0];
-    expect(row.last_error_code).toBe('shipbob_auth_failed:401');
-    expect(row.last_error_message).toContain('shipbob_auth_failed:401');
+    expect(row.last_error_code).toBe('shipbob_auth_failed');
+    expect(row.last_error_message).toContain('shipbob_auth_failed');
+    expect(row.last_error_message).not.toContain('401');
     expect(row.status).toBe('connected'); // connection is kept; sync failed
   });
 });
@@ -236,6 +237,48 @@ describe('persistShipBobCanonicalRecord order enum mapping', () => {
       ['unknown', 'unfulfilled'],
       ['cancelled', 'unknown'],
     ]);
+  });
+
+  it('links a fulfilment through the ShipBob order id instead of the merchant reference', async () => {
+    const lookupFilters: Array<[string, unknown]> = [];
+    const fulfilmentUpserts: Record<string, unknown>[] = [];
+    const orderQuery: Record<string, unknown> = {};
+    Object.assign(orderQuery, {
+      select: () => orderQuery,
+      eq: (column: string, value: unknown) => {
+        lookupFilters.push([column, value]);
+        return orderQuery;
+      },
+      maybeSingle: async () => ({ data: { id: 'source-order-1' }, error: null }),
+    });
+    const client = {
+      from: (table: string) => table === 'source_orders'
+        ? orderQuery
+        : {
+            upsert: async (payload: Record<string, unknown>) => {
+              if (table === 'source_fulfillments') fulfilmentUpserts.push(payload);
+              return { error: null };
+            },
+          },
+    } as never;
+
+    await persistShipBobCanonicalRecord(client, jobCtx, {
+      canonicalEntityType: 'fulfilment',
+      sourceEntityType: 'fulfilment',
+      externalId: 'shipment-1',
+      data: {
+        externalId: 'shipment-1',
+        orderExternalId: 'MERCHANT-ORDER-1001',
+        order: { id: 12345, reference_id: 'MERCHANT-ORDER-1001' },
+      },
+    }, 'source-record-1');
+
+    expect(lookupFilters).toContainEqual(['external_id', '12345']);
+    expect(fulfilmentUpserts[0]).toMatchObject({
+      merchant_id: 'm-1',
+      source_order_id: 'source-order-1',
+      external_id: 'shipment-1',
+    });
   });
 });
 

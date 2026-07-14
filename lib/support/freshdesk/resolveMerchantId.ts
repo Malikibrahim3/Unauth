@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { env } from '@/lib/utils/env';
+import { isLocalSupportFallbackRuntime } from '@/lib/support/devFallback';
 
 export const FRESHDESK_MERCHANT_ID_HEADER = 'x-unauth-merchant-id';
 
@@ -22,13 +23,7 @@ export function isFreshdeskDevMerchantFallbackAllowed(
 ): boolean {
   const nodeEnv = options.nodeEnv ?? process.env.NODE_ENV;
   const vercelEnv = options.vercelEnv ?? env.VERCEL_ENV;
-  return (
-    options.allowEnvMerchantInProduction === true ||
-    env.FRESHDESK_SUPPORT_ALLOW_ENV_MERCHANT === 'true' ||
-    nodeEnv === 'development' ||
-    nodeEnv === 'test' ||
-    vercelEnv === 'development'
-  );
+  return isLocalSupportFallbackRuntime({ nodeEnv, vercelEnv });
 }
 
 export function isFreshdeskProductionIngestMode(
@@ -63,7 +58,7 @@ export function resolveFreshdeskDevMerchantFallback(
   const testMerchantId =
     options.testMerchantId !== undefined
       ? options.testMerchantId
-      : env.FRESHDESK_SUPPORT_TEST_MERCHANT_ID ?? null;
+      : null;
 
   if (!testMerchantId) {
     return { error: 'missing' };

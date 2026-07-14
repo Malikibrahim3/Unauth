@@ -2,13 +2,13 @@ import { requestedShipBobEnvironment, shipBobEndpoints, shipBobEnvironmentFromCr
 import { safeShipBobAuditMetadata } from '@/lib/integrations/providers/shipbobAudit';
 
 describe('ShipBob per-connection environment', () => {
-  it('defaults normal production onboarding to production regardless of the legacy global default', () => {
+  it('defaults to production when the merchant does not request an environment', () => {
     expect(requestedShipBobEnvironment({ requested: null, nodeEnv: 'production' })).toBe('production');
-    expect(requestedShipBobEnvironment({ requested: 'sandbox', nodeEnv: 'production' })).toBe('production');
   });
 
-  it('allows sandbox only outside production or in authorised test mode', () => {
+  it('preserves a merchant connection sandbox choice independently of deployment environment', () => {
     expect(requestedShipBobEnvironment({ requested: 'sandbox', nodeEnv: 'development' })).toBe('sandbox');
+    expect(requestedShipBobEnvironment({ requested: 'sandbox', nodeEnv: 'production' })).toBe('sandbox');
     expect(requestedShipBobEnvironment({ requested: 'sandbox', nodeEnv: 'production', testMode: true })).toBe('sandbox');
   });
 
@@ -28,5 +28,13 @@ describe('ShipBob audit metadata', () => {
   it('excludes all secret-bearing fields', () => {
     expect(safeShipBobAuditMetadata({ accessToken: 'a', refresh_token: 'r', clientSecret: 'c', authorizationCode: 'x', webhookSecret: 'w', recordCount: 4, failureCategory: 'rate_limit' }))
       .toEqual({ recordCount: 4, failureCategory: 'rate_limit' });
+  });
+
+  it('uses an allowlist and never preserves free-form failure detail', () => {
+    expect(safeShipBobAuditMetadata({
+      note: 'token=do-not-store',
+      failureCategory: 'Provider said token=do-not-store',
+      recordCount: 2,
+    })).toEqual({ failureCategory: 'integration_error', recordCount: 2 });
   });
 });

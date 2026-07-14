@@ -77,7 +77,7 @@ function makeFreshdeskWebhookSupabase(options?: {
                   column === 'merchant_id' && value === MERCHANT_ID
                     ? {
                         merchant_id: MERCHANT_ID,
-                        shop_domain: 'unauth-test.myshopify.com',
+                        shop_domain: 'merchant-a.myshopify.com',
                         active: true,
                       }
                     : null,
@@ -89,7 +89,7 @@ function makeFreshdeskWebhookSupabase(options?: {
                     data: [
                       {
                         merchant_id: MERCHANT_ID,
-                        shop_domain: 'unauth-test.myshopify.com',
+                        shop_domain: 'merchant-a.myshopify.com',
                         active: true,
                       },
                     ],

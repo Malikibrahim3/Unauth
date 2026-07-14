@@ -6,8 +6,9 @@ const uniq = (arr: Array<string | null | undefined>) => Array.from(new Set(arr.f
 const hashAddress = (v: string | null) => (v ? createHash('sha256').update(v.trim().toLowerCase(), 'utf8').digest('hex') : null);
 
 async function main() {
-  const shopDomain = process.argv[2] || 'unauth-test.myshopify.com';
-  const merchantId = process.argv[3] || 'af070af9-df1a-46ba-89f8-29409926ef61';
+  const shopDomain = process.argv[2]?.trim();
+  const merchantId = process.argv[3]?.trim() ?? process.env.E2E_MERCHANT_ID?.trim();
+  if (!shopDomain || !merchantId) throw new Error('Usage: backfill-customer-profile-identities <shop-domain> <merchant-id>');
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) throw new Error('Missing env');

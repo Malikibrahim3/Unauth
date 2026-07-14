@@ -46,6 +46,13 @@ export type SyncJobDbPatch = {
   completed_at: string | null;
 };
 
+function safeErrorCode(value: string | null | undefined, fallback = 'worker_job_failed'): string {
+  const category = value?.split(':', 1)[0]
+    .replace(/[^a-z0-9_-]/gi, '_')
+    .slice(0, 80);
+  return category || fallback;
+}
+
 /** Map the engine's rich state onto the sync_jobs enum + fields. */
 export function mapStateToPatch(state: SyncJobState, continuation: boolean): SyncJobDbPatch {
   if (state.status === 'completed') {
@@ -66,8 +73,8 @@ export function mapStateToPatch(state: SyncJobState, continuation: boolean): Syn
   }
   // failed | dead_letter | unsupported all map to the enum's 'failed'.
   const code = state.status === 'unsupported' ? 'unsupported'
-    : state.status === 'dead_letter' ? `dead_letter:${state.lastErrorCode ?? 'unknown'}`
-    : state.lastErrorCode;
+    : state.status === 'dead_letter' ? `dead_letter:${safeErrorCode(state.lastErrorCode, 'unknown')}`
+    : safeErrorCode(state.lastErrorCode);
   return { status: 'failed', cursor: state.cursor, attempts: state.attempts, next_attempt_at: state.nextAttemptAt, last_error_code: code, processed_rows: state.processedRecords ?? 0, failed_rows: state.failedRecords ?? 0, completed_at: null };
 }
 
@@ -122,7 +129,10 @@ export async function runSyncJob(
 
   const continuation = state.status === 'running'; // budget hit with more pages
   const patch = mapStateToPatch(state, continuation);
-  const { error } = await client.from(TABLES.PROCESSING_JOBS).update(patch).eq('id', job.id);
+  const { error } = await client.from(TABLES.PROCESSING_JOBS)
+    .update(patch)
+    .eq('id', job.id)
+    .eq('merchant_id', job.merchant_id);
   if (error) throw new Error(`sync_job_persist_failed: ${error.message}`);
   if (job.source === 'shipbob') {
     // Reflect the run onto the connection row so the Integration Centre shows
@@ -152,6 +162,7 @@ export async function runSyncJob(
 async function resolveJobCredentials(client: SupabaseClient, job: SyncJobRow) {
   if (job.source === 'shipbob' && env.SHIPBOB_OAUTH_CLIENT_ID && env.SHIPBOB_OAUTH_CLIENT_SECRET) {
     const credentials = await refreshShipBobCredentialsIfNeeded(client, job.merchant_id, {
+      connectionId: job.connection_id!,
       clientId: env.SHIPBOB_OAUTH_CLIENT_ID,
       clientSecret: env.SHIPBOB_OAUTH_CLIENT_SECRET,
     });
@@ -161,7 +172,7 @@ async function resolveJobCredentials(client: SupabaseClient, job: SyncJobRow) {
     if (storedEnvironment !== credentialEnvironment) throw new Error('shipbob_connection_environment_mismatch');
     return { ...credentials, sandbox: storedEnvironment === 'sandbox', environment: storedEnvironment };
   }
-  return getIntegrationCredential(client, job.merchant_id, job.source ?? '');
+  return getIntegrationCredential(client, job.merchant_id, job.source ?? '', { connectionId: job.connection_id });
 }
 
 function defaultPersistRecord(client: SupabaseClient, job: SyncJobRow) {
@@ -216,12 +227,25 @@ export async function runDueSyncJobs(
     if (!adapter) {
       await client.from(TABLES.PROCESSING_JOBS)
         .update({ status: 'failed', last_error_code: 'connector_not_registered', next_attempt_at: null })
-        .eq('id', job.id);
+        .eq('id', job.id)
+        .eq('merchant_id', job.merchant_id);
       results.push({ jobId: job.id, status: 'connector_not_registered' });
       continue;
     }
-    const state = await runSyncJob(client, adapter, job);
-    results.push({ jobId: job.id, status: state.status });
+    try {
+      const state = await runSyncJob(client, adapter, job);
+      results.push({ jobId: job.id, status: state.status });
+    } catch (jobError) {
+      const safeCode = jobError instanceof Error
+        ? safeErrorCode(jobError.message)
+        : 'worker_job_failed';
+      await client.from(TABLES.PROCESSING_JOBS).update({
+        status: 'failed',
+        last_error_code: safeCode || 'worker_job_failed',
+        next_attempt_at: new Date(Date.now() + 60_000).toISOString(),
+      }).eq('id', job.id).eq('merchant_id', job.merchant_id);
+      results.push({ jobId: job.id, status: 'failed' });
+    }
   }
   return results;
 }

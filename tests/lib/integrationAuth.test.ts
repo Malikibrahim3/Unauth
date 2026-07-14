@@ -5,7 +5,7 @@ describe('Shopify integration connection selection', () => {
     const selected = pickLatestShopifyConnection([
       {
         platform: 'shopify',
-        store_key: 'simeon-murray-store.myshopify.com',
+        store_key: 'merchant-b.myshopify.com',
         status: 'revoked',
         last_sync_at: null,
         last_error: null,
@@ -13,7 +13,7 @@ describe('Shopify integration connection selection', () => {
       },
       {
         platform: 'shopify',
-        store_key: 'unauth-test.myshopify.com',
+        store_key: 'merchant-a.myshopify.com',
         status: 'active',
         last_sync_at: '2026-06-20T23:42:48.677Z',
         last_error: null,
@@ -22,7 +22,7 @@ describe('Shopify integration connection selection', () => {
     ]);
 
     expect(selected).toMatchObject({
-      store_key: 'unauth-test.myshopify.com',
+      store_key: 'merchant-a.myshopify.com',
       status: 'active',
     });
   });

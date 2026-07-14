@@ -9,7 +9,7 @@ export async function processBigCommerceAppUninstalled(
   const now = new Date().toISOString();
   const { data: connection } = await supabase
     .from('store_connections')
-    .select('credentials_encrypted, collector_metadata')
+    .select('id, merchant_id, credentials_encrypted, collector_metadata')
     .eq('platform', 'bigcommerce')
     .eq('store_key', storeHash)
     .maybeSingle();
@@ -26,7 +26,7 @@ export async function processBigCommerceAppUninstalled(
     } catch (error) {
       console.error('BigCommerce collector script cleanup failed', {
         storeHash,
-        message: error instanceof Error ? error.message : 'unknown',
+        category: error instanceof Error ? error.message.split(':', 1)[0] : 'unknown',
       });
     }
   }
@@ -38,7 +38,18 @@ export async function processBigCommerceAppUninstalled(
       uninstalled_at: now,
       updated_at: now,
     })
-    .eq('platform', 'bigcommerce')
-    .eq('store_key', storeHash);
+    .eq('id', connection?.id ?? '')
+    .eq('merchant_id', connection?.merchant_id ?? '');
   if (error) throw new Error(`store_connection_uninstall_failed: ${error.message}`);
+  if (connection) {
+    const { error: canonicalError } = await supabase.from('merchant_integrations').update({
+      status: 'revoked',
+      disconnected_at: now,
+      webhook_status: 'missing',
+      updated_at: now,
+    }).eq('merchant_id', connection.merchant_id)
+      .eq('provider_id', 'bigcommerce')
+      .eq('provider_account_id', storeHash);
+    if (canonicalError) throw new Error(`canonical_connection_uninstall_failed:${canonicalError.message}`);
+  }
 }
