@@ -153,7 +153,7 @@ async function handleCallback(request: NextRequest) {
       });
       const selectionUrl = new URL('/integrations/shipbob/select', getAppUrl());
       selectionUrl.searchParams.set('selection', selectionId);
-      const response = NextResponse.redirect(selectionUrl);
+      const response = NextResponse.redirect(selectionUrl, 303);
       response.cookies.set(shipBobOAuthCookie, '', clearShipBobOAuthCookieOptions());
       return response;
     }

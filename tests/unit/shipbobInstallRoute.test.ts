@@ -30,6 +30,7 @@ describe('ShipBob form-post callback', () => {
 
   it('converts the provider form POST into a browser GET redirect', () => {
     expect(source).toContain('NextResponse.redirect(url, 303)');
+    expect(source).toContain('NextResponse.redirect(selectionUrl, 303)');
   });
 
   it('still checks the initiating user permission for the transaction merchant', () => {
