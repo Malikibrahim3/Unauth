@@ -90,7 +90,7 @@ export default function CustomersTableClient({
       align: "right" as const,
       render: (p: CustomerRow) => (
         <div className="text-right">
-          <div className="num font-semibold" style={{ fontFamily: "var(--font-mono)" }}>{p.total_orders}</div>
+          <div className="num font-semibold">{p.total_orders}</div>
           <div className="mt-0.5 text-[11px] text-[var(--text-tertiary)]">completed in store</div>
         </div>
       ),
@@ -101,7 +101,7 @@ export default function CustomersTableClient({
       align: "right" as const,
       render: (p: CustomerRow) => (
         <div className="text-right">
-          <div className="num font-semibold" style={{ fontFamily: "var(--font-mono)" }}>
+          <div className="num font-semibold">
             {p.has_mixed_currency
               ? "Mixed currencies"
               : p.total_spent_currency && p.total_spent > 0
@@ -124,10 +124,12 @@ export default function CustomersTableClient({
         <div className="flex flex-col items-end gap-1">
           <span className="inline-flex items-center gap-1.5">
             <OpenCasesBadge count={p.payout_cases_open} />
-            <span className="num font-semibold" style={{ fontFamily: "var(--font-mono)" }}>{p.payout_cases_total}</span>
+            <span className="num font-semibold">{p.payout_cases_total}</span>
           </span>
           <span className="text-[11px] text-[var(--text-tertiary)]">
-            {p.total_orders > 0 ? `${Math.round((p.payout_cases_total / p.total_orders) * 100)}% of orders` : "No order baseline"}
+            {p.total_orders > 0
+              ? `${p.payout_cases_total} ${p.payout_cases_total === 1 ? "case" : "cases"} across ${p.total_orders} ${p.total_orders === 1 ? "order" : "orders"}`
+              : "No order baseline"}
           </span>
         </div>
       ),

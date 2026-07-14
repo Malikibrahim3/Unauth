@@ -131,7 +131,7 @@ export function CustomersOverviewPageView({
           action={
             <div className="flex items-center gap-4">
               <Link href={pageActions.primary.href} className="text-xs font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
-                {pageActions.primary.label} →
+                {pageActions.primary.label}
               </Link>
             </div>
           }
@@ -142,7 +142,7 @@ export function CustomersOverviewPageView({
           description="No customers meet the filters you've applied. Adjust or clear them to see more."
           action={
             <Link href="/customers" className="text-xs font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
-              Clear all filters →
+              Clear all filters
             </Link>
           }
         />

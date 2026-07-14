@@ -91,7 +91,7 @@ export function CustomerProfilePageHero({
         </PanelCard>
       ) : null}
       <header className="mb-6">
-        <Link href="/customers" className="text-xs font-semibold text-[var(--accent)]">← Customer directory</Link>
+        <Link href="/customers" className="text-xs font-semibold text-[var(--accent)]">Customer directory</Link>
         <PanelCard variant="app" className="mt-3 overflow-hidden p-0 shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-5 border-b border-[var(--border-muted)] bg-[var(--surface-sunken)] p-5 sm:p-6">
             <div className="flex min-w-0 items-center gap-4">
@@ -107,7 +107,7 @@ export function CustomerProfilePageHero({
                 <p className="mt-2 flex items-center gap-1.5 text-xs text-[var(--text-tertiary)]"><CalendarDays className="h-3.5 w-3.5" aria-hidden="true" /> Customer since {formatDateAbsolute(profile.first_seen)} · Last active {formatDateAbsolute(profile.last_seen)}</p>
               </div>
             </div>
-            {!viewToken ? <Link href="#cases" className="rounded-md bg-[var(--accent)] px-3.5 py-2 text-sm font-semibold text-white shadow-sm">{openClaimCount > 0 ? 'Review open cases' : 'View case history'}</Link> : null}
+            {!viewToken ? <Link href="#cases" className="rounded-md bg-[var(--accent)] px-3.5 py-2 text-sm font-semibold text-[var(--accent-fg-on-500)]">{openClaimCount > 0 ? 'Review open cases' : 'View case history'}</Link> : null}
           </div>
 
           <div className="grid grid-cols-2 gap-px bg-[var(--border-muted)] lg:grid-cols-4">

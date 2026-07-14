@@ -21,6 +21,7 @@ import type { IdentityGradeBadge } from "@/lib/customers/identityNetwork";
 import { CustomersOverviewPageView } from "@/app/(app)/customers/CustomersOverviewPageView";
 import { resolveCustomerActions } from "@/app/(app)/customers/customersOverviewPageUtils";
 import { merchantHasEntitlement } from "@/lib/product/requireEntitlement";
+import { ACTIVE_CLAIM_STATUSES } from "@/lib/claims/sla";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -28,7 +29,6 @@ export const maxDuration = 30;
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 const DEFAULT_PAGE_SIZE = 25;
 
-const OPEN_CLAIM_STATUSES = ["pending", "open", "escalated"] as const;
 const CHARGEBACK_CLAIM_TYPE = "chargeback";
 
 type SourceCustomerRow = {
@@ -182,7 +182,7 @@ export default async function CustomersOverviewPage({
     if (hasChargebacks && !hasRefunds)
       claimQuery = claimQuery.eq("claim_type", CHARGEBACK_CLAIM_TYPE);
     if (openClaimsOnly)
-      claimQuery = claimQuery.in("status", [...OPEN_CLAIM_STATUSES]);
+      claimQuery = claimQuery.in("status", [...ACTIVE_CLAIM_STATUSES]);
     const { data: claimRows } = (await claimQuery.limit(2000)) as unknown as {
       data: Array<{
         source_orders: { source_customer_id: string | null } | null;
@@ -330,7 +330,7 @@ export default async function CustomersOverviewPage({
       if (!customerId) continue;
       const agg = caseAggByCustomer.get(customerId) ?? { total: 0, open: 0 };
       agg.total += 1;
-      if ((OPEN_CLAIM_STATUSES as readonly string[]).includes(r.status))
+      if ((ACTIVE_CLAIM_STATUSES as readonly string[]).includes(r.status))
         agg.open += 1;
       caseAggByCustomer.set(customerId, agg);
     }

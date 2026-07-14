@@ -5,6 +5,7 @@ import { TABLES } from '@/lib/supabase/tables';
 import { normaliseCurrencyOrNull } from '@/lib/canonical/money';
 import { enforceEntitlement } from '@/lib/product/requireEntitlement';
 import { label } from '@/lib/ui/labels';
+import { isActiveClaimStatus } from '@/lib/claims/sla';
 
 type SourceCustomer = Record<string, unknown> & {
   id: string;
@@ -129,9 +130,7 @@ export async function GET(
     .filter(Boolean)
     .sort()
     .at(0) ?? sources.map((source) => source.updated_at).filter(Boolean).sort().at(0) ?? null;
-  const openCases = cases.filter((claim) =>
-    ['new', 'open', 'pending', 'evidence_needed', 'awaiting_customer_evidence', 'awaiting_carrier_response', 'ready_for_decision', 'manual_review', 'escalated'].includes(String(claim.status)),
-  );
+  const openCases = cases.filter((claim) => isActiveClaimStatus(String(claim.status)));
   const ordersWithCases = new Set(
     cases.map((claim) => String(claim.source_order_id ?? '')).filter(Boolean),
   ).size;

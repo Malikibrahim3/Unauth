@@ -116,7 +116,7 @@ export function CustomerPreviewDrawer({
         customer ? (
           <div className="flex w-full gap-2 p-4">
             <Link
-              className="flex-1 rounded-md bg-[var(--accent)] px-3 py-2 text-center text-sm font-semibold text-white"
+              className="flex-1 rounded-md bg-[var(--accent)] px-3 py-2 text-center text-sm font-semibold text-[var(--accent-fg-on-500)]"
               href={`/customers/${customer.id}?return=${encodeURIComponent(returnUrl)}`}
             >
               Open full profile
@@ -160,7 +160,7 @@ export function CustomerPreviewDrawer({
           <>
             <div className="rounded-lg border border-[var(--border-muted)] bg-[var(--surface-sunken)] p-4">
               <div className="flex items-center gap-3">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--surface)] text-sm font-semibold text-[var(--text-primary)] shadow-sm ring-1 ring-[var(--border)]">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--surface)] text-sm font-semibold text-[var(--text-primary)] ring-1 ring-[var(--border)]">
                 {customer.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'C'}
               </span>
               <div className="min-w-0 flex-1">
@@ -185,7 +185,7 @@ export function CustomerPreviewDrawer({
               ].map(([name, value]) => <div key={name} className="min-w-0 rounded-md border border-[var(--border-muted)] bg-[var(--surface)] p-3"><dt className="truncate text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">{name}</dt><dd className="mt-1 text-lg font-semibold tabular-nums">{value}</dd></div>)}
             </dl>
 
-            <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
+            <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
               <div className="flex items-center gap-2"><CircleDollarSign className="h-4 w-4 text-[var(--text-secondary)]" aria-hidden="true" /><h3 className="font-semibold">Store financials</h3></div>
               {customer.totalsByCurrency.length ? (
                 <dl className="mt-3 space-y-3">
@@ -222,7 +222,7 @@ export function CustomerPreviewDrawer({
               ) : null}
             </section>
 
-            <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
+            <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
               <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-[var(--text-secondary)]" aria-hidden="true" /><h3 className="font-semibold">Payout cases requiring attention</h3></div>{customer.openCases.length ? <Badge tone="warning" size="sm">Action needed</Badge> : null}</div>
               {customer.openCases.length ? (
                 <ul className="mt-2 divide-y divide-[var(--border-muted)]">
@@ -248,7 +248,7 @@ export function CustomerPreviewDrawer({
               )}
             </section>
 
-            <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
+            <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
               <div className="flex items-center gap-2"><ReceiptText className="h-4 w-4 text-[var(--text-secondary)]" aria-hidden="true" /><h3 className="font-semibold">Recent store activity</h3></div>
               {customer.recent.length ? (
                 <ul className="mt-2 divide-y divide-[var(--border-muted)]">
