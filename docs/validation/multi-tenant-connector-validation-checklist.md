@@ -178,10 +178,10 @@ Evidence:
 
 ## Checkpoint 7 — migration, delivery, and production verification
 
-Status: **pending**
+Status: **in progress**
 
 - [x] Apply only safe required migrations and regenerate generated types.
-- [ ] Create a focused commit without absorbing unrelated owner changes.
+- [x] Create a focused commit without absorbing unrelated owner changes.
 - [ ] Push the validated commit to `main` as requested.
 - [ ] Deploy to Vercel production and verify the production commit explicitly.
 - [ ] Rerun production multi-merchant browser, sync, webhook, refresh, disconnect, and reconnect checks.
@@ -191,13 +191,15 @@ Status: **pending**
 Evidence:
 
 - `LIVE` All nine preflighted connector migrations applied successfully to the linked Supabase project. A second linked dry-run reports the remote database up to date, the post-migration integrity preflight remains zero-conflict, generated database types were refreshed, and TypeScript passed afterward.
+- `CODE` The connector programme is isolated in a clean worktree based directly on `origin/main`. Focused commits `acff6a20` and `59eb0d03` contain the reusable connector repairs plus the minimal UI primitive contracts required by already-committed consumers; unrelated owner UI/design changes remain outside the delivery.
+- `CODE` The exact main-based delivery passed ESLint, TypeScript, a Next.js production build with 95/95 static pages, and the complete Jest gate: 276 passed suites and 2,065 passed tests, with one suite/three tests intentionally skipped.
 
 ## Current blockers
 
-- `LIVE` Vercel deployment `7ARft1Bug` for main commit `a4a4360` failed because `SegmentedControl` was imported but not exported by the committed UI barrel. The missing export/component exists in the current worktree and the current worktree production build passes; delivery remains pending the programme quality gates.
+- `LIVE` Vercel deployment `7ARft1Bug` for main commit `a4a4360` failed because committed UI consumers were missing required primitives/contracts. The focused main-based delivery now contains the minimal repair and passes the complete local quality gate; a replacement production deployment remains pending.
 - `BLOCKED` Live UPS validation requires one owner secret-entry step after the safe migration/deployment checkpoints.
 - `BLOCKED` Live FedEx validation requires one owner login step because the provider developer session has timed out; secret entry follows only after that login succeeds.
 
 ## Next automatic action
 
-Complete migration preflights and the full quality gate, then apply the safe schema changes and deploy the validated main-branch revision before returning to the owner-only UPS/FedEx steps.
+Commit this checkpoint update, push the validated main-based revision to `main`, and verify the replacement Vercel production deployment in Safari before returning to production browser checks and the owner-only UPS/FedEx steps.
