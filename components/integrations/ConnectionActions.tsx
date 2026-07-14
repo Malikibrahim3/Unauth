@@ -29,6 +29,7 @@ export function ConnectionActions({
   const isCarrier = providerId === "ups" || providerId === "fedex";
   const [disconnecting, setDisconnecting] = useState(false);
   const [credentialOpen, setCredentialOpen] = useState(false);
+  const [shipBobOpen, setShipBobOpen] = useState(false);
   const [clientId, setClientId] = useState("");
   const [clientSecret, setClientSecret] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
@@ -157,13 +158,22 @@ export function ConnectionActions({
         </p>
       ) : null}
       <div className="flex flex-wrap gap-2">
-        {!connected && setup ? (
+        {!connected && setup && providerId !== "shipbob" ? (
           <Link
             href={setup}
             className="inline-flex items-center gap-2 rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white"
           >
             <KeyRound className="h-4 w-4" /> Connect {providerName}
           </Link>
+        ) : null}
+        {!connected && providerId === "shipbob" ? (
+          <Button
+            variant="primary"
+            leadingIcon={<KeyRound className="h-4 w-4" />}
+            onClick={() => setShipBobOpen(true)}
+          >
+            Connect {providerName}
+          </Button>
         ) : null}
         {!connected && isCarrier ? (
           <Button
@@ -228,6 +238,37 @@ export function ConnectionActions({
           Reconnect later to resume future ingestion. Existing case decisions
           and source provenance are never deleted by this action.
         </p>
+      </Modal>
+      <Modal
+        open={shipBobOpen}
+        onClose={() => setShipBobOpen(false)}
+        title={`Connect ${providerName}`}
+        description="Choose the ShipBob account environment before authorizing access."
+      >
+        <div className="space-y-3">
+          <label className="block text-xs font-semibold text-[var(--text-secondary)]">
+            Environment
+            <select
+              value={environment}
+              onChange={(event) => setEnvironment(event.target.value as "sandbox" | "production")}
+              className="mt-1 w-full rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm"
+            >
+              <option value="production">Production</option>
+              <option value="sandbox">Sandbox</option>
+            </select>
+          </label>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setShipBobOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => router.push(`/api/integrations/shipbob/install?environment=${environment}`)}
+            >
+              Continue to ShipBob
+            </Button>
+          </div>
+        </div>
       </Modal>
       <Modal
         open={credentialOpen}
