@@ -1,14 +1,17 @@
 # HANDOFF — UI Craft Overhaul (for the next agent / codex)
 
-**Spec:** `docs/IMPL_ui_craft_overhaul.md` (the full plan — read it; this handoff assumes it).
+**Spec:** `docs/IMPL_ui_craft_overhaul.md` (reopened and evidence-gated on 14 Jul; the original full authenticated-product brief remains binding). `docs/IMPL_slop_eradication.md` is an incomplete supplemental draft ending at C9, not an executable plan.
 **Branch:** `ui-craft-overhaul` (off `main`). 15 commits so far, message convention `ui-overhaul(wsN): <title>`.
-**Gate (green as of handoff — 2026 tests pass, 0 fail):**
+**Safety snapshot:** the user's highlighted instruction was to protect the newest local build before edits. Claude created `backup-pre-slop-fix-20260714-0056.tar.gz`, committed that local state as `eabc8110`, and pushed it to `origin/ui-craft-overhaul`. Confirm local/remote refs before work, then edit on top of that snapshot. Do not reset to `main`, recreate the backup, or overwrite the local app with an older remote state. Push only the feature branch after verified phase commits; main/production release requires a fresh final gate and explicit release confirmation.
+**Gate (historically green; rerun before editing because the old validation is not current sign-off):**
 ```bash
 npx tsc --noEmit && npx eslint app components lib --max-warnings=0 && npx jest --silent
 ```
 Run it after **every** task. If a test fails only because copy/labels changed intentionally, update the test to the new canonical string — never weaken the assertion (see the two updates already made in `tests/utils/formatCurrency.test.ts` and `tests/components/claimReviewManageCard.test.tsx`).
 
-**Dev/verify:** dev server runs on `:3000` (`.claude/launch.json` → `next-dev`). Demo merchant session is usually already authenticated (Elara & Co, **GBP**). See memory `project_demo_auth`. Verify each surface in-browser at **1440×900 and 390×844**, light **and** dark (dark toggle: set `document.documentElement.dataset.theme='dark'`). The doc's §3.3 walk + §3.2 greps + §3.4 rubric are the sign-off bar.
+**Dev/verify:** dev server runs on `:3000` (`.claude/launch.json` → `next-dev`). Demo merchant session is usually already authenticated (Elara & Co, **GBP**). See memory `project_demo_auth`. Work continuously in the browser. The final gate covers every manifest surface at **1440, 1280, 1024, tablet and critical mobile**, plus populated/loading/empty/partial/error states. Light is default; verify dark wherever the existing setting exposes it. The spec's §3.3 matrix + §3.2 greps + binary §3.4 gate are the sign-off bar.
+
+> **Current status: REOPENED.** The 13 Jul manifest and validation report are historical claims invalidated for craft sign-off by the 14 Jul screenshots and current branch changes. Do not mark them complete again until fresh browser evidence exists. Implement application fixes; another audit document alone is not progress.
 
 ---
 
@@ -36,9 +39,9 @@ Run it after **every** task. If a test fails only because copy/labels changed in
 
 ## 2. VERIFIED CAVEATS (don't waste time re-discovering)
 
-- **Dark theme already exists and renders** (`app/globals.css` `:root[data-theme="dark"]` ~line 728). The doc's "no dark tokens yet" is STALE. WS6.4 is mostly a verification pass, not a build. Spot-check surfaces in dark; only add missing token overrides if a specific surface breaks.
+- **A dark theme path and user-visible appearance setting exist**, but do not assume they work. Root dark overrides live in `app/globals.css`, while `.ua-app` currently declares authenticated values and `color-scheme: light`; selector scope may prevent the setting from changing authenticated surfaces. Verify the actual toggle in-browser. Fix authenticated selectors/tokens if broken, or disable the promise honestly—never leave a cosmetic control that does nothing.
 - **B3 / B6 are likely demo-DATA issues, not UI bugs.** On the case page most demo cases show "No claim selected" and the recommendation loads in the stale-warning state. `pickPriorityClaim` (`lib/claims/priority.ts`) already auto-selects when claims exist — the demo cases have `is_claim=false` (see memory `project_gorgias_1008_claim_classification`). **Verify against a properly-classified case before changing** `components/claims/claimReviewState.ts` (selection + `decisionData` fetch effect, ~lines 135-221). B6's fix, if real, is auto-fetch on mount + only mark stale after edits — in that effect.
-- **A `CommandPalette` already exists** (`components/layout/CommandPalette*.tsx`, ⌘K wired). WS6.2 is largely present — verify j/k/Enter/a/s list shortcuts on `/work` + `/claims`, don't rebuild the palette.
+- **A `CommandPalette` already exists** (`components/layout/CommandPalette*.tsx`, ⌘K wired). Verify and refine it; do not rebuild it. Repository search shows no current `j/k/a/s` queue shortcuts. They are optional net-new polish and may be considered only after the core gate, with input/editor guards and accessible discovery.
 - Running jest mutates `tests/fixtures/generated/large_merchant_scale_PERFORMANCE.json` — do NOT stage it.
 
 ---
@@ -51,7 +54,7 @@ Run it after **every** task. If a test fails only because copy/labels changed in
 ### B. Page rebuilds (WS5) — the big ones, browser-verify heavily
 - **WS5.1 Case page `/claims/[id]`** (#1 priority): compose the hero (claim-type + StatusBadge + `caseDisplay` line: name · ref · £ · requested · opened), promote the **evidence checklist**, auto-fresh recommendation (B6 — see caveat), single Record-decision rail, kill the six grey "Claim evidence context" cards + "Store-owned claim history" jargon, demote "View missing data" to a quiet link. Files: `app/(app)/claims/[id]/page.tsx` + the `components/claims/ClaimReview*` + `components/claims/payout/*` kit. Reuse the kit's logic files.
 - **WS5.2 Customer drawer** `components/customers/CustomerPreviewDrawer.tsx` + **WS5.3 profile** `app/(app)/customers/[id]/*`: identity header, 4-stat signal strip, open cases, recent orders (real table — currently missing), notes with Save+toast. **Fixes B1** (currency — already GBP via formatMoney, verify), **B2** (drawer "2 orders" vs list "5" / profile vs rail count mismatch — align to list definitions), **B9** ("awaiting_c" truncated enum → `label()` + no clip). `/customers/[id]/claims` → redirect to profile #cases.
-- **WS5.4 Dashboard** `app/(app)/dashboard/page.tsx` + `components/reporting/IntelligenceReportView.tsx`: value strip with deltas, **recharts** charts (exposure/recovered over time, loss causes via `lossCategory` labels, recovery funnel), consolidate the 4-6 "Needs attention" link-cards into one, kill "Open matching records →" (§7), zero-cells collapse. `recharts@2.13` is installed. The subtitle/title are already done; the value cards + "Generated <US date>" + Title-Case status cards + loss-cause rows live in `IntelligenceReportView`.
+- **WS5.4 Dashboard and Reports** `app/(app)/dashboard/page.tsx`, `components/reporting/IntelligenceReportView.tsx`, `components/reporting/DashboardCharts.tsx`: implement the binding chart contract in the spec. Current code is still three equal 220px template cards with default tooltips, raw ticks, smoothed areas, a faux funnel, fake empty mini-bars and a guessed GBP fallback. Use a wide primary trend, ranked loss-cause bars and a reconciled stepped recovery ledger; support mixed/no currency, partial/empty/error states and accessible responsive output. Preserve `/reports` as a first-class analytical workspace. Consolidate Needs attention and remove textual arrows.
 - **WS5.5 Work queue** — mostly done; remaining: counted filter pills (pattern on `/claims`), dedupe templated task descriptions, whole-row navigation.
 - **WS5.6 Sweep:** `/recoveries` cards → new StatusBadge + card `⋯` menu; `/rules` detail "Readable policy" renders builder sentence form not `eq item_not_received` (`components/rules/RuleVersionWorkbench.tsx` / `FlowVersionWorkbench.tsx` line ~423 renders `condition.operator` raw); `/partners` confidence → StatusBadge tone; `/integrations` **B8** (connection truth — page vs `lib/connections/getConnectionState.ts`) + slashed-zero stat cards → Inter; `/flows` copy + field labels + `24` unit label; `/login` + `/onboarding` button geometry/progress; object record pages `components/relationships/ConnectedObjectDetail.tsx` ("Provenance and freshness" → "Data source" one-liner, back-link B12, kicker).
 
@@ -62,10 +65,10 @@ Not yet swept: `ConnectedObjectDetail.tsx` ("Provenance and freshness", "source 
 B1 (verify £ everywhere post-formatMoney), B2, B3/B6 (see caveats), B7 (settings profile prefill — `app/(app)/settings/account/page.tsx`), B8 (integrations connection truth), B9, B10 (Gorgias settings error card + retire Store-Check preview → 4-line decision card), B11 (`support@unauth.co` → `@unauth.app`), B12 (object back-link). B4/B5 done.
 
 ### E. WS4 remainder
-WS4.1 `PageHeader` detail variant + settings quadruple-header fix; WS4.2 migrate more tables to `DataTable` + selection bar where missing; WS4.3 `EmptyState`/`LoadingState` variants + rules empty-state 3 template cards from `default_rule_templates` (DB, unused); WS4.5 remaining mono→Inter (DM Mono only for refs/IDs/hashes).
+WS4.1 `PageHeader` detail variant + settings quadruple-header fix; WS4.2 migrate more tables to `DataTable` + selection bar where missing; WS4.3 `EmptyState`/`LoadingState` variants. Rules may expose template cards only after the query, permissions and create action are verified end to end. WS4.5 remaining mono→Inter (DM Mono only for refs/IDs/hashes).
 
 ### F. WS6 polish
-Motion (shared 140ms; count-up on dashboard deltas only); ⌘K/list shortcuts (verify — palette exists); focus-ring parity; dark-theme verification (§2 caveat); sidebar badge fetched in layout not per-page; **visual QA gate** — add §3.3 walk + screenshot-diff to `docs/ROLLOUT_RUNBOOK.md`, extend the visual suite to fail on `/\$\d/` (GBP workspace) or `/[a-z]+_[a-z]+/` in a rendered status cell.
+Motion (shared 140ms; remove all financial count-up); verify existing ⌘K, defer net-new list shortcuts; focus-ring parity; dark-theme verification/fix (§2 caveat); sidebar badge stability; **visual QA gate** — add the full §3.3 manifest matrix + screenshot diffs to `docs/ROLLOUT_RUNBOOK.md`, and extend format/status assertions without misclassifying legitimate mixed-currency content.
 
 ---
 

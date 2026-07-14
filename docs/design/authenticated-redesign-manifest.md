@@ -2,6 +2,8 @@
 
 Initial inventory frozen: 2026-07-13
 
+> **Craft verification reopened 2026-07-14.** The `Completed` and `Browser verified` values below record the first redesign pass; they are not current sign-off. The 14 Jul rendered-product review and branch snapshot exposed material visual/state defects. The executing agent must preserve the stable surface IDs, reset verification in its working copy/defect register, attach fresh evidence for every row and perform the independent second inventory again before this manifest can be closed.
+
 ## Initial counts
 
 | Category | Count | Discovery method |

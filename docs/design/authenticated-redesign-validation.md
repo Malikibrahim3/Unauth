@@ -2,6 +2,8 @@
 
 Finalized: 2026-07-13
 
+> **Historical result; current craft sign-off revoked on 2026-07-14.** This report describes the first redesign release and remains useful provenance, but its “all verified” conclusion is superseded by the 14 Jul screenshots, current branch changes and the reopened binary gate in `docs/IMPL_ui_craft_overhaul.md`. Do not cite this document as proof that the present authenticated product is complete. Produce a new dated validation report only after every manifest surface has fresh browser evidence.
+
 ## 1. Surface counts
 
 | Inventory | Initial | Final | Result |
