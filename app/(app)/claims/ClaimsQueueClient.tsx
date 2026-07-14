@@ -535,7 +535,7 @@ function ClaimDetailPanel({
                   className="shrink-0 text-caption font-semibold hover:underline"
                   style={{ color: "var(--accent)" }}
                 >
-                  Build evidence →
+                  Build evidence
                 </Link>
               )}
             </div>

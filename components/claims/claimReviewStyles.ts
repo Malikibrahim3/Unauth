@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import { normaliseCurrencyOrNull } from '@/lib/canonical/money';
 import { formatCurrency } from '@/lib/utils/format';
 
 export const CLAIM_REVIEW_PANEL_ROOT_STYLE: CSSProperties = {
@@ -34,8 +35,9 @@ export const SLA_COLOUR_MAP: Record<string, { bg: string; text: string }> = {
 };
 
 export function formatClaimMoney(value: number | null | undefined, currency?: string | null) {
-  if (typeof value !== 'number' || Number.isNaN(value)) return '—';
-  return formatCurrency(value, currency ?? 'USD');
+  const code = normaliseCurrencyOrNull(currency);
+  if (typeof value !== 'number' || Number.isNaN(value) || !code) return '—';
+  return formatCurrency(value, code);
 }
 
 export function inputStyle(): CSSProperties {
@@ -43,7 +45,7 @@ export function inputStyle(): CSSProperties {
 }
 
 export function btnStyle(variant: 'primary' | 'secondary' | 'muted' | 'disabled'): CSSProperties {
-  if (variant === 'primary') return { background: 'var(--accent)', color: 'white' };
+  if (variant === 'primary') return { background: 'var(--accent)', color: 'var(--accent-fg-on-500)' };
   if (variant === 'muted') {
     return { border: '1px solid var(--border-muted)', background: 'var(--bg-inset)', color: 'var(--text-secondary)' };
   }

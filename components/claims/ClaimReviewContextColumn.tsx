@@ -83,7 +83,7 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
             {history.length} previous payout cases for this customer
           </p>
           <a href={`${wb.customerProfileHref}#cases`} className="mt-1 inline-block text-xs font-semibold text-[var(--accent)]">
-            View case history →
+            View case history
           </a>
         </PanelCard>
       ) : null}
@@ -171,7 +171,7 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
                 state.auditTab === "timeline" ? "var(--accent)" : "transparent",
               color:
                 state.auditTab === "timeline"
-                  ? "white"
+                  ? "var(--accent-fg-on-500)"
                   : "var(--text-secondary)",
             }}
           >
@@ -186,7 +186,7 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
                 state.auditTab === "history" ? "var(--accent)" : "transparent",
               color:
                 state.auditTab === "history"
-                  ? "white"
+                  ? "var(--accent-fg-on-500)"
                   : "var(--text-secondary)",
             }}
           >
@@ -197,7 +197,7 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
           <>
             {!selectedClaim ? (
               <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-                Select a claim to view its audit history.
+                Loading case history…
               </p>
             ) : selectedClaimEvents.length === 0 ? (
               <p className="text-sm" style={{ color: "var(--text-secondary)" }}>

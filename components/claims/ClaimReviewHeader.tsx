@@ -52,13 +52,16 @@ export function ClaimReviewHeader({ wb }: { wb: ClaimReviewWorkbench }) {
               </div>
               <p className="mt-1 text-sm font-medium text-[var(--text-secondary)]">{caseDisplay({ customer_name: customerName, ref: selectedClaim.shopify_order_id ?? selectedClaim.order_ref, id: selectedClaim.id })}</p>
               <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-[var(--text-secondary)]">
-                {selectedClaim.amount_at_risk != null && selectedClaim.currency ? <span className="rounded-full border border-[var(--border)] bg-white/80 px-2.5 py-1 font-semibold tabular-nums text-[var(--text-primary)]">{formatClaimMoney(selectedClaim.amount_at_risk, selectedClaim.currency)} at risk</span> : null}
-                <span className="rounded-full border border-[var(--border)] bg-white/80 px-2.5 py-1">Requested: {selectedClaim.requested_action && selectedClaim.requested_action !== 'unknown' ? label('requestedAction', selectedClaim.requested_action) : 'Not specified'}</span>
-                {selectedClaim.created_at || selectedClaim.submitted_at ? <span className="rounded-full border border-[var(--border)] bg-white/80 px-2.5 py-1">Opened {formatDateAbsolute(selectedClaim.created_at ?? selectedClaim.submitted_at ?? '')}</span> : null}
+                {selectedClaim.amount_at_risk != null && selectedClaim.currency ? <span className="rounded-full border border-[var(--border)] bg-[var(--surface-muted)] px-2.5 py-1 font-semibold tabular-nums text-[var(--text-primary)]">{formatClaimMoney(selectedClaim.amount_at_risk, selectedClaim.currency)} at risk</span> : null}
+                <span className="rounded-full border border-[var(--border)] bg-[var(--surface-muted)] px-2.5 py-1">Requested: {selectedClaim.requested_action && selectedClaim.requested_action !== 'unknown' ? label('requestedAction', selectedClaim.requested_action) : 'Not specified'}</span>
+                {selectedClaim.created_at || selectedClaim.submitted_at ? <span className="rounded-full border border-[var(--border)] bg-[var(--surface-muted)] px-2.5 py-1">Opened {formatDateAbsolute(selectedClaim.created_at ?? selectedClaim.submitted_at ?? '')}</span> : null}
               </div>
             </div>
           ) : (
-            <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Evidence review</span>
+            <div>
+              <h1 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>Payout case</h1>
+              <p className="mt-1 text-sm text-[var(--text-secondary)]">Loading case context…</p>
+            </div>
           )}
           {history.length > 1 ? (
             <select

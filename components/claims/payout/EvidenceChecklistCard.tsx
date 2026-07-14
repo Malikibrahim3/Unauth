@@ -113,7 +113,7 @@ export function EvidenceChecklistCard({
               className="font-medium underline underline-offset-2"
               style={{ color: 'var(--warning)' }}
             >
-              Connect a tracking source →
+              Connect a tracking source
             </Link>
           </span>
         </PanelCard>

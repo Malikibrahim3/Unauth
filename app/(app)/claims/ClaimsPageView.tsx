@@ -142,7 +142,7 @@ export function ClaimsPageView({
                   </PanelCard>
                 ))}
                 <Link href="/settings/integrations" className="text-caption font-semibold hover:underline md:col-span-3" style={{ color: 'var(--accent)' }}>
-                  Connect support and commerce sources →
+                  Connect support and commerce sources
                 </Link>
               </div>
             }
@@ -286,7 +286,7 @@ export function ClaimsPageView({
                     <p id="queue-health-title" className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>Queue health</p>
                     <p className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>Counts stay actionable; no decorative chart or mixed denominator.</p>
                   </div>
-                  <Link href="/work" className="text-xs font-semibold hover:underline" style={{ color: 'var(--accent)' }}>Open work queue →</Link>
+                  <Link href="/work" className="text-xs font-semibold hover:underline" style={{ color: 'var(--accent)' }}>Open work queue</Link>
                 </div>
                 <dl className="mt-3 divide-y" style={{ borderColor: 'var(--border-muted)' }}>
                   {[
