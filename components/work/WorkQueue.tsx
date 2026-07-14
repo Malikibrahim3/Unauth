@@ -8,7 +8,7 @@ import { StatusBadge, PriorityChip } from "@/components/ui/StatusBadge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SourceMark } from "@/components/identity/ProviderLogo";
 import { RowActionsMenu, type RowAction } from "@/components/ui/RowActionsMenu";
-import { formatDateAbsolute } from "@/lib/utils/format";
+import { formatDateAbsolute, formatNumber } from "@/lib/utils/format";
 
 export type WorkQueueItem = {
   id: string;
@@ -39,6 +39,21 @@ const VIEWS = [
   ["integration-exceptions", "Integration exceptions"],
   ["completed", "Completed"],
 ] as const;
+
+export type WorkViewKey = (typeof VIEWS)[number][0];
+export type WorkViewCounts = Record<WorkViewKey, number>;
+
+const REDUNDANT_DESCRIPTIONS = new Set([
+  "Verify the case evidence and record the next merchant action.",
+  "Critical evidence is missing, so the agent should collect more information before payout.",
+  "This case has been open with no update for over 14 days. It may need chasing, closing, or a decision.",
+]);
+
+function usefulDescription(item: WorkQueueItem) {
+  if (!item.description || REDUNDANT_DESCRIPTIONS.has(item.description)) return null;
+  if (item.description.trim().toLowerCase() === item.title.trim().toLowerCase()) return null;
+  return item.description;
+}
 
 const title = (value: string | null) =>
   value
@@ -103,10 +118,12 @@ export function WorkQueue({
   items,
   total,
   view,
+  viewCounts,
 }: {
   items: WorkQueueItem[];
   total: number;
   view: string;
+  viewCounts: WorkViewCounts;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
@@ -195,6 +212,18 @@ export function WorkQueue({
     });
   }
 
+  function itemHref(item: WorkQueueItem) {
+    if (!item.objectHref) return null;
+    return `${item.objectHref}${item.objectHref.includes("?") ? "&" : "?"}returnTo=${encodeURIComponent(`/work?view=${view}`)}`;
+  }
+
+  function openRow(item: WorkQueueItem, target: EventTarget | null) {
+    const href = itemHref(item);
+    if (!href) return;
+    if (target instanceof HTMLElement && target.closest("a, button, input, select, textarea, [role='menu']")) return;
+    router.push(href);
+  }
+
   return (
     <section aria-labelledby="work-queue-title">
       <h2 id="work-queue-title" className="sr-only">
@@ -217,6 +246,7 @@ export function WorkQueue({
             }}
           >
             {label}
+            <span className="ml-1.5 tabular-nums text-[var(--text-tertiary)]">{formatNumber(viewCounts[key])}</span>
           </Link>
         ))}
       </nav>
@@ -319,10 +349,18 @@ export function WorkQueue({
               <tbody>
                 {items.map((item) => {
                   const due = dueState(item.dueAt);
+                  const description = usefulDescription(item);
+                  const href = itemHref(item);
                   return (
                     <tr
                       key={`${item.kind}:${item.id}`}
-                      className="ua-table-row border-b border-[var(--border)] last:border-0 hover:bg-[var(--surface-hover)] focus-within:bg-[var(--surface-hover)]"
+                      className={`ua-table-row border-b border-[var(--border)] last:border-0 hover:bg-[var(--surface-hover)] focus-within:bg-[var(--surface-hover)] ${href ? "cursor-pointer" : ""}`}
+                      tabIndex={href ? 0 : undefined}
+                      aria-label={href ? `Open ${item.objectLabel}` : undefined}
+                      onClick={(event) => openRow(item, event.target)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") openRow(item, event.target);
+                      }}
                     >
                       <td className="px-3 py-3">
                         {item.kind === "task" ? (
@@ -342,9 +380,9 @@ export function WorkQueue({
                           <SourceMark source={item.source} compact />
                           <div className="min-w-0">
                         <div className="font-medium">{item.title}</div>
-                        {item.description ? (
+                        {description ? (
                           <div className="mt-0.5 line-clamp-2 text-xs text-[var(--text-secondary)]">
-                            {item.description}
+                            {description}
                           </div>
                         ) : null}
                         {item.blockingReason ? (
@@ -359,7 +397,7 @@ export function WorkQueue({
                         {item.objectHref ? (
                           <Link
                             className="font-medium underline underline-offset-2"
-                            href={`${item.objectHref}${item.objectHref.includes("?") ? "&" : "?"}returnTo=${encodeURIComponent(`/work?view=${view}`)}`}
+                            href={href ?? item.objectHref}
                           >
                             {item.objectLabel}
                           </Link>
@@ -372,10 +410,10 @@ export function WorkQueue({
                       </td>
                       <td className="px-3 py-3">
                         <span className="inline-flex items-center gap-2">
-                          <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface-selected)] text-[10px] font-bold text-[var(--brand-deep)]">
+                          {item.ownerUserId || item.ownerRole ? <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface-selected)] text-[10px] font-bold text-[var(--brand-deep)]">
                             {(item.ownerUserId ? "A" : title(item.ownerRole).slice(0, 2)).toUpperCase()}
-                          </span>
-                          <span>{item.ownerUserId ? "Assigned" : title(item.ownerRole)}</span>
+                          </span> : null}
+                          <span>{item.ownerUserId ? "Assigned" : item.ownerRole ? title(item.ownerRole) : "Unassigned"}</span>
                         </span>
                       </td>
                       <td className={`px-3 py-3 text-xs ${due.className}`}>
@@ -397,6 +435,8 @@ export function WorkQueue({
           <div className="space-y-3 md:hidden">
             {items.map((item) => {
               const due = dueState(item.dueAt);
+              const description = usefulDescription(item);
+              const href = itemHref(item);
               return (
                 <article
                   key={`${item.kind}:${item.id}`}
@@ -428,9 +468,9 @@ export function WorkQueue({
                       {due.label}
                     </span>
                   </div>
-                  {item.description ? (
+                  {description ? (
                     <p className="mt-2 text-sm text-[var(--text-secondary)]">
-                      {item.description}
+                      {description}
                     </p>
                   ) : null}
                   <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-[var(--text-secondary)]">
@@ -438,7 +478,7 @@ export function WorkQueue({
                       {item.objectHref ? (
                         <Link
                           className="underline"
-                          href={`${item.objectHref}${item.objectHref.includes("?") ? "&" : "?"}returnTo=${encodeURIComponent(`/work?view=${view}`)}`}
+                          href={href ?? item.objectHref}
                         >
                           {item.objectLabel}
                         </Link>
@@ -447,7 +487,7 @@ export function WorkQueue({
                       )}
                     </span>
                     <span>
-                      {item.ownerUserId ? "Assigned" : title(item.ownerRole)}
+                      {item.ownerUserId ? "Assigned" : item.ownerRole ? title(item.ownerRole) : "Unassigned"}
                     </span>
                   </div>
                   {item.blockingReason ? (
