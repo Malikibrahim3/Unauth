@@ -40,10 +40,11 @@ export async function upsertConnection(
   input: UpsertConnectionInput,
 ): Promise<{ connectionId: string; sourceAccountId: string }> {
   const environment = input.environment ?? 'production';
+  const nextStatus = input.status ?? 'connected';
   const connectionValues = {
     category: input.category,
     auth_mode: input.authMode,
-    status: input.status ?? 'connected',
+    status: nextStatus,
     provider_account_name: input.providerAccountName ?? null,
     provider_base_url: input.providerBaseUrl ?? null,
     display_name: input.displayName ?? input.providerAccountName ?? null,
@@ -53,6 +54,9 @@ export async function upsertConnection(
     capabilities_snapshot: input.capabilitiesSnapshot ?? {},
     environment,
     updated_at: new Date().toISOString(),
+    ...(['pending', 'connected', 'degraded', 'syncing'].includes(nextStatus)
+      ? { disconnected_at: null }
+      : {}),
   };
 
   let conn: { id: string } | null = null;

@@ -34,6 +34,64 @@ describe('direct carrier tracking evidence', () => {
     expect(items.find((item) => item.evidenceType === 'tracking_events')?.value).toBe(1);
     expect(items.find((item) => item.evidenceType === 'delivery_photo')?.value).toBeNull();
     expect(items.find((item) => item.evidenceType === 'signature')?.value).toBeNull();
+    expect(items.find((item) => item.evidenceType === 'delivery_status')?.occurredAt)
+      .toBe('2026-07-14T00:00:00.000Z');
+  });
+
+  it('maps UPS nested signature and delivery-photo proof', () => {
+    const items = mapCarrierProofToEvidence('ups', {
+      trackResponse: { shipment: [{ package: [{
+        trackingNumber: '1ZPROOF',
+        deliveryInformation: {
+          signature: { image: 'base64-signature' },
+          deliveryPhoto: { photo: 'base64-photo' },
+        },
+      }] }] },
+    }, { merchantId: 'merchant-1', trackingNumber: '1ZPROOF' });
+
+    expect(items.find((item) => item.evidenceType === 'signature')?.value).toBe('base64-signature');
+    expect(items.find((item) => item.evidenceType === 'delivery_photo')?.value).toBe('base64-photo');
+  });
+
+  it('does not represent a FedEx availability flag as a retrieved proof document', () => {
+    const items = mapCarrierProofToEvidence('fedex', {
+      output: { completeTrackResults: [{ trackResults: [{
+        availableImages: [
+          { type: 'SIGNATURE_PROOF_OF_DELIVERY' },
+          { type: 'PICTURE_PROOF_OF_DELIVERY' },
+        ],
+      }] }] },
+    }, { merchantId: 'merchant-1', trackingNumber: '123456789012' });
+
+    const signature = items.find((item) => item.evidenceType === 'signature');
+    const photo = items.find((item) => item.evidenceType === 'delivery_photo');
+    expect(signature?.value).toBeNull();
+    expect(signature?.summary).toContain('reports signature proof is available');
+    expect(photo?.value).toBeNull();
+    expect(photo?.summary).toContain('reports a delivery photo is available');
+  });
+
+  it('maps a retrieved FedEx signature proof URL', () => {
+    const items = mapCarrierProofToEvidence('fedex', {
+      output: { completeTrackResults: [{ trackResults: [{
+        deliveryDetails: { signatureProofOfDeliveryUrl: 'https://example.test/signature.pdf' },
+      }] }] },
+    }, { merchantId: 'merchant-1', trackingNumber: '123456789012' });
+
+    expect(items.find((item) => item.evidenceType === 'signature')?.value)
+      .toBe('https://example.test/signature.pdf');
+  });
+
+  it('maps a retrieved FedEx signature document', () => {
+    const items = mapCarrierProofToEvidence('fedex', {
+      _unauthProof: { signatureDocument: 'base64-spod-document' },
+      output: { completeTrackResults: [{ trackResults: [{
+        availableImages: [{ type: 'SIGNATURE_PROOF_OF_DELIVERY' }],
+      }] }] },
+    }, { merchantId: 'merchant-1', trackingNumber: '123456789012' });
+
+    expect(items.find((item) => item.evidenceType === 'signature')?.value)
+      .toBe('base64-spod-document');
   });
 
   it('distinguishes disconnected, unsupported, missing, and found states', () => {

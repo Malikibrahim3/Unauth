@@ -50,6 +50,7 @@ describe('provider-account ownership claims', () => {
 
   it('reconnects the same merchant account by reusing its connection and source account', async () => {
     const writes = { integrationUpdates: 0, integrationInserts: 0, sourceUpserts: 0 };
+    const integrationPatches: Record<string, unknown>[] = [];
     const client: any = {
       from: (table: string) => {
         let operation = 'select';
@@ -58,9 +59,10 @@ describe('provider-account ownership claims', () => {
           eq: () => builder,
           or: () => builder,
           limit: () => builder,
-          update: () => {
+          update: (patch: Record<string, unknown>) => {
             operation = 'update';
             writes.integrationUpdates += 1;
+            integrationPatches.push(patch);
             return builder;
           },
           insert: () => {
@@ -105,5 +107,9 @@ describe('provider-account ownership claims', () => {
       sourceAccountId: 'existing-source-account',
     });
     expect(writes).toEqual({ integrationUpdates: 1, integrationInserts: 0, sourceUpserts: 1 });
+    expect(integrationPatches[0]).toMatchObject({
+      status: 'connected',
+      disconnected_at: null,
+    });
   });
 });

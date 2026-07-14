@@ -74,7 +74,11 @@ function firstDate(...values: unknown[]): string | null {
   for (const value of values) {
     const stringValue = stringifyValue(value);
     if (!stringValue) continue;
-    const ms = Date.parse(stringValue);
+    const compactDate = /^(\d{4})(\d{2})(\d{2})$/.exec(stringValue);
+    const normalized = compactDate
+      ? `${compactDate[1]}-${compactDate[2]}-${compactDate[3]}T00:00:00.000Z`
+      : stringValue;
+    const ms = Date.parse(normalized);
     if (Number.isFinite(ms)) return new Date(ms).toISOString();
   }
   return null;
@@ -286,21 +290,58 @@ export function mapShopifyDisputeToEvidence(
 }
 
 function extractProofValues(providerId: 'ups' | 'fedex', payload: Record<string, any>) {
-  const fedexImages = Array.isArray(payload.output?.completeTrackResults?.[0]?.trackResults?.[0]?.availableImages)
-    ? payload.output.completeTrackResults[0].trackResults[0].availableImages
+  const upsPackage = payload.trackResponse?.shipment?.[0]?.package?.[0] ?? {};
+  const upsDelivery = upsPackage.deliveryInformation ?? {};
+  const fedexResult = payload.output?.completeTrackResults?.[0]?.trackResults?.[0] ?? {};
+  const fedexImages = Array.isArray(fedexResult.availableImages)
+    ? fedexResult.availableImages
     : [];
   const hasFedexImage = (term: string) =>
-    fedexImages.some((image: unknown) => String(image ?? '').toLowerCase().includes(term));
-  const signature =
-    firstString(payload.signature, payload.signatureImage, payload.signature_image, payload.output?.signatureName) ??
-    (providerId === 'fedex' && hasFedexImage('signature') ? 'signature proof available' : null);
-  const photo =
-    firstString(payload.deliveryPhoto, payload.delivery_photo, payload.photo, payload.image, payload.output?.deliveryPhoto) ??
-    (providerId === 'fedex' && (hasFedexImage('photo') || hasFedexImage('picture')) ? 'delivery photo available' : null);
+    fedexImages.some((image: unknown) => {
+      if (typeof image === 'string') return image.toLowerCase().includes(term);
+      if (!image || typeof image !== 'object') return false;
+      const detail = image as Record<string, unknown>;
+      return String(detail.type ?? detail.imageType ?? '').toLowerCase().includes(term);
+    });
+  const signature = providerId === 'ups'
+    ? firstString(
+        upsDelivery.signature?.image,
+        upsPackage.signatureImage,
+        payload.signature,
+        payload.signatureImage,
+        payload.signature_image,
+      )
+    : firstString(
+        payload._unauthProof?.signatureDocument,
+        fedexResult.deliveryDetails?.signatureProofOfDeliveryUrl,
+        payload.signature,
+        payload.signatureImage,
+        payload.signature_image,
+        payload.output?.signatureName,
+      );
+  const photo = providerId === 'ups'
+    ? firstString(
+        upsDelivery.deliveryPhoto?.photo,
+        upsPackage.deliveryPhoto,
+        payload.deliveryPhoto,
+        payload.delivery_photo,
+        payload.photo,
+        payload.image,
+      )
+    : firstString(
+        fedexResult.deliveryDetails?.deliveryPhoto,
+        payload.deliveryPhoto,
+        payload.delivery_photo,
+        payload.photo,
+        payload.image,
+        payload.output?.deliveryPhoto,
+      );
   return {
     providerName: getIntegrationProvider(providerId)?.name ?? providerId,
     signature,
     photo,
+    signatureAvailable: providerId === 'fedex' && hasFedexImage('signature'),
+    photoAvailable: providerId === 'fedex' && (hasFedexImage('photo') || hasFedexImage('picture')),
   };
 }
 
@@ -380,7 +421,11 @@ export function mapCarrierProofToEvidence(
       sourceProvider: providerId,
       evidenceType: 'signature',
       title: `${proof.providerName} signature proof`,
-      summary: proof.signature ? 'Signature proof found' : 'Signature proof attempted, not available for this shipment',
+      summary: proof.signature
+        ? 'Signature proof found'
+        : proof.signatureAvailable
+          ? 'Carrier reports signature proof is available; the document was not retrieved'
+          : 'Signature proof attempted, not available for this shipment',
       value: proof.signature,
       confidence: proof.signature ? 'high' : 'medium',
       rawReference: reference,
@@ -390,7 +435,11 @@ export function mapCarrierProofToEvidence(
       sourceProvider: providerId,
       evidenceType: 'delivery_photo',
       title: `${proof.providerName} delivery photo`,
-      summary: proof.photo ? 'Delivery photo found' : 'Delivery photo attempted, not available for this shipment',
+      summary: proof.photo
+        ? 'Delivery photo found'
+        : proof.photoAvailable
+          ? 'Carrier reports a delivery photo is available; the image was not retrieved'
+          : 'Delivery photo attempted, not available for this shipment',
       value: proof.photo,
       confidence: proof.photo ? 'high' : 'medium',
       rawReference: reference,

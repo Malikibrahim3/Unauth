@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { INTEGRATION_PROVIDERS } from '@/lib/integrations/registry';
 import { buildEvidence } from '@/lib/claim-gate/buildEvidence';
-import { exchangeFedExClientCredentials } from '@/lib/integrations/providers/fedex';
+import { exchangeFedExClientCredentials, fetchFedExDeliveryProof } from '@/lib/integrations/providers/fedex';
 import { exchangeUpsClientCredentials } from '@/lib/integrations/providers/ups';
 import { mapCarrierProofToEvidence } from '@/lib/integrations/evidenceMapper';
 import { assembleEvidencePack } from '@/lib/payouts/assembleEvidencePack';
@@ -147,6 +147,43 @@ describe('live connector auth and normalization', () => {
       .resolves.toMatchObject({ accessToken: 'token_123' });
     await expect(exchangeFedExClientCredentials({ clientId: 'id', clientSecret: 'secret' }))
       .resolves.toMatchObject({ accessToken: 'token_123' });
+  });
+
+  it('retrieves a FedEx signature document only when tracking reports one available', async () => {
+    global.fetch = jest.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          output: { completeTrackResults: [{ trackResults: [{
+            availableImages: [{ type: 'SIGNATURE_PROOF_OF_DELIVERY', size: 'LARGE' }],
+          }] }] },
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ output: { document: ['base64-spod-document'] } }),
+      }) as any;
+
+    const payload = await fetchFedExDeliveryProof({
+      credentials: { accessToken: 'token_123', environment: 'sandbox', accountNumber: '123456789' },
+      trackingNumber: '449044304137821',
+    });
+
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+    expect((global.fetch as jest.Mock).mock.calls[1][0]).toContain('/track/v1/trackingdocuments');
+    expect(JSON.parse((global.fetch as jest.Mock).mock.calls[1][1].body)).toMatchObject({
+      trackDocumentDetail: { documentType: 'SIGNATURE_PROOF_OF_DELIVERY', documentFormat: 'PNG' },
+      trackDocumentSpecification: [{
+        trackingNumberInfo: { trackingNumber: '449044304137821' },
+        accountNumber: '123456789',
+      }],
+    });
+    expect(payload._unauthProof).toMatchObject({
+      signatureDocument: 'base64-spod-document',
+      signatureRetrieval: 'retrieved',
+      documentStatus: 200,
+    });
   });
 
   it('normalizes unavailable carrier proof without erroring', () => {
