@@ -1,43 +1,36 @@
 # Multi-tenant connector matrix
 
-Updated: 2026-07-14 (Europe/London)
+Updated: 2026-07-15 (Europe/London)
 
-Status: checkpoint-5 classification. `FIXTURE` means production-shaped storage/worker/authorization isolation passed; `LIVE` means a controlled provider or Safari state was inspected without exposing credentials.
+LIVE means a controlled provider call or production browser/database state was verified. FIXTURE means production-shaped isolation evidence. CODE means implementation and automated tests. PRODUCTION means deployed configuration or migrations.
 
-| Provider | Authentication | Merchant credentials | Self-service | Import | Webhooks | Reconciliation | Isolation verified | Limitation |
-|---|---|---|---:|---:|---:|---:|---:|---|
-| Shopify | Platform OAuth | Encrypted merchant token; platform client/secret shared | Yes | Yes | Yes | Partial | LIVE + FIXTURE | Merchant A read probe passed; OAuth is tenant-bound and replay-safe. Live disconnect/reconnect remains pending. |
-| ShipBob | Platform OAuth with PKCE; legacy PAT alias | Encrypted token/PAT, webhook secret, environment and selected channel per connection | Yes | Yes | Yes | Yes | LIVE + FIXTURE | Merchant A read probe and completed imports passed. Several channels require explicit selection; live disconnect/reconnect remains pending. |
-| UPS | Merchant client credentials | Encrypted client ID/secret, account number, token and environment per connection | Yes | On demand | No | Evidence only | LIVE UI + FIXTURE | Safari verified the unconnected state and reusable form. Live token/evidence call requires owner secret entry. |
-| FedEx | Merchant client credentials | Encrypted client ID/secret, account number, token and environment per connection | Yes | On demand | No | Evidence only | LIVE UI + FIXTURE | Safari verified the reusable form. Provider login has timed out; live token/evidence call requires owner login and secret entry. |
-| Gorgias | Merchant API token | Encrypted merchant token and webhook secret | Yes | Yes | Yes | Partial | LIVE + FIXTURE | Merchant A is truthfully degraded (`gorgias_400`); ownership, routing, redaction, and production fallback boundaries pass. |
-| Zendesk | Merchant API credentials | Encrypted merchant credentials and webhook secret | Founder-assisted reusable | Yes | Yes | Partial | No | Secure backend exists but provider is absent from the main connector registry/catalogue flow. |
-| Freshdesk | Merchant API token | Encrypted merchant token and webhook secret | Founder-assisted reusable | Yes | Yes | Partial | No | Secure backend exists but provider is absent from the main connector registry/catalogue flow. |
-| BigCommerce | Platform OAuth | Encrypted merchant token; platform client/secret shared | No | Yes | Yes | Partial | FIXTURE | Backend ownership and callback isolation are repaired, but normal merchant onboarding remains deliberately unavailable. |
-| WooCommerce | Merchant store/API credentials | Encrypted merchant credentials and webhook secret | No | Yes | Yes | Partial | FIXTURE | Backend ownership and webhook isolation are repaired, but normal merchant onboarding remains deliberately unavailable. |
-| Document upload | Authenticated application session | No provider credential | Yes | Manual | No | Document linking | Pending | Manual-only by design; connector manifest currently labels verification as partial. |
-| CSV import | Authenticated application session | No provider credential | Yes | Manual | No | Normalized import | Pending | Batch intake, not a live provider connection. |
-| Merchant API intake | Merchant API key | Hashed merchant-owned API key | Yes | Push API | Push API | Canonical events | Pending | External callers must implement their own provider polling/webhook bridge. |
-| Self-fulfilment pack | Authenticated application session | No provider credential | Legacy only | Manual | No | Manual | No | Live in the legacy registry but absent from the modern merchant catalogue. |
-| Stripe | None | None | No | No | No | No | N/A | Request-only placeholder; Shopify Payments disputes are handled through Shopify data. |
-| Carrier claims | None | None | No | No | No | No | N/A | Request-only placeholder. |
-| AfterShip | None in production code | None | No | No | No | No | N/A | Removed production connector; remaining references are stale historical/fixture material. |
-
-## Inventory classification
-
-- Merchant self-service surfaces: Shopify, Gorgias, UPS, FedEx, ShipBob, document upload, CSV import, merchant API intake.
-- Founder-assisted reusable backend surfaces: Zendesk and Freshdesk.
-- Backend present but normal onboarding unavailable: BigCommerce and WooCommerce.
-- Legacy/internal manual surface: self-fulfilment pack.
-- Placeholders: Stripe and carrier claims.
-- Removed/stale only: AfterShip.
+| Provider | Authentication and credential owner | Self-service | Data path | Isolation evidence | Current classification and limitation |
+|---|---|---:|---|---|---|
+| Shopify | Platform OAuth; merchant token encrypted per connection | Yes | Imports, webhooks, canonical orders/customers | CODE + FIXTURE + LIVE | Verified live disconnect/reconnect. One active store per merchant/provider. |
+| ShipBob | Platform OAuth with PKCE; merchant token, environment, channel, and webhook secret per connection | Yes | Imports, webhooks, orders, fulfilments, shipments, locations | CODE + FIXTURE + LIVE | Verified for two live merchants and distinct provider accounts. Explicit channel choice is required when several exist. |
+| UPS | Merchant client credentials encrypted per connection | Yes | On-demand tracking/evidence | CODE + LIVE | Production OAuth and official public sample tracking passed. Sample had no provider signature/photo; canonical unavailability is explicit. |
+| FedEx | Merchant client credentials encrypted per connection | Yes | On-demand tracking/evidence | CODE + LIVE | Sandbox OAuth and official mock tracking passed. Production OAuth correctly rejected the sandbox project. Signature/photo/POD was unavailable. |
+| Gorgias | Merchant API token encrypted per connection | Yes | Imports and webhooks | CODE + FIXTURE; LIVE excluded | User explicitly excluded Gorgias from the completion pass. No provider-health claim is made. |
+| Zendesk | Merchant API credentials per connection | Founder-assisted | Imports and webhooks | CODE | Reusable secure backend is absent from the main catalogue flow. |
+| Freshdesk | Merchant API token per connection | Founder-assisted | Imports and webhooks | CODE | Reusable secure backend is absent from the main catalogue flow. |
+| BigCommerce | Platform OAuth; merchant token per connection | No | Imports and webhooks | CODE + FIXTURE | Ownership and callback isolation are repaired; normal onboarding is unavailable. |
+| WooCommerce | Merchant store/API credentials per connection | No | Imports and webhooks | CODE + FIXTURE | Ownership and webhook isolation are repaired; normal onboarding is unavailable. |
+| Document upload | Authenticated application session | Yes | Manual document linking | CODE | Manual source by design, not a live provider connection. |
+| CSV import | Authenticated application session | Yes | Batch normalized import | CODE | Manual batch source by design. |
+| Merchant API intake | Hashed merchant-owned API key | Yes | Push API and canonical events | CODE | External caller supplies its own provider bridge. |
+| Self-fulfilment pack | Authenticated application session | Legacy | Manual | CODE | Legacy/internal surface, absent from the modern catalogue. |
+| Stripe | None | No | None | N/A | Request-only placeholder. |
+| Carrier claims | None | No | None | N/A | Request-only placeholder; direct carrier evidence routes are implemented separately. |
+| AfterShip | None in production | No | None | CODE + PRODUCTION | Removed connector; any remaining references are historical or fixture-only. |
 
 ## Active connection-count policy
 
-| Provider family | MVP active-count policy | Connecting another account | Record distinction |
+| Provider family | Active policy | Connecting another account | Record distinction |
 |---|---:|---|---|
-| Shopify, BigCommerce, WooCommerce | One active store per merchant/provider | Reject while another active store exists; reconnect the retained connection after disconnect | Merchant + store connection + provider external ID |
-| ShipBob | One active connection; one explicitly selected channel | Reject a second active connection; multiple discovered channels require selection before persistence | Merchant + connection + source account/channel + external ID |
-| UPS and FedEx | One active carrier account per merchant/provider | Reject while active; reconnect preserves stored environment/account identity | Merchant + carrier connection + tracking reference |
-| Gorgias, Zendesk, Freshdesk | One active helpdesk per merchant/provider | Reject while active; reconnect/credential rotation updates the same owned account | Merchant + helpdesk connection + ticket/message external ID |
-| Document/CSV/API intake | Multiple independent batches/API keys as designed | Coexist; they are not singleton provider credentials | Merchant + source/batch/key + external ID |
+| Shopify, BigCommerce, WooCommerce | One active store per merchant/provider | Reject while active; reconnect retained identity after disconnect | Merchant + connection + provider external ID |
+| ShipBob | One active connection and one explicitly selected channel | Reject a second active connection; require selection among discovered channels | Merchant + connection + source account/channel + external ID |
+| UPS and FedEx | One active carrier account per merchant/provider | Reject while active; reconnect retains environment/account identity | Merchant + connection + tracking reference |
+| Helpdesks | One active account per merchant/provider | Reject while active; reconnect or credential rotation retains owned identity | Merchant + connection + ticket/message external ID |
+| Document, CSV, API intake | Multiple independent batches or keys | Coexist by design | Merchant + source/batch/key + external ID |
+
+The included live completion scope is Shopify, ShipBob, UPS, and FedEx. Gorgias is excluded by explicit instruction. A single real order traversing all four included providers was not available; carrier calls used official provider samples and are not represented as merchant-order correlation proof.
