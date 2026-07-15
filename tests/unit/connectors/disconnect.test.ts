@@ -53,6 +53,8 @@ describe('disconnectProviderConnection', () => {
     expect(store?.eqs).toContainEqual(['store_key', 'account-1']);
     expect(canon?.patch.status).toBe('revoked');
     expect(canon?.patch.disconnected_at).toBeTruthy();
+    expect(canon?.patch.subscribed).toBe(false);
+    expect(canon?.patch.webhook_status).toBe('disconnected');
     expect(disconnectIntegration).not.toHaveBeenCalled();
   });
 
@@ -76,6 +78,7 @@ describe('disconnectProviderConnection', () => {
     await disconnectProviderConnection(client, M, { id: 'ups', category: 'carrier' }, 'connection-1');
     expect(disconnectIntegration).toHaveBeenCalledWith(client, M, 'ups', 'connection-1');
     expect(updates.find((u) => u.table === 'merchant_integrations')?.patch.disconnected_at).toBeTruthy();
+    expect(updates.find((u) => u.table === 'merchant_integrations')?.patch.subscribed).toBe(false);
     expect(updates.some((u) => u.table === 'source_records')).toBe(false);
   });
 

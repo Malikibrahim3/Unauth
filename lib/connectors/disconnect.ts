@@ -84,7 +84,13 @@ export async function disconnectProviderConnection(
   // Canonical mirror: mark the merchant_integrations row revoked + disconnected.
   const { error: canonicalError } = await client
     .from(TABLES.MERCHANT_INTEGRATIONS)
-    .update({ status: 'revoked', disconnected_at: now, updated_at: now })
+    .update({
+      status: 'revoked',
+      disconnected_at: now,
+      subscribed: false,
+      webhook_status: 'disconnected',
+      updated_at: now,
+    })
     .eq('id', connectionId)
     .eq('merchant_id', merchantId)
     .eq('provider_id', provider.id);
