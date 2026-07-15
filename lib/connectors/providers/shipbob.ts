@@ -160,10 +160,11 @@ export const shipbobConnector: ConnectorAdapter = {
     // subscriptions. Failure never blocks the disconnect itself.
     const credentials = credentialsFromContext(ctx);
     if (!shipBobToken(credentials)) return { ok: true };
+    if (!ctx.connectionId) return { ok: true, message: 'shipbob_connection_id_missing' };
     try {
-      const ourUrlPrefix = `${getAppUrl()}/api/integrations/shipbob/webhook`;
+      const webhookUrl = `${getAppUrl()}/api/integrations/shipbob/webhook?connectionId=${encodeURIComponent(ctx.connectionId)}`;
       const existing = await listShipBobSubscriptions(credentials);
-      const ours = existing.items.filter((subscription) => subscription.url?.startsWith(ourUrlPrefix));
+      const ours = existing.items.filter((subscription) => subscription.url === webhookUrl);
       for (const subscription of ours) {
         await deleteShipBobSubscription(credentials, subscription.id);
       }
