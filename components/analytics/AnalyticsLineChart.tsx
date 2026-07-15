@@ -44,8 +44,7 @@ export function AnalyticsLineChart({
     }
 
     return {
-      animation: true,
-      animationDuration: 400,
+      animation: false,
       grid: { left: 0, right: 8, top: 8, bottom: 0, containLabel: true },
       tooltip: {
         ...baseTooltip(t),
@@ -76,10 +75,10 @@ export function AnalyticsLineChart({
         name: seriesName,
         type: 'line' as const,
         data: data.map((d) => d.value),
-        smooth: 0.3,
-        symbol: 'circle',
-        symbolSize: data.length === 1 ? 6 : 4,
-        showSymbol: data.length <= 10,
+        smooth: false,
+        symbol: 'none',
+        symbolSize: data.length === 1 ? 6 : 0,
+        showSymbol: data.length === 1,
         lineStyle: { color: c, width: 2 },
         itemStyle: { color: c },
         areaStyle: area ? {

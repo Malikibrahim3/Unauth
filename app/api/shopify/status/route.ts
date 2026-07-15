@@ -57,7 +57,7 @@ export async function GET() {
     serviceClient
       .from('processed_webhooks')
       .select('processed_at,topic,status')
-      .eq('platform', 'shopify')
+      .eq('provider', 'shopify')
       .eq('store_key', shopDomain)
       .order('processed_at', { ascending: false })
       .limit(1)
@@ -65,13 +65,13 @@ export async function GET() {
     serviceClient
       .from('processed_webhooks')
       .select('idempotency_key', { count: 'exact', head: true })
-      .eq('platform', 'shopify')
+      .eq('provider', 'shopify')
       .eq('store_key', shopDomain)
       .eq('status', 'failed'),
     serviceClient
       .from('processed_webhooks')
       .select('processed_at,topic,status')
-      .eq('platform', 'shopify')
+      .eq('provider', 'shopify')
       .eq('store_key', shopDomain)
       .order('processed_at', { ascending: false })
       .limit(5),

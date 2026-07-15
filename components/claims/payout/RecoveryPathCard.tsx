@@ -2,18 +2,14 @@
 
 import {
   LIKELY_OWNER_LABELS,
-  RECOVERABILITY_LABELS,
   type RecoveryPath,
 } from '@/lib/payouts/types';
 import {
-  TONE_STYLE,
   humanizeEvidenceKey,
-  recoverabilityTone,
 } from '@/components/claims/payout/payoutCopy';
+import { EvidenceChecklist, StatusBadge } from '@/components/ui';
 
 export function RecoveryPathCard({ recovery }: { recovery: RecoveryPath }) {
-  const tone = TONE_STYLE[recoverabilityTone(recovery.recoverability)];
-
   return (
     <section
       className="rounded-md p-4 border"
@@ -23,12 +19,7 @@ export function RecoveryPathCard({ recovery }: { recovery: RecoveryPath }) {
         <p className="text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>
           Recovery route
         </p>
-        <span
-          className="inline-block text-xs font-semibold rounded-full px-2.5 py-1"
-          style={{ background: tone.bg, color: tone.color }}
-        >
-          {RECOVERABILITY_LABELS[recovery.recoverability]}
-        </span>
+        <StatusBadge family="recoverability" value={recovery.recoverability} size="sm" />
       </div>
 
       <p className="text-sm" style={{ color: 'var(--text)' }}>
@@ -40,17 +31,7 @@ export function RecoveryPathCard({ recovery }: { recovery: RecoveryPath }) {
           <p className="text-xs mb-1" style={{ color: 'var(--text-secondary)' }}>
             Still needed
           </p>
-          <div className="flex flex-wrap gap-1.5">
-            {recovery.requiredEvidence.map((key) => (
-              <span
-                key={key}
-                className="inline-flex items-center rounded-full px-2 py-0.5 text-xs"
-                style={{ background: 'var(--bg-inset)', color: 'var(--text-secondary)' }}
-              >
-                {humanizeEvidenceKey(key)}
-              </span>
-            ))}
-          </div>
+          <EvidenceChecklist items={recovery.requiredEvidence.map((key) => ({ label: humanizeEvidenceKey(key) }))} />
         </div>
       )}
 

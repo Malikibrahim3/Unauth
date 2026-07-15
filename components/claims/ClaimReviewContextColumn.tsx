@@ -1,6 +1,6 @@
 "use client";
 
-import { PanelCard } from "@/components/ui";
+import { Card } from "@/components/ui";
 import { claimEventLabel, claimEventSummary } from "@/lib/claims/events";
 import SupportCaseContextList from "@/components/support/SupportCaseContextList";
 import {
@@ -78,18 +78,18 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
         />
       ) : null}
       {history.length > 1 ? (
-        <PanelCard as="aside" variant="appInset" className="border-[var(--warning-bd)] p-3">
+        <Card unstyled as="aside" variant="inset" className="border-[var(--warning-bd)] p-3">
           <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
             {history.length} previous payout cases for this customer
           </p>
           <a href={`${wb.customerProfileHref}#cases`} className="mt-1 inline-block text-xs font-semibold text-[var(--accent)]">
             View case history
           </a>
-        </PanelCard>
+        </Card>
       ) : null}
 
       {selectedClaim && latestOutcome && (
-        <PanelCard as="section" variant="app" className="p-4">
+        <Card unstyled as="section" variant="flat" className="p-4">
           <p
             className="text-caption font-semibold mb-3"
             style={{ color: "var(--text-secondary)" }}
@@ -155,13 +155,13 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
               </div>
             )}
           </div>
-        </PanelCard>
+        </Card>
       )}
 
       <SupportCaseContextList cases={supportCases} />
 
-      <PanelCard as="section" variant="app" className="p-4">
-        <PanelCard variant="appInset" className="mb-3 inline-flex p-0.5">
+      <Card unstyled as="section" variant="flat" className="p-4">
+        <Card unstyled variant="inset" className="mb-3 inline-flex p-0.5">
           <button
             type="button"
             onClick={() => patch({ auditTab: "timeline" })}
@@ -192,7 +192,7 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
           >
             Claim history
           </button>
-        </PanelCard>
+        </Card>
         {state.auditTab === "timeline" && (
           <>
             {!selectedClaim ? (
@@ -206,10 +206,10 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
             ) : (
               <ol className="space-y-2">
                 {selectedClaimEvents.map((event) => (
-                  <PanelCard
+                  <Card unstyled
                     key={event.id}
                     as="li"
-                    variant="appInset"
+                    variant="inset"
                     className="p-3"
                   >
                     <div className="flex flex-wrap items-start justify-between gap-2">
@@ -241,7 +241,7 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
                         )}
                       </div>
                     </div>
-                  </PanelCard>
+                  </Card>
                 ))}
               </ol>
             )}
@@ -253,7 +253,7 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
             onSelectClaim={setClaimId}
           />
         )}
-      </PanelCard>
+      </Card>
     </div>
   );
 }

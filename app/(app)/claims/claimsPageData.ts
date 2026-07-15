@@ -12,6 +12,11 @@ export function humanizeEnumValue(value: string): string {
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
+/** Humanise known enum/evidence tokens before they reach merchant-facing copy. */
+export function sanitizeMerchantText(value: string): string {
+  return value.replace(/\b[a-z][a-z0-9]*(?:_[a-z0-9]+)+\b/g, humanizeEnumValue);
+}
+
 /**
  * Display labels for merchant-recorded outcome values. Legacy fraud-era values
  * map to neutral policy language and must never render raw.

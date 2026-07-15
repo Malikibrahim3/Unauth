@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import type { ButtonSize, ButtonVariant } from './Button';
 
 const BUTTON_BASE =
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-colors duration-[var(--duration-fast)] focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed select-none';
+  'relative inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[var(--ua-radius-control)] font-medium transition-colors duration-[var(--duration-fast)] focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed select-none';
 
 const BUTTON_SIZES: Record<ButtonSize, { height: string; px: string; fontSize: number }> = {
   sm: { height: 'var(--ua-control-height-sm)', px: 'var(--ua-control-padding-x-sm)', fontSize: 12 },
@@ -31,7 +31,7 @@ function buttonVariantStyle(variant: ButtonVariant): CSSProperties {
     case 'primary':
       return {
         background: 'var(--ua-accent)',
-        color: 'white',
+        color: 'var(--ua-text-inverse)',
         border: '1px solid var(--ua-accent)',
       };
     // Lime brand CTA — sparing: marketing CTAs, "New X" marquee actions.
@@ -47,7 +47,7 @@ function buttonVariantStyle(variant: ButtonVariant): CSSProperties {
     case 'ghost':
       return { background: 'transparent', color: 'var(--text-secondary)' };
     case 'danger':
-      return { background: 'var(--risk-critical)', color: 'white', border: '1px solid var(--risk-critical)' };
+      return { background: 'var(--risk-critical)', color: 'var(--text-inverse)', border: '1px solid var(--risk-critical)' };
     case 'link':
       return { background: 'transparent', color: 'var(--text-secondary)' };
   }
@@ -68,7 +68,7 @@ export function getButtonPresentation(
       paddingLeft: isLink ? undefined : sz.px,
       paddingRight: isLink ? undefined : sz.px,
       fontSize: sz.fontSize,
-        borderRadius: isLink ? undefined : 'var(--ua-radius-control)',
+      borderRadius: isLink ? undefined : 'var(--ua-radius-control)',
       minWidth: isLink ? undefined : 'fit-content',
       ...buttonVariantStyle(variant),
       ...style,

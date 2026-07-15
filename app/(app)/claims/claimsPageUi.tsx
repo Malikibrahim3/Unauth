@@ -8,6 +8,6 @@ export function StatusPill({ status }: { status: string }) {
 
 export function SlaPill({ claim }: { claim: ClaimRow }) {
   const sla = getClaimSlaState(claim);
-  const value = sla.state === 'overdue' || sla.state === 'approaching' || sla.state === 'resolved' ? sla.state : 'normal';
-  return <StatusBadge family="workflowStatus" value={value} size="sm" />;
+  if (sla.state !== 'overdue' && sla.state !== 'approaching') return null;
+  return <StatusBadge family="workflowStatus" value={sla.state} size="sm" />;
 }

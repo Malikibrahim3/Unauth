@@ -22,6 +22,7 @@ import {
   buildCustomerIdentifierHashes,
   lookupNetworkIdentity,
   resolveIdentitySiblingCustomers,
+  resolveRepresentativeCustomerIdForIdentity,
 } from "@/lib/customers/identityNetwork";
 import { getEventStream } from "@/lib/analysis/customerIntelligence";
 import type { BehaviorRoadmapEvent } from "@/components/customers/BehaviorRoadmap";
@@ -360,6 +361,27 @@ export async function loadCustomerProfilePage(
       .eq("id", profileId)
       .maybeSingle()) as unknown as { data: SourceCustomerRow | null };
     customer = fallback.data;
+  }
+  // Layer 1b — the id may be an identity_id (e.g. a claim's identity_id used
+  // as a deep link target from the payout queue). Resolve it back to one of
+  // its merchant-owned source_customers rows.
+  if (!customer) {
+    const representativeCustomerId = await resolveRepresentativeCustomerIdForIdentity(
+      svc,
+      merchantId,
+      profileId,
+    );
+    if (representativeCustomerId) {
+      const byIdentity = (await svc
+        .from("source_customers")
+        .select(
+          "id, email, phone, first_name, last_name, other_emails, orders_count, account_created_at, created_at, updated_at",
+        )
+        .eq("merchant_id", merchantId)
+        .eq("id", representativeCustomerId)
+        .maybeSingle()) as unknown as { data: SourceCustomerRow | null };
+      customer = byIdentity.data;
+    }
   }
   if (!customer) {
     if (viewToken) {

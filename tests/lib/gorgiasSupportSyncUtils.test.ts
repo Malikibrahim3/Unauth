@@ -25,7 +25,7 @@ describe('gorgiasSupportSyncUtils', () => {
         true,
       );
       expect(text).toContain('integration limit');
-      expect(text).toContain('Settings → Integrations');
+      expect(text).toContain('Settings, then Integrations');
       expect(text).not.toContain('Reconnect to try again.');
     });
 

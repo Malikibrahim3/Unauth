@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, ShieldCheck } from "lucide-react";
+import { ArrowRight, Plus, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Button,
-  PanelCard,
+  Card,
 } from "@/components/ui";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import {
@@ -97,8 +97,8 @@ export function RulesIndexClient({
               href={`/rules/${rule.id}`}
               className="block rounded-[var(--radius-lg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
             >
-              <PanelCard
-                variant="app"
+              <Card unstyled
+                variant="flat"
                 className="group grid gap-3 p-4 transition-colors hover:border-[var(--accent)] sm:grid-cols-[minmax(0,1fr)_8rem_8rem_auto] sm:items-center"
               >
                 <div className="min-w-0">
@@ -131,16 +131,14 @@ export function RulesIndexClient({
                       <span className="text-[11px] text-[var(--text-tertiary)]">Draft over v{rule.publishedVersion}</span>
                     ) : null}
                   </div>
-                  <span aria-hidden="true" className="text-[var(--accent)]">
-                    →
-                  </span>
+                  <ArrowRight className="h-4 w-4 text-[var(--text-secondary)]" aria-hidden="true" />
                 </div>
-              </PanelCard>
+              </Card>
             </Link>
           ))}
         </div>
       ) : (
-        <PanelCard variant="app" className="p-10 text-center">
+        <Card unstyled variant="flat" className="p-10 text-center">
           <h2 className="text-base font-semibold">No payout rules yet</h2>
           <p className="mx-auto mt-2 max-w-xl text-sm text-[var(--text-secondary)]">
             Write a rule, try it on a sample case, then publish when it looks
@@ -155,7 +153,7 @@ export function RulesIndexClient({
               Create first rule
             </Button>
           ) : null}
-        </PanelCard>
+        </Card>
       )}
       <RuleBuilderDrawer
         key={creating ? "open" : "closed"}

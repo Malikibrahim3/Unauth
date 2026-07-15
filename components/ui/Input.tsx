@@ -16,7 +16,7 @@ export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputE
         height: 'var(--ua-control-height-input)',
         background: 'var(--surface-sunken)',
         border: '1px solid var(--border)',
-        borderRadius: 'var(--ua-radius-input)',
+        borderRadius: 'var(--ua-radius-control)',
         color: 'var(--text-primary)',
         ...style,
       }}

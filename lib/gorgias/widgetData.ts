@@ -581,118 +581,13 @@ export async function countShopifyOrdersAtMerchant(
   merchantId: string,
   normEmail: string
 ): Promise<number> {
-  const { data: connections, error } = await service
-    .from('merchant_shopify_connections' as never)
-    .select('shop_domain')
+  const { count, error } = await service
+    .from(TABLES.SOURCE_ORDERS)
+    .select('id', { count: 'exact', head: true })
     .eq('merchant_id', merchantId)
-    .eq('active', true);
-
-  if (error || !connections?.length) return 0;
-
-  const directEmailOrderIds = new Set<string>();
-  const directEmailCustomerIdsByShop = new Map<string, Set<string>>();
-  const countSignalRowsForCustomerIds = async (customerIdsByShop: Map<string, Set<string>>) => {
-    const orderIds = new Set<string>();
-    const signalRowGroups = await Promise.all(
-      [...customerIdsByShop.entries()].map(async ([shopDomain, customerIds]) => {
-        const ids = [...customerIds];
-        if (!ids.length) return { shopDomain, signalRows: [] as Array<{ shopify_order_id?: string | number | null; order_number?: string | number | null }> };
-        const { data: signalRows } = await service
-          .from('shopify_order_signals' as never)
-          .select('shopify_order_id, order_number')
-          .eq('shop_domain', shopDomain)
-          .in('customer_id', ids);
-        return { shopDomain, signalRows: (signalRows ?? []) as Array<{ shopify_order_id?: string | number | null; order_number?: string | number | null }> };
-      })
-    );
-
-    for (const { shopDomain, signalRows } of signalRowGroups) {
-      for (const signal of signalRows) {
-        const orderNumber = signal.order_number == null ? null : String(signal.order_number).trim();
-        if (orderNumber && !/^\d+$/.test(orderNumber)) continue;
-        if (signal.shopify_order_id != null) {
-          orderIds.add(`${shopDomain}:${String(signal.shopify_order_id)}`);
-        }
-      }
-    }
-    return orderIds;
-  };
-
-  const identityRowGroups = await Promise.all(
-    (connections as Array<{ shop_domain: string }>).map(async (row) => {
-      const shopDomain = row.shop_domain?.trim();
-      if (!shopDomain) return { shopDomain: null, identityRows: [] as Array<{ source_id?: string | number | null; customer_id?: string | number | null }> };
-      const { data: identityRows } = await service
-        .from('merchant_identities' as never)
-        .select('source_id, customer_id')
-        .eq('shop_domain', shopDomain)
-        .eq('source', 'order')
-        .eq('email', normEmail);
-      return { shopDomain, identityRows: (identityRows ?? []) as Array<{ source_id?: string | number | null; customer_id?: string | number | null }> };
-    })
-  );
-
-  for (const { shopDomain, identityRows } of identityRowGroups) {
-    if (!shopDomain) continue;
-    for (const identity of identityRows) {
-      if (identity.source_id != null) {
-        directEmailOrderIds.add(`${shopDomain}:${String(identity.source_id)}`);
-      }
-      if (identity.customer_id != null) {
-        const customerIds = directEmailCustomerIdsByShop.get(shopDomain) ?? new Set<string>();
-        customerIds.add(String(identity.customer_id));
-        directEmailCustomerIdsByShop.set(shopDomain, customerIds);
-      }
-    }
-  }
-
-  const [directEmailSignalOrderIds, { data: emailIdentityRows }] = await Promise.all([
-    countSignalRowsForCustomerIds(directEmailCustomerIdsByShop),
-    service
-      .from(TABLES.CUSTOMER_PROFILE_IDENTITIES)
-      .select('customer_profile_id')
-      .eq('merchant_id', merchantId)
-      .eq('identity_type', 'email')
-      .eq('identity_value', normEmail),
-  ]);
-
-  const profileIds = Array.from(
-    new Set(
-      ((emailIdentityRows ?? []) as Array<{ customer_profile_id?: string | null }>)
-        .flatMap((row) => {
-          const id = row.customer_profile_id?.trim();
-          return id ? [id] : [];
-        })
-    )
-  );
-
-  const profileCustomerIdsByShop = new Map<string, Set<string>>();
-  if (profileIds.length > 0) {
-    const { data: customerIdentityRows } = await service
-      .from(TABLES.CUSTOMER_PROFILE_IDENTITIES)
-      .select('identity_value')
-      .eq('merchant_id', merchantId)
-      .eq('identity_type', 'shopify_customer_id')
-      .in('customer_profile_id', profileIds);
-
-    const profileCustomerIds = Array.from(
-      new Set(
-        ((customerIdentityRows ?? []) as Array<{ identity_value?: string | null }>)
-          .map((row) => row.identity_value?.trim())
-          .filter((id): id is string => Boolean(id))
-      )
-    );
-    if (profileCustomerIds.length > 0) {
-      for (const row of connections as Array<{ shop_domain: string }>) {
-        const shopDomain = row.shop_domain?.trim();
-        if (shopDomain) profileCustomerIdsByShop.set(shopDomain, new Set(profileCustomerIds));
-      }
-    }
-  }
-
-  const profileSignalOrderIds = await countSignalRowsForCustomerIds(profileCustomerIdsByShop);
-  const signalOrderCount = Math.max(directEmailSignalOrderIds.size, profileSignalOrderIds.size);
-  return signalOrderCount > 0 ? signalOrderCount : directEmailOrderIds.size;
+    .eq('source', 'shopify')
+    .ilike('email', normEmail);
+  return error ? 0 : count ?? 0;
 }
 
 export async function readThisStoreSummary(
@@ -761,13 +656,25 @@ export async function derivePrimaryReasonAtMerchant(
   merchantId: string,
   emailHash: string
 ): Promise<PrimaryReason> {
+  const { data: signals, error: signalError } = await service
+    .from(TABLES.IDENTITY_SIGNALS)
+    .select('source_ticket_id')
+    .eq('merchant_id', merchantId)
+    .eq('identifier_type', 'email')
+    .eq('identifier_hash', emailHash)
+    .not('source_ticket_id', 'is', null);
+
+  if (signalError) return null;
+  const ticketIds = Array.from(new Set((signals ?? []).flatMap((row) =>
+    row.source_ticket_id ? [row.source_ticket_id] : []
+  )));
+  if (ticketIds.length === 0) return null;
+
   const { data, error } = await service
-    .from(TABLES.SUPPORT_CASE_INTAKE)
+    .from(TABLES.MERCHANT_CLAIMS)
     .select('claim_type')
     .eq('merchant_id', merchantId)
-    .eq('customer_email_hash', emailHash)
-    .eq('is_claim', true)
-    .eq('requires_merchant_review', false);
+    .in('source_ticket_id', ticketIds);
 
   if (error || !data) return null;
 
@@ -784,40 +691,37 @@ export async function countStoreRecentClaims(
   emailHash: string
 ): Promise<number> {
   const cutoff = ninetyDayCutoff();
-  // support_case_intake has no `created_at` column — the claim timestamp is
-  // created_at_provider. Filtering on the missing column errored and silently
-  // returned 0, so "recent 90 days" was always 0.
+  const { data: signals, error: signalError } = await service
+    .from(TABLES.IDENTITY_SIGNALS)
+    .select('source_ticket_id')
+    .eq('merchant_id', merchantId)
+    .eq('identifier_type', 'email')
+    .eq('identifier_hash', emailHash)
+    .not('source_ticket_id', 'is', null);
+  if (signalError) return 0;
+  const ticketIds = Array.from(new Set((signals ?? []).flatMap((row) =>
+    row.source_ticket_id ? [row.source_ticket_id] : []
+  )));
+  if (ticketIds.length === 0) return 0;
+
   const { count, error } = await service
-    .from(TABLES.SUPPORT_CASE_INTAKE)
+    .from(TABLES.MERCHANT_CLAIMS)
     .select('*', { count: 'exact', head: true })
     .eq('merchant_id', merchantId)
-    .eq('customer_email_hash', emailHash)
-    .eq('is_claim', true)
-    .eq('requires_merchant_review', false)
-    .gte('created_at_provider', cutoff);
+    .in('source_ticket_id', ticketIds)
+    .gte('submitted_at', cutoff);
 
   if (error || typeof count !== 'number') return 0;
   return count;
 }
 
 export async function derivePrimaryReason(
-  service: SupabaseClient,
-  emailHash: string
+  _service: SupabaseClient,
+  _emailHash: string
 ): Promise<PrimaryReason> {
-  const { data, error } = await service
-    .from(TABLES.SUPPORT_CASE_INTAKE)
-    .select('claim_type')
-    .eq('customer_email_hash', emailHash)
-    .eq('is_claim', true)
-    .eq('requires_merchant_review', false);
-
-  if (error || !data) return null;
-
-  const types = (data as Array<{ claim_type: unknown }>)
-    .map((r) => (typeof r.claim_type === 'string' ? r.claim_type : null))
-    .filter((t): t is ClaimType => t !== null && t in CLAIM_TYPE_LABELS);
-
-  return derivePrimaryReasonFromTypes(types);
+  // Cross-merchant reason aggregation is disclosed only by the k-anonymous v2
+  // lookup RPC. The legacy unscoped helper cannot enforce that contract.
+  return null;
 }
 
 /** Pure: adaptive primary-reason from a list of claim types. */

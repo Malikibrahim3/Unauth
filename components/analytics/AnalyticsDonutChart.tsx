@@ -21,6 +21,10 @@ export interface AnalyticsDonutChartProps {
   gradePalette?: boolean;
 }
 
+/**
+ * Retained for the public demo only. Authenticated reporting uses ranked tables
+ * and bars; this component is not imported by app/(app) routes.
+ */
 export function AnalyticsDonutChart({
   data,
   height = 220,
@@ -33,30 +37,24 @@ export function AnalyticsDonutChart({
     const t = readCssTokens();
     const fmt = valueFormatter ?? ((n: number) => formatNumber(n));
     const palette = gradePalette ? gradeColors(t) : [t.accent, t.sev_clear, t.sev_probable, t.sev_neutral, t.sev_weak];
-    const total = data.reduce((s, d) => s + d.value, 0);
+    const total = data.reduce((sum, slice) => sum + slice.value, 0);
 
-    if (!data || data.length === 0 || total === 0) {
+    if (!data.length || total === 0) {
       return {
+        animation: false,
         graphic: [{ type: 'text', left: 'center', top: 'middle', style: { text: emptyLabel, fill: t.ink_tertiary, fontSize: 12, fontFamily: 'inherit' } }],
         series: [],
       };
     }
 
-    const seriesData = data.map((d, i) => ({
-      name: d.label,
-      value: d.value,
-      itemStyle: { color: d.color ?? palette[i % palette.length] },
-    }));
-
     return {
-      animation: true,
-      animationDuration: 400,
+      animation: false,
       tooltip: {
         ...baseTooltip(t),
         trigger: 'item' as const,
         formatter: (param: unknown) => {
-          const p = param as { name: string; value: number; percent: number };
-          return `<span style="color:${t.ink_secondary};font-size:11px">${p.name}</span><br/><span style="font-weight:600;color:${t.ink_primary}">${fmt(p.value)}</span> <span style="color:${t.ink_tertiary}">${p.percent.toFixed(1)}%</span>`;
+          const point = param as { name: string; value: number; percent: number };
+          return `<span style="color:${t.ink_secondary};font-size:11px">${point.name}</span><br/><span style="font-weight:600;color:${t.ink_primary}">${fmt(point.value)}</span> <span style="color:${t.ink_tertiary}">${point.percent.toFixed(1)}%</span>`;
         },
       },
       legend: showLegend ? {
@@ -76,12 +74,12 @@ export function AnalyticsDonutChart({
         padAngle: 2,
         itemStyle: { borderRadius: 3, borderColor: t.surface_raised, borderWidth: 2 },
         label: { show: false },
-        emphasis: {
-          scale: true,
-          scaleSize: 4,
-          itemStyle: { shadowBlur: 8, shadowColor: 'color-mix(in srgb, var(--text-primary) 12%, transparent)' },
-        },
-        data: seriesData,
+        emphasis: { scale: false },
+        data: data.map((slice, index) => ({
+          name: slice.label,
+          value: slice.value,
+          itemStyle: { color: slice.color ?? palette[index % palette.length] },
+        })),
       }],
     };
   }, [data, showLegend, valueFormatter, emptyLabel, gradePalette]);

@@ -2,7 +2,7 @@ import { Activity, AtSign, CreditCard, Fingerprint, Lightbulb, MapPin, Phone, Sh
 import Link from "next/link";
 import CustomerNotes from "@/components/audit/CustomerNotes";
 import CustomerSupportCasesSection from "@/components/customers/CustomerSupportCasesSection";
-import { Badge, PanelCard } from "@/components/ui";
+import { Badge, Card, DataTableServer } from "@/components/ui";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import {
@@ -56,21 +56,35 @@ function CompactTransactionList({
   }
 
   return (
-    <div className="overflow-x-auto rounded-md border border-[var(--border)]">
-      <table className="w-full min-w-[560px] text-left text-sm">
-        <thead className="bg-[var(--surface-sunken)] text-[11px] uppercase tracking-wide text-[var(--text-tertiary)]"><tr><th className="px-3 py-2">Order</th><th className="px-3 py-2">Date</th><th className="px-3 py-2">Store outcome</th><th className="px-3 py-2 text-right">Amount</th></tr></thead>
-        <tbody className="divide-y divide-[var(--border-muted)]">
-      {transactions.slice(0, 25).map((tx) => (
-        <tr key={tx.order_id} className="hover:bg-[var(--surface-hover)]">
-          <td className="px-3 py-3"><Link href={`/orders/${tx.source_order_id}`} className="font-mono text-xs font-semibold underline-offset-2 hover:underline">{tx.order_id}</Link>{tx.via_email ? <span className="mt-1 block max-w-[190px] truncate text-[11px] text-[var(--text-tertiary)]">via {tx.via_email}</span> : null}</td>
-          <td className="px-3 py-3 text-[var(--text-secondary)]">{formatDateAbsolute(tx.processed_at)}</td>
-          <td className="px-3 py-3">{tx.chargeback_filed ? <Badge tone="danger" size="sm">Chargeback filed</Badge> : tx.refund_claimed ? <Badge tone="warning" size="sm">Payout case</Badge> : <Badge tone="success" size="sm">No linked case</Badge>}</td>
-          <td className="px-3 py-3 text-right font-semibold tabular-nums">{formatMoneyOrDash(Math.round((Number(tx.order_value) || 0) * 100), tx.currency)}</td>
-        </tr>
-      ))}
-        </tbody>
-      </table>
-    </div>
+    <DataTableServer
+      rows={transactions.slice(0, 25)}
+      getRowKey={(tx) => tx.order_id}
+      density="compact"
+      emptyState={<EmptyState variant="compact" title="No orders in dataset" />}
+      columns={[
+        {
+          key: "order",
+          header: "Order",
+          render: (tx) => <div><Link href={`/orders/${tx.source_order_id}`} className="font-mono text-xs font-semibold text-[var(--text-link)] underline-offset-2 hover:underline">{tx.order_id}</Link>{tx.via_email ? <span className="mt-1 block max-w-[190px] truncate text-[11px] text-[var(--text-tertiary)]">via {tx.via_email}</span> : null}</div>,
+        },
+        {
+          key: "date",
+          header: "Date",
+          render: (tx) => <span className="text-[var(--text-secondary)]">{formatDateAbsolute(tx.processed_at)}</span>,
+        },
+        {
+          key: "outcome",
+          header: "Store outcome",
+          render: (tx) => tx.chargeback_filed ? <Badge tone="danger" size="sm">Chargeback filed</Badge> : tx.refund_claimed ? <Badge tone="warning" size="sm">Payout case</Badge> : <Badge tone="success" size="sm">No linked case</Badge>,
+        },
+        {
+          key: "amount",
+          header: "Amount",
+          align: "right" as const,
+          render: (tx) => <span className="font-semibold tabular-nums">{formatMoneyOrDash(Math.round((Number(tx.order_value) || 0) * 100), tx.currency)}</span>,
+        },
+      ]}
+    />
   );
 }
 
@@ -178,10 +192,10 @@ export function CustomerProfilePageMainColumn({
                   description = labelize(entry.event_type);
               }
               return (
-                <PanelCard
+                <Card unstyled
                   key={entry.id}
                   as="li"
-                  variant="appInset"
+                  variant="inset"
                   className="flex items-start gap-3 p-3"
                 >
                   <Activity
@@ -203,7 +217,7 @@ export function CustomerProfilePageMainColumn({
                       {formatDateMode(entry.created_at, "recent")}
                     </p>
                   </div>
-                </PanelCard>
+                </Card>
               );
             })}
           </ol>

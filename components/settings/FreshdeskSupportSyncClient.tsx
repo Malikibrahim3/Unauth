@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useReducer, useRef, useState, type FormEvent } from 'react';
-import { PanelCard } from '@/components/ui';
+import { Card } from '@/components/ui';
 import { useFetchJson } from '@/lib/react/useFetchJson';
 import { FreshdeskSupportSyncConnectionDetails } from '@/components/settings/FreshdeskSupportSyncConnectionDetails';
 import { FreshdeskSupportSyncCreateForm } from '@/components/settings/FreshdeskSupportSyncCreateForm';
@@ -218,8 +218,8 @@ export default function FreshdeskSupportSyncClient({ canManage }: Props) {
   return (
     <div className="space-y-5">
       {state.message ? (
-        <PanelCard
-          variant="appInset"
+        <Card unstyled
+          variant="inset"
           className="px-4 py-3 text-sm"
           style={{
             borderColor:
@@ -238,7 +238,7 @@ export default function FreshdeskSupportSyncClient({ canManage }: Props) {
           }}
         >
           {state.message.text}
-        </PanelCard>
+        </Card>
       ) : null}
 
       {loading ? (

@@ -124,7 +124,7 @@ export default async function RecoveryDetailPage({ params }: Props) {
                     <span style={{ color: 'var(--text-primary)' }}>
                       {label('workflowStatus', event.event_type)}
                       {event.from_status && event.to_status ? (
-                        <span style={{ color: 'var(--text-tertiary)' }}> · {label('recoveryStatus', event.from_status)} → {label('recoveryStatus', event.to_status)}</span>
+                        <span style={{ color: 'var(--text-tertiary)' }}> · from {label('recoveryStatus', event.from_status)} to {label('recoveryStatus', event.to_status)}</span>
                       ) : null}
                       {event.note ? <span style={{ color: 'var(--text-secondary)' }}> — {event.note}</span> : null}
                     </span>

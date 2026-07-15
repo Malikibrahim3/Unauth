@@ -32,7 +32,7 @@ export function SectionCard({
         background: "var(--surface)",
         border: "1px solid var(--border)",
         borderRadius: "var(--ua-radius-card)",
-        boxShadow: "var(--ua-shadow-card)",
+        boxShadow: "none",
         ...style,
       }}
     >

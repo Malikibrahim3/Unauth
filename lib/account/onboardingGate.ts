@@ -7,20 +7,18 @@ interface OnboardingGateInput {
 }
 
 /**
- * Dashboard access requires both an order source (Shopify) and a helpdesk
- * (Gorgias, or another linked provider) connected — the claim gate can't
- * assemble evidence or surface a widget without them. Profile completion
- * alone no longer satisfies onboarding.
+ * Connections improve coverage, but they are optional during signup. A user
+ * can finish their profile and enter the app in a limited/no-source state,
+ * then connect one provider from each category later.
  */
 export function shouldRequireOnboarding({
   hasMerchantContext,
   setupComplete,
   auditRunCount,
-  shopifyConnected,
-  helpdeskConnected,
+  shopifyConnected: _shopifyConnected,
+  helpdeskConnected: _helpdeskConnected,
 }: OnboardingGateInput): boolean {
   if (!hasMerchantContext) return true;
-  if (!shopifyConnected || !helpdeskConnected) return true;
   if (setupComplete === true) return false;
   return (auditRunCount ?? 0) === 0;
 }

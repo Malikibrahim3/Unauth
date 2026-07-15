@@ -181,7 +181,7 @@ describe("/api/customers/search — auth requirement", () => {
     // unscoped scan of identities.
     expect(content).toContain("findCustomerProfileIdsByText");
     expect(content).toContain("ctx.merchantId");
-    expect(content).toContain(".in('id'");
+    expect(content).toContain(".in('identity_id'");
     // Must NOT run its own ilike/text scan against identities on user input.
     expect(content).not.toMatch(/\.ilike\(/);
   });
@@ -1457,7 +1457,7 @@ describe("/api/customers/search — partial name matching", () => {
     );
     // Results are constrained to IDs the caller's merchant owns.
     expect(content).toContain("ctx.merchantId");
-    expect(content).toContain(".in('id'");
+    expect(content).toContain(".in('identity_id'");
   });
 });
 

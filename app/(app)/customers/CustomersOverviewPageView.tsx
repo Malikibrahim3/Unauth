@@ -6,7 +6,7 @@ import type { MerchantSetupState } from '@/lib/connections/getMerchantSetupState
 import CustomersTableClient from '@/components/customers/CustomersTableClient';
 import { CustomersPageWorkbench } from '@/app/(app)/customers/CustomersPageWorkbench';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
-import { Badge, ButtonLink, PanelCard, WorkbenchEmptyState } from '@/components/ui';
+import { Badge, ButtonLink, Card, WorkbenchEmptyState } from '@/components/ui';
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { FilterChip } from '@/app/(app)/customers/CustomersOverviewFilterChip';
 import { buildRemoveHref, customersListHref } from '@/app/(app)/customers/customersOverviewPageUtils';
@@ -83,7 +83,7 @@ export function CustomersOverviewPageView({
       {/* match band copy belongs on customer scoring surfaces, not risk labels. */}
       {/* ── Compact filter bar ─────────────────────────────────────── */}
       {totalCount > 0 && (
-        <PanelCard variant="app" className="flex h-auto min-h-10 flex-wrap items-center gap-2 px-3 py-2">
+        <Card unstyled variant="flat" className="flex h-auto min-h-10 flex-wrap items-center gap-2 px-3 py-2">
           <span className="text-xs font-medium mr-1" style={{ color: 'var(--text-tertiary)' }}>Filters</span>
           {[
             { label: 'Open payout cases', href: '?openClaims=1', highlight: openClaimsOnly },
@@ -105,7 +105,7 @@ export function CustomersOverviewPageView({
               Payout case counts include connected helpdesk data only.
             </span>
           )}
-        </PanelCard>
+        </Card>
       )}
 
       {/* ── Active filter chips ───────────────────────────────────── */}

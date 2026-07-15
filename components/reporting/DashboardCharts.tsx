@@ -57,7 +57,7 @@ export function DashboardCharts({ report }: { report: IntelligenceReport }) {
 
   if (!groups.length) {
     return (
-      <section className="ua-section-panel rounded-[var(--radius-lg)] p-5" aria-labelledby="charts-empty-title">
+      <section className="ua-section-panel rounded-[var(--ua-radius-card)] p-5" aria-labelledby="charts-empty-title">
         <h2 id="charts-empty-title" className="text-base font-semibold">Payout performance</h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">
           No reconciled financial activity is available for this period. Charts appear only when payout-case ledger entries include an amount and currency.
@@ -78,7 +78,7 @@ export function DashboardCharts({ report }: { report: IntelligenceReport }) {
           </div>
 
           {!report.reconciliation.ok ? (
-            <div className="rounded-[var(--radius-md)] border border-[var(--warning-bd)] bg-[var(--warning-bg)] px-4 py-3 text-sm text-[var(--warning-fg)]" role="status">
+            <div className="rounded-[var(--ua-radius-card)] border border-[var(--warning-bd)] bg-[var(--warning-bg)] px-4 py-3 text-sm text-[var(--warning-fg)]" role="status">
               Some ledger entries could not be reconciled. Valid currency data remains visible; review the reconciliation notice above before using these figures.
             </div>
           ) : null}
@@ -119,7 +119,7 @@ export function DashboardCharts({ report }: { report: IntelligenceReport }) {
                           content={({ active, label, payload }) => {
                             if (!active || !payload?.length) return null;
                             return (
-                              <div className="min-w-44 rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--surface-overlay)] px-3 py-2 shadow-[var(--shadow-overlay)]">
+                              <div className="min-w-44 rounded-[var(--ua-radius-overlay)] border border-[var(--border-strong)] bg-[var(--surface-overlay)] px-3 py-2 shadow-[var(--ua-shadow-overlay)]">
                                 <p className="text-xs font-semibold text-[var(--text-primary)]">{formatDateAbsolute(String(label))}</p>
                                 <dl className="mt-2 space-y-1.5">
                                   {payload.map((item) => (
@@ -184,7 +184,7 @@ export function DashboardCharts({ report }: { report: IntelligenceReport }) {
                           const row = payload?.[0]?.payload as { name?: string; valueMinor?: number } | undefined;
                           if (!active || !row?.name || row.valueMinor == null) return null;
                           return (
-                            <div className="rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--surface-overlay)] px-3 py-2 shadow-[var(--shadow-overlay)]">
+                            <div className="rounded-[var(--ua-radius-overlay)] border border-[var(--border-strong)] bg-[var(--surface-overlay)] px-3 py-2 shadow-[var(--ua-shadow-overlay)]">
                               <p className="text-xs text-[var(--text-secondary)]">{row.name}</p>
                               <p className="mt-1 text-sm font-semibold tabular-nums">{formatMoney(row.valueMinor, bridge.currency)}</p>
                             </div>
@@ -231,7 +231,7 @@ function ChartPanel({
   title: string;
 }) {
   return (
-    <section className={`ua-section-panel overflow-hidden rounded-[var(--radius-lg)] ${className}`}>
+            <section className={`ua-section-panel overflow-hidden rounded-[var(--ua-radius-card)] ${className}`}>
       <div className="border-b border-[var(--border-muted)] px-4 py-3">
         <h3 className="text-sm font-semibold">{title}</h3>
       </div>
@@ -266,7 +266,7 @@ function RecoveryLedger({ bridge }: { bridge: MoneyBridge }) {
   const hasActivity = rows.some((row) => row.value > 0);
 
   return (
-    <section className="ua-section-panel rounded-[var(--radius-lg)] xl:col-span-12" aria-labelledby={`recovery-ledger-${bridge.currency}`}>
+    <section className="ua-section-panel rounded-[var(--ua-radius-card)] xl:col-span-12" aria-labelledby={`recovery-ledger-${bridge.currency}`}>
       <div className="border-b border-[var(--border-muted)] px-4 py-3">
         <h3 id={`recovery-ledger-${bridge.currency}`} className="text-sm font-semibold">Recovery progression</h3>
         <p className="mt-0.5 text-xs text-[var(--text-secondary)]">Reconciled value through the recovery workflow</p>

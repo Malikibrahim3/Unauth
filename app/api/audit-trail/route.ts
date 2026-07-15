@@ -196,11 +196,6 @@ async function GETHandler(request: NextRequest) {
         .select("user_id, invited_email, role")
         .eq("merchant_id", ctx.merchantId)
         .in("user_id", actorIds);
-      const { data: merchantRow2 } = await service
-        .from("merchants")
-        .select("user_id")
-        .eq("id", ctx.merchantId)
-        .maybeSingle();
       for (const m of (memberRows ?? []) as Array<{
         user_id: string | null;
         invited_email: string;
@@ -208,12 +203,6 @@ async function GETHandler(request: NextRequest) {
       }>) {
         if (m.user_id)
           actorMap[m.user_id] = { email: m.invited_email, role: m.role };
-      }
-      if (merchantRow2?.user_id && !actorMap[merchantRow2.user_id]) {
-        actorMap[merchantRow2.user_id] = {
-          email: user.email ?? "owner",
-          role: "owner",
-        };
       }
     }
 

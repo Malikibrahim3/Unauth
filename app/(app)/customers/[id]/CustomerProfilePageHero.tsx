@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { CalendarDays, CircleDollarSign, Info, ReceiptText, ShieldCheck, TriangleAlert } from 'lucide-react';
-import { Badge, PanelCard } from '@/components/ui';
+import { Badge, Card } from '@/components/ui';
 import { formatDateAbsolute, formatMoney, formatNumber } from '@/lib/utils/format';
 import { useBreadcrumbLabel } from '@/components/layout/BreadcrumbOverrideContext';
 import type {
@@ -86,13 +86,13 @@ export function CustomerProfilePageHero({
   return (
     <>
       {gorgiasSource === 'gorgias' ? (
-        <PanelCard variant="appInset" className="mb-3 flex items-center gap-2 px-3 py-2 text-xs text-[var(--text-secondary)]">
+        <Card unstyled variant="inset" className="mb-3 flex items-center gap-2 px-3 py-2 text-xs text-[var(--text-secondary)]">
           <Info className="h-4 w-4" aria-hidden="true" /> From Gorgias{gorgiasTicketId ? ` · case #${gorgiasTicketId}` : ''}
-        </PanelCard>
+        </Card>
       ) : null}
       <header className="mb-6">
         <Link href="/customers" className="text-xs font-semibold text-[var(--accent)]">Customer directory</Link>
-        <PanelCard variant="app" className="mt-3 overflow-hidden p-0 shadow-sm">
+        <Card unstyled variant="flat" className="mt-3 overflow-hidden p-0 shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-5 border-b border-[var(--border-muted)] bg-[var(--surface-sunken)] p-5 sm:p-6">
             <div className="flex min-w-0 items-center gap-4">
               <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[var(--surface)] text-lg font-semibold text-[var(--text-primary)] shadow-sm ring-1 ring-[var(--border)]">
@@ -129,7 +129,7 @@ export function CustomerProfilePageHero({
             <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
             <p>{merchantOrderCount === 0 ? 'No merchant-owned order history is linked to this customer.' : merchantClaimCount === 0 ? `This customer has placed ${formatNumber(merchantOrderCount)} orders in your store with no linked payout cases.` : `${formatNumber(merchantClaimCount)} of ${formatNumber(merchantOrderCount)} orders have linked payout cases. Review the order and case history below before taking action.`}</p>
           </div>
-        </PanelCard>
+        </Card>
       </header>
     </>
   );

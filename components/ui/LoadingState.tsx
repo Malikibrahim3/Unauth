@@ -1,5 +1,5 @@
-import Link from 'next/link';
 import { Button } from './Button';
+import { ButtonLink } from './ButtonLink';
 
 interface ErrorBoundaryUIProps {
   error: Error & { digest?: string };
@@ -23,7 +23,7 @@ export function ErrorBoundaryUI({
     <div className="mx-auto flex min-h-[50vh] max-w-2xl items-center justify-center p-[var(--space-5)]">
       <div
         role="alert"
-        className="w-full rounded-[var(--radius-3)] border p-[var(--space-6)] shadow-sm"
+        className="w-full rounded-[var(--ua-radius-card)] border p-[var(--space-6)] shadow-none"
         style={{
           background: 'var(--surface)',
           borderColor: 'var(--border)',
@@ -55,17 +55,9 @@ export function ErrorBoundaryUI({
             <Button type="button" onClick={reset}>
               Try again
             </Button>
-            <Link
-              href="/dashboard"
-              className="inline-flex h-8 items-center justify-center rounded-[var(--radius-2)] border px-[14px] text-[14px] font-medium transition-colors"
-              style={{
-                borderColor: 'var(--border)',
-                color: 'var(--text-primary)',
-                background: 'var(--surface)',
-              }}
-            >
+            <ButtonLink href="/dashboard" variant="secondary" size="md">
               Go to dashboard
-            </Link>
+            </ButtonLink>
           </div>
         </div>
       </div>

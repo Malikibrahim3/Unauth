@@ -1,6 +1,12 @@
 # Authenticated component migration register
 
-Date: 2026-07-14 · Companion to `docs/design/authenticated-style-system-audit.md` and `styles/authenticated/README.md`.
+Date: 2026-07-14 · Historical inventory; final counts are in `authenticated-final-migration-register.md`.
+
+## Craft-pass update
+
+The table below records the earlier staged inventory and is retained for provenance. The final pass completed the safe PanelCard and operational-table migrations described in the companion final register.
+
+The initial register below is retained as a historical inventory. The canonical controls deferred in that pass now exist: `IconButton`, `FilterChip`, `SegmentedControl`, `Tabs`, `MetadataChip`, `MetricGroup`, `EvidenceChecklist`, and `RecommendationBlock`. Claims, dashboard, reports, notifications, losses and the gallery have adopted them. Remaining route-level call sites and the legacy claims-review button styles are tracked in `docs/design/authenticated-component-defect-register.md`.
 
 Tracks every duplicate primitive family found while building the `styles/authenticated/` design system, what's authoritative, what's migrated, and exactly what's left — so nothing found during the audit silently disappears.
 

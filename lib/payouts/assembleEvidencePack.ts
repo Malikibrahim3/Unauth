@@ -101,7 +101,7 @@ export async function assembleEvidencePack(input: AssembleEvidencePackInput): Pr
     input.ticketId
       ? input.client
           .from('source_tickets')
-          .select('id,external_id,subject,status,created_at,updated_at,provider')
+          .select('id,external_id,subject,status,created_at_provider,updated_at_provider,provider')
           .eq('merchant_id', input.merchantId)
           .eq('id', input.ticketId)
           .maybeSingle()
@@ -109,7 +109,7 @@ export async function assembleEvidencePack(input: AssembleEvidencePackInput): Pr
     input.orderId
       ? input.client
           .from('source_orders')
-          .select('id,external_id,order_number,total_price,currency,line_items_count,placed_at,created_at')
+          .select('id,external_id,order_number,total_price,currency,line_items_count,placed_at,ingested_at')
           .eq('merchant_id', input.merchantId)
           .eq('id', input.orderId)
           .maybeSingle()
@@ -144,7 +144,11 @@ export async function assembleEvidencePack(input: AssembleEvidencePackInput): Pr
   // map* helpers remain provider-shaped adapters over those canonical rows.
   // Connection state only informs the missing-evidence coverage hints below.
   if (ticketRes.data) {
-    items.push(...mapGorgiasTicketToEvidence(ticketRes.data as any, {
+    items.push(...mapGorgiasTicketToEvidence({
+      ...ticketRes.data,
+      created_at: ticketRes.data.created_at_provider,
+      updated_at: ticketRes.data.updated_at_provider,
+    } as any, {
       merchantId: input.merchantId,
       supportPayoutCaseId: input.supportPayoutCaseId,
       now: generatedAt,
@@ -154,7 +158,10 @@ export async function assembleEvidencePack(input: AssembleEvidencePackInput): Pr
   }
 
   if (orderRes.data) {
-    items.push(...mapShopifyOrderToEvidence(orderRes.data as any, {
+    items.push(...mapShopifyOrderToEvidence({
+      ...orderRes.data,
+      created_at: orderRes.data.ingested_at,
+    } as any, {
       merchantId: input.merchantId,
       supportPayoutCaseId: input.supportPayoutCaseId,
       now: generatedAt,

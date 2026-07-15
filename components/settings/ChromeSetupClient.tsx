@@ -54,7 +54,7 @@ export default function ChromeSetupClient({ hasApiKeys, keyPrefixes }: Props) {
           className="mt-4 inline-flex rounded-md px-3 py-2 text-sm font-medium"
           style={{ background: 'var(--accent)', color: 'white' }}
         >
-          Settings → API &amp; Integrations
+          Settings, then API &amp; Integrations
         </Link>
       </div>
     );
@@ -102,7 +102,7 @@ export default function ChromeSetupClient({ hasApiKeys, keyPrefixes }: Props) {
         </li>
         <li>Pin the Unauth extension to your toolbar.</li>
         <li>
-          Click the icon → paste an API key from <strong>Settings → Integrations</strong> below.
+          Click the icon, then paste an API key from <strong>Settings, then Integrations</strong> below.
         </li>
       </ol>
 

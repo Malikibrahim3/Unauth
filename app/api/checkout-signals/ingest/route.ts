@@ -2,9 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
-import { buildFastContext } from '@/lib/engine/fastContext';
-import type { NormalisedOrder } from '@/lib/engine/types';
-import { canonicalizeEdgePair, type IdentifierRef } from '@/lib/identity/identifierGraph';
 import { verifyCollectorToken } from '@/lib/checkout/collectorToken';
 
 export const runtime = 'nodejs';
@@ -205,124 +202,6 @@ function sanitizedRawPayload(signal: ParsedSignal): Record<string, unknown> {
   };
 }
 
-function fastContextOrder(emailHash: string, visitorId: string, deviceFp: string | null): NormalisedOrder {
-  return {
-    orderId: `checkout_signal:${visitorId}`,
-    orderDate: new Date(),
-    emailHash,
-    addressHash: null,
-    phoneHash: null,
-    billingAddressHash: null,
-    ipHash: null,
-    deviceIdHash: deviceFp,
-    browserFingerprint: deviceFp,
-    cookieIdHash: visitorId,
-    customerNameNorm: '',
-    orderTotal: 0,
-    currency: 'UNK',
-    orderStatus: 'pending',
-    refundStatus: 'none',
-    refundReason: null,
-    refundDate: null,
-    refundAmount: null,
-    paymentMethod: null,
-  };
-}
-
-async function runFastContextGate(
-  supabase: ServiceClient,
-  merchantId: string,
-  emailHash: string,
-  visitorId: string,
-  deviceFp: string | null
-): Promise<void> {
-  await buildFastContext([fastContextOrder(emailHash, visitorId, deviceFp)], supabase as any, merchantId);
-}
-
-async function upsertCheckoutIdentifiers(
-  supabase: ServiceClient,
-  signal: ParsedSignal
-): Promise<void> {
-  const identifiers = [
-    {
-      identifier_type: 'visitor_id',
-      identifier_hash: signal.visitorId,
-      raw_vs_hashed_storage: 'raw',
-    },
-  ];
-  if (signal.deviceFp) {
-    identifiers.push({
-      identifier_type: 'device_fingerprint',
-      identifier_hash: signal.deviceFp,
-      raw_vs_hashed_storage: 'hashed',
-    });
-  }
-
-  const { error } = await supabase.rpc('bulk_upsert_identity_identifiers', {
-    p_identifiers: identifiers,
-    p_source_provider: signal.platform,
-  });
-  if (error) throw new Error(`checkout_identifier_upsert_failed: ${error.message}`);
-}
-
-async function linkSignalToIdentityGraph(
-  supabase: ServiceClient,
-  signal: ParsedSignal
-): Promise<void> {
-  if (!signal.emailHash) return;
-
-  await runFastContextGate(
-    supabase,
-    signal.merchantId,
-    signal.emailHash,
-    signal.visitorId,
-    signal.deviceFp
-  );
-
-  await upsertCheckoutIdentifiers(supabase, signal);
-
-  const { data: emailIdentifier, error: emailError } = await supabase
-    .from(TABLES.IDENTITY_IDENTIFIERS)
-    .select('id')
-    .eq('identifier_type', 'normalized_email_hash')
-    .eq('identifier_hash', signal.emailHash)
-    .maybeSingle();
-  if (emailError || !emailIdentifier) return;
-
-  const emailRef: IdentifierRef = {
-    type: 'normalized_email_hash',
-    hash: signal.emailHash,
-    rawVsHashedStorage: 'hashed',
-  };
-  const visitorRef: IdentifierRef = {
-    type: 'visitor_id',
-    hash: signal.visitorId,
-    rawVsHashedStorage: 'raw',
-  };
-  const pairs = [canonicalizeEdgePair(emailRef, visitorRef)];
-
-  if (signal.deviceFp) {
-    pairs.push(canonicalizeEdgePair(emailRef, {
-      type: 'device_fingerprint',
-      hash: signal.deviceFp,
-      rawVsHashedStorage: 'hashed',
-    }));
-  }
-
-  const { error: edgeError } = await supabase.rpc('bulk_upsert_identifier_co_occurrence_edges', {
-    p_merchant_id: signal.merchantId,
-    p_edges: pairs.map((pair) => ({
-      left_type: pair.left.type,
-      left_hash: pair.left.hash,
-      right_type: pair.right.type,
-      right_hash: pair.right.hash,
-      count_delta: 1,
-    })),
-    p_source_provider: signal.platform,
-  });
-  if (edgeError) throw new Error(`checkout_edge_upsert_failed: ${edgeError.message}`);
-}
-
 export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
 }
@@ -387,17 +266,6 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (insertError) return json({ ok: false }, { status: 500 });
-
-  if (signal.emailHash) {
-    try {
-      await linkSignalToIdentityGraph(supabase, signal);
-    } catch (error) {
-      console.error('checkout_signal_identity_link_failed', {
-        signalId: inserted?.id,
-        message: error instanceof Error ? error.message : 'unknown',
-      });
-    }
-  }
 
   return json({ ok: true });
 }

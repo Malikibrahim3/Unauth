@@ -4,8 +4,7 @@ import path from 'node:path';
 
 const EVIDENCE_DIR = path.join(
   process.cwd(),
-  'design-evidence',
-  '2026-07-14-authenticated-craft-completion',
+  'screenshots-app-2026-07-14-final-craft',
 );
 
 async function capture(page: Page, name: string) {

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import {
@@ -12,6 +11,7 @@ import {
   parseReportRange,
   REPORT_RANGES,
 } from "@/lib/reporting/intelligence";
+import { ButtonLink, SegmentedControl } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 export default async function DashboardPage({
@@ -54,38 +54,22 @@ export default async function DashboardPage({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Link
-            href="/work"
-            className="min-h-9 rounded-[var(--radius-md)] bg-[var(--accent)] px-3.5 py-2 text-sm font-semibold text-[var(--accent-fg-on-500)]"
-          >
+          <ButtonLink href="/work" size="md">
             Open work
-          </Link>
-          <Link
-            href="/claims?sort=value"
-            className="min-h-9 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3.5 py-2 text-sm font-semibold"
-          >
+          </ButtonLink>
+          <ButtonLink href="/claims?sort=value" variant="secondary" size="md">
             Review high-value cases
-          </Link>
+          </ButtonLink>
         </div>
       </header>
-      <nav aria-label="Overview period" className="flex w-fit flex-wrap gap-1 rounded-[var(--radius-md)] bg-[var(--surface-muted)] p-1">
-        {REPORT_RANGES.map((r) => (
-          <Link
-            key={r}
-            aria-current={r === range ? "page" : undefined}
-            href={`/dashboard?range=${r}&timezone=${encodeURIComponent(timezone)}`}
-            className={`min-h-8 rounded-[var(--radius-sm)] px-3 py-1.5 text-sm font-medium ${r === range ? "bg-[var(--surface)] text-[var(--text-primary)] shadow-[var(--shadow-xs)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
-          >
-            {r === "all" ? "All time" : r}
-          </Link>
-        ))}
-        <Link
-          href={`/reports?range=${range}&timezone=${encodeURIComponent(timezone)}`}
-          className="min-h-8 px-3 py-1.5 text-sm font-medium text-[var(--accent)]"
-        >
-          Open reports
-        </Link>
-      </nav>
+      <div className="flex flex-wrap items-center gap-2">
+        <SegmentedControl
+          aria-label="Overview period"
+          value={range}
+          items={REPORT_RANGES.map((r) => ({ value: r, label: r === "all" ? "All time" : r, href: `/dashboard?range=${r}&timezone=${encodeURIComponent(timezone)}` }))}
+        />
+        <ButtonLink href={`/reports?range=${range}&timezone=${encodeURIComponent(timezone)}`} variant="ghost" size="sm">Open reports</ButtonLink>
+      </div>
       <IntelligenceReportView report={report} compact />
     </div>
   );

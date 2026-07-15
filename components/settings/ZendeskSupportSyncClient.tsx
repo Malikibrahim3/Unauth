@@ -250,8 +250,8 @@ export default function ZendeskSupportSyncClient({ canManage }: Props) {
               />
             </label>
             <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
-              Create a token in Zendesk Admin → Apps and integrations → APIs →
-              Zendesk API. Use an admin or agent account with ticket read
+              Create a token in Zendesk Admin, then open Apps and integrations,
+              then APIs and Zendesk API. Use an admin or agent account with ticket read
               access.
             </p>
             <div className="flex flex-wrap gap-2 pt-1">

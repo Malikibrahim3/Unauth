@@ -73,7 +73,7 @@ export function GorgiasCredentialFields({
           autoComplete="off"
         />
         <p className="mt-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
-          Found in Gorgias under Settings → REST API → API key (password).
+          Found in Gorgias under Settings, then REST API, then API key (password).
         </p>
       </div>
       <div>
@@ -87,7 +87,7 @@ export function GorgiasCredentialFields({
         </button>
         {showCredHelp && (
           <p className="mt-2 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-            In Gorgias, open <strong>Settings → REST API</strong>. The API email is the address you
+            In Gorgias, open <strong>Settings, then REST API</strong>. The API email is the address you
             log in with; the API key is the value labelled <strong>API key (password)</strong>.
             Unauth uses them once to register the sidebar widget, then stores them encrypted so it
             can keep your tickets in sync.

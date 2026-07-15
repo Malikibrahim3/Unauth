@@ -4,9 +4,9 @@ import { cn } from '@/lib/utils';
 interface EmptyStateProps {
   /**
    * Layout variant:
-   * - `default`  → centered vertical stack (icon, title, description, action, footer)
-   * - `compact`  → left-aligned inline pattern for empty tables / lists
-   * - `hero`     → full-width onboarding hero (passes children through as content area)
+   * - `default`  centered vertical stack
+   * - `compact`  left-aligned inline pattern for empty tables / lists
+   * - `hero`     full-width onboarding content area
    */
   variant?: 'default' | 'compact' | 'hero';
   icon?: ReactNode;
@@ -79,18 +79,18 @@ export function EmptyState({
     >
       {icon ? (
         <span
-          className="ua-empty-visual mb-[var(--space-4)] flex h-14 w-14 items-center justify-center rounded-xl"
+          className="ua-empty-visual mb-[var(--space-4)] flex h-12 w-12 items-center justify-center rounded-[var(--ua-radius-card)]"
           style={{ color: 'var(--ua-brand-deep)' }}
           aria-hidden="true"
         >
           {icon}
         </span>
       ) : (
-        <span className="ua-empty-visual mb-[var(--space-4)] grid h-14 w-14 grid-cols-2 place-content-center gap-1 rounded-xl" aria-hidden="true">
-          <span className="h-2 w-2 rounded-sm bg-[var(--ua-brand-signal)]" />
-          <span className="h-2 w-2 rounded-sm bg-[var(--ua-brand-deep)]" />
-          <span className="h-2 w-2 rounded-sm bg-[var(--ua-accent-border)]" />
+        <span className="ua-empty-visual mb-[var(--space-4)] grid h-12 w-12 grid-cols-2 place-content-center gap-1 rounded-[var(--ua-radius-card)]" aria-hidden="true">
+          <span className="h-2 w-2 rounded-sm bg-[var(--ua-text-secondary)]" />
           <span className="h-2 w-2 rounded-sm bg-[var(--ua-text-tertiary)]" />
+          <span className="h-2 w-2 rounded-sm bg-[var(--ua-border-strong)]" />
+          <span className="h-2 w-2 rounded-sm bg-[var(--ua-text-disabled)]" />
         </span>
       )}
       <h3 className="text-h2" style={{ color: 'var(--text-primary)' }}>

@@ -13,7 +13,7 @@ import {
 import {
   Button,
   Modal,
-  PanelCard,
+  Card,
 } from "@/components/ui";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import {
@@ -425,7 +425,7 @@ export function RuleVersionWorkbench({
           {message.text}
         </div>
       ) : null}
-      <PanelCard variant="app" className="p-4">
+      <Card unstyled variant="flat" className="p-4">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="flex flex-wrap items-center gap-2">
@@ -484,12 +484,12 @@ export function RuleVersionWorkbench({
             ) : null}
           </div>
         </div>
-      </PanelCard>
+      </Card>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <PanelCard
+        <Card unstyled
           as="section"
-          variant="app"
+          variant="flat"
           className="p-4"
           aria-labelledby="rule-conditions-title"
         >
@@ -518,11 +518,11 @@ export function RuleVersionWorkbench({
               No conditions: this rule would match every evaluated case.
             </p>
           ) : null}
-        </PanelCard>
+        </Card>
 
-        <PanelCard
+        <Card unstyled
           as="section"
-          variant="app"
+          variant="flat"
           className="p-4"
           aria-labelledby="draft-diff-title"
         >
@@ -554,7 +554,7 @@ export function RuleVersionWorkbench({
                     <span className="line-through text-[var(--text-tertiary)]">
                       {before}
                     </span>
-                    <span className="mx-1">→</span>
+                    <span className="mx-1 text-[var(--text-tertiary)]">to</span>
                     <strong>{after}</strong>
                   </dd>
                 </div>
@@ -572,12 +572,12 @@ export function RuleVersionWorkbench({
               Discard draft
             </Button>
           ) : null}
-        </PanelCard>
+        </Card>
       </div>
 
-      <PanelCard
+      <Card unstyled
         as="section"
-        variant="app"
+        variant="flat"
         className="overflow-hidden p-0"
         aria-labelledby="version-history-title"
       >
@@ -618,7 +618,7 @@ export function RuleVersionWorkbench({
             </div>
           ))}
         </div>
-      </PanelCard>
+      </Card>
 
       <RuleBuilderDrawer
         key={`${draft?.id ?? "new"}-${editing}`}
@@ -744,7 +744,7 @@ export function RuleVersionWorkbench({
               )}
               <strong className="text-sm">
                 {simulation.simulation.matched
-                  ? `Matched → ${ACTION_LABELS[simulation.simulation.recommendedAction as keyof typeof ACTION_LABELS] ?? simulation.simulation.recommendedAction}`
+                  ? `Matched: ${ACTION_LABELS[simulation.simulation.recommendedAction as keyof typeof ACTION_LABELS] ?? simulation.simulation.recommendedAction}`
                   : "Did not match"}
               </strong>
             </div>

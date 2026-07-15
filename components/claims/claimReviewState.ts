@@ -298,7 +298,7 @@ export function useClaimReviewWorkbench(
       key: `${row.entityType ?? 'signal'}-${i}`,
     }));
   }, [data?.linkedAccounts]);
-  const customerProfileHref = `/customers/${profileId}`;
+  const customerProfileHref = sourceCustomerId ? `/customers/${encodeURIComponent(sourceCustomerId)}` : `/customers/${encodeURIComponent(profileId)}`;
 
   function showMsg(msg: string, tone: 'success' | 'error') {
     patch({ message: msg, messageTone: tone });

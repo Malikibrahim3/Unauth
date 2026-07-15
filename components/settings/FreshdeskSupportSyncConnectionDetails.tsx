@@ -3,7 +3,7 @@
 import { CheckCircle2, Circle, RefreshCw, Unplug } from 'lucide-react';
 import type { FormEvent } from 'react';
 import Image from 'next/image';
-import { Badge, PanelCard } from '@/components/ui';
+import { Badge, Card } from '@/components/ui';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { FreshdeskSupportSyncCreateForm } from '@/components/settings/FreshdeskSupportSyncCreateForm';
 import type { FreshdeskSupportSyncState } from '@/components/settings/freshdeskSupportSyncReducer';
@@ -102,7 +102,7 @@ export function FreshdeskSupportSyncConnectionDetails({
       </div>
 
       {/* Setup checklist */}
-      <PanelCard variant="app" className="divide-y overflow-hidden p-0">
+      <Card unstyled variant="flat" className="divide-y overflow-hidden p-0">
         <div className="px-4 py-2.5">
           <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
             Setup checklist
@@ -113,11 +113,11 @@ export function FreshdeskSupportSyncConnectionDetails({
             <ChecklistRow item={item} />
           </div>
         ))}
-      </PanelCard>
+      </Card>
 
       {/* Webhook endpoint info when active */}
       {isActive ? (
-        <PanelCard variant="app" className="space-y-2 p-4">
+        <Card unstyled variant="flat" className="space-y-2 p-4">
           <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
             Webhook endpoint
           </p>
@@ -130,7 +130,7 @@ export function FreshdeskSupportSyncConnectionDetails({
           <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
             Add header <code className="font-mono">{FRESHDESK_SUPPORT_WEBHOOK_HEADER_NAME}</code> with your webhook secret to authenticate requests.
           </p>
-        </PanelCard>
+        </Card>
       ) : null}
 
       {/* Danger zone */}
@@ -174,7 +174,7 @@ export function FreshdeskSupportSyncConnectionDetails({
 
       {/* Reconnect form when disabled */}
       {canManage && isDisabledOrError ? (
-        <PanelCard variant="app" className="space-y-4 p-4">
+        <Card unstyled variant="flat" className="space-y-4 p-4">
           <div>
             <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
               Reconnect Freshdesk
@@ -191,7 +191,7 @@ export function FreshdeskSupportSyncConnectionDetails({
             submitLabel="Reconnect"
             variant="reconnect"
           />
-        </PanelCard>
+        </Card>
       ) : null}
     </div>
   );

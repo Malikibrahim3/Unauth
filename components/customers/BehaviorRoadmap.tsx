@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { Badge, PanelCard } from '@/components/ui';
+import { Badge, Card } from '@/components/ui';
 import { formatCurrencyNullable, formatDateMode } from '@/lib/utils/format';
 import { labelFor } from '@/lib/copy/labels';
 
@@ -55,7 +55,7 @@ export default function BehaviorRoadmap({ events }: BehaviorRoadmapProps) {
   }, [events]);
 
   return (
-    <PanelCard variant="app" className="overflow-hidden p-0">
+    <Card unstyled variant="flat" className="overflow-hidden p-0">
       <div className="border-b px-4 py-3" style={{ borderColor: 'var(--border)' }}>
         <div className="flex items-center justify-between gap-3">
           <p className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>Order & claim history</p>
@@ -129,6 +129,6 @@ export default function BehaviorRoadmap({ events }: BehaviorRoadmapProps) {
           );
         })}
       </ol>
-    </PanelCard>
+    </Card>
   );
 }

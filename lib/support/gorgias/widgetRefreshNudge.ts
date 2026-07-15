@@ -18,7 +18,7 @@ type TicketForRefresh = {
 };
 
 type SupportCaseRow = {
-  external_case_id?: string | number | null;
+  external_id?: string | number | null;
 };
 
 function stableStringify(value: unknown): string {
@@ -164,7 +164,7 @@ export async function nudgeRecentGorgiasTicketsWithAccessBestEffort(input: {
   try {
     const { data, error } = await input.supabase
       .from(TABLES.SUPPORT_CASE_INTAKE)
-      .select('external_case_id')
+      .select('external_id')
       .eq('merchant_id', input.merchantId)
       .eq('provider', 'gorgias')
       .order('updated_at_provider', { ascending: false })
@@ -175,7 +175,7 @@ export async function nudgeRecentGorgiasTicketsWithAccessBestEffort(input: {
     const ticketIds = Array.from(
       new Set(
         (data as SupportCaseRow[])
-          .map((row) => (row.external_case_id == null ? '' : String(row.external_case_id).trim()))
+          .map((row) => (row.external_id == null ? '' : String(row.external_id).trim()))
           .filter(Boolean)
       )
     );

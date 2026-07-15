@@ -34,21 +34,21 @@ const STEPS = [
   },
   {
     id: 'shopify',
-    label: 'Connect Shopify',
+    label: 'Connect a commerce store',
     icon: ShoppingBag,
-    body: 'Connect Shopify so Unauth can show order history, refund patterns, and customer signals inside every Gorgias ticket.',
+    body: 'Connect one commerce store so Unauth can show order history, refund patterns, and customer signals. This step is optional — you can skip it and connect a store later.',
   },
   {
     id: 'gorgias',
-    label: 'Connect Gorgias',
+    label: 'Connect a helpdesk',
     icon: Headphones,
-    body: 'Connect Gorgias so your support agents see claim context — prior orders, claim rate, trust indicators — without leaving the ticket.',
+    body: 'Connect one helpdesk so your support agents see claim context without leaving the ticket. This step is optional — you can skip it and connect one later.',
   },
   {
     id: 'done',
-    label: 'Widget is live',
+    label: 'Your workspace is ready',
     icon: Check,
-    body: 'Your Gorgias claim context widget is ready. Agents will see Unauth intelligence inside every support ticket automatically.',
+    body: 'Your workspace is ready. You can connect commerce, helpdesk, and other sources later from Integrations whenever you are ready.',
   },
 ] as const;
 
@@ -81,6 +81,7 @@ export default function OnboardingClient({
   );
   const {
     activeStep,
+    profileSaved,
     storeName,
     platform,
     annualVolume,
@@ -96,7 +97,9 @@ export default function OnboardingClient({
     dispatch({ type: 'patch', patch: { shopDomain: shopifyShopDomain } });
   }, [shopifyShopDomain]);
 
-  const maxReachableStep = !shopifyConnected ? 1 : !helpdeskConnected ? 2 : 3;
+  // The profile is the only required onboarding step. Once it is saved, each
+  // source category is reachable whether or not a connection exists yet.
+  const maxReachableStep = profileSaved ? STEPS.length - 1 : 0;
 
   async function saveProfileAndContinue() {
     if (!storeName.trim() || !platform || !annualVolume || !primaryConcern) {
@@ -123,7 +126,7 @@ export default function OnboardingClient({
       dispatch({ type: 'patch', patch: { error: payload.error ?? 'Could not save your store details.' } });
       return;
     }
-    dispatch({ type: 'patch', patch: { activeStep: 1 } });
+    dispatch({ type: 'patch', patch: { activeStep: 1, profileSaved: true } });
   }
 
   const current = STEPS[activeStep];
@@ -137,7 +140,7 @@ export default function OnboardingClient({
           Get set up
         </h1>
         <p className={foundation.landingSectionLead} style={{ marginTop: '0.75rem', maxWidth: '52ch' }}>
-          A few quick steps to bring payout control into every support ticket.
+          A few quick steps to bring payout control into every support ticket. You can skip source connections and add them later.
         </p>
         <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-[var(--surface-sunken)]" aria-label={`Setup progress: step ${activeStep + 1} of ${STEPS.length}`}>
           <div className="h-full rounded-full bg-[var(--accent)] transition-[width] duration-150" style={{ width: `${((activeStep + 1) / STEPS.length) * 100}%` }} />
@@ -198,7 +201,14 @@ export default function OnboardingClient({
             </span>
             <div>
               <p className={foundation.landingSectionEyebrow}>Step {activeStep + 1} of {STEPS.length}</p>
-              <h2 className={foundation.landingSubsectionTitle} style={{ marginTop: '0.4rem' }}>{current.label}</h2>
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className={foundation.landingSubsectionTitle} style={{ marginTop: '0.4rem' }}>{current.label}</h2>
+                {(activeStep === 1 || activeStep === 2) && (
+                  <span className="t-label rounded-full border px-2 py-1" style={{ color: 'var(--text-tertiary)', borderColor: 'var(--border)' }}>
+                    Optional
+                  </span>
+                )}
+              </div>
               <p className="text-body-sm mt-2 max-w-2xl" style={{ color: 'var(--text-secondary)' }}>{current.body}</p>
             </div>
           </div>
@@ -287,7 +297,7 @@ export default function OnboardingClient({
                   <p className="text-body-sm" style={{ color: 'var(--text-secondary)' }}>
                     Enter your Shopify store domain to connect. You can also connect from{' '}
                     <Link href="/settings/integrations" className="underline underline-offset-2" style={{ color: 'var(--accent)' }}>
-                      Settings → Integrations
+                      Settings and Integrations
                     </Link>
                     {' '}at any time.
                   </p>
@@ -300,6 +310,15 @@ export default function OnboardingClient({
                       className="w-full rounded-md border px-3 py-2 text-sm outline-none"
                       style={{ background: 'var(--surface-sunken)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
                     />
+                  </div>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => dispatch({ type: 'patch', patch: { activeStep: 2 } })}
+                    >
+                      Skip for now
+                    </Button>
                     <a
                       href={`/api/shopify/install?shop=${encodeURIComponent(shopDomain.trim())}`}
                       className="inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-semibold gap-1.5"
@@ -347,14 +366,23 @@ export default function OnboardingClient({
                   <p className="t-caption" style={{ color: 'var(--text-tertiary)' }}>
                     You can also add Zendesk or Freshdesk later from the same page.
                   </p>
-                  <Link
-                    href="/settings/integrations/gorgias"
-                    className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold"
-                    style={{ background: 'var(--accent)', borderColor: 'var(--accent)', border: '1px solid', color: 'var(--text-inverse)' }}
-                  >
-                    <Headphones className="h-4 w-4" />
-                    Set up Gorgias integration
-                  </Link>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => dispatch({ type: 'patch', patch: { activeStep: 3 } })}
+                    >
+                      Skip for now
+                    </Button>
+                    <Link
+                      href="/settings/integrations/gorgias"
+                      className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold"
+                      style={{ background: 'var(--accent)', borderColor: 'var(--accent)', border: '1px solid', color: 'var(--text-inverse)' }}
+                    >
+                      <Headphones className="h-4 w-4" />
+                      Set up Gorgias integration
+                    </Link>
+                  </div>
                 </div>
               )}
               {helpdeskConnected && (

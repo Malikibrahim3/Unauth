@@ -65,11 +65,6 @@ const INTEGRATION_GROUPS = [
     summary: 'Tracking, delivery proof, and carrier recovery windows.',
     cards: [
       {
-        name: 'AfterShip',
-        logo: '/integrations/aftership.svg',
-        description: 'Normalize tracking events and delivery outcomes.',
-      },
-      {
         name: 'UPS',
         logo: '/integrations/ups.svg',
         description: 'Verify delivery proof and carrier claim eligibility.',

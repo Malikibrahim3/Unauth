@@ -50,7 +50,7 @@ describe('shouldRequireOnboarding', () => {
     ).toBe(true);
   });
 
-  it('requires onboarding when Shopify is not connected, even with setup complete', () => {
+  it('allows completed setup without a commerce connection', () => {
     expect(
       shouldRequireOnboarding({
         hasMerchantContext: true,
@@ -59,10 +59,10 @@ describe('shouldRequireOnboarding', () => {
         shopifyConnected: false,
         helpdeskConnected: true,
       }),
-    ).toBe(true);
+    ).toBe(false);
   });
 
-  it('requires onboarding when no helpdesk is connected, even with setup complete', () => {
+  it('allows completed setup without a helpdesk connection', () => {
     expect(
       shouldRequireOnboarding({
         hasMerchantContext: true,
@@ -71,7 +71,7 @@ describe('shouldRequireOnboarding', () => {
         shopifyConnected: true,
         helpdeskConnected: false,
       }),
-    ).toBe(true);
+    ).toBe(false);
   });
 });
 

@@ -21,18 +21,11 @@ export default async function AuditTrailPage() {
   );
   if (denied) redirect("/settings");
 
-  const [{ data: teamRows }, { data: merchantRow }] = await Promise.all([
-    serviceClient
-      .from(TABLES.MERCHANT_MEMBERS)
-      .select("user_id, invited_email, role, invite_status")
-      .eq("merchant_id", ctx.merchantId)
-      .eq("invite_status", "active"),
-    serviceClient
-      .from("merchants")
-      .select("user_id")
-      .eq("id", ctx.merchantId)
-      .maybeSingle(),
-  ]);
+  const { data: teamRows } = await serviceClient
+    .from(TABLES.MERCHANT_MEMBERS)
+    .select("user_id, invited_email, role, invite_status")
+    .eq("merchant_id", ctx.merchantId)
+    .eq("invite_status", "active");
 
   const actorsByUserId: Record<string, { email: string; role: string }> = {};
   for (const row of (teamRows ?? []) as Array<{
@@ -41,17 +34,9 @@ export default async function AuditTrailPage() {
     role: string;
   }>) {
     if (!row.user_id) continue;
-    const isOwner = merchantRow?.user_id === row.user_id;
     actorsByUserId[row.user_id] = {
       email: row.invited_email,
-      role: isOwner ? "owner" : row.role,
-    };
-  }
-
-  if (merchantRow?.user_id && !actorsByUserId[merchantRow.user_id]) {
-    actorsByUserId[merchantRow.user_id] = {
-      email: user.email ?? "Account owner",
-      role: "owner",
+      role: row.role,
     };
   }
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { Check, Copy } from 'lucide-react';
-import { PanelCard } from '@/components/ui';
+import { Card } from '@/components/ui';
 import type { FreshdeskEphemeralSecret } from '@/components/settings/freshdeskSupportSyncReducer';
 
 type FreshdeskWebhookSetupPanelProps = {
@@ -20,7 +20,7 @@ export function FreshdeskWebhookSetupPanel({
   onDismiss,
 }: FreshdeskWebhookSetupPanelProps) {
   return (
-    <PanelCard variant="app" className="space-y-4 p-5">
+    <Card unstyled variant="flat" className="space-y-4 p-5">
       <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>
         One-time webhook setup
       </p>
@@ -88,7 +88,7 @@ export function FreshdeskWebhookSetupPanel({
 
       <ol className="list-decimal space-y-2 pl-5 text-sm" style={{ color: 'var(--text-secondary)' }}>
         <li>
-          In Freshdesk → <strong>Admin</strong> → <strong>Workflows</strong> → <strong>Automations</strong>.
+          In Freshdesk, then <strong>Admin</strong>, then <strong>Workflows</strong>, then <strong>Automations</strong>.
         </li>
         <li>
           Create a rule for <strong>Ticket is created</strong> and another for <strong>Ticket is updated</strong>{' '}
@@ -113,6 +113,6 @@ export function FreshdeskWebhookSetupPanel({
       >
         I saved the secret - hide this panel
       </button>
-    </PanelCard>
+    </Card>
   );
 }

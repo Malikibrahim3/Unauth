@@ -3,7 +3,7 @@
 import { Check, CheckCircle2, Circle, Copy, RefreshCw, Unplug, AlertTriangle } from 'lucide-react';
 import type { FormEvent } from 'react';
 import Image from 'next/image';
-import { Badge, PanelCard } from '@/components/ui';
+import { Badge, Card } from '@/components/ui';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { GorgiasSupportSyncCreateForm } from '@/components/settings/GorgiasSupportSyncCreateForm';
 import type { GorgiasSupportSyncState } from '@/components/settings/gorgiasSupportSyncReducer';
@@ -121,7 +121,7 @@ export function GorgiasSupportSyncConnectionDetails({
       ) : null}
 
       {/* Setup checklist */}
-      <PanelCard variant="app" className="divide-y overflow-hidden p-0">
+      <Card unstyled variant="flat" className="divide-y overflow-hidden p-0">
         <div className="px-4 py-2.5">
           <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
             Setup checklist
@@ -132,16 +132,16 @@ export function GorgiasSupportSyncConnectionDetails({
             <ChecklistRow item={item} />
           </div>
         ))}
-      </PanelCard>
+      </Card>
 
       {/* Webhook URL panel when setup instructions shown */}
       {state.showSetupInstructions && connection.webhook_url ? (
-        <PanelCard variant="app" className="space-y-3 p-4">
+        <Card unstyled variant="flat" className="space-y-3 p-4">
           <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
             Webhook setup
           </p>
           <ol className="list-decimal space-y-1 pl-4 text-xs" style={{ color: 'var(--text-secondary)' }}>
-            <li>Open Gorgias → Settings → Apps &amp; Plugins → HTTP Integration → Add HTTP Integration</li>
+            <li>Open Gorgias, then Settings, then Apps &amp; Plugins, then HTTP Integration, then Add HTTP Integration</li>
             <li>Set method to POST and paste the URL below</li>
             <li>Add header <code className="font-mono">{GORGIAS_SUPPORT_WEBHOOK_HEADER_NAME}</code> with your webhook secret</li>
           </ol>
@@ -168,7 +168,7 @@ export function GorgiasSupportSyncConnectionDetails({
               )}
             </button>
           </div>
-        </PanelCard>
+        </Card>
       ) : null}
 
       {/* Actions */}
@@ -232,7 +232,7 @@ export function GorgiasSupportSyncConnectionDetails({
 
       {/* Reconnect form when disabled */}
       {canManage && isDisabledOrError ? (
-        <PanelCard variant="app" className="space-y-4 p-4">
+        <Card unstyled variant="flat" className="space-y-4 p-4">
           <div>
             <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
               Reconnect Gorgias
@@ -249,7 +249,7 @@ export function GorgiasSupportSyncConnectionDetails({
             submitLabel="Reconnect"
             variant="reconnect"
           />
-        </PanelCard>
+        </Card>
       ) : null}
     </div>
   );

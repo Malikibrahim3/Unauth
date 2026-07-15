@@ -86,6 +86,98 @@ const arbitraryRadiusInline = /borderRadius:\s*(['"])(?!var\()(?!50%\1)(?!\1\1)[
 // "none" (which is a legitimate "no shadow" value, not a hardcoded shadow).
 const arbitraryShadow = /boxShadow:\s*(['"])(?!var\()(?!none\1)[^'"]+\1/g;
 
+// Exact baseline for native controls that still live in low-level forms,
+// navigation, overlays, and compatibility surfaces. New files may not add
+// native controls, and existing files may not increase their count. Migrate a
+// call site to Input/Select/Button/IconButton before changing this baseline.
+const rawControlExpression = /<(?:button|input|select|textarea)\b/g;
+const rawControlBaseline = new Map([
+  ['app/(app)/claims/ClaimsQueueClient.tsx', 1],
+  ['app/(app)/recoveries/RecoveryBoardClient.tsx', 2],
+  ['app/(app)/settings/agreements/page.tsx', 17],
+  ['components/apply/FoundingMerchantApplicationForm.tsx', 3],
+  ['components/audit/CustomerNotes.tsx', 6],
+  ['components/BuiltForPurposeStack.tsx', 1],
+  ['components/billing/BillingSettingsClient.tsx', 9],
+  ['components/claims/ClaimReviewContextColumn.tsx', 2],
+  ['components/claims/ClaimReviewFormSection.tsx', 8],
+  ['components/claims/ClaimReviewHeader.tsx', 1],
+  ['components/claims/ClaimReviewManageCard.tsx', 17],
+  ['components/claims/ClaimReviewToast.tsx', 1],
+  ['components/claims/claimReviewPrimitives.tsx', 7],
+  ['components/collaboration/CaseComments.tsx', 2],
+  ['components/collaboration/MentionPicker.tsx', 1],
+  ['components/customers/BehaviorRoadmap.tsx', 1],
+  ['components/customers/CustomerPreviewDrawer.tsx', 1],
+  ['components/customers/CustomersFilterSheetInner.tsx', 2],
+  ['components/customers/CustomersTableClient.tsx', 1],
+  ['components/evidence/EvidencePackageFormFields.tsx', 4],
+  ['components/evidence/EvidencePackageFormStates.tsx', 1],
+  ['components/EvidenceNotVerdictsRampSection.tsx', 1],
+  ['components/exceptions/ExceptionQueue.tsx', 7],
+  ['components/identity/EvidenceScoreBadge.tsx', 1],
+  ['components/imports/CanonicalCsvImportClient.tsx', 5],
+  ['components/integrations/ConnectionActions.tsx', 2],
+  ['components/layout/AppHeader.tsx', 2],
+  ['components/layout/AvatarMenu.tsx', 2],
+  ['components/layout/CommandPaletteInputBar.tsx', 2],
+  ['components/layout/CommandPaletteResultsList.tsx', 4],
+  ['components/layout/WorkspaceSwitcher.tsx', 1],
+  ['components/losses/LossActions.tsx', 2],
+  ['components/nav/SidebarAside.tsx', 3],
+  ['components/nav/SidebarInner.tsx', 1],
+  ['components/notifications/NotificationCentre.tsx', 1],
+  ['components/OnboardingClient.tsx', 8],
+  ['components/rules/ConditionBlock.tsx', 2],
+  ['components/rules/FlowEditor.tsx', 6],
+  ['components/rules/FlowVersionWorkbench.tsx', 1],
+  ['components/rules/RuleBuilderDrawer.tsx', 3],
+  ['components/rules/RuleVersionWorkbench.tsx', 3],
+  ['components/settings/AccountPasswordSection.tsx', 1],
+  ['components/settings/ApiIntegrationsKeyDialogs.tsx', 2],
+  ['components/settings/ApiKeyCreateDialog.tsx', 3],
+  ['components/settings/AppearanceSettings.tsx', 1],
+  ['components/settings/AuditTrailClient.tsx', 2],
+  ['components/settings/BulkDeleteClient.tsx', 3],
+  ['components/settings/ChromeSetupClient.tsx', 1],
+  ['components/settings/FreshdeskCredentialFields.tsx', 2],
+  ['components/settings/FreshdeskSupportSyncConnectionDetails.tsx', 3],
+  ['components/settings/FreshdeskSupportSyncCreateForm.tsx', 3],
+  ['components/settings/FreshdeskWebhookSetupPanel.tsx', 3],
+  ['components/settings/GorgiasCredentialFields.tsx', 3],
+  ['components/settings/GorgiasSupportSyncConnectionDetails.tsx', 5],
+  ['components/settings/GorgiasSupportSyncCreateForm.tsx', 3],
+  ['components/settings/GorgiasWebhookSetupPanel.tsx', 2],
+  ['components/settings/NotificationPreferencesForm.tsx', 1],
+  ['components/settings/PlatformSettingsClient.tsx', 7],
+  ['components/settings/TeamInviteForm.tsx', 3],
+  ['components/settings/TeamMemberRow.tsx', 4],
+  ['components/settings/FreshdeskSupportSyncConnectionDetails.tsx', 3],
+  ['components/settings/ZendeskSetupClient.tsx', 1],
+  ['components/settings/ZendeskSupportSyncClient.tsx', 6],
+  ['components/shopify/ShopifyDisconnectClient.tsx', 3],
+  ['components/shopify/ShopifyIntegrationBanner.tsx', 0],
+  ['components/shopify/SyncStatusConnectModal.tsx', 5],
+  ['components/shopify/SyncStatusConnectedView.tsx', 2],
+  ['components/shopify/SyncStatusDisconnectedView.tsx', 2],
+  ['components/ui/Button.tsx', 1],
+  ['components/ui/DataTable.tsx', 1],
+  ['components/ui/Drawer.tsx', 1],
+  ['components/ui/FilterChip.tsx', 1],
+  ['components/ui/IconButton.tsx', 1],
+  ['components/ui/Input.tsx', 1],
+  ['components/ui/LandingPrimitives.tsx', 1],
+  ['components/ui/RowActionsMenu.tsx', 2],
+  ['components/ui/SegmentedControl.tsx', 1],
+  ['components/ui/Select.tsx', 1],
+  ['components/ui/SensitiveField.tsx', 1],
+  ['components/ui/Tabs.tsx', 1],
+  ['components/ui/Toast.tsx', 1],
+  ['components/work/WorkQueue.tsx', 5],
+]);
+const textArrowExpression = /[→↗]/g;
+const textArrowBaseline = 70;
+
 const allowedExtensions = new Set(['.ts', '.tsx', '.css']);
 
 async function filesUnder(path) {
@@ -114,11 +206,29 @@ function findMatches(source, expression) {
 
 const files = (await Promise.all(scanRoots.map(filesUnder))).flat();
 const failures = [];
+let rawControlTotal = 0;
+let textArrowTotal = 0;
 
 for (const file of files) {
   const normalized = relative(ROOT, join(ROOT, file));
   if (ignored.has(normalized)) continue;
   const source = await readFile(join(ROOT, file), 'utf8');
+
+  if (!['components/ui/LandingPrimitives.tsx', 'components/ui/index.ts'].includes(normalized)) {
+    for (const { line, text } of findMatches(source, /<PanelCard\b|\bPanelCard\b(?=.*from)/g)) {
+      failures.push(`${normalized}:${line} deprecated PanelCard usage: ${text} — use Card, SectionCard, or a specialised canonical surface`);
+    }
+  }
+
+  const rawControls = findMatches(source, rawControlExpression);
+  rawControlTotal += rawControls.length;
+  if (rawControls.length > 0 && !rawControlBaseline.has(normalized)) {
+    failures.push(`${normalized}: raw control outside explicit allowlist — use Button, Input, Select, SegmentedControl, or document a low-level implementation reason`);
+  } else if (rawControlBaseline.has(normalized) && rawControls.length !== rawControlBaseline.get(normalized)) {
+    failures.push(`${normalized}: raw control baseline changed from ${rawControlBaseline.get(normalized)} to ${rawControls.length} — migrate the call site or update the documented baseline after review`);
+  }
+
+  textArrowTotal += findMatches(source, textArrowExpression).length;
 
   for (const [rule, expression] of [['old palette', oldPalette], ['landing token dependency', landingDependency]]) {
     for (const { line, text } of findMatches(source, expression)) {
@@ -154,6 +264,10 @@ for (const file of files) {
       failures.push(`${normalized}:${line} deprecated import: ${text} — ${dep.message}`);
     }
   }
+}
+
+if (textArrowTotal > textArrowBaseline) {
+  failures.push(`authenticated text-arrow baseline increased from ${textArrowBaseline} to ${textArrowTotal} — use words or an accessible icon component`);
 }
 
 if (failures.length) {

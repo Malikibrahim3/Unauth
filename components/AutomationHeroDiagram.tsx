@@ -10,7 +10,6 @@ import {
   RefreshCw,
   CreditCard,
   Shield,
-  MapPin,
   Clock,
   CheckCircle2,
   Circle,
@@ -48,8 +47,7 @@ const INPUT_GROUPS = [
     label: 'Carriers',
     color: '#FFF0E0',
     items: [
-      { label: 'AfterShip', icon: <Truck size={14} strokeWidth={1.75} /> },
-      { label: 'Royal Mail', icon: <MapPin size={14} strokeWidth={1.75} /> },
+      { label: 'FedEx', icon: <Truck size={14} strokeWidth={1.75} /> },
       { label: 'UPS', icon: <Package size={14} strokeWidth={1.75} /> },
     ],
   },

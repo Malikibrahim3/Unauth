@@ -3,6 +3,7 @@
 import type { FormattedClaimDecision } from "@/lib/claims/decision/format";
 import { RailSection } from "@/components/claims/claimReviewPrimitives";
 import { formatDateTime } from "@/lib/utils/format";
+import { Button } from "@/components/ui";
 
 export type ClaimDecisionPayload = {
   formatted: FormattedClaimDecision;
@@ -74,15 +75,16 @@ export function ClaimDecisionRecommendationCard({
             </p>
           )}
           {onRefresh && (
-            <button
+            <Button
               type="button"
-              className="text-caption ml-auto shrink-0 underline-offset-2 hover:underline disabled:opacity-50"
-              style={{ color: "var(--text-secondary)" }}
+              variant="ghost"
+              size="sm"
+              className="ml-auto shrink-0"
               onClick={onRefresh}
               disabled={loading}
             >
               Refresh recommendation
-            </button>
+            </Button>
           )}
         </div>
       )}
@@ -102,12 +104,9 @@ export function ClaimDecisionRecommendationCard({
       {claimId && formatted && !loading && !error && (
         <div className="space-y-3">
           <div>
-            <span
-              className="inline-block text-body font-semibold rounded-full px-2.5 py-1"
-              style={{ background: styles.bg, color: styles.color }}
-            >
+            <p className="text-body font-semibold" style={{ color: styles.color }}>
               {formatted.recommendationLabel}
-            </span>
+            </p>
             {formatted.ruleName && (
               <p
                 className="mt-2 text-caption"

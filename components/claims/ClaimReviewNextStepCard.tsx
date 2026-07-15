@@ -1,7 +1,6 @@
 'use client';
 
-import Link from 'next/link';
-import { btnStyle } from '@/components/claims/claimReviewStyles';
+import { Button, ButtonLink, Card } from '@/components/ui';
 import type { ClaimReviewWorkbench } from '@/components/claims/claimReviewWorkbench';
 
 export function ClaimReviewNextStepCard({ wb }: { wb: ClaimReviewWorkbench }) {
@@ -11,24 +10,25 @@ export function ClaimReviewNextStepCard({ wb }: { wb: ClaimReviewWorkbench }) {
 
   return (
     <>
-      <div className="ua-focal-panel overflow-hidden rounded-lg px-4 py-4" style={{ borderColor: 'var(--accent-border)', background: 'linear-gradient(145deg, var(--brand-signal-soft), var(--surface) 52%)' }}>
+      <Card variant="flat" density="default" className="overflow-hidden">
         <p className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--text-secondary)' }}>Evidence status</p>
         <p className="text-sm font-semibold leading-snug" style={{ color: 'var(--text)' }}>{primaryAction.label}</p>
         <p className="text-xs mt-1 mb-3 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{primaryAction.reason}</p>
         {primaryAction.key === 'close' && state.nextClaimHref ? (
-          <Link href={state.nextClaimHref} className="block w-full text-center px-3 py-2 rounded-md text-sm font-semibold" style={btnStyle('primary')}>
+          <ButtonLink href={state.nextClaimHref} className="w-full">
             {primaryAction.cta}
-          </Link>
+          </ButtonLink>
         ) : (
-          <button
+          <Button
             type="button"
+            variant={primaryAction.key === 'none' ? 'secondary' : 'primary'}
+            size="md"
             disabled={busy || primaryAction.key === 'none'}
             onClick={() => void handlePrimaryCta()}
-            className="w-full px-3 py-2 rounded-md text-sm font-semibold disabled:opacity-60"
-            style={btnStyle(primaryAction.key === 'none' ? 'disabled' : 'primary')}
+            className="w-full"
           >
             {primaryAction.cta}
-          </button>
+          </Button>
         )}
         <div className="mt-3 pt-3 border-t flex items-center gap-1 flex-wrap" style={{ borderColor: 'var(--border-muted)' }}>
           {([
@@ -47,7 +47,7 @@ export function ClaimReviewNextStepCard({ wb }: { wb: ClaimReviewWorkbench }) {
           ))}
         </div>
         <p className="mt-2 text-xs" style={{ color: 'var(--text-secondary)' }}>Review hint: {nextClaimAction}</p>
-      </div>
+      </Card>
 
       {(state.nextClaimHref || state.noMoreClaims) && primaryAction.key !== 'close' && (
         <div className="rounded-md px-3 py-2 border text-xs" style={{ borderColor: 'var(--success-bd)', background: 'var(--success-bg)', color: 'var(--success)' }}>

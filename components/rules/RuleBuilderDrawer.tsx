@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { AlertTriangle, Plus } from 'lucide-react';
-import { Button, Drawer, Input, PanelCard } from '@/components/ui';
+import { Button, Drawer, Input, Card } from '@/components/ui';
 import type { ConditionOperator, MerchantRule, RuleAction, RuleCondition } from '@/lib/rules-engine';
 import { RULE_FIELDS } from '@/lib/rules/fields';
 import { ACTION_LABELS, ACTION_TONES, summarizeConditions } from '@/lib/rules/summary';
@@ -231,7 +231,7 @@ export function RuleBuilderDrawer({
         </Field>
 
         {/* Live preview */}
-        <PanelCard variant="appInset" className="p-4">
+        <Card unstyled variant="inset" className="p-4">
           <span className="text-caption font-semibold uppercase tracking-wide" style={{ color: 'var(--text-tertiary)' }}>
             Preview
           </span>
@@ -241,7 +241,7 @@ export function RuleBuilderDrawer({
           <p className="mt-3 text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
             Recommended: {ACTION_LABELS[action]}
           </p>
-        </PanelCard>
+        </Card>
       </div>
     </Drawer>
   );

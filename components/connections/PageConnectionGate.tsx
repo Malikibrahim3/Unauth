@@ -1,10 +1,10 @@
 'use client';
 
-import Link from 'next/link';
 import { Plug } from 'lucide-react';
 import type { ConnectionState } from '@/lib/connections/getConnectionState';
 import { type MerchantSetupState, shouldFullGate } from '@/lib/connections/setupState';
 import { ConnectionPromptStrip } from './ConnectionPromptStrip';
+import { ButtonLink } from '@/components/ui';
 
 type Requires = 'both' | 'shopify' | 'helpdesk';
 
@@ -90,12 +90,9 @@ function GatePanel({ missing, pageName, pageDescription }: {
           </p>
         </div>
 
-        <Link
-          href={isDangerous ? '/settings/integrations/gorgias' : '/settings/integrations'}
-          className="btn-accent inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-90"
-        >
+        <ButtonLink href={isDangerous ? '/settings/integrations/gorgias' : '/settings/integrations'} size="md">
           {isDangerous ? 'Connect Gorgias' : 'Set up Shopify + Gorgias'}
-        </Link>
+        </ButtonLink>
       </div>
     </div>
   );

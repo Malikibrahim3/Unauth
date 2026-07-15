@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { humanise } from '@/lib/ui/labels';
 
 type Candidate = { id: string; entity_type: string; entity_id: string; confidence: number | null };
 type Exception = {
@@ -10,7 +11,7 @@ type Exception = {
   created_at: string;
 };
 
-function label(value: string) { return value.replaceAll('_', ' '); }
+function label(value: string) { return humanise(value); }
 
 export function ExceptionQueue({ compact = false }: { compact?: boolean }) {
   const [rows, setRows] = useState<Exception[]>([]);

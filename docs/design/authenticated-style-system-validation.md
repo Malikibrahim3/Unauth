@@ -2,6 +2,18 @@
 
 Date: 2026-07-14 · Branch: `ui-craft-overhaul`
 
+> Craft-pass addendum: Sections below document the earlier token-consolidation baseline. The current component and route result is recorded in `authenticated-component-consistency-validation.md`, `authenticated-chip-badge-audit.md`, `authenticated-chart-audit.md`, and `authenticated-component-defect-register.md`. Where this historical baseline says a primitive was deferred, treat the addendum and defect register as authoritative.
+
+## Craft-pass changes
+
+- Replaced cobalt action/selection aliases with ink and warm-neutral selected surfaces.
+- Made the four-radius and shared-height contracts explicit in `tokens.css` and `contracts.ts`.
+- Added canonical `IconButton`, `FilterChip`, `SegmentedControl`, `Tabs`, `MetadataChip`, `MetricGroup`, `EvidenceChecklist`, and `RecommendationBlock` primitives.
+- Migrated Payout Control filters, sorting, KPI/empty states, queue rows, workflow and recovery presentation.
+- Migrated dashboard/reports period controls, notifications filters/metadata, and loss filters to shared primitives.
+- Removed duplicated status/recommendation pills from the migrated claims surfaces and added the raw enum render-path test.
+- Added chart token names and disabled animation/smoothing in shared analytics charts.
+
 ## 1. Files created
 
 - `styles/authenticated/{index.css,tokens.css,typography.css,foundations.css,controls.css,status.css,surfaces.css,tables.css,overlays.css,states.css,responsive.css,README.md,contracts.ts}`

@@ -1,5 +1,6 @@
 export type OnboardingState = {
   activeStep: number;
+  profileSaved: boolean;
   storeName: string;
   platform: string;
   annualVolume: string;
@@ -25,6 +26,7 @@ export function createInitialOnboardingState(input: {
 }): OnboardingState {
   return {
     activeStep: 0,
+    profileSaved: false,
     storeName: input.initialStoreName,
     platform: input.initialPlatform,
     annualVolume: input.initialAnnualVolume,

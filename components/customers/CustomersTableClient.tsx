@@ -3,7 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Clock3, ReceiptText } from "lucide-react";
 import { DataTable } from "@/components/ui/DataTable";
-import { Badge, PanelCard } from "@/components/ui";
+import { Badge, Card } from "@/components/ui";
 import { formatCurrency, formatDate } from "@/lib/utils/format";
 import { CustomerPreviewDrawer } from "@/components/customers/CustomerPreviewDrawer";
 
@@ -190,11 +190,11 @@ export default function CustomersTableClient({
       {/* ── Mobile card list (<sm) ───────────────────────────── */}
       <div className="sm:hidden space-y-3">
         {rows.map((p) => (
-          <PanelCard
+          <Card unstyled
             as="button"
             type="button"
             key={p.id}
-            variant="app"
+            variant="flat"
             className="w-full cursor-pointer p-4 text-left transition-colors"
             onClick={() => setPreview(p.id)}
           >
@@ -232,7 +232,7 @@ export default function CustomersTableClient({
                 View <ArrowRight className="h-3 w-3" aria-hidden="true" />
               </span>
             </div>
-          </PanelCard>
+          </Card>
         ))}
       </div>
       <CustomerPreviewDrawer id={previewId} onClose={() => setPreview(null)} />

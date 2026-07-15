@@ -3,8 +3,6 @@
 import { ArrowDown, ArrowUp, Minus } from 'lucide-react';
 import { type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-import { useCountUp } from '@/hooks/useCountUp';
-import { formatNumber } from '@/lib/utils/format';
 
 interface DeltaProps {
   value: number;
@@ -39,11 +37,7 @@ const ARROW_ICON: Record<DeltaProps['direction'], typeof ArrowUp> = {
 export function MetricCard({ label, value, delta, hint, icon, density = 'default', size, microchart, className }: MetricCardProps) {
   const isHero = size === 'hero';
   const padding = isHero ? 'var(--space-5)' : density === 'compact' ? 'var(--space-3)' : 'var(--space-4)';
-  const numericValue = typeof value === 'number' ? value : null;
-  const animatedValue = useCountUp(numericValue ?? 0, {
-    format: (next) => formatNumber(Math.round(next)),
-  });
-  const displayValue = numericValue !== null ? animatedValue : value;
+  const displayValue = value;
 
   return (
     <div
@@ -53,7 +47,7 @@ export function MetricCard({ label, value, delta, hint, icon, density = 'default
         border: '1px solid var(--border)',
         borderRadius: 'var(--ua-radius-card)',
         padding,
-        boxShadow: 'var(--ua-shadow-card)',
+        boxShadow: 'none',
       }}
     >
       <div className="flex items-start justify-between gap-2">
@@ -67,21 +61,17 @@ export function MetricCard({ label, value, delta, hint, icon, density = 'default
       >
           {label}
         </span>
-        {icon && (
-          <span style={{ color: 'var(--brand-deep)', flexShrink: 0 }} className="ua-identity-tile flex h-8 w-8 items-center justify-center">
-            {icon}
-          </span>
-        )}
+        {icon ? <span aria-hidden="true" className="sr-only">{icon}</span> : null}
       </div>
 
       <div
         className="mt-3 num leading-tight tabular-nums"
         style={{
-          fontSize: isHero ? 40 : 30,
+          fontSize: isHero ? 24 : 23,
           fontWeight: 600,
           color: 'var(--text-primary)',
-          letterSpacing: '-0.04em',
-          fontFamily: 'var(--font-mono)',
+          letterSpacing: '-0.01em',
+          fontFamily: 'var(--font-sans)',
         }}
       >
         {displayValue}

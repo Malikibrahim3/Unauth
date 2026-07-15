@@ -101,13 +101,21 @@ describe('static guard: service-role API routes use scoped tenant access', () =>
     'app/api/account/delete/route.ts': new Set(['*']), // audited purge list; direct deletes scope by merchant_id or merchant-derived ids
     'app/api/audit-trail/route.ts': new Set(['merchant_members']), // .eq('merchant_id', ctx.merchantId)
     'app/api/lookup/remaining/route.ts': new Set(['lookup_daily_counts']), // .eq('merchant_id', ctx.merchantId)
-    'app/api/search/route.ts': new Set(['customer_profiles', 'transactions', 'evidence_packages']), // .in(... merchantJobIds)
+    'app/api/search/route.ts': new Set(['source_customers', 'source_orders']), // every query has .eq('merchant_id', merchantId)
     'app/api/settings/bulk-delete/route.ts': new Set(['*']), // dynamic from(table); serviceClient branch uses .eq('merchant_id', ctx.merchantId)
     // v2 tenant tables accessed with the service-role client but manually scoped
     // by merchant_id (audited 2026-07-04):
     'app/api/claim-gate/check/route.ts': new Set(['support_payout_cases']), // .eq('merchant_id', input.merchantId) (merchant from validated API key)
     'app/api/test/e2e-auth/route.ts': new Set(['merchant_users']), // .eq('merchant_id', merchantId); route is local-dev only
-    'app/api/claims/[claimId]/route.ts': new Set(['merchant_identity_state']), // .eq('merchant_id', ctx.merchantId)
+    'app/api/claims/[claimId]/route.ts': new Set(['merchant_identity_state', 'source_orders', 'source_tickets']), // .eq('merchant_id', ctx.merchantId)
+    'app/api/shopify/status/route.ts': new Set(['source_orders']), // .eq('merchant_id', merchantId)
+    'app/api/integrations/[provider]/sync/route.ts': new Set(['source_orders']), // merchant-scoped connector sync
+    'app/api/gorgias/support-webhook/route.ts': new Set(['source_orders']), // merchant resolved from authenticated webhook connection
+    'app/api/customers/[id]/route.ts': new Set(['source_customers', 'source_orders']), // .eq('merchant_id', ctx.merchantId)
+    'app/api/customers/[id]/shopify-orders/route.ts': new Set(['source_orders']), // merchant ownership is checked before query
+    'app/api/claims/route.ts': new Set(['source_orders']), // .eq('merchant_id', ctx.merchantId)
+    'app/api/claims/[claimId]/support-context/route.ts': new Set(['source_orders']), // .eq('merchant_id', ctx.merchantId)
+    'app/api/claims/[claimId]/outcome/route.ts': new Set(['source_tickets']), // claim ownership supplies merchant scope
   };
 
   it('finds API route files to scan', () => {

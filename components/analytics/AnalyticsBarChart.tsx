@@ -42,8 +42,7 @@ export function AnalyticsBarChart({
     }
 
     return {
-      animation: true,
-      animationDuration: 400,
+      animation: false,
       grid: { left: 0, right: 8, top: 8, bottom: 0, containLabel: true },
       tooltip: {
         ...baseTooltip(t),
