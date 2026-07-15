@@ -24,6 +24,22 @@ export const CANONICAL_CLAIM_STATUSES = [
 
 export type CanonicalClaimStatus = (typeof CANONICAL_CLAIM_STATUSES)[number];
 
+export const ACTIVE_CANONICAL_CLAIM_STATUSES = [
+  'new',
+  'evidence_needed',
+  'awaiting_customer_evidence',
+  'awaiting_carrier_response',
+  'awaiting_3pl_response',
+  'awaiting_supplier_response',
+  'ready_for_decision',
+  'manual_review',
+  'decision_recorded',
+  'recovery_opened',
+  'pending',
+  'open',
+  'escalated',
+] as const satisfies readonly CanonicalClaimStatus[];
+
 export const FINAL_CANONICAL_CLAIM_STATUSES = [
   'closed',
   'resolved_refunded',

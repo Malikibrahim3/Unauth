@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Unauth — Fraud Intelligence",
-  "description": "Instantly check if a customer is a known fraudster across merchants",
+  "name": "Unauth — Payout Context",
+  "description": "Review merchant-owned customer payout history and prepare evidence",
   "version": "0.1.0",
   "permissions": [
     "activeTab",
@@ -9,11 +9,11 @@
     "scripting"
   ],
   "host_permissions": [
-    "https://unauth-pi.vercel.app/*"
+    "https://app.unauth.co/*"
   ],
   "action": {
     "default_popup": "popup/popup.html",
-    "default_title": "Unauth — Fraud Intelligence",
+    "default_title": "Unauth — Payout Context",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",

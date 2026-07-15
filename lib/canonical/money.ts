@@ -5,7 +5,7 @@
  * plus an ISO currency code. Conversion MUST use the currency's ISO exponent;
  * never assume every currency has 2 decimals (JPY has 0, BHD has 3).
  *
- * See docs/IMPL_source_agnostic_connected_ecosystem.md §4 (Financial ledger rules).
+ * See ARCHITECTURE.md §4 (Financial ledger rules).
  */
 
 /** Currencies whose minor-unit exponent is NOT the default of 2. */

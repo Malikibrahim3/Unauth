@@ -66,7 +66,6 @@ describe("Static security guard: service-role routes must be auth-gated", () => 
       "app/api/public-audit/submit/route.ts",
       "app/api/public-audit/[runId]/claim/route.ts",
       "app/api/process-csv-finalize/route.ts",
-      "app/api/founding-merchant-applications/route.ts",
       "app/api/cron/purge-expired-audits/route.ts",
       "app/api/account/setup/route.ts",
       // Intentionally public bootstrap script: returns merchant-scoped collector JS

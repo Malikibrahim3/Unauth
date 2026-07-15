@@ -7,7 +7,7 @@ const root = __dirname;
 const dist = resolve(root, 'dist');
 const projectRoot = resolve(root, '..', '..');
 
-const DEFAULT_API_BASE = 'https://unauth-pi.vercel.app';
+const DEFAULT_API_BASE = 'https://app.unauth.co';
 
 // Resolve the deployment the packed extension should call. Reads the same
 // .env.local the Next app uses (NEXT_PUBLIC_APP_URL) so the build auto-adapts;

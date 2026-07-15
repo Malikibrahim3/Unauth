@@ -20,7 +20,6 @@ describe('billing tiers (canonical SSOT)', () => {
     expect(can('free', 'context_checks')).toBe(true);
     expect(can('free', 'claims_queue')).toBe(true);
     expect(can('free', 'helpdesk_widget')).toBe(true);
-    expect(can('free', 'watchlist')).toBe(false);
     expect(limit('free', 'contextCreditsPerMonth')).toBe(100);
     expect(limit('free', 'historyDays')).toBe(30);
     if (isBillingActive()) {

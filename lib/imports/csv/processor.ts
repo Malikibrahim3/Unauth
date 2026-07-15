@@ -5,7 +5,7 @@
  * within the file) are skipped. No domain events are emitted for invalid rows —
  * that is the commit job's responsibility, and only for the valid set.
  *
- * See docs/IMPL_source_agnostic_connected_ecosystem.md §7.3.
+ * See ARCHITECTURE.md §7.3.
  */
 import type { CsvDatasetKey, DatasetConfig, RowValue } from '@/lib/imports/csv/entitySchemas';
 import { CSV_DATASETS } from '@/lib/imports/csv/entitySchemas';

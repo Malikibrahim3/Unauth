@@ -3,6 +3,7 @@ import type { IntegrationProvider } from '@/lib/integrations/types';
 export const carrierClaimsProvider: IntegrationProvider = {
   id: 'carrier_claims',
   name: 'UPS/FedEx Claims API',
+  logoSrc: '/integrations/carrier-claims.svg',
   category: 'carrier',
   authMode: 'oauth',
   buildStatus: 'slot_only',

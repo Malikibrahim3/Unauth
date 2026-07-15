@@ -1,31 +1,10 @@
 import Image from 'next/image';
 import { FileUp, PlugZap } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getProviderLogoSrc } from '@/lib/integrations/registry';
 
-const PROVIDER_LOGOS: Record<string, string> = {
-  bigcommerce: '/integrations/bigcommerce.svg',
-  document_upload: '/integrations/document-upload.svg',
-  freshdesk: '/integrations/freshdesk.png',
-  fedex: '/integrations/fedex.svg',
-  gorgias: '/integrations/gorgias.png',
-  shipbob: '/integrations/shipbob.svg',
-  shopify: '/integrations/shopify.svg',
-  ups: '/integrations/ups.svg',
-  woocommerce: '/integrations/woocommerce.svg',
-  zendesk: '/integrations/zendesk.svg',
-};
-
-const SOURCE_ALIASES: Record<string, string> = {
-  helpdesk: 'gorgias',
-  shop: 'shopify',
-  store: 'shopify',
-  warehouse: 'shipbob',
-};
-
-export function providerLogoSrc(provider: string | null | undefined) {
-  if (!provider) return null;
-  const key = provider.toLowerCase().replaceAll('-', '_').replaceAll(' ', '_');
-  return PROVIDER_LOGOS[key] ?? PROVIDER_LOGOS[SOURCE_ALIASES[key]] ?? null;
+function providerLogoSrc(provider: string | null | undefined) {
+  return getProviderLogoSrc(provider);
 }
 
 export function ProviderLogo({

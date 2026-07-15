@@ -28,7 +28,7 @@ function connection(over: Partial<ConnectionState>): ConnectionState {
     helpdeskProvider: helpdesk ? 'gorgias' : null,
     bothConnected: orderSourceConnected && helpdesk,
     neitherConnected: !orderSourceConnected && !helpdesk,
-    shopifyOnlyConnected: orderSourceConnected && !helpdesk,
+    orderSourceOnlyConnected: orderSourceConnected && !helpdesk,
     helpdeskOnlyConnected: !orderSourceConnected && helpdesk,
     shopDomain: null,
     linkState: 'not_connected',
@@ -41,7 +41,7 @@ function presence(over: Partial<MerchantDataPresence> = {}): MerchantDataPresenc
     hasAnyData: false,
     hasCustomerProfiles: false,
     hasOrders: false,
-    hasShopifySignals: false,
+    hasOrderSourceSignals: false,
     hasHelpdeskClaims: false,
     hasEvidencePackages: false,
     hasWatchlist: false,
@@ -50,14 +50,12 @@ function presence(over: Partial<MerchantDataPresence> = {}): MerchantDataPresenc
     hasLiveIntegrationReports: false,
     sources: {
       customerProfiles: 0,
-      auditTransactions: 0,
+      sourceOrders: 0,
       processingJobs: 0,
       csvImports: 0,
-      shopifyOrderSignals: 0,
       merchantClaims: 0,
       supportCases: 0,
       evidencePackages: 0,
-      watchlistEntries: 0,
       customerActivity: 0,
     },
   };
@@ -65,22 +63,22 @@ function presence(over: Partial<MerchantDataPresence> = {}): MerchantDataPresenc
 }
 
 const EMPTY = presence();
-const SHOPIFY_DATA = presence({ hasAnyData: true, hasShopifySignals: true, hasOrders: true });
+const SHOPIFY_DATA = presence({ hasAnyData: true, hasOrderSourceSignals: true, hasOrders: true });
 const HELPDESK_DATA = presence({ hasAnyData: true, hasHelpdeskClaims: true });
 const CSV_DATA = presence({ hasAnyData: true, hasCsvImports: true, hasCustomerProfiles: true });
-const STALE_DATA = presence({ hasAnyData: true, hasCustomerProfiles: true, hasShopifySignals: true });
+const STALE_DATA = presence({ hasAnyData: true, hasCustomerProfiles: true, hasOrderSourceSignals: true });
 
 describe('resolveMerchantSetupState', () => {
   it('fresh: no data, no integrations', () => {
     expect(resolveMerchantSetupState(connection({}), EMPTY)).toBe('fresh');
   });
 
-  it('shopify_only_empty', () => {
-    expect(resolveMerchantSetupState(connection({ shopify: true }), EMPTY)).toBe('shopify_only_empty');
+  it('order_source_only_empty', () => {
+    expect(resolveMerchantSetupState(connection({ shopify: true }), EMPTY)).toBe('order_source_only_empty');
   });
 
-  it('shopify_only_with_data', () => {
-    expect(resolveMerchantSetupState(connection({ shopify: true }), SHOPIFY_DATA)).toBe('shopify_only_with_data');
+  it('order_source_only_with_data', () => {
+    expect(resolveMerchantSetupState(connection({ shopify: true }), SHOPIFY_DATA)).toBe('order_source_only_with_data');
   });
 
   it('helpdesk_only_empty', () => {
@@ -108,7 +106,7 @@ describe('resolveMerchantSetupState', () => {
   });
 
   it('csv data plus live signals is not csv_only', () => {
-    const mixed = presence({ hasAnyData: true, hasCsvImports: true, hasShopifySignals: true });
+    const mixed = presence({ hasAnyData: true, hasCsvImports: true, hasOrderSourceSignals: true });
     expect(resolveMerchantSetupState(connection({}), mixed)).toBe('stale_existing_data');
   });
 });
@@ -116,11 +114,11 @@ describe('resolveMerchantSetupState', () => {
 describe('gating helpers', () => {
   it('full-gates only the empty / no-useful-data states', () => {
     expect(shouldFullGate('fresh')).toBe(true);
-    expect(shouldFullGate('shopify_only_empty')).toBe(true);
+    expect(shouldFullGate('order_source_only_empty')).toBe(true);
     expect(shouldFullGate('helpdesk_only_empty')).toBe(true);
     expect(shouldFullGate('fully_connected_empty')).toBe(true);
 
-    expect(shouldFullGate('shopify_only_with_data')).toBe(false);
+    expect(shouldFullGate('order_source_only_with_data')).toBe(false);
     expect(shouldFullGate('helpdesk_only_with_data')).toBe(false);
     expect(shouldFullGate('fully_connected_with_data')).toBe(false);
     expect(shouldFullGate('csv_only')).toBe(false);
@@ -130,8 +128,8 @@ describe('gating helpers', () => {
   it('setupStateHasUsefulData is the inverse of shouldFullGate', () => {
     const states = [
       'fresh',
-      'shopify_only_empty',
-      'shopify_only_with_data',
+      'order_source_only_empty',
+      'order_source_only_with_data',
       'helpdesk_only_empty',
       'helpdesk_only_with_data',
       'csv_only',

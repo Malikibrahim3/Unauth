@@ -30,7 +30,6 @@ const remotePatterns = supabaseHostname
 
 const nextConfig = {
   serverExternalPackages: ['papaparse'],
-  transpilePackages: ['three'],
   devIndicators: false,
   allowedDevOrigins: ['127.0.0.1'],
   // The Chrome download route reads extension files from disk at runtime.
@@ -75,21 +74,41 @@ const nextConfig = {
     return [{ source: '/:path*', headers: securityHeaders }];
   },
   async redirects() {
-    // Backward-compat aliases for renamed routes. Page-level redirect stubs were
-    // removed in favour of these config redirects so the route tree stays clean
-    // while old bookmarks/links keep working.
+    // Compatibility redirects for URLs that were previously shipped or linked
+    // externally. Keep this as the only legacy-route source of truth. Remove an
+    // entry after production access logs show no requests for 90 days; the web
+    // platform owner owns that review.
     return [
       { source: '/inbox', destination: '/claims', permanent: false },
-      { source: '/audits', destination: '/history', permanent: false },
-      { source: '/audit-history', destination: '/history', permanent: false },
-      { source: '/saved', destination: '/history', permanent: false },
-      { source: '/new-audit', destination: '/upload', permanent: false },
-      { source: '/audits/new', destination: '/upload', permanent: false },
-      { source: '/evidence', destination: '/chargebacks', permanent: false },
-      { source: '/evidence-packages', destination: '/chargebacks', permanent: false },
-      { source: '/clusters', destination: '/customers?merchantsMin=2', permanent: false },
-      { source: '/graph', destination: '/global', permanent: false },
-      { source: '/report/:runId', destination: '/audit/:runId', permanent: false },
+      { source: '/catches/:path*', destination: '/claims', permanent: false },
+      { source: '/chargebacks/:path*', destination: '/claims', permanent: false },
+      { source: '/evidence', destination: '/claims', permanent: false },
+      { source: '/evidence-packages', destination: '/claims', permanent: false },
+      { source: '/store/:path*', destination: '/dashboard', permanent: false },
+      { source: '/lookup/:path*', destination: '/customers', permanent: false },
+      { source: '/global/:path*', destination: '/customers', permanent: false },
+      { source: '/graph/:path*', destination: '/customers', permanent: false },
+      { source: '/clusters/:path*', destination: '/customers', permanent: false },
+      { source: '/watchlist/:path*', destination: '/customers', permanent: false },
+      { source: '/audit/:path*', destination: '/reports', permanent: false },
+      { source: '/report/:path*', destination: '/reports', permanent: false },
+      { source: '/audits/:path*', destination: '/reports', permanent: false },
+      { source: '/audit-history', destination: '/reports', permanent: false },
+      { source: '/history/:path*', destination: '/reports', permanent: false },
+      { source: '/saved/:path*', destination: '/reports', permanent: false },
+      { source: '/new-audit', destination: '/integrations/imports', permanent: false },
+      { source: '/upload/:path*', destination: '/integrations/imports', permanent: false },
+      { source: '/settings/integrations', destination: '/integrations', permanent: false },
+      { source: '/settings/integrations/bigcommerce', destination: '/integrations/bigcommerce', permanent: false },
+      { source: '/settings/integrations/woocommerce', destination: '/integrations/woocommerce', permanent: false },
+      { source: '/network-metrics/:path*', destination: '/dashboard', permanent: false },
+      { source: '/eval/:path*', destination: '/dashboard', permanent: false },
+      { source: '/help/identity-matching', destination: '/help', permanent: false },
+      { source: '/help/confidence-grades', destination: '/help', permanent: false },
+      { source: '/help/how-it-works', destination: '/help', permanent: false },
+      { source: '/help/integrations/siena', destination: '/help', permanent: false },
+      { source: '/help/integrations/yuma', destination: '/help', permanent: false },
+      { source: '/partners', destination: '/rules/recovery', permanent: false },
     ];
   },
   // SECURITY: Explicit image optimizer allowlist — mitigates GHSA-9g9p-9gw9-jx7f.

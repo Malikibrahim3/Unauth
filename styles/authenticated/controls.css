@@ -3,7 +3,7 @@
  * Relocated verbatim from app/(app)/authenticated.css. Component-level
  * variants (Button primary/secondary/ghost/danger, Input, Select) are
  * implemented in components/ui/*.tsx and consume these same tokens — see
- * docs/design/authenticated-component-migration-register.md for their
+ * styles/authenticated/README.md for their
  * current --ua-* alias adoption status.
  */
 .ua-app :where(input, select, textarea) {

@@ -6,7 +6,7 @@ import { type MerchantSetupState, shouldFullGate } from '@/lib/connections/setup
 import { ConnectionPromptStrip } from './ConnectionPromptStrip';
 import { ButtonLink } from '@/components/ui';
 
-type Requires = 'both' | 'shopify' | 'helpdesk';
+type Requires = 'both' | 'helpdesk';
 
 interface PageConnectionGateProps {
   requires: Requires;
@@ -23,8 +23,8 @@ interface PageConnectionGateProps {
   /** Legacy fallback when setupState is not supplied: show data + strip instead of a full gate. */
   hasData?: boolean;
   /**
-   * Pass true when customer_profiles exist but neither integration is active.
-   * Forwards to ConnectionPromptStrip to surface the "stale Shopify data" message.
+   * Pass true when customer profiles exist but neither source is active.
+   * Forwards to ConnectionPromptStrip to disclose that the data may be stale.
    */
   hasExistingProfiles?: boolean;
   children: React.ReactNode;
@@ -33,7 +33,7 @@ interface PageConnectionGateProps {
 function missingFor(requires: Requires, connection: ConnectionState): 'helpdesk' | 'both' | null {
   if (requires === 'both') {
     if (connection.bothConnected) return null;
-    if (connection.shopifyOnlyConnected) return 'helpdesk';
+    if (connection.orderSourceOnlyConnected) return 'helpdesk';
     return 'both';
   }
   if (requires === 'helpdesk' && !connection.helpdesk) {
@@ -47,16 +47,16 @@ function GatePanel({ missing, pageName, pageDescription }: {
   pageName: string;
   pageDescription?: string;
 }) {
-  const isDangerous = missing === 'helpdesk';
+  const helpdeskMissing = missing === 'helpdesk';
 
-  const headline = isDangerous
-    ? `Shopify is connected — connect Gorgias to activate ${pageName}`
-    : `Connect Shopify + Gorgias to use ${pageName}`;
+  const headline = helpdeskMissing
+    ? `Connect a helpdesk to activate ${pageName}`
+    : `Connect an order source and helpdesk to use ${pageName}`;
 
   const body = pageDescription ?? (
-    isDangerous
-    ? `Connect Gorgias so your agents see claim context — order history, prior claims, and trust indicators — inside every support ticket.`
-      : `${pageName} requires Shopify for order data and Gorgias for support payout context. Both are required to activate evidence-backed payout control.`
+    helpdeskMissing
+      ? `Connect a supported helpdesk so support cases, evidence, and merchant-rule recommendations flow into Unauth.`
+      : `${pageName} combines commerce records with support context. Connect both source categories to activate evidence-backed payout control.`
   );
 
   return (
@@ -90,8 +90,8 @@ function GatePanel({ missing, pageName, pageDescription }: {
           </p>
         </div>
 
-        <ButtonLink href={isDangerous ? '/settings/integrations/gorgias' : '/settings/integrations'} size="md">
-          {isDangerous ? 'Connect Gorgias' : 'Set up Shopify + Gorgias'}
+        <ButtonLink href="/integrations" size="md">
+          {helpdeskMissing ? 'Connect a helpdesk' : 'Set up sources'}
         </ButtonLink>
       </div>
     </div>

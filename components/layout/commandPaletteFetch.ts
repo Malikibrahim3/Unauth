@@ -1,4 +1,3 @@
-import { FLAG_COMMAND_CENTER } from '@/lib/flags';
 import {
   unifiedToCustomerResults,
   type CustomerResult,
@@ -10,15 +9,9 @@ export async function fetchSearchResults(query: string): Promise<{
   unifiedResults: UnifiedResult[];
 }> {
   const trimmed = query.trim();
-  if (FLAG_COMMAND_CENTER) {
-    const response = await fetch(`/api/search?q=${encodeURIComponent(trimmed)}&limit=6`);
-    if (!response.ok) throw new Error('Search is temporarily unavailable');
-    const data = await response.json() as { results?: UnifiedResult[] };
-    const unifiedResults = data.results ?? [];
-    return { unifiedResults, customerResults: unifiedToCustomerResults(unifiedResults) };
-  }
-  const response = await fetch(`/api/customers/search?q=${encodeURIComponent(trimmed)}&limit=5`);
+  const response = await fetch(`/api/search?q=${encodeURIComponent(trimmed)}&limit=6`);
   if (!response.ok) throw new Error('Search is temporarily unavailable');
-  const data = await response.json() as { results?: CustomerResult[] };
-  return { unifiedResults: [], customerResults: data.results ?? [] };
+  const data = await response.json() as { results?: UnifiedResult[] };
+  const unifiedResults = data.results ?? [];
+  return { unifiedResults, customerResults: unifiedToCustomerResults(unifiedResults) };
 }

@@ -12,7 +12,7 @@ import { allowedOutcomes, decisionRequiresRationale, merchantDecisionSchema, typ
 import { formatClaimMoney } from '@/components/claims/claimReviewStyles';
 
 // Merchant-selectable decisions/outcomes are an explicit neutral allowlist —
-// accusation vocabulary is deliberately excluded (see docs/product/TERMINOLOGY.md).
+// accusation vocabulary is deliberately excluded (see docs/PRODUCT.md).
 const DECISION_OPTIONS: Decision[] = [
   'approved', 'denied', 'escalated', 'partial_refund', 'full_refund', 'chargeback_disputed', 'internal_watch', 'no_action',
 ];

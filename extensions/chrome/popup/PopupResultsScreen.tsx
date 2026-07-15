@@ -34,7 +34,6 @@ export function PopupResultsScreen({
   onNewLookup,
 }: PopupResultsScreenProps) {
   const visual = gradeVisualForLookup(lookup);
-  const crossMerchant = lookup.claims_record.cross_merchant;
 
   return (
     <div className="app">
@@ -50,20 +49,9 @@ export function PopupResultsScreen({
         </div>
 
         <div>
-          <p className="section-title">Claims on record</p>
+          <p className="section-title">Payout history</p>
           <p style={{ margin: 0 }}>{claimsLine(lookup.claims_record)}</p>
         </div>
-
-        {crossMerchant && (
-          <div className="cross-merchant">
-            <p className="section-title">Cross-merchant</p>
-            <p style={{ margin: 0 }}>
-              Seen at {crossMerchant.merchant_count} merchants
-              <br />
-              {crossMerchant.claim_count} total claims
-            </p>
-          </div>
-        )}
 
         {lookup.ce3_evidence_available && (
           <div className="ce3">
@@ -93,7 +81,7 @@ export function PopupResultsScreen({
                 className="input"
                 value={evidenceOrderId}
                 onChange={(e) => onEvidenceOrderIdChange(e.target.value)}
-                placeholder="Shopify order ID or ref"
+                placeholder="Order reference"
               />
               {evidenceError && <div className="error-box">{evidenceError}</div>}
               <button

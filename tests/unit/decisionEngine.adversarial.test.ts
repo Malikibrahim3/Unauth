@@ -8,7 +8,7 @@
  * BEFORE running the engine. Where the engine's actual output differed from the
  * independently-derived expectation, the ENGINE was fixed, not the test.
  *
- * See: docs/product/MVP_STEERING.md — the engine must never make verdicts,
+ * See: docs/PRODUCT.md — the engine must never make verdicts,
  * only surface evidence, matched rules, and available routes.
  */
 import { recommendFromEvidence } from '@/lib/claim-gate/buildRecommendation';

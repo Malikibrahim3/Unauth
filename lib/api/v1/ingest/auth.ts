@@ -3,7 +3,7 @@
  * validation; the merchant is derived from the credential, never from the
  * request body (a caller-supplied merchant_id is not authority).
  *
- * See docs/IMPL_source_agnostic_connected_ecosystem.md §7.1.
+ * See ARCHITECTURE.md §7.1.
  */
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';

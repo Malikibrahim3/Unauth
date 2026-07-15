@@ -1,7 +1,0 @@
-7.1 lookup latency known (10 calls, server-side)	p99 < 200ms	median 2.2ms, worst 6.3ms	PASS	all samples: 6.3 3.3 2.3 2.3 2.2 2.2 2.1 2.1 2.2 2.1 
-7.1 lookup latency unknown (10 calls, server-side)	p99 < 200ms	median 2.1ms, worst 5.9ms	PASS	all samples: 5.9 2.0 2.1 2.1 2.1 2.0 2.1 2.1 2.1 2.1 
-7.2 ingest 1000 signals single call (server-side)	report	1265ms	PASS	rows now in table: 1000
-7.2 ingest 10000 signals single call (server-side)	< 5000ms	1555ms	PASS	rows now in table: 11000
-7.3 claims merchant query	index scan, no seq scan	Index Scan using idx_claims_merchant_submitted on claims, 0.092ms	PASS	ORDER BY submitted_at DESC LIMIT 50
-7.4 signals lookup uses idx_identity_signals_lookup	index used	idx_identity_signals_lookup, 0.053ms	PASS	
-7.5 identities with merchant_count >= 3	87 live (baseline)	89 now (87 pre-test baseline; suite added k3+k4 test identities)	PASS	server exec 0.422ms, wall 342ms incl RTT

@@ -11,7 +11,6 @@ const archivedV1Modules = new Set([
   'lib/analysis/entityResolution.ts',
   'lib/engine/fastContext.ts',
   'lib/gorgias/widgetData.ts',
-  'lib/identity/globalIdentityStore.ts',
   'lib/supabase/merchantHelpers.ts',
   'lib/support/intake/claimSummary.ts',
   'lib/support/intake/linkSupportCase.ts',

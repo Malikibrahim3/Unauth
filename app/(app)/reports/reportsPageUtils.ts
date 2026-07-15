@@ -20,24 +20,24 @@ import type {
  */
 export function liveSetupCta(connection: ConnectionState): { title: string; body: string; label: string } | null {
   if (connection.bothConnected) return null;
-  if (connection.shopifyOnlyConnected) {
+  if (connection.orderSourceOnlyConnected) {
     return {
       title: 'Connect your helpdesk to complete payout reporting',
-      body: 'Shopify order data is flowing. Add your helpdesk to report on support payout cases, evidence gaps, decisions, and outcomes.',
+      body: 'Order data is flowing. Add your helpdesk to report on support payout cases, evidence gaps, decisions, and outcomes.',
       label: 'Connect helpdesk',
     };
   }
   if (connection.helpdeskOnlyConnected) {
     return {
-      title: 'Connect Shopify to complete payout reporting',
-      body: 'Support cases are flowing from your helpdesk. Add Shopify to attach order value, exposure, fulfillment evidence, and recovery context.',
-      label: 'Connect Shopify',
+      title: 'Connect an order source to complete payout reporting',
+      body: 'Support cases are flowing from your helpdesk. Add an order source to attach order value, exposure, fulfillment evidence, and recovery context.',
+      label: 'Connect order source',
     };
   }
   return {
-    title: 'Connect Shopify and your helpdesk for payout reporting',
+    title: 'Connect an order source and helpdesk for payout reporting',
     body: 'Reports combine store orders, support cases, evidence, decisions, and recoveries. Connect both sources to monitor new payout work as it happens.',
-    label: 'Connect Shopify and your helpdesk',
+    label: 'Connect sources',
   };
 }
 

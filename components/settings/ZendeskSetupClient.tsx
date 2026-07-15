@@ -184,7 +184,7 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
                   <p className="mt-0.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
                     When prompted, paste a key from{' '}
                     <Link
-                      href="/settings/integrations"
+                      href="/integrations"
                       className="underline"
                       style={{ color: 'var(--accent)' }}
                     >

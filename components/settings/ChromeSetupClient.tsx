@@ -50,7 +50,7 @@ export default function ChromeSetupClient({ hasApiKeys, keyPrefixes }: Props) {
           Create a key in API &amp; Integrations, then return here to install the extension.
         </p>
         <Link
-          href="/settings/integrations"
+          href="/integrations"
           className="mt-4 inline-flex rounded-md px-3 py-2 text-sm font-medium"
           style={{ background: 'var(--accent)', color: 'white' }}
         >

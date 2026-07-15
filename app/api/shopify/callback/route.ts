@@ -13,7 +13,7 @@ import { PERMISSIONS, requirePermissionForMerchant } from '@/lib/permissions';
 import { safeConnectionErrorCode } from '@/lib/integrations/publicErrors';
 
 const SHOP_REGEX = /^[a-zA-Z0-9][a-zA-Z0-9-]*\.myshopify\.com$/;
-const INTEGRATIONS_PATH = '/settings/integrations';
+const INTEGRATIONS_PATH = '/integrations';
 
 export const maxDuration = 300;
 

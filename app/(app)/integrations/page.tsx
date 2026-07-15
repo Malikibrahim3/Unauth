@@ -134,7 +134,7 @@ export default async function IntegrationsPage() {
   const attention = catalogue.filter((item) => ATTENTION.has(item.status));
   const manual = catalogue.filter(
     (item) =>
-      item.category === "documents" &&
+      item.authMode === "manual_upload" &&
       !ACTIVE.has(item.status) &&
       !ATTENTION.has(item.status),
   );
@@ -148,9 +148,17 @@ export default async function IntegrationsPage() {
     (item) =>
       !ACTIVE.has(item.status) &&
       !ATTENTION.has(item.status) &&
-      item.category !== "documents" &&
+      item.authMode !== "manual_upload" &&
       item.stage !== "planned" &&
       item.connectEnabled,
+  );
+  const limited = catalogue.filter(
+    (item) =>
+      !ACTIVE.has(item.status) &&
+      !ATTENTION.has(item.status) &&
+      item.authMode !== "manual_upload" &&
+      item.stage !== "planned" &&
+      !item.connectEnabled,
   );
   const imported = catalogue.reduce(
     (sum, item) => sum + item.importedRecords,
@@ -184,6 +192,12 @@ export default async function IntegrationsPage() {
       description:
         "Auditable imports and liability documents without a live provider connection.",
       items: manual,
+    },
+    {
+      title: "Limited availability",
+      description:
+        "Implemented provider coverage whose shared setup lifecycle is still incomplete.",
+      items: limited,
     },
     {
       title: "Planned",

@@ -33,51 +33,34 @@ export function CustomerProfileBlockedView({ reason }: { reason: CustomerProfile
 export function CustomerProfilePageView(props: CustomerProfilePageViewProps) {
   const {
     connectionState,
-    auditRunId,
     viewToken,
     gorgiasSource,
     gorgiasTicketId,
     profile,
     displayName,
-    profileGrade,
     hasCleanRecord,
     merchantClaimCount,
     merchantChargebackCount,
     merchantOrderCount,
     localClaimRatePct,
-    isEligibleForEvidence,
     totalOrderValue,
     totalRefundedValue,
     displayCurrency,
-    merchantsSeen,
-    profileWideOrders,
-    localOrderSharePct,
-    networkChargebackRatePct,
-    thisStoreMerchantSharePct,
-    density,
-    primaryIdentifier,
-    identitySignalRows,
-    identitySignals,
     transactions,
-    roadmapEvents,
     identityTimeline,
     variantCount,
     merchantNarrative,
     linkedAccounts,
-    merchantSignalPills,
     activityLog,
     openClaimCount,
-    evidenceDisplay,
   } = props;
 
   return (
     <PageConnectionGate requires="both" connection={connectionState} pageName="Customer payout history" pageDescription="This profile shows customer order history and linked support payout cases from merchant-owned sources. An incomplete profile can be misleading - you may see orders with no case history when helpdesk data is not syncing yet." hasData={true}>
     <div className="mx-auto max-w-7xl px-3 py-5 sm:px-5">
       <CustomerProfilePageHero
-        auditRunId={auditRunId}
         displayName={displayName}
         profile={profile}
-        profileGrade={profileGrade}
         hasCleanRecord={hasCleanRecord}
         merchantClaimCount={merchantClaimCount}
         merchantChargebackCount={merchantChargebackCount}
@@ -85,21 +68,11 @@ export function CustomerProfilePageView(props: CustomerProfilePageViewProps) {
         localClaimRatePct={localClaimRatePct}
         viewToken={viewToken}
         openClaimCount={openClaimCount}
-        isEligibleForEvidence={isEligibleForEvidence}
         totalOrderValue={totalOrderValue}
         totalRefundedValue={totalRefundedValue}
         displayCurrency={displayCurrency}
-        merchantsSeen={merchantsSeen}
-        profileWideOrders={profileWideOrders}
-        localOrderSharePct={localOrderSharePct}
-        networkChargebackRatePct={networkChargebackRatePct}
-        thisStoreMerchantSharePct={thisStoreMerchantSharePct}
-        density={density}
-        primaryIdentifier={primaryIdentifier}
-        identitySignalRows={identitySignalRows}
         gorgiasSource={gorgiasSource}
         gorgiasTicketId={gorgiasTicketId}
-        evidenceDisplay={evidenceDisplay}
       />
 
       {/*
@@ -114,16 +87,12 @@ export function CustomerProfilePageView(props: CustomerProfilePageViewProps) {
       <div className="grid grid-cols-1 gap-[var(--space-6)]">
         <CustomerProfilePageMainColumn
           profile={profile}
-          profileGrade={profileGrade}
           hasCleanRecord={hasCleanRecord}
           merchantOrderCount={merchantOrderCount}
           merchantNarrative={merchantNarrative}
-          identitySignals={identitySignals}
           transactions={transactions}
-          roadmapEvents={roadmapEvents}
           identityTimeline={identityTimeline}
           variantCount={variantCount}
-          merchantSignalPills={merchantSignalPills}
           linkedAccounts={linkedAccounts}
           activityLog={activityLog}
         />

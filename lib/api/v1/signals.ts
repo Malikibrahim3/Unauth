@@ -1,5 +1,5 @@
 // Human-readable evidence/attribution labels for internal claim-history flag
-// codes. Wording follows docs/product/TERMINOLOGY.md: describe the observed
+// codes. Wording follows docs/PRODUCT.md: describe the observed
 // pattern for merchant review, never accuse ("fraud", "abuse", "ring", etc.).
 const FLAG_HUMAN_LABELS: Record<string, string> = {
   cross_merchant: 'Repeat claim pattern across multiple merchants',
@@ -34,7 +34,7 @@ function normalizeFlagKey(flag: string): string {
  * Converts internal claim-history signal codes into merchant-facing evidence
  * labels. Does not alter which flags exist or how they are computed upstream
  * — this only maps a code to approved-vocabulary text (see
- * docs/product/TERMINOLOGY.md).
+ * docs/PRODUCT.md).
  */
 export function humanizeClaimHistorySignals(flags: string[]): string[] {
   const out: string[] = [];

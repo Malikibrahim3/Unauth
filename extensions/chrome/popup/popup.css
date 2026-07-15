@@ -316,14 +316,6 @@ a {
   margin-bottom: 4px;
 }
 
-.cross-merchant {
-  padding: 10px 12px;
-  border-radius: 6px;
-  background: #1f1814;
-  border: 1px solid #2a211c;
-  font-size: 12px;
-}
-
 .actions {
   display: flex;
   flex-direction: column;

@@ -4,7 +4,7 @@ import { INTEGRATION_PROVIDERS } from '@/lib/integrations/registry';
 import { buildEvidence } from '@/lib/claim-gate/buildEvidence';
 import { exchangeFedExClientCredentials } from '@/lib/integrations/providers/fedex';
 import { exchangeUpsClientCredentials } from '@/lib/integrations/providers/ups';
-import { mapCarrierProofToEvidence } from '@/lib/integrations/evidenceMapper';
+import { mapCarrierProofToEvidence, mapCommerceOrderToEvidence } from '@/lib/integrations/evidenceMapper';
 import { assembleEvidencePack } from '@/lib/payouts/assembleEvidencePack';
 
 class MockQuery {
@@ -79,10 +79,15 @@ describe('integration registry', () => {
   it('marks built providers live and future providers slot-only', () => {
     const byId = Object.fromEntries(INTEGRATION_PROVIDERS.map((provider) => [provider.id, provider]));
     expect(byId.shopify.buildStatus).toBe('live');
+    expect(byId.woocommerce.buildStatus).toBe('partial');
+    expect(byId.bigcommerce.buildStatus).toBe('partial');
     expect(byId.gorgias.buildStatus).toBe('live');
+    expect(byId.zendesk.buildStatus).toBe('live');
+    expect(byId.freshdesk.buildStatus).toBe('live');
     expect(byId.aftership).toBeUndefined();
     expect(byId.ups.buildStatus).toBe('live');
     expect(byId.fedex.buildStatus).toBe('live');
+    expect(byId.csv_import.buildStatus).toBe('live');
     expect(byId.document_upload.buildStatus).toBe('live');
     expect(byId.self_fulfillment_pack.buildStatus).toBe('live');
     expect(byId.shipbob.buildStatus).toBe('partial');
@@ -112,9 +117,14 @@ describe('integration registry', () => {
     );
     expect(new Set(INTEGRATION_PROVIDERS.map((provider) => provider.id))).toEqual(new Set([
       'shopify',
+      'woocommerce',
+      'bigcommerce',
       'gorgias',
+      'zendesk',
+      'freshdesk',
       'ups',
       'fedex',
+      'csv_import',
       'document_upload',
       'self_fulfillment_pack',
       'shipbob',
@@ -161,6 +171,19 @@ describe('live connector auth and normalization', () => {
     expect(items.filter((item) => item.evidenceType === 'delivery_photo' || item.evidenceType === 'signature')
       .every((item) => item.value === null)).toBe(true);
     expect(items.map((item) => item.summary).join(' ').toLowerCase()).toContain('not available');
+  });
+
+  it('preserves the canonical provider when mapping commerce evidence', () => {
+    const items = mapCommerceOrderToEvidence(
+      { id: 'order-1', order_number: '1042', total_price: 42, currency: 'GBP' },
+      { merchantId: 'm1', sourceProvider: 'woocommerce' },
+    );
+
+    expect(items[0]).toMatchObject({
+      sourceProvider: 'woocommerce',
+      sourceCategory: 'commerce',
+      title: 'WooCommerce order 1042',
+    });
   });
 });
 

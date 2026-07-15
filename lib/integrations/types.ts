@@ -77,6 +77,8 @@ export type ConnectorCapabilityMap = {
 export type IntegrationProvider = {
   id: string;
   name: string;
+  /** Public brand asset used by every provider-facing surface. */
+  logoSrc?: string;
   category: IntegrationCategory;
   authMode: IntegrationAuthMode;
   buildStatus: IntegrationBuildStatus;
@@ -84,6 +86,8 @@ export type IntegrationProvider = {
   capabilities?: ConnectorCapabilityMap;
   requiredScopes?: string[];
   description?: string;
+  /** Canonical merchant-facing setup or management route, when available. */
+  setupHref?: string;
 };
 
 export type ConnectorDescriptor = {

@@ -32,7 +32,7 @@ export function EvidenceChecklistCard({
     TRACKING_RELEVANT_CLAIM_TYPES.has(evidence.claimType);
 
   const gapMessage = delivery?.trackingGap === 'no_tracking_number'
-    ? 'No tracking number on Shopify order.'
+    ? 'No tracking number on the source order.'
     : delivery?.trackingGap === 'tracking_not_found'
       ? 'Tracking not found by the connected carrier.'
       : 'Tracking data is unavailable for this case.';
@@ -104,12 +104,12 @@ export function EvidenceChecklistCard({
           <span style={{ color: 'var(--text-secondary)' }}>
             <span className="font-semibold" style={{ color: 'var(--text)' }}>
               {delivery?.trackingGap === 'no_tracking_number'
-                ? 'Delivery evidence: no tracking number on Shopify order.'
+                ? 'Delivery evidence: no tracking number on the source order.'
                 : 'Delivery evidence: not connected.'}
             </span>{' '}
             {gapMessage}{' '}
             <Link
-              href="/settings/integrations"
+              href="/integrations"
               className="font-medium underline underline-offset-2"
               style={{ color: 'var(--warning)' }}
             >

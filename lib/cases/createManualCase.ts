@@ -7,7 +7,7 @@
  *   - multiple matches            -> ambiguous (unanchored; match candidates recorded);
  *   - none                        -> keep manual_reference (no fake order).
  *
- * See docs/IMPL_source_agnostic_connected_ecosystem.md §7.4.
+ * See ARCHITECTURE.md §7.4.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';

@@ -1,14 +1,14 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
-  mapGorgiasTicketToEvidence,
+  mapSupportTicketToEvidence,
   mapApprovedPartnerTermsToEvidence,
-  mapShopifyFulfillmentToEvidence,
-  mapShopifyOrderToEvidence,
-  mapShopifyRefundToEvidence,
+  mapCommerceFulfillmentToEvidence,
+  mapCommerceOrderToEvidence,
+  mapCommerceRefundToEvidence,
 } from '@/lib/integrations/evidenceMapper';
 import { getStoredIntegrationViews } from '@/lib/integrations/auth';
 import { providerShapeFromCanonical } from '@/lib/integrations/canonicalEvidence';
-import { getIntegrationProvider, INTEGRATION_PROVIDERS } from '@/lib/integrations/registry';
+import { getIntegrationProvider, INTEGRATION_PROVIDERS, normalizeProviderId } from '@/lib/integrations/registry';
 import type {
   EvidenceCapability,
   EvidencePack,
@@ -29,6 +29,13 @@ export type AssembleEvidencePackInput = {
 
 function hasConnected(views: ProviderConnectionView[], providerId: string): boolean {
   return views.some((view) => view.id === providerId && view.status === 'connected');
+}
+
+function hasConnectedCategory(
+  views: ProviderConnectionView[],
+  category: ProviderConnectionView['category'],
+): boolean {
+  return views.some((view) => view.category === category && view.status === 'connected');
 }
 
 function missing(
@@ -109,7 +116,7 @@ export async function assembleEvidencePack(input: AssembleEvidencePackInput): Pr
     input.orderId
       ? input.client
           .from('source_orders')
-          .select('id,external_id,order_number,total_price,currency,line_items_count,placed_at,ingested_at')
+          .select('id,external_id,order_number,total_price,currency,line_items_count,placed_at,ingested_at,source')
           .eq('merchant_id', input.merchantId)
           .eq('id', input.orderId)
           .maybeSingle()
@@ -144,7 +151,8 @@ export async function assembleEvidencePack(input: AssembleEvidencePackInput): Pr
   // map* helpers remain provider-shaped adapters over those canonical rows.
   // Connection state only informs the missing-evidence coverage hints below.
   if (ticketRes.data) {
-    items.push(...mapGorgiasTicketToEvidence({
+    const ticketProvider = normalizeProviderId(ticketRes.data.provider ?? 'gorgias');
+    items.push(...mapSupportTicketToEvidence({
       ...ticketRes.data,
       created_at: ticketRes.data.created_at_provider,
       updated_at: ticketRes.data.updated_at_provider,
@@ -152,35 +160,40 @@ export async function assembleEvidencePack(input: AssembleEvidencePackInput): Pr
       merchantId: input.merchantId,
       supportPayoutCaseId: input.supportPayoutCaseId,
       now: generatedAt,
+      sourceProvider: ticketProvider,
     }));
-  } else if (!hasConnected(views, 'gorgias')) {
-    missingEvidence.push(missing(views, 'gorgias', 'ticket_messages', 'not_connected', 'Gorgias is not connected.'));
+  } else if (!hasConnectedCategory(views, 'helpdesk')) {
+    missingEvidence.push(missing(views, 'gorgias', 'ticket_messages', 'not_connected', 'No supported helpdesk is connected.'));
   }
 
+  const orderProvider = normalizeProviderId(orderRes.data?.source ?? 'shopify');
   if (orderRes.data) {
-    items.push(...mapShopifyOrderToEvidence({
+    items.push(...mapCommerceOrderToEvidence({
       ...orderRes.data,
       created_at: orderRes.data.ingested_at,
     } as any, {
       merchantId: input.merchantId,
       supportPayoutCaseId: input.supportPayoutCaseId,
       now: generatedAt,
+      sourceProvider: orderProvider,
     }));
-  } else if (!hasConnected(views, 'shopify')) {
-    missingEvidence.push(missing(views, 'shopify', 'order_value', 'not_connected', 'Shopify is not connected.'));
+  } else if (!hasConnectedCategory(views, 'commerce')) {
+    missingEvidence.push(missing(views, 'shopify', 'order_value', 'not_connected', 'No supported order source is connected.'));
   }
   for (const refund of (refundRes.data ?? []) as any[]) {
-    items.push(mapShopifyRefundToEvidence(refund, {
+    items.push(mapCommerceRefundToEvidence(refund, {
       merchantId: input.merchantId,
       supportPayoutCaseId: input.supportPayoutCaseId,
       now: generatedAt,
+      sourceProvider: orderProvider,
     }));
   }
   for (const fulfillment of (fulfillmentRes.data ?? []) as any[]) {
-    items.push(...mapShopifyFulfillmentToEvidence(fulfillment, {
+    items.push(...mapCommerceFulfillmentToEvidence(fulfillment, {
       merchantId: input.merchantId,
       supportPayoutCaseId: input.supportPayoutCaseId,
       now: generatedAt,
+      sourceProvider: orderProvider,
     }));
   }
 

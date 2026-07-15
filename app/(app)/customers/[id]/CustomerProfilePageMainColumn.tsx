@@ -19,24 +19,17 @@ import type {
   ActivityLogEntry,
   CustomerProfileDisplay,
   LinkedAccountRow,
-  MerchantSignalPill,
 } from "@/app/(app)/customers/[id]/customerProfilePageLoad";
 import type { CustomerIntelligencePanel } from "@/app/api/customers/[id]/route";
-import type { ConfidenceGradeValue } from "@/lib/confidence";
-import type { BehaviorRoadmapEvent } from "@/components/customers/BehaviorRoadmap";
 
 export type CustomerProfilePageMainColumnProps = {
   profile: CustomerProfileDisplay;
-  profileGrade: ConfidenceGradeValue;
   hasCleanRecord: boolean;
   merchantOrderCount: number;
   merchantNarrative: string;
-  identitySignals: string[];
   transactions: RoadmapTransaction[];
-  roadmapEvents: BehaviorRoadmapEvent[];
   identityTimeline: CustomerIntelligencePanel["identityTimeline"];
   variantCount: number;
-  merchantSignalPills: MerchantSignalPill[];
   linkedAccounts: LinkedAccountRow[];
   activityLog: ActivityLogEntry[];
 };
@@ -90,23 +83,15 @@ function CompactTransactionList({
 
 export function CustomerProfilePageMainColumn({
   profile,
-  profileGrade,
   hasCleanRecord,
   merchantOrderCount,
   merchantNarrative,
-  identitySignals,
   transactions,
-  roadmapEvents,
   identityTimeline,
   variantCount,
-  merchantSignalPills,
   linkedAccounts,
   activityLog,
 }: CustomerProfilePageMainColumnProps) {
-  void profileGrade;
-  void identitySignals;
-  void roadmapEvents;
-
   const contactRows = [
     { label: "Email", value: profile.primary_email ?? profile.emails[0], icon: AtSign },
     { label: "Phone", value: profile.phones[0], icon: Phone },
@@ -243,7 +228,6 @@ export function CustomerProfilePageMainColumn({
           {identityTimeline.length ? <ol className="space-y-3">{identityTimeline.slice(-6).reverse().map((entry) => <li key={`${entry.date}-${entry.field}-${entry.value}`} className="flex gap-3"><span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${entry.isVariant ? 'bg-[var(--warning)]' : 'bg-[var(--text-tertiary)]'}`} /><div className="min-w-0"><p className="truncate text-xs font-medium text-[var(--text-primary)]">{entry.value}</p><p className="mt-0.5 text-[11px] text-[var(--text-tertiary)]">{entry.isVariant ? 'New ' : 'First '} {labelize(entry.field)} · {formatDateAbsolute(entry.date)}</p></div></li>)}</ol> : <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]"><ShoppingBag className="h-4 w-4" aria-hidden="true" />No identifier history yet.</div>}
         </SectionCard>
 
-        {merchantSignalPills.length ? <SectionCard title="Network context" description="Aggregate case types disclosed under privacy thresholds." density="compact"><div className="flex flex-wrap gap-2">{merchantSignalPills.slice(0, 12).map((signal, index) => <Badge key={`${signal.claimType}-${index}`} tone="neutral" size="sm">{signal.claimType}</Badge>)}</div></SectionCard> : null}
       </aside>
     </div>
   );

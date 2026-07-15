@@ -12,7 +12,6 @@ export const ENTITLEMENT_TO_FEATURE: Record<Entitlement, FeatureKey> = {
   CUSTOMER_DOSSIER: 'customer_dossier',
   CLAIM_REVIEW_QUEUE: 'claims_queue',
   HELPDESK_WIDGET: 'helpdesk_widget',
-  WATCHLIST: 'watchlist',
   REPORTS_ADVANCED: 'advanced_reports',
   LIVE_LOOKUP_API: 'lookup_api',
   QUICK_SCORE: 'quick_score_api',

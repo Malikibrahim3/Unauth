@@ -6,7 +6,7 @@
  * Sort order: `occurredAt`, then `recordedAt`, then `id`. Provider occurrence
  * time is never overwritten with ingestion time.
  *
- * See docs/IMPL_source_agnostic_connected_ecosystem.md §6.
+ * See ARCHITECTURE.md §6.
  */
 
 export type TimelineActor = { type: string; id?: string; label?: string };

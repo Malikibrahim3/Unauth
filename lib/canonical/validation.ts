@@ -3,7 +3,7 @@
  * integer minor units, and ISO-UTC timestamps. A failed required field yields a
  * validation error so a partial canonical entity is never persisted.
  *
- * See docs/IMPL_source_agnostic_connected_ecosystem.md §3.
+ * See ARCHITECTURE.md §3.
  */
 import { z } from 'zod';
 import { ORDER_FINANCIAL_STATUSES, FULFILLMENT_STATES, SHIPMENT_STATUSES } from '@/lib/canonical/statuses';

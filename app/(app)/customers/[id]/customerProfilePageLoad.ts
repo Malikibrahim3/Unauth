@@ -3,8 +3,6 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { TABLES } from "@/lib/supabase/tables";
 import { requirePermission, PERMISSIONS } from "@/lib/permissions";
 import { buildBehavioralNarrative } from "@/lib/customers/narrative";
-import { riskLevelToNewGrade } from "@/lib/confidence";
-import type { ConfidenceGradeValue } from "@/lib/confidence";
 import type { CustomerIntelligencePanel } from "@/app/api/customers/[id]/route";
 import { ACTIVE_CLAIM_STATUSES } from "@/lib/claims/sla";
 import {
@@ -14,28 +12,17 @@ import {
 import { getConnectionState } from "@/lib/connections/getConnectionState";
 import type { ConnectionState } from "@/lib/connections/getConnectionState";
 import {
-  CLAIM_TYPE_LABELS,
-  firstArrayValue,
   type RoadmapTransaction,
 } from "@/app/(app)/customers/[id]/customerProfilePageLabels";
 import {
-  buildCustomerIdentifierHashes,
-  lookupNetworkIdentity,
   resolveIdentitySiblingCustomers,
   resolveRepresentativeCustomerIdForIdentity,
 } from "@/lib/customers/identityNetwork";
-import { getEventStream } from "@/lib/analysis/customerIntelligence";
-import type { BehaviorRoadmapEvent } from "@/components/customers/BehaviorRoadmap";
-import type { EvidenceLevel, ScoreFactor } from "@/lib/engine/evidence/score";
-import type { ConfidenceGrade } from "@/lib/engine/weights";
 import { merchantHasEntitlement } from "@/lib/product/requireEntitlement";
 import { dominantCurrency } from "@/lib/utils/format";
 
 export type CustomerProfileSearchParams = {
-  audit?: string;
   view_token?: string;
-  buildEvidence?: string;
-  disputedOrder?: string;
   source?: string;
   ticket_id?: string;
 };
@@ -61,15 +48,6 @@ export type CustomerProfileDisplay = {
   phones: string[];
   ips: string[];
   primary_email: string | null;
-  risk_level: string;
-  total_orders: number;
-  total_refund_claims: number;
-  total_chargebacks: number;
-  total_merchants_seen_at: number;
-  refund_rate: number;
-  fastest_claim_days: number | null;
-  avg_claim_days: number | null;
-  refund_acceleration_score: number;
   first_seen: string;
   last_seen: string;
   fraud_flags: string[];
@@ -83,27 +61,6 @@ export type LinkedAccountRow = {
   entityType: string;
   entityValue: string;
   confidence: number;
-};
-
-export type IdentitySignalRow = {
-  value: string;
-  signalType: string;
-  grade: string;
-};
-
-export type MerchantSignalPill = {
-  merchantLabel: string;
-  claimType: string;
-};
-
-/** Cached network evidence score for the customer profile badge (service-role fetch). */
-export type CustomerEvidenceDisplay = {
-  evidence_disclosed: boolean;
-  evidence_score: number;
-  evidence_level: EvidenceLevel;
-  has_sufficient_data: boolean;
-  score_breakdown: ScoreFactor[];
-  confidence_grade: ConfidenceGrade | null;
 };
 
 export type ClaimSummaryRow = {
@@ -126,43 +83,28 @@ export type ActivityLogEntry = {
 
 export type CustomerProfilePageViewProps = {
   connectionState: ConnectionState;
-  auditRunId: string | null;
   viewToken: string;
   gorgiasSource: string | null;
   gorgiasTicketId: string | null;
   profile: CustomerProfileDisplay;
   displayName: string;
-  profileGrade: ConfidenceGradeValue;
   hasCleanRecord: boolean;
   merchantClaimCount: number;
   merchantChargebackCount: number;
   merchantOrderCount: number;
   localClaimRatePct: number;
-  isEligibleForEvidence: boolean;
   totalOrderValue: number;
   totalRefundedValue: number;
   displayCurrency: string;
-  merchantsSeen: number;
-  profileWideOrders: number;
-  localOrderSharePct: number;
-  networkChargebackRatePct: number;
-  thisStoreMerchantSharePct: number;
-  density: number[];
-  primaryIdentifier: string;
-  identitySignalRows: IdentitySignalRow[];
-  identitySignals: string[];
   transactions: RoadmapTransaction[];
-  roadmapEvents: BehaviorRoadmapEvent[];
   identityTimeline: CustomerIntelligencePanel["identityTimeline"];
   variantCount: number;
   merchantNarrative: string;
   linkedAccounts: LinkedAccountRow[];
-  merchantSignalPills: MerchantSignalPill[];
   activityLog: ActivityLogEntry[];
   openClaimCount: number;
   latestClaim: ClaimSummaryRow | null;
   merchantRefundRate: number;
-  evidenceDisplay: CustomerEvidenceDisplay | null;
 };
 
 type SourceCustomerRow = {
@@ -243,31 +185,11 @@ function formatAddress(row: SourceAddressRow): string {
     .join(", ");
 }
 
-function buildIdentitySignalRows(
-  profile: CustomerProfileDisplay,
-): IdentitySignalRow[] {
-  const rows: IdentitySignalRow[] = [];
-  for (const email of profile.emails) {
-    if (email && email !== profile.primary_email) {
-      rows.push({ value: email, signalType: "email variant", grade: "B" });
-    }
-  }
-  const address = firstArrayValue(profile.addresses);
-  if (address)
-    rows.push({ value: address, signalType: "address match", grade: "B" });
-  const phone = firstArrayValue(profile.phones);
-  if (phone) rows.push({ value: phone, signalType: "phone match", grade: "A" });
-  const ip = firstArrayValue(profile.ips);
-  if (ip) rows.push({ value: ip, signalType: "device/ip match", grade: "C" });
-  return rows;
-}
-
 export async function loadCustomerProfilePage(
   profileId: string,
   searchParams: CustomerProfileSearchParams,
 ): Promise<CustomerProfileLoadResult> {
   const viewToken = searchParams.view_token?.trim() ?? "";
-  const auditRunId = searchParams.audit ?? null;
   const gorgiasSource =
     searchParams.source?.trim() === "gorgias" ? "gorgias" : null;
   const gorgiasTicketId = searchParams.ticket_id?.trim() || null;
@@ -452,15 +374,6 @@ export async function loadCustomerProfilePage(
     claimsByOrder.set(claim.source_order_id, list);
   }
 
-  // ---------------------------------------------------------------------------
-  // Network identity (layers 3/5) — via the k-anonymous RPC only.
-  // ---------------------------------------------------------------------------
-  const identifierHashes = buildCustomerIdentifierHashes(customer);
-  const network = await lookupNetworkIdentity(
-    svc,
-    merchantId,
-    identifierHashes,
-  );
   const identityId = resolvedIdentityId;
 
   // Merchant-side state (watchlist / investigation status) for the identity.
@@ -477,48 +390,8 @@ export async function loadCustomerProfilePage(
     investigationStatus = stateRow?.investigation_status;
   }
 
-  // Network evidence score (service-role table; disclosed only when k-anon RPC matched).
-  let evidenceDisplay: CustomerEvidenceDisplay | null = null;
-  if (network) {
-    const { data: evidenceRow } = (await svc
-      .from(TABLES.IDENTITY_EVIDENCE_SCORES)
-      .select(
-        "evidence_score, evidence_level, has_sufficient_data, score_breakdown",
-      )
-      .eq("identity_id", network.identityId)
-      .maybeSingle()) as unknown as {
-      data: {
-        evidence_score: number;
-        evidence_level: string;
-        has_sufficient_data: boolean;
-        score_breakdown: unknown;
-      } | null;
-    };
-
-    evidenceDisplay = {
-      evidence_disclosed: true,
-      evidence_score: Number(evidenceRow?.evidence_score ?? 0),
-      evidence_level: (evidenceRow?.evidence_level ??
-        "minimal") as EvidenceLevel,
-      has_sufficient_data: Boolean(evidenceRow?.has_sufficient_data),
-      score_breakdown: Array.isArray(evidenceRow?.score_breakdown)
-        ? (evidenceRow.score_breakdown as ScoreFactor[])
-        : [],
-      confidence_grade: network.confidenceGrade,
-    };
-  } else if (identityId || identifierHashes.length > 0) {
-    evidenceDisplay = {
-      evidence_disclosed: false,
-      evidence_score: 0,
-      evidence_level: "minimal",
-      has_sufficient_data: false,
-      score_breakdown: [],
-      confidence_grade: null,
-    };
-  }
-
   // ---------------------------------------------------------------------------
-  // Display assembly (own-store data first; network aggregates where disclosed).
+  // Display assembly from merchant-owned customer, order, and case records.
   // ---------------------------------------------------------------------------
   const customerName = [customer.first_name, customer.last_name]
     .filter(Boolean)
@@ -569,27 +442,9 @@ export async function loadCustomerProfilePage(
     phones,
     ips,
     primary_email: customer.email,
-    // Identity confidence grade (displayed as confidence, never a verdict).
-    risk_level: network?.confidenceGrade ?? "none",
-    total_orders: Math.max(network?.totalOrders ?? 0, merchantOrderCount),
-    total_refund_claims: Math.max(
-      network?.totalClaims ?? 0,
-      merchantClaimCount,
-    ),
-    total_chargebacks: Math.max(
-      network?.totalChargebacks ?? 0,
-      merchantChargebacks,
-    ),
-    total_merchants_seen_at: Math.max(network?.merchantCount ?? 1, 1),
     sibling_count: siblingCount,
-    refund_rate:
-      network?.claimRate ??
-      (merchantOrderCount > 0 ? merchantClaimCount / merchantOrderCount : 0),
-    fastest_claim_days: network?.fastestClaimDays ?? null,
-    avg_claim_days: null,
-    refund_acceleration_score: 0,
-    first_seen: network?.firstSeenAt ?? firstSeenLocal,
-    last_seen: network?.lastSeenAt ?? lastSeenLocal,
+    first_seen: firstSeenLocal,
+    last_seen: lastSeenLocal,
     fraud_flags: [],
     identity_signals: [],
     investigation_status: investigationStatus,
@@ -743,9 +598,6 @@ export async function loadCustomerProfilePage(
     }));
   }
 
-  const isEligibleForEvidence =
-    transactions.some((tx) => tx.refund_claimed || tx.chargeback_filed) ||
-    profile.total_chargebacks > 0;
   const totalOrderValue = orders.reduce(
     (sum, order) => sum + (Number(order.total_price) || 0),
     0,
@@ -757,58 +609,25 @@ export async function loadCustomerProfilePage(
   const merchantRefundRate =
     merchantOrderCount > 0
       ? Math.round((merchantClaimCount / merchantOrderCount) * 100)
-      : Math.round(profile.refund_rate * 100);
+      : 0;
   const hasCleanRecord =
-    merchantClaimCount === 0 && profile.total_chargebacks === 0;
-  const identitySignals: string[] = [];
-
-  const density = Array.from({ length: 12 }, () => 0);
-  for (const tx of transactions) {
-    const diffDays = Math.floor(
-      (Date.now() - new Date(tx.processed_at).getTime()) / 86400000,
-    );
-    const weekIndex = Math.min(11, Math.max(0, 11 - Math.floor(diffDays / 7)));
-    density[weekIndex] += 1;
-  }
-
-  const roadmapEvents = getEventStream({
-    orderHistory: transactions.map((tx) => ({
-      orderId: tx.order_id,
-      processedAt: tx.processed_at,
-      orderValue: Number(tx.order_value) || null,
-      riskLevel: tx.risk_level ?? null,
-      refundRequested: !!tx.refund_claimed,
-      refundReason: tx.refund_reason ?? null,
-      chargebackFiled: !!tx.chargeback_filed,
-      chargebackReasonCode: tx.chargeback_reason_code ?? null,
-      fraudFlags: Array.isArray(tx.fraud_flags) ? tx.fraud_flags : [],
-      address: tx.shipping_address,
-      email: tx.customer_email,
-      cardLast4: tx.card_last4,
-      source: tx.source ?? null,
-    })),
-    identityTimeline,
-    notes: [],
-  });
+    merchantClaimCount === 0 && merchantChargebacks === 0;
 
   const merchantNarrative = buildBehavioralNarrative({
     totalOrders: merchantOrderCount,
     totalRefundClaims: merchantClaimCount,
-    refundRate:
-      merchantOrderCount > 0
-        ? merchantClaimCount / merchantOrderCount
-        : profile.refund_rate,
-    fastestClaimDays: profile.fastest_claim_days,
-    avgClaimDays: profile.avg_claim_days,
-    refundAccelerationScore: profile.refund_acceleration_score,
+    refundRate: merchantOrderCount > 0
+      ? merchantClaimCount / merchantOrderCount
+      : 0,
+    fastestClaimDays: null,
+    avgClaimDays: null,
+    refundAccelerationScore: 0,
     firstSeen: transactions[0]?.processed_at ?? profile.first_seen,
     lastSeen:
       transactions[transactions.length - 1]?.processed_at ?? profile.last_seen,
     fraudFlags: profile.identity_signals ?? profile.fraud_flags,
     linkedAccountCount: 0,
   });
-
-  const profileGrade = riskLevelToNewGrade(network?.confidenceGrade ?? null);
 
   const claimSummaryRows: ClaimSummaryRow[] = claimRows
     .slice(0, 20)
@@ -833,78 +652,35 @@ export async function loadCustomerProfilePage(
     ),
   ).length;
   const latestClaim = claimSummaryRows[0] ?? null;
-  const profileWideOrders = Math.max(0, profile.total_orders);
-  const merchantsSeen = Math.max(1, profile.total_merchants_seen_at);
-  const localOrderSharePct =
-    profileWideOrders > 0 ? (merchantOrderCount / profileWideOrders) * 100 : 0;
   const localClaimRatePct =
     merchantOrderCount > 0
       ? (merchantClaimCount / merchantOrderCount) * 100
       : 0;
-  const networkChargebackRatePct =
-    profileWideOrders > 0
-      ? (profile.total_chargebacks / profileWideOrders) * 100
-      : 0;
-  const thisStoreMerchantSharePct = (1 / merchantsSeen) * 100;
-
-  // Cross-merchant claim-type mix from the k-anonymous rollup only. Counts are
-  // aggregates; no per-merchant identification is possible or implied.
-  const merchantSignalPills: MerchantSignalPill[] = network
-    ? Object.entries(network.claimTypeCounts).flatMap(
-        ([claimType, claimCount]) => {
-          const label = CLAIM_TYPE_LABELS[claimType] ?? "Other";
-          const safeCount = Math.max(0, Math.min(Number(claimCount) || 0, 12));
-          return Array.from({ length: safeCount }, () => ({
-            merchantLabel: "Network report",
-            claimType: label,
-          }));
-        },
-      )
-    : [];
-
-  const primaryIdentifier =
-    profile.primary_email ?? firstArrayValue(profile.emails) ?? "primary";
-  const identitySignalRows = buildIdentitySignalRows(profile);
 
   const props: CustomerProfilePageViewProps = {
     connectionState: connectionState as ConnectionState,
-    auditRunId,
     viewToken,
     gorgiasSource,
     gorgiasTicketId,
     profile,
     displayName,
-    profileGrade,
     hasCleanRecord,
     merchantClaimCount,
     merchantChargebackCount: merchantChargebacks,
     merchantOrderCount,
     localClaimRatePct,
-    isEligibleForEvidence,
     totalOrderValue,
     totalRefundedValue,
     displayCurrency,
-    merchantsSeen,
-    profileWideOrders,
-    localOrderSharePct,
-    networkChargebackRatePct,
-    thisStoreMerchantSharePct,
-    density,
-    primaryIdentifier,
-    identitySignalRows,
-    identitySignals,
     transactions,
-    roadmapEvents,
     identityTimeline,
     variantCount,
     merchantNarrative,
     linkedAccounts,
-    merchantSignalPills,
     activityLog,
     openClaimCount,
     latestClaim,
     merchantRefundRate,
-    evidenceDisplay,
   };
 
   return { blocked: false, props };

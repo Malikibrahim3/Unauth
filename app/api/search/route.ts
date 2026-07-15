@@ -3,7 +3,7 @@
  * GET /api/search?q=<query>&types=customers,orders,cases&limit=5&page=1
  *
  * Feature-flagged: endpoint always available to authorised merchants, but
- * only called by CommandPalette when FLAG_COMMAND_CENTER=true.
+ * Called by the authenticated command palette for cross-entity navigation.
  *
  * Returns paginated, merchant-scoped results across the v2 read model:
  *   - customers → source_customers (email, name)

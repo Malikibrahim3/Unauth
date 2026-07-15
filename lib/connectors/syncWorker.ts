@@ -6,7 +6,7 @@
  * them onto the enum plus `last_error_code`, so an unsupported/dead-letter job is
  * an honest `failed` with a stable code — never a false `completed`.
  *
- * See docs/IMPL_source_agnostic_connected_ecosystem.md §5.
+ * See ARCHITECTURE.md §5.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/lib/supabase/tables';

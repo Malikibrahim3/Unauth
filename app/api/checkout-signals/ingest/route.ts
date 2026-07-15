@@ -244,7 +244,7 @@ export async function POST(request: NextRequest) {
     return json({ ok: true });
   }
 
-  const { data: inserted, error: insertError } = await supabase
+  const { error: insertError } = await supabase
     .from(TABLES.CHECKOUT_SIGNALS)
     .insert({
       merchant_id: signal.merchantId,

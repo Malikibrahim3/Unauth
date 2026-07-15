@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Button, Select } from '@/components/ui';
 
 type Account = { id: string; name: string | null };
 
@@ -62,15 +63,15 @@ export default function ShipBobAccountSelectionClient({ selectionId }: { selecti
       {accounts.length > 0 && (
         <label style={{ display: 'grid', gap: 8, marginBottom: 20 }}>
           <span>Channel</span>
-          <select value={selected} onChange={(event) => setSelected(event.target.value)} disabled={status !== 'ready'} style={{ minHeight: 44, padding: '0 12px' }}>
+          <Select value={selected} onChange={(event) => setSelected(event.target.value)} disabled={status !== 'ready'}>
             {accounts.map((account) => <option key={account.id} value={account.id}>{account.name ?? account.id}</option>)}
-          </select>
+          </Select>
         </label>
       )}
       {message && <p role={status === 'error' ? 'alert' : 'status'} style={{ marginBottom: 16 }}>{message}</p>}
-      <button type="button" onClick={() => void submit()} disabled={status !== 'ready' || !selected} style={{ minHeight: 44, padding: '0 18px' }}>
+      <Button onClick={() => void submit()} disabled={status !== 'ready' || !selected} loading={status === 'saving'}>
         {status === 'saving' ? 'Connecting…' : 'Connect selected channel'}
-      </button>
+      </Button>
     </main>
   );
 }

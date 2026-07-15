@@ -4,7 +4,7 @@ import path from 'node:path';
 
 const EVIDENCE_DIR = path.join(
   process.cwd(),
-  'screenshots-app-2026-07-14-final-craft',
+  'test-results/authenticated-evidence',
 );
 
 async function capture(page: Page, name: string) {
@@ -47,7 +47,6 @@ test('capture the final authenticated visual evidence set', async ({ page }) => 
     ['/integrations', '13-integrations'],
     ['/settings/account', '14-settings'],
     ['/notifications', '15-notifications'],
-    ['/audit-running?email=masked%40example.test', '16-setup-progress'],
   ] as const;
 
   for (const [route, name] of routes) await visitAndCapture(page, route, name);

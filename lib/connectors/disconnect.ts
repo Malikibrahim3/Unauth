@@ -7,7 +7,7 @@
  * helpdesk  -> helpdesk_connections (all helpdesk providers, not just Gorgias)
  * other     -> integration_credentials + merchant_integrations (disconnectIntegration)
  *
- * See docs/IMPL_source_agnostic_connected_ecosystem.md §5.
+ * See ARCHITECTURE.md §5.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/lib/supabase/tables';

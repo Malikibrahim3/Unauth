@@ -1,7 +1,8 @@
 import { capability } from '@/lib/connectors/capabilities';
 import type { ConnectorAdapter, ConnectorContext, ConnectionTestResult, DisconnectResult, IngestionResult, NormalizedRecord, SyncPage, UnsupportedResult, WebhookContext } from '@/lib/connectors/types';
-import { exchangeFedExClientCredentials } from '@/lib/integrations/providers/fedex';
-import { exchangeUpsClientCredentials } from '@/lib/integrations/providers/ups';
+import { exchangeFedExClientCredentials, fedexProvider } from '@/lib/integrations/providers/fedex';
+import { exchangeUpsClientCredentials, upsProvider } from '@/lib/integrations/providers/ups';
+import type { IntegrationProvider } from '@/lib/integrations/types';
 
 const RUNTIME_PENDING: UnsupportedResult = {
   supported: false,
@@ -16,17 +17,14 @@ function credentials(ctx: ConnectorContext) {
   };
 }
 
-function carrierConnector(providerId: 'ups' | 'fedex', name: 'UPS' | 'FedEx'): ConnectorAdapter {
+function carrierConnector(provider: IntegrationProvider): ConnectorAdapter {
+  const { id: providerId, name } = provider;
   return {
     manifest: {
-      id: providerId,
-      name,
-      category: 'carrier',
-      authMode: 'oauth',
+      ...provider,
       verificationStatus: 'partial',
       launchVisible: true,
       connectorVersion: '1',
-      description: `Direct ${name} tracking, scan history, and delivery proof when available.`,
       capabilities: [
         capability('shipments.read', 'read', { description: 'Read shipment tracking details' }),
         capability('tracking_events.read', 'read', { description: 'Read detailed carrier scan events' }),
@@ -63,5 +61,5 @@ function carrierConnector(providerId: 'ups' | 'fedex', name: 'UPS' | 'FedEx'): C
   };
 }
 
-export const upsConnector = carrierConnector('ups', 'UPS');
-export const fedexConnector = carrierConnector('fedex', 'FedEx');
+export const upsConnector = carrierConnector(upsProvider);
+export const fedexConnector = carrierConnector(fedexProvider);

@@ -6,7 +6,7 @@
  * `(merchant_id, idempotency_key)` and optionally registers per-handler
  * delivery rows. Handlers claim/complete/fail deliveries through their own RPCs.
  *
- * See docs/IMPL_source_agnostic_connected_ecosystem.md §2.4 / §4.
+ * See ARCHITECTURE.md §2.4 / §4.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 

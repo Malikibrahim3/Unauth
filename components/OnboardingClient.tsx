@@ -296,7 +296,7 @@ export default function OnboardingClient({
                 <div className="rounded-md border p-4 space-y-3" style={{ background: 'var(--surface-sunken)', borderColor: 'var(--border)' }}>
                   <p className="text-body-sm" style={{ color: 'var(--text-secondary)' }}>
                     Enter your Shopify store domain to connect. You can also connect from{' '}
-                    <Link href="/settings/integrations" className="underline underline-offset-2" style={{ color: 'var(--accent)' }}>
+                    <Link href="/integrations" className="underline underline-offset-2" style={{ color: 'var(--accent)' }}>
                       Settings and Integrations
                     </Link>
                     {' '}at any time.
@@ -411,7 +411,7 @@ export default function OnboardingClient({
                   Go to claim overview
                   <ArrowRight className="h-4 w-4" />
                 </Link>
-                <Link href="/settings/integrations" className="t-caption hover:underline" style={{ color: 'var(--text-tertiary)' }}>
+                <Link href="/integrations" className="t-caption hover:underline" style={{ color: 'var(--text-tertiary)' }}>
                   Manage integrations
                 </Link>
               </div>

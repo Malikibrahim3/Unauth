@@ -8,7 +8,7 @@ import { scoreIdentityFromSignals } from '@/lib/scorer';
 // The legacy scoring `recommended_action` column must stay null/non-decisioning
 // (asserted below). Separately, the OLD fraud-tool framing banned all
 // recommendation phrasing in the UI. Under the payout-control direction merchant
-// rules legitimately surface a "recommended action" (docs/product/TERMINOLOGY.md,
+// rules legitimately surface a "recommended action" (docs/PRODUCT.md,
 // MVP_STEERING §19), so that phrasing is allowed. What stays banned is Unauth
 // itself deciding the claim — auto-deny/auto-reject and approve/deny/reject-claim
 // CTAs (MVP_STEERING §24: merchant rules recommend, Unauth never decides).

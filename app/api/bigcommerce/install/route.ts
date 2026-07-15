@@ -16,7 +16,7 @@ import { getAppUrl } from '@/lib/utils/appUrl';
 import { env } from '@/lib/utils/env';
 import { safeConnectionErrorCode } from '@/lib/integrations/publicErrors';
 
-const INTEGRATIONS_URL = '/settings/integrations/bigcommerce';
+const INTEGRATIONS_URL = '/integrations/bigcommerce';
 
 function integrationsRedirect(request: NextRequest, params: Record<string, string>): NextResponse {
   const url = new URL(INTEGRATIONS_URL, request.url);

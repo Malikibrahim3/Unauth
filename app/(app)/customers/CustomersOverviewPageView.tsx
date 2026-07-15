@@ -7,7 +7,6 @@ import CustomersTableClient from '@/components/customers/CustomersTableClient';
 import { CustomersPageWorkbench } from '@/app/(app)/customers/CustomersPageWorkbench';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
 import { Badge, ButtonLink, Card, WorkbenchEmptyState } from '@/components/ui';
-import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { FilterChip } from '@/app/(app)/customers/CustomersOverviewFilterChip';
 import { buildRemoveHref, customersListHref } from '@/app/(app)/customers/customersOverviewPageUtils';
 import { formatNumber } from '@/lib/utils/format';
@@ -61,11 +60,10 @@ export function CustomersOverviewPageView({
   kpis,
 }: CustomersOverviewPageViewProps) {
   return (
-    <PageConnectionGate requires="both" connection={connectionState} pageName="Customers" pageDescription="The customer directory adds merchant-owned context to loss-case decisions: order count, payout case history, and prior outcomes. Without both Shopify and your helpdesk connected, payout case counts may be zero because data is missing - not because the customer has no history." setupState={setupState} hasData={hasData}>
+    <PageConnectionGate requires="both" connection={connectionState} pageName="Customers" pageDescription="The customer directory adds merchant-owned context to loss-case decisions: order count, payout case history, and prior outcomes. Without an order source and helpdesk connected, counts may be zero because data is missing—not because the customer has no history." setupState={setupState} hasData={hasData}>
     <CustomersPageWorkbench
       title="Customers"
       subtitle={pageActions.subtitle}
-      navItems={WORKBENCH_NAV_ITEMS}
       actions={
         <>
           <ButtonLink href={pageActions.primary.href} size="sm">{pageActions.primary.label}</ButtonLink>
@@ -125,7 +123,7 @@ export function CustomersOverviewPageView({
           title="No customers yet"
           description={
             connectionState.bothConnected
-              ? 'Shopify and your helpdesk are connected. Customers appear here as orders and payout cases sync.'
+              ? 'Your order source and helpdesk are connected. Customers appear here as orders and payout cases sync.'
               : 'The customer directory is built from your connected merchant sources. Finish setup to see order, claim, and payout history.'
           }
           action={

@@ -1,5 +1,5 @@
 /**
- * Steering-aligned payout recommendation vocabulary (docs/product/MVP_STEERING.md §16).
+ * Steering-aligned payout recommendation vocabulary (docs/PRODUCT.md §16).
  *
  * Merchant rules still evaluate to approve | manual_review | deny internally.
  * This layer maps rule output + payout case context into operational recommendations.

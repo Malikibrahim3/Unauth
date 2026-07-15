@@ -23,7 +23,8 @@ function genUuid(): string {
 
 type Row = Record<string, unknown>;
 type Filter =
-  | ['eq' | 'neq' | 'ilike', string, unknown]
+  | ['eq' | 'neq' | 'ilike' | 'is' | 'gte', string, unknown]
+  | ['not', string, { operator: string; value: unknown }]
   | ['in', string, unknown[]]
   | ['or', Array<['eq', string, unknown]>, null];
 
@@ -82,6 +83,21 @@ class QueryBuilder {
     return this;
   }
 
+  is(col: string, val: unknown): this {
+    this.filters.push(['is', col, val]);
+    return this;
+  }
+
+  not(col: string, operator: string, val: unknown): this {
+    this.filters.push(['not', col, { operator, value: val }]);
+    return this;
+  }
+
+  gte(col: string, val: unknown): this {
+    this.filters.push(['gte', col, val]);
+    return this;
+  }
+
   in(col: string, vals: unknown[]): this {
     this.filters.push(['in', col, vals]);
     return this;
@@ -118,6 +134,16 @@ class QueryBuilder {
     return this.filters.every(([op, col, val]) => {
       if (op === 'eq') return row[col] === val;
       if (op === 'neq') return row[col] !== val;
+      if (op === 'is') return row[col] === val || (val === null && row[col] == null);
+      if (op === 'not') {
+        const predicate = val as { operator: string; value: unknown };
+        if (predicate.operator === 'is') {
+          return predicate.value === null ? row[col] != null : row[col] !== predicate.value;
+        }
+        if (predicate.operator === 'eq') return row[col] !== predicate.value;
+        throw new Error(`Unsupported not operator: ${predicate.operator}`);
+      }
+      if (op === 'gte') return String(row[col] ?? '') >= String(val ?? '');
       if (op === 'ilike') {
         // `.or.eq.` operands compare as exact strings; the `%`-free email
         // pattern intake uses is case-insensitive equality.
@@ -183,14 +209,14 @@ class QueryBuilder {
     return { data: rows[0] ?? null, error: null };
   }
 
-  then<TResult1 = { data: Row[]; error: null }, TResult2 = never>(
+  then<TResult1 = { data: Row[]; error: null; count: number }, TResult2 = never>(
     onfulfilled?:
-      | ((value: { data: Row[]; error: null }) => TResult1 | PromiseLike<TResult1>)
+      | ((value: { data: Row[]; error: null; count: number }) => TResult1 | PromiseLike<TResult1>)
       | null,
     onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
   ): Promise<TResult1 | TResult2> {
     const rows = this.execute();
-    return Promise.resolve({ data: rows, error: null }).then(onfulfilled, onrejected);
+    return Promise.resolve({ data: rows, error: null, count: rows.length }).then(onfulfilled, onrejected);
   }
 }
 

@@ -3,7 +3,6 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { TABLES } from '@/lib/supabase/tables';
 import { WorkbenchPage } from '@/components/ui';
-import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { LossLedger, type LossLedgerRow } from '@/components/losses/LossLedger';
 import { freshnessFromTimestamp } from '@/components/sources/FreshnessIndicator';
 import { formatCurrencyNullable, formatNumber, sumSameCurrency } from '@/lib/utils/format';
@@ -143,8 +142,6 @@ export default async function LossesPage() {
     <WorkbenchPage
       eyebrow="Operations"
       title="Losses"
-      navItems={WORKBENCH_NAV_ITEMS}
-      activeNavKey="losses"
       kpiItems={[
         { label: 'Loss records', value: formatNumber(rows.length), hint: derivedRows.length ? `${canonicalRows.length} recorded · ${derivedRows.length} awaiting reconciliation` : 'All recorded losses' },
         { label: 'Realised / estimated loss', value: formatCurrencyNullable(exposure.total || null, exposure.currency) ?? '—', hint: `Excludes written-off${mixedHint}` },

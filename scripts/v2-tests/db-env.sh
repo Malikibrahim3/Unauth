@@ -1,5 +1,0 @@
-#!/bin/bash
-: "${V2_TEST_DATABASE_URL:?Set V2_TEST_DATABASE_URL to the test database connection URL}"
-: "${V2_TEST_DATABASE_PASSWORD:?Set V2_TEST_DATABASE_PASSWORD for the test database role}"
-DB="$V2_TEST_DATABASE_URL"
-export PGPASSWORD="$V2_TEST_DATABASE_PASSWORD"

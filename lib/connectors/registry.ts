@@ -3,10 +3,10 @@
  * provider adapter. Adding a new connector means registering it here — no edits
  * to the generic connect/sync/disconnect routes.
  *
- * `lib/integrations/registry.ts` remains as a compatibility shim that delegates
- * to this module.
+ * Provider identity and shared display metadata come from
+ * `lib/integrations/registry.ts`; this registry owns executable adapters only.
  *
- * See docs/IMPL_source_agnostic_connected_ecosystem.md §5.
+ * See ARCHITECTURE.md §5.
  */
 import type { ConnectorAdapter } from '@/lib/connectors/types';
 import { connectorNotRegistered } from '@/lib/connectors/errors';

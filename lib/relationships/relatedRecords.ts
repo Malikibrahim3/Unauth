@@ -4,7 +4,7 @@
  * merchant-scoped list, annotated with each record's source system and
  * freshness (from `source_records` where available).
  *
- * See docs/IMPL_source_agnostic_connected_ecosystem.md §8.
+ * See ARCHITECTURE.md §8.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/lib/supabase/tables';

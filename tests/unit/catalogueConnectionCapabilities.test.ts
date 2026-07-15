@@ -20,6 +20,10 @@ jest.mock('@/lib/connectors/registry', () => ({
   }],
 }));
 
+jest.mock('@/lib/integrations/auth', () => ({
+  getStoredIntegrationViews: async () => [],
+}));
+
 import { loadConnectorCatalogue } from '@/lib/connectors/catalogue';
 
 function connection(
@@ -68,13 +72,14 @@ describe('connection-specific catalogue capabilities', () => {
       ],
     }) as never, 'merchant-a');
 
-    expect(catalogue[0]).toMatchObject({
+    const shipbob = catalogue.find((item) => item.id === 'shipbob');
+    expect(shipbob).toMatchObject({
       connectionId: 'active-connection',
       connectionCount: 1,
       importedRecords: 7,
       scopes: ['orders_read'],
     });
-    expect(catalogue[0].capabilities[0].availability).toBe('enabled');
+    expect(shipbob?.capabilities[0].availability).toBe('enabled');
   });
 
   it('keeps capability coverage different for a second merchant missing a scope', async () => {
@@ -84,8 +89,9 @@ describe('connection-specific catalogue capabilities', () => {
       ],
     }) as never, 'merchant-b');
 
-    expect(catalogue[0].connectionId).toBe('merchant-b-connection');
-    expect(catalogue[0].capabilities[0]).toMatchObject({
+    const shipbob = catalogue.find((item) => item.id === 'shipbob');
+    expect(shipbob?.connectionId).toBe('merchant-b-connection');
+    expect(shipbob?.capabilities[0]).toMatchObject({
       availability: 'permission_missing',
       scopes: ['orders_read'],
     });

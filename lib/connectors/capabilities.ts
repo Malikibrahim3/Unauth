@@ -7,7 +7,7 @@
  * availability (what it can do RIGHT NOW for a given connection). See
  * `lib/connectors/runtime.ts` for the availability resolver.
  *
- * See docs/IMPL_source_agnostic_connected_ecosystem.md §5.
+ * See ARCHITECTURE.md §5.
  */
 
 export type CapabilityLevel = 'read' | 'sync' | 'link' | 'write' | 'act' | 'subscribe';

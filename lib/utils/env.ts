@@ -19,14 +19,8 @@ const envSchema = z.object({
   FLAG_THRESHOLD: z.coerce.number().default(44),
   KV_REST_API_URL: z.string().url().optional(),
   KV_REST_API_TOKEN: z.string().min(1).optional(),
-  SYNC_BACKGROUND_WRITES: z.string().optional(),
-  SKIP_OPTIONAL_BACKGROUND_WRITES: z.string().optional(),
   VERCEL_URL: z.string().optional(),
   SKIP_CROSS_MERCHANT_CONTEXT: z.string().optional(),
-  // Enable after applying 20260531000000_audit_tx_merchant_id_dedup.sql. When
-  // 'true', CSV/manual ingest writes merchant_id and upserts on
-  // (merchant_id, order_id, source) so re-uploads dedupe across jobs.
-  AUDIT_TX_MERCHANT_DEDUP: z.string().optional(),
   AUDIT_EMAIL_FROM: z.string().optional(),
   SHOPIFY_API_KEY: z.string().min(1).optional(),
   SHOPIFY_API_SECRET: z.string().min(1).optional(),
@@ -58,9 +52,6 @@ const envSchema = z.object({
   APP_URL: z.string().url().optional(),
   /** Merchant id scoped to the public /demo page. */
   NEXT_PUBLIC_DEMO_MERCHANT_ID: z.string().uuid().optional(),
-  SOURCE_AGNOSTIC_READS: z.string().optional(),
-  SOURCE_AGNOSTIC_WRITES: z.string().optional(),
-  SOURCE_AGNOSTIC_PILOT_MERCHANTS: z.string().optional(),
 }).superRefine((env, ctx) => {
   if (!env.NEXT_PUBLIC_SUPABASE_ANON_KEY && !env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) {
     ctx.addIssue({

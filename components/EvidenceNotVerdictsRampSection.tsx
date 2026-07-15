@@ -2,9 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
 import {
-  ArrowRight,
   CheckCircle2,
   Circle,
   CircleDot,
@@ -14,59 +12,15 @@ import {
 } from 'lucide-react';
 import {
   FL_DEMO_PRODUCT_CARDS,
-  FL_ROUTES,
 } from '@/app/(public)/landing/_lib/foundationContent';
-import MobileCollapse from '@/app/(public)/landing/_components/foundation/MobileCollapse';
-import foundationStyles from '@/app/(public)/landing/_components/foundation/foundation.module.css';
 import {
   MockBrowserFrame,
-  SectionBody,
-  SectionEyebrow,
-  SectionHeadline,
   StepBadge,
   type StepBadgeVariant,
   uiTokens,
 } from '@/components/ui';
 
 const demo = FL_DEMO_PRODUCT_CARDS;
-
-export default function EvidenceNotVerdictsRampSection() {
-  return (
-    <section
-      id="how-it-works"
-      className="relative min-h-screen scroll-mt-24 overflow-hidden bg-white text-[#111111] border-t border-black/[0.07]"
-      data-nav-theme="light"
-    >
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_24%,rgba(0,0,0,0.055),transparent_58%)]" />
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-white to-transparent" />
-
-      <main className="relative mx-auto hidden max-w-[1180px] px-6 pb-24 pt-20 md:pt-24 min-[769px]:block">
-        <ClaimGateWrapper />
-        <CategoryComparison />
-      </main>
-
-      <main className="relative px-4 pb-20 pt-16 min-[769px]:hidden">
-        <MobileCollapse collapsedLabel="See how the gate works">
-          <ClaimGateWrapper />
-          <div className={foundationStyles.collapseDetails}>
-            <div className={foundationStyles.collapseDetailsInner}>
-              <CategoryComparison />
-            </div>
-          </div>
-        </MobileCollapse>
-      </main>
-    </section>
-  );
-}
-
-function ClaimGateWrapper() {
-  return (
-    <div className="mb-10">
-      <SectionIntro />
-      <GateArtifactsRow />
-    </div>
-  );
-}
 
 export function GateArtifactsRow({
   scale = 1,
@@ -204,23 +158,6 @@ export function GateArtifactsRow({
   );
 }
 
-function SectionIntro() {
-  return (
-    <div className="mb-10 max-w-[760px]">
-      <SectionEyebrow className={foundationStyles.landingSectionEyebrow}>
-        THE CLAIM GATE
-      </SectionEyebrow>
-      <SectionHeadline className={foundationStyles.landingSectionTitle}>
-        Sits between the AI decision and the payout. Every time.
-      </SectionHeadline>
-      <SectionBody className={`${foundationStyles.landingSectionLead} max-w-[700px]`}>
-        Gorgias AI queues the refund. Unauth intercepts it, assembles the evidence, and assigns the
-        recovery route — before your team sees a single claim.
-      </SectionBody>
-    </div>
-  );
-}
-
 function FeatureCard({
   number,
   title,
@@ -250,7 +187,7 @@ function FeatureCard({
     >
       <div className="flex items-start justify-between gap-3">
         <StepBadge variant={number} />
-        <OpenButton />
+        <PreviewGlyph />
       </div>
       <h2 className="mt-5 max-w-[280px] text-[26px] font-semibold leading-[1.08] tracking-[-0.06em] text-[#1d2027]">
         {title}
@@ -265,15 +202,15 @@ function FeatureCard({
 function ArrivalCard({ scale }: { scale?: number }) {
   return (
     <FeatureCard number="01" title="A claim arrives" scale={scale}>
-      <h3 className="mb-4 text-[16px] font-semibold tracking-[-0.04em]">Helpdesk claim</h3>
+      <h3 className="mb-4 text-[16px] font-semibold tracking-[-0.04em]">Helpdesk case</h3>
       <div className="space-y-2">
-        <ContextRow icon={<PackageCheck size={14} />} label="Gorgias ticket received" />
-        <ContextRow icon={<PackageCheck size={14} />} label="Refund intent detected" />
+        <ContextRow icon={<PackageCheck size={14} />} label="Support ticket received" />
+        <ContextRow icon={<PackageCheck size={14} />} label="Payout intent detected" />
         <ContextRow icon={<PackageCheck size={14} />} label="Order #UA-10482 linked" />
         <ContextRow icon={<PackageCheck size={14} />} label="Item-not-received detected" />
       </div>
       <CardNote>
-        Gorgias AI approved the refund. Unauth intercepts it before the payout clears.
+        A connected workflow queued the payout. Unauth applies the merchant&apos;s control before it clears.
       </CardNote>
     </FeatureCard>
   );
@@ -314,7 +251,7 @@ function RulesRunCard({ scale }: { scale?: number }) {
     'Order value: above threshold',
     'Claim count: 3rd claim this quarter',
     'Delivery state: confirmed',
-    'Customer pattern: flagged',
+    'Prior merchant-owned case pattern',
   ] as const;
 
   return (
@@ -359,90 +296,14 @@ function LossAttributionCard({ scale }: { scale?: number }) {
   );
 }
 
-function CategoryComparison() {
+function PreviewGlyph() {
   return (
-    <section className="mt-10 rounded-xl border border-[#dedede] bg-[#f5f4f1] px-6 py-8">
-      <p className={foundationStyles.landingSectionEyebrow}>Step tag labels</p>
-      <div className="mt-6 grid grid-cols-1 gap-8 md:grid-cols-2">
-        <ComparisonColumn
-          title="Without the gate"
-          items={[
-            'Safe claims pass straight through',
-            'Risky claims are held',
-            'Outcomes are logged',
-          ]}
-          muted
-        />
-        <ComparisonColumn
-          title="With Unauth"
-          items={[
-            'Cleared',
-            'Held',
-            'Logged',
-          ]}
-        />
-      </div>
-      <div className="mt-8 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-        <Link
-          href={FL_ROUTES.audit}
-          prefetch={false}
-          className="inline-flex h-11 items-center gap-2 rounded-full bg-[#111111] px-5 text-[14px] font-semibold text-white"
-        >
-          See the gate in action
-          <ArrowRight size={15} />
-        </Link>
-        <p className="text-[13px] leading-[1.45] text-[#555555]">
-          Turn your automation all the way up. The gate still catches the claims that should never have been auto-paid.
-        </p>
-      </div>
-    </section>
-  );
-}
-
-function ComparisonColumn({
-  title,
-  items,
-  muted = false,
-}: {
-  title: string;
-  items: readonly string[];
-  muted?: boolean;
-}) {
-  return (
-    <div>
-      <h3
-        className={`text-[18px] font-semibold tracking-[-0.04em] ${
-          muted ? 'text-black/45' : 'text-[#111111]'
-        }`}
-      >
-        {title}
-      </h3>
-      <ul className="mt-4 space-y-2.5">
-        {items.map((item) => (
-          <li
-            key={item}
-            className={`flex gap-2.5 text-[14px] leading-[1.45] ${
-              muted ? 'text-black/50' : 'text-[#333333]'
-            }`}
-          >
-            <span className="mt-2 h-px w-3 shrink-0 bg-current opacity-40" aria-hidden />
-            {item}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function OpenButton() {
-  return (
-    <button
-      type="button"
-      aria-label="Open preview"
+    <span
+      aria-hidden="true"
       className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[rgba(20,24,31,0.10)] bg-[#fbfbfa] shadow-[0_4px_14px_rgba(0,0,0,0.05)]"
     >
       <ExternalLink size={18} />
-    </button>
+    </span>
   );
 }
 

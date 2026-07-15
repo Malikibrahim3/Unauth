@@ -6,17 +6,12 @@ import { Badge, Card } from '@/components/ui';
 import { formatDateAbsolute, formatMoney, formatNumber } from '@/lib/utils/format';
 import { useBreadcrumbLabel } from '@/components/layout/BreadcrumbOverrideContext';
 import type {
-  CustomerEvidenceDisplay,
   CustomerProfileDisplay,
-  IdentitySignalRow,
 } from '@/app/(app)/customers/[id]/customerProfilePageLoad';
-import type { ConfidenceGradeValue } from '@/lib/confidence';
 
 export type CustomerProfilePageHeroProps = {
-  auditRunId: string | null;
   displayName: string;
   profile: CustomerProfileDisplay;
-  profileGrade: ConfidenceGradeValue;
   hasCleanRecord: boolean;
   merchantClaimCount: number;
   merchantChargebackCount: number;
@@ -24,28 +19,16 @@ export type CustomerProfilePageHeroProps = {
   localClaimRatePct: number;
   viewToken: string;
   openClaimCount: number;
-  isEligibleForEvidence: boolean;
   totalOrderValue: number;
   totalRefundedValue: number;
   displayCurrency: string;
-  merchantsSeen: number;
-  profileWideOrders: number;
-  localOrderSharePct: number;
-  networkChargebackRatePct: number;
-  thisStoreMerchantSharePct: number;
-  density: number[];
-  primaryIdentifier: string;
-  identitySignalRows: IdentitySignalRow[];
   gorgiasSource?: string | null;
   gorgiasTicketId?: string | null;
-  evidenceDisplay?: CustomerEvidenceDisplay | null;
 };
 
 export function CustomerProfilePageHero({
-  auditRunId,
   displayName,
   profile,
-  profileGrade,
   hasCleanRecord,
   merchantClaimCount,
   merchantChargebackCount,
@@ -53,35 +36,13 @@ export function CustomerProfilePageHero({
   localClaimRatePct,
   viewToken,
   openClaimCount,
-  isEligibleForEvidence,
   totalOrderValue,
   totalRefundedValue,
   displayCurrency,
-  merchantsSeen,
-  profileWideOrders,
-  localOrderSharePct,
-  networkChargebackRatePct,
-  thisStoreMerchantSharePct,
-  density,
-  primaryIdentifier,
-  identitySignalRows,
   gorgiasSource,
   gorgiasTicketId,
-  evidenceDisplay,
 }: CustomerProfilePageHeroProps) {
   useBreadcrumbLabel(displayName);
-  void auditRunId;
-  void profileGrade;
-  void isEligibleForEvidence;
-  void merchantsSeen;
-  void profileWideOrders;
-  void localOrderSharePct;
-  void networkChargebackRatePct;
-  void thisStoreMerchantSharePct;
-  void primaryIdentifier;
-  void identitySignalRows;
-  void density;
-  void evidenceDisplay;
   const averageOrderValue = merchantOrderCount > 0 ? totalOrderValue / merchantOrderCount : 0;
   return (
     <>

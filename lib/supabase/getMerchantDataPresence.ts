@@ -5,23 +5,20 @@ export type MerchantDataPresence = {
   hasAnyData: boolean;
   hasCustomerProfiles: boolean;
   hasOrders: boolean;
-  hasShopifySignals: boolean;
+  hasOrderSourceSignals: boolean;
   hasHelpdeskClaims: boolean;
   hasEvidencePackages: boolean;
-  hasWatchlist: boolean;
   hasCustomerActivity: boolean;
   hasCsvImports: boolean;
   hasLiveIntegrationReports: boolean;
   sources: {
     customerProfiles: number;
-    auditTransactions: number;
+    sourceOrders: number;
     processingJobs: number;
     csvImports: number;
-    shopifyOrderSignals: number;
     merchantClaims: number;
     supportCases: number;
     evidencePackages: number;
-    watchlistEntries: number;
     customerActivity: number;
   };
 };
@@ -37,8 +34,8 @@ export type MerchantDataPresence = {
  * Scoping notes (verified against the v2 schema):
  * - source_customers / source_orders / claims / source_tickets are all
  *   merchant-scoped by merchant_id and are the app's canonical read model.
- * - Shopify orders are source_orders rows with source='shopify'. The old
- *   shopify_order_signals and merchant_shopify_connections names are legacy.
+ * - Order presence is provider-neutral: every supported commerce source writes
+ *   to source_orders and retains its provider in the source column.
  * - public_audits is intentionally excluded: it is the public free-audit intake
  *   table and must not count as merchant workspace data until claimed and
  *   re-tenanted.
@@ -52,13 +49,12 @@ export async function getMerchantDataPresence(
 
   const [
     { count: customerProfiles },
-    { count: auditTransactions },
+    { count: sourceOrders },
     { count: processingJobs },
     { count: csvImports },
     { count: merchantClaims },
     { count: supportCases },
     { count: evidencePackages },
-    { count: shopifyOrderSignals },
   ] = await Promise.all([
     serviceClient
       .from('source_customers')
@@ -73,13 +69,13 @@ export async function getMerchantDataPresence(
       .select('id', { count: 'exact', head: true })
       .eq('merchant_id', merchantId)
       .eq('hidden', false),
-    // CSV/import jobs only — Shopify-sourced jobs use upload_type = 'shopify'.
+    // Manual CSV/import jobs only; provider sync jobs use their provider id.
     serviceClient
       .from(TABLES.PROCESSING_JOBS)
       .select('id', { count: 'exact', head: true })
       .eq('merchant_id', merchantId)
       .eq('hidden', false)
-      .neq('source', 'shopify'),
+      .eq('source', 'csv'),
     serviceClient
       .from(TABLES.MERCHANT_CLAIMS)
       .select('id', { count: 'exact', head: true })
@@ -92,35 +88,27 @@ export async function getMerchantDataPresence(
       .from(TABLES.EVIDENCE_PACKAGES)
       .select('id', { count: 'exact', head: true })
       .eq('merchant_id', merchantId),
-    serviceClient
-      .from(TABLES.AUDIT_TRANSACTIONS)
-      .select('id', { count: 'exact', head: true })
-      .eq('merchant_id', merchantId)
-      .eq('source', 'shopify'),
   ]);
 
   const sources = {
     customerProfiles: customerProfiles ?? 0,
-    auditTransactions: auditTransactions ?? 0,
+    sourceOrders: sourceOrders ?? 0,
     processingJobs: processingJobs ?? 0,
     csvImports: csvImports ?? 0,
-    shopifyOrderSignals: shopifyOrderSignals ?? 0,
     merchantClaims: merchantClaims ?? 0,
     supportCases: supportCases ?? 0,
     evidencePackages: evidencePackages ?? 0,
-    watchlistEntries: 0,
     customerActivity: 0,
   };
 
   const hasCustomerProfiles = sources.customerProfiles > 0;
-  const hasShopifySignals = sources.shopifyOrderSignals > 0;
-  const hasOrders = sources.auditTransactions > 0 || hasShopifySignals;
+  const hasOrderSourceSignals = sources.sourceOrders > 0;
+  const hasOrders = hasOrderSourceSignals;
   const hasHelpdeskClaims = sources.merchantClaims > 0 || sources.supportCases > 0;
   const hasEvidencePackages = sources.evidencePackages > 0;
-  const hasWatchlist = false;
   const hasCustomerActivity = sources.customerActivity > 0;
   const hasCsvImports = sources.csvImports > 0;
-  const hasLiveIntegrationReports = hasShopifySignals || hasHelpdeskClaims;
+  const hasLiveIntegrationReports = hasOrderSourceSignals || hasHelpdeskClaims;
 
   const hasAnyData =
     hasCustomerProfiles ||
@@ -134,10 +122,9 @@ export async function getMerchantDataPresence(
     hasAnyData,
     hasCustomerProfiles,
     hasOrders,
-    hasShopifySignals,
+    hasOrderSourceSignals,
     hasHelpdeskClaims,
     hasEvidencePackages,
-    hasWatchlist,
     hasCustomerActivity,
     hasCsvImports,
     hasLiveIntegrationReports,

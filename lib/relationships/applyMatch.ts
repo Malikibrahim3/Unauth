@@ -9,7 +9,7 @@
  *   - ambiguous: record all candidates, emit `relationship.ambiguous`. No edge.
  *   - unmatched: nothing to persist.
  *
- * See docs/IMPL_source_agnostic_connected_ecosystem.md §8.
+ * See ARCHITECTURE.md §8.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { recordDomainEvent } from '@/lib/events/domainEventStore';

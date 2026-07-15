@@ -3,7 +3,7 @@
  * fraud-audit CSV worker. Enforces size/row caps, rejects binary content, and
  * neutralizes CSV formula injection (cells starting with = + - @ or tab).
  *
- * See docs/IMPL_source_agnostic_connected_ecosystem.md §7.3.
+ * See ARCHITECTURE.md §7.3.
  */
 export const MAX_CSV_BYTES = 20 * 1024 * 1024; // 20 MB
 export const MAX_CSV_ROWS = 100_000;

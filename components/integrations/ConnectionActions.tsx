@@ -4,14 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { KeyRound, RefreshCw, Unplug } from "lucide-react";
-import { Button, Modal, Card } from "@/components/ui";
-
-const SETUP_LINKS: Record<string, string> = {
-  shopify: "/settings/integrations/shopify",
-  gorgias: "/settings/integrations/gorgias",
-  shipbob: "/api/integrations/shipbob/install",
-  document_upload: "/settings/agreements",
-};
+import { Button, Card, Input, Modal, Select } from "@/components/ui";
+import { getIntegrationProvider } from "@/lib/integrations/registry";
 
 export function ConnectionActions({
   providerId,
@@ -137,7 +131,14 @@ export function ConnectionActions({
         disconnection requires the settings-management permission.
       </Card>
     );
-  const setup = SETUP_LINKS[providerId];
+  const setup = getIntegrationProvider(providerId)?.setupHref;
+  if (!connected && !setup && !isCarrier) {
+    return (
+      <Card unstyled variant="inset" className="p-3 text-sm text-[var(--text-secondary)]">
+        Connection setup is not available in the shared catalogue yet. The capability contract below documents the currently implemented coverage.
+      </Card>
+    );
+  }
   return (
     <div className="space-y-3">
       {message ? (
@@ -186,14 +187,12 @@ export function ConnectionActions({
               : "Sync account"}
           </Button>
         ) : null}
-        {connected &&
-        (providerId === "shopify" || providerId === "gorgias") &&
-        setup ? (
+        {connected && setup ? (
           <Link
             href={setup}
             className="inline-flex items-center rounded-md border border-[var(--border)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)]"
           >
-            Manage credentials
+            Manage connection
           </Link>
         ) : null}
         {connected ? (
@@ -238,44 +237,44 @@ export function ConnectionActions({
         <div className="space-y-3">
           <label className="block text-xs font-semibold text-[var(--text-secondary)]">
             Client ID
-            <input
+            <Input
               type="password"
               autoComplete="off"
               value={clientId}
               onChange={(event) => setClientId(event.target.value)}
-              className="mt-1 w-full rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm"
+              className="mt-1"
             />
           </label>
           <label className="block text-xs font-semibold text-[var(--text-secondary)]">
             Client secret
-            <input
+            <Input
               type="password"
               autoComplete="off"
               value={clientSecret}
               onChange={(event) => setClientSecret(event.target.value)}
-              className="mt-1 w-full rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm"
+              className="mt-1"
             />
           </label>
           <label className="block text-xs font-semibold text-[var(--text-secondary)]">
             Shipper account number (optional for basic tracking)
-            <input
+            <Input
               type="password"
               autoComplete="off"
               value={accountNumber}
               onChange={(event) => setAccountNumber(event.target.value)}
-              className="mt-1 w-full rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm"
+              className="mt-1"
             />
           </label>
           <label className="block text-xs font-semibold text-[var(--text-secondary)]">
             Environment
-            <select
+            <Select
               value={environment}
               onChange={(event) => setEnvironment(event.target.value as "sandbox" | "production")}
-              className="mt-1 w-full rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm"
+              className="mt-1"
             >
               <option value="production">Production</option>
               <option value="sandbox">Sandbox</option>
-            </select>
+            </Select>
           </label>
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setCredentialOpen(false)}>

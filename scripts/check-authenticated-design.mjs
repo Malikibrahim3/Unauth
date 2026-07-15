@@ -5,10 +5,9 @@ const ROOT = process.cwd();
 const scanRoots = [
   'app/(app)',
   'app/onboarding',
-  'app/audit-running',
   'styles/authenticated',
   ...[
-    'apply', 'analytics', 'billing', 'cases', 'claims', 'collaboration',
+    'analytics', 'billing', 'cases', 'claims', 'collaboration',
     'connections', 'customers', 'evidence', 'exceptions', 'identity', 'imports',
     'inbox', 'integrations', 'layout', 'losses', 'nav', 'navigation',
     'notifications', 'product', 'relationships', 'reporting', 'reports', 'rules',
@@ -30,15 +29,13 @@ const ignored = new Set([
 
 // Grandfathered pre-existing debt — real hits that predate this lint rule
 // and this pass's design-system consolidation. Not exemptions for new code;
-// each is logged in docs/design/authenticated-style-system-validation.md as
+// each is logged in styles/authenticated/README.md as
 // remaining cleanup, not silently accepted. Adding a NEW file here for a NEW
 // violation defeats the point of the rule — fix the value or add a narrowly-
 // scoped documented exception instead (see styles/authenticated/README.md's
 // "Exception mechanism" section: data-viz literals and third-party brand
 // marks are the only sanctioned categories).
 const hardcodedColorGrandfathered = new Set([
-  'app/(app)/help/integrations/siena/page.tsx',
-  'app/(app)/help/integrations/yuma/page.tsx',
   'app/(app)/recoveries/[id]/page.tsx',
   'components/collaboration/CaseComments.tsx',
   'components/connections/ConnectionPromptStrip.tsx',
@@ -50,15 +47,13 @@ const hardcodedColorGrandfathered = new Set([
 ]);
 const arbitraryRadiusGrandfathered = new Set([
   'app/(app)/customers/CustomersOverviewFilterChip.tsx',
-  'app/(app)/partners/PartnerRulebookClient.tsx',
   'app/(app)/claims/ClaimsPageView.tsx',
-  'components/apply/FoundingMerchantApplicationForm.tsx',
   'components/claims/ClaimReviewHeader.tsx',
   'components/nav/SidebarNavItem.tsx',
 ]);
 
 // Components documented as deprecated in
-// docs/design/authenticated-component-migration-register.md. Empty for now:
+// styles/authenticated/README.md. Empty for now:
 // nothing found during the design-system consolidation is deprecated
 // cleanly enough to retroactively enforce without breaking in-flight work
 // (see the register's "why components/claims is excluded" note). Add an
@@ -95,9 +90,7 @@ const rawControlBaseline = new Map([
   ['app/(app)/claims/ClaimsQueueClient.tsx', 1],
   ['app/(app)/recoveries/RecoveryBoardClient.tsx', 2],
   ['app/(app)/settings/agreements/page.tsx', 17],
-  ['components/apply/FoundingMerchantApplicationForm.tsx', 3],
   ['components/audit/CustomerNotes.tsx', 6],
-  ['components/BuiltForPurposeStack.tsx', 1],
   ['components/billing/BillingSettingsClient.tsx', 9],
   ['components/claims/ClaimReviewContextColumn.tsx', 2],
   ['components/claims/ClaimReviewFormSection.tsx', 8],
@@ -117,7 +110,6 @@ const rawControlBaseline = new Map([
   ['components/exceptions/ExceptionQueue.tsx', 7],
   ['components/identity/EvidenceScoreBadge.tsx', 1],
   ['components/imports/CanonicalCsvImportClient.tsx', 5],
-  ['components/integrations/ConnectionActions.tsx', 2],
   ['components/layout/AppHeader.tsx', 2],
   ['components/layout/AvatarMenu.tsx', 2],
   ['components/layout/CommandPaletteInputBar.tsx', 2],
@@ -170,7 +162,6 @@ const rawControlBaseline = new Map([
   ['components/ui/RowActionsMenu.tsx', 2],
   ['components/ui/SegmentedControl.tsx', 1],
   ['components/ui/Select.tsx', 1],
-  ['components/ui/SensitiveField.tsx', 1],
   ['components/ui/Tabs.tsx', 1],
   ['components/ui/Toast.tsx', 1],
   ['components/work/WorkQueue.tsx', 5],

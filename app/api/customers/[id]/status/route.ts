@@ -54,14 +54,6 @@ async function PATCHHandler(
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  const { data: previousState } = await serviceClient
-    .from(TABLES.MERCHANT_IDENTITY_STATE)
-    .select('investigation_status')
-    .eq('merchant_id', ctx.merchantId)
-    .eq('identity_id', resolvedParams.id)
-    .maybeSingle();
-  const previousStatus = previousState?.investigation_status ?? 'new';
-
   const { data, error } = await serviceClient
     .from(TABLES.MERCHANT_IDENTITY_STATE)
     .upsert({

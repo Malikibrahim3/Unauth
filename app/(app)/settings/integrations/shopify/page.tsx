@@ -28,7 +28,7 @@ export default async function ShopifyIntegrationPage() {
       subtitle="Sync orders, customers, refunds, and fulfillment events in real time."
       breadcrumbs={[
         { label: 'Settings', href: '/settings/account' },
-        { label: 'Integrations', href: '/settings/integrations' },
+        { label: 'Integrations', href: '/integrations' },
         { label: 'Shopify' },
       ]}
     >

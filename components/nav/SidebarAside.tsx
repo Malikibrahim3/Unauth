@@ -96,7 +96,7 @@ export function SidebarAside({
 
         {!isCollapsed && (!shopifyConnected || !helpdeskConnected) ? (
           <Link
-            href="/settings/integrations"
+            href="/integrations"
             onClick={onCloseMobile}
             className="flex w-full items-center gap-1.5 rounded-sm px-2 py-1 text-xs font-medium leading-tight hover:opacity-80 transition-opacity"
             style={{

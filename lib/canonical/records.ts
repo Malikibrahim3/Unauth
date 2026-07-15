@@ -6,7 +6,7 @@
  * Money is integer minor units + ISO currency. Timestamps are ISO UTC. Provider
  * status is preserved as `sourceStatus`; canonical status is separate.
  *
- * See docs/IMPL_source_agnostic_connected_ecosystem.md §3.
+ * See ARCHITECTURE.md §3.
  */
 import type { OrderFinancialStatus, FulfillmentState, ShipmentStatus } from '@/lib/canonical/statuses';
 

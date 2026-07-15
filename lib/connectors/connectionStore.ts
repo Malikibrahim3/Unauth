@@ -3,7 +3,7 @@
  * finish by writing canonical `merchant_integrations` + `source_accounts` rows
  * through here, so the connection model has one writer regardless of provider.
  *
- * See docs/IMPL_source_agnostic_connected_ecosystem.md §5.
+ * See ARCHITECTURE.md §5.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/lib/supabase/tables';

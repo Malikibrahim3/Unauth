@@ -4,7 +4,7 @@
  * route only validates and enqueues — it never runs case/rule/recovery logic
  * synchronously (that is the domain-event worker's job).
  *
- * See docs/IMPL_source_agnostic_connected_ecosystem.md §7.1.
+ * See ARCHITECTURE.md §7.1.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { enqueueIngestionEvent } from '@/lib/connectors/ingestionInbox';

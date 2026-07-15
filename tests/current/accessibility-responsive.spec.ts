@@ -15,7 +15,7 @@ const CORE_ROUTES = [
   "/settings/account",
   "/integrations/imports",
   "/flows/runs",
-  "/partners",
+  "/rules/recovery",
   "/settings/billing",
   "/settings/team",
   "/settings/platform",

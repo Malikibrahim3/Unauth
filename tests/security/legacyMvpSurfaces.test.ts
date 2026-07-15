@@ -1,51 +1,24 @@
 import fs from 'fs';
 import path from 'path';
 
-const REDIRECT_PAGES = [
-  ['app/(app)/global/page.tsx', '/customers'],
-  ['app/(app)/watchlist/page.tsx', '/customers'],
-  ['app/(app)/catches/page.tsx', '/claims'],
-  ['app/(app)/chargebacks/page.tsx', '/claims'],
-  ['app/(app)/chargebacks/[id]/page.tsx', '/claims'],
-  ['app/(app)/store/page.tsx', '/dashboard'],
-  ['app/(app)/help/how-it-works/page.tsx', '/help'],
-  ['app/(app)/help/confidence-grades/page.tsx', '/help'],
-  ['app/(app)/help/identity-matching/page.tsx', '/help'],
-  ['app/(app)/settings/integrations/woocommerce/page.tsx', '/settings/integrations'],
-  ['app/(app)/settings/integrations/bigcommerce/page.tsx', '/settings/integrations'],
-] as const;
-
-function read(rel: string): string {
-  return fs.readFileSync(path.join(process.cwd(), rel), 'utf8');
-}
-
 describe('legacy MVP surfaces', () => {
-  it('redirects legacy merchant page modules to payout-control surfaces', () => {
-    for (const [file, target] of REDIRECT_PAGES) {
-      const source = read(file);
-      expect(source).toContain("from 'next/navigation'");
-      expect(source).toContain(`redirect('${target}')`);
+  it('removes redirect-only page modules from the application route tree', () => {
+    for (const route of ['global', 'watchlist', 'catches', 'chargebacks', 'store', 'lookup']) {
+      expect(fs.existsSync(path.join(process.cwd(), 'app/(app)', route, 'page.tsx'))).toBe(false);
     }
   });
 
-  it('proxy redirects logged-in legacy URLs before they can render', () => {
-    const source = read('proxy.ts');
-    for (const route of [
-      '/lookup',
-      '/global',
-      '/watchlist',
-      '/catches',
-      '/chargebacks',
-      '/audit',
-      '/store',
-      '/network-metrics',
-      '/eval',
-      '/help/identity-matching',
-      '/help/confidence-grades',
-      '/help/how-it-works',
-    ]) {
-      expect(source).toContain(route);
+  it('removes the retired watchlist API implementation', () => {
+    expect(fs.existsSync(path.join(process.cwd(), 'app/api/watchlist/route.ts'))).toBe(false);
+    expect(fs.existsSync(path.join(process.cwd(), 'app/api/watchlist/[id]/route.ts'))).toBe(false);
+  });
+
+  it('keeps compatibility URLs in the single Next.js redirect registry', async () => {
+    const config = require('../../next.config.js') as { redirects(): Promise<Array<{ source: string; destination: string }>> };
+    const redirects = await config.redirects();
+    const sources = new Set(redirects.map((redirect) => redirect.source));
+    for (const source of ['/lookup/:path*', '/global/:path*', '/watchlist/:path*', '/catches/:path*', '/chargebacks/:path*', '/audit/:path*', '/store/:path*']) {
+      expect(sources).toContain(source);
     }
-    expect(source).toContain("url.pathname = '/dashboard'");
   });
 });

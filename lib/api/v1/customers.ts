@@ -100,7 +100,7 @@ export async function performV1CustomerProfile(
   const cards = (Array.isArray(profile.card_last4s) ? profile.card_last4s : []) as string[];
   // NOTE: `fraud_flags` is the underlying database column name (out of scope
   // to rename here); the local name below is kept neutral per
-  // docs/product/TERMINOLOGY.md.
+  // docs/PRODUCT.md.
   const claimHistorySignals = (Array.isArray(profile.fraud_flags) ? profile.fraud_flags : []) as string[];
 
   const riskScore = Number(profile.risk_score ?? 0);
@@ -133,7 +133,7 @@ export async function performV1CustomerProfile(
       // `risk_grade` is a deprecated alias kept for backward compatibility
       // with existing external consumers of this field name. New
       // integrations should read `confidence_grade` instead — same value,
-      // neutral naming per docs/product/TERMINOLOGY.md (this reflects
+      // neutral naming per docs/PRODUCT.md (this reflects
       // identity/evidence confidence, not an accusation of risk).
       risk_grade: gradeToLetter(confidence),
       confidence_grade: gradeToLetter(confidence),

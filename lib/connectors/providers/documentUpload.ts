@@ -7,6 +7,7 @@
  * than a false success.
  */
 import { capability } from '@/lib/connectors/capabilities';
+import { documentUploadProvider } from '@/lib/integrations/providers/documentUpload';
 import type {
   ConnectorAdapter,
   ConnectionTestResult,
@@ -25,14 +26,10 @@ const MANUAL_ONLY: UnsupportedResult = {
 
 export const documentUploadConnector: ConnectorAdapter = {
   manifest: {
-    id: 'document_upload',
-    name: 'Document upload',
-    category: 'documents',
-    authMode: 'custom',
+    ...documentUploadProvider,
     verificationStatus: 'partial',
     launchVisible: true,
     connectorVersion: '1',
-    description: 'Manual upload of carrier/3PL/supplier liability documents.',
     capabilities: [
       capability('documents.read', 'read', { description: 'Read uploaded documents' }),
       capability('documents.link', 'link', { description: 'Link documents to cases/partners' }),

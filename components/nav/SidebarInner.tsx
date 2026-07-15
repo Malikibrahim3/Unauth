@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Menu } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useFetchJson } from '@/lib/react/useFetchJson';
@@ -41,7 +41,6 @@ function SidebarInnerContent({
   permissions = [],
 }: SidebarProps) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const router = useRouter();
   const supabase = createClient();
 
@@ -93,9 +92,6 @@ function SidebarInnerContent({
   }));
 
   const isActive = (href: string) => {
-    if (href === '/store' && pathname.startsWith('/audit') && searchParams.get('source') === 'shopify') {
-      return true;
-    }
     return pathname === href || pathname.startsWith(`${href}/`);
   };
 

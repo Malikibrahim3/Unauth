@@ -18,7 +18,7 @@ import { SHOPIFY_SCOPES } from "@/lib/shopify/scopes";
 import { htmlSafeJson } from "@/lib/utils/htmlSafeJson";
 import { safeConnectionErrorCode } from "@/lib/integrations/publicErrors";
 
-const INTEGRATIONS_URL = "/settings/integrations";
+const INTEGRATIONS_URL = "/integrations";
 
 function oauthCompleteResponse(params: Record<string, string>): NextResponse {
   const appUrl = getAppUrl();
