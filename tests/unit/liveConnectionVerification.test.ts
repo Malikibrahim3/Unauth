@@ -125,6 +125,42 @@ describe('merchant integration live verification', () => {
     ]);
   });
 
+  // "Last health check" semantics: persistLiveVerification stamps
+  // last_verified_at with the checkedAt it's given, which callers only ever
+  // pass AFTER the corresponding verifyXConnection promise has resolved
+  // (see lib/connections/liveVerification.ts verifyMerchantLiveConnections
+  // and both /api/*/verify routes) — never optimistically before a check
+  // starts, and identically for a successful, failed, or inconclusive
+  // outcome (a completed check is a completed check regardless of verdict).
+  it.each([
+    { status: 'verified' as const },
+    { status: 'failed' as const, reason: 'credentials_revoked' },
+    { status: 'inconclusive' as const, reason: 'network_or_timeout' },
+  ])('stamps last_verified_at with the check-completion time for a $status result', async (result) => {
+    const patches: Array<Record<string, unknown>> = [];
+    const query: Record<string, unknown> = { error: null };
+    query.update = jest.fn((patch: Record<string, unknown>) => {
+      patches.push(patch);
+      return query;
+    });
+    query.eq = jest.fn(() => query);
+    const client = { from: jest.fn(() => query) };
+    const checkedAt = '2026-07-16T20:00:00.000Z';
+
+    await persistLiveVerification(
+      client as never,
+      'merchant_integrations',
+      'merchant-a',
+      'connection-a',
+      'connected',
+      result,
+      checkedAt,
+    );
+
+    expect(patches[0].last_verified_at).toBe(checkedAt);
+    expect(patches[0].last_verification_status).toBe(result.status);
+  });
+
   it('degrades safely during the additive verification-column rollout only', async () => {
     const query: Record<string, unknown> = {
       error: {

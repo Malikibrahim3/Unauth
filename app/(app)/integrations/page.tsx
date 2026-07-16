@@ -8,76 +8,27 @@ import {
   requirePermission,
   resolveDefaultAppPath,
 } from "@/lib/permissions";
-import {
-  loadConnectorCatalogue,
-  type ConnectorCatalogueItem,
-} from "@/lib/connectors/catalogue";
-import { LiveConnectionStatus } from "@/components/integrations/LiveConnectionStatus";
-import { formatDateTime, formatNumber } from "@/lib/utils/format";
+import { loadConnectorCatalogue } from "@/lib/connectors/catalogue";
+import { formatNumber } from "@/lib/utils/format";
 import { getConnectionState } from "@/lib/connections/getConnectionState";
 import { verifyMerchantLiveConnections } from "@/lib/connections/liveVerification";
-import { ProviderLogo } from "@/components/identity/ProviderLogo";
-import { humanise } from "@/lib/ui/labels";
+import {
+  isLiveCredentialCheckSupported,
+  resolveEffectiveConnectionStatus,
+} from "@/lib/connections/effectiveStatus";
+import {
+  ConnectorRow,
+  type CatalogueRowItem,
+} from "@/components/integrations/ConnectorRow";
 
 export const dynamic = "force-dynamic";
 
-const ACTIVE = new Set(["connected", "import_complete", "importing"]);
-const ATTENTION = new Set(["error", "attention_required", "revoked"]);
-
-function categoryLabel(category: string) {
-  return category === "warehouse_3pl"
-    ? "Warehouse / 3PL"
-    : humanise(category);
-}
-
-function ConnectorRow({ item }: { item: ConnectorCatalogueItem }) {
-  const connected = ACTIVE.has(item.status);
-  return (
-    <Link
-      href={`/integrations/${item.id}`}
-      className="ua-table-row grid min-w-[820px] grid-cols-[minmax(220px,1.35fr)_150px_minmax(240px,1.4fr)_100px_160px_24px] items-center gap-4 border-b border-[var(--border-muted)] px-4 py-3 text-sm last:border-b-0 hover:bg-[var(--surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--focus-ring)]"
-    >
-      <div className="flex min-w-0 items-center gap-3">
-        <ProviderLogo provider={item.id} name={item.name} />
-        <div className="min-w-0">
-          <p className="font-semibold text-[var(--text-primary)]">{item.name}</p>
-          <p className="mt-0.5 truncate text-xs capitalize text-[var(--text-tertiary)]">
-            {item.account ?? categoryLabel(item.category)}
-          </p>
-        </div>
-      </div>
-      <div>
-        <LiveConnectionStatus provider={item.id} initialStatus={item.status} />
-      </div>
-      <div className="min-w-0">
-        <p className="line-clamp-2 text-xs leading-relaxed text-[var(--text-secondary)]">
-          {item.description}
-        </p>
-        {item.lastError ? (
-          <p
-            role="status"
-            className="mt-1 line-clamp-1 text-xs text-[var(--danger)]"
-          >
-            {item.lastError}
-          </p>
-        ) : null}
-      </div>
-      <p className="text-right font-semibold tabular-nums text-[var(--text-primary)]">
-        {formatNumber(item.importedRecords)}
-      </p>
-      <p className="text-xs font-medium text-[var(--text-secondary)]">
-        {item.lastSuccessfulSyncAt
-          ? formatDateTime(item.lastSuccessfulSyncAt)
-          : connected
-            ? "Initial import pending"
-            : "No successful sync"}
-      </p>
-      <span className="text-right text-[var(--text-tertiary)]">
-        <span className="sr-only">View connection</span>
-      </span>
-    </Link>
-  );
-}
+// Raw merchant_integrations status values treated as "actively connected" for
+// the pre-merge "was a live probe even expected" guard below.
+const RAW_ACTIVE_STATUSES = new Set(["connected", "active", "import_complete", "importing"]);
+// Post-merge bucket sets — grouping only, the finer badge drives the copy.
+const ACTIVE_BUCKETS = new Set(["connected"]);
+const ATTENTION_BUCKETS = new Set(["error", "attention_required"]);
 
 export default async function IntegrationsPage() {
   const auth = createClient();
@@ -97,9 +48,12 @@ export default async function IntegrationsPage() {
     getConnectionState(service, ctx.merchantId),
     verifyMerchantLiveConnections(service, ctx.merchantId),
   ]);
-  const catalogue = catalogueRows.map((item) => {
+  const catalogue: CatalogueRowItem[] = catalogueRows.map((item) => {
     const isOrderSource = item.id === connectionState.orderSourcePlatform;
     const isHelpdesk = item.id === connectionState.helpdeskProvider;
+    const providerHasLiveCheck = isLiveCredentialCheckSupported(item.id);
+    const isActiveSelection = item.id === "shopify" ? isOrderSource : item.id === "gorgias" ? isHelpdesk : true;
+    const isActiveProbedProvider = providerHasLiveCheck && isActiveSelection;
     const health = item.id === "shopify" && isOrderSource
       ? liveHealth.shopify
       : item.id === "gorgias" && isHelpdesk
@@ -107,47 +61,41 @@ export default async function IntegrationsPage() {
         : item.id === "shipbob" || item.id === "ups" || item.id === "fedex"
           ? liveHealth[item.id]
           : null;
-    if (!health) {
-      const liveCheckExpected = (item.id === "shopify" && isOrderSource)
-        || (item.id === "gorgias" && isHelpdesk)
-        || ((item.id === "shipbob" || item.id === "ups" || item.id === "fedex") && ACTIVE.has(item.status));
-      return liveCheckExpected
-        ? { ...item, status: "attention_required", lastError: "Live verification is unavailable. We will retry automatically." }
-        : isOrderSource || isHelpdesk
-          ? { ...item, status: "connected" }
-          : item;
+
+    // A probe was expected (this is the merchant's active platform for this
+    // category) but no checkable row was found at all — a cross-table data
+    // inconsistency, not a normal freshness signal, so it stays a hard flag.
+    if (isActiveProbedProvider && !health && RAW_ACTIVE_STATUSES.has(item.status)) {
+      return {
+        ...item,
+        status: "attention_required",
+        badge: "not_syncing",
+        lastError: "Live verification is unavailable. We will retry automatically.",
+        noteTone: "warning",
+      };
     }
 
-    const status = health.status === "verified"
-      ? "connected"
-      : health.status === "failed"
-        ? "error"
-        : "attention_required";
-    const liveError = health.status === "verified"
-      ? null
-      : health.status === "failed"
-        ? `Live verification failed${health.reason ? `: ${health.reason}` : ". Reconnect this integration."}`
-        : "Live verification could not be completed. We will retry automatically.";
-    return { ...item, status, lastError: liveError };
+    const effective = resolveEffectiveConnectionStatus(health, item.syncState, item.freshness);
+    return { ...item, status: effective.bucket, badge: effective.badge, lastError: effective.note, noteTone: effective.noteTone };
   });
-  const connected = catalogue.filter((item) => ACTIVE.has(item.status));
-  const attention = catalogue.filter((item) => ATTENTION.has(item.status));
+  const connected = catalogue.filter((item) => ACTIVE_BUCKETS.has(item.status));
+  const attention = catalogue.filter((item) => ATTENTION_BUCKETS.has(item.status));
   const manual = catalogue.filter(
     (item) =>
       item.category === "documents" &&
-      !ACTIVE.has(item.status) &&
-      !ATTENTION.has(item.status),
+      !ACTIVE_BUCKETS.has(item.status) &&
+      !ATTENTION_BUCKETS.has(item.status),
   );
   const planned = catalogue.filter(
     (item) =>
       item.stage === "planned" &&
-      !ACTIVE.has(item.status) &&
-      !ATTENTION.has(item.status),
+      !ACTIVE_BUCKETS.has(item.status) &&
+      !ATTENTION_BUCKETS.has(item.status),
   );
   const available = catalogue.filter(
     (item) =>
-      !ACTIVE.has(item.status) &&
-      !ATTENTION.has(item.status) &&
+      !ACTIVE_BUCKETS.has(item.status) &&
+      !ATTENTION_BUCKETS.has(item.status) &&
       item.category !== "documents" &&
       item.stage !== "planned" &&
       item.connectEnabled,
@@ -160,7 +108,7 @@ export default async function IntegrationsPage() {
   const groups: Array<{
     title: string;
     description: string;
-    items: ConnectorCatalogueItem[];
+    items: CatalogueRowItem[];
   }> = [
     {
       title: "Needs attention",
@@ -267,7 +215,7 @@ export default async function IntegrationsPage() {
                 <span>Status</span>
                 <span>Coverage</span>
                 <span className="text-right">Imported</span>
-                <span>Last successful sync</span>
+                <span>Last activity</span>
                 <span aria-hidden="true" />
               </div>
               {group.items.map((item) => <ConnectorRow key={item.id} item={item} />)}
