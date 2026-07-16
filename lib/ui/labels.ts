@@ -165,6 +165,16 @@ const workflowStatus: Record<string, string> = {
   unsupported: 'Unavailable',
   hold: 'Hold',
   proceed: 'Proceed',
+  // Connection health badges (lib/connections/effectiveStatus.ts).
+  healthy: 'Healthy',
+  connection_verified: 'Connection verified',
+  not_syncing: 'Not syncing',
+  stale: 'Stale',
+  sync_pending: 'Sync pending',
+  no_data: 'No data',
+  verification_unavailable: 'Verification unavailable',
+  attention_required: 'Attention required',
+  sync_failed: 'Sync failed',
 };
 
 const evidenceStrength: Record<string, string> = {

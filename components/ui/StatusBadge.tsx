@@ -40,6 +40,9 @@ export const STATUS_TONES: Record<string, StatusTone> = {
   archived: 'neutral',
   view_only: 'neutral',
   unmatched: 'neutral',
+  not_connected: 'neutral',
+  sync_pending: 'neutral',
+  verification_unavailable: 'neutral',
   // info — in progress on our side
   collecting_evidence: 'info',
   ready_to_submit: 'info',
@@ -50,6 +53,7 @@ export const STATUS_TONES: Record<string, StatusTone> = {
   in_progress: 'info',
   active: 'info',
   connected: 'success',
+  connection_verified: 'info',
   enabled: 'info',
   processing: 'info',
   running: 'info',
@@ -57,6 +61,7 @@ export const STATUS_TONES: Record<string, StatusTone> = {
   proceed: 'success',
   strong: 'success',
   confirmed: 'success',
+  healthy: 'success',
   // warning — waiting on someone / time pressure
   awaiting_customer_evidence: 'warning',
   awaiting_carrier_response: 'warning',
@@ -74,6 +79,12 @@ export const STATUS_TONES: Record<string, StatusTone> = {
   review: 'warning',
   hold: 'warning',
   manual_review: 'warning',
+  stale: 'warning',
+  no_data: 'warning',
+  attention_required: 'warning',
+  not_syncing: 'warning',
+  sync_failed: 'warning',
+  degraded: 'warning',
   // success — positive terminal
   paid: 'success',
   approved: 'success',
@@ -97,6 +108,8 @@ export const STATUS_TONES: Record<string, StatusTone> = {
   disabled: 'danger',
   insufficient: 'danger',
   ambiguous: 'danger',
+  connection_error: 'danger',
+  revoked: 'danger',
   // work-task lifecycle extras
   cancelled: 'neutral',
   snoozed: 'neutral',

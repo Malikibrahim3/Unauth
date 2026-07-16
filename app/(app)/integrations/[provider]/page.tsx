@@ -7,13 +7,19 @@ import {
   requirePermission,
 } from "@/lib/permissions";
 import { loadConnectorCatalogue } from "@/lib/connectors/catalogue";
+import { getConnectionState } from "@/lib/connections/getConnectionState";
 import { verifyMerchantLiveConnections } from "@/lib/connections/liveVerification";
+import {
+  isLiveCredentialCheckSupported,
+  resolveEffectiveConnectionStatus,
+  type EffectiveConnectionBadge,
+} from "@/lib/connections/effectiveStatus";
 import { TABLES } from "@/lib/supabase/tables";
 import { ConnectionActions } from "@/components/integrations/ConnectionActions";
 import { Card, DataTableServer } from "@/components/ui";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { formatDateTime, formatNumber } from "@/lib/utils/format";
-import { ProviderLogo } from "@/components/identity/ProviderLogo";
+import { formatDateTime } from "@/lib/utils/format";
+import { ConnectionHealthHeader, ConnectionHealthGrid } from "@/components/integrations/ConnectionHealthPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -62,34 +68,39 @@ export default async function ConnectionPage({
     (candidate) => candidate.id === provider,
   );
   if (!item) notFound();
-  const liveHealth = provider === "shopify"
-    || provider === "gorgias"
-    || provider === "shipbob"
-    || provider === "ups"
-    || provider === "fedex"
+  // Must mirror app/(app)/integrations/page.tsx exactly — the same
+  // connector's badge must never disagree between the catalogue list and
+  // its own detail page. Shopify/Gorgias are only actually live-checked
+  // when they're the merchant's active order-source/helpdesk selection;
+  // ShipBob/UPS/FedEx are always probed.
+  const connectionState = await getConnectionState(service, ctx.merchantId);
+  const isOrderSource = provider === connectionState.orderSourcePlatform;
+  const isHelpdesk = provider === connectionState.helpdeskProvider;
+  const providerHasLiveCheck = isLiveCredentialCheckSupported(provider);
+  const isActiveSelection = provider === "shopify" ? isOrderSource : provider === "gorgias" ? isHelpdesk : true;
+  const isActiveProbedProvider = providerHasLiveCheck && isActiveSelection;
+  const liveHealth = isActiveProbedProvider
     ? await verifyMerchantLiveConnections(service, ctx.merchantId)
     : null;
-  const liveResult = provider === "shopify"
+  const liveResult = provider === "shopify" && isOrderSource
     ? liveHealth?.shopify
-    : provider === "gorgias"
+    : provider === "gorgias" && isHelpdesk
       ? liveHealth?.gorgias
       : provider === "shipbob" || provider === "ups" || provider === "fedex"
         ? liveHealth?.[provider]
         : null;
-  if (liveResult) {
-    item.status = liveResult.status === "verified"
-      ? "connected"
-      : liveResult.status === "failed"
-        ? "error"
-        : "attention_required";
-    item.lastError = liveResult.status === "failed"
-      ? `Live verification failed${liveResult.reason ? `: ${liveResult.reason}` : ". Reconnect this integration."}`
-      : liveResult.status === "inconclusive"
-        ? "Live verification could not be completed. We will retry automatically."
-        : null;
-  } else if (liveHealth && item.status === "connected") {
+  let badge: EffectiveConnectionBadge;
+  if (isActiveProbedProvider && !liveResult && item.status === "connected") {
+    // A probe was expected but no checkable row was found — a data
+    // inconsistency, not a normal freshness signal.
     item.status = "attention_required";
+    badge = "not_syncing";
     item.lastError = "Live verification is unavailable. We will retry automatically.";
+  } else {
+    const effective = resolveEffectiveConnectionStatus(liveResult ?? null, item.syncState, item.freshness);
+    item.status = effective.bucket;
+    badge = effective.badge;
+    item.lastError = effective.note;
   }
   const [canManage, jobsResult, issuesResult] = await Promise.all([
     hasPermission(service, ctx, PERMISSIONS.MANAGE_SETTINGS),
@@ -123,21 +134,7 @@ export default async function ConnectionPage({
       >
         Integrations
       </Link>
-      <header className="flex flex-wrap items-start justify-between gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-xs)] md:p-6">
-        <div className="flex min-w-0 items-start gap-4">
-          <ProviderLogo provider={item.id} name={item.name} size="lg" />
-          <div>
-          <p className="text-sm capitalize text-[var(--text-secondary)]">
-            {humanizeLabel(item.category)} · {humanizeLabel(item.stage)}
-          </p>
-          <h1 className="mt-1 text-2xl font-semibold">{item.name}</h1>
-          <p className="mt-1 max-w-2xl text-sm text-[var(--text-secondary)]">
-            {item.description}
-          </p>
-          </div>
-        </div>
-        <StatusBadge family="workflowStatus" value={item.status === "import_complete" ? "connected" : item.status} />
-      </header>
+      <ConnectionHealthHeader item={{ ...item, badge }} />
       {item.stage === "planned" ? (
         <Card unstyled
           variant="inset"
@@ -155,64 +152,7 @@ export default async function ConnectionPage({
           canManage={canManage}
         />
       )}
-      {item.lastError ? (
-        <Card unstyled
-          as="section"
-          variant="flat"
-          className="border-[var(--danger)] p-4"
-        >
-          <h2 className="text-sm font-semibold text-[var(--danger)]">
-            Action required
-          </h2>
-          <p role="alert" className="mt-1 text-sm text-[var(--text-secondary)]">
-            {item.lastError}
-          </p>
-        </Card>
-      ) : null}
-      <section aria-labelledby="connection-health-title">
-        <h2 id="connection-health-title" className="text-base font-semibold">
-          Connection health
-        </h2>
-        <dl className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Card unstyled variant="flat" className="ua-metric-card p-3">
-            <dt className="text-xs text-[var(--text-tertiary)]">Account</dt>
-            <dd className="mt-1 truncate text-sm font-medium">
-              {item.account ??
-                (item.connectionCount
-                  ? `${item.connectionCount} connected account${item.connectionCount === 1 ? "" : "s"}`
-                  : "Not connected")}
-            </dd>
-          </Card>
-          <Card unstyled variant="flat" className="ua-metric-card p-3">
-            <dt className="text-xs text-[var(--text-tertiary)]">
-              Imported objects
-            </dt>
-            <dd className="mt-1 font-mono text-sm font-semibold">
-              {formatNumber(item.importedRecords)}
-            </dd>
-          </Card>
-          <Card unstyled variant="flat" className="ua-metric-card p-3">
-            <dt className="text-xs text-[var(--text-tertiary)]">
-              Last successful sync
-            </dt>
-            <dd className="mt-1 text-sm font-medium">
-              {item.lastSuccessfulSyncAt
-                ? formatDateTime(item.lastSuccessfulSyncAt)
-                : "No successful sync"}
-            </dd>
-          </Card>
-          <Card unstyled variant="flat" className="ua-metric-card p-3">
-            <dt className="text-xs text-[var(--text-tertiary)]">
-              Granted scopes
-            </dt>
-            <dd className="mt-1 text-sm font-medium">
-              {item.scopes.length
-                ? `${item.scopes.length} recorded`
-                : "None recorded"}
-            </dd>
-          </Card>
-        </dl>
-      </section>
+      <ConnectionHealthGrid item={{ ...item, badge }} />
       <section aria-labelledby="capability-matrix-title">
         <div>
           <h2 id="capability-matrix-title" className="text-base font-semibold">
