@@ -7,7 +7,7 @@ export const fedexProvider: IntegrationProvider = {
   category: 'carrier',
   authMode: 'oauth',
   buildStatus: 'live',
-  description: 'Direct FedEx tracking, scan history, delivery status, signature proof, and delivery imagery when available.',
+  description: 'Direct FedEx tracking, scan history, delivery status, and signature proof documents when account permissions allow.',
   evidenceCapabilities: ['tracking_number', 'tracking_events', 'delivery_status', 'delivery_photo', 'signature'],
   capabilities: { readTracking: true, readAttachments: true },
 };
@@ -71,5 +71,53 @@ export async function fetchFedExDeliveryProof(input: {
   if (!res.ok) {
     throw new Error(`fedex_proof_fetch_failed: ${res.status} ${JSON.stringify(body).slice(0, 300)}`);
   }
-  return body;
+
+  const result = body.output?.completeTrackResults?.[0]?.trackResults?.[0] ?? {};
+  const availableImages = Array.isArray(result.availableImages) ? result.availableImages : [];
+  const signatureAvailable = availableImages.some((image: unknown) => {
+    if (typeof image === 'string') return image.toLowerCase().includes('signature');
+    if (!image || typeof image !== 'object') return false;
+    const detail = image as Record<string, unknown>;
+    return String(detail.type ?? detail.imageType ?? '').toLowerCase().includes('signature');
+  });
+  if (!signatureAvailable) return body;
+
+  const documentSpec: Record<string, unknown> = {
+    trackingNumberInfo: { trackingNumber: input.trackingNumber },
+  };
+  if (input.credentials.accountNumber) documentSpec.accountNumber = input.credentials.accountNumber;
+  const documentResponse = await fetch(`${fedexBaseUrl(String(input.credentials.environment))}/track/v1/trackingdocuments`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'X-locale': 'en_US',
+      'x-customer-transaction-id': `unauth-${Date.now()}`,
+    },
+    body: JSON.stringify({
+      trackDocumentDetail: {
+        documentType: 'SIGNATURE_PROOF_OF_DELIVERY',
+        documentFormat: 'PNG',
+      },
+      trackDocumentSpecification: [documentSpec],
+    }),
+    cache: 'no-store',
+  });
+  const documentBody = await documentResponse.json().catch(() => ({}));
+  const documents = documentResponse.ok && Array.isArray(documentBody.output?.document)
+    ? documentBody.output.document.filter((document: unknown) => typeof document === 'string' && document.length > 0)
+    : [];
+  return {
+    ...body,
+    _unauthProof: {
+      signatureDocument: documents[0] ?? null,
+      signatureDocumentFormat: documents.length > 0 ? 'PNG' : null,
+      signatureRetrieval: documents.length > 0
+        ? 'retrieved'
+        : documentResponse.ok
+          ? 'unavailable'
+          : 'failed',
+      documentStatus: documentResponse.status,
+    },
+  };
 }

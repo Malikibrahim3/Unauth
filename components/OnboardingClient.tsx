@@ -366,13 +366,13 @@ export default function OnboardingClient({
                   <p className="t-caption" style={{ color: 'var(--text-tertiary)' }}>
                     You can also add Zendesk or Freshdesk later from the same page.
                   </p>
-                  <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <Button
                       type="button"
                       variant="secondary"
                       onClick={() => dispatch({ type: 'patch', patch: { activeStep: 3 } })}
                     >
-                      Skip for now
+                      Skip for now and choose another integration
                     </Button>
                     <Link
                       href="/settings/integrations/gorgias"

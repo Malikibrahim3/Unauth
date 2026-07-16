@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { AuthError, AuthShell, authButtonStyle, authInputClassName } from '@/app/(auth)/AuthShell';
 import { createClient } from '@/lib/supabase/client';
-import { TABLES } from '@/lib/supabase/tables';
 
 type SignupErrors = Partial<Record<'email' | 'password' | 'confirm', string>>;
 
@@ -67,17 +66,17 @@ export default function SignupPage() {
     }
 
     if (user) {
-      const merchantPayload = {
-        user_id: user.id,
-        name: email.trim().split('@')[0] || 'New workspace',
-        setup_complete: false,
-      };
+      // Workspace ownership is represented by merchant_users, not a legacy
+      // merchants.user_id column. Bootstrap through the server-side service
+      // path so a brand-new account can create both rows as one service-owned
+      // product flow without relying on browser RLS permissions.
+      const setupResponse = await fetch('/api/account/setup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bootstrapOnly: true }),
+      });
 
-      const { error } = await supabase
-        .from(TABLES.MERCHANTS)
-        .upsert(merchantPayload as never, { onConflict: 'user_id' });
-
-      if (error) {
+      if (!setupResponse.ok) {
         setLoading(false);
         setFieldErrors({ email: 'Your account was created, but we could not prepare your workspace.' });
         return;

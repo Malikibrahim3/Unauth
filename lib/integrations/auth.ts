@@ -242,6 +242,9 @@ export async function upsertMerchantIntegration(
       last_error: fields.lastError ?? null,
       environment: fields.environment,
       updated_at: new Date().toISOString(),
+      ...(['pending', 'connected', 'degraded', 'syncing'].includes(status)
+        ? { disconnected_at: null }
+        : {}),
     })
     .eq('id', connectionId)
     .eq('merchant_id', merchantId)

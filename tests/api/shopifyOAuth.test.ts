@@ -43,6 +43,19 @@ jest.mock('@/lib/integrations/oauthTransactions', () => ({
   })),
 }));
 
+jest.mock('@/lib/integrations/oauthTransactions', () => ({
+  beginOAuthConnectionTransaction: jest.fn(async () => 'ledger-state'),
+  consumeOAuthConnectionTransaction: jest.fn(async () => ({
+    merchantId: 'merchant-1',
+    userId: 'user-1',
+    providerId: 'shopify',
+    environment: 'production',
+    callbackUrl: 'http://localhost:3000/api/shopify/callback',
+    providerAccountHint: 'merchant-a.myshopify.com',
+    expiresAt: new Date(Date.now() + 60_000).toISOString(),
+  })),
+}));
+
 jest.mock('@/lib/permissions', () => ({
   ACTIVE_MERCHANT_COOKIE: 'unauth.active_merchant',
   PERMISSIONS: { MANAGE_SETTINGS: 'manage_settings' },

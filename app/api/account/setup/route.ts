@@ -6,6 +6,7 @@ import { resolveCallerContext } from '@/lib/permissions';
 import { setCategoryApplicability } from '@/lib/integrations/applicability';
 
 interface SetupBody {
+  bootstrapOnly?: boolean;
   storeName?: string;
   platform?: string;
   monthlyOrderVolume?: string;
@@ -46,7 +47,8 @@ export async function POST(request: NextRequest) {
     const domain = email.split('@')[1] ?? '';
     const isDemo = Boolean((user.user_metadata as Record<string, unknown> | undefined)?.is_demo);
     const isSkipAction = body.setupComplete === true;
-    if (!isSkipAction && !isDemo && (!domain || PERSONAL_EMAIL_DOMAINS.has(domain))) {
+    const isBootstrap = body.bootstrapOnly === true;
+    if (!isBootstrap && !isSkipAction && !isDemo && (!domain || PERSONAL_EMAIL_DOMAINS.has(domain))) {
       return NextResponse.json(
         { error: 'Use a company email domain to complete merchant verification.' },
         { status: 403 }
@@ -56,7 +58,9 @@ export async function POST(request: NextRequest) {
     const merchant = await upsertMerchantForUser(serviceClient, {
       userId: user.id,
       email: user.email,
-      storeName: body.storeName ?? (user.user_metadata?.store_name as string | undefined) ?? null,
+      storeName: body.storeName
+        ?? (user.user_metadata?.store_name as string | undefined)
+        ?? (isBootstrap ? email.split('@')[0] || 'New workspace' : null),
       platform: body.platform ?? (user.user_metadata?.platform as string | undefined) ?? null,
       monthlyOrderVolume:
         body.monthlyOrderVolume ??
@@ -68,7 +72,7 @@ export async function POST(request: NextRequest) {
         (user.user_metadata?.primary_loss_concern as string | undefined) ??
         (user.user_metadata?.primary_fraud_concern as string | undefined) ??
         null,
-      setupComplete: body.setupComplete === true,
+      setupComplete: !isBootstrap && body.setupComplete === true,
     });
 
     const metadataPatch: Record<string, unknown> = {

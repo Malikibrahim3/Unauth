@@ -7,9 +7,10 @@ interface OnboardingGateInput {
 }
 
 /**
- * Connections improve coverage, but they are optional during signup. A user
- * can finish their profile and enter the app in a limited/no-source state,
- * then connect one provider from each category later.
+ * App access requires a merchant context and a completed profile (or retained
+ * audit history). Connector choice is intentionally not a gate: merchants
+ * must be able to enter Integrations and choose Shopify, ShipBob, a carrier,
+ * documents, or another supported source as their first connection.
  */
 export function shouldRequireOnboarding({
   hasMerchantContext,

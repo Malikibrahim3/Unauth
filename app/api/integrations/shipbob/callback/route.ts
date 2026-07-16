@@ -26,7 +26,10 @@ export const maxDuration = 60;
 function redirect(params: Record<string, string>): NextResponse {
   const url = new URL('/integrations', getAppUrl());
   for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
-  return NextResponse.redirect(url);
+  // The provider returns a form_post. A 307 would preserve that POST across
+  // the application redirect (and eventually hit /login with POST); 303 is the
+  // OAuth-safe POST/Redirect/GET transition.
+  return NextResponse.redirect(url, 303);
 }
 
 async function callbackParams(request: NextRequest): Promise<{ code: string | null; state: string | null; error: string | null }> {
@@ -92,8 +95,15 @@ async function handleCallback(request: NextRequest) {
     const userClient = createClient();
     const serviceClient = createServiceClient();
     const { data: { user } } = await userClient.auth.getUser();
-    if (!user) return responseError('unauthorized');
-    if (oauthState.userId && oauthState.userId !== user.id) return responseError('identity_mismatch');
+    // ShipBob's hybrid OAuth response uses form_post. Browsers intentionally
+    // omit SameSite=Lax session cookies on that cross-site POST, so recover the
+    // initiating user only from our HMAC-sealed, short-lived state. The
+    // one-time transaction and current merchant permission are both verified
+    // below before any credential is persisted.
+    const callbackUserId = user?.id
+      ?? (request.method === 'POST' ? oauthState.userId : null);
+    if (!callbackUserId) return responseError('unauthorized');
+    if (oauthState.userId && oauthState.userId !== callbackUserId) return responseError('identity_mismatch');
     if (!env.SHIPBOB_OAUTH_CLIENT_ID || !env.SHIPBOB_OAUTH_CLIENT_SECRET) return responseError('misconfigured');
 
     const redirectUri = `${getAppUrl()}/api/integrations/shipbob/callback`;
@@ -101,7 +111,7 @@ async function handleCallback(request: NextRequest) {
     try {
       transaction = await consumeOAuthConnectionTransaction(serviceClient, {
         state,
-        userId: user.id,
+        userId: callbackUserId,
         providerId: 'shipbob',
         callbackUrl: redirectUri,
       });
@@ -111,7 +121,7 @@ async function handleCallback(request: NextRequest) {
     if (oauthState.merchantId !== transaction.merchantId) return responseError('identity_mismatch');
     const { denied, ctx: context } = await requirePermissionForMerchant(
       serviceClient,
-      user.id,
+      callbackUserId,
       transaction.merchantId,
       PERMISSIONS.MANAGE_SETTINGS,
     );
@@ -132,7 +142,7 @@ async function handleCallback(request: NextRequest) {
     if (channels.length > 1) {
       const selectionId = await createPendingAccountSelection(serviceClient, {
         merchantId: context.merchantId,
-        userId: user.id,
+        userId: callbackUserId,
         providerId: 'shipbob',
         environment: oauthState.sandbox ? 'sandbox' : 'production',
         accounts: channels.map((channel) => ({
@@ -143,14 +153,14 @@ async function handleCallback(request: NextRequest) {
       });
       const selectionUrl = new URL('/integrations/shipbob/select', getAppUrl());
       selectionUrl.searchParams.set('selection', selectionId);
-      const response = NextResponse.redirect(selectionUrl);
+      const response = NextResponse.redirect(selectionUrl, 303);
       response.cookies.set(shipBobOAuthCookie, '', clearShipBobOAuthCookieOptions());
       return response;
     }
     const completed = await completeShipBobConnection({
       client: serviceClient,
       merchantId: context.merchantId,
-      userId: user.id,
+      userId: callbackUserId,
       token,
       channel: channels[0]!,
       sandbox: oauthState.sandbox,

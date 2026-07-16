@@ -76,6 +76,12 @@ export async function GET(request: NextRequest) {
   const authorizeUrl = new URL(`${shipBobOAuthBaseUrl(sandbox)}/connect/authorize`);
   authorizeUrl.searchParams.set('client_id', clientId);
   authorizeUrl.searchParams.set('response_type', 'code');
+  // ShipBob upgrades the request to a hybrid `code id_token` response. Without
+  // an explicit response mode IdentityServer places the authorization result
+  // in the URL fragment, which is never sent to this server-side callback.
+  // form_post keeps the result out of browser history and is already accepted
+  // by the callback's POST handler.
+  authorizeUrl.searchParams.set('response_mode', 'form_post');
   authorizeUrl.searchParams.set('scope', SHIPBOB_READ_SCOPES.join(' '));
   authorizeUrl.searchParams.set('redirect_uri', redirectUri);
   authorizeUrl.searchParams.set('code_challenge', shipBobCodeChallenge(oauthState.codeVerifier));
