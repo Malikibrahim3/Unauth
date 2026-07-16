@@ -48,7 +48,7 @@ const BANNED_PATTERNS: { pattern: RegExp; description: string }[] = [
   { pattern: /\bauto-deny\b/i,            description: '"auto-deny" copy' },
   { pattern: /\bauto-reject\b/i,          description: '"auto-reject" copy' },
   // NOTE: "recommended action" / "suggested action" / "recommended review" are
-  // now APPROVED payout-control vocabulary (docs/product/TERMINOLOGY.md,
+  // now APPROVED payout-control vocabulary (docs/PRODUCT.md,
   // MVP_STEERING §19 — merchant rules surface a recommended action). They were
   // banned under the old fraud-tool framing where Unauth made no recommendation;
   // that framing no longer applies. The bans on accusatory language above stay.

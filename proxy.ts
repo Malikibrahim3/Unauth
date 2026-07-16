@@ -4,55 +4,6 @@ import { TABLES } from './lib/supabase/tables';
 import { enforceRateLimit, getClientIp, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
 import { createRequestId, merchantIdHeader, requestIdHeader } from '@/lib/log';
 
-function legacyMvpRedirectTarget(pathname: string): string | null {
-  if (
-    pathname === '/lookup' ||
-    pathname.startsWith('/lookup/') ||
-    pathname === '/global' ||
-    pathname.startsWith('/global/') ||
-    pathname === '/watchlist' ||
-    pathname.startsWith('/watchlist/')
-  ) {
-    return '/customers';
-  }
-
-  if (
-    pathname === '/catches' ||
-    pathname.startsWith('/catches/') ||
-    pathname === '/chargebacks' ||
-    pathname.startsWith('/chargebacks/')
-  ) {
-    return '/claims';
-  }
-
-  if (pathname === '/store' || pathname.startsWith('/store/')) {
-    return '/dashboard';
-  }
-
-  if (pathname === '/audit' || pathname.startsWith('/audit/')) {
-    return '/dashboard';
-  }
-
-  if (
-    pathname === '/eval' ||
-    pathname.startsWith('/eval/') ||
-    pathname === '/network-metrics' ||
-    pathname.startsWith('/network-metrics/')
-  ) {
-    return '/dashboard';
-  }
-
-  if (
-    pathname === '/help/identity-matching' ||
-    pathname === '/help/confidence-grades' ||
-    pathname === '/help/how-it-works'
-  ) {
-    return '/help';
-  }
-
-  return null;
-}
-
 export async function proxy(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set(requestIdHeader, request.headers.get(requestIdHeader) ?? createRequestId());
@@ -124,14 +75,8 @@ export async function proxy(request: NextRequest) {
     pathname === '/pricing' ||
     pathname === '/signup' ||
     pathname.startsWith('/reset') ||
-    pathname === '/mobile-unsupported' ||
     pathname === '/legal' ||
     pathname.startsWith('/legal/');
-  const isInternalRoute =
-    pathname === '/eval' ||
-    pathname.startsWith('/eval/') ||
-    pathname === '/network-metrics' ||
-    pathname.startsWith('/network-metrics/');
 
   if (!user && !isAuthRoute && !isApiRoute && !isPublicRoute) {
     const url = request.nextUrl.clone();
@@ -147,20 +92,6 @@ export async function proxy(request: NextRequest) {
     const response = NextResponse.redirect(url);
     response.headers.set(requestIdHeader, requestHeaders.get(requestIdHeader)!);
     return response;
-  }
-
-  if (user && !isApiRoute) {
-    const redirectTarget = legacyMvpRedirectTarget(pathname);
-    if (redirectTarget) {
-      const url = request.nextUrl.clone();
-      url.pathname = redirectTarget;
-      const response = NextResponse.redirect(url);
-      response.headers.set(requestIdHeader, requestHeaders.get(requestIdHeader)!);
-      response.headers.set('x-unauth-legacy-route', pathname);
-      response.headers.set('x-unauth-canonical-route', redirectTarget);
-      console.info('legacy_route_redirect', { from: pathname, to: redirectTarget, requestId: requestHeaders.get(requestIdHeader) });
-      return response;
-    }
   }
 
   if (user && isApiRoute) {
@@ -186,24 +117,6 @@ export async function proxy(request: NextRequest) {
         route: pathname,
         method: request.method,
       });
-    }
-  }
-
-  if (user && isInternalRoute) {
-    const selectedMerchantId = request.cookies.get('unauth_active_merchant')?.value;
-    let membershipQuery = supabase.from(TABLES.MERCHANT_MEMBERS).select('merchant_id').eq('user_id', user.id).eq('invite_status', 'active');
-    if (selectedMerchantId) membershipQuery = membershipQuery.eq('merchant_id', selectedMerchantId);
-    const { data: membership } = await membershipQuery.limit(1).maybeSingle();
-    const { data: merchant } = membership?.merchant_id
-      ? await supabase.from(TABLES.MERCHANTS).select('is_internal').eq('id', membership.merchant_id).maybeSingle()
-      : { data: null };
-
-    if (!merchant?.is_internal) {
-      const url = request.nextUrl.clone();
-      url.pathname = '/dashboard';
-      const response = NextResponse.redirect(url);
-      response.headers.set(requestIdHeader, requestHeaders.get(requestIdHeader)!);
-      return response;
     }
   }
 

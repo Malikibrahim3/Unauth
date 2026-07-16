@@ -105,7 +105,7 @@ export default async function AppLayout({
         helpdeskProvider: null,
         bothConnected: false,
         neitherConnected: true,
-        shopifyOnlyConnected: false,
+        orderSourceOnlyConnected: false,
         helpdeskOnlyConnected: false,
         shopDomain: null,
         linkState: "not_connected" as const,

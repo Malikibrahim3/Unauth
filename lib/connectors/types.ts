@@ -6,10 +6,10 @@
  * Provider adapter modules are WRAPPERS around existing proven OAuth/API/
  * signature/normalizer code — they do not re-implement it.
  *
- * See docs/IMPL_source_agnostic_connected_ecosystem.md §5.
+ * See ARCHITECTURE.md §5.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { IntegrationCategory } from '@/lib/integrations/types';
+import type { IntegrationAuthMode, IntegrationCategory } from '@/lib/integrations/types';
 import type { ConnectorCapability } from '@/lib/connectors/capabilities';
 
 /** Whether the connector's full lifecycle is implemented + tested. */
@@ -19,7 +19,7 @@ export type ConnectorManifest = {
   id: string;
   name: string;
   category: IntegrationCategory;
-  authMode: 'oauth' | 'api_key' | 'webhook' | 'custom';
+  authMode: IntegrationAuthMode;
   capabilities: ConnectorCapability[];
   /**
    * Runtime availability + verification are independent of merchant-facing

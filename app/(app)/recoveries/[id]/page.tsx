@@ -3,7 +3,6 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { TABLES } from '@/lib/supabase/tables';
 import { WorkbenchPage } from '@/components/ui';
-import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { getRecoveryCase } from '@/lib/recoveries/store';
 import { RECOVERY_STATUS_LABELS, RECOVERY_OWNER_LABELS, type RecoveryCaseEvent } from '@/lib/recoveries/types';
 import { RECOVERY_TYPE_LABELS } from '@/lib/partners/types';
@@ -64,8 +63,6 @@ export default async function RecoveryDetailPage({ params }: Props) {
       eyebrow="Recovery"
       title={RECOVERY_TYPE_LABELS[recovery.recovery_type] ?? 'Recovery case'}
       subtitle={`${RECOVERY_OWNER_LABELS[recovery.owner_type] ?? 'Owner'} · ${RECOVERY_STATUS_LABELS[recovery.status] ?? recovery.status}`}
-      navItems={WORKBENCH_NAV_ITEMS}
-      activeNavKey="recoveries"
       kpiItems={[
         { label: 'Merchant loss', value: formatCurrencyNullable(recovery.merchant_loss_amount, recovery.currency) ?? '-', hint: 'Recorded loss' },
         { label: 'Amount pursued', value: formatCurrencyNullable(sought, recovery.currency) ?? '-', hint: 'Bounded by the recovery estimate' },
@@ -124,7 +121,7 @@ export default async function RecoveryDetailPage({ params }: Props) {
                     <span style={{ color: 'var(--text-primary)' }}>
                       {label('workflowStatus', event.event_type)}
                       {event.from_status && event.to_status ? (
-                        <span style={{ color: 'var(--text-tertiary)' }}> · {label('recoveryStatus', event.from_status)} → {label('recoveryStatus', event.to_status)}</span>
+                        <span style={{ color: 'var(--text-tertiary)' }}> · from {label('recoveryStatus', event.from_status)} to {label('recoveryStatus', event.to_status)}</span>
                       ) : null}
                       {event.note ? <span style={{ color: 'var(--text-secondary)' }}> — {event.note}</span> : null}
                     </span>

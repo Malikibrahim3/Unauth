@@ -1,31 +1,18 @@
-export const ACTIVE_CLAIM_STATUSES = [
-  'new',
-  'evidence_needed',
-  'awaiting_customer_evidence',
-  'awaiting_carrier_response',
-  'awaiting_3pl_response',
-  'awaiting_supplier_response',
-  'ready_for_decision',
-  'manual_review',
-  'decision_recorded',
-  'recovery_opened',
-  'pending',
-  'open',
-  'escalated',
-] as const;
-export const FINAL_CLAIM_STATUSES = [
-  'closed',
-  'resolved_refunded',
-  'resolved_won',
-  'resolved_lost',
-  'resolved_denied',
-  'resolved_exchanged',
-  'voided',
-  'stale',
-] as const;
-export const CLAIM_STATUSES = [...ACTIVE_CLAIM_STATUSES, ...FINAL_CLAIM_STATUSES] as const;
+import {
+  ACTIVE_CANONICAL_CLAIM_STATUSES,
+  CANONICAL_CLAIM_STATUSES,
+  FINAL_CANONICAL_CLAIM_STATUSES,
+  isCanonicalFinalClaimStatus,
+  type CanonicalClaimStatus,
+} from '@/lib/claims/statusMachine';
 
-export type ClaimStatus = (typeof CLAIM_STATUSES)[number];
+// Compatibility names for queue/SLA consumers. The status machine owns the
+// values; this module owns only age and SLA calculations.
+export const ACTIVE_CLAIM_STATUSES = ACTIVE_CANONICAL_CLAIM_STATUSES;
+export const FINAL_CLAIM_STATUSES = FINAL_CANONICAL_CLAIM_STATUSES;
+export const CLAIM_STATUSES = CANONICAL_CLAIM_STATUSES;
+
+export type ClaimStatus = CanonicalClaimStatus;
 export type SlaState = 'normal' | 'approaching' | 'overdue' | 'resolved';
 
 export type ClaimAgeInput = {
@@ -43,7 +30,7 @@ export function isActiveClaimStatus(status: string | null | undefined): boolean 
 }
 
 export function isFinalClaimStatus(status: string | null | undefined): boolean {
-  return (FINAL_CLAIM_STATUSES as readonly string[]).includes(status ?? '');
+  return isCanonicalFinalClaimStatus(status);
 }
 
 export function claimOpenedAt(claim: ClaimAgeInput): Date | null {

@@ -1,4 +1,5 @@
 import type { ClaimRow } from '@/app/(app)/claims/claimsPageData';
+import { sanitizeMerchantText } from '@/app/(app)/claims/claimsPageData';
 import {
   PAYOUT_CASE_NEXT_ACTION_LABELS,
   PAYOUT_CASE_STATUS_LABELS,
@@ -88,7 +89,7 @@ export function claimNextAction(
   if (claim.next_action_reason) {
     return {
       evidenceStatus: nextActionLabel,
-      reviewState: claim.next_action_reason,
+      reviewState: sanitizeMerchantText(claim.next_action_reason),
       nextActionLabel,
       daysWaiting: waitingDays,
     };

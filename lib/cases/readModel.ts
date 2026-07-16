@@ -26,7 +26,7 @@ export async function getCaseReadModel(client: SupabaseClient, merchantId: strin
       : Promise.resolve({ data: [], error: null }),
     // Commerce facts (source-of-truth order / fulfillment / refund) for the timeline.
     payoutCase.source_order_id
-      ? client.from(TABLES.SOURCE_ORDERS).select('id,order_number,placed_at,created_at,total_price,currency').eq('merchant_id', merchantId).eq('id', payoutCase.source_order_id).maybeSingle()
+      ? client.from(TABLES.SOURCE_ORDERS).select('id,order_number,placed_at,ingested_at,total_price,currency').eq('merchant_id', merchantId).eq('id', payoutCase.source_order_id).maybeSingle()
       : Promise.resolve({ data: null, error: null }),
     payoutCase.source_order_id
       ? client.from(TABLES.SOURCE_FULFILLMENTS).select('id,status,shipment_status,tracking_company,tracking_number,occurred_at,ingested_at').eq('merchant_id', merchantId).eq('source_order_id', payoutCase.source_order_id).order('occurred_at', { ascending: false })
@@ -77,7 +77,9 @@ export async function getCaseReadModel(client: SupabaseClient, merchantId: strin
       workTasksToTimeline(workTasksResult.data ?? []),
       ticketEventsToTimeline(ticketEventsResult.data ?? []),
       commerceEventsToTimeline({
-        order: (orderResult.data as never) ?? null,
+        order: orderResult.data
+          ? ({ ...orderResult.data, created_at: orderResult.data.ingested_at } as never)
+          : null,
         fulfillments: (fulfillmentsResult.data as never) ?? [],
         refunds: (refundsResult.data as never) ?? [],
       }),

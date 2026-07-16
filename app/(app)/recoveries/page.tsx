@@ -3,7 +3,6 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { hasPermission, PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { TABLES } from '@/lib/supabase/tables';
 import { WorkbenchPage } from '@/components/ui';
-import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { formatCurrencyNullable, formatNumber, sumSameCurrency } from '@/lib/utils/format';
 import { listRecoveryCases } from '@/lib/recoveries/store';
 import { RecoveryBoardClient } from '@/app/(app)/recoveries/RecoveryBoardClient';
@@ -108,8 +107,6 @@ export default async function RecoveriesPage() {
       eyebrow="Operations"
       title="Recovery board"
       subtitle="The losses you can still do something about: what needs evidence, what's ready to submit, what needs chasing, and what came back."
-      navItems={WORKBENCH_NAV_ITEMS}
-      activeNavKey="recoveries"
       kpiItems={[
         { label: 'Open recovery cases', value: formatNumber(openRecoveries.length), hint: 'Active cases' },
         { label: 'Missing source data', value: formatNumber(missingSourceData), hint: 'Waiting on a connected source' },

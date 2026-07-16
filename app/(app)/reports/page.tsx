@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import {
@@ -14,6 +13,7 @@ import {
 } from "@/lib/reporting/intelligence";
 import ExportMenu from "@/components/reports/ExportMenu";
 import { merchantHasEntitlement } from "@/lib/product/requireEntitlement";
+import { SegmentedControl } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 export default async function ReportsPage({
@@ -53,20 +53,12 @@ export default async function ReportsPage({
             Reconciled payout, loss, and recovery performance.
           </p>
         </div>
-        <div
-          className="flex flex-wrap items-center gap-1 rounded-[var(--radius-md)] bg-[var(--surface-muted)] p-1"
-          aria-label="Report scope"
-        >
-          {REPORT_RANGES.map((r) => (
-            <Link
-              key={r}
-              aria-current={r === range ? "page" : undefined}
-              href={`/reports?range=${r}&timezone=${encodeURIComponent(timezone)}`}
-              className={`min-h-8 rounded-[var(--radius-sm)] px-3 py-1.5 text-sm font-medium ${r === range ? "bg-[var(--surface)] text-[var(--text-primary)] shadow-[var(--shadow-xs)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
-            >
-              {r === "all" ? "All time" : r}
-            </Link>
-          ))}
+        <div className="flex flex-wrap items-center gap-2">
+          <SegmentedControl
+            aria-label="Report period"
+            value={range}
+            items={REPORT_RANGES.map((r) => ({ value: r, label: r === "all" ? "All time" : r, href: `/reports?range=${r}&timezone=${encodeURIComponent(timezone)}` }))}
+          />
           <ExportMenu range={range} />
         </div>
       </header>

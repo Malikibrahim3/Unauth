@@ -9,12 +9,13 @@ import type {
   ObjectFact,
   ObjectSummary,
 } from "@/lib/relationships/objectSummary";
-import { PanelCard } from "@/components/ui";
+import { Card } from "@/components/ui";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatCurrencyNullable, formatDateTime, formatNumber } from "@/lib/utils/format";
+import { humanise } from "@/lib/ui/labels";
 
 function label(value: string) {
-  return value.charAt(0).toUpperCase() + value.slice(1).replaceAll("_", " ");
+  return humanise(value);
 }
 const OBJECT_ROUTES = {
   order: "/orders",
@@ -41,7 +42,7 @@ function factValue(item: ObjectFact) {
         : "Unavailable";
   if (item.kind === "number" && typeof item.value === "number")
     return formatNumber(item.value);
-  return String(item.value ?? "Unavailable").replaceAll("_", " ");
+  return humanise(String(item.value ?? "Unavailable"));
 }
 
 export function ConnectedObjectDetail({
@@ -103,23 +104,23 @@ export function ConnectedObjectDetail({
         {object.facts.length ? (
           <dl className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {object.facts.map((item) => (
-              <PanelCard key={item.label} variant="appInset" className="p-3">
+              <Card unstyled key={item.label} variant="inset" className="p-3">
                 <dt className="text-xs text-[var(--text-tertiary)]">
                   {item.label}
                 </dt>
                 <dd className="mt-1 break-words text-sm font-medium text-[var(--text-primary)]">
                   {factValue(item)}
                 </dd>
-              </PanelCard>
+              </Card>
             ))}
           </dl>
         ) : (
-          <PanelCard
-            variant="appInset"
+          <Card unstyled
+            variant="inset"
             className="mt-3 p-4 text-sm text-[var(--text-secondary)]"
           >
             This source supplied no additional typed facts.
-          </PanelCard>
+          </Card>
         )}
       </section>
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
@@ -136,10 +137,10 @@ export function ConnectedObjectDetail({
           {object.timeline.length ? (
             <ol className="relative mt-3 space-y-2 before:absolute before:bottom-4 before:left-[15px] before:top-4 before:w-px before:bg-[var(--border)]">
               {object.timeline.map((item) => (
-                <PanelCard
+                <Card unstyled
                   key={`${item.label}-${item.at ?? 'unknown'}-${item.detail ?? ''}`}
                   as="li"
-                  variant="app"
+                  variant="flat"
                   className="relative grid grid-cols-[2rem_minmax(0,1fr)] gap-3 p-3"
                 >
                   <span className="z-10 mt-0.5 h-2.5 w-2.5 justify-self-center rounded-full bg-[var(--accent)] ring-4 ring-[var(--surface)]" />
@@ -159,16 +160,16 @@ export function ConnectedObjectDetail({
                       </p>
                     ) : null}
                   </div>
-                </PanelCard>
+                </Card>
               ))}
             </ol>
           ) : (
-            <PanelCard
-              variant="appInset"
+            <Card unstyled
+              variant="inset"
               className="mt-3 p-4 text-sm text-[var(--text-secondary)]"
             >
               No source lifecycle timestamps are available.
-            </PanelCard>
+            </Card>
           )}
         </section>
         <section aria-labelledby="object-provenance-heading">
@@ -193,7 +194,7 @@ export function ConnectedObjectDetail({
         {object.evidence.length ? (
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
             {object.evidence.map((item) => (
-              <PanelCard key={item.id} variant="app" className="p-3">
+              <Card unstyled key={item.id} variant="flat" className="p-3">
                 <div className="flex items-start justify-between gap-2">
                   <strong className="text-sm">{item.title}</strong>
                   <StatusBadge family="confidence" value={item.confidence} size="sm" />
@@ -210,16 +211,16 @@ export function ConnectedObjectDetail({
                     {item.reference}
                   </p>
                 ) : null}
-              </PanelCard>
+              </Card>
             ))}
           </div>
         ) : (
-          <PanelCard
-            variant="appInset"
+          <Card unstyled
+            variant="inset"
             className="mt-3 p-4 text-sm text-[var(--text-secondary)]"
           >
             No evidence linked yet.
-          </PanelCard>
+          </Card>
         )}
       </section>
       <section aria-labelledby="connected-heading">
@@ -256,13 +257,13 @@ export function ConnectedObjectDetail({
             ))}
           </ul>
         ) : (
-          <PanelCard
-            variant="appInset"
+          <Card unstyled
+            variant="inset"
             className="mt-3 p-4 text-sm text-[var(--text-secondary)]"
           >
             No connected records were found in this merchant’s synchronized
             sources.
-          </PanelCard>
+          </Card>
         )}
       </section>
     </div>

@@ -3,6 +3,7 @@ import type { IntegrationProvider, IntegrationCredentialPayload } from '@/lib/in
 export const fedexProvider: IntegrationProvider = {
   id: 'fedex',
   name: 'FedEx',
+  logoSrc: '/integrations/fedex.svg',
   category: 'carrier',
   authMode: 'oauth',
   buildStatus: 'live',

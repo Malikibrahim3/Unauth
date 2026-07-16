@@ -27,7 +27,7 @@ export interface ParsedCsvRow {
 
 export interface FraudTransactionInsert {
   job_id: string;
-  /** Set only when cross-job dedup is active (AUDIT_TX_MERCHANT_DEDUP + migration). */
+  /** Merchant owner for tenant-scoped imported rows. */
   merchant_id?: string;
   order_id: string;
   /** Order date from the merchant CSV (ISO 8601). Null when unparseable/absent. */

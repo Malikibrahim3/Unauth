@@ -11,7 +11,7 @@
  *   - unmatched:  no candidate. Retain the source record; surface it in health
  *                 / work queues.
  *
- * See docs/IMPL_source_agnostic_connected_ecosystem.md §8.
+ * See ARCHITECTURE.md §8.
  */
 
 export const MATCH_STATUSES = ['confirmed', 'probable', 'ambiguous', 'unmatched'] as const;

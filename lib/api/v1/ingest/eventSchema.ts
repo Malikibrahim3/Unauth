@@ -6,7 +6,7 @@
  * minimum. The merchant is NEVER taken from the body — it is derived from the
  * authenticated credential (see auth.ts).
  *
- * See docs/IMPL_source_agnostic_connected_ecosystem.md §7.1.
+ * See ARCHITECTURE.md §7.1.
  */
 import { z } from 'zod';
 

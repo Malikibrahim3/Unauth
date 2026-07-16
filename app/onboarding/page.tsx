@@ -41,7 +41,7 @@ export default async function OnboardingPage() {
         helpdeskProvider: null,
         bothConnected: false,
         neitherConnected: true,
-        shopifyOnlyConnected: false,
+        orderSourceOnlyConnected: false,
         helpdeskOnlyConnected: false,
         shopDomain: null,
         linkState: 'not_connected' as const,

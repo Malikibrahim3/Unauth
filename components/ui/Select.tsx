@@ -17,7 +17,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSel
           height: 'var(--ua-control-height-input)',
           background: 'var(--surface-sunken)',
           border: '1px solid var(--border)',
-          borderRadius: 'var(--ua-radius-input)',
+          borderRadius: 'var(--ua-radius-control)',
           color: 'var(--text-primary)',
           paddingRight: 32,
           ...style,

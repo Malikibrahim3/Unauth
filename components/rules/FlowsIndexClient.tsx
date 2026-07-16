@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { ArrowRight, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Button,
   Modal,
-  PanelCard,
+  Card,
 } from "@/components/ui";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import {
@@ -102,8 +102,8 @@ export function FlowsIndexClient({
               href={`/flows/${flow.hrefId}`}
               className="block rounded-[var(--radius-lg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
             >
-              <PanelCard
-                variant="app"
+              <Card unstyled
+                variant="flat"
                 className="grid gap-3 p-4 hover:border-[var(--accent)] sm:grid-cols-[minmax(0,1fr)_10rem_7rem_auto] sm:items-center"
               >
                 <div className="min-w-0">
@@ -137,16 +137,14 @@ export function FlowsIndexClient({
                   <span className="font-mono text-xs text-[var(--text-tertiary)]">
                     v{flow.version}
                   </span>
-                  <span aria-hidden="true" className="text-[var(--accent)]">
-                    →
-                  </span>
+                  <ArrowRight className="h-4 w-4 text-[var(--text-secondary)]" aria-hidden="true" />
                 </div>
-              </PanelCard>
+              </Card>
             </Link>
           ))}
         </div>
       ) : (
-        <PanelCard variant="app" className="p-10 text-center">
+        <Card unstyled variant="flat" className="p-10 text-center">
           <h2 className="text-base font-semibold">No flows yet</h2>
           <p className="mx-auto mt-2 max-w-xl text-sm text-[var(--text-secondary)]">
             Create a bounded event flow, test it without writes, then publish it
@@ -161,7 +159,7 @@ export function FlowsIndexClient({
               Create first flow
             </Button>
           ) : null}
-        </PanelCard>
+        </Card>
       )}
       <Modal
         open={creating}

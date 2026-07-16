@@ -5,7 +5,7 @@
  * canonical records; warehouse-accountability evidence is projected from those.
  */
 import { capability } from '@/lib/connectors/capabilities';
-import { verifyShipBobPat } from '@/lib/integrations/providers/shipbob';
+import { shipbobProvider, verifyShipBobPat } from '@/lib/integrations/providers/shipbob';
 import { deleteShipBobSubscription, listShipBobLocations, listShipBobOrders, listShipBobReturns, listShipBobSubscriptions, shipBobToken, type ShipBobCredentials } from '@/lib/connectors/providers/shipbob/api';
 import { getAppUrl } from '@/lib/utils/appUrl';
 import { mapShipBobOrder } from '@/lib/connectors/providers/shipbob/mappings';
@@ -47,14 +47,10 @@ function pageResult(records: NormalizedRecord[], next: ShipBobCursor | null): Sy
 
 export const shipbobConnector: ConnectorAdapter = {
   manifest: {
-    id: 'shipbob',
-    name: 'ShipBob',
-    category: 'warehouse_3pl',
-    authMode: 'oauth',
+    ...shipbobProvider,
     verificationStatus: 'verified',
     launchVisible: true,
     connectorVersion: '1',
-    description: 'Warehouse fulfilment, pick/pack, shipments, and returns.',
     capabilities: [
       capability('fulfilments.read', 'read', { description: 'Read fulfilments/pick-pack' }),
       capability('shipments.read', 'read', { description: 'Read shipments' }),

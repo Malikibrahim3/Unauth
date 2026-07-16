@@ -8,6 +8,7 @@
  */
 import { capability } from '@/lib/connectors/capabilities';
 import { writeAccountabilityNoteToGorgias } from '@/lib/claim-gate/writeBackToGorgias';
+import { gorgiasProvider } from '@/lib/integrations/providers/gorgias';
 import type {
   ActionResult,
   ConnectorAction,
@@ -30,14 +31,10 @@ const RUNTIME_PENDING: UnsupportedResult = {
 
 export const gorgiasConnector: ConnectorAdapter = {
   manifest: {
-    id: 'gorgias',
-    name: 'Gorgias',
-    category: 'helpdesk',
-    authMode: 'api_key',
+    ...gorgiasProvider,
     verificationStatus: 'partial',
     launchVisible: true,
     connectorVersion: '1',
-    description: 'Support tickets, messages, and the compressed decision widget.',
     capabilities: [
       capability('tickets.read', 'read', { description: 'Read tickets' }),
       capability('messages.read', 'read', { description: 'Read ticket messages' }),

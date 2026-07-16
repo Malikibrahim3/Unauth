@@ -25,6 +25,8 @@ jobs:
       PLAYWRIGHT_BASE_URL: ${{ secrets.STAGING_BASE_URL }}
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+      E2E_AUTH_SECRET: ${{ secrets.STAGING_E2E_AUTH_SECRET }}
+      E2E_MERCHANT_ID: ${{ secrets.STAGING_E2E_MERCHANT_ID }}
 
     steps:
       - name: Checkout
@@ -43,11 +45,11 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
 
-      - name: Generate Playwright fixtures
-        run: npm run test:fixtures
-
       - name: Run critical Playwright suite
-        run: npx playwright test --config=tests/playwright.config.ts --project=critical --project=mobile
+        run: npm run test:critical
+
+      - name: Run critical mobile path
+        run: npx playwright test --config=tests/playwright.config.ts --project=mobile tests/current/current-product.spec.ts
 
       - name: Upload Playwright HTML report
         if: always()

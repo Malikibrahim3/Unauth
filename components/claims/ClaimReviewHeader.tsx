@@ -14,6 +14,7 @@ import { caseDisplay } from '@/lib/ui/displayRef';
 import { label } from '@/lib/ui/labels';
 import { formatDateAbsolute } from '@/lib/utils/format';
 import { RowActionsMenu } from '@/components/ui/RowActionsMenu';
+import { MetadataChip } from '@/components/ui';
 import { ShieldCheck } from 'lucide-react';
 
 export function ClaimReviewHeader({ wb }: { wb: ClaimReviewWorkbench }) {
@@ -46,15 +47,15 @@ export function ClaimReviewHeader({ wb }: { wb: ClaimReviewWorkbench }) {
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
-                  {(selectedClaim.claim_type ? CLAIM_TYPE_LABELS[selectedClaim.claim_type] ?? selectedClaim.claim_type : null) ?? 'Payout case'}
+                  {(selectedClaim.claim_type ? CLAIM_TYPE_LABELS[selectedClaim.claim_type] ?? label('claimType', selectedClaim.claim_type) : null) ?? 'Payout case'}
                 </h1>
                 <StatusPill status={selectedClaim.status} />
               </div>
               <p className="mt-1 text-sm font-medium text-[var(--text-secondary)]">{caseDisplay({ customer_name: customerName, ref: selectedClaim.shopify_order_id ?? selectedClaim.order_ref, id: selectedClaim.id })}</p>
               <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-[var(--text-secondary)]">
-                {selectedClaim.amount_at_risk != null && selectedClaim.currency ? <span className="rounded-full border border-[var(--border)] bg-[var(--surface-muted)] px-2.5 py-1 font-semibold tabular-nums text-[var(--text-primary)]">{formatClaimMoney(selectedClaim.amount_at_risk, selectedClaim.currency)} at risk</span> : null}
-                <span className="rounded-full border border-[var(--border)] bg-[var(--surface-muted)] px-2.5 py-1">Requested: {selectedClaim.requested_action && selectedClaim.requested_action !== 'unknown' ? label('requestedAction', selectedClaim.requested_action) : 'Not specified'}</span>
-                {selectedClaim.created_at || selectedClaim.submitted_at ? <span className="rounded-full border border-[var(--border)] bg-[var(--surface-muted)] px-2.5 py-1">Opened {formatDateAbsolute(selectedClaim.created_at ?? selectedClaim.submitted_at ?? '')}</span> : null}
+                {selectedClaim.amount_at_risk != null && selectedClaim.currency ? <MetadataChip>{formatClaimMoney(selectedClaim.amount_at_risk, selectedClaim.currency)} at risk</MetadataChip> : null}
+                <MetadataChip>Requested: {selectedClaim.requested_action && selectedClaim.requested_action !== 'unknown' ? label('requestedAction', selectedClaim.requested_action) : 'Not specified'}</MetadataChip>
+                {selectedClaim.created_at || selectedClaim.submitted_at ? <MetadataChip>Opened {formatDateAbsolute(selectedClaim.created_at ?? selectedClaim.submitted_at ?? '')}</MetadataChip> : null}
               </div>
             </div>
           ) : (
@@ -73,7 +74,7 @@ export function ClaimReviewHeader({ wb }: { wb: ClaimReviewWorkbench }) {
             >
               {history.map((h) => (
                 <option key={h.id} value={h.id}>
-                  {caseDisplay({ customer_name: customerName, ref: h.shopify_order_id ?? h.order_ref, id: h.id })} · {STATUS_LABELS[h.status] ?? h.status}
+                  {caseDisplay({ customer_name: customerName, ref: h.shopify_order_id ?? h.order_ref, id: h.id })} · {STATUS_LABELS[h.status] ?? label('caseStatus', h.status)}
                 </option>
               ))}
             </select>

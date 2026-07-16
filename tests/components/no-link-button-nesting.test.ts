@@ -4,8 +4,9 @@ import path from 'path';
 const TARGET_FILES = [
   'app/(app)/claims/page.tsx',
   'app/(app)/customers/page.tsx',
-  'app/(app)/watchlist/page.tsx',
-  'app/(app)/chargebacks/page.tsx',
+  'app/(app)/work/page.tsx',
+  'app/(app)/losses/page.tsx',
+  'app/(app)/recoveries/page.tsx',
 ];
 
 describe('link/button composition', () => {

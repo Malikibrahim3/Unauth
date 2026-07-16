@@ -4,7 +4,7 @@ import {
   LOSS_ATTRIBUTION_DISPLAY,
   type LossAttributionResult,
 } from '@/lib/payouts/types';
-import { PanelCard } from '@/components/ui';
+import { Card } from '@/components/ui';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 
 export function LossAttributionCard({ attribution }: { attribution: LossAttributionResult }) {
@@ -12,7 +12,7 @@ export function LossAttributionCard({ attribution }: { attribution: LossAttribut
     attribution.label === 'unknown' || attribution.confidence === 'needs_more_evidence';
 
   return (
-    <PanelCard as="section" variant="app" className="p-4">
+    <Card unstyled as="section" variant="flat" className="p-4">
       <div className="flex items-center justify-between mb-2">
         <p className="text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>
           Loss attribution (advisory)
@@ -40,6 +40,6 @@ export function LossAttributionCard({ attribution }: { attribution: LossAttribut
           ))}
         </ul>
       )}
-    </PanelCard>
+    </Card>
   );
 }

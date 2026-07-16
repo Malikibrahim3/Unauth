@@ -8,7 +8,7 @@
  * raise DeferredReconciliation so the ingestion inbox retries the event
  * (status failed + backoff) instead of completing it.
  *
- * See docs/IMPL_source_agnostic_connected_ecosystem.md §3 / §6.
+ * See ARCHITECTURE.md §3 / §6.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/lib/supabase/tables';

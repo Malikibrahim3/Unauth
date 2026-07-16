@@ -69,7 +69,7 @@ export default function CommandPaletteSurface({ navItems, onClose, inputRef }: C
   const handleCustomerSelect = useCallback(
     (customer: CustomerResult) => {
       onClose();
-      router.push(`/customers/${customer.id}`);
+      router.push(customer.href ?? `/customers/${customer.id}`);
     },
     [router, onClose],
   );

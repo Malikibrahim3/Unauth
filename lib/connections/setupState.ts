@@ -1,7 +1,7 @@
 export type MerchantSetupState =
   | 'fresh'
-  | 'shopify_only_empty'
-  | 'shopify_only_with_data'
+  | 'order_source_only_empty'
+  | 'order_source_only_with_data'
   | 'helpdesk_only_empty'
   | 'helpdesk_only_with_data'
   | 'csv_only'
@@ -11,14 +11,14 @@ export type MerchantSetupState =
 
 type SetupConnectionState = {
   bothConnected: boolean;
-  shopifyOnlyConnected: boolean;
+  orderSourceOnlyConnected: boolean;
   helpdeskOnlyConnected: boolean;
 };
 
 type SetupDataPresence = {
   hasAnyData: boolean;
   hasCsvImports: boolean;
-  hasShopifySignals: boolean;
+  hasOrderSourceSignals: boolean;
   hasHelpdeskClaims: boolean;
 };
 
@@ -36,8 +36,8 @@ export function resolveMerchantSetupState(
     return hasData ? 'fully_connected_with_data' : 'fully_connected_empty';
   }
 
-  if (connection.shopifyOnlyConnected) {
-    return hasData ? 'shopify_only_with_data' : 'shopify_only_empty';
+  if (connection.orderSourceOnlyConnected) {
+    return hasData ? 'order_source_only_with_data' : 'order_source_only_empty';
   }
 
   if (connection.helpdeskOnlyConnected) {
@@ -48,7 +48,7 @@ export function resolveMerchantSetupState(
 
   const csvOnly =
     presence.hasCsvImports &&
-    !presence.hasShopifySignals &&
+    !presence.hasOrderSourceSignals &&
     !presence.hasHelpdeskClaims;
 
   return csvOnly ? 'csv_only' : 'stale_existing_data';
@@ -56,7 +56,7 @@ export function resolveMerchantSetupState(
 
 const FULL_GATE_STATES: ReadonlySet<MerchantSetupState> = new Set([
   'fresh',
-  'shopify_only_empty',
+  'order_source_only_empty',
   'helpdesk_only_empty',
   'fully_connected_empty',
 ]);

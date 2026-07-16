@@ -5,7 +5,7 @@
  * caller's Idempotency-Key). Returns the Unauth id, source-record id, a
  * created/updated result, and the emitted domain event ids.
  *
- * See docs/IMPL_source_agnostic_connected_ecosystem.md §7.2.
+ * See ARCHITECTURE.md §7.2.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { upsertSourceRecord } from '@/lib/sources/sourceRegistry';

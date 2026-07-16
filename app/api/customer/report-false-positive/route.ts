@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
-import { getMerchantOwnedJobIds } from '@/lib/supabase/merchantHelpers';
 import { createRequestLogger, withRequestLogging } from '@/lib/log';
 import { captureServerException } from '@/lib/sentry';
 
@@ -12,11 +11,8 @@ import { captureServerException } from '@/lib/sentry';
  * Merchant-submitted false-positive report for a confirmed identity link.
  *
  * Contract:
- *  - Stores the report in `identity_false_positive_reports` for Unauth review.
- *  - Sets `false_positive_reported = true` on the relevant `audit_transactions`
- *    and `customer_profiles` rows.
- *  - Does NOT change `match_status` — the graph is append-only; only Unauth
- *    reviewers can dismiss or confirm a false positive.
+ *  - Stores an append-only `identity_resolution_events` record for review.
+ *  - Does NOT mutate the identity graph or its confidence grade.
  *
  * Body: { cluster_id: string; merchant_id?: string; notes?: string }
  */
@@ -61,21 +57,22 @@ async function POSTHandler(req: NextRequest) {
     if (denied) return denied;
     const merchantId = ctx.merchantId;
 
-    // ── 1. Fetch evidence snapshot, constrained to this merchant's own jobs ──
+    // ── 1. Fetch evidence snapshot, constrained directly to this merchant ──
     type FalsePositiveTxRow = {
       id: string;
-      signals_matched: string[] | null;
       identity_score: number | null;
+      identity_confidence_grade: string | null;
+      match_status: string | null;
     };
-    const ownedJobIds = await getMerchantOwnedJobIds(serviceClient, merchantId);
-    let txRows: FalsePositiveTxRow[] = [];
-    if (ownedJobIds.length > 0) {
-      const { data } = (await serviceClient
-        .from(TABLES.AUDIT_TRANSACTIONS)
-        .select('id, order_id, identity_confidence_grade, identity_score, signals_matched, behavioural_flags, match_status, confirmed_identity_id')
-        .eq('confirmed_identity_id', cluster_id)
-        .in('job_id', ownedJobIds)) as unknown as { data: FalsePositiveTxRow[] | null };
-      txRows = data ?? [];
+    const { data } = (await serviceClient
+      .from(TABLES.SOURCE_ORDERS)
+      .select('id, identity_confidence_grade, identity_score, match_status')
+      .eq('merchant_id', merchantId)
+      .eq('cluster_id', cluster_id)) as unknown as { data: FalsePositiveTxRow[] | null };
+    const txRows = data ?? [];
+
+    if (txRows.length === 0) {
+      return NextResponse.json({ error: 'Identity not found' }, { status: 404 });
     }
 
     // Build a compact evidence snapshot — just the signals, scores, and order IDs.
@@ -83,23 +80,22 @@ async function POSTHandler(req: NextRequest) {
       cluster_id,
       merchant_id: merchantId,
       transaction_count: txRows.length,
-      sample_signals: Array.from(
-        new Set(txRows.flatMap((r) => r.signals_matched ?? []))
-      ).slice(0, 20),
+      confidence_grades: Array.from(new Set(txRows.map((r) => r.identity_confidence_grade).filter(Boolean))),
+      match_statuses: Array.from(new Set(txRows.map((r) => r.match_status).filter(Boolean))),
       max_identity_score: Math.max(0, ...txRows.map((r) => r.identity_score ?? 0)),
       reported_at: new Date().toISOString(),
       reviewer_notes: notes ?? null,
     };
 
-    // ── 2. Insert the false-positive report ──────────────────────────────────
+    // ── 2. Append the false-positive report to the identity event stream ────
     const { error: reportError } = await serviceClient
-      .from('identity_false_positive_reports' as never)
+      .from('identity_resolution_events')
       .insert({
-        cluster_id,
-        reported_by_merchant_id: merchantId,
-        evidence_snapshot: evidenceSnapshot,
-        status: 'pending',
-      } as never);
+        identity_id: cluster_id,
+        event_type: 'merchant_false_positive_reported',
+        actor: user.id,
+        detail: evidenceSnapshot,
+      });
 
     if (reportError) {
       logger.error('false_positive_report.insert_failed', { error: reportError, clusterId: cluster_id });
@@ -107,20 +103,6 @@ async function POSTHandler(req: NextRequest) {
         { error: 'Failed to submit report' },
         { status: 500 }
       );
-    }
-
-    // ── 3. Flag this merchant's own audit_transactions rows ──────────────────
-    // Scoped by both id and owned job IDs (source_orders is a caller-scoped table).
-    if (txRows.length > 0) {
-      const txIds = txRows.map((r) => r.id);
-      await serviceClient
-        .from(TABLES.AUDIT_TRANSACTIONS)
-        .update({
-          false_positive_reported: true,
-          false_positive_reported_at: new Date().toISOString(),
-        } as never)
-        .in('id', txIds)
-        .in('job_id', ownedJobIds);
     }
 
     return NextResponse.json({

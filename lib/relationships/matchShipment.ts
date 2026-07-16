@@ -3,7 +3,7 @@
  * carrier record) to source_shipments rows by tracking number. Tracking numbers
  * are strong identifiers, so a single hit confirms.
  *
- * See docs/IMPL_source_agnostic_connected_ecosystem.md §8.
+ * See ARCHITECTURE.md §8.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/lib/supabase/tables';

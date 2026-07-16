@@ -10,7 +10,18 @@ import { TABLES } from "@/lib/supabase/tables";
 import { parseReportRange, reportCutoff } from "@/lib/reporting/intelligence";
 import { merchantHasEntitlement } from "@/lib/product/requireEntitlement";
 import { formatDateTime, formatNumber } from "@/lib/utils/format";
+import { DataTableServer, EmptyState, StatusBadge } from "@/components/ui";
 export const dynamic = "force-dynamic";
+
+function humanizeRecordValue(value: unknown): string {
+  const text = String(value ?? "").replaceAll("_", " ").trim();
+  return text ? text.charAt(0).toUpperCase() + text.slice(1) : "—";
+}
+
+function recordLabel(id: string): string {
+  return `Record ${id.slice(0, 8)}`;
+}
+
 export default async function ReportRecords({
   searchParams,
 }: {
@@ -80,7 +91,7 @@ export default async function ReportRecords({
       </Link>
       <header>
         <h1 className="text-2xl font-semibold capitalize">
-          {value.replaceAll("_", " ") || kind} records
+          {humanizeRecordValue(value || kind)} records
         </h1>
         <p className="mt-1 text-sm text-[var(--text-secondary)]">
           {formatNumber(total)} exact matching records ·{" "}
@@ -88,56 +99,59 @@ export default async function ReportRecords({
           {sp.currency ? `· ${sp.currency.toUpperCase()}` : ""}
         </p>
       </header>
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[650px] text-sm">
-          <thead>
-            <tr className="border-b">
-              <th className="py-2 text-left">Record</th>
-              <th className="text-left">Type</th>
-              <th className="text-left">State</th>
-              <th className="text-right">Amount</th>
-              <th className="text-right">Updated</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.id} className="border-b border-[var(--border-muted)]">
-                <td className="py-3">
-                  <Link
-                    className="font-mono text-[var(--accent)]"
-                    href={
-                      kind === "recovery"
-                        ? `/recoveries/${r.id}`
-                        : `/claims/${r.id}`
-                    }
-                  >
-                    {r.id}
-                  </Link>
-                </td>
-                <td>
-                  {String(
-                    r.recovery_type ||
-                      r.reason_normalized ||
-                      r.claim_type ||
-                      "—",
-                  ).replaceAll("_", " ")}
-                </td>
-                <td>{String(r.status || "—").replaceAll("_", " ")}</td>
-                <td className="text-right tabular-nums">
-                  {r.currency &&
-                  Number(r.amount_recovered ?? r.amount_at_risk) != null
-                    ? `${Number(r.amount_recovered ?? r.amount_at_risk).toFixed(2)} ${r.currency}`
-                    : "—"}
-                </td>
-                <td className="text-right">
-                  {formatDateTime(r.updated_at)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      {!rows.length ? <p>No records match this report slice.</p> : null}
+      <DataTableServer
+        rows={rows}
+        getRowKey={(row) => String(row.id)}
+        density="compact"
+        emptyState={
+          <EmptyState
+            variant="compact"
+            title="No matching records"
+            description="Try a broader report range or remove the active filter."
+          />
+        }
+        columns={[
+          {
+            key: "record",
+            header: "Record",
+            render: (row) => (
+              <Link
+                className="font-mono text-[var(--text-link)] hover:underline"
+                href={kind === "recovery" ? `/recoveries/${row.id}` : `/claims/${row.id}`}
+              >
+                {recordLabel(String(row.id))}
+              </Link>
+            ),
+          },
+          {
+            key: "type",
+            header: "Type",
+            render: (row) => humanizeRecordValue(row.recovery_type || row.reason_normalized || row.claim_type),
+          },
+          {
+            key: "status",
+            header: "State",
+            render: (row) => <StatusBadge family="workflowStatus" value={String(row.status ?? "unknown")} size="sm" />,
+          },
+          {
+            key: "amount",
+            header: "Amount",
+            align: "right" as const,
+            render: (row) => {
+              const amount = row.amount_recovered ?? row.amount_at_risk;
+              return row.currency && amount != null
+                ? <span className="tabular-nums">{Number(amount).toFixed(2)} {row.currency}</span>
+                : "—";
+            },
+          },
+          {
+            key: "updated",
+            header: "Updated",
+            align: "right" as const,
+            render: (row) => formatDateTime(String(row.updated_at)),
+          },
+        ]}
+      />
       <nav className="flex justify-between">
         {page > 1 ? (
           <Link

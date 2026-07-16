@@ -3,7 +3,7 @@
  * graph. Every query is merchant-scoped. Writes go through the validated
  * entity/relationship-type guards so the free-text columns stay honest.
  *
- * See docs/IMPL_source_agnostic_connected_ecosystem.md §2.3 and §8.
+ * See ARCHITECTURE.md §2.3 and §8.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/lib/supabase/tables';

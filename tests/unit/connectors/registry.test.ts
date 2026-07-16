@@ -6,6 +6,7 @@ import {
   launchVisibleConnectors,
 } from '@/lib/connectors/registry';
 import { ConnectorError } from '@/lib/connectors/errors';
+import { getIntegrationProvider } from '@/lib/integrations/registry';
 
 describe('connector registry', () => {
   it('resolves registered connectors by id', () => {
@@ -37,5 +38,20 @@ describe('connector registry', () => {
     const visible = launchVisibleConnectors().map((c) => c.manifest.id);
     expect(visible.every((id) => all.includes(id))).toBe(true);
     expect(all).toEqual(expect.arrayContaining(['shopify', 'gorgias', 'ups', 'fedex', 'shipbob', 'document_upload']));
+  });
+
+  it('derives shared provider metadata from the canonical integration registry', () => {
+    for (const connector of listConnectors()) {
+      const provider = getIntegrationProvider(connector.manifest.id);
+      expect(provider).not.toBeNull();
+      const sharedMetadata = {
+        id: provider?.id,
+        name: provider?.name,
+        category: provider?.category,
+        authMode: provider?.authMode,
+        ...(provider?.description ? { description: provider.description } : {}),
+      };
+      expect(connector.manifest).toMatchObject(sharedMetadata);
+    }
   });
 });

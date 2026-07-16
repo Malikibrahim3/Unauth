@@ -8,7 +8,7 @@
  * Email alone must never silently select the newest of several orders — it
  * yields `probable` for a single hit and `ambiguous` for many.
  *
- * See docs/IMPL_source_agnostic_connected_ecosystem.md §8.
+ * See ARCHITECTURE.md §8.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/lib/supabase/tables';

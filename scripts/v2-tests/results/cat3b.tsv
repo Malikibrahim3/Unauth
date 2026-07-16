@@ -1,8 +1,0 @@
-3.3 Gorgias webhook accepted (HTTP, corrected header)	2xx	HTTP 500 body:{"ok":false,"error":"ingest_failed"}	FAIL	x-unauth-gorgias-secret + dev merchant header
-3.3 source_tickets row created	1 row id=880001	0 rows (delta 0)	FAIL	
-3.3 source_customer_id linked via external_id	1	0	FAIL	
-3.3 helpdesk_contact_id signal emitted	>=1	0	FAIL	
-3.3 email signal emitted (ticket provenance)	>=1	0	FAIL	
-3.4 Gorgias no auth (detail)	401 or 4xx denial	HTTP 400 {"ok":false,"error":"gorgias_account_identity_required","rejection":{"has_ticket	PASS	request denied; code may be 400 identity-required before auth
-3.5 signal not duplicated on second call	1 then 1	first:1 second:1	PASS	ON CONFLICT DO NOTHING
-3.5 edge seen_count incremented not duplicated	1 row, 1→2	rows:1 seen:1→2	PASS	

@@ -2,7 +2,7 @@
 
 import type { GateRecommendation } from '@/lib/claim-gate/buildRecommendation';
 import { formatCurrency } from '@/lib/utils/format';
-import { PanelCard } from '@/components/ui';
+import { Card } from '@/components/ui';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 
 /**
@@ -14,12 +14,12 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 export function GateRecommendationPanel({ recommendation }: { recommendation: GateRecommendation | null }) {
   if (!recommendation) {
     return (
-      <PanelCard as="section" variant="app" className="p-4">
+      <Card unstyled as="section" variant="flat" className="p-4">
         <h3 className="text-body font-semibold" style={{ color: 'var(--text-primary)' }}>Recommendation</h3>
         <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
           No merchant rule matched this case yet. Review the evidence and record your decision.
         </p>
-      </PanelCard>
+      </Card>
     );
   }
 
@@ -28,7 +28,7 @@ export function GateRecommendationPanel({ recommendation }: { recommendation: Ga
   const availableRoutes = recommendation.recovery_routes.filter((route) => route.available);
 
   return (
-    <PanelCard as="section" variant="app" className="space-y-3 p-4">
+    <Card unstyled as="section" variant="flat" className="space-y-3 p-4">
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-body font-semibold" style={{ color: 'var(--text-primary)' }}>
           Review gate
@@ -126,6 +126,6 @@ export function GateRecommendationPanel({ recommendation }: { recommendation: Ga
           ))}
         </ul>
       )}
-    </PanelCard>
+    </Card>
   );
 }

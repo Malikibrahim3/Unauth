@@ -36,47 +36,47 @@ export async function GET() {
       serviceClient
         .from(TABLES.AUDIT_TRANSACTIONS)
         .select('id', { count: 'exact', head: true })
-        .eq('shop_domain', storeKey)
+        .eq('merchant_id', ctx.merchantId)
         .eq('source', 'woocommerce'),
       serviceClient
         .from(TABLES.AUDIT_TRANSACTIONS)
         .select('processed_at')
-        .eq('shop_domain', storeKey)
+        .eq('merchant_id', ctx.merchantId)
         .eq('source', 'woocommerce')
         .order('processed_at', { ascending: false })
         .limit(1)
         .maybeSingle(),
       serviceClient
         .from('processed_webhooks' as never)
-        .select('created_at,topic,status')
-        .eq('platform', 'woocommerce')
+        .select('processed_at,topic,status')
+        .eq('provider', 'woocommerce')
         .eq('store_key', storeKey)
-        .order('created_at', { ascending: false })
+        .order('processed_at', { ascending: false })
         .limit(1)
         .maybeSingle(),
       serviceClient
         .from('processed_webhooks' as never)
         .select('status', { count: 'exact', head: true })
-        .eq('platform', 'woocommerce')
+        .eq('provider', 'woocommerce')
         .eq('store_key', storeKey)
         .eq('status', 'failed'),
       serviceClient
         .from('processed_webhooks' as never)
-        .select('created_at,topic,status')
-        .eq('platform', 'woocommerce')
+        .select('processed_at,topic,status')
+        .eq('provider', 'woocommerce')
         .eq('store_key', storeKey)
-        .order('created_at', { ascending: false })
+        .order('processed_at', { ascending: false })
         .limit(5),
     ]);
 
   const lastAudit = lastAuditResult.data as { processed_at?: string } | null;
   const lastWebhook = webhookResult.data as {
-    created_at?: string;
+    processed_at?: string;
     topic?: string | null;
     status?: string | null;
   } | null;
   const recentWebhooks = (recentWebhooksResult.data ?? []) as Array<{
-    created_at: string;
+    processed_at: string;
     topic: string | null;
     status: string | null;
   }>;
@@ -86,14 +86,14 @@ export async function GET() {
     storeKey,
     storeDomain: storeKey,
     lastOrderSyncedAt: lastAudit?.processed_at ?? null,
-    lastWebhookAt: lastWebhook?.created_at ?? null,
+    lastWebhookAt: lastWebhook?.processed_at ?? null,
     lastWebhookTopic: lastWebhook?.topic ?? null,
     lastWebhookStatus: lastWebhook?.status ?? null,
     auditTransactionCount: auditCountResult.count ?? 0,
     lastError: connection.lastError,
     webhookFailures: webhookHealthResult.count ?? 0,
     recentWebhooks: recentWebhooks.map((row) => ({
-      at: row.created_at,
+      at: row.processed_at,
       topic: row.topic,
       status: row.status ?? 'received',
     })),

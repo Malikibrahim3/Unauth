@@ -59,7 +59,8 @@ const SALTED_TYPES = new Set([
 ]);
 
 const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
-const SIMEON_MERCHANT = 'af070af9-df1a-46ba-89f8-29409926ef61';
+const SIMEON_MERCHANT = process.env.E2E_MERCHANT_ID;
+if (!SIMEON_MERCHANT) throw new Error('E2E_MERCHANT_ID is required');
 const log = (...a) => console.log(...a);
 
 async function pageAll(table, select, tweak) {

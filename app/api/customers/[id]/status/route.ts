@@ -1,10 +1,8 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
-import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
 import { fetchMerchantScopedCustomerProfile } from '@/lib/supabase/merchantHelpers';
-import { writeActivityLog } from '@/lib/customers/activityLog';
 import { NextRequest, NextResponse } from 'next/server';
 import { withRequestLogging } from '@/lib/log';
 
@@ -25,7 +23,6 @@ async function PATCHHandler(
   const serviceClient = createServiceClient();
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.UPDATE_CUSTOMER_STATUS);
   if (denied) return denied;
-  const scopedClient = createScopedClient(ctx.merchantId, serviceClient);
 
   let body: { status: string };
   try {
@@ -57,13 +54,16 @@ async function PATCHHandler(
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  const previousStatus = (profile.investigation_status as string | undefined) ?? 'new';
-
   const { data, error } = await serviceClient
-    .from(TABLES.CUSTOMER_PROFILES)
-    .update({ investigation_status: body.status })
-    .eq('id', resolvedParams.id)
-    .select('id, investigation_status')
+    .from(TABLES.MERCHANT_IDENTITY_STATE)
+    .upsert({
+      merchant_id: ctx.merchantId,
+      identity_id: resolvedParams.id,
+      investigation_status: body.status,
+      updated_by: user.id,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'merchant_id,identity_id' })
+    .select('identity_id, investigation_status')
     .single();
 
   if (error) {
@@ -79,15 +79,10 @@ async function PATCHHandler(
     ip,
   });
 
-  await writeActivityLog({
-    supabase: scopedClient,
-    profileId: resolvedParams.id,
-    merchantId: ctx.merchantId,
-    eventType: 'status_changed',
-    eventData: { from: previousStatus, to: body.status },
+  return NextResponse.json({
+    id: data.identity_id,
+    investigation_status: data.investigation_status,
   });
-
-  return NextResponse.json(data);
 }
 
 export const PATCH = withRequestLogging('/api/customers/[id]/status', PATCHHandler);

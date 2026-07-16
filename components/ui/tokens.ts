@@ -94,11 +94,11 @@ export const uiTokens = {
   },
   app: {
     card:
-      'rounded-[var(--radius-lg)] border bg-[var(--surface)] shadow-[var(--shadow-md)]',
+      'rounded-[var(--ua-radius-card)] border bg-[var(--surface)] shadow-none',
     cardMuted:
-      'rounded-[var(--radius-lg)] border bg-[var(--surface-sunken)] shadow-none',
+      'rounded-[var(--ua-radius-card)] border bg-[var(--surface-sunken)] shadow-none',
     cardInset:
-      'rounded-[var(--radius-md)] border bg-[var(--surface-sunken)]',
+      'rounded-[var(--ua-radius-card)] border bg-[var(--surface-sunken)]',
     border: 'border-[var(--border)]',
     borderMuted: 'border-[var(--border-muted)]',
     eyebrow:

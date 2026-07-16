@@ -1,118 +1,42 @@
 # Unauth
 
-Unauth is a post-purchase loss accountability platform for ecommerce merchants.
+Unauth is a source-agnostic post-purchase payout-control, loss, and recovery platform for ecommerce merchants.
 
-> Control payouts. Recover where possible. Prevent where not.
+It brings commerce, helpdesk, fulfillment, payment, and manually imported records into one merchant-scoped operational model. Unauth explains payout exposure, applies merchant-owned rules, records evidence and decisions, attributes losses, and manages recoveries. The merchant always controls the outcome.
 
-The MVP is a Shopify/Gorgias payout-control workflow: support payout cases, a compressed Gorgias decision card, evidence checklist, merchant rules, attribution/recoverability, manual recovery cases, recovery board, and operational dashboards.
+The signed-in product is organized around **Overview**, **Work**, **Payout Control**, **Losses**, **Recovery**, **Customers**, **Rules and Flows**, **Reports**, **Integrations**, and **Settings**. Provider-specific integrations feed the same cases, records, timeline, and financial ledger; no provider defines the product model.
 
-**Product source of truth:** [`docs/product/MVP_STEERING.md`](docs/product/MVP_STEERING.md)
+## Local development
 
-Merchant rules make recommendations. Unauth surfaces evidence, payout exposure, attribution, recoverability, and next actions — the merchant remains responsible for the final outcome.
-
-## Current product surface
-
-- Support payout case queue (claims) for active and historical post-purchase loss cases.
-- Gorgias 4-line decision widget and Shopify connection paths for ticket, order, and fulfillment context.
-- Merchant-owned rules with operational recommendations (approve, ask for evidence, manual review, deny under policy, open recovery).
-- Evidence checklist and evidence records for payout and recovery review.
-- Loss attribution, recoverability classification, and recovery cases with recovery board.
-- Partner rulebook for carrier/3PL/supplier recoverability rules.
-- Outcome recording and audit trail for support decisions.
-- Dashboard metrics for payout exposure, recovery, prevention, and policy leakage.
-- Legacy customer profiles and pattern context where already integrated (not the primary product story).
-
-## Fraud signal reference
-
-The canonical fraud signals and their weights are generated from the engine constants:
-
-<!-- signals-table:start -->
-| Signal | Weight | What it detects |
-| --- | ---: | --- |
-| `refundRate` | 20 | Customer refund rate vs population baseline |
-| `inrAbuse` | 25 | Repeated INR claims |
-| `velocity` | 18 | Burst ordering across 1h / 24h / 7d windows |
-| `inrSpeed` | 10 | INR timing inconsistent with confirmed delivery |
-| `postDeliveryClaimRate` | 22 | Rate of INR claims filed after confirmed delivery |
-| `emailPattern` | 8 | Disposable or aliased email patterns |
-| `addressClustering` | 9 | Multiple emails shipping to the same address |
-| `billingAddressClustering` | 9 | Multiple emails linked through billing-address dispute history |
-| `billingAddressClusteringActive` | 9 | Billing-address chargeback cluster with current dispute behavior |
-| `valueAnomaly` | 5 | Order value far outside the customer's norm |
-| `paymentChurn` | 15 | Tight-window payment-method churn |
-| `refundPattern` | 20 | Historical refund-pattern intelligence |
-| `crossMerchant` | 24 | Cross-network refund or INR history (k-anon >=3) |
-| `disputeHistory` | 40 | Prior disputes, refund requests, or return requests |
-| `addressMismatch` | 4 | Billing and shipping address mismatch |
-| `networkDeviceLink` | 15 | Shared device or network identifier linked to a known fraud cluster |
-| `networkDeviceLinkActive` | 25 | Shared device or network identifier plus active current-order dispute evidence |
-<!-- signals-table:end -->
-
-## What Unauth does not do today
-
-- It does not automatically approve, deny, refund, or close claims.
-- It does not expose order-blocking tools as a merchant product.
-- It does not automate refunds or claim resolution.
-- It does not license raw or identifiable customer data to banks or institutions.
-- It does not share cross-merchant plaintext PII with merchants.
-- It does not position machine learning or an AI classifier as the production decision engine.
-- It does not use manual file uploads or free batch audits as the current merchant onboarding path.
-
-## Running locally
-
-### Prerequisites
-
-- Node.js 18+
-- A Supabase project
-
-### 1. Install dependencies
+Requirements: Node.js 22, npm, and a Supabase project.
 
 ```bash
 npm install
-```
-
-### 2. Configure environment
-
-Copy `.env.local.example` to `.env.local` and fill in:
-
-```bash
-NEXT_PUBLIC_SUPABASE_URL=<your supabase url>
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<your anon key>
-SUPABASE_SERVICE_ROLE_KEY=<your service role key>
-IDENTITY_SALT=<64+ random hex chars>
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-```
-
-Generate a salt:
-
-```bash
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-```
-
-For a full local, GitHub, and Vercel setup checklist, see [ENV_SETUP.md](/Users/malikibrahim/Downloads/Unauth/ENV_SETUP.md).
-
-### 3. Apply database migrations
-
-Run the SQL in `supabase/migrations/` against your Supabase project via the SQL editor or `supabase db push`.
-
-### 4. Start the dev server
-
-```bash
+cp .env.local.example .env.local
 npm run dev
 ```
 
-Visit `http://localhost:3000` and sign in with magic link.
+Fill in the required values documented in `.env.local.example`. Apply the ordered migrations in `supabase/migrations/` with the Supabase CLI or your normal deployment process. Never edit an already-applied migration; add a new forward migration.
 
-### 5. Run tests
+## Validation
 
 ```bash
-npm test
+npm run typecheck
+npm run lint
+npm run lint:authenticated-design
+npm test -- --runInBand
+npm run build
 ```
 
-## Privacy and legacy context
+Browser tests require an isolated non-production environment and explicit test credentials. See [`docs/TESTING.md`](docs/TESTING.md).
 
-Unauth keeps merchant-scoped raw records inside the merchant's own workspace. Legacy identity/pattern context may exist in the codebase but is not the primary MVP product story. See [`docs/product/TERMINOLOGY.md`](docs/product/TERMINOLOGY.md) for preferred language.
+## Documentation
 
-## Legacy and internal assets
+- [`ARCHITECTURE.md`](ARCHITECTURE.md) — system boundaries and canonical contracts
+- [`docs/PRODUCT.md`](docs/PRODUCT.md) — product model and terminology
+- [`docs/CONNECTORS.md`](docs/CONNECTORS.md) — provider capabilities and lifecycle
+- [`docs/OPERATIONS.md`](docs/OPERATIONS.md) — environments, migrations, deployment, and rollback
+- [`docs/SECURITY.md`](docs/SECURITY.md) — security invariants and outstanding rotations
+- [`docs/TESTING.md`](docs/TESTING.md) — local, integration, and browser validation
 
-This repository still contains legacy ingestion, synthetic evaluation, and historical audit code used by tests, internal analysis, or previously imported merchant data. Those paths should not be treated as the current merchant-facing product unless a route or component explicitly exposes them in the app.
+The authenticated design system lives in [`styles/authenticated/README.md`](styles/authenticated/README.md).

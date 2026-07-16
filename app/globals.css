@@ -207,11 +207,6 @@
     --warning-bg:       #F7F0DA;
     --warning-bd:       #E5D194;
 
-    /* ── Watchlist ── */
-    --watchlist:        #0F6B6B;
-    --watchlist-bg:     #E2F1F0;
-    --watchlist-bd:     #A9D5D2;
-
     /* ── Focus & shadow base ── */
     --focus-ring:       var(--brand-rust);
     --shadow-color:     25 15% 11%;
@@ -273,11 +268,6 @@
     --evidence-weak-fg:   var(--risk-high-fg);
     --evidence-weak-bg:   var(--risk-high-bg);
     --evidence-weak-line: var(--risk-high-line);
-
-    /* Watchlist trend direction */
-    --watchlist-trend-up:   var(--risk-critical-fg);
-    --watchlist-trend-down: var(--risk-low-fg);
-    --watchlist-trend-flat: var(--text-tertiary);
 
     /* ── Legacy shadcn compat aliases ── */
     --background:          var(--bg-canvas);
@@ -650,8 +640,6 @@
     --local-soft:       #EEF1F6;
     --local-border:     #D5DCE6;
 
-    --watchlist:        #0E7490; --watchlist-bg: #E6F4F8; --watchlist-bd: #BCDFE9;
-
     /* Severity / Confidence grade compat (map to the existing grade system) */
     --sev-definite:      #18794E; --sev-definite-fill: #E9F6EF;
     --sev-probable:      #AB6400; --sev-probable-fill: #FBF1E2;
@@ -852,10 +840,6 @@
     --warning:    var(--sev-probable);
     --warning-bg: var(--sev-probable-fill);
     --warning-bd: color-mix(in srgb, var(--sev-probable) 42%, transparent);
-    --watchlist:    var(--privacy-ink);
-    --watchlist-bg: var(--privacy-fill);
-    --watchlist-bd: var(--privacy-border);
-
     --focus-ring: var(--action-primary);
     --icon:       var(--ink-secondary);
     --icon-muted: var(--ink-tertiary);
@@ -1150,7 +1134,6 @@
 /* ── Hover utilities (safe for Server Components — no JS handlers needed) ── */
 .hover-bg-subtle:hover  { background: var(--bg-subtle); }
 .hover-bg-canvas:hover  { background: var(--bg-canvas); }
-.hover-bg-watchlist:hover { background: color-mix(in srgb, var(--watchlist) 8%, transparent); }
 .btn-accent             { background: var(--accent); color: var(--ink-inverse); border: 1px solid var(--accent); }
 .btn-accent:hover       { background: var(--accent-hover); }
 .btn-ghost              { color: var(--text); }

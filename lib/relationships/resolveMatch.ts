@@ -7,7 +7,7 @@
  * original candidate evidence is never overwritten, so a later reversal can see
  * exactly what was decided.
  *
- * See docs/IMPL_source_agnostic_connected_ecosystem.md §8.
+ * See ARCHITECTURE.md §8.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/lib/supabase/tables';

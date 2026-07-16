@@ -135,7 +135,7 @@ export function baseTooltip(t: ThemeTokens) {
     borderColor: t.surface_border,
     borderWidth: 1,
     textStyle: { color: t.ink_primary, fontSize: 12, fontFamily: 'inherit' },
-    extraCssText: 'box-shadow: var(--shadow-md); border-radius: var(--radius-md);',
+    extraCssText: 'box-shadow: var(--ua-shadow-overlay); border-radius: var(--ua-radius-overlay);',
   };
 }
 

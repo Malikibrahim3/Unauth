@@ -26,7 +26,7 @@ export default async function GorgiasIntegrationPage() {
       subtitle="Show payout case context, evidence gaps, and recommendations on support tickets."
       breadcrumbs={[
         { label: 'Settings', href: '/settings/account' },
-        { label: 'Integrations', href: '/settings/integrations' },
+        { label: 'Integrations', href: '/integrations' },
         { label: 'Gorgias' },
       ]}
     >

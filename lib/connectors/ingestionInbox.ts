@@ -10,7 +10,7 @@
  *
  * Reads are service-role only (raw payloads are never merchant-readable).
  *
- * See docs/IMPL_source_agnostic_connected_ecosystem.md §2.1 / §7.1.
+ * See ARCHITECTURE.md §2.1 / §7.1.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createHash } from 'crypto';

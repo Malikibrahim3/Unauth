@@ -1,6 +1,6 @@
 'use client';
 
-import { PanelCard } from '@/components/ui';
+import { Card } from '@/components/ui';
 import { CLAIM_TYPE_LABELS } from '@/components/claims/claimReviewLabels';
 import { formatOrderOption } from '@/components/claims/claimReviewLogic';
 import { inputStyle } from '@/components/claims/claimReviewStyles';
@@ -20,10 +20,10 @@ export function ClaimReviewFormSection({ wb }: { wb: ClaimReviewWorkbench }) {
   } = wb;
 
   return (
-    <PanelCard
+    <Card unstyled
       id="source-case-details"
       as="section"
-      variant="app"
+      variant="flat"
       className="order-3 min-w-0 overflow-hidden p-0 min-[1100px]:col-start-1 min-[1100px]:row-start-2"
     >
       <button
@@ -36,9 +36,9 @@ export function ClaimReviewFormSection({ wb }: { wb: ClaimReviewWorkbench }) {
       </button>
       {claimFormOpen && (
         <div className="px-4 pb-4 pt-0 border-t space-y-3" style={{ borderColor: 'var(--border-muted)' }}>
-          <PanelCard variant="appInset" className="px-3 py-2 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+          <Card unstyled variant="inset" className="px-3 py-2 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
             Case facts are created from connected order, helpdesk, payment, returns, carrier, warehouse, or correspondence sources. Missing data stays marked unavailable until a connector or matched source record supplies it.
-          </PanelCard>
+          </Card>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {shops.length > 0 && (
               <div>
@@ -60,9 +60,9 @@ export function ClaimReviewFormSection({ wb }: { wb: ClaimReviewWorkbench }) {
                   {orderOptions.map((o) => <option key={o.id} value={o.id}>{formatOrderOption(o)}</option>)}
                 </select>
               ) : (
-                <PanelCard id="claim-order" variant="appInset" className="px-2 py-1.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                <Card unstyled id="claim-order" variant="inset" className="px-2 py-1.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
                   No connected order record is available for this context.
-                </PanelCard>
+                </Card>
               )}
             </div>
             <div>
@@ -86,6 +86,6 @@ export function ClaimReviewFormSection({ wb }: { wb: ClaimReviewWorkbench }) {
           </div>
         </div>
       )}
-    </PanelCard>
+    </Card>
   );
 }

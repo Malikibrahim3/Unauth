@@ -19,6 +19,10 @@ type BaseMapInput = {
   now?: string;
 };
 
+type ProviderMapInput = BaseMapInput & {
+  sourceProvider: string;
+};
+
 function createEvidence(input: BaseMapInput & {
   sourceProvider: string;
   sourceCategory?: IntegrationCategory;
@@ -138,16 +142,16 @@ export function mapShipBobFulfillmentToEvidence(
   return items;
 }
 
-export function mapGorgiasTicketToEvidence(
+export function mapSupportTicketToEvidence(
   ticket: Record<string, any> | null | undefined,
-  input: BaseMapInput,
+  input: ProviderMapInput,
 ): NormalizedEvidenceItem[] {
   if (!ticket) return [];
   const items: NormalizedEvidenceItem[] = [];
-  const subject = firstString(ticket.subject, ticket.external_id) ?? 'Gorgias ticket';
+  const providerName = getIntegrationProvider(input.sourceProvider)?.name ?? 'Helpdesk';
+  const subject = firstString(ticket.subject, ticket.external_id) ?? `${providerName} ticket`;
   items.push(createEvidence({
     ...input,
-    sourceProvider: 'gorgias',
     evidenceType: 'ticket_messages',
     title: 'Support ticket on file',
     summary: subject,
@@ -158,7 +162,6 @@ export function mapGorgiasTicketToEvidence(
   if (ticket.reason_raw || ticket.reason_normalized) {
     items.push(createEvidence({
       ...input,
-      sourceProvider: 'gorgias',
       evidenceType: 'customer_claim_reason',
       title: 'Customer claim reason',
       summary: firstString(ticket.reason_normalized, ticket.reason_raw) ?? 'Claim reason captured from helpdesk',
@@ -170,16 +173,16 @@ export function mapGorgiasTicketToEvidence(
   return items;
 }
 
-export function mapShopifyOrderToEvidence(
+export function mapCommerceOrderToEvidence(
   order: Record<string, any> | null | undefined,
-  input: BaseMapInput,
+  input: ProviderMapInput,
 ): NormalizedEvidenceItem[] {
   if (!order) return [];
-  const title = order.order_number ? `Shopify order ${order.order_number}` : 'Shopify order';
+  const providerName = getIntegrationProvider(input.sourceProvider)?.name ?? 'Commerce';
+  const title = order.order_number ? `${providerName} order ${order.order_number}` : `${providerName} order`;
   const items: NormalizedEvidenceItem[] = [
     createEvidence({
       ...input,
-      sourceProvider: 'shopify',
       evidenceType: 'order_value',
       title,
       summary: order.total_price != null ? `Order value ${order.currency ?? ''} ${order.total_price}`.trim() : 'Order value captured',
@@ -202,13 +205,12 @@ export function mapShopifyOrderToEvidence(
   return items;
 }
 
-export function mapShopifyRefundToEvidence(
+export function mapCommerceRefundToEvidence(
   refund: Record<string, any>,
-  input: BaseMapInput,
+  input: ProviderMapInput,
 ): NormalizedEvidenceItem {
   return createEvidence({
     ...input,
-    sourceProvider: 'shopify',
     evidenceType: 'refund_history',
     title: 'Refund history',
     summary: refund.amount != null ? `Refund ${refund.currency ?? ''} ${refund.amount}`.trim() : 'Refund record found',
@@ -218,18 +220,17 @@ export function mapShopifyRefundToEvidence(
   });
 }
 
-export function mapShopifyFulfillmentToEvidence(
+export function mapCommerceFulfillmentToEvidence(
   fulfillment: Record<string, any>,
-  input: BaseMapInput,
+  input: ProviderMapInput,
 ): NormalizedEvidenceItem[] {
   const trackingNumber = firstString(fulfillment.tracking_number);
   const items: NormalizedEvidenceItem[] = [];
   if (trackingNumber) {
     items.push(createEvidence({
       ...input,
-      sourceProvider: 'shopify',
       evidenceType: 'tracking_number',
-      title: 'Tracking number from Shopify fulfillment',
+      title: `Tracking number from ${getIntegrationProvider(input.sourceProvider)?.name ?? 'commerce'} fulfillment`,
       summary: `${fulfillment.tracking_company ?? 'Carrier'} ${trackingNumber}`.trim(),
       value: trackingNumber,
       occurredAt: firstDate(fulfillment.occurred_at, fulfillment.updated_at_source),

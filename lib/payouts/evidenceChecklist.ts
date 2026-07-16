@@ -81,7 +81,7 @@ function probeReason(key: string, state: EvidenceItemState, delivery: ClaimDecis
   }
   if (state === 'not_tracked') return 'Not currently captured by your connected sources';
   if (key === 'tracking' && delivery?.trackingGap === 'no_tracking_number') {
-    return 'No tracking number on Shopify order';
+    return 'No tracking number on the source order';
   }
   if (key === 'delivery_status_known' && delivery?.trackingGap === 'provider_not_connected') {
     return 'Tracking provider not connected';

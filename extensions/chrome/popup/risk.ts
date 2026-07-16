@@ -28,17 +28,17 @@ function formatClaimDate(iso: string | null): string {
 
 /** One-line factual claims record: counts, amount, date, and explicit source. */
 export function claimsLine(claims: LookupResponse['claims_record']): string {
+  if (claims.source !== 'your_store') return 'No merchant-owned payout history found';
   const refunds = claims?.refunds ?? 0;
   const chargebacks = claims?.chargebacks ?? 0;
-  if (refunds + chargebacks === 0) return 'No prior claims on record';
-  const src = claims.source === 'network' ? 'across network' : 'your store';
+  if (refunds + chargebacks === 0) return 'No prior payouts on record';
   const parts: string[] = [];
   if (refunds > 0) parts.push(`${refunds} ${refunds === 1 ? 'refund' : 'refunds'}`);
   if (chargebacks > 0) parts.push(`${chargebacks} ${chargebacks === 1 ? 'chargeback' : 'chargebacks'}`);
   if (claims.refund_value != null) parts.push(`$${claims.refund_value.toLocaleString()} at your store`);
   const date = formatClaimDate(claims.last_claim_at);
   if (date) parts.push(`last ${date}`);
-  return `${parts.join(' · ')} — ${src}`;
+  return parts.join(' · ');
 }
 
 export function maskApiKey(key: string): string {

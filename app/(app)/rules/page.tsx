@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import {
@@ -84,14 +85,22 @@ export default async function RulesPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-6">
-      <header>
-        <p className="text-sm text-[var(--text-secondary)]">Configuration</p>
-        <h1 className="mt-1 text-2xl font-semibold">Rules</h1>
-        <p className="mt-1 max-w-3xl text-sm text-[var(--text-secondary)]">
-          Compose readable payout policy, simulate sample cases, review
-          conflicts and impact, then publish an immutable version.
-          Recommendations remain non-binding.
-        </p>
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="text-sm text-[var(--text-secondary)]">Configuration</p>
+          <h1 className="mt-1 text-2xl font-semibold">Rules</h1>
+          <p className="mt-1 max-w-3xl text-sm text-[var(--text-secondary)]">
+            Compose readable payout policy, simulate sample cases, review
+            conflicts and impact, then publish an immutable version.
+            Recommendations remain non-binding.
+          </p>
+        </div>
+        <Link
+          href="/rules/recovery"
+          className="rounded-md border border-[var(--border)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)]"
+        >
+          Recovery rules
+        </Link>
       </header>
       <RulesIndexClient rules={rules} canManage={canManage} />
     </div>

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { PanelCard } from "@/components/ui";
+import { Card } from "@/components/ui";
 import {
   PLANS,
   TOP_UP_CREDITS,
@@ -148,8 +148,8 @@ export default function BillingSettingsClient() {
   return (
     <div className="mx-auto max-w-2xl space-y-8 p-6">
       {toast && (
-        <PanelCard
-          variant="app"
+        <Card unstyled
+          variant="flat"
           className="px-4 py-3 text-sm"
           style={{
             borderColor:
@@ -159,12 +159,12 @@ export default function BillingSettingsClient() {
           role="status"
         >
           {toast.message}
-        </PanelCard>
+        </Card>
       )}
 
       {state.status === "grace_period" && (
-        <PanelCard
-          variant="app"
+        <Card unstyled
+          variant="flat"
           className="px-4 py-3 text-sm"
           style={{
             borderColor: "var(--risk-high)",
@@ -188,12 +188,12 @@ export default function BillingSettingsClient() {
           >
             Update billing
           </button>
-        </PanelCard>
+        </Card>
       )}
 
       {state.status === "past_due" && (
-        <PanelCard
-          variant="app"
+        <Card unstyled
+          variant="flat"
           className="px-4 py-3 text-sm"
           style={{
             borderColor: "var(--risk-high)",
@@ -210,7 +210,7 @@ export default function BillingSettingsClient() {
             Resubscribe
           </button>{" "}
           to restore Pro/Growth features.
-        </PanelCard>
+        </Card>
       )}
 
       <section>
@@ -222,7 +222,7 @@ export default function BillingSettingsClient() {
         </p>
       </section>
 
-      <PanelCard as="section" variant="app" className="p-5">
+      <Card unstyled as="section" variant="flat" className="p-5">
         <h2 className="text-sm font-semibold text-[var(--text-primary)]">
           Current plan
         </h2>
@@ -246,9 +246,9 @@ export default function BillingSettingsClient() {
             to Free after that.
           </p>
         )}
-      </PanelCard>
+      </Card>
 
-      <PanelCard as="section" variant="app" className="p-5">
+      <Card unstyled as="section" variant="flat" className="p-5">
         <h2 className="text-sm font-semibold text-[var(--text-primary)]">
           Network credits this cycle
         </h2>
@@ -288,9 +288,9 @@ export default function BillingSettingsClient() {
             Top up — ${TOP_UP_PRICE_GBP} for {TOP_UP_CREDITS} credits
           </button>
         )}
-      </PanelCard>
+      </Card>
 
-      <PanelCard as="section" variant="app" className="space-y-3 p-5">
+      <Card unstyled as="section" variant="flat" className="space-y-3 p-5">
         <h2 className="text-sm font-semibold text-[var(--text-primary)]">
           Change plan
         </h2>
@@ -346,9 +346,9 @@ export default function BillingSettingsClient() {
             onClick={() => void runAction("contact_scale")}
           />
         )}
-      </PanelCard>
+      </Card>
 
-      <PanelCard as="section" variant="app" className="space-y-3 p-5">
+      <Card unstyled as="section" variant="flat" className="space-y-3 p-5">
         <h2 className="text-sm font-semibold text-[var(--text-primary)]">
           Payment method
         </h2>
@@ -371,7 +371,7 @@ export default function BillingSettingsClient() {
                 Cancel plan
               </button>
             ) : (
-              <PanelCard variant="appInset" className="p-3 text-sm">
+              <Card unstyled variant="inset" className="p-3 text-sm">
                 <p>
                   You&apos;ll keep access until{" "}
                   {formatDateTime(state.currentPeriodEnd)}, then move to Free.
@@ -394,7 +394,7 @@ export default function BillingSettingsClient() {
                     Keep plan
                   </button>
                 </div>
-              </PanelCard>
+              </Card>
             )}
           </>
         )}
@@ -408,7 +408,7 @@ export default function BillingSettingsClient() {
             Resume subscription
           </button>
         )}
-      </PanelCard>
+      </Card>
     </div>
   );
 }
@@ -481,15 +481,15 @@ function BillingSettingsSkeleton() {
       </section>
 
       {/* Current plan */}
-      <PanelCard as="section" variant="app" className="space-y-3 p-5">
+      <Card unstyled as="section" variant="flat" className="space-y-3 p-5">
         <SkeletonBlock className="h-4 w-24" />
         <SkeletonBlock className="h-8 w-32" />
         <SkeletonBlock className="h-4 w-20" />
         <SkeletonBlock className="h-3 w-48" />
-      </PanelCard>
+      </Card>
 
       {/* Credits */}
-      <PanelCard as="section" variant="app" className="space-y-3 p-5">
+      <Card unstyled as="section" variant="flat" className="space-y-3 p-5">
         <SkeletonBlock className="h-4 w-48" />
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
@@ -502,20 +502,20 @@ function BillingSettingsSkeleton() {
           </div>
         </div>
         <SkeletonBlock className="h-3 w-56" />
-      </PanelCard>
+      </Card>
 
       {/* Change plan */}
-      <PanelCard as="section" variant="app" className="space-y-3 p-5">
+      <Card unstyled as="section" variant="flat" className="space-y-3 p-5">
         <SkeletonBlock className="h-4 w-28" />
         <SkeletonBlock className="h-9 w-full" />
         <SkeletonBlock className="h-9 w-full" />
-      </PanelCard>
+      </Card>
 
       {/* Payment */}
-      <PanelCard as="section" variant="app" className="space-y-3 p-5">
+      <Card unstyled as="section" variant="flat" className="space-y-3 p-5">
         <SkeletonBlock className="h-4 w-36" />
         <SkeletonBlock className="h-4 w-48" />
-      </PanelCard>
+      </Card>
     </div>
   );
 }

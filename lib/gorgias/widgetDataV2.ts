@@ -216,7 +216,7 @@ export async function buildGorgiasClaimWidgetDataV2(
     if ((ownSignals?.length ?? 0) > 0 && member?.identity_id) {
       const { data: idRow } = await service
         .from('identities')
-        .select('id, confidence_grade, merchant_count, total_orders, total_claims, claim_rate, last_seen_at')
+        .select('id, confidence_grade, merchant_count, last_seen_at')
         .eq('id', params.linkedIdentityId)
         .is('superseded_by', null)
         .maybeSingle();
@@ -232,9 +232,9 @@ export async function buildGorgiasClaimWidgetDataV2(
           identity_id: idRow.id as string,
           confidence_grade: idRow.confidence_grade as string,
           merchant_count: profile?.merchant_count ?? idRow.merchant_count,
-          total_orders: profile?.total_orders ?? idRow.total_orders,
-          total_claims: profile?.total_claims ?? idRow.total_claims,
-          claim_rate: profile?.claim_rate ?? idRow.claim_rate,
+          total_orders: profile?.total_orders ?? 0,
+          total_claims: profile?.total_claims ?? 0,
+          claim_rate: profile?.claim_rate ?? 0,
           last_seen_at: profile?.last_seen_at ?? idRow.last_seen_at,
           claim_type_counts: (profile?.claim_type_counts as Record<string, number> | null) ?? null,
         };

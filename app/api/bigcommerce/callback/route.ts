@@ -18,7 +18,7 @@ import { backfillBigCommerceOrders } from '@/lib/commerce/bigcommerce/backfill';
 import { TABLES } from '@/lib/supabase/tables';
 import { safeConnectionErrorCode } from '@/lib/integrations/publicErrors';
 
-const INTEGRATIONS_PATH = '/settings/integrations/bigcommerce';
+const INTEGRATIONS_PATH = '/integrations/bigcommerce';
 
 function integrationsRedirect(params: Record<string, string>): NextResponse {
   const appUrl = getAppUrl();

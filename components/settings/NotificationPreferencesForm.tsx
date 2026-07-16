@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Bell, MailX } from "lucide-react";
-import { PanelCard } from "@/components/ui";
+import { Card } from "@/components/ui";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import type { NotificationKind } from "@/lib/collaboration/notificationPreferences";
 
@@ -100,7 +100,7 @@ export function NotificationPreferencesForm({ initial }: { initial: Pref[] }) {
 
   return (
     <div className="space-y-5">
-      <PanelCard variant="appInset" className="flex items-start gap-3 p-4">
+      <Card unstyled variant="inset" className="flex items-start gap-3 p-4">
         <Bell className="mt-0.5 h-4 w-4 text-[var(--accent)]" />
         <div>
           <h2 className="text-sm font-semibold">In-app delivery</h2>
@@ -108,7 +108,7 @@ export function NotificationPreferencesForm({ initial }: { initial: Pref[] }) {
             Choose which case updates appear in your notification inbox.
           </p>
         </div>
-      </PanelCard>
+      </Card>
       <p
         aria-live="polite"
         className="min-h-5 text-sm text-[var(--text-secondary)]"
@@ -124,9 +124,9 @@ export function NotificationPreferencesForm({ initial }: { initial: Pref[] }) {
           };
           const isSaving = saving === item.kind;
           return (
-            <PanelCard
+            <Card unstyled
               key={item.kind}
-              variant="app"
+              variant="flat"
               className="flex items-start justify-between gap-4 p-4"
             >
               <div>
@@ -159,11 +159,11 @@ export function NotificationPreferencesForm({ initial }: { initial: Pref[] }) {
                   style={{ left: pref.in_app_enabled ? 22 : 2 }}
                 />
               </button>
-            </PanelCard>
+            </Card>
           );
         })}
       </div>
-      <PanelCard variant="app" className="flex items-start gap-3 p-4">
+      <Card unstyled variant="flat" className="flex items-start gap-3 p-4">
         <MailX className="mt-0.5 h-4 w-4 text-[var(--text-tertiary)]" />
         <div>
           <h2 className="text-sm font-semibold">
@@ -174,7 +174,7 @@ export function NotificationPreferencesForm({ initial }: { initial: Pref[] }) {
             active in the meantime.
           </p>
         </div>
-      </PanelCard>
+      </Card>
     </div>
   );
 }

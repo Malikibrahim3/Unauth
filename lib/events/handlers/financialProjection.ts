@@ -9,7 +9,7 @@
  *
  * Mixed currencies are never summed together — the summary is keyed by currency.
  *
- * See docs/IMPL_source_agnostic_connected_ecosystem.md §6 and §4 (ledger rules).
+ * See ARCHITECTURE.md §6 and §4 (ledger rules).
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/lib/supabase/tables';

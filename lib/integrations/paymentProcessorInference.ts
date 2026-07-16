@@ -17,14 +17,6 @@ function gatewayToProcessor(gateway: string): InferredPaymentProcessor | null {
   return 'other';
 }
 
-function gatewaysFromJson(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  return value.flatMap((entry) => {
-    const gateway = typeof entry === 'string' ? entry.trim() : '';
-    return gateway ? [gateway] : [];
-  });
-}
-
 function topProcessor(counts: Map<InferredPaymentProcessor, number>): InferredPaymentProcessor | null {
   if (counts.size === 0) return null;
   return [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
@@ -55,40 +47,5 @@ export async function inferPaymentProcessor(
     counts.set(processor, (counts.get(processor) ?? 0) + 1);
   }
 
-  const fromOrders = topProcessor(counts);
-  if (fromOrders) return fromOrders;
-
-  const { data: shopifyConnection } = await client
-    .from(TABLES.MERCHANT_SHOPIFY_CONNECTIONS)
-    .select('store_key')
-    .eq('merchant_id', merchantId)
-    .eq('platform', 'shopify')
-    .neq('status', 'revoked')
-    .limit(1)
-    .maybeSingle();
-
-  const shopDomain = (shopifyConnection as { store_key?: string | null } | null)?.store_key;
-  if (!shopDomain) return null;
-
-  const { data: signalRows, error: signalError } = await client
-    .from('shopify_order_signals')
-    .select('payment_gateway_names')
-    .eq('shop_domain', shopDomain)
-    .order('created_at_shopify', { ascending: false })
-    .limit(25);
-
-  if (signalError) {
-    return null;
-  }
-
-  const signalCounts = new Map<InferredPaymentProcessor, number>();
-  for (const row of signalRows ?? []) {
-    for (const gateway of gatewaysFromJson((row as { payment_gateway_names?: unknown }).payment_gateway_names)) {
-      const processor = gatewayToProcessor(gateway);
-      if (!processor) continue;
-      signalCounts.set(processor, (signalCounts.get(processor) ?? 0) + 1);
-    }
-  }
-
-  return topProcessor(signalCounts);
+  return topProcessor(counts);
 }

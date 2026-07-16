@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button, PanelCard, SectionCard } from "@/components/ui";
+import { Button, Card, SectionCard } from "@/components/ui";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import {
   DEFAULT_PLATFORM_SETTINGS,
@@ -120,8 +120,8 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
   return (
     <form onSubmit={save} className="max-w-4xl space-y-5">
       {!canManage ? (
-        <PanelCard
-          variant="appInset"
+        <Card unstyled
+          variant="inset"
           className="flex items-center justify-between gap-3 p-4"
         >
           <div>
@@ -132,16 +132,16 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
             </p>
           </div>
           <StatusBadge family="workflowStatus" value="view_only" size="sm" />
-        </PanelCard>
+        </Card>
       ) : null}
       {loading ? (
-        <PanelCard
-          variant="appInset"
+        <Card unstyled
+          variant="inset"
           className="p-4 text-sm text-[var(--text-secondary)]"
           role="status"
         >
           Loading workspace defaults…
-        </PanelCard>
+        </Card>
       ) : null}
 
       <SectionCard

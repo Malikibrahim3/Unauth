@@ -78,7 +78,7 @@ describe('disconnectProviderConnection', () => {
     await disconnectProviderConnection(client, M, { id: 'ups', category: 'carrier' }, 'connection-1');
     expect(disconnectIntegration).toHaveBeenCalledWith(client, M, 'ups', 'connection-1');
     expect(updates.find((u) => u.table === 'merchant_integrations')?.patch.disconnected_at).toBeTruthy();
-    expect(updates.find((u) => u.table === 'merchant_integrations')?.patch.subscribed).toBe(false);
+     expect(updates.find((u) => u.table === 'merchant_integrations')?.patch.subscribed).toBe(false);
     expect(updates.some((u) => u.table === 'source_records')).toBe(false);
   });
 

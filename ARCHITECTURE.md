@@ -1,112 +1,48 @@
-# ARCHITECTURE.md — System Architecture Reference
+# Architecture
 
-> **Product direction:** For what Unauth is building now, read [`docs/product/MVP_STEERING.md`](docs/product/MVP_STEERING.md). This file documents the technical architecture, including legacy CSV ingestion and identity scoring subsystems that predate the payout-control MVP.
+Unauth is a Next.js App Router application backed by Supabase. Its core domain is source-agnostic: provider adapters ingest records into canonical merchant-scoped entities, then domain services create one operational timeline across payout decisions, losses, and recoveries.
 
-## Overview
+## System boundaries
 
-Unauth is a Next.js App Router TypeScript application. The **current product focus** is post-purchase payout control and recovery (support payout cases, Gorgias widget, evidence, rules, recovery board). The codebase also contains legacy subsystems for CSV ingestion, identity clustering, and behavioral scoring used by tests, internal analysis, and historical merchant data.
+- `app/(app)` contains the authenticated merchant product; `app/(public)` contains public pages.
+- `app/api` authenticates requests, verifies provider signatures, and delegates to domain modules.
+- `lib/canonical` defines provider-neutral records, money, statuses, and validation.
+- `lib/connectors` defines executable connector capabilities, ingestion, synchronization, reconciliation, and disconnect behavior.
+- `lib/integrations/providers` is the canonical catalogue for provider identity, category, availability, help text, and logo metadata.
+- `lib/cases`, `lib/payouts`, `lib/finance`, `lib/recovery`, `lib/rules`, and `lib/events` own operational behavior.
+- `lib/supabase` owns database client and schema conventions. `supabase/migrations` is the immutable database history.
 
----
+Provider metadata and executable adapters are deliberately separate. A provider can be visible as `partial` before it implements the complete generic connector contract. See [`docs/CONNECTORS.md`](docs/CONNECTORS.md).
 
-## Directory Structure
+## Canonical data flow
 
-```
-app/                      Next.js App Router pages and API routes
-  (app)/                  Authenticated merchant app
-  (public)/               Public-facing pages (landing, public audit)
-  api/                    API route handlers
-lib/                      All shared business logic
-  csv/                    CSV parsing, normalisation, data quality
-  engine/                 Fraud scoring engine
-  identity/               Identity normalisation and hashing
-  processing/             CSV pipeline (jobs, chunks, dispatch)
-  supabase/               Supabase client helpers, query helpers
-  utils/                  Formatting, environment, UI utilities
-components/               React components
-  dashboard/              Dashboard charts and summaries
-  customers/              Identity cluster graph
-  ui/                     Shared UI primitives
-scripts/                  One-off maintenance and benchmark scripts
-tests/                    Playwright E2E and unit tests
-```
+1. A signed provider webhook, scheduled sync, CSV import, or manual action enters through an authenticated boundary.
+2. The connector records source provenance and normalizes data into canonical customers, orders, shipments, tickets, payments, and events.
+3. Idempotent matching links records only inside the owning merchant workspace.
+4. Domain events project the case timeline and append financial ledger entries.
+5. Merchant rules produce explainable recommendations. They never autonomously approve, deny, refund, or close a case.
+6. Recorded merchant decisions update payout exposure, loss attribution, recoverability, and recovery work.
 
----
+## Canonical contracts
 
-## Fraud Scoring Engine
+- Claim lifecycle states and active/final groupings: `lib/claims/statusMachine.ts`
+- Provider presentation metadata: `lib/integrations/registry.ts`
+- Executable connector adapters: `lib/connectors/registry.ts`
+- Authenticated routes and navigation: `lib/appRoutes.ts` and `components/nav/SidebarInner.tsx`
+- Database names and clients: `lib/supabase`
+- Authenticated visual tokens and primitives: `styles/authenticated`
 
-### Behavioral Scoring (`lib/engine/fastScore.ts`)
+Compatibility redirects are defined only in `next.config.js`. Do not create duplicate redirect pages or middleware rules.
 
-Used by the CSV pipeline via `scoreBatch()`. Takes `EnrichedOrder[]` and runs signal detectors defined in `lib/engine/signals/`. Signal weights are defined in `lib/engine/weights.ts` (`SIGNAL_WEIGHTS`). The output risk tier is determined by `RISK_TIER_THRESHOLDS` and `FLAG_THRESHOLD`.
+## Security invariants
 
-### Identity Scoring (`lib/scorer.ts`)
+- Every query and mutation is scoped to the authenticated merchant; service-role access never replaces an authorization check.
+- Webhooks are verified before parsing or mutation, and replay-sensitive writes are idempotent.
+- Raw provider payloads retain provenance. Canonical records do not erase their source identifiers.
+- Money is represented in minor units with an explicit currency. Financial history is append-only.
+- Secrets remain server-only and are accessed through the validated environment contract in `lib/utils/env.ts`.
+- Scoring, matching, and identity thresholds are independent calibrated systems and are not changed as incidental refactors.
 
-Used by identity resolution via `scoreIdentityFromSignals()`. Takes identity signals and outputs a confidence grade. Has its own internal weights (`SCORER_INTERNAL_SIGNAL_WEIGHTS`) and thresholds (`GRADE_THRESHOLDS`) that were calibrated independently and must not be changed without explicit instruction.
+## Legacy compatibility
 
----
-
-## Identity Resolution
-
-### Normalisation (`lib/identity/normalise.ts`)
-
-Single source of truth for all identity normalisation functions:
-- `normaliseEmail(email)` → `string | null`
-- `normaliseAddress(address)` → `string | null` (canonical form for storage/matching)
-- `normaliseAddressTokens(address)` → `string[]` (token array for Jaccard/linker set operations)
-- `normaliseIP(ip)` → `string | null`
-- `normaliseCard(card)` → `string | null`
-
-### Hashing (`lib/identity/hash.ts`)
-
-HMAC-SHA256 identifiers using `env.IDENTITY_SALT`. Re-exports `normaliseEmail` and `normaliseAddress` for backwards compatibility.
-
-### Clustering (`lib/engine/identityClusterBuilder.ts`)
-
-Union-Find algorithm to cluster orders by identity signals. Helper functions (`extractRawIds`, `chooseAnchor`, `reasonsFromSignals`) live in `lib/engine/identityHelpers.ts`.
-
-### Linker (`lib/linker.ts`)
-
-The linker uses `normaliseAddressTokens` (returns `string[]`) for Jaccard address overlap calculations. It re-exports it as `normaliseAddress` for backwards compatibility. The canonical `normaliseAddress` (returns `string | null`) is re-exported as `normaliseAddressFull`.
-
----
-
-## Confidence Grade System
-
-Confidence grades are lowercase strings: `'definite' | 'probable' | 'possible' | 'weak'`.
-
-Canonical thresholds (from `lib/engine/weights.ts`):
-- `DEFINITE` >= 85
-- `PROBABLE` >= 65
-- `POSSIBLE` >= 45
-- `WEAK` < 45
-
-Letter grades: `'A'` (definite), `'B'` (probable), `'C'` (possible), `'D'` (weak).
-
-Conversion functions `scoreToGrade()` and `gradeToLetter()` are in `lib/engine/weights.ts`.
-
----
-
-## CSV Processing Pipeline
-
-1. User uploads CSV via `app/api/upload/route.ts` or `app/api/public-audit/submit/route.ts`
-2. A `processing_jobs` row is created via `lib/processing/job.ts`
-3. CSV is split into chunks and dispatched via `lib/processing/chunkedDispatch.ts`
-4. Each chunk is processed by `app/api/process-csv-chunk/route.ts` → calls `scoreBatch()`
-5. When all chunks complete, `app/api/process-csv-finalize/route.ts` runs:
-   - Watchlist appearance sync
-   - Customer summary refresh
-   - Identity restitch (`lib/processing/restitchAuditIdentity.ts`)
-   - Results email
-
----
-
-## Supabase Conventions
-
-- Table names: use constants from `lib/supabase/tables.ts` (`TABLES`, `STORAGE_BUCKETS`, `COLUMNS`)
-- PostgREST filter strings: use `buildReviewableFilter()` from `lib/supabase/filters.ts`
-- Server-side clients: `createServiceClient()` for service role, `createClient()` for user session, `createAdminClient()` for auth admin operations
-
----
-
-## Environment Variables
-
-Validated at startup via Zod schema in `lib/utils/env.ts`. All server-side code accesses env vars through the `env` object, not `process.env` directly. See `ENV_SETUP.md` for the full variable list.
+Some historical ingestion and scoring modules remain because current tests, imported data, or operational projections still depend on them. They are supporting subsystems, not separate merchant-facing products. Remove a compatibility path only after its database, runtime, test, and access-log dependencies have been disproved.

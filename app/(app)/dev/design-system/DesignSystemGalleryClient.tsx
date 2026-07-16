@@ -3,7 +3,12 @@
 import { useState } from 'react';
 import {
   Button,
+  IconButton,
   Badge,
+  FilterChip,
+  SegmentedControl,
+  Tabs,
+  MetadataChip,
   Card,
   DataTable,
   Drawer,
@@ -14,9 +19,11 @@ import {
   Select,
   SectionCard,
   StatusBadge,
+  MetricGroup,
+  EvidenceChecklist,
+  RecommendationBlock,
 } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
-import { filterChipContract, segmentedControlContract } from '@/styles/authenticated/contracts';
 
 function GallerySection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -81,7 +88,6 @@ const RADIUS_SCALE = [
   ['none', '--ua-radius-none'],
   ['sm', '--ua-radius-sm'],
   ['control', '--ua-radius-control'],
-  ['input', '--ua-radius-input'],
   ['card', '--ua-radius-card'],
   ['overlay', '--ua-radius-overlay'],
   ['pill', '--ua-radius-pill'],
@@ -169,6 +175,7 @@ export function DesignSystemGalleryClient() {
         <Button variant="primary" disabled>
           Disabled
         </Button>
+        <IconButton label="Close" icon={<span aria-hidden="true">×</span>} />
       </GallerySection>
 
       <GallerySection title="Inputs">
@@ -179,24 +186,22 @@ export function DesignSystemGalleryClient() {
         </Select>
       </GallerySection>
 
-      <GallerySection title="Filter chips (draft contract — no component yet)">
-        <span className={`${filterChipContract.base} ${filterChipContract.unselected} ${filterChipContract.hover}`}>
-          Unselected
-        </span>
-        <span className={`${filterChipContract.base} ${filterChipContract.selected}`}>Selected</span>
-        <span className={`${filterChipContract.base} ${filterChipContract.unselected} ${filterChipContract.disabled}`}>
-          Disabled
-        </span>
+      <GallerySection title="Filter chips">
+        <FilterChip>All <span className="tabular-nums">24</span></FilterChip>
+        <FilterChip active>Needs evidence <span className="tabular-nums">8</span></FilterChip>
+        <FilterChip disabled>Closed <span className="tabular-nums">0</span></FilterChip>
       </GallerySection>
 
-      <GallerySection title="Segmented control (draft contract — no component yet)">
-        <div className={segmentedControlContract.root}>
-          <span className={`${segmentedControlContract.item} ${segmentedControlContract.itemHeight} ${segmentedControlContract.selectedItem}`}>
-            7d
-          </span>
-          <span className={`${segmentedControlContract.item} ${segmentedControlContract.itemHeight}`}>30d</span>
-          <span className={`${segmentedControlContract.item} ${segmentedControlContract.itemHeight}`}>90d</span>
-        </div>
+      <GallerySection title="Segmented controls and tabs">
+        <SegmentedControl aria-label="Time period" value="30d" items={[{ value: '7d', label: '7d' }, { value: '30d', label: '30d' }, { value: '90d', label: '90d' }]} />
+        <Tabs aria-label="Example sections" value="overview" items={[{ value: 'overview', label: 'Overview' }, { value: 'activity', label: 'Activity' }]} />
+      </GallerySection>
+
+      <GallerySection title="Metadata and evidence">
+        <MetadataChip>Shopify</MetadataChip>
+        <MetadataChip>3 sources</MetadataChip>
+        <EvidenceChecklist items={[{ label: 'Tracking found', complete: true }, { label: 'Proof of delivery needed' }]} />
+        <RecommendationBlock title="Next step" currentState="Needs evidence" nextAction="Request customer evidence" summary="Collect the missing delivery records." />
       </GallerySection>
 
       <GallerySection title="Statuses">
@@ -221,10 +226,17 @@ export function DesignSystemGalleryClient() {
           Flat card
         </Card>
         <MetricCard label="Payout exposure" value={18400} />
+        <MetricGroup items={[{ label: 'Open cases', value: '24', description: 'Current queue' }, { label: 'Exposure', value: '$4,820', description: 'All cases' }, { label: 'Ready', value: '8' }, { label: 'Ageing', value: '3' }]} />
         <div style={{ width: 260 }}>
           <SectionCard title="Section card" description="Descriptive text">
             Body content
           </SectionCard>
+        </div>
+      </GallerySection>
+
+      <GallerySection title="Do not use">
+        <div className="grid w-full gap-3 md:grid-cols-3">
+          {['Action rendered as a pill', 'Filter rendered with semantic colour', 'Three adjacent status badges', 'Cobalt primary button', 'Arbitrary radius', 'Shadowed ordinary card'].map((item) => <div key={item} className="rounded-[var(--ua-radius-card)] border border-dashed border-[var(--ua-border-strong)] bg-[var(--ua-surface-secondary)] p-3 text-xs text-[var(--ua-text-secondary)]"><span className="font-semibold text-[var(--ua-text-primary)]">Deprecated</span><br />{item}</div>)}
         </div>
       </GallerySection>
 

@@ -366,31 +366,16 @@ describe('paginateAll', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Watchlist isolation — merchantId vs userId
+// Retired watchlist surface
 // ---------------------------------------------------------------------------
-describe('Watchlist uses merchantId not userId', () => {
-  it('watchlist routes scope merchant_id by merchantId, and the page redirects out of the merchant MVP', async () => {
+describe('Retired watchlist surface', () => {
+  it('has no page or API implementation', async () => {
     const fs = await import('fs');
     const path = await import('path');
-    const read = (rel: string) => fs.readFileSync(path.join(process.cwd(), rel), 'utf-8');
 
-    const files = {
-      route: read('app/api/watchlist/route.ts'),
-      deleteRoute: read('app/api/watchlist/[id]/route.ts'),
-    };
-
-    for (const content of Object.values(files)) {
-      // The original tenancy bug keyed merchant_id off the auth user id.
-      // Guard against every shape it took: ctx.userId, user.id, and the
-      // upsert object form `merchant_id: user.id`.
-      expect(content).not.toMatch(/merchant_id['"]?\s*[:,]\s*ctx\.userId/);
-      expect(content).not.toMatch(/merchant_id['"]?\s*[:,]\s*user\.id/);
-      // And it must scope by the merchant tenant key.
-      expect(content).toMatch(/\.merchantId/);
-    }
-
-    const page = read('app/(app)/watchlist/page.tsx');
-    expect(page).toContain("redirect('/customers')");
+    expect(fs.existsSync(path.join(process.cwd(), 'app/(app)/watchlist/page.tsx'))).toBe(false);
+    expect(fs.existsSync(path.join(process.cwd(), 'app/api/watchlist/route.ts'))).toBe(false);
+    expect(fs.existsSync(path.join(process.cwd(), 'app/api/watchlist/[id]/route.ts'))).toBe(false);
   });
 });
 

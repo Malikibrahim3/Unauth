@@ -7,7 +7,7 @@
  * to `(merchant_id, connection_id, source_entity_type, external_id)` so two
  * accounts of the same provider never collide.
  *
- * See docs/IMPL_source_agnostic_connected_ecosystem.md §4.
+ * See ARCHITECTURE.md §4.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/lib/supabase/tables';

@@ -22,7 +22,7 @@ const CARD_STYLES: Record<CardVariant, CSSProperties> = {
   raised: {
     background: 'var(--surface-raised)',
     border: '1px solid color-mix(in srgb, var(--border) 88%, var(--text-primary))',
-    boxShadow: 'var(--ua-shadow-card)',
+    boxShadow: 'none',
   },
   overlay: {
     background: 'var(--surface)',

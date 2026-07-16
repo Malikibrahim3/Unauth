@@ -30,6 +30,7 @@ export const E2E_REQUIRED_VARS: E2EVarSpec[] = [
   { name: 'SUPABASE_URL' },
   { name: 'SUPABASE_SERVICE_ROLE_KEY' },
   { name: 'INTERNAL_HMAC_SECRET' },
+  { name: 'IDENTITY_SALT' },
 ];
 
 export function getVar(name: string): string | undefined {

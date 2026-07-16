@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { PERMISSIONS, requirePermission } from "@/lib/permissions";
 import { WorkbenchPage } from "@/components/ui";
-import { WORKBENCH_NAV_ITEMS } from "@/components/workbench/workbenchNavItems";
 import { formatNumber } from "@/lib/utils/format";
 import {
   NotificationCentre,
@@ -35,7 +34,6 @@ export default async function NotificationsPage() {
     <WorkbenchPage
       eyebrow="Work"
       title="Notifications"
-      navItems={WORKBENCH_NAV_ITEMS}
       kpiItems={
         notifications.length === 0
           ? undefined

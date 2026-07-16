@@ -5,6 +5,7 @@ export interface CustomerResult {
   name: string;
   email: string | null;
   risk_level: string;
+  href?: string;
 }
 
 export interface UnifiedResult {
@@ -88,6 +89,7 @@ export function unifiedToCustomerResults(results: UnifiedResult[]): CustomerResu
         name: r.label,
         email: r.sublabel ?? null,
         risk_level: r.riskLevel ?? '',
+        href: r.href,
       });
     }
   }

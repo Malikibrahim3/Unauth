@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   Badge,
   Modal,
-  PanelCard,
+  Card,
 } from "@/components/ui";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { CaseContextDrawer } from "@/components/cases/CaseContextDrawer";
@@ -151,9 +151,9 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
             column.statuses.includes(item.status),
           );
           return (
-            <PanelCard
+            <Card unstyled
               as="section"
-              variant="app"
+              variant="flat"
               key={column.key}
               className="min-w-0 overflow-hidden p-0"
             >
@@ -184,10 +184,10 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
                       item.support_payout_case?.ticket_external_id ??
                       item.support_payout_case_id.slice(0, 8);
                     return (
-                      <PanelCard
+                      <Card unstyled
                         as="article"
                         key={item.id}
-                        variant="appInset"
+                        variant="inset"
                         className="p-3"
                       >
                         <div className="flex items-start justify-between gap-2">
@@ -306,12 +306,12 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
                             ))}
                           </div>
                         ) : null}
-                      </PanelCard>
+                      </Card>
                     );
                   })
                 )}
               </div>
-            </PanelCard>
+            </Card>
           );
         })}
       </div>

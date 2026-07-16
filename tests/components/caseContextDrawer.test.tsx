@@ -48,7 +48,7 @@ describe("CaseContextDrawer", () => {
       screen.getByRole("link", { name: /open full case/i }),
     ).toHaveAttribute("href", "/claims/case-1");
 
-    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Close panel" })[1]);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

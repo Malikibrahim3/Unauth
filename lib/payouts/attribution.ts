@@ -280,7 +280,7 @@ export function deriveLossAttribution(
  * Reclassify an already-derived attribution to `policy_override` when the
  * merchant's own rule recommendation was to deny under policy and the
  * recorded decision approved the payout anyway. Mirrors the "policy leakage"
- * condition in lib/dashboard/payoutDashboardMetrics.ts — same signal, applied
+ * condition in the dashboard aggregation — same signal, applied
  * at the point the decision is actually known (attribution runs before a
  * decision exists, so this is a separate reclassification step, not part of
  * deriveLossAttribution itself).

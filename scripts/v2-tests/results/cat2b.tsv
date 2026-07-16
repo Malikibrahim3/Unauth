@@ -1,9 +1,0 @@
-2.10 superseded_by set on losing identity	4f48b893-983c-42b4-be80-0d9a3debd42f	4f48b893-983c-42b4-be80-0d9a3debd42f	PASS	winner=higher confidence_score
-2.10 'merged' resolution event exists	1	1	PASS	
-2.10 members re-pointed to winner	0 on loser, old email on winner	loser:0 winner-has-old-email:2	FAIL	
-2.10 lookup by old hash returns winner only	4f48b893-983c-42b4-be80-0d9a3debd42f	4f48b893-983c-42b4-be80-0d9a3debd42f	PASS	superseded identity unreachable
-2.10 merged identity rescored	47|possible	47|possible	PASS	email+email_root+phone+shipping = 12+0+20+15
-2.11 FP event inserted	1 row	1	PASS	
-2.11 grade unchanged after FP report	100|definite	100|definite	PASS	FP reporting is advisory only
-2.11 FP event UPDATE rejected	append-only error	ERROR:  identity_resolution_events is append-only	PASS	
-2.11 FP event DELETE rejected	append-only error	ERROR:  identity_resolution_events is append-only	PASS	

@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, Copy, AlertTriangle } from "lucide-react";
-import { PanelCard } from "@/components/ui";
+import { Card } from "@/components/ui";
 import type {
   GorgiasEphemeralSecret,
   GorgiasSupportSyncState,
@@ -80,8 +80,8 @@ export function GorgiasWebhookSetupPanel({
   return (
     <div className="space-y-5">
       {/* Warning banner */}
-      <PanelCard
-        variant="appInset"
+      <Card unstyled
+        variant="inset"
         className="flex gap-3 px-4 py-3"
         style={{
           borderColor: "color-mix(in srgb, var(--warning) 35%, var(--border))",
@@ -101,10 +101,10 @@ export function GorgiasWebhookSetupPanel({
             it from the connection settings.
           </p>
         </div>
-      </PanelCard>
+      </Card>
 
       {/* Credentials to copy */}
-      <PanelCard variant="app" className="divide-y p-4 space-y-3">
+      <Card unstyled variant="flat" className="divide-y p-4 space-y-3">
         <p
           className="text-xs font-semibold uppercase tracking-wider pb-3"
           style={{
@@ -139,10 +139,10 @@ export function GorgiasWebhookSetupPanel({
             onCopy={onCopy}
           />
         </div>
-      </PanelCard>
+      </Card>
 
       {/* Setup steps */}
-      <PanelCard variant="app" className="divide-y p-0">
+      <Card unstyled variant="flat" className="divide-y p-0">
         <div className="px-4 py-2.5">
           <p
             className="text-xs font-semibold uppercase tracking-wider"
@@ -152,7 +152,7 @@ export function GorgiasWebhookSetupPanel({
           </p>
         </div>
         {[
-          "Go to Gorgias → Settings → Apps & Plugins → HTTP Integration → Add HTTP Integration",
+          "Go to Gorgias, then Settings, then Apps & Plugins, then HTTP Integration, then Add HTTP Integration",
           "Set Request type to POST and paste the Webhook URL above into the URL field",
           `Under Headers, add: name = ${GORGIAS_SUPPORT_WEBHOOK_HEADER_NAME}, value = the secret above`,
           "Add a second header: name = x-gorgias-account-id, value = your numeric Gorgias account ID (visible in your Gorgias URL)",
@@ -181,7 +181,7 @@ export function GorgiasWebhookSetupPanel({
             </p>
           </div>
         ))}
-      </PanelCard>
+      </Card>
 
       <button
         type="button"

@@ -9,7 +9,9 @@ export type LookupResponse = {
   claims_record: {
     refunds: number;
     chargebacks: number;
+    /** @deprecated API compatibility only; the extension shows merchant-owned history. */
     source: 'your_store' | 'network';
+    /** @deprecated API compatibility only; never rendered in the extension. */
     cross_merchant: {
       merchant_count: number;
       claim_count: number;

@@ -89,11 +89,10 @@ async function POSTHandler(
     .from('user_permission_grants')
     .upsert(
       {
-        grantor_user_id: user.id,
+        granted_by: user.id,
         grantee_user_id: member.user_id,
         permission,
         revoked: false,
-        granted_at: new Date().toISOString(),
         revoked_at: null,
       },
       { onConflict: 'merchant_id,grantee_user_id,permission' }

@@ -6,7 +6,7 @@
  * value they cannot produce, so the mapping engine can distinguish "absent" from
  * a real value and apply required/fallback rules.
  *
- * See docs/IMPL_source_agnostic_connected_ecosystem.md §3.
+ * See ARCHITECTURE.md §3.
  */
 import { toMinorUnits } from '@/lib/canonical/money';
 

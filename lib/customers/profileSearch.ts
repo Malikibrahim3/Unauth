@@ -3,7 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/lib/supabase/tables';
 import { escapePostgrestFilterValue } from '@/lib/supabase/merchantHelpers';
 
-type IdentityProfileIdRow = { customer_profile_id?: string | null };
+type MerchantCustomerIdentityRow = { identity_id?: string | null };
 
 function uniqueNonEmpty(values: Array<string | null | undefined>): string[] {
   return Array.from(
@@ -16,15 +16,11 @@ function uniqueNonEmpty(values: Array<string | null | undefined>): string[] {
 }
 
 /**
- * Merchant-scoped customer text search across all normalized identity anchors.
+ * Merchant-scoped customer text search across merchant-owned customer records.
  *
- * SECURITY: the ONLY tenant boundary here is customer_profile_identities.merchant_id.
- * `identities` (TABLES.CUSTOMER_PROFILES) is a network-level table with no
- * merchant_id column, so it must never be filtered by a `merchant_ids` predicate
- * (that column does not exist post-v2 — the old primary_email query silently ran
- * unscoped and could surface other merchants' profiles). Candidate IDs are
- * derived solely from the merchant-scoped anchor table; callers fetch display
- * rows by these already-owned IDs.
+ * Names and emails are merchant data in `merchant_customers`; the network-level
+ * `identities` table intentionally contains neither. Candidate identity IDs are
+ * therefore derived only from rows explicitly scoped to the caller's merchant.
  *
  * `merchantFilter` is retained in the signature for call-site compatibility but
  * is intentionally unused — do not reintroduce an unscoped `identities` scan.
@@ -46,17 +42,27 @@ export async function findCustomerProfileIdsByText(
 
   const limit = opts.limit ?? 500;
   const safeLike = `%${escapePostgrestFilterValue(q)}%`;
+  const [nameResult, emailResult] = await Promise.all([
+    service
+      .from(TABLES.MERCHANT_CUSTOMERS)
+      .select('identity_id')
+      .in('merchant_id', merchantIds)
+      .ilike('display_name', safeLike)
+      .limit(limit),
+    service
+      .from(TABLES.MERCHANT_CUSTOMERS)
+      .select('identity_id')
+      .in('merchant_id', merchantIds)
+      .ilike('email', safeLike)
+      .limit(limit),
+  ]);
+
   const ids = new Set<string>();
-
-  const { data: identityRows } = (await service
-    .from(TABLES.CUSTOMER_PROFILE_IDENTITIES)
-    .select('customer_profile_id')
-    .in('merchant_id', merchantIds)
-    .ilike('identity_value', safeLike)
-    .limit(limit)) as unknown as { data: IdentityProfileIdRow[] | null; error: unknown };
-
-  for (const row of identityRows ?? []) {
-    if (row.customer_profile_id) ids.add(row.customer_profile_id);
+  for (const row of [
+    ...((nameResult.data ?? []) as MerchantCustomerIdentityRow[]),
+    ...((emailResult.data ?? []) as MerchantCustomerIdentityRow[]),
+  ]) {
+    if (row.identity_id) ids.add(row.identity_id);
   }
 
   return [...ids];

@@ -6,7 +6,6 @@ export type Entitlement =
   | 'CUSTOMER_DOSSIER'
   | 'CLAIM_REVIEW_QUEUE'
   | 'HELPDESK_WIDGET'
-  | 'WATCHLIST'
   | 'REPORTS_ADVANCED'
   | 'LIVE_LOOKUP_API'
   | 'QUICK_SCORE';

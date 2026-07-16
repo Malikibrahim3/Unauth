@@ -108,8 +108,8 @@ export function statusTone(value: string | null | undefined): StatusTone {
 }
 
 const SIZE_STYLE: Record<'sm' | 'md', CSSProperties> = {
-  sm: { height: 18, paddingInline: 6, fontSize: 11, gap: 5 },
-  md: { height: 22, paddingInline: 8, fontSize: 12, gap: 6 },
+  sm: { height: 'var(--ua-badge-height)', paddingInline: 8, fontSize: 12, gap: 6 },
+  md: { height: 'var(--ua-badge-height)', paddingInline: 8, fontSize: 12, gap: 6 },
 };
 
 interface StatusBadgeProps {

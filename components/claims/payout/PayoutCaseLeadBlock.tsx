@@ -1,7 +1,7 @@
 'use client';
 
 import { REQUESTED_ACTION_LABELS, type SupportPayoutCase } from '@/lib/payouts/types';
-import { PanelCard } from '@/components/ui';
+import { Card } from '@/components/ui';
 import { PAYOUT_DISCLAIMER } from '@/components/claims/payout/payoutCopy';
 import { PayoutExposureCard } from '@/components/claims/payout/PayoutExposureCard';
 import { EvidenceChecklistCard } from '@/components/claims/payout/EvidenceChecklistCard';
@@ -33,11 +33,11 @@ export function PayoutCaseLeadBlock({
   if (!payoutCase) {
     if (!loading) return null;
     return (
-      <PanelCard as="section" variant="app" className="p-4">
+      <Card unstyled as="section" variant="flat" className="p-4">
         <p className="text-caption" style={{ color: 'var(--text-tertiary)' }}>
           Loading payout exposure…
         </p>
-      </PanelCard>
+      </Card>
     );
   }
 

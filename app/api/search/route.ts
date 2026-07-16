@@ -3,7 +3,7 @@
  * GET /api/search?q=<query>&types=customers,orders,cases&limit=5&page=1
  *
  * Feature-flagged: endpoint always available to authorised merchants, but
- * only called by CommandPalette when FLAG_COMMAND_CENTER=true.
+ * Called by the authenticated command palette for cross-entity navigation.
  *
  * Returns paginated, merchant-scoped results across the v2 read model:
  *   - customers → source_customers (email, name)
@@ -133,7 +133,7 @@ export async function GET(req: NextRequest) {
         const name = [c.first_name, c.last_name].filter(Boolean).join(' ').trim();
         results.push({
           type: 'customer',
-          id: c.id,
+          id: c.merchant_customer_id ?? c.id,
           label: name || c.email || c.id,
           sublabel: name ? c.email ?? undefined : undefined,
           href: `/customers/${c.merchant_customer_id ?? c.id}`,
@@ -312,8 +312,8 @@ export async function GET(req: NextRequest) {
 
   if (requested.includes('losses') && isUuid(q)) {
     try {
-      const { data } = await serviceClient.from(TABLES.LOSS_CASES).select('id,status,currency,realised_loss_minor').eq('merchant_id', merchantId).eq('id', q).limit(limit);
-      for (const row of (data as Array<Record<string, any>> ?? [])) results.push({ type: 'loss', id: row.id, label: `Loss ${row.id.slice(0, 8)}`, sublabel: row.realised_loss_minor != null && row.currency ? formatCurrency(row.realised_loss_minor / 100, row.currency) : row.status, href: `/losses/${row.id}` });
+      const { data } = await serviceClient.from(TABLES.LOSS_CASES).select('id,status').eq('merchant_id', merchantId).eq('id', q).limit(limit);
+      for (const row of (data as Array<Record<string, any>> ?? [])) results.push({ type: 'loss', id: row.id, label: `Loss ${row.id.slice(0, 8)}`, sublabel: row.status, href: `/losses/${row.id}` });
     } catch (error) { console.error('Search losses failed', error); }
   }
 

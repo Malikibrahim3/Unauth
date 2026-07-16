@@ -165,17 +165,20 @@ export async function getMerchantOwnerEmail(
   supabase: SupabaseClient,
   merchantId: string,
 ): Promise<string | null> {
-  const { data: merchant } = await supabase
-    .from(TABLES.MERCHANTS)
-    .select('user_id')
-    .eq('id', merchantId)
+  const { data: owner } = await supabase
+    .from(TABLES.MERCHANT_MEMBERS)
+    .select('user_id, invited_email')
+    .eq('merchant_id', merchantId)
+    .eq('role', 'owner')
+    .eq('invite_status', 'active')
+    .order('accepted_at', { ascending: true })
+    .limit(1)
     .maybeSingle();
 
-  const userId = (merchant as { user_id?: string } | null)?.user_id;
-  if (!userId) return null;
+  if (!owner?.user_id) return owner?.invited_email ?? null;
 
-  const { data: userData, error } = await supabase.auth.admin.getUserById(userId);
-  if (error || !userData?.user?.email) return null;
+  const { data: userData, error } = await supabase.auth.admin.getUserById(owner.user_id);
+  if (error || !userData?.user?.email) return owner.invited_email ?? null;
   return userData.user.email;
 }
 

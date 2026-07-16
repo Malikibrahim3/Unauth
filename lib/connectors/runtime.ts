@@ -8,7 +8,7 @@
  *   declared support + granted scope + merchant writeback + connection health
  *     -> enabled | permission_missing | merchant_disabled | degraded | unsupported
  *
- * See docs/IMPL_source_agnostic_connected_ecosystem.md §5.
+ * See ARCHITECTURE.md §5.
  */
 import type { ConnectorCapability, RuntimeAvailability, RuntimeCapability } from '@/lib/connectors/capabilities';
 

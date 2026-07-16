@@ -3,7 +3,7 @@
  * one of these codes so routes/health records can render safe, stable messages
  * instead of leaking raw provider errors.
  *
- * See docs/IMPL_source_agnostic_connected_ecosystem.md §5.
+ * See ARCHITECTURE.md §5.
  */
 
 export type ConnectorErrorCode =

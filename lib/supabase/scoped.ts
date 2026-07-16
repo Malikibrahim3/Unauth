@@ -19,8 +19,7 @@ type TenantScope =
  *      + migrations (every entry below has a merchant_id column).
  *
  *   2. CALLER_SCOPED_TABLES — network-level tables that intentionally have NO
- *      `merchant_id` column (`identities` and the identity graph, plus
- *      `source_orders`, which is isolated via `job_id -> sync_jobs.merchant_id`).
+ *      `merchant_id` column (`identities` and the identity graph).
  *      The proxy CANNOT scope these with a simple filter, so it passes the
  *      builder through UNCHANGED. Callers MUST prove ownership themselves
  *      (e.g. via merchantHelpers: getMerchantOwnedJobIds / assertMerchantOwnsJob
@@ -45,9 +44,10 @@ const COLUMN_SCOPES: Record<string, TenantScope> = {
   sync_jobs: { kind: 'column', column: 'merchant_id' },
   support_payout_cases: { kind: 'column', column: 'merchant_id' },
   evidence_packages: { kind: 'column', column: 'merchant_id' },
-  customer_notes: { kind: 'column', column: 'merchant_id' },
-  customer_activity_log: { kind: 'column', column: 'merchant_id' },
   merchant_identity_state: { kind: 'column', column: 'merchant_id' },
+  source_customers: { kind: 'column', column: 'merchant_id' },
+  source_orders: { kind: 'column', column: 'merchant_id' },
+  source_tickets: { kind: 'column', column: 'merchant_id' },
   // Verified live: both tables have a merchant_id column. Registered so the
   // audit-trail and team-permissions routes stop failing closed at runtime.
   user_action_log: { kind: 'column', column: 'merchant_id' },
@@ -95,17 +95,8 @@ const CALLER_SCOPED_TABLES: ReadonlySet<string> = new Set([
   'identities',
   'identity_profiles',
   'identity_members',
-  'identity_identifiers',
   'identity_edges',
   'identity_resolution_events',
-  // NOTE: source_orders DOES have a populated merchant_id column (verified live:
-  // 5743/5743 non-null). It is kept caller-scoped for now only because 17 route
-  // files access it via the service role and read/insert it job-scoped; moving it
-  // to COLUMN_SCOPES tightens the static route guard across all of them and is a
-  // separate, reviewed tenancy pass (tracked for the source-agnostic cutover),
-  // not part of the additive Phase 1 foundation. Isolation today: RLS +
-  // job_id -> sync_jobs.merchant_id at call sites.
-  'source_orders',
   'sync_job_chunks', // isolated via job_id -> sync_jobs.merchant_id
   'claim_outcomes', // isolated via parent support_payout_cases
 ]);

@@ -6,7 +6,7 @@
  *
  * Idempotent by construction — it performs no mutation yet.
  *
- * See docs/IMPL_source_agnostic_connected_ecosystem.md §6.
+ * See ARCHITECTURE.md §6.
  */
 import type { DomainEventHandler } from '@/lib/events/handlers/types';
 

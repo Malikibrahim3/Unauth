@@ -7,7 +7,6 @@ import {
   getAllCanonicalHrefs,
   getCommandPaletteNavItems,
   getSidebarNavItems,
-  getWorkbenchNavItems,
 } from "@/lib/navigation/appRoutes";
 import { ROUTE_ALIASES, resolveCanonicalHref } from "@/lib/navigation/aliases";
 
@@ -41,17 +40,16 @@ describe("app route registry", () => {
     }
   });
 
-  it("generates sidebar, workbench, and command palette from registry", () => {
+  it("generates sidebar and command palette from registry", () => {
     const sidebarHrefs = getSidebarNavItems().flatMap((g) =>
       g.items.map((i) => i.href),
     );
-    const workbenchHrefs = getWorkbenchNavItems().map((i) => i.href);
     const paletteHrefs = [
       ...getCommandPaletteNavItems().map((i) => i.href),
       ...COMMAND_PALETTE_FILTERS.map((i) => i.href.split("?")[0]),
     ];
 
-    for (const href of [...sidebarHrefs, ...workbenchHrefs, ...paletteHrefs]) {
+    for (const href of [...sidebarHrefs, ...paletteHrefs]) {
       const route = Object.values(APP_ROUTES).find(
         (r) => r.href === href.split("?")[0],
       );
@@ -69,7 +67,7 @@ describe("app route registry", () => {
   "Work",
   "Payout Control",
   "Losses",
-  "Recoveries",
+  "Recovery",
   "Customers",
   "Rules",
   "Flows",
@@ -94,12 +92,15 @@ describe("app route registry", () => {
     );
   });
 
-  it("keeps recovery-partner configuration out of merchant discovery", () => {
-    expect(getWorkbenchNavItems().map((item) => item.href)).not.toContain(
+  it("keeps compatibility-only routes out of the canonical registry", () => {
+    expect(getAllCanonicalHrefs()).not.toEqual(expect.arrayContaining([
       "/partners",
-    );
-    expect(getCommandPaletteNavItems().map((item) => item.href)).not.toContain(
-      "/partners",
-    );
+      "/lookup",
+      "/global",
+      "/watchlist",
+      "/catches",
+      "/chargebacks",
+      "/store",
+    ]));
   });
 });

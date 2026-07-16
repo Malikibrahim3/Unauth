@@ -3,7 +3,6 @@ import { Suspense } from 'react';
 import { PageConnectionGate } from '@/components/connections/PageConnectionGate';
 import type { ConnectionState } from '@/lib/connections/getConnectionState';
 import { WorkbenchPage, EmptyState, ButtonLink, Card, DataTableServer, FilterChip, SegmentedControl } from '@/components/ui';
-import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { dominantCurrency, formatCurrencyNullable, formatNumber } from '@/lib/utils/format';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
 import {
@@ -139,11 +138,9 @@ export function ClaimsPageView({
                                   : 'No payout cases match this filter.';
 
   return (
-    <PageConnectionGate requires="helpdesk" connection={connectionState} pageName="Payout Control" pageDescription="Connect Gorgias or Zendesk so Unauth can create payout cases, assemble evidence, and apply your rules." hasData={queueCounts.total > 0}>
+    <PageConnectionGate requires="helpdesk" connection={connectionState} pageName="Payout Control" pageDescription="Connect a supported helpdesk so Unauth can create payout cases, assemble evidence, and apply your rules." hasData={queueCounts.total > 0}>
     <WorkbenchPage
       title="Payout Control"
-      navItems={WORKBENCH_NAV_ITEMS}
-      activeNavKey="claims"
       kpiItems={[
         { label: 'Open payout cases', value: formatNumber(queueCounts.active), hint: 'Refunds, reships, replacements' },
         { label: 'New evidence', value: formatNumber(queueCounts.unread), hint: 'Arrived since last visit' },
@@ -160,7 +157,7 @@ export function ClaimsPageView({
           <EmptyState
             title="No payout cases yet"
             description="Connect a support source to create payout cases from customer conversations."
-            action={<ButtonLink href="/settings/integrations" size="md">Connect support source</ButtonLink>}
+            action={<ButtonLink href="/integrations" size="md">Connect support source</ButtonLink>}
           />
         ) : (
           <div>

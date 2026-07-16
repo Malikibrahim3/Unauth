@@ -156,7 +156,7 @@ export function buildGorgiasSidebarWidgetTemplate(appBaseUrl: string) {
           },
         },
         widgets: [
-          // Compressed 4-line payout decision card (see docs/product/MVP_STEERING.md §11).
+          // Compressed 4-line payout decision card (see docs/PRODUCT.md §11).
           { path: 'payout_exposure', title: labels.payout_exposure, type: 'text' },
           { path: 'evidence_checklist', title: labels.evidence_checklist, type: 'text' },
           { path: 'recommendation', title: labels.recommendation, type: 'text' },

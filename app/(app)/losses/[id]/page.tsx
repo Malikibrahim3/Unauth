@@ -10,7 +10,7 @@ import { DetailPageShell } from "@/components/workbench/DetailPageShell";
 import { getLossReadModel } from "@/lib/losses/readModel";
 import { LossActions } from "@/components/losses/LossActions";
 import { formatDateTime, formatMoneyOrDash } from "@/lib/utils/format";
-import { label as enumLabel } from "@/lib/ui/labels";
+import { humanise, label as enumLabel } from "@/lib/ui/labels";
 import { hashId } from "@/lib/ui/displayRef";
 
 export const dynamic = "force-dynamic";
@@ -20,12 +20,7 @@ const money = (
 ) => formatMoneyOrDash(minor, currency);
 // Humanise fields that have no dedicated label family (evidence types, source
 // providers, confidence, financial state, event types).
-const humaniseField = (value: string | null | undefined) =>
-  value
-    ? value
-        .replaceAll("_", " ")
-        .replace(/\b\w/g, (letter) => letter.toUpperCase())
-    : "—";
+const humaniseField = (value: string | null | undefined) => value ? humanise(value) : "—";
 
 export default async function LossDetailPage({
   params,

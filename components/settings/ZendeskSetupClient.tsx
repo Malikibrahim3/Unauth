@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { CheckCircle2, Download, ExternalLink } from 'lucide-react';
 import Image from 'next/image';
-import { PanelCard } from '@/components/ui';
+import { Card } from '@/components/ui';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import HelpdeskSidebarPreview from '@/components/settings/HelpdeskSidebarPreview';
 import ZendeskSupportSyncClient from '@/components/settings/ZendeskSupportSyncClient';
@@ -28,7 +28,7 @@ const SETUP_STEPS = [
   {
     number: 2,
     title: 'Upload as a private app',
-    detail: 'Zendesk Admin → Apps and integrations → Zendesk Support apps → Upload private app',
+    detail: 'Zendesk Admin, then Apps and integrations, then Zendesk Support apps, then Upload private app',
   },
   {
     number: 3,
@@ -53,7 +53,7 @@ const SETUP_STEPS = [
   {
     number: 7,
     title: 'Add the ticket webhook',
-    detail: `Zendesk Admin → Apps and integrations → Webhooks → create a webhook pointing to this deployment at ${ZENDESK_SUPPORT_WEBHOOK_PATH}?${ZENDESK_WEBHOOK_DOMAIN_QUERY_PARAM}=<your-subdomain>, then attach it to a trigger on ticket created/updated. Include the webhook secret shown when you connect below.`,
+    detail: `Zendesk Admin, then Apps and integrations, then Webhooks, then create a webhook pointing to this deployment at ${ZENDESK_SUPPORT_WEBHOOK_PATH}?${ZENDESK_WEBHOOK_DOMAIN_QUERY_PARAM}=<your-subdomain>, then attach it to a trigger on ticket created/updated. Include the webhook secret shown when you connect below.`,
   },
 ];
 
@@ -147,7 +147,7 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
       </div>
 
       {/* Setup steps */}
-      <PanelCard variant="app" className="divide-y overflow-hidden p-0">
+      <Card unstyled variant="flat" className="divide-y overflow-hidden p-0">
         <div className="px-4 py-2.5">
           <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
             Setup steps
@@ -184,11 +184,11 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
                   <p className="mt-0.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
                     When prompted, paste a key from{' '}
                     <Link
-                      href="/settings/integrations"
+                      href="/integrations"
                       className="underline"
                       style={{ color: 'var(--accent)' }}
                     >
-                      Settings → Integrations → API keys
+                      Settings, then Integrations, then API keys
                     </Link>
                   </p>
                 ) : step.detail ? (
@@ -200,7 +200,7 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
             </div>
           );
         })}
-      </PanelCard>
+      </Card>
 
       {/* Actions */}
       <div className="flex flex-wrap gap-3">
@@ -244,8 +244,8 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
       </div>
 
       {verifyError ? (
-        <PanelCard
-          variant="app"
+        <Card unstyled
+          variant="flat"
           className="px-4 py-3 text-sm"
           style={{
             borderColor: 'color-mix(in srgb, var(--risk-critical) 30%, var(--border))',
@@ -254,7 +254,7 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
           }}
         >
           {verifyError}
-        </PanelCard>
+        </Card>
       ) : null}
 
       {/* Ticket sync section */}

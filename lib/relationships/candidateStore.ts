@@ -4,7 +4,7 @@
  * mutates a case FK — a user (or a strong unique match) does that through
  * `resolveMatch`.
  *
- * See docs/IMPL_source_agnostic_connected_ecosystem.md §8.
+ * See ARCHITECTURE.md §8.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/lib/supabase/tables';

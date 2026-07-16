@@ -23,20 +23,6 @@ const ARTICLES = [
       'Track recoverable losses, recovery owners, deadlines, required evidence, and partner outcomes.',
     href: '/recoveries',
   },
-  {
-    icon: BookOpen,
-    title: 'Yuma escalation setup',
-    description:
-      'Configure Yuma to hand post-purchase claim escalations to the Unauth Gate API.',
-    href: '/help/integrations/yuma',
-  },
-  {
-    icon: BookOpen,
-    title: 'Siena escalation setup',
-    description:
-      'Configure Siena escalation webhooks with the Unauth Gate API endpoint and bearer key.',
-    href: '/help/integrations/siena',
-  },
 ];
 
 export default function HelpIndexPage() {

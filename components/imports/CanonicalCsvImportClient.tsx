@@ -6,7 +6,7 @@ import { CheckCircle2, FileSpreadsheet, Upload } from "lucide-react";
 import {
   Badge,
   Button,
-  PanelCard,
+  Card,
 } from "@/components/ui";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 
@@ -192,7 +192,7 @@ export function CanonicalCsvImportClient({
         ))}
       </ol>
 
-      <PanelCard as="section" variant="app" className="p-4">
+      <Card unstyled as="section" variant="flat" className="p-4">
         <h2 className="text-sm font-semibold">1. Source file</h2>
         <div className="mt-3 grid gap-4 sm:grid-cols-2">
           <label className="text-xs font-semibold text-[var(--text-secondary)]">
@@ -253,10 +253,10 @@ export function CanonicalCsvImportClient({
             placeholder="external_id,currency,total_minor&#10;ORDER-1,GBP,8400"
           />
         </details>
-      </PanelCard>
+      </Card>
 
       {headers.length > 0 ? (
-        <PanelCard as="section" variant="app" className="p-4">
+        <Card unstyled as="section" variant="flat" className="p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-sm font-semibold">2. Column mapping</h2>
@@ -278,7 +278,7 @@ export function CanonicalCsvImportClient({
                 <span className="truncate font-mono" title={header}>
                   {header}
                 </span>
-                <span aria-hidden="true">→</span>
+                <span className="text-[var(--text-tertiary)]">maps to</span>
                 <select
                   aria-label={`Map ${header}`}
                   className="min-w-0 rounded-md border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5"
@@ -302,11 +302,11 @@ export function CanonicalCsvImportClient({
               </label>
             ))}
           </div>
-        </PanelCard>
+        </Card>
       ) : null}
 
       {csv ? (
-        <PanelCard as="section" variant="app" className="p-4">
+        <Card unstyled as="section" variant="flat" className="p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-sm font-semibold">3. Validate and import</h2>
@@ -352,9 +352,9 @@ export function CanonicalCsvImportClient({
                   ["Errors", result.error_count],
                   ["Duplicates skipped", result.duplicates_skipped],
                 ].map(([label, value]) => (
-                  <PanelCard
+                  <Card unstyled
                     key={String(label)}
-                    variant="appInset"
+                    variant="inset"
                     className="p-3"
                   >
                     <dt className="text-[11px] text-[var(--text-tertiary)]">
@@ -363,7 +363,7 @@ export function CanonicalCsvImportClient({
                     <dd className="mt-1 font-mono text-lg font-semibold">
                       {value}
                     </dd>
-                  </PanelCard>
+                  </Card>
                 ))}
               </dl>
               {result.errors.length ? (
@@ -414,7 +414,7 @@ export function CanonicalCsvImportClient({
               </p>
             </div>
           ) : null}
-        </PanelCard>
+        </Card>
       ) : null}
 
       <section aria-labelledby="import-history-title">
@@ -450,12 +450,12 @@ export function CanonicalCsvImportClient({
             ))}
           </div>
         ) : (
-          <PanelCard
-            variant="appInset"
+          <Card unstyled
+            variant="inset"
             className="mt-3 p-4 text-sm text-[var(--text-secondary)]"
           >
             No CSV import jobs recorded yet.
-          </PanelCard>
+          </Card>
         )}
       </section>
     </div>

@@ -1,7 +1,7 @@
 # Source-agnostic test fixtures
 
 Synthetic payloads used by the source-agnostic MVP+ normalization/snapshot tests
-(Phases 1–3 of `docs/IMPL_source_agnostic_connected_ecosystem.md`).
+(Phases 1–3 of `ARCHITECTURE.md`).
 
 - No production credentials, tokens, or real customer data. All identifiers are fake
   (`example.com`, `EXAMPLE-*`, sequential IDs).

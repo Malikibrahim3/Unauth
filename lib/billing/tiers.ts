@@ -38,7 +38,6 @@ export type FeatureKey =
   | 'claims_queue'
   | 'customer_dossier'
   | 'customer_search'
-  | 'watchlist'
   | 'internal_notes'
   | 'lookup_api'
   | 'quick_score_api'

@@ -7,6 +7,7 @@ import { RelatedRecordsPanel } from "@/components/relationships/RelatedRecordsPa
 import type { TimelineItem } from "@/lib/cases/timeline";
 import type { RelatedRecord } from "@/lib/relationships/relatedRecords";
 import { formatCurrencyNullable } from "@/lib/utils/format";
+import { humanise } from "@/lib/ui/labels";
 
 type CaseContext = {
   case: {
@@ -23,7 +24,7 @@ type CaseContext = {
 };
 
 function title(value: string | null | undefined) {
-  return value ? value.replaceAll("_", " ") : "Not set";
+  return value ? humanise(value) : "Not set";
 }
 
 export function CaseContextDrawer({

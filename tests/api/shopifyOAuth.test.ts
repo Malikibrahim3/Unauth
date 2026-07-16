@@ -30,10 +30,16 @@ jest.mock('@/lib/shopify/webhooks', () => ({
   registerShopifyWebhooks: jest.fn(async () => {}),
 }));
 
-jest.mock('@/lib/shopify/collectorScripts', () => ({
-  registerShopifyCollectorScriptTags: jest.fn(async () => ({
-    collectorScriptTagId: 'tag-1',
-    initScriptTagId: 'tag-2',
+jest.mock('@/lib/integrations/oauthTransactions', () => ({
+  beginOAuthConnectionTransaction: jest.fn(async () => 'ledger-state'),
+  consumeOAuthConnectionTransaction: jest.fn(async () => ({
+    merchantId: 'merchant-1',
+    userId: 'user-1',
+    providerId: 'shopify',
+    environment: 'production',
+    callbackUrl: 'http://localhost:3000/api/shopify/callback',
+    providerAccountHint: 'merchant-a.myshopify.com',
+    expiresAt: new Date(Date.now() + 60_000).toISOString(),
   })),
 }));
 
@@ -173,7 +179,7 @@ describe('Shopify OAuth routes', () => {
       const req = new NextRequest('http://localhost:3000/api/shopify/install?shop=bad.store.example');
       const res = await installGET(req);
       expect(await extractFallbackHref(res)).toBe(
-        'http://localhost:3000/settings/integrations?shopify_error=public_domain',
+        'http://localhost:3000/integrations?shopify_error=public_domain',
       );
     });
   });
@@ -199,7 +205,7 @@ describe('Shopify OAuth routes', () => {
       const res = await callbackGET(req);
       expect(res.status).toBe(200);
       expect(await extractFallbackHref(res)).toBe(
-        'http://localhost:3000/settings/integrations?shopify_connected=1&shop=merchant-a.myshopify.com',
+        'http://localhost:3000/integrations?shopify_connected=1&shop=merchant-a.myshopify.com',
       );
 
       expect(consumeOAuthConnectionTransaction).toHaveBeenCalledWith(expect.anything(), {
@@ -235,7 +241,7 @@ describe('Shopify OAuth routes', () => {
 
       const res = await callbackGET(req);
       expect(await extractFallbackHref(res)).toBe(
-        'http://localhost:3000/settings/integrations?shopify_error=invalid_state',
+        'http://localhost:3000/integrations?shopify_error=invalid_state',
       );
     });
 
@@ -259,7 +265,7 @@ describe('Shopify OAuth routes', () => {
 
       const res = await callbackGET(req);
       expect(await extractFallbackHref(res)).toBe(
-        'http://localhost:3000/settings/integrations?shopify_error=invalid_or_replayed_state',
+        'http://localhost:3000/integrations?shopify_error=invalid_or_replayed_state',
       );
       expect(persistShopifyOAuthConnection).not.toHaveBeenCalled();
     });

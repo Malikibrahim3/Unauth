@@ -61,8 +61,8 @@ export function FreshdeskCredentialFields({
         </button>
         {showCredHelp && (
           <p className="mt-2 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-            In Freshdesk, open <strong>Profile Settings</strong> (avatar) → <strong>View profile</strong>{' '}
-            → your API key is listed on the right. You need an admin or agent profile with API access.
+            In Freshdesk, open <strong>Profile Settings</strong> (avatar), then <strong>View profile</strong>{' '}
+           , then your API key is listed on the right. You need an admin or agent profile with API access.
           </p>
         )}
       </div>

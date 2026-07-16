@@ -25,7 +25,7 @@ export default async function FreshdeskIntegrationPage() {
       subtitle="Ingest support tickets for claim detection and dispute context."
       breadcrumbs={[
         { label: 'Settings', href: '/settings/account' },
-        { label: 'Integrations', href: '/settings/integrations' },
+        { label: 'Integrations', href: '/integrations' },
         { label: 'Freshdesk' },
       ]}
     >

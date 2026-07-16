@@ -8,6 +8,7 @@
  * will route them through the durable sync engine.
  */
 import { capability } from '@/lib/connectors/capabilities';
+import { shopifyProvider } from '@/lib/integrations/providers/shopify';
 import type {
   ConnectorAdapter,
   ConnectorContext,
@@ -28,14 +29,10 @@ const RUNTIME_PENDING: UnsupportedResult = {
 
 export const shopifyConnector: ConnectorAdapter = {
   manifest: {
-    id: 'shopify',
-    name: 'Shopify',
-    category: 'commerce',
-    authMode: 'oauth',
+    ...shopifyProvider,
     verificationStatus: 'partial',
     launchVisible: true,
     connectorVersion: '2026-01',
-    description: 'Orders, refunds, fulfilments, and Shopify Payments disputes.',
     capabilities: [
       capability('orders.read', 'read', { requiredScopes: ['read_orders'], description: 'Read orders' }),
       capability('orders.sync', 'sync', { requiredScopes: ['read_orders'], description: 'Backfill/sync orders' }),

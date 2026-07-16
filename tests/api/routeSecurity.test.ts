@@ -66,7 +66,6 @@ describe("Static security guard: service-role routes must be auth-gated", () => 
       "app/api/public-audit/submit/route.ts",
       "app/api/public-audit/[runId]/claim/route.ts",
       "app/api/process-csv-finalize/route.ts",
-      "app/api/founding-merchant-applications/route.ts",
       "app/api/cron/purge-expired-audits/route.ts",
       "app/api/account/setup/route.ts",
       // Intentionally public bootstrap script: returns merchant-scoped collector JS
@@ -181,7 +180,7 @@ describe("/api/customers/search — auth requirement", () => {
     // unscoped scan of identities.
     expect(content).toContain("findCustomerProfileIdsByText");
     expect(content).toContain("ctx.merchantId");
-    expect(content).toContain(".in('id'");
+    expect(content).toContain(".in('identity_id'");
     // Must NOT run its own ilike/text scan against identities on user input.
     expect(content).not.toMatch(/\.ilike\(/);
   });
@@ -1457,7 +1456,7 @@ describe("/api/customers/search — partial name matching", () => {
     );
     // Results are constrained to IDs the caller's merchant owns.
     expect(content).toContain("ctx.merchantId");
-    expect(content).toContain(".in('id'");
+    expect(content).toContain(".in('identity_id'");
   });
 });
 

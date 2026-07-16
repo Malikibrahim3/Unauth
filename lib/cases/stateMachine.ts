@@ -9,7 +9,7 @@
  * any axis; the status axis delegates to the canonical claim status machine so
  * there is a single source of truth for status transitions.
  *
- * See docs/IMPL_source_agnostic_connected_ecosystem.md §6.
+ * See ARCHITECTURE.md §6.
  */
 import { canTransitionClaimStatus } from '@/lib/claims/statusMachine';
 import {

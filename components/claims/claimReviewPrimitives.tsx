@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { getClaimSlaState } from '@/lib/claims/sla';
-import { PanelCard } from '@/components/ui';
+import { Card } from '@/components/ui';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import {
   EVIDENCE_SOURCE_LABELS,
@@ -49,8 +49,8 @@ export function RailSection({
   highlighted?: boolean;
 }) {
   return (
-    <PanelCard
-      variant="app"
+    <Card unstyled
+      variant="flat"
       className={`overflow-hidden p-0 ${id === 'manage' ? 'ua-focal-panel' : ''}`}
       style={{
         borderColor: highlighted ? 'var(--text-primary)' : id === 'manage' ? 'var(--accent-border)' : 'var(--border-muted)',
@@ -75,16 +75,16 @@ export function RailSection({
           {children}
         </div>
       )}
-    </PanelCard>
+    </Card>
   );
 }
 
 export function CaseIntelTile({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <PanelCard variant="appInset" className="min-w-0 px-3 py-2.5">
+    <Card unstyled variant="inset" className="min-w-0 px-3 py-2.5">
       <p className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--text-secondary)' }}>{label}</p>
       <div className="text-sm leading-snug" style={{ color: 'var(--text)' }}>{children}</div>
-    </PanelCard>
+    </Card>
   );
 }
 

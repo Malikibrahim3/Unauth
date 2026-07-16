@@ -8,7 +8,7 @@
  * function instead of hardcoding enum literals (which produced the latent
  * `'completed'` fulfilment bug — 'completed' is NOT a valid fulfillment_state).
  *
- * See docs/IMPL_source_agnostic_connected_ecosystem.md §3 / §21.4.
+ * See ARCHITECTURE.md §3 / §21.4.
  */
 
 export const ORDER_FINANCIAL_STATUSES = [

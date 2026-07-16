@@ -1,7 +1,7 @@
 import type { ConnectionState } from '@/lib/connections/getConnectionState';
 import type { MerchantSetupState } from '@/lib/connections/getMerchantSetupState';
 
-const INTEGRATIONS_HREF = '/settings/integrations';
+const INTEGRATIONS_HREF = '/integrations';
 
 export function resolveCustomerActions(
   setupState: MerchantSetupState,
@@ -13,27 +13,27 @@ export function resolveCustomerActions(
       subtitle: 'Merchant-owned customer context for loss-case decisions - order history, claim history, prior outcomes, and evidence patterns.',
     };
   }
-  if (connection.shopifyOnlyConnected) {
+  if (connection.orderSourceOnlyConnected) {
     return {
       primary: { label: 'Connect helpdesk', href: INTEGRATIONS_HREF },
-      subtitle: 'Customer history from Shopify orders. Connect your helpdesk to add claim reasons, prior outcomes, and decision context.',
+      subtitle: 'Customer history from your order source. Connect a helpdesk to add case reasons, prior outcomes, and decision context.',
     };
   }
   if (connection.helpdeskOnlyConnected) {
     return {
-      primary: { label: 'Connect Shopify', href: INTEGRATIONS_HREF },
-      subtitle: 'Customer claim history from your helpdesk. Connect Shopify to add order value, purchase history, and account context.',
+      primary: { label: 'Connect order source', href: INTEGRATIONS_HREF },
+      subtitle: 'Customer case history from your helpdesk. Connect an order source to add order value, purchase history, and account context.',
     };
   }
   if (setupState === 'csv_only') {
     return {
-      primary: { label: 'Connect Shopify and your helpdesk', href: INTEGRATIONS_HREF },
-      subtitle: 'Customer and case history from your imported data. Connect Shopify and your helpdesk to keep the evidence memory current.',
+      primary: { label: 'Connect order source and helpdesk', href: INTEGRATIONS_HREF },
+      subtitle: 'Customer and case history from imported data. Connect live sources to keep the evidence record current.',
     };
   }
   return {
     primary: { label: 'Reconnect sources', href: INTEGRATIONS_HREF },
-    subtitle: 'Customer history from existing merchant data. Reconnect Shopify and your helpdesk to keep case context current.',
+    subtitle: 'Customer history from existing merchant data. Reconnect an order source and helpdesk to keep case context current.',
   };
 }
 

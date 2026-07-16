@@ -1,47 +1,19 @@
 ---
-description: Unauth product direction and MVP steering rules
+description: Unauth product contract
 globs:
   - "**/*"
 alwaysApply: true
 ---
-# Unauth Direction
+# Unauth direction
 
-Always treat `docs/product/MVP_STEERING.md` as the product source of truth.
+Treat `docs/PRODUCT.md`, `ARCHITECTURE.md`, and `CLAUDE.md` as the maintained product and engineering contract.
 
-Also reference when needed:
-- `docs/product/PRODUCT_PRINCIPLES.md`
-- `docs/product/TERMINOLOGY.md`
-- `CLAUDE.md` (product direction + engineering rules)
+Unauth is a source-agnostic post-purchase payout-control, loss, and recovery platform. Commerce, helpdesk, fulfillment, payment, and import providers feed one merchant-scoped model and timeline.
 
-Unauth is a post-purchase loss accountability platform.
+Use neutral operational language: payout exposure, support payout case, evidence strength, merchant rule, recommended action, loss attribution, recoverability, recovery owner, prevention opportunity, policy leakage, and partner accountability.
 
-The MVP is Shopify/Gorgias payout control + evidence checklist + merchant rules + attribution/recoverability + manual recovery cases + recovery board + partner rulebook v1.
+Do not present Unauth as an accusation engine. Merchant rules make explainable recommendations; the merchant controls and records the final outcome.
 
-Do not frame Unauth primarily as a fraud/risk network.
+Keep helpdesk widgets compressed. Full investigation belongs on the Unauth case page; recovery operations belong in Recovery; provider-specific setup belongs in Integrations.
 
-Do not use accusatory language like fraudster, bad actor, blacklist, guilty, caught, scammer, or cross-merchant accusation.
-
-Use operational language:
-- payout exposure
-- support payout case
-- evidence strength
-- merchant rule fired
-- recommended action
-- loss attribution
-- recoverability
-- recovery owner
-- prevention opportunity
-- policy leakage
-- partner accountability
-
-Merchant rules make recommendations. Unauth surfaces evidence and next actions.
-
-The Gorgias widget must stay compressed. It should be a 4-line decision card, not a full dashboard.
-
-Full investigation belongs in the Unauth case page.
-
-Recovery operation belongs in the recovery board.
-
-Partner recoverability rules belong in the partner rulebook.
-
-Do not overbuild automatic carrier claims, AI contract extraction, network benchmarks, WMS/ERP integrations, or full enterprise APIs until the MVP workflow is proven.
+New providers extend shared canonical and connector contracts instead of creating parallel product models.

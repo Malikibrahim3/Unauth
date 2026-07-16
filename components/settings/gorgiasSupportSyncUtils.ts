@@ -61,7 +61,7 @@ export function formatGorgiasSidebarWidgetRegistrationWarning(
   const prefix = `Gorgias connected${webhookAutoRegistered ? ' and ticket sync is active' : ''}, but the sidebar widget couldn't be registered automatically`;
 
   if (isGorgiasIntegrationLimitError(sidebarError)) {
-    return `${prefix}. Your Gorgias account has reached its integration limit. In Gorgias, go to Settings → Integrations and remove an unused integration, or upgrade your Gorgias plan. Then reconnect here.`;
+    return `${prefix}. Your Gorgias account has reached its integration limit. In Gorgias, go to Settings, then Integrations and remove an unused integration, or upgrade your Gorgias plan. Then reconnect here.`;
   }
 
   return `${prefix} (${sidebarError ?? 'unknown error'}). Reconnect to try again.`;

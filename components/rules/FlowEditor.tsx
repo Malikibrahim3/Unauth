@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
-import { Button, Input, PanelCard } from "@/components/ui";
+import { Button, Input, Card } from "@/components/ui";
 
 export type FlowConditionDraft = {
   field: string;
@@ -168,7 +168,7 @@ export function FlowEditor({
 
   return (
     <form onSubmit={submit} className="space-y-5">
-      <PanelCard variant="app" className="p-4">
+      <Card unstyled variant="flat" className="p-4">
         <h2 className="text-sm font-semibold">Flow identity and trigger</h2>
         <div className="mt-3 grid gap-4 sm:grid-cols-2">
           <label className="text-xs font-semibold text-[var(--text-secondary)]">
@@ -205,9 +205,9 @@ export function FlowEditor({
             placeholder="What work does this route, and why?"
           />
         </label>
-      </PanelCard>
+      </Card>
 
-      <PanelCard variant="app" className="p-4">
+      <Card unstyled variant="flat" className="p-4">
         <div className="flex items-center justify-between gap-3">
           <div>
             <h2 className="text-sm font-semibold">Conditions</h2>
@@ -339,9 +339,9 @@ export function FlowEditor({
             below.
           </p>
         )}
-      </PanelCard>
+      </Card>
 
-      <PanelCard variant="app" className="p-4">
+      <Card unstyled variant="flat" className="p-4">
         <div className="flex items-center justify-between gap-3">
           <div>
             <h2 className="text-sm font-semibold">Bounded actions</h2>
@@ -373,9 +373,9 @@ export function FlowEditor({
             />
           ))}
         </div>
-      </PanelCard>
+      </Card>
 
-      <PanelCard variant="appInset" className="p-4">
+      <Card unstyled variant="inset" className="p-4">
         <p className="text-xs font-semibold text-[var(--text-secondary)]">
           Readable summary
         </p>
@@ -399,7 +399,7 @@ export function FlowEditor({
             </li>
           ))}
         </ul>
-      </PanelCard>
+      </Card>
       {error ? (
         <p role="alert" className="text-sm text-[var(--danger)]">
           {error}

@@ -3,7 +3,7 @@
  * Rows map to the SAME canonical shapes as connectors/webhook/API, so a CSV
  * order is normalized identically to one ingested any other way.
  *
- * See docs/IMPL_source_agnostic_connected_ecosystem.md §7.3.
+ * See ARCHITECTURE.md §7.3.
  */
 import { mapCanonicalOrder, mapCanonicalRefund } from '@/lib/canonical/entities';
 import type { RecordError } from '@/lib/connectors/mapping/recordErrors';

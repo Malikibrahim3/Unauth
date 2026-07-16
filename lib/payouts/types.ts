@@ -417,7 +417,7 @@ export type RecoveryPath = {
 };
 
 // ---------------------------------------------------------------------------
-// Payout recommendation (steering vocabulary — docs/product/MVP_STEERING.md §16)
+// Payout recommendation (steering vocabulary — docs/PRODUCT.md §16)
 // ---------------------------------------------------------------------------
 
 export const PAYOUT_RECOMMENDATION_VALUES = PAYOUT_CASE_NEXT_ACTIONS;
@@ -447,7 +447,7 @@ export type SupportPayoutCase = {
   nextAction: PayoutCaseNextAction;
   nextActionReason: string;
   evidence: EvidenceChecklistResult;
-  /** Concise direct-carrier / Shopify delivery evidence summary for INR widget and case UI. */
+  /** Concise direct-carrier / commerce-source delivery evidence summary for INR widget and case UI. */
   deliveryEvidenceLine: string;
   attribution: LossAttributionResult;
   clarificationRequests: CaseClarificationRequest[];

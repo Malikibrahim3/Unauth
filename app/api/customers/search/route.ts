@@ -10,10 +10,9 @@ export const dynamic = 'force-dynamic';
 
 /** Shape of a customer_profiles row selected by this route. */
 type CustomerSearchRow = {
-  id: string;
-  names: string[] | null;
-  primary_email: string | null;
-  risk_level: string | null;
+  identity_id: string;
+  display_name: string | null;
+  email: string | null;
 };
 
 /**
@@ -21,11 +20,8 @@ type CustomerSearchRow = {
  * Returns matching customer profiles for the command palette.
  *
  * SECURITY: requires authenticated user with VIEW_CUSTOMERS permission.
- * Candidate profile IDs are resolved ONLY through findCustomerProfileIdsByText,
- * which scopes by customer_profile_identities.merchant_id. Display rows are then
- * fetched by those already-owned IDs. `identities` is a network-level table with
- * no merchant_id column, so it is NEVER scanned unscoped here (doing so leaked
- * cross-tenant profiles when the scoped-client proxy silently no-op'd on it).
+ * Candidate identity IDs and display fields both come from merchant_customers.
+ * `identities` is network-level and deliberately has no names or emails.
  */
 async function GETHandler(req: NextRequest) {
   // ── Auth ──────────────────────────────────────────────────────────────────
@@ -65,20 +61,33 @@ async function GETHandler(req: NextRequest) {
     return NextResponse.json({ results: [] });
   }
 
-  // Fetch display fields ONLY for IDs already proven to belong to this merchant.
-  const { data } = await serviceClient
-    .from(TABLES.CUSTOMER_PROFILES)
-    .select('id, names, primary_email, risk_level')
-    .in('id', ownedProfileIds)
-    .order('risk_score', { ascending: false })
-    .limit(limit) as unknown as { data: CustomerSearchRow[] | null };
+  // Fetch display fields from the same merchant-owned source of truth.
+  const { data, error } = await serviceClient
+    .from(TABLES.MERCHANT_CUSTOMERS)
+    .select('identity_id, display_name, email')
+    .eq('merchant_id', ctx.merchantId)
+    .in('identity_id', ownedProfileIds)
+    .order('updated_at', { ascending: false })
+    .limit(limit) as unknown as {
+      data: CustomerSearchRow[] | null;
+      error: { message: string } | null;
+    };
 
-  const results = (data ?? []).map((r) => ({
-    id: r.id,
-    name: r.names?.[0] ?? r.primary_email ?? 'Unknown',
-    email: r.primary_email,
-    risk_level: r.risk_level ?? 'low',
-  }));
+  if (error) {
+    return NextResponse.json({ error: 'Customer search failed' }, { status: 500 });
+  }
+
+  const seen = new Set<string>();
+  const results = (data ?? []).flatMap((r) => {
+    if (!r.identity_id || seen.has(r.identity_id)) return [];
+    seen.add(r.identity_id);
+    return [{
+      id: r.identity_id,
+      name: r.display_name ?? r.email ?? 'Unknown customer',
+      email: r.email,
+      risk_level: '',
+    }];
+  });
 
   return NextResponse.json({ results });
 }

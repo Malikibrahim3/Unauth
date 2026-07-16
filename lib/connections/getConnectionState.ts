@@ -17,7 +17,7 @@ export type ConnectionState = {
   helpdeskProvider: HelpdeskProvider | null;
   bothConnected: boolean;
   neitherConnected: boolean;
-  shopifyOnlyConnected: boolean;
+  orderSourceOnlyConnected: boolean;
   helpdeskOnlyConnected: boolean;
   shopDomain: string | null;
   linkState: ShopifyLinkState;
@@ -53,7 +53,7 @@ export async function getConnectionState(
     helpdeskProvider,
     bothConnected: orderSourceConnected && helpdesk,
     neitherConnected: !orderSourceConnected && !helpdesk,
-    shopifyOnlyConnected: orderSourceConnected && !helpdesk,
+    orderSourceOnlyConnected: orderSourceConnected && !helpdesk,
     helpdeskOnlyConnected: !orderSourceConnected && helpdesk,
     shopDomain: shopify ? orderSourceStoreKey : shopifyStatus.shopDomain,
     linkState: shopifyStatus.linkState,

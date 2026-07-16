@@ -2,7 +2,7 @@ import { Activity, AtSign, CreditCard, Fingerprint, Lightbulb, MapPin, Phone, Sh
 import Link from "next/link";
 import CustomerNotes from "@/components/audit/CustomerNotes";
 import CustomerSupportCasesSection from "@/components/customers/CustomerSupportCasesSection";
-import { Badge, PanelCard } from "@/components/ui";
+import { Badge, Card, DataTableServer } from "@/components/ui";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import {
@@ -19,24 +19,17 @@ import type {
   ActivityLogEntry,
   CustomerProfileDisplay,
   LinkedAccountRow,
-  MerchantSignalPill,
 } from "@/app/(app)/customers/[id]/customerProfilePageLoad";
 import type { CustomerIntelligencePanel } from "@/app/api/customers/[id]/route";
-import type { ConfidenceGradeValue } from "@/lib/confidence";
-import type { BehaviorRoadmapEvent } from "@/components/customers/BehaviorRoadmap";
 
 export type CustomerProfilePageMainColumnProps = {
   profile: CustomerProfileDisplay;
-  profileGrade: ConfidenceGradeValue;
   hasCleanRecord: boolean;
   merchantOrderCount: number;
   merchantNarrative: string;
-  identitySignals: string[];
   transactions: RoadmapTransaction[];
-  roadmapEvents: BehaviorRoadmapEvent[];
   identityTimeline: CustomerIntelligencePanel["identityTimeline"];
   variantCount: number;
-  merchantSignalPills: MerchantSignalPill[];
   linkedAccounts: LinkedAccountRow[];
   activityLog: ActivityLogEntry[];
 };
@@ -56,43 +49,49 @@ function CompactTransactionList({
   }
 
   return (
-    <div className="overflow-x-auto rounded-md border border-[var(--border)]">
-      <table className="w-full min-w-[560px] text-left text-sm">
-        <thead className="bg-[var(--surface-sunken)] text-[11px] uppercase tracking-wide text-[var(--text-tertiary)]"><tr><th className="px-3 py-2">Order</th><th className="px-3 py-2">Date</th><th className="px-3 py-2">Store outcome</th><th className="px-3 py-2 text-right">Amount</th></tr></thead>
-        <tbody className="divide-y divide-[var(--border-muted)]">
-      {transactions.slice(0, 25).map((tx) => (
-        <tr key={tx.order_id} className="hover:bg-[var(--surface-hover)]">
-          <td className="px-3 py-3"><Link href={`/orders/${tx.source_order_id}`} className="font-mono text-xs font-semibold underline-offset-2 hover:underline">{tx.order_id}</Link>{tx.via_email ? <span className="mt-1 block max-w-[190px] truncate text-[11px] text-[var(--text-tertiary)]">via {tx.via_email}</span> : null}</td>
-          <td className="px-3 py-3 text-[var(--text-secondary)]">{formatDateAbsolute(tx.processed_at)}</td>
-          <td className="px-3 py-3">{tx.chargeback_filed ? <Badge tone="danger" size="sm">Chargeback filed</Badge> : tx.refund_claimed ? <Badge tone="warning" size="sm">Payout case</Badge> : <Badge tone="success" size="sm">No linked case</Badge>}</td>
-          <td className="px-3 py-3 text-right font-semibold tabular-nums">{formatMoneyOrDash(Math.round((Number(tx.order_value) || 0) * 100), tx.currency)}</td>
-        </tr>
-      ))}
-        </tbody>
-      </table>
-    </div>
+    <DataTableServer
+      rows={transactions.slice(0, 25)}
+      getRowKey={(tx) => tx.order_id}
+      density="compact"
+      emptyState={<EmptyState variant="compact" title="No orders in dataset" />}
+      columns={[
+        {
+          key: "order",
+          header: "Order",
+          render: (tx) => <div><Link href={`/orders/${tx.source_order_id}`} className="font-mono text-xs font-semibold text-[var(--text-link)] underline-offset-2 hover:underline">{tx.order_id}</Link>{tx.via_email ? <span className="mt-1 block max-w-[190px] truncate text-[11px] text-[var(--text-tertiary)]">via {tx.via_email}</span> : null}</div>,
+        },
+        {
+          key: "date",
+          header: "Date",
+          render: (tx) => <span className="text-[var(--text-secondary)]">{formatDateAbsolute(tx.processed_at)}</span>,
+        },
+        {
+          key: "outcome",
+          header: "Store outcome",
+          render: (tx) => tx.chargeback_filed ? <Badge tone="danger" size="sm">Chargeback filed</Badge> : tx.refund_claimed ? <Badge tone="warning" size="sm">Payout case</Badge> : <Badge tone="success" size="sm">No linked case</Badge>,
+        },
+        {
+          key: "amount",
+          header: "Amount",
+          align: "right" as const,
+          render: (tx) => <span className="font-semibold tabular-nums">{formatMoneyOrDash(Math.round((Number(tx.order_value) || 0) * 100), tx.currency)}</span>,
+        },
+      ]}
+    />
   );
 }
 
 export function CustomerProfilePageMainColumn({
   profile,
-  profileGrade,
   hasCleanRecord,
   merchantOrderCount,
   merchantNarrative,
-  identitySignals,
   transactions,
-  roadmapEvents,
   identityTimeline,
   variantCount,
-  merchantSignalPills,
   linkedAccounts,
   activityLog,
 }: CustomerProfilePageMainColumnProps) {
-  void profileGrade;
-  void identitySignals;
-  void roadmapEvents;
-
   const contactRows = [
     { label: "Email", value: profile.primary_email ?? profile.emails[0], icon: AtSign },
     { label: "Phone", value: profile.phones[0], icon: Phone },
@@ -178,10 +177,10 @@ export function CustomerProfilePageMainColumn({
                   description = labelize(entry.event_type);
               }
               return (
-                <PanelCard
+                <Card unstyled
                   key={entry.id}
                   as="li"
-                  variant="appInset"
+                  variant="inset"
                   className="flex items-start gap-3 p-3"
                 >
                   <Activity
@@ -203,7 +202,7 @@ export function CustomerProfilePageMainColumn({
                       {formatDateMode(entry.created_at, "recent")}
                     </p>
                   </div>
-                </PanelCard>
+                </Card>
               );
             })}
           </ol>
@@ -229,7 +228,6 @@ export function CustomerProfilePageMainColumn({
           {identityTimeline.length ? <ol className="space-y-3">{identityTimeline.slice(-6).reverse().map((entry) => <li key={`${entry.date}-${entry.field}-${entry.value}`} className="flex gap-3"><span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${entry.isVariant ? 'bg-[var(--warning)]' : 'bg-[var(--text-tertiary)]'}`} /><div className="min-w-0"><p className="truncate text-xs font-medium text-[var(--text-primary)]">{entry.value}</p><p className="mt-0.5 text-[11px] text-[var(--text-tertiary)]">{entry.isVariant ? 'New ' : 'First '} {labelize(entry.field)} · {formatDateAbsolute(entry.date)}</p></div></li>)}</ol> : <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]"><ShoppingBag className="h-4 w-4" aria-hidden="true" />No identifier history yet.</div>}
         </SectionCard>
 
-        {merchantSignalPills.length ? <SectionCard title="Network context" description="Aggregate case types disclosed under privacy thresholds." density="compact"><div className="flex flex-wrap gap-2">{merchantSignalPills.slice(0, 12).map((signal, index) => <Badge key={`${signal.claimType}-${index}`} tone="neutral" size="sm">{signal.claimType}</Badge>)}</div></SectionCard> : null}
       </aside>
     </div>
   );

@@ -5,10 +5,9 @@ const ROOT = process.cwd();
 const scanRoots = [
   'app/(app)',
   'app/onboarding',
-  'app/audit-running',
   'styles/authenticated',
   ...[
-    'apply', 'analytics', 'billing', 'cases', 'claims', 'collaboration',
+    'analytics', 'billing', 'cases', 'claims', 'collaboration',
     'connections', 'customers', 'evidence', 'exceptions', 'identity', 'imports',
     'inbox', 'integrations', 'layout', 'losses', 'nav', 'navigation',
     'notifications', 'product', 'relationships', 'reporting', 'reports', 'rules',
@@ -30,15 +29,13 @@ const ignored = new Set([
 
 // Grandfathered pre-existing debt — real hits that predate this lint rule
 // and this pass's design-system consolidation. Not exemptions for new code;
-// each is logged in docs/design/authenticated-style-system-validation.md as
+// each is logged in styles/authenticated/README.md as
 // remaining cleanup, not silently accepted. Adding a NEW file here for a NEW
 // violation defeats the point of the rule — fix the value or add a narrowly-
 // scoped documented exception instead (see styles/authenticated/README.md's
 // "Exception mechanism" section: data-viz literals and third-party brand
 // marks are the only sanctioned categories).
 const hardcodedColorGrandfathered = new Set([
-  'app/(app)/help/integrations/siena/page.tsx',
-  'app/(app)/help/integrations/yuma/page.tsx',
   'app/(app)/recoveries/[id]/page.tsx',
   'components/collaboration/CaseComments.tsx',
   'components/connections/ConnectionPromptStrip.tsx',
@@ -50,15 +47,13 @@ const hardcodedColorGrandfathered = new Set([
 ]);
 const arbitraryRadiusGrandfathered = new Set([
   'app/(app)/customers/CustomersOverviewFilterChip.tsx',
-  'app/(app)/partners/PartnerRulebookClient.tsx',
   'app/(app)/claims/ClaimsPageView.tsx',
-  'components/apply/FoundingMerchantApplicationForm.tsx',
   'components/claims/ClaimReviewHeader.tsx',
   'components/nav/SidebarNavItem.tsx',
 ]);
 
 // Components documented as deprecated in
-// docs/design/authenticated-component-migration-register.md. Empty for now:
+// styles/authenticated/README.md. Empty for now:
 // nothing found during the design-system consolidation is deprecated
 // cleanly enough to retroactively enforce without breaking in-flight work
 // (see the register's "why components/claims is excluded" note). Add an
@@ -85,6 +80,94 @@ const arbitraryRadiusInline = /borderRadius:\s*(['"])(?!var\()(?!50%\1)(?!\1\1)[
 // Inline boxShadow holding a literal instead of var() or the bare literal
 // "none" (which is a legitimate "no shadow" value, not a hardcoded shadow).
 const arbitraryShadow = /boxShadow:\s*(['"])(?!var\()(?!none\1)[^'"]+\1/g;
+
+// Exact baseline for native controls that still live in low-level forms,
+// navigation, overlays, and compatibility surfaces. New files may not add
+// native controls, and existing files may not increase their count. Migrate a
+// call site to Input/Select/Button/IconButton before changing this baseline.
+const rawControlExpression = /<(?:button|input|select|textarea)\b/g;
+const rawControlBaseline = new Map([
+  ['app/(app)/claims/ClaimsQueueClient.tsx', 1],
+  ['app/(app)/recoveries/RecoveryBoardClient.tsx', 2],
+  ['app/(app)/settings/agreements/page.tsx', 17],
+  ['components/audit/CustomerNotes.tsx', 6],
+  ['components/billing/BillingSettingsClient.tsx', 9],
+  ['components/claims/ClaimReviewContextColumn.tsx', 2],
+  ['components/claims/ClaimReviewFormSection.tsx', 8],
+  ['components/claims/ClaimReviewHeader.tsx', 1],
+  ['components/claims/ClaimReviewManageCard.tsx', 17],
+  ['components/claims/ClaimReviewToast.tsx', 1],
+  ['components/claims/claimReviewPrimitives.tsx', 7],
+  ['components/collaboration/CaseComments.tsx', 2],
+  ['components/collaboration/MentionPicker.tsx', 1],
+  ['components/customers/BehaviorRoadmap.tsx', 1],
+  ['components/customers/CustomerPreviewDrawer.tsx', 1],
+  ['components/customers/CustomersFilterSheetInner.tsx', 2],
+  ['components/customers/CustomersTableClient.tsx', 1],
+  ['components/evidence/EvidencePackageFormFields.tsx', 4],
+  ['components/evidence/EvidencePackageFormStates.tsx', 1],
+  ['components/EvidenceNotVerdictsRampSection.tsx', 1],
+  ['components/exceptions/ExceptionQueue.tsx', 7],
+  ['components/identity/EvidenceScoreBadge.tsx', 1],
+  ['components/imports/CanonicalCsvImportClient.tsx', 5],
+  ['components/layout/AppHeader.tsx', 2],
+  ['components/layout/AvatarMenu.tsx', 2],
+  ['components/layout/CommandPaletteInputBar.tsx', 2],
+  ['components/layout/CommandPaletteResultsList.tsx', 4],
+  ['components/layout/WorkspaceSwitcher.tsx', 1],
+  ['components/losses/LossActions.tsx', 2],
+  ['components/nav/SidebarAside.tsx', 3],
+  ['components/nav/SidebarInner.tsx', 1],
+  ['components/notifications/NotificationCentre.tsx', 1],
+  ['components/OnboardingClient.tsx', 8],
+  ['components/rules/ConditionBlock.tsx', 2],
+  ['components/rules/FlowEditor.tsx', 6],
+  ['components/rules/FlowVersionWorkbench.tsx', 1],
+  ['components/rules/RuleBuilderDrawer.tsx', 3],
+  ['components/rules/RuleVersionWorkbench.tsx', 3],
+  ['components/settings/AccountPasswordSection.tsx', 1],
+  ['components/settings/ApiIntegrationsKeyDialogs.tsx', 2],
+  ['components/settings/ApiKeyCreateDialog.tsx', 3],
+  ['components/settings/AppearanceSettings.tsx', 1],
+  ['components/settings/AuditTrailClient.tsx', 2],
+  ['components/settings/BulkDeleteClient.tsx', 3],
+  ['components/settings/ChromeSetupClient.tsx', 1],
+  ['components/settings/FreshdeskCredentialFields.tsx', 2],
+  ['components/settings/FreshdeskSupportSyncConnectionDetails.tsx', 3],
+  ['components/settings/FreshdeskSupportSyncCreateForm.tsx', 3],
+  ['components/settings/FreshdeskWebhookSetupPanel.tsx', 3],
+  ['components/settings/GorgiasCredentialFields.tsx', 3],
+  ['components/settings/GorgiasSupportSyncConnectionDetails.tsx', 5],
+  ['components/settings/GorgiasSupportSyncCreateForm.tsx', 3],
+  ['components/settings/GorgiasWebhookSetupPanel.tsx', 2],
+  ['components/settings/NotificationPreferencesForm.tsx', 1],
+  ['components/settings/PlatformSettingsClient.tsx', 7],
+  ['components/settings/TeamInviteForm.tsx', 3],
+  ['components/settings/TeamMemberRow.tsx', 4],
+  ['components/settings/FreshdeskSupportSyncConnectionDetails.tsx', 3],
+  ['components/settings/ZendeskSetupClient.tsx', 1],
+  ['components/settings/ZendeskSupportSyncClient.tsx', 6],
+  ['components/shopify/ShopifyDisconnectClient.tsx', 3],
+  ['components/shopify/ShopifyIntegrationBanner.tsx', 0],
+  ['components/shopify/SyncStatusConnectModal.tsx', 5],
+  ['components/shopify/SyncStatusConnectedView.tsx', 2],
+  ['components/shopify/SyncStatusDisconnectedView.tsx', 2],
+  ['components/ui/Button.tsx', 1],
+  ['components/ui/DataTable.tsx', 1],
+  ['components/ui/Drawer.tsx', 1],
+  ['components/ui/FilterChip.tsx', 1],
+  ['components/ui/IconButton.tsx', 1],
+  ['components/ui/Input.tsx', 1],
+  ['components/ui/LandingPrimitives.tsx', 1],
+  ['components/ui/RowActionsMenu.tsx', 2],
+  ['components/ui/SegmentedControl.tsx', 1],
+  ['components/ui/Select.tsx', 1],
+  ['components/ui/Tabs.tsx', 1],
+  ['components/ui/Toast.tsx', 1],
+  ['components/work/WorkQueue.tsx', 5],
+]);
+const textArrowExpression = /[→↗]/g;
+const textArrowBaseline = 70;
 
 const allowedExtensions = new Set(['.ts', '.tsx', '.css']);
 
@@ -114,11 +197,29 @@ function findMatches(source, expression) {
 
 const files = (await Promise.all(scanRoots.map(filesUnder))).flat();
 const failures = [];
+let rawControlTotal = 0;
+let textArrowTotal = 0;
 
 for (const file of files) {
   const normalized = relative(ROOT, join(ROOT, file));
   if (ignored.has(normalized)) continue;
   const source = await readFile(join(ROOT, file), 'utf8');
+
+  if (!['components/ui/LandingPrimitives.tsx', 'components/ui/index.ts'].includes(normalized)) {
+    for (const { line, text } of findMatches(source, /<PanelCard\b|\bPanelCard\b(?=.*from)/g)) {
+      failures.push(`${normalized}:${line} deprecated PanelCard usage: ${text} — use Card, SectionCard, or a specialised canonical surface`);
+    }
+  }
+
+  const rawControls = findMatches(source, rawControlExpression);
+  rawControlTotal += rawControls.length;
+  if (rawControls.length > 0 && !rawControlBaseline.has(normalized)) {
+    failures.push(`${normalized}: raw control outside explicit allowlist — use Button, Input, Select, SegmentedControl, or document a low-level implementation reason`);
+  } else if (rawControlBaseline.has(normalized) && rawControls.length !== rawControlBaseline.get(normalized)) {
+    failures.push(`${normalized}: raw control baseline changed from ${rawControlBaseline.get(normalized)} to ${rawControls.length} — migrate the call site or update the documented baseline after review`);
+  }
+
+  textArrowTotal += findMatches(source, textArrowExpression).length;
 
   for (const [rule, expression] of [['old palette', oldPalette], ['landing token dependency', landingDependency]]) {
     for (const { line, text } of findMatches(source, expression)) {
@@ -154,6 +255,10 @@ for (const file of files) {
       failures.push(`${normalized}:${line} deprecated import: ${text} — ${dep.message}`);
     }
   }
+}
+
+if (textArrowTotal > textArrowBaseline) {
+  failures.push(`authenticated text-arrow baseline increased from ${textArrowBaseline} to ${textArrowTotal} — use words or an accessible icon component`);
 }
 
 if (failures.length) {

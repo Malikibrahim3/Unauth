@@ -4,6 +4,7 @@ import { type ReactNode, useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
+import { IconButton } from '@/components/ui/IconButton';
 
 interface ModalAction {
   label: string;
@@ -135,14 +136,7 @@ export function Modal({
                 </p>
               )}
             </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-1 rounded-md hover:bg-[var(--surface-hover)] transition-colors flex-shrink-0"
-              aria-label="Close modal"
-            >
-              <X className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
-            </button>
+            <IconButton label="Close modal" icon={<X className="w-4 h-4" />} size="sm" onClick={onClose} className="border-0 bg-transparent" />
           </div>
         )}
 

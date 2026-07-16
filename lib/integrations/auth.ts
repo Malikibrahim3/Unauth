@@ -37,6 +37,16 @@ type ShopifyConnectionRow = {
   installed_at: string | null;
 };
 
+type HelpdeskConnectionRow = {
+  provider: string;
+  provider_account_name: string | null;
+  provider_account_id: string | null;
+  status: string | null;
+  last_sync_at: string | null;
+  last_error: string | null;
+  updated_at: string | null;
+};
+
 /** Pick the most recently installed Shopify connection for this merchant. */
 export function pickLatestShopifyConnection(rows: ShopifyConnectionRow[]): ShopifyConnectionRow | null {
   return [...rows].sort((a, b) => {
@@ -71,7 +81,7 @@ export async function getStoredIntegrationViews(
   client: SupabaseClient,
   merchantId: string,
 ): Promise<ProviderConnectionView[]> {
-  const [{ data: integrationRows }, { data: shopifyRows }, { data: gorgiasRows }, shopifyOrders] = await Promise.all([
+  const [{ data: integrationRows }, { data: storeRows }, { data: helpdeskRows }, shopifyOrders] = await Promise.all([
     client
       .from('merchant_integrations')
       .select('provider_id,status,provider_account_id,provider_account_name,last_sync_at,last_error,last_sync_started_at,last_sync_completed_at,last_successful_sync_at,imported_record_count,last_error_code,updated_at')
@@ -80,16 +90,14 @@ export async function getStoredIntegrationViews(
       .from('store_connections')
       .select('platform,store_key,status,last_sync_at,last_error,installed_at')
       .eq('merchant_id', merchantId)
-      .eq('platform', 'shopify')
       .order('installed_at', { ascending: false })
-      .limit(1),
+      .limit(100),
     client
       .from('helpdesk_connections')
       .select('provider,provider_account_name,provider_account_id,status,last_sync_at,last_error,updated_at')
       .eq('merchant_id', merchantId)
-      .eq('provider', 'gorgias')
       .order('updated_at', { ascending: false })
-      .limit(1),
+      .limit(100),
     client
       .from('source_orders')
       .select('id', { count: 'exact', head: true })
@@ -105,47 +113,57 @@ export async function getStoredIntegrationViews(
   const integrationByProvider = new Map(
     [...groupedIntegrationRows.entries()].map(([providerId, rows]) => [providerId, pickPreferredIntegrationConnection(rows)]),
   );
-  const shopify = pickLatestShopifyConnection((shopifyRows ?? []) as ShopifyConnectionRow[]);
-  const shopifyIntegration = pickPreferredIntegrationConnection(
-    ((integrationRows ?? []) as IntegrationRow[]).filter(
-      (row) => row.provider_id === 'shopify' && row.provider_account_id === shopify?.store_key,
-    ),
-  );
-  const gorgias = gorgiasRows?.[0] as any;
+  const storeByProvider = new Map<string, ShopifyConnectionRow>();
+  for (const row of (storeRows ?? []) as ShopifyConnectionRow[]) {
+    if (!row.platform || storeByProvider.has(row.platform)) continue;
+    storeByProvider.set(row.platform, row);
+  }
+  const helpdeskByProvider = new Map<string, HelpdeskConnectionRow>();
+  for (const row of (helpdeskRows ?? []) as HelpdeskConnectionRow[]) {
+    if (!row.provider || helpdeskByProvider.has(row.provider)) continue;
+    helpdeskByProvider.set(row.provider, row);
+  }
 
   return INTEGRATION_PROVIDERS.filter((provider) => providerAppliesToMerchant(provider, applicability)).map((provider) => {
-    if (provider.id === 'shopify') {
+    const storedIntegration = integrationByProvider.get(provider.id);
+    const storeConnection = storeByProvider.get(provider.id);
+    if (storeConnection) {
       return {
         ...provider,
-        status: activeStatus(shopify?.status),
-        lastSyncAt: shopify?.last_sync_at ?? shopifyIntegration?.last_sync_at ?? null,
-        lastError: publicConnectionErrorMessage(shopify?.last_error, shopifyIntegration?.last_error),
-        detail: shopify?.store_key ?? null,
-        importedRecordCount: shopifyOrders.count ?? shopifyIntegration?.imported_record_count ?? null,
-        ...(shopifyIntegration
+        status: activeStatus(storeConnection.status),
+        lastSyncAt: storeConnection.last_sync_at ?? storedIntegration?.last_sync_at ?? null,
+        lastError: publicConnectionErrorMessage(storeConnection.last_error, storedIntegration?.last_error),
+        detail: storeConnection.store_key ?? null,
+        importedRecordCount: provider.id === 'shopify'
+          ? shopifyOrders.count ?? storedIntegration?.imported_record_count ?? null
+          : storedIntegration?.imported_record_count ?? null,
+        ...(storedIntegration
           ? {
               syncState: deriveSyncState({
-                status: activeStatus(shopify?.status),
-                lastSyncStartedAt: shopifyIntegration.last_sync_started_at,
-                lastSyncCompletedAt: shopifyIntegration.last_sync_completed_at ?? shopify?.last_sync_at ?? null,
-                lastSuccessfulSyncAt: shopifyIntegration.last_successful_sync_at ?? shopify?.last_sync_at ?? null,
-                importedRecordCount: shopifyOrders.count ?? shopifyIntegration.imported_record_count,
-                lastErrorCode: shopifyIntegration.last_error_code,
+                status: activeStatus(storeConnection.status),
+                lastSyncStartedAt: storedIntegration.last_sync_started_at,
+                lastSyncCompletedAt: storedIntegration.last_sync_completed_at ?? storeConnection.last_sync_at ?? null,
+                lastSuccessfulSyncAt: storedIntegration.last_successful_sync_at ?? storeConnection.last_sync_at ?? null,
+                importedRecordCount: provider.id === 'shopify'
+                  ? shopifyOrders.count ?? storedIntegration.imported_record_count
+                  : storedIntegration.imported_record_count,
+                lastErrorCode: storedIntegration.last_error_code,
               }),
             }
           : {}),
       };
     }
-    if (provider.id === 'gorgias') {
+    const helpdeskConnection = helpdeskByProvider.get(provider.id);
+    if (helpdeskConnection) {
       return {
         ...provider,
-        status: activeStatus(gorgias?.status),
-        lastSyncAt: gorgias?.last_sync_at ?? null,
-        lastError: publicConnectionErrorMessage(gorgias?.last_error),
-        detail: gorgias?.provider_account_name ?? gorgias?.provider_account_id ?? null,
+        status: activeStatus(helpdeskConnection.status),
+        lastSyncAt: helpdeskConnection.last_sync_at ?? null,
+        lastError: publicConnectionErrorMessage(helpdeskConnection.last_error),
+        detail: helpdeskConnection.provider_account_name ?? helpdeskConnection.provider_account_id ?? null,
       };
     }
-    const row = integrationByProvider.get(provider.id);
+    const row = storedIntegration;
     return {
       ...provider,
       status: provider.buildStatus === 'slot_only' ? 'not_connected' : activeStatus(row?.status),

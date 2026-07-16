@@ -6,8 +6,7 @@ import { useDemoMode } from './ConnectionStateContext';
 
 interface ConnectionPromptStripProps {
   connection: ConnectionState;
-  /** Pass true when customer_profiles exist but neither integration is active.
-   *  Surfaces an honest "stale Shopify data" message instead of the CSV-only copy. */
+  /** Pass true when customer profiles exist but neither source is active. */
   hasExistingProfiles?: boolean;
 }
 
@@ -19,19 +18,18 @@ export function ConnectionPromptStrip({ connection, hasExistingProfiles }: Conne
 
   let message: string;
 
-  if (connection.shopifyOnlyConnected) {
+  if (connection.orderSourceOnlyConnected) {
     message =
-      'Shopify is connected but your helpdesk is not — claim data is missing. Some numbers shown here may be zero because data isn\'t syncing, not because the customer has no history.';
+      'Your order source is connected but your helpdesk is not — case context is incomplete. Some values may be zero because data is missing, not because there is no history.';
   } else if (connection.helpdeskOnlyConnected) {
     message =
-      'Your helpdesk is connected but Shopify is not — order data is missing. Connect both to see the full picture.';
+      'Your helpdesk is connected but no order source is active — order value and fulfillment context are incomplete.';
   } else if (hasExistingProfiles) {
-    // Neither connected, but merchant has profiles (likely from a previous Shopify sync)
     message =
-      'Showing existing Shopify data. Reconnect Shopify and your helpdesk to keep this analysis current and add claim context.';
+      'Showing existing merchant data. Reconnect an order source and helpdesk to keep it current and add case context.';
   } else {
     message =
-      'Connect Shopify and your helpdesk to see complete claim context. Without connected sources, this view may be incomplete.';
+      'Connect an order source and helpdesk to see complete case context. Without connected sources, this view may be incomplete.';
   }
 
   return (
@@ -53,7 +51,7 @@ export function ConnectionPromptStrip({ connection, hasExistingProfiles }: Conne
         <span className="leading-snug" style={{ color: 'var(--text-primary)' }}>{message}</span>
       </div>
       <Link
-        href="/settings/integrations"
+        href="/integrations"
         className="shrink-0 text-sm font-semibold whitespace-nowrap hover:opacity-80 transition-opacity"
         style={{ color: 'var(--accent)' }}
       >

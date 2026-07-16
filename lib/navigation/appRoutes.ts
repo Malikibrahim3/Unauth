@@ -4,12 +4,9 @@ import {
   Users,
   HelpCircle,
   Settings,
-  ShieldCheck,
   BarChart3,
-  Store,
   FileWarning,
   GitBranch,
-  Handshake,
   Repeat2,
   SlidersHorizontal,
   ListChecks,
@@ -22,21 +19,15 @@ import { ROUTE_ALIASES } from './aliases';
 
 export type AppRouteKey =
   | 'dashboard'
-  | 'store'
   | 'work'
   | 'customers'
   | 'claims'
   | 'losses'
   | 'recoveries'
-  | 'partners'
-  | 'watchlist'
-  | 'evidencePackages'
   | 'reports'
   | 'integrations'
   | 'settings'
   | 'help'
-  | 'global'
-  | 'lookup'
   | 'rules'
   | 'flows';
 
@@ -50,8 +41,6 @@ export type AppRoute = {
   icon?: LucideIcon;
   /** Included in primary sidebar navigation */
   sidebar?: boolean;
-  /** Included in workbench sub-nav */
-  workbench?: boolean;
   /** Included in command palette quick nav */
   commandPalette?: boolean;
   commandDescription?: string;
@@ -73,18 +62,8 @@ export const APP_ROUTES = {
     permission: PERMISSIONS.VIEW_DASHBOARD,
     icon: Home,
     sidebar: true,
-    workbench: true,
     commandPalette: true,
     commandDescription: 'Payout exposure, recovery, and prevention metrics',
-  },
-  store: {
-    key: 'store',
-    href: '/store',
-    label: 'Store overview',
-    pageTitle: 'Store overview',
-    permission: PERMISSIONS.VIEW_DASHBOARD,
-    icon: Store,
-    sidebar: false,
   },
   work: {
     key: 'work',
@@ -94,7 +73,6 @@ export const APP_ROUTES = {
     permission: PERMISSIONS.VIEW_INBOX,
     icon: ListChecks,
     sidebar: true,
-    workbench: true,
     commandPalette: true,
     commandDescription: 'Open tasks across payout cases, losses, and recoveries',
   },
@@ -108,7 +86,6 @@ export const APP_ROUTES = {
     tierLabel: 'Context',
     icon: Users,
     sidebar: true,
-    workbench: true,
     commandPalette: true,
     commandDescription: 'Customer context for support payout decisions',
   },
@@ -123,7 +100,6 @@ export const APP_ROUTES = {
     tierLabel: 'Payout Control',
     icon: FileWarning,
     sidebar: true,
-    workbench: true,
     commandPalette: true,
     commandDescription: 'Control support payouts, evidence, and recovery cases',
     badgeKey: 'claims',
@@ -138,67 +114,21 @@ export const APP_ROUTES = {
     tierLabel: 'Losses',
     icon: TrendingDown,
     sidebar: true,
-    workbench: true,
     commandPalette: true,
     commandDescription: 'Canonical loss ledger: confirmed, estimated, recoverable, prevented, written off',
   },
   recoveries: {
     key: 'recoveries',
     href: '/recoveries',
-    label: 'Recoveries',
+    label: 'Recovery',
     pageTitle: 'Recovery board',
     permission: PERMISSIONS.VIEW_INBOX,
     tier: 'pro',
     tierLabel: 'Recovery',
     icon: Repeat2,
     sidebar: true,
-    workbench: true,
     commandPalette: true,
     commandDescription: 'Track source-backed losses, evidence gaps, correspondence, and synced recovery outcomes',
-  },
-  partners: {
-    key: 'partners',
-    href: '/partners',
-    label: 'Partners',
-    pageTitle: 'Partner Rulebook',
-    permission: PERMISSIONS.VIEW_SETTINGS,
-    tier: 'pro',
-    tierLabel: 'Rules',
-    icon: Handshake,
-    sidebar: false,
-    // Compatibility route for existing recovery configuration. Recovery parties
-    // belong to the loss/recovery workflow, not a competing merchant module.
-    workbench: false,
-    commandPalette: false,
-    commandDescription: 'Legacy recovery-partner configuration',
-  },
-  watchlist: {
-    key: 'watchlist',
-    href: '/watchlist',
-    label: 'Customer context',
-    pageTitle: 'Customer context',
-    permission: PERMISSIONS.VIEW_WATCHLIST,
-    tier: 'growth',
-    tierLabel: 'Context',
-    icon: GitBranch,
-    sidebar: false,
-    workbench: false,
-    commandPalette: false,
-    commandDescription: 'Legacy customer-context redirect',
-  },
-  evidencePackages: {
-    key: 'evidencePackages',
-    href: '/chargebacks',
-    label: 'Evidence',
-    pageTitle: 'Evidence packages',
-    permission: PERMISSIONS.VIEW_CHARGEBACKS,
-    tier: 'growth',
-    tierLabel: 'Evidence',
-    icon: ShieldCheck,
-    sidebar: false,
-    workbench: false,
-    commandPalette: false,
-    commandDescription: 'Dispute evidence packages (legacy)',
   },
   reports: {
     key: 'reports',
@@ -209,7 +139,6 @@ export const APP_ROUTES = {
     tier: 'pro',
     icon: BarChart3,
     sidebar: true,
-    workbench: true,
   },
   integrations: {
     key: 'integrations',
@@ -220,7 +149,6 @@ export const APP_ROUTES = {
     aliases: ['/settings/integrations'],
     icon: Plug,
     sidebar: true,
-    workbench: false,
     commandPalette: true,
     commandDescription: 'Connect commerce, helpdesk, carrier, and payment sources',
   },
@@ -242,20 +170,6 @@ export const APP_ROUTES = {
     pageTitle: 'Help',
     icon: HelpCircle,
   },
-  global: {
-    key: 'global',
-    href: '/global',
-    label: 'Pattern context',
-    pageTitle: 'Pattern context',
-    permission: PERMISSIONS.VIEW_CUSTOMERS,
-    tier: 'growth',
-    tierLabel: 'Legacy',
-    icon: GitBranch,
-    sidebar: false,
-    workbench: false,
-    commandPalette: false,
-    commandDescription: 'Legacy imported pattern context',
-  },
   rules: {
     key: 'rules',
     href: '/rules',
@@ -266,7 +180,6 @@ export const APP_ROUTES = {
     tierLabel: 'Rules',
     icon: SlidersHorizontal,
     sidebar: true,
-    workbench: true,
     commandPalette: true,
     commandDescription: 'Configure merchant-owned payout and recovery rules',
   },
@@ -280,21 +193,8 @@ export const APP_ROUTES = {
     tierLabel: 'Flows',
     icon: GitBranch,
     sidebar: true,
-    workbench: true,
     commandPalette: true,
     commandDescription: 'Configure bounded operational workflows and inspect runs',
-  },
-  lookup: {
-    key: 'lookup',
-    href: '/lookup',
-    label: 'Live lookup',
-    pageTitle: 'Live lookup',
-    permission: PERMISSIONS.VIEW_CUSTOMERS,
-    tier: 'growth',
-    icon: Users,
-    sidebar: false,
-    commandPalette: false,
-    commandDescription: 'API-style customer lookup (redirects to search)',
   },
 } satisfies Record<AppRouteKey, AppRoute>;
 
@@ -326,19 +226,6 @@ export function getSidebarNavItems(permissions?: ReadonlySet<Permission>): Array
       .map((key) => APP_ROUTES[key] as AppRoute)
       .filter((route) => !route.permission || !permissions || permissions.has(route.permission)),
   })).filter((group) => group.items.length > 0);
-}
-
-export function getWorkbenchNavItems() {
-  const items: Array<{ key: string; label: string; href: string }> = [];
-  for (const r of Object.values(APP_ROUTES) as AppRoute[]) {
-    if (!r.workbench) continue;
-    items.push({
-      key: r.key === 'evidencePackages' ? 'evidence' : r.key,
-      label: r.label,
-      href: r.href,
-    });
-  }
-  return items;
 }
 
 export function getCommandPaletteNavItems(permissions?: ReadonlySet<Permission>) {

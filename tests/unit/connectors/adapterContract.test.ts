@@ -5,7 +5,7 @@ import { isUnsupported, type ConnectorAdapter } from '@/lib/connectors/types';
 const CATEGORIES = new Set([
   'commerce', 'helpdesk', 'tracking', 'carrier', 'warehouse_3pl', 'returns', 'payments_disputes', 'documents',
 ]);
-const AUTH_MODES = new Set(['oauth', 'api_key', 'webhook', 'custom']);
+const AUTH_MODES = new Set(['oauth', 'api_key', 'manual_upload']);
 
 describe.each(listConnectors().map((a) => [a.manifest.id, a] as [string, ConnectorAdapter]))(
   'connector contract: %s',

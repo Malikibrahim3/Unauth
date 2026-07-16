@@ -3,7 +3,6 @@ description: Authenticated design system rules — styles/authenticated/ is the 
 globs:
   - "app/(app)/**"
   - "app/onboarding/**"
-  - "app/audit-running/**"
   - "components/**"
   - "styles/authenticated/**"
 alwaysApply: true
@@ -22,4 +21,4 @@ alwaysApply: true
 - Visible focus states are mandatory on every interactive control.
 - `npm run lint:authenticated-design` must pass before completing any authenticated styling change.
 
-See `docs/design/authenticated-style-system-audit.md` and `docs/design/authenticated-component-migration-register.md` for the full rationale, known mismatches, and what's still in progress.
+The maintained token, exception, and component rules are in `styles/authenticated/README.md`; do not link new work to historical audit documents.

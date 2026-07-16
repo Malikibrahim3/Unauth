@@ -14,7 +14,7 @@ import { useRouter } from "next/navigation";
 import {
   Button,
   Modal,
-  PanelCard,
+  Card,
 } from "@/components/ui";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import {
@@ -340,7 +340,7 @@ export function FlowVersionWorkbench({
           {message.text}
         </p>
       ) : null}
-      <PanelCard variant="app" className="p-4">
+      <Card unstyled variant="flat" className="p-4">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="flex flex-wrap items-center gap-2">
@@ -413,9 +413,9 @@ export function FlowVersionWorkbench({
             ) : null}
           </div>
         </div>
-      </PanelCard>
+      </Card>
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <PanelCard as="section" variant="app" className="p-4">
+        <Card unstyled as="section" variant="flat" className="p-4">
           <h2 className="text-sm font-semibold">Structured flow</h2>
           <ol className="mt-4 space-y-3">
             <li className="rounded-md border border-[var(--border-muted)] bg-[var(--surface-sunken)] p-3">
@@ -455,8 +455,8 @@ export function FlowVersionWorkbench({
               </li>
             ))}
           </ol>
-        </PanelCard>
-        <PanelCard as="section" variant="app" className="p-4">
+        </Card>
+        <Card unstyled as="section" variant="flat" className="p-4">
           <h2 className="text-sm font-semibold">Draft impact</h2>
           {!draft ? (
             <p className="mt-3 text-sm text-[var(--text-secondary)]">
@@ -478,7 +478,7 @@ export function FlowVersionWorkbench({
                     <span className="line-through text-[var(--text-tertiary)]">
                       {before}
                     </span>
-                    <span className="mx-1">→</span>
+                    <span className="mx-1 text-[var(--text-tertiary)]">to</span>
                     <strong>{after}</strong>
                   </dd>
                 </div>
@@ -489,9 +489,9 @@ export function FlowVersionWorkbench({
               Draft and published definitions are identical.
             </p>
           )}
-        </PanelCard>
+        </Card>
       </div>
-      <PanelCard as="section" variant="app" className="overflow-hidden p-0">
+      <Card unstyled as="section" variant="flat" className="overflow-hidden p-0">
         <div className="border-b border-[var(--border-muted)] px-4 py-3">
           <h2 className="text-sm font-semibold">
             Version history and rollback
@@ -527,7 +527,7 @@ export function FlowVersionWorkbench({
             </div>
           ))}
         </div>
-      </PanelCard>
+      </Card>
       <Modal
         open={editing}
         onClose={() => setEditing(false)}

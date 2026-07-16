@@ -40,14 +40,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         style={buttonStyle}
         {...props}
       >
-        {loading ? (
-          <Spinner size={size} />
-        ) : leadingIcon ? (
-          <span className={cn('shrink-0', iconSizeClass)} aria-hidden="true">
-            {leadingIcon}
-          </span>
-        ) : null}
-        {children}
+        <span className={cn('inline-flex items-center gap-2', loading && 'invisible')} aria-hidden={loading || undefined}>
+          {leadingIcon ? <span className={cn('shrink-0', iconSizeClass)} aria-hidden="true">{leadingIcon}</span> : null}
+          {children}
+        </span>
+        {loading ? <span className="absolute inset-0 inline-flex items-center justify-center"><Spinner size={size} /></span> : null}
       </button>
     );
   },
