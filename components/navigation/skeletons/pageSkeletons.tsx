@@ -5,104 +5,80 @@ import {
   TableSkeleton,
 } from "./primitives";
 import { WorkbenchPageSkeleton } from "./WorkbenchPageSkeleton";
+import styles from '@/components/authenticated/AuthenticatedPageChrome.module.css';
 
 export function DashboardLoadingSkeleton() {
   return (
     <div
       role="status"
-      className="p-4 md:p-6 space-y-5 animate-pulse"
+      className="space-y-3.5 animate-pulse"
       aria-busy="true"
       aria-label="Loading dashboard"
     >
-      <header className="flex flex-wrap items-end justify-between gap-3">
+      <header className="flex min-h-12 flex-wrap items-center justify-between gap-3">
         <div className="min-w-0 space-y-2">
-          <Bone className="h-8 w-36" />
-          <Bone className="h-4 w-72 max-w-full" />
+          <Bone className="h-5 w-28" />
+          <Bone className="h-3 w-64 max-w-full" />
         </div>
-        <div className="flex items-center gap-2">
-          <Bone className="h-9 w-28" />
-          <Bone className="h-9 w-32" />
-        </div>
+        <Bone className="h-4 w-20" />
       </header>
 
-      <MetricCardGridSkeleton count={5} />
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
-        <section
-          className="rounded-md border p-4 space-y-3"
-          style={{ borderColor: "var(--border)", background: "var(--surface)" }}
-        >
-          <div className="flex items-center justify-between">
-            <div className="space-y-1.5">
-              <Bone className="h-4 w-32" />
-              <Bone className="h-3 w-44" />
-            </div>
-            <Bone className="h-3 w-20" />
-          </div>
-          <Bone className="h-[130px] w-full rounded-md" />
-        </section>
-        <section
-          className="rounded-md border p-4 space-y-4"
-          style={{ borderColor: "var(--border)", background: "var(--surface)" }}
-        >
-          <div className="space-y-2">
-            <Bone className="h-3 w-24" />
-            <Bone className="h-8 w-20" />
-            <Bone className="h-3 w-36" />
-          </div>
-          <div className="space-y-2">
-            <Bone className="h-3 w-40" />
-            <Bone className="h-10 w-full" />
-          </div>
-        </section>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-y border-[var(--border-muted)] py-2.5">
+        <div className="flex flex-wrap gap-2">
+          <Bone className="h-[30px] w-28 rounded-md" />
+          <Bone className="h-[30px] w-32 rounded-md" />
+        </div>
+        <div className="flex gap-2">
+          <Bone className="h-[30px] w-20 rounded-md" />
+          <Bone className="h-[30px] w-16 rounded-md" />
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <section
-          className="rounded-md border overflow-hidden"
-          style={{ borderColor: "var(--border)", background: "var(--surface)" }}
-        >
-          <div
-            className="flex items-center justify-between border-b px-4 py-2.5"
-            style={{ borderColor: "var(--border)" }}
-          >
-            <div className="space-y-1">
-              <Bone className="h-4 w-28" />
-              <Bone className="h-3 w-56" />
-            </div>
-            <Bone className="h-3 w-16" />
+      <section className="overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface)]">
+        <div className="flex items-start justify-between gap-3 p-4 pb-2">
+          <div className="space-y-1.5">
+            <Bone className="h-3.5 w-36" />
+            <Bone className="h-2.5 w-28" />
           </div>
-          {[...Array(4)].map((_, i) => (
-            <div
-              key={i}
-              className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 border-b px-4 py-3"
-              style={{ borderColor: "var(--border-muted)" }}
-            >
+          <Bone className="h-2.5 w-32" />
+        </div>
+        <div className="px-4 pt-2">
+          <Bone className="h-3 w-24" />
+          <Bone className="mt-2 h-5 w-32" />
+        </div>
+        <div className="p-4 pt-2">
+          <Bone className="h-[250px] w-full rounded-md" />
+        </div>
+        <div className="grid grid-cols-2 border-t border-[var(--border-muted)] lg:grid-cols-4">
+          {[...Array(4)].map((_, index) => (
+            <div key={index} className="space-y-2 border-l border-[var(--border-muted)] p-3 first:border-l-0">
+              <Bone className="h-2.5 w-24" />
+              <Bone className="h-5 w-20" />
+              <Bone className="h-2.5 w-28 max-w-full" />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-2">
+        {[0, 1].map((card) => (
+          <section key={card} className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
+            <div className="flex items-start justify-between">
               <div className="space-y-2">
-                <Bone className="h-4 w-48" />
-                <Bone className="h-3 w-40" />
-                <Bone className="h-3 w-56" />
+                <Bone className="h-3.5 w-32" />
+                <Bone className="h-6 w-16" />
+                <Bone className="h-2.5 w-40" />
               </div>
-              <Bone className="h-3 w-12 self-center" />
+              <Bone className="h-7 w-16 rounded-md" />
             </div>
-          ))}
-        </section>
-        <aside className="space-y-4">
-          {[...Array(4)].map((_, i) => (
-            <div
-              key={i}
-              className="rounded-md border p-4 space-y-2"
-              style={{
-                borderColor: "var(--border)",
-                background: "var(--surface)",
-              }}
-            >
-              <Bone className="h-4 w-36" />
-              <Bone className="h-7 w-10" />
-              <Bone className="h-3 w-full" />
+            <Bone className="mt-5 h-12 w-full rounded-sm" />
+            <div className="mt-4 grid grid-cols-3 gap-3 border-t border-[var(--border-muted)] pt-3">
+              <Bone className="h-8 w-full" />
+              <Bone className="h-8 w-full" />
+              <Bone className="h-8 w-full" />
             </div>
-          ))}
-        </aside>
+          </section>
+        ))}
       </div>
     </div>
   );
@@ -256,7 +232,7 @@ export function WatchlistLoadingSkeleton() {
 
 export function CustomersLoadingSkeleton() {
   return (
-    <WorkbenchPageSkeleton showActionBar kpiCount={5}>
+    <WorkbenchPageSkeleton showActionBar visualVariant="range" kpiCount={4} kpiColsClassName="grid-cols-2 md:grid-cols-4">
       <div className="p-4 space-y-4">
         <div
           className="rounded-md border p-4 space-y-3"
@@ -307,8 +283,9 @@ export function CustomersLoadingSkeleton() {
 export function ClaimsLoadingSkeleton() {
   return (
     <WorkbenchPageSkeleton
-      kpiCount={6}
-      kpiColsClassName="grid-cols-2 md:grid-cols-3 lg:grid-cols-6"
+      visualVariant="columns"
+      kpiCount={4}
+      kpiColsClassName="grid-cols-2 md:grid-cols-4"
     >
       <div className="p-4 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -441,7 +418,7 @@ export function ChargebacksLoadingSkeleton() {
 export function UploadLoadingSkeleton() {
   return (
     <WorkbenchPageSkeleton showActions kpiCount={0}>
-      <div className="mx-auto w-full max-w-3xl p-4 space-y-6">
+      <div className="mx-auto w-full max-w-[1500px] space-y-3 p-4">
         <div
           className="rounded-[var(--radius-2)] px-5 py-4 space-y-2"
           style={{
@@ -453,7 +430,7 @@ export function UploadLoadingSkeleton() {
           <Bone className="h-3 w-full" />
         </div>
         <div
-          className="rounded-md border border-dashed p-10 flex flex-col items-center gap-4"
+          className="flex flex-col items-center gap-3 rounded-[var(--ua-radius-card)] border border-dashed p-6"
           style={{ borderColor: "var(--border)", background: "var(--surface)" }}
         >
           <Bone className="h-12 w-12 rounded-full" />
@@ -516,7 +493,7 @@ export function NetworkIntelligenceLoadingSkeleton() {
   return (
     <div
       role="status"
-      className="p-6 md:p-8 space-y-6 animate-pulse"
+      className="mx-auto max-w-[1500px] animate-pulse space-y-3.5 px-3 pb-6 pt-4 sm:px-5"
       aria-busy="true"
       aria-label="Loading network intelligence"
     >
@@ -524,7 +501,7 @@ export function NetworkIntelligenceLoadingSkeleton() {
         <Bone className="h-7 w-52" />
         <Bone className="h-4 w-96 max-w-full" />
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {[...Array(4)].map((_, i) => (
           <div
             key={i}
@@ -540,7 +517,7 @@ export function NetworkIntelligenceLoadingSkeleton() {
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[260px_minmax(0,1fr)_300px]">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[230px_minmax(0,1fr)_280px]">
         <Bone className="rounded-md h-64" />
         <Bone className="rounded-md h-[520px]" />
         <Bone className="rounded-md h-64" />
@@ -553,7 +530,7 @@ export function AuditDetailLoadingSkeleton() {
   return (
     <div
       role="status"
-      className="p-6 md:p-8 space-y-6 animate-pulse"
+      className="mx-auto max-w-[1500px] animate-pulse space-y-3.5 px-3 pb-6 pt-4 sm:px-5"
       aria-busy="true"
       aria-label="Loading audit"
     >
@@ -617,55 +594,41 @@ export function TablePageLoadingSkeleton({
 
 /** Generic form page skeleton — used for apply, new-audit, settings subpages */
 export function FormPageLoadingSkeleton() {
-  return (
-    <div className="p-6 md:p-8 space-y-6 max-w-2xl" aria-busy="true">
-      <div className="space-y-2">
-        <Bone className="h-8 w-48" />
-        <Bone className="h-4 w-80 max-w-full" />
-      </div>
-      <SectionCardSkeleton titleWidth="w-40">
-        <div className="space-y-4">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="space-y-1.5">
-              <Bone className="h-3 w-24" />
-              <Bone className="h-10 w-full" />
-            </div>
-          ))}
-          <Bone className="h-10 w-36" />
-        </div>
-      </SectionCardSkeleton>
-    </div>
-  );
+  return <SettingsGeometrySkeleton mode="form" />;
 }
 
 /** Settings page with list items skeleton — used for integrations, team */
 export function SettingsListLoadingSkeleton() {
+  return <SettingsGeometrySkeleton mode="list" />;
+}
+
+function SettingsGeometrySkeleton({ mode }: { mode: 'form' | 'list' }) {
   return (
-    <div className="p-6 md:p-8 space-y-6 max-w-3xl" aria-busy="true">
-      <div className="space-y-2">
-        <Bone className="h-8 w-44" />
-        <Bone className="h-4 w-72 max-w-full" />
-      </div>
-      <div className="space-y-3">
-        {[...Array(5)].map((_, i) => (
-          <div
-            key={i}
-            className="flex flex-wrap items-center justify-between gap-4 rounded-md border px-4 py-3 sm:flex-nowrap"
-            style={{
-              borderColor: "var(--border)",
-              background: "var(--surface)",
-            }}
-          >
-            <div className="flex min-w-0 flex-1 items-center gap-3">
-              <Bone className="h-9 w-9 rounded-md shrink-0" />
-              <div className="min-w-0 flex-1 space-y-1.5">
-                <Bone className="h-4 w-36 max-w-full" />
-                <Bone className="h-3 w-52 max-w-full" />
-              </div>
+    <div className="animate-pulse" aria-busy="true" aria-label="Loading settings">
+      <header className={styles.pageHeader}>
+        <div className={styles.headerTop}>
+          <div className="space-y-2"><Bone className="h-2.5 w-20" /><Bone className="h-5 w-40" /><Bone className="h-3 w-72 max-w-full" /></div>
+        </div>
+      </header>
+      <div className={styles.pageBody}>
+        <div className={styles.settingsGrid}>
+          <section className={styles.panel}>
+            <div className="space-y-3 p-4">
+              {mode === 'form' ? Array.from({ length: 3 }, (_, index) => (
+                <div key={index} className="space-y-1.5"><Bone className="h-2.5 w-24" /><Bone className="h-8 w-full" /></div>
+              )) : Array.from({ length: 5 }, (_, index) => (
+                <div key={index} className="flex min-h-14 items-center justify-between gap-4 border-b border-[var(--border-muted)] py-2 last:border-0">
+                  <div className="space-y-1.5"><Bone className="h-3 w-36" /><Bone className="h-2.5 w-52 max-w-full" /></div><Bone className="h-8 w-24" />
+                </div>
+              ))}
+              {mode === 'form' ? <Bone className="h-8 w-28" /> : null}
             </div>
-            <Bone className="h-8 w-24 shrink-0" />
-          </div>
-        ))}
+          </section>
+          <aside className={styles.guidanceStack}>
+            <div className={styles.guidanceCard}><Bone className="h-8 w-8" /><Bone className="mt-3 h-3 w-32" /><Bone className="mt-2 h-12 w-full" /></div>
+            <Bone className="h-8 w-full" />
+          </aside>
+        </div>
       </div>
     </div>
   );
@@ -674,12 +637,12 @@ export function SettingsListLoadingSkeleton() {
 /** Graph / network visualization skeleton */
 export function GraphLoadingSkeleton() {
   return (
-    <div className="p-6 md:p-8 space-y-6" aria-busy="true">
+    <div className="mx-auto max-w-[1500px] space-y-3.5 px-3 pb-6 pt-4 sm:px-5" aria-busy="true">
       <div className="space-y-2">
         <Bone className="h-8 w-52" />
         <Bone className="h-4 w-96 max-w-full" />
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {[...Array(4)].map((_, i) => (
           <div
             key={i}
@@ -694,7 +657,7 @@ export function GraphLoadingSkeleton() {
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[260px_minmax(0,1fr)_300px]">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[230px_minmax(0,1fr)_280px]">
         <Bone className="rounded-md h-64" />
         <Bone className="rounded-md h-[520px]" />
         <Bone className="rounded-md h-64" />
@@ -706,7 +669,7 @@ export function GraphLoadingSkeleton() {
 /** Report detail skeleton */
 export function ReportDetailLoadingSkeleton() {
   return (
-    <div className="p-6 md:p-8 space-y-6" aria-busy="true">
+    <div className="mx-auto max-w-[1500px] space-y-3.5 px-3 pb-6 pt-4 sm:px-5" aria-busy="true">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-2">
           <Bone className="h-8 w-56" />
@@ -718,7 +681,7 @@ export function ReportDetailLoadingSkeleton() {
         </div>
       </div>
       <MetricCardGridSkeleton count={4} />
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <SectionCardSkeleton titleWidth="w-36">
           <Bone className="h-48 w-full" />
         </SectionCardSkeleton>

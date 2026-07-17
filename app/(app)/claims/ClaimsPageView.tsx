@@ -3,6 +3,7 @@ import { Suspense } from 'react';
 import { PageConnectionGate } from '@/components/connections/PageConnectionGate';
 import type { ConnectionState } from '@/lib/connections/getConnectionState';
 import { WorkbenchPage, EmptyState, ButtonLink, Card, DataTableServer, FilterChip, SegmentedControl } from '@/components/ui';
+import { ColumnComparisonChart } from '@/components/charts/authenticated';
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { dominantCurrency, formatCurrencyNullable, formatNumber } from '@/lib/utils/format';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
@@ -102,6 +103,8 @@ export function ClaimsPageView({
       label: CLAIM_TYPE_LABELS[claimType] ?? humanizeEnumValue(claimType),
       value,
     }));
+  const waitingCount = queueCounts.awaitingCarrier + queueCounts.awaiting3pl + queueCounts.awaitingSupplier;
+  const classifiedActive = queueCounts.awaitingEvidence + waitingCount + queueCounts.readyForDecision + queueCounts.manualReview;
   // Display currency for aggregate KPIs: the most common case currency on record.
   const displayCurrency = dominantCurrency(recoveryMetricRows.length > 0 ? recoveryMetricRows : claims);
   const emptyDescription = listView.kind === 'unread'
@@ -150,6 +153,24 @@ export function ClaimsPageView({
         { label: 'Ready for decision', value: formatNumber(queueCounts.readyForDecision), hint: 'Evidence complete' },
         { label: 'Payout exposure', value: formatCurrencyNullable(totalAtRisk || null, displayCurrency), hint: 'All cases' },
       ]}
+      primaryVisual={
+        <ColumnComparisonChart
+          id="payout-decision-state"
+          title="Decision-state comparison"
+          description="The entire active payout queue grouped by the next evidence or merchant-decision step."
+          annotation={{
+            value: queueCounts.active > 0 ? `${Math.round((queueCounts.readyForDecision / queueCounts.active) * 100)}%` : '—',
+            label: 'ready for decision',
+          }}
+          columns={[
+            { label: 'Needs evidence', value: queueCounts.awaitingEvidence, tone: 'red' },
+            { label: 'Partner wait', value: waitingCount, tone: 'yellow' },
+            { label: 'Ready', value: queueCounts.readyForDecision, tone: 'orange' },
+            { label: 'Manual review', value: queueCounts.manualReview, tone: 'blue' },
+            { label: 'Other active', value: Math.max(0, queueCounts.active - classifiedActive), tone: 'neutral' },
+          ]}
+        />
+      }
       footer={
         <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
           Support conversations stay in your helpdesk. Unauth controls the payout decision moment, logs the loss, and routes recoverable cases to the right partner.

@@ -140,7 +140,7 @@ export default function TeamManagementClient() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {message ? (
         <output
           className="block rounded-md border px-3 py-2 text-sm"

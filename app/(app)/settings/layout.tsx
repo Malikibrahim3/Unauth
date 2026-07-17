@@ -20,13 +20,10 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
   const pathname = usePathname();
 
   return (
-    <div className="grid min-h-full grid-cols-1 xl:grid-cols-[240px_minmax(0,1fr)]">
-      <aside
-        className="border-b px-5 py-5 xl:border-b-0 xl:border-r xl:px-6 xl:py-6"
-        style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
-      >
-        <p className="t-label mb-3 px-2" style={{ color: 'var(--text-tertiary)' }}>Settings</p>
-        <nav className="flex gap-1 overflow-x-auto pb-1 xl:block xl:space-y-1 xl:overflow-visible xl:pb-0" aria-label="Settings">
+    <div className="min-h-full">
+      <div className="border-b border-[var(--border)] bg-[var(--surface)] px-3 py-2 md:px-5">
+        <nav className="flex items-center gap-1.5 overflow-x-auto" aria-label="Settings">
+          <span className="mr-1 shrink-0 text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--text-tertiary)]">Settings</span>
           {TABS.map((tab) => {
             const active = pathname === tab.href || pathname.startsWith(`${tab.href}/`);
             return (
@@ -34,7 +31,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
                 key={tab.href}
                 href={tab.href}
                 aria-current={active ? 'page' : undefined}
-                className="block shrink-0 whitespace-nowrap rounded-[var(--radius-sm)] border px-3 py-2 text-sm transition-colors xl:whitespace-normal"
+                className="inline-flex h-7 shrink-0 items-center whitespace-nowrap rounded-[var(--ua-radius-input)] border px-2.5 text-[11px] font-medium transition-colors"
                 style={{
                   borderColor: active ? 'var(--border)' : 'transparent',
                   background: active ? 'var(--surface)' : 'transparent',
@@ -47,8 +44,8 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
             );
           })}
         </nav>
-      </aside>
-      <div className="min-w-0 bg-[var(--bg-canvas)]">{children}</div>
+      </div>
+      <div className="min-w-0">{children}</div>
     </div>
   );
 }

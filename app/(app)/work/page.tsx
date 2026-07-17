@@ -3,10 +3,12 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { PERMISSIONS, requirePermission } from "@/lib/permissions";
 import { TABLES } from "@/lib/supabase/tables";
 import { WorkbenchPage } from "@/components/ui";
+import { DeadlineRiskChart } from "@/components/charts/authenticated";
 import { WorkQueue, type WorkQueueItem, type WorkViewCounts } from "@/components/work/WorkQueue";
 import { countOpenExceptions, listExceptions } from "@/lib/exceptions/store";
 import { formatNumber } from "@/lib/utils/format";
 import { shortRef, hashId } from "@/lib/ui/displayRef";
+import { selectDeadlineBands } from "@/lib/visualisation/chartSelectors";
 
 export const dynamic = "force-dynamic";
 type TaskRow = {
@@ -73,10 +75,26 @@ export default async function WorkPage({
       .gte("due_at", start.toISOString())
       .lt("due_at", end.toISOString());
   }
-  const taskResult =
-    view === "integration-exceptions"
-      ? { data: [], count: 0 }
-      : await query.range((page - 1) * pageSize, page * pageSize - 1);
+  const includeExceptions =
+    view === "open" || view === "integration-exceptions";
+  const [taskResult, openExceptionCount, exceptionRows, countRowsResult] =
+    await Promise.all([
+      view === "integration-exceptions"
+        ? Promise.resolve({ data: [], count: 0 })
+        : query.range((page - 1) * pageSize, page * pageSize - 1),
+      countOpenExceptions(serviceClient, ctx.merchantId),
+      includeExceptions
+        ? listExceptions(serviceClient, ctx.merchantId, {
+            status: "open",
+            limit: pageSize,
+          })
+        : Promise.resolve([]),
+      serviceClient
+        .from(TABLES.WORK_TASKS)
+        .select("status,owner_user_id,due_at,blocking_reason,title")
+        .eq("merchant_id", ctx.merchantId)
+        .limit(10000),
+    ]);
   const tasks: WorkQueueItem[] = ((taskResult.data ?? []) as TaskRow[]).map(
     (row) => ({
       id: row.id,
@@ -108,22 +126,7 @@ export default async function WorkPage({
       source: row.source,
     }),
   );
-  const includeExceptions =
-    view === "open" || view === "integration-exceptions";
-  const [openExceptionCount, exceptionRows] = await Promise.all([
-    countOpenExceptions(serviceClient, ctx.merchantId),
-    includeExceptions
-      ? listExceptions(serviceClient, ctx.merchantId, {
-          status: "open",
-          limit: pageSize,
-        })
-      : Promise.resolve([]),
-  ]);
-  const { data: countRowsData } = await serviceClient
-    .from(TABLES.WORK_TASKS)
-    .select("status,owner_user_id,due_at,blocking_reason,title")
-    .eq("merchant_id", ctx.merchantId)
-    .limit(10000);
+  const { data: countRowsData } = countRowsResult;
   const countRows = (countRowsData ?? []) as Array<{
     status: string;
     owner_user_id: string | null;
@@ -150,6 +153,11 @@ export default async function WorkPage({
     "integration-exceptions": openExceptionCount,
     completed: countRows.filter((row) => row.status === "completed").length,
   };
+  const deadlineBands = selectDeadlineBands(
+    activeRows.map((row) => ({ dueAt: row.due_at })),
+    todayStart.getTime(),
+    todayEnd.getTime(),
+  );
   const exceptions: WorkQueueItem[] = exceptionRows.map((row) => ({
     id: row.id,
     kind: "exception",
@@ -192,6 +200,20 @@ export default async function WorkPage({
           hint: "Merchant decisions required",
         },
       ]}
+      primaryVisual={
+        <DeadlineRiskChart
+          id="work-deadline-risk"
+          title="Deadline risk"
+          description="Active tasks grouped by their recorded deadline. Integration exceptions remain counted separately above."
+          bands={[
+            { label: "Overdue", value: deadlineBands.overdue, tone: "red", hint: "Past the recorded due time" },
+            { label: "Due today", value: deadlineBands.dueToday, tone: "orange", hint: "Due before tomorrow UTC" },
+            { label: "Upcoming", value: deadlineBands.upcoming, tone: "blue", hint: "Future deadline" },
+            { label: "No deadline", value: deadlineBands.unscheduled, tone: "neutral", hint: "No due time recorded" },
+            ...(deadlineBands.invalid > 0 ? [{ label: "Invalid deadline", value: deadlineBands.invalid, tone: "yellow" as const, hint: "Recorded deadline could not be parsed" }] : []),
+          ]}
+        />
+      }
       main={
         <WorkQueue
           items={items}

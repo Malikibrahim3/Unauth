@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Bell, MailX } from "lucide-react";
 import { PanelCard } from "@/components/ui";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { AuthenticatedPanel } from "@/components/authenticated/AuthenticatedPanel";
 import type { NotificationKind } from "@/lib/collaboration/notificationPreferences";
 
 const KINDS: Array<{
@@ -99,23 +100,19 @@ export function NotificationPreferencesForm({ initial }: { initial: Pref[] }) {
   }
 
   return (
-    <div className="space-y-5">
-      <PanelCard variant="appInset" className="flex items-start gap-3 p-4">
-        <Bell className="mt-0.5 h-4 w-4 text-[var(--accent)]" />
-        <div>
-          <h2 className="text-sm font-semibold">In-app delivery</h2>
-          <p className="mt-1 text-xs text-[var(--text-secondary)]">
-            Choose which case updates appear in your notification inbox.
-          </p>
-        </div>
-      </PanelCard>
+    <div className="space-y-3">
       <p
         aria-live="polite"
-        className="min-h-5 text-sm text-[var(--text-secondary)]"
+        className="min-h-4 px-1 text-[10px] text-[var(--text-secondary)]"
       >
         {status}
       </p>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <AuthenticatedPanel
+        title="In-app delivery"
+        description="Choose which case updates appear in your notification inbox."
+        actions={<Bell className="h-3.5 w-3.5 text-[var(--accent)]" aria-hidden="true" />}
+      >
+      <div className="divide-y divide-[var(--border-muted)]">
         {KINDS.map((item) => {
           const pref = prefs.get(item.kind) ?? {
             kind: item.kind,
@@ -124,19 +121,18 @@ export function NotificationPreferencesForm({ initial }: { initial: Pref[] }) {
           };
           const isSaving = saving === item.kind;
           return (
-            <PanelCard
+            <div
               key={item.kind}
-              variant="app"
-              className="flex items-start justify-between gap-4 p-4"
+              className="flex min-h-[62px] items-center justify-between gap-4 px-4 py-3 hover:bg-[var(--surface-hover)]"
             >
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-sm font-semibold">{item.label}</h2>
+                  <h2 className="text-[11px] font-semibold">{item.label}</h2>
                   {isSaving ? (
                     <StatusBadge family="workflowStatus" value="saving" size="sm" />
                   ) : null}
                 </div>
-                <p className="mt-1 text-xs leading-relaxed text-[var(--text-secondary)]">
+                <p className="mt-1 text-[10px] leading-4 text-[var(--text-secondary)]">
                   {item.description}
                 </p>
               </div>
@@ -159,17 +155,18 @@ export function NotificationPreferencesForm({ initial }: { initial: Pref[] }) {
                   style={{ left: pref.in_app_enabled ? 22 : 2 }}
                 />
               </button>
-            </PanelCard>
+            </div>
           );
         })}
       </div>
-      <PanelCard variant="app" className="flex items-start gap-3 p-4">
+      </AuthenticatedPanel>
+      <PanelCard variant="app" className="flex items-start gap-3 p-3.5">
         <MailX className="mt-0.5 h-4 w-4 text-[var(--text-tertiary)]" />
         <div>
-          <h2 className="text-sm font-semibold">
+          <h2 className="text-[11px] font-semibold">
             Email delivery is not enabled
           </h2>
-          <p className="mt-1 text-xs text-[var(--text-secondary)]">
+          <p className="mt-1 text-[10px] text-[var(--text-secondary)]">
             Email notifications are coming later. Your in-app preferences stay
             active in the meantime.
           </p>

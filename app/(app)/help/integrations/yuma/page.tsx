@@ -1,4 +1,6 @@
-import Link from 'next/link';
+import { AuthenticatedPageHeader } from '@/components/authenticated/AuthenticatedPageHeader';
+import { AuthenticatedPanel } from '@/components/authenticated/AuthenticatedPanel';
+import pageStyles from '@/components/authenticated/AuthenticatedPageChrome.module.css';
 
 const TEST_PAYLOAD = `{
   "platform": "yuma",
@@ -15,31 +17,32 @@ const TEST_PAYLOAD = `{
 
 export default function YumaIntegrationGuidePage() {
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-8">
-      <Link href="/help" className="text-caption hover:underline" style={{ color: 'var(--text-secondary)' }}>
-        Help
-      </Link>
-      <div>
-        <h1 className="text-heading-lg" style={{ color: 'var(--text)' }}>Yuma escalation setup</h1>
-        <p className="mt-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
-          Point Yuma escalations at Unauth so every claim handoff creates a payout case, evaluates merchant rules, and writes the outcome ledger path.
-        </p>
-      </div>
-      <section className="space-y-3">
-        <h2 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Webhook</h2>
-        <pre className="overflow-x-auto rounded-md p-4 text-xs" style={{ background: 'var(--surface-subtle)', border: '1px solid var(--border)' }}>
+    <div>
+      <AuthenticatedPageHeader
+        eyebrow="Integration guide"
+        title="Yuma escalation setup"
+        subtitle="Point Yuma escalations at Unauth so every claim handoff creates a payout case, evaluates merchant rules, and writes the outcome ledger path."
+        breadcrumbs={[{ label: 'Help', href: '/help' }, { label: 'Yuma escalation setup' }]}
+      />
+      <div className={pageStyles.pageBody}>
+        <div className="grid gap-3">
+      <AuthenticatedPanel title="Webhook" description="Send escalations to the Gate API with your bearer credential.">
+        <div className="grid gap-2 p-3">
+        <pre className="overflow-x-auto rounded-[var(--ua-radius-input)] border border-[var(--border)] bg-[var(--surface-sunken)] p-3 text-[10px]">
           <code>POST https://YOUR-UNAUTH-DOMAIN/api/v1/gate/escalation</code>
         </pre>
-        <pre className="overflow-x-auto rounded-md p-4 text-xs" style={{ background: 'var(--surface-subtle)', border: '1px solid var(--border)' }}>
+        <pre className="overflow-x-auto rounded-[var(--ua-radius-input)] border border-[var(--border)] bg-[var(--surface-sunken)] p-3 text-[10px]">
           <code>Authorization: Bearer YOUR_UNAUTH_GATE_API_KEY</code>
         </pre>
-      </section>
-      <section className="space-y-3">
-        <h2 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Test Payload</h2>
-        <pre className="overflow-x-auto rounded-md p-4 text-xs" style={{ background: 'var(--surface-subtle)', border: '1px solid var(--border)' }}>
+        </div>
+      </AuthenticatedPanel>
+      <AuthenticatedPanel title="Test payload" description="Use a representative handoff before enabling live traffic.">
+        <pre className="overflow-x-auto bg-[var(--surface-sunken)] p-4 text-[10px] leading-4">
           <code>{TEST_PAYLOAD}</code>
         </pre>
-      </section>
+      </AuthenticatedPanel>
+        </div>
+      </div>
     </div>
   );
 }

@@ -108,7 +108,7 @@ export function Modal({
         aria-modal="true"
         tabIndex={-1}
         aria-label={ariaLabel ?? title ?? 'Modal'}
-        className={cn('rounded-[var(--ua-radius-overlay)] overflow-hidden flex flex-col max-h-[90vh]', className)}
+        className={cn('ua-card rounded-[var(--ua-radius-overlay)] overflow-hidden flex flex-col max-h-[90vh]', className)}
         style={{
           background: 'var(--surface)',
           border: '1px solid var(--border)',
@@ -120,7 +120,7 @@ export function Modal({
       >
         {(title || description) && (
           <div
-            className="flex items-start justify-between gap-4 border-b px-5 py-4"
+            className="flex items-start justify-between gap-3 border-b px-4 py-3"
             style={{ borderColor: 'var(--border)' }}
           >
             <div className="flex-1 min-w-0">
@@ -146,13 +146,13 @@ export function Modal({
           </div>
         )}
 
-        <div className="flex-1 overflow-y-auto px-5 py-4">
+        <div className="flex-1 overflow-y-auto px-4 py-3.5">
           {children}
         </div>
 
         {(footer || actions) && (
           <div
-            className="border-t px-5 py-4 flex items-center justify-end gap-2"
+            className="flex items-center justify-end gap-2 border-t px-4 py-3"
             style={{ borderColor: 'var(--border)' }}
           >
             {footer ?? (

@@ -266,6 +266,40 @@ export async function hasPermission(
   return !!grant;
 }
 
+/**
+ * Resolves the complete permission set for an already-authorised caller in a
+ * single delegated-grant query. The authenticated shell needs every
+ * permission to build navigation and the command palette; calling
+ * hasPermission once per capability turns one render into an avoidable query
+ * fan-out for viewer and delegated roles.
+ */
+export async function resolvePermissions(
+  serviceClient: SupabaseClient,
+  ctx: CallerContext,
+): Promise<Permission[]> {
+  const orderedPermissions = Object.values(PERMISSIONS) as Permission[];
+  const resolved = new Set(ROLE_PERMISSIONS[ctx.role] ?? []);
+
+  // Owners already receive every current permission through their role.
+  if (resolved.size === orderedPermissions.length) return orderedPermissions;
+
+  const { data: grants } = await serviceClient
+    .from('user_permission_grants')
+    .select('permission')
+    .eq('merchant_id', ctx.merchantId)
+    .eq('grantee_user_id', ctx.userId)
+    .eq('revoked', false);
+
+  const knownPermissions = new Set<Permission>(orderedPermissions);
+  for (const row of (grants ?? []) as Array<{ permission: string }>) {
+    if (knownPermissions.has(row.permission as Permission)) {
+      resolved.add(row.permission as Permission);
+    }
+  }
+
+  return orderedPermissions.filter((permission) => resolved.has(permission));
+}
+
 const DEFAULT_APP_DESTINATIONS: Array<{ permission: Permission; href: string }> = [
   { permission: PERMISSIONS.VIEW_DASHBOARD, href: '/dashboard' },
   { permission: PERMISSIONS.VIEW_INBOX, href: '/claims' },

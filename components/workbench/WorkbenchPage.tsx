@@ -2,14 +2,9 @@ import { type ReactNode } from 'react';
 import { type WorkbenchNavItem } from './WorkbenchNav';
 import { WorkbenchKpiStrip, type WorkbenchKpiItem } from './WorkbenchKpiStrip';
 import { WorkbenchActionBar } from './WorkbenchActionBar';
-import {
-  PAGE_BAND_STYLE,
-  PAGE_EYEBROW_STYLE,
-  PAGE_HEADER_STYLE,
-  PAGE_SHELL_INNER_CLASS,
-  PAGE_SUBTITLE_STYLE,
-  PAGE_TITLE_STYLE,
-} from '@/components/ui/pageShellStyles';
+import { AuthenticatedPageHeader } from '@/components/authenticated/AuthenticatedPageHeader';
+import { AuthenticatedPanel } from '@/components/authenticated/AuthenticatedPanel';
+import styles from '@/components/authenticated/AuthenticatedPageChrome.module.css';
 
 interface WorkbenchPageProps {
   eyebrow?: string;
@@ -23,6 +18,7 @@ interface WorkbenchPageProps {
   /** Prefer kpiItems over kpiStrip to avoid passing JSX as a prop. */
   kpiItems?: WorkbenchKpiItem[];
   kpiStrip?: ReactNode;
+  primaryVisual?: ReactNode;
   actionBarLeft?: ReactNode;
   actionBarMiddle?: ReactNode;
   actionBarRight?: ReactNode;
@@ -39,6 +35,7 @@ export function WorkbenchPage({
   actions,
   kpiItems,
   kpiStrip,
+  primaryVisual,
   actionBarLeft,
   actionBarMiddle,
   actionBarRight,
@@ -67,46 +64,30 @@ export function WorkbenchPage({
     );
 
   return (
-    <div style={PAGE_BAND_STYLE}>
-      <section>
-        <header
-          className={PAGE_SHELL_INNER_CLASS}
-          style={{ ...PAGE_HEADER_STYLE, background: 'var(--surface)' }}
-        >
-          {eyebrow ? (
-            <div className="mb-2" style={PAGE_EYEBROW_STYLE}>
-              {eyebrow}
+    <div>
+      <AuthenticatedPageHeader
+        eyebrow={eyebrow}
+        title={title}
+        subtitle={subtitle}
+        actions={actions}
+        capabilityId="page.heading"
+      />
+      <div className={styles.pageBody}>
+        <div className={styles.workbenchStack}>
+          {resolvedKpiStrip}
+          {primaryVisual}
+          {resolvedActionBar}
+          {rail ? (
+            <div className={styles.workbenchGrid}>
+              <AuthenticatedPanel className={styles.mainPanel} capabilityId="page.primary-content">{main}</AuthenticatedPanel>
+              <aside className={styles.rail}>{rail}</aside>
             </div>
-          ) : null}
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0">
-              <h1 className="t-page-title" style={PAGE_TITLE_STYLE}>
-                {title}
-              </h1>
-              {subtitle && (
-                <p className="mt-2 text-body-sm" style={PAGE_SUBTITLE_STYLE}>
-                  {subtitle}
-                </p>
-              )}
-            </div>
-            {actions && <div className="flex items-center gap-2">{actions}</div>}
-          </div>
-        </header>
-
-        {resolvedKpiStrip}
-        {resolvedActionBar}
-
-        {rail ? (
-          <div className={`${PAGE_SHELL_INNER_CLASS} grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start`}>
-            <div className="min-w-0">{main}</div>
-            <aside>{rail}</aside>
-          </div>
-        ) : (
-          <div className={PAGE_SHELL_INNER_CLASS}>{main}</div>
-        )}
-
-        {footer && <footer className={PAGE_SHELL_INNER_CLASS} style={PAGE_HEADER_STYLE}>{footer}</footer>}
-      </section>
+          ) : (
+            <AuthenticatedPanel className={styles.mainPanel} capabilityId="page.primary-content">{main}</AuthenticatedPanel>
+          )}
+          {footer ? <footer className={styles.footer}>{footer}</footer> : null}
+        </div>
+      </div>
     </div>
   );
 }

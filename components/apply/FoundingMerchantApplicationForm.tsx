@@ -70,11 +70,11 @@ export default function FoundingMerchantApplicationForm({ defaultStoreName }: { 
 
   if (submitted) {
     return (
-      <div className="rounded-sm border px-8 py-10" style={{ background: 'var(--surface)', borderColor: 'var(--border-muted)' }}>
-        <h1 className="text-3xl font-medium tracking-tight" style={{ color: 'var(--text)' }}>
+      <div className="px-3 py-6">
+        <h2 className="text-lg font-semibold tracking-tight" style={{ color: 'var(--text)' }}>
           Application received.
-        </h1>
-        <p className="mt-3 text-base leading-7" style={{ color: 'var(--text-secondary)' }}>
+        </h2>
+        <p className="mt-2 text-xs leading-5" style={{ color: 'var(--text-secondary)' }}>
           We&apos;ll be in touch within two business days.
         </p>
       </div>
@@ -82,15 +82,15 @@ export default function FoundingMerchantApplicationForm({ defaultStoreName }: { 
   }
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-[var(--radius-lg)] border px-8 py-10" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+    <form onSubmit={handleSubmit} className="px-3 py-2">
       <p className="text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: 'var(--text-tertiary)' }}>
         Tier 2
       </p>
-      <h1 className="mt-3 text-3xl font-medium tracking-tight" style={{ color: 'var(--text)' }}>
+      <h2 className="mt-2 text-base font-semibold tracking-tight" style={{ color: 'var(--text)' }}>
         Apply for network access.
-      </h1>
+      </h2>
 
-      <div className="mt-8 space-y-5">
+      <div className="mt-5 space-y-4">
         <Field label="Store name">
           <Input value={storeName} onChange={(event) => dispatch({ type: 'patch', patch: { storeName: event.target.value } })} required style={FIELD_STYLE} />
         </Field>
@@ -100,7 +100,7 @@ export default function FoundingMerchantApplicationForm({ defaultStoreName }: { 
             value={monthlyOrderVolume}
             onChange={(event) => dispatch({ type: 'patch', patch: { monthlyOrderVolume: event.target.value } })}
             required
-            className="w-full rounded-[4px] border px-3 py-2 text-sm focus:outline-none"
+            className="w-full rounded-[var(--ua-radius-control)] border px-3 py-2 text-sm focus:outline-none"
             style={{ ...FIELD_STYLE, background: 'var(--surface-input)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
           >
             <option value="">Select range</option>
@@ -127,7 +127,7 @@ export default function FoundingMerchantApplicationForm({ defaultStoreName }: { 
             aria-label="What post-purchase loss problem are you trying to solve?"
             rows={3}
             required
-            className="w-full rounded-[4px] border px-3 py-2 text-sm focus:outline-none"
+            className="w-full rounded-[var(--ua-radius-control)] border px-3 py-2 text-sm focus:outline-none"
             style={{ ...FIELD_STYLE, background: 'var(--surface-input)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
           />
         </Field>
@@ -154,8 +154,8 @@ export default function FoundingMerchantApplicationForm({ defaultStoreName }: { 
         </p>
       ) : null}
 
-      <div className="mt-8">
-        <Button type="submit" size="lg" loading={loading}>
+      <div className="mt-5">
+        <Button type="submit" size="sm" loading={loading}>
           Submit application
         </Button>
       </div>

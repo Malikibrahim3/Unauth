@@ -1,10 +1,9 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft, History, ShieldCheck } from "lucide-react";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { TABLES } from "@/lib/supabase/tables";
 import { PERMISSIONS, requirePermission } from "@/lib/permissions";
 import AuditTrailClient from "@/components/settings/AuditTrailClient";
+import { SettingsPageShell } from "@/components/settings/SettingsPageShell";
 
 export default async function AuditTrailPage() {
   const userClient = createClient();
@@ -56,40 +55,13 @@ export default async function AuditTrailPage() {
   }
 
   return (
-    <div className="max-w-6xl space-y-6 p-4 sm:p-6 lg:p-8">
-      <div>
-        <Link
-          href="/settings"
-          className="mb-4 inline-flex items-center gap-1.5 text-xs hover:underline"
-          style={{ color: "var(--text-secondary)" }}
-        >
-          <ArrowLeft className="h-3 w-3" /> Settings
-        </Link>
-        <div className="flex items-center gap-3">
-          <History
-            className="h-5 w-5"
-            style={{ color: "var(--privacy-ink)" }}
-          />
-          <h1 className="t-heading" style={{ color: "var(--text)" }}>
-            Audit trail
-          </h1>
-        </div>
-        <p
-          className="mt-2 max-w-2xl text-sm"
-          style={{ color: "var(--text-secondary)" }}
-        >
-          Review merchant-scoped user actions and claim lifecycle events with
-          actor attribution.
-        </p>
-        <p
-          className="mt-1 inline-flex items-center gap-1 text-xs font-semibold"
-          style={{ color: "var(--privacy-ink)" }}
-        >
-          <ShieldCheck className="h-3.5 w-3.5" /> Append-only · merchant scoped
-        </p>
-      </div>
-
+    <SettingsPageShell
+      eyebrow="Append-only · merchant scoped"
+      title="Audit trail"
+      subtitle="Review merchant-scoped user actions and claim lifecycle events with actor attribution."
+      breadcrumbs={[{ label: "Settings", href: "/settings/account" }, { label: "Audit trail" }]}
+    >
       <AuditTrailClient actorsByUserId={actorsByUserId} />
-    </div>
+    </SettingsPageShell>
   );
 }

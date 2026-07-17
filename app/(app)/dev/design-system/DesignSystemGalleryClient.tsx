@@ -17,17 +17,17 @@ import {
 } from '@/components/ui';
 import { useToast } from '@/components/ui/Toast';
 import { filterChipContract, segmentedControlContract } from '@/styles/authenticated/contracts';
+import { AuthenticatedPageHeader } from '@/components/authenticated/AuthenticatedPageHeader';
+import { AuthenticatedPanel } from '@/components/authenticated/AuthenticatedPanel';
+import pageStyles from '@/components/authenticated/AuthenticatedPageChrome.module.css';
 
 function GallerySection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section style={{ marginBottom: 'var(--space-9)' }}>
-      <h2 className="text-h1" style={{ color: 'var(--text-primary)', marginBottom: 'var(--space-4)' }}>
-        {title}
-      </h2>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-4)', alignItems: 'flex-start' }}>
+    <AuthenticatedPanel title={title} bodyClassName="p-4">
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-3)', alignItems: 'flex-start' }}>
         {children}
       </div>
-    </section>
+    </AuthenticatedPanel>
   );
 }
 
@@ -99,10 +99,14 @@ export function DesignSystemGalleryClient() {
   const toast = useToast();
 
   return (
-    <div style={{ padding: 'var(--space-8)', maxWidth: 1100 }}>
-      <p className="text-caption" style={{ color: 'var(--ua-warning)', marginBottom: 'var(--space-6)' }}>
-        Development only — this route 404s outside NODE_ENV=development. Visual regression inspection, not documentation.
-      </p>
+    <div>
+      <AuthenticatedPageHeader
+        eyebrow="Development tool"
+        title="Authenticated design system"
+        subtitle="Visual regression inspection for the shared signed-in interface. This route is unavailable outside development."
+      />
+      <div className={pageStyles.pageBody}>
+        <div className={pageStyles.workbenchStack}>
 
       <GallerySection title="Colour — surfaces">
         {SURFACE_SWATCHES.map(([name, v]) => (
@@ -267,6 +271,8 @@ export function DesignSystemGalleryClient() {
       <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)} title="Drawer title">
         <div style={{ padding: 'var(--space-4)' }}>Drawer body content.</div>
       </Drawer>
+        </div>
+      </div>
     </div>
   );
 }

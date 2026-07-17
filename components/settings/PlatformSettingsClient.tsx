@@ -11,7 +11,7 @@ import {
 type SaveState = "idle" | "saving" | "saved" | "error";
 
 const INPUT_CLASS =
-  "mt-1.5 w-full rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--accent)_18%,transparent)] disabled:cursor-not-allowed disabled:opacity-60";
+  "mt-1.5 h-8 w-full rounded-[var(--ua-radius-input)] border border-[var(--border)] bg-[var(--surface)] px-3 text-[12px] text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--accent)_18%,transparent)] disabled:cursor-not-allowed disabled:opacity-60";
 
 function Field({
   label,
@@ -23,7 +23,7 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <label className="block text-sm font-medium text-[var(--text-primary)]">
+    <label className="block text-[12px] font-medium text-[var(--text-primary)]">
       {label}
       {children}
       <span className="mt-1 block text-xs font-normal leading-relaxed text-[var(--text-tertiary)]">
@@ -118,7 +118,7 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
   );
 
   return (
-    <form onSubmit={save} className="max-w-4xl space-y-5">
+    <form onSubmit={save} className="space-y-3">
       {!canManage ? (
         <PanelCard
           variant="appInset"
@@ -148,7 +148,7 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
         title="Reporting and retention"
         description="Display and lifecycle defaults used across reports, exports, and stored source records."
       >
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-3 md:grid-cols-2">
           <Field
             label="Reporting currency"
             help="Three-letter ISO currency used for workspace defaults. Mixed currencies remain separated in financial reports."
@@ -196,7 +196,7 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
         title="Decision and financial policy"
         description="Defaults guide operators; they never replace case evidence or silently execute a payout."
       >
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-3 md:grid-cols-2">
           <Field
             label="Matching policy"
             help="Controls whether ambiguous links are blocked, balanced, or queued for review."

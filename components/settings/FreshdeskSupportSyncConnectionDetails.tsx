@@ -78,7 +78,7 @@ export function FreshdeskSupportSyncConnectionDetails({
   ];
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       {/* Status header */}
       <div className="flex items-start gap-3">
         <Image
@@ -86,7 +86,7 @@ export function FreshdeskSupportSyncConnectionDetails({
           alt="Freshdesk"
           width={40}
           height={40}
-          className="h-10 w-10 shrink-0 rounded-xl object-contain"
+          className="h-9 w-9 shrink-0 rounded-[var(--ua-radius-input)] border border-[var(--border-muted)] object-contain p-1"
         />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">

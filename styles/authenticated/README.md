@@ -1,8 +1,18 @@
 # Authenticated design system
 
-Single source of truth for every visual value used by `app/(app)/**` and the authenticated-consumed parts of `components/**`. If you're building or editing an authenticated surface, styles come from here — never invent a new colour, radius, shadow, or control height locally.
+Single source of truth for every visual value used by `app/(app)/**` and the authenticated-consumed parts of `components/**`. If you're building or editing an authenticated surface, styles come from here — never invent a new colour, radius, shadow, control height, or chart palette locally.
 
-This is an infrastructure/consolidation layer, not a redesign. Every value here was relocated from the pre-existing `app/(app)/authenticated.css` (see `docs/design/authenticated-style-system-audit.md` for the full "what came from where" trace) — nothing was changed to make the product look different. Final craft decisions (button radius, pill shape, badge palette, chart palette) are deferred to a later pass; see `docs/design/authenticated-style-system-audit.md` and `docs/design/authenticated-component-migration-register.md` for what's tracked as remaining work.
+The approved dashboard and Autumn CRM references are the visual benchmark for the complete signed-in product. A page is not finished merely because it uses the right colours: its composition must belong beside that dashboard — warm neutral shell, compact utility chrome, dense bordered white cards, restrained type, small-radius controls, orange action/performance signals, and blue operational-health visuals.
+
+## Global product rules
+
+1. **Functionality is the baseline.** Presentation work must preserve every committed route, query parameter, permission check, server action, mutation, export, deep link, keyboard path, mobile path, and truthful unavailable state. Moving a secondary action is allowed only when it remains labelled, keyboard-accessible, and no more than one activation further away. Primary actions stay visible.
+2. **Use composition, not cosmetic wrapping.** Signed-in index pages use `WorkbenchPage`; detail pages use `DetailPageShell`; settings use `SettingsPageShell`; exceptional pages use `AuthenticatedPageHeader` and `AuthenticatedPanel`. Do not place an old text-heavy page inside a newly coloured container and call it migrated.
+3. **Visuals explain real data without templating the app.** Data-rich operational pages normally have one primary visual and at most two compact supporting visuals. Select the chart by the operational question, then pass it already-authorised, already-filtered data from the page loader. Cohesion comes from `components/charts/authenticated/**`, not from repeating one composition. Never fabricate history, infer nulls as zero, combine currencies, or chart a paginated subset as if it were the full population.
+4. **Density follows the reference.** Desktop pages use the 208px rail, 48px utility header, 20px content gutters, 10–13px supporting text, 20–24px primary metrics, 6–8px radii, subtle borders, and minimal shadow. Empty space should clarify grouping, not turn operational pages into marketing layouts.
+5. **Loading geometry is a contract.** A route skeleton must reserve the same header, KPI, chart family, toolbar, main-card, and side-rail positions as the resolved page. Select the matching deadline, column, ranked, funnel, range, matrix, sequence, health, or activity skeleton; do not substitute a generic rectangle. If the resolved layout changes, its skeleton changes in the same pull request.
+6. **Navigation work stays off the critical path.** Shared layouts must batch independent database reads, avoid per-permission query fan-out, and defer non-blocking badges or notification counts to cached client resources. Page loaders parallelise independent queries and retain the same authorisation boundary.
+7. **Responsive and dark mode are first-class.** Controls remain reachable at 320px, cards stack without page-level horizontal overflow, dense tables scroll within their panel, and every chart token has a dark equivalent.
 
 ## Entry point
 
@@ -12,7 +22,7 @@ This is an infrastructure/consolidation layer, not a redesign. Every value here 
 
 | File | Contents |
 |---|---|
-| `tokens.css` | Surfaces, ink/text, borders, brand/accent, geometry (radius/shadow/focus), density (control heights), plus the `--ua-*` alias layer (surfaces/text/borders/radius/shadow/control-dimensions/spacing/motion/z-layers) |
+| `tokens.css` | Surfaces, ink/text, borders, brand/accent, chart palette, geometry (radius/shadow/focus), density (control heights), plus the `--ua-*` alias layer |
 | `status.css` | Semantic/risk/severity/gauge colour tokens, plus `--ua-success/-warning/-critical/-info` (+ `-bg`/`-border`) aliases |
 | `typography.css` | Font stacks + `--ua-text-*` named type-role tokens |
 | `foundations.css` | Canvas/base text rendering, selection, focus-visible, reduced motion, logo mark, scrollbar |
@@ -42,9 +52,42 @@ New and migrated code should read `--ua-*` names. Existing code reading the olde
 
 **Badge** — `components/ui/Badge.tsx`. Generic labelling (not lifecycle status). Distinct height/radius/case convention from `StatusBadge` intentionally — they solve different problems (see the migration register for where this line has blurred in practice).
 
-**Filter chips** — no canonical component exists yet. `contracts.ts` in this folder defines the intended visual contract (unselected/hover/selected/disabled) so whoever builds the component next has a token-driven starting point instead of inventing colours. Filter chips must never borrow semantic warning/success/critical colour merely because they're selected — selection uses `--ua-surface-selected`/`--ua-border-focus`, not a semantic tone.
+**Filter chips** — `components/ui/FilterChip.tsx`. Filter chips must never borrow semantic warning/success/critical colour merely because they're selected — selection uses the neutral selected surface and strong border.
 
-**Segmented controls** — no canonical component exists yet either; same `contracts.ts` treatment. Use only for mutually exclusive views/sort choices — one container, one height, one selected-state treatment, not per-segment pill styling.
+**Segmented controls** — `components/ui/SegmentedControl.tsx`. Use only for mutually exclusive views/sort choices — one container, one height, one selected-state treatment, not per-segment pill styling.
+
+**Authenticated charts** — `components/charts/authenticated/**`. `ChartPanel` owns the compact panel header, annotation, legend, accessible data table, focus treatment, empty state and spacing. Purpose-built primitives currently include deadline risk, column comparison, ranked contribution, stage funnel, range plot, status matrix, mini-bar sequence, source-health matrix and activity strip. Route code prepares the business dataset; chart components only render it.
+
+### Chart selection rules
+
+| Data question | Preferred primitive |
+|---|---|
+| Deadline or SLA bands | `DeadlineRiskChart` |
+| Compare a small set of categorical counts | `ColumnComparisonChart` |
+| Rank contribution to a compatible financial total | `RankedContributionChart` |
+| Show stage volume without claiming conversion | `StageFunnelChart` with an explicit volume note |
+| Compare proportions against one common population | `RangePlotChart` |
+| Show one state per rule/entity across a population | `StatusMatrixChart` |
+| Compare configured action load across definitions | `MiniBarSequenceChart` |
+| Cross provider and health dimensions | `SourceHealthMatrixChart` |
+| Show real received records over represented dates | `ActivityStripChart` |
+| Historical financial trends and configurable analysis | dashboard/reporting chart modules using the same tokens |
+
+Use a trend only when dated observations exist. Use a money chart only when every plotted value has one compatible currency. Do not use a funnel for causal conversion, a bubble without a third quantitative variable, a doughnut for precise comparison, or a heatmap when absence cannot be distinguished from zero.
+
+### Chart grammar and performance
+
+- Orange is operational attention or financial emphasis; blue is measured coverage/health; green/yellow/red retain semantic status meaning; neutral is unavailable, inactive, or comparison context.
+- Axes and grids are quiet, labels are 9–11px, radii are 2px inside plots and 6–8px on panels, legends stay compact, and third-party defaults never leak through.
+- Every important chart exposes `View chart data`; meaning is never available only on hover or by colour.
+- Charts receive stable prepared arrays and do not query, authorise, aggregate merchant business rules, or create historical points.
+- Server/CSS primitives are preferred for current-state charts. Heavier client chart libraries are restricted to dashboard/reporting, code-split where possible, reduced-motion aware, and capped to a truthful point density.
+- Empty, zero, insufficient, partial, unavailable and disconnected states are distinct. A missing series never becomes a flat zero line.
+- Chart changes must include the corresponding skeleton variant, parity run, total cross-check, responsive inspection and dark-mode inspection.
+
+The removed `OperationalVisualSummary` must not be reintroduced. Repeating a generic distribution-plus-coverage card across unrelated routes is a design-system violation.
+
+**Skeletons** — route loading files select from `components/navigation/skeletons/**` or `OperationalRouteSkeleton`. `AuthenticatedChartSkeleton` supplies a geometry for every approved operational chart family. Skeletons mirror resolved geometry and never contain their own bespoke pulse markup.
 
 **Cards and panels** — `components/ui/Card.tsx` (`raised`/`overlay`/`flat`) is authoritative going forward. `SectionCard`/`ModuleCard` wrap it. `PanelCard` (`LandingPrimitives.tsx`) remains in heavy authenticated use today (see mismatch note above) and is not migrated in this pass — do not add *new* authenticated call sites of `PanelCard`; use `Card`/`SectionCard` instead.
 
@@ -54,7 +97,7 @@ New and migrated code should read `--ua-*` names. Existing code reading the olde
 
 Hardcoded colour/radius/shadow values are flagged by the authenticated design lint. Documented exceptions:
 
-- **Data visualisation** — chart series colours may be literal when they encode a specific semantic data mapping (not a component's chrome). Prefer referencing `--ua-success`/`--ua-warning`/`--ua-critical`/`--ua-info` where the semantics match; only use a literal value for a genuinely chart-specific hue with a comment explaining why.
+- **Data visualisation** — authenticated charts use `--ua-chart-*` or semantic status tokens. Literal series colours belong only in token definitions; page and component code must not invent hues.
 - **Provider/third-party brand marks** — a connector's own logo colour (e.g. Shopify green, Gorgias mark) is not a product theme choice and may be literal.
 - **`styles/authenticated/tokens.css` and `status.css` themselves** — these are the token *definitions*; they are excluded from the hardcoded-value scan by design (that's where hex values are supposed to live).
 

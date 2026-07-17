@@ -5,6 +5,7 @@ import { PERMISSIONS, requirePermission } from "@/lib/permissions";
 import { SectionCard } from "@/components/ui";
 import BulkDeleteClient from "@/components/settings/BulkDeleteClient";
 import { PrivacyBadge } from "@/components/ui/PrivacyBadge";
+import { SettingsPageShell } from "@/components/settings/SettingsPageShell";
 
 export default async function DataPrivacySettingsPage() {
   const userClient = createClient();
@@ -22,19 +23,13 @@ export default async function DataPrivacySettingsPage() {
   if (denied) redirect("/settings");
 
   return (
-    <div className="p-6 md:p-8 max-w-3xl">
-      <h1 className="t-heading" style={{ color: "var(--text-primary)" }}>
-        Data &amp; privacy
-      </h1>
-      <p
-        className="text-body-sm mt-1"
-        style={{ color: "var(--text-secondary)" }}
-      >
-        How Unauth handles merchant and customer data, retention, and
-        compliance.
-      </p>
-
-      <div className="mt-6 space-y-4">
+    <SettingsPageShell
+      eyebrow="Workspace governance"
+      title="Data & privacy"
+      subtitle="How Unauth handles merchant and customer data, retention, and compliance."
+      breadcrumbs={[{ label: "Settings", href: "/settings/account" }, { label: "Data & privacy" }]}
+    >
+      <div className="space-y-3">
         <SectionCard title="How payout-case data is scoped">
           <div className="mb-4 flex flex-wrap items-center gap-2">
             <PrivacyBadge value="Merchant-owned context" />
@@ -150,6 +145,6 @@ export default async function DataPrivacySettingsPage() {
           </ul>
         </SectionCard>
       </div>
-    </div>
+    </SettingsPageShell>
   );
 }

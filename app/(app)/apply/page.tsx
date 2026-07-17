@@ -2,6 +2,9 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import FoundingMerchantApplicationForm from '@/components/apply/FoundingMerchantApplicationForm';
+import { AuthenticatedPageHeader } from '@/components/authenticated/AuthenticatedPageHeader';
+import { AuthenticatedPanel } from '@/components/authenticated/AuthenticatedPanel';
+import pageStyles from '@/components/authenticated/AuthenticatedPageChrome.module.css';
 
 export default async function ApplyPage() {
   const supabase = createClient();
@@ -31,9 +34,19 @@ export default async function ApplyPage() {
   if (!completedAudit) redirect('/dashboard');
 
   return (
-    <div className="p-6 md:p-8">
-      <div className="mx-auto max-w-2xl">
-        <FoundingMerchantApplicationForm defaultStoreName={(merchant as { name: string }).name} />
+    <div>
+      <AuthenticatedPageHeader
+        eyebrow="Programme application"
+        title="Founding merchant application"
+        subtitle="Tell us about your operation and the payout-control workflows you want to improve."
+        breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Application' }]}
+      />
+      <div className={pageStyles.pageBody}>
+        <AuthenticatedPanel>
+          <div className="p-4">
+            <FoundingMerchantApplicationForm defaultStoreName={(merchant as { name: string }).name} />
+          </div>
+        </AuthenticatedPanel>
       </div>
     </div>
   );

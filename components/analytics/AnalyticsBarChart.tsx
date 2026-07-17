@@ -43,7 +43,10 @@ export function AnalyticsBarChart({
 
     return {
       animation: true,
-      animationDuration: 400,
+      animationDuration: 520,
+      animationDurationUpdate: 320,
+      animationEasing: 'cubicOut',
+      animationEasingUpdate: 'cubicOut',
       grid: { left: 0, right: 8, top: 8, bottom: 0, containLabel: true },
       tooltip: {
         ...baseTooltip(t),
@@ -83,6 +86,7 @@ export function AnalyticsBarChart({
           },
         })),
         barMaxWidth: 32,
+        animationDelay: (index: number) => Math.min(index * 45, 315),
         emphasis: { itemStyle: { opacity: 0.8 } },
       }],
     };

@@ -168,7 +168,7 @@ export default function AccountSettingsPage() {
       title="Account"
       subtitle="Update your store profile, account credentials, and workspace preferences."
     >
-      <div className="max-w-2xl space-y-8">
+      <div className="space-y-3">
         <AccountProfileSection
           state={state}
           dispatch={dispatch}

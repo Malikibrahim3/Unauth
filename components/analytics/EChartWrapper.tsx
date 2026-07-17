@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import type { EChartsOption } from 'echarts';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 const ReactECharts = dynamic(() => import('echarts-for-react'), {
   ssr: false,
@@ -21,6 +22,7 @@ export interface EChartWrapperProps {
 
 /** Thin ECharts wrapper. SVG renderer, subtle animations, ssr:false. */
 export function EChartWrapper({ option, height = 220, className, notMerge }: EChartWrapperProps) {
+  const reducedMotion = useReducedMotion();
   if (!option) {
     return (
       <div
@@ -35,7 +37,7 @@ export function EChartWrapper({ option, height = 220, className, notMerge }: ECh
   return (
     <div style={{ height }} className={className}>
       <ReactECharts
-        option={option}
+        option={reducedMotion ? { ...option, animation: false, animationDuration: 0, animationDurationUpdate: 0 } : option}
         notMerge={notMerge ?? true}
         style={{ height, width: '100%' }}
         opts={{ renderer: 'svg' }}

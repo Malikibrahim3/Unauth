@@ -17,7 +17,7 @@ export function EvidencePackageFormIntro({ showIntro }: EvidencePackageFormIntro
           qualifies as valid dispute evidence.
         </p>
         <p
-          className="text-caption mb-8 rounded-md border px-3 py-2"
+          className="text-caption mb-3 rounded-[var(--ua-radius-input)] border px-3 py-2"
           style={{ color: 'var(--text-tertiary)', borderColor: 'var(--border-muted)', background: 'var(--bg-inset)' }}
         >
           This export presents identity match data for your review. How you use it in a dispute is at your
@@ -43,7 +43,7 @@ export function EvidencePackageFormLoadingState({ loadingOrders }: EvidencePacka
 
   return (
     <div
-      className="rounded-md p-8 text-center"
+      className="rounded-[var(--ua-radius-input)] p-5 text-center"
       style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-muted)' }}
     >
       <div
@@ -74,7 +74,7 @@ export function EvidencePackageFormEmptyOrders({
 
   return (
     <div
-      className="rounded-md p-8 text-center"
+      className="rounded-[var(--ua-radius-input)] p-5 text-center"
       style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-muted)' }}
     >
       <p className="text-heading-sm mb-2" style={{ color: 'var(--text)' }}>
@@ -111,7 +111,7 @@ export function EvidencePackageFormNoClaimsBanner({
 
   return (
     <div
-      className="mb-6 flex items-start gap-3 rounded-md p-4"
+      className="mb-3 flex items-start gap-3 rounded-[var(--ua-radius-input)] p-3"
       style={{ background: 'var(--warning-bg)', border: '1px solid var(--warning-bd)' }}
     >
       <span style={{ color: 'var(--warning)' }}>⚠</span>

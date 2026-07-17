@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { PERMISSIONS, requirePermission } from "@/lib/permissions";
 import { WorkbenchPage } from "@/components/ui";
+import { ActivityStripChart } from "@/components/charts/authenticated";
 import { WORKBENCH_NAV_ITEMS } from "@/components/workbench/workbenchNavItems";
 import { formatNumber } from "@/lib/utils/format";
 import {
@@ -9,6 +10,7 @@ import {
   type NotificationItem,
 } from "@/components/notifications/NotificationCentre";
 import { listNotifications } from "@/lib/notifications/store";
+import { selectNotificationActivity } from "@/lib/visualisation/chartSelectors";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +33,9 @@ export default async function NotificationsPage() {
     user.id,
   )) as NotificationItem[];
   const unread = notifications.filter((item) => !item.read_at).length;
+  const activityDays = selectNotificationActivity(
+    notifications.map((item) => ({ createdAt: item.created_at, readAt: item.read_at })),
+  );
   return (
     <WorkbenchPage
       eyebrow="Work"
@@ -51,6 +56,14 @@ export default async function NotificationsPage() {
                 hint: "Newest first",
               },
             ]
+      }
+      primaryVisual={
+        <ActivityStripChart
+          id="notification-activity"
+          title="Recent notification activity"
+          description="Read and unread records across the latest seven represented UTC dates in this inbox (up to the newest 100 records)."
+          days={activityDays}
+        />
       }
       main={<NotificationCentre initialNotifications={notifications} />}
     />

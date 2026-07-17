@@ -244,13 +244,13 @@ export default function FreshdeskSupportSyncClient({ canManage }: Props) {
       {loading ? (
         <div className="space-y-3">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl animate-pulse" style={{ background: 'var(--border)' }} />
+            <div className="h-9 w-9 animate-pulse rounded-[var(--ua-radius-input)]" style={{ background: 'var(--border)' }} />
             <div className="space-y-1.5 flex-1">
               <div className="h-4 w-40 rounded animate-pulse" style={{ background: 'var(--border)' }} />
               <div className="h-3 w-24 rounded animate-pulse" style={{ background: 'var(--border)' }} />
             </div>
           </div>
-          <div className="h-32 rounded-xl animate-pulse" style={{ background: 'var(--border)' }} />
+          <div className="h-32 animate-pulse rounded-[var(--ua-radius-card)]" style={{ background: 'var(--border)' }} />
         </div>
       ) : state.ephemeralSecret ? (
         <FreshdeskWebhookSetupPanel

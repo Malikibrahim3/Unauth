@@ -43,13 +43,15 @@
   --risk-none: #69717d;
   --risk-none-bg: #f1f2f4;
   --risk-none-bd: #d9dde3;
-  --info: #3157d5;
-  --info-fg: #3157d5;
-  --info-bg: #eef2ff;
+  /* Informational and operational-health data stays blue; it is deliberately
+   * distinct from the orange action colour. */
+  --info: #6078d6;
+  --info-fg: #5269bf;
+  --info-bg: #eff2ff;
   --info-bd: #cbd5ff;
-  --info-line: #899ff0;
-  --privacy-ink: #3157d5;
-  --privacy-fill: #eef2ff;
+  --info-line: #7088e8;
+  --privacy-ink: #5269bf;
+  --privacy-fill: #eff2ff;
   --privacy-border: #cbd5ff;
   --neutral: #5f6672;
   --neutral-soft: #f1f2f4;
@@ -57,8 +59,8 @@
   --danger: #c0362c;
   --danger-fg: #c0362c;
   --danger-bg: #ffefed;
-  --watchlist: #3157d5;
-  --watchlist-bg: #eef2ff;
+  --watchlist: #6078d6;
+  --watchlist-bg: #eff2ff;
   --watchlist-bd: #cbd5ff;
   --sev-definite: #18794e;
   --sev-definite-fill: #eaf6ef;
@@ -111,10 +113,10 @@
   --danger: #ff8d84;
   --danger-fg: #ff9b93;
   --danger-bg: #3d1e1c;
-  --info: #9fb3ff;
-  --info-fg: #aebeff;
-  --info-bg: #202b4d;
-  --info-bd: #3b4f83;
+  --info: #9aabff;
+  --info-fg: #b1bfff;
+  --info-bg: #252c4a;
+  --info-bd: #465486;
   --neutral: #b0b6bf;
   --neutral-soft: #23272b;
   --neutral-border: #3a4048;

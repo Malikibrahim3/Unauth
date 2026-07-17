@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { PanelCard } from "@/components/ui";
+import { SettingsPageShell } from "@/components/settings/SettingsPageShell";
 import {
   PLANS,
   TOP_UP_CREDITS,
@@ -113,14 +114,12 @@ export default function BillingSettingsClient() {
 
   if (!state) {
     return (
-      <div className="mx-auto max-w-2xl p-6 space-y-4">
-        <section>
-          <h1 className="text-lg font-semibold text-[var(--text-primary)]">
-            Billing
-          </h1>
-        </section>
+      <SettingsPageShell
+        title="Billing"
+        subtitle="Manage your plan, network credits, and payment method."
+      >
         <div
-          className="rounded-md border p-5 text-sm"
+          className="rounded-[var(--ua-radius-input)] border p-4 text-[12px]"
           style={{
             borderColor: "var(--border)",
             color: "var(--text-secondary)",
@@ -134,7 +133,7 @@ export default function BillingSettingsClient() {
             support if the issue persists.
           </p>
         </div>
-      </div>
+      </SettingsPageShell>
     );
   }
 
@@ -146,11 +145,15 @@ export default function BillingSettingsClient() {
         : `$${state.priceGbp}/mo`;
 
   return (
-    <div className="mx-auto max-w-2xl space-y-8 p-6">
+    <SettingsPageShell
+      title="Billing"
+      subtitle="Manage your plan, network credits, and payment method."
+    >
+    <div className="space-y-3">
       {toast && (
         <PanelCard
           variant="app"
-          className="px-4 py-3 text-sm"
+          className="px-4 py-3 text-[12px]"
           style={{
             borderColor:
               toast.type === "error" ? "var(--risk-high)" : "var(--accent)",
@@ -165,7 +168,7 @@ export default function BillingSettingsClient() {
       {state.status === "grace_period" && (
         <PanelCard
           variant="app"
-          className="px-4 py-3 text-sm"
+          className="px-4 py-3 text-[12px]"
           style={{
             borderColor: "var(--risk-high)",
             background: "var(--surface)",
@@ -194,7 +197,7 @@ export default function BillingSettingsClient() {
       {state.status === "past_due" && (
         <PanelCard
           variant="app"
-          className="px-4 py-3 text-sm"
+          className="px-4 py-3 text-[12px]"
           style={{
             borderColor: "var(--risk-high)",
             background: "var(--surface)",
@@ -213,71 +216,62 @@ export default function BillingSettingsClient() {
         </PanelCard>
       )}
 
-      <section>
-        <h1 className="text-lg font-semibold text-[var(--text-primary)]">
-          Billing
-        </h1>
-        <p className="mt-1 text-sm text-[var(--text-secondary)]">
-          Manage your plan, credits, and payment method.
-        </p>
-      </section>
-
-      <PanelCard as="section" variant="app" className="p-5">
+      <PanelCard as="section" variant="app" className="p-4">
         <h2 className="text-sm font-semibold text-[var(--text-primary)]">
           Current plan
         </h2>
-        <p className="mt-2 text-2xl font-semibold">{state.planName}</p>
-        <p className="text-sm text-[var(--text-secondary)]">{priceLabel}</p>
+        <p className="mt-2 text-xl font-semibold">{state.planName}</p>
+        <p className="text-[12px] text-[var(--text-secondary)]">{priceLabel}</p>
         {state.currentPeriodEnd && (
-          <p className="mt-2 text-sm text-[var(--text-tertiary)]">
+          <p className="mt-2 text-[12px] text-[var(--text-tertiary)]">
             Next billing date: {formatDateTime(state.currentPeriodEnd)}
           </p>
         )}
         {state.downgradeToPlanId && (
-          <p className="mt-2 text-sm" style={{ color: "var(--accent)" }}>
+          <p className="mt-2 text-[12px]" style={{ color: "var(--accent)" }}>
             Your plan will change to {state.downgradeToPlanName} on{" "}
             {formatDateTime(state.currentPeriodEnd)}. You keep your current credits
             and features until then.
           </p>
         )}
         {state.cancelAtPeriodEnd && !state.downgradeToPlanId && (
-          <p className="mt-2 text-sm text-[var(--text-secondary)]">
+          <p className="mt-2 text-[12px] text-[var(--text-secondary)]">
             Cancels on {formatDateTime(state.currentPeriodEnd)} — you&apos;ll move
             to Free after that.
           </p>
         )}
       </PanelCard>
 
-      <PanelCard as="section" variant="app" className="p-5">
+      <PanelCard as="section" variant="app" className="p-4">
         <h2 className="text-sm font-semibold text-[var(--text-primary)]">
           Network credits this cycle
         </h2>
-        <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
+        <div className="mt-3 grid grid-cols-2 gap-3 text-[12px]">
           <div>
             <p className="text-[var(--text-tertiary)]">Monthly remaining</p>
-            <p className="text-xl font-semibold">
+            <p className="text-lg font-semibold">
               {state.monthlyCreditsRemaining}
             </p>
           </div>
           <div>
             <p className="text-[var(--text-tertiary)]">Top-up balance</p>
-            <p className="text-xl font-semibold">
+            <p className="text-lg font-semibold">
               {state.topupCreditsRemaining}
             </p>
           </div>
         </div>
-        <p className="mt-3 text-sm text-[var(--text-secondary)]">
+        <p className="mt-3 text-[12px] text-[var(--text-secondary)]">
           {state.totalRemaining} total remaining
           {state.monthlyAllowance != null &&
             ` · ${state.usedThisCycle} used of ${state.monthlyAllowance} monthly`}
         </p>
-        <p className="mt-1 text-sm text-[var(--text-tertiary)]">
+        <p className="mt-1 text-[12px] text-[var(--text-tertiary)]">
           Cycle resets: {formatDateTime(state.cycleResetAt)}
         </p>
         {state.canTopUp && (
           <button
             type="button"
-            className="mt-4 rounded-md px-4 py-2 text-sm font-medium"
+            className="mt-3 h-8 rounded-[var(--ua-radius-input)] px-3 text-[11px] font-semibold"
             style={{
               background: "var(--accent)",
               color: "var(--surface-base)",
@@ -290,7 +284,7 @@ export default function BillingSettingsClient() {
         )}
       </PanelCard>
 
-      <PanelCard as="section" variant="app" className="space-y-3 p-5">
+      <PanelCard as="section" variant="app" className="space-y-2.5 p-4">
         <h2 className="text-sm font-semibold text-[var(--text-primary)]">
           Change plan
         </h2>
@@ -333,7 +327,7 @@ export default function BillingSettingsClient() {
           </>
         )}
         {state.planId === "scale" && (
-          <p className="text-sm text-[var(--text-secondary)]">
+          <p className="text-[12px] text-[var(--text-secondary)]">
             Scale is managed by your account team. Contact hello@unauth.co for
             changes.
           </p>
@@ -348,13 +342,13 @@ export default function BillingSettingsClient() {
         )}
       </PanelCard>
 
-      <PanelCard as="section" variant="app" className="space-y-3 p-5">
+      <PanelCard as="section" variant="app" className="space-y-2.5 p-4">
         <h2 className="text-sm font-semibold text-[var(--text-primary)]">
           Payment method
         </h2>
         <button
           type="button"
-          className="text-sm underline text-[var(--accent)]"
+          className="text-[12px] underline text-[var(--accent)]"
           disabled={actionLoading === "portal"}
           onClick={() => void runAction("portal")}
         >
@@ -365,13 +359,13 @@ export default function BillingSettingsClient() {
             {!showCancelConfirm ? (
               <button
                 type="button"
-                className="block text-sm text-[var(--text-tertiary)] underline"
+                className="block text-[12px] text-[var(--text-tertiary)] underline"
                 onClick={() => setShowCancelConfirm(true)}
               >
                 Cancel plan
               </button>
             ) : (
-              <PanelCard variant="appInset" className="p-3 text-sm">
+              <PanelCard variant="appInset" className="p-3 text-[12px]">
                 <p>
                   You&apos;ll keep access until{" "}
                   {formatDateTime(state.currentPeriodEnd)}, then move to Free.
@@ -379,7 +373,7 @@ export default function BillingSettingsClient() {
                 <div className="mt-2 flex gap-2">
                   <button
                     type="button"
-                    className="rounded px-3 py-1 text-sm"
+                    className="h-7 rounded-[var(--ua-radius-control)] px-3 text-[11px]"
                     style={{ background: "var(--risk-high)", color: "white" }}
                     disabled={actionLoading === "cancel"}
                     onClick={() => void runAction("cancel")}
@@ -388,7 +382,7 @@ export default function BillingSettingsClient() {
                   </button>
                   <button
                     type="button"
-                    className="text-sm underline"
+                    className="text-[11px] underline"
                     onClick={() => setShowCancelConfirm(false)}
                   >
                     Keep plan
@@ -401,7 +395,7 @@ export default function BillingSettingsClient() {
         {state.cancelAtPeriodEnd && (
           <button
             type="button"
-            className="text-sm underline"
+            className="text-[12px] underline"
             disabled={actionLoading === "resume"}
             onClick={() => void runAction("resume")}
           >
@@ -410,6 +404,7 @@ export default function BillingSettingsClient() {
         )}
       </PanelCard>
     </div>
+    </SettingsPageShell>
   );
 }
 
@@ -427,7 +422,7 @@ function PlanButton({
   return (
     <button
       type="button"
-      className="block w-full rounded-md px-4 py-2 text-left text-sm font-medium"
+      className="block min-h-8 w-full rounded-[var(--ua-radius-input)] px-3 py-1.5 text-left text-[11px] font-semibold"
       style={{
         background: variant === "primary" ? "var(--accent)" : "var(--surface)",
         color:
@@ -469,19 +464,14 @@ function SkeletonBlock({
 
 function BillingSettingsSkeleton() {
   return (
-    <div
-      role="status"
-      className="mx-auto max-w-2xl space-y-8 p-4 sm:p-6"
-      aria-busy="true"
-      aria-label="Loading billing"
+    <SettingsPageShell
+      title="Billing"
+      subtitle="Manage your plan, network credits, and payment method."
     >
-      <section className="space-y-1">
-        <SkeletonBlock className="h-6 w-24" />
-        <SkeletonBlock className="h-4 w-64" />
-      </section>
+    <div role="status" className="space-y-3" aria-busy="true" aria-label="Loading billing">
 
       {/* Current plan */}
-      <PanelCard as="section" variant="app" className="space-y-3 p-5">
+      <PanelCard as="section" variant="app" className="space-y-3 p-4">
         <SkeletonBlock className="h-4 w-24" />
         <SkeletonBlock className="h-8 w-32" />
         <SkeletonBlock className="h-4 w-20" />
@@ -489,7 +479,7 @@ function BillingSettingsSkeleton() {
       </PanelCard>
 
       {/* Credits */}
-      <PanelCard as="section" variant="app" className="space-y-3 p-5">
+      <PanelCard as="section" variant="app" className="space-y-3 p-4">
         <SkeletonBlock className="h-4 w-48" />
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
@@ -505,17 +495,18 @@ function BillingSettingsSkeleton() {
       </PanelCard>
 
       {/* Change plan */}
-      <PanelCard as="section" variant="app" className="space-y-3 p-5">
+      <PanelCard as="section" variant="app" className="space-y-3 p-4">
         <SkeletonBlock className="h-4 w-28" />
         <SkeletonBlock className="h-9 w-full" />
         <SkeletonBlock className="h-9 w-full" />
       </PanelCard>
 
       {/* Payment */}
-      <PanelCard as="section" variant="app" className="space-y-3 p-5">
+      <PanelCard as="section" variant="app" className="space-y-3 p-4">
         <SkeletonBlock className="h-4 w-36" />
         <SkeletonBlock className="h-4 w-48" />
       </PanelCard>
     </div>
+    </SettingsPageShell>
   );
 }

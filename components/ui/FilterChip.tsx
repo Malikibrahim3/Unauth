@@ -18,6 +18,7 @@ export interface FilterChipProps {
 
 const chipClass = (active: boolean, disabled: boolean, className?: string) =>
   cn(
+    'ua-jitter',
     filterChipContract.base,
     active ? filterChipContract.selected : filterChipContract.unselected,
     disabled && filterChipContract.disabled,

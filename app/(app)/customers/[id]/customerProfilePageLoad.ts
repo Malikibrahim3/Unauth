@@ -11,7 +11,7 @@ import {
   parseAndVerifySignedToken,
   hashSignedToken,
 } from "@/lib/api/signedAccess";
-import { getConnectionState } from "@/lib/connections/getConnectionState";
+import { getCachedConnectionState } from "@/lib/connections/getConnectionState";
 import type { ConnectionState } from "@/lib/connections/getConnectionState";
 import {
   CLAIM_TYPE_LABELS,
@@ -334,7 +334,7 @@ export async function loadCustomerProfilePage(
   // source-customer deep links during the additive migration.
   // ---------------------------------------------------------------------------
   const [connectionState, customerRes] = await Promise.all([
-    getConnectionState(svc, merchantId),
+    getCachedConnectionState(merchantId),
     svc
       .from("source_customers")
       .select(

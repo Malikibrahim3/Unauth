@@ -22,13 +22,14 @@ export default async function globalSetup(config: FullConfig) {
   const browser = await chromium.launch();
   const context = await browser.newContext();
   const page = await context.newPage();
+  const authTimeoutMs = 120_000;
   try {
     const authUrl = new URL('/api/test/e2e-auth', baseURL);
     authUrl.searchParams.set('secret', secret);
     authUrl.searchParams.set('merchant_id', merchantId);
     authUrl.searchParams.set('redirect', '/dashboard');
-    await page.goto(authUrl.toString(), { waitUntil: 'domcontentloaded' });
-    await page.waitForURL('**/dashboard', { timeout: 30_000 });
+    await page.goto(authUrl.toString(), { waitUntil: 'domcontentloaded', timeout: authTimeoutMs });
+    await page.waitForURL('**/dashboard', { timeout: authTimeoutMs });
     await context.storageState({ path: STORAGE_STATE });
   } finally {
     await browser.close();

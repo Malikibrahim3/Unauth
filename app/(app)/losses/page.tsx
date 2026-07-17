@@ -3,11 +3,14 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { TABLES } from '@/lib/supabase/tables';
 import { WorkbenchPage } from '@/components/ui';
+import { RankedContributionChart } from '@/components/charts/authenticated';
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { LossLedger, type LossLedgerRow } from '@/components/losses/LossLedger';
 import { freshnessFromTimestamp } from '@/components/sources/FreshnessIndicator';
 import { formatCurrencyNullable, formatNumber, sumSameCurrency } from '@/lib/utils/format';
 import { recoverySoughtAmount } from '@/lib/recoveries/amounts';
+import { humanise } from '@/lib/ui/labels';
+import { selectLossContributions } from '@/lib/visualisation/chartSelectors';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,21 +56,23 @@ export default async function LossesPage() {
   if (denied) redirect('/dashboard');
 
   const nowMs = Date.now();
-  const { data } = await serviceClient
-    .from(TABLES.LOSS_CASES)
-    .select('id,support_payout_case_id,case_category,attribution,counterparty_type,counterparty_name,status,recoverability,financial_state,prevention_only,written_off_at,estimated_recovery_minor,currency,source_metadata,updated_at')
-    .eq('merchant_id', ctx.merchantId)
-    .order('updated_at', { ascending: false })
-    .limit(500);
+  const [{ data }, { data: orphanRecoveryData }] = await Promise.all([
+    serviceClient
+      .from(TABLES.LOSS_CASES)
+      .select('id,support_payout_case_id,case_category,attribution,counterparty_type,counterparty_name,status,recoverability,financial_state,prevention_only,written_off_at,estimated_recovery_minor,currency,source_metadata,updated_at')
+      .eq('merchant_id', ctx.merchantId)
+      .order('updated_at', { ascending: false })
+      .limit(500),
+    serviceClient
+      .from(TABLES.RECOVERY_CASES)
+      .select('id,support_payout_case_id,recovery_type,owner_type,status,merchant_loss_amount,eligible_loss_amount,estimated_recoverable_max,amount_recovered,currency,updated_at')
+      .eq('merchant_id', ctx.merchantId)
+      .is('loss_case_id', null)
+      .eq('prevention_only', false)
+      .gt('merchant_loss_amount', 0)
+      .limit(500),
+  ]);
   const raw = (data ?? []) as LossCaseRow[];
-  const { data: orphanRecoveryData } = await serviceClient
-    .from(TABLES.RECOVERY_CASES)
-    .select('id,support_payout_case_id,recovery_type,owner_type,status,merchant_loss_amount,eligible_loss_amount,estimated_recoverable_max,amount_recovered,currency,updated_at')
-    .eq('merchant_id', ctx.merchantId)
-    .is('loss_case_id', null)
-    .eq('prevention_only', false)
-    .gt('merchant_loss_amount', 0)
-    .limit(500);
   const orphanRecoveries = (orphanRecoveryData ?? []) as OrphanRecoveryRow[];
   const caseIds = raw.flatMap((row) => row.support_payout_case_id ? [row.support_payout_case_id] : []);
   const { data: financialRows } = caseIds.length
@@ -138,6 +143,17 @@ export default async function LossesPage() {
   const recoverable = rows.filter((r) => r.recoverability === 'recoverable' || r.recoverability === 'eligible_to_chase').length;
   const prevented = rows.filter((r) => r.preventionOnly).length;
   const writtenOff = rows.filter((r) => r.writtenOff).length;
+  const contributionRows = selectLossContributions(rows.map((row) => ({
+    label: humanise(row.attribution ?? row.category ?? 'Unattributed'),
+    amountMinor: row.realisedLossMinor ?? row.estimatedLossMinor,
+    currency: row.currency,
+    writtenOff: row.writtenOff,
+  })), exposure.currency).map(({ label, valueMajor: value }) => ({
+    label,
+    value,
+    displayValue: formatCurrencyNullable(value, exposure.currency) ?? 'Unavailable',
+    detail: 'Realised or estimated loss, excluding written-off records',
+  }));
 
   return (
     <WorkbenchPage
@@ -152,6 +168,15 @@ export default async function LossesPage() {
         { label: 'Prevented', value: formatNumber(prevented), hint: 'Prevention-only outcomes' },
         { label: 'Written off', value: formatNumber(writtenOff), hint: 'Closed unrecoverable' },
       ]}
+      primaryVisual={
+        <RankedContributionChart
+          id="loss-attribution-contribution"
+          title="Loss contribution"
+          description={`Ranked attribution of current realised or estimated loss in ${exposure.currency ?? 'the available currency'}. Written-off and incompatible-currency rows are excluded.${mixedHint}`}
+          annotation={{ value: formatCurrencyNullable(exposure.total || null, exposure.currency) ?? '—', label: 'current loss' }}
+          items={contributionRows}
+        />
+      }
       main={<LossLedger rows={rows} />}
       footer={
         <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>

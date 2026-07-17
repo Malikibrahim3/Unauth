@@ -3,7 +3,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import { sumSameCurrency } from '@/lib/utils/format';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
-import { getConnectionState } from '@/lib/connections/getConnectionState';
+import { getCachedConnectionState } from '@/lib/connections/getConnectionState';
 import { ACTIVE_CLAIM_STATUSES, getClaimSlaState } from '@/lib/claims/sla';
 import { fetchClaimQueueCounts } from '@/lib/claims/queueCounts';
 import { claimsListTotalForView, formatClaimsResultText, resolveClaimsListView } from '@/lib/claims/claimsQueueUi';
@@ -84,11 +84,23 @@ type ClaimQueryRow = {
   snoozed_until: string | null;
 };
 type ClaimStatus = (typeof ALLOWED_STATUSES)[number];
+type ClaimsSearchParams = {
+  status?: string;
+  workflow?: string;
+  sort?: string;
+  sla?: string;
+  page?: string;
+  pageSize?: string;
+  queue?: string;
+  owner?: string;
+  viewed?: string;
+  focus?: string;
+};
 
 export default async function ClaimsPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ status?: string; workflow?: string; sort?: string; sla?: string; page?: string; pageSize?: string; queue?: string; owner?: string; viewed?: string; focus?: string }>;
+  searchParams?: Promise<ClaimsSearchParams>;
 }) {
   const userClient = createClient();
   const { data: { user } } = await userClient.auth.getUser();
@@ -97,14 +109,15 @@ export default async function ClaimsPage({
   const serviceClient = createServiceClient();
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_INBOX);
   if (denied) redirect('/dashboard');
-  if (!await merchantHasEntitlement(serviceClient, ctx.merchantId, 'CLAIM_REVIEW_QUEUE')) {
+  const [hasQueueEntitlement, connectionState, resolvedParams] = await Promise.all([
+    merchantHasEntitlement(serviceClient, ctx.merchantId, 'CLAIM_REVIEW_QUEUE'),
+    getCachedConnectionState(ctx.merchantId),
+    searchParams ?? Promise.resolve<ClaimsSearchParams>({}),
+  ]);
+  if (!hasQueueEntitlement) {
     redirect('/settings/billing?required=CLAIM_REVIEW_QUEUE');
   }
-
-  const connectionState = await getConnectionState(serviceClient, ctx.merchantId);
-
-  const resolvedParams = (await searchParams) ?? {};
-  const sp: Record<string, string | undefined> = { ...resolvedParams };
+  const sp: Record<string, string | undefined> = { ...(resolvedParams ?? {}) };
   const statusFilter = ALLOWED_STATUSES.includes(resolvedParams.status as ClaimStatus)
     ? (resolvedParams.status as ClaimStatus)
     : null;

@@ -17,8 +17,8 @@
 
 .ua-app ::selection,
 .ua-auth-surface ::selection {
-  background: #cbd5ff;
-  color: #17191c;
+  background: var(--accent-border);
+  color: var(--text-primary);
 }
 
 .ua-app :where(button, a, input, select, textarea, [tabindex]):focus-visible,

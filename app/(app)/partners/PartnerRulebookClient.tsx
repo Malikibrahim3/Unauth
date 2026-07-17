@@ -83,7 +83,7 @@ export function PartnerRulebookClient({ partners, rules, canManage }: Props) {
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
-      <section className="rounded-[8px] border" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
+      <section className="rounded-[var(--ua-radius-card)] border" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
         <div className="border-b px-4 py-3" style={{ borderColor: 'var(--border-muted)' }}>
           <p className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>Recovery rules</p>
         </div>
@@ -99,7 +99,7 @@ export function PartnerRulebookClient({ partners, rules, canManage }: Props) {
                 </p>
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {rule.required_evidence.slice(0, 5).map((item) => (
-                    <span key={item} className="rounded-[6px] px-2 py-0.5 text-[11px]" style={{ background: 'var(--bg-inset)', color: 'var(--text-secondary)' }}>
+                    <span key={item} className="rounded-[var(--ua-radius-input)] px-2 py-0.5 text-[11px]" style={{ background: 'var(--bg-inset)', color: 'var(--text-secondary)' }}>
                       {item.replaceAll('_', ' ')}
                     </span>
                   ))}
@@ -116,13 +116,13 @@ export function PartnerRulebookClient({ partners, rules, canManage }: Props) {
       </section>
 
       <aside className="space-y-4">
-        <section className="rounded-[8px] border p-4" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
+        <section className="rounded-[var(--ua-radius-card)] border p-4" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
           <p className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>Partners</p>
           <div className="mt-3 space-y-2">
             {partners.length === 0 ? (
               <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>No partners configured.</p>
             ) : partners.map((partner) => (
-              <div key={partner.id} className="rounded-[8px] border px-3 py-2" style={{ borderColor: 'var(--border-muted)', background: 'var(--surface-sunken)' }}>
+              <div key={partner.id} className="rounded-[var(--ua-radius-card)] border px-3 py-2" style={{ borderColor: 'var(--border-muted)', background: 'var(--surface-sunken)' }}>
                 <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{partner.name}</p>
                 <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{PARTNER_TYPE_LABELS[partner.partner_type]}</p>
               </div>
@@ -140,7 +140,7 @@ export function PartnerRulebookClient({ partners, rules, canManage }: Props) {
         </section>
 
         {canManage ? (
-          <section className="rounded-[8px] border p-4" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
+          <section className="rounded-[var(--ua-radius-card)] border p-4" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
             <p className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>New recovery rule</p>
             <div className="mt-3 grid gap-2">
               <Input aria-label="Rule name" placeholder="Rule name" value={ruleName} onChange={(event) => setRuleName(event.target.value)} />

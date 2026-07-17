@@ -1,4 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { cache } from 'react';
+import { createServiceClient } from '@/lib/supabase/server';
 import { getOrderSourceConnectionStatus } from '@/lib/commerce/connectionStatus';
 import type { OrderSourcePlatform } from '@/lib/commerce/types';
 import { resolveMerchantHelpdeskLink } from '@/lib/support/helpdesk/resolveMerchantHelpdeskLink';
@@ -60,3 +62,8 @@ export async function getConnectionState(
     trackingConnected,
   };
 }
+
+/** Share the shell/page connection read graph within one server render. */
+export const getCachedConnectionState = cache(async (merchantId: string) =>
+  getConnectionState(createServiceClient(), merchantId),
+);

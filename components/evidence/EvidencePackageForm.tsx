@@ -124,8 +124,8 @@ export function EvidencePackageForm({
     <div
       className={
         showIntro
-          ? "p-8 max-w-2xl mx-auto"
-          : "px-[var(--space-5)] py-[var(--space-4)]"
+          ? "p-4"
+          : "px-4 py-3"
       }
     >
       <EvidencePackageFormIntro showIntro={showIntro} />

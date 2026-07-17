@@ -7,10 +7,11 @@ const scanRoots = [
   'app/onboarding',
   'app/audit-running',
   'styles/authenticated',
+  'components/charts/authenticated',
   ...[
-    'apply', 'analytics', 'billing', 'cases', 'claims', 'collaboration',
+    'apply', 'analytics', 'authenticated', 'billing', 'cases', 'claims', 'collaboration',
     'connections', 'customers', 'evidence', 'exceptions', 'identity', 'imports',
-    'inbox', 'integrations', 'layout', 'losses', 'nav', 'navigation',
+    'dashboard', 'inbox', 'integrations', 'layout', 'losses', 'nav', 'navigation',
     'notifications', 'product', 'relationships', 'reporting', 'reports', 'rules',
     'settings', 'shopify', 'sources', 'states', 'support', 'ui', 'work', 'workbench',
   ].map((dir) => `components/${dir}`),
@@ -85,6 +86,8 @@ const arbitraryRadiusInline = /borderRadius:\s*(['"])(?!var\()(?!50%\1)(?!\1\1)[
 // Inline boxShadow holding a literal instead of var() or the bare literal
 // "none" (which is a legitimate "no shadow" value, not a hardcoded shadow).
 const arbitraryShadow = /boxShadow:\s*(['"])(?!var\()(?!none\1)[^'"]+\1/g;
+const directChartLibrary = /from\s+['"](?:recharts|chart\.js|react-chartjs-2)['"]/g;
+const obsoleteVisualSummary = /OperationalVisualSummary|data-visual-summary/g;
 
 const allowedExtensions = new Set(['.ts', '.tsx', '.css']);
 
@@ -120,6 +123,10 @@ for (const file of files) {
   if (ignored.has(normalized)) continue;
   const source = await readFile(join(ROOT, file), 'utf8');
 
+  for (const { line, text } of findMatches(source, obsoleteVisualSummary)) {
+    failures.push(`${normalized}:${line} obsolete repeated chart: ${text} — select a purpose-built component from components/charts/authenticated`);
+  }
+
   for (const [rule, expression] of [['old palette', oldPalette], ['landing token dependency', landingDependency]]) {
     for (const { line, text } of findMatches(source, expression)) {
       failures.push(`${normalized}:${line} ${rule}: ${text} — replace with a styles/authenticated token`);
@@ -143,6 +150,17 @@ for (const file of files) {
 
   for (const { line, text } of findMatches(source, arbitraryShadow)) {
     failures.push(`${normalized}:${line} arbitrary shadow: ${text} — use one of the --ua-shadow-* tokens, or literal "none"`);
+  }
+
+  const chartLibraryAllowed = normalized.startsWith('components/dashboard/') || normalized.startsWith('components/reporting/');
+  if (!chartLibraryAllowed) {
+    for (const { line, text } of findMatches(source, directChartLibrary)) {
+      failures.push(`${normalized}:${line} direct chart dependency: ${text} — use components/charts/authenticated, or a reporting-specific chart module`);
+    }
+  }
+
+  if (normalized.startsWith('app/(app)/') && normalized.endsWith('/loading.tsx') && /animate-pulse/.test(source)) {
+    failures.push(`${normalized}: route-local pulse markup — select a shared geometry-matched skeleton instead`);
   }
 
   for (const dep of deprecatedImports) {

@@ -12,7 +12,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { shouldRequireOnboarding } from "@/lib/account/onboardingGate";
 import { ensureMerchantContextForUser } from "@/lib/account/ensureMerchantContext";
 import { getMerchantProfileById } from "@/lib/account/merchantProfile";
-import { getConnectionState } from "@/lib/connections/getConnectionState";
+import { getCachedConnectionState } from "@/lib/connections/getConnectionState";
 import {
   ConnectionStateProvider,
   DemoModeProvider,
@@ -20,15 +20,18 @@ import {
 import { NavigationProvider } from "@/components/navigation/NavigationProvider";
 import { ToastProvider } from "@/components/ui/Toast";
 import { DevPreviewProvider } from "@/components/product/DevPreviewContext";
+import { AuthUiCohortTelemetry } from "@/components/product/AuthUiCohortTelemetry";
+import {
+  AUTH_UI_ROLLOUT_COOKIE,
+  resolveAuthUiRollout,
+} from "@/lib/product/authenticatedUiRollout";
 import {
   DEV_TIER_COOKIE,
   getDevPreviewFromCookieValue,
 } from "@/lib/product/devPreview";
 import {
   ACTIVE_MERCHANT_COOKIE,
-  hasPermission,
-  PERMISSIONS,
-  type Permission,
+  resolvePermissions,
 } from "@/lib/permissions";
 import "../../styles/authenticated/index.css";
 
@@ -49,6 +52,10 @@ export default async function AppLayout({
   }
 
   const cookieStore = await cookies();
+  const authUiRollout = resolveAuthUiRollout({
+    environment: process.env.VERCEL_ENV ?? process.env.NODE_ENV,
+    cookieValue: cookieStore.get(AUTH_UI_ROLLOUT_COOKIE)?.value,
+  });
   const ctx = await ensureMerchantContextForUser(
     serviceClient,
     user,
@@ -61,17 +68,8 @@ export default async function AppLayout({
     .eq("user_id", user.id)
     .eq("invite_status", "active");
 
-  const permissionValues = Object.values(PERMISSIONS) as Permission[];
   const permissionsPromise = ctx
-    ? Promise.all(
-        permissionValues.map(
-          async (permission) =>
-            [
-              permission,
-              await hasPermission(serviceClient, ctx, permission),
-            ] as const,
-        ),
-      )
+    ? resolvePermissions(serviceClient, ctx)
     : Promise.resolve([]);
 
   const merchantPromise = ctx
@@ -95,7 +93,7 @@ export default async function AppLayout({
     : Promise.resolve({ data: null });
 
   const connectionPromise = ctx
-    ? getConnectionState(serviceClient, ctx.merchantId)
+    ? getCachedConnectionState(ctx.merchantId)
     : Promise.resolve({
         orderSourceConnected: false,
         orderSourcePlatform: null,
@@ -118,7 +116,7 @@ export default async function AppLayout({
     { data: merchantFlags },
     connectionState,
     { data: memberships },
-    permissionEntries,
+    permissions,
   ] = await Promise.all([
     merchantPromise,
     jobsPromise,
@@ -152,23 +150,6 @@ export default async function AppLayout({
     name: merchantNames.get(membership.merchant_id) ?? "Unnamed workspace",
     role: membership.role,
   }));
-  const permissions = permissionEntries.reduce<Permission[]>(
-    (allowedPermissions, [permission, allowed]) => {
-      if (allowed) allowedPermissions.push(permission);
-      return allowedPermissions;
-    },
-    [],
-  );
-
-  const { count: unreadCount } = ctx
-    ? await serviceClient
-        .from(TABLES.NOTIFICATIONS)
-        .select("id", { count: "exact", head: true })
-        .eq("merchant_id", ctx.merchantId)
-        .eq("recipient_user_id", user.id)
-        .is("read_at", null)
-    : { count: 0 };
-
   const merchantComplete =
     merchantProfile?.setup_complete === true ||
     user.user_metadata?.setup_complete === true;
@@ -221,7 +202,13 @@ export default async function AppLayout({
     <ToastProvider>
     <NavigationProvider>
       <DevPreviewProvider value={devPreview}>
-        <div className="ua-app flex h-screen overflow-hidden">
+        <div
+          className="ua-app flex h-screen overflow-hidden"
+          data-ui-version="authenticated-v2"
+          data-ui-cohorts={[...authUiRollout.enabled].join(',') || 'none'}
+          data-ui-rollout-source={authUiRollout.source}
+        >
+          <AuthUiCohortTelemetry />
           <Sidebar
             merchantName={displayMerchantName ?? null}
             userEmail={user.email ?? ""}
@@ -246,7 +233,7 @@ export default async function AppLayout({
                 userEmail={user.email ?? null}
                 workspaces={workspaces}
                 activeMerchantId={ctx?.merchantId ?? null}
-                unreadCount={unreadCount ?? 0}
+                unreadCount={0}
                 permissions={permissions}
               />
 

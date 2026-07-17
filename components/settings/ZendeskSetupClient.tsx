@@ -115,7 +115,7 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
   const allDone = !statusLoading && sidebarVerified && ticketSyncConnected;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-3">
       {/* Status header */}
       <div className="flex items-start gap-3">
         <Image
@@ -123,7 +123,7 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
           alt="Zendesk"
           width={40}
           height={40}
-          className="h-10 w-10 shrink-0 rounded-xl object-contain"
+          className="h-9 w-9 shrink-0 rounded-[var(--ua-radius-input)] border border-[var(--border-muted)] object-contain p-1"
         />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
@@ -162,7 +162,7 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
           return (
             <div
               key={step.number}
-              className="flex gap-3 px-4 py-3.5"
+              className="flex gap-3 px-4 py-3"
               style={{ borderColor: 'var(--border)' }}
             >
               <div
@@ -207,7 +207,7 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
         <a
           href={ZENDESK_ZIP_PATH}
           download="unauth-zendesk-app.zip"
-          className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold"
+          className="inline-flex h-8 items-center gap-2 rounded-[var(--ua-radius-input)] px-3 text-[11px] font-semibold"
           style={{ background: 'var(--accent)', color: 'white' }}
         >
           <Download className="h-4 w-4" />
@@ -217,7 +217,7 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
           type="button"
           onClick={() => void verifyInstall()}
           disabled={verifying || sidebarVerified}
-          className="inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold disabled:opacity-60"
+          className="inline-flex h-8 items-center gap-2 rounded-[var(--ua-radius-input)] border px-3 text-[11px] font-semibold disabled:opacity-60"
           style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
         >
           {sidebarVerified ? (
@@ -235,7 +235,7 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
           href="https://support.zendesk.com/hc/en-us/articles/4408843303194"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 rounded-xl border px-4 py-2.5 text-sm font-medium"
+          className="inline-flex h-8 items-center gap-1.5 rounded-[var(--ua-radius-input)] border px-3 text-[11px] font-medium"
           style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
         >
           Zendesk docs
@@ -258,7 +258,7 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
       ) : null}
 
       {/* Ticket sync section */}
-      <div className="space-y-4">
+      <div className="space-y-2.5 border-t border-[var(--border-muted)] pt-3">
         <div>
           <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
             Ticket sync

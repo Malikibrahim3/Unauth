@@ -40,7 +40,7 @@ function PageSizeSelectInner({
   return (
     <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
       <span className="shrink-0">{label}</span>
-      <div className="inline-flex shrink-0 overflow-hidden rounded-[4px] border" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
+      <div className="inline-flex shrink-0 overflow-hidden rounded-[var(--ua-radius-control)] border" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
         {PAGE_SIZES.map((size) => {
           const active = size === activePageSize;
           return (

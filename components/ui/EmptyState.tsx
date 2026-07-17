@@ -73,7 +73,7 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        'flex flex-col items-center justify-center text-center py-[var(--space-8)] px-[var(--space-6)]',
+        'ua-empty-state flex flex-col items-center justify-center text-center py-[var(--space-8)] px-[var(--space-6)]',
         className,
       )}
     >

@@ -74,10 +74,10 @@ export default async function RecoveryDetailPage({ params }: Props) {
         { label: 'Evidence gaps', value: formatNumber(missing.length), hint: 'Missing items' },
       ]}
       main={
-        <div className="flex flex-col gap-6">
-          <section className="rounded-lg p-4" style={{ border: '1px solid var(--border-subtle, rgba(0,0,0,0.08))' }}>
+        <div className="flex flex-col gap-3">
+          <section className="rounded-[var(--ua-radius-card)] p-4" style={{ border: '1px solid var(--border-subtle, rgba(0,0,0,0.08))' }}>
             <h2 className="mb-3 text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Recovery details</h2>
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
               <Row label="Status" value={RECOVERY_STATUS_LABELS[recovery.status] ?? recovery.status} />
               <Row label="Owner" value={RECOVERY_OWNER_LABELS[recovery.owner_type] ?? recovery.owner_type} />
               <Row label="Type" value={RECOVERY_TYPE_LABELS[recovery.recovery_type] ?? recovery.recovery_type} />
@@ -98,7 +98,7 @@ export default async function RecoveryDetailPage({ params }: Props) {
           </section>
 
           {missing.length > 0 ? (
-            <section className="rounded-lg p-4" style={{ border: '1px solid var(--border-subtle, rgba(0,0,0,0.08))' }}>
+            <section className="rounded-[var(--ua-radius-card)] p-4" style={{ border: '1px solid var(--border-subtle, rgba(0,0,0,0.08))' }}>
               <h2 className="mb-2 text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Missing evidence</h2>
               <ul className="flex flex-wrap gap-1.5">
                 {missing.map((key) => (

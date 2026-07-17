@@ -24,7 +24,7 @@ export default async function AuditRunningPage({ searchParams }: AuditRunningPag
   const email = resolvedSearchParams.email ?? user.email ?? 'your inbox';
 
   return (
-    <div className="ua-auth-surface min-h-screen bg-[var(--surface-base)] px-6 py-20 text-[var(--text-primary)] md:px-10">
+    <div className="ua-auth-surface min-h-screen bg-[var(--surface-base)] px-6 py-20 text-[var(--text-primary)] md:px-10" data-ui-version="authenticated-v2">
       <div className="mx-auto max-w-2xl rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] px-8 py-10 md:px-10 md:py-12">
         <p
           style={{

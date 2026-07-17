@@ -34,6 +34,8 @@ export { MetricCard } from './MetricCard';
 export { SectionCard } from './SectionCard';
 export { PageHeader } from './PageHeader';
 export type { Breadcrumb } from './PageHeader';
+export { AuthenticatedPageHeader } from '@/components/authenticated/AuthenticatedPageHeader';
+export { AuthenticatedPanel } from '@/components/authenticated/AuthenticatedPanel';
 export { DataTable } from './DataTable';
 export { DataTableServer } from './DataTableServer';
 export type { DataTableServerProps, ServerDataTableColumn } from './DataTableServer';

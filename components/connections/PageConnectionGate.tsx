@@ -60,19 +60,19 @@ function GatePanel({ missing, pageName, pageDescription }: {
   );
 
   return (
-    <div className="flex items-center justify-center min-h-[55vh] p-8">
+    <div className="mx-auto w-full max-w-[1500px] px-3 pb-6 pt-4 sm:px-5">
       <div
-        className="max-w-md w-full rounded-md border p-8 space-y-5"
+        className="w-full space-y-3 rounded-[var(--ua-radius-card)] border p-4"
         style={{
           background: 'var(--surface)',
           borderColor: 'var(--border)',
         }}
       >
         <div
-          className="inline-flex h-10 w-10 items-center justify-center rounded-md"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--ua-radius-input)]"
           style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
         >
-          <Plug className="h-5 w-5" style={{ color: 'var(--text-secondary)' }} />
+          <Plug className="h-4 w-4" style={{ color: 'var(--text-secondary)' }} />
         </div>
 
         <div className="space-y-2">
@@ -83,7 +83,7 @@ function GatePanel({ missing, pageName, pageDescription }: {
             {headline}
           </h2>
           <p
-            className="text-sm leading-relaxed"
+            className="max-w-2xl text-[12px] leading-5"
             style={{ color: 'var(--text-secondary)', fontFamily: 'DM Sans, system-ui, sans-serif' }}
           >
             {body}
@@ -92,7 +92,7 @@ function GatePanel({ missing, pageName, pageDescription }: {
 
         <Link
           href={isDangerous ? '/settings/integrations/gorgias' : '/settings/integrations'}
-          className="btn-accent inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-90"
+          className="btn-accent inline-flex h-8 items-center gap-2 rounded-[var(--ua-radius-input)] px-3 text-[11px] font-semibold transition-opacity hover:opacity-90"
         >
           {isDangerous ? 'Connect Gorgias' : 'Set up Shopify + Gorgias'}
         </Link>

@@ -1,6 +1,6 @@
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { TABLES } from "@/lib/supabase/tables";
-import { getConnectionState } from "@/lib/connections/getConnectionState";
+import { getCachedConnectionState } from "@/lib/connections/getConnectionState";
 import { getMerchantDataPresence } from "@/lib/supabase/getMerchantDataPresence";
 import { resolveMerchantSetupState } from "@/lib/connections/getMerchantSetupState";
 import { redirect } from "next/navigation";
@@ -101,18 +101,18 @@ export default async function CustomersOverviewPage({
     PERMISSIONS.VIEW_CUSTOMERS,
   );
   if (denied) return redirect(await resolveDefaultAppPath(svc, user.id));
-  if (!(await merchantHasEntitlement(svc, ctx.merchantId, "CUSTOMER_SEARCH"))) {
-    redirect("/settings/billing?required=CUSTOMER_SEARCH");
-  }
-
-  // Run connection state and search-param resolution in parallel — neither blocks the other.
-  const [[connectionState, dataPresence], sp] = await Promise.all([
+  // Entitlement, source state, and URL state are independent after tenancy is resolved.
+  const [hasCustomerSearch, [connectionState, dataPresence], sp] = await Promise.all([
+    merchantHasEntitlement(svc, ctx.merchantId, "CUSTOMER_SEARCH"),
     Promise.all([
-      getConnectionState(svc, ctx.merchantId),
+      getCachedConnectionState(ctx.merchantId),
       getMerchantDataPresence(svc, ctx.merchantId, user.id),
     ]),
     Promise.resolve(searchParams).then((p) => p ?? {}),
   ]);
+  if (!hasCustomerSearch) {
+    redirect("/settings/billing?required=CUSTOMER_SEARCH");
+  }
   const setupState = resolveMerchantSetupState(connectionState, dataPresence);
 
   const page = Math.max(1, parseInt(sp.page ?? "1", 10));

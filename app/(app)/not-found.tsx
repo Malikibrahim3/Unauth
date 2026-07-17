@@ -1,32 +1,37 @@
 import Link from 'next/link';
-import { EmptyState } from '@/components/ui';
+import { AuthenticatedPageHeader } from '@/components/authenticated/AuthenticatedPageHeader';
+import { AuthenticatedPanel } from '@/components/authenticated/AuthenticatedPanel';
+import pageStyles from '@/components/authenticated/AuthenticatedPageChrome.module.css';
 
 export default function AppNotFound() {
   return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center px-6">
-      <h1 className="sr-only">This workspace page was not found</h1>
-      <EmptyState
-          title="This workspace page was not found"
-          description="The page may have been renamed or you may not have access. Return to your queue or open settings to verify integrations."
-          action={
-            <div className="flex flex-wrap items-center justify-center gap-3">
+    <div>
+      <AuthenticatedPageHeader
+        eyebrow="Workspace route"
+        title="This page was not found"
+        subtitle="The page may have been renamed or you may not have access. Return to your queue or verify the current workspace."
+      />
+      <div className={pageStyles.pageBody}>
+        <AuthenticatedPanel bodyClassName="flex flex-wrap items-center justify-between gap-3 p-4">
+          <p className="text-[11px] leading-5 text-[var(--text-secondary)]">No record or workflow state was changed.</p>
+          <div className="flex flex-wrap items-center gap-2">
               <Link
                 href="/dashboard"
-                className="inline-flex items-center rounded-md px-4 py-2 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
+                className="inline-flex h-8 items-center rounded-[var(--ua-radius-input)] px-3 text-[11px] font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
                 style={{ background: 'var(--accent)', color: 'white', outlineColor: 'var(--accent)' }}
               >
                 Back to dashboard
               </Link>
               <Link
                 href="/claims"
-                className="inline-flex items-center rounded-md border px-4 py-2 text-sm font-semibold hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
+                className="inline-flex h-8 items-center rounded-[var(--ua-radius-input)] border px-3 text-[11px] font-semibold hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
                 style={{ borderColor: 'var(--border-muted)', color: 'var(--text)', outlineColor: 'var(--accent)' }}
               >
                 Open claims
               </Link>
-            </div>
-          }
-        />
+          </div>
+        </AuthenticatedPanel>
+      </div>
     </div>
   );
 }

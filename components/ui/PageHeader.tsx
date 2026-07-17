@@ -46,7 +46,7 @@ export function PageHeader({
 }: PageHeaderProps) {
   return (
     <header
-      className={cn(PAGE_SHELL_INNER_CLASS, className)}
+      className={cn(PAGE_SHELL_INNER_CLASS, "ua-page-frame", className)}
       style={PAGE_HEADER_STYLE}
     >
       {/* Breadcrumbs */}

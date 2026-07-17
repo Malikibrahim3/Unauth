@@ -18,12 +18,12 @@
 /** Filter chips have no canonical component yet. This is the intended
  * contract for whoever builds one next — see the migration register. */
 export const filterChipContract = {
-  base: 'inline-flex items-center gap-1.5 rounded-[var(--ua-radius-pill)] border px-2.5 py-1 text-[13px] font-medium transition-colors',
+  base: 'inline-flex h-7 items-center gap-1.5 rounded-[var(--ua-radius-control)] border px-2.5 text-[11px] font-medium transition-colors',
   unselected:
     'border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] text-[var(--ua-text-secondary)]',
   hover: 'hover:bg-[var(--ua-surface-hover)]',
   selected:
-    'border-[var(--ua-border-focus)] bg-[var(--ua-surface-selected)] text-[var(--ua-text-primary)]',
+    'border-[var(--ua-border-strong)] bg-[var(--ua-surface-primary)] text-[var(--ua-text-primary)] shadow-[var(--ua-shadow-subtle)]',
   disabled: 'opacity-50 cursor-not-allowed pointer-events-none',
 } as const;
 
@@ -32,10 +32,22 @@ export const filterChipContract = {
  * register. Use only for mutually exclusive views/sort choices. */
 export const segmentedControlContract = {
   root: 'inline-flex items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-secondary)] p-0.5',
-  item: 'inline-flex items-center justify-center rounded-[var(--ua-radius-control)] px-3 text-[13px] font-medium text-[var(--ua-text-secondary)] transition-colors',
+  item: 'inline-flex items-center justify-center rounded-[var(--ua-radius-control)] px-2.5 text-[11px] font-medium text-[var(--ua-text-secondary)] transition-colors',
   itemHeight: 'h-[var(--ua-control-height-sm)]',
   selectedItem: 'bg-[var(--ua-surface-primary)] text-[var(--ua-text-primary)] shadow-[var(--ua-shadow-subtle)]',
 } as const;
 
 export type FilterChipContract = typeof filterChipContract;
 export type SegmentedControlContract = typeof segmentedControlContract;
+
+/** Reviewable product rules used by tests and implementation checklists. */
+export const authenticatedDesignEthos = {
+  reference: 'approved-dashboard-autumn',
+  shell: '208px warm rail, 48px utility header, warm canvas, dense bordered cards',
+  functionality: 'committed routes, actions, permissions, data semantics, and keyboard/mobile access remain unchanged',
+  visuals: 'one purpose-selected primary visual on most data-rich operational pages; shared grammar without repeated compositions',
+  chartData: 'prepared merchant-scoped loader data only; no fake history, null-to-zero conversion, mixed currencies, or duplicate queries',
+  chartAccess: 'stable labels, non-colour distinctions, visible data tables, focus states, reduced motion, and touch-safe layouts',
+  skeletons: 'loading geometry mirrors the exact chart family plus resolved header, KPI, toolbar, content, and rail positions',
+  performance: 'server/CSS operational charts, stable prepared arrays, batched permissions, parallel reads, deferred non-blocking work',
+} as const;

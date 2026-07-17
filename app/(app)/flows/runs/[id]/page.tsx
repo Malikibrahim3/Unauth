@@ -1,9 +1,11 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { PERMISSIONS, requirePermission } from "@/lib/permissions";
 import { TABLES } from "@/lib/supabase/tables";
 import { formatDateTime } from "@/lib/utils/format";
+import { AuthenticatedPageHeader } from "@/components/authenticated/AuthenticatedPageHeader";
+import { AuthenticatedPanel } from "@/components/authenticated/AuthenticatedPanel";
+import pageStyles from "@/components/authenticated/AuthenticatedPageChrome.module.css";
 export default async function Run({
   params,
 }: {
@@ -41,44 +43,46 @@ export default async function Run({
         .order("step_index")
     ).data ?? [];
   return (
-    <div className="mx-auto max-w-5xl space-y-5 p-4 md:p-6">
-      <Link href="/flows/runs" className="text-sm text-[var(--accent)]">
-        Run history
-      </Link>
-      <h1 className="text-2xl font-semibold">Flow run</h1>
-      <dl className="grid gap-3 sm:grid-cols-3">
-        <div>
-          <dt>Status</dt>
-          <dd>{run.status}</dd>
+    <div>
+      <AuthenticatedPageHeader
+        eyebrow="Execution detail"
+        title="Flow run"
+        subtitle={`Started ${formatDateTime(run.started_at)}`}
+        breadcrumbs={[{ label: "Flows", href: "/flows" }, { label: "Run history", href: "/flows/runs" }, { label: id }]}
+      />
+      <div className={pageStyles.pageBody}>
+        <div className="grid gap-3">
+          <AuthenticatedPanel title="Run summary">
+            <dl className="grid sm:grid-cols-3">
+              {[
+                ["Status", String(run.status)],
+                ["Event", String(run.domain_event_id ?? "Unavailable")],
+                ["Started", formatDateTime(run.started_at)],
+              ].map(([label, value], index) => (
+                <div key={label} className={`min-w-0 p-4 ${index ? "border-t border-[var(--border-muted)] sm:border-l sm:border-t-0" : ""}`}>
+                  <dt className="text-[10px] font-medium text-[var(--text-tertiary)]">{label}</dt>
+                  <dd className="mt-1 break-all text-xs font-semibold">{value}</dd>
+                </div>
+              ))}
+            </dl>
+          </AuthenticatedPanel>
+          {run.error ? <p role="alert" className="rounded-[var(--ua-radius-card)] border border-[var(--danger)] bg-[var(--danger-bg)] p-3 text-xs">{run.error}</p> : null}
+          <AuthenticatedPanel title="Execution steps" description={`${steps.length} recorded ${steps.length === 1 ? "step" : "steps"}.`}>
+            <ol className="divide-y divide-[var(--border-muted)]">
+              {steps.map((s: any) => (
+                <li key={s.id} className="p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <strong className="text-xs">Step {s.step_index + 1}: {s.output_type}</strong>
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.06em] text-[var(--text-tertiary)]">{s.status}</span>
+                  </div>
+                  {s.error ? <p role="alert" className="mt-2 text-xs text-[var(--danger)]">{s.error}</p> : null}
+                  <pre className="mt-3 max-h-64 overflow-auto rounded-[var(--ua-radius-input)] border border-[var(--border-muted)] bg-[var(--surface-sunken)] p-3 text-[10px] leading-4">{JSON.stringify(s.result, null, 2)}</pre>
+                </li>
+              ))}
+            </ol>
+          </AuthenticatedPanel>
         </div>
-        <div>
-          <dt>Event</dt>
-          <dd className="font-mono break-all">{run.domain_event_id}</dd>
-        </div>
-        <div>
-          <dt>Started</dt>
-          <dd>{formatDateTime(run.started_at)}</dd>
-        </div>
-      </dl>
-      {run.error ? (
-        <p role="alert" className="border border-[var(--danger)] p-3">
-          {run.error}
-        </p>
-      ) : null}
-      <ol className="space-y-3">
-        {steps.map((s: any) => (
-          <li key={s.id} className="border p-3">
-            <strong>
-              Step {s.step_index + 1}: {s.output_type}
-            </strong>
-            <p>Status: {s.status}</p>
-            {s.error ? <p role="alert">{s.error}</p> : null}
-            <pre className="mt-2 overflow-auto text-xs">
-              {JSON.stringify(s.result, null, 2)}
-            </pre>
-          </li>
-        ))}
-      </ol>
+      </div>
     </div>
   );
 }

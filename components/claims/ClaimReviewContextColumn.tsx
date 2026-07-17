@@ -55,7 +55,7 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
   )?.delivery ?? null;
 
   return (
-    <div className="space-y-4 min-w-0 order-1 min-[1100px]:col-start-1 min-[1100px]:row-start-1">
+    <div className="order-1 min-w-0 space-y-3 min-[1100px]:col-start-1 min-[1100px]:row-start-1">
       {payoutCase ? (
         <EvidenceChecklistCard evidence={payoutCase.evidence} delivery={delivery} />
       ) : null}

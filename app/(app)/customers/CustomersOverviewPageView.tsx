@@ -7,6 +7,7 @@ import CustomersTableClient from '@/components/customers/CustomersTableClient';
 import { CustomersPageWorkbench } from '@/app/(app)/customers/CustomersPageWorkbench';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
 import { Badge, ButtonLink, PanelCard, WorkbenchEmptyState } from '@/components/ui';
+import { RangePlotChart } from '@/components/charts/authenticated';
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { FilterChip } from '@/app/(app)/customers/CustomersOverviewFilterChip';
 import { buildRemoveHref, customersListHref } from '@/app/(app)/customers/customersOverviewPageUtils';
@@ -77,6 +78,19 @@ export function CustomersOverviewPageView({
         { label: 'Past payout cases', value: formatNumber(kpis.pastCaseCustomers), hint: 'Customers with any case history' },
         { label: 'Total orders', value: formatNumber(kpis.totalOrders), hint: 'Across listed customers' },
       ]}
+      primaryVisual={
+        <RangePlotChart
+          id="customer-case-context"
+          title="Customer case context"
+          description="Share of the filtered customer population with current or historical merchant-owned payout-case context."
+          total={kpis.totalCustomers}
+          rows={[
+            { label: 'Open payout case', value: kpis.openCaseCustomers, tone: 'orange' },
+            { label: 'Any case history', value: kpis.pastCaseCustomers, tone: 'blue' },
+            { label: 'No recorded case', value: Math.max(0, kpis.totalCustomers - kpis.pastCaseCustomers), tone: 'neutral' },
+          ]}
+        />
+      }
       main={
         <div className="p-4 space-y-4">
 

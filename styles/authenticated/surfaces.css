@@ -7,7 +7,71 @@
 }
 
 .ua-app .ua-app-header {
-  background: color-mix(in srgb, var(--surface-base) 94%, transparent);
+  background: color-mix(in srgb, var(--surface) 96%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+@media (min-width: 768px) {
+  .ua-app aside.ua-app-sidebar:not(.w-14) {
+    width: 208px;
+  }
+}
+
+/* Shared dashboard-derived presentation primitives. These are additive so
+ * existing components retain their data, state, and interaction contracts. */
+.ua-page-frame {
+  width: 100%;
+  max-width: 1500px;
+  margin-inline: auto;
+}
+
+.ua-page-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-inline: -20px;
+  padding: 10px 20px;
+  border-block: 1px solid var(--border-muted);
+  background: color-mix(in srgb, var(--surface) 54%, transparent);
+}
+
+.ua-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-xs);
+}
+
+.ua-section-heading {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+}
+
+.ua-kpi-value {
+  color: var(--text-primary);
+  font-size: clamp(24px, 2.4vw, 32px);
+  font-weight: 680;
+  letter-spacing: -0.045em;
+  line-height: 1;
+}
+
+.ua-form-section {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-xs);
+}
+
+.ua-sticky-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: var(--ua-z-header);
+  border-top: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
   backdrop-filter: blur(10px);
 }
 
@@ -30,12 +94,38 @@
 }
 
 .ua-panel-header {
-  background: var(--surface-muted);
+  background: var(--surface);
   border-bottom: 1px solid var(--border);
 }
 
 .ua-metric-card {
   background: var(--surface);
+}
+
+/* Operational data should arrive with a little momentum, not theatrical motion. */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes ua-data-surface-in {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 8px, 0);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  .ua-app .ua-metric-card {
+    animation: ua-data-surface-in 420ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  }
+
+  .ua-app .ua-data-surface {
+    animation: ua-data-surface-in 460ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  }
+
+  .ua-app .ua-data-surface:nth-child(2) {
+    animation-delay: 70ms;
+  }
 }
 
 .ua-empty-visual {

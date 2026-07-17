@@ -1,2 +1,5 @@
-import { OperationalRouteSkeleton } from '@/components/states/OperationalRouteSkeleton';
-export default function Loading() { return <OperationalRouteSkeleton title="Loading workspace settings" rows={5} detail />; }
+import { SettingsListLoadingSkeleton } from '@/components/navigation/skeletons/pageSkeletons';
+
+export default function Loading() {
+  return <SettingsListLoadingSkeleton />;
+}

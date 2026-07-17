@@ -11,6 +11,9 @@ import {
   RulesIndexClient,
   type RuleIndexRecord,
 } from "@/components/rules/RulesIndexClient";
+import { WorkbenchPage } from "@/components/ui";
+import { StatusMatrixChart } from "@/components/charts/authenticated";
+import { formatNumber } from '@/lib/utils/format';
 
 export const dynamic = "force-dynamic";
 
@@ -81,19 +84,39 @@ export default async function RulesPage() {
       };
     },
   );
+  const draftRules = rules.filter((rule) => rule.hasDraft).length;
+  const publishedRules = rules.filter((rule) => !rule.hasDraft && rule.publishedVersion != null).length;
+  const disabledRules = Math.max(0, rules.length - draftRules - publishedRules);
+  const publishedCoverage = rules.filter((rule) => rule.publishedVersion != null).length;
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-6">
-      <header>
-        <p className="text-sm text-[var(--text-secondary)]">Configuration</p>
-        <h1 className="mt-1 text-2xl font-semibold">Rules</h1>
-        <p className="mt-1 max-w-3xl text-sm text-[var(--text-secondary)]">
-          Compose readable payout policy, simulate sample cases, review
-          conflicts and impact, then publish an immutable version.
-          Recommendations remain non-binding.
-        </p>
-      </header>
-      <RulesIndexClient rules={rules} canManage={canManage} />
-    </div>
+    <WorkbenchPage
+      eyebrow="Configuration"
+      title="Rules"
+      subtitle="Compose readable payout policy, simulate sample cases, review conflicts and impact, then publish an immutable version. Recommendations remain non-binding."
+      kpiItems={[
+        { label: 'Rules', value: formatNumber(rules.length), hint: 'Active configuration families' },
+        { label: 'Published', value: formatNumber(publishedCoverage), hint: 'With an immutable version' },
+        { label: 'Draft changes', value: formatNumber(draftRules), hint: 'Awaiting review or publish' },
+      ]}
+      primaryVisual={
+        <StatusMatrixChart
+          id="rule-lifecycle-matrix"
+          title="Rule lifecycle matrix"
+          description="One cell per rule family. Draft cells may still retain an earlier published version; the KPI above shows that coverage."
+          items={rules.map((rule) => ({
+            label: rule.name,
+            tone: rule.hasDraft ? 'orange' : rule.publishedVersion != null ? 'green' : 'neutral',
+            detail: rule.hasDraft ? 'Draft change' : rule.publishedVersion != null ? 'Published current' : 'Disabled',
+          }))}
+          summary={[
+            { label: 'Published current', value: publishedRules, tone: 'green' },
+            { label: 'Draft change', value: draftRules, tone: 'orange' },
+            { label: 'Disabled', value: disabledRules, tone: 'neutral' },
+          ]}
+        />
+      }
+      main={<RulesIndexClient rules={rules} canManage={canManage} />}
+    />
   );
 }

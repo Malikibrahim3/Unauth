@@ -28,13 +28,13 @@ export function TeamInviteForm({
   return (
     <form
       onSubmit={onSubmit}
-      className="rounded-md border p-5 space-y-4"
+      className="space-y-3 rounded-[var(--ua-radius-input)] border p-4"
       style={{ background: 'var(--surface)', borderColor: 'var(--border-muted)' }}
     >
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Invite teammate</h2>
-          <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
+          <p className="mt-1 text-[11px]" style={{ color: 'var(--text-secondary)' }}>
             Invite up to 50 teammates per hour with a magic-link email.
           </p>
         </div>
@@ -51,7 +51,7 @@ export function TeamInviteForm({
             disabled={!canManageTeam || submitting}
             required
             placeholder="name@company.com"
-            className="w-full rounded-md px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 disabled:opacity-50"
+            className="h-8 w-full rounded-[var(--ua-radius-input)] px-3 text-[12px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 disabled:opacity-50"
             style={{ background: 'var(--bg-inset)', border: '1px solid var(--border)', color: 'var(--text)', outlineColor: 'var(--accent)' }}
           />
         </label>
@@ -62,7 +62,7 @@ export function TeamInviteForm({
             value={role}
             onChange={(event) => onRoleChange(event.target.value as Exclude<TeamRole, 'owner'>)}
             disabled={!canManageTeam || submitting}
-            className="w-full rounded-md px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 disabled:opacity-50"
+            className="h-8 w-full rounded-[var(--ua-radius-input)] px-3 text-[12px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 disabled:opacity-50"
             style={{ background: 'var(--bg-inset)', border: '1px solid var(--border)', color: 'var(--text)', outlineColor: 'var(--accent)' }}
           >
             {INVITE_ROLES.map((option) => (
@@ -74,7 +74,7 @@ export function TeamInviteForm({
         <button
           type="submit"
           disabled={!canManageTeam || submitting}
-          className="inline-flex h-10 items-center justify-center gap-2 self-end rounded-md px-4 text-sm font-semibold transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex h-8 items-center justify-center gap-2 self-end rounded-[var(--ua-radius-input)] px-3 text-[11px] font-semibold transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           style={{ background: 'var(--accent)', color: 'white' }}
         >
           <MailPlus className="h-4 w-4" />

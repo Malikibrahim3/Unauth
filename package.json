@@ -13,6 +13,7 @@
     "verify:rules": "jest tests/unit/rulesEngine.test.ts --runInBand && DOTENV_CONFIG_PATH=.env.local ts-node --project tsconfig.scripts.json --transpile-only -r dotenv/config -r tsconfig-paths/register scripts/verify-rules.ts",
     "verify:rules:live": "ts-node --project tsconfig.scripts.json --transpile-only -r tsconfig-paths/register scripts/verify-rules-live.ts",
     "verify:evidence": "jest tests/unit/evidenceScore.test.ts --runInBand",
+    "verify:ui-parity": "node scripts/check-authenticated-functional-parity.mjs",
     "verify:evidence:recompute": "jest tests/unit/evidenceRecompute.test.ts --runInBand",
     "typecheck": "tsc --noEmit",
     "package:zendesk": "node scripts/package-zendesk-app.mjs",

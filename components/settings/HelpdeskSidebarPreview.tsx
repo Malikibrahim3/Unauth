@@ -5,10 +5,10 @@ interface HelpdeskSidebarPreviewProps {
 export default function HelpdeskSidebarPreview({ providerLabel }: HelpdeskSidebarPreviewProps) {
   return (
     <div>
-      <p className="text-sm font-semibold mb-3" style={{ color: 'var(--text)' }}>
+      <p className="mb-2 text-[12px] font-semibold" style={{ color: 'var(--text)' }}>
         Sidebar preview
       </p>
-      <div className="flex flex-wrap items-start gap-6">
+      <div className="flex flex-wrap items-start gap-3">
         <div
           className="w-[300px] shrink-0 rounded-md border p-3 text-xs"
           style={{
@@ -47,7 +47,7 @@ export default function HelpdeskSidebarPreview({ providerLabel }: HelpdeskSideba
           </div>
           <p className="mt-2 text-right opacity-40">Unauth</p>
         </div>
-        <p className="max-w-xs text-sm" style={{ color: 'var(--text-secondary)' }}>
+        <p className="max-w-xs text-[11px] leading-5" style={{ color: 'var(--text-secondary)' }}>
           Approximate appearance inside {providerLabel} (~300px sidebar). The widget is a context
           entry point, not a decisioning tool.
         </p>

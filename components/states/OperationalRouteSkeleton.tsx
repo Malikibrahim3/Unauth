@@ -1,46 +1,37 @@
+import { WorkbenchPageSkeleton } from '@/components/navigation/skeletons/WorkbenchPageSkeleton';
+import type { AuthChartSkeletonVariant } from '@/components/navigation/skeletons/AuthenticatedChartSkeleton';
+import { Bone, TableSkeleton } from '@/components/navigation/skeletons/primitives';
+
 export function OperationalRouteSkeleton({
   title = "Loading workspace",
   rows = 6,
   detail = false,
+  kpiCount = 4,
+  visualVariant,
 }: {
   title?: string;
   rows?: number;
   detail?: boolean;
+  kpiCount?: number;
+  visualVariant?: AuthChartSkeletonVariant;
 }) {
-  return (
-    <div
-      className="mx-auto w-full max-w-7xl space-y-5 p-4 sm:p-6"
-      aria-busy="true"
-      aria-label={title}
-    >
-      <div className="space-y-2">
-        <div className="h-7 w-48 animate-pulse rounded bg-[var(--surface-sunken)]" />
-        <div className="h-4 w-full max-w-xl animate-pulse rounded bg-[var(--surface-sunken)]" />
+  if (detail) {
+    return (
+      <div className="mx-auto w-full max-w-[1500px] space-y-3 px-3 pb-6 pt-4 sm:px-5" aria-busy="true" aria-label={title}>
+        <div className="space-y-2"><Bone className="h-2.5 w-20" /><Bone className="h-5 w-44" /><Bone className="h-3 w-72 max-w-full" /></div>
+        <div className="grid gap-3.5 lg:grid-cols-[minmax(0,1fr)_310px]">
+          <div className="space-y-3">{Array.from({ length: Math.max(3, rows) }, (_, index) => <Bone key={index} className="h-16 w-full border border-[var(--border-muted)] bg-[var(--surface)]" />)}</div>
+          <Bone className="h-64 w-full border border-[var(--border-muted)] bg-[var(--surface)]" />
+        </div>
       </div>
-      {detail ? (
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
-          <div className="space-y-3">
-            {Array.from({ length: Math.max(3, rows) }, (_, index) => (
-              <div
-                key={index}
-                className="h-20 animate-pulse rounded-lg border border-[var(--border-muted)] bg-[var(--surface)]"
-              />
-            ))}
-          </div>
-          <div className="h-72 animate-pulse rounded-lg border border-[var(--border-muted)] bg-[var(--surface)]" />
-        </div>
-      ) : (
-        <div className="overflow-hidden rounded-lg border border-[var(--border)]">
-          <div className="h-11 animate-pulse bg-[var(--surface-sunken)]" />
-          {Array.from({ length: rows }, (_, index) => (
-            <div
-              key={index}
-              className="h-14 animate-pulse border-t border-[var(--border-muted)] bg-[var(--surface)]"
-            />
-          ))}
-        </div>
-      )}
-      <span className="sr-only">{title}</span>
-    </div>
+    );
+  }
+
+  return (
+    <WorkbenchPageSkeleton kpiCount={kpiCount} visualVariant={visualVariant} showActionBar>
+      <div className="p-3">
+        <TableSkeleton columns={[{ width: '34%' }, { width: '18%' }, { width: '18%' }, { width: '18%' }, { width: '12%' }]} rows={rows} />
+      </div>
+    </WorkbenchPageSkeleton>
   );
 }

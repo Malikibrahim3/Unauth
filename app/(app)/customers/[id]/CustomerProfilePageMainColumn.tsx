@@ -62,10 +62,10 @@ function CompactTransactionList({
         <tbody className="divide-y divide-[var(--border-muted)]">
       {transactions.slice(0, 25).map((tx) => (
         <tr key={tx.order_id} className="hover:bg-[var(--surface-hover)]">
-          <td className="px-3 py-3"><Link href={`/orders/${tx.source_order_id}`} className="font-mono text-xs font-semibold underline-offset-2 hover:underline">{tx.order_id}</Link>{tx.via_email ? <span className="mt-1 block max-w-[190px] truncate text-[11px] text-[var(--text-tertiary)]">via {tx.via_email}</span> : null}</td>
-          <td className="px-3 py-3 text-[var(--text-secondary)]">{formatDateAbsolute(tx.processed_at)}</td>
-          <td className="px-3 py-3">{tx.chargeback_filed ? <Badge tone="danger" size="sm">Chargeback filed</Badge> : tx.refund_claimed ? <Badge tone="warning" size="sm">Payout case</Badge> : <Badge tone="success" size="sm">No linked case</Badge>}</td>
-          <td className="px-3 py-3 text-right font-semibold tabular-nums">{formatMoneyOrDash(Math.round((Number(tx.order_value) || 0) * 100), tx.currency)}</td>
+          <td className="px-3 py-2.5"><Link href={`/orders/${tx.source_order_id}`} className="font-mono text-xs font-semibold underline-offset-2 hover:underline">{tx.order_id}</Link>{tx.via_email ? <span className="mt-1 block max-w-[190px] truncate text-[11px] text-[var(--text-tertiary)]">via {tx.via_email}</span> : null}</td>
+          <td className="px-3 py-2.5 text-[var(--text-secondary)]">{formatDateAbsolute(tx.processed_at)}</td>
+          <td className="px-3 py-2.5">{tx.chargeback_filed ? <Badge tone="danger" size="sm">Chargeback filed</Badge> : tx.refund_claimed ? <Badge tone="warning" size="sm">Payout case</Badge> : <Badge tone="success" size="sm">No linked case</Badge>}</td>
+          <td className="px-3 py-2.5 text-right font-semibold tabular-nums">{formatMoneyOrDash(Math.round((Number(tx.order_value) || 0) * 100), tx.currency)}</td>
         </tr>
       ))}
         </tbody>
@@ -103,8 +103,8 @@ export function CustomerProfilePageMainColumn({
   const visibleActivity = activityLog.filter((entry) => entry.event_type !== 'claim_viewed');
 
   return (
-    <div className="grid min-w-0 grid-cols-1 items-start gap-[var(--space-5)] lg:grid-cols-[minmax(0,1fr)_340px]">
-      <div className="min-w-0 space-y-[var(--space-5)]">
+    <div className="grid min-w-0 grid-cols-1 items-start gap-3 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="min-w-0 space-y-3">
         <SectionCard title="Store relationship" description="A concise readout based on this merchant's linked orders and payout cases.">
           <div className="flex items-start gap-3 rounded-md bg-[var(--surface-sunken)] p-4">
             <Lightbulb className="mt-0.5 h-5 w-5 shrink-0 text-[var(--text-secondary)]" aria-hidden="true" />
@@ -211,7 +211,7 @@ export function CustomerProfilePageMainColumn({
         </SectionCard>
       </div>
 
-      <aside className="space-y-[var(--space-5)] lg:sticky lg:top-20">
+      <aside className="space-y-3 lg:sticky lg:top-20">
         <SectionCard title="Customer details" description="Contact and checkout details observed in your store." density="compact">
           {contactRows.length ? <dl className="divide-y divide-[var(--border-muted)]">{contactRows.map(({ label, value, icon: Icon }) => <div key={label} className="flex gap-3 py-3 first:pt-0 last:pb-0"><Icon className="mt-0.5 h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden="true" /><div className="min-w-0"><dt className="text-[11px] uppercase tracking-wide text-[var(--text-tertiary)]">{label}</dt><dd className="mt-1 break-words text-sm text-[var(--text-primary)]">{value}</dd></div></div>)}</dl> : <p className="text-sm text-[var(--text-secondary)]">Contact details are unavailable.</p>}
           {(profile.emails.length > 1 || profile.phones.length > 1 || profile.addresses.length > 1) ? <p className="mt-3 border-t border-[var(--border-muted)] pt-3 text-xs text-[var(--text-secondary)]">Also observed: {profile.emails.length} emails, {profile.phones.length} phones, and {profile.addresses.length} addresses across this store history.</p> : null}

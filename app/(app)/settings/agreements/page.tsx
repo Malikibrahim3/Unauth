@@ -98,29 +98,29 @@ export default function AgreementSettingsPage() {
       title="Agreements"
       subtitle="Upload courier, 3PL, payment, and policy documents that define recoverability rules."
     >
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,680px)_minmax(280px,1fr)]">
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,680px)_minmax(280px,1fr)]">
         <form
           ref={formRef}
           onSubmit={handleSubmit}
-          className="space-y-5 rounded-[var(--radius-sm)] border p-5"
+          className="space-y-3 rounded-[var(--ua-radius-card)] border p-4"
           style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
         >
           <div className="flex items-center gap-3">
             <span
-              className="grid h-10 w-10 place-items-center rounded-[var(--radius-sm)] border"
+              className="grid h-8 w-8 place-items-center rounded-[var(--ua-radius-input)] border"
               style={{ borderColor: 'var(--border)', color: 'var(--accent)' }}
             >
               <FileText className="h-5 w-5" aria-hidden />
             </span>
             <div>
-              <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Upload agreement</h2>
-              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+              <h2 className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>Upload agreement</h2>
+              <p className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
                 Upload the source PDF, then enter the terms you have verified.
               </p>
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-2">
             <label className="space-y-1 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
               Agreement type
               <select
@@ -183,7 +183,7 @@ export default function AgreementSettingsPage() {
           </div>
 
           <label
-            className="flex min-h-32 cursor-pointer flex-col items-center justify-center gap-3 rounded-[var(--radius-sm)] border border-dashed p-6 text-center"
+            className="flex min-h-24 cursor-pointer flex-col items-center justify-center gap-2 rounded-[var(--ua-radius-input)] border border-dashed p-4 text-center"
             style={{ borderColor: 'var(--border)', background: 'var(--bg-canvas)', color: 'var(--text-secondary)' }}
           >
             <Upload className="h-6 w-6" aria-hidden />
@@ -206,7 +206,7 @@ export default function AgreementSettingsPage() {
           <button
             type="submit"
             disabled={uploadState.status === 'saving'}
-            className="inline-flex items-center gap-2 rounded-[var(--radius-sm)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+            className="inline-flex h-8 items-center gap-2 rounded-[var(--ua-radius-input)] px-3 text-[11px] font-semibold text-white disabled:opacity-60"
             style={{ background: 'var(--accent)' }}
           >
             <Upload className="h-4 w-4" aria-hidden />
@@ -214,20 +214,20 @@ export default function AgreementSettingsPage() {
           </button>
         </form>
 
-        <section className="rounded-[var(--radius-sm)] border p-5" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
-          <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Verified terms</h2>
+        <section className="rounded-[var(--ua-radius-card)] border p-4" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
+          <h2 className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>Verified terms</h2>
           {uploadState.status !== 'success' ? (
             <div className="mt-4 space-y-3 text-sm" style={{ color: 'var(--text-secondary)' }}>
               <p>Upload a PDF first. Unapproved documents never affect claim decisions.</p>
               <p>After upload, enter the recovery rule exactly as it appears in the agreement.</p>
             </div>
           ) : (
-            <form onSubmit={handleRuleSubmit} className="mt-4 space-y-4">
+            <form onSubmit={handleRuleSubmit} className="mt-3 space-y-3">
               <label className="block space-y-1 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
                 Rule name
                 <input name="rule_name" required maxLength={160} className="w-full rounded-[var(--radius-sm)] border px-3 py-2" style={{ borderColor: 'var(--border)', background: 'var(--bg-canvas)' }} placeholder="Lost parcel recovery eligibility" />
               </label>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <label className="space-y-1 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
                   Claim type
                   <select name="applies_to_claim_type" className="w-full rounded-[var(--radius-sm)] border px-3 py-2" style={{ borderColor: 'var(--border)', background: 'var(--bg-canvas)' }} defaultValue="LOST_PARCEL">

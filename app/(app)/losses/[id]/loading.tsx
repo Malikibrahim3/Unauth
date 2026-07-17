@@ -1,1 +1,2 @@
-export default function LoadingLoss() { return <div className="p-6" role="status" aria-live="polite"><div className="h-8 w-64 animate-pulse rounded bg-[var(--surface-sunken)]" /><div className="mt-6 h-48 animate-pulse rounded-lg bg-[var(--surface-sunken)]" /><span className="sr-only">Loading loss</span></div>; }
+import { OperationalRouteSkeleton } from '@/components/states/OperationalRouteSkeleton';
+export default function LoadingLoss() { return <OperationalRouteSkeleton title="Loading loss" rows={6} detail />; }

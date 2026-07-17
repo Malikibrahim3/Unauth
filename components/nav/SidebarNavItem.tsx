@@ -39,8 +39,8 @@ export function SidebarNavItem({
       active={active}
       onNavigate={onNavigate}
       className={cn(
-        'group relative flex h-8 items-center gap-2.5 rounded-[4px] px-2.5',
-        'text-[13px] font-medium leading-none',
+        'group relative flex h-7 items-center gap-2 rounded-[var(--ua-radius-control)] px-2.5',
+        'text-[11px] font-medium leading-none',
         'transition-all duration-150',
         'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
         active

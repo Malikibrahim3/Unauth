@@ -7,18 +7,52 @@ export type ReportRange = (typeof REPORT_RANGES)[number];
 export type MoneyBridge = { currency:string; requestedMinor:number; paidMinor:number; preventedMinor:number; realisedLossMinor:number; recoverableMinor:number; recoveredMinor:number; outstandingMinor:number; writtenOffMinor:number; caseIds:string[] };
 export type RankedRow = { key:string; label:string; count:number; amountMinor:number; currency:string; href:string };
 export type CoverageRow = { objectType:string; records:number; freshRecords:number; staleRecords:number; latestAt:string|null; href:string };
-export type ReportTrendPoint = { date:string; exposureMinor:number; recoveredMinor:number; currency:string };
+export type ReportTrendPoint = {
+  date:string;
+  exposureMinor:number;
+  recoveredMinor:number;
+  preventedMinor:number;
+  realisedLossMinor:number;
+  currency:string;
+};
 export type IntelligenceReport = { range:ReportRange; timezone:string; generatedAt:string; bridges:MoneyBridge[]; trend:ReportTrendPoint[]; causes:RankedRow[]; operations:Array<{key:string;label:string;count:number;href:string}>; recoveries:RankedRow[]; coverage:CoverageRow[]; reconciliation:{ok:boolean;issues:string[]}; recordCount:number };
+export type DashboardPeriodComparison = {
+  range: Exclude<ReportRange, 'all'>;
+  startAt: string;
+  endAt: string;
+  bridges: MoneyBridge[];
+  trend: ReportTrendPoint[];
+};
 
 type Client={from:(table:string)=>any};
 const RANGE_DAYS:Record<Exclude<ReportRange,'all'>,number>={ '7d':7,'30d':30,'90d':90 };
 export function parseReportRange(value:string|undefined):ReportRange{return REPORT_RANGES.includes(value as ReportRange)?value as ReportRange:'30d'}
 export function reportCutoff(range:ReportRange, now=new Date()):string|null { if(range==='all')return null; return new Date(now.getTime()-RANGE_DAYS[range]*86400000).toISOString(); }
+export function dashboardPreviousPeriodWindow(
+  range: ReportRange,
+  now = new Date(),
+): { range: Exclude<ReportRange, 'all'>; startAt: string; endAt: string } | null {
+  if (range === 'all') return null;
+  const durationMs = RANGE_DAYS[range] * 86_400_000;
+  const endAt = new Date(now.getTime() - durationMs);
+  return {
+    range,
+    startAt: new Date(endAt.getTime() - durationMs).toISOString(),
+    endAt: endAt.toISOString(),
+  };
+}
 export function aggregateMoneyBridges(rows:Array<Record<string,any>>):MoneyBridge[]{const byCurrency=new Map<string,MoneyBridge>();for(const row of rows){const currency=normaliseCurrencyOrNull(row.currency);if(!currency)continue;const b=byCurrency.get(currency)??{currency,requestedMinor:0,paidMinor:0,preventedMinor:0,realisedLossMinor:0,recoverableMinor:0,recoveredMinor:0,outstandingMinor:0,writtenOffMinor:0,caseIds:[]};b.requestedMinor+=Number(row.requested_minor||0);b.paidMinor+=Number(row.paid_minor||0);b.preventedMinor+=Number(row.prevented_minor||0);b.realisedLossMinor+=Number(row.confirmed_loss_minor||0);b.recoverableMinor+=Number(row.recoverable_minor||0);b.recoveredMinor+=Number(row.recovered_minor||0);b.writtenOffMinor+=Number(row.written_off_minor||0);b.caseIds.push(row.support_payout_case_id);byCurrency.set(currency,b)}for(const b of byCurrency.values())b.outstandingMinor=Math.max(0,b.recoverableMinor-b.recoveredMinor-b.writtenOffMinor);return[...byCurrency.values()].sort((a,b)=>a.currency.localeCompare(b.currency))}
 
 export function buildReportTrend(
   cases: Array<{ id: string; submitted_at?: string | null; created_at?: string | null; updated_at?: string | null }>,
-  financial: Array<{ support_payout_case_id: string; currency?: string | null; requested_minor?: number | null; recovered_minor?: number | null }>,
+  financial: Array<{
+    support_payout_case_id: string;
+    currency?: string | null;
+    requested_minor?: number | null;
+    recovered_minor?: number | null;
+    prevented_minor?: number | null;
+    confirmed_loss_minor?: number | null;
+  }>,
 ): ReportTrendPoint[] {
   const financialByCase = new Map(financial.map((row) => [row.support_payout_case_id, row]));
   const trendMap = new Map<string, ReportTrendPoint>();
@@ -29,12 +63,69 @@ export function buildReportTrend(
     const date = String(payoutCase.submitted_at || payoutCase.created_at || payoutCase.updated_at || '').slice(0, 10);
     if (!date) continue;
     const key = `${currency}:${date}`;
-    const point = trendMap.get(key) ?? { date, exposureMinor: 0, recoveredMinor: 0, currency };
+    const point = trendMap.get(key) ?? {
+      date,
+      exposureMinor: 0,
+      recoveredMinor: 0,
+      preventedMinor: 0,
+      realisedLossMinor: 0,
+      currency,
+    };
     point.exposureMinor += Number(entry.requested_minor || 0);
     point.recoveredMinor += Number(entry.recovered_minor || 0);
+    point.preventedMinor += Number(entry.prevented_minor || 0);
+    point.realisedLossMinor += Number(entry.confirmed_loss_minor || 0);
     trendMap.set(key, point);
   }
   return [...trendMap.values()].sort((a, b) => a.currency.localeCompare(b.currency) || a.date.localeCompare(b.date));
+}
+
+/** Previous-period financial projection used by the dashboard comparison. */
+export async function loadDashboardPeriodComparison(
+  client: Client,
+  merchantId: string,
+  range: ReportRange,
+  asOf = new Date(),
+): Promise<DashboardPeriodComparison | null> {
+  const window = dashboardPreviousPeriodWindow(range, asOf);
+  if (!window) return null;
+
+  const { data: caseData } = await client
+    .from(TABLES.MERCHANT_CLAIMS)
+    .select('id,submitted_at,created_at,updated_at')
+    .eq('merchant_id', merchantId)
+    .gte('submitted_at', window.startAt)
+    .lt('submitted_at', window.endAt)
+    .order('submitted_at', { ascending: true })
+    .limit(10000);
+  const cases = (caseData ?? []) as Array<{
+    id: string;
+    submitted_at?: string | null;
+    created_at?: string | null;
+    updated_at?: string | null;
+  }>;
+  const caseIds = cases.map((row) => row.id);
+  const { data: financialData } = caseIds.length
+    ? await client
+        .from(TABLES.CASE_FINANCIAL_SUMMARIES)
+        .select('support_payout_case_id,currency,requested_minor,prevented_minor,confirmed_loss_minor,recovered_minor')
+        .eq('merchant_id', merchantId)
+        .in('support_payout_case_id', caseIds)
+    : { data: [] };
+  const financial = (financialData ?? []) as Array<{
+    support_payout_case_id: string;
+    currency?: string | null;
+    requested_minor?: number | null;
+    prevented_minor?: number | null;
+    confirmed_loss_minor?: number | null;
+    recovered_minor?: number | null;
+  }>;
+
+  return {
+    ...window,
+    bridges: aggregateMoneyBridges(financial as Array<Record<string, any>>),
+    trend: buildReportTrend(cases, financial),
+  };
 }
 
 function lossCategoryFor(claimType:string|null|undefined): string {
@@ -47,8 +138,9 @@ function lossCategoryFor(claimType:string|null|undefined): string {
 function addRank(map:Map<string,RankedRow>, key:string, label:string, amountMinor:number, currency:string, href:string){const id=`${key}:${currency}`;const row=map.get(id)??{key,label,count:0,amountMinor:0,currency,href};row.count++;row.amountMinor+=amountMinor;map.set(id,row)}
 
 /** Canonical reporting projection. Money never crosses currency boundaries. */
-export async function loadIntelligenceReport(client:Client,merchantId:string,range:ReportRange,timezone='UTC'):Promise<IntelligenceReport>{
-  const cutoff=reportCutoff(range);
+export async function loadIntelligenceReport(client:Client,merchantId:string,range:ReportRange,timezone='UTC',options:{asOf?:Date}={}):Promise<IntelligenceReport>{
+  const asOf=options.asOf??new Date();
+  const cutoff=reportCutoff(range,asOf);
   let casesQuery=client.from(TABLES.MERCHANT_CLAIMS).select('id,status,claim_type,reason_normalized,loss_attribution,currency,submitted_at,created_at,updated_at').eq('merchant_id',merchantId).order('updated_at',{ascending:false}).limit(10000);
   if(cutoff)casesQuery=casesQuery.gte('submitted_at',cutoff);
   const {data:caseData}=await casesQuery; const cases=(caseData??[]) as Array<Record<string,any>>; const caseIds=cases.map(c=>c.id);
@@ -58,7 +150,7 @@ export async function loadIntelligenceReport(client:Client,merchantId:string,ran
   for(const c of cases){const f=financialByCase.get(c.id);const currency=String(f?.currency||c.currency||'Unknown').toUpperCase();const key=lossCategoryFor(c.claim_type);addRank(causesMap,key,label('lossCategory',key),Number(f?.confirmed_loss_minor||0),currency,`/reports/records?kind=case&dimension=category&value=${encodeURIComponent(key)}&range=${range}&currency=${currency}`)}
   const trend=buildReportTrend(
     cases as Array<{id:string;submitted_at?:string|null;created_at?:string|null;updated_at?:string|null}>,
-    financial as Array<{support_payout_case_id:string;currency?:string|null;requested_minor?:number|null;recovered_minor?:number|null}>,
+    financial as Array<{support_payout_case_id:string;currency?:string|null;requested_minor?:number|null;recovered_minor?:number|null;prevented_minor?:number|null;confirmed_loss_minor?:number|null}>,
   );
   const statuses=new Map<string,number>();for(const c of cases)statuses.set(c.status,(statuses.get(c.status)??0)+1);
   const {data:recoveryData}=await client.from(TABLES.RECOVERY_CASES).select('id,status,recovery_type,currency,merchant_loss_amount,amount_recovered,updated_at').eq('merchant_id',merchantId).limit(10000);const recoveryMap=new Map<string,RankedRow>();
@@ -66,7 +158,7 @@ export async function loadIntelligenceReport(client:Client,merchantId:string,ran
   const coverageSpecs=[[TABLES.SOURCE_ORDERS,'Orders','/orders'],[TABLES.SOURCE_TICKETS,'Tickets','/tickets'],[TABLES.SOURCE_SHIPMENTS,'Shipments','/shipments'],[TABLES.SOURCE_REFUNDS,'Refunds','/refunds'],[TABLES.SOURCE_RETURNS,'Returns','/returns'],[TABLES.MERCHANT_CLAIMS,'Payout cases','/claims']] as const;const staleBefore=new Date(Date.now()-48*3600000).toISOString();const coverage:CoverageRow[]=[];
   for(const [table,objectType,href] of coverageSpecs){const date=table===TABLES.SOURCE_REFUNDS?'ingested_at':'updated_at';const [all,fresh,latest]=await Promise.all([client.from(table).select('id',{count:'exact',head:true}).eq('merchant_id',merchantId),client.from(table).select('id',{count:'exact',head:true}).eq('merchant_id',merchantId).gte(date,staleBefore),client.from(table).select(`id,${date}`).eq('merchant_id',merchantId).order(date,{ascending:false}).limit(1)]);const records=all.count??0;const freshRecords=fresh.count??0;coverage.push({objectType,records,freshRecords,staleRecords:Math.max(0,records-freshRecords),latestAt:(latest.data as Array<Record<string,any>>|null)?.[0]?.[date]??null,href})}
   const issues:string[]=[];const invalidCurrencyRows=financial.filter(row=>!normaliseCurrencyOrNull(row.currency)).length;if(invalidCurrencyRows)issues.push(`${invalidCurrencyRows} financial record${invalidCurrencyRows===1?' has':'s have'} a missing or invalid currency and ${invalidCurrencyRows===1?'was':'were'} excluded`);for(const b of bridges){if(b.paidMinor>b.requestedMinor&&b.requestedMinor>0)issues.push(`${b.currency}: paid compensation exceeds requested amount`);if(b.recoveredMinor>b.recoverableMinor&&b.recoverableMinor>0)issues.push(`${b.currency}: recovered exceeds recoverable amount`);const trendRequested=trend.filter(point=>point.currency===b.currency).reduce((sum,point)=>sum+point.exposureMinor,0);const trendRecovered=trend.filter(point=>point.currency===b.currency).reduce((sum,point)=>sum+point.recoveredMinor,0);if(trendRequested!==b.requestedMinor||trendRecovered!==b.recoveredMinor)issues.push(`${b.currency}: chart totals do not reconcile with the financial value strip`)}
-  return{range,timezone,generatedAt:new Date().toISOString(),bridges,trend,causes:[...causesMap.values()].sort((a,b)=>b.amountMinor-a.amountMinor||b.count-a.count),operations:[...statuses].map(([key,count])=>({key,label:label('caseStatus',key),count,href:`/reports/records?kind=case&dimension=status&value=${encodeURIComponent(key)}&range=${range}`})).sort((a,b)=>b.count-a.count),recoveries:[...recoveryMap.values()].sort((a,b)=>b.amountMinor-a.amountMinor||b.count-a.count),coverage,reconciliation:{ok:issues.length===0,issues},recordCount:cases.length};
+  return{range,timezone,generatedAt:asOf.toISOString(),bridges,trend,causes:[...causesMap.values()].sort((a,b)=>b.amountMinor-a.amountMinor||b.count-a.count),operations:[...statuses].map(([key,count])=>({key,label:label('caseStatus',key),count,href:`/reports/records?kind=case&dimension=status&value=${encodeURIComponent(key)}&range=${range}`})).sort((a,b)=>b.count-a.count),recoveries:[...recoveryMap.values()].sort((a,b)=>b.amountMinor-a.amountMinor||b.count-a.count),coverage,reconciliation:{ok:issues.length===0,issues},recordCount:cases.length};
 }
 
 export const REPORT_DEFINITIONS=[

@@ -10,6 +10,9 @@ import { TABLES } from "@/lib/supabase/tables";
 import { parseReportRange, reportCutoff } from "@/lib/reporting/intelligence";
 import { merchantHasEntitlement } from "@/lib/product/requireEntitlement";
 import { formatDateTime, formatNumber } from "@/lib/utils/format";
+import { AuthenticatedPageHeader } from "@/components/authenticated/AuthenticatedPageHeader";
+import { AuthenticatedPanel } from "@/components/authenticated/AuthenticatedPanel";
+import pageStyles from "@/components/authenticated/AuthenticatedPageChrome.module.css";
 export const dynamic = "force-dynamic";
 export default async function ReportRecords({
   searchParams,
@@ -70,41 +73,47 @@ export default async function ReportRecords({
     .range(from, from + 49);
   const rows = (result.data ?? []) as Array<Record<string, any>>;
   const total = result.count ?? 0;
+  const recordTitle = `${value.replaceAll("_", " ") || kind} records`;
   return (
-    <div className="mx-auto max-w-6xl space-y-5 p-4 md:p-6">
-      <Link
-        className="text-sm font-medium text-[var(--accent)]"
-        href={`/reports?range=${range}`}
-      >
-        Return to reports
-      </Link>
-      <header>
-        <h1 className="text-2xl font-semibold capitalize">
-          {value.replaceAll("_", " ") || kind} records
-        </h1>
-        <p className="mt-1 text-sm text-[var(--text-secondary)]">
+    <div>
+      <AuthenticatedPageHeader
+        eyebrow="Report drill-down"
+        title={recordTitle}
+        subtitle={
+          <>
           {formatNumber(total)} exact matching records ·{" "}
           {range === "all" ? "all time" : range}{" "}
           {sp.currency ? `· ${sp.currency.toUpperCase()}` : ""}
-        </p>
-      </header>
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[650px] text-sm">
+          </>
+        }
+        breadcrumbs={[
+          { label: "Reports", href: `/reports?range=${range}` },
+          { label: recordTitle },
+        ]}
+      />
+      <div className={pageStyles.pageBody}>
+        <AuthenticatedPanel
+          title="Matching records"
+          description="Canonical records behind this report slice."
+          capabilityId="reports.records.table"
+        >
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[650px] text-[11px]">
           <thead>
-            <tr className="border-b">
-              <th className="py-2 text-left">Record</th>
-              <th className="text-left">Type</th>
-              <th className="text-left">State</th>
-              <th className="text-right">Amount</th>
-              <th className="text-right">Updated</th>
+            <tr className="border-b border-[var(--border)] bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
+              <th className="px-4 py-2.5 text-left font-medium">Record</th>
+              <th className="px-3 py-2.5 text-left font-medium">Type</th>
+              <th className="px-3 py-2.5 text-left font-medium">State</th>
+              <th className="px-3 py-2.5 text-right font-medium">Amount</th>
+              <th className="px-4 py-2.5 text-right font-medium">Updated</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((r) => (
-              <tr key={r.id} className="border-b border-[var(--border-muted)]">
-                <td className="py-3">
+              <tr key={r.id} className="border-b border-[var(--border-muted)] last:border-b-0 hover:bg-[var(--surface-hover)]">
+                <td className="px-4 py-3">
                   <Link
-                    className="font-mono text-[var(--accent)]"
+                    className="font-mono font-semibold text-[var(--text-primary)] hover:text-[var(--accent)]"
                     href={
                       kind === "recovery"
                         ? `/recoveries/${r.id}`
@@ -114,7 +123,7 @@ export default async function ReportRecords({
                     {r.id}
                   </Link>
                 </td>
-                <td>
+                <td className="px-3 py-3 text-[var(--text-secondary)]">
                   {String(
                     r.recovery_type ||
                       r.reason_normalized ||
@@ -122,25 +131,28 @@ export default async function ReportRecords({
                       "—",
                   ).replaceAll("_", " ")}
                 </td>
-                <td>{String(r.status || "—").replaceAll("_", " ")}</td>
-                <td className="text-right tabular-nums">
+                <td className="px-3 py-3 capitalize">{String(r.status || "—").replaceAll("_", " ")}</td>
+                <td className="px-3 py-3 text-right tabular-nums">
                   {r.currency &&
                   Number(r.amount_recovered ?? r.amount_at_risk) != null
                     ? `${Number(r.amount_recovered ?? r.amount_at_risk).toFixed(2)} ${r.currency}`
                     : "—"}
                 </td>
-                <td className="text-right">
+                <td className="px-4 py-3 text-right text-[var(--text-secondary)]">
                   {formatDateTime(r.updated_at)}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-      </div>
-      {!rows.length ? <p>No records match this report slice.</p> : null}
-      <nav className="flex justify-between">
+          </div>
+          {!rows.length ? (
+            <p className="px-4 py-10 text-center text-xs text-[var(--text-secondary)]">No records match this report slice.</p>
+          ) : null}
+          <nav className="flex min-h-12 items-center justify-between border-t border-[var(--border-muted)] px-4 text-[11px] font-semibold">
         {page > 1 ? (
           <Link
+            className="rounded-[var(--ua-radius-input)] border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1.5 hover:bg-[var(--surface-hover)]"
             href={`?${new URLSearchParams({ ...sp, page: String(page - 1) } as Record<string, string>)}`}
           >
             Previous
@@ -150,12 +162,15 @@ export default async function ReportRecords({
         )}
         {from + rows.length < total ? (
           <Link
+            className="rounded-[var(--ua-radius-input)] border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1.5 hover:bg-[var(--surface-hover)]"
             href={`?${new URLSearchParams({ ...sp, page: String(page + 1) } as Record<string, string>)}`}
           >
             Next
           </Link>
         ) : null}
-      </nav>
+          </nav>
+        </AuthenticatedPanel>
+      </div>
     </div>
   );
 }

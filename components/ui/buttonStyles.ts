@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import type { ButtonSize, ButtonVariant } from './Button';
 
 const BUTTON_BASE =
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-colors duration-[var(--duration-fast)] focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed select-none';
+  'ua-jitter inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-colors duration-[var(--duration-fast)] focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed select-none';
 
 const BUTTON_SIZES: Record<ButtonSize, { height: string; px: string; fontSize: number }> = {
   sm: { height: 'var(--ua-control-height-sm)', px: 'var(--ua-control-padding-x-sm)', fontSize: 12 },

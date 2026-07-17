@@ -19,6 +19,7 @@ import {
   formatDateAbsolute,
   formatMoney,
 } from '@/lib/utils/format';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 type CurrencyCharts = {
   bridge: MoneyBridge;
@@ -53,6 +54,7 @@ function chartData(report: IntelligenceReport): CurrencyCharts[] {
 }
 
 export function DashboardCharts({ report }: { report: IntelligenceReport }) {
+  const reducedMotion = useReducedMotion();
   const groups = chartData(report);
 
   if (!groups.length) {
@@ -84,11 +86,11 @@ export function DashboardCharts({ report }: { report: IntelligenceReport }) {
           ) : null}
 
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
-            <ChartPanel className="xl:col-span-8" title="Exposure and recovered">
+            <ChartPanel className="ua-data-surface xl:col-span-8" title="Exposure and recovered">
               <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-3">
                 <p className="text-xs text-[var(--text-secondary)]">Daily ledger value</p>
                 <div className="flex flex-wrap items-center gap-4 text-xs" aria-label="Chart legend">
-                  <LegendItem colour="var(--text-primary)" label="Exposure" />
+                  <LegendItem colour="var(--accent)" label="Exposure" />
                   <LegendItem colour="var(--success)" label="Recovered" />
                 </div>
               </div>
@@ -137,11 +139,14 @@ export function DashboardCharts({ report }: { report: IntelligenceReport }) {
                           type="linear"
                           dataKey="exposureMinor"
                           name="Exposure"
-                          stroke="var(--text-primary)"
+                          stroke="var(--accent)"
                           strokeWidth={2}
-                          dot={trend.length === 1 ? { r: 3, fill: 'var(--text-primary)' } : false}
+                          dot={trend.length === 1 ? { r: 3, fill: 'var(--accent)' } : false}
                           activeDot={{ r: 4 }}
-                          isAnimationActive={false}
+                          isAnimationActive={!reducedMotion}
+                          animationBegin={80}
+                          animationDuration={700}
+                          animationEasing="ease-out"
                         />
                         <Line
                           type="linear"
@@ -151,7 +156,10 @@ export function DashboardCharts({ report }: { report: IntelligenceReport }) {
                           strokeWidth={2}
                           dot={trend.length === 1 ? { r: 3, fill: 'var(--success)' } : false}
                           activeDot={{ r: 4 }}
-                          isAnimationActive={false}
+                          isAnimationActive={!reducedMotion}
+                          animationBegin={150}
+                          animationDuration={700}
+                          animationEasing="ease-out"
                         />
                       </LineChart>
                     </ResponsiveContainer>
@@ -163,7 +171,7 @@ export function DashboardCharts({ report }: { report: IntelligenceReport }) {
               )}
             </ChartPanel>
 
-            <ChartPanel className="xl:col-span-4" title="Loss causes">
+            <ChartPanel className="ua-data-surface xl:col-span-4" title="Loss causes">
               <p className="px-4 pt-3 text-xs text-[var(--text-secondary)]">Confirmed loss, ranked by recorded cause</p>
               {causes.length ? (
                 <div className="px-2 pb-4 pt-2" style={{ height: Math.max(220, causes.length * 38 + 54) }}>
@@ -191,7 +199,16 @@ export function DashboardCharts({ report }: { report: IntelligenceReport }) {
                           );
                         }}
                       />
-                      <Bar dataKey="valueMinor" fill="var(--text-secondary)" radius={[0, 2, 2, 0]} barSize={12} isAnimationActive={false}>
+                      <Bar
+                        dataKey="valueMinor"
+                        fill="var(--accent)"
+                        radius={[0, 2, 2, 0]}
+                        barSize={12}
+                        isAnimationActive={!reducedMotion}
+                        animationBegin={140}
+                        animationDuration={600}
+                        animationEasing="ease-out"
+                      >
                         <LabelList
                           dataKey="valueMinor"
                           position="right"

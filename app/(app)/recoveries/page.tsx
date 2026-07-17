@@ -3,6 +3,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { hasPermission, PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { TABLES } from '@/lib/supabase/tables';
 import { WorkbenchPage } from '@/components/ui';
+import { StageFunnelChart } from '@/components/charts/authenticated';
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { formatCurrencyNullable, formatNumber, sumSameCurrency } from '@/lib/utils/format';
 import { listRecoveryCases } from '@/lib/recoveries/store';
@@ -87,9 +88,10 @@ export default async function RecoveriesPage() {
   const serviceClient = createServiceClient();
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_INBOX);
   if (denied) redirect('/dashboard');
-  const canManage = await hasPermission(serviceClient, ctx, PERMISSIONS.SUBMIT_PAYOUT_DECISIONS);
-
-  const rawRecoveries = await listRecoveryCases(serviceClient, ctx.merchantId);
+  const [canManage, rawRecoveries] = await Promise.all([
+    hasPermission(serviceClient, ctx, PERMISSIONS.SUBMIT_PAYOUT_DECISIONS),
+    listRecoveryCases(serviceClient, ctx.merchantId),
+  ]);
   const recoveries = await enrichRecoveryCases(serviceClient, ctx.merchantId, rawRecoveries);
   const openRecoveries = recoveries.filter((item) => !['paid', 'closed_unrecoverable'].includes(item.status));
   const missingSourceData = recoveries.filter((item) => item.status === 'evidence_needed' || item.evidence_missing.length > 0).length;
@@ -102,6 +104,16 @@ export default async function RecoveriesPage() {
   const recovered = recoveredSum.total;
   const currency = recoverableSum.currency;
   const mixedHint = recoverableSum.mixedCount > 0 ? ` · ${recoverableSum.mixedCount} case${recoverableSum.mixedCount === 1 ? '' : 's'} in other currencies excluded` : '';
+  const recoveryDistribution = recoveries.reduce(
+    (counts, item) => {
+      if (['paid', 'closed_unrecoverable'].includes(item.status)) counts.closed += 1;
+      else if (item.status === 'evidence_needed' || item.evidence_missing.length > 0) counts.evidence += 1;
+      else if (item.status === 'chase_due') counts.chase += 1;
+      else counts.ready += 1;
+      return counts;
+    },
+    { evidence: 0, chase: 0, ready: 0, closed: 0 },
+  );
 
   return (
     <WorkbenchPage
@@ -117,6 +129,19 @@ export default async function RecoveriesPage() {
         { label: 'Estimated recovery', value: formatCurrencyNullable(estimatedRecoverable || null, currency) ?? '—', hint: `Upper estimate${mixedHint}` },
         { label: 'Approved recovery', value: formatCurrencyNullable(recovered || null, currency) ?? '—', hint: `Confirmed to date${mixedHint}` },
       ]}
+      primaryVisual={
+        <StageFunnelChart
+          id="recovery-stage-volume"
+          title="Recovery stage volume"
+          description="Current case counts by operational stage. Width represents case volume, not a conversion rate."
+          stages={[
+            { label: 'Needs evidence', value: recoveryDistribution.evidence, tone: 'red', detail: 'Blocked by missing evidence' },
+            { label: 'Ready / active', value: recoveryDistribution.ready, tone: 'orange', detail: 'Ready to progress or active' },
+            { label: 'Chase due', value: recoveryDistribution.chase, tone: 'yellow', detail: 'Correspondence required' },
+            { label: 'Closed', value: recoveryDistribution.closed, tone: 'green', detail: 'Paid or closed unrecoverable' },
+          ]}
+        />
+      }
       main={<RecoveryBoardClient recoveries={recoveries} canManage={canManage} />}
       footer={
         <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>

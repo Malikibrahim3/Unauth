@@ -2,7 +2,9 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { HelpCircle, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { PageHeader, type Breadcrumb } from '@/components/ui/PageHeader';
+import type { Breadcrumb } from '@/components/ui/PageHeader';
+import { AuthenticatedPageHeader } from '@/components/authenticated/AuthenticatedPageHeader';
+import styles from '@/components/authenticated/AuthenticatedPageChrome.module.css';
 
 interface SettingsPageShellProps {
   title: string;
@@ -31,29 +33,35 @@ export function SettingsPageShell({
 }: SettingsPageShellProps) {
   return (
     <div className={cn('min-w-0', className)}>
-      <PageHeader
+      <AuthenticatedPageHeader
         eyebrow={eyebrow}
         title={title}
         subtitle={subtitle}
         breadcrumbs={breadcrumbs}
-        primaryAction={primaryAction}
-        secondaryActions={secondaryActions}
+        actions={
+          primaryAction || secondaryActions?.length
+            ? <>{secondaryActions}{primaryAction}</>
+            : undefined
+        }
         meta={meta}
         tabs={tabs}
+        capabilityId="settings.heading"
       />
-      <div className="mx-auto grid w-full max-w-[1180px] gap-6 px-5 py-6 sm:px-6 lg:grid-cols-[minmax(0,1fr)_230px] lg:px-8">
-        <div className="min-w-0">{children}</div>
-        <aside className="hidden space-y-3 lg:block" aria-label="Settings guidance">
-          <div className="ua-section-panel rounded-lg p-4">
-            <span className="ua-identity-tile flex h-9 w-9 items-center justify-center text-[var(--brand-deep)]"><ShieldCheck size={17} aria-hidden="true" /></span>
-            <h2 className="mt-3 text-sm font-semibold">Workspace controls</h2>
-            <p className="mt-1 text-xs leading-relaxed text-[var(--text-secondary)]">Changes are scoped to this workspace. Sensitive actions and configuration updates remain available in the audit trail.</p>
+      <div className={styles.pageBody}>
+        <div className={styles.settingsGrid}>
+          <div className={styles.settingsMain}>{children}</div>
+          <aside className={styles.guidanceStack} aria-label="Settings guidance">
+          <div className={styles.guidanceCard}>
+            <span className={styles.guidanceIcon}><ShieldCheck size={15} aria-hidden="true" /></span>
+            <h2>Workspace controls</h2>
+            <p>Changes are scoped to this workspace. Sensitive actions and configuration updates remain available in the audit trail.</p>
           </div>
-          <Link href="/help" className="flex items-center gap-2 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-xs font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]">
+          <Link href="/help" className={styles.guidanceLink}>
             <HelpCircle size={15} aria-hidden="true" />
             Settings help
           </Link>
         </aside>
+        </div>
       </div>
     </div>
   );

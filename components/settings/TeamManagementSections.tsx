@@ -44,7 +44,7 @@ function TeamMembersSkeleton() {
       {[1, 2, 3].map((i) => (
         <div
           key={i}
-          className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-3 py-4 sm:px-5"
+          className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-3 py-3 sm:px-4"
         >
           <div className="flex min-w-0 items-center gap-3">
             <Bone className="h-8 w-8 rounded-full shrink-0" />
@@ -85,7 +85,7 @@ export function TeamMembersSection({
       }}
     >
       <div
-        className="flex items-center justify-between border-b px-5 py-4"
+        className="flex items-center justify-between border-b px-4 py-3"
         style={{ borderColor: "var(--border-muted)" }}
       >
         <div>
@@ -111,7 +111,7 @@ export function TeamMembersSection({
         <TeamMembersSkeleton />
       ) : members.length === 0 ? (
         <p
-          className="px-5 py-6 text-sm"
+            className="px-4 py-5 text-[12px]"
           style={{ color: "var(--text-secondary)" }}
         >
           {emptyMessage}

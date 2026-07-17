@@ -11,6 +11,8 @@ import {
   FlowVersionWorkbench,
   type WorkflowVersionRecord,
 } from "@/components/rules/FlowVersionWorkbench";
+import { AuthenticatedPageHeader } from "@/components/authenticated/AuthenticatedPageHeader";
+import pageStyles from "@/components/authenticated/AuthenticatedPageChrome.module.css";
 
 export const dynamic = "force-dynamic";
 
@@ -53,36 +55,24 @@ export default async function FlowDetail({
   const versions = (versionsResult.data ??
     []) as unknown as WorkflowVersionRecord[];
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Link
-          href="/flows"
-          className="text-sm font-semibold text-[var(--accent)]"
-        >
-          Flows
-        </Link>
+    <div>
+      <AuthenticatedPageHeader
+        eyebrow="Workflow configuration"
+        title={current.name}
+        subtitle={current.description || "No operator-facing description yet. Add intent and expected work in the next draft."}
+        breadcrumbs={[{ label: "Flows", href: "/flows" }, { label: current.name }]}
+        actions={
         <Link
           href={`/flows/runs?workflow=${id}`}
-          className="text-sm font-semibold text-[var(--accent)]"
+          className="inline-flex h-7 items-center rounded-[var(--ua-radius-input)] border border-[var(--border)] bg-[var(--surface)] px-2.5 text-[11px] font-semibold shadow-[var(--shadow-xs)] hover:bg-[var(--surface-hover)]"
         >
           Run history
         </Link>
-      </div>
-      <header>
-        <p className="text-sm text-[var(--text-secondary)]">
-          Workflow configuration
-        </p>
-        <h1 className="mt-1 text-2xl font-semibold">{current.name}</h1>
-        <p className="mt-1 max-w-3xl text-sm text-[var(--text-secondary)]">
-          {current.description ||
-            "No operator-facing description yet. Add intent and expected work in the next draft."}
-        </p>
-      </header>
-      <FlowVersionWorkbench
-        versions={versions}
-        currentId={id}
-        canManage={canManage}
+        }
       />
+      <div className={pageStyles.pageBody}>
+        <FlowVersionWorkbench versions={versions} currentId={id} canManage={canManage} />
+      </div>
     </div>
   );
 }

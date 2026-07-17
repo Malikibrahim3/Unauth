@@ -12,6 +12,7 @@ import { AvatarMenu } from './AvatarMenu';
 import { ContextCreditsBadge } from './ContextCreditsBadge';
 import { WorkspaceSwitcher, type WorkspaceOption } from './WorkspaceSwitcher';
 import type { Permission } from '@/lib/permissions';
+import { useFetchJson } from '@/lib/react/useFetchJson';
 
 export interface BreadcrumbSegment {
   label: string;
@@ -58,6 +59,10 @@ export default function AppHeader({
 }: AppHeaderProps) {
   const pathname = usePathname();
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const { data: notificationSummary } = useFetchJson<{ unreadCount?: number }>(
+    '/api/notifications/unread-count',
+  );
+  const resolvedUnreadCount = notificationSummary?.unreadCount ?? unreadCount;
 
   const openPalette = useCallback(() => setPaletteOpen(true), []);
   const closePalette = useCallback(() => setPaletteOpen(false), []);
@@ -189,12 +194,12 @@ export default function AppHeader({
 
       <Link
         href="/notifications"
-        aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
+        aria-label={resolvedUnreadCount > 0 ? `Notifications, ${resolvedUnreadCount} unread` : 'Notifications'}
         className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
         style={{ borderColor: 'var(--border)', background: 'var(--surface-sunken)' }}
       >
         <Bell size={14} aria-hidden="true" />
-        {unreadCount > 0 ? <span className="sr-only">{unreadCount} unread</span> : null}
+        {resolvedUnreadCount > 0 ? <span className="sr-only">{resolvedUnreadCount} unread</span> : null}
       </Link>
 
       <AvatarMenu email={userEmail} />
@@ -210,7 +215,7 @@ export default function AppHeader({
 
 function deriveFromPathname(pathname: string): BreadcrumbSegment[] {
   const segmentMap: Record<string, string> = {
-    dashboard:   'Dashboard',
+    dashboard:   'Overview',
     customers:   'Customers',
     claims:      'Payout Control',
     watchlist:   'Customer context',

@@ -50,7 +50,10 @@ export function AnalyticsDonutChart({
 
     return {
       animation: true,
-      animationDuration: 400,
+      animationDuration: 620,
+      animationDurationUpdate: 360,
+      animationEasing: 'cubicOut',
+      animationEasingUpdate: 'cubicOut',
       tooltip: {
         ...baseTooltip(t),
         trigger: 'item' as const,
@@ -74,6 +77,7 @@ export function AnalyticsDonutChart({
         radius: ['48%', '72%'],
         center: showLegend ? ['50%', '44%'] : ['50%', '50%'],
         padAngle: 2,
+        animationDelay: 90,
         itemStyle: { borderRadius: 3, borderColor: t.surface_raised, borderWidth: 2 },
         label: { show: false },
         emphasis: {

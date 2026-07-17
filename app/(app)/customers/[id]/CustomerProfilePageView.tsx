@@ -1,6 +1,9 @@
 import { PageConnectionGate } from '@/components/connections/PageConnectionGate';
 import { CustomerProfilePageHero } from '@/app/(app)/customers/[id]/CustomerProfilePageHero';
 import { CustomerProfilePageMainColumn } from '@/app/(app)/customers/[id]/CustomerProfilePageMainColumn';
+import pageStyles from '@/components/authenticated/AuthenticatedPageChrome.module.css';
+import { AuthenticatedPageHeader } from '@/components/authenticated/AuthenticatedPageHeader';
+import { AuthenticatedPanel } from '@/components/authenticated/AuthenticatedPanel';
 import type {
   CustomerProfileBlockedReason,
   CustomerProfilePageViewProps,
@@ -9,23 +12,16 @@ import type {
 export function CustomerProfileBlockedView({ reason }: { reason: CustomerProfileBlockedReason }) {
   if (reason === 'access_denied') {
     return (
-      <div className="p-8">
-        <h1 className="text-heading-lg">Access denied</h1>
-        <p className="text-body-sm mt-2" style={{ color: 'var(--text-secondary)' }}>
-          You do not have permission to view this customer profile.
-        </p>
+      <div>
+        <AuthenticatedPageHeader eyebrow="Customer record" title="Access denied" subtitle="You do not have permission to view this customer profile." />
+        <div className={pageStyles.pageBody}><AuthenticatedPanel bodyClassName="p-4 text-[11px] text-[var(--text-secondary)]">Your current workspace role does not include this record.</AuthenticatedPanel></div>
       </div>
     );
   }
   return (
-    <div className="p-8">
-      <h1 className="text-heading-lg">Link expired</h1>
-      <p className="text-body-sm mt-2" style={{ color: 'var(--text-secondary)' }}>
-        This link has expired. Ask your team for a new one from Unauth.
-      </p>
-      <a href="https://unauth.co" className="text-body-sm mt-3 inline-block underline" style={{ color: 'var(--text)' }}>
-        Go to unauth.co
-      </a>
+    <div>
+      <AuthenticatedPageHeader eyebrow="Customer record" title="Link expired" subtitle="This link has expired. Ask your team for a new one from Unauth." />
+      <div className={pageStyles.pageBody}><AuthenticatedPanel bodyClassName="p-4"><a href="https://unauth.co" className="text-[11px] font-semibold underline" style={{ color: 'var(--text)' }}>Go to unauth.co</a></AuthenticatedPanel></div>
     </div>
   );
 }
@@ -72,7 +68,7 @@ export function CustomerProfilePageView(props: CustomerProfilePageViewProps) {
 
   return (
     <PageConnectionGate requires="both" connection={connectionState} pageName="Customer payout history" pageDescription="This profile shows customer order history and linked support payout cases from merchant-owned sources. An incomplete profile can be misleading - you may see orders with no case history when helpdesk data is not syncing yet." hasData={true}>
-    <div className="mx-auto max-w-7xl px-3 py-5 sm:px-5">
+    <div>
       <CustomerProfilePageHero
         auditRunId={auditRunId}
         displayName={displayName}
@@ -111,22 +107,24 @@ export function CustomerProfilePageView(props: CustomerProfilePageViewProps) {
         5. Grid is [1fr 380px] — main content gets majority width.
         6. Section order: summary → context → detail → action.
       */}
-      <div className="grid grid-cols-1 gap-[var(--space-6)]">
-        <CustomerProfilePageMainColumn
-          profile={profile}
-          profileGrade={profileGrade}
-          hasCleanRecord={hasCleanRecord}
-          merchantOrderCount={merchantOrderCount}
-          merchantNarrative={merchantNarrative}
-          identitySignals={identitySignals}
-          transactions={transactions}
-          roadmapEvents={roadmapEvents}
-          identityTimeline={identityTimeline}
-          variantCount={variantCount}
-          merchantSignalPills={merchantSignalPills}
-          linkedAccounts={linkedAccounts}
-          activityLog={activityLog}
-        />
+      <div className={pageStyles.pageBody}>
+        <div className="grid grid-cols-1 gap-3">
+          <CustomerProfilePageMainColumn
+            profile={profile}
+            profileGrade={profileGrade}
+            hasCleanRecord={hasCleanRecord}
+            merchantOrderCount={merchantOrderCount}
+            merchantNarrative={merchantNarrative}
+            identitySignals={identitySignals}
+            transactions={transactions}
+            roadmapEvents={roadmapEvents}
+            identityTimeline={identityTimeline}
+            variantCount={variantCount}
+            merchantSignalPills={merchantSignalPills}
+            linkedAccounts={linkedAccounts}
+            activityLog={activityLog}
+          />
+        </div>
       </div>
     </div>
     </PageConnectionGate>

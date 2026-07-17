@@ -231,14 +231,14 @@ export function WorkQueue({
       </h2>
       <nav
         aria-label="Work views"
-        className="mb-4 flex gap-1 overflow-x-auto pb-1"
+        className="mb-3 flex gap-1 overflow-x-auto pb-1"
       >
         {VIEWS.map(([key, label]) => (
           <Link
             key={key}
             href={`/work?view=${key}`}
             aria-current={view === key ? "page" : undefined}
-            className="whitespace-nowrap rounded-md border px-3 py-2 text-sm font-medium"
+            className="inline-flex h-7 items-center whitespace-nowrap rounded-[var(--ua-radius-input)] border px-2.5 text-[11px] font-medium"
             style={{
               background:
                 view === key ? "var(--surface-selected)" : "var(--surface)",
@@ -246,7 +246,7 @@ export function WorkQueue({
             }}
           >
             {label}
-            <span className="ml-1.5 tabular-nums text-[var(--text-tertiary)]">{formatNumber(viewCounts[key])}</span>
+            <span className="ml-1.5 tabular-nums text-[10px] text-[var(--text-tertiary)]">{formatNumber(viewCounts[key])}</span>
           </Link>
         ))}
       </nav>

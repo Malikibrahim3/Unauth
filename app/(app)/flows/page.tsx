@@ -11,6 +11,9 @@ import {
   FlowsIndexClient,
   type FlowIndexRecord,
 } from "@/components/rules/FlowsIndexClient";
+import { WorkbenchPage } from "@/components/ui";
+import { MiniBarSequenceChart } from "@/components/charts/authenticated";
+import { formatNumber } from '@/lib/utils/format';
 
 export const dynamic = "force-dynamic";
 
@@ -76,17 +79,31 @@ export default async function FlowsPage() {
       };
     },
   );
+  const activeFlows = flows.filter((flow) => flow.active).length;
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-6">
-      <header>
-        <p className="text-sm text-[var(--text-secondary)]">Configuration</p>
-        <h1 className="mt-1 text-2xl font-semibold">Flows</h1>
-        <p className="mt-1 max-w-3xl text-sm text-[var(--text-secondary)]">
-          Route tasks, evidence, deadlines, and notifications. Test safely —
-          nothing changes until you publish.
-        </p>
-      </header>
-      <FlowsIndexClient flows={flows} canManage={canManage} />
-    </div>
+    <WorkbenchPage
+      eyebrow="Configuration"
+      title="Flows"
+      subtitle="Route tasks, evidence, deadlines, and notifications. Test safely — nothing changes until you publish."
+      kpiItems={[
+        { label: 'Flows', value: formatNumber(flows.length), hint: 'Configured workflow families' },
+        { label: 'Active', value: formatNumber(activeFlows), hint: 'Running published versions' },
+        { label: 'Draft changes', value: formatNumber(flows.filter((flow) => flow.hasDraft).length), hint: 'Safe unpublished edits' },
+      ]}
+      primaryVisual={
+        <MiniBarSequenceChart
+          id="flow-action-load"
+          title="Flow action load"
+          description="Configured actions per workflow family. Bar height describes definition complexity, not execution volume or success."
+          items={flows.map((flow) => ({
+            label: flow.name,
+            value: flow.actionCount,
+            tone: flow.active ? 'green' : flow.hasDraft ? 'orange' : 'neutral',
+            detail: flow.active ? 'Active' : flow.hasDraft ? 'Draft change' : 'Inactive',
+          }))}
+        />
+      }
+      main={<FlowsIndexClient flows={flows} canManage={canManage} />}
+    />
   );
 }
