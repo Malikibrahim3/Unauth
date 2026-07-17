@@ -138,7 +138,7 @@ export function Modal({
             <button
               type="button"
               onClick={onClose}
-              className="p-1 rounded-md hover:bg-[var(--surface-hover)] transition-colors flex-shrink-0"
+              className="p-1 rounded-md hover:bg-[var(--surface-hover)] transition-colors flex-shrink-0 focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]"
               aria-label="Close modal"
             >
               <X className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />

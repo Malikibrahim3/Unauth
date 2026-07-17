@@ -22,6 +22,7 @@ export const filterChipContract = {
   unselected:
     'border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] text-[var(--ua-text-secondary)]',
   hover: 'hover:bg-[var(--ua-surface-hover)]',
+  focus: 'focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]',
   selected:
     'border-[var(--ua-border-strong)] bg-[var(--ua-surface-primary)] text-[var(--ua-text-primary)] shadow-[var(--ua-shadow-subtle)]',
   disabled: 'opacity-50 cursor-not-allowed pointer-events-none',

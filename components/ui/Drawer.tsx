@@ -122,7 +122,7 @@ export function Drawer({
             <button
               type="button"
               onClick={onClose}
-              className="flex h-11 w-11 items-center justify-center rounded-[var(--ua-radius-control)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)] transition-colors"
+              className="flex h-11 w-11 items-center justify-center rounded-[var(--ua-radius-control)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)] transition-colors focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]"
               aria-label="Close"
             >
               <X className="w-4 h-4" />

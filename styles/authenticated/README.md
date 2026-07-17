@@ -42,7 +42,15 @@ New and migrated code should read `--ua-*` names. Existing code reading the olde
 ### Known mismatches the alias layer surfaces honestly, not silently
 
 - **Control radius**: buttons use `--radius-sm` (4px); inputs/selects use `--radius-md` (6px). `--ua-radius-control` forwards to 4px (matches Button); a separate `--ua-radius-input` forwards to 6px (matches Input/Select) rather than forcing one onto the other's current value. Converging these is a craft-pass decision, not made here.
-- **Card radius**: `Card.tsx`/`SectionCard.tsx`/`ModuleCard.tsx`/`MetricCard.tsx`/`Modal.tsx`/`DataTable.tsx` all use `--radius-md` (6px) — `--ua-radius-card`/`--ua-radius-overlay` forward to that. `PanelCard`'s `app`/`appMuted`/`appInset` variants (in `components/ui/LandingPrimitives.tsx`, consumed 39× across the authenticated app) use `--radius-lg` (8px) instead — a real, pre-existing inconsistency, tracked in the migration register, not fixed here.
+- **Card radius**: `Card.tsx`/`SectionCard.tsx`/`ModuleCard.tsx`/`MetricCard.tsx`/`Modal.tsx`/`DataTable.tsx` all use `--radius-md` (6px) — `--ua-radius-card`/`--ua-radius-overlay` forward to that. The page-chrome panels (`AuthenticatedPageChrome.module.css`: `.panel`, `.kpiStrip`, `.toolbar`, `.detailSection`, `.guidanceCard`) now also read `--ua-radius-card` — do not reintroduce literal panel radii. `PanelCard`'s `app`/`appMuted`/`appInset` variants (in `components/ui/LandingPrimitives.tsx`) still use `--radius-lg` (8px) — pre-existing, tracked in the migration register.
+
+### Focus treatment (binding)
+
+Every interactive control gets a visible keyboard focus state from `--shadow-focus`. `Button`/`ButtonLink` (via `buttonStyles.ts`), `FilterChip`, and the Modal/Drawer close buttons apply `focus-visible:shadow-[var(--shadow-focus)]`; list rows that fill their container use the inset form `focus-visible:shadow-[inset_var(--shadow-focus)]`. New interactive components must not ship with `focus-visible:outline-none` and no replacement ring.
+
+### Panel composition (binding)
+
+Content passed as `WorkbenchPage`'s `main` renders inside an `AuthenticatedPanel` (bordered, unpadded body). Do not nest free-standing bordered cards (`PanelCard`, `Card`) directly inside it — that produces double borders and flush-to-edge controls. Instead compose joined sections: a toolbar row (`px-4 py-3`, `border-b border-[var(--border-muted)]`) holding the section note and its actions, then a `divide-y` list of padded rows, then `EmptyState` for the empty case. `RulesIndexClient`/`FlowsIndexClient` are the reference implementations.
 
 ## Component taxonomy — one primitive per situation
 

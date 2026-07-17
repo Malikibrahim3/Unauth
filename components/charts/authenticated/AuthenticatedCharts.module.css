@@ -145,7 +145,7 @@
 .statusMatrix { display: grid; grid-template-columns: repeat(12, minmax(12px, 1fr)); gap: 4px; }
 .statusCell { min-height: 28px; border: 1px solid color-mix(in srgb, currentColor 28%, transparent); border-radius: 2px; opacity: 0.9; }
 .matrixKey { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 11px; }
-.matrixKey div { display: flex; align-items: center; justify-content: space-between; gap: 6px; color: var(--text-tertiary); font-size: 9px; }
+.matrixKey div { display: flex; align-items: center; justify-content: flex-start; gap: 6px; color: var(--text-tertiary); font-size: 9px; }
 .matrixKey strong { color: var(--text-primary); font-size: 11px; }
 
 /* Mini bar sequence */

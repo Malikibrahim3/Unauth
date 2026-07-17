@@ -16,6 +16,7 @@ import {
   ConnectorRow,
   type CatalogueRowItem,
 } from "@/components/integrations/ConnectorRow";
+import { CONNECTOR_GRID_CLASS } from "@/components/integrations/connectorGrid";
 import { DeferredLiveConnectionVerification } from "@/components/integrations/DeferredLiveConnectionVerification";
 import { WorkbenchPage } from "@/components/ui";
 import { SourceHealthMatrixChart } from "@/components/charts/authenticated";
@@ -189,7 +190,7 @@ export default async function IntegrationsPage() {
               </div>
             </div>
             <div className="mt-3 overflow-x-auto rounded-[var(--ua-radius-card)] border border-[var(--border)]">
-              <div className="ua-panel-header grid min-w-[820px] grid-cols-[minmax(220px,1.35fr)_150px_minmax(240px,1.4fr)_100px_160px_24px] gap-4 px-4 py-2.5 text-[11px] font-semibold text-[var(--text-tertiary)]">
+              <div className={`ua-panel-header ${CONNECTOR_GRID_CLASS} px-4 py-2.5 text-[11px] font-semibold text-[var(--text-tertiary)]`}>
                 <span>Provider</span>
                 <span>Status</span>
                 <span>Coverage</span>

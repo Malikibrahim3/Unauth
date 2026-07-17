@@ -4,10 +4,7 @@ import { useState } from "react";
 import { Plus, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  Button,
-  PanelCard,
-} from "@/components/ui";
+import { Button, EmptyState } from "@/components/ui";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import {
   RuleBuilderDrawer,
@@ -66,15 +63,16 @@ export function RulesIndexClient({
 
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
-          <ShieldCheck className="h-4 w-4 text-[var(--success)]" /> Published
-          versions are immutable; changes begin as drafts.
-        </div>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-muted)] px-4 py-3">
+        <p className="flex min-w-0 items-center gap-2 text-xs text-[var(--text-secondary)]">
+          <ShieldCheck aria-hidden="true" className="h-4 w-4 shrink-0 text-[var(--success)]" />
+          Published versions are immutable; changes begin as drafts.
+        </p>
         {canManage ? (
           <Button
             variant="primary"
-            leadingIcon={<Plus className="h-4 w-4" />}
+            size="sm"
+            leadingIcon={<Plus className="h-3.5 w-3.5" />}
             onClick={() => setCreating(true)}
           >
             New rule
@@ -84,22 +82,18 @@ export function RulesIndexClient({
       {error ? (
         <p
           role="alert"
-          className="rounded-md border border-[var(--danger)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--danger)]"
+          className="border-b border-[var(--border-muted)] bg-[var(--surface)] px-4 py-2 text-sm text-[var(--danger)]"
         >
           {error}
         </p>
       ) : null}
       {rules.length > 0 ? (
-        <div className="grid gap-3">
+        <ul className="divide-y divide-[var(--border-muted)]">
           {rules.map((rule) => (
-            <Link
-              key={rule.id}
-              href={`/rules/${rule.id}`}
-              className="block rounded-[var(--radius-lg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
-            >
-              <PanelCard
-                variant="app"
-                className="group grid gap-3 p-4 transition-colors hover:border-[var(--accent)] sm:grid-cols-[minmax(0,1fr)_8rem_8rem_auto] sm:items-center"
+            <li key={rule.id}>
+              <Link
+                href={`/rules/${rule.id}`}
+                className="grid gap-3 px-4 py-3 transition-colors hover:bg-[var(--surface-hover)] focus-visible:outline-none focus-visible:shadow-[inset_var(--shadow-focus)] sm:grid-cols-[minmax(0,1fr)_7rem_7rem_auto] sm:items-center"
               >
                 <div className="min-w-0">
                   <h2 className="truncate text-sm font-semibold text-[var(--text-primary)]">
@@ -135,27 +129,22 @@ export function RulesIndexClient({
                     →
                   </span>
                 </div>
-              </PanelCard>
-            </Link>
+              </Link>
+            </li>
           ))}
-        </div>
+        </ul>
       ) : (
-        <PanelCard variant="app" className="p-6 text-center">
-          <h2 className="text-base font-semibold">No payout rules yet</h2>
-          <p className="mx-auto mt-2 max-w-xl text-sm text-[var(--text-secondary)]">
-            Write a rule, try it on a sample case, then publish when it looks
-            right. Rules recommend; they never execute payouts.
-          </p>
-          {canManage ? (
-            <Button
-              className="mt-5"
-              variant="primary"
-              onClick={() => setCreating(true)}
-            >
-              Create first rule
-            </Button>
-          ) : null}
-        </PanelCard>
+        <EmptyState
+          title="No payout rules yet"
+          description="Write a rule, try it on a sample case, then publish when it looks right. Rules recommend; they never execute payouts."
+          action={
+            canManage ? (
+              <Button variant="primary" onClick={() => setCreating(true)}>
+                Create first rule
+              </Button>
+            ) : undefined
+          }
+        />
       )}
       <RuleBuilderDrawer
         key={creating ? "open" : "closed"}

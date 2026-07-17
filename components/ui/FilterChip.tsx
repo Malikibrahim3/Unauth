@@ -21,6 +21,8 @@ const chipClass = (active: boolean, disabled: boolean, className?: string) =>
     'ua-jitter',
     filterChipContract.base,
     active ? filterChipContract.selected : filterChipContract.unselected,
+    !disabled && filterChipContract.hover,
+    filterChipContract.focus,
     disabled && filterChipContract.disabled,
     className,
   );
