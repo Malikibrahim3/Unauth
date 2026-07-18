@@ -11,6 +11,7 @@ import { loadClaimForMerchant } from '@/lib/claims/access';
 import { claimStatusForOutcome } from '@/lib/claims/statusMachine';
 import { resolveHoldTag } from '@/lib/gorgias/applyHoldTag';
 import { CaseTransitionRejectedError, CaseVersionConflictError, transitionCase } from '@/lib/cases/transitionCase';
+import { getAppUrl } from '@/lib/utils/appUrl';
 
 async function latestOutcome(serviceClient: any, claimId: string) {
   const { data } = await serviceClient
@@ -153,7 +154,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           merchantId: ctx.merchantId,
           ticketId: ticket.external_id,
           decision: outcome.decision,
-          caseUrl: `${process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/claims?focus=${encodeURIComponent(claimId)}`,
+          caseUrl: `${getAppUrl()}/claims?focus=${encodeURIComponent(claimId)}`,
         }).catch((error) => {
           console.warn('gorgias_hold_tag_resolution_failed', {
             claim_id: claimId,

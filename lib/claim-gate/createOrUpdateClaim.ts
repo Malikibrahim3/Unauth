@@ -1,8 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { upsertClaimEvidenceItem, upsertMerchantClaim } from '@/lib/claims/store';
 import { appendClaimEvent } from '@/lib/claims/events';
-import { env } from '@/lib/utils/env';
 import { claimGateTypeToStoredClaimType } from '@/lib/claim-gate/classifyClaim';
+import { getAppUrl } from '@/lib/utils/appUrl';
 import type {
   ClaimGateActorType,
   ClaimGateCase,
@@ -42,7 +42,7 @@ function requestedAction(value: string | null | undefined): RequestedAction {
 }
 
 function appBaseUrl(): string {
-  return (process.env.APP_URL || env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/$/, '');
+  return getAppUrl();
 }
 
 async function ensureTicket(input: {
