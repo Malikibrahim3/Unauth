@@ -2,8 +2,8 @@ import { redirect } from 'next/navigation';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { TABLES } from '@/lib/supabase/tables';
-import { WorkbenchPage } from '@/components/ui';
-import { RankedContributionChart } from '@/components/charts/authenticated';
+import { WorkbenchPage, KeyInsightCallout, SummaryRail } from '@/components/ui';
+import { TrendingDown } from 'lucide-react';
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { LossLedger, type LossLedgerRow } from '@/components/losses/LossLedger';
 import { freshnessFromTimestamp } from '@/components/sources/FreshnessIndicator';
@@ -143,17 +143,19 @@ export default async function LossesPage() {
   const recoverable = rows.filter((r) => r.recoverability === 'recoverable' || r.recoverability === 'eligible_to_chase').length;
   const prevented = rows.filter((r) => r.preventionOnly).length;
   const writtenOff = rows.filter((r) => r.writtenOff).length;
-  const contributionRows = selectLossContributions(rows.map((row) => ({
-    label: humanise(row.attribution ?? row.category ?? 'Unattributed'),
-    amountMinor: row.realisedLossMinor ?? row.estimatedLossMinor,
-    currency: row.currency,
-    writtenOff: row.writtenOff,
-  })), exposure.currency).map(({ label, valueMajor: value }) => ({
-    label,
-    value,
-    displayValue: formatCurrencyNullable(value, exposure.currency) ?? 'Unavailable',
-    detail: 'Realised or estimated loss, excluding written-off records',
-  }));
+  const contributions = selectLossContributions(rows.map((row) => {
+    const key = row.attribution ?? row.category ?? 'unattributed';
+    return {
+      key,
+      label: humanise(key),
+      amountMinor: row.realisedLossMinor ?? row.estimatedLossMinor,
+      currency: row.currency,
+      writtenOff: row.writtenOff,
+    };
+  }), exposure.currency);
+  const topContributions = contributions.slice(0, 5);
+  const topLoss = topContributions[0];
+  const topLossPct = topLoss && exposure.total ? Math.round((topLoss.valueMajor / exposure.total) * 100) : null;
 
   return (
     <WorkbenchPage
@@ -169,13 +171,31 @@ export default async function LossesPage() {
         { label: 'Written off', value: formatNumber(writtenOff), hint: 'Closed unrecoverable' },
       ]}
       primaryVisual={
-        <RankedContributionChart
-          id="loss-attribution-contribution"
-          title="Loss contribution"
-          description={`Ranked attribution of current realised or estimated loss in ${exposure.currency ?? 'the available currency'}. Written-off and incompatible-currency rows are excluded.${mixedHint}`}
-          annotation={{ value: formatCurrencyNullable(exposure.total || null, exposure.currency) ?? '—', label: 'current loss' }}
-          items={contributionRows}
-        />
+        topLoss ? (
+          <KeyInsightCallout eyebrow="Loss contribution" icon={<TrendingDown size={16} />}>
+            <strong>{topLoss.label}</strong> is the largest loss driver
+            {topLossPct != null ? <> at <strong>{topLossPct}%</strong> of current loss</> : null}
+            {' '}(<strong>{formatCurrencyNullable(exposure.total || null, exposure.currency) ?? '—'}</strong> total).
+          </KeyInsightCallout>
+        ) : undefined
+      }
+      rail={
+        topContributions.length === 0 ? undefined : (
+          <SummaryRail
+            sections={[
+              {
+                title: 'Loss contribution',
+                rows: topContributions.map((item) => ({
+                  label: item.label,
+                  value: formatCurrencyNullable(item.valueMajor, exposure.currency) ?? '—',
+                  bar: exposure.total ? item.valueMajor / exposure.total : 0,
+                  href: `/losses?attribution=${encodeURIComponent(item.key)}`,
+                })),
+                footnote: `Ranked attribution of current loss in ${exposure.currency ?? 'the available currency'}. Written-off and incompatible-currency rows excluded.${mixedHint}`,
+              },
+            ]}
+          />
+        )
       }
       main={<LossLedger rows={rows} />}
       footer={

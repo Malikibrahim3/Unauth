@@ -783,7 +783,7 @@ export async function loadCustomerProfilePage(
     lastSeen:
       transactions[transactions.length - 1]?.processed_at ?? profile.last_seen,
     fraudFlags: profile.identity_signals ?? profile.fraud_flags,
-    linkedAccountCount: 0,
+    linkedAccountCount: linkedAccounts.length,
   });
 
   const profileGrade = riskLevelToNewGrade(network?.confidenceGrade ?? null);

@@ -1,4 +1,4 @@
-export type AuthChartTone = 'orange' | 'blue' | 'green' | 'yellow' | 'red' | 'neutral';
+export type AuthChartTone = 'orange' | 'blue' | 'green' | 'yellow' | 'red' | 'violet' | 'neutral';
 
 export type AuthChartDatum = {
   label: string;
@@ -6,12 +6,15 @@ export type AuthChartDatum = {
   displayValue?: string;
   tone?: AuthChartTone;
   detail?: string;
+  /** Optional deep link for this mark. Server prepares it; the chart never constructs one. */
+  href?: string;
 };
 
 export type AuthChartTableRow = {
   label: string;
   value: string;
   detail?: string;
+  href?: string;
 };
 
 export function finiteNonNegative(value: number): number {

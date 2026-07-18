@@ -11,8 +11,8 @@ import {
   FlowsIndexClient,
   type FlowIndexRecord,
 } from "@/components/rules/FlowsIndexClient";
-import { WorkbenchPage } from "@/components/ui";
-import { MiniBarSequenceChart } from "@/components/charts/authenticated";
+import { WorkbenchPage, KeyInsightCallout, SummaryRail } from "@/components/ui";
+import { Workflow } from "lucide-react";
 import { formatNumber } from '@/lib/utils/format';
 
 export const dynamic = "force-dynamic";
@@ -80,6 +80,9 @@ export default async function FlowsPage() {
     },
   );
   const activeFlows = flows.filter((flow) => flow.active).length;
+  const draftFlows = flows.filter((flow) => flow.hasDraft).length;
+  const maxActionCount = Math.max(1, ...flows.map((flow) => flow.actionCount));
+  const topFlows = [...flows].sort((a, b) => b.actionCount - a.actionCount).slice(0, 6);
   return (
     <WorkbenchPage
       eyebrow="Configuration"
@@ -91,16 +94,29 @@ export default async function FlowsPage() {
         { label: 'Draft changes', value: formatNumber(flows.filter((flow) => flow.hasDraft).length), hint: 'Safe unpublished edits' },
       ]}
       primaryVisual={
-        <MiniBarSequenceChart
-          id="flow-action-load"
-          title="Flow action load"
-          description="Configured actions per workflow family. Bar height describes definition complexity, not execution volume or success."
-          items={flows.map((flow) => ({
-            label: flow.name,
-            value: flow.actionCount,
-            tone: flow.active ? 'green' : flow.hasDraft ? 'orange' : 'neutral',
-            detail: flow.active ? 'Active' : flow.hasDraft ? 'Draft change' : 'Inactive',
-          }))}
+        <KeyInsightCallout
+          eyebrow="Flows"
+          tone={draftFlows > 0 ? 'warning' : 'neutral'}
+          icon={<Workflow size={16} />}
+        >
+          <strong>{formatNumber(activeFlows)}</strong> of <strong>{formatNumber(flows.length)}</strong> flows active
+          {draftFlows > 0 ? <> · <strong>{formatNumber(draftFlows)}</strong> with draft changes</> : null}.
+        </KeyInsightCallout>
+      }
+      rail={
+        <SummaryRail
+          sections={[
+            {
+              title: 'Action load',
+              rows: topFlows.map((flow) => ({
+                label: flow.name,
+                value: formatNumber(flow.actionCount),
+                tone: flow.active ? 'success' : flow.hasDraft ? 'warning' : 'neutral',
+                bar: flow.actionCount / maxActionCount,
+              })),
+              footnote: 'Configured actions per flow — definition complexity, not execution volume.',
+            },
+          ]}
         />
       }
       main={<FlowsIndexClient flows={flows} canManage={canManage} />}

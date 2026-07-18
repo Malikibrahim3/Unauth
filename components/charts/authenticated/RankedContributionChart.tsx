@@ -36,7 +36,7 @@ export function RankedContributionChart({
             <div className={styles.rankedRow} key={row.label}>
               <span className={styles.rankedName}>{index + 1}. {row.label}</span>
               <div className={styles.rankedTrack}><div className={`${styles.rankedFill} ${styles[row.tone ?? (index === 0 ? 'orange' : 'neutral')]}`} style={{ width: row.value > 0 ? `${Math.max(2, (row.value / max) * 100)}%` : '0%' }} /></div>
-              <span className={styles.rankedValue}>{row.displayValue ?? formatNumber(row.value)}</span>
+              <span className={`${styles.rankedValue} ${styles.mono}`}>{row.displayValue ?? formatNumber(row.value)}</span>
             </div>
           ))}
         </div>

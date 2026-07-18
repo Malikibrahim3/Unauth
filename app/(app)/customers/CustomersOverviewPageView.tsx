@@ -6,8 +6,8 @@ import type { MerchantSetupState } from '@/lib/connections/getMerchantSetupState
 import CustomersTableClient from '@/components/customers/CustomersTableClient';
 import { CustomersPageWorkbench } from '@/app/(app)/customers/CustomersPageWorkbench';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
-import { Badge, ButtonLink, PanelCard, WorkbenchEmptyState } from '@/components/ui';
-import { RangePlotChart } from '@/components/charts/authenticated';
+import { Badge, ButtonLink, PanelCard, WorkbenchEmptyState, KeyInsightCallout, SummaryRail } from '@/components/ui';
+import { Users } from 'lucide-react';
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { FilterChip } from '@/app/(app)/customers/CustomersOverviewFilterChip';
 import { buildRemoveHref, customersListHref } from '@/app/(app)/customers/customersOverviewPageUtils';
@@ -79,15 +79,28 @@ export function CustomersOverviewPageView({
         { label: 'Total orders', value: formatNumber(kpis.totalOrders), hint: 'Across listed customers' },
       ]}
       primaryVisual={
-        <RangePlotChart
-          id="customer-case-context"
-          title="Customer case context"
-          description="Share of the filtered customer population with current or historical merchant-owned payout-case context."
-          total={kpis.totalCustomers}
-          rows={[
-            { label: 'Open payout case', value: kpis.openCaseCustomers, tone: 'orange' },
-            { label: 'Any case history', value: kpis.pastCaseCustomers, tone: 'blue' },
-            { label: 'No recorded case', value: Math.max(0, kpis.totalCustomers - kpis.pastCaseCustomers), tone: 'neutral' },
+        <KeyInsightCallout
+          eyebrow="Case context"
+          tone={kpis.openCaseCustomers > 0 ? 'info' : 'neutral'}
+          icon={<Users size={16} />}
+        >
+          <strong>{formatNumber(kpis.openCaseCustomers)}</strong> of{' '}
+          <strong>{formatNumber(kpis.totalCustomers)}</strong> customers have an open payout case
+          {kpis.pastCaseCustomers > 0 ? <> · <strong>{formatNumber(kpis.pastCaseCustomers)}</strong> with case history</> : null}.
+        </KeyInsightCallout>
+      }
+      rail={
+        <SummaryRail
+          sections={[
+            {
+              title: 'Case context',
+              rows: [
+                { label: 'Open payout case', value: formatNumber(kpis.openCaseCustomers), tone: 'info', bar: kpis.totalCustomers ? kpis.openCaseCustomers / kpis.totalCustomers : 0 },
+                { label: 'Any case history', value: formatNumber(kpis.pastCaseCustomers), tone: 'neutral', bar: kpis.totalCustomers ? kpis.pastCaseCustomers / kpis.totalCustomers : 0 },
+                { label: 'No recorded case', value: formatNumber(Math.max(0, kpis.totalCustomers - kpis.pastCaseCustomers)), tone: 'neutral', bar: kpis.totalCustomers ? Math.max(0, kpis.totalCustomers - kpis.pastCaseCustomers) / kpis.totalCustomers : 0 },
+              ],
+              footnote: 'Share of the filtered customer population with merchant-owned case context.',
+            },
           ]}
         />
       }

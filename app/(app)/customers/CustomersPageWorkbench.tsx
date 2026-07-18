@@ -14,6 +14,7 @@ type CustomersPageWorkbenchProps = {
   kpiItems: WorkbenchKpiItem[];
   primaryVisual?: ReactNode;
   main: ReactNode;
+  rail?: ReactNode;
 };
 
 export function CustomersPageWorkbench({
@@ -24,6 +25,7 @@ export function CustomersPageWorkbench({
   kpiItems,
   primaryVisual,
   main,
+  rail,
 }: CustomersPageWorkbenchProps) {
   const actionBarLeft = useMemo(() => <CustomersPageActionBarLeft />, []);
 
@@ -38,6 +40,7 @@ export function CustomersPageWorkbench({
       primaryVisual={primaryVisual}
       actionBarLeft={actionBarLeft}
       main={main}
+      rail={rail}
     />
   );
 }

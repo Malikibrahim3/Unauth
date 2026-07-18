@@ -10,7 +10,7 @@ The approved dashboard and Autumn CRM references are the visual benchmark for th
 2. **Use composition, not cosmetic wrapping.** Signed-in index pages use `WorkbenchPage`; detail pages use `DetailPageShell`; settings use `SettingsPageShell`; exceptional pages use `AuthenticatedPageHeader` and `AuthenticatedPanel`. Do not place an old text-heavy page inside a newly coloured container and call it migrated.
 3. **Visuals explain real data without templating the app.** Data-rich operational pages normally have one primary visual and at most two compact supporting visuals. Select the chart by the operational question, then pass it already-authorised, already-filtered data from the page loader. Cohesion comes from `components/charts/authenticated/**`, not from repeating one composition. Never fabricate history, infer nulls as zero, combine currencies, or chart a paginated subset as if it were the full population.
 4. **Density follows the reference.** Desktop pages use the 208px rail, 48px utility header, 20px content gutters, 10–13px supporting text, 20–24px primary metrics, 6–8px radii, subtle borders, and minimal shadow. Empty space should clarify grouping, not turn operational pages into marketing layouts.
-5. **Loading geometry is a contract.** A route skeleton must reserve the same header, KPI, chart family, toolbar, main-card, and side-rail positions as the resolved page. Select the matching deadline, column, ranked, funnel, range, matrix, sequence, health, or activity skeleton; do not substitute a generic rectangle. If the resolved layout changes, its skeleton changes in the same pull request.
+5. **Loading geometry is a contract.** A route skeleton must reserve the same header, KPI, chart family, toolbar, main-card, and side-rail positions as the resolved page. Select the matching `AuthenticatedChartSkeleton` variant (`trend · combo · rail · meter · matrix · segment · ranked · columns · bands · dotplot · sequence · sparkline · health`); do not substitute a generic rectangle. If the resolved layout changes, its skeleton changes in the same pull request.
 6. **Navigation work stays off the critical path.** Shared layouts must batch independent database reads, avoid per-permission query fan-out, and defer non-blocking badges or notification counts to cached client resources. Page loaders parallelise independent queries and retain the same authorisation boundary.
 7. **Responsive and dark mode are first-class.** Controls remain reachable at 320px, cards stack without page-level horizontal overflow, dense tables scroll within their panel, and every chart token has a dark equivalent.
 
@@ -64,34 +64,67 @@ Content passed as `WorkbenchPage`'s `main` renders inside an `AuthenticatedPanel
 
 **Segmented controls** — `components/ui/SegmentedControl.tsx`. Use only for mutually exclusive views/sort choices — one container, one height, one selected-state treatment, not per-segment pill styling.
 
-**Authenticated charts** — `components/charts/authenticated/**`. `ChartPanel` owns the compact panel header, annotation, legend, accessible data table, focus treatment, empty state and spacing. Purpose-built primitives currently include deadline risk, column comparison, ranked contribution, stage funnel, range plot, status matrix, mini-bar sequence, source-health matrix and activity strip. Route code prepares the business dataset; chart components only render it.
+**Authenticated charts** — `components/charts/authenticated/**`. `ChartPanel` owns the compact panel header, annotation, legend, tab-strip slot, pin-annotation slot, interpretive-caption slot, accessible data table, focus treatment, empty state and spacing. Route code prepares the business dataset; chart components only render it. This is the "Autumn" chart language — ten fixed treatments, T1–T10, decoded in full in `docs/IMPL_chart_visualisation_system.md` §1; every geometry constant they use lives once in `components/charts/authenticated/core/geometry.ts` (the plot-geometry SSOT — a PR that hardcodes plot geometry in a component fails review).
 
-### Chart selection rules
+**Operational summaries** — `components/ui/KeyInsightCallout.tsx` and `components/ui/SummaryRail.tsx`. Unauth is an operational system, not a BI dashboard: **full charts live only on `/dashboard` and `/reports`.** Operational routes are intentionally chart-free. Each states its one actionable fact as a `KeyInsightCallout` in the `primaryVisual` band (a sentence with emphasised figures, computed from data the loader already holds — never a new query) and puts lightweight context — a distribution, counts, a `SparkTrend`, a `TickMeterRow` — in a `SummaryRail` in `WorkbenchPage.rail`. Both are non-interactive (rail rows may deep-link), token-only, and their tones mirror the five `StatusBadge` tones. Do not add a hero chart to an operational route; do not reintroduce the removed `OperationalVisualSummary`.
 
-| Data question | Preferred primitive |
-|---|---|
-| Deadline or SLA bands | `DeadlineRiskChart` |
-| Compare a small set of categorical counts | `ColumnComparisonChart` |
-| Rank contribution to a compatible financial total | `RankedContributionChart` |
-| Show stage volume without claiming conversion | `StageFunnelChart` with an explicit volume note |
-| Compare proportions against one common population | `RangePlotChart` |
-| Show one state per rule/entity across a population | `StatusMatrixChart` |
-| Compare configured action load across definitions | `MiniBarSequenceChart` |
-| Cross provider and health dimensions | `SourceHealthMatrixChart` |
-| Show real received records over represented dates | `ActivityStripChart` |
-| Historical financial trends and configurable analysis | dashboard/reporting chart modules using the same tokens |
+### T1–T10 vocabulary
 
-Use a trend only when dated observations exist. Use a money chart only when every plotted value has one compatible currency. Do not use a funnel for causal conversion, a bubble without a third quantitative variable, a doughnut for precise comparison, or a heatmap when absence cannot be distinguished from zero.
+| # | Treatment | Where it lives |
+|---|---|---|
+| T1 | Quiet cartesian frame — no axis/border/ticks, ≤5 horizontal gridlines, mono axis labels | `core/geometry.ts` frame constants; CSS `.frameGrid`/`.frameYAxis`/`.frameXLabel` |
+| T2 | Hatch — 45°, 1px stroke, 5px pitch. Fixed meanings only: single-series area wash, remainder/headroom, or unavailable/disconnected region. Never decoration, never on a value-carrying mark | `core/HatchDefs.tsx` (SVG), `.hatch{Hue}`/`.hatchNeutral` (CSS) |
+| T3 | Trend line with hatched fall | `cartesian/TrendLineChart.tsx`, `cartesian/DualLineChart.tsx` |
+| T4 | Cap-top gradient bars + dashed comparison overlay | `cartesian/ComboBarLineChart.tsx` |
+| T5 | Dot-matrix / status-matrix grid (7px cells, ordinal ramp, sequential/single-hue only) | _Removed in the operational de-chart (2026-07-17); no current implementer_ |
+| T6 | Block rail with pin annotations + hatched remainder | `operational/BlockRailChart.tsx` |
+| T7 | Tick meter ("barcode" meter) | `operational/TickMeterRow.tsx` |
+| T8 | Segment bar + dot legend + ranked rows (composition card) | `operational/SegmentCompositionCard.tsx` |
+| T9 | Metric tab strip (KPI row that doubles as a chart's series selector) | `micro/MetricTabs.tsx`; passive variant is `WorkbenchKpiStrip` |
+| T10 | Cursor + tooltip grammar (dashed crosshair, value-first tooltip card, axis pill) | `core/ChartCursor.tsx`, `core/ChartTooltip.tsx` |
+
+Every in-chart numeral — axis ticks, tile values, tooltip values, pins, meter values, ranked values — is DM Mono (`--ua-font-mono`) with `tabular-nums`; the CSS utility is `.mono`. The interpretive caption (`.caption`) is the only italic in the product and states interpretation, never a number.
+
+### Route map (§6 of the IMPL doc — keep in sync when a route's primary visual changes)
+
+Only `/dashboard` and `/reports` carry full charts. Every operational route uses a `KeyInsightCallout` (primary) + `SummaryRail` (supporting) instead — see "Operational summaries" above.
+
+| Route | Primary | Supporting |
+|---|---|---|
+| `/dashboard` | `MetricTabs` (T9) driving `ComboBarLineChart` (T4) | `SegmentCompositionCard` (T8) work composition, `BlockRailChart` (T6) data health |
+| `/reports` | `DualLineChart` (T3, 2-series) | `RankedContributionChart` loss causes |
+| `/work` | `KeyInsightCallout` — deadline risk | `SummaryRail` deadline-band distribution |
+| `/claims` | `KeyInsightCallout` — exposure awaiting decision | `SummaryRail` decision-state distribution |
+| `/losses` | `KeyInsightCallout` — top loss driver | `SummaryRail` loss-contribution breakdown |
+| `/recoveries` | `KeyInsightCallout` — recovered vs recoverable | `SummaryRail` with `TickMeterRow` (T7) + stage volume |
+| `/customers` | `KeyInsightCallout` — open-case context | `SummaryRail` case-context distribution |
+| `/customers/[id]` | `BehaviorRoadmap`, `EvidenceScoreBadge` | — |
+| `/rules` | `KeyInsightCallout` — published vs draft | `SummaryRail` rule-lifecycle counts |
+| `/flows` | `KeyInsightCallout` — active vs draft | `SummaryRail` per-flow action load |
+| `/integrations` | `KeyInsightCallout` — connected / needs attention | `SummaryRail` source-health counts |
+| `/notifications` | `KeyInsightCallout` — unread | `SummaryRail` activity `SparkTrend` + read/unread |
+| `/partners` | KPI-only (no chart — rows not yet loaded for a useful visual) | — |
+
+### Palette rules (binding — computed, not aesthetic; see IMPL doc Appendix A for the validation evidence)
+
+- **Fixed categorical slot order, never cycled, never reassigned on filter:** 1 orange · 2 blue · 3 yellow(amber) · 4 green · 5 violet · 6 red. Colour follows the entity — filtering out a series must not repaint the survivors. More than 6 real series fold into `--ua-chart-neutral` ("Other") or facet; never generate a 7th hue.
+- **Amber relief rule:** slot 3 (yellow) is 2.27:1 on white — below text-contrast. Wherever amber appears, it must carry a direct label (never colour alone); the `View chart data` table is the mandatory fallback.
+- **Scatter/matrix/small-multiples subset:** where any two marks can neighbour, restrict to slots {1, 2, 4, 6} (orange/blue/green/red) — the full 6-slot set is only CVD-safe adjacent, not all-pairs.
+- **Ordinal ramps** (`--ua-chart-ramp-{orange,blue}-{1..4}`) are for ordered intensity (dot-matrix buckets, ageing bands, stage order) — one hue, monotone lightness. `--ua-chart-heat-*` extensions are heat-only (dense continuous fills near zero); never for discrete marks.
+- Text never wears a series colour, with one audited exception: T7's row value, which falls back to `--text-primary` for orange/yellow (they fail 4.5:1 as text).
+
+### Hatch semantics (T2 — binding)
+
+Hatch has exactly three meanings and no others: (1) the area wash under a single-series trend line, (2) the unfilled remainder/headroom of a rail or capacity bar, (3) a plot region where data genuinely does not exist. Never on a value-carrying mark (a bar, a segment, a cell), never as a decorative background pattern.
 
 ### Chart grammar and performance
 
-- Orange is operational attention or financial emphasis; blue is measured coverage/health; green/yellow/red retain semantic status meaning; neutral is unavailable, inactive, or comparison context.
-- Axes and grids are quiet, labels are 9–11px, radii are 2px inside plots and 6–8px on panels, legends stay compact, and third-party defaults never leak through.
-- Every important chart exposes `View chart data`; meaning is never available only on hover or by colour.
+- Server/CSS primitives are preferred for current-state charts (`operational/**`, zero chart JS on those routes). Recharts is confined to `cartesian/**` (`/dashboard`, `/reports` only), code-split via `next/dynamic`, reduced-motion aware (`isAnimationActive={false}`), and capped to a truthful point density (60 plotted buckets, 26×7 matrix cells).
+- Recharts components never hardcode hex and never read a page-local remap layer — `core/useChartTheme.ts` resolves `--ua-chart-*` (and border/ink tokens) once per mount and on `data-theme` change.
+- Every important chart exposes `View chart data`; meaning is never available only on hover or by colour. A mark is a real `<Link>` (not an inert `onClick`) only when a genuine destination exists for that entity/filtered slice — see the IMPL doc §4.5 for the per-route destination table.
 - Charts receive stable prepared arrays and do not query, authorise, aggregate merchant business rules, or create historical points.
-- Server/CSS primitives are preferred for current-state charts. Heavier client chart libraries are restricted to dashboard/reporting, code-split where possible, reduced-motion aware, and capped to a truthful point density.
-- Empty, zero, insufficient, partial, unavailable and disconnected states are distinct. A missing series never becomes a flat zero line.
-- Chart changes must include the corresponding skeleton variant, parity run, total cross-check, responsive inspection and dark-mode inspection.
+- Empty, zero, insufficient, partial, unavailable and disconnected states are distinct (IMPL doc §9). A missing series never becomes a flat zero line; null is never coerced to zero.
+- Chart changes must include the corresponding skeleton variant (`AuthenticatedChartSkeleton`'s variant set: `trend · combo · rail · meter · matrix · segment · ranked · columns · bands · dotplot · sequence · sparkline`), parity run, total cross-check, responsive inspection and dark-mode inspection.
 
 The removed `OperationalVisualSummary` must not be reintroduced. Repeating a generic distribution-plus-coverage card across unrelated routes is a design-system violation.
 

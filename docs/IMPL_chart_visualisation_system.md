@@ -8,6 +8,8 @@
 
 **The core test (unchanged from the original prompt):** if a page were placed directly beside the source images, would it feel like part of the same product? If not, it is not finished.
 
+> **Update — 2026-07-17 (operational de-chart).** This document's T1–T10 chart language now applies only to `/dashboard` and `/reports`. Operational routes are intentionally chart-free: each shows a `KeyInsightCallout` (`components/ui/KeyInsightCallout.tsx`) in the `primaryVisual` band plus a `SummaryRail` (`components/ui/SummaryRail.tsx`) in `WorkbenchPage.rail`, fed only by data the loader already holds. The operational chart components (`DeadlineRiskChart`, `ColumnComparisonChart`, `RangePlotChart`, `SourceHealthMatrixChart`, `StatusMatrixChart`, `MiniBarSequenceChart`, `DotMatrixChart`) were deleted; T5 has no current implementer. `SegmentCompositionCard`, `BlockRailChart`, `TickMeterRow`, `RankedContributionChart`, `SparkTrend` and the `cartesian/*` charts remain. See `styles/authenticated/README.md` §6 for the current route map.
+
 ---
 
 ## 0. What this pass is — and why the last one failed
@@ -291,6 +293,46 @@ Every constant from §1 lives here once (`HATCH_PITCH = 5`, `RAIL_HEIGHT = 36`, 
 - Custom `shape` for T4 bars (cap + gradient via `<defs>`), `<Customized>` or `content` renderers for T10 cursor/tooltip, `HatchDefs` for T3 areas.
 - `isAnimationActive={false}` globally. Recharts defaults (its `#8884d8` purple, default tooltip, default legend) must never render — the lint guard greps for them (§13).
 
+### 4.5 Click-through — marks link to their record, when a record exists
+
+Today **no chart mark is clickable anywhere in the app** — confirmed by inspecting `AuthChartDatum` (`components/charts/authenticated/types.ts`), which carries no `href`/id field, and by grep across every primitive. Meanwhile the surrounding pages already do this correctly for non-chart elements: `/claims` builds query-string filters (`buildClaimsQueryString`) for its status tabs and KPI rail (`ClaimsPageView.tsx:211-279`), and detail routes exist at predictable paths (`/customers/[id]`, `/recoveries/[id]`, `/integrations/[provider]`). Charts should follow the same pattern the page already uses — not invent a new one.
+
+**The rule:** a mark is a link **only when a real destination exists for the specific entity or filtered slice it represents**. A mark with no destination stays inert — never a fake `href="#"`, never a click that does nothing, never a hover cursor promising navigation that isn't there.
+
+**Contract change** — extend the shared datum/table types (`components/charts/authenticated/types.ts`) with one optional field, consumed by every primitive's row/segment/cell renderer:
+
+```ts
+export type AuthChartDatum = {
+  label: string;
+  value: number;
+  displayValue?: string;
+  tone?: AuthChartTone;
+  detail?: string;
+  href?: string;   // NEW — optional deep link for this mark; server prepares it, chart never constructs one
+};
+```
+
+The route loader/selector is the only place that builds the `href` (same as it already builds `queueCounts[].href` in `ClaimsPageView.tsx:276-279`) — it has the entity id or the filter values; the chart component never synthesises a URL, a query string, or an id from a label string. `ChartPanel`'s table fallback renders the same `href` on its row, so keyboard/table users get identical navigation to mouse users — a mark's link is never mouse-only.
+
+**Rendering:** a linked mark (bar, segment, rail block, matrix cell, ranked row, tick-meter row) renders as a real `<Link>`/`<a>` wrapping the mark, not a `div` with an `onClick` — focusable, has a visible focus ring (existing `--ua-border-focus` token), shows up in `⌘`-click/middle-click/"open in new tab" like any other link, and gets an accessible name ("Open {label} — {value}"), not just the bare number. Hover adds the mark-lift treatment from §8.1 plus a pointer cursor; no separate "click here" affordance clutters the mark itself — the whole mark is the target (≥ 24px hit area, per §8.1).
+
+**Per-route destinations** (extends §6 — data source is unchanged, this only adds `href` alongside the existing value):
+
+| Route / primitive | Mark represents | Destination |
+|---|---|---|
+| `/work` — `DeadlineBandsChart` | an ageing band (e.g. "Overdue") | `/work?sla=<band>` — same query-filter pattern `/claims` already uses |
+| `/claims` — `ColumnChart` | a claim type column | `/claims?type=<claimType>` |
+| `/losses` — `SegmentCompositionCard` / `RankedBarsChart` | an attribution category | `/losses?attribution=<category>` |
+| `/recoveries` — `BlockRailChart` | a recovery stage block | `/recoveries?stage=<stage>` |
+| `/customers` — `DotPlotChart` | a customer/cohort row | `/customers/[id]` when the row is one identity; a `/customers?...` filter when it's a cohort bucket |
+| `/rules` — `StatusMatrixChart` | a rule × outcome cell | `/rules/[id]` (the rule) — the link goes to the rule definition, never to a page framed as "outcomes this rule caused" (§6's `/rules` entry: rules recommend, they don't decide) |
+| `/flows` — `MiniBarSequenceChart` | a flow definition | `/flows/[id]` |
+| `/integrations` — `SourceHealthMatrixChart` / freshness rail | a provider row/block | `/integrations/[provider]` |
+| `/notifications` — `DotMatrixChart` | a day column | `/notifications?date=<day>` |
+| `/dashboard`, `/reports` — `ComboBarLineChart`, `DualLineChart` | a period bar/point | out of scope for this pass — these are aggregate periods, not entities; a period click would need a "drill to records for this period" destination that doesn't exist in any loader today. Do not invent one; leave these charts inert until a records-by-period route exists |
+
+Where a loader doesn't yet expose the field needed to build a given `href` (e.g. `/rules` cells need `rule.id` per cell, `/notifications` needs a per-day route param), wire the `href` only where the data is already loaded; otherwise ship the mark inert and note it in the final report (§15) rather than adding a new query to make it clickable.
+
 ---
 
 ## 5. The primitive roster — verdicts and specs
@@ -408,6 +450,7 @@ Format per route: **operational question → primary visual · supporting (≤2)
 3. `MetricTabs` switching swaps series data in place — axes re-scale, geometry doesn't jump, no skeleton flash. Refetch (filter change) holds the previous render at 60% opacity until data lands.
 4. Motion: 100–120ms opacity/transform only; no entry animations on plots (`isAnimationActive={false}`); `prefers-reduced-motion` disables the residual lift/fade and the count-up in `MetricCard`.
 5. Touch: tap = hover (tooltip toggles), second tap on a link/tab activates; targets ≥ 40px on coarse pointers.
+6. Click-through: where a mark carries an `href` (§4.5), tap/click/Enter navigates; hover still shows the tooltip first on pointer devices (tooltip and link are not mutually exclusive — the tooltip previews, the click commits). A linked mark's hit area and its tooltip hit area are the same element.
 
 ---
 
@@ -510,7 +553,9 @@ Token blocks §2.1 (including the `status.css` dark-mode fix) · `geometry.ts` �
 
 **Automated:** `npm run lint`, `npm run lint:authenticated-design`, typecheck, unit/integration suites, `next build`. A check not run is reported as not run — never claimed.
 
-**Final report (deliverable of WS6):** primitives created/extended/deleted · per-route: form chosen, why it fits the question, data source, filters honoured · functional parity result + anything restored · bundle/perf deltas · checks run with results · routes that genuinely lacked data for a useful visual (expected: possibly `/partners`) · remaining risks.
+**Click-through:** per §4.5's table — every linked mark navigates via a real anchor (verify with a real click, not just presence of an `onClick`), keyboard `Enter` on a focused mark matches, the `View chart data` table row carries the identical `href`, and every mark left intentionally inert is named in the final report rather than silently unlinked.
+
+**Final report (deliverable of WS6):** primitives created/extended/deleted · per-route: form chosen, why it fits the question, data source, filters honoured, click-through destination or "intentionally inert" · functional parity result + anything restored · bundle/perf deltas · checks run with results · routes that genuinely lacked data for a useful visual (expected: possibly `/partners`) · remaining risks.
 
 ---
 

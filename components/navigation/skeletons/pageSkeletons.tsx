@@ -232,7 +232,7 @@ export function WatchlistLoadingSkeleton() {
 
 export function CustomersLoadingSkeleton() {
   return (
-    <WorkbenchPageSkeleton showActionBar visualVariant="range" kpiCount={4} kpiColsClassName="grid-cols-2 md:grid-cols-4">
+    <WorkbenchPageSkeleton showActionBar showInsight showRail kpiCount={4} kpiColsClassName="grid-cols-2 md:grid-cols-4">
       <div className="p-4 space-y-4">
         <div
           className="rounded-md border p-4 space-y-3"
@@ -283,7 +283,8 @@ export function CustomersLoadingSkeleton() {
 export function ClaimsLoadingSkeleton() {
   return (
     <WorkbenchPageSkeleton
-      visualVariant="columns"
+      showInsight
+      showRail
       kpiCount={4}
       kpiColsClassName="grid-cols-2 md:grid-cols-4"
     >

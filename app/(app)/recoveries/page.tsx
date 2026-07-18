@@ -2,8 +2,9 @@ import { redirect } from 'next/navigation';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { hasPermission, PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { TABLES } from '@/lib/supabase/tables';
-import { WorkbenchPage } from '@/components/ui';
-import { StageFunnelChart } from '@/components/charts/authenticated';
+import { WorkbenchPage, KeyInsightCallout, SummaryRail } from '@/components/ui';
+import { TrendingUp } from 'lucide-react';
+import { TickMeterRow } from '@/components/charts/authenticated';
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { formatCurrencyNullable, formatNumber, sumSameCurrency } from '@/lib/utils/format';
 import { listRecoveryCases } from '@/lib/recoveries/store';
@@ -114,6 +115,8 @@ export default async function RecoveriesPage() {
     },
     { evidence: 0, chase: 0, ready: 0, closed: 0 },
   );
+  const stageTotal = recoveryDistribution.evidence + recoveryDistribution.ready + recoveryDistribution.chase + recoveryDistribution.closed;
+  const recoveredPct = estimatedRecoverable > 0 ? Math.round((recovered / estimatedRecoverable) * 100) : null;
 
   return (
     <WorkbenchPage
@@ -130,15 +133,48 @@ export default async function RecoveriesPage() {
         { label: 'Approved recovery', value: formatCurrencyNullable(recovered || null, currency) ?? '—', hint: `Confirmed to date${mixedHint}` },
       ]}
       primaryVisual={
-        <StageFunnelChart
-          id="recovery-stage-volume"
-          title="Recovery stage volume"
-          description="Current case counts by operational stage. Width represents case volume, not a conversion rate."
-          stages={[
-            { label: 'Needs evidence', value: recoveryDistribution.evidence, tone: 'red', detail: 'Blocked by missing evidence' },
-            { label: 'Ready / active', value: recoveryDistribution.ready, tone: 'orange', detail: 'Ready to progress or active' },
-            { label: 'Chase due', value: recoveryDistribution.chase, tone: 'yellow', detail: 'Correspondence required' },
-            { label: 'Closed', value: recoveryDistribution.closed, tone: 'green', detail: 'Paid or closed unrecoverable' },
+        <KeyInsightCallout
+          eyebrow="Recovery"
+          tone={recoveredPct != null && recoveredPct >= 50 ? 'success' : 'info'}
+          icon={<TrendingUp size={16} />}
+        >
+          <strong>{formatCurrencyNullable(recovered || null, currency) ?? '—'}</strong> recovered
+          {estimatedRecoverable > 0 ? <> of <strong>{formatCurrencyNullable(estimatedRecoverable, currency) ?? '—'}</strong> recoverable ({recoveredPct}%)</> : null}
+          {' '}· <strong>{formatNumber(needsCorrespondence)}</strong> awaiting a chase.
+        </KeyInsightCallout>
+      }
+      rail={
+        <SummaryRail
+          sections={[
+            ...(estimatedRecoverable > 0
+              ? [{
+                  title: 'Recovery progress',
+                  children: (
+                    <TickMeterRow
+                      label="Recovered"
+                      percent={(recovered / estimatedRecoverable) * 100}
+                      displayValue={`${Math.round((recovered / estimatedRecoverable) * 100)}%`}
+                      tone="green"
+                      caption={
+                        recovered / estimatedRecoverable >= 0.5
+                          ? 'Most recoverable value has come back'
+                          : 'Most recoverable value is still in flight'
+                      }
+                    />
+                  ),
+                  footnote: `${formatCurrencyNullable(recovered || null, currency) ?? '—'} of ${formatCurrencyNullable(estimatedRecoverable, currency) ?? '—'} recoverable${mixedHint}`,
+                }]
+              : []),
+            {
+              title: 'Stage volume',
+              rows: [
+                { label: 'Needs evidence', value: formatNumber(recoveryDistribution.evidence), tone: 'danger', bar: stageTotal ? recoveryDistribution.evidence / stageTotal : 0, href: '/recoveries?stage=evidence' },
+                { label: 'Ready / active', value: formatNumber(recoveryDistribution.ready), tone: 'info', bar: stageTotal ? recoveryDistribution.ready / stageTotal : 0, href: '/recoveries?stage=ready' },
+                { label: 'Chase due', value: formatNumber(recoveryDistribution.chase), tone: 'warning', bar: stageTotal ? recoveryDistribution.chase / stageTotal : 0, href: '/recoveries?stage=chase' },
+                { label: 'Closed', value: formatNumber(recoveryDistribution.closed), tone: 'success', bar: stageTotal ? recoveryDistribution.closed / stageTotal : 0, href: '/recoveries?stage=closed' },
+              ],
+              footnote: 'Current case counts by operational stage.',
+            },
           ]}
         />
       }

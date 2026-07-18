@@ -80,16 +80,36 @@
   --secondary: #efeee7;
   --secondary-foreground: #171713;
 
-  /* Data visualisation. Orange leads financial/action charts; blue is
-   * reserved for operational health, matching the authenticated reference. */
+  /* Data visualisation. Orange leads financial/attention charts; blue is
+   * reserved for operational health/coverage; violet is duration/velocity.
+   * Series values are CVD-validated as a set — change only as a set. */
   --chart-orange: #ff5a0a;
   --chart-blue: #7088e8;
-  --chart-green: #10b981;
-  --chart-yellow: #f5c400;
+  --chart-green: #0e9f6e;
+  --chart-yellow: #d9a400;
   --chart-red: #e65745;
+  --chart-violet: #8b5cf6;
   --chart-neutral: #c9c7be;
   --chart-track: #efeee8;
   --chart-grid: #eceae4;
+
+  /* Ordinal/sequential ramps (4 mark-carrying steps each, validated).
+   * Steps 1–2 below the ramp (…-soft tints) are heat-only extensions and
+   * may recede below 2:1 — never use them for discrete ordered marks. */
+  --chart-ramp-orange-1: #ff9058;
+  --chart-ramp-orange-2: #ff5a0a;
+  --chart-ramp-orange-3: #d94b08;
+  --chart-ramp-orange-4: #a83a04;
+  --chart-ramp-blue-1: #93a4ee;
+  --chart-ramp-blue-2: #7088e8;
+  --chart-ramp-blue-3: #5568c9;
+  --chart-ramp-blue-4: #3f519c;
+  --chart-heat-orange-0: #fff0e8;
+  --chart-heat-orange-1: #ffd8c2;
+  --chart-heat-orange-2: #ffb28a;
+  --chart-heat-blue-0: #eff2ff;
+  --chart-heat-blue-1: #d9dffb;
+  --chart-heat-blue-2: #b8c3f5;
 
   /* Geometry and depth */
   --radius-xs: 3px;
@@ -156,9 +176,24 @@
   --ua-chart-green: var(--chart-green);
   --ua-chart-yellow: var(--chart-yellow);
   --ua-chart-red: var(--chart-red);
+  --ua-chart-violet: var(--chart-violet);
   --ua-chart-neutral: var(--chart-neutral);
   --ua-chart-track: var(--chart-track);
   --ua-chart-grid: var(--chart-grid);
+  --ua-chart-ramp-orange-1: var(--chart-ramp-orange-1);
+  --ua-chart-ramp-orange-2: var(--chart-ramp-orange-2);
+  --ua-chart-ramp-orange-3: var(--chart-ramp-orange-3);
+  --ua-chart-ramp-orange-4: var(--chart-ramp-orange-4);
+  --ua-chart-ramp-blue-1: var(--chart-ramp-blue-1);
+  --ua-chart-ramp-blue-2: var(--chart-ramp-blue-2);
+  --ua-chart-ramp-blue-3: var(--chart-ramp-blue-3);
+  --ua-chart-ramp-blue-4: var(--chart-ramp-blue-4);
+  --ua-chart-heat-orange-0: var(--chart-heat-orange-0);
+  --ua-chart-heat-orange-1: var(--chart-heat-orange-1);
+  --ua-chart-heat-orange-2: var(--chart-heat-orange-2);
+  --ua-chart-heat-blue-0: var(--chart-heat-blue-0);
+  --ua-chart-heat-blue-1: var(--chart-heat-blue-1);
+  --ua-chart-heat-blue-2: var(--chart-heat-blue-2);
 
   /* Text */
   --ua-text-primary: var(--text-primary);
@@ -317,14 +352,30 @@
   --secondary: #2a2923;
   --secondary-foreground: #f6f4ee;
 
-  --chart-orange: #ff7838;
-  --chart-blue: #8ea2f2;
-  --chart-green: #35c99a;
-  --chart-yellow: #e9c949;
-  --chart-red: #ef786a;
+  /* chart orange decouples from the #ff7838 action accent in dark — deliberate */
+  --chart-orange: #d95514;
+  --chart-blue: #6e84e2;
+  --chart-green: #169a72;
+  --chart-yellow: #b28c22;
+  --chart-red: #d55a50;
+  --chart-violet: #8a68e4;
   --chart-neutral: #5d5a52;
   --chart-track: #2a2923;
   --chart-grid: #302f29;
+  --chart-ramp-orange-1: #8f3f14;
+  --chart-ramp-orange-2: #b34a10;
+  --chart-ramp-orange-3: #d95514;
+  --chart-ramp-orange-4: #f07434;
+  --chart-ramp-blue-1: #48588f;
+  --chart-ramp-blue-2: #5c6ec0;
+  --chart-ramp-blue-3: #7a90ea;
+  --chart-ramp-blue-4: #a3b2f4;
+  --chart-heat-orange-0: #3a2216;
+  --chart-heat-orange-1: #5c331d;
+  --chart-heat-orange-2: #8a4a26;
+  --chart-heat-blue-0: #232842;
+  --chart-heat-blue-1: #2e3660;
+  --chart-heat-blue-2: #3d4a86;
 
   --focus-ring: #ff9362;
   --shadow-focus: 0 0 0 3px rgb(255 147 98 / 26%);

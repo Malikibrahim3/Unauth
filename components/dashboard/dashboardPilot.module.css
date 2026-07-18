@@ -18,15 +18,6 @@
 }
 
 .dashboardPilot {
-  --dashboard-orange: var(--ua-chart-orange);
-  --dashboard-blue: var(--ua-chart-blue);
-  --dashboard-green: var(--ua-chart-green);
-  --dashboard-yellow: var(--ua-chart-yellow);
-  --dashboard-red: var(--ua-chart-red);
-  --dashboard-grid: var(--ua-chart-grid);
-  --dashboard-muted: var(--text-tertiary);
-  --dashboard-previous: var(--icon-muted);
-  --dashboard-hover: var(--surface-hover);
   box-sizing: border-box;
   width: 100%;
   max-width: 1500px;
@@ -226,9 +217,9 @@
   gap: 7px;
   margin: 0 16px 6px;
   padding: 7px 9px;
-  border: 1px solid color-mix(in srgb, var(--dashboard-yellow) 42%, var(--border));
+  border: 1px solid color-mix(in srgb, var(--ua-chart-yellow) 42%, var(--border));
   border-radius: 5px;
-  background: color-mix(in srgb, var(--dashboard-yellow) 10%, var(--surface));
+  background: color-mix(in srgb, var(--ua-chart-yellow) 10%, var(--surface));
   color: var(--text-secondary);
   font-size: 11px;
 }
@@ -273,7 +264,7 @@
 
 .legend .dashedLegend {
   height: 0;
-  border-top: 1px dashed var(--dashboard-previous);
+  border-top: 1px dashed var(--icon-muted);
   background: transparent;
 }
 
@@ -338,7 +329,7 @@
 }
 
 .metricTabs button:hover {
-  background: var(--dashboard-hover);
+  background: var(--surface-hover);
 }
 
 .metricTabs button::before {
@@ -465,89 +456,10 @@
   box-shadow: var(--shadow-xs);
 }
 
-.workflowBar {
-  display: flex;
-  height: 8px;
-  gap: 3px;
-  margin-top: 17px;
-}
-
-.workflowBar span {
-  min-width: 3px;
-  border-radius: 2px;
-}
-
-.workflowLegend {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 7px;
-  margin-top: 8px;
-  color: var(--text-tertiary);
-  font-size: 9px;
-}
-
-.workflowLegend span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.workflowLegend i {
-  display: inline-block;
-  width: 5px;
-  height: 5px;
-  margin-right: 3px;
-  border-radius: 50%;
-}
-
-.workflowRows {
-  margin-top: 11px;
-  border-top: 1px solid var(--border-muted);
-}
-
-.workflowRows a {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 2px;
-  border-bottom: 1px solid var(--border-muted);
-  color: var(--text-secondary);
-  font-size: 10px;
-}
-
-.workflowRows a:hover span {
-  color: var(--text-primary);
-}
-
-.workflowRows strong {
-  color: var(--text-primary);
-  font-variant-numeric: tabular-nums;
-}
-
 .cardEmpty {
   margin: 18px 0 2px;
   color: var(--text-secondary);
   font-size: 11px;
-}
-
-.healthVisual {
-  display: grid;
-  grid-template-columns: repeat(24, minmax(2px, 1fr));
-  gap: 3px;
-  height: 49px;
-  align-items: end;
-  margin-top: 21px;
-}
-
-.healthVisual span {
-  height: 100%;
-  border-radius: 2px;
-  background: color-mix(in srgb, var(--border) 62%, transparent);
-}
-
-.healthVisual .healthFilled {
-  background: var(--dashboard-blue);
 }
 
 .healthSummary {
@@ -613,9 +525,9 @@
 .modalIssues {
   margin-top: 12px;
   padding: 12px;
-  border: 1px solid color-mix(in srgb, var(--dashboard-yellow) 42%, var(--border));
+  border: 1px solid color-mix(in srgb, var(--ua-chart-yellow) 42%, var(--border));
   border-radius: 7px;
-  background: color-mix(in srgb, var(--dashboard-yellow) 9%, var(--surface));
+  background: color-mix(in srgb, var(--ua-chart-yellow) 9%, var(--surface));
   font-size: 11px;
 }
 
@@ -761,14 +673,6 @@
 
   .incompleteState a {
     grid-column: 2;
-  }
-
-  .workflowLegend {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .healthVisual {
-    gap: 2px;
   }
 
   .coverageList > a {

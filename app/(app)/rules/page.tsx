@@ -11,8 +11,8 @@ import {
   RulesIndexClient,
   type RuleIndexRecord,
 } from "@/components/rules/RulesIndexClient";
-import { WorkbenchPage } from "@/components/ui";
-import { StatusMatrixChart } from "@/components/charts/authenticated";
+import { WorkbenchPage, KeyInsightCallout, SummaryRail } from "@/components/ui";
+import { ShieldCheck } from "lucide-react";
 import { formatNumber } from '@/lib/utils/format';
 
 export const dynamic = "force-dynamic";
@@ -100,19 +100,27 @@ export default async function RulesPage() {
         { label: 'Draft changes', value: formatNumber(draftRules), hint: 'Awaiting review or publish' },
       ]}
       primaryVisual={
-        <StatusMatrixChart
-          id="rule-lifecycle-matrix"
-          title="Rule lifecycle matrix"
-          description="One cell per rule family. Draft cells may still retain an earlier published version; the KPI above shows that coverage."
-          items={rules.map((rule) => ({
-            label: rule.name,
-            tone: rule.hasDraft ? 'orange' : rule.publishedVersion != null ? 'green' : 'neutral',
-            detail: rule.hasDraft ? 'Draft change' : rule.publishedVersion != null ? 'Published current' : 'Disabled',
-          }))}
-          summary={[
-            { label: 'Published current', value: publishedRules, tone: 'green' },
-            { label: 'Draft change', value: draftRules, tone: 'orange' },
-            { label: 'Disabled', value: disabledRules, tone: 'neutral' },
+        <KeyInsightCallout
+          eyebrow="Rule lifecycle"
+          tone={draftRules > 0 ? 'warning' : publishedCoverage > 0 ? 'success' : 'neutral'}
+          icon={<ShieldCheck size={16} />}
+        >
+          <strong>{formatNumber(publishedCoverage)}</strong> of <strong>{formatNumber(rules.length)}</strong> rules published
+          {draftRules > 0 ? <> · <strong>{formatNumber(draftRules)}</strong> with draft changes awaiting review</> : null}.
+        </KeyInsightCallout>
+      }
+      rail={
+        <SummaryRail
+          sections={[
+            {
+              title: 'Rule lifecycle',
+              rows: [
+                { label: 'Published current', value: formatNumber(publishedRules), tone: 'success', bar: rules.length ? publishedRules / rules.length : 0 },
+                { label: 'Draft change', value: formatNumber(draftRules), tone: 'warning', bar: rules.length ? draftRules / rules.length : 0 },
+                { label: 'Disabled', value: formatNumber(disabledRules), tone: 'neutral', bar: rules.length ? disabledRules / rules.length : 0 },
+              ],
+              footnote: 'One row per rule family. Draft families may retain an earlier published version.',
+            },
           ]}
         />
       }

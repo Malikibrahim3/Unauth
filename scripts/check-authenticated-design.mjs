@@ -88,6 +88,14 @@ const arbitraryRadiusInline = /borderRadius:\s*(['"])(?!var\()(?!50%\1)(?!\1\1)[
 const arbitraryShadow = /boxShadow:\s*(['"])(?!var\()(?!none\1)[^'"]+\1/g;
 const directChartLibrary = /from\s+['"](?:recharts|chart\.js|react-chartjs-2)['"]/g;
 const obsoleteVisualSummary = /OperationalVisualSummary|data-visual-summary/g;
+// echarts was fully removed in the Autumn chart pass (§12) — an import anywhere is a regression.
+const echartsImport = /from\s+['"]echarts(?:-for-react)?['"]/g;
+// The --dashboard-* remap layer was deleted (§12.2); components read --ua-chart-* directly.
+const dashboardRemapVar = /var\(--dashboard-[a-z-]+\)/g;
+// Recharts' own default palette/tooltip must never render — a lint tell for the Autumn
+// restyle (§13.3d): the library defaults are always a sign useChartTheme()/ChartTooltip
+// weren't wired up for that chart.
+const rechartsDefaultTell = /#8884d8|#82ca9d|<Tooltip\s*\/>/g;
 
 const allowedExtensions = new Set(['.ts', '.tsx', '.css']);
 
@@ -152,10 +160,26 @@ for (const file of files) {
     failures.push(`${normalized}:${line} arbitrary shadow: ${text} — use one of the --ua-shadow-* tokens, or literal "none"`);
   }
 
-  const chartLibraryAllowed = normalized.startsWith('components/dashboard/') || normalized.startsWith('components/reporting/');
+  // Recharts is confined to the cartesian primitives (Autumn chart system §4.1/§13.3b) —
+  // /dashboard and /reports consume it only through components/charts/authenticated/cartesian/.
+  const chartLibraryAllowed = normalized.startsWith('components/charts/authenticated/cartesian/');
   if (!chartLibraryAllowed) {
     for (const { line, text } of findMatches(source, directChartLibrary)) {
-      failures.push(`${normalized}:${line} direct chart dependency: ${text} — use components/charts/authenticated, or a reporting-specific chart module`);
+      failures.push(`${normalized}:${line} direct chart dependency: ${text} — use components/charts/authenticated/cartesian/, not a page-local chart import`);
+    }
+  }
+
+  for (const { line, text } of findMatches(source, echartsImport)) {
+    failures.push(`${normalized}:${line} echarts import: ${text} — echarts was removed (§12); use a components/charts/authenticated primitive`);
+  }
+
+  for (const { line, text } of findMatches(source, dashboardRemapVar)) {
+    failures.push(`${normalized}:${line} deleted remap token: ${text} — the --dashboard-* layer was removed (§12); read --ua-chart-* directly`);
+  }
+
+  if (chartLibraryAllowed) {
+    for (const { line, text } of findMatches(source, rechartsDefaultTell)) {
+      failures.push(`${normalized}:${line} recharts default style: ${text} — wire useChartTheme()/ChartTooltip instead of letting Recharts fall back to its defaults`);
     }
   }
 

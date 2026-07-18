@@ -1,0 +1,6 @@
+.header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px; }
+.label { color: var(--text-secondary); font-size: 13px; }
+.value { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+.row { display: flex; gap: 2px; }
+.row > * { width: 3px; height: 14px; flex: 1 1 auto; max-width: 3px; border-radius: 1px; }
+.tickEmpty { background: var(--ua-chart-track); }

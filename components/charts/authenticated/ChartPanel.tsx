@@ -8,6 +8,12 @@ type ChartPanelProps = {
   description?: string;
   annotation?: ReactNode;
   legend?: ReactNode;
+  /** T9 metric-tab strip — renders below the header, above the plot; tabs own the chart's series selection. */
+  tabs?: ReactNode;
+  /** T6 pin-annotation row — renders above the plot, inside its padding. */
+  pins?: ReactNode;
+  /** T7 interpretive caption — the one audited italic in the product; states interpretation, never a number. */
+  caption?: ReactNode;
   children: ReactNode;
   table: AuthChartTableRow[];
   kind: string;
@@ -21,6 +27,9 @@ export function ChartPanel({
   description,
   annotation,
   legend,
+  tabs,
+  pins,
+  caption,
   children,
   table,
   kind,
@@ -40,8 +49,11 @@ export function ChartPanel({
         </div>
         {annotation ? <div className={styles.annotation}>{annotation}</div> : null}
       </header>
+      {tabs ? <div className={styles.tabStrip}>{tabs}</div> : null}
       {legend ? <div className={styles.legend}>{legend}</div> : null}
+      {pins ? <div className={styles.pinRow}>{pins}</div> : null}
       <div className={compact ? styles.compactPlot : styles.plot}>{children}</div>
+      {caption ? <p className={styles.caption}>{caption}</p> : null}
       {table.length > 0 ? (
         <details className={styles.dataDetails}>
           <summary>View chart data</summary>
@@ -51,8 +63,10 @@ export function ChartPanel({
               <tbody>
                 {table.map((row) => (
                   <tr key={`${row.label}-${row.detail ?? ''}`}>
-                    <th scope="row">{row.label}</th>
-                    <td>{row.value}</td>
+                    <th scope="row">
+                      {row.href ? <a href={row.href}>{row.label}</a> : row.label}
+                    </th>
+                    <td className={styles.mono}>{row.value}</td>
                     <td>{row.detail ?? '—'}</td>
                   </tr>
                 ))}

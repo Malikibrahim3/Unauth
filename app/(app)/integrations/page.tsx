@@ -18,9 +18,7 @@ import {
 } from "@/components/integrations/ConnectorRow";
 import { CONNECTOR_GRID_CLASS } from "@/components/integrations/connectorGrid";
 import { DeferredLiveConnectionVerification } from "@/components/integrations/DeferredLiveConnectionVerification";
-import { WorkbenchPage } from "@/components/ui";
-import { SourceHealthMatrixChart } from "@/components/charts/authenticated";
-import { humanise } from "@/lib/ui/labels";
+import { WorkbenchPage, KeyInsightCallout, SummaryRail } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -132,30 +130,31 @@ export default async function IntegrationsPage() {
         { label: "Covered categories", value: formatNumber(categories), hint: "Operational evidence types" },
       ]}
       primaryVisual={
-        <SourceHealthMatrixChart
-          id="integration-source-health"
-          title="Source health matrix"
-          description="Stored connection, freshness and imported-record evidence for each visible provider. Live credential checks refresh after the page is interactive."
-          columns={["Connection", "Freshness", "Records"]}
-          rows={catalogue.map((item) => {
-            const connectedState = ACTIVE_BUCKETS.has(item.status);
-            const attentionState = ATTENTION_BUCKETS.has(item.status);
-            const freshnessValue = item.freshness.confidence === 'unavailable'
-              ? 'Not measurable'
-              : item.lastDataReceivedAt
-                ? 'Measured'
-                : connectedState
-                  ? 'No activity'
-                  : 'Not connected';
-            return {
-              label: item.name,
-              cells: [
-                { label: 'Connection', value: humanise(item.badge), tone: attentionState ? 'red' : connectedState ? 'green' : 'neutral' },
-                { label: 'Freshness', value: freshnessValue, tone: item.freshness.confidence === 'unavailable' ? 'neutral' : item.lastDataReceivedAt ? 'blue' : connectedState ? 'yellow' : 'neutral' },
-                { label: 'Records', value: item.importedRecords > 0 ? formatNumber(item.importedRecords) : connectedState ? 'None yet' : '—', tone: item.importedRecords > 0 ? 'blue' : connectedState ? 'yellow' : 'neutral' },
+        <KeyInsightCallout
+          eyebrow="Source health"
+          tone={attention.length > 0 ? 'warning' : connected.length > 0 ? 'success' : 'neutral'}
+          icon={<Cable size={16} />}
+        >
+          <strong>{formatNumber(connected.length)}</strong> providers connected
+          {attention.length > 0 ? <> · <strong>{formatNumber(attention.length)}</strong> need attention</> : null}
+          {' '}· <strong>{formatNumber(imported)}</strong> records imported.
+        </KeyInsightCallout>
+      }
+      rail={
+        <SummaryRail
+          sections={[
+            {
+              title: 'Source health',
+              rows: [
+                { label: 'Needs attention', value: formatNumber(attention.length), tone: 'danger', bar: catalogue.length ? attention.length / catalogue.length : 0 },
+                { label: 'Connected', value: formatNumber(connected.length), tone: 'success', bar: catalogue.length ? connected.length / catalogue.length : 0 },
+                { label: 'Available', value: formatNumber(available.length), tone: 'neutral', bar: catalogue.length ? available.length / catalogue.length : 0 },
+                { label: 'Manual evidence', value: formatNumber(manual.length), tone: 'neutral', bar: catalogue.length ? manual.length / catalogue.length : 0 },
+                { label: 'Planned', value: formatNumber(planned.length), tone: 'neutral', bar: catalogue.length ? planned.length / catalogue.length : 0 },
               ],
-            };
-          })}
+              footnote: 'Stored connection state. Live credential checks refresh after the page is interactive.',
+            },
+          ]}
         />
       }
       main={

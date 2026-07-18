@@ -90,8 +90,6 @@
     "@tailwindcss/postcss": "^4.2.4",
     "@types/three": "^0.184.1",
     "clsx": "^2.1.1",
-    "echarts": "^6.1.0",
-    "echarts-for-react": "^3.0.6",
     "framer-motion": "^12.40.0",
     "jszip": "^3.10.1",
     "lucide-react": "^0.460.0",

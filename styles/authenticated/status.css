@@ -139,4 +139,18 @@
   --risk-none: #b0b6bf;
   --risk-none-bg: #23272b;
   --risk-none-bd: #3a4048;
+  --sev-definite: #65c99a;
+  --sev-definite-fill: #153226;
+  --sev-probable: #edc66b;
+  --sev-probable-fill: #352b15;
+  --sev-possible: #b0b6bf;
+  --sev-possible-fill: #23272b;
+  --sev-neutral: #b0b6bf;
+  --sev-neutral-fill: #23272b;
+  --sev-clear: #65c99a;
+  --sev-clear-fill: #153226;
+  --data-neutral: #b0b6bf;
+  --gauge-from: #65c99a;
+  --gauge-mid: #edc66b;
+  --gauge-to: #ff8d84;
 }

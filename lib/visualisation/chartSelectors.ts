@@ -26,21 +26,23 @@ export function selectDeadlineBands(
 
 export function selectLossContributions(
   rows: Array<{
+    key: string;
     label: string;
     amountMinor: number | null;
     currency: string | null;
     writtenOff: boolean;
   }>,
   currency: string | null,
-): Array<{ label: string; valueMajor: number }> {
+): Array<{ key: string; label: string; valueMajor: number }> {
   if (!currency) return [];
-  const grouped = new Map<string, number>();
+  const grouped = new Map<string, { label: string; minor: number }>();
   for (const row of rows) {
     if (row.writtenOff || row.currency !== currency || row.amountMinor == null || row.amountMinor <= 0) continue;
-    grouped.set(row.label, (grouped.get(row.label) ?? 0) + row.amountMinor);
+    const existing = grouped.get(row.key);
+    grouped.set(row.key, { label: row.label, minor: (existing?.minor ?? 0) + row.amountMinor });
   }
   return [...grouped.entries()]
-    .map(([label, valueMinor]) => ({ label, valueMajor: valueMinor / 100 }))
+    .map(([key, { label, minor }]) => ({ key, label, valueMajor: minor / 100 }))
     .sort((left, right) => right.valueMajor - left.valueMajor);
 }
 
@@ -54,6 +56,7 @@ export type NotificationActivityDay = {
 export function selectNotificationActivity(
   rows: Array<{ createdAt: string; readAt: string | null }>,
   representedDateLimit = 7,
+  asOf: Date | string = new Date(),
 ): NotificationActivityDay[] {
   const grouped = new Map<string, NotificationActivityDay>();
   for (const row of rows) {
@@ -70,7 +73,23 @@ export function selectNotificationActivity(
     else current.unread += 1;
     grouped.set(key, current);
   }
+  // Zero-fill the represented window — an inbox day with no notifications is a
+  // real zero (the account existed that day), never an absent/hatched period.
+  const end = new Date(asOf);
+  const days = Math.max(1, representedDateLimit);
+  for (let offset = 0; offset < days; offset += 1) {
+    const day = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate() - offset));
+    const key = day.toISOString().slice(0, 10);
+    if (!grouped.has(key)) {
+      grouped.set(key, {
+        label: new Intl.DateTimeFormat('en-GB', { weekday: 'short', timeZone: 'UTC' }).format(day),
+        dateLabel: key,
+        read: 0,
+        unread: 0,
+      });
+    }
+  }
   return [...grouped.values()]
     .sort((left, right) => left.dateLabel.localeCompare(right.dateLabel))
-    .slice(-Math.max(1, representedDateLimit));
+    .slice(-days);
 }

@@ -8,12 +8,18 @@ export function OperationalRouteSkeleton({
   detail = false,
   kpiCount = 4,
   visualVariant,
+  showInsight = false,
+  showRail = false,
 }: {
   title?: string;
   rows?: number;
   detail?: boolean;
   kpiCount?: number;
   visualVariant?: AuthChartSkeletonVariant;
+  /** Reserve the KeyInsightCallout band (operational pages without a hero chart). */
+  showInsight?: boolean;
+  /** Reserve the two-column side-summary rail. */
+  showRail?: boolean;
 }) {
   if (detail) {
     return (
@@ -28,7 +34,13 @@ export function OperationalRouteSkeleton({
   }
 
   return (
-    <WorkbenchPageSkeleton kpiCount={kpiCount} visualVariant={visualVariant} showActionBar>
+    <WorkbenchPageSkeleton
+      kpiCount={kpiCount}
+      visualVariant={visualVariant}
+      showInsight={showInsight}
+      showRail={showRail}
+      showActionBar
+    >
       <div className="p-3">
         <TableSkeleton columns={[{ width: '34%' }, { width: '18%' }, { width: '18%' }, { width: '18%' }, { width: '12%' }]} rows={rows} />
       </div>

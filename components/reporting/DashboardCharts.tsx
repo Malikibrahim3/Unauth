@@ -1,25 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  LabelList,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
 import type { IntelligenceReport, MoneyBridge } from '@/lib/reporting/intelligence';
 import {
   formatCurrencyCompact,
   formatDateAbsolute,
   formatMoney,
 } from '@/lib/utils/format';
-import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { DualLineChart, type DualLinePoint } from '@/components/charts/authenticated/cartesian/DualLineChart';
+import { RankedContributionChart } from '@/components/charts/authenticated/RankedContributionChart';
+import { ChartLegend } from '@/components/charts/authenticated/ChartPanel';
+import dvStyles from '@/components/charts/authenticated/AuthenticatedCharts.module.css';
 
 type CurrencyCharts = {
   bridge: MoneyBridge;
@@ -54,7 +45,6 @@ function chartData(report: IntelligenceReport): CurrencyCharts[] {
 }
 
 export function DashboardCharts({ report }: { report: IntelligenceReport }) {
-  const reducedMotion = useReducedMotion();
   const groups = chartData(report);
 
   if (!groups.length) {
@@ -89,80 +79,25 @@ export function DashboardCharts({ report }: { report: IntelligenceReport }) {
             <ChartPanel className="ua-data-surface xl:col-span-8" title="Exposure and recovered">
               <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-3">
                 <p className="text-xs text-[var(--text-secondary)]">Daily ledger value</p>
-                <div className="flex flex-wrap items-center gap-4 text-xs" aria-label="Chart legend">
-                  <LegendItem colour="var(--accent)" label="Exposure" />
-                  <LegendItem colour="var(--success)" label="Recovered" />
-                </div>
+                <ChartLegend items={[{ label: 'Exposure', tone: 'orange' }, { label: 'Recovered', tone: 'green' }]} />
               </div>
               {trend.length ? (
                 <>
-                  <div className="h-[280px] min-h-[220px] px-2 pb-2 pt-1">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={trend} margin={{ top: 16, right: 20, bottom: 4, left: 8 }}>
-                        <CartesianGrid stroke="var(--border-muted)" vertical={false} />
-                        <XAxis
-                          dataKey="date"
-                          axisLine={false}
-                          tickLine={false}
-                          minTickGap={32}
-                          tick={{ fontSize: 11, fill: 'var(--text-tertiary)' }}
-                          tickFormatter={(value: string) => formatDateAbsolute(value)}
-                        />
-                        <YAxis
-                          axisLine={false}
-                          tickLine={false}
-                          tickCount={5}
-                          width={64}
-                          tick={{ fontSize: 11, fill: 'var(--text-tertiary)' }}
-                          tickFormatter={(value: number) => compactMoney(value, bridge.currency)}
-                        />
-                        <Tooltip
-                          cursor={{ stroke: 'var(--border-strong)', strokeWidth: 1 }}
-                          content={({ active, label, payload }) => {
-                            if (!active || !payload?.length) return null;
-                            return (
-                              <div className="min-w-44 rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--surface-overlay)] px-3 py-2 shadow-[var(--shadow-overlay)]">
-                                <p className="text-xs font-semibold text-[var(--text-primary)]">{formatDateAbsolute(String(label))}</p>
-                                <dl className="mt-2 space-y-1.5">
-                                  {payload.map((item) => (
-                                    <div key={String(item.dataKey)} className="flex items-center justify-between gap-5 text-xs">
-                                      <dt className="text-[var(--text-secondary)]">{item.dataKey === 'exposureMinor' ? 'Exposure' : 'Recovered'}</dt>
-                                      <dd className="font-semibold tabular-nums text-[var(--text-primary)]">{formatMoney(Number(item.value), bridge.currency)}</dd>
-                                    </div>
-                                  ))}
-                                </dl>
-                              </div>
-                            );
-                          }}
-                        />
-                        <Line
-                          type="linear"
-                          dataKey="exposureMinor"
-                          name="Exposure"
-                          stroke="var(--accent)"
-                          strokeWidth={2}
-                          dot={trend.length === 1 ? { r: 3, fill: 'var(--accent)' } : false}
-                          activeDot={{ r: 4 }}
-                          isAnimationActive={!reducedMotion}
-                          animationBegin={80}
-                          animationDuration={700}
-                          animationEasing="ease-out"
-                        />
-                        <Line
-                          type="linear"
-                          dataKey="recoveredMinor"
-                          name="Recovered"
-                          stroke="var(--success)"
-                          strokeWidth={2}
-                          dot={trend.length === 1 ? { r: 3, fill: 'var(--success)' } : false}
-                          activeDot={{ r: 4 }}
-                          isAnimationActive={!reducedMotion}
-                          animationBegin={150}
-                          animationDuration={700}
-                          animationEasing="ease-out"
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
+                  <div className="px-2 pb-2 pt-1">
+                    <DualLineChart
+                      data={trend.map<DualLinePoint>((point) => ({
+                        key: point.date,
+                        label: formatDateAbsolute(point.date),
+                        exposureMinor: point.exposureMinor,
+                        recoveredMinor: point.recoveredMinor,
+                      }))}
+                      series={[
+                        { key: 'exposureMinor', label: 'Exposure', colourVar: '--ua-chart-orange' },
+                        { key: 'recoveredMinor', label: 'Recovered', colourVar: '--ua-chart-green' },
+                      ]}
+                      valueFormatter={(value) => compactMoney(value, bridge.currency)}
+                      height={260}
+                    />
                   </div>
                   <ChartDataTable currency={bridge.currency} trend={trend} />
                 </>
@@ -171,64 +106,24 @@ export function DashboardCharts({ report }: { report: IntelligenceReport }) {
               )}
             </ChartPanel>
 
-            <ChartPanel className="ua-data-surface xl:col-span-4" title="Loss causes">
-              <p className="px-4 pt-3 text-xs text-[var(--text-secondary)]">Confirmed loss, ranked by recorded cause</p>
+            <div className="xl:col-span-4">
+              <RankedContributionChart
+                id={`loss-causes-${bridge.currency}`}
+                title="Loss causes"
+                description="Confirmed loss, ranked by recorded cause"
+                items={causes.map((cause) => ({
+                  label: cause.name,
+                  value: cause.valueMinor,
+                  displayValue: compactMoney(cause.valueMinor, bridge.currency),
+                  tone: 'orange',
+                }))}
+              />
               {causes.length ? (
-                <div className="px-2 pb-4 pt-2" style={{ height: Math.max(220, causes.length * 38 + 54) }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={causes} layout="vertical" margin={{ top: 4, right: 72, bottom: 4, left: 8 }}>
-                      <XAxis type="number" hide />
-                      <YAxis
-                        type="category"
-                        dataKey="name"
-                        axisLine={false}
-                        tickLine={false}
-                        width={126}
-                        tick={{ fontSize: 11, fill: 'var(--text-secondary)' }}
-                      />
-                      <Tooltip
-                        cursor={{ fill: 'var(--surface-hover)' }}
-                        content={({ active, payload }) => {
-                          const row = payload?.[0]?.payload as { name?: string; valueMinor?: number } | undefined;
-                          if (!active || !row?.name || row.valueMinor == null) return null;
-                          return (
-                            <div className="rounded-[var(--radius-md)] border border-[var(--border-strong)] bg-[var(--surface-overlay)] px-3 py-2 shadow-[var(--shadow-overlay)]">
-                              <p className="text-xs text-[var(--text-secondary)]">{row.name}</p>
-                              <p className="mt-1 text-sm font-semibold tabular-nums">{formatMoney(row.valueMinor, bridge.currency)}</p>
-                            </div>
-                          );
-                        }}
-                      />
-                      <Bar
-                        dataKey="valueMinor"
-                        fill="var(--accent)"
-                        radius={[0, 2, 2, 0]}
-                        barSize={12}
-                        isAnimationActive={!reducedMotion}
-                        animationBegin={140}
-                        animationDuration={600}
-                        animationEasing="ease-out"
-                      >
-                        <LabelList
-                          dataKey="valueMinor"
-                          position="right"
-                          formatter={(value: number) => compactMoney(value, bridge.currency)}
-                          fill="var(--text-primary)"
-                          fontSize={11}
-                        />
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <ChartEmpty message="No confirmed loss has been attributed to a cause in this period." />
-              )}
-              {causes.length ? (
-                <Link href={`/reports/records?kind=case&dimension=category&range=${report.range}&currency=${bridge.currency}`} className="mx-4 mb-4 inline-flex text-xs font-semibold text-[var(--accent)]">
+                <Link href={`/reports/records?kind=case&dimension=category&range=${report.range}&currency=${bridge.currency}`} className="mt-2 inline-flex text-xs font-semibold text-[var(--accent)]">
                   View all causes
                 </Link>
               ) : null}
-            </ChartPanel>
+            </div>
 
             <RecoveryLedger bridge={bridge} />
           </div>
@@ -254,15 +149,6 @@ function ChartPanel({
       </div>
       {children}
     </section>
-  );
-}
-
-function LegendItem({ colour, label }: { colour: string; label: string }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 text-[var(--text-secondary)]">
-      <span className="h-0.5 w-4" style={{ background: colour }} aria-hidden="true" />
-      {label}
-    </span>
   );
 }
 
@@ -292,7 +178,7 @@ function RecoveryLedger({ bridge }: { bridge: MoneyBridge }) {
         {rows.map((row, index) => (
           <div key={row.label} className={`p-4 ${index > 0 ? 'border-t border-[var(--border-muted)] sm:border-l sm:border-t-0' : ''}`}>
             <dt className="text-xs font-medium text-[var(--text-secondary)]">{row.label}</dt>
-            <dd className="mt-1 text-xl font-semibold tabular-nums">{formatMoney(row.value, bridge.currency)}</dd>
+            <dd className={`mt-1 text-xl font-semibold ${dvStyles.mono}`}>{formatMoney(row.value, bridge.currency)}</dd>
             <dd className="mt-1 min-h-4 text-xs text-[var(--text-tertiary)]">
               {row.conversion ? `${row.conversion} of previous stage` : index === 0 ? 'Requested payout value' : 'Conversion unavailable'}
             </dd>

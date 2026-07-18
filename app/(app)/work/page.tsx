@@ -2,8 +2,8 @@ import { redirect } from "next/navigation";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { PERMISSIONS, requirePermission } from "@/lib/permissions";
 import { TABLES } from "@/lib/supabase/tables";
-import { WorkbenchPage } from "@/components/ui";
-import { DeadlineRiskChart } from "@/components/charts/authenticated";
+import { WorkbenchPage, KeyInsightCallout, SummaryRail } from "@/components/ui";
+import { AlertTriangle, Clock } from "lucide-react";
 import { WorkQueue, type WorkQueueItem, type WorkViewCounts } from "@/components/work/WorkQueue";
 import { countOpenExceptions, listExceptions } from "@/lib/exceptions/store";
 import { formatNumber } from "@/lib/utils/format";
@@ -181,6 +181,14 @@ export default async function WorkPage({
   }));
   const items =
     view === "integration-exceptions" ? exceptions : [...tasks, ...exceptions];
+  const bandTotal =
+    deadlineBands.overdue +
+    deadlineBands.dueToday +
+    deadlineBands.upcoming +
+    deadlineBands.unscheduled +
+    deadlineBands.invalid;
+  const deadlineTone =
+    deadlineBands.overdue > 0 ? "danger" : deadlineBands.dueToday > 0 ? "warning" : "neutral";
   return (
     <WorkbenchPage
       eyebrow="Operations"
@@ -201,16 +209,30 @@ export default async function WorkPage({
         },
       ]}
       primaryVisual={
-        <DeadlineRiskChart
-          id="work-deadline-risk"
-          title="Deadline risk"
-          description="Active tasks grouped by their recorded deadline. Integration exceptions remain counted separately above."
-          bands={[
-            { label: "Overdue", value: deadlineBands.overdue, tone: "red", hint: "Past the recorded due time" },
-            { label: "Due today", value: deadlineBands.dueToday, tone: "orange", hint: "Due before tomorrow UTC" },
-            { label: "Upcoming", value: deadlineBands.upcoming, tone: "blue", hint: "Future deadline" },
-            { label: "No deadline", value: deadlineBands.unscheduled, tone: "neutral", hint: "No due time recorded" },
-            ...(deadlineBands.invalid > 0 ? [{ label: "Invalid deadline", value: deadlineBands.invalid, tone: "yellow" as const, hint: "Recorded deadline could not be parsed" }] : []),
+        <KeyInsightCallout
+          eyebrow="Deadline risk"
+          tone={deadlineTone}
+          icon={deadlineTone === "danger" ? <AlertTriangle size={16} /> : <Clock size={16} />}
+        >
+          <strong>{formatNumber(deadlineBands.overdue)}</strong> overdue and{" "}
+          <strong>{formatNumber(deadlineBands.dueToday)}</strong> due today
+          {deadlineBands.upcoming > 0 ? <> · {formatNumber(deadlineBands.upcoming)} upcoming</> : null}.
+        </KeyInsightCallout>
+      }
+      rail={
+        <SummaryRail
+          sections={[
+            {
+              title: "Deadline risk",
+              rows: [
+                { label: "Overdue", value: formatNumber(deadlineBands.overdue), tone: "danger", bar: bandTotal ? deadlineBands.overdue / bandTotal : 0 },
+                { label: "Due today", value: formatNumber(deadlineBands.dueToday), tone: "warning", bar: bandTotal ? deadlineBands.dueToday / bandTotal : 0 },
+                { label: "Upcoming", value: formatNumber(deadlineBands.upcoming), tone: "info", bar: bandTotal ? deadlineBands.upcoming / bandTotal : 0 },
+                { label: "No deadline", value: formatNumber(deadlineBands.unscheduled), tone: "neutral", bar: bandTotal ? deadlineBands.unscheduled / bandTotal : 0 },
+                ...(deadlineBands.invalid > 0 ? [{ label: "Invalid deadline", value: formatNumber(deadlineBands.invalid), tone: "warning" as const, bar: bandTotal ? deadlineBands.invalid / bandTotal : 0 }] : []),
+              ],
+              footnote: "Active tasks grouped by recorded deadline. Integration exceptions are counted separately.",
+            },
           ]}
         />
       }

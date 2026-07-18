@@ -11,21 +11,17 @@ import {
   ChevronDown,
   CircleGauge,
   Database,
-  ExternalLink,
+  RotateCcw,
+  ShieldCheck,
+  TrendingDown,
+  TrendingUp,
 } from 'lucide-react';
-import {
-  Bar,
-  CartesianGrid,
-  ComposedChart,
-  Line,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
 import ExportMenu from '@/components/reports/ExportMenu';
 import { Modal } from '@/components/ui';
-import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { ComboBarLineChart } from '@/components/charts/authenticated/cartesian/ComboBarLineChart';
+import { MetricTabs, type MetricTabItem } from '@/components/charts/authenticated/micro/MetricTabs';
+import { SegmentCompositionCard } from '@/components/charts/authenticated/operational/SegmentCompositionCard';
+import { BlockRailChart } from '@/components/charts/authenticated/operational/BlockRailChart';
 import type {
   DashboardPeriodComparison,
   IntelligenceReport,
@@ -48,6 +44,14 @@ import {
   type DashboardMetricKey,
 } from './dashboardModel';
 import styles from './dashboardPilot.module.css';
+import dvStyles from '@/components/charts/authenticated/AuthenticatedCharts.module.css';
+
+const METRIC_ICONS: Record<DashboardMetricKey, typeof TrendingUp> = {
+  exposure: TrendingUp,
+  recovered: RotateCcw,
+  prevented: ShieldCheck,
+  realisedLoss: TrendingDown,
+};
 
 type DashboardOverviewProps = {
   report: IntelligenceReport;
@@ -102,7 +106,6 @@ export function DashboardOverview({
   selectedCurrency,
   compare,
 }: DashboardOverviewProps) {
-  const reducedMotion = useReducedMotion();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -243,7 +246,7 @@ export function DashboardOverview({
               </div>
               {compare === 'previous' ? (
                 <div className={styles.legend} aria-label="Chart legend">
-                  <span><i style={{ background: selectedMetric.colour }} /> Current</span>
+                  <span><i className={dvStyles[selectedMetric.tone]} /> Current</span>
                   <span><i className={styles.dashedLegend} /> Previous</span>
                 </div>
               ) : null}
@@ -251,68 +254,19 @@ export function DashboardOverview({
 
             <div className={styles.chartRegion} role="region" aria-label="Payout performance charts">
               {chartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={chartData} margin={{ top: 12, right: 18, bottom: 2, left: 0 }}>
-                    <CartesianGrid stroke="var(--dashboard-grid)" vertical={false} />
-                    <XAxis
-                      dataKey="label"
-                      axisLine={false}
-                      tickLine={false}
-                      minTickGap={22}
-                      tick={{ fontSize: 10, fill: 'var(--dashboard-muted)' }}
-                    />
-                    <YAxis
-                      axisLine={false}
-                      tickLine={false}
-                      width={58}
-                      tickCount={5}
-                      tick={{ fontSize: 10, fill: 'var(--dashboard-muted)' }}
-                      tickFormatter={(value: number) => formatCurrencyCompact(value / 100, selectedCurrency)}
-                    />
-                    <Tooltip
-                      cursor={{ fill: 'var(--dashboard-hover)' }}
-                      content={({ active, payload, label }) => {
-                        if (!active || !payload?.length) return null;
-                        const row = payload[0]?.payload as { currentMinor: number; previousMinor: number | null };
-                        return (
-                          <div className={styles.chartTooltip}>
-                            <span>{label}</span>
-                            <strong>{formatMoney(row.currentMinor, selectedCurrency)}</strong>
-                            {row.previousMinor != null ? (
-                              <small>Previous {formatMoney(row.previousMinor, selectedCurrency)}</small>
-                            ) : null}
-                          </div>
-                        );
-                      }}
-                    />
-                    <Bar
-                      dataKey="currentMinor"
-                      fill={selectedMetric.colour}
-                      radius={[2, 2, 0, 0]}
-                      maxBarSize={20}
-                      isAnimationActive={!reducedMotion}
-                      animationBegin={100}
-                      animationDuration={620}
-                      animationEasing="ease-out"
-                    />
-                    {compare === 'previous' ? (
-                      <Line
-                        type="linear"
-                        dataKey="previousMinor"
-                        stroke="var(--dashboard-previous)"
-                        strokeWidth={1.5}
-                        strokeDasharray="4 4"
-                        dot={false}
-                        activeDot={{ r: 3 }}
-                        connectNulls
-                        isAnimationActive={!reducedMotion}
-                        animationBegin={180}
-                        animationDuration={680}
-                        animationEasing="ease-out"
-                      />
-                    ) : null}
-                  </ComposedChart>
-                </ResponsiveContainer>
+                <ComboBarLineChart
+                  data={chartData.map((bucket) => ({
+                    key: bucket.key,
+                    label: bucket.label,
+                    current: bucket.currentMinor,
+                    previous: bucket.previousMinor,
+                  }))}
+                  colourVar={selectedMetric.colourVar}
+                  comparison={compare === 'previous'}
+                  valueFormatter={(value) => formatCurrencyCompact(value / 100, selectedCurrency)}
+                  tooltipFormatter={(value) => formatMoney(value, selectedCurrency)}
+                  height={230}
+                />
               ) : (
                 <div className={styles.chartEmpty}>
                   No dated {selectedMetric.label.toLowerCase()} entries were recorded in this period.
@@ -320,32 +274,25 @@ export function DashboardOverview({
               )}
             </div>
 
-            <div className={styles.metricTabs} role="tablist" aria-label="Payout metric">
-              {DASHBOARD_METRICS.map((item) => {
+            <MetricTabs
+              aria-label="Payout metric"
+              active={metric}
+              onSelect={(key) => setMetric(key as DashboardMetricKey)}
+              items={DASHBOARD_METRICS.map<MetricTabItem>((item) => {
                 const current = bridgeMetricValue(bridge, item.key);
                 const previous = compare === 'previous'
                   ? bridgeMetricValue(previousBridge, item.key)
                   : null;
-                const active = metric === item.key;
-                return (
-                  <button
-                    key={item.key}
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    className={active ? styles.activeMetric : undefined}
-                    onClick={() => setMetric(item.key)}
-                    data-capability-id={`reports.metric.${item.key}`}
-                  >
-                    <span className={styles.metricLabel}>
-                      <i style={{ background: item.colour }} /> {item.label}
-                    </span>
-                    <strong>{current == null ? 'Unavailable' : formatMoney(current, selectedCurrency)}</strong>
-                    <small>{compare === 'previous' ? comparisonLabel(current, previous) : item.description}</small>
-                  </button>
-                );
+                const Icon = METRIC_ICONS[item.key];
+                return {
+                  key: item.key,
+                  label: item.label,
+                  icon: <Icon aria-hidden="true" size={14} />,
+                  value: current == null ? 'Unavailable' : formatMoney(current, selectedCurrency),
+                  delta: compare === 'previous' ? comparisonLabel(current, previous) : item.description,
+                };
               })}
-            </div>
+            />
           </>
         ) : (
           <div className={styles.incompleteState}>
@@ -374,34 +321,17 @@ export function DashboardOverview({
           </div>
 
           {report.recordCount > 0 ? (
-            <>
-              <div className={styles.workflowBar} aria-label="Workflow distribution">
-                {workflowGroups.map((group) => group.count > 0 ? (
-                  <span
-                    key={group.key}
-                    title={`${group.label}: ${group.count}`}
-                    style={{
-                      background: group.colour,
-                      width: `${Math.max(2, (group.count / report.recordCount) * 100)}%`,
-                    }}
-                  />
-                ) : null)}
-              </div>
-              <div className={styles.workflowLegend}>
-                {workflowGroups.map((group) => (
-                  <span key={group.key}><i style={{ background: group.colour }} /> {group.label} · {group.count}</span>
-                ))}
-              </div>
-              <div className={styles.workflowRows}>
-                {report.operations.slice(0, 4).map((operation) => (
-                  <Link key={operation.key} href={operation.href}>
-                    <span>{operation.label}</span>
-                    <strong>{operation.count}</strong>
-                    <ExternalLink aria-hidden="true" size={12} />
-                  </Link>
-                ))}
-              </div>
-            </>
+            <SegmentCompositionCard
+              segments={workflowGroups
+                .filter((group) => group.count > 0)
+                .map((group) => ({ key: group.key, label: group.label, value: group.count, tone: group.tone }))}
+              rows={report.operations.slice(0, 4).map((operation) => ({
+                key: operation.key,
+                label: operation.label,
+                displayValue: String(operation.count),
+                href: operation.href,
+              }))}
+            />
           ) : (
             <p className={styles.cardEmpty}>No payout-case records were found in the selected period.</p>
           )}
@@ -420,12 +350,16 @@ export function DashboardOverview({
             <button type="button" className={styles.detailButton} onClick={() => setHealthOpen(true)} data-capability-id="reports.data-health.details">Details</button>
           </div>
 
-          <div className={styles.healthVisual} aria-label={health.freshnessPercent == null ? 'Source freshness unavailable' : `${health.freshnessPercent}% of source records are current`}>
-            {Array.from({ length: 24 }, (_, index) => {
-              const filled = health.freshnessPercent != null && index < Math.round((health.freshnessPercent / 100) * 24);
-              return <span key={index} className={filled ? styles.healthFilled : undefined} />;
-            })}
-          </div>
+          {health.freshnessPercent != null ? (
+            <BlockRailChart
+              blocks={[{ key: 'fresh', label: 'Fresh records', value: health.freshRecords, tone: 'blue' }]}
+              remainder={health.staleRecords}
+              pins={[{ label: `${health.freshnessPercent}%`, emphasis: true }]}
+              compact
+            />
+          ) : (
+            <p className={styles.cardEmpty}>Source freshness unavailable.</p>
+          )}
           <div className={styles.healthSummary}>
             <div><span>Current records</span><strong>{formatNumber(health.freshRecords)}</strong></div>
             <div><span>Stale records</span><strong>{formatNumber(health.staleRecords)}</strong></div>
