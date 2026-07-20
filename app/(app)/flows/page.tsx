@@ -11,6 +11,9 @@ import {
   FlowsIndexClient,
   type FlowIndexRecord,
 } from "@/components/rules/FlowsIndexClient";
+import { WorkbenchPage, KeyInsightCallout, SummaryRail } from "@/components/ui";
+import { Workflow } from "lucide-react";
+import { formatNumber } from '@/lib/utils/format';
 
 export const dynamic = "force-dynamic";
 
@@ -76,17 +79,46 @@ export default async function FlowsPage() {
       };
     },
   );
+  const activeFlows = flows.filter((flow) => flow.active).length;
+  const draftFlows = flows.filter((flow) => flow.hasDraft).length;
+  const maxActionCount = Math.max(1, ...flows.map((flow) => flow.actionCount));
+  const topFlows = [...flows].sort((a, b) => b.actionCount - a.actionCount).slice(0, 6);
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-6">
-      <header>
-        <p className="text-sm text-[var(--text-secondary)]">Configuration</p>
-        <h1 className="mt-1 text-2xl font-semibold">Flows</h1>
-        <p className="mt-1 max-w-3xl text-sm text-[var(--text-secondary)]">
-          Route tasks, evidence, deadlines, and notifications. Test safely —
-          nothing changes until you publish.
-        </p>
-      </header>
-      <FlowsIndexClient flows={flows} canManage={canManage} />
-    </div>
+    <WorkbenchPage
+      title="Flows"
+      subtitle="Route tasks, evidence, deadlines, and notifications. Test safely — nothing changes until you publish."
+      kpiItems={[
+        { label: 'Flows', value: formatNumber(flows.length), hint: 'Configured workflow families' },
+        { label: 'Active', value: formatNumber(activeFlows), hint: 'Running published versions' },
+        { label: 'Draft changes', value: formatNumber(flows.filter((flow) => flow.hasDraft).length), hint: 'Safe unpublished edits' },
+      ]}
+      primaryVisual={
+        <KeyInsightCallout
+          eyebrow="Flows"
+          tone={draftFlows > 0 ? 'warning' : 'neutral'}
+          icon={<Workflow size={16} />}
+        >
+          <strong>{formatNumber(activeFlows)}</strong> of <strong>{formatNumber(flows.length)}</strong> flows active
+          {draftFlows > 0 ? <> · <strong>{formatNumber(draftFlows)}</strong> with draft changes</> : null}.
+        </KeyInsightCallout>
+      }
+      rail={
+        <SummaryRail
+          sections={[
+            {
+              title: 'Action load',
+              rows: topFlows.map((flow) => ({
+                label: flow.name,
+                value: formatNumber(flow.actionCount),
+                tone: flow.active ? 'success' : flow.hasDraft ? 'warning' : 'neutral',
+                bar: flow.actionCount / maxActionCount,
+              })),
+              footnote: 'Configured actions per flow — definition complexity, not execution volume.',
+            },
+          ]}
+        />
+      }
+      main={<FlowsIndexClient flows={flows} canManage={canManage} />}
+    />
   );
 }

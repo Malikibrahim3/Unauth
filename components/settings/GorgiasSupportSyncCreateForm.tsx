@@ -31,7 +31,7 @@ export function GorgiasSupportSyncCreateForm({
   const isCreate = variant === 'create';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Integration header — only on create */}
       {isCreate ? (
         <div className="flex items-center gap-3">
@@ -40,7 +40,7 @@ export function GorgiasSupportSyncCreateForm({
             alt="Gorgias"
             width={40}
             height={40}
-            className="h-10 w-10 rounded-xl object-contain"
+            className="h-9 w-9 rounded-[var(--ua-radius-input)] border border-[var(--border-muted)] object-contain p-1"
           />
           <div>
             <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
@@ -53,7 +53,7 @@ export function GorgiasSupportSyncCreateForm({
         </div>
       ) : null}
 
-      <form onSubmit={onSubmit} className="space-y-4">
+      <form onSubmit={onSubmit} className="space-y-3">
         {/* Account domain */}
         <div>
           <label
@@ -66,7 +66,7 @@ export function GorgiasSupportSyncCreateForm({
           <input
             id="gorgias-account-domain"
             required
-            className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
+            className="h-8 w-full rounded-[var(--ua-radius-input)] px-3 text-[12px] outline-none"
             style={INPUT_STYLE}
             placeholder="acme or acme.gorgias.com"
             value={state.accountOrDomain}
@@ -92,7 +92,7 @@ export function GorgiasSupportSyncCreateForm({
             </label>
             <input
               id="gorgias-display-name"
-              className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
+              className="h-8 w-full rounded-[var(--ua-radius-input)] px-3 text-[12px] outline-none"
               style={INPUT_STYLE}
               placeholder="Acme Gorgias"
               value={state.displayName}
@@ -118,7 +118,7 @@ export function GorgiasSupportSyncCreateForm({
           <button
             type="submit"
             disabled={(!canManage && isCreate) || state.busy}
-            className="inline-flex items-center rounded-xl px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
+            className="inline-flex h-8 items-center rounded-[var(--ua-radius-input)] px-3 text-[11px] font-semibold disabled:opacity-50"
             style={{ background: 'var(--accent)', color: 'white' }}
           >
             {state.busy ? 'Connecting…' : submitLabel}

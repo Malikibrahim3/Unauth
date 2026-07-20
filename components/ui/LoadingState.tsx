@@ -1,5 +1,8 @@
+import Link from 'next/link';
 import { Button } from './Button';
-import { ButtonLink } from './ButtonLink';
+import { AuthenticatedPageHeader } from '@/components/authenticated/AuthenticatedPageHeader';
+import { AuthenticatedPanel } from '@/components/authenticated/AuthenticatedPanel';
+import pageStyles from '@/components/authenticated/AuthenticatedPageChrome.module.css';
 
 interface ErrorBoundaryUIProps {
   error: Error & { digest?: string };
@@ -20,46 +23,30 @@ export function ErrorBoundaryUI({
   const safeErrorName = error?.name?.trim() || 'UnexpectedError';
 
   return (
-    <div className="mx-auto flex min-h-[50vh] max-w-2xl items-center justify-center p-[var(--space-5)]">
-      <div
-        role="alert"
-        className="w-full rounded-[var(--ua-radius-card)] border p-[var(--space-6)] shadow-none"
-        style={{
-          background: 'var(--surface)',
-          borderColor: 'var(--border)',
-        }}
-      >
-        <div className="space-y-[var(--space-3)]">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--text-secondary)' }}>
-            Page Error
-          </p>
-          <div className="space-y-[var(--space-2)]">
-            <h2 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>
-              {title}
-            </h2>
-            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-              {description}
-            </p>
+    <div>
+      <AuthenticatedPageHeader eyebrow="Page error" title={title} subtitle={description} />
+      <div className={pageStyles.pageBody}>
+        <AuthenticatedPanel bodyClassName="grid gap-3 p-4" capabilityId="error.recovery">
+          <div role="alert" className="rounded-[var(--ua-radius-input)] border border-[var(--border-muted)] bg-[var(--surface-sunken)] px-3 py-2 text-[11px] text-[var(--text-secondary)]">
+            Error type: <span className="font-medium text-[var(--text-primary)]">{safeErrorName}</span>
           </div>
-          <div
-            className="rounded-[var(--radius-2)] border px-[var(--space-3)] py-[var(--space-2)] text-sm"
-            style={{
-              background: 'var(--bg-subtle)',
-              borderColor: 'var(--border-muted)',
-              color: 'var(--text-primary)',
-            }}
-          >
-            Error type: <span className="font-medium">{safeErrorName}</span>
-          </div>
-          <div className="flex flex-wrap gap-[var(--space-3)] pt-[var(--space-1)]">
+          <div className="flex flex-wrap gap-2">
             <Button type="button" onClick={reset}>
               Try again
             </Button>
-            <ButtonLink href="/dashboard" variant="secondary" size="md">
+            <Link
+              href="/dashboard"
+              className="inline-flex h-8 items-center justify-center rounded-[var(--ua-radius-input)] border px-3 text-[11px] font-semibold transition-colors"
+              style={{
+                borderColor: 'var(--border)',
+                color: 'var(--text-primary)',
+                background: 'var(--surface)',
+              }}
+            >
               Go to dashboard
-            </ButtonLink>
+            </Link>
           </div>
-        </div>
+        </AuthenticatedPanel>
       </div>
     </div>
   );

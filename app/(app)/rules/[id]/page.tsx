@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import {
@@ -11,6 +10,9 @@ import {
   RuleVersionWorkbench,
   type RuleVersionRecord,
 } from "@/components/rules/RuleVersionWorkbench";
+import { AuthenticatedPageHeader } from "@/components/authenticated/AuthenticatedPageHeader";
+import { SetBreadcrumbLabel } from "@/components/layout/SetBreadcrumbLabel";
+import pageStyles from "@/components/authenticated/AuthenticatedPageChrome.module.css";
 
 export const dynamic = "force-dynamic";
 
@@ -62,30 +64,16 @@ export default async function RuleDetail({
     versions[0]!;
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-6">
-      <Link
-        href="/rules"
-        className="text-sm font-semibold text-[var(--accent)]"
-      >
-        Rules
-      </Link>
-      <header>
-        <p className="text-sm text-[var(--text-secondary)]">
-          Policy configuration
-        </p>
-        <h1 className="mt-1 text-2xl font-semibold text-[var(--text-primary)]">
-          {display.name}
-        </h1>
-        <p className="mt-1 max-w-3xl text-sm text-[var(--text-secondary)]">
-          {display.description ||
-            "No description. Add one in the next draft so operators understand intent and scope."}
-        </p>
-      </header>
-      <RuleVersionWorkbench
-        ruleId={id}
-        initialVersions={versions}
-        canManage={canManage}
+    <div>
+      <SetBreadcrumbLabel label={display.name} />
+      <AuthenticatedPageHeader
+        eyebrow="Policy configuration"
+        title={display.name}
+        subtitle={display.description || "No description. Add one in the next draft so operators understand intent and scope."}
       />
+      <div className={pageStyles.pageBody}>
+        <RuleVersionWorkbench ruleId={id} initialVersions={versions} canManage={canManage} />
+      </div>
     </div>
   );
 }

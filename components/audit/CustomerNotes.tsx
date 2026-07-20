@@ -86,9 +86,8 @@ export default function CustomerNotes({ customerProfileId }: CustomerNotesProps)
 
   return (
     <div className="rounded-md p-4 space-y-3 border" style={{ borderColor: 'var(--border-muted)' }}>
-      <div className="flex items-center justify-between gap-3">
-        <h4 className="text-overline">Notes</h4>
-        {selectedIds.size > 0 && (
+      {selectedIds.size > 0 && (
+        <div className="flex items-center justify-end gap-3">
           <div className="flex items-center gap-2">
             <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
               {selectedIds.size} selected
@@ -112,8 +111,8 @@ export default function CustomerNotes({ customerProfileId }: CustomerNotesProps)
               Clear
             </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {loading && <p className="text-caption" style={{ color: 'var(--text-tertiary)' }}>Loading…</p>}
 

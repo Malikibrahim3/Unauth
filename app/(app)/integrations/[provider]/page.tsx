@@ -7,7 +7,7 @@ import {
   requirePermission,
 } from "@/lib/permissions";
 import { loadConnectorCatalogue } from "@/lib/connectors/catalogue";
-import { getConnectionState } from "@/lib/connections/getConnectionState";
+import { getCachedConnectionState } from "@/lib/connections/getConnectionState";
 import { verifyMerchantLiveConnections } from "@/lib/connections/liveVerification";
 import {
   isLiveCredentialCheckSupported,
@@ -19,7 +19,9 @@ import { ConnectionActions } from "@/components/integrations/ConnectionActions";
 import { Card, DataTableServer } from "@/components/ui";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatDateTime } from "@/lib/utils/format";
-import { ConnectionHealthHeader, ConnectionHealthGrid } from "@/components/integrations/ConnectionHealthPanel";
+import { ConnectionHealthGrid } from "@/components/integrations/ConnectionHealthPanel";
+import { AuthenticatedPageHeader } from "@/components/authenticated/AuthenticatedPageHeader";
+import pageStyles from "@/components/authenticated/AuthenticatedPageChrome.module.css";
 
 export const dynamic = "force-dynamic";
 
@@ -73,7 +75,7 @@ export default async function ConnectionPage({
   // its own detail page. Shopify/Gorgias are only actually live-checked
   // when they're the merchant's active order-source/helpdesk selection;
   // ShipBob/UPS/FedEx are always probed.
-  const connectionState = await getConnectionState(service, ctx.merchantId);
+  const connectionState = await getCachedConnectionState(ctx.merchantId);
   const isOrderSource = provider === connectionState.orderSourcePlatform;
   const isHelpdesk = provider === connectionState.helpdeskProvider;
   const providerHasLiveCheck = isLiveCredentialCheckSupported(provider);
@@ -127,14 +129,16 @@ export default async function ConnectionPage({
   const jobs = (jobsResult.data ?? []) as SyncJob[];
   const issues = (issuesResult.data ?? []) as IngestionIssue[];
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-6">
-      <Link
-        href="/integrations"
-        className="text-sm font-semibold text-[var(--accent)]"
-      >
-        Integrations
-      </Link>
-      <ConnectionHealthHeader item={{ ...item, badge }} />
+    <div>
+      <AuthenticatedPageHeader
+        eyebrow={`${humanizeLabel(item.category)} · ${humanizeLabel(item.stage)}`}
+        title={item.name}
+        subtitle={item.description}
+        breadcrumbs={[{ label: "Integrations", href: "/integrations" }, { label: item.name }]}
+        actions={<StatusBadge family="workflowStatus" value={badge} />}
+      />
+      <div className={pageStyles.pageBody}>
+        <div className={pageStyles.detailStack}>
       {item.stage === "planned" ? (
         <Card unstyled
           variant="inset"
@@ -210,7 +214,7 @@ export default async function ConnectionPage({
           ))}
         </div>
       </section>
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className={pageStyles.detailSplit}>
         <section aria-labelledby="sync-history-title">
           <div className="flex items-center justify-between">
             <h2 id="sync-history-title" className="text-base font-semibold">
@@ -298,6 +302,8 @@ export default async function ConnectionPage({
             </Card>
           )}
         </section>
+      </div>
+        </div>
       </div>
     </div>
   );

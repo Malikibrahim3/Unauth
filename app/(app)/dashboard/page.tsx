@@ -5,19 +5,23 @@ import {
   requirePermission,
   resolveDefaultAppPath,
 } from "@/lib/permissions";
-import { IntelligenceReportView } from "@/components/reporting/IntelligenceReportView";
+import { DashboardOverview } from "@/components/dashboard/DashboardOverview";
 import {
+  loadDashboardPeriodComparison,
   loadIntelligenceReport,
   parseReportRange,
-  REPORT_RANGES,
 } from "@/lib/reporting/intelligence";
-import { ButtonLink, SegmentedControl } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ range?: string; timezone?: string }>;
+  searchParams: Promise<{
+    range?: string;
+    timezone?: string;
+    compare?: string;
+    currency?: string;
+  }>;
 }) {
   const auth = createClient();
   const {
@@ -37,40 +41,27 @@ export default async function DashboardPage({
   const sp = await searchParams;
   const range = parseReportRange(sp.range);
   const timezone = sp.timezone && sp.timezone.length < 80 ? sp.timezone : "UTC";
-  const report = await loadIntelligenceReport(
-    svc,
-    ctx.merchantId,
-    range,
-    timezone,
-  );
+  const compare = range !== "all" && sp.compare === "previous" ? "previous" : "none";
+  const asOf = new Date();
+  const [report, comparison] = await Promise.all([
+    loadIntelligenceReport(svc, ctx.merchantId, range, timezone, { asOf }),
+    compare === "previous"
+      ? loadDashboardPeriodComparison(svc, ctx.merchantId, range, asOf)
+      : Promise.resolve(null),
+  ]);
+  const requestedCurrency = sp.currency?.toUpperCase();
+  const selectedCurrency = report.bridges.some(
+    (bridge) => bridge.currency === requestedCurrency,
+  )
+    ? requestedCurrency ?? null
+    : report.bridges[0]?.currency ?? null;
+
   return (
-    <div className="mx-auto w-full max-w-[1600px] space-y-6 p-4 md:p-6">
-      <header className="flex flex-wrap items-end justify-between gap-4 border-b border-[var(--border)] pb-5">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-[-0.02em]">Overview</h1>
-          <p className="mt-1 text-sm text-[var(--text-secondary)]">
-            What you&apos;re owed, what you&apos;ve recovered, and what needs a
-            decision.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <ButtonLink href="/work" size="md">
-            Open work
-          </ButtonLink>
-          <ButtonLink href="/claims?sort=value" variant="secondary" size="md">
-            Review high-value cases
-          </ButtonLink>
-        </div>
-      </header>
-      <div className="flex flex-wrap items-center gap-2">
-        <SegmentedControl
-          aria-label="Overview period"
-          value={range}
-          items={REPORT_RANGES.map((r) => ({ value: r, label: r === "all" ? "All time" : r, href: `/dashboard?range=${r}&timezone=${encodeURIComponent(timezone)}` }))}
-        />
-        <ButtonLink href={`/reports?range=${range}&timezone=${encodeURIComponent(timezone)}`} variant="ghost" size="sm">Open reports</ButtonLink>
-      </div>
-      <IntelligenceReportView report={report} compact />
-    </div>
+    <DashboardOverview
+      report={report}
+      comparison={comparison}
+      selectedCurrency={selectedCurrency}
+      compare={compare}
+    />
   );
 }

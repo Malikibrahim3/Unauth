@@ -12,6 +12,7 @@ import {
   type GateRecommendation,
 } from '@/lib/claim-gate/buildRecommendation';
 import { applyHoldTag, UNAUTH_HOLD_TAG } from '@/lib/gorgias/applyHoldTag';
+import { getAppUrl } from '@/lib/utils/appUrl';
 
 export type PublicGateClaimType =
   | 'delivered_not_received'
@@ -172,8 +173,7 @@ async function findExistingCase(input: {
 }
 
 function caseUrl(claimId: string): string {
-  const base = (process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/$/, '');
-  return `${base}/claims?focus=${encodeURIComponent(claimId)}`;
+  return `${getAppUrl()}/claims?focus=${encodeURIComponent(claimId)}`;
 }
 
 function deliverySummary(evidence: ClaimGateEvidence): PublicGateResponse['evidence_summary'] {

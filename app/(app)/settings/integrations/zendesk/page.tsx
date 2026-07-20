@@ -28,7 +28,7 @@ export default async function ZendeskIntegrationPage() {
         { label: 'Zendesk' },
       ]}
     >
-      <div className="max-w-2xl space-y-6">
+      <div className="space-y-3">
         <ZendeskSetupClient canManage={canManage} />
       </div>
     </SettingsPageShell>

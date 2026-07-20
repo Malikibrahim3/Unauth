@@ -494,6 +494,8 @@ export type ClaimWidgetData = {
   /** Store-scoped primary reason when there is no network footprint. */
   storePrimaryReason: PrimaryReason;
   storeRecentClaimCount: number;
+  refundRequestCount365d?: number;
+  completedRefundCount365d?: number;
   profileUrl: string;
   dataFreshAt: string;
   /** @deprecated Always false in payloads — template field retained for Gorgias compatibility. */

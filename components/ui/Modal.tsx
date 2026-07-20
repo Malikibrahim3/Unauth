@@ -4,7 +4,6 @@ import { type ReactNode, useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
-import { IconButton } from '@/components/ui/IconButton';
 
 interface ModalAction {
   label: string;
@@ -109,7 +108,7 @@ export function Modal({
         aria-modal="true"
         tabIndex={-1}
         aria-label={ariaLabel ?? title ?? 'Modal'}
-        className={cn('rounded-[var(--ua-radius-overlay)] overflow-hidden flex flex-col max-h-[90vh]', className)}
+        className={cn('ua-card rounded-[var(--ua-radius-overlay)] overflow-hidden flex flex-col max-h-[90vh]', className)}
         style={{
           background: 'var(--surface)',
           border: '1px solid var(--border)',
@@ -121,7 +120,7 @@ export function Modal({
       >
         {(title || description) && (
           <div
-            className="flex items-start justify-between gap-4 border-b px-5 py-4"
+            className="flex items-start justify-between gap-3 border-b px-4 py-3"
             style={{ borderColor: 'var(--border)' }}
           >
             <div className="flex-1 min-w-0">
@@ -136,17 +135,24 @@ export function Modal({
                 </p>
               )}
             </div>
-            <IconButton label="Close modal" icon={<X className="w-4 h-4" />} size="sm" onClick={onClose} className="border-0 bg-transparent" />
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1 rounded-md hover:bg-[var(--surface-hover)] transition-colors flex-shrink-0 focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]"
+              aria-label="Close modal"
+            >
+              <X className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
+            </button>
           </div>
         )}
 
-        <div className="flex-1 overflow-y-auto px-5 py-4">
+        <div className="flex-1 overflow-y-auto px-4 py-3.5">
           {children}
         </div>
 
         {(footer || actions) && (
           <div
-            className="border-t px-5 py-4 flex items-center justify-end gap-2"
+            className="flex items-center justify-end gap-2 border-t px-4 py-3"
             style={{ borderColor: 'var(--border)' }}
           >
             {footer ?? (

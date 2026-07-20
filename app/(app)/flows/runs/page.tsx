@@ -4,6 +4,9 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { PERMISSIONS, requirePermission } from "@/lib/permissions";
 import { TABLES } from "@/lib/supabase/tables";
 import { formatDateTime } from "@/lib/utils/format";
+import { AuthenticatedPageHeader } from "@/components/authenticated/AuthenticatedPageHeader";
+import { AuthenticatedPanel } from "@/components/authenticated/AuthenticatedPanel";
+import pageStyles from "@/components/authenticated/AuthenticatedPageChrome.module.css";
 export default async function Runs({
   searchParams,
 }: {
@@ -31,26 +34,32 @@ export default async function Runs({
   if (sp.workflow) q = q.eq("workflow_definition_id", sp.workflow);
   const runs = (await q).data ?? [];
   return (
-    <div className="mx-auto max-w-6xl space-y-5 p-4 md:p-6">
-      <Link href="/flows" className="text-sm text-[var(--accent)]">
-        Flows
-      </Link>
-      <h1 className="text-2xl font-semibold">Flow runs</h1>
-      <div className="divide-y border-y">
+    <div>
+      <AuthenticatedPageHeader
+        eyebrow="Automation"
+        title="Flow runs"
+        subtitle="Execution history and operator-visible outcomes."
+        breadcrumbs={[{ label: "Flows", href: "/flows" }, { label: "Run history" }]}
+      />
+      <div className={pageStyles.pageBody}>
+        <AuthenticatedPanel title="Recent runs" description="Up to 100 executions in this scope.">
+          <div className="divide-y divide-[var(--border-muted)]">
         {runs.map((r: any) => (
           <Link
             key={r.id}
             href={`/flows/runs/${r.id}`}
-            className="grid gap-2 py-3 sm:grid-cols-4"
+            className="grid min-h-12 items-center gap-2 px-4 py-2.5 text-[11px] hover:bg-[var(--surface-hover)] sm:grid-cols-4"
           >
             <span className="font-mono text-xs">{r.id}</span>
-            <span>{r.status}</span>
-            <span>{formatDateTime(r.started_at)}</span>
-            <span>{r.error ? "Failed — inspect" : "Inspect"}</span>
+            <span className="capitalize">{r.status}</span>
+            <span className="text-[var(--text-secondary)]">{formatDateTime(r.started_at)}</span>
+            <span className="text-right font-semibold text-[var(--text-secondary)]">{r.error ? "Failed — inspect" : "Inspect"}</span>
           </Link>
         ))}
+          </div>
+          {!runs.length ? <p className="px-4 py-10 text-center text-xs text-[var(--text-secondary)]">No flow runs found for this scope.</p> : null}
+        </AuthenticatedPanel>
       </div>
-      {!runs.length ? <p>No flow runs found for this scope.</p> : null}
     </div>
   );
 }

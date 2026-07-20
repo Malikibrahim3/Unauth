@@ -596,7 +596,12 @@ export function RuleVersionWorkbench({
               <strong className="font-mono text-sm">
                 Version {version.version}
               </strong>
-              <StatusBadge family="workflowStatus" value={version.status} size="sm" />
+              <StatusBadge
+                family="workflowStatus"
+                value={version.status}
+                size="sm"
+                className="justify-self-start"
+              />
               <span className="text-xs text-[var(--text-secondary)]">
                 {version.published_at
                   ? `Published ${formatDateTime(version.published_at)}`

@@ -6,7 +6,9 @@ import type { MerchantSetupState } from '@/lib/connections/getMerchantSetupState
 import CustomersTableClient from '@/components/customers/CustomersTableClient';
 import { CustomersPageWorkbench } from '@/app/(app)/customers/CustomersPageWorkbench';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
-import { Badge, ButtonLink, Card, WorkbenchEmptyState } from '@/components/ui';
+import { Badge, ButtonLink, PanelCard, WorkbenchEmptyState, KeyInsightCallout, SummaryRail } from '@/components/ui';
+import { Users } from 'lucide-react';
+import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { FilterChip } from '@/app/(app)/customers/CustomersOverviewFilterChip';
 import { buildRemoveHref, customersListHref } from '@/app/(app)/customers/customersOverviewPageUtils';
 import { formatNumber } from '@/lib/utils/format';
@@ -60,10 +62,11 @@ export function CustomersOverviewPageView({
   kpis,
 }: CustomersOverviewPageViewProps) {
   return (
-    <PageConnectionGate requires="both" connection={connectionState} pageName="Customers" pageDescription="The customer directory adds merchant-owned context to loss-case decisions: order count, payout case history, and prior outcomes. Without an order source and helpdesk connected, counts may be zero because data is missing—not because the customer has no history." setupState={setupState} hasData={hasData}>
+    <PageConnectionGate requires="both" connection={connectionState} pageName="Customers" pageDescription="The customer directory adds merchant-owned context to loss-case decisions: order count, payout case history, and prior outcomes. Without both Shopify and your helpdesk connected, payout case counts may be zero because data is missing - not because the customer has no history." setupState={setupState} hasData={hasData}>
     <CustomersPageWorkbench
       title="Customers"
       subtitle={pageActions.subtitle}
+      navItems={WORKBENCH_NAV_ITEMS}
       actions={
         <>
           <ButtonLink href={pageActions.primary.href} size="sm">{pageActions.primary.label}</ButtonLink>
@@ -75,13 +78,39 @@ export function CustomersOverviewPageView({
         { label: 'Past payout cases', value: formatNumber(kpis.pastCaseCustomers), hint: 'Customers with any case history' },
         { label: 'Total orders', value: formatNumber(kpis.totalOrders), hint: 'Across listed customers' },
       ]}
+      primaryVisual={
+        <KeyInsightCallout
+          eyebrow="Case context"
+          tone={kpis.openCaseCustomers > 0 ? 'info' : 'neutral'}
+          icon={<Users size={16} />}
+        >
+          <strong>{formatNumber(kpis.openCaseCustomers)}</strong> of{' '}
+          <strong>{formatNumber(kpis.totalCustomers)}</strong> customers have an open payout case
+          {kpis.pastCaseCustomers > 0 ? <> · <strong>{formatNumber(kpis.pastCaseCustomers)}</strong> with case history</> : null}.
+        </KeyInsightCallout>
+      }
+      rail={
+        <SummaryRail
+          sections={[
+            {
+              title: 'Case context',
+              rows: [
+                { label: 'Open payout case', value: formatNumber(kpis.openCaseCustomers), tone: 'info', bar: kpis.totalCustomers ? kpis.openCaseCustomers / kpis.totalCustomers : 0 },
+                { label: 'Any case history', value: formatNumber(kpis.pastCaseCustomers), tone: 'neutral', bar: kpis.totalCustomers ? kpis.pastCaseCustomers / kpis.totalCustomers : 0 },
+                { label: 'No recorded case', value: formatNumber(Math.max(0, kpis.totalCustomers - kpis.pastCaseCustomers)), tone: 'neutral', bar: kpis.totalCustomers ? Math.max(0, kpis.totalCustomers - kpis.pastCaseCustomers) / kpis.totalCustomers : 0 },
+              ],
+              footnote: 'Share of the filtered customer population with merchant-owned case context.',
+            },
+          ]}
+        />
+      }
       main={
         <div className="p-4 space-y-4">
 
       {/* match band copy belongs on customer scoring surfaces, not risk labels. */}
       {/* ── Compact filter bar ─────────────────────────────────────── */}
       {totalCount > 0 && (
-        <Card unstyled variant="flat" className="flex h-auto min-h-10 flex-wrap items-center gap-2 px-3 py-2">
+        <PanelCard variant="app" className="flex h-auto min-h-10 flex-wrap items-center gap-2 px-3 py-2">
           <span className="text-xs font-medium mr-1" style={{ color: 'var(--text-tertiary)' }}>Filters</span>
           {[
             { label: 'Open payout cases', href: '?openClaims=1', highlight: openClaimsOnly },
@@ -103,7 +132,7 @@ export function CustomersOverviewPageView({
               Payout case counts include connected helpdesk data only.
             </span>
           )}
-        </Card>
+        </PanelCard>
       )}
 
       {/* ── Active filter chips ───────────────────────────────────── */}
@@ -123,7 +152,7 @@ export function CustomersOverviewPageView({
           title="No customers yet"
           description={
             connectionState.bothConnected
-              ? 'Your order source and helpdesk are connected. Customers appear here as orders and payout cases sync.'
+              ? 'Shopify and your helpdesk are connected. Customers appear here as orders and payout cases sync.'
               : 'The customer directory is built from your connected merchant sources. Finish setup to see order, claim, and payout history.'
           }
           action={

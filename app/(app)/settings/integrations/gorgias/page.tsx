@@ -30,7 +30,7 @@ export default async function GorgiasIntegrationPage() {
         { label: 'Gorgias' },
       ]}
     >
-      <div className="max-w-2xl space-y-6">
+      <div className="space-y-3">
         <GorgiasSupportSyncClient canManage={canManageGorgias} />
         <GorgiasSetupClient />
       </div>

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
+import { CONNECTOR_GRID_CLASS } from "@/components/integrations/connectorGrid";
 import type { ConnectorCatalogueItem } from "@/lib/connectors/catalogue";
 import type { EffectiveConnectionBadge } from "@/lib/connections/effectiveStatus";
 import { useLiveConnectionStatus } from "@/components/integrations/useLiveConnectionStatus";
@@ -36,7 +37,7 @@ export function ConnectorRow({ item }: { item: CatalogueRowItem }) {
   return (
     <Link
       href={`/integrations/${item.id}`}
-      className="ua-table-row grid min-w-[820px] grid-cols-[minmax(220px,1.35fr)_150px_minmax(240px,1.4fr)_100px_160px_24px] items-center gap-4 border-b border-[var(--border-muted)] px-4 py-3 text-sm last:border-b-0 hover:bg-[var(--surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--focus-ring)]"
+      className={`ua-table-row ${CONNECTOR_GRID_CLASS} items-center border-b border-[var(--border-muted)] px-4 py-3 text-sm last:border-b-0 hover:bg-[var(--surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--focus-ring)]`}
     >
       <div className="flex min-w-0 items-center gap-3">
         <ProviderLogo provider={item.id} name={item.name} />

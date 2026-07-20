@@ -1,0 +1,250 @@
+.panel {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--ua-radius-card);
+  background: var(--surface);
+  box-shadow: var(--ua-shadow-subtle);
+}
+
+.panelHeader {
+  display: flex;
+  min-height: 54px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 15px 10px;
+  border-bottom: 1px solid var(--border-muted);
+}
+
+.panelHeading { min-width: 0; }
+.panelHeading h2 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+.panelHeading p {
+  max-width: 720px;
+  margin: 3px 0 0;
+  color: var(--text-tertiary);
+  font-size: 10px;
+  line-height: 1.45;
+}
+.annotation {
+  color: var(--text-secondary);
+  font-size: 10px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.annotation strong {
+  margin-right: 4px;
+  color: var(--text-primary);
+  font-size: 18px;
+  letter-spacing: -0.035em;
+}
+.legend {
+  padding: 8px 15px 0;
+}
+.legendList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin: 0;
+  padding: 0;
+  color: var(--text-secondary);
+  font-size: 10px;
+  list-style: none;
+}
+.legendList li { display: inline-flex; align-items: center; gap: 5px; }
+.legendList i { width: 6px; height: 6px; border-radius: 50%; }
+.plot { min-height: 170px; padding: 15px; }
+.compactPlot { min-height: 132px; padding: 13px 15px; }
+
+/* T4 cap-top modifier — pairs with a tone class (which sets `color`) to derive the
+   gradient body + solid cap from currentColor without touching the flat tone fill
+   other primitives (rail blocks, segment bars, tick meters) rely on. */
+.capBar { position: relative; background: linear-gradient(to top, color-mix(in srgb, currentColor 4%, transparent), color-mix(in srgb, currentColor 22%, transparent)); border-radius: 2px 2px 0 0; }
+.capBar::after { position: absolute; top: 0; right: 0; left: 0; height: 2px; border-radius: 1px 1px 0 0; background: currentColor; content: ''; }
+
+.orange { background: var(--ua-chart-orange); color: var(--ua-chart-orange); }
+.blue { background: var(--ua-chart-blue); color: var(--ua-chart-blue); }
+.green { background: var(--ua-chart-green); color: var(--ua-chart-green); }
+.yellow { background: var(--ua-chart-yellow); color: var(--ua-chart-yellow); }
+.red { background: var(--ua-chart-red); color: var(--ua-chart-red); }
+.violet { background: var(--ua-chart-violet); color: var(--ua-chart-violet); }
+.neutral { background: var(--ua-chart-neutral); color: var(--ua-chart-neutral); }
+
+/* Text-only tone colours (no background) — for values/labels that carry a hue,
+ * distinct from the .orange/.blue/… dot-swatch classes above which set both. */
+.toneTextOrange { color: var(--ua-chart-orange); }
+.toneTextBlue { color: var(--ua-chart-blue); }
+.toneTextGreen { color: var(--ua-chart-green); }
+.toneTextYellow { color: var(--ua-chart-yellow); }
+.toneTextRed { color: var(--ua-chart-red); }
+.toneTextViolet { color: var(--ua-chart-violet); }
+.toneTextNeutral { color: var(--ua-chart-neutral); }
+
+/* ════════ T1–T10 shared grammar (geometry constants: core/geometry.ts) ════════ */
+
+/* T1 — quiet cartesian frame */
+.frameYAxis { width: 36px; flex: 0 0 36px; color: var(--text-tertiary); font: 10px/1.3 var(--ua-font-mono); font-variant-numeric: tabular-nums; text-align: right; }
+.frameXLabel { color: var(--text-tertiary); font: 10px/1.3 var(--ua-font-mono); font-variant-numeric: tabular-nums; }
+.frameXLabel[data-active="true"] { color: var(--text-primary); font-weight: 500; }
+.frameGrid { background-repeat: repeat; background-image: repeating-linear-gradient(to top, transparent 0, transparent calc(100% / 4 - 1px), var(--ua-chart-grid) calc(100% / 4)); }
+
+/* T2 — hatch texture. .hatch-{hue} = area wash at the series hue; .hatchNeutral = remainder/unavailable. */
+.hatchOrange { background-image: repeating-linear-gradient(45deg, color-mix(in srgb, var(--ua-chart-orange) 40%, transparent) 0 1px, transparent 1px 5px); }
+.hatchBlue { background-image: repeating-linear-gradient(45deg, color-mix(in srgb, var(--ua-chart-blue) 40%, transparent) 0 1px, transparent 1px 5px); }
+.hatchGreen { background-image: repeating-linear-gradient(45deg, color-mix(in srgb, var(--ua-chart-green) 40%, transparent) 0 1px, transparent 1px 5px); }
+.hatchViolet { background-image: repeating-linear-gradient(45deg, color-mix(in srgb, var(--ua-chart-violet) 40%, transparent) 0 1px, transparent 1px 5px); }
+.hatchRed { background-image: repeating-linear-gradient(45deg, color-mix(in srgb, var(--ua-chart-red) 40%, transparent) 0 1px, transparent 1px 5px); }
+.hatchNeutral { background-image: repeating-linear-gradient(45deg, color-mix(in srgb, var(--ua-chart-neutral) 55%, transparent) 0 1px, transparent 1px 5px); }
+.hatchFalloff { mask-image: linear-gradient(180deg, color-mix(in srgb, black 85%, transparent), color-mix(in srgb, black 10%, transparent)); -webkit-mask-image: linear-gradient(180deg, color-mix(in srgb, black 85%, transparent), color-mix(in srgb, black 10%, transparent)); }
+
+/* Mono numeral rule — every in-chart numeral (§3.2) */
+.mono { font-family: var(--ua-font-mono); font-variant-numeric: tabular-nums; }
+
+/* Interpretive caption (T7) — the one audited italic in the product */
+.caption { color: var(--text-tertiary); font-size: 12px; font-style: italic; }
+
+/* T9 — panel-level tab strip slot */
+.tabStrip { display: flex; border-bottom: 1px solid var(--border-muted); }
+.tabStrip > * { flex: 1 1 0; }
+
+/* Pin annotation slot (T6) */
+.pinRow { display: flex; align-items: flex-end; gap: 3px; padding: 0 15px; }
+.pin { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.pinLine { width: 1px; background: var(--border-strong); }
+.pinLabel { color: var(--text-secondary); font: 10px/1.2 var(--ua-font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pinLabel[data-emphasis="true"] { color: var(--text-primary); font-weight: 500; }
+
+/* T10 — cursor + tooltip grammar (CSS-chart hover layer; Recharts uses ChartCursor/ChartTooltip) */
+.cursorLine { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1px dashed var(--border-strong); pointer-events: none; }
+.tooltipCard { position: absolute; z-index: 5; display: grid; gap: 2px; padding: 8px 10px; border: 1px solid var(--border-default); border-radius: var(--ua-radius-card); background: var(--surface-overlay); box-shadow: var(--ua-shadow-overlay); pointer-events: none; white-space: nowrap; }
+.tooltipValue { color: var(--text-primary); font: 600 14px/1.2 var(--ua-font-mono); font-variant-numeric: tabular-nums; }
+.tooltipCaption { color: var(--text-tertiary); font-size: 11px; }
+.tooltipSeriesRow { display: flex; align-items: center; gap: 6px; color: var(--text-secondary); font-size: 11px; }
+.tooltipSeriesRow i { display: inline-block; width: 10px; height: 2px; }
+.axisPill { display: inline-block; padding: 2px 6px; border-radius: 4px; background: var(--ua-surface-inverse); color: var(--ua-text-inverse); font: 10px/1.3 var(--ua-font-mono); font-variant-numeric: tabular-nums; }
+
+.chartState {
+  display: grid;
+  min-height: 110px;
+  place-content: center;
+  gap: 4px;
+  text-align: center;
+}
+.chartState strong { color: var(--text-primary); font-size: 12px; }
+.chartState span { max-width: 440px; color: var(--text-tertiary); font-size: 10px; line-height: 1.45; }
+
+.dataDetails {
+  border-top: 1px solid var(--border-muted);
+  color: var(--text-secondary);
+  font-size: 10px;
+}
+.dataDetails summary {
+  width: max-content;
+  margin: 0;
+  padding: 8px 15px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.dataDetails summary:focus-visible { outline: none; box-shadow: inset var(--shadow-focus); }
+.dataTableWrap { overflow-x: auto; border-top: 1px solid var(--border-muted); }
+.dataTableWrap table { width: 100%; border-collapse: collapse; }
+.dataTableWrap th, .dataTableWrap td { padding: 7px 15px; border-bottom: 1px solid var(--border-muted); text-align: left; }
+.dataTableWrap thead th { color: var(--text-tertiary); font-weight: 600; }
+.dataTableWrap tbody th { color: var(--text-primary); font-weight: 600; }
+
+/* Deadline risk */
+.riskChart { display: grid; gap: 11px; }
+.riskRow { display: grid; grid-template-columns: minmax(90px, 0.36fr) minmax(140px, 1fr) 38px; align-items: center; gap: 10px; }
+.riskLabel { min-width: 0; color: var(--text-secondary); font-size: 10px; }
+.riskLabel strong { display: block; overflow: hidden; color: var(--text-primary); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.riskLabel span { display: block; margin-top: 2px; color: var(--text-tertiary); }
+.riskTrack { position: relative; height: 15px; overflow: hidden; border-radius: 2px; background: var(--ua-chart-track); }
+.riskFill { height: 100%; border-radius: 2px; }
+.riskValue { color: var(--text-primary); font-size: 11px; font-weight: 650; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Vertical comparison */
+.columnChart { display: grid; min-height: 148px; grid-template-columns: repeat(var(--columns), minmax(34px, 1fr)); align-items: end; gap: 8px; padding: 8px 2px 0; border-bottom: 1px solid var(--ua-chart-grid); background: repeating-linear-gradient(to top, transparent 0, transparent 36px, var(--ua-chart-grid) 37px); }
+.column { display: grid; height: 140px; grid-template-rows: 1fr auto auto; align-items: end; gap: 5px; text-align: center; }
+.columnBar { width: min(30px, 72%); margin-inline: auto; border-radius: 2px 2px 0 0; }
+.column strong { color: var(--text-primary); font-size: 11px; font-variant-numeric: tabular-nums; }
+.column span { min-height: 24px; color: var(--text-tertiary); font-size: 9px; line-height: 1.25; }
+
+/* Ranked contribution */
+.rankedChart { display: grid; gap: 10px; }
+.rankedRow { display: grid; grid-template-columns: minmax(110px, 0.42fr) minmax(150px, 1fr) minmax(74px, auto); align-items: center; gap: 10px; }
+.rankedName { overflow: hidden; color: var(--text-secondary); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.rankedTrack { height: 9px; border-radius: 4px 0 0 4px; background: var(--ua-chart-track); overflow: hidden; }
+.rankedFill { height: 100%; border-radius: 0 4px 4px 0; }
+.rankedValue { color: var(--text-primary); font-size: 10px; font-weight: 650; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Lollipop/range plot */
+.rangePlot { display: grid; gap: 15px; padding-top: 5px; }
+.rangeScale { display: grid; grid-template-columns: minmax(110px, 0.34fr) 1fr 42px; gap: 10px; color: var(--text-tertiary); font-size: 9px; }
+.rangeTicks { display: flex; justify-content: space-between; }
+.rangeRow { display: grid; grid-template-columns: minmax(110px, 0.34fr) 1fr 42px; align-items: center; gap: 10px; }
+.rangeLabel { color: var(--text-secondary); font-size: 10px; }
+.rangeTrack { position: relative; height: 16px; border-bottom: 1px solid var(--ua-chart-grid); background: repeating-linear-gradient(to right, transparent 0, transparent calc(25% - 1px), var(--ua-chart-grid) 25%); }
+.rangeLine { position: absolute; bottom: -1px; left: 0; height: 2px; border-radius: 2px; }
+.rangeDot { position: absolute; bottom: -4px; width: 8px; height: 8px; margin-left: -4px; border: 2px solid var(--surface); border-radius: 50%; box-shadow: 0 0 0 1px currentColor; }
+.rangeValue { color: var(--text-primary); font-size: 10px; font-weight: 650; text-align: right; }
+
+/* Status matrix */
+.statusMatrix { display: grid; grid-template-columns: repeat(12, minmax(12px, 1fr)); gap: 2px; }
+.statusCell { min-height: 28px; border: 1px solid color-mix(in srgb, currentColor 28%, transparent); border-radius: 2px; opacity: 0.9; }
+.matrixKey { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 11px; }
+.matrixKey div { display: flex; align-items: center; justify-content: flex-start; gap: 6px; color: var(--text-tertiary); font-size: 9px; }
+.matrixKey strong { color: var(--text-primary); font-size: 11px; }
+
+/* Mini bar sequence */
+.sequence { display: grid; min-height: 145px; grid-template-columns: repeat(var(--bars), minmax(18px, 1fr)); align-items: end; gap: 2px; padding-top: 8px; border-bottom: 1px solid var(--ua-chart-grid); background: repeating-linear-gradient(to top, transparent 0, transparent 35px, var(--ua-chart-grid) 36px); }
+.sequenceItem { display: grid; height: 136px; grid-template-rows: 1fr 28px; align-items: end; gap: 5px; }
+.sequenceBar { width: min(26px, 88%); margin-inline: auto; border-radius: 2px 2px 0 0; }
+.sequenceLabel { overflow: hidden; color: var(--text-tertiary); font-size: 8px; line-height: 1.2; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Provider health matrix */
+.healthMatrix { display: grid; grid-template-columns: minmax(120px, 0.8fr) repeat(var(--health-columns), minmax(72px, 1fr)); overflow-x: auto; }
+.healthMatrix > div { min-width: 0; padding: 8px 9px; border-right: 1px solid var(--border-muted); border-bottom: 1px solid var(--border-muted); }
+.healthMatrixRow { display: contents; }
+.healthMatrixRow > div { min-width: 0; padding: 8px 9px; border-right: 1px solid var(--border-muted); border-bottom: 1px solid var(--border-muted); }
+.healthHeader { color: var(--text-tertiary); font-size: 12px; font-weight: 600; }
+.healthProvider { color: var(--text-primary); font-size: 12px; font-weight: 600; }
+.healthCell { display: flex; align-items: center; gap: 6px; color: var(--text-secondary); font-size: 12px; }
+.healthCell i { width: 10px; height: 10px; flex: 0 0 auto; border-radius: 4px; }
+
+@media (max-width: 700px) {
+  .plot { min-height: 150px; padding: 13px; }
+  .riskRow, .rankedRow { grid-template-columns: minmax(82px, 0.42fr) minmax(90px, 1fr) auto; gap: 7px; }
+  .statusMatrix { grid-template-columns: repeat(8, minmax(12px, 1fr)); }
+  .healthMatrix {
+    min-width: 0;
+    grid-template-columns: 120px repeat(var(--health-columns), 115px);
+  }
+  .columnChart, .sequence { gap: 4px; }
+}
+
+/* T8 segment composition card */
+.segmentHeadline { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; }
+.segmentHeadline strong { color: var(--text-primary); font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.segmentBar { display: flex; height: 10px; gap: 4px; }
+.segmentSeg { height: 100%; min-width: 4px; border-radius: 3px; }
+.segmentSeg a { display: block; width: 100%; height: 100%; border-radius: 3px; }
+.dotLegend { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 8px 0 0; padding: 0; color: var(--text-secondary); font-size: 12px; list-style: none; }
+.dotLegend li { display: inline-flex; align-items: center; gap: 5px; }
+.dotLegend i { width: 6px; height: 6px; border-radius: 50%; }
+.rankedList { display: grid; gap: 7px; margin-top: 12px; }
+.rankedListRow { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.rankedListRow a, .rankedListRow > span:first-child { overflow: hidden; color: var(--text-primary); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.rankedListValue { display: flex; align-items: center; gap: 6px; color: var(--text-primary); font-size: 13px; font-variant-numeric: tabular-nums; }
+
+/* T6 block rail */
+.rail { position: relative; display: flex; overflow: hidden; height: 36px; gap: 3px; border-radius: 4px; }
+.rail[data-compact="true"] { height: 28px; }
+.railBlock { height: 100%; min-width: 6px; border-radius: 4px; }
+.railBlock a { display: block; width: 100%; height: 100%; }
+.railRemainder { height: 100%; flex: 1 1 auto; min-width: 4px; border-radius: 4px; }

@@ -3,6 +3,7 @@ import { withRequestLogging } from '@/lib/log';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
+import { resolveMerchantCustomerId } from '@/lib/customers/merchantCustomerHistory';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,17 +22,31 @@ async function GETHandler(
 
   const { data: customer } = await service
     .from(TABLES.SOURCE_CUSTOMERS)
-    .select('id')
+    .select('id, merchant_customer_id')
     .eq('id', customerId)
     .eq('merchant_id', ctx.merchantId)
     .maybeSingle();
-  if (!customer) return NextResponse.json({ orders: [] });
+  const merchantCustomerId = await resolveMerchantCustomerId(service, ctx.merchantId, customerId);
+  const { data: canonical } = !customer
+    ? await service
+      .from(TABLES.MERCHANT_CUSTOMERS)
+      .select('id')
+      .eq('merchant_id', ctx.merchantId)
+      .eq('id', customerId)
+      .maybeSingle()
+    : { data: null };
+  if (!customer && !canonical) return NextResponse.json({ orders: [] });
 
-  const { data: orderData, error: orderError } = await service
+  let orderQuery = service
     .from(TABLES.SOURCE_ORDERS)
     .select('id, external_id, order_number, placed_at, total_price')
-    .eq('merchant_id', ctx.merchantId)
-    .eq('source_customer_id', customerId)
+    .eq('merchant_id', ctx.merchantId);
+  if (merchantCustomerId || canonical?.id) {
+    orderQuery = orderQuery.eq('merchant_customer_id', merchantCustomerId ?? customerId);
+  } else {
+    orderQuery = orderQuery.eq('source_customer_id', customerId);
+  }
+  const { data: orderData, error: orderError } = await orderQuery
     .order('placed_at', { ascending: true })
     .limit(2000);
   if (orderError) return NextResponse.json({ error: 'Failed to load orders' }, { status: 500 });
@@ -56,6 +71,18 @@ async function GETHandler(
       claim.source_order_id ? [claim.source_order_id] : [],
     ),
   );
+
+  if (merchantCustomerId || canonical?.id) {
+    const { data: directClaims } = await service
+      .from(TABLES.MERCHANT_CLAIMS)
+      .select('source_order_id')
+      .eq('merchant_id', ctx.merchantId)
+      .eq('merchant_customer_id', merchantCustomerId ?? customerId)
+      .in('source_order_id', orderIds.length ? orderIds : ['00000000-0000-0000-0000-000000000000']);
+    for (const claim of (directClaims ?? []) as Array<{ source_order_id: string | null }>) {
+      if (claim.source_order_id) claimedOrderIds.add(claim.source_order_id);
+    }
+  }
 
   return NextResponse.json({
     orders: orders.map((order) => ({

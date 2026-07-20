@@ -5,6 +5,7 @@ import {
   isCanonicalFinalClaimStatus,
   type CanonicalClaimStatus,
 } from '@/lib/claims/statusMachine';
+import { formatDateAbsolute } from '@/lib/utils/format';
 
 // Compatibility names for queue/SLA consumers. The status machine owns the
 // values; this module owns only age and SLA calculations.
@@ -79,5 +80,5 @@ export function getClaimSlaState(claim: ClaimAgeInput, now = new Date()): {
 export function formatFiledDate(claim: ClaimAgeInput): string {
   const openedAt = claimOpenedAt(claim);
   if (!openedAt) return '—';
-  return openedAt.toLocaleDateString('en-US');
+  return formatDateAbsolute(openedAt);
 }

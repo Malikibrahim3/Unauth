@@ -46,7 +46,14 @@ export function track(
     console.log('[Analytics]', event, properties ?? '')
     return
   }
-  amplitude.track(event, properties ?? {})
+  const root = document.querySelector<HTMLElement>('.ua-app')
+  const rolloutProperties = root
+    ? {
+        ui_version: root.dataset.uiVersion ?? 'legacy',
+        ui_cohort: root.dataset.uiCohort ?? 'unknown',
+      }
+    : {}
+  amplitude.track(event, { ...rolloutProperties, ...properties })
 }
 
 export type AnalyticsEvent =
@@ -78,6 +85,7 @@ export type AnalyticsEvent =
   | 'History Viewed'
   | 'Store Viewed'
   | 'Catches Page Viewed'
+  | 'Authenticated UI Viewed'
   // Demo
   | 'Demo Loaded'
   | 'Demo Sign Up Clicked'

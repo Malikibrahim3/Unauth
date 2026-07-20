@@ -3,26 +3,47 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { TABLES } from "@/lib/supabase/tables";
 import { requirePermission, PERMISSIONS } from "@/lib/permissions";
 import { buildBehavioralNarrative } from "@/lib/customers/narrative";
+import { riskLevelToNewGrade } from "@/lib/confidence";
+import type { ConfidenceGradeValue } from "@/lib/confidence";
 import type { CustomerIntelligencePanel } from "@/app/api/customers/[id]/route";
 import { ACTIVE_CLAIM_STATUSES } from "@/lib/claims/sla";
 import {
   parseAndVerifySignedToken,
   hashSignedToken,
 } from "@/lib/api/signedAccess";
-import { getConnectionState } from "@/lib/connections/getConnectionState";
+import { getCachedConnectionState } from "@/lib/connections/getConnectionState";
 import type { ConnectionState } from "@/lib/connections/getConnectionState";
 import {
+  CLAIM_TYPE_LABELS,
+  firstArrayValue,
   type RoadmapTransaction,
 } from "@/app/(app)/customers/[id]/customerProfilePageLabels";
 import {
+  buildCustomerIdentifierHashes,
+  lookupNetworkIdentity,
   resolveIdentitySiblingCustomers,
-  resolveRepresentativeCustomerIdForIdentity,
 } from "@/lib/customers/identityNetwork";
+import { getEventStream } from "@/lib/analysis/customerIntelligence";
+import { normaliseAddress } from "@/lib/identity/normalise";
+import type { BehaviorRoadmapEvent } from "@/components/customers/BehaviorRoadmap";
+import type { EvidenceLevel, ScoreFactor } from "@/lib/engine/evidence/score";
+import type { ConfidenceGrade } from "@/lib/engine/weights";
 import { merchantHasEntitlement } from "@/lib/product/requireEntitlement";
 import { dominantCurrency } from "@/lib/utils/format";
+import {
+  loadMerchantCustomerHistory,
+  resolveMerchantCustomerId,
+} from "@/lib/customers/merchantCustomerHistory";
+import {
+  deriveSourceLink,
+  loadSourceLinkContext,
+} from "@/lib/relationships/sourceLinking";
 
 export type CustomerProfileSearchParams = {
+  audit?: string;
   view_token?: string;
+  buildEvidence?: string;
+  disputedOrder?: string;
   source?: string;
   ticket_id?: string;
 };
@@ -48,6 +69,15 @@ export type CustomerProfileDisplay = {
   phones: string[];
   ips: string[];
   primary_email: string | null;
+  risk_level: string;
+  total_orders: number;
+  total_refund_claims: number;
+  total_chargebacks: number;
+  total_merchants_seen_at: number;
+  refund_rate: number;
+  fastest_claim_days: number | null;
+  avg_claim_days: number | null;
+  refund_acceleration_score: number;
   first_seen: string;
   last_seen: string;
   fraud_flags: string[];
@@ -55,12 +85,37 @@ export type CustomerProfileDisplay = {
   investigation_status?: string;
   /** Count of OTHER linked source_customers records collapsed into this identity (0 if none). */
   sibling_count?: number;
+  refund_requests_365d: number;
+  completed_refunds_365d: number;
+  completed_refund_amounts_by_currency: Record<string, number>;
+  possible_match_count: number;
 };
 
 export type LinkedAccountRow = {
   entityType: string;
   entityValue: string;
   confidence: number;
+};
+
+export type IdentitySignalRow = {
+  value: string;
+  signalType: string;
+  grade: string;
+};
+
+export type MerchantSignalPill = {
+  merchantLabel: string;
+  claimType: string;
+};
+
+/** Cached network evidence score for the customer profile badge (service-role fetch). */
+export type CustomerEvidenceDisplay = {
+  evidence_disclosed: boolean;
+  evidence_score: number;
+  evidence_level: EvidenceLevel;
+  has_sufficient_data: boolean;
+  score_breakdown: ScoreFactor[];
+  confidence_grade: ConfidenceGrade | null;
 };
 
 export type ClaimSummaryRow = {
@@ -83,28 +138,46 @@ export type ActivityLogEntry = {
 
 export type CustomerProfilePageViewProps = {
   connectionState: ConnectionState;
+  auditRunId: string | null;
   viewToken: string;
   gorgiasSource: string | null;
   gorgiasTicketId: string | null;
   profile: CustomerProfileDisplay;
   displayName: string;
+  profileGrade: ConfidenceGradeValue;
   hasCleanRecord: boolean;
   merchantClaimCount: number;
   merchantChargebackCount: number;
   merchantOrderCount: number;
   localClaimRatePct: number;
+  isEligibleForEvidence: boolean;
   totalOrderValue: number;
   totalRefundedValue: number;
   displayCurrency: string;
+  merchantsSeen: number;
+  profileWideOrders: number;
+  localOrderSharePct: number;
+  networkChargebackRatePct: number;
+  thisStoreMerchantSharePct: number;
+  density: number[];
+  primaryIdentifier: string;
+  identitySignalRows: IdentitySignalRow[];
+  identitySignals: string[];
   transactions: RoadmapTransaction[];
+  roadmapEvents: BehaviorRoadmapEvent[];
   identityTimeline: CustomerIntelligencePanel["identityTimeline"];
   variantCount: number;
   merchantNarrative: string;
   linkedAccounts: LinkedAccountRow[];
+  merchantSignalPills: MerchantSignalPill[];
   activityLog: ActivityLogEntry[];
   openClaimCount: number;
   latestClaim: ClaimSummaryRow | null;
   merchantRefundRate: number;
+  evidenceDisplay: CustomerEvidenceDisplay | null;
+  billingAddress: string | null;
+  identitySignalSummary: IdentitySignalSummaryRow[];
+  possibleMatches: PossibleMatchRow[];
 };
 
 type SourceCustomerRow = {
@@ -118,6 +191,7 @@ type SourceCustomerRow = {
   account_created_at: string | null;
   created_at: string;
   updated_at: string;
+  merchant_customer_id?: string | null;
 };
 
 type SourceOrderRow = {
@@ -132,8 +206,11 @@ type SourceOrderRow = {
   card_last4: string | null;
   browser_ip: string | null;
   source: string | null;
+  connection_id: string | null;
+  source_account_id: string | null;
   placed_at: string | null;
   shipping_address_id: string | null;
+  merchant_customer_id?: string | null;
 };
 
 type SourceAddressRow = {
@@ -156,6 +233,43 @@ type ClaimRow = {
   submitted_at: string | null;
   created_at: string;
   updated_at: string;
+};
+
+type OrderLineRow = {
+  source_order_id: string;
+  title: string | null;
+  quantity: number | null;
+  unit_price_minor: number | null;
+  total_minor: number | null;
+  currency: string | null;
+};
+
+type ShipmentRow = {
+  source_order_id: string;
+  external_id: string;
+  source_account_id: string | null;
+  source_record_id: string | null;
+  carrier: string | null;
+  status: string | null;
+  tracking_number: string | null;
+  shipped_at: string | null;
+  delivered_at: string | null;
+};
+
+export type IdentitySignalSummaryRow = {
+  signalType: string;
+  distinctCount: number;
+  firstSeenAt: string;
+  lastSeenAt: string;
+  seenCount: number;
+};
+
+export type PossibleMatchRow = {
+  candidateId: string;
+  displayName: string | null;
+  email: string | null;
+  confidence: number | null;
+  matchedTypes: string[];
 };
 
 function toStringArray(value: unknown): string[] {
@@ -185,11 +299,31 @@ function formatAddress(row: SourceAddressRow): string {
     .join(", ");
 }
 
+function buildIdentitySignalRows(
+  profile: CustomerProfileDisplay,
+): IdentitySignalRow[] {
+  const rows: IdentitySignalRow[] = [];
+  for (const email of profile.emails) {
+    if (email && email !== profile.primary_email) {
+      rows.push({ value: email, signalType: "email variant", grade: "B" });
+    }
+  }
+  const address = firstArrayValue(profile.addresses);
+  if (address)
+    rows.push({ value: address, signalType: "address match", grade: "B" });
+  const phone = firstArrayValue(profile.phones);
+  if (phone) rows.push({ value: phone, signalType: "phone match", grade: "A" });
+  const ip = firstArrayValue(profile.ips);
+  if (ip) rows.push({ value: ip, signalType: "device/ip match", grade: "C" });
+  return rows;
+}
+
 export async function loadCustomerProfilePage(
   profileId: string,
   searchParams: CustomerProfileSearchParams,
 ): Promise<CustomerProfileLoadResult> {
   const viewToken = searchParams.view_token?.trim() ?? "";
+  const auditRunId = searchParams.audit ?? null;
   const gorgiasSource =
     searchParams.source?.trim() === "gorgias" ? "gorgias" : null;
   const gorgiasTicketId = searchParams.ticket_id?.trim() || null;
@@ -257,11 +391,11 @@ export async function loadCustomerProfilePage(
   // source-customer deep links during the additive migration.
   // ---------------------------------------------------------------------------
   const [connectionState, customerRes] = await Promise.all([
-    getConnectionState(svc, merchantId),
+    getCachedConnectionState(merchantId),
     svc
       .from("source_customers")
       .select(
-        "id, email, phone, first_name, last_name, other_emails, orders_count, account_created_at, created_at, updated_at",
+        "id, email, phone, first_name, last_name, other_emails, orders_count, account_created_at, created_at, updated_at, merchant_customer_id",
       )
       .eq("merchant_id", merchantId)
       .or(`id.eq.${profileId},merchant_customer_id.eq.${profileId}`)
@@ -277,32 +411,43 @@ export async function loadCustomerProfilePage(
     const fallback = (await svc
       .from("source_customers")
       .select(
-        "id, email, phone, first_name, last_name, other_emails, orders_count, account_created_at, created_at, updated_at",
+        "id, email, phone, first_name, last_name, other_emails, orders_count, account_created_at, created_at, updated_at, merchant_customer_id",
       )
       .eq("merchant_id", merchantId)
       .eq("id", profileId)
       .maybeSingle()) as unknown as { data: SourceCustomerRow | null };
     customer = fallback.data;
   }
-  // Layer 1b — the id may be an identity_id (e.g. a claim's identity_id used
-  // as a deep link target from the payout queue). Resolve it back to one of
-  // its merchant-owned source_customers rows.
   if (!customer) {
-    const representativeCustomerId = await resolveRepresentativeCustomerIdForIdentity(
-      svc,
-      merchantId,
-      profileId,
-    );
-    if (representativeCustomerId) {
-      const byIdentity = (await svc
-        .from("source_customers")
-        .select(
-          "id, email, phone, first_name, last_name, other_emails, orders_count, account_created_at, created_at, updated_at",
-        )
-        .eq("merchant_id", merchantId)
-        .eq("id", representativeCustomerId)
-        .maybeSingle()) as unknown as { data: SourceCustomerRow | null };
-      customer = byIdentity.data;
+    const { data: canonicalCustomer } = await svc
+      .from("merchant_customers")
+      .select("id, display_name, email, updated_at, created_at")
+      .eq("merchant_id", merchantId)
+      .eq("id", profileId)
+      .maybeSingle() as unknown as {
+        data: {
+          id: string;
+          display_name: string | null;
+          email: string | null;
+          updated_at: string;
+          created_at: string;
+        } | null;
+      };
+    if (canonicalCustomer) {
+      const nameParts = (canonicalCustomer.display_name ?? "").trim().split(/\s+/).filter(Boolean);
+      customer = {
+        id: canonicalCustomer.id,
+        email: canonicalCustomer.email,
+        phone: null,
+        first_name: nameParts[0] ?? null,
+        last_name: nameParts.slice(1).join(" ") || null,
+        other_emails: [],
+        orders_count: null,
+        account_created_at: canonicalCustomer.created_at,
+        created_at: canonicalCustomer.created_at,
+        updated_at: canonicalCustomer.updated_at,
+        merchant_customer_id: canonicalCustomer.id,
+      };
     }
   }
   if (!customer) {
@@ -312,28 +457,78 @@ export async function loadCustomerProfilePage(
     notFound();
   }
 
+  const merchantCustomerId =
+    (await resolveMerchantCustomerId(svc, merchantId, profileId)) ??
+    customer.merchant_customer_id ??
+    null;
+  const merchantHistory = await loadMerchantCustomerHistory(svc, merchantId, profileId);
+
   // Sibling records linked by the network identity (same merchant, own-signal
   // disciplined). Orders/claims are aggregated across all linked records so the
   // dossier reflects the whole resolved identity, not just the clicked record.
-  const {
-    identityId: resolvedIdentityId,
-    customerIds: identityCustomerIds,
-    siblings,
-  } = await resolveIdentitySiblingCustomers(svc, merchantId, customer);
+  let resolvedIdentityId: string | null = null;
+  let identityCustomerIds: string[] = [customer.id];
+  let siblings: Array<{ id: string; email: string | null; name: string | null; ordersCount: number | null }> = [];
+  if (merchantCustomerId) {
+    const { data: canonicalSiblings } = await svc
+      .from("source_customers")
+      .select("id, email, first_name, last_name, orders_count")
+      .eq("merchant_id", merchantId)
+      .eq("merchant_customer_id", merchantCustomerId);
+    siblings = (canonicalSiblings ?? []).map((row: Record<string, unknown>) => ({
+      id: String(row.id),
+      email: (row.email as string | null) ?? null,
+      name: [row.first_name, row.last_name].filter(Boolean).join(" ").trim() || null,
+      ordersCount: row.orders_count == null ? null : Number(row.orders_count),
+    }));
+    identityCustomerIds = siblings.length > 0 ? siblings.map((s) => s.id) : [customer.id];
+  } else {
+    const siblingResolution = await resolveIdentitySiblingCustomers(svc, merchantId, customer);
+    resolvedIdentityId = siblingResolution.identityId;
+    identityCustomerIds = siblingResolution.customerIds;
+    siblings = siblingResolution.siblings;
+  }
   const siblingById = new Map(siblings.map((s) => [s.id, s]));
   const siblingCount = Math.max(identityCustomerIds.length - 1, 0);
 
   // Own-store orders (layer 1), across all linked records.
-  const { data: orderRows } = (await svc
-    .from("source_orders")
-    .select(
-      "id, external_id, order_number, source_customer_id, email, phone, total_price, currency, card_last4, browser_ip, source, placed_at, shipping_address_id",
-    )
-    .eq("merchant_id", merchantId)
-    .in("source_customer_id", identityCustomerIds)
-    .order("placed_at", { ascending: true })
-    .limit(2000)) as unknown as { data: SourceOrderRow[] | null };
-  const orders = orderRows ?? [];
+  const orderSelect =
+    "id, external_id, order_number, source_customer_id, merchant_customer_id, email, phone, total_price, currency, card_last4, browser_ip, source, connection_id, source_account_id, placed_at, shipping_address_id";
+  let orderRows: SourceOrderRow[] = [];
+  if (merchantCustomerId) {
+    const canonicalOrders = (await svc
+      .from("source_orders")
+      .select(orderSelect)
+      .eq("merchant_id", merchantId)
+      .eq("merchant_customer_id", merchantCustomerId)
+      .order("placed_at", { ascending: true })
+      .limit(2000)) as unknown as { data: SourceOrderRow[] | null; error?: { message: string } | null };
+    orderRows = canonicalOrders.data ?? [];
+    if (canonicalOrders.error) {
+      const legacyOrders = (await svc
+        .from("source_orders")
+        .select(
+          "id, external_id, order_number, source_customer_id, email, phone, total_price, currency, card_last4, browser_ip, source, connection_id, source_account_id, placed_at, shipping_address_id",
+        )
+        .eq("merchant_id", merchantId)
+        .in("source_customer_id", identityCustomerIds)
+        .order("placed_at", { ascending: true })
+        .limit(2000)) as unknown as { data: SourceOrderRow[] | null };
+      orderRows = legacyOrders.data ?? [];
+    }
+  } else {
+    const legacyOrders = (await svc
+      .from("source_orders")
+      .select(
+        "id, external_id, order_number, source_customer_id, email, phone, total_price, currency, card_last4, browser_ip, source, connection_id, source_account_id, placed_at, shipping_address_id",
+      )
+      .eq("merchant_id", merchantId)
+      .in("source_customer_id", identityCustomerIds)
+      .order("placed_at", { ascending: true })
+      .limit(2000)) as unknown as { data: SourceOrderRow[] | null };
+    orderRows = legacyOrders.data ?? [];
+  }
+  const orders = orderRows;
 
   // Shipping addresses for the orders (atomic in v2; render as one string).
   const addressIds = uniqueNonEmpty(orders.map((o) => o.shipping_address_id));
@@ -365,6 +560,22 @@ export async function loadCustomerProfilePage(
       .limit(200)) as unknown as { data: ClaimRow[] | null };
     claimRows = data ?? [];
   }
+  if (merchantCustomerId) {
+    const { data: canonicalClaimRows } = (await svc
+      .from(TABLES.MERCHANT_CLAIMS)
+      .select(
+        "id, claim_type, status, source_order_id, reason_normalized, reason_raw, submitted_at, created_at, updated_at",
+      )
+      .eq("merchant_id", merchantId)
+      .eq("merchant_customer_id", merchantCustomerId)
+      .order("updated_at", { ascending: false })
+      .limit(500)) as unknown as { data: ClaimRow[] | null };
+    const byId = new Map(claimRows.map((claim) => [claim.id, claim]));
+    for (const claim of canonicalClaimRows ?? []) byId.set(claim.id, claim);
+    claimRows = [...byId.values()].sort((a, b) =>
+      String(b.updated_at).localeCompare(String(a.updated_at)),
+    );
+  }
 
   const claimsByOrder = new Map<string, ClaimRow[]>();
   for (const claim of claimRows) {
@@ -374,6 +585,112 @@ export async function loadCustomerProfilePage(
     claimsByOrder.set(claim.source_order_id, list);
   }
 
+  // Order line items (products/qty/price) for the order history breakdown.
+  let lineRows: OrderLineRow[] = [];
+  if (orderIds.length > 0) {
+    const { data } = (await svc
+      .from(TABLES.SOURCE_ORDER_LINES)
+      .select("source_order_id, title, quantity, unit_price_minor, total_minor, currency")
+      .eq("merchant_id", merchantId)
+      .in("source_order_id", orderIds)) as unknown as { data: OrderLineRow[] | null };
+    lineRows = data ?? [];
+  }
+  const linesByOrder = new Map<string, OrderLineRow[]>();
+  for (const line of lineRows) {
+    const list = linesByOrder.get(line.source_order_id) ?? [];
+    list.push(line);
+    linesByOrder.set(line.source_order_id, list);
+  }
+
+  // Shipments (delivery status/carrier/tracking) for the order history.
+  let shipmentRows: ShipmentRow[] = [];
+  if (orderIds.length > 0) {
+    const { data } = (await svc
+      .from(TABLES.SOURCE_SHIPMENTS)
+      .select("source_order_id, external_id, source_account_id, source_record_id, carrier, status, tracking_number, shipped_at, delivered_at")
+      .eq("merchant_id", merchantId)
+      .in("source_order_id", orderIds)) as unknown as { data: ShipmentRow[] | null };
+    shipmentRows = data ?? [];
+  }
+  const shipmentsByOrder = new Map<string, ShipmentRow[]>();
+  for (const shipment of shipmentRows) {
+    const list = shipmentsByOrder.get(shipment.source_order_id) ?? [];
+    list.push(shipment);
+    shipmentsByOrder.set(shipment.source_order_id, list);
+  }
+
+  const sourceLinkContext = await loadSourceLinkContext(svc, merchantId);
+
+  // Billing/other addresses not tied to a specific order's shipping address.
+  const customerAddressIds = identityCustomerIds;
+  let extraAddressRows: (SourceAddressRow & { source_customer_id: string; kind: string })[] = [];
+  if (customerAddressIds.length > 0) {
+    const { data } = (await svc
+      .from(TABLES.SOURCE_ADDRESSES)
+      .select("id, source_customer_id, kind, line1, line2, city, region, postal_code, country")
+      .eq("merchant_id", merchantId)
+      .in("source_customer_id", customerAddressIds)) as unknown as {
+      data: (SourceAddressRow & { source_customer_id: string; kind: string })[] | null;
+    };
+    extraAddressRows = data ?? [];
+  }
+  const billingAddress = extraAddressRows.find((row) => row.kind === "billing");
+  const billingAddressDisplay = billingAddress ? formatAddress(billingAddress) : null;
+
+  // Identity-signal footprint (hashed identifiers) — counts and freshness per
+  // signal type, not the raw values, since only hashes are stored.
+  let identitySignalSummary: IdentitySignalSummaryRow[] = [];
+  if (merchantCustomerId) {
+    const { data } = (await svc
+      .from(TABLES.MERCHANT_CUSTOMER_SIGNALS)
+      .select("identifier_type, identifier_hash, first_seen_at, last_seen_at, seen_count")
+      .eq("merchant_id", merchantId)
+      .eq("merchant_customer_id", merchantCustomerId)) as unknown as {
+      data: Array<{
+        identifier_type: string;
+        identifier_hash: string;
+        first_seen_at: string;
+        last_seen_at: string;
+        seen_count: number;
+      }> | null;
+    };
+    const byType = new Map<
+      string,
+      { hashes: Set<string>; firstSeenAt: string; lastSeenAt: string; seenCount: number }
+    >();
+    for (const row of data ?? []) {
+      const current = byType.get(row.identifier_type) ?? {
+        hashes: new Set<string>(),
+        firstSeenAt: row.first_seen_at,
+        lastSeenAt: row.last_seen_at,
+        seenCount: 0,
+      };
+      current.hashes.add(row.identifier_hash);
+      if (row.first_seen_at < current.firstSeenAt) current.firstSeenAt = row.first_seen_at;
+      if (row.last_seen_at > current.lastSeenAt) current.lastSeenAt = row.last_seen_at;
+      current.seenCount += row.seen_count;
+      byType.set(row.identifier_type, current);
+    }
+    identitySignalSummary = [...byType.entries()]
+      .map(([signalType, agg]) => ({
+        signalType,
+        distinctCount: agg.hashes.size,
+        firstSeenAt: agg.firstSeenAt,
+        lastSeenAt: agg.lastSeenAt,
+        seenCount: agg.seenCount,
+      }))
+      .sort((a, b) => b.seenCount - a.seenCount);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Network identity (layers 3/5) — via the k-anonymous RPC only.
+  // ---------------------------------------------------------------------------
+  const identifierHashes = buildCustomerIdentifierHashes(customer);
+  const network = await lookupNetworkIdentity(
+    svc,
+    merchantId,
+    identifierHashes,
+  );
   const identityId = resolvedIdentityId;
 
   // Merchant-side state (watchlist / investigation status) for the identity.
@@ -390,8 +707,48 @@ export async function loadCustomerProfilePage(
     investigationStatus = stateRow?.investigation_status;
   }
 
+  // Network evidence score (service-role table; disclosed only when k-anon RPC matched).
+  let evidenceDisplay: CustomerEvidenceDisplay | null = null;
+  if (network) {
+    const { data: evidenceRow } = (await svc
+      .from(TABLES.IDENTITY_EVIDENCE_SCORES)
+      .select(
+        "evidence_score, evidence_level, has_sufficient_data, score_breakdown",
+      )
+      .eq("identity_id", network.identityId)
+      .maybeSingle()) as unknown as {
+      data: {
+        evidence_score: number;
+        evidence_level: string;
+        has_sufficient_data: boolean;
+        score_breakdown: unknown;
+      } | null;
+    };
+
+    evidenceDisplay = {
+      evidence_disclosed: true,
+      evidence_score: Number(evidenceRow?.evidence_score ?? 0),
+      evidence_level: (evidenceRow?.evidence_level ??
+        "minimal") as EvidenceLevel,
+      has_sufficient_data: Boolean(evidenceRow?.has_sufficient_data),
+      score_breakdown: Array.isArray(evidenceRow?.score_breakdown)
+        ? (evidenceRow.score_breakdown as ScoreFactor[])
+        : [],
+      confidence_grade: network.confidenceGrade,
+    };
+  } else if (identityId || identifierHashes.length > 0) {
+    evidenceDisplay = {
+      evidence_disclosed: false,
+      evidence_score: 0,
+      evidence_level: "minimal",
+      has_sufficient_data: false,
+      score_breakdown: [],
+      confidence_grade: null,
+    };
+  }
+
   // ---------------------------------------------------------------------------
-  // Display assembly from merchant-owned customer, order, and case records.
+  // Display assembly (own-store data first; network aggregates where disclosed).
   // ---------------------------------------------------------------------------
   const customerName = [customer.first_name, customer.last_name]
     .filter(Boolean)
@@ -442,12 +799,34 @@ export async function loadCustomerProfilePage(
     phones,
     ips,
     primary_email: customer.email,
+    // Identity confidence grade (displayed as confidence, never a verdict).
+    risk_level: network?.confidenceGrade ?? "none",
+    total_orders: Math.max(network?.totalOrders ?? 0, merchantOrderCount),
+    total_refund_claims: Math.max(
+      network?.totalClaims ?? 0,
+      merchantClaimCount,
+    ),
+    total_chargebacks: Math.max(
+      network?.totalChargebacks ?? 0,
+      merchantChargebacks,
+    ),
+    total_merchants_seen_at: Math.max(network?.merchantCount ?? 1, 1),
     sibling_count: siblingCount,
-    first_seen: firstSeenLocal,
-    last_seen: lastSeenLocal,
+    refund_rate:
+      network?.claimRate ??
+      (merchantOrderCount > 0 ? merchantClaimCount / merchantOrderCount : 0),
+    fastest_claim_days: network?.fastestClaimDays ?? null,
+    avg_claim_days: null,
+    refund_acceleration_score: 0,
+    first_seen: network?.firstSeenAt ?? firstSeenLocal,
+    last_seen: network?.lastSeenAt ?? lastSeenLocal,
     fraud_flags: [],
     identity_signals: [],
     investigation_status: investigationStatus,
+    refund_requests_365d: merchantHistory.refundRequests365d,
+    completed_refunds_365d: merchantHistory.completedRefunds365d,
+    completed_refund_amounts_by_currency: merchantHistory.completedRefundAmountByCurrency,
+    possible_match_count: merchantHistory.possibleMatches.length,
   };
 
   const transactions: RoadmapTransaction[] = orders.map((order) => {
@@ -461,9 +840,26 @@ export async function loadCustomerProfilePage(
       viaCustomerId != null && viaCustomerId !== customer.id
         ? (siblingById.get(viaCustomerId)?.email ?? order.email ?? null)
         : null;
+    const shipment = shipmentsByOrder.get(order.id)?.[0] ?? null;
+    const orderLink = deriveSourceLink({
+      context: sourceLinkContext,
+      entityType: "order",
+      row: order,
+      relatedShipmentExternalId: shipment?.external_id ?? null,
+    });
+    const shipmentLink = shipment
+      ? deriveSourceLink({
+          context: sourceLinkContext,
+          entityType: "shipment",
+          row: shipment,
+          parentOrder: order,
+        })
+      : null;
     return {
       source_order_id: order.id,
       order_id: order.order_number ?? order.external_id,
+      external_href: orderLink?.sourceUrl ?? null,
+      external_source: orderLink?.sourceSystem ?? null,
       processed_at: order.placed_at ?? customer.created_at,
       order_value: order.total_price,
       currency: order.currency,
@@ -484,12 +880,38 @@ export async function loadCustomerProfilePage(
         refundClaim?.reason_normalized ?? refundClaim?.reason_raw ?? null,
       fraud_flags: [],
       risk_level: null,
+      line_items: (linesByOrder.get(order.id) ?? []).map((line) => ({
+        title: line.title,
+        quantity: line.quantity,
+        unit_price_minor: line.unit_price_minor,
+        total_minor: line.total_minor,
+        currency: line.currency,
+      })),
+      shipment: (() => {
+        if (!shipment) return null;
+        return {
+          carrier: shipment.carrier,
+          status: shipment.status,
+          tracking_number: shipment.tracking_number,
+          shipped_at: shipment.shipped_at,
+          delivered_at: shipment.delivered_at,
+          external_href: shipmentLink?.sourceUrl ?? null,
+          external_source: shipmentLink?.sourceSystem ?? null,
+        };
+      })(),
     };
   });
 
   type TimelineField = "email" | "name" | "address" | "ip" | "card_last4";
   const identityTimeline: CustomerIntelligencePanel["identityTimeline"] = [];
   const firstSeen: Record<string, string> = {};
+
+  // Compare on a normalised key so formatting differences (e.g. "St" vs
+  // "Street") don't register as a false identity change; the raw value is
+  // still what's displayed and deduplicated against.
+  function comparisonKey(field: TimelineField, value: string): string {
+    return field === "address" ? (normaliseAddress(value) ?? value) : value;
+  }
 
   function addEntry(
     date: string,
@@ -498,12 +920,13 @@ export async function loadCustomerProfilePage(
   ) {
     const v = (value ?? "").trim();
     if (!v) return;
+    const key = comparisonKey(field, v);
     if (!(field in firstSeen)) {
-      firstSeen[field] = v;
+      firstSeen[field] = key;
       identityTimeline.push({ date, field, value: v, isVariant: false });
-    } else if (firstSeen[field] !== v) {
+    } else if (firstSeen[field] !== key) {
       const alreadyAdded = identityTimeline.some(
-        (e) => e.field === field && e.value === v,
+        (e) => e.field === field && comparisonKey(field, e.value) === key,
       );
       if (!alreadyAdded) {
         identityTimeline.push({ date, field, value: v, isVariant: true });
@@ -598,6 +1021,9 @@ export async function loadCustomerProfilePage(
     }));
   }
 
+  const isEligibleForEvidence =
+    transactions.some((tx) => tx.refund_claimed || tx.chargeback_filed) ||
+    profile.total_chargebacks > 0;
   const totalOrderValue = orders.reduce(
     (sum, order) => sum + (Number(order.total_price) || 0),
     0,
@@ -609,25 +1035,58 @@ export async function loadCustomerProfilePage(
   const merchantRefundRate =
     merchantOrderCount > 0
       ? Math.round((merchantClaimCount / merchantOrderCount) * 100)
-      : 0;
+      : Math.round(profile.refund_rate * 100);
   const hasCleanRecord =
-    merchantClaimCount === 0 && merchantChargebacks === 0;
+    merchantClaimCount === 0 && profile.total_chargebacks === 0;
+  const identitySignals: string[] = [];
+
+  const density = Array.from({ length: 12 }, () => 0);
+  for (const tx of transactions) {
+    const diffDays = Math.floor(
+      (Date.now() - new Date(tx.processed_at).getTime()) / 86400000,
+    );
+    const weekIndex = Math.min(11, Math.max(0, 11 - Math.floor(diffDays / 7)));
+    density[weekIndex] += 1;
+  }
+
+  const roadmapEvents = getEventStream({
+    orderHistory: transactions.map((tx) => ({
+      orderId: tx.order_id,
+      processedAt: tx.processed_at,
+      orderValue: Number(tx.order_value) || null,
+      riskLevel: tx.risk_level ?? null,
+      refundRequested: !!tx.refund_claimed,
+      refundReason: tx.refund_reason ?? null,
+      chargebackFiled: !!tx.chargeback_filed,
+      chargebackReasonCode: tx.chargeback_reason_code ?? null,
+      fraudFlags: Array.isArray(tx.fraud_flags) ? tx.fraud_flags : [],
+      address: tx.shipping_address,
+      email: tx.customer_email,
+      cardLast4: tx.card_last4,
+      source: tx.source ?? null,
+    })),
+    identityTimeline,
+    notes: [],
+  });
 
   const merchantNarrative = buildBehavioralNarrative({
     totalOrders: merchantOrderCount,
     totalRefundClaims: merchantClaimCount,
-    refundRate: merchantOrderCount > 0
-      ? merchantClaimCount / merchantOrderCount
-      : 0,
-    fastestClaimDays: null,
-    avgClaimDays: null,
-    refundAccelerationScore: 0,
+    refundRate:
+      merchantOrderCount > 0
+        ? merchantClaimCount / merchantOrderCount
+        : profile.refund_rate,
+    fastestClaimDays: profile.fastest_claim_days,
+    avgClaimDays: profile.avg_claim_days,
+    refundAccelerationScore: profile.refund_acceleration_score,
     firstSeen: transactions[0]?.processed_at ?? profile.first_seen,
     lastSeen:
       transactions[transactions.length - 1]?.processed_at ?? profile.last_seen,
     fraudFlags: profile.identity_signals ?? profile.fraud_flags,
-    linkedAccountCount: 0,
+    linkedAccountCount: linkedAccounts.length,
   });
+
+  const profileGrade = riskLevelToNewGrade(network?.confidenceGrade ?? null);
 
   const claimSummaryRows: ClaimSummaryRow[] = claimRows
     .slice(0, 20)
@@ -652,35 +1111,89 @@ export async function loadCustomerProfilePage(
     ),
   ).length;
   const latestClaim = claimSummaryRows[0] ?? null;
+  const profileWideOrders = Math.max(0, profile.total_orders);
+  const merchantsSeen = Math.max(1, profile.total_merchants_seen_at);
+  const localOrderSharePct =
+    profileWideOrders > 0 ? (merchantOrderCount / profileWideOrders) * 100 : 0;
   const localClaimRatePct =
     merchantOrderCount > 0
       ? (merchantClaimCount / merchantOrderCount) * 100
       : 0;
+  const networkChargebackRatePct =
+    profileWideOrders > 0
+      ? (profile.total_chargebacks / profileWideOrders) * 100
+      : 0;
+  const thisStoreMerchantSharePct = (1 / merchantsSeen) * 100;
+
+  // Cross-merchant claim-type mix from the k-anonymous rollup only. Counts are
+  // aggregates; no per-merchant identification is possible or implied.
+  const merchantSignalPills: MerchantSignalPill[] = network
+    ? Object.entries(network.claimTypeCounts).flatMap(
+        ([claimType, claimCount]) => {
+          const label = CLAIM_TYPE_LABELS[claimType] ?? "Other";
+          const safeCount = Math.max(0, Math.min(Number(claimCount) || 0, 12));
+          return Array.from({ length: safeCount }, () => ({
+            merchantLabel: "Network report",
+            claimType: label,
+          }));
+        },
+      )
+    : [];
+
+  const primaryIdentifier =
+    profile.primary_email ?? firstArrayValue(profile.emails) ?? "primary";
+  const identitySignalRows = buildIdentitySignalRows(profile);
+
+  const possibleMatches: PossibleMatchRow[] = merchantHistory.possibleMatches.map((match) => ({
+    candidateId: match.candidateId,
+    displayName: match.displayName,
+    email: match.email,
+    confidence: match.confidence,
+    matchedTypes: match.matchedTypes,
+  }));
 
   const props: CustomerProfilePageViewProps = {
     connectionState: connectionState as ConnectionState,
+    auditRunId,
     viewToken,
     gorgiasSource,
     gorgiasTicketId,
     profile,
     displayName,
+    profileGrade,
     hasCleanRecord,
     merchantClaimCount,
     merchantChargebackCount: merchantChargebacks,
     merchantOrderCount,
     localClaimRatePct,
+    isEligibleForEvidence,
     totalOrderValue,
     totalRefundedValue,
     displayCurrency,
+    merchantsSeen,
+    profileWideOrders,
+    localOrderSharePct,
+    networkChargebackRatePct,
+    thisStoreMerchantSharePct,
+    density,
+    primaryIdentifier,
+    identitySignalRows,
+    identitySignals,
     transactions,
+    roadmapEvents,
     identityTimeline,
     variantCount,
     merchantNarrative,
     linkedAccounts,
+    merchantSignalPills,
     activityLog,
     openClaimCount,
     latestClaim,
     merchantRefundRate,
+    evidenceDisplay,
+    billingAddress: billingAddressDisplay,
+    identitySignalSummary,
+    possibleMatches,
   };
 
   return { blocked: false, props };

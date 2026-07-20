@@ -3,33 +3,32 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   ShieldCheck,
-  ExternalLink,
   FileText,
+  ArrowRight,
   Clock,
 } from "lucide-react";
 import { StatusPill, SlaPill } from "@/app/(app)/claims/claimsPageUi";
 import {
   EvidenceLine,
-  Card,
-  ButtonLink,
-  EvidenceChecklist,
-  RecommendationBlock,
+  PanelCard,
 } from "@/components/ui";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { formatCurrencyNullable } from "@/lib/utils/format";
+import { formatCurrencyNullable, formatDateAbsolute } from "@/lib/utils/format";
 import { formatClaimAge, formatFiledDate } from "@/lib/claims/sla";
 import {
   LIKELY_OWNER_LABELS,
   LOSS_ATTRIBUTION_DISPLAY,
   PAYOUT_CASE_STATUS_LABELS,
 } from "@/lib/payouts/types";
-import { humanizeEvidenceKey } from "@/components/claims/payout/payoutCopy";
+import {
+  humanizeEvidenceKey,
+  humanizeEvidenceProse,
+} from "@/components/claims/payout/payoutCopy";
 import {
   CLAIM_TYPE_LABELS,
   DECISION_LABELS,
   STATUS_META,
   humanizeEnumValue,
-  sanitizeMerchantText,
   outcomeLabel,
   type ClaimRow,
   type CustomerProfileSummary,
@@ -143,9 +142,11 @@ export function ClaimsQueueClient({
               style={{
                 padding: "11px 14px",
                 borderColor: "var(--border-muted)",
-                background: isSelected ? "var(--surface-selected)" : "transparent",
+                background: isSelected
+                  ? "color-mix(in srgb, var(--brand-signal) 13%, var(--surface))"
+                  : "transparent",
                 borderLeft: isSelected
-                  ? "3px solid var(--text-primary)"
+                  ? "2px solid var(--brand-deep)"
                   : "2px solid transparent",
               }}
             >
@@ -159,8 +160,8 @@ export function ClaimsQueueClient({
                   {customerDisplayName(customer)}
                 </p>
                 <span
-                  className="shrink-0 text-caption font-semibold tabular-nums"
-                  style={{ color: "var(--text-primary)" }}
+                  className="shrink-0 text-caption font-mono tabular-nums"
+                  style={{ color: "var(--text-secondary)" }}
                 >
                   {formatCurrencyNullable(
                     c.amount_at_risk,
@@ -169,11 +170,11 @@ export function ClaimsQueueClient({
                 </span>
               </div>
               <p
-                className="text-caption mb-1.5"
+                className="text-caption font-mono mb-1.5"
                 style={{ color: "var(--text-tertiary)" }}
               >
                 {c.shopify_order_id ?? c.id.slice(0, 8)}&nbsp;·&nbsp;
-                {CLAIM_TYPE_LABELS[c.claim_type] ?? humanizeEnumValue(c.claim_type)}
+                {CLAIM_TYPE_LABELS[c.claim_type] ?? c.claim_type}
               </p>
               <p
                 className="text-caption font-medium mb-1"
@@ -189,11 +190,16 @@ export function ClaimsQueueClient({
                 className="text-[11px] mb-1.5"
                 style={{ color: "var(--text-tertiary)" }}
               >
-                {sourceSystemLabel(c)}{ops.daysWaiting != null ? ` · ${ops.daysWaiting}d waiting` : ""}
+                {sourceSystemLabel(c)}
+                {ops.daysWaiting != null
+                  ? ` · ${ops.daysWaiting}d waiting`
+                  : ""}
               </p>
               <div className="flex items-center gap-1.5 flex-wrap">
                 <StatusPill status={c.status} />
-                <SlaPill claim={c} />
+                {c.recoverability && (
+                  <StatusBadge family="recoverability" value={c.recoverability} size="sm" />
+                )}
               </div>
             </button>
           );
@@ -261,7 +267,7 @@ function ClaimDetailPanel({
           <SlaPill claim={claim} />
           {claim.amount_at_risk != null && (
             <span
-              className="text-caption font-semibold tabular-nums"
+              className="text-caption font-mono font-semibold tabular-nums"
               style={{ color: "var(--text-primary)" }}
             >
               {formatCurrencyNullable(
@@ -286,25 +292,116 @@ function ClaimDetailPanel({
       </div>
 
       {/* Workflow state — primary call-out */}
-      <RecommendationBlock
-        title="Workflow"
-        currentState={workflowStatusLabel(claim.status)}
-        nextAction={ops.nextActionLabel}
-        summary={ops.reviewState}
-        action={<ButtonLink href={`/claims/${claim.id}`} size="sm">Review evidence</ButtonLink>}
-      />
+      <PanelCard
+        as="section"
+        variant="appInset"
+        className="px-4 py-3"
+        style={{
+          background: "color-mix(in srgb, var(--brand-signal-soft) 58%, var(--surface))",
+          borderColor: "var(--accent-border)",
+        }}
+      >
+        <p
+          className="text-caption font-semibold uppercase tracking-wide mb-0.5"
+          style={{ color: "var(--brand-deep)", letterSpacing: "0.06em" }}
+        >
+          Workflow
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <p
+              className="text-caption"
+              style={{ color: "var(--text-tertiary)" }}
+            >
+              Current state
+            </p>
+            <p
+              className="text-body-sm font-medium"
+              style={{ color: "var(--text-primary)" }}
+            >
+              {workflowStatusLabel(claim.status)}
+            </p>
+          </div>
+          <div>
+            <p
+              className="text-caption"
+              style={{ color: "var(--text-tertiary)" }}
+            >
+              Next action
+            </p>
+            <p
+              className="text-body-sm font-medium"
+              style={{ color: "var(--text-primary)" }}
+            >
+              {ops.nextActionLabel}
+            </p>
+          </div>
+          <div>
+            <p
+              className="text-caption"
+              style={{ color: "var(--text-tertiary)" }}
+            >
+              Payout exposure
+            </p>
+            <p
+              className="text-body-sm font-mono font-semibold tabular-nums"
+              style={{ color: "var(--text-primary)" }}
+            >
+              {formatCurrencyNullable(
+                claim.amount_at_risk,
+                claim.currency ?? undefined,
+              ) ?? "—"}
+            </p>
+          </div>
+          <div>
+            <p
+              className="text-caption"
+              style={{ color: "var(--text-tertiary)" }}
+            >
+              Days waiting
+            </p>
+            <p
+              className="text-body-sm font-medium"
+              style={{ color: "var(--text-primary)" }}
+            >
+              {ops.daysWaiting == null ? "—" : `${ops.daysWaiting}d`}
+            </p>
+          </div>
+        </div>
+        <p
+          className="text-caption mt-2"
+          style={{ color: "var(--text-secondary)" }}
+        >
+          {ops.reviewState}
+        </p>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          <StatusBadge family="workflowStatus" value={ops.evidenceStatus} tone="neutral" size="sm" />
+          {claim.next_action && (
+            <StatusBadge family="workflowStatus" value={claim.next_action} tone="neutral" size="sm" />
+          )}
+          {claim.recovery_state && (
+            <StatusBadge family="recoveryStatus" value={claim.recovery_state} tone="neutral" size="sm" />
+          )}
+        </div>
+        <Link
+          href={`/claims/${claim.id}`}
+          className="mt-2.5 inline-flex items-center gap-1.5 rounded-md px-3.5 py-1.5 text-caption font-semibold btn-accent"
+        >
+          Review evidence <ArrowRight className="h-3 w-3" />
+        </Link>
+      </PanelCard>
 
       {/* Recovery chase-up */}
       {(claim.recoverability ||
         claim.recovery_owner ||
         claim.loss_attribution) && (
-        <Card unstyled as="section" variant="flat" className="overflow-hidden p-0">
+        <PanelCard as="section" variant="app" className="overflow-hidden p-0">
           <div
             className="flex items-center justify-between gap-3 px-4 py-2.5 border-b"
             style={{ borderColor: "var(--border-muted)" }}
           >
             <p
-              className="text-caption font-semibold"
+              className="text-caption font-semibold uppercase tracking-wide"
               style={{ color: "var(--text-tertiary)", letterSpacing: "0.06em" }}
             >
               Recovery chase-up
@@ -324,12 +421,12 @@ function ClaimDetailPanel({
                 </p>
                 <p
                   className="text-body-sm font-medium"
-                  style={{ color: "var(--text-primary)" }}
+                  style={{ color: claim.recovery_owner ? "var(--text-primary)" : "var(--text-tertiary)" }}
                 >
                   {claim.recovery_owner
                     ? (LIKELY_OWNER_LABELS[
                         claim.recovery_owner as keyof typeof LIKELY_OWNER_LABELS
-                    ] ?? humanizeEnumValue(claim.recovery_owner))
+                      ] ?? claim.recovery_owner)
                     : "Unknown"}
                 </p>
               </div>
@@ -342,30 +439,42 @@ function ClaimDetailPanel({
                 </p>
                 <p
                   className="text-body-sm font-medium"
-                  style={{ color: "var(--text-primary)" }}
+                  style={{ color: claim.loss_attribution ? "var(--text-primary)" : "var(--text-tertiary)" }}
                 >
                   {claim.loss_attribution
                     ? (LOSS_ATTRIBUTION_DISPLAY[
                         claim.loss_attribution as keyof typeof LOSS_ATTRIBUTION_DISPLAY
-                    ] ?? humanizeEnumValue(claim.loss_attribution))
+                      ] ?? claim.loss_attribution)
                     : "Unclear"}
                 </p>
               </div>
             </div>
-            {claim.recovery_next_action && <p className="text-caption" style={{ color: "var(--text-secondary)" }}>{sanitizeMerchantText(claim.recovery_next_action)}</p>}
+            {claim.recovery_next_action && (
+              <p
+                className="text-caption"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                {humanizeEvidenceProse(claim.recovery_next_action)}
+              </p>
+            )}
             {claim.recovery_required_evidence &&
               claim.recovery_required_evidence.length > 0 && (
-                <div>
-                  <p className="mb-1 text-caption" style={{ color: "var(--text-tertiary)" }}>Evidence needed</p>
-                  <EvidenceChecklist items={claim.recovery_required_evidence.map((item) => ({ label: humanizeEvidenceKey(item) }))} />
-                </div>
+                <p
+                  className="text-caption"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
+                  Evidence needed:{" "}
+                  {claim.recovery_required_evidence
+                    .map(humanizeEvidenceKey)
+                    .join(", ")}
+                </p>
               )}
           </div>
-        </Card>
+        </PanelCard>
       )}
 
       {/* Evidence package */}
-      <Card unstyled as="section" variant="flat" className="overflow-hidden p-0">
+      <PanelCard as="section" variant="app" className="overflow-hidden p-0">
         <div
           className="flex items-center justify-between px-4 py-2.5 border-b"
           style={{ borderColor: "var(--border-muted)" }}
@@ -375,8 +484,8 @@ function ClaimDetailPanel({
               className="h-3.5 w-3.5"
               style={{ color: "var(--brand-deep)" }}
             />
-              <p
-                className="text-caption font-semibold"
+            <p
+              className="text-caption font-semibold uppercase tracking-wide"
               style={{ color: "var(--text-primary)", letterSpacing: "0.06em" }}
             >
               Evidence package
@@ -390,25 +499,20 @@ function ClaimDetailPanel({
                 <EvidenceLine
                   icon="confirmed"
                   text={
-                    <span className="font-semibold tabular-nums text-[var(--text-primary)]">
+                    <span className="font-mono font-semibold text-[var(--text-primary)]">
                       {evidence.reference_number}
                     </span>
                   }
-                  timestamp={new Date(evidence.generated_at).toLocaleDateString(
-                    "en-US",
-                    {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                      timeZone: "UTC",
-                    },
-                  )}
+                  timestamp={formatDateAbsolute(new Date(evidence.generated_at))}
                   className="text-caption"
                 />
               </div>
-              <ButtonLink href={`/claims/${claim.id}`} variant="secondary" size="sm" leadingIcon={<FileText className="h-3.5 w-3.5" />}>
-                Open evidence package
-              </ButtonLink>
+              <Link
+                href={`/claims/${claim.id}`}
+                className="shrink-0 inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-caption font-semibold btn-accent"
+              >
+                <FileText className="h-3.5 w-3.5" /> Open evidence package
+              </Link>
             </div>
           ) : (
             <div className="flex items-center justify-between gap-3">
@@ -418,11 +522,11 @@ function ClaimDetailPanel({
               >
                 No evidence package for this claim yet.
               </p>
-              {claim.customer_id && claim.customer_id !== claim.id && (
+              {claim.customer_id && (
                 <Link
                   href={`/customers/${claim.customer_id}`}
                   className="shrink-0 text-caption font-semibold hover:underline"
-                  style={{ color: "var(--text-link)" }}
+                  style={{ color: "var(--accent)" }}
                 >
                   Build evidence
                 </Link>
@@ -430,17 +534,17 @@ function ClaimDetailPanel({
             </div>
           )}
         </div>
-      </Card>
+      </PanelCard>
 
       {/* Customer identity */}
       {customer && (
-        <Card unstyled as="section" variant="flat" className="overflow-hidden p-0">
+        <PanelCard as="section" variant="app" className="overflow-hidden p-0">
           <div
             className="flex items-center justify-between px-4 py-2.5 border-b"
             style={{ borderColor: "var(--border-muted)" }}
           >
-              <p
-                className="text-caption font-semibold"
+            <p
+              className="text-caption font-semibold uppercase tracking-wide"
               style={{ color: "var(--text-tertiary)", letterSpacing: "0.06em" }}
             >
               Customer
@@ -464,23 +568,21 @@ function ClaimDetailPanel({
                   </p>
                 ) : null}
               </div>
-              {customer.id !== claim.id && (
-                <Link
-                  href={`/customers/${customer.id}`}
-                  className="shrink-0 inline-flex items-center gap-1 text-caption font-semibold hover:underline"
-                  style={{ color: "var(--text-link)" }}
-                >
-                  Profile <ExternalLink className="h-3 w-3" />
-                </Link>
-              )}
+              <Link
+                href={`/customers/${customer.id}`}
+                className="shrink-0 inline-flex items-center gap-1 text-caption font-semibold hover:underline"
+                style={{ color: "var(--accent)" }}
+              >
+                Profile <ArrowRight className="h-3 w-3" />
+              </Link>
             </div>
           </div>
-        </Card>
+        </PanelCard>
       )}
 
       {/* Merchant-recorded outcome (if any) */}
       {outcome && (
-        <Card unstyled as="section" variant="flat" className="overflow-hidden p-0">
+        <PanelCard as="section" variant="app" className="overflow-hidden p-0">
           <div
             className="flex items-center gap-2 px-4 py-2.5 border-b"
             style={{ borderColor: "var(--border-muted)" }}
@@ -489,8 +591,8 @@ function ClaimDetailPanel({
               className="h-3.5 w-3.5"
               style={{ color: "var(--text-tertiary)" }}
             />
-              <p
-                className="text-caption font-semibold"
+            <p
+              className="text-caption font-semibold uppercase tracking-wide"
               style={{ color: "var(--text-tertiary)", letterSpacing: "0.06em" }}
             >
               Merchant-recorded outcome
@@ -501,7 +603,7 @@ function ClaimDetailPanel({
               className="text-body-sm font-medium"
               style={{ color: "var(--text-primary)" }}
             >
-              {DECISION_LABELS[outcome.decision] ?? humanizeEnumValue(outcome.decision)}
+              {DECISION_LABELS[outcome.decision] ?? outcome.decision}
             </p>
             {outcome.outcome && outcome.outcome !== outcome.decision && (
               <p
@@ -515,13 +617,10 @@ function ClaimDetailPanel({
               className="text-caption mt-1"
               style={{ color: "var(--text-tertiary)" }}
             >
-              Updated{" "}
-              {new Date(outcome.updated_at).toLocaleDateString("en-US", {
-                timeZone: "UTC",
-              })}
+              Updated {formatDateAbsolute(new Date(outcome.updated_at))}
             </p>
           </div>
-        </Card>
+        </PanelCard>
       )}
     </div>
   );

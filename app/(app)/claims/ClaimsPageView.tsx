@@ -2,7 +2,9 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { PageConnectionGate } from '@/components/connections/PageConnectionGate';
 import type { ConnectionState } from '@/lib/connections/getConnectionState';
-import { WorkbenchPage, EmptyState, ButtonLink, Card, DataTableServer, FilterChip, SegmentedControl } from '@/components/ui';
+import { WorkbenchPage, EmptyState, ButtonLink, Card, DataTableServer, FilterChip, SegmentedControl, KeyInsightCallout, SummaryRail } from '@/components/ui';
+import { Clock, AlertTriangle } from 'lucide-react';
+import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { dominantCurrency, formatCurrencyNullable, formatNumber } from '@/lib/utils/format';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
 import {
@@ -101,6 +103,9 @@ export function ClaimsPageView({
       label: CLAIM_TYPE_LABELS[claimType] ?? humanizeEnumValue(claimType),
       value,
     }));
+  const waitingCount = queueCounts.awaitingCarrier + queueCounts.awaiting3pl + queueCounts.awaitingSupplier;
+  const classifiedActive = queueCounts.awaitingEvidence + waitingCount + queueCounts.readyForDecision + queueCounts.manualReview;
+  const decisionTone = queueCounts.overdue > 0 ? 'warning' : queueCounts.readyForDecision > 0 ? 'info' : 'neutral';
   // Display currency for aggregate KPIs: the most common case currency on record.
   const displayCurrency = dominantCurrency(recoveryMetricRows.length > 0 ? recoveryMetricRows : claims);
   const emptyDescription = listView.kind === 'unread'
@@ -138,15 +143,45 @@ export function ClaimsPageView({
                                   : 'No payout cases match this filter.';
 
   return (
-    <PageConnectionGate requires="helpdesk" connection={connectionState} pageName="Payout Control" pageDescription="Connect a supported helpdesk so Unauth can create payout cases, assemble evidence, and apply your rules." hasData={queueCounts.total > 0}>
+    <PageConnectionGate requires="helpdesk" connection={connectionState} pageName="Payout Control" pageDescription="Connect Gorgias or Zendesk so Unauth can create payout cases, assemble evidence, and apply your rules." hasData={queueCounts.total > 0}>
     <WorkbenchPage
       title="Payout Control"
+      navItems={WORKBENCH_NAV_ITEMS}
+      activeNavKey="claims"
       kpiItems={[
         { label: 'Open payout cases', value: formatNumber(queueCounts.active), hint: 'Refunds, reships, replacements' },
         { label: 'New evidence', value: formatNumber(queueCounts.unread), hint: 'Arrived since last visit' },
         { label: 'Ready for decision', value: formatNumber(queueCounts.readyForDecision), hint: 'Evidence complete' },
         { label: 'Payout exposure', value: formatCurrencyNullable(totalAtRisk || null, displayCurrency), hint: 'All cases' },
       ]}
+      primaryVisual={
+        <KeyInsightCallout
+          eyebrow="Payout Control"
+          tone={decisionTone}
+          icon={decisionTone === 'warning' ? <AlertTriangle size={16} /> : <Clock size={16} />}
+        >
+          <strong>{formatNumber(queueCounts.active)}</strong> open cases holding{' '}
+          <strong>{formatCurrencyNullable(totalAtRisk || null, displayCurrency)}</strong> in exposure —{' '}
+          <strong>{formatNumber(queueCounts.readyForDecision)}</strong> ready to decide now.
+        </KeyInsightCallout>
+      }
+      rail={
+        <SummaryRail
+          sections={[
+            {
+              title: 'Decision states',
+              rows: [
+                { label: 'Needs evidence', value: formatNumber(queueCounts.awaitingEvidence), tone: 'danger', bar: queueCounts.active ? queueCounts.awaitingEvidence / queueCounts.active : 0 },
+                { label: 'Partner wait', value: formatNumber(waitingCount), tone: 'warning', bar: queueCounts.active ? waitingCount / queueCounts.active : 0 },
+                { label: 'Ready for decision', value: formatNumber(queueCounts.readyForDecision), tone: 'info', bar: queueCounts.active ? queueCounts.readyForDecision / queueCounts.active : 0 },
+                { label: 'Manual review', value: formatNumber(queueCounts.manualReview), tone: 'neutral', bar: queueCounts.active ? queueCounts.manualReview / queueCounts.active : 0 },
+                { label: 'Other active', value: formatNumber(Math.max(0, queueCounts.active - classifiedActive)), tone: 'neutral', bar: queueCounts.active ? Math.max(0, queueCounts.active - classifiedActive) / queueCounts.active : 0 },
+              ],
+              footnote: 'The active payout queue grouped by the next evidence or decision step.',
+            },
+          ]}
+        />
+      }
       footer={
         <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
           Support conversations stay in your helpdesk. Unauth controls the payout decision moment, logs the loss, and routes recoverable cases to the right partner.
@@ -157,7 +192,7 @@ export function ClaimsPageView({
           <EmptyState
             title="No payout cases yet"
             description="Connect a support source to create payout cases from customer conversations."
-            action={<ButtonLink href="/integrations" size="md">Connect support source</ButtonLink>}
+            action={<ButtonLink href="/settings/integrations" size="md">Connect support source</ButtonLink>}
           />
         ) : (
           <div>

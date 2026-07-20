@@ -23,7 +23,6 @@ export function useSyncStatusCard() {
     setSyncing(true);
     setSyncError(null);
     try {
-      console.log('[shopify] POST /api/shopify/sync-audit');
       const res = await fetch('/api/shopify/sync-audit', {
         method: 'POST',
         credentials: 'include',
@@ -37,7 +36,7 @@ export function useSyncStatusCard() {
         body = text ? (JSON.parse(text) as { error?: string }) : null;
       } catch {
         console.error('[shopify] sync non-JSON response:', res.status, text.slice(0, 200));
-        setSyncError(`Sync failed (${res.status}). The API may not be deployed yet.`);
+        setSyncError(`Sync failed (${res.status}). Try again or reconnect Shopify.`);
         return;
       }
       if (!res.ok) {
@@ -45,7 +44,6 @@ export function useSyncStatusCard() {
         setSyncError(body?.error ?? `Sync failed (${res.status}). Try again or reconnect Shopify.`);
         return;
       }
-      console.log('[shopify] sync ok:', body);
       await loadStatus();
     } catch (err) {
       console.error('[shopify] sync-audit request error:', err);

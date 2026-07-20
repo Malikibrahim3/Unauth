@@ -1,5 +1,5 @@
 import { OperationalRouteSkeleton } from '@/components/states/OperationalRouteSkeleton';
 
 export default function IntegrationsLoading() {
-  return <OperationalRouteSkeleton title="Loading integrations" rows={6} />;
+  return <OperationalRouteSkeleton title="Loading integrations" rows={6} kpiCount={3} showInsight showRail />;
 }

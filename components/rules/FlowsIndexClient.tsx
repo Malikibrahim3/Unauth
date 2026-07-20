@@ -1,14 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  Button,
-  Modal,
-  Card,
-} from "@/components/ui";
+import { Button, ButtonLink, EmptyState, Modal } from "@/components/ui";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import {
   FlowEditor,
@@ -64,21 +60,19 @@ export function FlowsIndexClient({
   }
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs text-[var(--text-secondary)]">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-muted)] px-4 py-3">
+        <p className="min-w-0 text-xs text-[var(--text-secondary)]">
           Each family has at most one published version and one editable draft.
         </p>
-        <div className="flex gap-2">
-          <Link
-            href="/flows/runs"
-            className="inline-flex items-center rounded-md border border-[var(--border)] px-3 py-2 text-sm font-semibold text-[var(--text-primary)]"
-          >
+        <div className="flex items-center gap-2">
+          <ButtonLink href="/flows/runs" variant="secondary" size="sm">
             Run history
-          </Link>
+          </ButtonLink>
           {canManage ? (
             <Button
               variant="primary"
-              leadingIcon={<Plus className="h-4 w-4" />}
+              size="sm"
+              leadingIcon={<Plus className="h-3.5 w-3.5" />}
               onClick={() => setCreating(true)}
             >
               New flow
@@ -89,22 +83,18 @@ export function FlowsIndexClient({
       {error ? (
         <p
           role="alert"
-          className="rounded-md border border-[var(--danger)] px-3 py-2 text-sm text-[var(--danger)]"
+          className="border-b border-[var(--border-muted)] px-4 py-2 text-sm text-[var(--danger)]"
         >
           {error}
         </p>
       ) : null}
       {flows.length ? (
-        <div className="grid gap-3">
+        <ul className="divide-y divide-[var(--border-muted)]">
           {flows.map((flow) => (
-            <Link
-              key={flow.name}
-              href={`/flows/${flow.hrefId}`}
-              className="block rounded-[var(--radius-lg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
-            >
-              <Card unstyled
-                variant="flat"
-                className="grid gap-3 p-4 hover:border-[var(--accent)] sm:grid-cols-[minmax(0,1fr)_10rem_7rem_auto] sm:items-center"
+            <li key={flow.name}>
+              <Link
+                href={`/flows/${flow.hrefId}`}
+                className="grid gap-3 px-4 py-3 transition-colors hover:bg-[var(--surface-hover)] focus-visible:outline-none focus-visible:shadow-[inset_var(--shadow-focus)] sm:grid-cols-[minmax(0,1fr)_10rem_6rem_auto] sm:items-center"
               >
                 <div className="min-w-0">
                   <h2 className="truncate text-sm font-semibold">
@@ -114,7 +104,7 @@ export function FlowsIndexClient({
                     {flow.description || "No operator-facing description yet."}
                   </p>
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="text-[11px] uppercase tracking-wide text-[var(--text-tertiary)]">
                     Trigger
                   </p>
@@ -137,29 +127,26 @@ export function FlowsIndexClient({
                   <span className="font-mono text-xs text-[var(--text-tertiary)]">
                     v{flow.version}
                   </span>
-                  <ArrowRight className="h-4 w-4 text-[var(--text-secondary)]" aria-hidden="true" />
+                  <span aria-hidden="true" className="text-[var(--accent)]">
+                    →
+                  </span>
                 </div>
-              </Card>
-            </Link>
+              </Link>
+            </li>
           ))}
-        </div>
+        </ul>
       ) : (
-        <Card unstyled variant="flat" className="p-10 text-center">
-          <h2 className="text-base font-semibold">No flows yet</h2>
-          <p className="mx-auto mt-2 max-w-xl text-sm text-[var(--text-secondary)]">
-            Create a bounded event flow, test it without writes, then publish it
-            explicitly. Flows route work; they never decide or issue payouts.
-          </p>
-          {canManage ? (
-            <Button
-              className="mt-5"
-              variant="primary"
-              onClick={() => setCreating(true)}
-            >
-              Create first flow
-            </Button>
-          ) : null}
-        </Card>
+        <EmptyState
+          title="No flows yet"
+          description="Create a workflow, test it safely without affecting live data, then publish it when you're ready. Flows route work — they never decide or issue payouts."
+          action={
+            canManage ? (
+              <Button variant="primary" onClick={() => setCreating(true)}>
+                Create first flow
+              </Button>
+            ) : undefined
+          }
+        />
       )}
       <Modal
         open={creating}

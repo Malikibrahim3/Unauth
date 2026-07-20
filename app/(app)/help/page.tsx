@@ -1,5 +1,8 @@
 import Link from 'next/link';
 import { BookOpen, HelpCircle, Info } from 'lucide-react';
+import { AuthenticatedPageHeader } from '@/components/authenticated/AuthenticatedPageHeader';
+import { AuthenticatedPanel } from '@/components/authenticated/AuthenticatedPanel';
+import pageStyles from '@/components/authenticated/AuthenticatedPageChrome.module.css';
 
 const ARTICLES = [
   {
@@ -27,73 +30,48 @@ const ARTICLES = [
 
 export default function HelpIndexPage() {
   return (
-    <div className="p-8 max-w-2xl mx-auto space-y-6">
-      <div>
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center gap-1.5 text-caption mb-4 hover:underline"
-          style={{ color: 'var(--text-secondary)' }}
-        >
-          Dashboard
-        </Link>
-        <h1 className="text-heading-lg" style={{ color: 'var(--text)' }}>Help &amp; Docs</h1>
-        <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
-          Payout-control guides and shortcuts for support operations.
-        </p>
-      </div>
-
-      <div className="space-y-3">
-        {ARTICLES.map(({ icon: Icon, title, description, href }) => (
-          <div
-            key={title}
-            className="flex items-start gap-4 rounded-md px-5 py-4 border"
-            style={{
-              background: 'var(--surface)',
-              borderColor: 'var(--border-muted)',
-            }}
-          >
-            <div
-              className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-md mt-0.5"
-              style={{ background: 'var(--bg-subtle)' }}
-            >
-              <Icon className="h-4 w-4" style={{ color: 'var(--icon-muted)' }} />
+    <div>
+      <AuthenticatedPageHeader
+        eyebrow="Support"
+        title="Help & Docs"
+        subtitle="Payout-control guides and shortcuts for support operations."
+        breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Help & Docs' }]}
+      />
+      <div className={pageStyles.pageBody}>
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_280px]">
+          <AuthenticatedPanel title="Guides" description="Operational playbooks for common workflows.">
+            <div className="divide-y divide-[var(--border-muted)]">
+              {ARTICLES.map(({ icon: Icon, title, description, href }) => (
+                <Link
+                  key={title}
+                  href={href}
+                  className="group flex min-h-[72px] items-center gap-3 px-4 py-3 hover:bg-[var(--surface-hover)]"
+                >
+                  <span className="flex h-8 w-8 flex-none items-center justify-center rounded-[var(--ua-radius-input)] border border-[var(--border)] bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
+                    <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-xs font-semibold text-[var(--text-primary)]">{title}</span>
+                    <span className="mt-1 block text-[11px] leading-4 text-[var(--text-secondary)]">{description}</span>
+                  </span>
+                  <span className="flex-none text-[10px] font-semibold text-[var(--text-tertiary)] group-hover:text-[var(--text-primary)]">Read</span>
+                </Link>
+              ))}
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
-                {title}
+          </AuthenticatedPanel>
+          <AuthenticatedPanel title="Still stuck?" description="Talk to the Unauth support team.">
+            <div className="p-4">
+              <p className="text-[11px] leading-5 text-[var(--text-secondary)]">
+                Email us and we&apos;ll get back to you within one business day.
               </p>
-              <p className="text-caption mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-                {description}
-              </p>
+              <a
+                href="mailto:support@unauth.app"
+                className="mt-3 inline-flex h-7 items-center rounded-[var(--ua-radius-input)] border border-[var(--border)] bg-[var(--surface)] px-2.5 text-[11px] font-semibold text-[var(--text-primary)] shadow-[var(--shadow-xs)] hover:bg-[var(--surface-hover)]"
+              >
+                support@unauth.app
+              </a>
             </div>
-            <Link
-              href={href}
-              className="text-caption font-semibold hover:underline flex-shrink-0 mt-0.5"
-              style={{ color: 'var(--text)' }}
-            >
-              Read
-            </Link>
-          </div>
-        ))}
-
-        <div
-          className="rounded-md px-5 py-4 border"
-          style={{ background: 'var(--surface)', borderColor: 'var(--border-muted)' }}
-        >
-          <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
-            Still stuck?
-          </p>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-            Email us at{' '}
-            <a
-              href="mailto:support@unauth.app"
-              className="underline underline-offset-2"
-              style={{ color: 'var(--text)' }}
-            >
-              support@unauth.app
-            </a>{' '}
-            and we&apos;ll get back to you within one business day.
-          </p>
+          </AuthenticatedPanel>
         </div>
       </div>
     </div>

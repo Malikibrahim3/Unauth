@@ -1,9 +1,3 @@
-'use client';
-
-import { useMemo } from 'react';
-import type { EChartsOption } from 'echarts';
-import { EChartWrapper } from './EChartWrapper';
-import { readCssTokens, gradeColors, baseTooltip } from '@/components/charts/echartsTheme';
 import { formatNumber } from '@/lib/utils/format';
 
 export interface DonutSlice {
@@ -18,71 +12,66 @@ export interface AnalyticsDonutChartProps {
   showLegend?: boolean;
   valueFormatter?: (n: number) => string;
   emptyLabel?: string;
-  gradePalette?: boolean;
 }
 
-/**
- * Retained for the public demo only. Authenticated reporting uses ranked tables
- * and bars; this component is not imported by app/(app) routes.
- */
+const DEFAULT_PALETTE = ['var(--accent)', 'var(--sev-clear)', 'var(--sev-probable)', 'var(--sev-neutral)', 'var(--neutral)'];
+
+/** Dependency-free replacement for the deleted echarts-based donut chart (§12). */
 export function AnalyticsDonutChart({
   data,
   height = 220,
   showLegend = true,
   valueFormatter,
   emptyLabel = 'No data yet',
-  gradePalette = false,
 }: AnalyticsDonutChartProps) {
-  const option = useMemo((): EChartsOption => {
-    const t = readCssTokens();
-    const fmt = valueFormatter ?? ((n: number) => formatNumber(n));
-    const palette = gradePalette ? gradeColors(t) : [t.accent, t.sev_clear, t.sev_probable, t.sev_neutral, t.sev_weak];
-    const total = data.reduce((sum, slice) => sum + slice.value, 0);
+  const fmt = valueFormatter ?? ((n: number) => formatNumber(n));
+  const total = data?.reduce((sum, d) => sum + d.value, 0) ?? 0;
+  if (!data || data.length === 0 || total === 0) {
+    return (
+      <div style={{ height, display: 'grid', placeItems: 'center', color: 'var(--text-tertiary)', fontSize: 12 }}>
+        {emptyLabel}
+      </div>
+    );
+  }
+  const cumulative = data.reduce<number[]>((acc, d) => [...acc, (acc.at(-1) ?? 0) + d.value], []);
+  const stops = data.map((d, i) => {
+    const start = ((cumulative[i - 1] ?? 0) / total) * 360;
+    const end = (cumulative[i] / total) * 360;
+    const colour = d.color ?? DEFAULT_PALETTE[i % DEFAULT_PALETTE.length];
+    return `${colour} ${start}deg ${end}deg`;
+  });
 
-    if (!data.length || total === 0) {
-      return {
-        animation: false,
-        graphic: [{ type: 'text', left: 'center', top: 'middle', style: { text: emptyLabel, fill: t.ink_tertiary, fontSize: 12, fontFamily: 'inherit' } }],
-        series: [],
-      };
-    }
-
-    return {
-      animation: false,
-      tooltip: {
-        ...baseTooltip(t),
-        trigger: 'item' as const,
-        formatter: (param: unknown) => {
-          const point = param as { name: string; value: number; percent: number };
-          return `<span style="color:${t.ink_secondary};font-size:11px">${point.name}</span><br/><span style="font-weight:600;color:${t.ink_primary}">${fmt(point.value)}</span> <span style="color:${t.ink_tertiary}">${point.percent.toFixed(1)}%</span>`;
-        },
-      },
-      legend: showLegend ? {
-        orient: 'horizontal' as const,
-        bottom: 0,
-        left: 'center',
-        textStyle: { color: t.ink_secondary, fontSize: 11, fontFamily: 'inherit' },
-        icon: 'circle',
-        itemWidth: 8,
-        itemHeight: 8,
-        itemGap: 12,
-      } : { show: false },
-      series: [{
-        type: 'pie' as const,
-        radius: ['48%', '72%'],
-        center: showLegend ? ['50%', '44%'] : ['50%', '50%'],
-        padAngle: 2,
-        itemStyle: { borderRadius: 3, borderColor: t.surface_raised, borderWidth: 2 },
-        label: { show: false },
-        emphasis: { scale: false },
-        data: data.map((slice, index) => ({
-          name: slice.label,
-          value: slice.value,
-          itemStyle: { color: slice.color ?? palette[index % palette.length] },
-        })),
-      }],
-    };
-  }, [data, showLegend, valueFormatter, emptyLabel, gradePalette]);
-
-  return <EChartWrapper option={option} height={height} />;
+  return (
+    <div style={{ height, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, justifyContent: 'center' }}>
+      <div
+        style={{
+          width: Math.min(height * 0.75, 140),
+          height: Math.min(height * 0.75, 140),
+          flexShrink: 0,
+          borderRadius: '50%',
+          background: `conic-gradient(${stops.join(', ')})`,
+          position: 'relative',
+        }}
+      >
+        <div
+          style={{
+            position: 'absolute',
+            inset: '24%',
+            borderRadius: '50%',
+            background: 'var(--surface)',
+          }}
+        />
+      </div>
+      {showLegend ? (
+        <ul style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '4px 12px', margin: 0, padding: 0, listStyle: 'none' }}>
+          {data.map((d, i) => (
+            <li key={d.label} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text-secondary)' }}>
+              <i style={{ width: 8, height: 8, borderRadius: '50%', background: d.color ?? DEFAULT_PALETTE[i % DEFAULT_PALETTE.length] }} />
+              {d.label} <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)' }}>{fmt(d.value)}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
 }

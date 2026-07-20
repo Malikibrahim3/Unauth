@@ -1,8 +1,9 @@
 import crypto from 'crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { normaliseAddress } from '@/lib/identity/normalise';
-import { emitIdentityObservations, type ObservationEntity } from '@/lib/identity/observations';
+import { emitIdentityObservations, signalsForEntity, type ObservationEntity } from '@/lib/identity/observations';
 import { resolveIdentitiesForKeys } from '@/lib/identity/resolver';
+import { resolveMerchantCustomer } from '@/lib/identity/merchantCustomerResolver';
 import { fetchBigCommerceOrder, loadBigCommerceAccessToken } from '@/lib/commerce/bigcommerce/bigcommerceApi';
 import type { BigCommerceAddress, BigCommerceOrderPayload } from '@/lib/commerce/bigcommerce/orderTypes';
 import { linkCheckoutSignalsToOrder } from '@/lib/checkoutSignals/linkOrder';
@@ -252,6 +253,41 @@ export async function processBigCommerceOrderWebhook(input: {
   }];
   const { signalKeys } = await emitIdentityObservations(supabase, merchantId, entities);
   await resolveIdentitiesForKeys(supabase, signalKeys);
+  try {
+    await resolveMerchantCustomer(
+      supabase,
+      {
+        merchantId,
+        entityType: 'source_order',
+        entityId: orderRow.id as string,
+        source: 'bigcommerce',
+        sourceAccountKey: connection.id,
+        observedAt: order.date_created ?? now,
+        email,
+      },
+      typeof signalsForEntity === 'function' ? signalsForEntity(entities[0]) : signalKeys,
+    );
+    if (customerId) {
+      await resolveMerchantCustomer(
+        supabase,
+        {
+          merchantId,
+          entityType: 'source_customer',
+          entityId: customerId,
+          source: 'bigcommerce',
+          sourceAccountKey: connection.id,
+          observedAt: order.date_created ?? now,
+          email,
+        },
+        typeof signalsForEntity === 'function' ? signalsForEntity(entities[0]) : signalKeys,
+      );
+    }
+  } catch (error) {
+    console.error('merchant_local_customer_resolution_failed', {
+      merchantId,
+      message: error instanceof Error ? error.message : String(error),
+    });
+  }
 
   const visitorId = extractUnauthVisitorId(order as unknown as Record<string, unknown>);
   if (visitorId) {

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import {
@@ -12,6 +11,9 @@ import {
   RulesIndexClient,
   type RuleIndexRecord,
 } from "@/components/rules/RulesIndexClient";
+import { WorkbenchPage, KeyInsightCallout, SummaryRail } from "@/components/ui";
+import { ShieldCheck } from "lucide-react";
+import { formatNumber } from '@/lib/utils/format';
 
 export const dynamic = "force-dynamic";
 
@@ -82,27 +84,46 @@ export default async function RulesPage() {
       };
     },
   );
+  const draftRules = rules.filter((rule) => rule.hasDraft).length;
+  const publishedRules = rules.filter((rule) => !rule.hasDraft && rule.publishedVersion != null).length;
+  const disabledRules = Math.max(0, rules.length - draftRules - publishedRules);
+  const publishedCoverage = rules.filter((rule) => rule.publishedVersion != null).length;
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-sm text-[var(--text-secondary)]">Configuration</p>
-          <h1 className="mt-1 text-2xl font-semibold">Rules</h1>
-          <p className="mt-1 max-w-3xl text-sm text-[var(--text-secondary)]">
-            Compose readable payout policy, simulate sample cases, review
-            conflicts and impact, then publish an immutable version.
-            Recommendations remain non-binding.
-          </p>
-        </div>
-        <Link
-          href="/rules/recovery"
-          className="rounded-md border border-[var(--border)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)]"
+    <WorkbenchPage
+      title="Rules"
+      subtitle="Compose readable payout policy, simulate sample cases, review conflicts and impact, then publish an immutable version. Recommendations remain non-binding."
+      kpiItems={[
+        { label: 'Rules', value: formatNumber(rules.length), hint: 'Active payout rules' },
+        { label: 'Published', value: formatNumber(publishedCoverage), hint: 'With an immutable version' },
+        { label: 'Draft changes', value: formatNumber(draftRules), hint: 'Awaiting review or publish' },
+      ]}
+      primaryVisual={
+        <KeyInsightCallout
+          eyebrow="Rule lifecycle"
+          tone={draftRules > 0 ? 'warning' : publishedCoverage > 0 ? 'success' : 'neutral'}
+          icon={<ShieldCheck size={16} />}
         >
-          Recovery rules
-        </Link>
-      </header>
-      <RulesIndexClient rules={rules} canManage={canManage} />
-    </div>
+          <strong>{formatNumber(publishedCoverage)}</strong> of <strong>{formatNumber(rules.length)}</strong> rules published
+          {draftRules > 0 ? <> · <strong>{formatNumber(draftRules)}</strong> with draft changes awaiting review</> : null}.
+        </KeyInsightCallout>
+      }
+      rail={
+        <SummaryRail
+          sections={[
+            {
+              title: 'Rule lifecycle',
+              rows: [
+                { label: 'Published current', value: formatNumber(publishedRules), tone: 'success', bar: rules.length ? publishedRules / rules.length : 0 },
+                { label: 'Draft change', value: formatNumber(draftRules), tone: 'warning', bar: rules.length ? draftRules / rules.length : 0 },
+                { label: 'Disabled', value: formatNumber(disabledRules), tone: 'neutral', bar: rules.length ? disabledRules / rules.length : 0 },
+              ],
+              footnote: 'One row per rule family. Draft families may retain an earlier published version.',
+            },
+          ]}
+        />
+      }
+      main={<RulesIndexClient rules={rules} canManage={canManage} />}
+    />
   );
 }

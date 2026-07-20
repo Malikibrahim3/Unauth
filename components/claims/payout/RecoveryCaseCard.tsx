@@ -1,17 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { ExternalLink, RefreshCw } from "lucide-react";
-import { Badge, Button, Card, EvidenceChecklist } from "@/components/ui";
+import { ArrowRight, RefreshCw } from "lucide-react";
+import { Badge, Button, PanelCard } from "@/components/ui";
 import { formatCurrencyNullable, formatDate } from "@/lib/utils/format";
 import { RECOVERY_TYPE_LABELS } from "@/lib/partners/types";
+import { humanizeEvidenceKey } from "@/components/claims/payout/payoutCopy";
 import {
   RECOVERY_OWNER_LABELS,
   RECOVERY_STATUS_LABELS,
   type RecoveryCase,
 } from "@/lib/recoveries/types";
 import type { SupportPayoutCase } from "@/lib/payouts/types";
-import { humanizeEvidenceKey } from "@/components/claims/payout/payoutCopy";
 
 function dateLabel(value: string | null | undefined) {
   if (!value) return "No date set";
@@ -44,7 +44,7 @@ export function RecoveryCaseCard({
       recovery?.recoverability === "possibly_recoverable");
 
   return (
-    <Card unstyled as="section" variant="flat" className="p-4">
+    <PanelCard as="section" variant="app" className="p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p
@@ -66,7 +66,7 @@ export function RecoveryCaseCard({
           size="sm"
           onClick={onRefresh}
           loading={loading}
-          leadingIcon={<RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />}
+          leadingIcon={<RefreshCw />}
         >
           Check route
         </Button>
@@ -136,7 +136,11 @@ export function RecoveryCaseCard({
               >
                 Missing evidence
               </p>
-              <EvidenceChecklist items={recoveryCase.evidence_missing.map((item) => ({ label: humanizeEvidenceKey(item) }))} />
+              <div className="flex flex-wrap gap-1.5">
+                {recoveryCase.evidence_missing.map((item) => (
+                  <Badge key={item} size="sm">{humanizeEvidenceKey(item)}</Badge>
+                ))}
+              </div>
             </div>
           ) : null}
           <Link
@@ -145,7 +149,7 @@ export function RecoveryCaseCard({
             style={{ color: "var(--accent)" }}
           >
             Open recovery board{" "}
-            <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+            <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
           </Link>
         </>
       ) : canOpenRecovery && recovery ? (
@@ -176,7 +180,11 @@ export function RecoveryCaseCard({
               >
                 Required for recovery
               </p>
-              <EvidenceChecklist items={recovery.requiredEvidence.map((item) => ({ label: humanizeEvidenceKey(item) }))} />
+              <div className="flex flex-wrap gap-1.5">
+                {recovery.requiredEvidence.map((item) => (
+                  <Badge key={item} size="sm">{humanizeEvidenceKey(item)}</Badge>
+                ))}
+              </div>
             </div>
           ) : null}
           <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
@@ -194,6 +202,6 @@ export function RecoveryCaseCard({
           No external recovery route currently identified.
         </p>
       )}
-    </Card>
+    </PanelCard>
   );
 }

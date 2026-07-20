@@ -1,8 +1,8 @@
 'use client';
 
+import Link from 'next/link';
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { SegmentedControl } from '@/components/ui/SegmentedControl';
 
 const PAGE_SIZES = [25, 50, 100] as const;
 
@@ -40,15 +40,27 @@ function PageSizeSelectInner({
   return (
     <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
       <span className="shrink-0">{label}</span>
-      <SegmentedControl
-        aria-label="Rows per page"
-        value={String(activePageSize)}
-        items={PAGE_SIZES.map((size) => ({
-          value: String(size),
-          label: size,
-          href: buildHref(pathname, searchParams, size, pageSizeParam, pageParam),
-        }))}
-      />
+      <div className="inline-flex shrink-0 overflow-hidden rounded-[var(--ua-radius-control)] border" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
+        {PAGE_SIZES.map((size) => {
+          const active = size === activePageSize;
+          return (
+            <Link
+              key={size}
+              href={buildHref(pathname, searchParams, size, pageSizeParam, pageParam)}
+              scroll={false}
+              className="px-2.5 py-1.5 font-semibold transition-colors"
+              style={{
+                background: active ? 'var(--brand-ink)' : 'var(--surface)',
+                color: active ? 'var(--brand-paper)' : 'var(--text-secondary)',
+                boxShadow: active ? 'inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 8%, transparent)' : undefined,
+              }}
+              aria-current={active ? 'page' : undefined}
+            >
+              {size}
+            </Link>
+          );
+        })}
+      </div>
     </div>
   );
 }

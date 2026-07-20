@@ -21,6 +21,7 @@ import {
   attachIdentityToPayoutCase,
   resolvePayoutCaseIdentity,
 } from '@/lib/support/intake/resolvePayoutCaseIdentity';
+import { syncPayoutCaseMerchantCustomer } from '@/lib/identity/merchantCustomerResolver';
 import { SOURCE_DELETED_TICKET_STATUS } from '@/lib/support/gorgias/reconcileDeletedTickets';
 import type { ClaimType } from '@/lib/support/intake/classifyClaim';
 import { classifyClaimType, detectIsClaim } from '@/lib/support/intake/classifyClaim';
@@ -419,6 +420,21 @@ export async function ingestSupportCase(
       claimId,
       identityId: identityResolution.identityId,
     });
+  }
+  if (claimId) {
+    try {
+      await syncPayoutCaseMerchantCustomer(
+        supabase as SupabaseClient<Database>,
+        parsed.merchant_id,
+        claimId,
+      );
+    } catch (error) {
+      console.error('merchant_local_case_resolution_failed', {
+        merchantId: parsed.merchant_id,
+        claimId,
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
   }
 
   return {

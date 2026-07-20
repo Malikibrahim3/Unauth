@@ -38,7 +38,7 @@ export default async function ChromeIntegrationPage() {
         { label: 'Chrome Extension' },
       ]}
     >
-      <div className="max-w-2xl space-y-6">
+      <div className="space-y-3">
         <ChromeSetupClient hasApiKeys={keyPrefixes.length > 0} keyPrefixes={keyPrefixes} />
       </div>
     </SettingsPageShell>

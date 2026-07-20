@@ -231,14 +231,14 @@ export function WorkQueue({
       </h2>
       <nav
         aria-label="Work views"
-        className="mb-4 flex gap-1 overflow-x-auto pb-1"
+        className="mb-3 flex gap-1 overflow-x-auto pb-1"
       >
         {VIEWS.map(([key, label]) => (
           <Link
             key={key}
             href={`/work?view=${key}`}
             aria-current={view === key ? "page" : undefined}
-            className="whitespace-nowrap rounded-md border px-3 py-2 text-sm font-medium"
+            className="inline-flex h-7 items-center whitespace-nowrap rounded-[var(--ua-radius-input)] border px-2.5 text-[11px] font-medium"
             style={{
               background:
                 view === key ? "var(--surface-selected)" : "var(--surface)",
@@ -246,7 +246,7 @@ export function WorkQueue({
             }}
           >
             {label}
-            <span className="ml-1.5 tabular-nums text-[var(--text-tertiary)]">{formatNumber(viewCounts[key])}</span>
+            <span className="ml-1.5 tabular-nums text-[10px] text-[var(--text-tertiary)]">{formatNumber(viewCounts[key])}</span>
           </Link>
         ))}
       </nav>
@@ -362,7 +362,7 @@ export function WorkQueue({
                         if (event.key === "Enter") openRow(item, event.target);
                       }}
                     >
-                      <td className="px-3 py-3">
+                      <td className="px-3 py-2.5">
                         {item.kind === "task" ? (
                           <input
                             type="checkbox"
@@ -372,16 +372,16 @@ export function WorkQueue({
                           />
                         ) : null}
                       </td>
-                      <td className="px-3 py-3">
+                      <td className="px-3 py-2.5">
                         <PriorityChip value={item.priority} size="sm" />
                       </td>
-                      <td className="max-w-[340px] px-3 py-3">
+                      <td className="max-w-[340px] px-3 py-2.5">
                         <div className="flex items-start gap-2.5">
                           <SourceMark source={item.source} compact />
                           <div className="min-w-0">
                         <div className="font-medium">{item.title}</div>
                         {description ? (
-                          <div className="mt-0.5 line-clamp-2 text-xs text-[var(--text-secondary)]">
+                          <div className="mt-0.5 line-clamp-1 text-xs text-[var(--text-secondary)]">
                             {description}
                           </div>
                         ) : null}
@@ -393,7 +393,7 @@ export function WorkQueue({
                           </div>
                         </div>
                       </td>
-                      <td className="px-3 py-3">
+                      <td className="px-3 py-2.5">
                         {item.objectHref ? (
                           <Link
                             className="font-medium underline underline-offset-2"
@@ -405,10 +405,10 @@ export function WorkQueue({
                           item.objectLabel
                         )}
                       </td>
-                      <td className="px-3 py-3">
+                      <td className="px-3 py-2.5">
                         <StatusBadge family="caseStatus" value={item.status} size="sm" />
                       </td>
-                      <td className="px-3 py-3">
+                      <td className="px-3 py-2.5">
                         <span className="inline-flex items-center gap-2">
                           {item.ownerUserId || item.ownerRole ? <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface-selected)] text-[10px] font-bold text-[var(--brand-deep)]">
                             {(item.ownerUserId ? "A" : title(item.ownerRole).slice(0, 2)).toUpperCase()}
@@ -416,10 +416,10 @@ export function WorkQueue({
                           <span>{item.ownerUserId ? "Assigned" : item.ownerRole ? title(item.ownerRole) : "Unassigned"}</span>
                         </span>
                       </td>
-                      <td className={`px-3 py-3 text-xs ${due.className}`}>
+                      <td className={`px-3 py-2.5 text-xs ${due.className}`}>
                         {due.label}
                       </td>
-                      <td className="px-3 py-3">
+                      <td className="px-3 py-2.5">
                         <WorkItemActions
                           item={item}
                           busy={busy}

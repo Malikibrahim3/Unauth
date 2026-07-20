@@ -14,7 +14,6 @@ import { caseDisplay } from '@/lib/ui/displayRef';
 import { label } from '@/lib/ui/labels';
 import { formatDateAbsolute } from '@/lib/utils/format';
 import { RowActionsMenu } from '@/components/ui/RowActionsMenu';
-import { MetadataChip } from '@/components/ui';
 import { ShieldCheck } from 'lucide-react';
 
 export function ClaimReviewHeader({ wb }: { wb: ClaimReviewWorkbench }) {
@@ -34,33 +33,33 @@ export function ClaimReviewHeader({ wb }: { wb: ClaimReviewWorkbench }) {
 
   return (
     <header
-      className="border-b px-4 py-5 md:px-6"
+      className="border-b px-3 py-3 md:px-5"
       style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
     >
-      <div className="max-w-[1440px] mx-auto flex flex-wrap items-start justify-between gap-4">
-        <div className="flex min-w-0 items-start gap-3.5">
-          <span className="ua-identity-tile flex h-11 w-11 items-center justify-center text-sm font-bold text-[var(--brand-deep)]">
+      <div className="mx-auto flex max-w-[1500px] flex-wrap items-start justify-between gap-3">
+        <div className="flex min-w-0 items-start gap-3">
+          <span className="ua-identity-tile flex h-9 w-9 items-center justify-center text-xs font-bold text-[var(--brand-deep)]">
             {customerName ? customerName.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase() : <ShieldCheck size={20} aria-hidden="true" />}
           </span>
           <div className="min-w-0">
           {selectedClaim ? (
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
-                  {(selectedClaim.claim_type ? CLAIM_TYPE_LABELS[selectedClaim.claim_type] ?? label('claimType', selectedClaim.claim_type) : null) ?? 'Payout case'}
+                <h1 className="text-lg font-semibold tracking-[-0.02em]" style={{ color: 'var(--text-primary)' }}>
+                  {(selectedClaim.claim_type ? CLAIM_TYPE_LABELS[selectedClaim.claim_type] ?? selectedClaim.claim_type : null) ?? 'Payout case'}
                 </h1>
                 <StatusPill status={selectedClaim.status} />
               </div>
-              <p className="mt-1 text-sm font-medium text-[var(--text-secondary)]">{caseDisplay({ customer_name: customerName, ref: selectedClaim.shopify_order_id ?? selectedClaim.order_ref, id: selectedClaim.id })}</p>
-              <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-[var(--text-secondary)]">
-                {selectedClaim.amount_at_risk != null && selectedClaim.currency ? <MetadataChip>{formatClaimMoney(selectedClaim.amount_at_risk, selectedClaim.currency)} at risk</MetadataChip> : null}
-                <MetadataChip>Requested: {selectedClaim.requested_action && selectedClaim.requested_action !== 'unknown' ? label('requestedAction', selectedClaim.requested_action) : 'Not specified'}</MetadataChip>
-                {selectedClaim.created_at || selectedClaim.submitted_at ? <MetadataChip>Opened {formatDateAbsolute(selectedClaim.created_at ?? selectedClaim.submitted_at ?? '')}</MetadataChip> : null}
+              <p className="mt-0.5 text-[11px] font-medium text-[var(--text-secondary)]">{caseDisplay({ customer_name: customerName, ref: selectedClaim.shopify_order_id ?? selectedClaim.order_ref, id: selectedClaim.id })}</p>
+              <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[10px] text-[var(--text-secondary)]">
+                {selectedClaim.amount_at_risk != null && selectedClaim.currency ? <span className="rounded-[var(--ua-radius-input)] border border-[var(--border)] bg-[var(--surface)] px-2 py-1 font-semibold tabular-nums text-[var(--text-primary)]">{formatClaimMoney(selectedClaim.amount_at_risk, selectedClaim.currency)} at risk</span> : null}
+                <span className="rounded-[var(--ua-radius-input)] border border-[var(--border)] bg-[var(--surface)] px-2 py-1">Requested: {selectedClaim.requested_action && selectedClaim.requested_action !== 'unknown' ? label('requestedAction', selectedClaim.requested_action) : 'Not specified'}</span>
+                {selectedClaim.created_at || selectedClaim.submitted_at ? <span className="rounded-[var(--ua-radius-input)] border border-[var(--border)] bg-[var(--surface)] px-2 py-1">Opened {formatDateAbsolute(selectedClaim.created_at ?? selectedClaim.submitted_at ?? '')}</span> : null}
               </div>
             </div>
           ) : (
             <div>
-              <h1 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>Payout case</h1>
+              <h1 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>Payout case</h1>
               <p className="mt-1 text-sm text-[var(--text-secondary)]">Loading case context…</p>
             </div>
           )}
@@ -74,7 +73,7 @@ export function ClaimReviewHeader({ wb }: { wb: ClaimReviewWorkbench }) {
             >
               {history.map((h) => (
                 <option key={h.id} value={h.id}>
-                  {caseDisplay({ customer_name: customerName, ref: h.shopify_order_id ?? h.order_ref, id: h.id })} · {STATUS_LABELS[h.status] ?? label('caseStatus', h.status)}
+                  {caseDisplay({ customer_name: customerName, ref: h.shopify_order_id ?? h.order_ref, id: h.id })} · {STATUS_LABELS[h.status] ?? h.status}
                 </option>
               ))}
             </select>
@@ -82,7 +81,7 @@ export function ClaimReviewHeader({ wb }: { wb: ClaimReviewWorkbench }) {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Link href={customerProfileHref} className="px-3 py-1.5 rounded-[6px] text-xs font-semibold" style={{ border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+          <Link href={customerProfileHref} className="inline-flex h-7 items-center rounded-[var(--ua-radius-input)] px-2.5 text-[11px] font-semibold" style={{ border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
             Open customer profile
           </Link>
           <RowActionsMenu

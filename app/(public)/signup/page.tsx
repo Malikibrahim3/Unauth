@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { PanelCard } from '@/components/ui';
 import { AuthError, AuthShell, authButtonStyle, authInputClassName } from '@/app/(auth)/AuthShell';
 import { createClient } from '@/lib/supabase/client';
 
@@ -89,12 +90,12 @@ export default function SignupPage() {
 
   return (
     <AuthShell>
-      <section>
-        <h1 className="text-3xl font-semibold tracking-normal text-[#17151F]">Create your account</h1>
+      <PanelCard as="section" variant="app" className="p-6">
+        <h1 className="text-3xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">Create your account</h1>
 
         <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
           <div>
-            <label htmlFor="signup-email" className="mb-2 block text-sm font-medium text-[#3D394B]">
+            <label htmlFor="signup-email" className="mb-2 block text-sm font-medium text-[var(--text-secondary)]">
               Email
             </label>
             <Input
@@ -113,7 +114,7 @@ export default function SignupPage() {
           </div>
 
           <div>
-            <label htmlFor="signup-password" className="mb-2 block text-sm font-medium text-[#3D394B]">
+            <label htmlFor="signup-password" className="mb-2 block text-sm font-medium text-[var(--text-secondary)]">
               Password
             </label>
             <Input
@@ -133,7 +134,7 @@ export default function SignupPage() {
           </div>
 
           <div>
-            <label htmlFor="signup-confirm" className="mb-2 block text-sm font-medium text-[#3D394B]">
+            <label htmlFor="signup-confirm" className="mb-2 block text-sm font-medium text-[var(--text-secondary)]">
               Confirm password
             </label>
             <Input
@@ -164,13 +165,13 @@ export default function SignupPage() {
           </Button>
         </form>
 
-        <p className="mt-5 text-sm text-[#625D70]">
+        <p className="mt-5 text-sm text-[var(--text-secondary)]">
           Already have an account?{' '}
-          <Link href="/login" className="font-medium text-[#5D4B8B] underline-offset-4 hover:underline">
+          <Link href="/login" className="font-medium text-[var(--accent)] underline-offset-4 hover:underline">
             Sign in
           </Link>
         </p>
-      </section>
+      </PanelCard>
     </AuthShell>
   );
 }

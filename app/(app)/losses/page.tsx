@@ -2,11 +2,15 @@ import { redirect } from 'next/navigation';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { TABLES } from '@/lib/supabase/tables';
-import { WorkbenchPage } from '@/components/ui';
+import { WorkbenchPage, KeyInsightCallout, SummaryRail } from '@/components/ui';
+import { TrendingDown } from 'lucide-react';
+import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { LossLedger, type LossLedgerRow } from '@/components/losses/LossLedger';
 import { freshnessFromTimestamp } from '@/components/sources/FreshnessIndicator';
 import { formatCurrencyNullable, formatNumber, sumSameCurrency } from '@/lib/utils/format';
 import { recoverySoughtAmount } from '@/lib/recoveries/amounts';
+import { humanise, label } from '@/lib/ui/labels';
+import { selectLossContributions } from '@/lib/visualisation/chartSelectors';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,21 +56,23 @@ export default async function LossesPage() {
   if (denied) redirect('/dashboard');
 
   const nowMs = Date.now();
-  const { data } = await serviceClient
-    .from(TABLES.LOSS_CASES)
-    .select('id,support_payout_case_id,case_category,attribution,counterparty_type,counterparty_name,status,recoverability,financial_state,prevention_only,written_off_at,estimated_recovery_minor,currency,source_metadata,updated_at')
-    .eq('merchant_id', ctx.merchantId)
-    .order('updated_at', { ascending: false })
-    .limit(500);
+  const [{ data }, { data: orphanRecoveryData }] = await Promise.all([
+    serviceClient
+      .from(TABLES.LOSS_CASES)
+      .select('id,support_payout_case_id,case_category,attribution,counterparty_type,counterparty_name,status,recoverability,financial_state,prevention_only,written_off_at,estimated_recovery_minor,currency,source_metadata,updated_at')
+      .eq('merchant_id', ctx.merchantId)
+      .order('updated_at', { ascending: false })
+      .limit(500),
+    serviceClient
+      .from(TABLES.RECOVERY_CASES)
+      .select('id,support_payout_case_id,recovery_type,owner_type,status,merchant_loss_amount,eligible_loss_amount,estimated_recoverable_max,amount_recovered,currency,updated_at')
+      .eq('merchant_id', ctx.merchantId)
+      .is('loss_case_id', null)
+      .eq('prevention_only', false)
+      .gt('merchant_loss_amount', 0)
+      .limit(500),
+  ]);
   const raw = (data ?? []) as LossCaseRow[];
-  const { data: orphanRecoveryData } = await serviceClient
-    .from(TABLES.RECOVERY_CASES)
-    .select('id,support_payout_case_id,recovery_type,owner_type,status,merchant_loss_amount,eligible_loss_amount,estimated_recoverable_max,amount_recovered,currency,updated_at')
-    .eq('merchant_id', ctx.merchantId)
-    .is('loss_case_id', null)
-    .eq('prevention_only', false)
-    .gt('merchant_loss_amount', 0)
-    .limit(500);
   const orphanRecoveries = (orphanRecoveryData ?? []) as OrphanRecoveryRow[];
   const caseIds = raw.flatMap((row) => row.support_payout_case_id ? [row.support_payout_case_id] : []);
   const { data: financialRows } = caseIds.length
@@ -137,11 +143,25 @@ export default async function LossesPage() {
   const recoverable = rows.filter((r) => r.recoverability === 'recoverable' || r.recoverability === 'eligible_to_chase').length;
   const prevented = rows.filter((r) => r.preventionOnly).length;
   const writtenOff = rows.filter((r) => r.writtenOff).length;
+  const contributions = selectLossContributions(rows.map((row) => {
+    const key = row.attribution ?? row.category ?? 'unattributed';
+    return {
+      key,
+      label: row.attribution ? label('attribution', key) : humanise(key),
+      amountMinor: row.realisedLossMinor ?? row.estimatedLossMinor,
+      currency: row.currency,
+      writtenOff: row.writtenOff,
+    };
+  }), exposure.currency);
+  const topContributions = contributions.slice(0, 5);
+  const topLoss = topContributions[0];
+  const topLossPct = topLoss && exposure.total ? Math.round((topLoss.valueMajor / exposure.total) * 100) : null;
 
   return (
     <WorkbenchPage
-      eyebrow="Operations"
       title="Losses"
+      navItems={WORKBENCH_NAV_ITEMS}
+      activeNavKey="losses"
       kpiItems={[
         { label: 'Loss records', value: formatNumber(rows.length), hint: derivedRows.length ? `${canonicalRows.length} recorded · ${derivedRows.length} awaiting reconciliation` : 'All recorded losses' },
         { label: 'Realised / estimated loss', value: formatCurrencyNullable(exposure.total || null, exposure.currency) ?? '—', hint: `Excludes written-off${mixedHint}` },
@@ -149,6 +169,33 @@ export default async function LossesPage() {
         { label: 'Prevented', value: formatNumber(prevented), hint: 'Prevention-only outcomes' },
         { label: 'Written off', value: formatNumber(writtenOff), hint: 'Closed unrecoverable' },
       ]}
+      primaryVisual={
+        topLoss ? (
+          <KeyInsightCallout eyebrow="Loss contribution" icon={<TrendingDown size={16} />}>
+            <strong>{topLoss.label}</strong> is the largest loss driver
+            {topLossPct != null ? <> at <strong>{topLossPct}%</strong> of current loss</> : null}
+            {' '}(<strong>{formatCurrencyNullable(exposure.total || null, exposure.currency) ?? '—'}</strong> total).
+          </KeyInsightCallout>
+        ) : undefined
+      }
+      rail={
+        topContributions.length === 0 ? undefined : (
+          <SummaryRail
+            sections={[
+              {
+                title: 'Loss contribution',
+                rows: topContributions.map((item) => ({
+                  label: item.label,
+                  value: formatCurrencyNullable(item.valueMajor, exposure.currency) ?? '—',
+                  bar: exposure.total ? item.valueMajor / exposure.total : 0,
+                  href: `/losses?attribution=${encodeURIComponent(item.key)}`,
+                })),
+                footnote: `Ranked attribution of current loss in ${exposure.currency ?? 'the available currency'}. Written-off and incompatible-currency rows excluded.${mixedHint}`,
+              },
+            ]}
+          />
+        )
+      }
       main={<LossLedger rows={rows} />}
       footer={
         <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>

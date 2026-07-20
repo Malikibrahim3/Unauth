@@ -19,6 +19,7 @@ import { persistShipBobCanonicalRecord, updateShipBobConnectionAfterSync } from 
 import { runSyncJobPage, type SyncJobKind, type SyncJobState } from '@/lib/connectors/syncEngine';
 import type { ConnectorAdapter, ConnectorContext, NormalizedRecord } from '@/lib/connectors/types';
 import { recordShipBobAudit } from '@/lib/integrations/providers/shipbobAudit';
+import { shipBobOrdersUrl, shipBobShipmentUrl } from '@/lib/links/providerDeepLinks';
 
 export type SyncJobRow = {
   id: string;
@@ -176,7 +177,43 @@ async function resolveJobCredentials(client: SupabaseClient, job: SyncJobRow) {
 }
 
 function defaultPersistRecord(client: SupabaseClient, job: SyncJobRow) {
+  let environmentPromise: Promise<string | null> | null = null;
+  const shipBobSourceUrl = async (record: NormalizedRecord): Promise<string | null> => {
+    if (job.source !== 'shipbob' || record.sourceEntityType === 'location' || record.sourceEntityType === 'return') return null;
+    if (!environmentPromise) {
+      environmentPromise = Promise.resolve(
+        client
+          .from('merchant_integrations')
+          .select('environment')
+          .eq('id', job.connection_id)
+          .eq('merchant_id', job.merchant_id)
+          .maybeSingle()
+          .then(({ data }: { data: { environment?: string | null } | null }) => data?.environment ?? 'production'),
+      );
+    }
+    const environment = await environmentPromise;
+    const raw = record.data as Record<string, unknown>;
+    const embeddedOrder = raw.order && typeof raw.order === 'object'
+      ? raw.order as Record<string, unknown>
+      : null;
+    const orderId = record.sourceEntityType === 'order'
+      ? record.externalId
+      : typeof embeddedOrder?.id === 'string' || typeof embeddedOrder?.id === 'number'
+        ? String(embeddedOrder.id)
+        : null;
+    const shipmentId = record.sourceEntityType === 'shipment' || record.sourceEntityType === 'fulfilment'
+      ? record.externalId
+      : Array.isArray(raw.shipments) && raw.shipments[0] && typeof raw.shipments[0] === 'object'
+        ? String((raw.shipments[0] as Record<string, unknown>).id ?? '') || null
+        : null;
+    return orderId && shipmentId
+      ? shipBobShipmentUrl(environment, orderId, shipmentId)
+      : record.sourceEntityType === 'order'
+        ? shipBobOrdersUrl(environment)
+        : null;
+  };
   return async (record: NormalizedRecord): Promise<void> => {
+    const sourceUrl = record.sourceUrl ?? await shipBobSourceUrl(record);
     const sourceRecord = await upsertSourceRecord(client, {
       merchantId: job.merchant_id,
       connectionId: job.connection_id,
@@ -185,7 +222,7 @@ function defaultPersistRecord(client: SupabaseClient, job: SyncJobRow) {
       sourceEntityType: record.sourceEntityType,
       externalId: record.externalId,
       canonicalEntityType: record.canonicalEntityType,
-      sourceUrl: record.sourceUrl ?? null,
+      sourceUrl,
       sourceCreatedAt: record.sourceCreatedAt ?? null,
       sourceUpdatedAt: record.sourceUpdatedAt ?? null,
       sourceMetadata: { provider_payload: record.data },

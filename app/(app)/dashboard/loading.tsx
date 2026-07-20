@@ -1,5 +1,10 @@
-import { LoadingSkeleton } from '@/components/ui';
+import { DashboardLoadingSkeleton } from '@/components/navigation/skeletons/pageSkeletons';
+import styles from '@/components/dashboard/dashboardPilot.module.css';
 
 export default function DashboardLoading() {
-  return <div className="mx-auto max-w-7xl space-y-4 p-4 md:p-6"><LoadingSkeleton variant="page" title="Loading dashboard" rows={5} /><LoadingSkeleton variant="chart" title="Loading dashboard chart" /></div>;
+  return (
+    <div className={`${styles.dashboardPilot} ua-dashboard-pilot`}>
+      <DashboardLoadingSkeleton />
+    </div>
+  );
 }

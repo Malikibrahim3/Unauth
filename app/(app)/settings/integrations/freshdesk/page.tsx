@@ -29,7 +29,7 @@ export default async function FreshdeskIntegrationPage() {
         { label: 'Freshdesk' },
       ]}
     >
-      <div className="max-w-2xl space-y-6">
+      <div className="space-y-3">
         <FreshdeskSupportSyncClient canManage={canManageFreshdesk} />
       </div>
     </SettingsPageShell>

@@ -17,14 +17,17 @@
 
 .ua-app ::selection,
 .ua-auth-surface ::selection {
-  background: var(--surface-selected);
+  background: var(--accent-border);
   color: var(--text-primary);
 }
 
+/* box-shadow (not outline) so the ring always follows an element's
+   border-radius — Safari does not clip `outline` to a rounded corner, which
+   stamps a rectangular ring onto pill/rounded controls. */
 .ua-app :where(button, a, input, select, textarea, [tabindex]):focus-visible,
 .ua-auth-surface :where(button, a, input, select, textarea, [tabindex]):focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 2px;
+  outline: none;
+  box-shadow: var(--shadow-focus);
 }
 
 .ua-app .ua-mark,

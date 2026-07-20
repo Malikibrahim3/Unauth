@@ -18,15 +18,15 @@ function humanizeLabel(value: string | null | undefined): string {
  */
 export function ConnectionHealthHeader({ item }: { item: CatalogueRowItem }) {
   return (
-    <header className="flex flex-wrap items-start justify-between gap-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-xs)] md:p-6">
-      <div className="flex min-w-0 items-start gap-4">
-        <ProviderLogo provider={item.id} name={item.name} size="lg" />
+    <header className="flex flex-wrap items-start justify-between gap-3 rounded-[var(--ua-radius-card)] border border-[var(--border)] bg-[var(--surface)] p-4 shadow-[var(--shadow-xs)]">
+      <div className="flex min-w-0 items-start gap-3">
+        <ProviderLogo provider={item.id} name={item.name} size="md" />
         <div>
-          <p className="text-sm capitalize text-[var(--text-secondary)]">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--text-tertiary)]">
             {humanizeLabel(item.category)} · {humanizeLabel(item.stage)}
           </p>
-          <h1 className="mt-1 text-2xl font-semibold">{item.name}</h1>
-          <p className="mt-1 max-w-2xl text-sm text-[var(--text-secondary)]">
+          <h1 className="mt-1 text-lg font-semibold tracking-[-0.02em]">{item.name}</h1>
+          <p className="mt-1 max-w-2xl text-[11px] leading-5 text-[var(--text-secondary)]">
             {item.description}
           </p>
         </div>
@@ -39,6 +39,15 @@ export function ConnectionHealthHeader({ item }: { item: CatalogueRowItem }) {
 /** The provider-detail page's "Action required" note + "Connection health"
  * timestamp grid — same reuse rationale as ConnectionHealthHeader above. */
 export function ConnectionHealthGrid({ item }: { item: CatalogueRowItem }) {
+  const healthItems = [
+    ["Account", item.account ?? (item.connectionCount ? `${item.connectionCount} connected account${item.connectionCount === 1 ? "" : "s"}` : "Not connected")],
+    ["Records imported", formatNumber(item.importedRecords)],
+    ["Granted scopes", item.scopes.length ? `${item.scopes.length} recorded` : "None recorded"],
+    ["Last health check", item.lastVerifiedAt ? formatDateTime(item.lastVerifiedAt) : "Not yet checked"],
+    ["Last sync attempt", item.lastSyncAttemptAt ? formatDateTime(item.lastSyncAttemptAt) : item.freshness.deliveryModel === "periodic_sync" ? "Never" : "Not applicable"],
+    ["Last successful sync", item.lastSuccessfulSyncAt ? formatDateTime(item.lastSuccessfulSyncAt) : item.freshness.deliveryModel === "periodic_sync" ? "No successful sync" : "Not applicable"],
+    ["Last data received", item.freshness.confidence === "measured" ? item.lastDataReceivedAt ? formatDateTime(item.lastDataReceivedAt) : "Never" : "Not measurable"],
+  ];
   return (
     <>
       {item.lastError ? (
@@ -49,68 +58,17 @@ export function ConnectionHealthGrid({ item }: { item: CatalogueRowItem }) {
           </p>
         </Card>
       ) : null}
-      <section aria-labelledby="connection-health-title">
-        <h2 id="connection-health-title" className="text-base font-semibold">
-          Connection health
-        </h2>
-        <dl className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Card unstyled variant="flat" className="ua-metric-card p-3">
-            <dt className="text-xs text-[var(--text-tertiary)]">Account</dt>
-            <dd className="mt-1 truncate text-sm font-medium">
-              {item.account ??
-                (item.connectionCount
-                  ? `${item.connectionCount} connected account${item.connectionCount === 1 ? "" : "s"}`
-                  : "Not connected")}
-            </dd>
-          </Card>
-          <Card unstyled variant="flat" className="ua-metric-card p-3">
-            <dt className="text-xs text-[var(--text-tertiary)]">Imported objects</dt>
-            <dd className="mt-1 font-mono text-sm font-semibold">
-              {formatNumber(item.importedRecords)}
-            </dd>
-          </Card>
-          <Card unstyled variant="flat" className="ua-metric-card p-3">
-            <dt className="text-xs text-[var(--text-tertiary)]">Granted scopes</dt>
-            <dd className="mt-1 text-sm font-medium">
-              {item.scopes.length ? `${item.scopes.length} recorded` : "None recorded"}
-            </dd>
-          </Card>
-          <Card unstyled variant="flat" className="ua-metric-card p-3">
-            <dt className="text-xs text-[var(--text-tertiary)]">Last health check</dt>
-            <dd className="mt-1 text-sm font-medium">
-              {item.lastVerifiedAt ? formatDateTime(item.lastVerifiedAt) : "Not yet checked"}
-            </dd>
-          </Card>
-          <Card unstyled variant="flat" className="ua-metric-card p-3">
-            <dt className="text-xs text-[var(--text-tertiary)]">Last sync attempt</dt>
-            <dd className="mt-1 text-sm font-medium">
-              {item.lastSyncAttemptAt
-                ? formatDateTime(item.lastSyncAttemptAt)
-                : item.freshness.deliveryModel === "periodic_sync"
-                  ? "Never"
-                  : "Not applicable"}
-            </dd>
-          </Card>
-          <Card unstyled variant="flat" className="ua-metric-card p-3">
-            <dt className="text-xs text-[var(--text-tertiary)]">Last successful sync</dt>
-            <dd className="mt-1 text-sm font-medium">
-              {item.lastSuccessfulSyncAt
-                ? formatDateTime(item.lastSuccessfulSyncAt)
-                : item.freshness.deliveryModel === "periodic_sync"
-                  ? "No successful sync"
-                  : "Not applicable"}
-            </dd>
-          </Card>
-          <Card unstyled variant="flat" className="ua-metric-card p-3">
-            <dt className="text-xs text-[var(--text-tertiary)]">Last data received</dt>
-            <dd className="mt-1 text-sm font-medium">
-              {item.freshness.confidence === "measured"
-                ? item.lastDataReceivedAt
-                  ? formatDateTime(item.lastDataReceivedAt)
-                  : "Never"
-                : "Not measurable for this connector"}
-            </dd>
-          </Card>
+      <section className="overflow-hidden rounded-[var(--ua-radius-card)] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-xs)]" aria-labelledby="connection-health-title">
+        <div className="border-b border-[var(--border-muted)] px-4 py-3">
+          <h2 id="connection-health-title" className="text-xs font-semibold">Connection health</h2>
+        </div>
+        <dl className="grid sm:grid-cols-2 lg:grid-cols-4">
+          {healthItems.map(([label, value], index) => (
+            <div key={label} className={`min-w-0 p-3.5 ${index ? "border-t border-[var(--border-muted)] sm:border-l sm:border-t-0" : ""}`}>
+              <dt className="text-[10px] text-[var(--text-tertiary)]">{label}</dt>
+              <dd className="mt-1 truncate text-[11px] font-semibold">{value}</dd>
+            </div>
+          ))}
         </dl>
       </section>
     </>

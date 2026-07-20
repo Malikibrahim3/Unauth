@@ -77,10 +77,10 @@ export default async function LossDetailPage({
         />
       }
     >
-      <div className="space-y-6">
+      <div className="space-y-3">
         <section
           aria-labelledby="loss-financial"
-          className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4"
+          className="rounded-[var(--ua-radius-card)] border border-[var(--border)] bg-[var(--surface)] p-4 shadow-[var(--shadow-xs)]"
         >
           <h2 id="loss-financial" className="font-semibold">
             Financial outcome
@@ -118,7 +118,7 @@ export default async function LossDetailPage({
             </p>
           ) : null}
         </section>
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-3 lg:grid-cols-2">
           <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
             <h2 className="font-semibold">Attribution</h2>
             <p className="mt-3 text-sm">

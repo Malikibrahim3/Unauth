@@ -96,6 +96,48 @@ export function checklistTemplateFor(claimType: PayoutClaimType | null): Checkli
   return DEFAULT_TEMPLATE;
 }
 
+/**
+ * Short, sentence-safe noun phrases for each evidence key, for inline prose and
+ * chips ("Gather customer statement, delivery confirmation …"). Distinct from
+ * the checklist `label` above, which is a full row caption ("Customer statement
+ * on file"). Raw snake_case keys must never reach the DOM — unknown keys fall
+ * back to a spaced form via `evidenceKeyLabel`.
+ */
+export const EVIDENCE_KEY_LABELS: Record<string, string> = {
+  tracking: 'carrier tracking',
+  proof_of_delivery: 'proof of delivery',
+  carrier_identified: 'carrier identification',
+  delivery_confirmed: 'delivery confirmation',
+  delivery_scan_timeline: 'delivery scan timeline',
+  customer_statement: 'customer statement',
+  customer_evidence: 'customer evidence',
+  merchant_inspection: 'merchant inspection',
+  order_contents: 'order contents',
+  order_on_file: 'order details',
+  delivery_status_known: 'delivery status',
+  delivery_photo: 'delivery photo',
+  signature: 'delivery signature',
+  gps: 'GPS coordinates',
+  pick_pack_record: 'warehouse pick/pack record',
+  packing_slip: 'packing slip',
+  packaging_condition: 'packaging condition',
+  carrier_damage_report: 'carrier damage report',
+  received_item_photo: 'photo of the received item',
+};
+
+/** Map an evidence key to a sentence-safe noun phrase (never raw snake_case). */
+export function evidenceKeyLabel(key: string): string {
+  return EVIDENCE_KEY_LABELS[key] ?? key.replace(/_/g, ' ');
+}
+
+/** Join evidence-key labels into readable prose: "a", "a and b", "a, b and c". */
+export function joinEvidenceLabels(keys: readonly string[]): string {
+  const labels = keys.map(evidenceKeyLabel);
+  if (labels.length <= 1) return labels[0] ?? '';
+  if (labels.length === 2) return `${labels[0]} and ${labels[1]}`;
+  return `${labels.slice(0, -1).join(', ')} and ${labels[labels.length - 1]}`;
+}
+
 // ---------------------------------------------------------------------------
 // Requested-action inference (used only when the caller supplies no actions)
 // ---------------------------------------------------------------------------

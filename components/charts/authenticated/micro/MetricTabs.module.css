@@ -1,0 +1,39 @@
+.strip {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  border-bottom: 1px solid var(--border-muted);
+  list-style: none;
+}
+.tile {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 0;
+  border-right: 1px solid var(--border-muted);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+.tile:last-child { border-right: 0; }
+.tile[data-selected="true"] { background: var(--surface-selected, var(--ua-surface-secondary)); }
+button.tile:focus-visible { outline: none; box-shadow: inset var(--shadow-focus); }
+.iconChip {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  margin-bottom: 6px;
+  border-radius: 4px;
+  background: var(--surface-muted);
+  color: var(--icon);
+  place-items: center;
+}
+.iconChip[data-selected="true"] { background: var(--ua-surface-inverse); color: var(--ua-text-inverse); }
+.label { display: block; margin: 0; color: var(--text-secondary); font-size: 12px; font-weight: 400; }
+.value { display: block; margin: 2px 0; color: var(--text-primary); font-size: 20px; font-weight: 500; }
+.delta { display: block; font-size: 12px; }
+
+@media (max-width: 700px) {
+  .strip { flex-wrap: wrap; }
+  .tile { flex: 1 1 50%; }
+}

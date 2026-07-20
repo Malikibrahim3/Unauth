@@ -249,6 +249,22 @@ function pluralWord(n: number, singular: string, plural: string): string {
   return n === 1 ? singular : plural;
 }
 
+function formatRefundActivity(
+  refundRequests365d: number | undefined,
+  completedRefunds365d: number | undefined,
+): string {
+  const parts: string[] = [];
+  const requests = Number(refundRequests365d ?? 0);
+  const completed = Number(completedRefunds365d ?? 0);
+  if (requests > 0) {
+    parts.push(`${requests} ${pluralWord(requests, 'refund request', 'refund requests')} in last 365 days`);
+  }
+  if (completed > 0) {
+    parts.push(`${completed} ${pluralWord(completed, 'completed refund', 'completed refunds')} in last 365 days`);
+  }
+  return parts.join(' · ');
+}
+
 function buildContextSummary(
   result: GorgiasClaimWidgetResult,
   link: GorgiasWidgetLinkContext | undefined,
@@ -271,7 +287,14 @@ function buildContextSummary(
     }
   }
 
-  const { thisStore, network, ce3EvidenceAvailable, storeRecentClaimCount } = result.data;
+  const {
+    thisStore,
+    network,
+    ce3EvidenceAvailable,
+    storeRecentClaimCount,
+    refundRequestCount365d,
+    completedRefundCount365d,
+  } = result.data;
   const parts: string[] = [];
 
   if (orderRef) parts.push(`Order ${orderRef}`);
@@ -290,6 +313,9 @@ function buildContextSummary(
   } else if (thisStore.orderCount > 0) {
     parts.push('no prior claims');
   }
+
+  const refundActivity = formatRefundActivity(refundRequestCount365d, completedRefundCount365d);
+  if (refundActivity) parts.push(refundActivity);
 
   if (ce3EvidenceAvailable) parts.push('claim evidence available');
 
@@ -774,7 +800,11 @@ export function claimWidgetToJson(
     storeClaimValue,
     storePrimaryReason,
     storeRecentClaimCount,
+    refundRequestCount365d,
+    completedRefundCount365d,
   } = result.data;
+
+  const refundActivity = formatRefundActivity(refundRequestCount365d, completedRefundCount365d);
 
   const networkData = showNetworkIntelligence ? network : null;
 
@@ -782,7 +812,8 @@ export function claimWidgetToJson(
     thisStore.ordersCountSource === 'none' &&
     thisStore.orderCount === 0 &&
     thisStore.claimCount === 0 &&
-    !network
+    !network &&
+    !refundActivity
   ) {
     return withUnlockFields(
       {
@@ -813,9 +844,11 @@ export function claimWidgetToJson(
   }
 
   const hasAnyClaims =
-    thisStore.claimCount > 0 || (networkData ? networkData.claimCount > 0 : false);
+    thisStore.claimCount > 0 ||
+    (networkData ? networkData.claimCount > 0 : false) ||
+    Boolean(refundActivity);
   const claims = hasAnyClaims
-    ? formatClaimsSummary(thisStore.claimCount, networkData, storeClaimValue, thisStore.lastClaimAt)
+    ? formatClaimsSummary(thisStore.claimCount, networkData, storeClaimValue, thisStore.lastClaimAt, refundActivity)
     : NO_CLAIMS_LABEL;
 
   const primaryReason = networkData
@@ -865,7 +898,8 @@ function formatClaimsSummary(
   storeClaims: number,
   network: NetworkStats | null,
   storeClaimValue: number | null,
-  storeLastClaimAt: string | null
+  storeLastClaimAt: string | null,
+  refundActivity?: string,
 ): string {
   const parts: string[] = [];
   if (storeClaims > 0) {
@@ -880,6 +914,7 @@ function formatClaimsSummary(
       `${network.claimCount} ${pluralise(network.claimCount, 'claim', 'claims')} across ${network.merchantCount} ${pluralise(network.merchantCount, 'merchant', 'merchants')}`
     );
   }
+  if (refundActivity) parts.push(refundActivity);
   return parts.length > 0 ? parts.join(' · ') : NO_CLAIMS_LABEL;
 }
 

@@ -2,7 +2,6 @@
 
 import { type ReactNode, useEffect, useId, useRef } from 'react';
 import { X } from 'lucide-react';
-import { IconButton } from '@/components/ui/IconButton';
 
 interface DrawerProps {
   open: boolean;
@@ -114,13 +113,22 @@ export function Drawer({
               height: 56,
               padding: '0 var(--space-5)',
               background: 'var(--surface)',
-              position: 'sticky',
-              top: 0,
+              // The body below is the only scroll container, so the header
+              // stays fixed in the flex layout without Safari's sticky
+              // positioning bug moving it into the middle of the drawer.
+              position: 'relative',
               zIndex: 'var(--ua-z-header)' as unknown as number,
             }}
           >
             <h2 id={titleId} className="text-h3" style={{ color: 'var(--text-primary)' }}>{title}</h2>
-            <IconButton label="Close panel" icon={<X className="w-4 h-4" />} size="lg" onClick={onClose} className="border-0 bg-transparent" />
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex h-11 w-11 items-center justify-center rounded-[var(--ua-radius-control)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)] transition-colors focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]"
+              aria-label="Close"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
         )}
 
@@ -129,7 +137,9 @@ export function Drawer({
         {footer && (
           <div
             className="shrink-0 bg-[var(--surface)] border-t border-[var(--border-muted)]"
-            style={{ position: 'sticky', bottom: 0 }}
+            // The footer is outside the scrollable body and is already held
+            // at the bottom by the drawer's flex column layout.
+            style={{ position: 'relative', zIndex: 'var(--ua-z-header)' as unknown as number }}
           >
             {footer}
           </div>

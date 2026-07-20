@@ -56,7 +56,7 @@ export function SidebarAside({
       <div
         className={cn(
           'flex flex-shrink-0 border-b border-[var(--border)] px-3',
-          isCollapsed ? 'h-16 flex-col items-center justify-center gap-1 py-1.5' : 'flex-col gap-2 py-3',
+          isCollapsed ? 'h-14 flex-col items-center justify-center gap-1 py-1.5' : 'flex-col gap-1.5 py-2',
         )}
       >
         <div className="flex w-full min-w-0 items-center justify-between gap-2">
@@ -66,7 +66,7 @@ export function SidebarAside({
             title="Unauth"
             onClick={onCloseMobile}
           >
-            <UnauthLogo variant="mono-dark" size={isCollapsed ? 9 : 28} />
+            <UnauthLogo variant="mono-dark" size={isCollapsed ? 9 : 12} />
           </Link>
           {!isCollapsed && (
             <button
@@ -86,8 +86,8 @@ export function SidebarAside({
         </div>
 
         {!isCollapsed && merchantName ? (
-          <div className="flex w-full items-center gap-2 rounded-md border border-white/70 bg-white/55 px-2 py-1.5 shadow-[var(--shadow-xs)]" title={merchantName}>
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--surface-selected)] text-[10px] font-bold text-[var(--brand-deep)]">
+          <div className="flex min-h-8 w-full items-center gap-2 rounded-md border border-[var(--border-muted)] bg-[var(--surface)] px-2 py-1 shadow-[var(--shadow-xs)]" title={merchantName}>
+            <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-md bg-[var(--surface-selected)] text-[9px] font-bold text-[var(--brand-deep)]">
               {merchantName.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase()}
             </span>
             <span className="min-w-0 truncate text-[11px] font-semibold leading-tight text-[var(--text-secondary)]">{merchantName}</span>
@@ -98,7 +98,7 @@ export function SidebarAside({
           <Link
             href="/integrations"
             onClick={onCloseMobile}
-            className="flex w-full items-center gap-1.5 rounded-sm px-2 py-1 text-xs font-medium leading-tight hover:opacity-80 transition-opacity"
+            className="flex min-h-6 w-full items-center gap-1.5 rounded-sm px-2 py-1 text-[10px] font-medium leading-tight transition-opacity hover:opacity-80"
             style={{
               background: 'color-mix(in srgb, var(--warning) 10%, transparent)',
               color: 'var(--warning)',
@@ -123,16 +123,21 @@ export function SidebarAside({
 
         {isCollapsed && merchantName ? (
           <div
-            className="w-full truncate text-center text-xs leading-none text-[var(--text-tertiary)]"
+            className="flex h-[22px] w-[22px] items-center justify-center rounded-md bg-[var(--surface-selected)] text-[9px] font-bold leading-none text-[var(--brand-deep)]"
             title={merchantName}
           >
-            {merchantName.slice(0, 8)}
+            {merchantName
+              .split(/\s+/)
+              .map((part) => part[0])
+              .join('')
+              .slice(0, 2)
+              .toUpperCase()}
           </div>
         ) : null}
       </div>
 
       <nav
-        className={cn('flex-1 overflow-y-auto overflow-x-hidden', isCollapsed ? 'px-2 py-3' : 'p-2')}
+        className={cn('min-h-0 flex-1 overflow-y-auto overflow-x-hidden', isCollapsed ? 'px-2 py-3' : 'p-2')}
         aria-label="Main navigation"
       >
         {groups.map((group) => (
@@ -171,7 +176,7 @@ export function SidebarAside({
           onClick={onCloseMobile}
           className={cn(
             'flex h-8 items-center gap-3 rounded-sm px-2',
-            'text-body-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)]',
+            'text-[11px] text-[var(--text-secondary)] hover:text-[var(--text-primary)]',
             'transition-colors duration-[var(--duration-fast)]',
             'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
             isCollapsed && 'justify-center',
@@ -187,7 +192,7 @@ export function SidebarAside({
           onClick={onCloseMobile}
           className={cn(
             'flex h-8 items-center gap-3 rounded-sm px-2',
-            'text-body-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)]',
+            'text-[11px] text-[var(--text-secondary)] hover:text-[var(--text-primary)]',
             'transition-colors duration-[var(--duration-fast)]',
             'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
             isCollapsed && 'justify-center',
@@ -203,7 +208,7 @@ export function SidebarAside({
           title={isCollapsed ? 'Sign out' : undefined}
           className={cn(
             'flex h-8 w-full items-center gap-3 rounded-sm px-2',
-            'text-body-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)]',
+            'text-[11px] text-[var(--text-secondary)] hover:text-[var(--text-primary)]',
             'transition-colors duration-[var(--duration-fast)]',
             'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
             isCollapsed && 'justify-center',
@@ -223,7 +228,7 @@ export function SidebarAside({
               <Link
                 key={href}
                 href={href}
-                className="text-xs text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:underline transition-colors"
+                className="text-[10px] text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-secondary)] hover:underline"
               >
                 {label}
               </Link>

@@ -29,6 +29,10 @@ import { env } from '@/lib/utils/env';
 import { refreshCarrierCredentials } from '@/lib/integrations/providers/carrierCredentials';
 import type { NormalizedEvidenceItem } from '@/lib/integrations/types';
 import { safeConnectionErrorCode } from '@/lib/integrations/publicErrors';
+import {
+  resolveLinkedCarrierTracking,
+  resolveShipBobOrderReference,
+} from '@/lib/integrations/orderLinking';
 
 const syncSchema = z.object({
   supportPayoutCaseId: z.string().uuid().optional(),
@@ -36,39 +40,6 @@ const syncSchema = z.object({
   trackingNumber: z.string().trim().min(1).optional(),
   orderReference: z.string().trim().min(1).optional(),
 });
-
-async function resolveTrackingNumber(client: any, merchantId: string, orderId?: string, provided?: string) {
-  if (provided?.trim()) return provided.trim();
-  if (!orderId) return null;
-  const { data } = await client
-    .from('source_fulfillments')
-    .select('tracking_number')
-    .eq('merchant_id', merchantId)
-    .eq('source_order_id', orderId)
-    .not('tracking_number', 'is', null)
-    .order('occurred_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  return data?.tracking_number ?? null;
-}
-
-
-async function resolveOrderReference(
-  client: any,
-  merchantId: string,
-  orderId?: string,
-  provided?: string,
-): Promise<string | null> {
-  if (provided?.trim()) return provided.trim().replace(/^#/, '');
-  if (!orderId) return null;
-  const { data } = await client
-    .from('source_orders')
-    .select('external_id,order_number')
-    .eq('merchant_id', merchantId)
-    .eq('id', orderId)
-    .maybeSingle();
-  return data?.order_number ?? data?.external_id ?? null;
-}
 
 export async function POST(
   request: NextRequest,
@@ -150,7 +121,7 @@ export async function POST(
       if (!credentials) return NextResponse.json({ error: 'ShipBob is not connected.' }, { status: 400 });
       const token = credentials?.accessToken ?? credentials?.apiKey;
       if (!token) return NextResponse.json({ error: 'ShipBob is not connected.' }, { status: 400 });
-      const orderReference = await resolveOrderReference(
+      const orderReference = await resolveShipBobOrderReference(
         serviceClient,
         ctx.merchantId,
         parsed.data.orderId,
@@ -186,7 +157,13 @@ export async function POST(
           })
         : null;
       if (!credentials?.accessToken) return NextResponse.json({ error: `${provider.name} is not connected.` }, { status: 400 });
-      const trackingNumber = await resolveTrackingNumber(serviceClient, ctx.merchantId, parsed.data.orderId, parsed.data.trackingNumber);
+      const tracking = await resolveLinkedCarrierTracking(
+        serviceClient,
+        ctx.merchantId,
+        parsed.data.orderId,
+        parsed.data.trackingNumber,
+      );
+      const trackingNumber = tracking?.trackingNumber ?? null;
       if (!trackingNumber) return NextResponse.json({ error: 'Tracking number is required for carrier proof sync.' }, { status: 400 });
       const payload = provider.id === 'ups'
         ? await fetchUpsDeliveryProof({ credentials, trackingNumber })

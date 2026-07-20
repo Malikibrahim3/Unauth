@@ -110,6 +110,7 @@ test('seeded dynamic record routes use the new system', async ({ page }) => {
 });
 
 test('visual enrichment preserves provider identity and focal hierarchy', async ({ page }) => {
+  test.setTimeout(90_000);
   await page.goto('/integrations', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('img[src*="shopify"]')).toBeVisible();
   await expect(page.locator('img[src*="gorgias"]')).toBeVisible();
@@ -119,6 +120,66 @@ test('visual enrichment preserves provider identity and focal hierarchy', async 
   await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
   await expect(page.getByRole('region', { name: 'Value this period' })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Payout performance charts' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Exposure and recovered' }).first()).toBeVisible();
-  await expect(page.getByText('View chart data').first()).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Payout performance' })).toBeVisible();
+  await expect(page.getByRole('tab', { name: /Recovered/ })).toBeVisible();
+});
+
+test('dashboard pilot interactions and responsive layout remain operational', async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
+  await expect(page.getByRole('heading', { name: 'Overview', level: 1 })).toBeVisible({ timeout: 60_000 });
+  await expect(page.locator('svg.recharts-surface')).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator('[data-capability-id="reports.range"]')).toBeVisible();
+  await expect(page.locator('[data-capability-id="reports.compare"]')).toBeVisible();
+  await expect(page.locator('[data-capability-id="reports.currency"]')).toBeVisible();
+  await expect(page.locator('[data-capability-id="reports.open-full"]')).toBeVisible();
+  await expect(page.locator('[data-capability-id="work.open-header"]')).toHaveAttribute('href', '/work');
+  await expect(page.locator('[data-capability-id="claims.review-high-value"]')).toHaveAttribute('href', '/claims?sort=value');
+  await expect(page.locator('[data-capability-id="reports.open-full"]')).toHaveAttribute('href', /\/reports\?range=/);
+
+  const recoveredTab = page.getByRole('tab').filter({ hasText: 'Recovered' });
+  await expect(recoveredTab).toHaveCount(1);
+  await recoveredTab.click();
+  await expect(recoveredTab).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('[data-capability-id="reports.metric.recovered"]')).toHaveAttribute('aria-selected', 'true');
+
+  const detailsButton = page.getByRole('button', { name: 'Details', exact: true });
+  await expect(detailsButton).toHaveCount(1);
+  await detailsButton.click();
+  await expect(page.getByRole('dialog', { name: 'Data health' })).toBeVisible();
+  await page.getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Data health' })).toHaveCount(0);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.body.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  await expect(page.getByRole('button', { name: 'Open navigation' })).toBeVisible();
+});
+
+test('operational routes use purpose-specific charts from one visual grammar', async ({ page }) => {
+  test.setTimeout(4 * 60_000);
+  const routeCharts = [
+    ['/work', 'deadline-risk'],
+    ['/claims', 'column-comparison'],
+    ['/losses', 'ranked-contribution'],
+    ['/recoveries', 'stage-funnel'],
+    ['/customers', 'range-plot'],
+    ['/rules', 'status-matrix'],
+    ['/flows', 'mini-bar-sequence'],
+    ['/integrations', 'source-health-matrix'],
+    ['/notifications', 'activity-strip'],
+  ] as const;
+
+  for (const [route, chart] of routeCharts) {
+    await test.step(`${route} → ${chart}`, async () => {
+      await page.goto(route, { waitUntil: 'domcontentloaded' });
+      await expect(page.locator(`[data-auth-chart="${chart}"]`)).toBeVisible({ timeout: 30_000 });
+      await expect(page.locator('[data-auth-chart]')).toHaveCount(1);
+      const dataDisclosure = page.locator(`[data-auth-chart="${chart}"] summary`);
+      await expect(dataDisclosure).toBeVisible();
+      await dataDisclosure.focus();
+      await page.keyboard.press('Enter');
+      await expect(page.locator(`[data-auth-chart="${chart}"] details`)).toHaveAttribute('open', '');
+      expect(await page.evaluate(() => document.body.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+    });
+  }
 });

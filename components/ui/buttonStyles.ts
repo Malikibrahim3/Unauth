@@ -3,7 +3,15 @@ import { cn } from '@/lib/utils';
 import type { ButtonSize, ButtonVariant } from './Button';
 
 const BUTTON_BASE =
-  'relative inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[var(--ua-radius-control)] font-medium transition-colors duration-[var(--duration-fast)] focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed select-none';
+  'ua-jitter inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-colors duration-[var(--duration-fast)] focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)] disabled:cursor-not-allowed select-none';
+
+// A genuinely inert disabled look (muted surface + tertiary text), not a faded
+// accent — a 50%-opacity orange primary reads as "enabled but light".
+const DISABLED_STYLE: CSSProperties = {
+  background: 'var(--surface-sunken)',
+  color: 'var(--text-tertiary)',
+  border: '1px solid var(--border)',
+};
 
 const BUTTON_SIZES: Record<ButtonSize, { height: string; px: string; fontSize: number }> = {
   sm: { height: 'var(--ua-control-height-sm)', px: 'var(--ua-control-padding-x-sm)', fontSize: 12 },
@@ -31,7 +39,7 @@ function buttonVariantStyle(variant: ButtonVariant): CSSProperties {
     case 'primary':
       return {
         background: 'var(--ua-accent)',
-        color: 'var(--ua-text-inverse)',
+        color: 'white',
         border: '1px solid var(--ua-accent)',
       };
     // Lime brand CTA — sparing: marketing CTAs, "New X" marquee actions.
@@ -47,7 +55,7 @@ function buttonVariantStyle(variant: ButtonVariant): CSSProperties {
     case 'ghost':
       return { background: 'transparent', color: 'var(--text-secondary)' };
     case 'danger':
-      return { background: 'var(--risk-critical)', color: 'var(--text-inverse)', border: '1px solid var(--risk-critical)' };
+      return { background: 'var(--risk-critical)', color: 'white', border: '1px solid var(--risk-critical)' };
     case 'link':
       return { background: 'transparent', color: 'var(--text-secondary)' };
   }
@@ -58,19 +66,29 @@ export function getButtonPresentation(
   size: ButtonSize = 'md',
   className?: string,
   style?: CSSProperties,
+  disabled = false,
 ) {
   const isLink = variant === 'link';
   const sz = BUTTON_SIZES[size];
+  // Inert disabled applies to filled variants only; link/ghost fall back to a
+  // subtle opacity so they don't gain an out-of-place box.
+  const inert = disabled && !isLink && variant !== 'ghost';
   return {
-    className: cn(BUTTON_BASE, BUTTON_VARIANT_CLASSES[variant], className),
+    className: cn(
+      BUTTON_BASE,
+      disabled ? '' : BUTTON_VARIANT_CLASSES[variant],
+      !inert && disabled ? 'opacity-50' : '',
+      className,
+    ),
     style: {
       height: isLink ? undefined : sz.height,
       paddingLeft: isLink ? undefined : sz.px,
       paddingRight: isLink ? undefined : sz.px,
       fontSize: sz.fontSize,
-      borderRadius: isLink ? undefined : 'var(--ua-radius-control)',
+        borderRadius: isLink ? undefined : 'var(--ua-radius-control)',
       minWidth: isLink ? undefined : 'fit-content',
       ...buttonVariantStyle(variant),
+      ...(inert ? DISABLED_STYLE : null),
       ...style,
     } as CSSProperties,
     iconSizeClass: BUTTON_ICON_SIZES[size],

@@ -3,13 +3,8 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import { sumSameCurrency } from '@/lib/utils/format';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
-import { getConnectionState } from '@/lib/connections/getConnectionState';
+import { getCachedConnectionState } from '@/lib/connections/getConnectionState';
 import { ACTIVE_CLAIM_STATUSES, getClaimSlaState } from '@/lib/claims/sla';
-import {
-  CANONICAL_CLAIM_STATUSES,
-  FINAL_CANONICAL_CLAIM_STATUSES,
-  type CanonicalClaimStatus,
-} from '@/lib/claims/statusMachine';
 import { fetchClaimQueueCounts } from '@/lib/claims/queueCounts';
 import { claimsListTotalForView, formatClaimsResultText, resolveClaimsListView } from '@/lib/claims/claimsQueueUi';
 import { ClaimsPageView } from '@/app/(app)/claims/ClaimsPageView';
@@ -26,10 +21,28 @@ export const dynamic = 'force-dynamic';
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 const DEFAULT_PAGE_SIZE = 25;
+const FINAL_CLAIM_STATUSES = ['closed', 'resolved_refunded', 'resolved_won', 'resolved_lost', 'resolved_denied', 'resolved_exchanged', 'voided', 'stale'] as const;
+
 /** v2 `claims` columns surfaced to the queue view-model. */
 const CLAIM_LIST_SELECT =
   'id,identity_id,source_order_id,source_ticket_id,claim_type,status,amount_at_risk,total_estimated_loss,currency,loss_attribution,attribution_confidence,recoverability,recovery_owner,recovery_required_evidence,recovery_next_action,payout_decision_state,recovery_state,next_action,next_action_reason,submitted_at,created_at,updated_at,first_viewed_at,assigned_to,assigned_at,snoozed_until';
 
+const ALLOWED_STATUSES = [
+  'new',
+  'evidence_needed',
+  'awaiting_customer_evidence',
+  'awaiting_carrier_response',
+  'awaiting_3pl_response',
+  'awaiting_supplier_response',
+  'ready_for_decision',
+  'manual_review',
+  'decision_recorded',
+  'recovery_opened',
+  'pending',
+  'open',
+  'escalated',
+  ...FINAL_CLAIM_STATUSES,
+] as const;
 const WORKFLOW_FILTERS = [
   'needs_evidence',
   'awaiting_carrier',
@@ -70,10 +83,24 @@ type ClaimQueryRow = {
   assigned_at: string | null;
   snoozed_until: string | null;
 };
+type ClaimStatus = (typeof ALLOWED_STATUSES)[number];
+type ClaimsSearchParams = {
+  status?: string;
+  workflow?: string;
+  sort?: string;
+  sla?: string;
+  page?: string;
+  pageSize?: string;
+  queue?: string;
+  owner?: string;
+  viewed?: string;
+  focus?: string;
+};
+
 export default async function ClaimsPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ status?: string; workflow?: string; sort?: string; sla?: string; page?: string; pageSize?: string; queue?: string; owner?: string; viewed?: string; focus?: string }>;
+  searchParams?: Promise<ClaimsSearchParams>;
 }) {
   const userClient = createClient();
   const { data: { user } } = await userClient.auth.getUser();
@@ -82,21 +109,22 @@ export default async function ClaimsPage({
   const serviceClient = createServiceClient();
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_INBOX);
   if (denied) redirect('/dashboard');
-  if (!await merchantHasEntitlement(serviceClient, ctx.merchantId, 'CLAIM_REVIEW_QUEUE')) {
+  const [hasQueueEntitlement, connectionState, resolvedParams] = await Promise.all([
+    merchantHasEntitlement(serviceClient, ctx.merchantId, 'CLAIM_REVIEW_QUEUE'),
+    getCachedConnectionState(ctx.merchantId),
+    searchParams ?? Promise.resolve<ClaimsSearchParams>({}),
+  ]);
+  if (!hasQueueEntitlement) {
     redirect('/settings/billing?required=CLAIM_REVIEW_QUEUE');
   }
-
-  const connectionState = await getConnectionState(serviceClient, ctx.merchantId);
-
-  const resolvedParams = (await searchParams) ?? {};
-  const sp: Record<string, string | undefined> = { ...resolvedParams };
-  const statusFilter = CANONICAL_CLAIM_STATUSES.includes(resolvedParams.status as CanonicalClaimStatus)
-    ? (resolvedParams.status as CanonicalClaimStatus)
+  const sp: Record<string, string | undefined> = { ...(resolvedParams ?? {}) };
+  const statusFilter = ALLOWED_STATUSES.includes(resolvedParams.status as ClaimStatus)
+    ? (resolvedParams.status as ClaimStatus)
     : null;
   const workflowFilter = WORKFLOW_FILTERS.includes(resolvedParams.workflow as WorkflowFilter)
     ? (resolvedParams.workflow as WorkflowFilter)
     : null;
-  const queueFilter = resolvedParams.queue === 'history' || resolvedParams.queue === 'snoozed' || workflowFilter === 'closed' || (statusFilter && (FINAL_CANONICAL_CLAIM_STATUSES as readonly string[]).includes(statusFilter))
+  const queueFilter = resolvedParams.queue === 'history' || resolvedParams.queue === 'snoozed' || workflowFilter === 'closed' || (statusFilter && (FINAL_CLAIM_STATUSES as readonly string[]).includes(statusFilter))
     ? resolvedParams.queue === 'snoozed' ? 'snoozed' : 'history'
     : 'active';
   const ownerFilter = resolvedParams.owner === 'me' || resolvedParams.owner === 'unassigned' ? resolvedParams.owner : null;
@@ -134,11 +162,11 @@ export default async function ClaimsPage({
   } else if (workflowFilter === 'manual_review') {
     listQuery = listQuery.in('status', ['manual_review', 'escalated']);
   } else if (workflowFilter === 'closed') {
-    listQuery = listQuery.in('status', [...FINAL_CANONICAL_CLAIM_STATUSES]);
+    listQuery = listQuery.in('status', [...FINAL_CLAIM_STATUSES]);
   } else if (statusFilter) {
     listQuery = listQuery.eq('status', statusFilter);
   } else if (queueFilter === 'history') {
-    listQuery = listQuery.in('status', [...FINAL_CANONICAL_CLAIM_STATUSES]);
+    listQuery = listQuery.in('status', [...FINAL_CLAIM_STATUSES]);
   } else if (queueFilter === 'snoozed') {
     listQuery = listQuery.in('status', [...ACTIVE_CLAIM_STATUSES]).not('snoozed_until', 'is', null).gt('snoozed_until', new Date().toISOString());
   } else {

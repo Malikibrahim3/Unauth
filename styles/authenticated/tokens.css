@@ -2,9 +2,10 @@
  * Authenticated design tokens — surfaces, ink, borders, brand/accent,
  * geometry (radius/shadow/focus), density (control heights).
  *
- * Authenticated product tokens. Semantic/status/risk tokens live in status.css
- * and type-role tokens live in typography.css. Components consume the
- * --ua-* aliases below rather than inventing page-local values.
+ * Relocated verbatim from app/(app)/authenticated.css (no values changed).
+ * Semantic/status/risk tokens live in status.css. Type-role tokens live in
+ * typography.css. See styles/authenticated/README.md for the --ua-* alias
+ * contract and why both naming schemes coexist during the migration.
  */
 .ua-app,
 .ua-auth-surface {
@@ -14,101 +15,131 @@
   --bg: #f7f7f4;
   --bg-canvas: #f7f7f4;
   --bg-surface: #ffffff;
-  --bg-surface-alt: #f3f3ef;
-  --bg-surface-sunk: #f0f0ec;
-  --bg-subtle: #f3f3ef;
-  --bg-muted: #f0f0ec;
-  --bg-inset: #f9f9f6;
-  --bg-hover: #eeeeea;
-  --bg-selected: #ecece7;
+  --bg-surface-alt: #efeee7;
+  --bg-surface-sunk: #f3f2ed;
+  --bg-subtle: #efeee7;
+  --bg-muted: #efeee7;
+  --bg-inset: #faf9f6;
+  --bg-hover: #f5f3ed;
+  --bg-selected: #ffffff;
   --surface: #ffffff;
   --surface-base: #f7f7f4;
   --surface-raised: #ffffff;
   --surface-overlay: #ffffff;
-  --surface-muted: #f3f3ef;
-  --surface-sunken: #f0f0ec;
-  --surface-hover: #eeeeea;
-  --surface-selected: #ecece7;
-  --surface-subtle: #f3f3ef;
+  --surface-muted: #efeee7;
+  --surface-sunken: #f3f2ed;
+  --surface-hover: #f5f3ed;
+  --surface-selected: #ffffff;
+  --surface-subtle: #efeee7;
   --surface-input: #ffffff;
-  --surface-border: #e4e4de;
+  --surface-border: #e4e2da;
 
   /* Ink */
-  --text: #171816;
-  --text-primary: #171816;
-  --text-secondary: #5d5f5a;
-  --text-tertiary: #73756f;
-  --text-muted: #5d5f5a;
-  --text-subtle: #73756f;
-  --text-disabled: #b4b6af;
+  --text: #171713;
+  --text-primary: #171713;
+  --text-secondary: #66665f;
+  --text-tertiary: #8d8b83;
+  --text-muted: #66665f;
+  --text-subtle: #8d8b83;
+  --text-disabled: #b7b4aa;
   --text-inverse: #ffffff;
-  --text-link: #17418f;
-  --ink-primary: #171816;
-  --ink-secondary: #5d5f5a;
-  --ink-tertiary: #73756f;
+  --text-link: #c94706;
+  --ink-primary: #171713;
+  --ink-secondary: #66665f;
+  --ink-tertiary: #8d8b83;
   --ink-inverse: #ffffff;
-  --icon: #565853;
-  --icon-muted: #73756f;
+  --icon: #4d4c46;
+  --icon-muted: #96948c;
 
   /* Lines */
-  --border: #e4e4de;
-  --border-muted: #ebebe5;
-  --border-subtle: #f0f0ea;
-  --border-default: #e4e4de;
-  --border-strong: #b9b9b0;
+  --border: #e4e2da;
+  --border-muted: #eceae4;
+  --border-subtle: #f0eee8;
+  --border-default: #e4e2da;
+  --border-strong: #b9b6aa;
 
-  /* Ink is the action colour. Blue is reserved for links, information and focus. */
-  --accent: #171816;
-  --accent-hover: #2b2c29;
-  --accent-soft: #ecece7;
-  --accent-border: #d9d9d2;
-  --accent-subtle: #f5f5f1;
-  --brand-signal: #171816;
-  --brand-signal-soft: #ecece7;
-  --brand-deep: #171816;
+  /* Warm orange is the product action colour. Blue remains reserved for
+   * operational-health and informational data visualisation. */
+  --accent: #ff5a0a;
+  --accent-hover: #dd4600;
+  --accent-soft: #fff0e8;
+  --accent-border: #ffd0b9;
+  --accent-subtle: #fff7f2;
+  --brand-signal: #ff5a0a;
+  --brand-signal-soft: #fff0e8;
+  --brand-deep: #dc4700;
   --accent-fg-on-500: #ffffff;
-  --action-primary: #171816;
-  --action-primary-hover: #2b2c29;
-  --action-primary-soft: #ecece7;
-  --action-ink: #171816;
-  --action-ink-hover: #2b2c29;
-  --action-ink-soft: #ecece7;
-  --primary: #171816;
+  --action-primary: #ff5a0a;
+  --action-primary-hover: #dd4600;
+  --action-primary-soft: #fff0e8;
+  --action-ink: #c94706;
+  --action-ink-hover: #a93b05;
+  --action-ink-soft: #fff0e8;
+  --primary: #ff5a0a;
   --primary-foreground: #ffffff;
-  --secondary: #f3f3ef;
-  --secondary-foreground: #171816;
+  --secondary: #efeee7;
+  --secondary-foreground: #171713;
+
+  /* Data visualisation. Orange leads financial/attention charts; blue is
+   * reserved for operational health/coverage; violet is duration/velocity.
+   * Series values are CVD-validated as a set — change only as a set. */
+  --chart-orange: #ff5a0a;
+  --chart-blue: #7088e8;
+  --chart-green: #0e9f6e;
+  --chart-yellow: #d9a400;
+  --chart-red: #e65745;
+  --chart-violet: #8b5cf6;
+  --chart-neutral: #c9c7be;
+  --chart-track: #efeee8;
+  --chart-grid: #eceae4;
+
+  /* Ordinal/sequential ramps (4 mark-carrying steps each, validated).
+   * Steps 1–2 below the ramp (…-soft tints) are heat-only extensions and
+   * may recede below 2:1 — never use them for discrete ordered marks. */
+  --chart-ramp-orange-1: #ff9058;
+  --chart-ramp-orange-2: #ff5a0a;
+  --chart-ramp-orange-3: #d94b08;
+  --chart-ramp-orange-4: #a83a04;
+  --chart-ramp-blue-1: #93a4ee;
+  --chart-ramp-blue-2: #7088e8;
+  --chart-ramp-blue-3: #5568c9;
+  --chart-ramp-blue-4: #3f519c;
+  --chart-heat-orange-0: #fff0e8;
+  --chart-heat-orange-1: #ffd8c2;
+  --chart-heat-orange-2: #ffb28a;
+  --chart-heat-blue-0: #eff2ff;
+  --chart-heat-blue-1: #d9dffb;
+  --chart-heat-blue-2: #b8c3f5;
 
   /* Geometry and depth */
-  --radius-xs: 0px;
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 12px;
-  --radius-1: 0px;
-  --radius-2: 6px;
-  --radius-3: 8px;
+  --radius-xs: 3px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
+  --radius-1: 3px;
+  --radius-2: 4px;
+  --radius-3: 6px;
   --radius-4: 8px;
-  --radius: 8px;
+  --radius: 6px;
   --radius-full: 9999px;
   --radius-pill: 9999px;
-  --shadow-xs: 0 1px 2px rgba(23, 24, 22, 0.04);
-  --shadow-sm: 0 1px 2px rgba(23, 24, 22, 0.05);
-  --shadow-md: 0 1px 2px rgba(23, 24, 22, 0.06), 0 8px 24px rgba(23, 24, 22, 0.035);
+  --shadow-xs: 0 1px 2px rgba(23, 23, 19, 0.035);
+  --shadow-sm: 0 1px 2px rgba(23, 23, 19, 0.05);
+  --shadow-md: 0 1px 2px rgba(23, 23, 19, 0.05), 0 8px 24px rgba(23, 23, 19, 0.03);
   --shadow-lg: 0 12px 30px rgba(23, 24, 22, 0.12);
   --shadow-xl: 0 20px 48px rgba(23, 24, 22, 0.16);
   --shadow-overlay: 0 18px 48px rgba(23, 24, 22, 0.16);
   --shadow-drawer: -14px 0 40px rgba(23, 24, 22, 0.14);
   --shadow-modal: 0 20px 60px rgba(23, 24, 22, 0.18);
-  --focus-ring: #17418f;
-  --shadow-focus: 0 0 0 3px rgba(23, 65, 143, 0.18);
+  --focus-ring: #d94b08;
+  --shadow-focus: 0 0 0 3px rgb(255 90 10 / 20%);
 
   /* Density */
-  --button-height-sm: 32px;
-  --button-height-md: 36px;
-  --button-height-lg: 40px;
+  --button-height-sm: 30px;
+  --button-height-md: 34px;
+  --button-height-lg: 38px;
   --input-height: 36px;
-  --badge-height: 24px;
-  --chip-height: 32px;
 
   /* ════════════════════════════════════════════════════════════════════
    * --ua-* authoritative alias layer (additive — introduced by the design-
@@ -140,6 +171,29 @@
   --ua-accent-border: var(--accent-border);
   --ua-brand-signal: var(--brand-signal);
   --ua-brand-deep: var(--brand-deep);
+  --ua-chart-orange: var(--chart-orange);
+  --ua-chart-blue: var(--chart-blue);
+  --ua-chart-green: var(--chart-green);
+  --ua-chart-yellow: var(--chart-yellow);
+  --ua-chart-red: var(--chart-red);
+  --ua-chart-violet: var(--chart-violet);
+  --ua-chart-neutral: var(--chart-neutral);
+  --ua-chart-track: var(--chart-track);
+  --ua-chart-grid: var(--chart-grid);
+  --ua-chart-ramp-orange-1: var(--chart-ramp-orange-1);
+  --ua-chart-ramp-orange-2: var(--chart-ramp-orange-2);
+  --ua-chart-ramp-orange-3: var(--chart-ramp-orange-3);
+  --ua-chart-ramp-orange-4: var(--chart-ramp-orange-4);
+  --ua-chart-ramp-blue-1: var(--chart-ramp-blue-1);
+  --ua-chart-ramp-blue-2: var(--chart-ramp-blue-2);
+  --ua-chart-ramp-blue-3: var(--chart-ramp-blue-3);
+  --ua-chart-ramp-blue-4: var(--chart-ramp-blue-4);
+  --ua-chart-heat-orange-0: var(--chart-heat-orange-0);
+  --ua-chart-heat-orange-1: var(--chart-heat-orange-1);
+  --ua-chart-heat-orange-2: var(--chart-heat-orange-2);
+  --ua-chart-heat-blue-0: var(--chart-heat-blue-0);
+  --ua-chart-heat-blue-1: var(--chart-heat-blue-1);
+  --ua-chart-heat-blue-2: var(--chart-heat-blue-2);
 
   /* Text */
   --ua-text-primary: var(--text-primary);
@@ -167,8 +221,9 @@
   --ua-radius-none: 0px;
   --ua-radius-sm: var(--radius-sm);
   --ua-radius-control: var(--radius-sm);
+  --ua-radius-input: var(--radius-md);
   --ua-radius-card: var(--radius-md);
-  --ua-radius-overlay: var(--radius-lg);
+  --ua-radius-overlay: var(--radius-md);
   --ua-radius-pill: var(--radius-full);
 
   /* Shadows */
@@ -185,24 +240,6 @@
   --ua-control-height-md: var(--button-height-md);
   --ua-control-height-lg: var(--button-height-lg);
   --ua-control-height-input: var(--input-height);
-  --ua-badge-height: var(--badge-height);
-  --ua-chip-height: var(--chip-height);
-
-  /* Chart contract. Data series remain semantic; chart chrome never invents a palette. */
-  --ua-chart-text: var(--text-primary);
-  --ua-chart-axis: var(--text-tertiary);
-  --ua-chart-grid: var(--border-muted);
-  --ua-chart-series-primary: var(--text-primary);
-  --ua-chart-series-comparison: var(--text-secondary);
-  --ua-chart-series-success: var(--success);
-  --ua-chart-series-warning: var(--warning);
-  --ua-chart-series-critical: var(--critical);
-  --ua-chart-tooltip-surface: var(--surface-overlay);
-  --ua-chart-tooltip-text: var(--text-primary);
-  --ua-chart-active: var(--focus-ring);
-  --ua-chart-height-sm: 180px;
-  --ua-chart-height-md: 240px;
-  --ua-chart-height-lg: 320px;
   --ua-control-padding-x-sm: var(--space-2);
   --ua-control-padding-x-md: var(--space-4);
   --ua-control-padding-x-lg: var(--space-5);
@@ -251,72 +288,97 @@
 :root[data-theme="dark"] .ua-auth-surface {
   color-scheme: dark;
 
-  --bg: #111315;
-  --bg-canvas: #111315;
-  --bg-surface: #181b1e;
-  --bg-surface-alt: #1d2024;
-  --bg-surface-sunk: #0d0f11;
-  --bg-subtle: #1d2024;
-  --bg-muted: #1d2024;
-  --bg-inset: #15181b;
-  --bg-hover: #23272b;
-  --bg-selected: #30322d;
-  --surface: #181b1e;
-  --surface-base: #111315;
-  --surface-raised: #181b1e;
-  --surface-overlay: #202328;
-  --surface-muted: #1d2024;
-  --surface-sunken: #0d0f11;
-  --surface-hover: #23272b;
-  --surface-selected: #30322d;
-  --surface-subtle: #1d2024;
-  --surface-input: #15181b;
-  --surface-border: #30353b;
+  --bg: #171714;
+  --bg-canvas: #171714;
+  --bg-surface: #20201c;
+  --bg-surface-alt: #1b1b17;
+  --bg-surface-sunk: #191915;
+  --bg-subtle: #1b1b17;
+  --bg-muted: #1b1b17;
+  --bg-inset: #1d1d19;
+  --bg-hover: #2a2923;
+  --bg-selected: #2d2b24;
+  --surface: #20201c;
+  --surface-base: #171714;
+  --surface-raised: #24241f;
+  --surface-overlay: #25251f;
+  --surface-muted: #1b1b17;
+  --surface-sunken: #191915;
+  --surface-hover: #2a2923;
+  --surface-selected: #2d2b24;
+  --surface-subtle: #1b1b17;
+  --surface-input: #1d1d19;
+  --surface-border: #3a3831;
 
-  --text: #f1f3f5;
-  --text-primary: #f1f3f5;
-  --text-secondary: #b0b6bf;
-  --text-tertiary: #858d98;
-  --text-muted: #b0b6bf;
-  --text-subtle: #858d98;
-  --text-disabled: #626a75;
-  --text-inverse: #111315;
-  --text-link: #9fb3ff;
-  --ink-primary: #f1f3f5;
-  --ink-secondary: #b0b6bf;
-  --ink-tertiary: #858d98;
-  --ink-inverse: #111315;
-  --icon: #c2c7ce;
-  --icon-muted: #858d98;
+  --text: #f6f4ee;
+  --text-primary: #f6f4ee;
+  --text-secondary: #b9b5ab;
+  --text-tertiary: #8e8a81;
+  --text-muted: #b9b5ab;
+  --text-subtle: #8e8a81;
+  --text-disabled: #6f6b62;
+  --text-inverse: #171714;
+  --text-link: #ff9362;
+  --ink-primary: #f6f4ee;
+  --ink-secondary: #b9b5ab;
+  --ink-tertiary: #8e8a81;
+  --ink-inverse: #171714;
+  --icon: #d2cec3;
+  --icon-muted: #99958a;
 
-  --border: #30353b;
-  --border-muted: #292e34;
-  --border-subtle: #24292e;
-  --border-default: #30353b;
-  --border-strong: #555d68;
+  --border: #3a3831;
+  --border-muted: #302f29;
+  --border-subtle: #292823;
+  --border-default: #3a3831;
+  --border-strong: #615e54;
 
-  --accent: #f1f3f5;
-  --accent-hover: #ffffff;
-  --accent-soft: #30322d;
-  --accent-border: #4c5149;
-  --accent-subtle: #20231f;
-  --brand-signal: #f1f3f5;
-  --brand-signal-soft: #30322d;
-  --brand-deep: #f1f3f5;
-  --accent-fg-on-500: #111315;
-  --action-primary: #f1f3f5;
-  --action-primary-hover: #ffffff;
-  --action-primary-soft: #30322d;
-  --action-ink: #f1f3f5;
-  --action-ink-hover: #ffffff;
-  --action-ink-soft: #30322d;
-  --primary: #f1f3f5;
-  --primary-foreground: #111315;
-  --secondary: #23272b;
-  --secondary-foreground: #f1f3f5;
+  --accent: #ff7838;
+  --accent-hover: #ff9362;
+  --accent-soft: #402719;
+  --accent-border: #754329;
+  --accent-subtle: #2d2018;
+  --brand-signal: #ff7838;
+  --brand-signal-soft: #402719;
+  --brand-deep: #ff9362;
+  --accent-fg-on-500: #20130c;
+  --action-primary: #ff7838;
+  --action-primary-hover: #ff9362;
+  --action-primary-soft: #402719;
+  --action-ink: #ff9362;
+  --action-ink-hover: #ffb08a;
+  --action-ink-soft: #402719;
+  --primary: #ff7838;
+  --primary-foreground: #20130c;
+  --secondary: #2a2923;
+  --secondary-foreground: #f6f4ee;
 
-  --focus-ring: #9fb3ff;
-  --shadow-focus: 0 0 0 3px rgba(159, 179, 255, .28);
+  /* chart orange decouples from the #ff7838 action accent in dark — deliberate */
+  --chart-orange: #d95514;
+  --chart-blue: #6e84e2;
+  --chart-green: #169a72;
+  --chart-yellow: #b28c22;
+  --chart-red: #d55a50;
+  --chart-violet: #8a68e4;
+  --chart-neutral: #5d5a52;
+  --chart-track: #2a2923;
+  --chart-grid: #302f29;
+  --chart-ramp-orange-1: #8f3f14;
+  --chart-ramp-orange-2: #b34a10;
+  --chart-ramp-orange-3: #d95514;
+  --chart-ramp-orange-4: #f07434;
+  --chart-ramp-blue-1: #48588f;
+  --chart-ramp-blue-2: #5c6ec0;
+  --chart-ramp-blue-3: #7a90ea;
+  --chart-ramp-blue-4: #a3b2f4;
+  --chart-heat-orange-0: #3a2216;
+  --chart-heat-orange-1: #5c331d;
+  --chart-heat-orange-2: #8a4a26;
+  --chart-heat-blue-0: #232842;
+  --chart-heat-blue-1: #2e3660;
+  --chart-heat-blue-2: #3d4a86;
+
+  --focus-ring: #ff9362;
+  --shadow-focus: 0 0 0 3px rgb(255 147 98 / 26%);
 
   --background: var(--surface-base);
   --foreground: var(--text-primary);

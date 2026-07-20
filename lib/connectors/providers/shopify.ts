@@ -9,6 +9,7 @@
  */
 import { capability } from '@/lib/connectors/capabilities';
 import { shopifyProvider } from '@/lib/integrations/providers/shopify';
+import { shopifyCustomerUrl, shopifyOrderUrl } from '@/lib/links/providerDeepLinks';
 import type {
   ConnectorAdapter,
   ConnectorContext,
@@ -86,10 +87,13 @@ export const shopifyConnector: ConnectorAdapter = {
   },
 
   deepLink(input: DeepLinkInput): string | null {
-    const base = input.providerAccountBaseUrl?.replace(/\/$/, '');
     if (input.sourceUrl) return input.sourceUrl;
-    if (!base) return null;
-    if (input.entityType === 'order') return `${base}/admin/orders/${input.externalId}`;
+    if (input.entityType === 'customer') {
+      return shopifyCustomerUrl(input.providerAccountBaseUrl, input.externalId);
+    }
+    if (input.entityType === 'order') {
+      return shopifyOrderUrl(input.providerAccountBaseUrl, input.externalId);
+    }
     return null;
   },
 

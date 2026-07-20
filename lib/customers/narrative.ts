@@ -41,7 +41,7 @@ function assertNoBannedWords(text: string): void {
   }
 }
 
-const customerNarrativeDateFormatter = new Intl.DateTimeFormat('en-US', {
+const customerNarrativeDateFormatter = new Intl.DateTimeFormat('en-GB', {
   day: 'numeric',
   month: 'short',
   year: 'numeric',

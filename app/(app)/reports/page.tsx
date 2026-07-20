@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import {
@@ -13,7 +14,9 @@ import {
 } from "@/lib/reporting/intelligence";
 import ExportMenu from "@/components/reports/ExportMenu";
 import { merchantHasEntitlement } from "@/lib/product/requireEntitlement";
-import { SegmentedControl } from "@/components/ui";
+import { WorkbenchPage } from "@/components/workbench/WorkbenchPage";
+import { filterChipContract } from "@/styles/authenticated/contracts";
+import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 export default async function ReportsPage({
@@ -45,24 +48,34 @@ export default async function ReportsPage({
     timezone,
   );
   return (
-    <div className="mx-auto w-full max-w-[1600px] space-y-6 p-4 md:p-6">
-      <header className="flex flex-wrap items-end justify-between gap-4 border-b border-[var(--border)] pb-5">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-[-0.02em]">Reports</h1>
-          <p className="mt-1 text-sm text-[var(--text-secondary)]">
-            Reconciled payout, loss, and recovery performance.
-          </p>
+    <WorkbenchPage
+      title="Reports"
+      subtitle="Reconciled payout, loss, and recovery performance."
+      actionBarLeft={
+        <div className="flex min-w-max items-center gap-1.5" aria-label="Report scope">
+          <span className="mr-1 text-[10px] font-medium text-[var(--text-tertiary)]">Date range</span>
+          {REPORT_RANGES.map((r) => (
+            <Link
+              key={r}
+              aria-current={r === range ? "page" : undefined}
+              href={`/reports?range=${r}&timezone=${encodeURIComponent(timezone)}`}
+              className={cn(
+                filterChipContract.base,
+                filterChipContract.hover,
+                r === range ? filterChipContract.selected : filterChipContract.unselected,
+              )}
+            >
+              {r === "all" ? "All time" : r}
+            </Link>
+          ))}
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <SegmentedControl
-            aria-label="Report period"
-            value={range}
-            items={REPORT_RANGES.map((r) => ({ value: r, label: r === "all" ? "All time" : r, href: `/reports?range=${r}&timezone=${encodeURIComponent(timezone)}` }))}
-          />
-          <ExportMenu range={range} />
-        </div>
-      </header>
-      <IntelligenceReportView report={report} />
-    </div>
+      }
+      actionBarRight={<ExportMenu range={range} />}
+      main={
+        <section className="p-3.5 md:p-4">
+          <IntelligenceReportView report={report} />
+        </section>
+      }
+    />
   );
 }

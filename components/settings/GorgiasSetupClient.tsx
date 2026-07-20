@@ -5,12 +5,12 @@ import HelpdeskSidebarPreview from '@/components/settings/HelpdeskSidebarPreview
 // carries manual setup steps — it explains what to expect and previews the in-ticket widget.
 export default function GorgiasSetupClient() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <div>
         <h2 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
           Gorgias sidebar widget
         </h2>
-        <p className="mt-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
+        <p className="mt-1 text-[12px] leading-5" style={{ color: 'var(--text-secondary)' }}>
           {GORGIAS_SIDEBAR_AUTO_NOTE}
         </p>
       </div>

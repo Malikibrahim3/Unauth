@@ -130,12 +130,11 @@ export function IntelligenceReportView({
                       className={`min-h-24 py-4 sm:px-4 ${index > 0 ? "border-t border-[var(--border-muted)] sm:border-l sm:border-t-0" : ""}`}
                     >
                       <dt className="text-xs font-medium text-[var(--text-secondary)]">{label}</dt>
-                      <dd className="mt-2 text-xl font-semibold tabular-nums">
-                        {b[key] === 0
-                          ? key === "requestedMinor"
-                            ? "Nothing outstanding"
-                            : "Nothing recorded"
-                          : money(b[key] as number, b.currency)}
+                      <dd
+                        className="mt-2 text-xl font-semibold tabular-nums"
+                        style={b[key] === 0 ? { color: "var(--text-tertiary)" } : undefined}
+                      >
+                        {money(b[key] as number, b.currency)}
                       </dd>
                       <dd className="mt-1 text-xs text-[var(--text-secondary)]">
                         {definition}
@@ -156,7 +155,7 @@ export function IntelligenceReportView({
       <DashboardCharts report={report} />
       <section className="border-t border-[var(--border-muted)] pt-5">
         <h2 className="text-lg font-semibold">Needs attention</h2>
-        <div className="ua-section-panel mt-3 divide-y divide-[var(--border-muted)] overflow-hidden rounded-lg">
+        <div className="ua-section-panel mt-3 max-w-2xl divide-y divide-[var(--border-muted)] overflow-hidden rounded-lg">
           {report.operations.slice(0, compact ? 4 : 8).map((row) => (
             <Link
               key={row.key}

@@ -2,6 +2,7 @@ import { claimHasEvidence } from '@/lib/claims/events';
 import { getClaimSlaState, isFinalClaimStatus } from '@/lib/claims/sla';
 import type { ClaimReviewState } from '@/components/claims/claimReviewReducer';
 import { formatClaimMoney } from '@/components/claims/claimReviewStyles';
+import { formatDateAbsolute } from '@/lib/utils/format';
 import { normaliseClaimStatusForOperator } from '@/components/claims/claimReviewLabels';
 import type {
   ClaimRecord,
@@ -30,7 +31,7 @@ export function normalizeMetaRows(rows: Array<{ id?: string; key: string; value:
 }
 
 export function formatOrderOption(o: OrderOption) {
-  const date = o.date ? new Date(o.date).toLocaleDateString('en-US') : '—';
+  const date = o.date ? formatDateAbsolute(new Date(o.date)) : '—';
   const val = typeof o.orderValue === 'number' ? formatClaimMoney(o.orderValue, o.currency) : '—';
   const status = o.status !== 'unknown' ? o.status : '—';
   return `${o.orderLabel} · ${val} · ${status} · ${date}`;

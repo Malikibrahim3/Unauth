@@ -39,7 +39,7 @@ describe("payout-control reports contract", () => {
     expect(view).toContain("<table");
     expect(view).toContain("underlying");
     expect(view).toContain('b.caseIds.length === 1 ? "case" : "cases"');
-    expect(charts).toContain("recharts");
+    expect(charts).toContain("components/charts/authenticated/cartesian/DualLineChart");
     expect(charts).toContain("Exposure and recovered");
     expect(charts).toContain("Loss causes");
     expect(charts).toContain("Recovery progression");

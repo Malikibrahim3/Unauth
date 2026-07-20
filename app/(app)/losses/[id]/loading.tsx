@@ -1,5 +1,2 @@
 import { OperationalRouteSkeleton } from '@/components/states/OperationalRouteSkeleton';
-
-export default function LoadingLoss() {
-  return <OperationalRouteSkeleton title="Loading loss record" rows={5} detail />;
-}
+export default function LoadingLoss() { return <OperationalRouteSkeleton title="Loading loss" rows={6} detail />; }

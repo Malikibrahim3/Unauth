@@ -1,4 +1,9 @@
 import { TABLES } from "@/lib/supabase/tables";
+import {
+  deriveSourceLink,
+  loadSourceLinkContext,
+  type SourceLinkRow,
+} from "@/lib/relationships/sourceLinking";
 
 export const CONNECTED_OBJECT_TYPES = [
   "order",
@@ -55,6 +60,9 @@ export type ObjectLink = {
   id: string;
   reference: string;
   href: string;
+  externalId?: string | null;
+  externalHref?: string | null;
+  externalSource?: string | null;
   state?: string | null;
 };
 export type ObjectFact = {
@@ -135,6 +143,43 @@ function event(
 }
 function compactFacts(values: ObjectFact[]) {
   return values.filter((item) => item.value !== null && item.value !== "");
+}
+
+async function loadSourceRecord(
+  client: Client,
+  merchantId: string,
+  type: ConnectedObjectType,
+  id: string,
+  row: SourceLinkRow,
+): Promise<SourceLinkRow | null> {
+  const columns =
+    "id,source_system,source_entity_type,external_id,source_url,source_account_id,connection_id,freshness_state,sync_state,last_synced_at,source_created_at,source_updated_at,connector_version,payload_hash";
+  const sourceRecordId = text(row, "source_record_id");
+  let query = client
+    .from(TABLES.SOURCE_RECORDS)
+    .select(columns)
+    .eq("merchant_id", merchantId);
+  if (sourceRecordId) {
+    query = query.eq("id", sourceRecordId);
+  } else {
+    const externalId = text(row, "external_id");
+    const sourceSystem = text(row, "source") ?? text(row, "provider");
+    if (externalId && sourceSystem) {
+      query = query
+        .eq("source_system", sourceSystem)
+        .eq("source_entity_type", type)
+        .eq("external_id", externalId);
+      const sourceAccountId = text(row, "source_account_id");
+      if (sourceAccountId) query = query.eq("source_account_id", sourceAccountId);
+    } else {
+      query = query
+        .eq("canonical_entity_id", id)
+        .eq("canonical_entity_type", type);
+    }
+  }
+  const result = await query.order("last_synced_at", { ascending: false }).limit(1);
+  if (result.error) throw new Error(`connected_object_source_record_failed:${result.error.message}`);
+  return ((result.data as SourceLinkRow[] | null) ?? [])[0] ?? null;
 }
 
 function factsFor(
@@ -348,12 +393,13 @@ export async function getObjectSummary(
     throw new Error(`connected_object_read_failed:${type}:${error.message}`);
   const row = data as Record<string, unknown> | null;
   if (!row) return null;
+  const sourceLinkContext = await loadSourceLinkContext(client, merchantId);
   const orderId = type === "order" ? id : text(row, "source_order_id");
   let order: Record<string, unknown> | null = type === "order" ? row : null;
   if (orderId && !order) {
     const result = await client
       .from(TABLES.SOURCE_ORDERS)
-      .select("id,external_id,order_number,source_customer_id")
+      .select("id,external_id,order_number,source_customer_id,source,connection_id,source_account_id")
       .eq("merchant_id", merchantId)
       .eq("id", orderId)
       .maybeSingle();
@@ -368,7 +414,7 @@ export async function getObjectSummary(
   if (sourceCustomerId) {
     const result = await client
       .from(TABLES.SOURCE_CUSTOMERS)
-      .select("id,merchant_customer_id,first_name,last_name,email")
+      .select("id,merchant_customer_id,first_name,last_name,email,external_id,source,connection_id")
       .eq("merchant_id", merchantId)
       .eq("id", sourceCustomerId)
       .maybeSingle();
@@ -395,34 +441,48 @@ export async function getObjectSummary(
           "Unnamed customer",
         href: `/customers/${canonicalId}`,
       };
+      const customerLink = deriveSourceLink({
+        context: sourceLinkContext,
+        entityType: "customer",
+        row: sourceCustomer,
+      });
+      customer.externalHref = customerLink?.sourceUrl ?? null;
+      customer.externalSource = customerLink?.sourceSystem ?? null;
     }
   }
 
   const connected: ObjectLink[] = [];
   if (orderId) {
     if (type !== "order" && order)
-      connected.push({
-        type: "order",
-        id: text(order, "id")!,
-        reference:
-          text(order, "order_number") ??
-          text(order, "external_id") ??
-          text(order, "id")!,
-        href: `/orders/${text(order, "id")}`,
-      });
+      (() => {
+        const orderLink = deriveSourceLink({
+          context: sourceLinkContext,
+          entityType: "order",
+          row: order,
+        });
+        connected.push({
+          type: "order",
+          id: text(order, "id")!,
+          reference:
+            text(order, "order_number") ??
+            text(order, "external_id") ??
+            text(order, "id")!,
+          href: `/orders/${text(order, "id")}`,
+          externalId: text(order, "external_id"),
+          externalHref: orderLink?.sourceUrl ?? null,
+          externalSource: orderLink?.sourceSystem ?? null,
+        });
+      })();
     const families = [
-      ["shipment", TABLES.SOURCE_SHIPMENTS, "tracking_number", "status"],
-      ["refund", TABLES.SOURCE_REFUNDS, "external_id", null],
-      ["return", TABLES.SOURCE_RETURNS, "external_id", "status"],
-      ["dispute", TABLES.SOURCE_DISPUTES, "external_id", "status"],
+      ["shipment", TABLES.SOURCE_SHIPMENTS, "tracking_number", "status", "id,tracking_number,status,external_id,source_account_id,source_record_id"],
+      ["refund", TABLES.SOURCE_REFUNDS, "external_id", null, "id,external_id"],
+      ["return", TABLES.SOURCE_RETURNS, "external_id", "status", "id,external_id,status,source_account_id,source_record_id"],
+      ["dispute", TABLES.SOURCE_DISPUTES, "external_id", "status", "id,external_id,status"],
     ] as const;
     const relationshipResults = await Promise.all(
       families
         .filter(([childType]) => childType !== type)
-        .map(async ([childType, table, referenceField, stateField]) => {
-          const fields = ["id", referenceField, stateField]
-            .filter(Boolean)
-            .join(",");
+        .map(async ([childType, table, referenceField, stateField, fields]) => {
           const result = await client
             .from(table)
             .select(fields)
@@ -449,12 +509,21 @@ export async function getObjectSummary(
     } of relationshipResults) {
       for (const child of rows) {
         const childId = text(child, "id")!;
+        const childLink = deriveSourceLink({
+          context: sourceLinkContext,
+          entityType: childType,
+          row: child,
+          parentOrder: order,
+        });
         connected.push({
           type: childType,
           id: childId,
           reference: text(child, referenceField) ?? childId,
           state: stateField ? text(child, stateField) : null,
           href: `/${childType}s/${childId}`,
+          externalId: text(child, "external_id"),
+          externalHref: childLink?.sourceUrl ?? null,
+          externalSource: childLink?.sourceSystem ?? null,
         });
       }
     }
@@ -515,27 +584,19 @@ export async function getObjectSummary(
     }));
   }
 
-  const sourceRecordId = text(row, "source_record_id");
-  let provenanceQuery = client
-    .from(TABLES.SOURCE_RECORDS)
-    .select(
-      "source_system,external_id,source_url,freshness_state,sync_state,last_synced_at,source_created_at,source_updated_at,connector_version,payload_hash",
-    )
-    .eq("merchant_id", merchantId);
-  provenanceQuery = sourceRecordId
-    ? provenanceQuery.eq("id", sourceRecordId)
-    : provenanceQuery
-        .eq("canonical_entity_id", id)
-        .eq("canonical_entity_type", type);
-  const provenanceResult = await provenanceQuery
-    .order("last_synced_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (provenanceResult.error)
-    throw new Error(
-      `connected_object_provenance_failed:${provenanceResult.error.message}`,
-    );
-  const sourceRecord = provenanceResult.data as Record<string, unknown> | null;
+  const sourceRecord = await loadSourceRecord(client, merchantId, type, id, row);
+  const firstShipment = connected.find((item) => item.type === "shipment");
+  const mainSourceLink = deriveSourceLink({
+    context: sourceLinkContext,
+    entityType: type,
+    row,
+    parentOrder: order,
+    sourceRecord,
+    relatedShipmentExternalId: firstShipment?.externalSource === "shipbob" ? firstShipment?.externalId : null,
+  });
+  const derivedSourceUrl =
+    mainSourceLink?.sourceUrl ??
+    (type === "ticket" ? text(row, "external_url") : null);
   const provenance: ObjectProvenance | null = sourceRecord
     ? {
         sourceSystem: text(sourceRecord, "source_system") ?? "connected source",
@@ -543,7 +604,7 @@ export async function getObjectSummary(
           text(sourceRecord, "external_id") ?? text(row, "external_id") ?? id,
         sourceUrl:
           text(sourceRecord, "source_url") ??
-          (type === "ticket" ? text(row, "external_url") : null),
+          derivedSourceUrl,
         freshness: text(sourceRecord, "freshness_state") ?? "unknown",
         syncState: text(sourceRecord, "sync_state") ?? "unknown",
         lastSyncedAt: text(sourceRecord, "last_synced_at"),
@@ -552,7 +613,20 @@ export async function getObjectSummary(
         connectorVersion: text(sourceRecord, "connector_version"),
         payloadHash: text(sourceRecord, "payload_hash"),
       }
-    : null;
+    : mainSourceLink
+      ? {
+          sourceSystem: mainSourceLink.sourceSystem,
+          externalId: mainSourceLink.externalId,
+          sourceUrl: derivedSourceUrl,
+          freshness: "unknown",
+          syncState: "unknown",
+          lastSyncedAt: null,
+          sourceCreatedAt: null,
+          sourceUpdatedAt: null,
+          connectorVersion: null,
+          payloadHash: null,
+        }
+      : null;
 
   return {
     id,

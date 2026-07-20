@@ -17,6 +17,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { createScopedClient } from '@/lib/supabase/scoped';
 import { TABLES } from '@/lib/supabase/tables';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { formatCurrency } from '@/lib/utils/format';
@@ -95,6 +96,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
   const merchantId = ctx.merchantId;
+  const scopedService = createScopedClient(merchantId, serviceClient);
 
   const parsed = SearchQuerySchema.safeParse(
     Object.fromEntries(req.nextUrl.searchParams),
@@ -129,14 +131,36 @@ export async function GET(req: NextRequest) {
         .limit(limit)
         .range(offset, offset + limit - 1);
 
+      const seenCanonicalIds = new Set<string>();
       for (const c of (customers as Array<{ id: string; merchant_customer_id: string | null; email: string | null; first_name: string | null; last_name: string | null }> ?? [])) {
         const name = [c.first_name, c.last_name].filter(Boolean).join(' ').trim();
+        if (c.merchant_customer_id) seenCanonicalIds.add(c.merchant_customer_id);
         results.push({
           type: 'customer',
           id: c.merchant_customer_id ?? c.id,
           label: name || c.email || c.id,
           sublabel: name ? c.email ?? undefined : undefined,
           href: `/customers/${c.merchant_customer_id ?? c.id}`,
+        });
+      }
+
+      // Guest orders and support-only contacts can have a canonical merchant
+      // customer without a source_customers row. Include those aggregates in
+      // global search so the profile remains discoverable.
+      const { data: canonicalCustomers } = await scopedService
+        .from('merchant_customers')
+        .select('id, display_name, email')
+        .eq('merchant_id', merchantId)
+        .or(`email.ilike.${pattern},display_name.ilike.${pattern}`)
+        .limit(limit);
+      for (const c of (canonicalCustomers as Array<{ id: string; display_name: string | null; email: string | null }> ?? [])) {
+        if (seenCanonicalIds.has(c.id)) continue;
+        results.push({
+          type: 'customer',
+          id: c.id,
+          label: c.display_name || c.email || c.id,
+          sublabel: c.display_name ? c.email ?? undefined : undefined,
+          href: `/customers/${c.id}`,
         });
       }
     } catch (error) {

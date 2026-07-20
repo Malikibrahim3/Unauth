@@ -89,6 +89,11 @@ export type DeepLinkInput = {
   externalId: string;
   sourceUrl?: string | null;
   providerAccountBaseUrl?: string | null;
+  providerEnvironment?: "sandbox" | "production" | string | null;
+  /** Parent provider order id when linking a shipment/fulfilment. */
+  relatedOrderExternalId?: string | null;
+  /** Child ShipBob shipment id when linking a ShipBob order. */
+  relatedShipmentExternalId?: string | null;
 };
 
 export type ConnectorAction = {

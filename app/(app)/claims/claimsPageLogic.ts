@@ -6,6 +6,7 @@ import {
   type PayoutCaseNextAction,
   type PayoutCaseStatus,
 } from '@/lib/payouts/types';
+import { formatDateAbsolute } from '@/lib/utils/format';
 
 export type ClaimEvidenceStatus = {
   evidenceStatus: string;
@@ -81,7 +82,7 @@ export function claimNextAction(
   if (snoozedUntil && snoozedUntil.getTime() > Date.now()) {
     return {
       evidenceStatus: 'Linked identity evidence available after follow-up date',
-      reviewState: `Evidence state: Deferred until ${snoozedUntil.toLocaleDateString('en-US')}`,
+      reviewState: `Evidence state: Deferred until ${formatDateAbsolute(snoozedUntil)}`,
       nextActionLabel,
       daysWaiting: waitingDays,
     };

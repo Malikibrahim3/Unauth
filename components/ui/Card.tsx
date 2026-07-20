@@ -70,7 +70,7 @@ export function Card({
   const padding = CARD_PADDING[density];
   return (
     <Component
-      className={cn('rounded-[var(--ua-radius-card)]', className)}
+      className={cn('ua-card rounded-[var(--ua-radius-card)]', className)}
       style={{
         ...CARD_STYLES[variant],
         ...(unstyled ? {} : { padding }),

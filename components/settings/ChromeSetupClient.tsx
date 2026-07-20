@@ -50,11 +50,11 @@ export default function ChromeSetupClient({ hasApiKeys, keyPrefixes }: Props) {
           Create a key in API &amp; Integrations, then return here to install the extension.
         </p>
         <Link
-          href="/integrations"
-          className="mt-4 inline-flex rounded-md px-3 py-2 text-sm font-medium"
+          href="/settings/integrations"
+          className="mt-3 inline-flex h-8 items-center rounded-[var(--ua-radius-input)] px-3 text-[11px] font-semibold"
           style={{ background: 'var(--accent)', color: 'white' }}
         >
-          Settings, then API &amp; Integrations
+          Settings → API &amp; Integrations
         </Link>
       </div>
     );
@@ -63,9 +63,9 @@ export default function ChromeSetupClient({ hasApiKeys, keyPrefixes }: Props) {
   const displayPrefix = keyPrefixes[0] ?? 'unauth_sk_…';
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-3">
       <p
-        className="rounded-md border px-4 py-3 text-sm"
+        className="rounded-[var(--ua-radius-input)] border px-4 py-3 text-[11px]"
         style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
       >
         Available for manual install while Chrome Web Store listing is pending.
@@ -76,7 +76,7 @@ export default function ChromeSetupClient({ hasApiKeys, keyPrefixes }: Props) {
           type="button"
           onClick={() => void downloadZip()}
           disabled={downloading}
-          className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium disabled:opacity-60"
+          className="inline-flex h-8 items-center gap-2 rounded-[var(--ua-radius-input)] px-3 text-[11px] font-semibold disabled:opacity-60"
           style={{ background: 'var(--accent)', color: 'white' }}
         >
           <Download className="h-4 w-4" />
@@ -92,7 +92,7 @@ export default function ChromeSetupClient({ hasApiKeys, keyPrefixes }: Props) {
         </p>
       </div>
 
-      <ol className="list-decimal space-y-3 pl-5 text-sm" style={{ color: 'var(--text)' }}>
+      <ol className="list-decimal space-y-2 pl-5 text-[12px] leading-5" style={{ color: 'var(--text)' }}>
         <li>Download the extension zip above and unzip it.</li>
         <li>
           In Chrome, open <strong>Extensions</strong> (from the puzzle icon or browser menu).
@@ -102,7 +102,7 @@ export default function ChromeSetupClient({ hasApiKeys, keyPrefixes }: Props) {
         </li>
         <li>Pin the Unauth extension to your toolbar.</li>
         <li>
-          Click the icon, then paste an API key from <strong>Settings, then Integrations</strong> below.
+          Click the icon → paste an API key from <strong>Settings → Integrations</strong> below.
         </li>
       </ol>
 

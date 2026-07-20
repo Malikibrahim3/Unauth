@@ -29,6 +29,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       size,
       className,
       style,
+      Boolean(disabled) && !loading,
     );
 
     return (

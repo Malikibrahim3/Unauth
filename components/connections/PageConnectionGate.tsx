@@ -1,12 +1,12 @@
 'use client';
 
+import Link from 'next/link';
 import { Plug } from 'lucide-react';
 import type { ConnectionState } from '@/lib/connections/getConnectionState';
 import { type MerchantSetupState, shouldFullGate } from '@/lib/connections/setupState';
 import { ConnectionPromptStrip } from './ConnectionPromptStrip';
-import { ButtonLink } from '@/components/ui';
 
-type Requires = 'both' | 'helpdesk';
+type Requires = 'both' | 'shopify' | 'helpdesk';
 
 interface PageConnectionGateProps {
   requires: Requires;
@@ -23,8 +23,8 @@ interface PageConnectionGateProps {
   /** Legacy fallback when setupState is not supplied: show data + strip instead of a full gate. */
   hasData?: boolean;
   /**
-   * Pass true when customer profiles exist but neither source is active.
-   * Forwards to ConnectionPromptStrip to disclose that the data may be stale.
+   * Pass true when customer_profiles exist but neither integration is active.
+   * Forwards to ConnectionPromptStrip to surface the "stale Shopify data" message.
    */
   hasExistingProfiles?: boolean;
   children: React.ReactNode;
@@ -47,32 +47,32 @@ function GatePanel({ missing, pageName, pageDescription }: {
   pageName: string;
   pageDescription?: string;
 }) {
-  const helpdeskMissing = missing === 'helpdesk';
+  const isDangerous = missing === 'helpdesk';
 
-  const headline = helpdeskMissing
-    ? `Connect a helpdesk to activate ${pageName}`
-    : `Connect an order source and helpdesk to use ${pageName}`;
+  const headline = isDangerous
+    ? `Shopify is connected — connect Gorgias to activate ${pageName}`
+    : `Connect Shopify + Gorgias to use ${pageName}`;
 
   const body = pageDescription ?? (
-    helpdeskMissing
-      ? `Connect a supported helpdesk so support cases, evidence, and merchant-rule recommendations flow into Unauth.`
-      : `${pageName} combines commerce records with support context. Connect both source categories to activate evidence-backed payout control.`
+    isDangerous
+    ? `Connect Gorgias so your agents see claim context — order history, prior claims, and trust indicators — inside every support ticket.`
+      : `${pageName} requires Shopify for order data and Gorgias for support payout context. Both are required to activate evidence-backed payout control.`
   );
 
   return (
-    <div className="flex items-center justify-center min-h-[55vh] p-8">
+    <div className="mx-auto w-full max-w-[1500px] px-3 pb-6 pt-4 sm:px-5">
       <div
-        className="max-w-md w-full rounded-md border p-8 space-y-5"
+        className="w-full space-y-3 rounded-[var(--ua-radius-card)] border p-4"
         style={{
           background: 'var(--surface)',
           borderColor: 'var(--border)',
         }}
       >
         <div
-          className="inline-flex h-10 w-10 items-center justify-center rounded-md"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--ua-radius-input)]"
           style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
         >
-          <Plug className="h-5 w-5" style={{ color: 'var(--text-secondary)' }} />
+          <Plug className="h-4 w-4" style={{ color: 'var(--text-secondary)' }} />
         </div>
 
         <div className="space-y-2">
@@ -83,16 +83,19 @@ function GatePanel({ missing, pageName, pageDescription }: {
             {headline}
           </h2>
           <p
-            className="text-sm leading-relaxed"
+            className="max-w-2xl text-[12px] leading-5"
             style={{ color: 'var(--text-secondary)', fontFamily: 'DM Sans, system-ui, sans-serif' }}
           >
             {body}
           </p>
         </div>
 
-        <ButtonLink href="/integrations" size="md">
-          {helpdeskMissing ? 'Connect a helpdesk' : 'Set up sources'}
-        </ButtonLink>
+        <Link
+          href={isDangerous ? '/settings/integrations/gorgias' : '/settings/integrations'}
+          className="btn-accent inline-flex h-8 items-center gap-2 rounded-[var(--ua-radius-input)] px-3 text-[11px] font-semibold transition-opacity hover:opacity-90"
+        >
+          {isDangerous ? 'Connect Gorgias' : 'Set up Shopify + Gorgias'}
+        </Link>
       </div>
     </div>
   );

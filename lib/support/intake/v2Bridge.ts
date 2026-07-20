@@ -5,8 +5,9 @@
  * bulk_upsert_* paths that were dropped at the 2026-06-11 cutover.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { emitIdentityObservations, type ObservationEntity } from '@/lib/identity/observations';
+import { emitIdentityObservations, signalsForEntity, type ObservationEntity } from '@/lib/identity/observations';
 import { resolveIdentitiesForKeys } from '@/lib/identity/resolver';
+import { resolveMerchantCustomer } from '@/lib/identity/merchantCustomerResolver';
 import { normaliseAddress } from '@/lib/identity/normalise';
 import { ensureClaimDecisionEvidence } from '@/lib/claims/decision/ensureEvidence';
 import { TABLES } from '@/lib/supabase/tables';
@@ -225,6 +226,26 @@ export async function captureTicketIdentitySignalsV2(
     const { signalKeys } = await emitIdentityObservations(supabase, input.merchantId, [entity]);
     if (signalKeys.length === 0) return [];
     const summary = await resolveIdentitiesForKeys(supabase, signalKeys);
+    try {
+      await resolveMerchantCustomer(
+        supabase,
+        {
+          merchantId: input.merchantId,
+          entityType: 'source_ticket',
+          entityId: input.ticketId,
+          source,
+          observedAt: input.observedAt,
+          email: refs.email,
+        },
+        typeof signalsForEntity === 'function' ? signalsForEntity(entity) : signalKeys,
+      );
+    } catch (error) {
+      console.error('merchant_local_ticket_resolution_failed', {
+        merchantId: input.merchantId,
+        ticketId: input.ticketId,
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
     return summary.identityIds;
   } catch (error) {
     console.error('captureTicketIdentitySignalsV2 failed', {

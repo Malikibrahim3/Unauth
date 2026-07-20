@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { createScopedClient } from '@/lib/supabase/scoped';
 import { TABLES } from '@/lib/supabase/tables';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { enforceEntitlement } from '@/lib/product/requireEntitlement';
@@ -11,6 +12,10 @@ import {
   lookupNetworkIdentity,
   resolveIdentitySiblingCustomers,
 } from '@/lib/customers/identityNetwork';
+import {
+  loadMerchantCustomerHistory,
+  resolveMerchantCustomerId,
+} from '@/lib/customers/merchantCustomerHistory';
 
 export const dynamic = 'force-dynamic';
 
@@ -92,6 +97,10 @@ export interface CustomerIntelligencePanel {
     sibling_count?: number;
     /** Distinct emails across the linked records (incl. primary). */
     linked_customer_emails?: string[];
+    refund_requests_365d: number;
+    completed_refunds_365d: number;
+    completed_refund_amounts_by_currency: Record<string, number>;
+    possible_match_count: number;
     refund_rate: number;
     fastest_claim_days: number | null;
     avg_claim_days: number | null;
@@ -122,6 +131,7 @@ type SourceCustomerRow = {
   account_created_at: string | null;
   created_at: string;
   updated_at: string;
+  merchant_customer_id?: string | null;
 };
 
 type SourceOrderRow = {
@@ -172,20 +182,54 @@ async function GETHandler(
   if (gated) return gated;
 
   const customerId = resolvedParams.id;
+  const scopedServiceClient = createScopedClient(ctx.merchantId, serviceClient);
 
   // -------------------------------------------------------------------------
   // 1. The merchant's OWN customer record (layer 1, merchant-scoped).
   // -------------------------------------------------------------------------
-  const { data: customer } = await serviceClient
+  const { data: initialCustomer } = await serviceClient
     .from('source_customers')
-    .select('id, email, phone, first_name, last_name, other_emails, orders_count, account_created_at, created_at, updated_at')
+    .select('id, email, phone, first_name, last_name, other_emails, orders_count, account_created_at, created_at, updated_at, merchant_customer_id')
     .eq('id', customerId)
     .eq('merchant_id', ctx.merchantId)
     .maybeSingle() as unknown as { data: SourceCustomerRow | null };
 
+  let customer = initialCustomer as SourceCustomerRow | null;
+  if (!customer) {
+    const { data: canonicalCustomer } = await scopedServiceClient
+      .from('merchant_customers')
+      .select('id, display_name, email, created_at, updated_at')
+      .eq('merchant_id', ctx.merchantId)
+      .eq('id', customerId)
+      .maybeSingle() as unknown as {
+        data: { id: string; display_name: string | null; email: string | null; created_at: string; updated_at: string } | null;
+      };
+    if (canonicalCustomer) {
+      const nameParts = (canonicalCustomer.display_name ?? '').trim().split(/\s+/).filter(Boolean);
+      customer = {
+        id: canonicalCustomer.id,
+        email: canonicalCustomer.email,
+        phone: null,
+        first_name: nameParts[0] ?? null,
+        last_name: nameParts.slice(1).join(' ') || null,
+        other_emails: [],
+        orders_count: null,
+        account_created_at: canonicalCustomer.created_at,
+        created_at: canonicalCustomer.created_at,
+        updated_at: canonicalCustomer.updated_at,
+        merchant_customer_id: canonicalCustomer.id,
+      };
+    }
+  }
   if (!customer) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
+
+  const merchantCustomerId =
+    (await resolveMerchantCustomerId(serviceClient, ctx.merchantId, customerId)) ??
+    customer.merchant_customer_id ??
+    null;
+  const merchantHistory = await loadMerchantCustomerHistory(serviceClient, ctx.merchantId, customerId);
 
   // -------------------------------------------------------------------------
   // 1b. Sibling records: other source_customers the network identity links to
@@ -193,25 +237,62 @@ async function GETHandler(
   //     are aggregated across all of them so the dossier reflects the whole
   //     resolved identity, not just the record that was clicked.
   // -------------------------------------------------------------------------
-  const { customerIds: identityCustomerIds, siblings } = await resolveIdentitySiblingCustomers(
-    serviceClient,
-    ctx.merchantId,
-    customer,
-  );
+  let identityCustomerIds: string[] = [customer.id];
+  let siblings: Array<{ id: string; email: string | null; name: string | null; ordersCount: number | null }> = [];
+  if (merchantCustomerId) {
+    const { data: canonicalSiblings } = await serviceClient
+      .from('source_customers')
+      .select('id, email, first_name, last_name, orders_count')
+      .eq('merchant_id', ctx.merchantId)
+      .eq('merchant_customer_id', merchantCustomerId);
+    siblings = (canonicalSiblings ?? []).map((row: Record<string, unknown>) => ({
+      id: String(row.id),
+      email: (row.email as string | null) ?? null,
+      name: [row.first_name, row.last_name].filter(Boolean).join(' ').trim() || null,
+      ordersCount: row.orders_count == null ? null : Number(row.orders_count),
+    }));
+    identityCustomerIds = siblings.length ? siblings.map((s) => s.id) : [customer.id];
+  } else {
+    const siblingResolution = await resolveIdentitySiblingCustomers(serviceClient, ctx.merchantId, customer);
+    identityCustomerIds = siblingResolution.customerIds;
+    siblings = siblingResolution.siblings;
+  }
   const siblingById = new Map(siblings.map((s) => [s.id, s]));
   const siblingCount = Math.max(identityCustomerIds.length - 1, 0);
 
   // -------------------------------------------------------------------------
   // 2. Own-store orders + claims (layers 1 and 4), across all linked records.
   // -------------------------------------------------------------------------
-  const { data: orderRows } = await serviceClient
-    .from('source_orders')
-    .select('id, external_id, order_number, source_customer_id, email, phone, total_price, card_last4, browser_ip, placed_at, shipping_address_id')
-    .eq('merchant_id', ctx.merchantId)
-    .in('source_customer_id', identityCustomerIds)
-    .order('placed_at', { ascending: true })
-    .limit(2000) as unknown as { data: SourceOrderRow[] | null };
-  const orders = orderRows ?? [];
+  let orders: SourceOrderRow[] = [];
+  if (merchantCustomerId) {
+    const { data: canonicalOrders, error: canonicalOrderError } = await serviceClient
+      .from('source_orders')
+      .select('id, external_id, order_number, source_customer_id, merchant_customer_id, email, phone, total_price, card_last4, browser_ip, placed_at, shipping_address_id')
+      .eq('merchant_id', ctx.merchantId)
+      .eq('merchant_customer_id', merchantCustomerId)
+      .order('placed_at', { ascending: true })
+      .limit(2000) as unknown as { data: SourceOrderRow[] | null; error?: { message: string } | null };
+    orders = canonicalOrders ?? [];
+    if (canonicalOrderError) {
+      const { data: fallbackOrders } = await serviceClient
+        .from('source_orders')
+        .select('id, external_id, order_number, source_customer_id, email, phone, total_price, card_last4, browser_ip, placed_at, shipping_address_id')
+        .eq('merchant_id', ctx.merchantId)
+        .in('source_customer_id', identityCustomerIds)
+        .order('placed_at', { ascending: true })
+        .limit(2000) as unknown as { data: SourceOrderRow[] | null };
+      orders = fallbackOrders ?? [];
+    }
+  } else {
+    const { data: orderRows } = await serviceClient
+      .from('source_orders')
+      .select('id, external_id, order_number, source_customer_id, email, phone, total_price, card_last4, browser_ip, placed_at, shipping_address_id')
+      .eq('merchant_id', ctx.merchantId)
+      .in('source_customer_id', identityCustomerIds)
+      .order('placed_at', { ascending: true })
+      .limit(2000) as unknown as { data: SourceOrderRow[] | null };
+    orders = orderRows ?? [];
+  }
 
   const addressIds = uniqueValues(orders.map((o) => o.shipping_address_id));
   const addressById = new Map<string, string>();
@@ -250,6 +331,18 @@ async function GETHandler(
       .in('source_order_id', orderIds)
       .limit(500) as unknown as { data: ClaimRow[] | null };
     claims = claimRows ?? [];
+  }
+  if (merchantCustomerId) {
+    const { data: canonicalClaimRows } = await serviceClient
+      .from(TABLES.MERCHANT_CLAIMS)
+      .select('id, claim_type, status, source_order_id, reason_normalized, reason_raw, amount_at_risk, submitted_at')
+      .eq('merchant_id', ctx.merchantId)
+      .eq('merchant_customer_id', merchantCustomerId)
+      .order('submitted_at', { ascending: false })
+      .limit(500) as unknown as { data: ClaimRow[] | null };
+    const byId = new Map(claims.map((claim) => [claim.id, claim]));
+    for (const claim of canonicalClaimRows ?? []) byId.set(claim.id, claim);
+    claims = [...byId.values()];
   }
   const claimsByOrder = new Map<string, ClaimRow[]>();
   for (const claim of claims) {
@@ -425,6 +518,10 @@ async function GETHandler(
       total_merchants_seen_at: Math.max(network?.merchantCount ?? 1, 1),
       sibling_count: siblingCount,
       linked_customer_emails: linkedCustomerEmails,
+      refund_requests_365d: merchantHistory.refundRequests365d,
+      completed_refunds_365d: merchantHistory.completedRefunds365d,
+      completed_refund_amounts_by_currency: merchantHistory.completedRefundAmountByCurrency,
+      possible_match_count: merchantHistory.possibleMatches.length,
       refund_rate: computedRefundRate,
       fastest_claim_days: network?.fastestClaimDays ?? null,
       avg_claim_days: null,
