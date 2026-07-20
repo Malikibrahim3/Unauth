@@ -7,6 +7,8 @@ export function labelize(value: string) {
 export type RoadmapTransaction = {
   source_order_id: string;
   order_id: string;
+  external_href?: string | null;
+  external_source?: string | null;
   processed_at: string;
   order_value: number | string | null;
   currency?: string | null;
@@ -25,6 +27,22 @@ export type RoadmapTransaction = {
   refund_reason?: string | null;
   fraud_flags?: string[] | null;
   risk_level?: string | null;
+  line_items?: Array<{
+    title: string | null;
+    quantity: number | null;
+    unit_price_minor: number | null;
+    total_minor: number | null;
+    currency: string | null;
+  }> | null;
+  shipment?: {
+    carrier: string | null;
+    status: string | null;
+    tracking_number: string | null;
+    shipped_at: string | null;
+    delivered_at: string | null;
+    external_href?: string | null;
+    external_source?: string | null;
+  } | null;
 };
 
 export const CLAIM_TYPE_LABELS: Record<string, string> = {

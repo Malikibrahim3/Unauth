@@ -90,6 +90,20 @@ describe('claimWidgetToJson', () => {
     expect(payload.recent_activity).toContain('1 claim in last 90 days');
   });
 
+  it('keeps refund requests separate from completed refunds in store context', () => {
+    const payload = claimWidgetToJson({
+      ...OK_RESULT,
+      data: {
+        ...OK_RESULT.data,
+        refundRequestCount365d: 12,
+        completedRefundCount365d: 3,
+      },
+    });
+    expect(payload.claims).toContain('12 refund requests in last 365 days');
+    expect(payload.claims).toContain('3 completed refunds in last 365 days');
+    expect(payload.context_summary).toContain('12 refund requests in last 365 days');
+  });
+
   it('not_found renders a factual fallback', () => {
     const payload = claimWidgetToJson({ ok: false, kind: 'not_found' });
 

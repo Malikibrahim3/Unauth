@@ -47,6 +47,7 @@ export function AnalyticsDonutChart({
         style={{
           width: Math.min(height * 0.75, 140),
           height: Math.min(height * 0.75, 140),
+          flexShrink: 0,
           borderRadius: '50%',
           background: `conic-gradient(${stops.join(', ')})`,
           position: 'relative',

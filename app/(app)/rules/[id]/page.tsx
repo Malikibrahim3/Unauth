@@ -11,6 +11,7 @@ import {
   type RuleVersionRecord,
 } from "@/components/rules/RuleVersionWorkbench";
 import { AuthenticatedPageHeader } from "@/components/authenticated/AuthenticatedPageHeader";
+import { SetBreadcrumbLabel } from "@/components/layout/SetBreadcrumbLabel";
 import pageStyles from "@/components/authenticated/AuthenticatedPageChrome.module.css";
 
 export const dynamic = "force-dynamic";
@@ -64,11 +65,11 @@ export default async function RuleDetail({
 
   return (
     <div>
+      <SetBreadcrumbLabel label={display.name} />
       <AuthenticatedPageHeader
         eyebrow="Policy configuration"
         title={display.name}
         subtitle={display.description || "No description. Add one in the next draft so operators understand intent and scope."}
-        breadcrumbs={[{ label: "Rules", href: "/rules" }, { label: display.name }]}
       />
       <div className={pageStyles.pageBody}>
         <RuleVersionWorkbench ruleId={id} initialVersions={versions} canManage={canManage} />

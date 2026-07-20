@@ -113,8 +113,10 @@ export function Drawer({
               height: 56,
               padding: '0 var(--space-5)',
               background: 'var(--surface)',
-              position: 'sticky',
-              top: 0,
+              // The body below is the only scroll container, so the header
+              // stays fixed in the flex layout without Safari's sticky
+              // positioning bug moving it into the middle of the drawer.
+              position: 'relative',
               zIndex: 'var(--ua-z-header)' as unknown as number,
             }}
           >
@@ -135,7 +137,9 @@ export function Drawer({
         {footer && (
           <div
             className="shrink-0 bg-[var(--surface)] border-t border-[var(--border-muted)]"
-            style={{ position: 'sticky', bottom: 0 }}
+            // The footer is outside the scrollable body and is already held
+            // at the bottom by the drawer's flex column layout.
+            style={{ position: 'relative', zIndex: 'var(--ua-z-header)' as unknown as number }}
           >
             {footer}
           </div>

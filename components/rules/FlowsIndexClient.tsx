@@ -138,7 +138,7 @@ export function FlowsIndexClient({
       ) : (
         <EmptyState
           title="No flows yet"
-          description="Create a bounded event flow, test it without writes, then publish it explicitly. Flows route work; they never decide or issue payouts."
+          description="Create a workflow, test it safely without affecting live data, then publish it when you're ready. Flows route work — they never decide or issue payouts."
           action={
             canManage ? (
               <Button variant="primary" onClick={() => setCreating(true)}>

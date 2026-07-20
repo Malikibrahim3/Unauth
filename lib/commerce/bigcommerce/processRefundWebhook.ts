@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { fetchBigCommerceOrder, loadBigCommerceAccessToken } from '@/lib/commerce/bigcommerce/bigcommerceApi';
+import { syncPayoutCasesForOrder } from '@/lib/identity/merchantCustomerResolver';
 
 /**
  * BigCommerce refund ingestion → v2 source_refunds, anchored to the
@@ -81,4 +82,13 @@ export async function processBigCommerceRefundWebhook(input: {
     raw_payload_hash: crypto.createHash('sha256').update(JSON.stringify(webhookPayload), 'utf8').digest('hex'),
   }, { onConflict: 'merchant_id,source_order_id,external_id' });
   if (error) throw new Error(`source_refund_upsert_failed: ${error.message}`);
+  try {
+    await syncPayoutCasesForOrder(supabase, connection.merchant_id, orderRow.id as string);
+  } catch (syncError) {
+    console.error('merchant_local_refund_case_sync_failed', {
+      merchantId: connection.merchant_id,
+      sourceOrderId: orderRow.id,
+      message: syncError instanceof Error ? syncError.message : String(syncError),
+    });
+  }
 }

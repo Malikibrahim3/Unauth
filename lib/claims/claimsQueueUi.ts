@@ -1,4 +1,5 @@
 import type { ClaimQueueCounts } from './queueCounts';
+import { formatNumber } from '@/lib/utils/format';
 
 export type ClaimsListView =
   | { kind: 'active' }
@@ -64,7 +65,7 @@ export function formatClaimsResultText(input: {
   view: ClaimsListView;
 }): string {
   const { showing, totalMatching, view } = input;
-  const pagePart = `Showing ${showing.toLocaleString('en-US')} of ${totalMatching.toLocaleString('en-US')}`;
+  const pagePart = `Showing ${formatNumber(showing)} of ${formatNumber(totalMatching)}`;
 
   switch (view.kind) {
     case 'active':

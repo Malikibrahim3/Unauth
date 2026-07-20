@@ -12,6 +12,7 @@ import type {
   Recoverability,
 } from '@/lib/payouts/types';
 import { formatCurrency } from '@/lib/utils/format';
+import { evidenceKeyLabel } from '@/lib/payouts/config';
 
 export const PAYOUT_DISCLAIMER =
   'Loss attribution and recovery route are advisory estimates from the available evidence. Your team owns the decision.';
@@ -63,5 +64,18 @@ export function formatPayoutMoney(money: Money): string {
 
 /** Humanize a checklist item key (e.g. proof_of_delivery → "proof of delivery"). */
 export function humanizeEvidenceKey(key: string): string {
-  return key.replace(/_/g, ' ');
+  return evidenceKeyLabel(key);
+}
+
+/**
+ * Defensive repair for persisted prose that may embed raw snake_case evidence
+ * tokens (e.g. a `recovery_next_action` string written before the label layer
+ * existed). Replaces any snake_case token with its human label so raw enums
+ * never reach the DOM, and leaves ordinary words untouched.
+ */
+export function humanizeEvidenceProse(text: string | null | undefined): string {
+  if (!text) return '';
+  return text.replace(/\b[a-z][a-z0-9]*(?:_[a-z0-9]+)+\b/g, (token) =>
+    evidenceKeyLabel(token),
+  );
 }

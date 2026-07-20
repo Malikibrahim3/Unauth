@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ArrowRight, Clock3, ReceiptText } from "lucide-react";
+import { ArrowRight, ChevronRight, Clock3, ReceiptText } from "lucide-react";
 import { DataTable } from "@/components/ui/DataTable";
 import { Badge, PanelCard } from "@/components/ui";
 import { formatCurrency, formatDate } from "@/lib/utils/format";
@@ -149,18 +149,11 @@ export default function CustomersTableClient({
       key: "open",
       header: "",
       align: "right" as const,
-      render: (p: CustomerRow) => (
-        <button
-          type="button"
-          className="inline-flex items-center gap-1 text-xs font-semibold hover:underline"
-          style={{ color: "var(--accent)" }}
-          onClick={(e) => {
-            e.stopPropagation();
-            setPreview(p.id);
-          }}
-        >
-          View <ArrowRight className="h-3 w-3" aria-hidden="true" />
-        </button>
+      render: () => (
+        <ChevronRight
+          className="ml-auto h-4 w-4 text-[var(--text-tertiary)]"
+          aria-hidden="true"
+        />
       ),
     },
   ];

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus } from 'lucide-react';
-import { Button, Input, Select } from '@/components/ui';
+import { Button, Input, Modal, Select } from '@/components/ui';
 import {
   PARTNER_RULE_CLAIM_TYPES,
   PARTNER_TYPE_LABELS,
@@ -33,6 +33,8 @@ function splitList(value: string): string[] {
 export function PartnerRulebookClient({ partners, rules, canManage }: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const [partnerModalOpen, setPartnerModalOpen] = useState(false);
+  const [ruleModalOpen, setRuleModalOpen] = useState(false);
   const [partnerName, setPartnerName] = useState('');
   const [partnerType, setPartnerType] = useState<PartnerType>('carrier');
   const [ruleName, setRuleName] = useState('');
@@ -53,6 +55,7 @@ export function PartnerRulebookClient({ partners, rules, canManage }: Props) {
     });
     setPartnerName('');
     setBusy(false);
+    setPartnerModalOpen(false);
     router.refresh();
   }
 
@@ -78,14 +81,18 @@ export function PartnerRulebookClient({ partners, rules, canManage }: Props) {
     });
     setRuleName('');
     setBusy(false);
+    setRuleModalOpen(false);
     router.refresh();
   }
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
       <section className="rounded-[var(--ua-radius-card)] border" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
-        <div className="border-b px-4 py-3" style={{ borderColor: 'var(--border-muted)' }}>
+        <div className="flex items-center justify-between border-b px-4 py-3" style={{ borderColor: 'var(--border-muted)' }}>
           <p className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>Recovery rules</p>
+          {canManage ? (
+            <Button type="button" variant="secondary" size="sm" leadingIcon={<Plus />} onClick={() => setRuleModalOpen(true)}>Add rule</Button>
+          ) : null}
         </div>
         <div className="divide-y" style={{ borderColor: 'var(--border-muted)' }}>
           {rules.length === 0 ? (
@@ -117,7 +124,12 @@ export function PartnerRulebookClient({ partners, rules, canManage }: Props) {
 
       <aside className="space-y-4">
         <section className="rounded-[var(--ua-radius-card)] border p-4" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
-          <p className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>Partners</p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>Partners</p>
+            {canManage ? (
+              <Button type="button" variant="secondary" size="sm" leadingIcon={<Plus />} onClick={() => setPartnerModalOpen(true)}>Add partner</Button>
+            ) : null}
+          </div>
           <div className="mt-3 space-y-2">
             {partners.length === 0 ? (
               <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>No partners configured.</p>
@@ -128,40 +140,87 @@ export function PartnerRulebookClient({ partners, rules, canManage }: Props) {
               </div>
             ))}
           </div>
-          {canManage ? (
-            <div className="mt-4 grid gap-2">
-              <Input aria-label="Partner name" placeholder="Partner name" value={partnerName} onChange={(event) => setPartnerName(event.target.value)} />
+        </section>
+      </aside>
+
+      {canManage ? (
+        <Modal
+          open={partnerModalOpen}
+          onClose={() => setPartnerModalOpen(false)}
+          title="Add partner"
+          description="Recovery counterparties you chase losses with — carriers, 3PLs, suppliers."
+          size="sm"
+          actions={[
+            { label: busy ? 'Adding…' : 'Add partner', onClick: () => void createPartner(), disabled: busy || !partnerName.trim() },
+          ]}
+        >
+          <div className="grid gap-3">
+            <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+              Partner name
+              <Input aria-label="Partner name" placeholder="e.g. Royal Mail" value={partnerName} onChange={(event) => setPartnerName(event.target.value)} />
+            </label>
+            <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+              Partner type
               <Select aria-label="Partner type" value={partnerType} onChange={(event) => setPartnerType(event.target.value as PartnerType)}>
                 {PARTNER_TYPES.map((type) => <option key={type} value={type}>{PARTNER_TYPE_LABELS[type]}</option>)}
               </Select>
-              <Button type="button" onClick={() => void createPartner()} loading={busy} leadingIcon={<Plus />}>Add partner</Button>
-            </div>
-          ) : null}
-        </section>
+            </label>
+          </div>
+        </Modal>
+      ) : null}
 
-        {canManage ? (
-          <section className="rounded-[var(--ua-radius-card)] border p-4" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
-            <p className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>New recovery rule</p>
-            <div className="mt-3 grid gap-2">
-              <Input aria-label="Rule name" placeholder="Rule name" value={ruleName} onChange={(event) => setRuleName(event.target.value)} />
-              <Select aria-label="Rule partner" value={rulePartnerId} onChange={(event) => setRulePartnerId(event.target.value)}>
-                <option value="">Default rule</option>
-                {partners.map((partner) => <option key={partner.id} value={partner.id}>{partner.name}</option>)}
-              </Select>
-              <Select aria-label="Recovery type" value={recoveryType} onChange={(event) => setRecoveryType(event.target.value as PartnerRecoveryType)}>
-                {RECOVERY_TYPES.map((type) => <option key={type} value={type}>{RECOVERY_TYPE_LABELS[type]}</option>)}
-              </Select>
-              <Select aria-label="Claim type" value={claimType} onChange={(event) => setClaimType(event.target.value as PartnerRuleClaimType)}>
-                {PARTNER_RULE_CLAIM_TYPES.map((type) => <option key={type} value={type}>{type.replaceAll('_', ' ')}</option>)}
-              </Select>
-              <Input aria-label="Required evidence" placeholder="Required evidence, comma separated" value={requiredEvidence} onChange={(event) => setRequiredEvidence(event.target.value)} />
-              <Input aria-label="Claimable costs" placeholder="Claimable costs, comma separated" value={claimableCosts} onChange={(event) => setClaimableCosts(event.target.value)} />
-              <Input aria-label="Deadline days" type="number" min="0" placeholder="Deadline days" value={deadlineDays} onChange={(event) => setDeadlineDays(event.target.value)} />
-              <Button type="button" onClick={() => void createRule()} loading={busy} leadingIcon={<Plus />}>Add rule</Button>
+      {canManage ? (
+        <Modal
+          open={ruleModalOpen}
+          onClose={() => setRuleModalOpen(false)}
+          title="Add recovery rule"
+          description="How a loss against this partner is chased, and what evidence the claim needs."
+          size="md"
+          actions={[
+            { label: busy ? 'Adding…' : 'Add rule', onClick: () => void createRule(), disabled: busy || !ruleName.trim() },
+          ]}
+        >
+          <div className="grid gap-3">
+            <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+              Rule name
+              <Input aria-label="Rule name" placeholder="e.g. Royal Mail non-delivery" value={ruleName} onChange={(event) => setRuleName(event.target.value)} />
+            </label>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+                Partner
+                <Select aria-label="Rule partner" value={rulePartnerId} onChange={(event) => setRulePartnerId(event.target.value)}>
+                  <option value="">Default rule</option>
+                  {partners.map((partner) => <option key={partner.id} value={partner.id}>{partner.name}</option>)}
+                </Select>
+              </label>
+              <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+                Recovery type
+                <Select aria-label="Recovery type" value={recoveryType} onChange={(event) => setRecoveryType(event.target.value as PartnerRecoveryType)}>
+                  {RECOVERY_TYPES.map((type) => <option key={type} value={type}>{RECOVERY_TYPE_LABELS[type]}</option>)}
+                </Select>
+              </label>
+              <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+                Applies to claim type
+                <Select aria-label="Claim type" value={claimType} onChange={(event) => setClaimType(event.target.value as PartnerRuleClaimType)}>
+                  {PARTNER_RULE_CLAIM_TYPES.map((type) => <option key={type} value={type}>{type.replaceAll('_', ' ')}</option>)}
+                </Select>
+              </label>
+              <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+                Deadline (days)
+                <Input aria-label="Deadline days" type="number" min="0" placeholder="14" value={deadlineDays} onChange={(event) => setDeadlineDays(event.target.value)} />
+              </label>
             </div>
-          </section>
-        ) : null}
-      </aside>
+            <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+              Required evidence
+              <Input aria-label="Required evidence" placeholder="Required evidence, comma separated" value={requiredEvidence} onChange={(event) => setRequiredEvidence(event.target.value)} />
+            </label>
+            <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+              Claimable costs
+              <Input aria-label="Claimable costs" placeholder="Claimable costs, comma separated" value={claimableCosts} onChange={(event) => setClaimableCosts(event.target.value)} />
+            </label>
+          </div>
+        </Modal>
+      ) : null}
     </div>
   );
 }

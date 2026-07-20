@@ -98,7 +98,7 @@ export default async function IntegrationsPage() {
     {
       title: "Manual evidence",
       description:
-        "Auditable imports and liability documents without a live provider connection.",
+        "Upload records and liability documents manually — no live connection needed.",
       items: manual,
     },
     {
@@ -112,7 +112,6 @@ export default async function IntegrationsPage() {
     <>
       <DeferredLiveConnectionVerification />
       <WorkbenchPage
-      eyebrow="Configuration"
       title="Integrations"
       subtitle="Connect your store, helpdesk, and carriers. We’ll tell you when data stops flowing."
       actions={
@@ -152,7 +151,7 @@ export default async function IntegrationsPage() {
                 { label: 'Manual evidence', value: formatNumber(manual.length), tone: 'neutral', bar: catalogue.length ? manual.length / catalogue.length : 0 },
                 { label: 'Planned', value: formatNumber(planned.length), tone: 'neutral', bar: catalogue.length ? planned.length / catalogue.length : 0 },
               ],
-              footnote: 'Stored connection state. Live credential checks refresh after the page is interactive.',
+              footnote: 'Shows the last known connection state; live checks run when you open this page.',
             },
           ]}
         />

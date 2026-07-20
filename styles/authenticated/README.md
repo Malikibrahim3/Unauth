@@ -54,11 +54,15 @@ Content passed as `WorkbenchPage`'s `main` renders inside an `AuthenticatedPanel
 
 ## Component taxonomy — one primitive per situation
 
-**Buttons** — `components/ui/Button.tsx` / `ButtonLink.tsx`. Variants: `primary`, `cta`, `secondary`, `ghost`, `danger`, `link`. All share height/radius/typography/focus/disabled treatment from `buttonStyles.ts`. There is no canonical `IconButton` yet — see the migration register.
+**Buttons** — `components/ui/Button.tsx` / `ButtonLink.tsx`. Variants: `primary`, `cta`, `secondary`, `ghost`, `danger`, `link`. All share height/radius/typography/focus/disabled treatment from `buttonStyles.ts`. **Disabled (binding):** a disabled filled button renders inert — muted `--surface-sunken` background + `--text-tertiary` text, not a faded-accent tint (a 50%-opacity orange primary reads as "enabled but light"). `loading` keeps the accent + spinner; only the real `disabled` prop triggers the inert look. There is no canonical `IconButton` yet — see the migration register.
 
 **Status badges** — `components/ui/StatusBadge.tsx`. Non-interactive. Communicates neutral/informational/warning/critical/success. Do not build a page-specific status badge; if a status doesn't fit the existing tone map, extend `STATUS_TONES`, don't hand-roll a pill.
 
-**Badge** — `components/ui/Badge.tsx`. Generic labelling (not lifecycle status). Distinct height/radius/case convention from `StatusBadge` intentionally — they solve different problems (see the migration register for where this line has blurred in practice).
+**Badge** — `components/ui/Badge.tsx`. Generic labelling (not lifecycle status): counts, partner names, tags, record types. **Sentence-case (binding):** Badge shares StatusBadge's sentence-case, medium-weight typography — it is no longer uppercase/700 (that clashed with the sentence-case StatusBadge on shared screens). It still differs from StatusBadge in that it carries no semantic tone-map and takes free children; use StatusBadge for anything that is a lifecycle status value.
+
+**KPI strip** — `WorkbenchKpiStrip` / `AuthenticatedPageChrome.module.css .kpiStrip`. A non-interactive metrics row. It carries no selected/active accent — do not add a first-tile top-border or any per-tile highlight; the tiles are not tabs. If a metric row ever needs to filter, build it as a real `SegmentedControl`/tab, not a styled KPI strip.
+
+**Internal vs external link affordance (binding):** the up-right arrow (`ArrowUpRight` / ↗ / `ExternalLink`) is reserved for links that open a genuinely external target (`target="_blank"` — helpdesk/Shopify/docs). Internal navigation uses `ArrowRight` (→) or a chevron.
 
 **Filter chips** — `components/ui/FilterChip.tsx`. Filter chips must never borrow semantic warning/success/critical colour merely because they're selected — selection uses the neutral selected surface and strong border.
 

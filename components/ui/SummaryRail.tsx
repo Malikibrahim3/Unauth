@@ -76,7 +76,7 @@ function Row({ row }: { row: SummaryRailRow }) {
       {pct != null ? (
         <div
           className="mt-1.5 overflow-hidden"
-          style={{ height: 3, borderRadius: 'var(--ua-radius-pill)', background: 'var(--surface-sunken)' }}
+          style={{ height: 3, borderRadius: 'var(--ua-radius-pill)', background: 'var(--ua-chart-track)' }}
         >
           <div style={{ width: `${pct}%`, height: '100%', background: fill, borderRadius: 'var(--ua-radius-pill)' }} />
         </div>

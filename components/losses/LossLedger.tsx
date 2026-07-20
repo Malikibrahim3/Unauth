@@ -97,7 +97,7 @@ export function LossLedger({ rows }: { rows: LossLedgerRow[] }) {
                 <th className="py-2 pr-4 font-medium">Attribution</th>
                 <th className="py-2 pr-4 font-medium">Owner</th>
                 <th className="py-2 pr-4 font-medium">Status</th>
-                <th className="py-2 pr-4 font-medium text-right">Realised / estimated loss</th>
+                <th className="py-2 pr-4 font-medium text-right whitespace-nowrap">Est. loss</th>
                 <th className="py-2 pr-4 font-medium text-right">Recoverable</th>
                 <th className="py-2 pr-4 font-medium">Source</th>
               </tr>

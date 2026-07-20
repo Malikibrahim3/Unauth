@@ -9,6 +9,7 @@ import { verifyShipBobPat } from '@/lib/integrations/providers/shipbob';
 import { deleteShipBobSubscription, listShipBobLocations, listShipBobOrders, listShipBobReturns, listShipBobSubscriptions, shipBobToken, type ShipBobCredentials } from '@/lib/connectors/providers/shipbob/api';
 import { getAppUrl } from '@/lib/utils/appUrl';
 import { mapShipBobOrder } from '@/lib/connectors/providers/shipbob/mappings';
+import { shipBobOrdersUrl, shipBobShipmentUrl } from '@/lib/links/providerDeepLinks';
 import type {
   ConnectorAdapter,
   ConnectorContext,
@@ -31,7 +32,11 @@ function credentialsFromContext(ctx: ConnectorContext): ShipBobCredentials {
     accessToken: typeof credentials.accessToken === 'string' ? credentials.accessToken : undefined,
     refreshToken: typeof credentials.refreshToken === 'string' ? credentials.refreshToken : undefined,
     sandbox: credentials.environment === 'sandbox' || credentials.sandbox === true,
-    channelId: typeof credentials.channelId === 'string' ? credentials.channelId : undefined,
+    channelId: typeof credentials.channelId === 'string'
+      ? credentials.channelId
+      : typeof credentials.providerAccountId === 'string'
+        ? credentials.providerAccountId
+        : undefined,
     providerAccountId: typeof credentials.providerAccountId === 'string' ? credentials.providerAccountId : undefined,
   };
 }
@@ -151,7 +156,16 @@ export const shipbobConnector: ConnectorAdapter = {
   },
 
   deepLink(input: DeepLinkInput): string | null {
-    return input.sourceUrl ?? null;
+    if (input.sourceUrl) return input.sourceUrl;
+    const environment = input.providerEnvironment ?? 'production';
+    const orderId = input.entityType === 'order'
+      ? input.externalId
+      : input.relatedOrderExternalId;
+    const shipmentId = input.entityType === 'shipment' || input.entityType === 'fulfilment'
+      ? input.externalId
+      : input.relatedShipmentExternalId;
+    if (orderId && shipmentId) return shipBobShipmentUrl(environment, orderId, shipmentId);
+    return input.entityType === 'order' ? shipBobOrdersUrl(environment) : null;
   },
 
   async disconnect(ctx: ConnectorContext): Promise<DisconnectResult> {

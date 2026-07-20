@@ -1031,10 +1031,13 @@
     font-feature-settings: "tnum" 1, "cv11" 1;
   }
 
-  /* Focus rings — always visible, never just outline removal */
+  /* Focus rings — always visible, never just outline removal. box-shadow
+     (not outline) so the ring always follows an element's border-radius —
+     Safari does not clip `outline` to a rounded corner, which stamps a
+     rectangular ring onto pill/rounded controls. */
   :focus-visible {
-    outline: 2px solid var(--focus-ring);
-    outline-offset: 2px;
+    outline: none;
+    box-shadow: var(--shadow-focus);
   }
 
   /* Typography scale */

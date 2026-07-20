@@ -8,6 +8,7 @@ import {
   PanelCard,
 } from "@/components/ui";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
 import { CaseContextDrawer } from "@/components/cases/CaseContextDrawer";
 import { formatCurrencyNullable, formatDate } from "@/lib/utils/format";
 import { recoverySoughtAmount } from "@/lib/recoveries/amounts";
@@ -190,11 +191,11 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
                         variant="appInset"
                         className="p-3"
                       >
-                        <div className="flex items-start justify-between gap-2">
+                        <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
                           <div className="min-w-0">
                             <Link
                               href={`/recoveries/${item.id}`}
-                              className="block truncate text-xs font-semibold no-underline hover:underline"
+                              className="block whitespace-nowrap text-xs font-semibold no-underline hover:underline"
                               style={{ color: "var(--text-primary)" }}
                             >
                               {orderLabel}
@@ -278,34 +279,55 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
                             Case context
                           </button>
                         </div>
-                        {canManage ? (
-                          <div
-                            className="mt-3 flex flex-wrap gap-1.5 border-t pt-3"
-                            style={{ borderColor: "var(--border-muted)" }}
-                          >
-                            {ACTIONS.filter((option) =>
-                              option.statuses.includes(item.status),
-                            ).map((option) => (
-                              <button
-                                key={option.action}
-                                type="button"
-                                className="rounded-md px-2 py-1 text-[11px] font-medium"
-                                style={{
-                                  border: "1px solid var(--border-muted)",
-                                  color: "var(--text-secondary)",
-                                }}
-                                disabled={
-                                  busyId === `${item.id}:${option.action}`
-                                }
-                                onClick={() => runAction(item, option)}
-                              >
-                                {busyId === `${item.id}:${option.action}`
-                                  ? "Saving…"
-                                  : option.label}
-                              </button>
-                            ))}
-                          </div>
-                        ) : null}
+                        {canManage
+                          ? (() => {
+                              const applicable = ACTIONS.filter((option) =>
+                                option.statuses.includes(item.status),
+                              );
+                              if (applicable.length === 0) return null;
+                              const [primary, ...rest] = applicable;
+                              const isDanger = (a: RecoveryAction) =>
+                                a === "closed_unrecoverable" || a === "rejected";
+                              const primaryBusy =
+                                busyId === `${item.id}:${primary.action}`;
+                              return (
+                                <div
+                                  className="mt-3 flex items-center gap-1.5 border-t pt-3"
+                                  style={{ borderColor: "var(--border-muted)" }}
+                                >
+                                  <button
+                                    type="button"
+                                    className="rounded-md px-2.5 py-1 text-[11px] font-medium"
+                                    style={{
+                                      border: "1px solid var(--border-muted)",
+                                      color: isDanger(primary.action)
+                                        ? "var(--risk-critical-fg)"
+                                        : "var(--text-secondary)",
+                                    }}
+                                    disabled={primaryBusy}
+                                    onClick={() => runAction(item, primary)}
+                                  >
+                                    {primaryBusy ? "Saving…" : primary.label}
+                                  </button>
+                                  {rest.length > 0 ? (
+                                    <RowActionsMenu
+                                      label="More recovery actions"
+                                      actions={rest.map((option) => ({
+                                        label: option.label,
+                                        tone: isDanger(option.action)
+                                          ? "danger"
+                                          : "default",
+                                        disabled:
+                                          busyId ===
+                                          `${item.id}:${option.action}`,
+                                        onSelect: () => runAction(item, option),
+                                      }))}
+                                    />
+                                  ) : null}
+                                </div>
+                              );
+                            })()
+                          : null}
                       </PanelCard>
                     );
                   })

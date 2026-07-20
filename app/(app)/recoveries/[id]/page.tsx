@@ -10,6 +10,7 @@ import { RECOVERY_TYPE_LABELS } from '@/lib/partners/types';
 import { formatCurrencyNullable, formatDateAbsolute, formatDateTime, formatNumber } from '@/lib/utils/format';
 import { recoveryOutstanding, recoverySoughtAmount } from '@/lib/recoveries/amounts';
 import { humanise, label } from '@/lib/ui/labels';
+import { SetBreadcrumbLabel } from '@/components/layout/SetBreadcrumbLabel';
 
 export const dynamic = 'force-dynamic';
 
@@ -58,11 +59,12 @@ export default async function RecoveryDetailPage({ params }: Props) {
     ? Math.max(0, sought - recovered)
     : 0;
   const outstanding = recoveryOutstanding({ sought, recovered, writtenOff });
+  const recoveryTitle = RECOVERY_TYPE_LABELS[recovery.recovery_type] ?? 'Recovery case';
 
   return (
     <WorkbenchPage
       eyebrow="Recovery"
-      title={RECOVERY_TYPE_LABELS[recovery.recovery_type] ?? 'Recovery case'}
+      title={recoveryTitle}
       subtitle={`${RECOVERY_OWNER_LABELS[recovery.owner_type] ?? 'Owner'} · ${RECOVERY_STATUS_LABELS[recovery.status] ?? recovery.status}`}
       navItems={WORKBENCH_NAV_ITEMS}
       activeNavKey="recoveries"
@@ -75,6 +77,7 @@ export default async function RecoveryDetailPage({ params }: Props) {
       ]}
       main={
         <div className="flex flex-col gap-3">
+          <SetBreadcrumbLabel label={recoveryTitle} />
           <section className="rounded-[var(--ua-radius-card)] p-4" style={{ border: '1px solid var(--border-subtle, rgba(0,0,0,0.08))' }}>
             <h2 className="mb-3 text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Recovery details</h2>
             <div className="grid grid-cols-2 gap-3 md:grid-cols-3">

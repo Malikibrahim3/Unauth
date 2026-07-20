@@ -17,7 +17,7 @@
 }
 .tile:last-child { border-right: 0; }
 .tile[data-selected="true"] { background: var(--surface-selected, var(--ua-surface-secondary)); }
-button.tile:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
+button.tile:focus-visible { outline: none; box-shadow: inset var(--shadow-focus); }
 .iconChip {
   display: grid;
   width: 26px;

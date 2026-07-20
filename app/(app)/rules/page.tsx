@@ -91,11 +91,10 @@ export default async function RulesPage() {
 
   return (
     <WorkbenchPage
-      eyebrow="Configuration"
       title="Rules"
       subtitle="Compose readable payout policy, simulate sample cases, review conflicts and impact, then publish an immutable version. Recommendations remain non-binding."
       kpiItems={[
-        { label: 'Rules', value: formatNumber(rules.length), hint: 'Active configuration families' },
+        { label: 'Rules', value: formatNumber(rules.length), hint: 'Active payout rules' },
         { label: 'Published', value: formatNumber(publishedCoverage), hint: 'With an immutable version' },
         { label: 'Draft changes', value: formatNumber(draftRules), hint: 'Awaiting review or publish' },
       ]}

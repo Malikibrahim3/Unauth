@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { AuthenticatedPageHeader } from '@/components/authenticated/AuthenticatedPageHeader';
+import { SetBreadcrumbLabel } from '@/components/layout/SetBreadcrumbLabel';
 import styles from '@/components/authenticated/AuthenticatedPageChrome.module.css';
 
 interface DetailPageShellProps {
@@ -28,8 +29,6 @@ interface DetailPageShellProps {
 }
 
 export function DetailPageShell({
-  backHref,
-  backLabel,
   eyebrow,
   title,
   subtitle,
@@ -41,22 +40,16 @@ export function DetailPageShell({
   rail,
   className,
 }: DetailPageShellProps) {
-  const breadcrumbs = backHref
-    ? [
-        { label: backLabel ?? 'Back', href: backHref },
-        ...(eyebrow ? [{ label: eyebrow }] : []),
-      ]
-    : eyebrow
-      ? [{ label: eyebrow }]
-      : undefined;
-
+  // The chrome breadcrumb (AppHeader) already renders "Back → title" navigation
+  // once the title override below is set, so an in-page breadcrumb would just
+  // duplicate it. Keep only the eyebrow kicker.
   return (
     <div className={cn(className)}>
+      <SetBreadcrumbLabel label={title} />
       <AuthenticatedPageHeader
         eyebrow={eyebrow}
         title={title}
         subtitle={subtitle}
-        breadcrumbs={breadcrumbs}
         actions={statusBadge || actions ? <>{statusBadge}{actions}</> : undefined}
         tabs={tabs}
         capabilityId="detail.heading"

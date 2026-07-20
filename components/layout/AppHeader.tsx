@@ -244,10 +244,44 @@ function deriveFromPathname(pathname: string): BreadcrumbSegment[] {
 
   return parts.map((part, i) => {
     const pathKey = parts.slice(0, i + 1).join('/');
-    const label = pathMap[pathKey] ?? segmentMap[part] ?? humanize(part);
+    // A dynamic id segment (UUID/opaque hash) must never render as a raw
+    // truncated id. Fall back to the singular entity label for its section so
+    // the breadcrumb reads cleanly even before a page-level ref override lands.
+    const label = pathMap[pathKey]
+      ?? segmentMap[part]
+      ?? (isDynamicId(part) ? singularEntityLabel(parts[i - 1]) : humanize(part));
     const href = '/' + pathKey;
     return { label, href };
   });
+}
+
+const SINGULAR_ENTITY_LABELS: Record<string, string> = {
+  losses: 'Loss',
+  recoveries: 'Recovery',
+  rules: 'Rule',
+  flows: 'Flow',
+  claims: 'Case',
+  chargebacks: 'Case',
+  customers: 'Customer',
+  orders: 'Order',
+  disputes: 'Dispute',
+  refunds: 'Refund',
+  returns: 'Return',
+  shipments: 'Shipment',
+  tickets: 'Ticket',
+  runs: 'Run',
+  integrations: 'Connection',
+};
+
+/** A path segment that is an opaque id rather than a readable route name. */
+function isDynamicId(segment: string): boolean {
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(segment)) return true;
+  // Long, mostly-hex or delimiter-less tokens read as ids, not route names.
+  return segment.length > 16 && !/\s/.test(segment);
+}
+
+function singularEntityLabel(parentSegment: string | undefined): string {
+  return (parentSegment && SINGULAR_ENTITY_LABELS[parentSegment]) || 'Detail';
 }
 
 function humanize(s: string): string {

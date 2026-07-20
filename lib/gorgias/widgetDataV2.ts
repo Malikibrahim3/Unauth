@@ -13,6 +13,7 @@ import type { ScoreFactor } from '@/lib/engine/evidence/score';
 import type { EvidenceLevel } from '@/lib/rules-engine';
 import { env } from '@/lib/utils/env';
 import type { MerchantCustomerLookupDiagnostics } from '@/lib/gorgias/findMerchantCustomerByEmail';
+import { loadMerchantCustomerHistory } from '@/lib/customers/merchantCustomerHistory';
 import {
   canonicalClaimTypesFromCounts,
   WITHHELD_EVIDENCE_SIGNALS,
@@ -136,14 +137,63 @@ export async function buildGorgiasClaimWidgetDataV2(
       lookupDiagnostics: null,
     };
   }
+  // Prefer the merchant-local canonical customer anchored by this order. Exact
+  // email remains a compatibility fallback for pre-migration records.
+  let merchantCustomerId: string | null = null;
+  if (params.orderId) {
+    const byExternal = await service
+      .from('source_orders')
+      .select('id, merchant_customer_id')
+      .eq('merchant_id', auth.merchantId)
+      .eq('external_id', params.orderId)
+      .order('placed_at', { ascending: false })
+      .limit(1)
+      .maybeSingle() as unknown as { data: { id: string; merchant_customer_id: string | null } | null };
+    merchantCustomerId = byExternal.data?.merchant_customer_id ?? null;
+    if (!merchantCustomerId) {
+      const byNumber = await service
+        .from('source_orders')
+        .select('id, merchant_customer_id')
+        .eq('merchant_id', auth.merchantId)
+        .eq('order_number', params.orderId)
+        .order('placed_at', { ascending: false })
+        .limit(1)
+        .maybeSingle() as unknown as { data: { id: string; merchant_customer_id: string | null } | null };
+      merchantCustomerId = byNumber.data?.merchant_customer_id ?? null;
+    }
+  }
+  if (!merchantCustomerId) {
+    const sourceCustomerQuery = service
+      .from('source_customers')
+      .select('id, merchant_customer_id')
+      .eq('merchant_id', auth.merchantId)
+      .ilike('email', normEmail);
+    // Some lightweight Supabase test doubles do not implement `not`; the
+    // nullable link is filtered in JavaScript in that compatibility path.
+    const filteredSourceCustomerQuery = typeof (sourceCustomerQuery as { not?: unknown }).not === 'function'
+      ? (sourceCustomerQuery as unknown as { not: (column: string, operator: string, value: unknown) => unknown }).not(
+          'merchant_customer_id',
+          'is',
+          null,
+        )
+      : sourceCustomerQuery;
+    const { data: sourceCustomer } = await (filteredSourceCustomerQuery as typeof sourceCustomerQuery)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle() as unknown as { data: { id: string; merchant_customer_id: string } | null };
+    merchantCustomerId = sourceCustomer?.merchant_customer_id ?? null;
+  }
+
   // ── own-store stats (merchant-owned layer-1 data)
-  const ordersRes = await service
+  const baseOrdersQuery = service
     .from('source_orders')
     .select('id, placed_at')
     .eq('merchant_id', auth.merchantId)
-    .ilike('email', normEmail)
     .order('placed_at', { ascending: false })
     .limit(1000);
+  const ordersRes = merchantCustomerId
+    ? await baseOrdersQuery.eq('merchant_customer_id', merchantCustomerId)
+    : await baseOrdersQuery.ilike('email', normEmail);
   const { data: orders, error: oe } = ordersRes;
   if (oe) {
     return { result: { ok: false, kind: 'error', message: 'Store order lookup failed.' }, lookupDiagnostics: null };
@@ -162,6 +212,24 @@ export async function buildGorgiasClaimWidgetDataV2(
     }
     storeClaims = claims ?? [];
   }
+
+  if (merchantCustomerId) {
+    const { data: directClaims } = await service
+      .from(TABLES.MERCHANT_CLAIMS)
+      .select('claim_type, submitted_at, amount_at_risk')
+      .eq('merchant_id', auth.merchantId)
+      .eq('merchant_customer_id', merchantCustomerId)
+      .gte('submitted_at', new Date(Date.now() - 365 * 86400e3).toISOString());
+    const seen = new Set(storeClaims.map((claim) => `${claim.claim_type}|${claim.submitted_at}|${claim.amount_at_risk}`));
+    for (const claim of directClaims ?? []) {
+      const key = `${claim.claim_type}|${claim.submitted_at}|${claim.amount_at_risk}`;
+      if (!seen.has(key)) storeClaims.push(claim);
+    }
+  }
+
+  const merchantHistory = merchantCustomerId
+    ? await loadMerchantCustomerHistory(service, auth.merchantId, merchantCustomerId)
+    : null;
 
   const ninetyDaysAgo = new Date(Date.now() - 90 * 86400e3).toISOString();
   const storeTypeCounts: Record<string, number> = {};
@@ -279,13 +347,15 @@ export async function buildGorgiasClaimWidgetDataV2(
   const appUrl = (env.NEXT_PUBLIC_APP_URL ?? '').replace(/\/$/, '');
   const data: ClaimWidgetData = {
     confidenceGrade: resolvedIdentity ? (resolvedIdentity.confidence_grade as ClaimWidgetData['confidenceGrade']) : null,
-    matchedOn: resolvedIdentity ? ['email address'] : [],
+    matchedOn: merchantCustomerId ? ['confirmed merchant customer'] : resolvedIdentity ? ['email address'] : [],
     ce3EvidenceAvailable: Boolean(resolvedIdentity && Number(resolvedIdentity.merchant_count) >= 2 && Number(resolvedIdentity.total_claims) > 0),
     thisStore,
     network,
     storeClaimValue: storeClaimValueRaw > 0 ? round2(storeClaimValueRaw) : null,
     storePrimaryReason: primaryReasonFromCounts(storeTypeCounts),
     storeRecentClaimCount,
+    refundRequestCount365d: merchantHistory?.refundRequests365d ?? 0,
+    completedRefundCount365d: merchantHistory?.completedRefunds365d ?? 0,
     profileUrl: `${appUrl}/customers`,
     dataFreshAt: new Date().toISOString(),
     watchlisted: false,

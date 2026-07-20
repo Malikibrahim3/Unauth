@@ -2,6 +2,7 @@
 
 import type { ClaimDecisionContext } from "@/lib/claims/decision/types";
 import { formatDeliveryEvidenceLine } from "@/lib/integrations/trackingEvidenceSlice";
+import { formatDateAbsolute } from "@/lib/utils/format";
 
 export function DeliveryEvidenceCard({
   delivery,
@@ -128,10 +129,5 @@ function formatDateTime(iso: string | null): string {
   if (!iso) return "—";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    timeZone: "UTC",
-  });
+  return formatDateAbsolute(d);
 }

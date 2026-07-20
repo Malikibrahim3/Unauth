@@ -34,8 +34,8 @@ export function CommandPaletteInputBar({
       <input
         ref={inputRef}
         type="text"
-        aria-label="Search customers, audits, evidence packages"
-        placeholder="Search customers, audits, evidence packages…"
+        aria-label="Search customers, cases, and evidence"
+        placeholder="Search customers, cases, evidence…"
         value={query}
         onChange={(e) => {
           const nextQuery = e.target.value;

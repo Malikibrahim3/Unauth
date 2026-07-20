@@ -1,6 +1,7 @@
 import type { DomainEventHandler } from '@/lib/events/handlers/types';
 import { recordDomainEvent } from '@/lib/events/domainEventStore';
 import { TABLES } from '@/lib/supabase/tables';
+import { syncPayoutCaseMerchantCustomer } from '@/lib/identity/merchantCustomerResolver';
 
 const DECISION_HANDLERS = [
   'financialProjection', 'lossProjection', 'recoveryProjection',
@@ -49,6 +50,8 @@ export const refundProjection: DomainEventHandler = async (client, event) => {
     if (createError) throw new Error(`retrospective_case_create_failed: ${createError.message}`);
     caseId = (created as { id: string }).id;
   }
+
+  await syncPayoutCaseMerchantCustomer(client, event.merchant_id, caseId);
 
   await client.from(TABLES.ENTITY_RELATIONSHIPS).upsert({
     merchant_id: event.merchant_id,

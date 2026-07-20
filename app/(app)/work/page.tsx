@@ -191,7 +191,6 @@ export default async function WorkPage({
     deadlineBands.overdue > 0 ? "danger" : deadlineBands.dueToday > 0 ? "warning" : "neutral";
   return (
     <WorkbenchPage
-      eyebrow="Operations"
       title="Work"
       kpiItems={[
         {

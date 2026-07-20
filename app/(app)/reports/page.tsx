@@ -49,7 +49,6 @@ export default async function ReportsPage({
   );
   return (
     <WorkbenchPage
-      eyebrow="Analytics"
       title="Reports"
       subtitle="Reconciled payout, loss, and recovery performance."
       actionBarLeft={

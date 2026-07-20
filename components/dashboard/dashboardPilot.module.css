@@ -133,9 +133,17 @@
   font-weight: 550;
 }
 
+/* The wrapper shows the one focus ring; the native select must never draw its
+   own on top of it (its own reset above loses to the global :focus-visible
+   rule's specificity once focused, producing a double ring). */
+.filterControl select:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
 .filterControl:focus-within {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 2px;
+  outline: none;
+  box-shadow: var(--shadow-focus);
 }
 
 .filterControl:has(select:disabled) {

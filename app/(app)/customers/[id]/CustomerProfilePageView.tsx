@@ -64,6 +64,10 @@ export function CustomerProfilePageView(props: CustomerProfilePageViewProps) {
     activityLog,
     openClaimCount,
     evidenceDisplay,
+    billingAddress,
+    identitySignalSummary,
+    possibleMatches,
+    latestClaim,
   } = props;
 
   return (
@@ -93,6 +97,7 @@ export function CustomerProfilePageView(props: CustomerProfilePageViewProps) {
         density={density}
         primaryIdentifier={primaryIdentifier}
         identitySignalRows={identitySignalRows}
+        merchantNarrative={merchantNarrative}
         gorgiasSource={gorgiasSource}
         gorgiasTicketId={gorgiasTicketId}
         evidenceDisplay={evidenceDisplay}
@@ -112,9 +117,6 @@ export function CustomerProfilePageView(props: CustomerProfilePageViewProps) {
           <CustomerProfilePageMainColumn
             profile={profile}
             profileGrade={profileGrade}
-            hasCleanRecord={hasCleanRecord}
-            merchantOrderCount={merchantOrderCount}
-            merchantNarrative={merchantNarrative}
             identitySignals={identitySignals}
             transactions={transactions}
             roadmapEvents={roadmapEvents}
@@ -123,6 +125,12 @@ export function CustomerProfilePageView(props: CustomerProfilePageViewProps) {
             merchantSignalPills={merchantSignalPills}
             linkedAccounts={linkedAccounts}
             activityLog={activityLog}
+            billingAddress={billingAddress}
+            identitySignalRows={identitySignalRows}
+            identitySignalSummary={identitySignalSummary}
+            possibleMatches={possibleMatches}
+            latestClaim={latestClaim}
+            openClaimCount={openClaimCount}
           />
         </div>
       </div>

@@ -11,15 +11,16 @@ type BadgeTone =
 
 type BadgeSize = 'sm' | 'md';
 
+// Sentence-case to match StatusBadge — status/label pills read as words, not
+// shouted all-caps. (Was uppercase+700; that clashed with the sentence-case
+// StatusBadge on the same screens.)
 export const BADGE_LAYOUT_STYLE: Record<BadgeSize, CSSProperties> = {
   sm: {
     height: 'var(--badge-height-sm)',
     paddingLeft: 'var(--space-1)',
     paddingRight: 'var(--space-1)',
-    fontSize: 12,
-    fontWeight: 700,
-    letterSpacing: '0.02em',
-    textTransform: 'uppercase',
+    fontSize: 11,
+    fontWeight: 500,
     whiteSpace: 'nowrap',
     borderRadius: 'var(--badge-radius)',
   },
@@ -28,9 +29,7 @@ export const BADGE_LAYOUT_STYLE: Record<BadgeSize, CSSProperties> = {
     paddingLeft: 'var(--space-2)',
     paddingRight: 'var(--space-2)',
     fontSize: 12,
-    fontWeight: 700,
-    letterSpacing: '0.02em',
-    textTransform: 'uppercase',
+    fontWeight: 500,
     whiteSpace: 'nowrap',
     borderRadius: 'var(--badge-radius)',
   },

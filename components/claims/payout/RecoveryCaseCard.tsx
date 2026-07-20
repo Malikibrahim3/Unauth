@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { ExternalLink, RefreshCw } from "lucide-react";
+import { ArrowRight, RefreshCw } from "lucide-react";
 import { Badge, Button, PanelCard } from "@/components/ui";
 import { formatCurrencyNullable, formatDate } from "@/lib/utils/format";
 import { RECOVERY_TYPE_LABELS } from "@/lib/partners/types";
+import { humanizeEvidenceKey } from "@/components/claims/payout/payoutCopy";
 import {
   RECOVERY_OWNER_LABELS,
   RECOVERY_STATUS_LABELS,
@@ -137,7 +138,7 @@ export function RecoveryCaseCard({
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {recoveryCase.evidence_missing.map((item) => (
-                  <Badge key={item} size="sm">{item.replaceAll("_", " ")}</Badge>
+                  <Badge key={item} size="sm">{humanizeEvidenceKey(item)}</Badge>
                 ))}
               </div>
             </div>
@@ -148,7 +149,7 @@ export function RecoveryCaseCard({
             style={{ color: "var(--accent)" }}
           >
             Open recovery board{" "}
-            <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+            <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
           </Link>
         </>
       ) : canOpenRecovery && recovery ? (
@@ -181,7 +182,7 @@ export function RecoveryCaseCard({
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {recovery.requiredEvidence.map((item) => (
-                  <Badge key={item} size="sm">{item.replaceAll("_", " ")}</Badge>
+                  <Badge key={item} size="sm">{humanizeEvidenceKey(item)}</Badge>
                 ))}
               </div>
             </div>

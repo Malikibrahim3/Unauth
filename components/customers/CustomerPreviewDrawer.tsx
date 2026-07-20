@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowUpRight, CalendarDays, CircleDollarSign, ReceiptText, ShieldCheck, TriangleAlert } from "lucide-react";
+import { ArrowUpRight, CalendarDays, ReceiptText, ShieldCheck, TriangleAlert } from "lucide-react";
 import { Drawer } from "@/components/ui/Drawer";
 import { Badge } from "@/components/ui/Badge";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -16,10 +16,26 @@ type Preview = {
     asOf: string | null;
     firstSeen: string | null;
     lastOrderAt: string | null;
-    stats: { orders: number; payoutCases: number; caseRate: number; chargebacks: number };
+    stats: {
+      orders: number;
+      payoutCases: number;
+      caseRate: number;
+      chargebacks: number;
+      possibleMatchCount?: number;
+    };
+    identitySignalCounts?: Array<{ type: string; distinctCount: number }>;
+    possibleMatches?: Array<{
+      candidateId: string;
+      displayName?: string | null;
+      email?: string | null;
+      confidence: number | null;
+      matchedTypes: string[];
+    }>;
     sources: Array<{
       provider: string;
       externalId: string;
+      email?: string | null;
+      phone?: string | null;
       verified: boolean | null;
       asOf: string;
     }>;
@@ -46,9 +62,16 @@ type Preview = {
       currency: string | null;
       at: string;
       href: string;
+      externalHref?: string | null;
+      externalSource?: string | null;
       caseCount: number;
       caseType: string | null;
       caseState: string | null;
+      lineItems?: Array<{ title: string; quantity: number | null }>;
+      shipmentStatus?: string | null;
+      shipmentCarrier?: string | null;
+      shipmentHref?: string | null;
+      shipmentSource?: string | null;
     }>;
   };
 };
@@ -102,6 +125,10 @@ export function CustomerPreviewDrawer({
     if (typeof window === "undefined") return "/customers";
     return `${window.location.pathname}${window.location.search}`;
   }, []);
+  const primaryTotal = useMemo(() => {
+    if (!customer?.totalsByCurrency?.length) return null;
+    return [...customer.totalsByCurrency].sort((a, b) => b.orders - a.orders)[0];
+  }, [customer]);
 
   return (
     <Drawer
@@ -160,71 +187,45 @@ export function CustomerPreviewDrawer({
           <>
             <div className="rounded-lg border border-[var(--border-muted)] bg-[var(--surface-sunken)] p-4">
               <div className="flex items-center gap-3">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--surface)] text-sm font-semibold text-[var(--text-primary)] ring-1 ring-[var(--border)]">
-                {customer.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'C'}
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{customer.email ?? "Contact unavailable"}</p>
-                <p className="mt-1 flex items-center gap-1.5 text-xs text-[var(--text-secondary)]"><CalendarDays className="h-3.5 w-3.5" aria-hidden="true" /> Customer since {customer.firstSeen ? formatDateAbsolute(customer.firstSeen) : 'date unavailable'}</p>
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--surface)] text-sm font-semibold text-[var(--text-primary)] ring-1 ring-[var(--border)]">
+                  {customer.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'C'}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{customer.email ?? "Contact unavailable"}</p>
+                  <p className="mt-1 flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
+                    <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
+                    Since {customer.firstSeen ? formatDateAbsolute(customer.firstSeen) : 'unavailable'}
+                    {customer.lastOrderAt ? ` · Last order ${formatDate(customer.lastOrderAt)}` : ''}
+                  </p>
+                </div>
               </div>
-              {customer.openCases.length ? <Badge tone="warning" size="sm" dot>{customer.openCases.length} open</Badge> : <Badge tone="success" size="sm" dot>No open cases</Badge>}
+              <div className="mt-3 flex flex-wrap gap-1.5 border-t border-[var(--border-muted)] pt-3">
+                {customer.openCases.length
+                  ? <Badge tone="warning" size="sm" dot>{customer.openCases.length} open case{customer.openCases.length === 1 ? '' : 's'}</Badge>
+                  : <Badge tone="success" size="sm" dot>No open cases</Badge>}
+                {customer.stats.possibleMatchCount ? <Badge tone="info" size="sm">{customer.stats.possibleMatchCount} possible match{customer.stats.possibleMatchCount === 1 ? '' : 'es'}</Badge> : null}
               </div>
-              <p className="mt-3 border-t border-[var(--border-muted)] pt-3 text-xs leading-5 text-[var(--text-secondary)]">
-                {customer.stats.orders === 0
-                  ? "No store orders are linked to this customer yet."
-                  : `${customer.stats.orders} store order${customer.stats.orders === 1 ? '' : 's'}${customer.lastOrderAt ? `, most recently ${formatDate(customer.lastOrderAt)}` : ''}. ${customer.stats.payoutCases === 0 ? 'No payout case history.' : `${customer.stats.payoutCases} payout case${customer.stats.payoutCases === 1 ? '' : 's'} across their order history.`}`}
-              </p>
             </div>
 
             <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {[
                 ['Orders', customer.stats.orders],
-                ['Case history', customer.stats.payoutCases],
+                ['Lifetime value', primaryTotal ? amount(primaryTotal.value, primaryTotal.currency) : '—'],
+                ['Avg order', primaryTotal ? amount(primaryTotal.value / Math.max(primaryTotal.orders, 1), primaryTotal.currency) : '—'],
                 ['Case rate', `${customer.stats.caseRate}%`],
-                ['Chargebacks', customer.stats.chargebacks],
-              ].map(([name, value]) => <div key={name} className="min-w-0 rounded-md border border-[var(--border-muted)] bg-[var(--surface)] p-3"><dt className="truncate text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">{name}</dt><dd className="mt-1 text-lg font-semibold tabular-nums">{value}</dd></div>)}
+              ].map(([name, value]) => <div key={name} className="min-w-0 rounded-md border border-[var(--border-muted)] bg-[var(--surface)] p-3"><dt className="truncate text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">{name}</dt><dd className="mt-1 truncate text-lg font-semibold tabular-nums">{value}</dd></div>)}
             </dl>
 
-            <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
-              <div className="flex items-center gap-2"><CircleDollarSign className="h-4 w-4 text-[var(--text-secondary)]" aria-hidden="true" /><h3 className="font-semibold">Store financials</h3></div>
-              {customer.totalsByCurrency.length ? (
-                <dl className="mt-3 space-y-3">
-                  {customer.totalsByCurrency.map((total) => (
-                    <div
-                      key={total.currency}
-                      className="flex justify-between gap-4"
-                    >
-                      <dt className="text-sm text-[var(--text-secondary)]">
-                        Lifetime order value<br /><span className="text-xs">{total.orders} orders · {amount(total.value / Math.max(total.orders, 1), total.currency)} average</span>
-                      </dt>
-                      <dd className="font-semibold tabular-nums">
-                        {amount(total.value, total.currency)}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
-              ) : (
-                <p className="mt-2 text-sm text-[var(--text-secondary)]">
-                  No currency-qualified order totals were found.
-                </p>
-              )}
-              {customer.unavailableCurrencyOrders > 0 ? (
-                <p className="mt-2 text-xs text-[var(--warning)]">
-                  {customer.unavailableCurrencyOrders} order
-                  {customer.unavailableCurrencyOrders === 1 ? "" : "s"} excluded
-                  because currency is unavailable.
-                </p>
-              ) : null}
-              {customer.openExposureByCurrency.length ? (
-                <div className="mt-3 border-t border-[var(--border-muted)] pt-3">
-                  {customer.openExposureByCurrency.map((item) => <div key={item.currency} className="flex items-center justify-between gap-3 text-sm"><span className="inline-flex items-center gap-1.5 text-[var(--warning)]"><TriangleAlert className="h-3.5 w-3.5" aria-hidden="true" /> Open case exposure</span><strong className="tabular-nums">{amount(item.value, item.currency)}</strong></div>)}
-                </div>
-              ) : null}
-            </section>
+            {customer.openExposureByCurrency.length ? (
+              <div className="flex items-center justify-between gap-3 rounded-md border border-[var(--warning-border,var(--border))] bg-[var(--warning-bg,var(--surface-sunken))] px-3 py-2 text-sm">
+                <span className="inline-flex items-center gap-1.5 text-[var(--warning)]"><TriangleAlert className="h-3.5 w-3.5" aria-hidden="true" /> Open case exposure</span>
+                <strong className="tabular-nums">{customer.openExposureByCurrency.map((item) => amount(item.value, item.currency)).join(' · ')}</strong>
+              </div>
+            ) : null}
 
-            <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
-              <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-[var(--text-secondary)]" aria-hidden="true" /><h3 className="font-semibold">Payout cases requiring attention</h3></div>{customer.openCases.length ? <Badge tone="warning" size="sm">Action needed</Badge> : null}</div>
-              {customer.openCases.length ? (
+            {customer.openCases.length ? (
+              <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
+                <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-[var(--text-secondary)]" aria-hidden="true" /><h3 className="font-semibold">Payout cases requiring attention</h3></div><Badge tone="warning" size="sm">Action needed</Badge></div>
                 <ul className="mt-2 divide-y divide-[var(--border-muted)]">
                   {customer.openCases.map((item) => (
                     <li key={item.id}>
@@ -241,34 +242,71 @@ export function CustomerPreviewDrawer({
                     </li>
                   ))}
                 </ul>
-              ) : (
-                <p className="mt-2 text-sm text-[var(--text-secondary)]">
-                  Nothing needs attention. This customer has no open payout cases.
-                </p>
-              )}
-            </section>
+              </section>
+            ) : null}
 
             <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
               <div className="flex items-center gap-2"><ReceiptText className="h-4 w-4 text-[var(--text-secondary)]" aria-hidden="true" /><h3 className="font-semibold">Recent store activity</h3></div>
               {customer.recent.length ? (
                 <ul className="mt-2 divide-y divide-[var(--border-muted)]">
-                  {customer.recent.map((item) => (
+                  {customer.recent.map((item) => {
+                    const items = item.lineItems ?? [];
+                    const shown = items.slice(0, 2);
+                    const extra = items.length - shown.length;
+                    return (
                     <li key={item.href}>
-                      <Link
-                        href={item.href}
-                        className="flex items-center justify-between gap-3 py-3"
-                      >
+                      <div className="flex items-center gap-3 py-3">
+                        <Link
+                          href={item.href}
+                          className="flex min-w-0 flex-1 items-center justify-between gap-3"
+                        >
                         <span className="min-w-0">
                           <span className="font-medium">Order {item.reference}</span>
                           <small className="mt-0.5 block text-[var(--text-secondary)]">
                             {formatDate(item.at)}
                           </small>
+                          {shown.length > 0 ? (
+                            <small className="mt-1 block truncate text-[var(--text-tertiary)]">
+                              {shown.map((line) => `${line.quantity ? `${line.quantity}× ` : ""}${line.title}`).join(", ")}
+                              {extra > 0 ? ` +${extra} more` : ""}
+                            </small>
+                          ) : null}
+                          {item.shipmentStatus ? (
+                            <small className="mt-1 block text-[var(--text-tertiary)]">
+                              {item.shipmentStatus}{item.shipmentCarrier ? ` · ${item.shipmentCarrier}` : ""}
+                            </small>
+                          ) : null}
                           {item.caseState ? <small className="mt-1 block"><StatusBadge family="caseStatus" value={item.caseState} size="sm" /></small> : null}
                         </span>
-                        <span className="text-right"><strong className="block tabular-nums">{amount(item.amount, item.currency)}</strong>{item.caseType ? <small className="mt-1 block text-[var(--text-secondary)]">{item.caseType}</small> : <small className="mt-1 block text-[var(--text-tertiary)]">No payout case</small>}</span>
-                      </Link>
+                          <span className="text-right"><strong className="block tabular-nums">{amount(item.amount, item.currency)}</strong>{item.caseType ? <small className="mt-1 block text-[var(--text-secondary)]">{item.caseType}</small> : null}</span>
+                        </Link>
+                        {item.externalHref ? (
+                          <a
+                            href={item.externalHref}
+                            target="_blank"
+                            rel="noreferrer"
+                            aria-label={`Open order in ${item.externalSource ?? "source"}`}
+                            title={`Open in ${item.externalSource ?? "source"}`}
+                            className="shrink-0 rounded p-1 text-[var(--accent)] hover:bg-[var(--surface-sunken)]"
+                          >
+                            <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+                          </a>
+                        ) : null}
+                        {item.shipmentHref ? (
+                          <a
+                            href={item.shipmentHref}
+                            target="_blank"
+                            rel="noreferrer"
+                            aria-label={`Open fulfilment in ${item.shipmentSource ?? "source"}`}
+                            title={`Open fulfilment in ${item.shipmentSource ?? "source"}`}
+                            className="shrink-0 rounded p-1 text-[var(--accent)] hover:bg-[var(--surface-sunken)]"
+                          >
+                            <ReceiptText className="h-3.5 w-3.5" aria-hidden="true" />
+                          </a>
+                        ) : null}
+                      </div>
                     </li>
-                  ))}
+                  );})}
                 </ul>
               ) : (
                 <p className="mt-2 text-sm text-[var(--text-secondary)]">
@@ -277,6 +315,37 @@ export function CustomerPreviewDrawer({
               )}
             </section>
 
+            {customer.identitySignalCounts?.length || customer.sources.length ? (
+              <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
+                <div className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-[var(--text-secondary)]" aria-hidden="true" /><h3 className="font-semibold">Identity</h3></div>
+                {customer.identitySignalCounts?.length ? (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {customer.identitySignalCounts.map((row) => (
+                      <Badge key={row.type} tone="neutral" size="sm">{row.distinctCount} {row.type.replace(/_/g, " ")}{row.distinctCount === 1 ? '' : 's'}</Badge>
+                    ))}
+                  </div>
+                ) : null}
+                {customer.sources.length ? (
+                  <ul className="mt-3 divide-y divide-[var(--border-muted)] border-t border-[var(--border-muted)] pt-1">
+                    {customer.sources.map((source, index) => (
+                      <li key={`${source.provider}-${source.externalId}-${index}`} className="flex items-center justify-between gap-3 py-2 text-sm">
+                        <span className="min-w-0 truncate"><span className="capitalize">{source.provider}</span>{source.email ? ` · ${source.email}` : ""}</span>
+                        {source.verified != null ? <Badge tone={source.verified ? "success" : "neutral"} size="sm">{source.verified ? "Verified" : "Unverified"}</Badge> : null}
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+                {customer.stats.possibleMatchCount ? (
+                  <Link
+                    href={`/customers/${customer.id}?return=${encodeURIComponent(returnUrl)}#identity`}
+                    className="mt-3 flex items-center justify-between gap-2 border-t border-[var(--border-muted)] pt-3 text-sm font-medium text-[var(--accent)] hover:underline"
+                  >
+                    {customer.stats.possibleMatchCount} possible match{customer.stats.possibleMatchCount === 1 ? '' : 'es'} held separately
+                    <ArrowUpRight className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  </Link>
+                ) : null}
+              </section>
+            ) : null}
           </>
         ) : null}
       </div>

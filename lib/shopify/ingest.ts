@@ -5,9 +5,10 @@ import { recordDomainEvent } from '@/lib/events/domainEventStore';
 import { transitionCase } from '@/lib/cases/transitionCase';
 import { linkCheckoutSignalsToOrder } from '@/lib/checkoutSignals/linkOrder';
 import { normaliseAddress, normaliseCard } from '@/lib/identity/normalise';
-import { emitIdentityObservations, type ObservationEntity } from '@/lib/identity/observations';
+import { emitIdentityObservations, signalsForEntity, type ObservationEntity } from '@/lib/identity/observations';
 import { maybeTriggerPackConfirmation } from '@/lib/fulfillment/packConfirmation';
 import { linkClaimToIdentity, resolveIdentitiesForKeys } from '@/lib/identity/resolver';
+import { resolveMerchantCustomer, syncPayoutCasesForOrder } from '@/lib/identity/merchantCustomerResolver';
 import { TABLES } from '@/lib/supabase/tables';
 
 type ServiceClient = SupabaseClient;
@@ -64,6 +65,48 @@ function validInetOrNull(value: unknown): string | null {
 function moneyValue(value: unknown): number | null {
   const n = Number(value);
   return Number.isFinite(n) ? n : null;
+}
+
+async function upsertOrderLines(
+  supabase: ServiceClient,
+  merchantId: string,
+  orderId: string,
+  currency: string | null,
+  lineItems: unknown,
+  now: string,
+) {
+  if (!Array.isArray(lineItems) || lineItems.length === 0) return;
+  const rows = lineItems
+    .filter((item): item is Record<string, any> => Boolean(item) && item.id != null)
+    .map((item) => {
+      const unitPrice = Number(item.price);
+      const quantity = Number(item.quantity);
+      const discount = Number(item.total_discount ?? 0);
+      const unitPriceMinor = Number.isFinite(unitPrice) ? Math.round(unitPrice * 100) : null;
+      const totalMinor =
+        Number.isFinite(unitPrice) && Number.isFinite(quantity)
+          ? Math.round((unitPrice * quantity - (Number.isFinite(discount) ? discount : 0)) * 100)
+          : null;
+      return {
+        merchant_id: merchantId,
+        source_order_id: orderId,
+        external_id: String(item.id),
+        sku: item.sku ?? null,
+        product_ref: item.product_id != null ? String(item.product_id) : null,
+        variant_ref: item.variant_id != null ? String(item.variant_id) : null,
+        title: item.name ?? item.title ?? null,
+        quantity: Number.isFinite(quantity) ? quantity : null,
+        unit_price_minor: unitPriceMinor,
+        total_minor: totalMinor,
+        currency: currency ?? null,
+        updated_at: now,
+      };
+    });
+  if (rows.length === 0) return;
+  const { error } = await supabase
+    .from('source_order_lines')
+    .upsert(rows, { onConflict: 'merchant_id,source_order_id,external_id' });
+  if (error) throw new Error(`source_order_lines_upsert_failed: ${error.message}`);
 }
 
 function tagsToArray(value: unknown): string[] {
@@ -308,6 +351,8 @@ async function processOrderTopic(
     .single();
   if (error) throw new Error(`source_order_upsert_failed: ${error.message}`);
 
+  await upsertOrderLines(supabase, merchantId, orderRow.id, payload.currency ?? null, payload.line_items, now);
+
   const entities: ObservationEntity[] = [
     {
       provenance: { orderId: orderRow.id },
@@ -337,6 +382,34 @@ async function processOrderTopic(
   }
   const { signalKeys } = await emitIdentityObservations(supabase, merchantId, entities);
   await resolveIdentitiesForKeys(supabase, signalKeys);
+
+  // Additive merchant-local projection. Existing identity_id consumers remain
+  // supported while customer-facing reads migrate to merchant_customer_id.
+  for (const entity of entities) {
+    try {
+      await resolveMerchantCustomer(
+        supabase,
+        {
+          merchantId,
+          entityType: entity.provenance.customerId ? 'source_customer' : 'source_order',
+          entityId: (entity.provenance.customerId ?? entity.provenance.orderId)!,
+          source: entity.source,
+          sourceAccountKey: entity.sourceAccountKey,
+          observedAt: entity.observedAt,
+          email: entity.email,
+          displayName: payload.customer
+            ? [payload.customer.first_name, payload.customer.last_name].filter(Boolean).join(' ').trim() || null
+            : null,
+        },
+        typeof signalsForEntity === 'function' ? signalsForEntity(entity) : signalKeys,
+      );
+    } catch (error) {
+      console.error('merchant_local_customer_resolution_failed', {
+        merchantId,
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
 }
 
 function detectRefundType(payload: Record<string, any>, refundedAmount: number): boolean | null {
@@ -402,6 +475,15 @@ async function processRefundTopic(
     occurredAt: payload.created_at ?? new Date().toISOString(),
     handlers: ['refundProjection'],
   });
+  try {
+    await syncPayoutCasesForOrder(supabase, merchantId, order.id as string);
+  } catch (syncError) {
+    console.error('merchant_local_refund_case_sync_failed', {
+      merchantId,
+      sourceOrderId: order.id,
+      message: syncError instanceof Error ? syncError.message : String(syncError),
+    });
+  }
 }
 
 async function processFulfillmentTopic(

@@ -86,7 +86,7 @@ export function SidebarAside({
         </div>
 
         {!isCollapsed && merchantName ? (
-          <div className="flex min-h-8 w-full items-center gap-2 rounded-md border border-white/70 bg-white/55 px-2 py-1 shadow-[var(--shadow-xs)]" title={merchantName}>
+          <div className="flex min-h-8 w-full items-center gap-2 rounded-md border border-[var(--border-muted)] bg-[var(--surface)] px-2 py-1 shadow-[var(--shadow-xs)]" title={merchantName}>
             <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-md bg-[var(--surface-selected)] text-[9px] font-bold text-[var(--brand-deep)]">
               {merchantName.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase()}
             </span>
@@ -123,16 +123,21 @@ export function SidebarAside({
 
         {isCollapsed && merchantName ? (
           <div
-            className="w-full truncate text-center text-xs leading-none text-[var(--text-tertiary)]"
+            className="flex h-[22px] w-[22px] items-center justify-center rounded-md bg-[var(--surface-selected)] text-[9px] font-bold leading-none text-[var(--brand-deep)]"
             title={merchantName}
           >
-            {merchantName.slice(0, 8)}
+            {merchantName
+              .split(/\s+/)
+              .map((part) => part[0])
+              .join('')
+              .slice(0, 2)
+              .toUpperCase()}
           </div>
         ) : null}
       </div>
 
       <nav
-        className={cn('flex-1 overflow-y-auto overflow-x-hidden', isCollapsed ? 'px-2 py-3' : 'p-2')}
+        className={cn('min-h-0 flex-1 overflow-y-auto overflow-x-hidden', isCollapsed ? 'px-2 py-3' : 'p-2')}
         aria-label="Main navigation"
       >
         {groups.map((group) => (

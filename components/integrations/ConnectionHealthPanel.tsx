@@ -41,7 +41,7 @@ export function ConnectionHealthHeader({ item }: { item: CatalogueRowItem }) {
 export function ConnectionHealthGrid({ item }: { item: CatalogueRowItem }) {
   const healthItems = [
     ["Account", item.account ?? (item.connectionCount ? `${item.connectionCount} connected account${item.connectionCount === 1 ? "" : "s"}` : "Not connected")],
-    ["Imported objects", formatNumber(item.importedRecords)],
+    ["Records imported", formatNumber(item.importedRecords)],
     ["Granted scopes", item.scopes.length ? `${item.scopes.length} recorded` : "None recorded"],
     ["Last health check", item.lastVerifiedAt ? formatDateTime(item.lastVerifiedAt) : "Not yet checked"],
     ["Last sync attempt", item.lastSyncAttemptAt ? formatDateTime(item.lastSyncAttemptAt) : item.freshness.deliveryModel === "periodic_sync" ? "Never" : "Not applicable"],

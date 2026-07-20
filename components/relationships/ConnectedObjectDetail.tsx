@@ -181,25 +181,39 @@ export function ConnectedObjectDetail({
           <ul className="divide-y divide-[var(--border-muted)]">
             {object.connected.map((connected) => (
               <li key={`${connected.type}:${connected.id}`}>
-                <Link
-                  href={`${connected.href}?return=${encodeURIComponent(`/${object.type}s/${object.id}`)}`}
-                  className="flex min-h-12 flex-col items-start justify-between gap-2 px-4 py-2.5 hover:bg-[var(--surface-hover)] sm:flex-row sm:items-center sm:gap-4"
-                >
-                  <span className="min-w-0">
-                    <span className="block text-[10px] capitalize text-[var(--text-secondary)]">
-                      {label(connected.type)}
+                <div className="flex min-h-12 items-center gap-3 px-4 py-2.5 hover:bg-[var(--surface-hover)]">
+                  <Link
+                    href={`${connected.href}?return=${encodeURIComponent(`/${object.type}s/${object.id}`)}`}
+                    className="flex min-w-0 flex-1 flex-col items-start justify-between gap-2 sm:flex-row sm:items-center sm:gap-4"
+                  >
+                    <span className="min-w-0">
+                      <span className="block text-[10px] capitalize text-[var(--text-secondary)]">
+                        {label(connected.type)}
+                      </span>
+                      <span className="break-all text-[11px] font-semibold">
+                        {connected.reference}
+                      </span>
                     </span>
-                    <span className="break-all text-[11px] font-semibold">
-                      {connected.reference}
+                    <span className="flex shrink-0 items-center gap-2 text-[10px]">
+                      {connected.state ? (
+                        <StatusBadge family="workflowStatus" value={connected.state} size="sm" />
+                      ) : null}
+                      <span className="text-[var(--accent)]">Open</span>
                     </span>
-                  </span>
-                  <span className="flex shrink-0 items-center gap-2 text-[10px]">
-                    {connected.state ? (
-                      <StatusBadge family="workflowStatus" value={connected.state} size="sm" />
-                    ) : null}
-                    <span className="text-[var(--accent)]">Open</span>
-                  </span>
-                </Link>
+                  </Link>
+                  {connected.externalHref ? (
+                    <a
+                      href={connected.externalHref}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={`Open ${label(connected.type)} in ${label(connected.externalSource ?? "source")}`}
+                      title={`Open in ${label(connected.externalSource ?? "source")}`}
+                      className="shrink-0 rounded p-1 text-[var(--accent)] hover:bg-[var(--surface)]"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  ) : null}
+                </div>
               </li>
             ))}
           </ul>

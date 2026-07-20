@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { hasPermission, PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { TABLES } from '@/lib/supabase/tables';
-import { WorkbenchPage, KeyInsightCallout, SummaryRail } from '@/components/ui';
+import { WorkbenchPage, KeyInsightCallout, SummaryRail, ButtonLink } from '@/components/ui';
 import { TrendingUp } from 'lucide-react';
 import { TickMeterRow } from '@/components/charts/authenticated';
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
@@ -120,11 +120,15 @@ export default async function RecoveriesPage() {
 
   return (
     <WorkbenchPage
-      eyebrow="Operations"
       title="Recovery board"
       subtitle="The losses you can still do something about: what needs evidence, what's ready to submit, what needs chasing, and what came back."
       navItems={WORKBENCH_NAV_ITEMS}
       activeNavKey="recoveries"
+      actions={
+        <ButtonLink href="/partners" variant="secondary" size="sm">
+          Partner rulebook
+        </ButtonLink>
+      }
       kpiItems={[
         { label: 'Open recovery cases', value: formatNumber(openRecoveries.length), hint: 'Active cases' },
         { label: 'Missing source data', value: formatNumber(missingSourceData), hint: 'Waiting on a connected source' },

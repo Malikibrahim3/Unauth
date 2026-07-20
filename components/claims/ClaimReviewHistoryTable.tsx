@@ -7,6 +7,7 @@ import {
 } from "@/components/claims/claimReviewLabels";
 import { getSlaVisual } from "@/components/claims/claimReviewLogic";
 import { formatClaimAge, formatFiledDate } from "@/lib/claims/sla";
+import { formatDateAbsolute } from "@/lib/utils/format";
 import {
   formatClaimMoney,
   slaToneStyle,
@@ -120,11 +121,7 @@ export function ClaimReviewHistoryTable({
                   className="py-2 text-xs font-mono"
                   style={{ color: "var(--text-secondary)" }}
                 >
-                  {h.updated_at
-                    ? new Date(h.updated_at).toLocaleDateString("en-US", {
-                        timeZone: "UTC",
-                      })
-                    : "-"}
+                  {h.updated_at ? formatDateAbsolute(new Date(h.updated_at)) : "—"}
                 </td>
               </tr>
             );

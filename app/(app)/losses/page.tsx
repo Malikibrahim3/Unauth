@@ -9,7 +9,7 @@ import { LossLedger, type LossLedgerRow } from '@/components/losses/LossLedger';
 import { freshnessFromTimestamp } from '@/components/sources/FreshnessIndicator';
 import { formatCurrencyNullable, formatNumber, sumSameCurrency } from '@/lib/utils/format';
 import { recoverySoughtAmount } from '@/lib/recoveries/amounts';
-import { humanise } from '@/lib/ui/labels';
+import { humanise, label } from '@/lib/ui/labels';
 import { selectLossContributions } from '@/lib/visualisation/chartSelectors';
 
 export const dynamic = 'force-dynamic';
@@ -147,7 +147,7 @@ export default async function LossesPage() {
     const key = row.attribution ?? row.category ?? 'unattributed';
     return {
       key,
-      label: humanise(key),
+      label: row.attribution ? label('attribution', key) : humanise(key),
       amountMinor: row.realisedLossMinor ?? row.estimatedLossMinor,
       currency: row.currency,
       writtenOff: row.writtenOff,
@@ -159,7 +159,6 @@ export default async function LossesPage() {
 
   return (
     <WorkbenchPage
-      eyebrow="Operations"
       title="Losses"
       navItems={WORKBENCH_NAV_ITEMS}
       activeNavKey="losses"

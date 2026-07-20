@@ -151,7 +151,7 @@
   cursor: pointer;
   font-weight: 600;
 }
-.dataDetails summary:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
+.dataDetails summary:focus-visible { outline: none; box-shadow: inset var(--shadow-focus); }
 .dataTableWrap { overflow-x: auto; border-top: 1px solid var(--border-muted); }
 .dataTableWrap table { width: 100%; border-collapse: collapse; }
 .dataTableWrap th, .dataTableWrap td { padding: 7px 15px; border-bottom: 1px solid var(--border-muted); text-align: left; }

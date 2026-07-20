@@ -24,11 +24,20 @@ import {
   resolveIdentitySiblingCustomers,
 } from "@/lib/customers/identityNetwork";
 import { getEventStream } from "@/lib/analysis/customerIntelligence";
+import { normaliseAddress } from "@/lib/identity/normalise";
 import type { BehaviorRoadmapEvent } from "@/components/customers/BehaviorRoadmap";
 import type { EvidenceLevel, ScoreFactor } from "@/lib/engine/evidence/score";
 import type { ConfidenceGrade } from "@/lib/engine/weights";
 import { merchantHasEntitlement } from "@/lib/product/requireEntitlement";
 import { dominantCurrency } from "@/lib/utils/format";
+import {
+  loadMerchantCustomerHistory,
+  resolveMerchantCustomerId,
+} from "@/lib/customers/merchantCustomerHistory";
+import {
+  deriveSourceLink,
+  loadSourceLinkContext,
+} from "@/lib/relationships/sourceLinking";
 
 export type CustomerProfileSearchParams = {
   audit?: string;
@@ -76,6 +85,10 @@ export type CustomerProfileDisplay = {
   investigation_status?: string;
   /** Count of OTHER linked source_customers records collapsed into this identity (0 if none). */
   sibling_count?: number;
+  refund_requests_365d: number;
+  completed_refunds_365d: number;
+  completed_refund_amounts_by_currency: Record<string, number>;
+  possible_match_count: number;
 };
 
 export type LinkedAccountRow = {
@@ -162,6 +175,9 @@ export type CustomerProfilePageViewProps = {
   latestClaim: ClaimSummaryRow | null;
   merchantRefundRate: number;
   evidenceDisplay: CustomerEvidenceDisplay | null;
+  billingAddress: string | null;
+  identitySignalSummary: IdentitySignalSummaryRow[];
+  possibleMatches: PossibleMatchRow[];
 };
 
 type SourceCustomerRow = {
@@ -175,6 +191,7 @@ type SourceCustomerRow = {
   account_created_at: string | null;
   created_at: string;
   updated_at: string;
+  merchant_customer_id?: string | null;
 };
 
 type SourceOrderRow = {
@@ -189,8 +206,11 @@ type SourceOrderRow = {
   card_last4: string | null;
   browser_ip: string | null;
   source: string | null;
+  connection_id: string | null;
+  source_account_id: string | null;
   placed_at: string | null;
   shipping_address_id: string | null;
+  merchant_customer_id?: string | null;
 };
 
 type SourceAddressRow = {
@@ -213,6 +233,43 @@ type ClaimRow = {
   submitted_at: string | null;
   created_at: string;
   updated_at: string;
+};
+
+type OrderLineRow = {
+  source_order_id: string;
+  title: string | null;
+  quantity: number | null;
+  unit_price_minor: number | null;
+  total_minor: number | null;
+  currency: string | null;
+};
+
+type ShipmentRow = {
+  source_order_id: string;
+  external_id: string;
+  source_account_id: string | null;
+  source_record_id: string | null;
+  carrier: string | null;
+  status: string | null;
+  tracking_number: string | null;
+  shipped_at: string | null;
+  delivered_at: string | null;
+};
+
+export type IdentitySignalSummaryRow = {
+  signalType: string;
+  distinctCount: number;
+  firstSeenAt: string;
+  lastSeenAt: string;
+  seenCount: number;
+};
+
+export type PossibleMatchRow = {
+  candidateId: string;
+  displayName: string | null;
+  email: string | null;
+  confidence: number | null;
+  matchedTypes: string[];
 };
 
 function toStringArray(value: unknown): string[] {
@@ -338,7 +395,7 @@ export async function loadCustomerProfilePage(
     svc
       .from("source_customers")
       .select(
-        "id, email, phone, first_name, last_name, other_emails, orders_count, account_created_at, created_at, updated_at",
+        "id, email, phone, first_name, last_name, other_emails, orders_count, account_created_at, created_at, updated_at, merchant_customer_id",
       )
       .eq("merchant_id", merchantId)
       .or(`id.eq.${profileId},merchant_customer_id.eq.${profileId}`)
@@ -354,12 +411,44 @@ export async function loadCustomerProfilePage(
     const fallback = (await svc
       .from("source_customers")
       .select(
-        "id, email, phone, first_name, last_name, other_emails, orders_count, account_created_at, created_at, updated_at",
+        "id, email, phone, first_name, last_name, other_emails, orders_count, account_created_at, created_at, updated_at, merchant_customer_id",
       )
       .eq("merchant_id", merchantId)
       .eq("id", profileId)
       .maybeSingle()) as unknown as { data: SourceCustomerRow | null };
     customer = fallback.data;
+  }
+  if (!customer) {
+    const { data: canonicalCustomer } = await svc
+      .from("merchant_customers")
+      .select("id, display_name, email, updated_at, created_at")
+      .eq("merchant_id", merchantId)
+      .eq("id", profileId)
+      .maybeSingle() as unknown as {
+        data: {
+          id: string;
+          display_name: string | null;
+          email: string | null;
+          updated_at: string;
+          created_at: string;
+        } | null;
+      };
+    if (canonicalCustomer) {
+      const nameParts = (canonicalCustomer.display_name ?? "").trim().split(/\s+/).filter(Boolean);
+      customer = {
+        id: canonicalCustomer.id,
+        email: canonicalCustomer.email,
+        phone: null,
+        first_name: nameParts[0] ?? null,
+        last_name: nameParts.slice(1).join(" ") || null,
+        other_emails: [],
+        orders_count: null,
+        account_created_at: canonicalCustomer.created_at,
+        created_at: canonicalCustomer.created_at,
+        updated_at: canonicalCustomer.updated_at,
+        merchant_customer_id: canonicalCustomer.id,
+      };
+    }
   }
   if (!customer) {
     if (viewToken) {
@@ -368,28 +457,78 @@ export async function loadCustomerProfilePage(
     notFound();
   }
 
+  const merchantCustomerId =
+    (await resolveMerchantCustomerId(svc, merchantId, profileId)) ??
+    customer.merchant_customer_id ??
+    null;
+  const merchantHistory = await loadMerchantCustomerHistory(svc, merchantId, profileId);
+
   // Sibling records linked by the network identity (same merchant, own-signal
   // disciplined). Orders/claims are aggregated across all linked records so the
   // dossier reflects the whole resolved identity, not just the clicked record.
-  const {
-    identityId: resolvedIdentityId,
-    customerIds: identityCustomerIds,
-    siblings,
-  } = await resolveIdentitySiblingCustomers(svc, merchantId, customer);
+  let resolvedIdentityId: string | null = null;
+  let identityCustomerIds: string[] = [customer.id];
+  let siblings: Array<{ id: string; email: string | null; name: string | null; ordersCount: number | null }> = [];
+  if (merchantCustomerId) {
+    const { data: canonicalSiblings } = await svc
+      .from("source_customers")
+      .select("id, email, first_name, last_name, orders_count")
+      .eq("merchant_id", merchantId)
+      .eq("merchant_customer_id", merchantCustomerId);
+    siblings = (canonicalSiblings ?? []).map((row: Record<string, unknown>) => ({
+      id: String(row.id),
+      email: (row.email as string | null) ?? null,
+      name: [row.first_name, row.last_name].filter(Boolean).join(" ").trim() || null,
+      ordersCount: row.orders_count == null ? null : Number(row.orders_count),
+    }));
+    identityCustomerIds = siblings.length > 0 ? siblings.map((s) => s.id) : [customer.id];
+  } else {
+    const siblingResolution = await resolveIdentitySiblingCustomers(svc, merchantId, customer);
+    resolvedIdentityId = siblingResolution.identityId;
+    identityCustomerIds = siblingResolution.customerIds;
+    siblings = siblingResolution.siblings;
+  }
   const siblingById = new Map(siblings.map((s) => [s.id, s]));
   const siblingCount = Math.max(identityCustomerIds.length - 1, 0);
 
   // Own-store orders (layer 1), across all linked records.
-  const { data: orderRows } = (await svc
-    .from("source_orders")
-    .select(
-      "id, external_id, order_number, source_customer_id, email, phone, total_price, currency, card_last4, browser_ip, source, placed_at, shipping_address_id",
-    )
-    .eq("merchant_id", merchantId)
-    .in("source_customer_id", identityCustomerIds)
-    .order("placed_at", { ascending: true })
-    .limit(2000)) as unknown as { data: SourceOrderRow[] | null };
-  const orders = orderRows ?? [];
+  const orderSelect =
+    "id, external_id, order_number, source_customer_id, merchant_customer_id, email, phone, total_price, currency, card_last4, browser_ip, source, connection_id, source_account_id, placed_at, shipping_address_id";
+  let orderRows: SourceOrderRow[] = [];
+  if (merchantCustomerId) {
+    const canonicalOrders = (await svc
+      .from("source_orders")
+      .select(orderSelect)
+      .eq("merchant_id", merchantId)
+      .eq("merchant_customer_id", merchantCustomerId)
+      .order("placed_at", { ascending: true })
+      .limit(2000)) as unknown as { data: SourceOrderRow[] | null; error?: { message: string } | null };
+    orderRows = canonicalOrders.data ?? [];
+    if (canonicalOrders.error) {
+      const legacyOrders = (await svc
+        .from("source_orders")
+        .select(
+          "id, external_id, order_number, source_customer_id, email, phone, total_price, currency, card_last4, browser_ip, source, connection_id, source_account_id, placed_at, shipping_address_id",
+        )
+        .eq("merchant_id", merchantId)
+        .in("source_customer_id", identityCustomerIds)
+        .order("placed_at", { ascending: true })
+        .limit(2000)) as unknown as { data: SourceOrderRow[] | null };
+      orderRows = legacyOrders.data ?? [];
+    }
+  } else {
+    const legacyOrders = (await svc
+      .from("source_orders")
+      .select(
+        "id, external_id, order_number, source_customer_id, email, phone, total_price, currency, card_last4, browser_ip, source, connection_id, source_account_id, placed_at, shipping_address_id",
+      )
+      .eq("merchant_id", merchantId)
+      .in("source_customer_id", identityCustomerIds)
+      .order("placed_at", { ascending: true })
+      .limit(2000)) as unknown as { data: SourceOrderRow[] | null };
+    orderRows = legacyOrders.data ?? [];
+  }
+  const orders = orderRows;
 
   // Shipping addresses for the orders (atomic in v2; render as one string).
   const addressIds = uniqueNonEmpty(orders.map((o) => o.shipping_address_id));
@@ -421,6 +560,22 @@ export async function loadCustomerProfilePage(
       .limit(200)) as unknown as { data: ClaimRow[] | null };
     claimRows = data ?? [];
   }
+  if (merchantCustomerId) {
+    const { data: canonicalClaimRows } = (await svc
+      .from(TABLES.MERCHANT_CLAIMS)
+      .select(
+        "id, claim_type, status, source_order_id, reason_normalized, reason_raw, submitted_at, created_at, updated_at",
+      )
+      .eq("merchant_id", merchantId)
+      .eq("merchant_customer_id", merchantCustomerId)
+      .order("updated_at", { ascending: false })
+      .limit(500)) as unknown as { data: ClaimRow[] | null };
+    const byId = new Map(claimRows.map((claim) => [claim.id, claim]));
+    for (const claim of canonicalClaimRows ?? []) byId.set(claim.id, claim);
+    claimRows = [...byId.values()].sort((a, b) =>
+      String(b.updated_at).localeCompare(String(a.updated_at)),
+    );
+  }
 
   const claimsByOrder = new Map<string, ClaimRow[]>();
   for (const claim of claimRows) {
@@ -428,6 +583,103 @@ export async function loadCustomerProfilePage(
     const list = claimsByOrder.get(claim.source_order_id) ?? [];
     list.push(claim);
     claimsByOrder.set(claim.source_order_id, list);
+  }
+
+  // Order line items (products/qty/price) for the order history breakdown.
+  let lineRows: OrderLineRow[] = [];
+  if (orderIds.length > 0) {
+    const { data } = (await svc
+      .from(TABLES.SOURCE_ORDER_LINES)
+      .select("source_order_id, title, quantity, unit_price_minor, total_minor, currency")
+      .eq("merchant_id", merchantId)
+      .in("source_order_id", orderIds)) as unknown as { data: OrderLineRow[] | null };
+    lineRows = data ?? [];
+  }
+  const linesByOrder = new Map<string, OrderLineRow[]>();
+  for (const line of lineRows) {
+    const list = linesByOrder.get(line.source_order_id) ?? [];
+    list.push(line);
+    linesByOrder.set(line.source_order_id, list);
+  }
+
+  // Shipments (delivery status/carrier/tracking) for the order history.
+  let shipmentRows: ShipmentRow[] = [];
+  if (orderIds.length > 0) {
+    const { data } = (await svc
+      .from(TABLES.SOURCE_SHIPMENTS)
+      .select("source_order_id, external_id, source_account_id, source_record_id, carrier, status, tracking_number, shipped_at, delivered_at")
+      .eq("merchant_id", merchantId)
+      .in("source_order_id", orderIds)) as unknown as { data: ShipmentRow[] | null };
+    shipmentRows = data ?? [];
+  }
+  const shipmentsByOrder = new Map<string, ShipmentRow[]>();
+  for (const shipment of shipmentRows) {
+    const list = shipmentsByOrder.get(shipment.source_order_id) ?? [];
+    list.push(shipment);
+    shipmentsByOrder.set(shipment.source_order_id, list);
+  }
+
+  const sourceLinkContext = await loadSourceLinkContext(svc, merchantId);
+
+  // Billing/other addresses not tied to a specific order's shipping address.
+  const customerAddressIds = identityCustomerIds;
+  let extraAddressRows: (SourceAddressRow & { source_customer_id: string; kind: string })[] = [];
+  if (customerAddressIds.length > 0) {
+    const { data } = (await svc
+      .from(TABLES.SOURCE_ADDRESSES)
+      .select("id, source_customer_id, kind, line1, line2, city, region, postal_code, country")
+      .eq("merchant_id", merchantId)
+      .in("source_customer_id", customerAddressIds)) as unknown as {
+      data: (SourceAddressRow & { source_customer_id: string; kind: string })[] | null;
+    };
+    extraAddressRows = data ?? [];
+  }
+  const billingAddress = extraAddressRows.find((row) => row.kind === "billing");
+  const billingAddressDisplay = billingAddress ? formatAddress(billingAddress) : null;
+
+  // Identity-signal footprint (hashed identifiers) — counts and freshness per
+  // signal type, not the raw values, since only hashes are stored.
+  let identitySignalSummary: IdentitySignalSummaryRow[] = [];
+  if (merchantCustomerId) {
+    const { data } = (await svc
+      .from(TABLES.MERCHANT_CUSTOMER_SIGNALS)
+      .select("identifier_type, identifier_hash, first_seen_at, last_seen_at, seen_count")
+      .eq("merchant_id", merchantId)
+      .eq("merchant_customer_id", merchantCustomerId)) as unknown as {
+      data: Array<{
+        identifier_type: string;
+        identifier_hash: string;
+        first_seen_at: string;
+        last_seen_at: string;
+        seen_count: number;
+      }> | null;
+    };
+    const byType = new Map<
+      string,
+      { hashes: Set<string>; firstSeenAt: string; lastSeenAt: string; seenCount: number }
+    >();
+    for (const row of data ?? []) {
+      const current = byType.get(row.identifier_type) ?? {
+        hashes: new Set<string>(),
+        firstSeenAt: row.first_seen_at,
+        lastSeenAt: row.last_seen_at,
+        seenCount: 0,
+      };
+      current.hashes.add(row.identifier_hash);
+      if (row.first_seen_at < current.firstSeenAt) current.firstSeenAt = row.first_seen_at;
+      if (row.last_seen_at > current.lastSeenAt) current.lastSeenAt = row.last_seen_at;
+      current.seenCount += row.seen_count;
+      byType.set(row.identifier_type, current);
+    }
+    identitySignalSummary = [...byType.entries()]
+      .map(([signalType, agg]) => ({
+        signalType,
+        distinctCount: agg.hashes.size,
+        firstSeenAt: agg.firstSeenAt,
+        lastSeenAt: agg.lastSeenAt,
+        seenCount: agg.seenCount,
+      }))
+      .sort((a, b) => b.seenCount - a.seenCount);
   }
 
   // ---------------------------------------------------------------------------
@@ -571,6 +823,10 @@ export async function loadCustomerProfilePage(
     fraud_flags: [],
     identity_signals: [],
     investigation_status: investigationStatus,
+    refund_requests_365d: merchantHistory.refundRequests365d,
+    completed_refunds_365d: merchantHistory.completedRefunds365d,
+    completed_refund_amounts_by_currency: merchantHistory.completedRefundAmountByCurrency,
+    possible_match_count: merchantHistory.possibleMatches.length,
   };
 
   const transactions: RoadmapTransaction[] = orders.map((order) => {
@@ -584,9 +840,26 @@ export async function loadCustomerProfilePage(
       viaCustomerId != null && viaCustomerId !== customer.id
         ? (siblingById.get(viaCustomerId)?.email ?? order.email ?? null)
         : null;
+    const shipment = shipmentsByOrder.get(order.id)?.[0] ?? null;
+    const orderLink = deriveSourceLink({
+      context: sourceLinkContext,
+      entityType: "order",
+      row: order,
+      relatedShipmentExternalId: shipment?.external_id ?? null,
+    });
+    const shipmentLink = shipment
+      ? deriveSourceLink({
+          context: sourceLinkContext,
+          entityType: "shipment",
+          row: shipment,
+          parentOrder: order,
+        })
+      : null;
     return {
       source_order_id: order.id,
       order_id: order.order_number ?? order.external_id,
+      external_href: orderLink?.sourceUrl ?? null,
+      external_source: orderLink?.sourceSystem ?? null,
       processed_at: order.placed_at ?? customer.created_at,
       order_value: order.total_price,
       currency: order.currency,
@@ -607,12 +880,38 @@ export async function loadCustomerProfilePage(
         refundClaim?.reason_normalized ?? refundClaim?.reason_raw ?? null,
       fraud_flags: [],
       risk_level: null,
+      line_items: (linesByOrder.get(order.id) ?? []).map((line) => ({
+        title: line.title,
+        quantity: line.quantity,
+        unit_price_minor: line.unit_price_minor,
+        total_minor: line.total_minor,
+        currency: line.currency,
+      })),
+      shipment: (() => {
+        if (!shipment) return null;
+        return {
+          carrier: shipment.carrier,
+          status: shipment.status,
+          tracking_number: shipment.tracking_number,
+          shipped_at: shipment.shipped_at,
+          delivered_at: shipment.delivered_at,
+          external_href: shipmentLink?.sourceUrl ?? null,
+          external_source: shipmentLink?.sourceSystem ?? null,
+        };
+      })(),
     };
   });
 
   type TimelineField = "email" | "name" | "address" | "ip" | "card_last4";
   const identityTimeline: CustomerIntelligencePanel["identityTimeline"] = [];
   const firstSeen: Record<string, string> = {};
+
+  // Compare on a normalised key so formatting differences (e.g. "St" vs
+  // "Street") don't register as a false identity change; the raw value is
+  // still what's displayed and deduplicated against.
+  function comparisonKey(field: TimelineField, value: string): string {
+    return field === "address" ? (normaliseAddress(value) ?? value) : value;
+  }
 
   function addEntry(
     date: string,
@@ -621,12 +920,13 @@ export async function loadCustomerProfilePage(
   ) {
     const v = (value ?? "").trim();
     if (!v) return;
+    const key = comparisonKey(field, v);
     if (!(field in firstSeen)) {
-      firstSeen[field] = v;
+      firstSeen[field] = key;
       identityTimeline.push({ date, field, value: v, isVariant: false });
-    } else if (firstSeen[field] !== v) {
+    } else if (firstSeen[field] !== key) {
       const alreadyAdded = identityTimeline.some(
-        (e) => e.field === field && e.value === v,
+        (e) => e.field === field && comparisonKey(field, e.value) === key,
       );
       if (!alreadyAdded) {
         identityTimeline.push({ date, field, value: v, isVariant: true });
@@ -844,6 +1144,14 @@ export async function loadCustomerProfilePage(
     profile.primary_email ?? firstArrayValue(profile.emails) ?? "primary";
   const identitySignalRows = buildIdentitySignalRows(profile);
 
+  const possibleMatches: PossibleMatchRow[] = merchantHistory.possibleMatches.map((match) => ({
+    candidateId: match.candidateId,
+    displayName: match.displayName,
+    email: match.email,
+    confidence: match.confidence,
+    matchedTypes: match.matchedTypes,
+  }));
+
   const props: CustomerProfilePageViewProps = {
     connectionState: connectionState as ConnectionState,
     auditRunId,
@@ -883,6 +1191,9 @@ export async function loadCustomerProfilePage(
     latestClaim,
     merchantRefundRate,
     evidenceDisplay,
+    billingAddress: billingAddressDisplay,
+    identitySignalSummary,
+    possibleMatches,
   };
 
   return { blocked: false, props };

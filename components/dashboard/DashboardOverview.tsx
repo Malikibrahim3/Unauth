@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import {
   AlertTriangle,
-  ArrowUpRight,
+  ArrowRight,
   CalendarDays,
   Check,
   ChevronDown,
@@ -128,6 +128,11 @@ export function DashboardOverview({
       : [],
     [metric, previousTrend, report.generatedAt, report.range, report.trend, selectedCurrency],
   );
+  // All-zero buckets would render a degenerate axis (£0–£0.04 with no line), so
+  // treat them as empty and show the empty-state message instead.
+  const hasChartValues = chartData.some(
+    (bucket) => (bucket.currentMinor ?? 0) !== 0 || (bucket.previousMinor ?? 0) !== 0,
+  );
   const selectedMetric = DASHBOARD_METRICS.find((item) => item.key === metric) ?? DASHBOARD_METRICS[0];
   const workflowGroups = groupWorkflowOperations(report.operations);
   const health = calculateDataHealth(report.coverage, report.reconciliation.ok);
@@ -164,7 +169,7 @@ export function DashboardOverview({
             className={styles.textAction}
             data-capability-id="reports.open-full"
           >
-            Full reports <ArrowUpRight aria-hidden="true" size={13} />
+            Full reports <ArrowRight aria-hidden="true" size={13} />
           </Link>
         </div>
       </header>
@@ -253,7 +258,7 @@ export function DashboardOverview({
             </div>
 
             <div className={styles.chartRegion} role="region" aria-label="Payout performance charts">
-              {chartData.length > 0 ? (
+              {chartData.length > 0 && hasChartValues ? (
                 <ComboBarLineChart
                   data={chartData.map((bucket) => ({
                     key: bucket.key,

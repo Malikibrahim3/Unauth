@@ -85,7 +85,6 @@ export default async function FlowsPage() {
   const topFlows = [...flows].sort((a, b) => b.actionCount - a.actionCount).slice(0, 6);
   return (
     <WorkbenchPage
-      eyebrow="Configuration"
       title="Flows"
       subtitle="Route tasks, evidence, deadlines, and notifications. Test safely — nothing changes until you publish."
       kpiItems={[

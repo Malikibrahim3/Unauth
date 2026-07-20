@@ -120,14 +120,6 @@
   background: var(--surface);
 }
 
-.kpiItem:first-child::before {
-  position: absolute;
-  inset: 0 0 auto;
-  height: 2px;
-  background: var(--accent);
-  content: '';
-}
-
 .kpiItem:last-child {
   border-right: 0;
 }

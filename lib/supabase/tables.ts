@@ -99,6 +99,7 @@ export const TABLES = {
   CASE_FINANCIAL_SUMMARIES: 'case_financial_summaries',
   // ── Canonical entity model (Phase 3) ──
   MERCHANT_CUSTOMERS: 'merchant_customers',
+  MERCHANT_CUSTOMER_SIGNALS: 'merchant_customer_signals',
   SOURCE_TICKETS: 'source_tickets',
   SOURCE_ORDER_LINES: 'source_order_lines',
   SOURCE_PAYMENTS: 'source_payments',

@@ -3,7 +3,6 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   ShieldCheck,
-  ExternalLink,
   FileText,
   ArrowRight,
   Clock,
@@ -14,14 +13,17 @@ import {
   PanelCard,
 } from "@/components/ui";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { formatCurrencyNullable } from "@/lib/utils/format";
+import { formatCurrencyNullable, formatDateAbsolute } from "@/lib/utils/format";
 import { formatClaimAge, formatFiledDate } from "@/lib/claims/sla";
 import {
   LIKELY_OWNER_LABELS,
   LOSS_ATTRIBUTION_DISPLAY,
   PAYOUT_CASE_STATUS_LABELS,
 } from "@/lib/payouts/types";
-import { humanizeEvidenceKey } from "@/components/claims/payout/payoutCopy";
+import {
+  humanizeEvidenceKey,
+  humanizeEvidenceProse,
+} from "@/components/claims/payout/payoutCopy";
 import {
   CLAIM_TYPE_LABELS,
   DECISION_LABELS,
@@ -195,7 +197,6 @@ export function ClaimsQueueClient({
               </p>
               <div className="flex items-center gap-1.5 flex-wrap">
                 <StatusPill status={c.status} />
-                <SlaPill claim={c} />
                 {c.recoverability && (
                   <StatusBadge family="recoverability" value={c.recoverability} size="sm" />
                 )}
@@ -420,7 +421,7 @@ function ClaimDetailPanel({
                 </p>
                 <p
                   className="text-body-sm font-medium"
-                  style={{ color: "var(--text-primary)" }}
+                  style={{ color: claim.recovery_owner ? "var(--text-primary)" : "var(--text-tertiary)" }}
                 >
                   {claim.recovery_owner
                     ? (LIKELY_OWNER_LABELS[
@@ -438,7 +439,7 @@ function ClaimDetailPanel({
                 </p>
                 <p
                   className="text-body-sm font-medium"
-                  style={{ color: "var(--text-primary)" }}
+                  style={{ color: claim.loss_attribution ? "var(--text-primary)" : "var(--text-tertiary)" }}
                 >
                   {claim.loss_attribution
                     ? (LOSS_ATTRIBUTION_DISPLAY[
@@ -453,7 +454,7 @@ function ClaimDetailPanel({
                 className="text-caption"
                 style={{ color: "var(--text-secondary)" }}
               >
-                {claim.recovery_next_action}
+                {humanizeEvidenceProse(claim.recovery_next_action)}
               </p>
             )}
             {claim.recovery_required_evidence &&
@@ -502,15 +503,7 @@ function ClaimDetailPanel({
                       {evidence.reference_number}
                     </span>
                   }
-                  timestamp={new Date(evidence.generated_at).toLocaleDateString(
-                    "en-US",
-                    {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                      timeZone: "UTC",
-                    },
-                  )}
+                  timestamp={formatDateAbsolute(new Date(evidence.generated_at))}
                   className="text-caption"
                 />
               </div>
@@ -580,7 +573,7 @@ function ClaimDetailPanel({
                 className="shrink-0 inline-flex items-center gap-1 text-caption font-semibold hover:underline"
                 style={{ color: "var(--accent)" }}
               >
-                Profile <ExternalLink className="h-3 w-3" />
+                Profile <ArrowRight className="h-3 w-3" />
               </Link>
             </div>
           </div>
@@ -624,10 +617,7 @@ function ClaimDetailPanel({
               className="text-caption mt-1"
               style={{ color: "var(--text-tertiary)" }}
             >
-              Updated{" "}
-              {new Date(outcome.updated_at).toLocaleDateString("en-US", {
-                timeZone: "UTC",
-              })}
+              Updated {formatDateAbsolute(new Date(outcome.updated_at))}
             </p>
           </div>
         </PanelCard>

@@ -51,6 +51,15 @@ export async function shipBobRequest<T>(
   credentials: ShipBobCredentials,
   options: { method?: 'GET' | 'POST' | 'DELETE'; body?: unknown } = {},
 ): Promise<T> {
+  const { payload } = await shipBobResponse<T>(path, credentials, options);
+  return payload;
+}
+
+async function shipBobResponse<T>(
+  path: string,
+  credentials: ShipBobCredentials,
+  options: { method?: 'GET' | 'POST' | 'DELETE'; body?: unknown } = {},
+): Promise<{ payload: T; headers: Headers }> {
   const token = shipBobToken(credentials);
   if (!token) throw new Error('shipbob_access_token_missing');
   const base = shipBobApiBaseUrl(credentials.sandbox === true);
@@ -70,7 +79,7 @@ export async function shipBobRequest<T>(
     const code = response.status === 401 || response.status === 403 ? 'shipbob_auth_failed' : 'shipbob_api_failed';
     throw new Error(`${code}:${response.status}`);
   }
-  return payload as T;
+  return { payload: payload as T, headers: response.headers };
 }
 
 function pageItems<T>(payload: unknown): ShipBobPage<T> {
@@ -91,14 +100,37 @@ function pageItems<T>(payload: unknown): ShipBobPage<T> {
   return { items: items as T[], next };
 }
 
+function nextPage(headers: Headers): string | null {
+  const nextPagePath = headers.get('next-page');
+  if (nextPagePath) {
+    try {
+      const url = new URL(nextPagePath, 'https://api.shipbob.com');
+      const page = url.searchParams.get('page');
+      if (page) return page;
+    } catch {
+      // Fall through to the numeric pagination headers below.
+    }
+  }
+
+  const current = Number(headers.get('page-number'));
+  const total = Number(headers.get('total-pages'));
+  return Number.isInteger(current) && Number.isInteger(total) && current < total
+    ? String(current + 1)
+    : null;
+}
+
 export async function listShipBobLocations(credentials: ShipBobCredentials, cursor?: string | null) {
   const payload = await shipBobRequest<unknown>(`/location${queryString({ RecordsPerPage: '250', Cursor: cursor })}`, credentials);
   return pageItems<Record<string, unknown>>(payload);
 }
 
 export async function listShipBobOrders(credentials: ShipBobCredentials, cursor?: string | null) {
-  const payload = await shipBobRequest<unknown>(`/order${queryString({ Limit: '100', Cursor: cursor })}`, credentials);
-  return pageItems<Record<string, unknown>>(payload);
+  const { payload, headers } = await shipBobResponse<unknown>(
+    `/order${queryString({ Limit: '100', Page: cursor ?? '1' })}`,
+    credentials,
+  );
+  const page = pageItems<Record<string, unknown>>(payload);
+  return { ...page, next: nextPage(headers) ?? page.next };
 }
 
 export async function listShipBobReturns(credentials: ShipBobCredentials, cursor?: string | null) {

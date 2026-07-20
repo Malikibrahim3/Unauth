@@ -42,7 +42,7 @@ export const FL_HERO = {
     'Unauth gets it back.',
   ],
   subtitle:
-    'The claim gate that catches refunds, recovers carrier losses, and stops repeat claimants — before anyone pays out.',
+    'Post-purchase payout control: surface the exposure, apply your rules, recover carrier and supplier losses, and prevent the leaks — before anyone pays out.',
   body: '',
   primaryCta: 'Request access',
   secondaryCta: 'See how it works',
@@ -256,7 +256,7 @@ export const FL_MANIFEST = {
   footer: 'assembled in 38ms · formatted for representment',
 } as const;
 
-/* ── Stats bento — fraud landscape (6 sourced stats) ──────────────────── */
+/* ── Stats bento — payout-control principles ──────────────────────────── */
 
 export const FL_BENTO = [
   {

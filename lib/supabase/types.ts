@@ -4366,8 +4366,12 @@ export type Database = {
           email: string | null
           id: string
           identity_id: string | null
+          last_resolved_at: string | null
+          matcher_version: string | null
           merchant_id: string
           raw_metadata: Json
+          resolution_status: string
+          superseded_by: string | null
           updated_at: string
         }
         Insert: {
@@ -4376,8 +4380,12 @@ export type Database = {
           email?: string | null
           id?: string
           identity_id?: string | null
+          last_resolved_at?: string | null
+          matcher_version?: string | null
           merchant_id: string
           raw_metadata?: Json
+          resolution_status?: string
+          superseded_by?: string | null
           updated_at?: string
         }
         Update: {
@@ -4386,13 +4394,71 @@ export type Database = {
           email?: string | null
           id?: string
           identity_id?: string | null
+          last_resolved_at?: string | null
+          matcher_version?: string | null
           merchant_id?: string
           raw_metadata?: Json
+          resolution_status?: string
+          superseded_by?: string | null
           updated_at?: string
         }
         Relationships: [
           {
             foreignKeyName: "merchant_customers_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      merchant_customer_signals: {
+        Row: {
+          evidence: Json
+          first_seen_at: string
+          identifier_hash: string
+          identifier_type: string
+          last_seen_at: string
+          merchant_customer_id: string
+          merchant_id: string
+          seen_count: number
+          source_entity_id: string
+          source_entity_type: string
+        }
+        Insert: {
+          evidence?: Json
+          first_seen_at?: string
+          identifier_hash: string
+          identifier_type: string
+          last_seen_at?: string
+          merchant_customer_id: string
+          merchant_id: string
+          seen_count?: number
+          source_entity_id: string
+          source_entity_type: string
+        }
+        Update: {
+          evidence?: Json
+          first_seen_at?: string
+          identifier_hash?: string
+          identifier_type?: string
+          last_seen_at?: string
+          merchant_customer_id?: string
+          merchant_id?: string
+          seen_count?: number
+          source_entity_id?: string
+          source_entity_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "merchant_customer_signals_merchant_customer_id_fkey"
+            columns: ["merchant_customer_id"]
+            isOneToOne: false
+            referencedRelation: "merchant_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "merchant_customer_signals_merchant_id_fkey"
             columns: ["merchant_id"]
             isOneToOne: false
             referencedRelation: "merchants"
@@ -6663,6 +6729,7 @@ export type Database = {
           landing_site: string | null
           line_items_count: number | null
           match_status: string | null
+          merchant_customer_id: string | null
           merchant_id: string
           note: string | null
           order_number: string | null
@@ -6711,6 +6778,7 @@ export type Database = {
           landing_site?: string | null
           line_items_count?: number | null
           match_status?: string | null
+          merchant_customer_id?: string | null
           merchant_id: string
           note?: string | null
           order_number?: string | null
@@ -6759,6 +6827,7 @@ export type Database = {
           landing_site?: string | null
           line_items_count?: number | null
           match_status?: string | null
+          merchant_customer_id?: string | null
           merchant_id?: string
           note?: string | null
           order_number?: string | null
@@ -6822,6 +6891,13 @@ export type Database = {
             columns: ["merchant_id"]
             isOneToOne: false
             referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_orders_merchant_customer_id_fkey"
+            columns: ["merchant_customer_id"]
+            isOneToOne: false
+            referencedRelation: "merchant_customers"
             referencedColumns: ["id"]
           },
           {
@@ -7541,6 +7617,7 @@ export type Database = {
           ingested_at: string
           is_spam: boolean | null
           linked_order_external_ids: Json
+          merchant_customer_id: string | null
           merchant_id: string
           message_count: number | null
           opened_at_provider: string | null
@@ -7567,6 +7644,7 @@ export type Database = {
           ingested_at?: string
           is_spam?: boolean | null
           linked_order_external_ids?: Json
+          merchant_customer_id?: string | null
           merchant_id: string
           message_count?: number | null
           opened_at_provider?: string | null
@@ -7593,6 +7671,7 @@ export type Database = {
           ingested_at?: string
           is_spam?: boolean | null
           linked_order_external_ids?: Json
+          merchant_customer_id?: string | null
           merchant_id?: string
           message_count?: number | null
           opened_at_provider?: string | null
@@ -7620,6 +7699,13 @@ export type Database = {
             columns: ["merchant_id"]
             isOneToOne: false
             referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_tickets_merchant_customer_id_fkey"
+            columns: ["merchant_customer_id"]
+            isOneToOne: false
+            referencedRelation: "merchant_customers"
             referencedColumns: ["id"]
           },
           {
@@ -8132,6 +8218,7 @@ export type Database = {
             | null
           manual_reference: string | null
           manual_source_url: string | null
+          merchant_customer_id: string | null
           merchant_id: string
           next_action: string | null
           next_action_reason: string | null
@@ -8185,6 +8272,7 @@ export type Database = {
             | null
           manual_reference?: string | null
           manual_source_url?: string | null
+          merchant_customer_id?: string | null
           merchant_id: string
           next_action?: string | null
           next_action_reason?: string | null
@@ -8238,6 +8326,7 @@ export type Database = {
             | null
           manual_reference?: string | null
           manual_source_url?: string | null
+          merchant_customer_id?: string | null
           merchant_id?: string
           next_action?: string | null
           next_action_reason?: string | null
@@ -8281,6 +8370,13 @@ export type Database = {
             columns: ["merchant_id"]
             isOneToOne: false
             referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_payout_cases_merchant_customer_id_fkey"
+            columns: ["merchant_customer_id"]
+            isOneToOne: false
+            referencedRelation: "merchant_customers"
             referencedColumns: ["id"]
           },
           {

@@ -6,6 +6,7 @@ import type {
   PackageIncludeItem,
   PriorMatchPreview,
 } from "@/components/evidence/evidencePackageFormTypes";
+import { formatDateAbsolute } from "@/lib/utils/format";
 
 type EvidencePackageFormFieldsProps = {
   profileId: string;
@@ -170,10 +171,7 @@ export function EvidencePackageFormFields({
           <option value="">Select an order to defend…</option>
           {orders.map((o) => (
             <option key={o.id} value={o.id}>
-              {o.order_id} ·{" "}
-              {new Date(o.processed_at).toLocaleDateString("en-US", {
-                timeZone: "UTC",
-              })}
+              {o.order_id} · {formatDateAbsolute(new Date(o.processed_at))}
               {o.order_value != null ? ` · ${o.order_value.toFixed(2)}` : ""}
               {o.refund_claimed ? " ★ refund claimed" : ""}
             </option>

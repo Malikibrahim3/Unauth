@@ -13,6 +13,7 @@ import type {
   Recoverability,
   RecoveryPath,
 } from '@/lib/payouts/types';
+import { joinEvidenceLabels } from '@/lib/payouts/config';
 
 const EXTERNAL_OWNER: Partial<Record<LossAttributionResult['label'], LikelyOwner>> = {
   carrier_loss: 'carrier',
@@ -49,7 +50,7 @@ export function deriveRecoveryPath(
   if (attribution.confidence === 'needs_more_evidence') {
     const suggestedNextAction =
       missingKeys.length > 0
-        ? `Gather ${missingKeys.join(', ')} to assess recovery.`
+        ? `Gather ${joinEvidenceLabels(missingKeys)} to assess recovery.`
         : 'Gather more evidence to assess recovery.';
     return {
       recoverability: 'needs_more_evidence',

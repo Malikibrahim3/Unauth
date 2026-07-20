@@ -36,7 +36,7 @@ export function useSyncStatusCard() {
         body = text ? (JSON.parse(text) as { error?: string }) : null;
       } catch {
         console.error('[shopify] sync non-JSON response:', res.status, text.slice(0, 200));
-        setSyncError(`Sync failed (${res.status}). The API may not be deployed yet.`);
+        setSyncError(`Sync failed (${res.status}). Try again or reconnect Shopify.`);
         return;
       }
       if (!res.ok) {

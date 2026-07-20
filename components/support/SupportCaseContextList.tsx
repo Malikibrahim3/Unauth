@@ -18,8 +18,9 @@ function formatTags(tags: unknown[]): string {
       }
       return null;
     })
-    .filter((value): value is string => !!value);
-  return values.length > 0 ? values.join(', ') : '-';
+    .filter((value): value is string => !!value)
+    .map((value) => value.replace(/_/g, ' '));
+  return values.length > 0 ? values.join(', ') : '—';
 }
 
 function safeHelpdeskUrl(value: string | null): string | null {
@@ -63,7 +64,7 @@ function SupportCaseCards({ cases }: { cases: PublicSupportCaseContext[] }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
               <div>
                 <span style={{ color: 'var(--text-secondary)' }}>Status: </span>
-                <span style={{ color: 'var(--text)' }}>{supportCase.case_status ?? '-'}</span>
+                <span style={{ color: 'var(--text)' }}>{supportCase.case_status ?? '—'}</span>
               </div>
               <div>
                 <span style={{ color: 'var(--text-secondary)' }}>Link: </span>
@@ -71,16 +72,16 @@ function SupportCaseCards({ cases }: { cases: PublicSupportCaseContext[] }) {
               </div>
               <div>
                 <span style={{ color: 'var(--text-secondary)' }}>Claim reason: </span>
-                <span style={{ color: 'var(--text)' }}>{supportCase.claim_reason ?? '-'}</span>
+                <span style={{ color: 'var(--text)' }}>{supportCase.claim_reason ?? '—'}</span>
               </div>
               <div>
                 <span style={{ color: 'var(--text-secondary)' }}>Order ref: </span>
-                <span style={{ color: 'var(--text)' }}>{supportCase.order_ref ?? supportCase.shopify_order_id ?? '-'}</span>
+                <span style={{ color: 'var(--text)' }}>{supportCase.order_ref ?? supportCase.shopify_order_id ?? '—'}</span>
               </div>
             </div>
             {supportCase.customer_message_summary ? (
               <p className="mt-2 text-xs" style={{ color: 'var(--text)' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>Customer: </span>
+                <span style={{ color: 'var(--text-secondary)' }}>Customer message: </span>
                 {supportCase.customer_message_summary}
               </p>
             ) : null}

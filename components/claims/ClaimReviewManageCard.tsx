@@ -48,7 +48,7 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
 
   if (!canManage) {
     return (
-      <RailSection id="manage" title="Record decision" open={state.railOpen.manage ?? false} onToggle={(id) => dispatch({ type: 'toggleRail', id })}>
+      <RailSection id="manage" title="Decision" open={state.railOpen.manage ?? false} onToggle={(id) => dispatch({ type: 'toggleRail', id })}>
         <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
           You have read-only access. Recording decisions, evidence, and transitions requires the payout-decision permission.
         </p>
@@ -66,7 +66,7 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
   const currency = wb.selectedClaim?.currency ?? null;
 
   return (
-    <RailSection id="manage" title="Record decision" open={state.railOpen.manage ?? true} onToggle={(id) => dispatch({ type: 'toggleRail', id })}>
+    <RailSection id="manage" title="Decision" open={state.railOpen.manage ?? true} onToggle={(id) => dispatch({ type: 'toggleRail', id })}>
       <div className="flex flex-col gap-4">
         {/* Ownership */}
         <div className="order-2 space-y-1.5">
@@ -76,16 +76,18 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
               className="flex-1 px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-60" style={btnStyle('secondary')}>
               Assign to me
             </button>
-            <button type="button" disabled={disabled} onClick={() => void onAssignment('unassign')}
-              className="flex-1 px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-60" style={btnStyle('secondary')}>
-              Unassign
-            </button>
+            {wb.selectedClaim?.assigned_to ? (
+              <button type="button" disabled={disabled} onClick={() => void onAssignment('unassign')}
+                className="flex-1 px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-60" style={btnStyle('secondary')}>
+                Unassign
+              </button>
+            ) : null}
           </div>
         </div>
 
         {/* Record decision + outcome */}
         <div className="order-1 space-y-1.5">
-          <FieldLabel htmlFor="manage-decision">Record decision &amp; outcome</FieldLabel>
+          <FieldLabel htmlFor="manage-decision">Decision &amp; outcome</FieldLabel>
           <select id="manage-decision" className="w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()}
             value={state.decision} onChange={(e) => {
               setDecisionTouched(true);

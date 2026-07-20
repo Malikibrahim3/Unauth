@@ -5,6 +5,7 @@ import { mapCarrierProofToEvidence } from '@/lib/integrations/evidenceMapper';
 import { fedexProvider, fetchFedExDeliveryProof } from '@/lib/integrations/providers/fedex';
 import { fetchUpsDeliveryProof, upsProvider } from '@/lib/integrations/providers/ups';
 import { refreshCarrierCredentials } from '@/lib/integrations/providers/carrierCredentials';
+import { resolveLinkedCarrierTracking } from '@/lib/integrations/orderLinking';
 
 type CarrierId = 'ups' | 'fedex';
 
@@ -21,33 +22,24 @@ function resolveCarrier(company: string | null, trackingNumber: string): Carrier
   return null;
 }
 
-async function resolveShipment(client: SupabaseClient, merchantId: string, sourceOrderId: string | null) {
-  if (!sourceOrderId) return null;
-  const { data } = await client
-    .from('source_fulfillments')
-    .select('tracking_number, tracking_company')
-    .eq('merchant_id', merchantId)
-    .eq('source_order_id', sourceOrderId)
-    .not('tracking_number', 'is', null)
-    .order('occurred_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  const trackingNumber = data?.tracking_number?.trim() ?? null;
-  return trackingNumber
-    ? { trackingNumber, provider: resolveCarrier(data?.tracking_company ?? null, trackingNumber) }
-    : null;
-}
-
 export async function syncCarrierEvidenceForCase(input: {
   client: SupabaseClient;
   merchantId: string;
   supportPayoutCaseId: string;
   sourceOrderId: string | null;
 }): Promise<SyncCarrierEvidenceResult> {
-  const shipment = await resolveShipment(input.client, input.merchantId, input.sourceOrderId);
-  if (!shipment) {
+  const tracking = await resolveLinkedCarrierTracking(
+    input.client,
+    input.merchantId,
+    input.sourceOrderId ?? undefined,
+  );
+  if (!tracking) {
     return { ok: false, reason: 'no_tracking_number', message: 'No tracking number on the order.' };
   }
+  const shipment = {
+    trackingNumber: tracking.trackingNumber,
+    provider: resolveCarrier(tracking.carrier, tracking.trackingNumber),
+  };
   if (!shipment.provider) {
     return { ok: false, reason: 'carrier_unsupported', message: 'The order is not a UPS or FedEx shipment.' };
   }

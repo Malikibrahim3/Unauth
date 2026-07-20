@@ -7,8 +7,9 @@
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { resolveIdentityIdForCustomer } from '@/lib/customers/identityNetwork';
-import { emitIdentityObservations, type ObservationEntity } from '@/lib/identity/observations';
+import { emitIdentityObservations, signalsForEntity, type ObservationEntity } from '@/lib/identity/observations';
 import { resolveIdentitiesForKeys, linkClaimToIdentity } from '@/lib/identity/resolver';
+import { resolveMerchantCustomer } from '@/lib/identity/merchantCustomerResolver';
 import { normaliseEmail } from '@/lib/identity/normalise';
 import { TABLES } from '@/lib/supabase/tables';
 import { captureTicketIdentitySignalsV2 } from '@/lib/support/intake/v2Bridge';
@@ -185,6 +186,37 @@ async function createViaObservations(
   try {
     const { signalKeys } = await emitIdentityObservations(client, input.merchantId, entities);
     if (signalKeys.length === 0) return { identityId: null, created: false };
+
+    // Keep the merchant-local canonical projection in step with support cases
+    // even when the ticket arrived without a raw provider payload (the v2
+    // bridge handles the richer signal set when one is available).
+    for (const entity of entities) {
+      try {
+        const entityType = entity.provenance.ticketId
+          ? 'source_ticket'
+          : entity.provenance.customerId
+            ? 'source_customer'
+            : 'source_order';
+        const entityId = (entity.provenance.ticketId ?? entity.provenance.customerId ?? entity.provenance.orderId)!;
+        await resolveMerchantCustomer(
+          client,
+          {
+            merchantId: input.merchantId,
+            entityType,
+            entityId,
+            source,
+            observedAt: input.observedAt,
+            email: entity.email,
+          },
+          typeof signalsForEntity === 'function' ? signalsForEntity(entity) : signalKeys,
+        );
+      } catch (error) {
+        console.error('merchant_local_customer_resolution_failed', {
+          merchantId: input.merchantId,
+          message: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
 
     const beforeIds = new Set<string>();
     for (const key of signalKeys) {

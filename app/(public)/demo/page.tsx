@@ -105,7 +105,7 @@ export default async function DemoPage() {
                   data={[
                     { label: 'Refund requests', value: 48, color: 'var(--accent)' },
                     { label: 'Chargebacks', value: 20, color: 'var(--sev-probable, #C7762B)' },
-                    { label: 'Repeat identities', value: 32, color: 'var(--sev-clear, #3E7A63)' },
+                    { label: 'Repeat requests', value: 32, color: 'var(--sev-clear, #3E7A63)' },
                   ]}
                   height={180}
                 />
@@ -297,7 +297,7 @@ export default async function DemoPage() {
         <div className="rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden">
           <div className="px-4 py-3 border-b border-[var(--border-subtle)] flex items-center justify-between">
             <span className="font-semibold text-[var(--text)]">Audit Runs</span>
-            <span className="text-xs text-[var(--text-muted)]">Nightly reset on staging</span>
+            <span className="text-xs text-[var(--text-muted)]">Resets nightly with fresh demo data</span>
           </div>
           <table className="w-full text-sm">
             <thead>

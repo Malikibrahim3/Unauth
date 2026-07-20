@@ -1,3 +1,5 @@
+import { formatDateAbsolute } from '@/lib/utils/format';
+
 export const ACTIVE_CLAIM_STATUSES = [
   'new',
   'evidence_needed',
@@ -92,5 +94,5 @@ export function getClaimSlaState(claim: ClaimAgeInput, now = new Date()): {
 export function formatFiledDate(claim: ClaimAgeInput): string {
   const openedAt = claimOpenedAt(claim);
   if (!openedAt) return '—';
-  return openedAt.toLocaleDateString('en-US');
+  return formatDateAbsolute(openedAt);
 }
