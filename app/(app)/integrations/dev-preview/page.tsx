@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/server";
+import { getRequestUser } from "@/lib/auth/requestContext";
 import { PERMISSIONS, requirePermission } from "@/lib/permissions";
 import { resolveEffectiveConnectionStatus } from "@/lib/connections/effectiveStatus";
 import type { ConnectorFreshness } from "@/lib/connections/freshness";
@@ -38,10 +39,7 @@ export const dynamic = "force-dynamic";
 export default async function IntegrationHealthDevPreviewPage() {
   if (process.env.NODE_ENV === "production") notFound();
 
-  const auth = createClient();
-  const {
-    data: { user },
-  } = await auth.auth.getUser();
+  const user = await getRequestUser();
   if (!user) redirect("/login");
   const service = createServiceClient();
   const { denied, ctx } = await requirePermission(service, user.id, PERMISSIONS.VIEW_SETTINGS);
@@ -61,7 +59,13 @@ export default async function IntegrationHealthDevPreviewPage() {
     description: "Direct UPS tracking, scan history, and delivery proof when available.",
     category: "carrier",
     authMode: "api_key",
-    stage: "beta",
+    // Matches UPS's real derived stage: connects and does something real
+    // (on-demand tracking evidence), but has no ongoing sync lifecycle and
+    // its health check only refreshes a token — see upsProvider.lifecycle.
+    stage: "partial",
+    lifecycle: [],
+    runtimeVerificationPending: true,
+    pendingRuntimeCapabilities: ["connect", "account_verification", "reconnect", "disconnect", "freshness_health"],
     status: "connected",
     syncState: "import_queued",
     freshness: onDemandFreshness,

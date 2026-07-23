@@ -14,7 +14,7 @@ import { ChartTooltip } from '../core/ChartTooltip';
 import { TREND_LINE_WIDTH, TREND_HOVER_DOT_R } from '../core/geometry';
 
 export type DualLineSeries = { key: string; label: string; colourVar: string };
-export type DualLinePoint = { key: string; label: string; [seriesKey: string]: string | number };
+export type DualLinePoint = { key: string; label: string; [seriesKey: string]: string | number | null };
 
 type DualLineChartProps = {
   data: DualLinePoint[];
@@ -57,7 +57,9 @@ export function DualLineChart({ data, series, valueFormatter, height = 240 }: Du
                   caption={String(label)}
                   series={series.map((s) => ({
                     label: s.label,
-                    value: valueFormatter(Number((payload[0]?.payload as DualLinePoint)?.[s.key] ?? 0)),
+                    value: (payload[0]?.payload as DualLinePoint)?.[s.key] == null
+                      ? 'Unavailable'
+                      : valueFormatter(Number((payload[0]?.payload as DualLinePoint)[s.key])),
                     colour: (theme as Record<string, string>)[s.colourVar] || 'var(--ua-chart-blue)',
                   }))}
                 />

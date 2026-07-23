@@ -6,10 +6,27 @@ export const fedexProvider: IntegrationProvider = {
   logoSrc: '/integrations/fedex.svg',
   category: 'carrier',
   authMode: 'oauth',
-  buildStatus: 'live',
+  // Matches the executable adapter's own verificationStatus: 'partial'
+  // (lib/connectors/providers/carriers.ts) — there is no sync/webhook
+  // lifecycle at all, only on-demand evidence fetch for a matching tracking
+  // number, and "health" only refreshes an OAuth token rather than probing
+  // the tracking API. See docs/audits/unauth-mvp-plus/08-provider-proof-matrix.md.
+  buildStatus: 'partial',
   description: 'Direct FedEx tracking, scan history, delivery status, and signature proof documents when account permissions allow.',
   evidenceCapabilities: ['tracking_number', 'tracking_events', 'delivery_status', 'delivery_photo', 'signature'],
   capabilities: { readTracking: true, readAttachments: true },
+  lifecycle: [
+    { id: 'connect', applicability: 'applicable', evidence: 'automated_tested', detail: 'OAuth exchange logic is covered with a mocked response by tests/unit/integrations.test.ts; no controlled FedEx account run is recorded.' },
+    { id: 'account_verification', applicability: 'applicable', evidence: 'automated_tested', detail: 'Health logic is tested but only refreshes OAuth; it does not probe the tracking/evidence API.' },
+    { id: 'initial_import', applicability: 'not_applicable', evidence: 'unavailable', detail: 'Evidence is fetched on demand for a case tracking number, not backfilled.' },
+    { id: 'incremental_pull', applicability: 'not_applicable', evidence: 'unavailable', detail: 'No ongoing sync; each fetch is case-triggered.' },
+    { id: 'webhook', applicability: 'not_applicable', evidence: 'unavailable', detail: 'FedEx does not push tracking events to Unauth.' },
+    { id: 'reconciliation', applicability: 'not_applicable', evidence: 'unavailable', detail: 'No sync lifecycle exists to reconcile.' },
+    { id: 'reconnect', applicability: 'applicable', evidence: 'implemented', detail: 'Re-running the OAuth exchange is implemented; controlled reconnect pending.' },
+    { id: 'disconnect', applicability: 'applicable', evidence: 'automated_tested', detail: 'Credential removal is covered by tests/unit/connectors/disconnect.test.ts; controlled disconnect pending.' },
+    { id: 'freshness_health', applicability: 'applicable', evidence: 'automated_tested', detail: 'Token-refresh-only health logic is covered by tests/unit/liveConnectionVerification.test.ts; a real evidence-API probe is unavailable.' },
+    { id: 'bounded_writeback', applicability: 'not_applicable', evidence: 'unavailable', detail: 'Read-only tracking/evidence lookup; no write-back to FedEx.' },
+  ],
 };
 
 function fedexBaseUrl(environment: string | undefined): string {

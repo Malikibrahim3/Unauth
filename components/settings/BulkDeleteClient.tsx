@@ -5,7 +5,7 @@ import { useState } from "react";
 const OPTIONS = [
   { value: "customer_notes", label: "Customer notes" },
   { value: "watchlist", label: "Saved customer context" },
-  { value: "all", label: "All removable data" },
+  { value: "all", label: "All listed workspace context" },
 ];
 
 export default function BulkDeleteClient() {
@@ -43,8 +43,9 @@ export default function BulkDeleteClient() {
   return (
     <div className="space-y-3">
       <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-        Choose which data to remove from active workspace views. Audit records
-        remain available for accountability.
+        Hide customer notes, saved customer context, or import and sync job
+        cards from active workspace views. This is not customer-data erasure;
+        audit and financial records remain available for accountability.
       </p>
 
       <div>

@@ -1,15 +1,13 @@
 import { redirect } from 'next/navigation';
-import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/server';
+import { getRequestUser } from '@/lib/auth/requestContext';
 import { TABLES } from '@/lib/supabase/tables';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import ChromeSetupClient from '@/components/settings/ChromeSetupClient';
 import { SettingsPageShell } from '@/components/ui';
 
 export default async function ChromeIntegrationPage() {
-  const userClient = createClient();
-  const {
-    data: { user },
-  } = await userClient.auth.getUser();
+  const user = await getRequestUser();
   if (!user) redirect('/login');
 
   const service = createServiceClient();

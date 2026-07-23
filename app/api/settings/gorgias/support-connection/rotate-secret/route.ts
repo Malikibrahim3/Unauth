@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
-import { logAction } from '@/lib/permissions/audit';
 import { getClientIp } from '@/lib/ratelimit';
 import { withRequestLogging } from '@/lib/log';
 import { rotateMerchantGorgiasWebhookSecret } from '@/lib/support/gorgias/settingsConnection';
@@ -19,16 +18,10 @@ async function POSTHandler(req: Request) {
   if (denied) return denied;
 
   try {
-    const rotated = await rotateMerchantGorgiasWebhookSecret(service, ctx.merchantId);
-
-    logAction({
-      ctx,
-      action: 'rotate_gorgias_webhook_secret',
-      resourceType: 'support_provider_connection',
-      resourceId: rotated.connection.id,
-      metadata: {},
-      ip,
-    });
+    const rotated = await rotateMerchantGorgiasWebhookSecret(
+      createServiceClient({ audit: { actorId: ctx.userId, actorRole: ctx.role, requestIp: ip } }),
+      ctx.merchantId,
+    );
 
     return NextResponse.json(rotated);
   } catch (err) {

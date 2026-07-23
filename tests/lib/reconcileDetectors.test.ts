@@ -13,7 +13,7 @@ function client(byTable: Record<string, unknown[]>) {
     from(table: string) {
       const b: Record<string, unknown> = {};
       const chain = () => b;
-      for (const m of ['select', 'eq', 'in', 'is', 'not', 'lt', 'order', 'limit']) b[m] = chain;
+      for (const m of ['select', 'eq', 'in', 'is', 'not', 'lt', 'contains', 'order', 'limit']) b[m] = chain;
       b.then = (resolve: (v: unknown) => unknown) => resolve({ data: byTable[table] ?? [], error: null });
       return b;
     },
@@ -72,7 +72,7 @@ describe('reconciliation detectors', () => {
   });
 
   it('closure-eligible case → other', async () => {
-    const rows = { case_financial_summaries: [{ support_payout_case_id: 'c1', exposed_minor: 0, confirmed_loss_minor: 500 }], support_payout_cases: [{ id: 'c1', status: 'open' }] };
+    const rows = { case_financial_summaries: [{ support_payout_case_id: 'c1', exposed_minor: 0, confirmed_loss_minor: 500, known_states: ['exposed', 'confirmed_loss'] }], support_payout_cases: [{ id: 'c1', status: 'open' }] };
     const r = await detectors.detectClosureEligibleCases(client(rows), M);
     expect(r.raised).toBe(1);
     expect(lastRaise()).toMatchObject({ exceptionType: 'other', supportPayoutCaseId: 'c1', dedupKey: 'reconcile:closure_eligible:c1' });

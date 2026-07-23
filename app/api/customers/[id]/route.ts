@@ -539,7 +539,7 @@ async function GETHandler(
     narrative,
   };
 
-  logAction({
+  await logAction({
     ctx,
     action: 'view_customer',
     resourceType: 'source_customer',

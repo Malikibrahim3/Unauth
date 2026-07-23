@@ -48,7 +48,13 @@ describe("CaseContextDrawer", () => {
       screen.getByRole("link", { name: /open full case/i }),
     ).toHaveAttribute("href", "/claims/case-1");
 
-    fireEvent.click(screen.getAllByRole("button", { name: "Close panel" })[1]);
+    // The drawer's focus trap moves initial focus to its primary close
+    // control (the header "Close" button) so keyboard users can dismiss
+    // immediately without tabbing through the panel content.
+    const closeButton = screen.getByRole("button", { name: "Close" });
+    await waitFor(() => expect(closeButton).toHaveFocus());
+
+    fireEvent.click(closeButton);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

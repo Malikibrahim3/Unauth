@@ -11,6 +11,7 @@ import { findBestPartnerRecoveryRule } from '@/lib/partners/store';
 import type { PartnerRecoveryType, PartnerRuleClaimType } from '@/lib/partners/types';
 import { calculateRecoveryEstimate } from '@/lib/recoveries/calculation';
 import {
+  addRecoveryCaseEvent,
   createRecoveryCase,
   getRecoveryCaseForSupportPayoutCase,
 } from '@/lib/recoveries/store';
@@ -181,7 +182,27 @@ export async function maybeCreateRecoveryCaseFromSupportPayoutCase(input: {
     input.merchantId,
     input.supportPayoutCaseId,
   );
-  if (existing) return existing;
+  if (existing) {
+    const idempotencyKey = `recovery-created:${existing.id}`;
+    const { data: createdEvent, error: createdEventError } = await input.client
+      .from(TABLES.RECOVERY_CASE_EVENTS)
+      .select('id')
+      .eq('merchant_id', input.merchantId)
+      .eq('idempotency_key', idempotencyKey)
+      .maybeSingle();
+    if (createdEventError) throw new Error(`Failed to verify recovery creation event: ${createdEventError.message}`);
+    if (!createdEvent) {
+      await addRecoveryCaseEvent(input.client, {
+        merchantId: input.merchantId,
+        recoveryCaseId: existing.id,
+        eventType: 'created',
+        toStatus: existing.status,
+        metadata: { support_payout_case_id: input.supportPayoutCaseId, repaired_after_retry: true },
+        idempotencyKey,
+      });
+    }
+    return existing;
+  }
 
   const { data: row, error } = await input.client
     .from(TABLES.MERCHANT_CLAIMS)

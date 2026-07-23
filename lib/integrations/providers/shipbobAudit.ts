@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ShipBobEnvironment } from './shipbobEnvironment';
+import { recordDomainEvent } from '@/lib/events/domainEventStore';
 
 export type ShipBobAuditAction =
   | 'shipbob_connection_started' | 'shipbob_connection_completed' | 'shipbob_authorization_failed'
@@ -47,14 +48,39 @@ export async function recordShipBobAudit(client: SupabaseClient, input: {
   environment: ShipBobEnvironment; status: 'started' | 'completed' | 'failed' | 'queued';
   actorUserId?: string | null; actorRole?: string; metadata?: Record<string, unknown>;
 }) {
-  const { error } = await client.from('user_action_log').insert({
-    merchant_id: input.merchantId,
-    actor_user_id: input.actorUserId ?? null,
-    actor_role: input.actorRole ?? (input.actorUserId ? 'merchant' : 'system'),
-    action: input.action,
-    resource_type: 'integration_connection',
-    resource_id: input.connectionId ?? null,
-    metadata: safeShipBobAuditMetadata({ provider: 'shipbob', environment: input.environment, status: input.status, ...(input.metadata ?? {}) }),
+  const metadata = safeShipBobAuditMetadata({
+    provider: 'shipbob',
+    environment: input.environment,
+    status: input.status,
+    ...(input.metadata ?? {}),
   });
-  if (error) console.error('shipbob_audit_insert_failed', { action: input.action, category: error.code ?? 'database_error' });
+  const stableReference = typeof metadata.jobId === 'string'
+    ? metadata.jobId
+    : input.connectionId ?? crypto.randomUUID();
+  const now = new Date().toISOString();
+  return recordDomainEvent(client, {
+    merchantId: input.merchantId,
+    eventType: 'audit.action_recorded',
+    aggregateType: 'integration_connection',
+    aggregateId: input.connectionId ?? null,
+    idempotencyKey: `audit:shipbob:${input.action}:${stableReference}`,
+    actorType: input.actorUserId ? 'user' : 'system',
+    actorId: input.actorUserId ?? null,
+    occurredAt: now,
+    correlationId: crypto.randomUUID(),
+    handlers: ['auditTimelineProjection'],
+    payload: {
+      audit: {
+        action: input.action,
+        resource_type: 'integration_connection',
+        resource_id: input.connectionId ?? null,
+        actor_role: input.actorRole ?? (input.actorUserId ? 'merchant' : 'system'),
+        meaning: input.action.replaceAll('_', ' '),
+        effective_at: now,
+        recorded_at: now,
+        idempotency_reference: `shipbob:${input.action}:${stableReference}`,
+        metadata,
+      },
+    },
+  });
 }

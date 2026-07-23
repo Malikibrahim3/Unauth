@@ -36,7 +36,10 @@ describe('case state machine', () => {
       merchantId: 'merchant-1', caseId: 'case-1', expectedVersion: 1,
       patch: { status: 'manual_review' }, reason: 'Concurrent review',
     };
-    const results = await Promise.allSettled([transitionCase(client, input), transitionCase(client, input)]);
+    const results = await Promise.allSettled([
+      transitionCase(client, { ...input, idempotencyKey: 'case-transition-writer-1' }),
+      transitionCase(client, { ...input, idempotencyKey: 'case-transition-writer-2' }),
+    ]);
     expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
     const rejected = results.find((result): result is PromiseRejectedResult => result.status === 'rejected');
     expect(rejected?.reason).toBeInstanceOf(CaseVersionConflictError);

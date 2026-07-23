@@ -140,6 +140,7 @@ export default function AppHeader({
               ) : (
                 <Link
                   href={seg.href}
+                  prefetch={false}
                   className={cn(
                     'text-caption truncate text-[var(--text-secondary)]',
                     'hover:text-[var(--text-primary)] transition-colors duration-[var(--duration-fast)]',
@@ -194,6 +195,7 @@ export default function AppHeader({
 
       <Link
         href="/notifications"
+        prefetch={false}
         aria-label={resolvedUnreadCount > 0 ? `Notifications, ${resolvedUnreadCount} unread` : 'Notifications'}
         className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
         style={{ borderColor: 'var(--border)', background: 'var(--surface-sunken)' }}

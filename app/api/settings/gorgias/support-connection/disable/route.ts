@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
-import { logAction } from '@/lib/permissions/audit';
 import { getClientIp } from '@/lib/ratelimit';
 import { withRequestLogging } from '@/lib/log';
 import { disableMerchantGorgiasSupportConnection } from '@/lib/support/gorgias/settingsConnection';
@@ -19,16 +18,10 @@ async function POSTHandler(req: Request) {
   if (denied) return denied;
 
   try {
-    const connection = await disableMerchantGorgiasSupportConnection(service, ctx.merchantId);
-
-    logAction({
-      ctx,
-      action: 'disable_gorgias_support_connection',
-      resourceType: 'support_provider_connection',
-      resourceId: connection.id,
-      metadata: {},
-      ip,
-    });
+    const connection = await disableMerchantGorgiasSupportConnection(
+      createServiceClient({ audit: { actorId: ctx.userId, actorRole: ctx.role, requestIp: ip } }),
+      ctx.merchantId,
+    );
 
     return NextResponse.json({ connection });
   } catch (err) {

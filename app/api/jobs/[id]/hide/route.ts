@@ -3,7 +3,6 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
-import { logAction } from '@/lib/permissions/audit';
 import { withRequestLogging } from '@/lib/log';
 
 async function PATCHHandler(
@@ -20,7 +19,10 @@ async function PATCHHandler(
   const serviceClient = createServiceClient();
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.HIDE_JOB);
   if (denied) return denied;
-  const scopedClient = createScopedClient(ctx.merchantId, serviceClient);
+  const scopedClient = createScopedClient(
+    ctx.merchantId,
+    createServiceClient({ audit: { actorId: ctx.userId, actorRole: ctx.role, requestIp: ip } }),
+  );
 
   const { error } = await scopedClient
     .from(TABLES.PROCESSING_JOBS)
@@ -28,14 +30,6 @@ async function PATCHHandler(
     .eq('id', resolvedParams.id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  logAction({
-    ctx,
-    action: 'hide_job',
-    resourceType: 'processing_job',
-    resourceId: resolvedParams.id,
-    ip,
-  });
 
   return NextResponse.json({ ok: true });
 }

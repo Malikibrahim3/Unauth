@@ -1,15 +1,13 @@
 import { redirect } from 'next/navigation';
-import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/server';
+import { getRequestUser } from '@/lib/auth/requestContext';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import GorgiasSetupClient from '@/components/settings/GorgiasSetupClient';
 import GorgiasSupportSyncClient from '@/components/settings/GorgiasSupportSyncClient';
 import { SettingsPageShell } from '@/components/ui';
 
 export default async function GorgiasIntegrationPage() {
-  const userClient = createClient();
-  const {
-    data: { user },
-  } = await userClient.auth.getUser();
+  const user = await getRequestUser();
   if (!user) redirect('/login');
 
   const service = createServiceClient();

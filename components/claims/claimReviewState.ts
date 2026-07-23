@@ -52,6 +52,11 @@ type ClaimsPayload = {
 
 type SupportPayload = { support_cases?: PublicSupportCaseContext[] };
 
+function requestKey(scope: string): string {
+  const random = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return `${scope}:${random}`;
+}
+
 function pickDraftFields(state: ClaimReviewState, claimId: string) {
   return {
     selectedOrderId: state.selectedOrderId,
@@ -61,6 +66,7 @@ function pickDraftFields(state: ClaimReviewState, claimId: string) {
     claimId,
     decision: state.decision,
     outcome: state.outcome,
+    decisionAmount: state.decisionAmount,
     evidenceType: state.evidenceType,
     source: state.source,
     evidenceUrl: state.evidenceUrl,
@@ -94,6 +100,8 @@ export function useClaimReviewWorkbench(
   const patch = useCallback((patchValue: Partial<ClaimReviewState>) => {
     dispatch({ type: 'patch', patch: patchValue });
   }, []);
+  const decisionRequestKeyRef = useRef<string | null>(null);
+  const reversalRequestKeyRef = useRef<string | null>(null);
 
   const prevSelectedClaimIdForFormRef = useRef<string | null>(null);
   const encodedSourceCustomerId = sourceCustomerId ? encodeURIComponent(sourceCustomerId) : null;
@@ -416,14 +424,27 @@ export function useClaimReviewWorkbench(
       showMsg('Save a claim first, then record the outcome.', 'error');
       return;
     }
+    const monetaryDecision = ['approved', 'partial_refund', 'full_refund', 'denied', 'no_action'].includes(state.decision);
+    const amountMajor = Number(state.decisionAmount);
+    const currency = selectedClaim?.currency ?? null;
+    if (monetaryDecision && (!Number.isFinite(amountMajor) || amountMajor < 0 || !currency)) {
+      showMsg('Enter the decision amount and confirm its currency before recording this decision.', 'error');
+      return;
+    }
+    const idempotencyKey = decisionRequestKeyRef.current
+      ?? requestKey(`case-decision:${resolvedActiveClaimId}`);
+    decisionRequestKeyRef.current = idempotencyKey;
     patch({ busy: true });
     const r = await submitOutcome(resolvedActiveClaimId, {
       decision: state.decision,
-      outcome: state.outcome,
+      outcome: 'pending',
+      amount_minor: monetaryDecision ? Math.round(amountMajor * 100) : null,
+      currency: monetaryDecision ? currency : null,
       notes: state.notes,
-    });
+    }, idempotencyKey);
     patch({ busy: false });
     if (r.message.toLowerCase().includes('saved')) {
+      decisionRequestKeyRef.current = null;
       showMsg(
         state.decision === 'escalated'
           ? 'Merchant outcome recorded. Claim flagged for high evidence density review.'
@@ -516,15 +537,30 @@ export function useClaimReviewWorkbench(
       showMsg('Add a reason before reversing the decision.', 'error');
       return;
     }
+    const monetaryDecision = ['approved', 'partial_refund', 'full_refund', 'denied', 'no_action'].includes(state.reverseDecision);
+    const amountMajor = Number(state.decisionAmount);
+    const currency = selectedClaim?.currency ?? null;
+    if (monetaryDecision && (!Number.isFinite(amountMajor) || amountMajor < 0 || !currency)) {
+      showMsg('Enter the replacement decision amount and confirm its currency before recording the reversal.', 'error');
+      return;
+    }
+    const idempotencyKey = reversalRequestKeyRef.current
+      ?? requestKey(`case-decision-reversal:${resolvedActiveClaimId}`);
+    reversalRequestKeyRef.current = idempotencyKey;
     patch({ busy: true });
     const r = await reverseClaimDecision(resolvedActiveClaimId, {
       decision: state.reverseDecision,
-      outcome: state.reverseOutcome,
+      outcome: 'pending',
       note: state.reverseNote,
-    });
+      amount_minor: monetaryDecision ? Math.round(amountMajor * 100) : null,
+      currency: monetaryDecision ? currency : null,
+    }, idempotencyKey);
     patch({ busy: false });
     showMsg(r.message, r.message.toLowerCase().includes('reversed') ? 'success' : 'error');
-    if (r.message.toLowerCase().includes('reversed')) patch({ reverseNote: '' });
+    if (r.message.toLowerCase().includes('reversed')) {
+      reversalRequestKeyRef.current = null;
+      patch({ reverseNote: '' });
+    }
     await refreshHistory();
     scheduleReloadDecision(resolvedActiveClaimId);
   }

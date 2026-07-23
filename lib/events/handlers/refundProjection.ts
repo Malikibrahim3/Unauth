@@ -1,12 +1,6 @@
 import type { DomainEventHandler } from '@/lib/events/handlers/types';
-import { recordDomainEvent } from '@/lib/events/domainEventStore';
 import { TABLES } from '@/lib/supabase/tables';
 import { syncPayoutCaseMerchantCustomer } from '@/lib/identity/merchantCustomerResolver';
-
-const DECISION_HANDLERS = [
-  'financialProjection', 'lossProjection', 'recoveryProjection',
-  'customerProjection', 'caseProjection', 'notificationProjection',
-];
 
 export const refundProjection: DomainEventHandler = async (client, event) => {
   if (event.event_type !== 'refund.created') return { applied: false, detail: 'ignored' };
@@ -35,10 +29,10 @@ export const refundProjection: DomainEventHandler = async (client, event) => {
         source_order_id: orderId,
         case_origin: typeof payload.case_origin === 'string' ? payload.case_origin : 'connector',
         claim_type: 'refund_request',
-        status: 'decision_recorded',
+        status: 'manual_review',
         detection_method: 'platform_refund',
         requested_action: 'refund',
-        payout_decision_state: 'decision_recorded',
+        payout_decision_state: 'undecided',
         amount_at_risk: amountMinor / 100,
         currency,
         primary_currency: currency,
@@ -61,16 +55,26 @@ export const refundProjection: DomainEventHandler = async (client, event) => {
     evidence: { refund_domain_event_id: event.id },
   }, { onConflict: 'merchant_id,from_entity_type,from_entity_id,to_entity_type,to_entity_id,relationship_type' });
 
-  await recordDomainEvent(client, {
-    merchantId: event.merchant_id,
-    eventType: 'case.decision_recorded',
-    aggregateType: 'case',
-    aggregateId: caseId,
-    idempotencyKey: `refund-projection:${event.id}`,
-    payload: { action: 'refund', amount_minor: amountMinor, currency, refund_event_id: event.id },
-    occurredAt: event.occurred_at ?? undefined,
-    causationId: event.id,
-    handlers: DECISION_HANDLERS,
+  const { error: outcomeError } = await client.rpc('record_case_source_outcome', {
+    p_merchant_id: event.merchant_id,
+    p_case_id: caseId,
+    p_outcome_type: 'source_refund',
+    p_action: 'refund',
+    p_amount_minor: amountMinor,
+    // A verified refund is a realised payout-value loss. This is explicitly
+    // labelled as a payout-value basis, not an accounting-grade cost basis.
+    p_confirmed_loss_minor: amountMinor,
+    p_currency: currency,
+    p_reason: typeof payload.reason === 'string' ? payload.reason : 'Verified source refund reconciled',
+    p_source_record_id: typeof payload.source_record_id === 'string' ? payload.source_record_id : null,
+    p_source_metadata: {
+      refund_domain_event_id: event.id,
+      loss_basis: 'payout_value',
+      source_verified: true,
+    },
+    p_occurred_at: event.occurred_at ?? new Date().toISOString(),
+    p_idempotency_key: `refund-projection:${event.id}`,
   });
+  if (outcomeError) throw new Error(`refund_outcome_reconciliation_failed: ${outcomeError.message}`);
   return { applied: true, detail: `case:${caseId}` };
 };

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   ZendeskWebhookError,
+  authenticateZendeskSupportWebhook,
   extractZendeskTicketPayload,
   ingestZendeskSupportWebhook,
 } from '@/lib/support/zendesk/ingestWebhook';
@@ -11,10 +12,10 @@ import {
 import { readZendeskWebhookSecret } from '@/lib/support/zendesk/webhookAuth';
 import {
   ZENDESK_WEBHOOK_DOMAIN_QUERY_PARAM,
-  ZENDESK_WEBHOOK_SECRET_QUERY_PARAM,
 } from '@/lib/support/zendesk/supportConnectionShared';
 import { logGorgiasWebhookResult } from '@/lib/support/intake/webhookLog';
 import { enforceRateLimit, getClientIp, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
+import { readBoundedWebhookBody, WebhookBodyError } from '@/lib/webhooks/body';
 
 function safeWebhookRejectionContext(request: NextRequest, body: unknown): Record<string, unknown> {
   let ticket: Record<string, unknown> | null = null;
@@ -35,8 +36,7 @@ function safeWebhookRejectionContext(request: NextRequest, body: unknown): Recor
     has_ticket_id: Boolean(ticket && ticket.id != null),
     identity_source: identity?.source ?? null,
     has_domain_query: new URL(request.url).searchParams.has(ZENDESK_WEBHOOK_DOMAIN_QUERY_PARAM),
-    has_secret_header: Boolean(readZendeskWebhookSecret(request.headers, null)),
-    has_secret_query: new URL(request.url).searchParams.has(ZENDESK_WEBHOOK_SECRET_QUERY_PARAM),
+    has_secret_header: Boolean(readZendeskWebhookSecret(request.headers)),
   };
 }
 
@@ -72,6 +72,20 @@ export async function POST(request: NextRequest) {
     request.headers.get(ZENDESK_SUBDOMAIN_HEADER) ??
     searchParams.get(ZENDESK_WEBHOOK_DOMAIN_QUERY_PARAM) ??
     getClientIp(request.headers);
+
+  let authenticatedContext;
+  try {
+    authenticatedContext = await authenticateZendeskSupportWebhook({
+      headers: request.headers,
+      requestUrl: request.url,
+    });
+  } catch (error) {
+    if (error instanceof ZendeskWebhookError) {
+      return NextResponse.json({ ok: false, error: error.message }, { status: error.status });
+    }
+    return NextResponse.json({ ok: false, error: 'authentication_failed' }, { status: 500 });
+  }
+
   const limited = await enforceRateLimit(
     rateLimitKey('webhook', 'zendesk', rateLimitIdentity),
     limitFromEnv('ZENDESK_WEBHOOK_RATE_LIMIT', 1000, 60)
@@ -80,8 +94,11 @@ export async function POST(request: NextRequest) {
 
   let body: unknown;
   try {
-    body = await request.json();
-  } catch {
+    body = JSON.parse(await readBoundedWebhookBody(request));
+  } catch (error) {
+    if (error instanceof WebhookBodyError) {
+      return NextResponse.json({ ok: false, error: error.code }, { status: error.status });
+    }
     await logGorgiasWebhookResult({
       provider: 'zendesk',
       status: 'validation_error',
@@ -96,6 +113,7 @@ export async function POST(request: NextRequest) {
       headers: request.headers,
       body,
       requestUrl: request.url,
+      authenticatedContext,
     });
     await logGorgiasWebhookResult({
       provider: 'zendesk',

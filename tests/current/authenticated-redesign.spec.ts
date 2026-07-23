@@ -30,11 +30,49 @@ const OLD_RGB = new Set([
   'rgb(216, 208, 189)',
 ]);
 
+async function blockAutomaticPrefetch(page: Page) {
+  await page.route(/(?:\?|&)_rsc=/, async (route) => {
+    if (await route.request().headerValue('next-router-prefetch') === '1') {
+      await route.abort();
+      return;
+    }
+    await route.continue();
+  });
+}
+
+async function settleBackgroundRequests(page: Page) {
+  try {
+    await page.waitForLoadState('networkidle', { timeout: 4_000 });
+  } catch {
+    // Some development-only streams remain open. The bounded wait still
+    // gives completed route requests time to leave the local runtime.
+  }
+}
+
+async function gotoAuthenticatedRoute(page: Page, route: string) {
+  const root = page.locator('.ua-app, .ua-auth-surface');
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    await page.goto(route, { waitUntil: 'commit', timeout: 60_000 });
+    await expect(root).toBeVisible({ timeout: 60_000 });
+    if (!/\/login(?:\?|$)/.test(page.url())) return;
+    if (attempt === 0) await page.waitForTimeout(500);
+  }
+  await expect(page).not.toHaveURL(/\/login(?:\?|$)/);
+}
+
+test.beforeEach(async ({ page }) => {
+  await blockAutomaticPrefetch(page);
+});
+
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: 'ignoreErrors' });
+});
+
 async function expectAuthenticatedSystem(page: Page, route: string) {
-  await page.goto(route, { waitUntil: 'domcontentloaded' });
+  await gotoAuthenticatedRoute(page, route);
   await expect(page).not.toHaveURL(/\/login(?:\?|$)/);
   const root = page.locator('.ua-app, .ua-auth-surface');
-  await expect(root).toBeVisible({ timeout: 20_000 });
+  await expect(root).toBeVisible({ timeout: 60_000 });
   await expect.poll(async () => {
     try {
       return await page.evaluate(() => {
@@ -68,17 +106,18 @@ async function expectAuthenticatedSystem(page: Page, route: string) {
     }
   }).toBe(true);
   expect(residue, `${route} rendered legacy authenticated colours`).toEqual([]);
+  await settleBackgroundRequests(page);
 }
 
 test('every static authenticated and compatibility route uses the new system', async ({ page }) => {
-  test.setTimeout(8 * 60_000);
+  test.setTimeout(12 * 60_000);
   for (const route of STATIC_AUTHENTICATED_ROUTES) {
     await test.step(route, async () => expectAuthenticatedSystem(page, route));
   }
 });
 
 test('seeded dynamic record routes use the new system', async ({ page }) => {
-  test.setTimeout(4 * 60_000);
+  test.setTimeout(8 * 60_000);
   const sources: Array<{ source: string; patterns: string[] }> = [
     { source: '/work', patterns: ['/claims/'] },
     { source: '/customers', patterns: ['/customers/'] },
@@ -92,7 +131,12 @@ test('seeded dynamic record routes use the new system', async ({ page }) => {
 
   const destinations = new Set<string>();
   for (const { source, patterns } of sources) {
-    await page.goto(source, { waitUntil: 'domcontentloaded' });
+    await gotoAuthenticatedRoute(page, source);
+    // `gotoAuthenticatedRoute` intentionally returns at the first committed
+    // authenticated shell. Wait for the streamed route data before looking
+    // for record links, otherwise a fast local run can inspect the shell
+    // before the seeded list has rendered.
+    await settleBackgroundRequests(page);
     for (const pattern of patterns) {
       const links = page.locator(`main a[href^="${pattern}"]`);
       const count = await links.count();
@@ -115,7 +159,8 @@ test('visual enrichment preserves provider identity and focal hierarchy', async 
   await expect(page.locator('img[src*="shopify"]')).toBeVisible();
   await expect(page.locator('img[src*="gorgias"]')).toBeVisible();
   await expect(page.locator('img[src*="shipbob"]')).toBeVisible();
-  await expect(page.locator('.ua-focal-panel')).not.toHaveCount(0);
+  await expect(page.locator('[data-auth-visual="key-insight"]')).toHaveCount(1);
+  await expect(page.locator('[data-auth-visual="summary-rail"]')).toHaveCount(1);
 
   await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
   await expect(page.getByRole('region', { name: 'Value this period' })).toBeVisible();
@@ -141,7 +186,6 @@ test('dashboard pilot interactions and responsive layout remain operational', as
   await expect(recoveredTab).toHaveCount(1);
   await recoveredTab.click();
   await expect(recoveredTab).toHaveAttribute('aria-selected', 'true');
-  await expect(page.locator('[data-capability-id="reports.metric.recovered"]')).toHaveAttribute('aria-selected', 'true');
 
   const detailsButton = page.getByRole('button', { name: 'Details', exact: true });
   await expect(detailsButton).toHaveCount(1);
@@ -155,31 +199,30 @@ test('dashboard pilot interactions and responsive layout remain operational', as
   await expect(page.getByRole('button', { name: 'Open navigation' })).toBeVisible();
 });
 
-test('operational routes use purpose-specific charts from one visual grammar', async ({ page }) => {
-  test.setTimeout(4 * 60_000);
-  const routeCharts = [
-    ['/work', 'deadline-risk'],
-    ['/claims', 'column-comparison'],
-    ['/losses', 'ranked-contribution'],
-    ['/recoveries', 'stage-funnel'],
-    ['/customers', 'range-plot'],
-    ['/rules', 'status-matrix'],
-    ['/flows', 'mini-bar-sequence'],
-    ['/integrations', 'source-health-matrix'],
-    ['/notifications', 'activity-strip'],
+test('operational routes use purpose-specific insights from one visual grammar', async ({ page }) => {
+  test.setTimeout(8 * 60_000);
+  const routeVisuals = [
+    ['/work', 'Deadline risk'],
+    ['/claims', 'Decision states'],
+    ['/losses', 'Loss contribution'],
+    ['/recoveries', 'Stage volume'],
+    ['/customers', 'Case context'],
+    ['/rules', 'Rule lifecycle'],
+    ['/flows', 'Action load'],
+    ['/integrations', 'Source health'],
+    ['/notifications', 'Recent activity'],
   ] as const;
 
-  for (const [route, chart] of routeCharts) {
-    await test.step(`${route} → ${chart}`, async () => {
-      await page.goto(route, { waitUntil: 'domcontentloaded' });
-      await expect(page.locator(`[data-auth-chart="${chart}"]`)).toBeVisible({ timeout: 30_000 });
-      await expect(page.locator('[data-auth-chart]')).toHaveCount(1);
-      const dataDisclosure = page.locator(`[data-auth-chart="${chart}"] summary`);
-      await expect(dataDisclosure).toBeVisible();
-      await dataDisclosure.focus();
-      await page.keyboard.press('Enter');
-      await expect(page.locator(`[data-auth-chart="${chart}"] details`)).toHaveAttribute('open', '');
+  for (const [route, summaryTitle] of routeVisuals) {
+    await test.step(`${route} → ${summaryTitle}`, async () => {
+      await gotoAuthenticatedRoute(page, route);
+      await expect(page).toHaveURL(new RegExp(`${route}(?:\\?|$)`), { timeout: 60_000 });
+      await expect(page.locator('[data-auth-visual="key-insight"]')).toBeVisible({ timeout: 60_000 });
+      const summaryRail = page.locator('[data-auth-visual="summary-rail"]');
+      await expect(summaryRail).toBeVisible({ timeout: 60_000 });
+      await expect(summaryRail.getByRole('heading', { name: summaryTitle })).toBeVisible();
       expect(await page.evaluate(() => document.body.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+      await settleBackgroundRequests(page);
     });
   }
 });

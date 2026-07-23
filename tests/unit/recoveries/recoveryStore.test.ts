@@ -57,6 +57,27 @@ function fakeClient(state: ConstructorParameters<typeof FakeQuery>[1]) {
     from(table: string) {
       return new FakeQuery(table, state);
     },
+    async rpc(fn: string, args: Record<string, unknown>) {
+      if (fn !== 'transition_recovery_case') return { data: null, error: null };
+      const fromStatus = String(state.recoveryCase.status);
+      const toStatus = String(args.p_status);
+      state.recoveryCase = {
+        ...state.recoveryCase,
+        status: toStatus,
+        next_chase_at: toStatus === 'submitted' ? '2026-06-26T00:00:00.000Z' : state.recoveryCase.next_chase_at,
+      };
+      state.insertedEvents.push({
+        id: `event-${state.insertedEvents.length + 1}`,
+        merchant_id: args.p_merchant_id,
+        recovery_case_id: args.p_recovery_case_id,
+        event_type: args.p_event_type,
+        from_status: fromStatus,
+        to_status: toStatus,
+        note: args.p_note,
+        idempotency_key: args.p_idempotency_key,
+      });
+      return { data: { status: toStatus, replayed: false }, error: null };
+    },
   } as never;
 }
 
@@ -98,6 +119,7 @@ describe('recovery store', () => {
       merchantId: '00000000-0000-0000-0000-000000000001',
       recoveryCaseId: '00000000-0000-0000-0000-000000000020',
       status: 'submitted',
+      idempotencyKey: 'recovery-status-test-1',
     });
 
     expect(updated.status).toBe('submitted');

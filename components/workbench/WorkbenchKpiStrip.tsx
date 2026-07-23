@@ -37,7 +37,7 @@ export function WorkbenchKpiStrip({ items, colsClassName = 'grid-cols-2 md:grid-
               item.value
             )}
           </dd>
-          {item.hint ? <p className={styles.kpiHint}>{item.hint}</p> : null}
+          {item.hint ? <dd className={styles.kpiHint}>{item.hint}</dd> : null}
         </div>
       ))}
     </dl>

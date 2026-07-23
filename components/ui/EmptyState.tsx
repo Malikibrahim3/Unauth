@@ -33,7 +33,7 @@ export function EmptyState({
   if (variant === 'compact') {
     return (
       <div className={cn('px-4 py-8', className)}>
-        <p
+        <h2
           className="flex items-center gap-2 text-body-sm font-semibold"
           style={{ color: 'var(--text)' }}
         >
@@ -49,7 +49,7 @@ export function EmptyState({
             />
           )}
           {title}
-        </p>
+        </h2>
         {description && (
           <p className="text-caption mt-1" style={{ color: 'var(--text-secondary)' }}>
             {description}

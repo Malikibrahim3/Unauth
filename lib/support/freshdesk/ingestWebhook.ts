@@ -24,6 +24,11 @@ import {
 import { fetchFreshdeskTicketById } from '@/lib/support/freshdesk/freshdeskApi';
 import { FreshdeskApiError } from '@/lib/support/freshdesk/freshdeskApi';
 import { getActiveFreshdeskMerchantApiAccess } from '@/lib/support/freshdesk/merchantApiAccess';
+import { completeProcessedWebhook } from '@/lib/commerce/processedWebhookHandler';
+import {
+  claimSupportTicketDelivery,
+  replayedSupportResult,
+} from '@/lib/support/webhookEventSafety';
 
 export class FreshdeskWebhookError extends Error {
   constructor(
@@ -104,6 +109,7 @@ export type IngestFreshdeskWebhookInput = {
   body: unknown;
   shopDomain?: string | null;
   requestUrl?: string | null;
+  authenticatedContext?: ResolvedMerchantContext;
 };
 
 function webhookSearchParamsFromRequestUrl(requestUrl?: string | null): URLSearchParams {
@@ -115,11 +121,30 @@ function webhookSearchParamsFromRequestUrl(requestUrl?: string | null): URLSearc
   }
 }
 
-type ResolvedMerchantContext = {
+export type ResolvedMerchantContext = {
   merchantId: string;
   connection: FreshdeskSupportConnectionRow | null;
   providerConnectionId: string | null;
 };
+
+export async function authenticateFreshdeskSupportWebhook(
+  input: Pick<IngestFreshdeskWebhookInput, 'headers' | 'requestUrl'>,
+  supabase: unknown = createServiceClient(),
+): Promise<ResolvedMerchantContext> {
+  const probe: IngestFreshdeskWebhookInput = {
+    headers: input.headers,
+    body: null,
+    requestUrl: input.requestUrl,
+  };
+  const merchantContext = await resolveMerchantContext(supabase, probe);
+  const auth = verifyFreshdeskWebhookAuth({
+    headerSecret: readFreshdeskWebhookSecret(input.headers),
+    connection: merchantContext.connection,
+    hasResolvedConnection: merchantContext.connection !== null,
+  });
+  if (!auth.ok) throw new FreshdeskWebhookError(auth.status, auth.code);
+  return merchantContext;
+}
 
 async function resolveMerchantContext(
   supabase: unknown,
@@ -254,26 +279,8 @@ export async function ingestFreshdeskSupportWebhook(
   const explicitShopDomain = input.shopDomain ?? shopDomainHeader ?? undefined;
 
   const supabase = createServiceClient();
-  const webhookSearchParams = webhookSearchParamsFromRequestUrl(input.requestUrl);
-  const merchantContext = await resolveMerchantContext(supabase, input);
-
-  const headerSecret = readFreshdeskWebhookSecret(input.headers, webhookSearchParams);
-  const auth = verifyFreshdeskWebhookAuth({
-    headerSecret,
-    connection: merchantContext.connection,
-    hasResolvedConnection: merchantContext.connection !== null,
-  });
-
-  if (!auth.ok) {
-    if (merchantContext.providerConnectionId) {
-      await recordFreshdeskSupportConnectionError(
-        supabase,
-        merchantContext.providerConnectionId,
-        auth.code
-      );
-    }
-    throw new FreshdeskWebhookError(auth.status, auth.code);
-  }
+  const merchantContext = input.authenticatedContext
+    ?? await authenticateFreshdeskSupportWebhook(input, supabase);
 
   const shopDomain = await resolveShopDomainForFreshdeskIngest({
     supabase,
@@ -289,6 +296,22 @@ export async function ingestFreshdeskSupportWebhook(
     ticket: initialTicket,
   });
 
+  const delivery = await claimSupportTicketDelivery(supabase, {
+    provider: 'freshdesk',
+    merchantId: merchantContext.merchantId,
+    providerConnectionId: connectionId,
+    eventType,
+    ticket,
+  });
+  if (delivery.status === 'duplicate') {
+    const replay = replayedSupportResult(delivery.result);
+    if (replay) return replay;
+    throw new FreshdeskWebhookError(500, 'freshdesk_replay_result_missing');
+  }
+  if (delivery.status === 'conflict') throw new FreshdeskWebhookError(409, 'freshdesk_delivery_conflict');
+  if (delivery.retry) throw new FreshdeskWebhookError(503, 'freshdesk_delivery_in_progress');
+  if (delivery.status === 'stale') throw new FreshdeskWebhookError(200, 'stale_event_ignored');
+
   try {
     const result = await ingestSupportCase(supabase, {
       merchant_id: merchantContext.merchantId,
@@ -303,8 +326,24 @@ export async function ingestFreshdeskSupportWebhook(
       await touchFreshdeskSupportConnectionSync(supabase, connectionId);
     }
 
+    await completeProcessedWebhook(
+      supabase,
+      delivery.idempotencyKey,
+      delivery.claimToken,
+      'completed',
+      null,
+      result,
+    );
+
     return result;
   } catch (error) {
+    await completeProcessedWebhook(
+      supabase,
+      delivery.idempotencyKey,
+      delivery.claimToken,
+      'failed',
+      error instanceof Error ? error.message : 'freshdesk_ingest_failed',
+    ).catch(() => undefined);
     if (connectionId) {
       await recordFreshdeskSupportConnectionError(
         supabase,

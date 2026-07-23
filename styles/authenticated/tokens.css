@@ -38,15 +38,15 @@
   --text: #171713;
   --text-primary: #171713;
   --text-secondary: #66665f;
-  --text-tertiary: #8d8b83;
+  --text-tertiary: #6d6b64;
   --text-muted: #66665f;
-  --text-subtle: #8d8b83;
+  --text-subtle: #6d6b64;
   --text-disabled: #b7b4aa;
   --text-inverse: #ffffff;
   --text-link: #c94706;
   --ink-primary: #171713;
   --ink-secondary: #66665f;
-  --ink-tertiary: #8d8b83;
+  --ink-tertiary: #6d6b64;
   --ink-inverse: #ffffff;
   --icon: #4d4c46;
   --icon-muted: #96948c;
@@ -60,22 +60,22 @@
 
   /* Warm orange is the product action colour. Blue remains reserved for
    * operational-health and informational data visualisation. */
-  --accent: #ff5a0a;
-  --accent-hover: #dd4600;
+  --accent: #c94706;
+  --accent-hover: #a93b05;
   --accent-soft: #fff0e8;
   --accent-border: #ffd0b9;
   --accent-subtle: #fff7f2;
   --brand-signal: #ff5a0a;
   --brand-signal-soft: #fff0e8;
-  --brand-deep: #dc4700;
+  --brand-deep: #b93b00;
   --accent-fg-on-500: #ffffff;
-  --action-primary: #ff5a0a;
-  --action-primary-hover: #dd4600;
+  --action-primary: #c94706;
+  --action-primary-hover: #a93b05;
   --action-primary-soft: #fff0e8;
   --action-ink: #c94706;
   --action-ink-hover: #a93b05;
   --action-ink-soft: #fff0e8;
-  --primary: #ff5a0a;
+  --primary: #c94706;
   --primary-foreground: #ffffff;
   --secondary: #efeee7;
   --secondary-foreground: #171713;

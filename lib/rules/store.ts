@@ -206,8 +206,8 @@ function buildRulesTrace(
 
 /**
  * Writes the audit row for an evaluation. Never skipped — even for no_match.
- * A failed audit write is logged but does not throw, so it can never break the
- * recommendation surface.
+ * A failed audit write rejects. Returning a recommendation without its rule
+ * snapshot would create an unaudited sensitive result.
  */
 export async function writeRuleEvaluationAudit(
   client: SupabaseClient,
@@ -236,14 +236,11 @@ export async function writeRuleEvaluationAudit(
     all_rules_evaluated: trace,
   });
   if (error) {
-    console.error(
-      "[rules-engine] failed to write rule_evaluations audit row",
-      error.message,
-    );
+    throw new Error(`rule_evaluation_audit_failed: ${error.message}`);
   }
 }
 
-export type RuleAuditStatus = "written" | "deduped" | "failed";
+export type RuleAuditStatus = "written" | "deduped";
 
 export interface ClaimRuleEvaluationAuditInput {
   merchantId: string;
@@ -335,15 +332,7 @@ export async function writeClaimRuleEvaluationAudit(
     evaluated_at: evaluatedAt,
   });
   if (error) {
-    console.error(
-      "[rules-engine] failed to write claim rule_evaluations audit row",
-      {
-        message: error.message,
-        claimId: input.claimId,
-        evaluationSource: input.evaluationSource,
-      },
-    );
-    return "failed";
+    throw new Error(`claim_rule_evaluation_audit_failed: ${error.message}`);
   }
   return "written";
 }

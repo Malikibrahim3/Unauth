@@ -117,6 +117,28 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
     </Field>
   );
 
+  const optionalRetentionField = (
+    <Field
+      label="Raw inbox retention (optional)"
+      help="Explicit days before terminal raw ingestion payloads are purged. Leave blank until your approved retention policy supplies a period; canonical case, evidence, financial, and audit records are unaffected."
+    >
+      <input
+        type="number"
+        min={30}
+        max={3650}
+        disabled={!canManage || loading || state === "saving"}
+        value={settings.retentionDays ?? ""}
+        onChange={(event) =>
+          patch(
+            "retentionDays",
+            event.target.value === "" ? null : Number(event.target.value),
+          )
+        }
+        className={INPUT_CLASS}
+      />
+    </Field>
+  );
+
   return (
     <form onSubmit={save} className="space-y-3">
       {!canManage ? (
@@ -175,13 +197,7 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
               className={INPUT_CLASS}
             />
           </Field>
-          {numberField(
-            "retentionDays",
-            "Retention period",
-            "Days before eligible source records reach their retention deadline.",
-            30,
-            3650,
-          )}
+          {optionalRetentionField}
           {numberField(
             "defaultDateRangeDays",
             "Default report range",

@@ -16,7 +16,6 @@ import {
   ZENDESK_SUPPORT_WEBHOOK_HEADER_NAME,
   ZENDESK_SUPPORT_WEBHOOK_PATH,
   ZENDESK_WEBHOOK_DOMAIN_QUERY_PARAM,
-  ZENDESK_WEBHOOK_SECRET_QUERY_PARAM,
   ZendeskCredentialsError,
   type ZendeskSupportConnectionSettings,
 } from '@/lib/support/zendesk/supportConnectionShared';
@@ -86,7 +85,6 @@ export function resolveZendeskConnectionIdentity(input: ZendeskSupportConnection
 
 export type BuildZendeskSupportWebhookUrlOptions = {
   subdomain?: string | null;
-  webhookSecretPlaintext?: string | null;
 };
 
 export function buildZendeskSupportWebhookUrl(
@@ -100,10 +98,6 @@ export function buildZendeskSupportWebhookUrl(
       ZENDESK_WEBHOOK_DOMAIN_QUERY_PARAM,
       normalizeZendeskSubdomain(subdomain),
     );
-  }
-  const secret = options?.webhookSecretPlaintext?.trim();
-  if (secret) {
-    url.searchParams.set(ZENDESK_WEBHOOK_SECRET_QUERY_PARAM, secret);
   }
   return url.toString();
 }
@@ -230,7 +224,6 @@ export async function createMerchantZendeskSupportConnection(
     webhook_secret_plaintext: webhookSecretPlaintext,
     webhook_url: buildZendeskSupportWebhookUrl({
       subdomain: identity.subdomain,
-      webhookSecretPlaintext,
     }),
     header_name: ZENDESK_SUPPORT_WEBHOOK_HEADER_NAME,
     warning: ZENDESK_SUPPORT_SECRET_SAVE_WARNING,

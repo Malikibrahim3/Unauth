@@ -21,8 +21,18 @@ import type { Decision, Outcome } from "@/components/claims/claimReviewTypes";
 import type { EvidencePack } from "@/lib/integrations/types";
 import type { SupportPayoutCase } from "@/lib/payouts/types";
 import type { RecoveryCase } from "@/lib/recoveries/types";
+import {
+  CaseFinancialHistoryCard,
+  type CaseFinancialSummary,
+} from "@/components/claims/payout/CaseFinancialHistoryCard";
 
-export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
+export function ClaimReviewContextColumn({
+  wb,
+  financialSummaries,
+}: {
+  wb: ClaimReviewWorkbench;
+  financialSummaries: CaseFinancialSummary[];
+}) {
   const {
     selectedClaim,
     latestOutcome,
@@ -68,6 +78,7 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
         stale={decisionStale}
         showEvidence={false}
       />
+      <CaseFinancialHistoryCard summaries={financialSummaries} />
       <IntegrationEvidenceSourcePanel evidencePack={evidencePack} />
       {selectedClaim ? (
         <RecoveryCaseCard

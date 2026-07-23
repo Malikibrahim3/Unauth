@@ -59,7 +59,7 @@ describe("safe configuration contracts", () => {
     const sql = fs.readFileSync(
       path.join(
         process.cwd(),
-        "supabase/migrations/20260713119000_configuration_archive_history.sql",
+        "supabase/migrations/20260720000000_canonical_production_baseline.sql",
       ),
       "utf8",
     );

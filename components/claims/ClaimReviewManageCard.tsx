@@ -8,16 +8,13 @@ import { EVIDENCE_TYPE_LABELS, EVIDENCE_SOURCE_LABELS } from '@/components/claim
 import type { Decision, Outcome, EvidenceType, EvidenceSource, ClaimStatus } from '@/components/claims/claimReviewTypes';
 import type { ClaimReviewWorkbench } from '@/components/claims/claimReviewWorkbench';
 import { Modal } from '@/components/ui/Modal';
-import { allowedOutcomes, decisionRequiresRationale, merchantDecisionSchema, type MerchantDecision } from '@/lib/claims/decision/merchantDecision';
+import { decisionRequiresRationale, merchantDecisionSchema, type MerchantDecision } from '@/lib/claims/decision/merchantDecision';
 import { formatClaimMoney } from '@/components/claims/claimReviewStyles';
 
 // Merchant-selectable decisions/outcomes are an explicit neutral allowlist —
 // accusation vocabulary is deliberately excluded (see docs/PRODUCT.md).
 const DECISION_OPTIONS: Decision[] = [
   'approved', 'denied', 'escalated', 'partial_refund', 'full_refund', 'chargeback_disputed', 'internal_watch', 'no_action',
-];
-const OUTCOME_OPTIONS: Outcome[] = [
-  'loss', 'recovered', 'pending', 'chargeback_won', 'chargeback_lost', 'customer_verified', 'legitimate',
 ];
 const EVIDENCE_TYPE_OPTIONS = Object.keys(EVIDENCE_TYPE_LABELS) as EvidenceType[];
 const EVIDENCE_SOURCE_OPTIONS = Object.keys(EVIDENCE_SOURCE_LABELS) as EvidenceSource[];
@@ -28,10 +25,6 @@ const DECISION_VERB: Record<string, string> = {
   approved: 'Approve payout', denied: 'Deny under policy', escalated: 'Escalate for review',
   partial_refund: 'Partial refund', full_refund: 'Full refund', chargeback_disputed: 'Dispute chargeback',
   internal_watch: 'Internal watch', no_action: 'No action',
-};
-const OUTCOME_VERB: Record<string, string> = {
-  loss: 'Loss', recovered: 'Recovered', pending: 'Pending', chargeback_won: 'Chargeback won',
-  chargeback_lost: 'Chargeback lost', customer_verified: 'Customer verified', legitimate: 'Legitimate',
 };
 
 export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbench; canManage: boolean }) {
@@ -59,11 +52,12 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
   const recoveryCase = (decisionData?.recoveryCase as { id?: string } | null | undefined) ?? null;
   const hasOutcome = Boolean(latestOutcome);
   const disabled = busy || !claimId;
-  const validOutcomes = allowedOutcomes(state.decision as MerchantDecision);
-  const validation = merchantDecisionSchema.safeParse({ decision: state.decision, outcome: state.outcome, notes: state.notes });
+  const validation = merchantDecisionSchema.safeParse({ decision: state.decision, outcome: 'pending', notes: state.notes });
   const validationMessage = validation.success ? null : validation.error.issues[0]?.message ?? 'Check the decision details.';
-  const amount = wb.selectedClaim?.amount_at_risk ?? null;
   const currency = wb.selectedClaim?.currency ?? null;
+  const amount = Number(state.decisionAmount);
+  const monetaryDecision = ['approved', 'partial_refund', 'full_refund', 'denied', 'no_action'].includes(state.decision);
+  const amountValid = !monetaryDecision || (Number.isFinite(amount) && amount >= 0 && Boolean(currency));
 
   return (
     <RailSection id="manage" title="Decision" open={state.railOpen.manage ?? true} onToggle={(id) => dispatch({ type: 'toggleRail', id })}>
@@ -87,25 +81,40 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
 
         {/* Record decision + outcome */}
         <div className="order-1 space-y-1.5">
-          <FieldLabel htmlFor="manage-decision">Decision &amp; outcome</FieldLabel>
+          <FieldLabel htmlFor="manage-decision">Merchant decision</FieldLabel>
           <select id="manage-decision" className="w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()}
             value={state.decision} onChange={(e) => {
               setDecisionTouched(true);
               const decision = e.target.value as Decision;
-              const outcomes = allowedOutcomes(decision as MerchantDecision);
-              patch({ decision, outcome: outcomes.includes(state.outcome as never) ? state.outcome : outcomes[0] as Outcome });
+              patch({ decision, outcome: 'pending' as Outcome });
             }} aria-label="Decision">
             {DECISION_OPTIONS.map((d) => <option key={d} value={d}>{DECISION_VERB[d] ?? d}</option>)}
           </select>
-          <select className="w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()}
-            value={state.outcome} onChange={(e) => { setDecisionTouched(true); patch({ outcome: e.target.value as Outcome }); }} aria-label="Outcome">
-            {OUTCOME_OPTIONS.filter((outcome) => validOutcomes.includes(outcome as never)).map((o) => <option key={o} value={o}>{OUTCOME_VERB[o] ?? o}</option>)}
-          </select>
+          {monetaryDecision ? (
+            <div className="grid grid-cols-[1fr_auto] gap-1.5">
+              <input
+                type="number"
+                min={0}
+                step="0.01"
+                className="w-full rounded-md px-2 py-1.5 text-xs"
+                style={inputStyle()}
+                value={state.decisionAmount}
+                onChange={(event) => patch({ decisionAmount: event.target.value })}
+                onBlur={() => setDecisionTouched(true)}
+                aria-label="Decision amount"
+                placeholder="Amount"
+              />
+              <span className="flex min-w-12 items-center justify-center rounded-md border border-[var(--border)] bg-[var(--surface-sunken)] px-2 text-xs font-semibold">
+                {currency ?? '—'}
+              </span>
+            </div>
+          ) : null}
           <textarea className="min-h-20 w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()}
             placeholder={decisionRequiresRationale(state.decision as MerchantDecision) ? 'Rationale (required)' : 'Decision rationale (optional)'} value={state.notes}
             onChange={(e) => patch({ notes: e.target.value })} onBlur={() => setDecisionTouched(true)} aria-label="Decision rationale" />
           {decisionTouched && validationMessage ? <p role="alert" className="text-xs text-[var(--danger)]">{validationMessage}</p> : null}
-          <button type="button" disabled={disabled || !validation.success}
+          {decisionTouched && !amountValid ? <p role="alert" className="text-xs text-[var(--danger)]">Enter a non-negative amount and known ISO currency.</p> : null}
+          <button type="button" disabled={disabled || !validation.success || !amountValid}
             onClick={() => setConfirming(true)}
             className="w-full px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-60" style={btnStyle('primary')}>
             Record decision
@@ -203,7 +212,7 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
         open={confirming}
         onClose={() => setConfirming(false)}
         title="Record merchant decision"
-        description="This action is append-only and will be attributed to your account."
+        description="This records your authorization and its value. It does not send a refund, replacement, credit, or external claim."
         actions={[{
           label: busy ? 'Recording…' : 'Confirm & record',
           onClick: () => {
@@ -214,11 +223,11 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
       >
         <dl className="space-y-3 text-sm">
           <div className="flex justify-between gap-4"><dt>Decision</dt><dd className="font-medium">{DECISION_VERB[state.decision] ?? state.decision}</dd></div>
-          <div className="flex justify-between gap-4"><dt>Recorded outcome</dt><dd className="font-medium">{OUTCOME_VERB[state.outcome] ?? state.outcome}</dd></div>
-          <div className="flex justify-between gap-4"><dt>Amount at risk</dt><dd className="font-mono font-medium">{amount == null ? 'Not available' : formatClaimMoney(amount, currency)}</dd></div>
+          <div className="flex justify-between gap-4"><dt>Authorized value</dt><dd className="font-mono font-medium">{monetaryDecision && amountValid ? formatClaimMoney(amount, currency) : 'Not applicable'}</dd></div>
+          <div className="flex justify-between gap-4"><dt>External action</dt><dd className="font-medium">None</dd></div>
         </dl>
         <div className="mt-4 rounded-md border border-[var(--border)] bg-[var(--surface-sunken)] p-3 text-xs text-[var(--text-secondary)]">
-          Financial ledger entries, and any resulting loss or recovery records, are created by the audited projection workflow. The source request itself is not modified automatically.
+          The approval stage is recorded in the append-only ledger. Paid value, realised loss, prevented value, and recovery are recorded only after their separate source or observation evidence arrives.
         </div>
       </Modal>
       <Modal

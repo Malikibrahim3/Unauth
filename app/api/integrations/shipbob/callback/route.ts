@@ -18,6 +18,7 @@ import {
   shipBobOAuthCookie,
 } from '@/lib/integrations/shipbobOAuthCookies';
 import { safeConnectionErrorCode } from '@/lib/integrations/publicErrors';
+import { readBoundedWebhookBody, WebhookBodyError } from '@/lib/webhooks/body';
 
 // Token exchange + channel lookup + webhook subscription is a multi-call
 // chain against ShipBob; the platform default duration can cut it off.
@@ -40,11 +41,12 @@ async function callbackParams(request: NextRequest): Promise<{ code: string | nu
       error: request.nextUrl.searchParams.get('error'),
     };
   }
-  const form = await request.formData();
+  const rawBody = await readBoundedWebhookBody(request, 16 * 1024);
+  const form = new URLSearchParams(rawBody);
   return {
-    code: typeof form.get('code') === 'string' ? String(form.get('code')) : null,
-    state: typeof form.get('state') === 'string' ? String(form.get('state')) : null,
-    error: typeof form.get('error') === 'string' ? String(form.get('error')) : null,
+    code: form.get('code'),
+    state: form.get('state'),
+    error: form.get('error'),
   };
 }
 
@@ -52,6 +54,7 @@ export async function GET(request: NextRequest) { return handleCallback(request)
 export async function POST(request: NextRequest) { return handleCallback(request); }
 
 async function handleCallback(request: NextRequest) {
+  let oauthStateForAudit: ShipBobOAuthState | null = null;
   const responseError = async (key: string) => {
     console.warn('shipbob_oauth_callback_rejected', {
       code: key,
@@ -72,8 +75,15 @@ async function handleCallback(request: NextRequest) {
     response.cookies.set(shipBobOAuthCookie, '', clearShipBobOAuthCookieOptions());
     return response;
   };
-  let oauthStateForAudit: ShipBobOAuthState | null = null;
-  const { code, state, error } = await callbackParams(request);
+  let callback;
+  try {
+    callback = await callbackParams(request);
+  } catch (callbackError) {
+    return responseError(
+      callbackError instanceof WebhookBodyError ? callbackError.code : 'invalid_body',
+    );
+  }
+  const { code, state, error } = callback;
   if (error) {
     try { oauthStateForAudit = state ? openShipBobOAuthState(state) : null; } catch { oauthStateForAudit = null; }
     console.warn('shipbob_oauth_provider_error', {

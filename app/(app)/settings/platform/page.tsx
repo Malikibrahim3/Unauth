@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/server";
+import { getRequestUser } from "@/lib/auth/requestContext";
 import {
   hasPermission,
   PERMISSIONS,
@@ -8,10 +9,7 @@ import {
 import { SettingsPageShell } from "@/components/settings/SettingsPageShell";
 import { PlatformSettingsClient } from "@/components/settings/PlatformSettingsClient";
 export default async function PlatformSettingsPage() {
-  const userClient = createClient();
-  const {
-    data: { user },
-  } = await userClient.auth.getUser();
+  const user = await getRequestUser();
   if (!user) redirect("/login");
   const client = createServiceClient();
   const { denied, ctx } = await requirePermission(

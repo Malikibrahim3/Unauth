@@ -19,7 +19,6 @@ import {
   FRESHDESK_SUPPORT_WEBHOOK_HEADER_NAME,
   FRESHDESK_SUPPORT_WEBHOOK_PATH,
   FRESHDESK_WEBHOOK_DOMAIN_QUERY_PARAM,
-  FRESHDESK_WEBHOOK_SECRET_QUERY_PARAM,
   FreshdeskCredentialsError,
   type FreshdeskSupportConnectionSettings,
 } from '@/lib/support/freshdesk/supportConnectionShared';
@@ -102,7 +101,6 @@ export function resolveFreshdeskConnectionIdentity(input: FreshdeskSupportConnec
 
 export type BuildFreshdeskSupportWebhookUrlOptions = {
   domain?: string | null;
-  webhookSecretPlaintext?: string | null;
 };
 
 export function buildFreshdeskSupportWebhookUrl(
@@ -113,10 +111,6 @@ export function buildFreshdeskSupportWebhookUrl(
   const domain = options?.domain?.trim();
   if (domain) {
     url.searchParams.set(FRESHDESK_WEBHOOK_DOMAIN_QUERY_PARAM, normalizeFreshdeskDomain(domain));
-  }
-  const secret = options?.webhookSecretPlaintext?.trim();
-  if (secret) {
-    url.searchParams.set(FRESHDESK_WEBHOOK_SECRET_QUERY_PARAM, secret);
   }
   return url.toString();
 }
@@ -247,7 +241,6 @@ export async function createMerchantFreshdeskSupportConnection(
     webhook_secret_plaintext: webhookSecretPlaintext,
     webhook_url: buildFreshdeskSupportWebhookUrl({
       domain: identity.domain,
-      webhookSecretPlaintext,
     }),
     header_name: FRESHDESK_SUPPORT_WEBHOOK_HEADER_NAME,
     warning: FRESHDESK_SUPPORT_SECRET_SAVE_WARNING,
@@ -328,7 +321,6 @@ export async function rotateMerchantFreshdeskWebhookSecret(
     webhook_secret_plaintext: webhookSecretPlaintext,
     webhook_url: buildFreshdeskSupportWebhookUrl({
       domain,
-      webhookSecretPlaintext,
     }),
     header_name: FRESHDESK_SUPPORT_WEBHOOK_HEADER_NAME,
     warning: FRESHDESK_SUPPORT_SECRET_SAVE_WARNING,

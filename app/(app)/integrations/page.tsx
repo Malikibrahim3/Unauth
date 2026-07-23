@@ -1,12 +1,15 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Cable, FileUp } from "lucide-react";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
 import {
   PERMISSIONS,
-  requirePermission,
   resolveDefaultAppPath,
 } from "@/lib/permissions";
+import {
+  getRequestServiceClient,
+  getRequestUser,
+  requirePagePermission,
+} from "@/lib/auth/requestContext";
 import { loadConnectorCatalogue } from "@/lib/connectors/catalogue";
 import { formatNumber } from "@/lib/utils/format";
 import {
@@ -27,18 +30,11 @@ const ACTIVE_BUCKETS = new Set(["connected"]);
 const ATTENTION_BUCKETS = new Set(["error", "attention_required"]);
 
 export default async function IntegrationsPage() {
-  const auth = createClient();
-  const {
-    data: { user },
-  } = await auth.auth.getUser();
+  const user = await getRequestUser();
   if (!user) redirect("/login");
-  const service = createServiceClient();
-  const { denied, ctx } = await requirePermission(
-    service,
-    user.id,
-    PERMISSIONS.VIEW_SETTINGS,
-  );
-  if (denied || !ctx) redirect(await resolveDefaultAppPath(service, user.id));
+  const service = getRequestServiceClient();
+  const ctx = await requirePagePermission(PERMISSIONS.VIEW_SETTINGS);
+  if (!ctx) redirect(await resolveDefaultAppPath(service, user.id));
   const catalogueRows = await loadConnectorCatalogue(service, ctx.merchantId);
   const catalogue: CatalogueRowItem[] = catalogueRows.map((item) => {
     // Stored sync and freshness state renders immediately; the deferred live
@@ -182,19 +178,21 @@ export default async function IntegrationsPage() {
               <p className="mt-1 text-xs text-[var(--text-secondary)]">
                 {group.description}
               </p>
-              <p className="mt-1 text-[11px] font-medium text-[var(--brand-deep)] md:hidden">
-                Swipe for coverage and freshness
+              <p className="mt-1 text-[11px] font-medium text-[var(--brand-deep)] xl:hidden">
+                Open a provider for full coverage and freshness details
               </p>
               </div>
             </div>
             <div className="mt-3 overflow-x-auto rounded-[var(--ua-radius-card)] border border-[var(--border)]">
-              <div className={`ua-panel-header ${CONNECTOR_GRID_CLASS} px-4 py-2.5 text-[11px] font-semibold text-[var(--text-tertiary)]`}>
-                <span>Provider</span>
-                <span>Status</span>
-                <span>Coverage</span>
-                <span className="text-right">Imported</span>
-                <span>Last activity</span>
-                <span aria-hidden="true" />
+              <div className="hidden xl:block">
+                <div className={`ua-panel-header ${CONNECTOR_GRID_CLASS} px-4 py-2.5 text-[11px] font-semibold text-[var(--text-tertiary)]`}>
+                  <span>Provider</span>
+                  <span>Status</span>
+                  <span>Coverage</span>
+                  <span className="text-right">Imported</span>
+                  <span>Last activity</span>
+                  <span aria-hidden="true" />
+                </div>
               </div>
               {group.items.map((item) => <ConnectorRow key={item.id} item={item} />)}
             </div>

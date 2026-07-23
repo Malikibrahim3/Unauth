@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
-import { fetchMerchantScopedCustomerProfile } from '@/lib/supabase/merchantHelpers';
+import { fetchMerchantScopedSourceCustomer } from '@/lib/supabase/merchantHelpers';
 import { listSupportCasesForCustomerProfile } from '@/lib/support/intake/supportCaseReadModel';
 
 export const dynamic = 'force-dynamic';
@@ -31,19 +31,19 @@ export async function GET(
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 
-  const profile = await fetchMerchantScopedCustomerProfile(
+  const customer = await fetchMerchantScopedSourceCustomer(
     serviceClient,
     ctx.merchantId,
     profileId
   );
-  if (!profile) {
+  if (!customer) {
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
   }
 
   const cases = await listSupportCasesForCustomerProfile(
     serviceClient,
     ctx.merchantId,
-    profileId
+    customer.id
   );
 
   return NextResponse.json({ support_cases: cases });

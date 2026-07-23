@@ -9,11 +9,7 @@ export const ZENDESK_SUPPORT_SECRET_HEADERS = [
 
 export const ZENDESK_SUPPORT_WEBHOOK_PATH = '/api/zendesk/support-webhook';
 
-/** Query param on the registered webhook URL — Zendesk triggers cannot always send custom headers. */
 export const ZENDESK_WEBHOOK_DOMAIN_QUERY_PARAM = 'zendesk_subdomain';
-
-/** Fallback secret transport when the Zendesk trigger/webhook UI can't send custom headers. */
-export const ZENDESK_WEBHOOK_SECRET_QUERY_PARAM = 'unauth_whsec';
 
 export const ZENDESK_SUPPORT_WEBHOOK_HEADER_NAME = ZENDESK_SUPPORT_SECRET_HEADERS[0];
 

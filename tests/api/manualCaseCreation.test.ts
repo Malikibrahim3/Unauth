@@ -13,13 +13,23 @@ function makeClient(orders: Array<{ id: string }>) {
           select: () => ({ eq: () => ({ eq: () => ({ limit: async () => ({ data: orders, error: null }) }) }) }),
         };
       }
+      const query: any = {
+        eq: () => query,
+        maybeSingle: async () => ({ data: null, error: null }),
+        then: (resolve: any) => resolve({ data: [], error: null }),
+      };
       return {
+        select: () => query,
         insert: (payload: any) => {
           (inserts[table] ??= []).push(payload);
           return {
             select: () => ({ single: async () => ({ data: { id: 'case-1' }, error: null }) }),
             then: (r: any) => r({ error: null }),
           };
+        },
+        upsert: (payload: any) => {
+          (inserts[table] ??= []).push(payload);
+          return Promise.resolve({ error: null });
         },
       };
     },

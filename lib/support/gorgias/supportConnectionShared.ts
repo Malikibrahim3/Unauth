@@ -14,11 +14,7 @@ export const GORGIAS_SUPPORT_SECRET_HEADERS = [
 
 export const GORGIAS_SUPPORT_WEBHOOK_PATH = '/api/gorgias/support-webhook';
 
-/** Query param on the registered webhook URL — Gorgias often omits custom headers. */
 export const GORGIAS_WEBHOOK_DOMAIN_QUERY_PARAM = 'gorgias_domain';
-
-/** Fallback secret transport when Gorgias does not forward integration headers. */
-export const GORGIAS_WEBHOOK_SECRET_QUERY_PARAM = 'unauth_whsec';
 
 export const GORGIAS_SUPPORT_WEBHOOK_HEADER_NAME = GORGIAS_SUPPORT_SECRET_HEADERS[0];
 

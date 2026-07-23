@@ -24,6 +24,11 @@ import {
 import { fetchGorgiasTicketById } from '@/lib/support/gorgias/fetchTicket';
 import { getActiveGorgiasMerchantApiAccess } from '@/lib/support/gorgias/merchantApiAccess';
 import { GorgiasSidebarRegistrationError } from '@/lib/support/gorgias/registerSidebarWidget';
+import { completeProcessedWebhook } from '@/lib/commerce/processedWebhookHandler';
+import {
+  claimSupportTicketDelivery,
+  replayedSupportResult,
+} from '@/lib/support/webhookEventSafety';
 
 export const GORGIAS_EVENT_TYPE_HEADER = 'x-gorgias-event-type';
 
@@ -90,6 +95,7 @@ export type IngestGorgiasWebhookInput = {
   shopDomain?: string | null;
   /** Full request URL — used for domain/secret query params on the registered webhook URL. */
   requestUrl?: string | null;
+  authenticatedContext?: ResolvedMerchantContext;
 };
 
 function webhookSearchParamsFromRequestUrl(requestUrl?: string | null): URLSearchParams {
@@ -101,11 +107,30 @@ function webhookSearchParamsFromRequestUrl(requestUrl?: string | null): URLSearc
   }
 }
 
-type ResolvedMerchantContext = {
+export type ResolvedMerchantContext = {
   merchantId: string;
   connection: GorgiasSupportConnectionRow | null;
   providerConnectionId: string | null;
 };
+
+export async function authenticateGorgiasSupportWebhook(
+  input: Pick<IngestGorgiasWebhookInput, 'headers' | 'requestUrl'>,
+  supabase: unknown = createServiceClient(),
+): Promise<ResolvedMerchantContext> {
+  const probe: IngestGorgiasWebhookInput = {
+    headers: input.headers,
+    body: null,
+    requestUrl: input.requestUrl,
+  };
+  const merchantContext = await resolveMerchantContext(supabase, probe, {});
+  const auth = verifyGorgiasWebhookAuth({
+    headerSecret: readGorgiasWebhookSecret(input.headers),
+    connection: merchantContext.connection,
+    hasResolvedConnection: merchantContext.connection !== null,
+  });
+  if (!auth.ok) throw new GorgiasWebhookError(auth.status, auth.code);
+  return merchantContext;
+}
 
 async function resolveMerchantContext(
   supabase: unknown,
@@ -240,26 +265,8 @@ export async function ingestGorgiasSupportWebhook(
   const explicitShopDomain = input.shopDomain ?? shopDomainHeader ?? undefined;
 
   const supabase = createServiceClient();
-  const webhookSearchParams = webhookSearchParamsFromRequestUrl(input.requestUrl);
-  const merchantContext = await resolveMerchantContext(supabase, input, initialTicket);
-
-  const headerSecret = readGorgiasWebhookSecret(input.headers, webhookSearchParams);
-  const auth = verifyGorgiasWebhookAuth({
-    headerSecret,
-    connection: merchantContext.connection,
-    hasResolvedConnection: merchantContext.connection !== null,
-  });
-
-  if (!auth.ok) {
-    if (merchantContext.providerConnectionId) {
-      await recordGorgiasSupportConnectionError(
-        supabase,
-        merchantContext.providerConnectionId,
-        auth.code
-      );
-    }
-    throw new GorgiasWebhookError(auth.status, auth.code);
-  }
+  const merchantContext = input.authenticatedContext
+    ?? await authenticateGorgiasSupportWebhook(input, supabase);
 
   const shopDomain = await resolveShopDomainForGorgiasIngest({
     supabase,
@@ -275,6 +282,22 @@ export async function ingestGorgiasSupportWebhook(
     ticket: initialTicket,
   });
 
+  const delivery = await claimSupportTicketDelivery(supabase, {
+    provider: 'gorgias',
+    merchantId: merchantContext.merchantId,
+    providerConnectionId: connectionId,
+    eventType,
+    ticket,
+  });
+  if (delivery.status === 'duplicate') {
+    const replay = replayedSupportResult(delivery.result);
+    if (replay) return replay;
+    throw new GorgiasWebhookError(500, 'gorgias_replay_result_missing');
+  }
+  if (delivery.status === 'conflict') throw new GorgiasWebhookError(409, 'gorgias_delivery_conflict');
+  if (delivery.retry) throw new GorgiasWebhookError(503, 'gorgias_delivery_in_progress');
+  if (delivery.status === 'stale') throw new GorgiasWebhookError(200, 'stale_event_ignored');
+
   try {
     const result = await ingestSupportCase(supabase, {
       merchant_id: merchantContext.merchantId,
@@ -289,8 +312,24 @@ export async function ingestGorgiasSupportWebhook(
       await touchGorgiasSupportConnectionSync(supabase, connectionId);
     }
 
+    await completeProcessedWebhook(
+      supabase,
+      delivery.idempotencyKey,
+      delivery.claimToken,
+      'completed',
+      null,
+      result,
+    );
+
     return result;
   } catch (error) {
+    await completeProcessedWebhook(
+      supabase,
+      delivery.idempotencyKey,
+      delivery.claimToken,
+      'failed',
+      error instanceof Error ? error.message : 'gorgias_ingest_failed',
+    ).catch(() => undefined);
     if (connectionId) {
       await recordGorgiasSupportConnectionError(
         supabase,

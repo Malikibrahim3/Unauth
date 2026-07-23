@@ -2,9 +2,11 @@
 
 Unauth separates provider presentation metadata from executable adapter behavior.
 
-`lib/integrations/providers` is the canonical provider catalogue. It owns stable IDs, labels, category, availability (`live`, `partial`, or `planned`), setup paths, help text, and logos. UI code must read this registry instead of maintaining local provider maps.
+`lib/integrations/providers` is the canonical provider catalogue. It owns stable IDs, labels, category, build status (`live`, `partial`, or `slot_only`), a ten-dimension lifecycle proof matrix, setup paths, help text, and logos. UI code must read this registry instead of maintaining local provider maps.
 
-`lib/connectors/registry.ts` contains providers that implement the generic runtime contract. Those adapters declare capabilities such as pull, webhook ingestion, reconciliation, and disconnect. A catalogue entry marked `partial` may have a specialized setup or webhook path without yet implementing that complete generic contract.
+The merchant-facing build-maturity label (`live`, `beta`, `partial`, or `planned`) is never read from `buildStatus` directly — it is *derived* from the lifecycle matrix by `deriveProviderDisplayStage()` (`lib/integrations/registry.ts`). Implementation, passing automated tests, and controlled-runtime verification are distinct evidence levels. "Live" requires fresh, complete, passing controlled evidence (environment, controlled account, date, build, scenario, result, limitations, and artifact) for every applicable lifecycle dimension. Provider kind, including `manual_upload`, and per-merchant connection health never upgrade build maturity. See `docs/audits/unauth-mvp-plus/08-provider-proof-matrix.md` for the full per-provider breakdown and evidence.
+
+`lib/connectors/registry.ts` contains providers that implement the generic runtime contract. Those adapters declare capabilities such as pull, webhook ingestion, reconciliation, and disconnect, plus their own `verificationStatus` (`verified`/`partial`/`unverified`) describing how much of that *generic* contract they implement. Dedicated provider routes may contain more implementation than a generic adapter, but neither adapter metadata nor code presence is controlled-runtime proof. A catalogue entry marked `partial` may have a specialized setup or webhook path without yet implementing or verifying that complete generic contract.
 
 ## Lifecycle
 

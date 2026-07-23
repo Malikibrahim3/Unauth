@@ -7,7 +7,6 @@ import { isFreshdeskProductionIngestMode } from '@/lib/support/freshdesk/resolve
 export { FRESHDESK_SUPPORT_SECRET_HEADERS } from '@/lib/support/freshdesk/supportConnectionShared';
 import {
   FRESHDESK_SUPPORT_SECRET_HEADERS,
-  FRESHDESK_WEBHOOK_SECRET_QUERY_PARAM,
 } from '@/lib/support/freshdesk/supportConnectionShared';
 
 export function readFreshdeskWebhookSecretHeader(
@@ -22,12 +21,8 @@ export function readFreshdeskWebhookSecretHeader(
 
 export function readFreshdeskWebhookSecret(
   headers: Headers | { get(name: string): string | null },
-  webhookSearchParams?: URLSearchParams | null
 ): string | null {
-  const fromHeader = readFreshdeskWebhookSecretHeader(headers);
-  if (fromHeader) return fromHeader;
-  const fromQuery = webhookSearchParams?.get(FRESHDESK_WEBHOOK_SECRET_QUERY_PARAM)?.trim();
-  return fromQuery || null;
+  return readFreshdeskWebhookSecretHeader(headers);
 }
 
 export function isFreshdeskGlobalWebhookSecretAllowed(): boolean {

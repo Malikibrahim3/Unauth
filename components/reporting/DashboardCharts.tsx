@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import type { IntelligenceReport, MoneyBridge } from '@/lib/reporting/intelligence';
+import { financialMetricValue, financialReportRecordsHref } from '@/lib/reporting/intelligence';
 import {
   formatCurrencyCompact,
   formatDateAbsolute,
@@ -15,15 +16,15 @@ import dvStyles from '@/components/charts/authenticated/AuthenticatedCharts.modu
 type CurrencyCharts = {
   bridge: MoneyBridge;
   causes: Array<{ name: string; valueMinor: number }>;
-  trend: Array<{ date: string; exposureMinor: number; recoveredMinor: number }>;
+  trend: Array<{ date: string; exposureMinor: number | null; recoveredMinor: number | null }>;
 };
 
 function compactMoney(valueMinor: number, currency: string) {
   return formatCurrencyCompact(valueMinor / 100, currency);
 }
 
-function conversion(numerator: number, denominator: number): string | null {
-  if (denominator <= 0 || numerator < 0) return null;
+function conversion(numerator: number | null, denominator: number | null): string | null {
+  if (numerator == null || denominator == null || denominator <= 0 || numerator < 0) return null;
   return `${Math.round((numerator / denominator) * 100)}%`;
 }
 
@@ -34,8 +35,8 @@ function chartData(report: IntelligenceReport): CurrencyCharts[] {
       .filter((point) => point.currency === bridge.currency)
       .map((point) => ({
         date: point.date,
-        exposureMinor: point.exposureMinor,
-        recoveredMinor: point.recoveredMinor,
+        exposureMinor: point.knownStates.includes('exposed') ? point.exposureMinor : null,
+        recoveredMinor: point.knownStates.includes('recovered') ? point.recoveredMinor : null,
       })),
     causes: report.causes
       .filter((row) => row.currency === bridge.currency && row.amountMinor > 0)
@@ -81,8 +82,13 @@ export function DashboardCharts({ report }: { report: IntelligenceReport }) {
                 <p className="text-xs text-[var(--text-secondary)]">Daily ledger value</p>
                 <ChartLegend items={[{ label: 'Exposure', tone: 'orange' }, { label: 'Recovered', tone: 'green' }]} />
               </div>
-              {trend.length ? (
+              {trend.some((point) => point.exposureMinor != null || point.recoveredMinor != null) ? (
                 <>
+                  {trend.some((point) => point.exposureMinor == null || point.recoveredMinor == null) ? (
+                    <p className="px-4 pt-2 text-xs text-[var(--text-secondary)]" role="status">
+                      Unavailable daily values are shown as gaps, not zero.
+                    </p>
+                  ) : null}
                   <div className="px-2 pb-2 pt-1">
                     <DualLineChart
                       data={trend.map<DualLinePoint>((point) => ({
@@ -99,6 +105,11 @@ export function DashboardCharts({ report }: { report: IntelligenceReport }) {
                       height={260}
                     />
                   </div>
+                  <ChartDataTable currency={bridge.currency} trend={trend} />
+                </>
+              ) : trend.length ? (
+                <>
+                  <ChartEmpty message="Dated exposure and recovery values are unavailable for this period." />
                   <ChartDataTable currency={bridge.currency} trend={trend} />
                 </>
               ) : (
@@ -119,7 +130,7 @@ export function DashboardCharts({ report }: { report: IntelligenceReport }) {
                 }))}
               />
               {causes.length ? (
-                <Link href={`/reports/records?kind=case&dimension=category&range=${report.range}&currency=${bridge.currency}`} className="mt-2 inline-flex text-xs font-semibold text-[var(--accent)]">
+                <Link href={financialReportRecordsHref({ range: report.range, currency: bridge.currency, metric: 'confirmed_loss' })} className="mt-2 inline-flex text-xs font-semibold text-[var(--accent)]">
                   View all causes
                 </Link>
               ) : null}
@@ -161,12 +172,15 @@ function ChartEmpty({ message }: { message: string }) {
 }
 
 function RecoveryLedger({ bridge }: { bridge: MoneyBridge }) {
+  const exposed = financialMetricValue(bridge, 'exposed');
+  const recoverable = financialMetricValue(bridge, 'recoverable');
+  const recovered = financialMetricValue(bridge, 'recovered');
   const rows = [
-    { label: 'Detected', value: bridge.requestedMinor, conversion: null },
-    { label: 'Pursued', value: bridge.recoverableMinor, conversion: conversion(bridge.recoverableMinor, bridge.requestedMinor) },
-    { label: 'Recovered', value: bridge.recoveredMinor, conversion: conversion(bridge.recoveredMinor, bridge.recoverableMinor) },
+    { label: 'Exposed', value: exposed, conversion: null },
+    { label: 'Pursued', value: recoverable, conversion: conversion(recoverable, exposed) },
+    { label: 'Recovered', value: recovered, conversion: conversion(recovered, recoverable) },
   ];
-  const hasActivity = rows.some((row) => row.value > 0);
+  const hasKnownValue = rows.some((row) => row.value != null);
 
   return (
     <section className="ua-section-panel rounded-[var(--radius-lg)] xl:col-span-12" aria-labelledby={`recovery-ledger-${bridge.currency}`}>
@@ -174,18 +188,26 @@ function RecoveryLedger({ bridge }: { bridge: MoneyBridge }) {
         <h3 id={`recovery-ledger-${bridge.currency}`} className="text-sm font-semibold">Recovery progression</h3>
         <p className="mt-0.5 text-xs text-[var(--text-secondary)]">Reconciled value through the recovery workflow</p>
       </div>
-      {hasActivity ? <dl className="grid sm:grid-cols-3">
+      {hasKnownValue ? <dl className="grid sm:grid-cols-3">
         {rows.map((row, index) => (
           <div key={row.label} className={`p-4 ${index > 0 ? 'border-t border-[var(--border-muted)] sm:border-l sm:border-t-0' : ''}`}>
             <dt className="text-xs font-medium text-[var(--text-secondary)]">{row.label}</dt>
-            <dd className={`mt-1 text-xl font-semibold ${dvStyles.mono}`}>{formatMoney(row.value, bridge.currency)}</dd>
+            <dd className={`mt-1 text-xl font-semibold ${dvStyles.mono}`}>
+              {row.value == null ? 'Unavailable' : formatMoney(row.value, bridge.currency)}
+            </dd>
             <dd className="mt-1 min-h-4 text-xs text-[var(--text-tertiary)]">
-              {row.conversion ? `${row.conversion} of previous stage` : index === 0 ? 'Requested payout value' : 'Conversion unavailable'}
+              {row.value == null
+                ? 'No known ledger value'
+                : row.conversion
+                  ? `${row.conversion} of previous stage`
+                  : index === 0
+                    ? 'Known current exposure'
+                    : 'Conversion unavailable'}
             </dd>
           </div>
         ))}
       </dl> : (
-        <p className="px-4 py-5 text-sm text-[var(--text-secondary)]">No recovery value entered this period.</p>
+        <p className="px-4 py-5 text-sm text-[var(--text-secondary)]">Recovery values are unavailable for this period.</p>
       )}
     </section>
   );
@@ -196,7 +218,7 @@ function ChartDataTable({
   trend,
 }: {
   currency: string;
-  trend: Array<{ date: string; exposureMinor: number; recoveredMinor: number }>;
+  trend: Array<{ date: string; exposureMinor: number | null; recoveredMinor: number | null }>;
 }) {
   return (
     <details className="border-t border-[var(--border-muted)] px-4 py-3">
@@ -214,8 +236,12 @@ function ChartDataTable({
             {trend.map((point) => (
               <tr key={point.date} className="border-b border-[var(--border-muted)]">
                 <th scope="row" className="py-2 text-left font-medium">{formatDateAbsolute(point.date)}</th>
-                <td className="py-2 text-right tabular-nums">{formatMoney(point.exposureMinor, currency)}</td>
-                <td className="py-2 text-right tabular-nums">{formatMoney(point.recoveredMinor, currency)}</td>
+                <td className="py-2 text-right tabular-nums">
+                  {point.exposureMinor == null ? 'Unavailable' : formatMoney(point.exposureMinor, currency)}
+                </td>
+                <td className="py-2 text-right tabular-nums">
+                  {point.recoveredMinor == null ? 'Unavailable' : formatMoney(point.recoveredMinor, currency)}
+                </td>
               </tr>
             ))}
           </tbody>

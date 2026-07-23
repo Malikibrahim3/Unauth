@@ -14,12 +14,15 @@ describe('controlled rollout contracts', () => {
     expect(read('proxy.ts')).not.toContain('legacyRouteRedirects');
   });
 
-  it('workspace switching has permission and target-membership checks', () => {
+  it('workspace switching authenticates and authorizes the exact active target membership', () => {
     const source = read('app/api/workspace/route.ts');
 
-    expect(source).toContain('requirePermission');
+    expect(source).toContain('supabase.auth.getUser()');
+    expect(source).not.toContain('requirePermission');
     expect(source).toContain(".eq('merchant_id', parsed.data.merchantId)");
     expect(source).toContain(".eq('user_id', user.id)");
+    expect(source).toContain(".eq('invite_status', 'active')");
+    expect(source).toContain('.maybeSingle()');
   });
 
   it('demo data covers the canonical operational lifecycle', () => {

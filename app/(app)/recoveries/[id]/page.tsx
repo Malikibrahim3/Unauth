@@ -1,15 +1,20 @@
 import { redirect } from 'next/navigation';
-import { createClient, createServiceClient } from '@/lib/supabase/server';
-import { PERMISSIONS, requirePermission } from '@/lib/permissions';
+import { PERMISSIONS } from '@/lib/permissions';
+import {
+  getRequestServiceClient,
+  getRequestUser,
+  requirePagePermission,
+} from '@/lib/auth/requestContext';
 import { TABLES } from '@/lib/supabase/tables';
 import { WorkbenchPage } from '@/components/ui';
 import { getRecoveryCase } from '@/lib/recoveries/store';
 import { RECOVERY_STATUS_LABELS, RECOVERY_OWNER_LABELS, type RecoveryCaseEvent } from '@/lib/recoveries/types';
 import { RECOVERY_TYPE_LABELS } from '@/lib/partners/types';
 import { formatCurrencyNullable, formatDateAbsolute, formatDateTime, formatNumber } from '@/lib/utils/format';
-import { recoveryOutstanding, recoverySoughtAmount } from '@/lib/recoveries/amounts';
-import { humanise, label } from '@/lib/ui/labels';
+import { recoveryOutstanding } from '@/lib/recoveries/amounts';
+import { label } from '@/lib/ui/labels';
 import { SetBreadcrumbLabel } from '@/components/layout/SetBreadcrumbLabel';
+import { humanizeEvidenceKey } from '@/components/claims/payout/payoutCopy';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,13 +33,12 @@ function Row({ label, value }: { label: string; value: string }) {
 
 export default async function RecoveryDetailPage({ params }: Props) {
   const { id } = await params;
-  const userClient = createClient();
-  const { data: { user } } = await userClient.auth.getUser();
+  const user = await getRequestUser();
   if (!user) redirect('/login');
 
-  const serviceClient = createServiceClient();
-  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_INBOX);
-  if (denied || !ctx) redirect('/dashboard');
+  const serviceClient = getRequestServiceClient();
+  const ctx = await requirePagePermission(PERMISSIONS.VIEW_INBOX);
+  if (!ctx) redirect('/dashboard');
 
   const recovery = await getRecoveryCase(serviceClient, ctx.merchantId, id);
   if (!recovery) redirect('/recoveries');
@@ -52,11 +56,10 @@ export default async function RecoveryDetailPage({ params }: Props) {
   ]);
 
   const missing = recovery.evidence_missing ?? [];
-  const sought = recoverySoughtAmount(recovery);
-  const recovered = recovery.amount_recovered ?? 0;
-  const writtenOff = recovery.status === 'closed_unrecoverable'
-    ? Math.max(0, sought - recovered)
-    : 0;
+  const sought = recovery.amount_sought_minor / 100;
+  const approved = recovery.amount_approved_minor / 100;
+  const recovered = recovery.amount_recovered_minor / 100;
+  const writtenOff = recovery.amount_written_off_minor / 100;
   const outstanding = recoveryOutstanding({ sought, recovered, writtenOff });
   const recoveryTitle = RECOVERY_TYPE_LABELS[recovery.recovery_type] ?? 'Recovery case';
 
@@ -68,7 +71,8 @@ export default async function RecoveryDetailPage({ params }: Props) {
       kpiItems={[
         { label: 'Merchant loss', value: formatCurrencyNullable(recovery.merchant_loss_amount, recovery.currency) ?? '-', hint: 'Recorded loss' },
         { label: 'Amount pursued', value: formatCurrencyNullable(sought, recovery.currency) ?? '-', hint: 'Bounded by the recovery estimate' },
-        { label: 'Recovered', value: formatCurrencyNullable(recovery.amount_recovered ?? null, recovery.currency) ?? '-', hint: 'Synced outcome' },
+        { label: 'Approved', value: formatCurrencyNullable(approved, recovery.currency) ?? '-', hint: 'Not recovered cash' },
+        { label: 'Recovered', value: formatCurrencyNullable(recovered, recovery.currency) ?? '-', hint: 'Actually received or credited' },
         { label: 'Outstanding', value: formatCurrencyNullable(outstanding, recovery.currency) ?? '-', hint: writtenOff > 0 ? 'Closed balance written off' : 'Pursued minus recovered' },
         { label: 'Evidence gaps', value: formatNumber(missing.length), hint: 'Missing items' },
       ]}
@@ -103,7 +107,7 @@ export default async function RecoveryDetailPage({ params }: Props) {
               <ul className="flex flex-wrap gap-1.5">
                 {missing.map((key) => (
                   <li key={key} className="rounded-md px-2 py-0.5 text-xs" style={{ backgroundColor: 'var(--surface-muted, rgba(0,0,0,0.04))', color: 'var(--text-secondary)' }}>
-                    {humanise(key)}
+                    {humanizeEvidenceKey(key)}
                   </li>
                 ))}
               </ul>

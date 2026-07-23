@@ -23,16 +23,19 @@ export default function HelpdeskSidebarPreview({ providerLabel }: HelpdeskSideba
             style={{ background: 'var(--sev-clear-fill)', borderColor: 'var(--neutral)', color: 'var(--neutral)' }}
           >
             <p className="text-sm font-bold">Case context available</p>
-            <p className="mt-1 opacity-90">Open the case in Unauth to review store and network context.</p>
-            <p className="mt-3 text-xs font-semibold uppercase tracking-wide opacity-70">Context actions</p>
-            <ul className="mt-1 list-disc space-y-0.5 pl-4 normal-case opacity-90">
+            <p className="mt-1">Open the case in Unauth to review store and network context.</p>
+            <p className="mt-3 text-xs font-semibold uppercase tracking-wide">Context actions</p>
+            <ul className="mt-1 list-disc space-y-0.5 pl-4 normal-case">
               <li>View Store Check — 1 credit</li>
               <li>View Network Check — 2 credits</li>
               <li>Generate Case Report — 3 credits</li>
             </ul>
             <div
-              className="mt-3 rounded px-2 py-1.5 normal-case opacity-80"
-              style={{ background: 'color-mix(in srgb, var(--text-primary) 8%, transparent)' }}
+              className="mt-3 rounded px-2 py-1.5 normal-case"
+              style={{
+                background: 'color-mix(in srgb, var(--text-primary) 8%, transparent)',
+                color: 'var(--text-primary)',
+              }}
             >
               Other merchants’ raw customer data is not exposed.
             </div>
@@ -45,7 +48,7 @@ export default function HelpdeskSidebarPreview({ providerLabel }: HelpdeskSideba
               </span>
             </div>
           </div>
-          <p className="mt-2 text-right opacity-40">Unauth</p>
+          <p className="mt-2 text-right">Unauth</p>
         </div>
         <p className="max-w-xs text-[11px] leading-5" style={{ color: 'var(--text-secondary)' }}>
           Approximate appearance inside {providerLabel} (~300px sidebar). The widget is a context

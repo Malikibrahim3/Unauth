@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import { verifyCollectorToken } from '@/lib/checkout/collectorToken';
+import { readBoundedWebhookBody, WebhookBodyError } from '@/lib/webhooks/body';
 
 export const runtime = 'nodejs';
 
@@ -18,10 +19,12 @@ const SHA256_RE = /^[0-9a-f]{64}$/i;
 const PLATFORMS = new Set(['shopify', 'woocommerce', 'bigcommerce']);
 const EVENT_TYPES = new Set(['pageview', 'checkout', 'email_capture']);
 const ACCOUNT_TYPES = new Set(['guest', 'registered', 'unknown']);
+const MAX_CHECKOUT_SIGNAL_BODY_BYTES = 32 * 1024;
 
 type ServiceClient = ReturnType<typeof createServiceClient>;
 
 type ParsedSignal = {
+  eventId: string | null;
   merchantId: string;
   visitorId: string;
   sessionId: string;
@@ -34,7 +37,7 @@ type ParsedSignal = {
   checkoutReached: boolean;
   cartCount: number | null;
   eventType: 'pageview' | 'checkout' | 'email_capture';
-  ts: number | null;
+  ts: number;
 };
 
 function json(body: unknown, init?: ResponseInit): NextResponse {
@@ -69,19 +72,29 @@ function integerOrNull(value: unknown): number | null {
   return Math.min(n, 100000);
 }
 
+function eventIdOrNull(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const normalized = value.trim();
+  if (!normalized || normalized.length > 128) return null;
+  return normalized;
+}
+
 function parseSignalBody(body: Record<string, unknown>, merchantId: string): ParsedSignal | null {
   const visitorId = text(body.visitorId, 128);
   const sessionId = text(body.sessionId, 128);
   const platform = text(body.platform, 32);
   const eventType = text(body.eventType, 32);
+  const ts = Number(body.ts);
   if (!visitorId || !sessionId || !platform || !PLATFORMS.has(platform)) return null;
   if (!eventType || !EVENT_TYPES.has(eventType)) return null;
+  if (!Number.isFinite(ts) || ts <= 0) return null;
 
   const account = text(body.accountType, 32);
   const emailHash = hashOrNull(body.emailHash);
   if (eventType === 'email_capture' && !emailHash) return null;
 
   return {
+    eventId: eventIdOrNull(body.eventId),
     merchantId,
     visitorId,
     sessionId,
@@ -94,7 +107,7 @@ function parseSignalBody(body: Record<string, unknown>, merchantId: string): Par
     checkoutReached: body.checkoutReached === true,
     cartCount: integerOrNull(body.cartCount),
     eventType: eventType as ParsedSignal['eventType'],
-    ts: Number.isFinite(Number(body.ts)) ? Number(body.ts) : null,
+    ts,
   };
 }
 
@@ -111,29 +124,7 @@ async function checkRateLimit(supabase: ServiceClient, ipHash: string): Promise<
   if (!error && typeof data === 'number') {
     return data <= 100;
   }
-
-  const { data: existing, error: readError } = await supabase
-    .from(TABLES.INGEST_RATE_LIMITS)
-    .select('request_count')
-    .eq('ip_hash', ipHash)
-    .eq('window_start', windowIso)
-    .maybeSingle();
-  if (readError) return false;
-
-  if (!existing) {
-    const { error: insertError } = await supabase
-      .from(TABLES.INGEST_RATE_LIMITS)
-      .insert({ ip_hash: ipHash, window_start: windowIso, request_count: 1 });
-    return !insertError;
-  }
-
-  const nextCount = Number(existing.request_count ?? 0) + 1;
-  const { error: updateError } = await supabase
-    .from(TABLES.INGEST_RATE_LIMITS)
-    .update({ request_count: nextCount })
-    .eq('ip_hash', ipHash)
-    .eq('window_start', windowIso);
-  return !updateError && nextCount <= 100;
+  return false;
 }
 
 async function resolveMerchantId(
@@ -167,25 +158,9 @@ async function resolveMerchantId(
   return null;
 }
 
-async function isDuplicate(
-  supabase: ServiceClient,
-  signal: Pick<ParsedSignal, 'merchantId' | 'visitorId' | 'sessionId' | 'eventType' | 'page'>
-): Promise<boolean> {
-  const since = new Date(Date.now() - 60_000).toISOString();
-  const { count } = await supabase
-    .from(TABLES.CHECKOUT_SIGNALS)
-    .select('id', { count: 'exact', head: true })
-    .eq('merchant_id', signal.merchantId)
-    .eq('visitor_id', signal.visitorId)
-    .eq('session_id', signal.sessionId)
-    .eq('event_type', signal.eventType)
-    .eq('page', signal.page ?? '')
-    .gte('created_at', since);
-  return (count ?? 0) > 0;
-}
-
 function sanitizedRawPayload(signal: ParsedSignal): Record<string, unknown> {
   return {
+    eventId: signal.eventId,
     merchantId: signal.merchantId,
     visitorId: signal.visitorId,
     sessionId: signal.sessionId,
@@ -202,28 +177,35 @@ function sanitizedRawPayload(signal: ParsedSignal): Record<string, unknown> {
   };
 }
 
+function signalIdempotencyKey(signal: ParsedSignal): string {
+  if (signal.eventId) return `event:${sha256(signal.eventId)}`;
+  return `legacy:${sha256(JSON.stringify(sanitizedRawPayload(signal)))}`;
+}
+
 export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = createServiceClient();
-  const rawIp =
-    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-    request.headers.get('x-real-ip') ||
-    '0.0.0.0';
-  const ipHash = sha256(rawIp);
-
-  const allowed = await checkRateLimit(supabase, ipHash);
-  if (!allowed) return json({ ok: false }, { status: 429 });
-
+  let rawBody: string;
+  try {
+    rawBody = await readBoundedWebhookBody(request, MAX_CHECKOUT_SIGNAL_BODY_BYTES);
+  } catch (error) {
+    if (error instanceof WebhookBodyError) {
+      return json({ ok: false, error: error.code }, { status: error.status });
+    }
+    throw error;
+  }
   let body: Record<string, unknown>;
   try {
-    body = await request.json();
+    const parsed = JSON.parse(rawBody);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('invalid_json');
+    body = parsed as Record<string, unknown>;
   } catch {
     return json({ ok: false }, { status: 400 });
   }
 
+  const supabase = createServiceClient();
   const merchantId = await resolveMerchantId(supabase, body);
   if (!merchantId) return json({ ok: true });
 
@@ -240,9 +222,13 @@ export async function POST(request: NextRequest) {
   const signal = parseSignalBody(body, merchantId);
   if (!signal) return json({ ok: false }, { status: 400 });
 
-  if (await isDuplicate(supabase, signal)) {
-    return json({ ok: true });
-  }
+  const rawIp =
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    request.headers.get('x-real-ip') ||
+    '0.0.0.0';
+  const ipHash = sha256(rawIp);
+  const allowed = await checkRateLimit(supabase, ipHash);
+  if (!allowed) return json({ ok: false }, { status: 429 });
 
   const { error: insertError } = await supabase
     .from(TABLES.CHECKOUT_SIGNALS)
@@ -260,11 +246,15 @@ export async function POST(request: NextRequest) {
       checkout_reached: signal.checkoutReached,
       cart_count: signal.cartCount,
       event_type: signal.eventType,
+      idempotency_key: signalIdempotencyKey(signal),
       raw_payload: sanitizedRawPayload(signal),
     })
     .select('id')
     .single();
 
+  if (insertError && (insertError as { code?: string }).code === '23505') {
+    return json({ ok: true });
+  }
   if (insertError) return json({ ok: false }, { status: 500 });
 
   return json({ ok: true });

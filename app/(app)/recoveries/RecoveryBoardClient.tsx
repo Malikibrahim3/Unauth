@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import {
   Badge,
@@ -11,7 +11,6 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
 import { CaseContextDrawer } from "@/components/cases/CaseContextDrawer";
 import { formatCurrencyNullable, formatDate } from "@/lib/utils/format";
-import { recoverySoughtAmount } from "@/lib/recoveries/amounts";
 import { RECOVERY_TYPE_LABELS } from "@/lib/partners/types";
 import {
   RECOVERY_OWNER_LABELS,
@@ -29,7 +28,9 @@ type RecoveryAction =
   | "submitted"
   | "chased"
   | "approved"
+  | "partially_approved"
   | "rejected"
+  | "appealed"
   | "paid"
   | "closed_unrecoverable";
 
@@ -38,6 +39,8 @@ const ACTIONS: Array<{
   label: string;
   statuses: RecoveryCase["status"][];
   confirm?: boolean;
+  requiresNote?: boolean;
+  amountKind?: "approved" | "received";
 }> = [
   {
     action: "ready",
@@ -49,6 +52,7 @@ const ACTIONS: Array<{
     label: "Mark submitted",
     statuses: ["ready_to_submit"],
     confirm: true,
+    requiresNote: true,
   },
   {
     action: "chased",
@@ -59,28 +63,58 @@ const ACTIONS: Array<{
     action: "approved",
     label: "Record approved",
     statuses: ["submitted", "waiting_response", "chase_due"],
+    confirm: true,
+    amountKind: "approved",
+  },
+  {
+    action: "partially_approved",
+    label: "Record partial approval",
+    statuses: ["submitted", "waiting_response", "chase_due"],
+    confirm: true,
+    amountKind: "approved",
   },
   {
     action: "rejected",
     label: "Record rejected",
     statuses: ["submitted", "waiting_response", "chase_due"],
+    confirm: true,
+    requiresNote: true,
+  },
+  {
+    action: "appealed",
+    label: "Record appeal",
+    statuses: ["rejected"],
+    confirm: true,
+    requiresNote: true,
   },
   {
     action: "paid",
     label: "Record paid",
     statuses: ["approved", "partially_approved"],
     confirm: true,
+    amountKind: "received",
   },
   {
     action: "closed_unrecoverable",
     label: "Close unrecoverable",
     statuses: ["draft", "evidence_needed", "rejected", "appealed"],
     confirm: true,
+    requiresNote: true,
   },
 ];
 
 function dateLabel(value: string | null) {
   return value ? formatDate(value) : "No date";
+}
+
+function actionDescription(action: RecoveryAction | undefined): string {
+  if (action === "approved" || action === "partially_approved") {
+    return "Records the source-approved amount. Approval is not recorded as recovered cash.";
+  }
+  if (action === "paid") return "Records the cumulative amount actually received or credited back to the merchant.";
+  if (action === "closed_unrecoverable") return "Records the remaining pursued amount as written off; it is not money recovered.";
+  if (action === "submitted") return "Records that a merchant submitted externally. Unauth does not send the claim or correspondence.";
+  return "This records an immutable recovery activity event.";
 }
 
 export function RecoveryBoardClient({ recoveries, canManage }: Props) {
@@ -94,16 +128,36 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
   const [pending, setPending] = useState<{
     item: RecoveryCase;
     option: (typeof ACTIONS)[number];
+    note: string;
+    amount: string;
+    idempotencyKey: string;
   } | null>(null);
+  const retryKeysRef = useRef<Record<string, string>>({});
 
   async function runAction(
     item: RecoveryCase,
     option: (typeof ACTIONS)[number],
   ) {
     if (option.confirm && pending == null) {
-      setPending({ item, option });
+      const retryScope = `${item.id}:${option.action}`;
+      const idempotencyKey = retryKeysRef.current[retryScope]
+        ?? `${retryScope}:${crypto.randomUUID()}`;
+      retryKeysRef.current[retryScope] = idempotencyKey;
+      const defaultAmount = option.amountKind === "approved"
+        ? String(item.amount_sought_minor / 100)
+        : "";
+      setPending({ item, option, note: "", amount: defaultAmount, idempotencyKey });
       return;
     }
+    const active = pending?.item.id === item.id && pending.option.action === option.action
+      ? pending
+      : null;
+    const retryScope = `${item.id}:${option.action}`;
+    const idempotencyKey = active?.idempotencyKey
+      ?? retryKeysRef.current[retryScope]
+      ?? `${retryScope}:${crypto.randomUUID()}`;
+    retryKeysRef.current[retryScope] = idempotencyKey;
+    const amountMajor = active?.amount ? Number(active.amount) : null;
     setBusyId(`${item.id}:${option.action}`);
     setMessage(null);
     try {
@@ -112,7 +166,11 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: option.action,
-          idempotencyKey: `${item.id}:${option.action}:${crypto.randomUUID()}`,
+          note: active?.note.trim() || undefined,
+          amountMinor: option.amountKind && amountMajor != null && Number.isFinite(amountMajor)
+            ? Math.round(amountMajor * 100)
+            : undefined,
+          idempotencyKey,
         }),
       });
       const body = await response.json();
@@ -121,6 +179,7 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
         ...current,
         [item.id]: body.recoveryCase,
       }));
+      delete retryKeysRef.current[retryScope];
       setPending(null);
     } catch (error) {
       setMessage(
@@ -347,7 +406,7 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
         open={pending != null}
         onClose={() => setPending(null)}
         title={pending?.option.label ?? "Confirm recovery action"}
-        description="This records an immutable recovery activity event."
+        description={actionDescription(pending?.option.action)}
         actions={
           pending
             ? [
@@ -357,6 +416,10 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
                     pending.option.action === "closed_unrecoverable"
                       ? "danger"
                       : "primary",
+                  disabled:
+                    (pending.option.requiresNote && pending.note.trim().length < 3)
+                    || (Boolean(pending.option.amountKind)
+                      && (!Number.isFinite(Number(pending.amount)) || Number(pending.amount) < 0)),
                   onClick: () =>
                     void runAction(pending.item, {
                       ...pending.option,
@@ -373,7 +436,7 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
             <dd className="font-mono">
               {pending
                 ? (formatCurrencyNullable(
-                    recoverySoughtAmount(pending.item),
+                    pending.item.amount_sought_minor / 100,
                     pending.item.currency,
                   ) ?? "—")
                 : "—"}
@@ -384,13 +447,42 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
             <dd className="font-mono">
               {pending
                 ? (formatCurrencyNullable(
-                    pending.item.amount_recovered,
+                    pending.item.amount_recovered_minor / 100,
                     pending.item.currency,
                   ) ?? "—")
                 : "—"}
             </dd>
           </div>
         </dl>
+        {pending?.option.amountKind ? (
+          <label className="mt-4 block text-xs font-medium text-[var(--text-secondary)]">
+            {pending.option.amountKind === "approved" ? "Approved amount" : "Cumulative amount received"}
+            <div className="mt-1 grid grid-cols-[1fr_auto] gap-2">
+              <input
+                type="number"
+                min={0}
+                step="0.01"
+                value={pending.amount}
+                onChange={(event) => setPending({ ...pending, amount: event.target.value })}
+                className="rounded-[var(--ua-radius-input)] border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-sm text-[var(--text-primary)] focus-visible:shadow-[var(--shadow-focus)]"
+              />
+              <span className="flex items-center rounded-[var(--ua-radius-input)] border border-[var(--border)] bg-[var(--surface-sunken)] px-3 font-semibold">
+                {pending.item.currency}
+              </span>
+            </div>
+          </label>
+        ) : null}
+        {pending?.option.requiresNote ? (
+          <label className="mt-4 block text-xs font-medium text-[var(--text-secondary)]">
+            Reason
+            <textarea
+              value={pending.note}
+              onChange={(event) => setPending({ ...pending, note: event.target.value })}
+              className="mt-1 min-h-20 w-full rounded-[var(--ua-radius-input)] border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-sm text-[var(--text-primary)] focus-visible:shadow-[var(--shadow-focus)]"
+              placeholder="Record the source reference or reason"
+            />
+          </label>
+        ) : null}
         <p className="mt-4 text-xs text-[var(--text-secondary)]">
           Closing unrecoverable does not delete prior evidence, correspondence,
           or financial activity.

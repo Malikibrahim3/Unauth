@@ -11,6 +11,20 @@ export const shipbobProvider: IntegrationProvider = {
   evidenceCapabilities: ['warehouse_pick_pack', 'warehouse_exception', 'three_pl_sla_claim_status'],
   capabilities: { readFulfilment: true, readWarehouseEvents: true, readClaimStatus: true },
   requiredScopes: ['channels_read', 'orders_read', 'fulfillments_read', 'locations_read', 'returns_read', 'webhooks_read', 'webhooks_write'],
+  // The validation command is executable tooling, not proof that it ran for
+  // this commit. No current controlled artifact exists, so this stays Beta.
+  lifecycle: [
+    { id: 'connect', applicability: 'applicable', evidence: 'automated_tested', detail: 'Install/OAuth transaction behavior is covered by tests/unit/shipbobInstallRoute.test.ts and shipbobOAuthLifecycle.test.ts; controlled install pending.' },
+    { id: 'account_verification', applicability: 'applicable', evidence: 'automated_tested', detail: 'PAT channel/location verification is covered with mocked responses by tests/unit/shipbobProvider.test.ts and liveConnectionVerification.test.ts; controlled account run pending.' },
+    { id: 'initial_import', applicability: 'applicable', evidence: 'automated_tested', detail: 'Paginated import and canonical persistence are covered by tests/unit/shipbobProvider.test.ts and integrations/shipbobSyncLifecycle.test.ts; controlled import pending.' },
+    { id: 'incremental_pull', applicability: 'applicable', evidence: 'automated_tested', detail: 'Incremental job/cursor lifecycle is covered by tests/unit/integrations/shipbobSyncLifecycle.test.ts; controlled incremental run pending.' },
+    { id: 'webhook', applicability: 'applicable', evidence: 'automated_tested', detail: 'Signature and account isolation are covered by tests/unit/shipbobOAuthLifecycle.test.ts and shipbobWebhookIsolation.test.ts; controlled provider delivery pending.' },
+    { id: 'reconciliation', applicability: 'applicable', evidence: 'implemented', detail: 'Cursor re-sync catches some drift, but no dedicated cancelled/deleted-order reconciliation job exists.' },
+    { id: 'reconnect', applicability: 'applicable', evidence: 'implemented', detail: 'Re-running install is implemented; no controlled reconnect run is recorded.' },
+    { id: 'disconnect', applicability: 'applicable', evidence: 'automated_tested', detail: 'Webhook-subscription removal and merchant isolation are covered by tests/unit/connectors/shipbobDisconnectIsolation.test.ts; controlled disconnect pending.' },
+    { id: 'freshness_health', applicability: 'applicable', evidence: 'automated_tested', detail: 'Selected-account health logic is covered by tests/unit/liveConnectionVerification.test.ts; controlled observation pending.' },
+    { id: 'bounded_writeback', applicability: 'not_applicable', evidence: 'unavailable', detail: 'Unauth only reads fulfilment/shipment data from ShipBob today.' },
+  ],
 };
 
 export type ShipBobOrder = {

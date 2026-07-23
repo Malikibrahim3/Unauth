@@ -24,13 +24,15 @@ export const DOMAIN_EVENT_TYPES = [
   'ticket.created', 'ticket.updated', 'message.created',
   'evidence.created', 'evidence.updated',
   'relationship.confirmed', 'relationship.ambiguous', 'relationship.resolved',
-  'case.created', 'case.updated', 'case.assigned', 'case.decision_recorded', 'case.closed',
+  'case.created', 'case.updated', 'case.assigned', 'case.decision_recorded',
+  'case.outcome_reconciled', 'case.prevention_confirmed', 'case.closed',
   'rule.evaluated',
   'loss.created', 'loss.confirmed', 'loss.written_off',
-  'recovery.created', 'recovery.submitted', 'recovery.completed',
+  'recovery.created', 'recovery.status_changed', 'recovery.submitted', 'recovery.completed',
   'task.created', 'task.assigned', 'task.completed',
   'notification.requested', 'notification.delivered', 'notification.failed',
   'connection.sync_started', 'connection.sync_completed', 'connection.sync_failed',
+  'audit.action_recorded',
 ] as const;
 
 export type DomainEventType = (typeof DOMAIN_EVENT_TYPES)[number];

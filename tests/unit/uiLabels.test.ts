@@ -33,4 +33,64 @@ describe('ui label layer', () => {
     expect(label('caseStatus', null)).toBe('');
     expect(label('caseStatus', undefined)).toBe('');
   });
+
+  it('maps every shipped loss and recovery enum without using the fallback', () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const values = {
+      lossStatus: [
+        'detected', 'collecting_evidence', 'missing_source_data',
+        'needs_external_correspondence', 'external_correspondence_requested',
+        'external_response_received', 'evidence_pack_ready', 'submitted',
+        'approved', 'partially_approved', 'denied', 'expired',
+        'closed_unrecoverable',
+      ],
+      lossCategory: [
+        'delivery_loss', 'chargeback_or_payment_dispute', 'refund_dispute',
+        'returns_abuse_or_exception', 'damaged_goods',
+        'wrong_item_or_missing_item', 'fulfilment_or_warehouse_error',
+        '3pl_accountability', 'shipping_protection_claim',
+        'marketplace_dispute', 'supplier_or_vendor_issue',
+        'tax_duty_or_customs_issue',
+        'subscription_or_digital_fulfilment_issue',
+        'unknown_post_purchase_loss',
+      ],
+      recoveryStatus: [
+        'no_recovery_needed', 'recovery_possible', 'recovery_opened',
+        'recovery_submitted', 'recovery_paid',
+        'draft', 'evidence_needed', 'ready_to_submit', 'submitted',
+        'waiting_response', 'chase_due', 'approved', 'partially_approved',
+        'rejected', 'appealed', 'paid', 'closed_unrecoverable',
+      ],
+      ownerType: [
+        'carrier', 'three_pl', '3pl', 'warehouse', 'supplier',
+        'returns_provider', 'payment_dispute_provider', 'payment_processor',
+        'merchant_support', 'merchant_ops', 'merchant_finance',
+        'shipping_protection_provider', 'bank', 'card_network', 'marketplace',
+        'customs_broker', 'customer', 'internal_team', 'unknown', 'merchant',
+      ],
+      attribution: [
+        'customer_claim', 'carrier_loss', 'carrier_damage',
+        'delivery_confirmed_evidence', 'warehouse_mispick',
+        'warehouse_missing_item', 'three_pl_late_dispatch', 'supplier_defect',
+        'packaging_failure', 'merchant_policy', 'unknown', 'repeat_claimant',
+        'policy_override', 'carrier_claim', 'carrier_service_refund',
+        'three_pl_claim', '3pl_claim', 'shipping_protection_claim',
+        'payment_processor_dispute', 'chargeback_evidence',
+        'chargeback_evidence_pack', 'bank_or_card_network_response',
+        'returns_platform_claim', 'marketplace_claim', 'supplier_vendor_claim',
+        'internal_fulfilment_issue', 'customer_evidence_review',
+        'not_recoverable', 'needs_more_evidence', 'warehouse_error',
+        'packaging_issue', 'returns_provider_claim', 'internal_policy_fix',
+        'other',
+      ],
+    } as const;
+
+    for (const [family, familyValues] of Object.entries(values)) {
+      for (const value of familyValues) {
+        expect(label(family as Parameters<typeof label>[0], value)).not.toBe('');
+      }
+    }
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
 });

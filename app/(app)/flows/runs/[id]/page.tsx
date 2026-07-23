@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/server";
+import { getRequestUser } from "@/lib/auth/requestContext";
 import { PERMISSIONS, requirePermission } from "@/lib/permissions";
 import { TABLES } from "@/lib/supabase/tables";
 import { formatDateTime } from "@/lib/utils/format";
@@ -11,10 +12,7 @@ export default async function Run({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const auth = createClient();
-  const {
-    data: { user },
-  } = await auth.auth.getUser();
+  const user = await getRequestUser();
   if (!user) redirect("/login");
   const svc = createServiceClient();
   const { denied, ctx } = await requirePermission(

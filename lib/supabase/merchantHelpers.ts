@@ -381,6 +381,33 @@ export async function assertMerchantOwnsJob(
 const PROFILE_SELECT = '*';
 
 /**
+ * Fetches one canonical source-customer row only when both its id and merchant
+ * match. This is the scope proof for source-customer deep links; unlike the
+ * legacy network identity helper below, it never traverses cross-merchant
+ * identity tables.
+ */
+export async function fetchMerchantScopedSourceCustomer(
+  serviceClient: SupabaseClient,
+  merchantId: string,
+  sourceCustomerId: string,
+): Promise<{ id: string; merchant_customer_id: string | null } | null> {
+  const { data, error } = await serviceClient
+    .from(TABLES.SOURCE_CUSTOMERS)
+    .select('id,merchant_customer_id')
+    .eq('merchant_id', merchantId)
+    .eq('id', sourceCustomerId)
+    .maybeSingle() as unknown as {
+      data: { id: string; merchant_customer_id: string | null } | null;
+      error: { message: string } | null;
+    };
+
+  if (error) {
+    throw new Error(`fetchMerchantScopedSourceCustomer failed: ${error.message}`);
+  }
+  return data;
+}
+
+/**
  * Fetches a customer profile, verifying it belongs to the caller's merchant.
  * Returns null if the profile does not exist or does not belong to the merchant.
  */

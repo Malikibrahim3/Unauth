@@ -26,6 +26,6 @@ export async function logPublicApiAccess(
   });
 
   if (error) {
-    console.error('[public-api] audit_log insert failed:', error.message);
+    throw new Error(`public_api_access_audit_failed: ${error.message}`);
   }
 }

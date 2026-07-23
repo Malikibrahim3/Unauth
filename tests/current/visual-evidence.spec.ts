@@ -48,8 +48,8 @@ test('customer detail and connected objects release evidence', async ({ page }) 
   test.setTimeout(60_000);
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/customers', { waitUntil: 'domcontentloaded' });
-  await page.getByRole('button', { name: 'View', exact: true }).first().click();
-  const profileLink = page.getByRole('link', { name: 'Open full customer profile' });
+  await page.getByTestId('customer-row').first().click();
+  const profileLink = page.getByRole('link', { name: 'Open full profile' });
   await expect(profileLink).toBeVisible({ timeout: 30_000 });
   const profileHref = await profileLink.getAttribute('href');
   expect(profileHref).toBeTruthy();

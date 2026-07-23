@@ -23,6 +23,24 @@ describe('explicit chase action (CR-3)', () => {
     const events: Array<Record<string, unknown>> = [];
     const state = { recoveryCase, events };
     const client = {
+      async rpc(fn: string, args: Record<string, unknown>) {
+        if (fn !== 'transition_recovery_case') return { data: null, error: null };
+        const fromStatus = String(state.recoveryCase.status);
+        const now = '2026-07-22T12:00:00.000Z';
+        state.recoveryCase = {
+          ...state.recoveryCase,
+          status: 'waiting_response',
+          last_chased_at: now,
+          next_chase_at: '2026-07-29T12:00:00.000Z',
+        };
+        state.events.push({
+          event_type: args.p_event_type,
+          from_status: fromStatus,
+          to_status: 'waiting_response',
+          idempotency_key: args.p_idempotency_key,
+        });
+        return { data: { status: 'waiting_response', replayed: false }, error: null };
+      },
       from(table: string) {
         const q: Record<string, unknown> = {};
         q.select = () => q;
@@ -58,7 +76,9 @@ describe('explicit chase action (CR-3)', () => {
       last_chased_at: null,
     });
 
-    const updated = await markRecoveryCaseChased(client, { merchantId: 'm1', recoveryCaseId: 'r1' });
+    const updated = await markRecoveryCaseChased(client, {
+      merchantId: 'm1', recoveryCaseId: 'r1', idempotencyKey: 'recovery-chase-test-1',
+    });
 
     expect(updated.status).toBe('waiting_response');
     expect(updated.last_chased_at).toBeTruthy();

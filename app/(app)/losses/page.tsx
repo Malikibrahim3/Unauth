@@ -1,16 +1,21 @@
 import { redirect } from 'next/navigation';
-import { createClient, createServiceClient } from '@/lib/supabase/server';
-import { PERMISSIONS, requirePermission } from '@/lib/permissions';
+import { PERMISSIONS } from '@/lib/permissions';
+import {
+  getRequestServiceClient,
+  getRequestUser,
+  requirePagePermission,
+} from '@/lib/auth/requestContext';
 import { TABLES } from '@/lib/supabase/tables';
 import { WorkbenchPage, KeyInsightCallout, SummaryRail } from '@/components/ui';
 import { TrendingDown } from 'lucide-react';
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { LossLedger, type LossLedgerRow } from '@/components/losses/LossLedger';
 import { freshnessFromTimestamp } from '@/components/sources/FreshnessIndicator';
-import { formatCurrencyNullable, formatNumber, sumSameCurrency } from '@/lib/utils/format';
+import { formatCurrencyNullable, formatNumber } from '@/lib/utils/format';
 import { recoverySoughtAmount } from '@/lib/recoveries/amounts';
-import { humanise, label } from '@/lib/ui/labels';
+import { label } from '@/lib/ui/labels';
 import { selectLossContributions } from '@/lib/visualisation/chartSelectors';
+import { isLossWrittenOff, lossFinancialDisplay, summarizeKnownLossExposure } from '@/lib/losses/financialDisplay';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,7 +36,16 @@ type LossCaseRow = {
   source_metadata: { origin?: string } | null;
   updated_at: string;
 };
-type FinancialRow = { support_payout_case_id: string; currency: string; confirmed_loss_minor: number; estimated_loss_minor: number; recoverable_minor: number; recovered_minor: number; written_off_minor: number };
+type FinancialRow = {
+  support_payout_case_id: string;
+  currency: string;
+  confirmed_loss_minor: number;
+  estimated_loss_minor: number;
+  recoverable_minor: number;
+  recovered_minor: number;
+  written_off_minor: number;
+  known_states: string[] | null;
+};
 type OrphanRecoveryRow = {
   id: string;
   support_payout_case_id: string;
@@ -47,13 +61,12 @@ type OrphanRecoveryRow = {
 };
 
 export default async function LossesPage() {
-  const userClient = createClient();
-  const { data: { user } } = await userClient.auth.getUser();
+  const user = await getRequestUser();
   if (!user) redirect('/login');
 
-  const serviceClient = createServiceClient();
-  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_INBOX);
-  if (denied) redirect('/dashboard');
+  const serviceClient = getRequestServiceClient();
+  const ctx = await requirePagePermission(PERMISSIONS.VIEW_INBOX);
+  if (!ctx) redirect('/dashboard');
 
   const nowMs = Date.now();
   const [{ data }, { data: orphanRecoveryData }] = await Promise.all([
@@ -76,30 +89,33 @@ export default async function LossesPage() {
   const orphanRecoveries = (orphanRecoveryData ?? []) as OrphanRecoveryRow[];
   const caseIds = raw.flatMap((row) => row.support_payout_case_id ? [row.support_payout_case_id] : []);
   const { data: financialRows } = caseIds.length
-    ? await serviceClient.from(TABLES.CASE_FINANCIAL_SUMMARIES).select('support_payout_case_id,currency,confirmed_loss_minor,estimated_loss_minor,recoverable_minor,recovered_minor,written_off_minor').eq('merchant_id', ctx.merchantId).in('support_payout_case_id', caseIds)
+    ? await serviceClient.from(TABLES.CASE_FINANCIAL_SUMMARIES).select('support_payout_case_id,currency,confirmed_loss_minor,estimated_loss_minor,recoverable_minor,recovered_minor,written_off_minor,known_states').eq('merchant_id', ctx.merchantId).in('support_payout_case_id', caseIds)
     : { data: [] };
   const financialByCase = new Map(((financialRows ?? []) as FinancialRow[]).map((row) => [row.support_payout_case_id, row]));
 
-  const canonicalRows: LossLedgerRow[] = raw.map((row) => ({
-    id: row.id,
-    supportPayoutCaseId: row.support_payout_case_id,
-    category: row.case_category,
-    attribution: row.attribution,
-    counterpartyType: row.counterparty_type,
-    counterpartyName: row.counterparty_name,
-    status: row.status,
-    recoverability: row.recoverability,
-    financialState: row.financial_state,
-    preventionOnly: row.prevention_only,
-    writtenOff: row.written_off_at != null,
-    realisedLossMinor: row.support_payout_case_id ? financialByCase.get(row.support_payout_case_id)?.confirmed_loss_minor ?? null : null,
-    estimatedLossMinor: row.support_payout_case_id ? financialByCase.get(row.support_payout_case_id)?.estimated_loss_minor ?? null : null,
-    recoverableMinor: row.support_payout_case_id ? financialByCase.get(row.support_payout_case_id)?.recoverable_minor ?? row.estimated_recovery_minor : row.estimated_recovery_minor,
-    recoveredMinor: row.support_payout_case_id ? financialByCase.get(row.support_payout_case_id)?.recovered_minor ?? null : null,
-    currency: row.support_payout_case_id ? financialByCase.get(row.support_payout_case_id)?.currency ?? row.currency : row.currency,
-    source: row.source_metadata?.origin ?? null,
-    freshness: freshnessFromTimestamp(row.updated_at, nowMs),
-  }));
+  const canonicalRows: LossLedgerRow[] = raw.map((row) => {
+    const summary = row.support_payout_case_id
+      ? financialByCase.get(row.support_payout_case_id)
+      : undefined;
+    const display = lossFinancialDisplay(summary, row.estimated_recovery_minor);
+    return {
+      id: row.id,
+      supportPayoutCaseId: row.support_payout_case_id,
+      category: row.case_category,
+      attribution: row.attribution,
+      counterpartyType: row.counterparty_type,
+      counterpartyName: row.counterparty_name,
+      status: row.status,
+      recoverability: row.recoverability,
+      financialState: row.financial_state,
+      preventionOnly: row.prevention_only,
+      writtenOff: isLossWrittenOff(row.status, row.written_off_at),
+      ...display,
+      currency: summary?.currency ?? row.currency,
+      source: row.source_metadata?.origin ?? null,
+      freshness: freshnessFromTimestamp(row.updated_at, nowMs),
+    };
+  });
   const derivedRows: LossLedgerRow[] = orphanRecoveries.map((recovery) => {
     const amounts = {
       merchant_loss_amount: Number(recovery.merchant_loss_amount),
@@ -131,11 +147,7 @@ export default async function LossesPage() {
   });
   const rows = [...canonicalRows, ...derivedRows];
 
-  const exposure = sumSameCurrency(
-    rows.filter((r) => !r.writtenOff),
-    (r) => ((r.realisedLossMinor ?? r.estimatedLossMinor) == null ? null : (r.realisedLossMinor ?? r.estimatedLossMinor)! / 100),
-    (r) => r.currency,
-  );
+  const exposure = summarizeKnownLossExposure(rows);
   const mixedHint = exposure.mixedCount > 0
     ? ` · ${exposure.mixedCount} in other currencies excluded`
     : '';
@@ -147,7 +159,7 @@ export default async function LossesPage() {
     const key = row.attribution ?? row.category ?? 'unattributed';
     return {
       key,
-      label: row.attribution ? label('attribution', key) : humanise(key),
+      label: row.attribution ? label('attribution', key) : label('lossCategory', key),
       amountMinor: row.realisedLossMinor ?? row.estimatedLossMinor,
       currency: row.currency,
       writtenOff: row.writtenOff,
@@ -164,7 +176,7 @@ export default async function LossesPage() {
       activeNavKey="losses"
       kpiItems={[
         { label: 'Loss records', value: formatNumber(rows.length), hint: derivedRows.length ? `${canonicalRows.length} recorded · ${derivedRows.length} awaiting reconciliation` : 'All recorded losses' },
-        { label: 'Realised / estimated loss', value: formatCurrencyNullable(exposure.total || null, exposure.currency) ?? '—', hint: `Excludes written-off${mixedHint}` },
+        { label: 'Realised / estimated loss', value: exposure.known ? formatCurrencyNullable(exposure.total, exposure.currency) : '—', hint: `Excludes written-off${mixedHint}` },
         { label: 'Recoverable', value: formatNumber(recoverable), hint: 'Eligible to chase' },
         { label: 'Prevented', value: formatNumber(prevented), hint: 'Prevention-only outcomes' },
         { label: 'Written off', value: formatNumber(writtenOff), hint: 'Closed unrecoverable' },
@@ -174,7 +186,7 @@ export default async function LossesPage() {
           <KeyInsightCallout eyebrow="Loss contribution" icon={<TrendingDown size={16} />}>
             <strong>{topLoss.label}</strong> is the largest loss driver
             {topLossPct != null ? <> at <strong>{topLossPct}%</strong> of current loss</> : null}
-            {' '}(<strong>{formatCurrencyNullable(exposure.total || null, exposure.currency) ?? '—'}</strong> total).
+            {' '}(<strong>{exposure.known ? formatCurrencyNullable(exposure.total, exposure.currency) : '—'}</strong> total).
           </KeyInsightCallout>
         ) : undefined
       }

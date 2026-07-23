@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
-import { logAction } from '@/lib/permissions/audit';
 import { withRequestLogging } from '@/lib/log';
 import { disableMerchantWooCommerceConnection } from '@/lib/commerce/woocommerce/settingsConnection';
 
@@ -17,15 +16,10 @@ async function POSTHandler() {
   if (denied) return denied;
 
   try {
-    const connection = await disableMerchantWooCommerceConnection(service, ctx.merchantId);
-
-    logAction({
-      ctx,
-      action: 'disable_woocommerce_connection',
-      resourceType: 'commerce_store_connection',
-      resourceId: connection.id,
-      metadata: { store_key: connection.store_key },
-    });
+    const connection = await disableMerchantWooCommerceConnection(
+      createServiceClient({ audit: { actorId: ctx.userId, actorRole: ctx.role } }),
+      ctx.merchantId,
+    );
 
     return NextResponse.json({ connection });
   } catch (err) {

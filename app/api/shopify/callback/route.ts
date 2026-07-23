@@ -32,7 +32,9 @@ function verifyOAuthHmac(params: URLSearchParams, secret: string): boolean {
     .map(([key, value]) => `${key}=${value}`)
     .join('&');
   const digest = crypto.createHmac('sha256', secret).update(message).digest('hex');
-  return crypto.timingSafeEqual(Buffer.from(digest, 'utf8'), Buffer.from(hmac, 'utf8'));
+  const expected = Buffer.from(digest, 'utf8');
+  const received = Buffer.from(hmac, 'utf8');
+  return received.length === expected.length && crypto.timingSafeEqual(expected, received);
 }
 
 function oauthCompleteResponse(params: Record<string, string>): NextResponse {

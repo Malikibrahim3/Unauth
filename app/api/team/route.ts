@@ -2,7 +2,6 @@ import { createClient, createAdminClient, createServiceClient } from '@/lib/supa
 import { TABLES } from '@/lib/supabase/tables';
 import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
-import { logAction } from '@/lib/permissions/audit';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { enforceRateLimit, getClientIp, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
@@ -14,9 +13,9 @@ const inviteSchema = z.object({
 });
 
 const TEAM_AUDIT_ACTIONS = [
-  'invite_team_member',
-  'update_team_member_role',
-  'remove_team_member',
+  'team_member_invited',
+  'team_member_role_changed',
+  'team_member_removed',
 ] as const;
 
 async function GETHandler(req: NextRequest) {
@@ -110,7 +109,10 @@ async function POSTHandler(req: NextRequest) {
   if (ctx.role !== 'owner' && ctx.role !== 'admin') {
     return NextResponse.json({ error: 'Only owners and admins can invite team members.' }, { status: 403 });
   }
-  const scopedClient = createScopedClient(ctx.merchantId, serviceClient);
+  const scopedClient = createScopedClient(
+    ctx.merchantId,
+    createServiceClient({ audit: { actorId: ctx.userId, actorRole: ctx.role, requestIp: ip } }),
+  );
 
   const limited = await enforceRateLimit(
     rateLimitKey('team', 'invite', ctx.merchantId),
@@ -197,7 +199,6 @@ async function POSTHandler(req: NextRequest) {
     );
   }
 
-  logAction({ ctx, action: 'invite_team_member', resourceType: 'merchant_member', resourceId: member.id, metadata: { email, role }, ip });
   return NextResponse.json({ member, inviteSent: true }, { status: 201 });
 }
 

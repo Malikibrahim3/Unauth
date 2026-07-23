@@ -10,8 +10,7 @@ import {
   type RecoveryCaseEventType,
   type RecoveryCaseStatus,
 } from '@/lib/recoveries/types';
-import { eventTypeForStatus, nextStatusPatch } from '@/lib/recoveries/status';
-import { recoverySoughtAmount, validateCumulativeRecovery } from '@/lib/recoveries/amounts';
+import { eventTypeForStatus } from '@/lib/recoveries/status';
 
 const recoveryCaseStatusSchema = z.enum(RECOVERY_CASE_STATUSES);
 const recoveryOwnerTypeSchema = z.enum(RECOVERY_OWNER_TYPES);
@@ -59,6 +58,10 @@ function mapRecoveryCase(row: unknown): RecoveryCase {
     estimated_recoverable_min: r.estimated_recoverable_min == null ? null : Number(r.estimated_recoverable_min),
     estimated_recoverable_max: r.estimated_recoverable_max == null ? null : Number(r.estimated_recoverable_max),
     amount_recovered: r.amount_recovered == null ? null : Number(r.amount_recovered),
+    amount_sought_minor: Number(r.amount_sought_minor ?? 0),
+    amount_approved_minor: Number(r.amount_approved_minor ?? 0),
+    amount_recovered_minor: Number(r.amount_recovered_minor ?? 0),
+    amount_written_off_minor: Number(r.amount_written_off_minor ?? 0),
     excluded_costs: Array.isArray(r.excluded_costs) ? r.excluded_costs : [],
   };
 }
@@ -156,6 +159,12 @@ export async function createRecoveryCase(
   if (!parsed.loss_case_id && parsed.prevention_only !== true) {
     throw new Error('createRecoveryCase requires a canonical loss_case_id unless prevention_only is set');
   }
+  const amountSought = parsed.estimated_recoverable_max
+    ?? parsed.eligible_loss_amount
+    ?? parsed.merchant_loss_amount;
+  const amountRecovered = parsed.amount_recovered ?? 0;
+  const amountSoughtMinor = Math.max(Math.round(amountSought * 100), Math.round(amountRecovered * 100));
+  const amountRecoveredMinor = Math.round(amountRecovered * 100);
   const { data, error } = await client
     .from(TABLES.RECOVERY_CASES)
     .insert({
@@ -165,6 +174,14 @@ export async function createRecoveryCase(
       partner_id: parsed.partner_id ?? null,
       excluded_costs: parsed.excluded_costs,
       internal_owner_user_id: parsed.internal_owner_user_id ?? null,
+      amount_sought_minor: amountSoughtMinor,
+      amount_approved_minor: ['approved', 'partially_approved', 'paid'].includes(parsed.status)
+        ? amountSoughtMinor
+        : 0,
+      amount_recovered_minor: amountRecoveredMinor,
+      amount_written_off_minor: parsed.status === 'closed_unrecoverable'
+        ? Math.max(amountSoughtMinor - amountRecoveredMinor, 0)
+        : 0,
     })
     .select('*, partner:partners(*)')
     .single();
@@ -176,6 +193,7 @@ export async function createRecoveryCase(
     eventType: 'created',
     toStatus: recoveryCase.status,
     metadata: { support_payout_case_id: parsed.support_payout_case_id },
+    idempotencyKey: `recovery-created:${recoveryCase.id}`,
   });
   return recoveryCase;
 }
@@ -188,44 +206,29 @@ export async function createRecoveryCase(
  */
 export async function markRecoveryCaseChased(
   client: SupabaseClient,
-  input: { merchantId: string; recoveryCaseId: string; note?: string | null; idempotencyKey?: string | null },
+  input: {
+    merchantId: string;
+    recoveryCaseId: string;
+    note?: string | null;
+    actorUserId?: string | null;
+    idempotencyKey: string;
+  },
 ): Promise<RecoveryCase> {
   const existing = await getRecoveryCase(client, input.merchantId, input.recoveryCaseId);
   if (!existing) throw new Error('Recovery case not found');
-
-  if (input.idempotencyKey) {
-    const { data: prior, error: priorError } = await client
-      .from(TABLES.RECOVERY_CASE_EVENTS)
-      .select('id')
-      .eq('merchant_id', input.merchantId)
-      .eq('idempotency_key', input.idempotencyKey)
-      .maybeSingle();
-    if (priorError) throw new Error(`Failed to check recovery action idempotency: ${priorError.message}`);
-    if (prior) return existing;
-  }
-
-  const now = new Date().toISOString();
-  const nextChase = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-  const { data, error } = await client
-    .from(TABLES.RECOVERY_CASES)
-    .update({ status: 'waiting_response', last_chased_at: now, next_chase_at: nextChase })
-    .eq('merchant_id', input.merchantId)
-    .eq('id', input.recoveryCaseId)
-    .select('*, partner:partners(*)')
-    .single();
-  if (error) throw new Error(`Failed to record chase: ${error.message}`);
-
-  const updated = mapRecoveryCase(data);
-  await addRecoveryCaseEvent(client, {
-    merchantId: input.merchantId,
-    recoveryCaseId: input.recoveryCaseId,
-    eventType: 'chased',
-    fromStatus: existing.status,
-    toStatus: 'waiting_response',
-    note: input.note ?? null,
-    metadata: { chased_at: now },
-    idempotencyKey: input.idempotencyKey,
+  const { error } = await client.rpc('transition_recovery_case', {
+    p_merchant_id: input.merchantId,
+    p_recovery_case_id: input.recoveryCaseId,
+    p_status: 'waiting_response',
+    p_event_type: 'chased',
+    p_note: input.note ?? null,
+    p_amount_minor: null,
+    p_actor_user_id: input.actorUserId ?? null,
+    p_idempotency_key: input.idempotencyKey,
   });
+  if (error) throw new Error(`Failed to record chase: ${error.message}`);
+  const updated = await getRecoveryCase(client, input.merchantId, input.recoveryCaseId);
+  if (!updated) throw new Error('Recovery case disappeared after chase');
   return updated;
 }
 
@@ -236,58 +239,25 @@ export async function updateRecoveryCaseStatus(
     recoveryCaseId: string;
     status: RecoveryCaseStatus;
     note?: string | null;
-    amountRecovered?: number | null;
-    rejectionReason?: string | null;
-    idempotencyKey?: string | null;
+    amountMinor?: number | null;
+    actorUserId?: string | null;
+    idempotencyKey: string;
   },
 ): Promise<RecoveryCase> {
   const existing = await getRecoveryCase(client, input.merchantId, input.recoveryCaseId);
   if (!existing) throw new Error('Recovery case not found');
-
-  if (input.idempotencyKey) {
-    const { data: prior, error: priorError } = await client
-      .from(TABLES.RECOVERY_CASE_EVENTS)
-      .select('id')
-      .eq('merchant_id', input.merchantId)
-      .eq('idempotency_key', input.idempotencyKey)
-      .maybeSingle();
-    if (priorError) throw new Error(`Failed to check recovery action idempotency: ${priorError.message}`);
-    if (prior) return existing;
-  }
-
-  const patch: Record<string, unknown> = {
-    status: input.status,
-    ...nextStatusPatch(input.status),
-  };
-  if (typeof input.amountRecovered === 'number') {
-    const sought = recoverySoughtAmount(existing);
-    validateCumulativeRecovery({ sought, previousRecovered: existing.amount_recovered ?? 0, nextRecovered: input.amountRecovered });
-    patch.amount_recovered = input.amountRecovered;
-  }
-  if (typeof input.rejectionReason === 'string') patch.rejection_reason = input.rejectionReason;
-
-  const { data, error } = await client
-    .from(TABLES.RECOVERY_CASES)
-    .update(patch)
-    .eq('merchant_id', input.merchantId)
-    .eq('id', input.recoveryCaseId)
-    .select('*, partner:partners(*)')
-    .single();
-  if (error) throw new Error(`Failed to update recovery status: ${error.message}`);
-
-  const updated = mapRecoveryCase(data);
-  await addRecoveryCaseEvent(client, {
-    merchantId: input.merchantId,
-    recoveryCaseId: input.recoveryCaseId,
-    eventType: eventTypeForStatus(input.status),
-    fromStatus: existing.status,
-    toStatus: input.status,
-    note: input.note ?? null,
-    metadata: {
-      amount_recovered: input.amountRecovered ?? null,
-      rejection_reason: input.rejectionReason ?? null,
-    },
-    idempotencyKey: input.idempotencyKey,
+  const { error } = await client.rpc('transition_recovery_case', {
+    p_merchant_id: input.merchantId,
+    p_recovery_case_id: input.recoveryCaseId,
+    p_status: input.status,
+    p_event_type: eventTypeForStatus(input.status),
+    p_note: input.note ?? null,
+    p_amount_minor: input.amountMinor ?? null,
+    p_actor_user_id: input.actorUserId ?? null,
+    p_idempotency_key: input.idempotencyKey,
   });
+  if (error) throw new Error(`Failed to update recovery status: ${error.message}`);
+  const updated = await getRecoveryCase(client, input.merchantId, input.recoveryCaseId);
+  if (!updated) throw new Error('Recovery case disappeared after transition');
   return updated;
 }

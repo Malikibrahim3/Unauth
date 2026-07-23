@@ -18,7 +18,7 @@ Before release, inspect the migration diff and exercise rollback at the applicat
 
 Run `npm run release:readiness` for the deterministic local gate described in [`TESTING.md`](TESTING.md), then exercise the affected integration against an isolated staging merchant. Confirm webhook verification, retries, idempotency, tenant-isolation, financial totals, and audit history.
 
-Remote migration comparison is deliberately excluded from the default gate. In an intentionally linked environment, run `npm run release:readiness -- --remote-migrations`; this delegates to `supabase db push --dry-run` and must never target production by accident.
+Remote migration comparison is deliberately excluded from the default gate, and `release:readiness` rejects `--remote-migrations`. Remote metadata/history reconciliation is allowed only through the target-checked, backup-gated sequence in [`audits/unauth-mvp-plus/13-production-rollout-approval-packet.md`](audits/unauth-mvp-plus/13-production-rollout-approval-packet.md) after explicit approval.
 
 Stop expansion if tenant-isolation, authorization, signature verification, ledger integrity, or idempotency checks fail. Roll back the application deployment first; use a forward migration for database correction.
 

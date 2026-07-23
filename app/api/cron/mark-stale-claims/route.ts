@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
-import { markStalePendingClaims } from '@/lib/claims/stale';
+import { flagAgedPendingClaims } from '@/lib/claims/stale';
 import { env } from '@/lib/utils/env';
 
 export const maxDuration = 60;
@@ -12,11 +12,11 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const result = await markStalePendingClaims(createServiceClient());
+    const result = await flagAgedPendingClaims(createServiceClient());
     return NextResponse.json(result);
   } catch (err) {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Failed to mark stale claims' },
+      { error: err instanceof Error ? err.message : 'Failed to flag aged pending cases' },
       { status: 500 }
     );
   }

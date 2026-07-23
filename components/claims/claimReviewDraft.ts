@@ -10,6 +10,7 @@ export type ClaimReviewDraft = Pick<
   | 'claimId'
   | 'decision'
   | 'outcome'
+  | 'decisionAmount'
   | 'evidenceType'
   | 'source'
   | 'evidenceUrl'

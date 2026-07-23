@@ -25,6 +25,7 @@ export default function AppNavLink({
   return (
     <Link
       href={href}
+      prefetch={false}
       className={cn(className, isPending && 'pointer-events-none')}
       aria-busy={isPending || undefined}
       onClick={(e) => {

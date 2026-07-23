@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { TABLES } from '@/lib/supabase/tables';
 import { hashFreshdeskWebhookSecret } from '@/lib/support/freshdesk/webhookSecret';
+import { FRESHDESK_SUPPORT_SECRET_HEADERS } from '@/lib/support/freshdesk/webhookAuth';
 import type { FreshdeskSupportConnectionRow } from '@/lib/support/freshdesk/resolveConnection';
 import { POST } from '@/app/api/freshdesk/support-webhook/route';
 import {
@@ -22,6 +23,16 @@ jest.mock('@/lib/support/freshdesk/freshdeskApi', () => ({
 
 jest.mock('@/lib/support/freshdesk/merchantApiAccess', () => ({
   getActiveFreshdeskMerchantApiAccess: jest.fn(),
+}));
+jest.mock('@/lib/support/webhookEventSafety', () => ({
+  claimSupportTicketDelivery: jest.fn(async () => ({
+    status: 'claimed', idempotencyKey: 'freshdesk:test:delivery',
+    claimToken: '10000000-0000-4000-8000-000000000001',
+  })),
+  replayedSupportResult: jest.fn((value) => value),
+}));
+jest.mock('@/lib/commerce/processedWebhookHandler', () => ({
+  completeProcessedWebhook: jest.fn(async () => undefined),
 }));
 
 const MERCHANT_ID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
@@ -210,14 +221,15 @@ describe('Freshdesk support webhook', () => {
     expect(res.status).toBe(401);
   });
 
-  it('ingests ticket with valid secret in query', async () => {
-    const url = `http://localhost/api/freshdesk/support-webhook?freshdesk_domain=${FRESHDESK_DOMAIN}&unauth_whsec=${encodeURIComponent(CONNECTION_WEBHOOK_SECRET)}`;
+  it('ingests ticket with a valid custom header secret', async () => {
+    const url = `http://localhost/api/freshdesk/support-webhook?freshdesk_domain=${FRESHDESK_DOMAIN}`;
     const mock = makeFreshdeskWebhookSupabase();
     createServiceClient.mockReturnValue(mock.supabase);
 
     const res = await POST(
       new NextRequest(url, {
         method: 'POST',
+        headers: { [FRESHDESK_SUPPORT_SECRET_HEADERS[0]]: CONNECTION_WEBHOOK_SECRET },
         body: JSON.stringify({ ticket: freshdeskTicket }),
       })
     );
@@ -227,5 +239,14 @@ describe('Freshdesk support webhook', () => {
     expect(json.provider).toBe('freshdesk');
     expect(json.external_case_id).toBe('42');
     expect(mock.caseUpserts()).toBeGreaterThan(0);
+  });
+
+  it('rejects a valid connection secret supplied only in the URL query', async () => {
+    const url = `http://localhost/api/freshdesk/support-webhook?freshdesk_domain=${FRESHDESK_DOMAIN}&unauth_whsec=${encodeURIComponent(CONNECTION_WEBHOOK_SECRET)}`;
+    const res = await POST(new NextRequest(url, {
+      method: 'POST',
+      body: JSON.stringify({ ticket: freshdeskTicket }),
+    }));
+    expect(res.status).toBe(401);
   });
 });

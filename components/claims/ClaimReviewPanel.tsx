@@ -8,17 +8,20 @@ import { ClaimReviewHeader } from '@/components/claims/ClaimReviewHeader';
 import { ClaimReviewToast } from '@/components/claims/ClaimReviewToast';
 import { CLAIM_REVIEW_PANEL_ROOT_STYLE } from '@/components/claims/claimReviewStyles';
 import { CaseComments } from '@/components/collaboration/CaseComments';
+import type { CaseFinancialSummary } from '@/components/claims/payout/CaseFinancialHistoryCard';
 
 export default function ClaimReviewPanel({
   profileId,
   sourceCustomerId,
   initialClaimId,
   canManage = false,
+  financialSummaries = [],
 }: {
   profileId: string;
   sourceCustomerId: string | null;
   initialClaimId?: string | null;
   canManage?: boolean;
+  financialSummaries?: CaseFinancialSummary[];
 }) {
   const wb = useClaimReviewWorkbench(profileId, sourceCustomerId, initialClaimId);
 
@@ -27,7 +30,7 @@ export default function ClaimReviewPanel({
       <ClaimReviewToast wb={wb} />
       <ClaimReviewHeader wb={wb} />
       <div className="mx-auto grid w-full max-w-[1500px] grid-cols-1 items-start gap-3.5 px-3 pb-6 pt-3 md:px-5 min-[1100px]:grid-cols-[minmax(0,1fr)_360px]">
-        <ClaimReviewContextColumn wb={wb} />
+        <ClaimReviewContextColumn wb={wb} financialSummaries={financialSummaries} />
         <ClaimReviewActionRail wb={wb} canManage={canManage} />
         <ClaimReviewFormSection wb={wb} />
         {initialClaimId ? <CaseComments caseId={initialClaimId} canComment={canManage} /> : null}

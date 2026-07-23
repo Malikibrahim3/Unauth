@@ -1,8 +1,12 @@
 import { redirect } from 'next/navigation';
-import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import { sumSameCurrency } from '@/lib/utils/format';
-import { requirePermission, PERMISSIONS } from '@/lib/permissions';
+import { PERMISSIONS } from '@/lib/permissions';
+import {
+  getRequestServiceClient,
+  getRequestUser,
+  requirePagePermission,
+} from '@/lib/auth/requestContext';
 import { getCachedConnectionState } from '@/lib/connections/getConnectionState';
 import { ACTIVE_CLAIM_STATUSES, getClaimSlaState } from '@/lib/claims/sla';
 import { fetchClaimQueueCounts } from '@/lib/claims/queueCounts';
@@ -21,7 +25,7 @@ export const dynamic = 'force-dynamic';
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 const DEFAULT_PAGE_SIZE = 25;
-const FINAL_CLAIM_STATUSES = ['closed', 'resolved_refunded', 'resolved_won', 'resolved_lost', 'resolved_denied', 'resolved_exchanged', 'voided', 'stale'] as const;
+const FINAL_CLAIM_STATUSES = ['closed', 'resolved_refunded', 'resolved_won', 'resolved_lost', 'resolved_denied', 'resolved_exchanged', 'voided'] as const;
 
 /** v2 `claims` columns surfaced to the queue view-model. */
 const CLAIM_LIST_SELECT =
@@ -102,13 +106,12 @@ export default async function ClaimsPage({
 }: {
   searchParams?: Promise<ClaimsSearchParams>;
 }) {
-  const userClient = createClient();
-  const { data: { user } } = await userClient.auth.getUser();
+  const user = await getRequestUser();
   if (!user) redirect('/login');
 
-  const serviceClient = createServiceClient();
-  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_INBOX);
-  if (denied) redirect('/dashboard');
+  const serviceClient = getRequestServiceClient();
+  const ctx = await requirePagePermission(PERMISSIONS.VIEW_INBOX);
+  if (!ctx) redirect('/dashboard');
   const [hasQueueEntitlement, connectionState, resolvedParams] = await Promise.all([
     merchantHasEntitlement(serviceClient, ctx.merchantId, 'CLAIM_REVIEW_QUEUE'),
     getCachedConnectionState(ctx.merchantId),
@@ -178,7 +181,20 @@ export default async function ClaimsPage({
   if (viewedFilter === 'viewed') listQuery = listQuery.not('first_viewed_at', 'is', null);
   listQuery = listQuery.range(listOffset, listOffset + listCap - 1);
 
-  const { data: rawClaims, error: claimsQueryError, count: listCount } = await listQuery;
+  // Generation 1: the list page, queue counts, and recovery metrics all depend
+  // only on the merchant — run them concurrently instead of serially.
+  const [
+    { data: rawClaims, error: claimsQueryError, count: listCount },
+    queueCounts,
+    { data: recoveryMetricRows },
+  ] = await Promise.all([
+    listQuery,
+    fetchClaimQueueCounts(serviceClient, ctx.merchantId, user.id),
+    serviceClient
+      .from(TABLES.MERCHANT_CLAIMS)
+      .select('status,total_estimated_loss,amount_at_risk,currency,recoverability,recovery_owner')
+      .eq('merchant_id', ctx.merchantId),
+  ]);
   if (claimsQueryError) {
     console.error('Claims page query failed', claimsQueryError);
   }
@@ -196,78 +212,84 @@ export default async function ClaimsPage({
   const totalPages = Math.max(1, Math.ceil(totalForPager / pageSize));
 
   const claimIds = claimRows.map((c) => c.id);
+  const sourceOrderIds = Array.from(new Set(claimRows.flatMap((c) => (c.source_order_id ? [c.source_order_id] : []))));
+  const sourceTicketIds = Array.from(new Set(claimRows.flatMap((c) => (c.source_ticket_id ? [c.source_ticket_id] : []))));
+  const identityIds = Array.from(new Set(claimRows.flatMap((c) => (c.identity_id ? [c.identity_id] : []))));
+
+  // Generation 2: the four lookups below each depend only on the claim rows,
+  // not on each other — run them concurrently.
+  const [{ data: outcomeRows }, { data: orderRows }, { data: ticketRows }, { data: stateRows }] =
+    await Promise.all([
+      claimIds.length > 0
+        ? serviceClient
+            .from('claim_outcomes')
+            .select('claim_id,decision,outcome,updated_at')
+            .in('claim_id', claimIds)
+        : Promise.resolve({ data: [] }),
+      sourceOrderIds.length > 0
+        ? serviceClient
+            .from('source_orders')
+            .select('id,order_number,email,source_customer:source_customers(first_name,last_name,email)')
+            .eq('merchant_id', ctx.merchantId)
+            .in('id', sourceOrderIds)
+        : Promise.resolve({ data: [] }),
+      sourceTicketIds.length > 0
+        ? serviceClient
+            .from('source_tickets')
+            .select('id,external_id')
+            .eq('merchant_id', ctx.merchantId)
+            .in('id', sourceTicketIds)
+        : Promise.resolve({ data: [] }),
+      identityIds.length > 0
+        ? serviceClient
+            .from('merchant_identity_state')
+            .select('identity_id,display_name')
+            .eq('merchant_id', ctx.merchantId)
+            .in('identity_id', identityIds)
+        : Promise.resolve({ data: [] }),
+    ]);
 
   // claim_outcomes has a UNIQUE claim_id (one row per claim) — no latest-by-updated_at dedupe needed.
   const latestOutcomeByClaimId = new Map<string, { decision: string; outcome: string; updated_at: string }>();
-  if (claimIds.length > 0) {
-    const { data: outcomeRows } = await serviceClient
-      .from('claim_outcomes')
-      .select('claim_id,decision,outcome,updated_at')
-      .in('claim_id', claimIds);
-    for (const row of outcomeRows ?? []) {
-      latestOutcomeByClaimId.set(row.claim_id, {
-        decision: row.decision,
-        outcome: row.outcome,
-        updated_at: row.updated_at,
-      });
-    }
+  for (const row of outcomeRows ?? []) {
+    latestOutcomeByClaimId.set(row.claim_id, {
+      decision: row.decision,
+      outcome: row.outcome,
+      updated_at: row.updated_at,
+    });
   }
 
-  // Join source_orders (with the linked source_customer) for each claim to recover
-  // the customer display (name, email) and order ref in a single query.
-  const sourceOrderIds = Array.from(new Set(claimRows.flatMap((c) => (c.source_order_id ? [c.source_order_id] : []))));
+  // source_orders join (with the linked source_customer) recovers the customer
+  // display (name, email) and order ref in a single query.
   const orderById = new Map<string, { order_number: string | null; email: string | null; customer_name: string | null }>();
-  if (sourceOrderIds.length > 0) {
-    const { data: orderRows } = await serviceClient
-      .from('source_orders')
-      .select('id,order_number,email,source_customer:source_customers(first_name,last_name,email)')
-      .eq('merchant_id', ctx.merchantId)
-      .in('id', sourceOrderIds);
-    type OrderJoinRow = {
-      id: string;
-      order_number: string | null;
-      email: string | null;
-      source_customer: { first_name: string | null; last_name: string | null; email: string | null } | null;
-    };
-    for (const row of (orderRows ?? []) as unknown as OrderJoinRow[]) {
-      const customerName = [row.source_customer?.first_name, row.source_customer?.last_name]
-        .filter((part): part is string => !!part && part.trim().length > 0)
-        .join(' ')
-        .trim();
-      orderById.set(row.id, {
-        order_number: row.order_number,
-        email: row.email ?? row.source_customer?.email ?? null,
-        customer_name: customerName.length > 0 ? customerName : null,
-      });
-    }
+  type OrderJoinRow = {
+    id: string;
+    order_number: string | null;
+    email: string | null;
+    source_customer: { first_name: string | null; last_name: string | null; email: string | null } | null;
+  };
+  for (const row of (orderRows ?? []) as unknown as OrderJoinRow[]) {
+    const customerName = [row.source_customer?.first_name, row.source_customer?.last_name]
+      .filter((part): part is string => !!part && part.trim().length > 0)
+      .join(' ')
+      .trim();
+    orderById.set(row.id, {
+      order_number: row.order_number,
+      email: row.email ?? row.source_customer?.email ?? null,
+      customer_name: customerName.length > 0 ? customerName : null,
+    });
   }
 
-  // Join source_tickets to recover the helpdesk ticket reference shown in the case header.
-  const sourceTicketIds = Array.from(new Set(claimRows.flatMap((c) => (c.source_ticket_id ? [c.source_ticket_id] : []))));
+  // source_tickets join recovers the helpdesk ticket reference shown in the case header.
   const ticketRefById = new Map<string, string | null>();
-  if (sourceTicketIds.length > 0) {
-    const { data: ticketRows } = await serviceClient
-      .from('source_tickets')
-      .select('id,external_id')
-      .eq('merchant_id', ctx.merchantId)
-      .in('id', sourceTicketIds);
-    for (const row of ticketRows ?? []) {
-      ticketRefById.set(row.id, row.external_id ?? null);
-    }
+  for (const row of ticketRows ?? []) {
+    ticketRefById.set(row.id, row.external_id ?? null);
   }
 
-  const identityIds = Array.from(new Set(claimRows.flatMap((c) => (c.identity_id ? [c.identity_id] : []))));
   // Merchant-scoped display name for each identity (its own labelling, not network data).
   const displayNameByIdentityId = new Map<string, string>();
-  if (identityIds.length > 0) {
-    const { data: stateRows } = await serviceClient
-      .from('merchant_identity_state')
-      .select('identity_id,display_name')
-      .eq('merchant_id', ctx.merchantId)
-      .in('identity_id', identityIds);
-    for (const row of stateRows ?? []) {
-      if (row.display_name) displayNameByIdentityId.set(row.identity_id, row.display_name);
-    }
+  for (const row of stateRows ?? []) {
+    if (row.display_name) displayNameByIdentityId.set(row.identity_id, row.display_name);
   }
 
   // Map v2 rows onto the view-model the JSX expects. customer_id = identity_id,
@@ -332,22 +354,10 @@ export default async function ClaimsPage({
     evidenceByClaimId.set(claim.id, null);
   }
 
-  const [queueCounts, { data: allAmountRows }, { data: recoveryMetricRows }] = await Promise.all([
-    fetchClaimQueueCounts(serviceClient, ctx.merchantId, user.id),
-    serviceClient
-      .from(TABLES.MERCHANT_CLAIMS)
-      .select('amount_at_risk,currency')
-      .eq('merchant_id', ctx.merchantId),
-    serviceClient
-      .from(TABLES.MERCHANT_CLAIMS)
-      .select('status,total_estimated_loss,amount_at_risk,currency,recoverability,recovery_owner')
-      .eq('merchant_id', ctx.merchantId),
-  ]);
-
   // Sum only rows in the dominant currency; mixed-currency rows are excluded
   // rather than silently added into a single-currency total.
   const { total: totalAtRisk } = sumSameCurrency(
-    (allAmountRows ?? []) as Array<{ amount_at_risk: number | null; currency: string | null }>,
+    (recoveryMetricRows ?? []) as Array<{ amount_at_risk: number | null; currency: string | null }>,
     (c) => c.amount_at_risk,
     (c) => c.currency,
   );

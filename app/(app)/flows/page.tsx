@@ -1,11 +1,14 @@
 import { redirect } from "next/navigation";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
 import {
   hasPermission,
   PERMISSIONS,
-  requirePermission,
   resolveDefaultAppPath,
 } from "@/lib/permissions";
+import {
+  getRequestServiceClient,
+  getRequestUser,
+  requirePagePermission,
+} from "@/lib/auth/requestContext";
 import { TABLES } from "@/lib/supabase/tables";
 import {
   FlowsIndexClient,
@@ -30,18 +33,11 @@ type FlowRow = {
 };
 
 export default async function FlowsPage() {
-  const auth = createClient();
-  const {
-    data: { user },
-  } = await auth.auth.getUser();
+  const user = await getRequestUser();
   if (!user) redirect("/login");
-  const service = createServiceClient();
-  const { denied, ctx } = await requirePermission(
-    service,
-    user.id,
-    PERMISSIONS.VIEW_SETTINGS,
-  );
-  if (denied || !ctx) redirect(await resolveDefaultAppPath(service, user.id));
+  const service = getRequestServiceClient();
+  const ctx = await requirePagePermission(PERMISSIONS.VIEW_SETTINGS);
+  if (!ctx) redirect(await resolveDefaultAppPath(service, user.id));
   const [rowsResult, canManage] = await Promise.all([
     service
       .from(TABLES.WORKFLOW_DEFINITIONS)

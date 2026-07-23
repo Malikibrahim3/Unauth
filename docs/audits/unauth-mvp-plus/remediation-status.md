@@ -1,0 +1,80 @@
+# Unauth MVP+ remediation status
+
+Last updated: 2026-07-23
+
+| Area | Status | Evidence | Remaining blocker |
+|---|---|---|---|
+| Canonical baseline/replay | UNVERIFIED | `recovery/baseline_schema.sql`; independent PG17.6 replays `unauth_replay_a` and `unauth_replay_b`; repeated official and explicit-local clean resets; current eight-migration public-schema hash `268f248ddb10d292172af9adc559e96b8e5f227723ee775ba985f0ba765f236d`; generated types match | Exact definitions for three production-only Storage policies and per-object ACLs were not retained by Task 2E; aggregate counts cannot prove byte parity without the later consolidated external metadata check |
+| Active local migration history | PASS | Eight-file active history; `legacy-migration-sha256.txt` validates all 223 archived SQL files; repeated official PG17.6 blank replays; generated-type parity; normalized local public-schema hash `268f248ddb10d292172af9adc559e96b8e5f227723ee775ba985f0ba765f236d`; `scripts/verify-canonical-database.mjs` is non-skippable in release readiness | — |
+| Durable audit runtime | PASS | `scripts/verify-durable-audit-runtime.sql`; atomic commit/rollback, one logical event, actor context, projection idempotence/immutability, retained retry errors, bounded dead letter, crash-lease recovery, operator retry, erasure receipt, and exact 26-table inventory all pass on PostgreSQL 17.6 | — |
+| Tenant/auth boundaries | PASS | `scripts/verify-tenant-boundaries.sql`; two synthetic merchants with overlapping provider IDs; authenticated viewer/owner/revoked/missing-context identities; exact RLS visibility; direct-write denial; privileged RPC denial; user/merchant/file Storage isolation; 21 focused Jest assertions; clean TypeScript check | — |
+| Webhook/event safety | UNVERIFIED | Local controls pass: `webhook-callback-inventory.md`; `scripts/verify-webhook-event-safety.sql/.mjs`; true concurrent duplicate/object claims; bounded raw-body verification; payload conflicts; fenced leases; stored-response replay; merchant/source-account scope; out-of-order/stale handling; retry after partial failure; header-only helpdesk secrets; 23-suite/243-test provider run plus focused helpdesk/pack-confirmation additions; TypeScript passes | Live provider deliveries/credentials were unavailable. Helpdesk paths remain Partial: Gorgias/Freshdesk use shared custom headers without provider-native signed freshness; Zendesk native HMAC needs an actual signing secret/configuration. Existing deployed URL-secret registrations require coordinated rotation/re-registration before this code can roll out. |
+| Privacy/deletion/retention | UNVERIFIED | Local controls pass: `privacy-data-map.md`; `20260722300000_privacy_erasure_retention.sql`; `scripts/verify-privacy-erasure-runtime.sql/.mjs`; immutable idempotent receipt; merchant-scoped redaction; retained minor-unit ledger/event envelopes; leased Storage cleanup; explicit-deadline raw-payload purge; 11 focused suites / 101 tests; TypeScript and authenticated-design guards pass | No approved period exists for canonical/evidence/audit/financial retention. Historical unlinked inbox payloads cannot be assigned to one subject without guessing, and legacy non-null `payload_ref` values lack a bucket/path deletion contract. These remain explicit policy/data-contract blockers. |
+| P0 contract audit | PASS | `07-p0-verification-ledger.md` §9 contains exactly 322 unique P0 rows across 44 namespaces using only `PASS`, `FAIL`, or `UNVERIFIED`: 153 PASS, 0 FAIL, 169 UNVERIFIED. The verifier now includes the four alphanumeric `A11Y-*` P0s that its prior regex omitted. Every PASS has a concrete evidence key; broad or external claims remain UNVERIFIED. | The 169 item-level evidence limits are retained truthfully, chiefly universal breadth, controlled provider/staging proof, retention/data-reference policy, full accessibility walkthroughs, production-managed metadata, monitoring and export/upload coverage. No locally reproduced Critical/High/P0 FAIL remains. |
+| Source-to-recovery slice | PASS | `20260722400000_source_to_recovery_integrity.sql`; `scripts/verify-source-to-recovery-runtime.sql/.mjs`; one synthetic merchant/source path proves scoped records and links, evidence provenance/freshness, versioned rule explanation, ambiguity, atomic human decision, contradictory source reconciliation, append-only paid/loss/recovery/prevention/write-off/reversal facts, partial recovery, mixed currency, closure blockers and denied viewer execution. Canonical case financial history, Overview, Reports, per-state drill-down and metadata-rich CSV export share the same per-currency projection; unknown/proven-zero, per-case outstanding/final-net-loss and stable-ID regressions pass (6 suites / 32 tests), alongside the 9 lifecycle suites / 64 tests and TypeScript. | — |
+| Workflow/accessibility | PASS | Authoritative production Playwright run: 105/105 desktop tests. It covers every primary/compatibility route, seeded dynamic records, case→evidence→recovery→report continuity, truthful demo/no-result/empty-import/Partial-provider states, 29 core routes with serious/critical axe checks and five reflow widths, keyboard Escape/dialog behavior, content language, sidebar navigation and performance. Focused prior-failure regression: 9/9 across desktop/tablet/mobile. Manual localhost evidence was completed earlier; all data remained synthetic. | Atomic universal WCAG 2.2/screen-reader and every-route/every-state claims remain explicitly UNVERIFIED in the P0 ledger rather than inferred from the representative release suite. |
+| Final release gate | PASS | `node /private/tmp/unauth-stage-h-local.mjs release` completed with `status=ready`, `failedChecks=0`, `remoteMigrations=false` at `2026-07-23T05:26:38.485Z`: TypeScript; zero-warning lint; 397-file design guard; 135-table contract; two canonical replays; all five PostgreSQL runtime gates; 322-row P0 ledger; exact 222→8 migration-history rollout/rollback rehearsal; provider TypeScript; 315/315 executed Jest suites and 2,389 tests; 92/92 static pages; 105/105 browser checks; whitespace and eight-file history. | One live-only Jest suite / three tests remain deliberately skipped; controlled remote/provider actions are outside the local gate and require the single approval packet. |
+| Production/external verification | UNVERIFIED | `13-production-rollout-approval-packet.md` contains target checks, backup/restore gates, exact 222-version history reconciliation, six-migration order, deployment/provider sequencing, monitoring, stop gates, rollback and residual risk. The exact sequence was rehearsed locally against synthetic history and schema only. | One consolidated approval plus exact staging/deployment target IDs, authorized credentials/accounts, named operators and policy decisions are required. Production/staging remain untouched. |
+
+## Stage A evidence notes
+
+- All database work targets the local Supabase PG17.6 stack on `127.0.0.1:54322`; no production or staging connection was used.
+- The clone-only replay excludes `pg_cron` because the local image permits it only in its configured `postgres` database. The active-layout reset must exercise it in that canonical database.
+- Task 2E records six production `storage.objects` policies and 132 public relations with explicit ACLs, but the retained reconstruction artifact contains only the three repository-proven CSV policies and aggregate ACL counts. Do not infer exact parity from counts; resolve through the safest local reconstruction and retain any irreducible metadata gap as `UNVERIFIED`.
+
+## Stage B evidence notes
+
+- Trigger-backed routes no longer append a second explicit audit event. They pass trusted server-derived actor, role, correlation and request-IP headers into the same PostgREST transaction consumed by `capture_sensitive_audit_event()`.
+- Explicit `logAction()` remains only on read/export actions that have no business-row trigger.
+- The delivery claim function now reclaims expired worker leases and sends an expired final attempt to `dead_letter`; the runtime acceptance test verifies retained errors and merchant/status-guarded operator recovery.
+- The stale bulk-deletion target `customer_notes` was corrected to canonical `identity_notes`, including its timestamp-based soft-delete contract.
+
+## Stage C evidence notes
+
+- Workspace resolution fails closed: a requested inactive/foreign merchant never falls back, and an absent selection auto-resolves only when exactly one active membership exists. Exact active target membership remains sufficient to recover through the workspace-switch endpoint.
+- All public functions are denied to `public`, `anon`, and `authenticated` by default; only the two RLS membership helpers are re-granted to authenticated clients. Service-role execution remains intact for server-owned workers and administrative routes.
+- Viewer-accessible business tables retain merchant-scoped reads but no longer expose direct authenticated writes. Permission delegation is owner-only.
+- CSV Storage objects require the exact `user-id/merchant-id/file` layout, the authenticated user prefix, and an active membership in the path merchant. Cross-merchant upload and read attempts fail in the local runtime proof.
+
+## Stage D evidence notes
+
+- The generic event claim is payload-aware, leased and token-fenced. A second caller cannot execute an active delivery; failed or expired work is reclaimable; completed responses are replayed; object versions serialize by provider/source account/object; older snapshots become observable `ignored` rows.
+- Shopify, WooCommerce, BigCommerce, Stripe and ShipBob verify the bounded raw body before parsing or mutation and scope delivery keys to the source account. BigCommerce and ShipBob use Standard Webhooks timestamped signatures; Stripe uses the SDK tolerance.
+- Gorgias, Freshdesk and Zendesk reject connection secrets in URL query strings. Their generated setup URLs contain only public account locators and setup copy requires a custom secret header.
+- Helpdesk ticket claims occur after authenticated hydration so skeletal provider notifications still receive the real provider update timestamp. Exact replays return the stored intake result; stale versions do not overwrite newer ticket state; failed processing is retryable.
+- The signed pack-confirmation callback now bounds multipart/JSON bodies, validates photo MIME against magic bytes, uses a deterministic merchant-prefixed photo path, atomically claims the single-use submission and resumes canonical evidence after a partial failure.
+- Checkout browser signals remain explicitly low trust. The bootstrap token binds writes to an active merchant/store but is not storefront-origin proof; the insert is now atomically idempotent and authentication precedes rate-limit mutation.
+
+## Stage E evidence notes
+
+- The prior bulk-removal implementation wrote nonexistent `hidden_by_merchant` and `removed_by_merchant` columns. It now uses the real canonical view-state fields: `sync_jobs.hidden`, `merchant_identity_state.on_watchlist`, and `identity_notes.deleted_at`; merchant-facing copy lists that limited scope instead of calling it all operational data.
+- Subject erasure is one service-only PostgreSQL transaction keyed by merchant, subject, and idempotency key. It redacts direct identifiers/free text and severs merchant-local identity signals while preserving order/case IDs, money, currency, state, reversal, and event/audit envelopes. A narrowly allow-listed trigger path permits only privacy-bearing fields to change on otherwise append-only rows.
+- Evidence/export/CSV object paths are captured before database redaction and placed on a leased, owner-fenced, bounded-retry Storage queue. A Storage failure cannot be reported as completed deletion; the authenticated maintenance cron retries it.
+- Raw retention is now executable but deliberately limited to terminal inline payloads with an explicit deadline. `retentionDays` defaults to `null`; pending/retryable rows, no-policy rows, and uncontracted external payload references remain untouched and observable.
+- The PostgreSQL acceptance uses two merchants with overlapping external customer/order/ticket IDs and identical synthetic contact values. Repeating the same erasure request returns the original receipt; merchant B remains unchanged; merchant A financial entries and event envelopes reconcile after PII redaction.
+- Disconnect proof is split across the canonical disconnect contract plus webhook intake tests: revoked Shopify and disabled helpdesk connections do not ingest future records, and credentials/webhook secrets are wiped on clean disconnect.
+
+## Stage F evidence notes
+
+- The atomic recheck now derives its count from all 322 P0 IDs across 44 namespaces, including the four `A11Y-*` identifiers previously excluded by an alphabetic-only parser. The verifier fails on duplicates, empty evidence, any `FAIL`, count/namespace drift, or mismatch with this ledger.
+- `UNVERIFIED` is retained for requirements whose universal, external, policy, staging-volume, screen-reader, monitoring, upload/export or controlled-provider scope is broader than the executed evidence. The green release gate does not promote those rows.
+
+## Stage G evidence notes
+
+- The end-to-end PostgreSQL slice keeps recommendation, human decision, actual source outcome and financial facts separate. Requested/exposed/approved/paid/estimated/confirmed/recoverable/recovered/prevented/written-off amounts remain distinct, per currency and in minor units.
+- The shared case/report/export projection and browser journey link the operational records without implying an external payout or recovery action occurred.
+
+## Stage H evidence notes
+
+- The browser fixture is explicitly local-only and synthetic. The final desktop suite passed 105/105; a focused regression of the three earlier timeout/redirect paths passed 9/9 across desktop/tablet/mobile.
+- Eighteen RSC pages now share the request-cached `getRequestUser()` helper with the authenticated layout, removing duplicate Auth round trips without weakening permission checks or fail-closed redirects.
+- Automatic Next.js prefetch requests are isolated from route assertions, background requests are drained between long route sweeps, and exactly one retry is permitted only after a transient login redirect. Persistent unauthenticated behavior still fails the test.
+- Seeded dynamic-record discovery now waits for the streamed route data after the authenticated shell commits. Its focused desktop/tablet/mobile regression passed 3/3, and the same check passed in the final 105-test production browser gate.
+- The final performance artifact records p75 628 ms and maximum 717 ms across two warmed iterations of eight primary routes. Contract-wide staging-volume/search/long-job performance claims remain UNVERIFIED.
+
+## Stage I evidence notes
+
+- The complete local gate is non-skippable and ends with `remoteMigrations=false`; it refuses the prohibited remote flag. It passes only against a loopback Supabase URL and a synthetic merchant.
+- The rollout verifier reconstructs the captured 222-version production history on the isolated local database, proves unreconciled push is rejected, marks baseline/supplement applied, restores the 222-version history through the immutable archive as a pre-DDL rollback, repeats reconciliation, applies the six forward migrations, and verifies the final eight-version history, schema hash and monitoring invariants.
+- The first complete run exposed two host-starvation timeouts and three browser symptoms rather than assertion defects. Isolated reruns passed; Auth logs showed local container DNS/database timeouts. The disposable Colima VM was recovered at 3 GiB, page Auth calls were deduplicated, and the complete gate then passed without changing security or performance assertions.
+- Production and staging were never linked, queried, migrated, deployed or otherwise changed during Stages A–I. The only permitted next operation is the single approved batch in `13-production-rollout-approval-packet.md`.

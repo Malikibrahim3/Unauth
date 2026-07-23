@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
-import { logAction } from '@/lib/permissions/audit';
 import { getClientIp } from '@/lib/ratelimit';
 import { disableMerchantBigCommerceConnection } from '@/lib/commerce/bigcommerce/connectionSettings';
 
@@ -18,16 +17,10 @@ export async function POST(req: Request) {
   if (denied) return denied;
 
   try {
-    const connection = await disableMerchantBigCommerceConnection(service, ctx.merchantId);
-
-    logAction({
-      ctx,
-      action: 'disconnect_bigcommerce',
-      resourceType: 'commerce_store_connection',
-      resourceId: connection.id,
-      metadata: { store_key: connection.store_key },
-      ip,
-    });
+    const connection = await disableMerchantBigCommerceConnection(
+      createServiceClient({ audit: { actorId: ctx.userId, actorRole: ctx.role, requestIp: ip } }),
+      ctx.merchantId,
+    );
 
     return NextResponse.json({ connection });
   } catch (err) {

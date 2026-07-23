@@ -15,6 +15,18 @@ export async function ensureMerchantContextForUser(
   const existingContext = await resolveCallerContext(serviceClient, user.id, selectedMerchantId);
   if (existingContext) return existingContext;
 
+  // An invalid explicit selection or an ambiguous multi-workspace account is
+  // an authorization failure, not evidence that the user needs a new tenant.
+  // Rehydration is only safe when no active membership exists at all.
+  const { data: activeMembership } = await serviceClient
+    .from('merchant_users')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('invite_status', 'active')
+    .limit(1)
+    .maybeSingle();
+  if (activeMembership) return null;
+
   if (!canRehydrateMerchantFromAuth(user)) return null;
 
   await upsertMerchantForUser(serviceClient as never, {

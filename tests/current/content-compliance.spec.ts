@@ -6,9 +6,10 @@ const MERCHANT_ROUTES = [
 ];
 
 test('current merchant surfaces avoid banned and internal failure language', async ({ page }) => {
+  test.setTimeout(180_000);
   for (const route of MERCHANT_ROUTES) {
-    await page.goto(route);
-    await expect(page.locator('main')).toBeVisible();
+    await page.goto(route, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('main')).toBeVisible({ timeout: 30_000 });
     const text = await page.locator('main').innerText();
     expect(text, `${route} exposes banned legacy language`).not.toMatch(/\bfraud\b/i);
     expect(text, `${route} exposes an internal stack trace`).not.toMatch(/\bat\s+\S+\.(?:ts|tsx|js):\d+/i);

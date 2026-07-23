@@ -10,16 +10,26 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { ProviderLogo } from "@/components/identity/ProviderLogo";
 import { formatDateTime, formatNumber } from "@/lib/utils/format";
 import { humanise } from "@/lib/ui/labels";
+import type { IntegrationCategory } from "@/lib/integrations/types";
 
 export type CatalogueRowItem = ConnectorCatalogueItem & {
   badge: EffectiveConnectionBadge;
   noteTone?: "warning" | "danger" | null;
 };
 
+const CATEGORY_LABELS: Record<IntegrationCategory, string> = {
+  commerce: "Commerce",
+  helpdesk: "Helpdesk",
+  tracking: "Tracking",
+  carrier: "Carrier",
+  warehouse_3pl: "Warehouse / 3PL",
+  returns: "Returns",
+  payments_disputes: "Payments / disputes",
+  documents: "Documents",
+};
+
 export function categoryLabel(category: string) {
-  return category === "warehouse_3pl"
-    ? "Warehouse / 3PL"
-    : humanise(category);
+  return CATEGORY_LABELS[category as IntegrationCategory] ?? humanise(category);
 }
 
 export function ConnectorRow({ item }: { item: CatalogueRowItem }) {
@@ -51,7 +61,7 @@ export function ConnectorRow({ item }: { item: CatalogueRowItem }) {
       <div>
         <StatusBadge family="workflowStatus" value={live.status} />
       </div>
-      <div className="min-w-0">
+      <div className="min-w-0 md:col-span-2 xl:col-span-1">
         <p className="line-clamp-2 text-xs leading-relaxed text-[var(--text-secondary)]">
           {item.description}
         </p>
@@ -65,10 +75,16 @@ export function ConnectorRow({ item }: { item: CatalogueRowItem }) {
           </p>
         ) : null}
       </div>
-      <p className="text-right font-semibold tabular-nums text-[var(--text-primary)]">
+      <p className="text-left font-semibold tabular-nums text-[var(--text-primary)] xl:text-right">
+        <span className="mr-1 text-[10px] font-medium uppercase tracking-wide text-[var(--text-tertiary)] xl:hidden">
+          Imported
+        </span>
         {formatNumber(item.importedRecords)}
       </p>
       <p className="text-xs font-medium text-[var(--text-secondary)]">
+        <span className="mr-1 text-[10px] uppercase tracking-wide text-[var(--text-tertiary)] xl:hidden">
+          Last activity
+        </span>
         {item.lastDataReceivedAt
           ? formatDateTime(item.lastDataReceivedAt)
           : item.badge === "sync_pending"
@@ -77,7 +93,7 @@ export function ConnectorRow({ item }: { item: CatalogueRowItem }) {
               ? "Not measurable"
               : "No activity yet"}
       </p>
-      <span className="text-right text-[var(--text-tertiary)]">
+      <span className="hidden text-right text-[var(--text-tertiary)] xl:block">
         <span className="sr-only">View connection</span>
       </span>
     </Link>

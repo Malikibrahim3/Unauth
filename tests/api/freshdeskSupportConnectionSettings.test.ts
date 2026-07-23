@@ -242,7 +242,7 @@ describe('Freshdesk support connection settings API', () => {
     const json = await res.json();
     expect(json.webhook_secret_plaintext).toMatch(/^freshdesk_whsec_/);
     expect(json.webhook_url).toContain('freshdesk_domain=acme.freshdesk.com');
-    expect(json.webhook_url).toContain('unauth_whsec=');
+    expect(json.webhook_url).not.toContain('unauth_whsec=');
     expect(json.manual_webhook_setup).toBe(true);
     expect(json.connection.freshdesk_api_configured).toBe(true);
   });
@@ -311,14 +311,13 @@ describe('Freshdesk webhook secret helpers', () => {
     expect(verifyFreshdeskWebhookSecret('wrong', hash)).toBe(false);
   });
 
-  it('buildFreshdeskSupportWebhookUrl embeds domain and secret for registration', () => {
+  it('buildFreshdeskSupportWebhookUrl embeds only the public domain locator', () => {
     const url = buildFreshdeskSupportWebhookUrl({
       domain: FRESHDESK_DOMAIN,
-      webhookSecretPlaintext: 'freshdesk_whsec_testsecretvalue0123456789abcdef',
     });
     expect(url).toContain('/api/freshdesk/support-webhook');
     expect(url).toContain('freshdesk_domain=acme.freshdesk.com');
-    expect(url).toContain('unauth_whsec=');
+    expect(url).not.toContain('unauth_whsec=');
   });
 
   it('verifyFreshdeskWebhookAuth accepts connection hash', () => {

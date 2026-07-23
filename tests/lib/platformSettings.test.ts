@@ -50,12 +50,13 @@ describe("platform settings", () => {
     });
   });
 
-  it("rejects invalid currency and unsafe retention", () => {
+  it("rejects invalid currency and unsafe retention while allowing no policy", () => {
     expect(
       platformSettingsSchema.safeParse({
         reportingCurrency: "dollars",
         retentionDays: 1,
       }).success,
     ).toBe(false);
+    expect(platformSettingsSchema.safeParse({ retentionDays: null }).success).toBe(true);
   });
 });

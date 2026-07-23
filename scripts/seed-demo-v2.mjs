@@ -76,7 +76,7 @@ const CASES = [
     fulfillmentState: 'delivered',
     reason: 'Tracking shows delivered but customer says the parcel never arrived.',
     subject: 'Delivered order not received',
-    lossAttribution: 'failed_delivery_evidence',
+    lossAttribution: 'delivery_confirmed_evidence',
     confidence: 'needs_more_evidence',
     recoverability: 'needs_more_evidence',
     recoveryOwner: 'carrier',
@@ -902,11 +902,20 @@ function buildOutcomeRows() {
 function buildRecoveryRows(merchantId) {
   return CASES.filter((casePlan) => casePlan.recovery).map((casePlan) => {
     const recovery = casePlan.recovery;
+    const amountSoughtMinor = Math.round(Math.max(recovery.max, recovery.recovered ?? 0) * 100);
+    const amountRecoveredMinor = Math.round((recovery.recovered ?? 0) * 100);
+    const amountApprovedMinor = ['approved', 'partially_approved', 'paid'].includes(recovery.status)
+      ? amountSoughtMinor
+      : 0;
+    const amountWrittenOffMinor = recovery.status === 'closed_unrecoverable'
+      ? Math.max(amountSoughtMinor - amountRecoveredMinor, 0)
+      : 0;
     const missingEvidence = recovery.status === 'evidence_needed' ? casePlan.requiredEvidence.slice(0, 2) : [];
     return {
       id: uuid(`recovery:${casePlan.key}`),
       merchant_id: merchantId,
       support_payout_case_id: uuid(`case:${casePlan.key}`),
+      loss_case_id: uuid(`loss:${casePlan.key}`),
       partner_id: partnerIdForRecovery(casePlan),
       recovery_type: recovery.type,
       owner_type: recovery.owner,
@@ -916,6 +925,10 @@ function buildRecoveryRows(merchantId) {
       estimated_recoverable_min: recovery.min,
       estimated_recoverable_max: recovery.max,
       amount_recovered: recovery.recovered ?? null,
+      amount_sought_minor: amountSoughtMinor,
+      amount_approved_minor: amountApprovedMinor,
+      amount_recovered_minor: amountRecoveredMinor,
+      amount_written_off_minor: amountWrittenOffMinor,
       currency: 'GBP',
       deadline_at: daysFromAnchorIso(recovery.status === 'chase_due' ? 1 : 14, 17),
       next_chase_at: recovery.status === 'chase_due' ? daysAgoIso(1, 9) : daysFromAnchorIso(4, 9),
@@ -1064,8 +1077,8 @@ async function seed(merchantId) {
   await upsertRows('source_tickets', buildTicketRows(merchantId));
   await upsertRows('support_payout_cases', buildCaseRows(merchantId));
   await upsertRows('claim_outcomes', buildOutcomeRows());
-  await upsertRows('recovery_cases', buildRecoveryRows(merchantId));
   await upsertRows('loss_cases', buildLossRows(merchantId));
+  await upsertRows('recovery_cases', buildRecoveryRows(merchantId));
   await upsertRows('work_tasks', buildWorkTaskRows(merchantId));
   await insertImmutableRows('case_decisions', buildCanonicalDecisionRows(merchantId));
   await insertImmutableRows('case_outcomes', buildCanonicalOutcomeRows(merchantId));

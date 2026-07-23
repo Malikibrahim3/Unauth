@@ -3,7 +3,6 @@ import { z } from 'zod';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
-import { logAction } from '@/lib/permissions/audit';
 import { getClientIp } from '@/lib/ratelimit';
 import { withRequestLogging } from '@/lib/log';
 import { createMerchantApiKey } from '@/lib/api/apiKeys';
@@ -70,19 +69,13 @@ async function POSTHandler(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
 
-  const created = await createMerchantApiKey(service, ctx.merchantId, parsed.name);
+  const mutationClient = createServiceClient({
+    audit: { actorId: ctx.userId, actorRole: ctx.role, requestIp: ip },
+  });
+  const created = await createMerchantApiKey(mutationClient, ctx.merchantId, parsed.name);
   if (!created) {
     return NextResponse.json({ error: 'Failed to create API key' }, { status: 500 });
   }
-
-  logAction({
-    ctx,
-    action: 'create_api_key',
-    resourceType: 'merchant_api_key',
-    resourceId: created.id,
-    metadata: { name: parsed.name, key_prefix: created.keyPrefix },
-    ip,
-  });
 
   return NextResponse.json({
     key: {

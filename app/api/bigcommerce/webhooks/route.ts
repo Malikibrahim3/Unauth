@@ -10,9 +10,27 @@ import { processBigCommerceRefundWebhook } from '@/lib/commerce/bigcommerce/proc
 import { processBigCommerceAppUninstalled } from '@/lib/commerce/bigcommerce/processAppUninstalled';
 import { verifyBigCommerceWebhookSignature } from '@/lib/commerce/bigcommerce/verifyWebhookSignature';
 import { enforceRateLimit, getClientIp, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
+import { readBoundedWebhookBody, WebhookBodyError } from '@/lib/webhooks/body';
 
 function normalizeScope(scope: string | null): string {
   return (scope ?? '').trim().toLowerCase();
+}
+
+function bigCommerceObjectVersion(
+  scope: string,
+  payload: Record<string, unknown>,
+): { objectKey: string; eventVersion: number } | null {
+  if (scope !== 'store/order/created' && scope !== 'store/order/updated') return null;
+  const data = payload.data && typeof payload.data === 'object'
+    ? payload.data as Record<string, unknown>
+    : null;
+  const id = data?.id;
+  const createdAt = payload.created_at;
+  if ((typeof id !== 'string' && typeof id !== 'number') || typeof createdAt !== 'number') return null;
+  const eventVersion = createdAt * 1000;
+  return Number.isSafeInteger(eventVersion)
+    ? { objectKey: `order:${String(id)}`, eventVersion }
+    : null;
 }
 
 export async function GET() {
@@ -21,8 +39,19 @@ export async function GET() {
 
 // Service-role access is protected here by HMAC signature verification, not user auth.
 export async function POST(request: NextRequest) {
-  const rawBody = await request.text();
-  const signature = request.headers.get('x-bc-signature');
+  let rawBody: string;
+  try {
+    rawBody = await readBoundedWebhookBody(request);
+  } catch (error) {
+    if (error instanceof WebhookBodyError) {
+      return NextResponse.json({ error: error.code }, { status: error.status });
+    }
+    throw error;
+  }
+
+  if (!verifyBigCommerceWebhookSignature(rawBody, request.headers)) {
+    return NextResponse.json({ error: 'Invalid webhook signature' }, { status: 401 });
+  }
 
   let webhookPayload: Record<string, unknown>;
   try {
@@ -53,23 +82,36 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Missing webhook fields' }, { status: 400 });
   }
 
-  if (!verifyBigCommerceWebhookSignature(rawBody, signature)) {
-    return NextResponse.json({ error: 'Invalid webhook signature' }, { status: 401 });
-  }
-
   const supabase = createServiceClient();
   let idempotencyKey: string;
+  let claimToken: string;
+  const objectVersion = bigCommerceObjectVersion(scope, webhookPayload);
   try {
     const claim = await claimProcessedWebhook(supabase, {
       platform: 'bigcommerce',
       storeKey: storeHash,
       nativeWebhookId: deliveryId,
       topic: scope,
+      rawBody,
+      ...(objectVersion ?? {}),
     });
+    if (claim.conflict) {
+      return NextResponse.json({ error: 'idempotency_payload_conflict' }, { status: 409 });
+    }
+    if (claim.retry) {
+      return NextResponse.json(
+        { error: 'webhook_object_in_progress' },
+        { status: 503, headers: { 'retry-after': '1' } },
+      );
+    }
+    if (claim.stale) {
+      return NextResponse.json({ ok: true, ignored: 'stale_event' });
+    }
     if (claim.duplicate) {
       return NextResponse.json({ ok: true, duplicate: true });
     }
     idempotencyKey = claim.idempotencyKey;
+    claimToken = claim.claimToken;
   } catch {
     return NextResponse.json({ error: 'Failed to claim webhook' }, { status: 500 });
   }
@@ -91,16 +133,17 @@ export async function POST(request: NextRequest) {
       await processBigCommerceAppUninstalled(supabase, storeHash);
     }
 
-    await completeProcessedWebhook(supabase, idempotencyKey, 'completed', null);
+    await completeProcessedWebhook(supabase, idempotencyKey, claimToken, 'completed', null);
   } catch (err) {
     const message = err instanceof Error ? err.message.slice(0, 300) : 'webhook_processing_failed';
-    await completeProcessedWebhook(supabase, idempotencyKey, 'failed', message);
+    await completeProcessedWebhook(supabase, idempotencyKey, claimToken, 'failed', message);
     console.error('BigCommerce webhook processing failed', {
       deliveryId,
       scope,
       storeHash,
       message,
     });
+    return NextResponse.json({ error: 'webhook_processing_failed' }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });

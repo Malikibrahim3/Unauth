@@ -3,7 +3,6 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
-import { logAction } from '@/lib/permissions/audit';
 import { withRequestLogging } from '@/lib/log';
 
 async function PATCHHandler(
@@ -21,6 +20,9 @@ async function PATCHHandler(
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.DISMISS_TRANSACTION);
   if (denied) return denied;
   const scopedClient = createScopedClient(ctx.merchantId, serviceClient);
+  const mutationClient = createServiceClient({
+    audit: { actorId: ctx.userId, actorRole: ctx.role, requestIp: ip },
+  });
 
   // Confirm the transaction belongs to a job owned by this merchant before updating
   const { data: tx } = await serviceClient
@@ -42,20 +44,12 @@ async function PATCHHandler(
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  const { error } = await serviceClient
+  const { error } = await mutationClient
     .from(TABLES.AUDIT_TRANSACTIONS)
     .update({ dismissed_by_merchant: true } as any)
     .eq('id', resolvedParams.id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  logAction({
-    ctx,
-    action: 'dismiss_transaction',
-    resourceType: 'transaction',
-    resourceId: resolvedParams.id,
-    ip,
-  });
 
   return NextResponse.json({ ok: true });
 

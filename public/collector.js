@@ -9,6 +9,7 @@
   var pendingEvents = [];
   var flushTimer = null;
   var deviceFpPromise = null;
+  var configBootstrapPromise = null;
 
   function noop() {}
 
@@ -219,6 +220,7 @@
     var checkoutReached = eventType === 'checkout' || pathIsCheckout();
     var cartCount = await detectCartCount();
     return {
+      eventId: uuid(),
       merchantId: config.merchantId,
       collectorToken: config.token || null,
       visitorId: getVisitorId(),
@@ -234,6 +236,38 @@
       eventType: eventType,
       ts: Date.now()
     };
+  }
+
+  function configEndpoint(endpoint) {
+    return safe(function () {
+      return new URL('/api/checkout-signals/config', endpoint || DEFAULT_ENDPOINT).toString();
+    }, 'https://app.unauth.co/api/checkout-signals/config');
+  }
+
+  function bootstrapCollectorConfig(input) {
+    if (configBootstrapPromise) return configBootstrapPromise;
+    var platform = String(input.platform || '').toLowerCase();
+    var storeKey = String(input.storeKey || '').toLowerCase();
+    if (!platform || !storeKey) return Promise.resolve(false);
+
+    var url = configEndpoint(input.endpoint);
+    url += '?platform=' + encodeURIComponent(platform) + '&store=' + encodeURIComponent(storeKey);
+    configBootstrapPromise = fetch(url, { method: 'GET', credentials: 'omit' })
+      .then(function (response) {
+        if (!response.ok) throw new Error('collector_config_failed');
+        return response.json();
+      })
+      .then(function (payload) {
+        if (!payload || !payload.merchantId) throw new Error('collector_config_invalid');
+        config.merchantId = String(payload.merchantId);
+        config.token = payload.collectorToken ? String(payload.collectorToken) : null;
+        if (payload.endpoint) config.endpoint = String(payload.endpoint);
+        flushPendingDescriptors();
+        flush().catch(noop);
+        return true;
+      })
+      .catch(function () { return false; });
+    return configBootstrapPromise;
   }
 
   function enqueueDescriptor(eventType, extra) {
@@ -347,15 +381,22 @@
     init: function (input) {
       try {
         input = input || {};
+        configBootstrapPromise = null;
+        var mustBootstrap = !input.token && input.storeKey;
         config = {
-          merchantId: String(input.merchantId || ''),
+          merchantId: mustBootstrap ? '' : String(input.merchantId || ''),
           platform: String(input.platform || ''),
           token: input.token ? String(input.token) : null,
-          endpoint: input.endpoint || DEFAULT_ENDPOINT
+          endpoint: input.endpoint || DEFAULT_ENDPOINT,
+          storeKey: input.storeKey ? String(input.storeKey) : null
         };
         startFlushTimer();
-        flushPendingDescriptors();
-        flush().catch(noop);
+        if (mustBootstrap) {
+          bootstrapCollectorConfig(input).catch(noop);
+        } else {
+          flushPendingDescriptors();
+          flush().catch(noop);
+        }
       } catch (_) {}
     }
   };

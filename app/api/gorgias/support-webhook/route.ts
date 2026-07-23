@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   GorgiasWebhookError,
+  authenticateGorgiasSupportWebhook,
   extractGorgiasTicketPayload,
   ingestGorgiasSupportWebhook,
 } from '@/lib/support/gorgias/ingestWebhook';
@@ -8,7 +9,6 @@ import { extractGorgiasAccountIdentity } from '@/lib/support/gorgias/accountIden
 import { readGorgiasWebhookSecret } from '@/lib/support/gorgias/webhookAuth';
 import {
   GORGIAS_WEBHOOK_DOMAIN_QUERY_PARAM,
-  GORGIAS_WEBHOOK_SECRET_QUERY_PARAM,
 } from '@/lib/support/gorgias/supportConnectionShared';
 import { getActiveGorgiasMerchantApiAccess } from '@/lib/support/gorgias/merchantApiAccess';
 import { nudgeGorgiasTicketWidgetRefreshBestEffort } from '@/lib/support/gorgias/widgetRefreshNudge';
@@ -19,6 +19,7 @@ import { evaluatePublicGate } from '@/lib/claim-gate/publicGate';
 import { resolveGorgiasTicketCustomerEmail } from '@/lib/support/gorgias/ticketCustomerEmail';
 import { matchOrder } from '@/lib/relationships/matchOrder';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { readBoundedWebhookBody, WebhookBodyError } from '@/lib/webhooks/body';
 
 type GateOrderReference = {
   id: string;
@@ -96,8 +97,7 @@ function safeWebhookRejectionContext(request: NextRequest, body: unknown): Recor
         : 'missing',
     identity_source: identity?.source ?? null,
     has_domain_query: new URL(request.url).searchParams.has(GORGIAS_WEBHOOK_DOMAIN_QUERY_PARAM),
-    has_secret_header: Boolean(readGorgiasWebhookSecret(request.headers, null)),
-    has_secret_query: new URL(request.url).searchParams.has(GORGIAS_WEBHOOK_SECRET_QUERY_PARAM),
+    has_secret_header: Boolean(readGorgiasWebhookSecret(request.headers)),
   };
 }
 
@@ -136,29 +136,37 @@ export async function POST(request: NextRequest) {
     request.headers.get('x-gorgias-domain') ??
     searchParams.get(GORGIAS_WEBHOOK_DOMAIN_QUERY_PARAM) ??
     getClientIp(request.headers);
+
+  if (!readGorgiasWebhookSecret(request.headers)) {
+    return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 });
+  }
+
+  let authenticatedContext;
+  try {
+    authenticatedContext = await authenticateGorgiasSupportWebhook({
+      headers: request.headers,
+      requestUrl: request.url,
+    });
+  } catch (error) {
+    if (error instanceof GorgiasWebhookError) {
+      return NextResponse.json({ ok: false, error: error.message }, { status: error.status });
+    }
+    return NextResponse.json({ ok: false, error: 'authentication_failed' }, { status: 500 });
+  }
+
   const limited = await enforceRateLimit(
     rateLimitKey('webhook', 'gorgias', rateLimitIdentity),
     limitFromEnv('GORGIAS_WEBHOOK_RATE_LIMIT', 1000, 60)
   );
   if (limited) return limited;
 
-  // A request with no presented connection secret can never authenticate.
-  // Reject it before account discovery or payload validation so unauthenticated
-  // callers cannot use response ordering to probe registered account identity.
-  if (!readGorgiasWebhookSecret(request.headers, searchParams)) {
-    await logGorgiasWebhookResult({
-      provider: 'gorgias',
-      status: 'validation_error',
-      http_status: 401,
-      error: 'unauthorized',
-    });
-    return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 });
-  }
-
   let body: unknown;
   try {
-    body = await request.json();
-  } catch {
+    body = JSON.parse(await readBoundedWebhookBody(request));
+  } catch (error) {
+    if (error instanceof WebhookBodyError) {
+      return NextResponse.json({ ok: false, error: error.code }, { status: error.status });
+    }
     await logGorgiasWebhookResult({ provider: 'gorgias', status: 'validation_error', http_status: 400, error: 'invalid_json' });
     return NextResponse.json({ ok: false, error: 'invalid_json' }, { status: 400 });
   }
@@ -168,6 +176,7 @@ export async function POST(request: NextRequest) {
       headers: request.headers,
       body,
       requestUrl: request.url,
+      authenticatedContext,
     });
     await logGorgiasWebhookResult({
       provider: 'gorgias',

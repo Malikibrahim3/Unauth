@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { after } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
-import { logAction } from '@/lib/permissions/audit';
 import { getClientIp } from '@/lib/ratelimit';
 import { withRequestLogging } from '@/lib/log';
 import { getConnectionState } from '@/lib/connections/getConnectionState';
@@ -56,6 +55,9 @@ async function POSTHandler(req: NextRequest) {
   const service = createServiceClient();
   const { denied, ctx } = await requirePermission(service, user.id, PERMISSIONS.MANAGE_SETTINGS);
   if (denied) return denied;
+  const mutationService = createServiceClient({
+    audit: { actorId: ctx.userId, actorRole: ctx.role, requestIp: ip },
+  });
 
   let body: unknown;
   try {
@@ -74,18 +76,8 @@ async function POSTHandler(req: NextRequest) {
 
     const saved =
       existing?.status === 'active' && existing.zendesk_api_configured
-        ? await updateMerchantZendeskSupportConnection(service, ctx.merchantId, parsed.data)
-        : await createMerchantZendeskSupportConnection(service, ctx.merchantId, parsed.data);
-
-    logAction({
-      ctx,
-      action:
-        existing?.zendesk_api_configured ? 'update_zendesk_support_connection' : 'create_zendesk_support_connection',
-      resourceType: 'support_provider_connection',
-      resourceId: saved.connection.id,
-      metadata: { provider_account_id: saved.connection.provider_account_id },
-      ip,
-    });
+        ? await updateMerchantZendeskSupportConnection(mutationService, ctx.merchantId, parsed.data)
+        : await createMerchantZendeskSupportConnection(mutationService, ctx.merchantId, parsed.data);
 
     const merchantId = ctx.merchantId;
     const connectionId = saved.connection.id;

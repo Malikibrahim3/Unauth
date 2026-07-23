@@ -20,13 +20,15 @@ describe('claim status machine', () => {
     );
   });
 
-  it('allows explicit reopen from final or stale claims to open', () => {
+  it('allows explicit reopen from final claims and maps legacy stale rows to review', () => {
     expect(assertClaimStatusTransition('resolved_won', 'open', { allowReopen: true })).toBe('open');
     expect(assertClaimStatusTransition('stale', 'open', { allowReopen: true })).toBe('open');
   });
 
-  it('allows stale only from pending without reopen', () => {
-    expect(assertClaimStatusTransition('pending', 'stale')).toBe('stale');
+  it('never uses stale as a business lifecycle transition', () => {
+    expect(() => assertClaimStatusTransition('pending', 'stale')).toThrow(
+      'illegal_claim_status_transition: pending -> stale',
+    );
     expect(canTransitionClaimStatus('open', 'stale')).toBe(false);
   });
 

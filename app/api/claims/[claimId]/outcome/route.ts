@@ -1,28 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
-import { createOutcomeSchema, upsertMerchantCaseOutcome } from '@/lib/claims/store';
+import { recordCaseDecisionSchema, recordMerchantCaseDecision } from '@/lib/claims/store';
 import { computeFollowedRecommendation } from '@/lib/payouts/recommendation';
 import { applyPolicyOverrideAttribution } from '@/lib/payouts/attribution';
 import type { AttributionConfidence, LossAttributionLabel, PayoutRecommendation } from '@/lib/payouts/types';
 import { TABLES } from '@/lib/supabase/tables';
-import { appendClaimEvent } from '@/lib/claims/events';
 import { loadClaimForMerchant } from '@/lib/claims/access';
-import { claimStatusForOutcome } from '@/lib/claims/statusMachine';
 import { resolveHoldTag } from '@/lib/gorgias/applyHoldTag';
-import { CaseTransitionRejectedError, CaseVersionConflictError, transitionCase } from '@/lib/cases/transitionCase';
 import { getAppUrl } from '@/lib/utils/appUrl';
+import { normalizeApiIdempotencyKey } from '@/lib/api/v1/ingest/requestIdempotency';
 
-async function latestOutcome(serviceClient: any, claimId: string) {
-  const { data } = await serviceClient
-    .from('claim_outcomes')
-    .select('decision,outcome,updated_at')
-    .eq('claim_id', claimId)
-    .order('updated_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  return data ?? null;
-}
+const MONETARY_DECISIONS = new Set([
+  'approved',
+  'partial_refund',
+  'full_refund',
+  'denied',
+  'no_action',
+]);
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ claimId: string }> }) {
   const userClient = createClient();
@@ -33,36 +28,48 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.SUBMIT_PAYOUT_DECISIONS);
   if (denied) return denied;
 
+  const idempotencyKey = normalizeApiIdempotencyKey(request.headers.get('idempotency-key'));
+  if (!idempotencyKey || idempotencyKey.length < 8) {
+    return NextResponse.json({ error: 'A valid Idempotency-Key header is required.' }, { status: 400 });
+  }
+
   const { claimId } = await params;
   const loaded = await loadClaimForMerchant(serviceClient, claimId, ctx.merchantId);
   if (loaded.denied === 'not_found') return NextResponse.json({ error: 'Claim not found' }, { status: 404 });
   if (loaded.denied === 'forbidden') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   const claim = loaded.claim!;
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  const body = await request.json().catch(() => null);
+  const parsed = recordCaseDecisionSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Invalid decision payload', issues: parsed.error.flatten() }, { status: 400 });
+  }
+  if (MONETARY_DECISIONS.has(parsed.data.decision) && (
+    parsed.data.amount_minor == null || parsed.data.currency == null
+  )) {
+    return NextResponse.json({ error: 'This decision requires an explicit amount and ISO currency.' }, { status: 400 });
   }
 
-  const parsed = createOutcomeSchema.safeParse({ ...body as object, claim_id: claimId });
-  if (!parsed.success) return NextResponse.json({ error: 'Invalid outcome payload', issues: parsed.error.flatten() }, { status: 400 });
-
-  const { data: claimRecommendationRow } = await serviceClient
+  const { data: claimRecommendationRow, error: recommendationError } = await serviceClient
     .from(TABLES.MERCHANT_CLAIMS)
     .select('recommended_payout_action,loss_attribution,attribution_confidence')
     .eq('id', claimId)
     .eq('merchant_id', ctx.merchantId)
     .maybeSingle();
+  if (recommendationError) {
+    return NextResponse.json({ error: 'Could not load the recommendation snapshot.' }, { status: 500 });
+  }
 
   const recommendedAtDecision =
     (claimRecommendationRow?.recommended_payout_action as PayoutRecommendation | null) ?? null;
   const followedRecommendation = computeFollowedRecommendation({
     recommendedAction: recommendedAtDecision,
     decision: parsed.data.decision,
-    outcome: parsed.data.outcome,
+    outcome: 'pending',
   });
+  if (followedRecommendation === false && !parsed.data.notes?.trim()) {
+    return NextResponse.json({ error: 'Explain why this decision overrides the recorded recommendation.' }, { status: 400 });
+  }
 
   const priorAttributionLabel = (claimRecommendationRow?.loss_attribution as LossAttributionLabel | null) ?? 'unknown';
   const reclassified = applyPolicyOverrideAttribution(
@@ -79,68 +86,33 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       decision: parsed.data.decision,
     },
   );
-  if (reclassified.label !== priorAttributionLabel) {
-    await serviceClient
-      .from(TABLES.MERCHANT_CLAIMS)
-      .update({ loss_attribution: reclassified.label, attribution_confidence: reclassified.confidence })
-      .eq('id', claimId)
-      .eq('merchant_id', ctx.merchantId);
-  }
 
   try {
-    const [previous, outcome] = await Promise.all([
-      latestOutcome(serviceClient, claimId),
-      upsertMerchantCaseOutcome(serviceClient, {
-        ...parsed.data,
-        actor_user_id: parsed.data.actor_user_id ?? user.id,
-        recommended_payout_action: recommendedAtDecision,
-        followed_recommendation: followedRecommendation,
-      }),
-    ]);
-    const newStatus = claimStatusForOutcome(parsed.data);
-    await transitionCase(serviceClient, {
-        merchantId: ctx.merchantId,
-        caseId: claimId,
-        expectedVersion: claim.state_version ?? 1,
-        patch: { status: newStatus, payoutDecisionState: 'decision_recorded' },
-        reason: parsed.data.notes ?? null,
-        actorUserId: user.id,
-        triggeredBy: 'merchant_manual',
-        eventType: 'case.decision_recorded',
-        eventPayload: {
-          action: parsed.data.decision === 'full_refund' || parsed.data.decision === 'partial_refund' || parsed.data.decision === 'approved' ? 'refund' : parsed.data.decision,
-          amount_minor: outcome.amount_refunded == null ? null : Math.round(outcome.amount_refunded * 100),
-          currency: claim.currency ?? null,
-          outcome_id: outcome.id,
+    const outcome = await recordMerchantCaseDecision(serviceClient, {
+      ...parsed.data,
+      merchantId: ctx.merchantId,
+      caseId: claimId,
+      expectedVersion: claim.state_version ?? 1,
+      actorUserId: user.id,
+      idempotencyKey,
+      recommended_payout_action: recommendedAtDecision,
+      followed_recommendation: followedRecommendation,
+      relatedSourceObject: {
+        source_order_id: claim.source_order_id ?? null,
+        source_ticket_id: claim.source_ticket_id ?? null,
+        attribution_snapshot: {
+          before: priorAttributionLabel,
+          after: reclassified.label,
+          confidence: reclassified.confidence,
         },
-        claimEventType: 'outcome_added',
-        claimEventDetails: {
-          previousDecision: previous?.decision ?? null,
-          newDecision: outcome.decision,
-          previousOutcome: previous?.outcome ?? null,
-          newOutcome: outcome.outcome,
-          metadata: {
-            outcome_id: outcome.id,
-            amount_refunded: outcome.amount_refunded ?? null,
-            amount_recovered: outcome.amount_recovered ?? null,
-            recommended_payout_action: recommendedAtDecision,
-            followed_recommendation: followedRecommendation,
-          },
-        },
-      });
-    await appendClaimEvent(serviceClient, {
-      claim_id: claimId,
-      merchant_id: ctx.merchantId,
-      event_type: newStatus === 'escalated' ? 'escalation_added' : 'claim_resolved',
-      previous_status: claim.status,
-      new_status: newStatus,
-      new_decision: outcome.decision,
-      new_outcome: outcome.outcome,
-      note: parsed.data.notes ?? null,
-      actor_user_id: user.id,
-      triggered_by: 'merchant_manual',
-      metadata: { triggered_by: 'merchant_manual', outcome_id: outcome.id },
+      },
     });
+
+    let connectorFollowUp: { attempted: boolean; ok: boolean; error?: string } = {
+      attempted: false,
+      ok: false,
+      error: 'not_applicable',
+    };
     if (claim.source_ticket_id) {
       const { data: ticket } = await serviceClient
         .from('source_tickets')
@@ -149,43 +121,42 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         .eq('merchant_id', ctx.merchantId)
         .maybeSingle();
       if (ticket?.provider === 'gorgias') {
-        resolveHoldTag({
+        connectorFollowUp = await resolveHoldTag({
           client: serviceClient,
           merchantId: ctx.merchantId,
           ticketId: ticket.external_id,
           decision: outcome.decision,
           caseUrl: `${getAppUrl()}/claims?focus=${encodeURIComponent(claimId)}`,
-        }).catch((error) => {
-          console.warn('gorgias_hold_tag_resolution_failed', {
-            claim_id: claimId,
-            message: error instanceof Error ? error.message : String(error),
-          });
         });
       }
     }
-    let consequenceRows = { financialEntries: [] as unknown[], lossCases: [] as unknown[], recoveryCases: [] as unknown[] };
-    try {
-      const [financialEntries, lossCases, recoveryCases] = await Promise.all([
-        serviceClient.from(TABLES.CASE_FINANCIAL_ENTRIES).select('id,state,amount_minor,currency,effective_at').eq('merchant_id', ctx.merchantId).eq('support_payout_case_id', claimId),
-        serviceClient.from(TABLES.LOSS_CASES).select('id,status,currency,order_value_minor,refund_value_minor,chargeback_value_minor,estimated_recovery_minor,financial_state').eq('merchant_id', ctx.merchantId).eq('support_payout_case_id', claimId),
-        serviceClient.from(TABLES.RECOVERY_CASES).select('id,status,merchant_loss_amount,eligible_loss_amount,amount_recovered,currency').eq('merchant_id', ctx.merchantId).eq('support_payout_case_id', claimId),
-      ]);
-      consequenceRows = { financialEntries: financialEntries.data ?? [], lossCases: lossCases.data ?? [], recoveryCases: recoveryCases.data ?? [] };
-    } catch (consequenceError) {
-      console.warn('claim_decision_consequence_read_failed', { claimId, merchantId: ctx.merchantId, consequenceError });
-    }
+
     return NextResponse.json({
-      outcome: { id: outcome.id, claim_id: outcome.claim_id, decision: outcome.decision, outcome: outcome.outcome },
-      consequences: {
-        financial_entries: consequenceRows.financialEntries,
-        loss_cases: consequenceRows.lossCases,
-        recovery_cases: consequenceRows.recoveryCases,
+      outcome: {
+        id: outcome.id,
+        decision_id: outcome.decision_id,
+        claim_id: outcome.claim_id,
+        decision: outcome.decision,
+        outcome: outcome.outcome,
+        amount_minor: outcome.amount_minor,
+        currency: outcome.currency,
       },
+      projection: {
+        domain_event_id: outcome.domain_event_id,
+        state: 'queued',
+        note: 'Authorization is recorded. No refund, replacement, credit, or recovery is treated as paid until a source outcome is reconciled.',
+      },
+      connector_follow_up: connectorFollowUp,
+      replayed: outcome.replayed,
     });
-  } catch (err) {
-    if (err instanceof CaseTransitionRejectedError || err instanceof CaseVersionConflictError) {
-      return NextResponse.json({ error: 'Illegal claim status transition.' }, { status: 409 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message.includes('case_version_conflict') || message.includes('idempotency_conflict')) {
+      return NextResponse.json({ error: 'The claim changed or this idempotency key was reused with different details.' }, { status: 409 });
     }
-    return NextResponse.json({ error: 'Failed to add outcome' }, { status: 500 });
+    if (message.includes('required') || message.includes('invalid') || message.includes('rejected')) {
+      return NextResponse.json({ error: 'The decision does not satisfy the case transition contract.' }, { status: 400 });
+    }
+    return NextResponse.json({ error: 'Failed to record decision' }, { status: 500 });
   }
 }

@@ -4,7 +4,7 @@
 import React from 'react';
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
-import { ConnectorRow, type CatalogueRowItem } from '@/components/integrations/ConnectorRow';
+import { ConnectorRow, categoryLabel, type CatalogueRowItem } from '@/components/integrations/ConnectorRow';
 
 function gorgiasRow(overrides: Partial<CatalogueRowItem> = {}): CatalogueRowItem {
   return {
@@ -38,6 +38,19 @@ function gorgiasRow(overrides: Partial<CatalogueRowItem> = {}): CatalogueRowItem
 }
 
 describe('Integrations list row — Gorgias timestamp/badge coherence', () => {
+  it('labels every shipped integration category without invoking the fallback', () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    expect([
+      'commerce', 'helpdesk', 'tracking', 'carrier', 'warehouse_3pl',
+      'returns', 'payments_disputes', 'documents',
+    ].map(categoryLabel)).toEqual([
+      'Commerce', 'Helpdesk', 'Tracking', 'Carrier', 'Warehouse / 3PL',
+      'Returns', 'Payments / disputes', 'Documents',
+    ]);
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
   it('a genuinely healthy Gorgias row (real activity, no raw sync-completion column) never shows "No successful sync" or "No activity yet"', () => {
     render(<ConnectorRow item={gorgiasRow()} />);
     expect(screen.getByText('Healthy')).toBeInTheDocument();

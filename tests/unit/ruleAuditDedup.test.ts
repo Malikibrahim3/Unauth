@@ -48,7 +48,7 @@ const baseResult: RuleEvaluationResult = {
   justification_lines: ['Rule "Test rule" triggered'],
 };
 
-function mockAuditClient(options?: { existingId?: string; existingDedupeKey?: string }) {
+function mockAuditClient(options?: { existingId?: string; existingDedupeKey?: string; insertError?: string }) {
   const inserts: Record<string, unknown>[] = [];
   const existingId = options?.existingId ?? null;
   const existingDedupeKey = options?.existingDedupeKey ?? null;
@@ -77,7 +77,7 @@ function mockAuditClient(options?: { existingId?: string; existingDedupeKey?: st
           }),
           insert: async (row: Record<string, unknown>) => {
             inserts.push(row);
-            return { error: null };
+            return { error: options?.insertError ? { message: options.insertError } : null };
           },
         };
       },
@@ -128,6 +128,14 @@ describe('auditHashes', () => {
 });
 
 describe('writeClaimRuleEvaluationAudit', () => {
+  it('rejects instead of returning a recommendation when the audit store fails', async () => {
+    const { client } = mockAuditClient({ insertError: 'store unavailable' });
+    await expect(writeClaimRuleEvaluationAudit(client, {
+      merchantId: 'm1', claimId: 'c1', signals: baseSignals, rules: baseRules,
+      result: baseResult, evaluationSource: 'claim_review',
+    })).rejects.toThrow('claim_rule_evaluation_audit_failed: store unavailable');
+  });
+
   it('writes audit on first evaluation', async () => {
     const { client, inserts } = mockAuditClient();
     const status = await writeClaimRuleEvaluationAudit(client, {
@@ -235,6 +243,13 @@ describe('writeClaimRuleEvaluationAudit', () => {
 });
 
 describe('writeRuleEvaluationAudit', () => {
+  it('rejects when the audit store fails', async () => {
+    const { client } = mockAuditClient({ insertError: 'store unavailable' });
+    await expect(writeRuleEvaluationAudit(client, {
+      merchantId: 'm1', claimId: 'c1', signals: baseSignals, rules: baseRules, result: baseResult,
+    })).rejects.toThrow('rule_evaluation_audit_failed: store unavailable');
+  });
+
   it('snapshots the full winning rule definition alongside rule_id', async () => {
     const { client, inserts } = mockAuditClient();
     await writeRuleEvaluationAudit(client, {

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/server";
+import { getRequestUser } from "@/lib/auth/requestContext";
 import { PERMISSIONS, requirePermission } from "@/lib/permissions";
 import { TABLES } from "@/lib/supabase/tables";
 import {
@@ -13,10 +14,7 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Import records" };
 
 export default async function ImportsPage() {
-  const auth = createClient();
-  const {
-    data: { user },
-  } = await auth.auth.getUser();
+  const user = await getRequestUser();
   if (!user) redirect("/login");
   const service = createServiceClient();
   const { denied, ctx } = await requirePermission(

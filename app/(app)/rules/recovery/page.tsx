@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
-import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/server';
+import { getRequestUser } from '@/lib/auth/requestContext';
 import { hasPermission, PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { WorkbenchPage } from '@/components/ui';
 import { listPartnerRecoveryRules, listPartners } from '@/lib/partners/store';
@@ -9,8 +10,7 @@ import { formatNumber } from '@/lib/utils/format';
 export const dynamic = 'force-dynamic';
 
 export default async function RecoveryRulesPage() {
-  const userClient = createClient();
-  const { data: { user } } = await userClient.auth.getUser();
+  const user = await getRequestUser();
   if (!user) redirect('/login');
 
   const serviceClient = createServiceClient();
