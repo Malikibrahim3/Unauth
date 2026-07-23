@@ -83,6 +83,20 @@ export async function upsertMerchantForUser(
     return { id: existingContext.merchantId, setup_complete: setupComplete };
   }
 
+  const { data: unresolvedMembership, error: membershipError } = await serviceClient
+    .from(TABLES.MERCHANT_MEMBERS)
+    .select('id')
+    .eq('user_id', input.userId)
+    .eq('invite_status', 'active')
+    .limit(1)
+    .maybeSingle();
+  if (membershipError) {
+    throw new Error(`Failed to resolve merchant membership: ${membershipError.message}`);
+  }
+  if (unresolvedMembership) {
+    throw new Error('An explicit active workspace selection is required.');
+  }
+
   const invitedEmail = cleanValue(input.email) ?? `user-${input.userId}@placeholder.local`;
   const { data: createdMerchant, error: createError } = await serviceClient
     .from(TABLES.MERCHANTS)

@@ -4,12 +4,20 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { loadClaimForMerchant } from '@/lib/claims/access';
 import { CANONICAL_CLAIM_STATUSES } from '@/lib/claims/statusMachine';
-import { CaseTransitionRejectedError, CaseVersionConflictError, transitionCase } from '@/lib/cases/transitionCase';
+import { CaseClosureBlockedError, CaseTransitionRejectedError, CaseVersionConflictError, transitionCase } from '@/lib/cases/transitionCase';
 
 const statusBodySchema = z.object({
-  status: z.enum(CANONICAL_CLAIM_STATUSES),
+  status: z.enum(CANONICAL_CLAIM_STATUSES).refine((status) => status !== 'stale', {
+    message: 'Stale is source freshness, not a case lifecycle status.',
+  }),
   note: z.string().trim().min(3),
+  close_with_exception: z.boolean().default(false),
 });
+
+const CLOSURE_STATUSES = new Set([
+  'closed', 'resolved_refunded', 'resolved_won', 'resolved_lost',
+  'resolved_denied', 'resolved_exchanged',
+]);
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ claimId: string }> }) {
   const userClient = createClient();
@@ -34,6 +42,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const parsed = statusBodySchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: 'Status change requires a note.' }, { status: 400 });
+  if (parsed.data.close_with_exception && !CLOSURE_STATUSES.has(parsed.data.status)) {
+    return NextResponse.json({ error: 'A closure exception applies only when closing a case.' }, { status: 400 });
+  }
+  if (parsed.data.close_with_exception && parsed.data.note.length < 10) {
+    return NextResponse.json({ error: 'Explain the unresolved item before closing with an exception.' }, { status: 400 });
+  }
 
   try {
     const claim = loaded.claim!;
@@ -46,9 +60,19 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       actorUserId: user.id,
       triggeredBy: 'merchant_manual',
       eventType: 'case.updated',
+      allowClosureException: parsed.data.close_with_exception,
     });
-    return NextResponse.json({ claim: { id: updated.caseId, status: updated.status, state_version: updated.newVersion } });
+    return NextResponse.json({
+      claim: { id: updated.caseId, status: updated.status, state_version: updated.newVersion },
+      closure_exception_documented: parsed.data.close_with_exception,
+    });
   } catch (err) {
+    if (err instanceof CaseClosureBlockedError) {
+      return NextResponse.json({
+        error: 'Resolve the payout outcome, financial exception, prevention window, or recovery work before closing. To override, explicitly close with a documented exception.',
+        blockers: err.blockers,
+      }, { status: 409 });
+    }
     if (err instanceof CaseTransitionRejectedError) {
       return NextResponse.json({ error: 'Illegal claim status transition.' }, { status: 409 });
     }

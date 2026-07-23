@@ -21,10 +21,6 @@ export async function authenticateIngest(req: NextRequest): Promise<IngestAuth |
 /** Max canonical intake body size (bytes). */
 export const MAX_INGEST_BODY_BYTES = 512 * 1024;
 
-export function bodyTooLarge(rawBody: string): boolean {
-  return Buffer.byteLength(rawBody, 'utf8') > MAX_INGEST_BODY_BYTES;
-}
-
 export function tooLargeResponse(): NextResponse {
   return NextResponse.json({ error: 'payload_too_large' }, { status: 413 });
 }

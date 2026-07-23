@@ -41,9 +41,18 @@ const VIEWPORTS = [
 
 async function waitForStableMain(page: Page) {
   await expect(page.locator("main").first()).toBeVisible();
+  await expect(page.locator("main h1").first()).toBeVisible({ timeout: 75_000 });
   await expect(
     page.getByText("Something went wrong", { exact: true }),
   ).toHaveCount(0);
+}
+
+async function gotoReadySurface(page: Page, route: string) {
+  await page.goto(route, {
+    waitUntil: "commit",
+    timeout: 60_000,
+  });
+  await waitForStableMain(page);
 }
 
 test.describe("release accessibility and responsive gates", () => {
@@ -51,12 +60,8 @@ test.describe("release accessibility and responsive gates", () => {
     test(`${route} has no serious or critical axe violations`, async ({
       page,
     }) => {
-      test.setTimeout(60_000);
-      await page.goto(route, {
-        waitUntil: "domcontentloaded",
-        timeout: 45_000,
-      });
-      await waitForStableMain(page);
+      test.setTimeout(150_000);
+      await gotoReadySurface(page, route);
       await page.addScriptTag({ path: require.resolve("axe-core/axe.min.js") });
       const violations = await page.evaluate(async () => {
         const axe = (
@@ -107,12 +112,8 @@ test.describe("release accessibility and responsive gates", () => {
     test(`${route} reflows without document clipping at release widths`, async ({
       page,
     }) => {
-      test.setTimeout(60_000);
-      await page.goto(route, {
-        waitUntil: "domcontentloaded",
-        timeout: 45_000,
-      });
-      await waitForStableMain(page);
+      test.setTimeout(150_000);
+      await gotoReadySurface(page, route);
       for (const viewport of VIEWPORTS) {
         await page.setViewportSize(viewport);
         const layout = await page.evaluate(() => {

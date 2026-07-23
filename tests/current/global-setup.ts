@@ -22,14 +22,39 @@ export default async function globalSetup(config: FullConfig) {
   const browser = await chromium.launch();
   const context = await browser.newContext();
   const page = await context.newPage();
-  const authTimeoutMs = 120_000;
+  const authAttemptTimeoutMs = 45_000;
   try {
+    const authLandingPath = '/legal/privacy?e2e_session=ready';
+    const expectedLandingUrl = new URL(authLandingPath, baseURL).toString();
     const authUrl = new URL('/api/test/e2e-auth', baseURL);
     authUrl.searchParams.set('secret', secret);
     authUrl.searchParams.set('merchant_id', merchantId);
-    authUrl.searchParams.set('redirect', '/dashboard');
-    await page.goto(authUrl.toString(), { waitUntil: 'domcontentloaded', timeout: authTimeoutMs });
-    await page.waitForURL('**/dashboard', { timeout: authTimeoutMs });
+    authUrl.searchParams.set('redirect', authLandingPath);
+
+    let lastFailure = 'no response';
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      try {
+        const response = await page.goto(authUrl.toString(), {
+          waitUntil: 'domcontentloaded',
+          timeout: authAttemptTimeoutMs,
+        });
+        if (page.url() === expectedLandingUrl) {
+          lastFailure = '';
+          break;
+        }
+
+        const detail = (await page.textContent('body').catch(() => null))?.trim().slice(0, 240);
+        lastFailure = `attempt ${attempt}: HTTP ${response?.status() ?? 'unknown'}${detail ? ` (${detail})` : ''}`;
+      } catch (error) {
+        lastFailure = `attempt ${attempt}: ${error instanceof Error ? error.message : String(error)}`;
+      }
+
+      if (attempt < 3) await page.waitForTimeout(500 * attempt);
+    }
+
+    if (lastFailure) {
+      throw new Error(`E2E auth bootstrap failed after 3 attempts: ${lastFailure}`);
+    }
     await context.storageState({ path: STORAGE_STATE });
   } finally {
     await browser.close();

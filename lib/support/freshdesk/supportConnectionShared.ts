@@ -9,8 +9,6 @@ export const FRESHDESK_SUPPORT_WEBHOOK_PATH = '/api/freshdesk/support-webhook';
 
 export const FRESHDESK_WEBHOOK_DOMAIN_QUERY_PARAM = 'freshdesk_domain';
 
-export const FRESHDESK_WEBHOOK_SECRET_QUERY_PARAM = 'unauth_whsec';
-
 export const FRESHDESK_SUPPORT_WEBHOOK_HEADER_NAME = FRESHDESK_SUPPORT_SECRET_HEADERS[0];
 
 export const FRESHDESK_SUPPORT_SECRET_SAVE_WARNING =

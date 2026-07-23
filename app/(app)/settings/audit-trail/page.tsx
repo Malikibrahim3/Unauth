@@ -1,15 +1,13 @@
 import { redirect } from "next/navigation";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/server";
+import { getRequestUser } from "@/lib/auth/requestContext";
 import { TABLES } from "@/lib/supabase/tables";
 import { PERMISSIONS, requirePermission } from "@/lib/permissions";
 import AuditTrailClient from "@/components/settings/AuditTrailClient";
 import { SettingsPageShell } from "@/components/settings/SettingsPageShell";
 
 export default async function AuditTrailPage() {
-  const userClient = createClient();
-  const {
-    data: { user },
-  } = await userClient.auth.getUser();
+  const user = await getRequestUser();
   if (!user) redirect("/login");
 
   const serviceClient = createServiceClient();

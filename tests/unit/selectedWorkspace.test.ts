@@ -20,9 +20,22 @@ describe('selected workspace resolution', () => {
     expect(context).toMatchObject({ merchantId: 'merchant-viewer', role: 'viewer' });
   });
 
-  it('ignores forged workspace ids and safely falls back to an active membership', async () => {
+  it('fails closed for a forged workspace id instead of choosing another tenant', async () => {
     const context = await resolveCallerContext(serviceWithMemberships(memberships), 'user-1', 'not-a-membership');
-    expect(context).toMatchObject({ merchantId: 'merchant-owner', role: 'owner' });
+    expect(context).toBeNull();
+  });
+
+  it('requires an explicit selection when several active memberships exist', async () => {
+    const context = await resolveCallerContext(serviceWithMemberships(memberships), 'user-1');
+    expect(context).toBeNull();
+  });
+
+  it('accepts the only active membership when selection is unnecessary', async () => {
+    const context = await resolveCallerContext(
+      serviceWithMemberships([memberships[0]]),
+      'user-1',
+    );
+    expect(context).toMatchObject({ merchantId: 'merchant-viewer', role: 'viewer' });
   });
 
   it('never falls back when an OAuth callback requires an exact merchant', async () => {

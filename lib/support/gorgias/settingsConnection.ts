@@ -43,7 +43,6 @@ import {
   GORGIAS_SUPPORT_WEBHOOK_HEADER_NAME,
   GORGIAS_SUPPORT_SECRET_SAVE_WARNING,
   GORGIAS_WEBHOOK_DOMAIN_QUERY_PARAM,
-  GORGIAS_WEBHOOK_SECRET_QUERY_PARAM,
   type GorgiasSupportConnectionSettings,
   type GorgiasSidebarScopeEntry,
   type GorgiasSidebarWidgetSetupResult,
@@ -147,10 +146,8 @@ type ListableSupabase = {
 };
 
 export type BuildGorgiasSupportWebhookUrlOptions = {
-  /** Baked into the Gorgias integration URL so inbound webhooks resolve the merchant. */
+  /** Public account locator only; authentication is always sent in a header. */
   domain?: string | null;
-  /** Only for Gorgias-side registration — never show in settings UI copy. */
-  webhookSecretPlaintext?: string | null;
 };
 
 export function buildGorgiasSupportWebhookUrl(
@@ -161,10 +158,6 @@ export function buildGorgiasSupportWebhookUrl(
   const domain = options?.domain?.trim();
   if (domain) {
     url.searchParams.set(GORGIAS_WEBHOOK_DOMAIN_QUERY_PARAM, normalizeGorgiasDomain(domain));
-  }
-  const secret = options?.webhookSecretPlaintext?.trim();
-  if (secret) {
-    url.searchParams.set(GORGIAS_WEBHOOK_SECRET_QUERY_PARAM, secret);
   }
   return url.toString();
 }
@@ -563,7 +556,6 @@ export async function createMerchantGorgiasSupportConnection(
         },
         webhookUrl: buildGorgiasSupportWebhookUrl({
           domain: identity.domain,
-          webhookSecretPlaintext,
         }),
         webhookSecretPlaintext,
         domain: identity.domain,
@@ -738,7 +730,6 @@ export async function rotateMerchantGorgiasWebhookSecret(
           credentials,
           webhookUrl: buildGorgiasSupportWebhookUrl({
             domain,
-            webhookSecretPlaintext,
           }),
           webhookSecretPlaintext,
           domain,

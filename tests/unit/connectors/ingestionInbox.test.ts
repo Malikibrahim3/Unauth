@@ -1,4 +1,8 @@
-import { enqueueIngestionEvent, hashPayload } from '@/lib/connectors/ingestionInbox';
+import {
+  configuredRetentionDeadline,
+  enqueueIngestionEvent,
+  hashPayload,
+} from '@/lib/connectors/ingestionInbox';
 
 /**
  * Builds a supabase-like mock. `insertResult` drives the initial insert;
@@ -30,9 +34,18 @@ const baseInput = {
   sourceSystem: 'custom_oms',
   idempotencyKey: 'custom_oms/uk/ORDER-1',
   payload: { total_minor: 8400 },
+  retentionDeadline: null,
 };
 
 describe('enqueueIngestionEvent', () => {
+  it('derives a deadline only from an explicitly stored valid policy', () => {
+    const now = Date.parse('2026-07-22T00:00:00.000Z');
+    expect(configuredRetentionDeadline({}, now)).toBeNull();
+    expect(configuredRetentionDeadline({ platform: { retentionDays: 1 } }, now)).toBeNull();
+    expect(configuredRetentionDeadline({ platform: { retentionDays: 30 } }, now))
+      .toBe('2026-08-21T00:00:00.000Z');
+  });
+
   it('enqueues a fresh event (atomic insert wins)', async () => {
     const client = makeClient({ data: { id: 'ie-1' }, error: null });
     const res = await enqueueIngestionEvent(client, baseInput);

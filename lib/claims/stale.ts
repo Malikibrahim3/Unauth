@@ -1,10 +1,14 @@
-import { appendClaimEvent } from '@/lib/claims/events';
 import { TABLES } from '@/lib/supabase/tables';
 
-export async function markStalePendingClaims(
+/**
+ * Flags aged pending work without changing the case lifecycle. Source
+ * freshness and business status are separate concepts; an old pending case is
+ * attention work, not a terminal `stale` case.
+ */
+export async function flagAgedPendingClaims(
   serviceClient: any,
   options: { now?: Date; olderThanDays?: number; limit?: number } = {}
-): Promise<{ scanned: number; marked: number }> {
+): Promise<{ scanned: number; flagged: number }> {
   const now = options.now ?? new Date();
   const olderThanDays = options.olderThanDays ?? 30;
   const cutoff = new Date(now.getTime() - olderThanDays * 24 * 60 * 60 * 1000).toISOString();
@@ -18,30 +22,19 @@ export async function markStalePendingClaims(
     .limit(limit);
   if (selectError) throw new Error(`select stale claims failed: ${selectError.message}`);
 
-  const markResults = await Promise.all(
+  const flagResults = await Promise.all(
     (claims ?? []).map(async (claim: { id: string; merchant_id: string }) => {
-      const { data, error } = await serviceClient
-        .from(TABLES.MERCHANT_CLAIMS)
-        .update({ status: 'stale' })
-        .eq('id', claim.id)
-        .eq('status', 'pending')
-        .select('id,status')
-        .maybeSingle();
-      if (error) throw new Error(`mark stale claims failed: ${error.message}`);
-      if (!data) return false;
-      await appendClaimEvent(serviceClient, {
-        claim_id: claim.id,
-        merchant_id: claim.merchant_id,
-        event_type: 'status_changed',
-        previous_status: 'pending',
-        new_status: 'stale',
-        triggered_by: 'system_stale_job',
-        metadata: { triggered_by: 'system_stale_job', cutoff },
+      const { data, error } = await serviceClient.rpc('flag_aged_payout_case', {
+        p_merchant_id: claim.merchant_id,
+        p_case_id: claim.id,
+        p_cutoff: cutoff,
+        p_idempotency_key: `aged-pending:${claim.id}:${cutoff.slice(0, 10)}`,
       });
-      return true;
+      if (error) throw new Error(`flag aged claims failed: ${error.message}`);
+      return (data as { flagged?: boolean } | null)?.flagged === true;
     })
   );
-  const marked = markResults.filter(Boolean).length;
+  const flagged = flagResults.filter(Boolean).length;
 
-  return { scanned: (claims ?? []).length, marked };
+  return { scanned: (claims ?? []).length, flagged };
 }

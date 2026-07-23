@@ -9,6 +9,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import HelpdeskSidebarPreview from '@/components/settings/HelpdeskSidebarPreview';
 import ZendeskSupportSyncClient from '@/components/settings/ZendeskSupportSyncClient';
 import {
+  ZENDESK_SUPPORT_WEBHOOK_HEADER_NAME,
   ZENDESK_SUPPORT_WEBHOOK_PATH,
   ZENDESK_WEBHOOK_DOMAIN_QUERY_PARAM,
 } from '@/lib/support/zendesk/supportConnectionShared';
@@ -53,7 +54,7 @@ const SETUP_STEPS = [
   {
     number: 7,
     title: 'Add the ticket webhook',
-    detail: `Zendesk Admin, then Apps and integrations, then Webhooks, then create a webhook pointing to this deployment at ${ZENDESK_SUPPORT_WEBHOOK_PATH}?${ZENDESK_WEBHOOK_DOMAIN_QUERY_PARAM}=<your-subdomain>, then attach it to a trigger on ticket created/updated. Include the webhook secret shown when you connect below.`,
+    detail: `Zendesk Admin, then Apps and integrations, then Webhooks, then create a webhook pointing to this deployment at ${ZENDESK_SUPPORT_WEBHOOK_PATH}?${ZENDESK_WEBHOOK_DOMAIN_QUERY_PARAM}=<your-subdomain>. Add header ${ZENDESK_SUPPORT_WEBHOOK_HEADER_NAME} with the one-time secret shown when you connect, then attach the webhook to a trigger on ticket created/updated.`,
   },
 ];
 

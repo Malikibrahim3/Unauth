@@ -24,6 +24,11 @@ import { extractZendeskAccountIdentity } from '@/lib/support/zendesk/webhookIden
 import { fetchZendeskTicketWithComments } from '@/lib/support/zendesk/fetchTicket';
 import { ZendeskApiError } from '@/lib/support/zendesk/zendeskApi';
 import { getActiveZendeskMerchantApiAccess } from '@/lib/support/zendesk/merchantApiAccess';
+import { completeProcessedWebhook } from '@/lib/commerce/processedWebhookHandler';
+import {
+  claimSupportTicketDelivery,
+  replayedSupportResult,
+} from '@/lib/support/webhookEventSafety';
 
 export class ZendeskWebhookError extends Error {
   constructor(
@@ -100,6 +105,7 @@ export type IngestZendeskWebhookInput = {
   body: unknown;
   shopDomain?: string | null;
   requestUrl?: string | null;
+  authenticatedContext?: ResolvedMerchantContext;
 };
 
 function webhookSearchParamsFromRequestUrl(requestUrl?: string | null): URLSearchParams {
@@ -111,11 +117,30 @@ function webhookSearchParamsFromRequestUrl(requestUrl?: string | null): URLSearc
   }
 }
 
-type ResolvedMerchantContext = {
+export type ResolvedMerchantContext = {
   merchantId: string;
   connection: ZendeskSupportConnectionRow | null;
   providerConnectionId: string | null;
 };
+
+export async function authenticateZendeskSupportWebhook(
+  input: Pick<IngestZendeskWebhookInput, 'headers' | 'requestUrl'>,
+  supabase: unknown = createServiceClient(),
+): Promise<ResolvedMerchantContext> {
+  const probe: IngestZendeskWebhookInput = {
+    headers: input.headers,
+    body: null,
+    requestUrl: input.requestUrl,
+  };
+  const merchantContext = await resolveMerchantContext(supabase, probe, {});
+  const auth = verifyZendeskWebhookAuth({
+    headerSecret: readZendeskWebhookSecret(input.headers),
+    connection: merchantContext.connection,
+    hasResolvedConnection: merchantContext.connection !== null,
+  });
+  if (!auth.ok) throw new ZendeskWebhookError(auth.status, auth.code);
+  return merchantContext;
+}
 
 async function resolveMerchantContext(
   supabase: unknown,
@@ -251,26 +276,8 @@ export async function ingestZendeskSupportWebhook(
   const explicitShopDomain = input.shopDomain ?? shopDomainHeader ?? undefined;
 
   const supabase = createServiceClient();
-  const webhookSearchParams = webhookSearchParamsFromRequestUrl(input.requestUrl);
-  const merchantContext = await resolveMerchantContext(supabase, input, initialTicket);
-
-  const headerSecret = readZendeskWebhookSecret(input.headers, webhookSearchParams);
-  const auth = verifyZendeskWebhookAuth({
-    headerSecret,
-    connection: merchantContext.connection,
-    hasResolvedConnection: merchantContext.connection !== null,
-  });
-
-  if (!auth.ok) {
-    if (merchantContext.providerConnectionId) {
-      await recordZendeskSupportConnectionError(
-        supabase,
-        merchantContext.providerConnectionId,
-        auth.code
-      );
-    }
-    throw new ZendeskWebhookError(auth.status, auth.code);
-  }
+  const merchantContext = input.authenticatedContext
+    ?? await authenticateZendeskSupportWebhook(input, supabase);
 
   const shopDomain = await resolveShopDomainForZendeskIngest({
     supabase,
@@ -286,6 +293,22 @@ export async function ingestZendeskSupportWebhook(
     ticket: initialTicket,
   });
 
+  const delivery = await claimSupportTicketDelivery(supabase, {
+    provider: 'zendesk',
+    merchantId: merchantContext.merchantId,
+    providerConnectionId: connectionId,
+    eventType,
+    ticket,
+  });
+  if (delivery.status === 'duplicate') {
+    const replay = replayedSupportResult(delivery.result);
+    if (replay) return replay;
+    throw new ZendeskWebhookError(500, 'zendesk_replay_result_missing');
+  }
+  if (delivery.status === 'conflict') throw new ZendeskWebhookError(409, 'zendesk_delivery_conflict');
+  if (delivery.retry) throw new ZendeskWebhookError(503, 'zendesk_delivery_in_progress');
+  if (delivery.status === 'stale') throw new ZendeskWebhookError(200, 'stale_event_ignored');
+
   try {
     const result = await ingestSupportCase(supabase, {
       merchant_id: merchantContext.merchantId,
@@ -300,8 +323,24 @@ export async function ingestZendeskSupportWebhook(
       await touchZendeskSupportConnectionSync(supabase, connectionId);
     }
 
+    await completeProcessedWebhook(
+      supabase,
+      delivery.idempotencyKey,
+      delivery.claimToken,
+      'completed',
+      null,
+      result,
+    );
+
     return result;
   } catch (error) {
+    await completeProcessedWebhook(
+      supabase,
+      delivery.idempotencyKey,
+      delivery.claimToken,
+      'failed',
+      error instanceof Error ? error.message : 'zendesk_ingest_failed',
+    ).catch(() => undefined);
     if (connectionId) {
       await recordZendeskSupportConnectionError(
         supabase,

@@ -245,6 +245,28 @@ describe('Shopify OAuth routes', () => {
       );
     });
 
+    it('rejects a malformed HMAC without throwing before the callback guard', async () => {
+      const state = 'state-malformed-hmac';
+      const params = buildOAuthCallbackParams({
+        shop: 'merchant-a.myshopify.com',
+        code: 'auth-code',
+        state,
+        secret: 'test-api-secret',
+      });
+      params.set('hmac', 'x');
+      const req = new NextRequest(
+        `http://localhost:3000/api/shopify/callback?${params.toString()}`,
+        { headers: { cookie: `shopify_oauth_state=${state}` } } as RequestInit,
+      );
+
+      const res = await callbackGET(req);
+      expect(await extractFallbackHref(res)).toBe(
+        'http://localhost:3000/integrations?shopify_error=invalid_hmac',
+      );
+      expect(consumeOAuthConnectionTransaction).not.toHaveBeenCalled();
+      expect(persistShopifyOAuthConnection).not.toHaveBeenCalled();
+    });
+
     it('rejects a replay before token exchange or persistence', async () => {
       consumeOAuthConnectionTransaction.mockRejectedValueOnce(new Error('oauth_transaction_invalid_expired_or_replayed'));
       createServiceClient.mockReturnValue({});

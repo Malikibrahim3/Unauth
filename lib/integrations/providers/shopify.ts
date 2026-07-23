@@ -22,6 +22,22 @@ export const shopifyProvider: IntegrationProvider = {
     'recovery_deadline',
   ],
   capabilities: { readOrders: true, readRefunds: true, readDisputes: true, readFulfilment: true, readSettlements: true },
+  // No capability is controlled_runtime_verified: this session has no isolated
+  // local/staging environment (hosted DB, Docker unavailable) and controlled
+  // Shopify actions were not triggered. Derives to Beta with "Runtime
+  // verification pending". See docs/audits/unauth-mvp-plus/08-provider-proof-matrix.md.
+  lifecycle: [
+    { id: 'connect', applicability: 'applicable', evidence: 'automated_tested', detail: 'OAuth install/callback flow covered by tests/api/shopifyOAuth.test.ts. Controlled end-to-end install against a live shop pending.' },
+    { id: 'account_verification', applicability: 'applicable', evidence: 'automated_tested', detail: 'Live shop.json probe logic covered by tests/api/shopifyVerifyRoute.test.ts + tests/unit/liveConnectionVerification.test.ts. Controlled run against a live shop pending.' },
+    { id: 'initial_import', applicability: 'applicable', evidence: 'automated_tested', detail: 'Order/refund/fulfillment backfill covered by tests/lib/shopifyBackfillV2.test.ts. Controlled backfill against a live shop pending.' },
+    { id: 'incremental_pull', applicability: 'applicable', evidence: 'automated_tested', detail: 'Ongoing updates via webhooks + scheduled reconcile cron (tests/api/reconcileCron.test.ts). Controlled run pending.' },
+    { id: 'webhook', applicability: 'applicable', evidence: 'automated_tested', detail: 'HMAC-before-parse + idempotency covered by tests/api/shopifyWebhookP0.test.ts. Controlled live delivery pending.' },
+    { id: 'reconciliation', applicability: 'applicable', evidence: 'automated_tested', detail: 'Scheduled reconcile covered by tests/lib/reconcileMerchant.test.ts + tests/api/reconcileCron.test.ts. Controlled run pending.' },
+    { id: 'reconnect', applicability: 'applicable', evidence: 'implemented', detail: 'Re-running the OAuth install flow re-establishes the connection; no dedicated automated reconnect test.' },
+    { id: 'disconnect', applicability: 'applicable', evidence: 'automated_tested', detail: 'Disconnect behaviour covered by tests/unit/connectors/disconnect.test.ts. Controlled run pending.' },
+    { id: 'freshness_health', applicability: 'applicable', evidence: 'automated_tested', detail: 'Health-probe logic covered by tests/unit/liveConnectionVerification.test.ts. Controlled run pending.' },
+    { id: 'bounded_writeback', applicability: 'not_applicable', evidence: 'unavailable', detail: 'Automatic refund issuance is an explicit MVP+ boundary — not offered.' },
+  ],
 };
 
 export type ShopifyDisputeNode = {

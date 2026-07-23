@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/server";
+import { getRequestUser } from "@/lib/auth/requestContext";
 import { PERMISSIONS, requirePermission } from "@/lib/permissions";
 import { TABLES } from "@/lib/supabase/tables";
 import { WorkbenchPage, KeyInsightCallout, SummaryRail } from "@/components/ui";
@@ -33,10 +34,7 @@ export default async function WorkPage({
 }: {
   searchParams: Promise<{ view?: string; page?: string }>;
 }) {
-  const userClient = createClient();
-  const {
-    data: { user },
-  } = await userClient.auth.getUser();
+  const user = await getRequestUser();
   if (!user) redirect("/login");
   const serviceClient = createServiceClient();
   const { denied, ctx } = await requirePermission(

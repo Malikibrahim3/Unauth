@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/supabase/server";
 import { TABLES } from "@/lib/supabase/tables";
 import Sidebar from "@/components/nav/Sidebar";
 import AppHeader from "@/components/layout/AppHeader";
@@ -8,9 +7,12 @@ import { BreadcrumbOverrideProvider } from "@/components/layout/BreadcrumbOverri
 import DemoBanner from "@/components/common/DemoBanner";
 import BillingStatusBanner from "@/components/billing/BillingStatusBanner";
 import AmplitudeInit from "@/components/common/AmplitudeInit";
-import { createServiceClient } from "@/lib/supabase/server";
 import { shouldRequireOnboarding } from "@/lib/account/onboardingGate";
-import { ensureMerchantContextForUser } from "@/lib/account/ensureMerchantContext";
+import {
+  getRequestCallerContext,
+  getRequestServiceClient,
+  getRequestUser,
+} from "@/lib/auth/requestContext";
 import { getMerchantProfileById } from "@/lib/account/merchantProfile";
 import { getCachedConnectionState } from "@/lib/connections/getConnectionState";
 import {
@@ -29,10 +31,7 @@ import {
   DEV_TIER_COOKIE,
   getDevPreviewFromCookieValue,
 } from "@/lib/product/devPreview";
-import {
-  ACTIVE_MERCHANT_COOKIE,
-  resolvePermissions,
-} from "@/lib/permissions";
+import { resolvePermissions } from "@/lib/permissions";
 import "../../styles/authenticated/index.css";
 
 export const dynamic = "force-dynamic";
@@ -42,10 +41,8 @@ export default async function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = createClient();
-  const serviceClient = createServiceClient();
-  const { data } = await supabase.auth.getUser();
-  const user = data?.user ?? null;
+  const serviceClient = getRequestServiceClient();
+  const user = await getRequestUser();
 
   if (!user) {
     redirect("/login");
@@ -56,15 +53,11 @@ export default async function AppLayout({
     environment: process.env.VERCEL_ENV ?? process.env.NODE_ENV,
     cookieValue: cookieStore.get(AUTH_UI_ROLLOUT_COOKIE)?.value,
   });
-  const ctx = await ensureMerchantContextForUser(
-    serviceClient,
-    user,
-    cookieStore.get(ACTIVE_MERCHANT_COOKIE)?.value,
-  );
+  const ctx = await getRequestCallerContext();
 
   const membershipsPromise = serviceClient
     .from(TABLES.MERCHANT_MEMBERS)
-    .select("merchant_id, role")
+    .select("merchant_id, role, merchants(name)")
     .eq("user_id", user.id)
     .eq("invite_status", "active");
 
@@ -129,25 +122,11 @@ export default async function AppLayout({
   const typedMemberships = (memberships ?? []) as Array<{
     merchant_id: string;
     role: string;
+    merchants: { name: string | null } | null;
   }>;
-  const merchantIds = typedMemberships.map(
-    (membership) => membership.merchant_id,
-  );
-  const { data: workspaceMerchants } =
-    merchantIds.length > 0
-      ? await serviceClient
-          .from(TABLES.MERCHANTS)
-          .select("id, name")
-          .in("id", merchantIds)
-      : { data: [] as Array<{ id: string; name: string | null }> };
-  const merchantNames = new Map(
-    (
-      (workspaceMerchants ?? []) as Array<{ id: string; name: string | null }>
-    ).map((merchant) => [merchant.id, merchant.name]),
-  );
   const workspaces = typedMemberships.map((membership) => ({
     id: membership.merchant_id,
-    name: merchantNames.get(membership.merchant_id) ?? "Unnamed workspace",
+    name: membership.merchants?.name ?? "Unnamed workspace",
     role: membership.role,
   }));
   const merchantComplete =

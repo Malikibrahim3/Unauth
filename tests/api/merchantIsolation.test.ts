@@ -18,6 +18,7 @@
 import {
   getMerchantOwnedJobIds,
   fetchMerchantScopedCustomerProfile,
+  fetchMerchantScopedSourceCustomer,
   fetchMerchantScopedCustomerTransactions,
   fetchMerchantScopedTransaction,
   escapeCsvCell,
@@ -209,6 +210,60 @@ describe('fetchMerchantScopedCustomerProfile', () => {
 
     const result = await fetchMerchantScopedCustomerProfile(mock as any, 'other-merchant', 'profile-123');
     expect(result).toBeNull();
+  });
+});
+
+describe('fetchMerchantScopedSourceCustomer', () => {
+  it('requires both merchant_id and source-customer id before returning a row', async () => {
+    const eqCalls: Array<[string, string]> = [];
+    const chain: any = {
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn((column: string, value: string) => {
+        eqCalls.push([column, value]);
+        return chain;
+      }),
+      maybeSingle: jest.fn().mockResolvedValue({
+        data: { id: 'source-customer-1', merchant_customer_id: 'merchant-customer-1' },
+        error: null,
+      }),
+    };
+    const mock = { from: jest.fn().mockReturnValue(chain) };
+
+    const result = await fetchMerchantScopedSourceCustomer(
+      mock as any,
+      'merchant-abc',
+      'source-customer-1',
+    );
+
+    expect(mock.from).toHaveBeenCalledWith('source_customers');
+    expect(eqCalls).toEqual([
+      ['merchant_id', 'merchant-abc'],
+      ['id', 'source-customer-1'],
+    ]);
+    expect(result).toEqual({
+      id: 'source-customer-1',
+      merchant_customer_id: 'merchant-customer-1',
+    });
+  });
+
+  it('surfaces scope-query errors instead of treating them as not found', async () => {
+    const chain: any = {
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      maybeSingle: jest.fn().mockResolvedValue({
+        data: null,
+        error: { message: 'database unavailable' },
+      }),
+    };
+    const mock = { from: jest.fn().mockReturnValue(chain) };
+
+    await expect(
+      fetchMerchantScopedSourceCustomer(
+        mock as any,
+        'merchant-abc',
+        'source-customer-1',
+      ),
+    ).rejects.toThrow('fetchMerchantScopedSourceCustomer failed');
   });
 });
 

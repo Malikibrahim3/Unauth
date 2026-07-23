@@ -10,7 +10,6 @@ import {
 import { registerBigCommerceWebhooks } from '@/lib/commerce/bigcommerce/registerWebhooks';
 import { registerBigCommerceCollectorScript } from '@/lib/commerce/bigcommerce/collectorScript';
 import { getAppUrl } from '@/lib/utils/appUrl';
-import { logAction } from '@/lib/permissions/audit';
 import { PERMISSIONS, requirePermissionForMerchant } from '@/lib/permissions';
 import { consumeOAuthConnectionTransaction } from '@/lib/integrations/oauthTransactions';
 import { getClientIp } from '@/lib/ratelimit';
@@ -91,6 +90,13 @@ export async function GET(request: NextRequest) {
       clearOAuthCookies(response);
       return response;
     }
+    const mutationClient = createServiceClient({
+      audit: {
+        actorId: ctx.userId,
+        actorRole: ctx.role,
+        requestIp: getClientIp(request.headers),
+      },
+    });
 
     const tokenExchange = await exchangeBigCommerceOAuthAccessToken({
       code,
@@ -104,7 +110,7 @@ export async function GET(request: NextRequest) {
       return response;
     }
 
-    const persisted = await persistBigCommerceOAuthConnection(serviceClient, {
+    const persisted = await persistBigCommerceOAuthConnection(mutationClient, {
       storeHash,
       accessToken: tokenExchange.token.access_token,
       scope: tokenExchange.token.scope ?? null,
@@ -118,15 +124,6 @@ export async function GET(request: NextRequest) {
       clearOAuthCookies(response);
       return response;
     }
-
-    logAction({
-      ctx,
-      action: 'connect_bigcommerce',
-      resourceType: 'commerce_store_connection',
-      resourceId: persisted.connectionId,
-      metadata: { store_key: storeHash },
-      ip: getClientIp(request.headers),
-    });
 
     let webhookWarning = false;
     try {

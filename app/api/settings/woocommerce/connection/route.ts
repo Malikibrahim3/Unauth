@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { after } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
-import { logAction } from '@/lib/permissions/audit';
 import { getClientIp } from '@/lib/ratelimit';
 import { withRequestLogging } from '@/lib/log';
 import {
@@ -75,6 +74,9 @@ async function POSTHandler(req: NextRequest) {
   const service = createServiceClient();
   const { denied, ctx } = await requirePermission(service, user.id, PERMISSIONS.MANAGE_SETTINGS);
   if (denied) return denied;
+  const mutationService = createServiceClient({
+    audit: { actorId: ctx.userId, actorRole: ctx.role, requestIp: ip },
+  });
 
   let body: unknown;
   try {
@@ -93,19 +95,10 @@ async function POSTHandler(req: NextRequest) {
 
     if (existing?.status === 'active' && existing.credentials_configured) {
       const updated = await updateMerchantWooCommerceConnection(
-        service,
+        mutationService,
         ctx.merchantId,
         parsed.data,
       );
-
-      logAction({
-        ctx,
-        action: 'update_woocommerce_connection',
-        resourceType: 'commerce_store_connection',
-        resourceId: updated.connection.id,
-        metadata: { store_key: updated.connection.store_key },
-        ip,
-      });
 
       const { store_url } = normalizeWooCommerceStoreUrl(parsed.data.store_url);
       scheduleWooCommerceBackfill(service, ctx.merchantId, store_url, updated.connection.store_key, {
@@ -117,19 +110,10 @@ async function POSTHandler(req: NextRequest) {
     }
 
     const created = await createMerchantWooCommerceConnection(
-      service,
+      mutationService,
       ctx.merchantId,
       parsed.data,
     );
-
-    logAction({
-      ctx,
-      action: 'create_woocommerce_connection',
-      resourceType: 'commerce_store_connection',
-      resourceId: created.connection.id,
-      metadata: { store_key: created.connection.store_key },
-      ip,
-    });
 
     const { store_url } = normalizeWooCommerceStoreUrl(parsed.data.store_url);
     const storeKey = created.connection.store_key;

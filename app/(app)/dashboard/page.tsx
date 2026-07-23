@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { PERMISSIONS, resolveDefaultAppPath } from "@/lib/permissions";
 import {
-  PERMISSIONS,
-  requirePermission,
-  resolveDefaultAppPath,
-} from "@/lib/permissions";
+  getRequestServiceClient,
+  getRequestUser,
+  requirePagePermission,
+} from "@/lib/auth/requestContext";
 import { DashboardOverview } from "@/components/dashboard/DashboardOverview";
 import {
   loadDashboardPeriodComparison,
@@ -23,18 +23,11 @@ export default async function DashboardPage({
     currency?: string;
   }>;
 }) {
-  const auth = createClient();
-  const {
-    data: { user },
-  } = await auth.auth.getUser();
+  const user = await getRequestUser();
   if (!user) redirect("/login");
-  const svc = createServiceClient();
-  const { denied, ctx } = await requirePermission(
-    svc,
-    user.id,
-    PERMISSIONS.VIEW_DASHBOARD,
-  );
-  if (denied)
+  const svc = getRequestServiceClient();
+  const ctx = await requirePagePermission(PERMISSIONS.VIEW_DASHBOARD);
+  if (!ctx)
     redirect(
       await resolveDefaultAppPath(svc, user.id, { exclude: ["/dashboard"] }),
     );

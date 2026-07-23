@@ -5,6 +5,7 @@ import type {
   ReportRange,
   ReportTrendPoint,
 } from '@/lib/reporting/intelligence';
+import { financialMetricValue } from '@/lib/reporting/intelligence';
 import { formatDateAbsolute } from '@/lib/utils/format';
 
 export type DashboardMetricKey =
@@ -24,7 +25,7 @@ export const DASHBOARD_METRICS: Array<{
   {
     key: 'exposure',
     label: 'Payout exposure',
-    description: 'Requested in this period',
+    description: 'Known current exposure in this period',
     colourVar: '--ua-chart-orange',
     tone: 'orange',
   },
@@ -54,7 +55,7 @@ export const DASHBOARD_METRICS: Array<{
 export type DashboardChartBucket = {
   key: string;
   label: string;
-  currentMinor: number;
+  currentMinor: number | null;
   previousMinor: number | null;
 };
 
@@ -70,7 +71,13 @@ function utcDay(value: Date | string): number {
   return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
 }
 
-function metricValue(point: ReportTrendPoint, metric: DashboardMetricKey): number {
+function metricValue(point: ReportTrendPoint, metric: DashboardMetricKey): number | null {
+  const state = metric === 'exposure'
+    ? 'exposed'
+    : metric === 'realisedLoss'
+      ? 'confirmed_loss'
+      : metric;
+  if (!point.knownStates.includes(state)) return null;
   if (metric === 'exposure') return point.exposureMinor;
   if (metric === 'recovered') return point.recoveredMinor;
   if (metric === 'prevented') return point.preventedMinor;
@@ -82,10 +89,10 @@ export function bridgeMetricValue(
   metric: DashboardMetricKey,
 ): number | null {
   if (!bridge) return null;
-  if (metric === 'exposure') return bridge.requestedMinor;
-  if (metric === 'recovered') return bridge.recoveredMinor;
-  if (metric === 'prevented') return bridge.preventedMinor;
-  return bridge.realisedLossMinor;
+  if (metric === 'exposure') return financialMetricValue(bridge, 'exposed');
+  if (metric === 'recovered') return financialMetricValue(bridge, 'recovered');
+  if (metric === 'prevented') return financialMetricValue(bridge, 'prevented');
+  return financialMetricValue(bridge, 'confirmed_loss');
 }
 
 function monthLabel(key: string): string {
@@ -109,10 +116,12 @@ export function buildDashboardChartBuckets(input: {
   const previous = (input.previous ?? []).filter((point) => point.currency === input.currency);
 
   if (input.range === 'all') {
-    const months = new Map<string, number>();
+    const months = new Map<string, number | null>();
     for (const point of current) {
       const key = point.date.slice(0, 7);
-      months.set(key, (months.get(key) ?? 0) + metricValue(point, input.metric));
+      const value = metricValue(point, input.metric);
+      if (!months.has(key)) months.set(key, null);
+      if (value != null) months.set(key, (months.get(key) ?? 0) + value);
     }
     return [...months.entries()]
       .sort(([a], [b]) => a.localeCompare(b))
@@ -137,8 +146,8 @@ export function buildDashboardChartBuckets(input: {
       return {
         key: new Date(timestamp).toISOString().slice(0, 10),
         label: dayLabel(timestamp),
-        currentMinor: 0,
-        previousMinor: input.previous ? 0 : null,
+        currentMinor: null,
+        previousMinor: null,
       };
     },
   );
@@ -147,10 +156,12 @@ export function buildDashboardChartBuckets(input: {
     for (const point of points) {
       const index = Math.floor((utcDay(point.date) - start) / (bucketDays * DAY_MS));
       if (index < 0 || index >= buckets.length) continue;
+      const value = metricValue(point, input.metric);
+      if (value == null) continue;
       if (field === 'currentMinor') {
-        buckets[index].currentMinor += metricValue(point, input.metric);
+        buckets[index].currentMinor = (buckets[index].currentMinor ?? 0) + value;
       } else {
-        buckets[index].previousMinor = (buckets[index].previousMinor ?? 0) + metricValue(point, input.metric);
+        buckets[index].previousMinor = (buckets[index].previousMinor ?? 0) + value;
       }
     }
   }

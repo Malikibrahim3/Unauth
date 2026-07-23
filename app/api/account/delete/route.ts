@@ -148,7 +148,6 @@ const CURRENT_V2_MERCHANT_DELETE_TABLES: string[] = [
   'merchant_widget_tokens',
   'merchant_api_keys',
   'access_audit_log',
-  'user_action_log',
   'user_permission_grants',
   'merchant_users',
   'merchant_credits',
@@ -221,9 +220,22 @@ export async function POST(request: NextRequest) {
   // Account deletion is owner-only. Use the resolved caller context so team
   // members cannot delete a merchant account by sharing the owner's session UI.
   const merchantId = ctx.merchantId;
+  const deletionCorrelationId = crypto.randomUUID();
 
   if (merchantId) {
     try {
+      const { error: deletionReceiptError } = await service.rpc('record_account_deletion_receipt', {
+        p_merchant_id: merchantId,
+        p_actor_user_id: user.id,
+        p_action: 'account_deletion_requested',
+        p_correlation_id: deletionCorrelationId,
+        p_idempotency_reference: `account-deletion:${merchantId}:${deletionCorrelationId}`,
+        p_effective_at: new Date().toISOString(),
+      });
+      if (deletionReceiptError) {
+        throw new Error(`account deletion audit failed: ${deletionReceiptError.message}`);
+      }
+
       const [
         { data: evidencePaths, error: evidencePathError },
         { data: claimEvidencePaths, error: claimEvidencePathError },
@@ -287,8 +299,39 @@ export async function POST(request: NextRequest) {
         throw new Error(`source-agnostic purge failed: ${purgeError.message}`);
       }
 
+      const { error: auditPurgeError } = await service.rpc('purge_merchant_audit_projection', {
+        p_merchant_id: merchantId,
+      });
+      if (auditPurgeError) {
+        throw new Error(`audit projection purge failed: ${auditPurgeError.message}`);
+      }
+
+      const { error: privacyPurgeError } = await service.rpc('purge_merchant_privacy_records', {
+        p_merchant_id: merchantId,
+      });
+      if (privacyPurgeError) {
+        throw new Error(`privacy receipt purge failed: ${privacyPurgeError.message}`);
+      }
+
       for (const table of CURRENT_V2_MERCHANT_DELETE_TABLES) {
         await deleteMerchantRows(service, table, merchantId);
+      }
+
+      // The destructive row deletes above are themselves trigger-audited. The
+      // account-erasure receipt is retained outside merchant-scoped history,
+      // so clear the newly enqueued merchant events before deleting the parent
+      // merchant (otherwise append-only/FK guards correctly block the cascade).
+      const { error: finalEventPurgeError } = await service.rpc('purge_merchant_source_agnostic', {
+        p_merchant_id: merchantId,
+      });
+      if (finalEventPurgeError) {
+        throw new Error(`final source-agnostic purge failed: ${finalEventPurgeError.message}`);
+      }
+      const { error: finalAuditPurgeError } = await service.rpc('purge_merchant_audit_projection', {
+        p_merchant_id: merchantId,
+      });
+      if (finalAuditPurgeError) {
+        throw new Error(`final audit projection purge failed: ${finalAuditPurgeError.message}`);
       }
 
       const { error: merchantDeleteError } = await service
@@ -309,6 +352,19 @@ export async function POST(request: NextRequest) {
   }
 
   // Delete the auth user last — this invalidates all sessions.
+  if (merchantId) {
+    const { error: authDeletionReceiptError } = await service.rpc('record_account_deletion_receipt', {
+      p_merchant_id: merchantId,
+      p_actor_user_id: user.id,
+      p_action: 'auth_deletion_requested',
+      p_correlation_id: deletionCorrelationId,
+      p_idempotency_reference: `auth-deletion:${user.id}:${deletionCorrelationId}`,
+      p_effective_at: new Date().toISOString(),
+    });
+    if (authDeletionReceiptError) {
+      return NextResponse.json({ error: 'Failed to durably audit account deletion. Contact support@unauth.app.' }, { status: 500 });
+    }
+  }
   const admin = createAdminClient();
   const { error: deleteError } = await admin.auth.admin.deleteUser(user.id);
   if (deleteError) {

@@ -146,7 +146,15 @@ export default function OnboardingClient({
         <p className="mt-1 max-w-[62ch] text-[12px] leading-5 text-[var(--text-secondary)]">
           A few quick steps to bring payout control into every support ticket.
         </p>
-        <div className="mt-3 h-1 overflow-hidden rounded-full bg-[var(--surface-sunken)]" aria-label={`Setup progress: step ${activeStep + 1} of ${STEPS.length}`}>
+        <div
+          className="mt-3 h-1 overflow-hidden rounded-full bg-[var(--surface-sunken)]"
+          role="progressbar"
+          aria-label="Setup progress"
+          aria-valuemin={1}
+          aria-valuemax={STEPS.length}
+          aria-valuenow={activeStep + 1}
+          aria-valuetext={`Step ${activeStep + 1} of ${STEPS.length}`}
+        >
           <div className="h-full rounded-full bg-[var(--accent)] transition-[width] duration-150" style={{ width: `${((activeStep + 1) / STEPS.length) * 100}%` }} />
         </div>
       </div>

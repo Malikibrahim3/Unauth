@@ -1,8 +1,39 @@
 import { createServerClient } from '@supabase/ssr';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
+import { randomUUID } from 'node:crypto';
 import type { Database } from './types';
 import { env } from '@/lib/utils/env';
+
+type ServiceAuditContext = {
+  actorId: string;
+  actorRole: string;
+  requestIp?: string;
+  correlationId?: string;
+};
+
+type ServiceClientOptions = {
+  /**
+   * Trusted server-derived context copied into PostgREST request headers.
+   * Sensitive-table triggers consume it in the same transaction as the row
+   * mutation, so actor attribution does not require a second audit write.
+   */
+  audit?: ServiceAuditContext;
+};
+
+function auditHeaders(options: ServiceClientOptions): Record<string, string> {
+  const audit = options.audit;
+  if (!audit) return {};
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(audit.actorId)) {
+    throw new Error('Invalid audited service actor id');
+  }
+  return {
+    'x-unauth-audit-actor-id': audit.actorId,
+    'x-unauth-audit-actor-role': audit.actorRole.slice(0, 64),
+    'x-unauth-audit-correlation-id': audit.correlationId ?? randomUUID(),
+    ...(audit.requestIp ? { 'x-unauth-audit-request-ip': audit.requestIp.slice(0, 128) } : {}),
+  };
+}
 
 function makeMissingEnvStub(name: string): any {
   const message = `${name} not configured`;
@@ -62,7 +93,7 @@ export function createClient(): any {
   );
 }
 
-export function createServiceClient(): any {
+export function createServiceClient(options: ServiceClientOptions = {}): any {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -82,6 +113,9 @@ export function createServiceClient(): any {
       auth: {
         persistSession: false,
         autoRefreshToken: false,
+      },
+      global: {
+        headers: auditHeaders(options),
       },
     }
   );

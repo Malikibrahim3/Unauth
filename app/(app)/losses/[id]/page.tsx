@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
 import {
   hasPermission,
   PERMISSIONS,
-  requirePermission,
 } from "@/lib/permissions";
+import {
+  getRequestServiceClient,
+  getRequestUser,
+  requirePagePermission,
+} from "@/lib/auth/requestContext";
 import { DetailPageShell } from "@/components/workbench/DetailPageShell";
 import { getLossReadModel } from "@/lib/losses/readModel";
 import { LossActions } from "@/components/losses/LossActions";
@@ -28,18 +31,11 @@ export default async function LossDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const auth = createClient();
-  const {
-    data: { user },
-  } = await auth.auth.getUser();
+  const user = await getRequestUser();
   if (!user) redirect("/login");
-  const client = createServiceClient();
-  const { denied, ctx } = await requirePermission(
-    client,
-    user.id,
-    PERMISSIONS.VIEW_INBOX,
-  );
-  if (denied) redirect("/dashboard");
+  const client = getRequestServiceClient();
+  const ctx = await requirePagePermission(PERMISSIONS.VIEW_INBOX);
+  if (!ctx) redirect("/dashboard");
   const model = await getLossReadModel(client, ctx.merchantId, id);
   if (!model) notFound();
   const canManage = await hasPermission(

@@ -26,6 +26,7 @@ export type ClaimReviewState = {
   claimId: string;
   decision: Decision;
   outcome: Outcome;
+  decisionAmount: string;
   evidenceType: EvidenceType;
   source: EvidenceSource;
   evidenceUrl: string;
@@ -83,6 +84,7 @@ export function createClaimReviewInitialState(profileId: string, initialClaimId?
     claimId: initialClaimId ?? readDraftField(draft, 'claimId', ''),
     decision: (readDraftField(draft, 'decision', 'escalated') as Decision) ?? 'escalated',
     outcome: (readDraftField(draft, 'outcome', 'pending') as Outcome) ?? 'pending',
+    decisionAmount: readDraftField(draft, 'decisionAmount', ''),
     evidenceType: (readDraftField(draft, 'evidenceType', 'tracking') as EvidenceType) ?? 'tracking',
     source: (readDraftField(draft, 'source', 'manual') as EvidenceSource) ?? 'manual',
     evidenceUrl: readDraftField(draft, 'evidenceUrl', ''),
@@ -96,7 +98,7 @@ export function createClaimReviewInitialState(profileId: string, initialClaimId?
     statusNote: '',
     reopenNote: '',
     reverseDecision: 'approved',
-    reverseOutcome: 'legitimate',
+    reverseOutcome: 'pending',
     reverseNote: '',
     nextClaimHref: null,
     noMoreClaims: false,

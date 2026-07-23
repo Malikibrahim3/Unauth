@@ -71,6 +71,9 @@ describe("Static security guard: service-role routes must be auth-gated", () => 
       // Intentionally public bootstrap script: returns merchant-scoped collector JS
       // for a validated Shopify shop domain and no customer PII.
       "app/api/shopify/collector-init/route.ts",
+      // Public storefront bootstrap: resolves only an active platform/store
+      // connection and returns a short-lived merchant-bound low-trust token.
+      "app/api/checkout-signals/config/route.ts",
       // Intentionally public browser ingestion endpoint. It accepts only hashed
       // checkout/session signals, validates merchant/platform, and rate-limits by IP.
       "app/api/checkout-signals/ingest/route.ts",
@@ -122,12 +125,18 @@ describe("Static security guard: service-role routes must be auth-gated", () => 
         content.includes("shopify_oauth_state") ||
         content.includes("verifyOAuthHmac");
       const hasCronAuth = content.includes("CRON_SECRET");
+      const hasExactTargetMembershipAuth =
+        content.includes("TABLES.MERCHANT_MEMBERS") &&
+        content.includes(".eq('user_id', user.id)") &&
+        content.includes(".eq('merchant_id'") &&
+        content.includes(".eq('invite_status', 'active')");
       if (
         hasApiKeyAuth ||
         hasWidgetAuth ||
         hasSignedTokenAuth ||
         hasOAuthHandshake ||
-        hasCronAuth
+        hasCronAuth ||
+        hasExactTargetMembershipAuth
       ) {
         continue;
       }
@@ -694,7 +703,29 @@ describe("Claims page — auth and permission guards", () => {
     expect(content).toContain("PERMISSIONS.VIEW_INBOX");
     expect(content).toContain("redirect('/login')");
     expect(content).not.toContain("PERMISSIONS.VIEW_CUSTOMERS");
-    expect(content).toContain("if (denied) redirect('/dashboard')");
+
+    // Security invariant (not tied to a specific implementation symbol like
+    // the historical `denied`): whatever variable captures the resolved
+    // permission context must be checked for a falsy/denied result that
+    // redirects away, and that gate must appear BEFORE the page's first use
+    // of the merchant-scoped context — i.e. fail-closed, not fail-open. This
+    // fails if the check is deleted, ignored, or reordered after data access.
+    const permissionCallMatch = content.match(
+      /(\w+)\s*=\s*await\s+requirePagePermission\(\s*PERMISSIONS\.VIEW_INBOX\s*\)/,
+    );
+    expect(permissionCallMatch).not.toBeNull();
+    const resultVar = permissionCallMatch![1];
+
+    const guardPattern = new RegExp(`if\\s*\\(\\s*!\\s*${resultVar}\\s*\\)\\s*redirect\\(`);
+    expect(content).toMatch(guardPattern);
+
+    const permissionCallIdx = content.indexOf(permissionCallMatch![0]);
+    const guardIdx = content.indexOf(content.match(guardPattern)![0]);
+    const firstMerchantDataUse = content.indexOf(`${resultVar}.merchantId`);
+
+    expect(guardIdx).toBeGreaterThan(permissionCallIdx);
+    expect(firstMerchantDataUse).toBeGreaterThan(-1);
+    expect(guardIdx).toBeLessThan(firstMerchantDataUse);
   });
 });
 
@@ -1554,14 +1585,33 @@ describe("dashboard/page.tsx — fail-closed and no silent zero", () => {
     expect(content).toContain("No canonical financial entries were found");
   });
 
-  it("handles permission denied — does NOT ignore denied return value", () => {
+  it("handles permission denial — does NOT ignore the resolved permission result", () => {
     const content = fs.readFileSync(
       path.join(process.cwd(), "app/(app)/dashboard/page.tsx"),
       "utf-8",
     );
-    // Must destructure denied from requirePermission and check it.
-    expect(content).toContain("denied");
-    expect(content).toMatch(/if\s*\(\s*denied\s*\)/);
+    // Security invariant (not tied to the historical `denied` symbol):
+    // whatever variable captures the resolved permission context must be
+    // checked for a falsy/denied result, and that check must gate a redirect
+    // shortly after — i.e. the result is consumed, not merely computed and
+    // discarded. This fails if the check is deleted or its result ignored.
+    const permissionCallMatch = content.match(
+      /(\w+)\s*=\s*await\s+requirePagePermission\(\s*PERMISSIONS\.VIEW_DASHBOARD\s*\)/,
+    );
+    expect(permissionCallMatch).not.toBeNull();
+    const resultVar = permissionCallMatch![1];
+
+    const guardPattern = new RegExp(`if\\s*\\(\\s*!\\s*${resultVar}\\s*\\)`);
+    expect(content).toMatch(guardPattern);
+
+    const permissionCallIdx = content.indexOf(permissionCallMatch![0]);
+    const guardIdx = content.indexOf(content.match(guardPattern)![0]);
+    expect(guardIdx).toBeGreaterThan(permissionCallIdx);
+
+    // The guard must actually redirect away (not just check-and-continue) —
+    // "redirect(" must appear shortly after the guard opens.
+    const afterGuard = content.slice(guardIdx, guardIdx + 200);
+    expect(afterGuard).toMatch(/redirect\(/);
   });
 
   it("redirects unauthenticated users to /login", () => {

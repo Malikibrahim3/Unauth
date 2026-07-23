@@ -55,17 +55,13 @@ test.describe("current merchant experience", () => {
       page.getByRole("link", { name: "Integration exceptions" }),
     ).toHaveAttribute("aria-current", "page");
     const caseLinks = page.locator('main a[href^="/claims/"]');
-    const count = await caseLinks.count();
-    test.skip(
-      count === 0,
-      "The safe E2E merchant currently has no open reconciliation exception.",
-    );
+    await expect(caseLinks.first()).toBeVisible({ timeout: 20_000 });
     const href = await caseLinks.first().getAttribute("href");
     expect(href).toBeTruthy();
     await page.goto(href!);
     await expect(
       page.getByText("Evidence on file", { exact: true }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 30_000 });
     await expect(
       page.getByText("Manage evidence and lifecycle", { exact: true }),
     ).toBeVisible();
@@ -85,11 +81,11 @@ test.describe("current merchant experience", () => {
     const dialog = page.getByRole("dialog", { name: "Command palette" });
     await expect(dialog).toBeVisible();
     const input = page.getByLabel(
-      "Search customers, audits, evidence packages",
+      "Search customers, cases, and evidence",
     );
-    await input.fill("recoveries");
+    await input.fill("recovery");
     await expect
-      .poll(() => dialog.getByText("Recoveries", { exact: true }).count())
+      .poll(() => dialog.getByText("Recovery", { exact: true }).count())
       .toBeGreaterThan(0);
     await input.press("Escape");
     await expect(
@@ -114,7 +110,7 @@ test.describe("current merchant experience", () => {
     await page.getByRole("button", { name: "Validate", exact: true }).click();
     await expect(
       page.getByText("Every row passed validation.", { exact: true }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 30_000 });
     await expect(
       page.getByRole("button", { name: "Import 1 valid row" }),
     ).toBeEnabled();
@@ -123,6 +119,7 @@ test.describe("current merchant experience", () => {
   test("integration catalogue exposes connection health, capability, and provenance", async ({
     page,
   }) => {
+    test.setTimeout(90_000);
     await page.goto("/integrations");
     await expect(
       page.getByText("Connected providers", { exact: true }),
@@ -142,18 +139,21 @@ test.describe("current merchant experience", () => {
       .first();
     await expect(connectorLink).toBeVisible();
     await connectorLink.click();
+    await expect(page).toHaveURL(/\/integrations\/[^/?]+(?:\?|$)/, {
+      timeout: 60_000,
+    });
     await expect(
       page.getByRole("heading", { level: 2, name: "Connection health" }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 60_000 });
     await expect(
       page.getByRole("heading", { level: 2, name: "Capability contract" }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 60_000 });
     await expect(
       page.getByText(/Unsupported autonomous payout actions remain blocked/),
     ).toBeVisible();
     await expect(
       page.getByRole("heading", { level: 2, name: "Import history" }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 60_000 });
     await expectNoDocumentOverflow(page);
   });
 

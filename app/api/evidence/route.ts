@@ -10,7 +10,6 @@ import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { TABLES, STORAGE_BUCKETS } from '@/lib/supabase/tables'
 import { createScopedClient } from '@/lib/supabase/scoped'
 import { requirePermission, PERMISSIONS } from '@/lib/permissions'
-import { logAction } from '@/lib/permissions/audit'
 import { writeActivityLog } from '@/lib/customers/activityLog'
 import { buildEvidencePackage } from '@/lib/evidence/buildPackage'
 import { buildNarrative } from '@/lib/evidence/narrative'
@@ -155,7 +154,11 @@ async function POSTHandler(request: NextRequest) {
   }
 
   // 7. Insert to evidence_packages
-  const { data: inserted, error: insertError } = await scopedServiceRole
+  const auditedScopedService = createScopedClient(
+    ctx.merchantId,
+    createServiceClient({ audit: { actorId: ctx.userId, actorRole: ctx.role, requestIp: ip } }),
+  )
+  const { data: inserted, error: insertError } = await auditedScopedService
     .from(TABLES.EVIDENCE_PACKAGES)
     .insert({
       customer_profile_id:      customerProfileId,
@@ -208,15 +211,6 @@ async function POSTHandler(request: NextRequest) {
       { status: 402 },
     )
   }
-
-  logAction({
-    ctx,
-    action: 'generate_evidence',
-    resourceType: 'evidence_package',
-    resourceId: packageId,
-    metadata: { customerProfileId, disputedOrderId, referenceNumber: pkg.referenceNumber },
-    ip,
-  })
 
   await writeActivityLog({
     supabase: scopedServiceRole,

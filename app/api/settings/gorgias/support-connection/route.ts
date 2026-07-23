@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { after } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
-import { logAction } from '@/lib/permissions/audit';
 import { getClientIp } from '@/lib/ratelimit';
 import { withRequestLogging } from '@/lib/log';
 import {
@@ -79,6 +78,9 @@ async function POSTHandler(req: NextRequest) {
   const service = createServiceClient();
   const { denied, ctx } = await requirePermission(service, user.id, PERMISSIONS.MANAGE_SETTINGS);
   if (denied) return denied;
+  const mutationService = createServiceClient({
+    audit: { actorId: ctx.userId, actorRole: ctx.role, requestIp: ip },
+  });
 
   let body: unknown;
   try {
@@ -100,22 +102,10 @@ async function POSTHandler(req: NextRequest) {
     // goes through the update path.
     if (existing && !(existing.status === 'disabled' && !existing.gorgias_api_configured)) {
       const updated = await updateMerchantGorgiasSupportConnectionMetadata(
-        service,
+        mutationService,
         ctx.merchantId,
         parsed.data
       );
-
-      logAction({
-        ctx,
-        action: 'update_gorgias_support_connection',
-        resourceType: 'support_provider_connection',
-        resourceId: updated.connection.id,
-        metadata: {
-          provider_account_id: updated.connection.provider_account_id,
-          status: updated.connection.status,
-        },
-        ip,
-      });
 
       if (updated.connection.status === 'active' && updated.connection.gorgias_api_configured) {
         scheduleGorgiasBackfill(service, ctx.merchantId, updated.connection.id);
@@ -128,21 +118,10 @@ async function POSTHandler(req: NextRequest) {
     }
 
     const created = await createMerchantGorgiasSupportConnection(
-      service,
+      mutationService,
       ctx.merchantId,
       parsed.data
     );
-
-    logAction({
-      ctx,
-      action: 'create_gorgias_support_connection',
-      resourceType: 'support_provider_connection',
-      resourceId: created.connection.id,
-      metadata: {
-        provider_account_id: created.connection.provider_account_id,
-      },
-      ip,
-    });
 
     const merchantId = ctx.merchantId;
     const connectionId = created.connection.id;

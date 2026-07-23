@@ -10,6 +10,7 @@ import { customerProjection } from '@/lib/events/handlers/customerProjection';
 import { refundProjection } from '@/lib/events/handlers/refundProjection';
 import { workflowHandler } from '@/lib/events/handlers/workflowHandler';
 import { exceptionProjection } from '@/lib/events/handlers/exceptionProjection';
+import { auditTimelineProjection } from '@/lib/events/handlers/auditTimelineProjection';
 import type { DomainEventHandler, DomainEventRecord } from '@/lib/events/handlers/types';
 
 export const DOMAIN_EVENT_HANDLERS: Record<string, DomainEventHandler> = {
@@ -22,6 +23,7 @@ export const DOMAIN_EVENT_HANDLERS: Record<string, DomainEventHandler> = {
   refundProjection,
   workflowHandler,
   exceptionProjection,
+  auditTimelineProjection,
 };
 
 type Delivery = { id: string; domain_event_id: string; handler_name: string };
@@ -47,7 +49,7 @@ export async function runDomainEventHandler(
     try {
       const { data: event, error: eventError } = await client
         .from(TABLES.DOMAIN_EVENTS)
-        .select('id,merchant_id,event_type,aggregate_type,aggregate_id,payload,occurred_at,recorded_at')
+        .select('id,merchant_id,event_type,aggregate_type,aggregate_id,payload,actor_type,actor_id,correlation_id,idempotency_key,occurred_at,recorded_at')
         .eq('id', delivery.domain_event_id)
         .maybeSingle();
       if (eventError) throw new Error(`domain_event_read_failed: ${eventError.message}`);
@@ -60,11 +62,14 @@ export async function runDomainEventHandler(
       processed += 1;
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : String(cause);
-      await client.rpc('fail_domain_event_delivery', {
+      const { error: failError } = await client.rpc('fail_domain_event_delivery', {
         p_delivery_id: delivery.id,
         p_error: message.slice(0, 1000),
         p_backoff_seconds: 30,
       });
+      if (failError) {
+        throw new Error(`fail_domain_event_delivery_failed: ${failError.message}; original_error: ${message}`);
+      }
       failed += 1;
     }
   }

@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { TABLES } from '@/lib/supabase/tables';
 import { hashZendeskWebhookSecret } from '@/lib/support/zendesk/webhookSecret';
+import { ZENDESK_SUPPORT_SECRET_HEADERS } from '@/lib/support/zendesk/webhookAuth';
 import type { ZendeskSupportConnectionRow } from '@/lib/support/zendesk/resolveConnection';
 import { POST } from '@/app/api/zendesk/support-webhook/route';
 import {
@@ -20,6 +21,16 @@ jest.mock('@/lib/support/zendesk/fetchTicket', () => ({
 jest.mock('@/lib/support/zendesk/merchantApiAccess', () => ({
   getActiveZendeskMerchantApiAccess: jest.fn(),
 }));
+jest.mock('@/lib/support/webhookEventSafety', () => ({
+  claimSupportTicketDelivery: jest.fn(async () => ({
+    status: 'claimed', idempotencyKey: 'zendesk:test:delivery',
+    claimToken: '10000000-0000-4000-8000-000000000001',
+  })),
+  replayedSupportResult: jest.fn((value) => value),
+}));
+jest.mock('@/lib/commerce/processedWebhookHandler', () => ({
+  completeProcessedWebhook: jest.fn(async () => undefined),
+}));
 
 const MERCHANT_ID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 const CONNECTION_ID = 'cccccccc-cccc-cccc-cccc-cccccccccccc';
@@ -31,6 +42,9 @@ const CONNECTION_SECRET_HASH = hashZendeskWebhookSecret(CONNECTION_WEBHOOK_SECRE
 
 const { createServiceClient } = jest.requireMock('@/lib/supabase/server') as {
   createServiceClient: jest.Mock;
+};
+const { claimSupportTicketDelivery } = jest.requireMock('@/lib/support/webhookEventSafety') as {
+  claimSupportTicketDelivery: jest.Mock;
 };
 
 const claimTicket = {
@@ -201,14 +215,27 @@ function makeZendeskWebhookSupabase(options?: {
   };
 }
 
-function webhookUrl(secret?: string): string {
-  const base = `http://localhost/api/zendesk/support-webhook?zendesk_subdomain=${ZENDESK_SUBDOMAIN}`;
-  return secret ? `${base}&unauth_whsec=${encodeURIComponent(secret)}` : base;
+function webhookUrl(): string {
+  return `http://localhost/api/zendesk/support-webhook?zendesk_subdomain=${ZENDESK_SUBDOMAIN}`;
+}
+
+function webhookRequest(ticket: unknown, secret?: string): NextRequest {
+  const headers: Record<string, string> = {};
+  if (secret) headers[ZENDESK_SUPPORT_SECRET_HEADERS[0]] = secret;
+  return new NextRequest(webhookUrl(), {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ ticket }),
+  });
 }
 
 describe('Zendesk support webhook', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    claimSupportTicketDelivery.mockResolvedValue({
+      status: 'claimed', idempotencyKey: 'zendesk:test:delivery',
+      claimToken: '10000000-0000-4000-8000-000000000001',
+    });
     process.env.NEXT_PUBLIC_APP_URL = 'https://app.unauth.test';
     process.env.NODE_ENV = 'test';
     createServiceClient.mockReturnValue(makeZendeskWebhookSupabase().supabase);
@@ -216,11 +243,16 @@ describe('Zendesk support webhook', () => {
 
   it('rejects a missing webhook secret with 401', async () => {
     const res = await POST(
-      new NextRequest(webhookUrl(), {
-        method: 'POST',
-        body: JSON.stringify({ ticket: claimTicket }),
-      })
+      webhookRequest(claimTicket)
     );
+    expect(res.status).toBe(401);
+  });
+
+  it('rejects a valid connection secret supplied only in the URL query', async () => {
+    const res = await POST(new NextRequest(
+      `${webhookUrl()}&unauth_whsec=${encodeURIComponent(CONNECTION_WEBHOOK_SECRET)}`,
+      { method: 'POST', body: JSON.stringify({ ticket: claimTicket }) },
+    ));
     expect(res.status).toBe(401);
   });
 
@@ -228,10 +260,7 @@ describe('Zendesk support webhook', () => {
     const mock = makeZendeskWebhookSupabase();
     createServiceClient.mockReturnValue(mock.supabase);
     const res = await POST(
-      new NextRequest(webhookUrl('zendesk_whsec_wrongwrongwrongwrongwrongwrongwrong00'), {
-        method: 'POST',
-        body: JSON.stringify({ ticket: claimTicket }),
-      })
+      webhookRequest(claimTicket, 'zendesk_whsec_wrongwrongwrongwrongwrongwrongwrong00')
     );
     expect(res.status).toBe(401);
     expect(mock.caseUpserts()).toBe(0);
@@ -242,10 +271,7 @@ describe('Zendesk support webhook', () => {
     createServiceClient.mockReturnValue(mock.supabase);
 
     const res = await POST(
-      new NextRequest(webhookUrl(CONNECTION_WEBHOOK_SECRET), {
-        method: 'POST',
-        body: JSON.stringify({ ticket: claimTicket }),
-      })
+      webhookRequest(claimTicket, CONNECTION_WEBHOOK_SECRET)
     );
     expect(res.status).toBe(200);
     const json = await res.json();
@@ -256,15 +282,45 @@ describe('Zendesk support webhook', () => {
     expect(mock.caseUpserts()).toBe(1);
   });
 
+  it('replays the stored result without repeating support ingestion', async () => {
+    claimSupportTicketDelivery.mockResolvedValue({
+      status: 'duplicate',
+      result: {
+        ok: true,
+        provider: 'zendesk',
+        merchant_id: MERCHANT_ID,
+        external_case_id: '42',
+        is_claim: true,
+        claim_type: 'other',
+      },
+    });
+    const mock = makeZendeskWebhookSupabase();
+    createServiceClient.mockReturnValue(mock.supabase);
+
+    const res = await POST(webhookRequest(claimTicket, CONNECTION_WEBHOOK_SECRET));
+
+    expect(res.status).toBe(200);
+    expect(mock.caseUpserts()).toBe(0);
+  });
+
+  it('acknowledges an older ticket version without overwriting current state', async () => {
+    claimSupportTicketDelivery.mockResolvedValue({ status: 'stale' });
+    const mock = makeZendeskWebhookSupabase();
+    createServiceClient.mockReturnValue(mock.supabase);
+
+    const res = await POST(webhookRequest(claimTicket, CONNECTION_WEBHOOK_SECRET));
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ ok: false, error: 'stale_event_ignored' });
+    expect(mock.caseUpserts()).toBe(0);
+  });
+
   it('ingests a non-claim ticket without creating a payout case', async () => {
     const mock = makeZendeskWebhookSupabase();
     createServiceClient.mockReturnValue(mock.supabase);
 
     const res = await POST(
-      new NextRequest(webhookUrl(CONNECTION_WEBHOOK_SECRET), {
-        method: 'POST',
-        body: JSON.stringify({ ticket: nonClaimTicket }),
-      })
+      webhookRequest(nonClaimTicket, CONNECTION_WEBHOOK_SECRET)
     );
     expect(res.status).toBe(200);
     const json = await res.json();
@@ -283,10 +339,7 @@ describe('Zendesk support webhook', () => {
 
     const deliver = () =>
       POST(
-        new NextRequest(webhookUrl(CONNECTION_WEBHOOK_SECRET), {
-          method: 'POST',
-          body: JSON.stringify({ ticket: claimTicket }),
-        })
+        webhookRequest(claimTicket, CONNECTION_WEBHOOK_SECRET)
       );
 
     const first = await deliver();

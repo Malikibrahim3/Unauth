@@ -83,13 +83,6 @@ export async function handleStripeWebhookEvent(
   supabase: SupabaseClient,
   event: Stripe.Event,
 ): Promise<void> {
-  const { duplicate } = await logBillingEvent(supabase, {
-    eventType: event.type,
-    stripeEventId: event.id,
-    payload: event.data.object as unknown as Record<string, unknown>,
-  });
-  if (duplicate) return;
-
   switch (event.type) {
     case 'checkout.session.completed':
       await handleCheckoutCompleted(supabase, event.data.object as Stripe.Checkout.Session);
@@ -112,6 +105,14 @@ export async function handleStripeWebhookEvent(
     default:
       break;
   }
+
+  // Route-level leased claims own execution idempotency. Record the billing
+  // event only after its effects succeed so a partial failure remains retryable.
+  await logBillingEvent(supabase, {
+    eventType: event.type,
+    stripeEventId: event.id,
+    payload: event.data.object as unknown as Record<string, unknown>,
+  });
 }
 
 async function handleCheckoutCompleted(

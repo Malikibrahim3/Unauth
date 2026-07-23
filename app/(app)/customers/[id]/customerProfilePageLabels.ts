@@ -1,4 +1,5 @@
 import { labelFor } from "@/lib/copy/labels";
+import { label } from "@/lib/ui/labels";
 
 export function labelize(value: string) {
   return labelFor(value);
@@ -64,6 +65,21 @@ export const CLAIM_STATUS_LABELS: Record<string, string> = {
   resolved: "Resolved",
   closed: "Closed",
 };
+
+export function customerClaimSummaryDisplay(claim: {
+  id: string;
+  claim_type: string;
+  status: string;
+  order_ref?: string | null;
+  shopify_order_id?: string | null;
+}) {
+  return {
+    status: label('caseStatus', claim.status),
+    claimType: label('claimType', claim.claim_type),
+    orderReference:
+      claim.order_ref ?? claim.shopify_order_id ?? claim.id.slice(0, 8),
+  };
+}
 
 export function firstArrayValue(value: unknown): string | null {
   return Array.isArray(value) && typeof value[0] === "string" && value[0].trim()

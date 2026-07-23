@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
-import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/server';
+import { getRequestUser } from '@/lib/auth/requestContext';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import ShopifyIntegrationBanner from '@/components/shopify/ShopifyIntegrationBanner';
 import SyncStatusCard from '@/components/shopify/SyncStatusCard';
@@ -8,10 +9,7 @@ import ShopifyDisconnectClient from '@/components/shopify/ShopifyDisconnectClien
 import { SettingsPageShell } from '@/components/ui';
 
 export default async function ShopifyIntegrationPage() {
-  const userClient = createClient();
-  const {
-    data: { user },
-  } = await userClient.auth.getUser();
+  const user = await getRequestUser();
   if (!user) redirect('/login');
 
   const service = createServiceClient();

@@ -15,7 +15,7 @@ jest.mock('@/lib/claims/store', () => {
   return {
     ...actual,
     upsertMerchantClaim: jest.fn(),
-    upsertMerchantCaseOutcome: jest.fn(),
+    recordMerchantCaseDecision: jest.fn(),
     upsertClaimEvidenceItem: jest.fn(),
   };
 });
@@ -32,7 +32,7 @@ import { POST as viewPost } from '@/app/api/claims/[claimId]/view/route';
 import { POST as assignmentPost } from '@/app/api/claims/[claimId]/assignment/route';
 import { POST as snoozePost } from '@/app/api/claims/[claimId]/snooze/route';
 import { POST as responseCopiedPost } from '@/app/api/claims/[claimId]/customer-response-copied/route';
-import { upsertMerchantClaim, upsertMerchantCaseOutcome, upsertClaimEvidenceItem } from '@/lib/claims/store';
+import { upsertMerchantClaim, recordMerchantCaseDecision, upsertClaimEvidenceItem } from '@/lib/claims/store';
 import { TABLES } from '@/lib/supabase/tables';
 
 const TEST_USER_ID = '11111111-1111-4111-8111-111111111111';
@@ -41,7 +41,11 @@ const OTHER_MERCHANT_ID = '33333333-3333-4333-8333-333333333333';
 const TEST_SOURCE_ORDER_ID = '44444444-4444-4444-8444-444444444444';
 
 function mkReq(url: string, body: any) {
-  return new NextRequest(url, { method: 'POST', body: JSON.stringify(body), headers: { 'content-type': 'application/json' } } as any);
+  return new NextRequest(url, {
+    method: 'POST',
+    body: JSON.stringify(body),
+    headers: { 'content-type': 'application/json', 'idempotency-key': 'route-test-request-1' },
+  } as any);
 }
 
 function setupAuth(ok: boolean) {
@@ -61,6 +65,7 @@ function setupServiceClient(opts: {
   assignedTo?: string | null;
   duplicateClaims?: any[];
   latestOutcome?: any;
+  transitionError?: { message: string; code?: string };
 } = {}) {
   const ownsShop = opts.ownsShop ?? true;
   const claimShopDomain = Object.prototype.hasOwnProperty.call(opts, 'claimShopDomain') ? opts.claimShopDomain : 'unit-test.myshopify.com';
@@ -141,9 +146,35 @@ function setupServiceClient(opts: {
   }
 
   const service = {
-    rpc: async (fn: string) => fn === 'record_domain_event'
-      ? { data: 'event-1', error: null }
-      : { data: null, error: null },
+    rpc: async (fn: string, args: Record<string, any>) => {
+      if (fn === 'record_domain_event') return { data: 'event-1', error: null };
+      if (fn === 'transition_payout_case') {
+        if (opts.transitionError) return { data: null, error: opts.transitionError };
+        const patch = args.p_patch ?? {};
+        claimUpdates.push(patch);
+        claimEvents.push({
+          claim_id: args.p_case_id,
+          merchant_id: args.p_merchant_id,
+          event_type: args.p_claim_event_type,
+          from_status: claimStatus,
+          to_status: patch.status ?? claimStatus,
+          note: args.p_reason,
+          metadata: args.p_claim_event_metadata ?? {},
+        });
+        return {
+          data: {
+            case_id: args.p_case_id,
+            new_version: Number(args.p_expected_version) + 1,
+            status: patch.status ?? claimStatus,
+            payout_decision_state: patch.payout_decision_state ?? 'undecided',
+            recovery_state: patch.recovery_state ?? 'no_recovery_needed',
+            domain_event_id: 'event-1',
+          },
+          error: null,
+        };
+      }
+      return { data: null, error: null };
+    },
     from: (table: string) => {
       if (storeConnectionTables.has(table)) {
         return {
@@ -342,35 +373,52 @@ describe('claims routes', () => {
     expect(body.error).toBe('Failed to upsert claim');
   });
 
-  it('valid outcome add succeeds', async () => {
+  it('records merchant authorization without claiming a source payout', async () => {
     setupAuth(true);
     setupPermission();
-    const { claimEvents } = setupServiceClient();
-    (upsertMerchantCaseOutcome as jest.Mock).mockResolvedValue({ id: 'o1', claim_id: 'c1', decision: 'approved', outcome: 'recovered', amount_refunded: null, amount_recovered: null });
+    setupServiceClient();
+    (recordMerchantCaseDecision as jest.Mock).mockResolvedValue({
+      id: 'o1', decision_id: 'd1', claim_id: '550e8400-e29b-41d4-a716-446655440000',
+      decision: 'approved', outcome: 'pending', amount_minor: 2500, currency: 'GBP',
+      domain_event_id: 'event-1', replayed: false,
+    });
     const res = await outcomePost(
-      mkReq('http://localhost/api/claims/c1/outcome', { decision: 'approved', outcome: 'recovered' }),
+      mkReq('http://localhost/api/claims/c1/outcome', {
+        decision: 'approved', outcome: 'pending', amount_minor: 2500, currency: 'GBP',
+      }),
       { params: Promise.resolve({ claimId: '550e8400-e29b-41d4-a716-446655440000' }) }
     );
+    const body = await res.json();
     expect(res.status).toBe(200);
-    expect(upsertMerchantCaseOutcome).toHaveBeenCalled();
-    expect(claimEvents.map((event) => event.event_type)).toEqual(expect.arrayContaining(['outcome_added', 'claim_resolved']));
+    expect(recordMerchantCaseDecision).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      decision: 'approved', outcome: 'pending', amount_minor: 2500, currency: 'GBP',
+    }));
+    expect(body.outcome.outcome).toBe('pending');
+    expect(body.projection.note).toContain('No refund');
   });
 
-  it('valid outcome resolves a merchant-owned CSV/manual claim without shop domain', async () => {
+  it('records a decision on a merchant-owned CSV/manual claim without shop domain', async () => {
     setupAuth(true);
     setupPermission();
     setupServiceClient({ claimShopDomain: null as any });
-    (upsertMerchantCaseOutcome as jest.Mock).mockResolvedValue({ id: 'o1', claim_id: 'c1', decision: 'denied', outcome: 'loss', amount_refunded: null, amount_recovered: null });
+    (recordMerchantCaseDecision as jest.Mock).mockResolvedValue({
+      id: 'o1', decision_id: 'd1', claim_id: '550e8400-e29b-41d4-a716-446655440000',
+      decision: 'denied', outcome: 'pending', amount_minor: 2500, currency: 'GBP',
+      domain_event_id: 'event-1', replayed: false,
+    });
 
     const res = await outcomePost(
-      mkReq('http://localhost/api/claims/c1/outcome', { decision: 'denied', outcome: 'loss', notes: 'Request does not meet the documented payout policy.' }),
+      mkReq('http://localhost/api/claims/c1/outcome', {
+        decision: 'denied', outcome: 'pending', amount_minor: 2500, currency: 'GBP',
+        notes: 'Request does not meet the documented payout policy.',
+      }),
       { params: Promise.resolve({ claimId: '550e8400-e29b-41d4-a716-446655440000' }) }
     );
 
     expect(res.status).toBe(200);
-    expect(upsertMerchantCaseOutcome).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+    expect(recordMerchantCaseDecision).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
       decision: 'denied',
-      outcome: 'loss',
+      outcome: 'pending',
     }));
   });
 
@@ -391,7 +439,7 @@ describe('claims routes', () => {
     );
     expect(suspectedFraud.status).toBe(400);
 
-    expect(upsertMerchantCaseOutcome).not.toHaveBeenCalled();
+    expect(recordMerchantCaseDecision).not.toHaveBeenCalled();
   });
 
   it('valid evidence add succeeds', async () => {
@@ -420,25 +468,26 @@ describe('claims routes', () => {
     expect(claimEvents).toEqual(expect.arrayContaining([expect.objectContaining({ event_type: 'claim_reopened', from_status: 'resolved_refunded', to_status: 'open' })]));
   });
 
-  it('decision reversal preserves previous outcome in event', async () => {
+  it('decision reversal records an immutable linked replacement authorization', async () => {
     setupAuth(true);
     setupPermission();
-    const { claimEvents } = setupServiceClient({ claimStatus: 'resolved_refunded', latestOutcome: { id: 'old-o1', decision: 'denied', outcome: 'suspected_fraud', updated_at: new Date().toISOString() } });
-    (upsertMerchantCaseOutcome as jest.Mock).mockResolvedValue({ id: 'new-o1', claim_id: 'c1', decision: 'approved', outcome: 'legitimate' });
+    setupServiceClient({ claimStatus: 'resolved_refunded', latestOutcome: { id: 'old-o1', decision: 'denied', outcome: 'pending', updated_at: new Date().toISOString() } });
+    (recordMerchantCaseDecision as jest.Mock).mockResolvedValue({
+      id: 'new-o1', decision_id: 'new-d1', claim_id: '550e8400-e29b-41d4-a716-446655440000',
+      decision: 'approved', outcome: 'pending', amount_minor: 2500, currency: 'GBP',
+      domain_event_id: 'event-2', replayed: false,
+    });
     const res = await reversePost(
-      mkReq('http://localhost/api/claims/c1/reverse', { decision: 'approved', outcome: 'legitimate', note: 'Carrier confirmed misdelivery' }),
+      mkReq('http://localhost/api/claims/c1/reverse', {
+        decision: 'approved', outcome: 'pending', amount_minor: 2500, currency: 'GBP',
+        note: 'Carrier confirmed misdelivery',
+      }),
       { params: Promise.resolve({ claimId: '550e8400-e29b-41d4-a716-446655440000' }) }
     );
     expect(res.status).toBe(200);
-    expect(claimEvents).toEqual(expect.arrayContaining([expect.objectContaining({
-      event_type: 'decision_reversed',
-      metadata: expect.objectContaining({
-        previous_decision: 'denied',
-        new_decision: 'approved',
-        previous_outcome: 'suspected_fraud',
-        new_outcome: 'legitimate',
-      }),
-    })]));
+    expect(recordMerchantCaseDecision).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      decision: 'approved', outcome: 'pending', amount_minor: 2500, currency: 'GBP', reversal: true,
+    }));
   });
 
   it('claim cannot be moved backward from open to pending', async () => {
@@ -451,6 +500,24 @@ describe('claims routes', () => {
     );
     expect(res.status).toBe(409);
     expect(claimEvents).toHaveLength(0);
+  });
+
+  it('returns actionable blockers when unresolved financial work prevents closure', async () => {
+    setupAuth(true);
+    setupPermission();
+    setupServiceClient({
+      transitionError: { message: 'case_closure_blocked:source_outcome,recovery_work', code: '22023' },
+    });
+    const res = await statusPost(
+      mkReq('http://localhost/api/claims/c1/status', {
+        status: 'closed', note: 'Close after all work is resolved',
+      }),
+      { params: Promise.resolve({ claimId: '550e8400-e29b-41d4-a716-446655440000' }) },
+    );
+    const body = await res.json();
+    expect(res.status).toBe(409);
+    expect(body.blockers).toEqual(['source_outcome', 'recovery_work']);
+    expect(body.error).toContain('Resolve the payout outcome');
   });
 
   it('wrong merchant cannot mutate claim', async () => {

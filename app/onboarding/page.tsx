@@ -1,5 +1,5 @@
-import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/server';
+import { getRequestUser } from '@/lib/auth/requestContext';
 import { TABLES } from '@/lib/supabase/tables';
 import { redirect } from 'next/navigation';
 import OnboardingClient from '@/components/OnboardingClient';
@@ -12,9 +12,8 @@ import { getConnectionState } from '@/lib/connections/getConnectionState';
 export const dynamic = 'force-dynamic';
 
 export default async function OnboardingPage() {
-  const supabase = createClient();
   const serviceClient = createServiceClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getRequestUser();
   if (!user) redirect('/login');
 
   const ctx = await ensureMerchantContextForUser(serviceClient, user);

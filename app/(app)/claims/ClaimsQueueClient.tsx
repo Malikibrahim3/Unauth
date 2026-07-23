@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { StatusPill, SlaPill } from "@/app/(app)/claims/claimsPageUi";
 import {
+  Badge,
   EvidenceLine,
   PanelCard,
 } from "@/components/ui";
@@ -18,6 +19,7 @@ import { formatClaimAge, formatFiledDate } from "@/lib/claims/sla";
 import {
   LIKELY_OWNER_LABELS,
   LOSS_ATTRIBUTION_DISPLAY,
+  PAYOUT_CASE_NEXT_ACTION_LABELS,
   PAYOUT_CASE_STATUS_LABELS,
 } from "@/lib/payouts/types";
 import {
@@ -375,9 +377,13 @@ function ClaimDetailPanel({
           {ops.reviewState}
         </p>
         <div className="mt-2 flex flex-wrap gap-1.5">
-          <StatusBadge family="workflowStatus" value={ops.evidenceStatus} tone="neutral" size="sm" />
+          <Badge tone="neutral" size="sm">{ops.evidenceStatus}</Badge>
           {claim.next_action && (
-            <StatusBadge family="workflowStatus" value={claim.next_action} tone="neutral" size="sm" />
+            <Badge tone="neutral" size="sm">
+              {PAYOUT_CASE_NEXT_ACTION_LABELS[
+                claim.next_action as keyof typeof PAYOUT_CASE_NEXT_ACTION_LABELS
+              ] ?? claim.next_action}
+            </Badge>
           )}
           {claim.recovery_state && (
             <StatusBadge family="recoveryStatus" value={claim.recovery_state} tone="neutral" size="sm" />

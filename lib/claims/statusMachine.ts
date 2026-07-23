@@ -48,7 +48,6 @@ export const FINAL_CANONICAL_CLAIM_STATUSES = [
   'resolved_denied',
   'resolved_exchanged',
   'voided',
-  'stale',
 ] as const satisfies readonly CanonicalClaimStatus[];
 
 const STATUS_SET = new Set<string>(CANONICAL_CLAIM_STATUSES);
@@ -64,6 +63,9 @@ export function isCanonicalFinalClaimStatus(status: string | null | undefined): 
 
 export function normalizeLegacyClaimStatus(status: string | null | undefined): CanonicalClaimStatus | null {
   if (!status) return null;
+  // Historical `stale` rows represented age/freshness as business lifecycle.
+  // Treat them as review work; the forward migration backfills stored rows.
+  if (status === 'stale') return 'manual_review';
   if (isCanonicalClaimStatus(status)) return status;
   if (status === 'under_review' || status === 'unresolved_unreviewed') return 'manual_review';
   if (status === 'evidence_requested' || status === 'waiting_evidence') return 'evidence_needed';
@@ -90,6 +92,7 @@ export function canTransitionClaimStatus(
   toStatus: string,
   options: { allowReopen?: boolean; allowSnooze?: boolean } = {}
 ): boolean {
+  if (toStatus === 'stale') return false;
   const from = normalizeLegacyClaimStatus(fromStatus);
   const to = normalizeLegacyClaimStatus(toStatus);
   if (!to) return false;
@@ -113,8 +116,6 @@ export function canTransitionClaimStatus(
   // rules first, which made these guards unreachable and wrongly allowed
   // backward transitions such as open → pending and open → stale.
 
-  // `stale` is a terminal state only reachable from a snoozed `pending` claim.
-  if (to === 'stale') return from === 'pending';
   // `pending` is an entry/snooze state, never a forward transition target.
   if (to === 'pending') return options.allowSnooze === true;
   // `escalated` (chargeback dispute) resolves only to won/lost outcomes.
@@ -129,7 +130,7 @@ export function assertClaimStatusTransition(
   options: { allowReopen?: boolean } = {}
 ): CanonicalClaimStatus {
   const to = normalizeLegacyClaimStatus(toStatus);
-  if (!to || !canTransitionClaimStatus(fromStatus, to, options)) {
+  if (!to || !canTransitionClaimStatus(fromStatus, toStatus, options)) {
     throw new Error(`illegal_claim_status_transition: ${fromStatus ?? 'null'} -> ${toStatus}`);
   }
   return to;

@@ -2,9 +2,20 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { resolveConnectorCapabilities } from '@/lib/connectors/runtime';
 import { listConnectors } from '@/lib/connectors/registry';
 import { getStoredIntegrationViews } from '@/lib/integrations/auth';
-import { INTEGRATION_PROVIDERS } from '@/lib/integrations/registry';
+import {
+  deriveProviderDisplayStage,
+  INTEGRATION_PROVIDERS,
+  isRuntimeVerificationPending,
+  pendingRuntimeCapabilities,
+} from '@/lib/integrations/registry';
 import { publicConnectionErrorMessage } from '@/lib/integrations/publicErrors';
-import type { IntegrationAuthMode, IntegrationProvider } from '@/lib/integrations/types';
+import type {
+  IntegrationAuthMode,
+  IntegrationProvider,
+  LifecycleCapability,
+  LifecycleCapabilityId,
+  ProviderDisplayStage,
+} from '@/lib/integrations/types';
 import { deriveSyncState, type ConnectionSyncState } from '@/lib/integrations/syncState';
 import { resolveConnectorFreshness, type ConnectorFreshness } from '@/lib/connections/freshness';
 import { TABLES } from '@/lib/supabase/tables';
@@ -15,7 +26,13 @@ export type ConnectorCatalogueItem = {
   description: string;
   category: string;
   authMode: IntegrationAuthMode;
-  stage: 'live' | 'beta' | 'planned';
+  stage: ProviderDisplayStage;
+  /** The ten-dimension lifecycle proof matrix backing `stage` — same data the
+   * provider detail page renders, so the badge and the capability breakdown
+  * can never disagree. */
+  lifecycle: LifecycleCapability[];
+  runtimeVerificationPending: boolean;
+  pendingRuntimeCapabilities: LifecycleCapabilityId[];
   status: string;
   syncState: ConnectionSyncState;
   freshness: ConnectorFreshness;
@@ -100,12 +117,6 @@ export function primaryConnection(rows: ConnectionRow[]): ConnectionRow | null {
       - Date.parse(left.last_successful_sync_at ?? left.updated_at);
     return Number.isFinite(freshness) ? freshness : 0;
   })[0] ?? null;
-}
-
-function stageFor(provider: IntegrationProvider): ConnectorCatalogueItem['stage'] {
-  if (provider.buildStatus === 'live') return 'live';
-  if (provider.buildStatus === 'partial') return 'beta';
-  return 'planned';
 }
 
 function fallbackCapabilities(provider: IntegrationProvider, status: string): ConnectorCatalogueItem['capabilities'] {
@@ -235,7 +246,10 @@ export async function loadConnectorCatalogue(
       description: provider.description ?? 'Provider-neutral source connection.',
       category: provider.category,
       authMode: provider.authMode,
-      stage: stageFor(provider),
+      stage: deriveProviderDisplayStage(provider),
+      lifecycle: provider.lifecycle ?? [],
+      runtimeVerificationPending: isRuntimeVerificationPending(provider),
+      pendingRuntimeCapabilities: pendingRuntimeCapabilities(provider),
       status,
       syncState: deriveSyncState({
         status,

@@ -44,18 +44,22 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (input.action === 'write_off') {
     if (model.loss.written_off_at) return NextResponse.json({ error: 'Loss is already written off.' }, { status: 409 });
     if (model.amounts.length === 0) return NextResponse.json({ error: 'A reconciled financial summary is required before write-off.' }, { status: 409 });
-    const { data: prior } = await client.from(TABLES.CASE_FINANCIAL_ENTRIES).select('id').eq('merchant_id', merchantId).eq('loss_case_id', id).eq('state', 'written_off').contains('metadata', { idempotency_key: input.idempotencyKey }).maybeSingle();
-    if (!prior) {
-      const amount = model.amounts.reduce((total, item) => total + item.outstandingRecoveryMinor, 0);
-      const currency = model.amounts.length === 1 ? model.amounts[0].currency : model.loss.currency;
-      if (model.amounts.length > 1) return NextResponse.json({ error: 'Mixed-currency loss must be written off per currency.' }, { status: 409 });
-      const { error: ledgerError } = await client.from(TABLES.CASE_FINANCIAL_ENTRIES).insert({ merchant_id: merchantId, support_payout_case_id: model.loss.support_payout_case_id, loss_case_id: id, state: 'written_off', amount_minor: amount, currency, direction: 'debit', metadata: { idempotency_key: input.idempotencyKey, rationale: input.rationale, actor_user_id: auth.user!.id } });
-      if (ledgerError) return NextResponse.json({ error: 'Could not record write-off' }, { status: 500 });
+    if (model.amounts.length > 1) return NextResponse.json({ error: 'Mixed-currency loss must be written off per currency.' }, { status: 409 });
+    const { error: writeOffError } = await client.rpc('write_off_loss_case', {
+      p_merchant_id: merchantId,
+      p_loss_case_id: id,
+      p_reason: input.rationale,
+      p_actor_user_id: auth.user!.id,
+      p_idempotency_key: input.idempotencyKey,
+    });
+    if (writeOffError) {
+      const status = writeOffError.message.includes('already_written_off') || writeOffError.message.includes('requires_outstanding') ? 409 : 500;
+      return NextResponse.json({ error: status === 409 ? 'Loss cannot be written off in its current financial state.' : 'Could not record write-off' }, { status });
     }
-    patch = { status: 'closed_unrecoverable', written_off_at: new Date().toISOString() };
+    return NextResponse.json({ ok: true, loss: await getLossReadModel(client, merchantId, id) });
   }
   const { error: updateError } = await client.from(TABLES.LOSS_CASES).update(patch).eq('merchant_id', merchantId).eq('id', id);
   if (updateError) return NextResponse.json({ error: 'Could not update loss' }, { status: 500 });
-  await client.from(TABLES.LOSS_CASE_EVENTS).insert({ merchant_id: merchantId, loss_case_id: id, event_type: input.action === 'write_off' ? 'case_closed' : 'status_synced', metadata_json: { action: input.action, rationale: input.rationale, actor_user_id: auth.user!.id, before: model.loss, patch } });
+  await client.from(TABLES.LOSS_CASE_EVENTS).insert({ merchant_id: merchantId, loss_case_id: id, event_type: 'status_synced', metadata_json: { action: input.action, rationale: input.rationale, actor_user_id: auth.user!.id, before: model.loss, patch } });
   return NextResponse.json({ ok: true, loss: await getLossReadModel(client, merchantId, id) });
 }

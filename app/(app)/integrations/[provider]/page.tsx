@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
 import {
   hasPermission,
   PERMISSIONS,
-  requirePermission,
 } from "@/lib/permissions";
+import {
+  getRequestServiceClient,
+  getRequestUser,
+  requirePagePermission,
+} from "@/lib/auth/requestContext";
 import { loadConnectorCatalogue } from "@/lib/connectors/catalogue";
 import { getCachedConnectionState } from "@/lib/connections/getConnectionState";
 import { verifyMerchantLiveConnections } from "@/lib/connections/liveVerification";
@@ -22,6 +25,7 @@ import { formatDateTime } from "@/lib/utils/format";
 import { ConnectionHealthGrid } from "@/components/integrations/ConnectionHealthPanel";
 import { AuthenticatedPageHeader } from "@/components/authenticated/AuthenticatedPageHeader";
 import pageStyles from "@/components/authenticated/AuthenticatedPageChrome.module.css";
+import { LIFECYCLE_CAPABILITY_LABELS } from "@/lib/ui/labels";
 
 export const dynamic = "force-dynamic";
 
@@ -53,18 +57,11 @@ export default async function ConnectionPage({
 }: {
   params: Promise<{ provider: string }>;
 }) {
-  const auth = createClient();
-  const {
-    data: { user },
-  } = await auth.auth.getUser();
+  const user = await getRequestUser();
   if (!user) redirect("/login");
-  const service = createServiceClient();
-  const { denied, ctx } = await requirePermission(
-    service,
-    user.id,
-    PERMISSIONS.VIEW_SETTINGS,
-  );
-  if (denied || !ctx) redirect("/dashboard");
+  const service = getRequestServiceClient();
+  const ctx = await requirePagePermission(PERMISSIONS.VIEW_SETTINGS);
+  if (!ctx) redirect("/dashboard");
   const { provider } = await params;
   const item = (await loadConnectorCatalogue(service, ctx.merchantId)).find(
     (candidate) => candidate.id === provider,
@@ -210,6 +207,77 @@ export default async function ConnectionPage({
                 {capability.level} · scopes:{" "}
                 {capability.scopes.join(", ") || "none"}
               </p>
+            </Card>
+          ))}
+        </div>
+      </section>
+      <section aria-labelledby="lifecycle-matrix-title">
+        <div>
+          <h2 id="lifecycle-matrix-title" className="text-base font-semibold">
+            Lifecycle capabilities
+          </h2>
+          <p className="mt-1 text-xs text-[var(--text-secondary)]">
+            Implementation, automated tests, and controlled runtime proof are
+            shown separately. Live requires fresh controlled proof for every
+            applicable row.
+          </p>
+        </div>
+        {item.runtimeVerificationPending ? (
+          <Card unstyled variant="inset" className="mt-3 p-3 text-xs text-[var(--text-secondary)]">
+            <strong className="text-[var(--text-primary)]">Runtime verification pending</strong>
+            <p className="mt-1">
+              Missing controlled proof: {item.pendingRuntimeCapabilities
+                .map((id) => LIFECYCLE_CAPABILITY_LABELS[id] ?? id)
+                .join(", ")}.
+            </p>
+          </Card>
+        ) : null}
+        <div className="mt-3 hidden md:block">
+          <DataTableServer
+            rows={item.lifecycle}
+            getRowKey={(dim) => dim.id}
+            density="compact"
+            columns={[
+              {
+                key: "dimension",
+                header: "Capability",
+                render: (dim) => <span className="font-medium">{LIFECYCLE_CAPABILITY_LABELS[dim.id] ?? dim.id}</span>,
+              },
+              {
+                key: "state",
+                header: "Evidence level",
+                render: (dim) => <StatusBadge family="workflowStatus" value={dim.applicability === "not_applicable" ? "not_applicable" : dim.evidence} size="sm" />,
+              },
+              {
+                key: "detail",
+                header: "What this means",
+                render: (dim) => (
+                  <div>
+                    <span className="text-xs text-[var(--text-secondary)]">{dim.detail}</span>
+                    {dim.runtimeEvidence ? (
+                      <small className="mt-1 block font-mono text-[11px] text-[var(--text-tertiary)]">
+                        {dim.runtimeEvidence.environment} · {dim.runtimeEvidence.verifiedAt} · {dim.runtimeEvidence.build} · {dim.runtimeEvidence.result} · {dim.runtimeEvidence.artifactRef}
+                      </small>
+                    ) : null}
+                  </div>
+                ),
+              },
+            ]}
+          />
+        </div>
+        <div className="mt-3 grid gap-2 md:hidden">
+          {item.lifecycle.map((dim) => (
+            <Card unstyled key={dim.id} variant="flat" className="p-3">
+              <div className="flex items-start justify-between gap-2">
+                <strong className="text-sm">{LIFECYCLE_CAPABILITY_LABELS[dim.id] ?? dim.id}</strong>
+                <StatusBadge family="workflowStatus" value={dim.applicability === "not_applicable" ? "not_applicable" : dim.evidence} size="sm" />
+              </div>
+              <p className="mt-2 text-xs text-[var(--text-secondary)]">{dim.detail}</p>
+              {dim.runtimeEvidence ? (
+                <p className="mt-2 font-mono text-[11px] text-[var(--text-tertiary)]">
+                  {dim.runtimeEvidence.environment} · {dim.runtimeEvidence.verifiedAt} · {dim.runtimeEvidence.build} · {dim.runtimeEvidence.result} · {dim.runtimeEvidence.artifactRef}
+                </p>
+              ) : null}
             </Card>
           ))}
         </div>

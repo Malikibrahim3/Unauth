@@ -184,7 +184,6 @@ export async function resolveCallerContext(
   // affiliation; a row with role='owner' is the account owner (the old
   // merchants.user_id column was dropped at the v2 cutover). memberId stays
   // null for owners so isAccountOwner checks keep working.
-  const ROLE_RANK: Record<Role, number> = { owner: 3, admin: 2, analyst: 1, viewer: 0 };
   const toCtx = (row: { id: string; merchant_id: string; role: string }): CallerContext => {
     const role = row.role as Role;
     return {
@@ -204,14 +203,14 @@ export async function resolveCallerContext(
     .eq('invite_status', 'active');
 
   if (active && active.length > 0) {
-    const selected = preferredMerchantId
-      ? active.find((membership) => membership.merchant_id === preferredMerchantId)
-      : null;
-    if (selected) return toCtx(selected);
-    const best = [...active].sort(
-      (a, b) => (ROLE_RANK[b.role as Role] ?? -1) - (ROLE_RANK[a.role as Role] ?? -1)
-    )[0];
-    return toCtx(best);
+    if (preferredMerchantId) {
+      const selected = active.find((membership) => membership.merchant_id === preferredMerchantId);
+      return selected ? toCtx(selected) : null;
+    }
+    // A single affiliation is unambiguous. Multiple affiliations require an
+    // explicit cookie/auth-metadata selection; choosing by role or row order
+    // could silently run a request in the wrong merchant workspace.
+    return active.length === 1 ? toCtx(active[0]) : null;
   }
 
   // 2. Did the user just accept a magic-link team invite? Auto-activate it.

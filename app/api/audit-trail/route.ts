@@ -278,7 +278,7 @@ async function GETHandler(request: NextRequest) {
       ...csvRows,
     ].join("\n");
 
-    logAction({
+    await logAction({
       ctx,
       action: "export_audit",
       resourceType: "audit_log",
@@ -297,7 +297,7 @@ async function GETHandler(request: NextRequest) {
     });
   }
 
-  logAction({ ctx, action: "view_audit_trail", resourceType: "audit_log" });
+  await logAction({ ctx, action: "view_audit_trail", resourceType: "audit_log" });
 
   return NextResponse.json({
     rows,

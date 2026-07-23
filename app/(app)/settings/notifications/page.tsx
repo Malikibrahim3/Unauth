@@ -1,12 +1,13 @@
 import { redirect } from 'next/navigation';
-import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/server';
+import { getRequestUser } from '@/lib/auth/requestContext';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { listNotificationPreferences } from '@/lib/collaboration/notificationPreferences';
 import { NotificationPreferencesForm } from '@/components/settings/NotificationPreferencesForm';
 import { SettingsPageShell } from '@/components/settings/SettingsPageShell';
 
 export default async function NotificationPreferencesPage() {
-  const auth = createClient(); const { data: { user } } = await auth.auth.getUser(); if (!user) redirect('/login');
+  const user = await getRequestUser(); if (!user) redirect('/login');
   const service = createServiceClient(); const { denied, ctx } = await requirePermission(service, user.id, PERMISSIONS.VIEW_INBOX); if (denied || !ctx) redirect('/dashboard');
   const values = await listNotificationPreferences(service, ctx.merchantId, user.id);
   return (

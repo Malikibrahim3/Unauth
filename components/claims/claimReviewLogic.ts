@@ -288,6 +288,7 @@ export function draftPatchFromClaim(claim: ClaimRecord, orderOptions: OrderOptio
     patch.manualModeExplicit = true;
   }
   if (claim.amount_at_risk != null) patch.orderValue = String(claim.amount_at_risk);
+  if (claim.amount_at_risk != null) patch.decisionAmount = String(claim.amount_at_risk);
   if (claim.latest_outcome?.decision) patch.decision = claim.latest_outcome.decision as Decision;
   if (claim.latest_outcome?.outcome) patch.outcome = claim.latest_outcome.outcome as Outcome;
   if (claim.status) patch.statusToSet = normaliseClaimStatusForOperator(claim.status);

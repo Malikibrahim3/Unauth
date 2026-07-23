@@ -10,8 +10,10 @@ import {
   supportIngestBodySchema,
 } from '@/lib/support/intake/ingestSupportCase';
 import { enforceRateLimit, getClientIp, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
+import { readBoundedWebhookBody, WebhookBodyError } from '@/lib/webhooks/body';
 
 export const runtime = 'nodejs';
+const MAX_SUPPORT_INGEST_BODY_BYTES = 512 * 1024;
 
 function unauthorized() {
   return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 });
@@ -22,21 +24,25 @@ function badRequest(message: string) {
 }
 
 export async function POST(request: NextRequest) {
+  const secret = request.headers.get(SUPPORT_INGEST_SECRET_HEADER);
+  if (!verifySupportIngestSecret(secret)) {
+    return unauthorized();
+  }
+
   const limited = await enforceRateLimit(
     rateLimitKey('webhook', 'support-ingest', getClientIp(request.headers)),
     limitFromEnv('SUPPORT_INGEST_RATE_LIMIT', 1000, 60)
   );
   if (limited) return limited;
 
-  const secret = request.headers.get(SUPPORT_INGEST_SECRET_HEADER);
-  if (!verifySupportIngestSecret(secret)) {
-    return unauthorized();
-  }
-
   let json: unknown;
   try {
-    json = await request.json();
-  } catch {
+    const rawBody = await readBoundedWebhookBody(request, MAX_SUPPORT_INGEST_BODY_BYTES);
+    json = JSON.parse(rawBody);
+  } catch (error) {
+    if (error instanceof WebhookBodyError) {
+      return NextResponse.json({ ok: false, error: error.code }, { status: error.status });
+    }
     return badRequest('invalid_json');
   }
 

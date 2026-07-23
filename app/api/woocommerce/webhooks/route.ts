@@ -11,9 +11,28 @@ import { processWooCommerceRefundWebhook } from '@/lib/commerce/woocommerce/proc
 import { loadWooCommerceCredentialsForStore } from '@/lib/commerce/woocommerce/settingsConnection';
 import { verifyWooCommerceWebhookSignature } from '@/lib/commerce/woocommerce/verifyWebhookSignature';
 import { enforceRateLimit, getClientIp, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
+import { readBoundedWebhookBody, WebhookBodyError } from '@/lib/webhooks/body';
 
 function normalizeTopic(topic: string | null): string {
   return (topic ?? '').trim().toLowerCase();
+}
+
+function wooCommerceObjectVersion(
+  topic: string,
+  payload: Record<string, unknown>,
+): { objectKey: string; eventVersion: number } | null {
+  if (topic !== 'order.created' && topic !== 'order.updated') return null;
+  const id = payload.id;
+  const rawTimestamp = payload.date_modified_gmt ?? payload.date_modified ?? payload.date_created_gmt ?? payload.date_created;
+  if (typeof id !== 'string' && typeof id !== 'number') return null;
+  if (typeof rawTimestamp !== 'string' || !rawTimestamp.trim()) return null;
+  const timestamp = /(?:z|[+-]\d\d:\d\d)$/i.test(rawTimestamp)
+    ? rawTimestamp
+    : `${rawTimestamp}Z`;
+  const eventVersion = Date.parse(timestamp);
+  return Number.isFinite(eventVersion)
+    ? { objectKey: `order:${String(id)}`, eventVersion }
+    : null;
 }
 
 export async function GET() {
@@ -24,21 +43,23 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   const webhookSource = request.headers.get('x-wc-webhook-source');
   const topic = normalizeTopic(request.headers.get('x-wc-webhook-topic'));
-  const webhookId = request.headers.get('x-wc-webhook-id');
+  const deliveryId = request.headers.get('x-wc-webhook-delivery-id');
   const signature = request.headers.get('x-wc-webhook-signature');
 
   const storeKey = webhookSource ? storeKeyFromWebhookSource(webhookSource) : null;
-  const limited = await enforceRateLimit(
-    rateLimitKey('webhook', 'woocommerce', storeKey ?? getClientIp(request.headers)),
-    limitFromEnv('WOOCOMMERCE_WEBHOOK_RATE_LIMIT', 1000, 60),
-  );
-  if (limited) return limited;
-
-  if (!storeKey || !topic || !webhookId) {
+  if (!storeKey || !topic || !deliveryId) {
     return NextResponse.json({ error: 'Missing webhook headers' }, { status: 400 });
   }
 
-  const rawBody = await request.text();
+  let rawBody: string;
+  try {
+    rawBody = await readBoundedWebhookBody(request);
+  } catch (error) {
+    if (error instanceof WebhookBodyError) {
+      return NextResponse.json({ error: error.code }, { status: error.status });
+    }
+    throw error;
+  }
   const supabase = createServiceClient();
 
   const credentialRow = await loadWooCommerceCredentialsForStore(supabase, storeKey);
@@ -57,26 +78,53 @@ export async function POST(request: NextRequest) {
   if (!verifyWooCommerceWebhookSignature(rawBody, signature, consumerSecret)) {
     return NextResponse.json({ error: 'Invalid webhook signature' }, { status: 401 });
   }
+  const limited = await enforceRateLimit(
+    rateLimitKey('webhook', 'woocommerce', storeKey ?? getClientIp(request.headers)),
+    limitFromEnv('WOOCOMMERCE_WEBHOOK_RATE_LIMIT', 1000, 60),
+  );
+  if (limited) return limited;
+
+  let payload: Record<string, unknown>;
+  try {
+    payload = JSON.parse(rawBody) as Record<string, unknown>;
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
 
   let idempotencyKey: string;
+  let claimToken: string;
+  const objectVersion = wooCommerceObjectVersion(topic, payload);
   try {
     const claim = await claimProcessedWebhook(supabase, {
       platform: 'woocommerce',
       storeKey,
-      nativeWebhookId: webhookId,
+      nativeWebhookId: deliveryId,
       topic,
+      rawBody,
+      ...(objectVersion ?? {}),
     });
+    if (claim.conflict) {
+      return NextResponse.json({ error: 'idempotency_payload_conflict' }, { status: 409 });
+    }
+    if (claim.retry) {
+      return NextResponse.json(
+        { error: 'webhook_object_in_progress' },
+        { status: 503, headers: { 'retry-after': '1' } },
+      );
+    }
+    if (claim.stale) {
+      return NextResponse.json({ ok: true, ignored: 'stale_event' });
+    }
     if (claim.duplicate) {
       return NextResponse.json({ ok: true, duplicate: true });
     }
     idempotencyKey = claim.idempotencyKey;
+    claimToken = claim.claimToken;
   } catch {
     return NextResponse.json({ error: 'Failed to claim webhook' }, { status: 500 });
   }
 
   try {
-    const payload = JSON.parse(rawBody) as Record<string, unknown>;
-
     if (topic === 'order.created' || topic === 'order.updated') {
       await processWooCommerceOrderWebhook({
         supabase,
@@ -108,16 +156,17 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    await completeProcessedWebhook(supabase, idempotencyKey, 'completed', null);
+    await completeProcessedWebhook(supabase, idempotencyKey, claimToken, 'completed', null);
   } catch (err) {
     const message = err instanceof Error ? err.message.slice(0, 300) : 'webhook_processing_failed';
-    await completeProcessedWebhook(supabase, idempotencyKey, 'failed', message);
+    await completeProcessedWebhook(supabase, idempotencyKey, claimToken, 'failed', message);
     console.error('WooCommerce webhook processing failed', {
-      webhookId,
+      deliveryId,
       topic,
       storeKey,
       message,
     });
+    return NextResponse.json({ error: 'webhook_processing_failed' }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });

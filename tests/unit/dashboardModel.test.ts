@@ -10,13 +10,18 @@ import type { MoneyBridge, ReportTrendPoint } from '@/lib/reporting/intelligence
 const bridge: MoneyBridge = {
   currency: 'GBP',
   requestedMinor: 10000,
+  exposedMinor: 8000,
+  approvedMinor: 0,
   paidMinor: 0,
+  estimatedLossMinor: 0,
   preventedMinor: 2500,
   realisedLossMinor: 1750,
   recoverableMinor: 0,
   recoveredMinor: 3200,
   outstandingMinor: 0,
   writtenOffMinor: 0,
+  finalNetLossMinor: 0,
+  knownStates: ['confirmed_loss', 'exposed', 'prevented', 'recovered'],
   caseIds: ['case-1'],
 };
 
@@ -27,15 +32,23 @@ const trend = (date: string, values: Partial<ReportTrendPoint> = {}): ReportTren
   recoveredMinor: 0,
   preventedMinor: 0,
   realisedLossMinor: 0,
+  knownStates: ['confirmed_loss', 'exposed', 'prevented', 'recovered'],
   ...values,
 });
 
 describe('dashboard model', () => {
   it('reads all four canonical bridge metrics', () => {
-    expect(bridgeMetricValue(bridge, 'exposure')).toBe(10000);
+    expect(bridgeMetricValue(bridge, 'exposure')).toBe(8000);
     expect(bridgeMetricValue(bridge, 'recovered')).toBe(3200);
     expect(bridgeMetricValue(bridge, 'prevented')).toBe(2500);
     expect(bridgeMetricValue(bridge, 'realisedLoss')).toBe(1750);
+  });
+
+  it('preserves unknown as unavailable instead of converting it to zero', () => {
+    expect(bridgeMetricValue({ ...bridge, knownStates: ['exposed'] }, 'recovered')).toBeNull();
+    expect(bridgeMetricValue({ ...bridge, knownStates: ['exposed'] }, 'prevented')).toBeNull();
+    expect(bridgeMetricValue({ ...bridge, knownStates: ['exposed'] }, 'realisedLoss')).toBeNull();
+    expect(bridgeMetricValue({ ...bridge, recoveredMinor: 0 }, 'recovered')).toBe(0);
   });
 
   it('aligns current and previous daily buckets without mixing currencies', () => {
@@ -52,7 +65,28 @@ describe('dashboard model', () => {
     });
     expect(buckets).toHaveLength(7);
     expect(buckets[5]).toMatchObject({ currentMinor: 1200, previousMinor: 700 });
-    expect(buckets.reduce((sum, row) => sum + row.currentMinor, 0)).toBe(1200);
+    expect(buckets.reduce((sum, row) => sum + (row.currentMinor ?? 0), 0)).toBe(1200);
+  });
+
+  it('keeps an unknown trend amount unavailable while preserving a proven zero', () => {
+    const unknown = buildDashboardChartBuckets({
+      current: [trend('2026-07-15', { recoveredMinor: 900, knownStates: ['exposed'] })],
+      range: '7d',
+      currency: 'GBP',
+      metric: 'recovered',
+      asOf: '2026-07-16T12:00:00.000Z',
+    });
+    expect(unknown[5].currentMinor).toBeNull();
+    expect(unknown.every((row) => row.currentMinor == null)).toBe(true);
+
+    const provenZero = buildDashboardChartBuckets({
+      current: [trend('2026-07-15', { recoveredMinor: 0, knownStates: ['recovered'] })],
+      range: '7d',
+      currency: 'GBP',
+      metric: 'recovered',
+      asOf: '2026-07-16T12:00:00.000Z',
+    });
+    expect(provenZero[5].currentMinor).toBe(0);
   });
 
   it('uses weekly buckets for 90 days and monthly buckets for all time', () => {

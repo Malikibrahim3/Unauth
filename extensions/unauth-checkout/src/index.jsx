@@ -67,6 +67,7 @@ function UnauthSignalCollector() {
     }).catch(() => {});
 
     const payload = {
+      eventId: randomId(),
       merchantId: shopifyDomain,
       shopifyDomain,
       visitorId,
@@ -83,11 +84,21 @@ function UnauthSignalCollector() {
       ts: Date.now(),
     };
 
-    fetch('https://app.unauth.co/api/checkout-signals/ingest', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    }).catch(() => {});
+    const configUrl =
+      'https://app.unauth.co/api/checkout-signals/config?platform=shopify&store=' +
+      encodeURIComponent(shopifyDomain.toLowerCase());
+    fetch(configUrl, { method: 'GET', credentials: 'omit' })
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error('collector_config_failed')))
+      .then((collectorConfig) => fetch(collectorConfig.endpoint || 'https://app.unauth.co/api/checkout-signals/ingest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...payload,
+          merchantId: collectorConfig.merchantId,
+          collectorToken: collectorConfig.collectorToken,
+        }),
+      }))
+      .catch(() => {});
   }, [applyAttribute, buyer, email, shop]);
 
   return null;

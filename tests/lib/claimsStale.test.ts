@@ -1,10 +1,15 @@
-import { markStalePendingClaims } from '@/lib/claims/stale';
+import { flagAgedPendingClaims } from '@/lib/claims/stale';
 
 function makeClient(rows: any[]) {
   const events: any[] = [];
   const state = { rows, events };
   return {
     state,
+    async rpc(fn: string, args: Record<string, unknown>) {
+      if (fn !== 'flag_aged_payout_case') return { data: null, error: null };
+      events.push({ fn, ...args });
+      return { data: { flagged: true, replayed: false }, error: null };
+    },
     from(table: string) {
       if (table === 'claim_events') {
         return {
@@ -47,8 +52,8 @@ function makeClient(rows: any[]) {
   };
 }
 
-describe('stale claim detection', () => {
-  it('marks pending claims older than 30 days as stale and writes an audit event', async () => {
+describe('aged pending-case attention', () => {
+  it('flags old pending work without changing its business lifecycle', async () => {
     const client = makeClient([
       {
         id: 'claim-old',
@@ -66,15 +71,16 @@ describe('stale claim detection', () => {
       },
     ]);
 
-    const result = await markStalePendingClaims(client, { now: new Date('2026-06-01T12:00:00.000Z') });
+    const result = await flagAgedPendingClaims(client, { now: new Date('2026-06-01T12:00:00.000Z') });
 
-    expect(result).toEqual({ scanned: 1, marked: 1 });
-    expect(client.state.rows[0].status).toBe('stale');
+    expect(result).toEqual({ scanned: 1, flagged: 1 });
+    expect(client.state.rows[0].status).toBe('pending');
     expect(client.state.events).toEqual([
       expect.objectContaining({
-        claim_id: 'claim-old',
-        from_status: 'pending',
-        to_status: 'stale',
+        fn: 'flag_aged_payout_case',
+        p_case_id: 'claim-old',
+        p_merchant_id: 'merchant-1',
+        p_idempotency_key: expect.stringContaining('aged-pending:claim-old:'),
       }),
     ]);
   });

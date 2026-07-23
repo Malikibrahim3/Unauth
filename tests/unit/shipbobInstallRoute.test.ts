@@ -28,6 +28,11 @@ describe('ShipBob form-post callback', () => {
     expect(source).toContain('userId: callbackUserId');
   });
 
+  it('bounds the form-post body before parsing callback parameters', () => {
+    expect(source).toContain('readBoundedWebhookBody(request, 16 * 1024)');
+    expect(source).not.toContain('request.formData()');
+  });
+
   it('converts the provider form POST into a browser GET redirect', () => {
     expect(source).toContain('NextResponse.redirect(url, 303)');
     expect(source).toContain('NextResponse.redirect(selectionUrl, 303)');

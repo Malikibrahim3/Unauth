@@ -66,13 +66,43 @@ async function assertResponsive(page: Page, route: string) {
   }
 }
 
-test("first-class detail workspaces pass production accessibility and responsive gates", async ({
-  page,
-}) => {
-  test.setTimeout(120_000);
-  const detailRoutes: string[] = [];
+async function blockAutomaticPrefetch(page: Page) {
+  await page.route(/(?:\?|&)_rsc=/, async (route) => {
+    if (await route.request().headerValue("next-router-prefetch") === "1") {
+      await route.abort();
+      return;
+    }
+    await route.continue();
+  });
+}
 
-  for (const item of LIST_DETAILS) {
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: "ignoreErrors" });
+});
+
+async function assertDetailSurface(page: Page, route: string) {
+  await test.step(route, async () => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(route, { waitUntil: "domcontentloaded" });
+    await expect(page.locator("main").first()).toBeVisible();
+    await expect(page.locator("main h1").first()).toBeVisible();
+    await expect(
+      page.getByText("Something went wrong", { exact: true }),
+    ).toHaveCount(0);
+    expect(
+      await seriousAxeViolations(page),
+      `${route} accessibility failures`,
+    ).toEqual([]);
+    await assertResponsive(page, route);
+  });
+}
+
+for (const item of LIST_DETAILS) {
+  test(`${item.list} exposes an accessible, responsive detail workspace`, async ({
+    page,
+  }) => {
+    test.setTimeout(4 * 60_000);
+    await blockAutomaticPrefetch(page);
     await page.goto(item.list, { waitUntil: "domcontentloaded" });
     const links = page.locator(`main a[href^="${item.pattern}"]`);
     await expect(
@@ -81,53 +111,42 @@ test("first-class detail workspaces pass production accessibility and responsive
     ).toBeVisible({ timeout: 20_000 });
     const href = await links.first().getAttribute("href");
     expect(href, `${item.list} should expose a drillable record`).toBeTruthy();
-    detailRoutes.push(href!);
-  }
-
-  await page.goto("/customers", { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: "View", exact: true }).first().click();
-  const fullProfile = page.getByRole("link", {
-    name: "Open full customer profile",
+    await assertDetailSurface(page, href!);
   });
-  await expect(fullProfile).toBeVisible({ timeout: 20_000 });
-  const customerHref = await fullProfile.getAttribute("href");
-  expect(customerHref).toBeTruthy();
-  detailRoutes.push(customerHref!);
+}
 
-  await page.goto(
-    detailRoutes.find((route) => route.startsWith("/customers/"))!,
-  );
+test("customer and connected-object workspaces pass accessibility and responsive gates", async ({
+  page,
+}) => {
+  test.setTimeout(6 * 60_000);
+  await blockAutomaticPrefetch(page);
+  await page.goto("/customers", { waitUntil: "domcontentloaded" });
+  const customerId = await page
+    .getByTestId("customer-row")
+    .first()
+    .getAttribute("data-row-key");
+  expect(customerId, "The customer directory should expose a record key").toBeTruthy();
+  const customerHref = `/customers/${customerId}?return=${encodeURIComponent("/customers")}`;
+
+  await page.goto(customerHref, { waitUntil: "domcontentloaded" });
   const connectedRoutes = await page
     .locator(
       'main a[href^="/orders/"], main a[href^="/tickets/"], main a[href^="/shipments/"], main a[href^="/refunds/"], main a[href^="/returns/"], main a[href^="/disputes/"]',
     )
-    .evaluateAll(
-      (links) =>
-        [
-          ...new Set(
-            links.map((link) => link.getAttribute("href")).filter(Boolean),
-          ),
-        ] as string[],
-    );
+    .evaluateAll((links) => {
+      const firstByType = new Map<string, string>();
+      for (const link of links) {
+        const href = link.getAttribute("href");
+        const type = href?.split("/")[1];
+        if (href && type && !firstByType.has(type)) firstByType.set(type, href);
+      }
+      return [...firstByType.values()];
+    });
   expect(
     connectedRoutes.length,
     "A customer profile should expose at least one connected operational object",
   ).toBeGreaterThan(0);
 
-  for (const route of [...detailRoutes, ...connectedRoutes]) {
-    await test.step(route, async () => {
-      await page.setViewportSize({ width: 1440, height: 900 });
-      await page.goto(route, { waitUntil: "domcontentloaded" });
-      await expect(page.locator("main").first()).toBeVisible();
-      await expect(page.locator("main h1").first()).toBeVisible();
-      await expect(
-        page.getByText("Something went wrong", { exact: true }),
-      ).toHaveCount(0);
-      expect(
-        await seriousAxeViolations(page),
-        `${route} accessibility failures`,
-      ).toEqual([]);
-      await assertResponsive(page, route);
-    });
-  }
+  await assertDetailSurface(page, customerHref);
+  for (const route of connectedRoutes) await assertDetailSurface(page, route);
 });

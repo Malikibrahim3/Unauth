@@ -13,13 +13,14 @@ async function resolveMerchantOwnerEmail(merchantId: string): Promise<string | n
   const admin = createAdminClient();
   const { data: member } = await admin
     .from('merchant_users')
-    .select('user_id')
+    .select('user_id,invited_email')
     .eq('merchant_id', merchantId)
     .eq('invite_status', 'active')
     .eq('role', 'owner')
     .limit(1)
     .maybeSingle();
 
+  if (member?.invited_email) return member.invited_email;
   if (!member?.user_id) return null;
 
   const { data: userData, error } = await admin.auth.admin.getUserById(member.user_id as string);

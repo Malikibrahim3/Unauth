@@ -1,6 +1,5 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
-import { logAction } from '@/lib/permissions/audit';
 import { resolveIdentityForSourceCustomerId } from '@/lib/customers/identityNetwork';
 import { NextRequest, NextResponse } from 'next/server';
 import { withRequestLogging } from '@/lib/log';
@@ -68,7 +67,10 @@ async function POSTHandler(req: NextRequest, { params }: { params: Promise<{ id:
     );
   }
 
-  const { data, error } = await serviceClient
+  const mutationClient = createServiceClient({
+    audit: { actorId: ctx.userId, actorRole: ctx.role, requestIp: ip },
+  });
+  const { data, error } = await mutationClient
     .from('identity_notes')
     .insert({
       merchant_id: ctx.merchantId,
@@ -80,15 +82,6 @@ async function POSTHandler(req: NextRequest, { params }: { params: Promise<{ id:
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  logAction({
-    ctx,
-    action: 'add_customer_note',
-    resourceType: 'identity_note',
-    resourceId: resolvedParams.id,
-    metadata: { noteId: (data as { id: string }).id },
-    ip,
-  });
 
   return NextResponse.json({ note: data });
 }

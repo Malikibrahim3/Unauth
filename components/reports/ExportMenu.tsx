@@ -6,9 +6,11 @@ import { Button } from '@/components/ui';
 
 interface ExportMenuProps {
   range: string;
+  timezone?: string;
+  currency?: string | null;
 }
 
-export default function ExportMenu({ range }: ExportMenuProps) {
+export default function ExportMenu({ range, timezone = 'UTC', currency = null }: ExportMenuProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -22,6 +24,9 @@ export default function ExportMenu({ range }: ExportMenuProps) {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [open]);
+
+  const exportParams = new URLSearchParams({ range, timezone });
+  if (currency) exportParams.set('currency', currency);
 
   return (
     <div className="relative" ref={ref}>
@@ -49,7 +54,7 @@ export default function ExportMenu({ range }: ExportMenuProps) {
           </p>
           <a
             role="menuitem"
-            href={`/api/reports/claims?range=${range}`}
+            href={`/api/reports/claims?${exportParams.toString()}`}
             className="block px-3 py-2 text-xs hover:bg-[var(--surface)]"
             style={{ color: 'var(--text)' }}
             onClick={() => setOpen(false)}
@@ -59,7 +64,7 @@ export default function ExportMenu({ range }: ExportMenuProps) {
           </a>
           <a
             role="menuitem"
-            href={`/api/reports/claims?range=${range}&view=outcomes`}
+            href={`/api/reports/claims?${exportParams.toString()}&view=outcomes`}
             className="block px-3 py-2 text-xs hover:bg-[var(--surface)]"
             style={{ color: 'var(--text)' }}
             onClick={() => setOpen(false)}

@@ -11,7 +11,7 @@ export async function registerBigCommerceCollectorScript(input: {
 }): Promise<string> {
   const html =
     `<script src="${COLLECTOR_SRC}" defer></script>` +
-    `<script>document.addEventListener('DOMContentLoaded',function(){window.UnauthCollector&&window.UnauthCollector.init({merchantId:${htmlSafeJson(input.merchantId)},platform:"bigcommerce",endpoint:${htmlSafeJson(INGEST_ENDPOINT)}});});</script>`;
+    `<script>document.addEventListener('DOMContentLoaded',function(){window.UnauthCollector&&window.UnauthCollector.init({merchantId:${htmlSafeJson(input.merchantId)},storeKey:${htmlSafeJson(input.storeHash)},platform:"bigcommerce",endpoint:${htmlSafeJson(INGEST_ENDPOINT)}});});</script>`;
 
   const response = await bigCommerceApiFetch(
     input.storeHash,

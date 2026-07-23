@@ -23,7 +23,7 @@ function genUuid(): string {
 
 type Row = Record<string, unknown>;
 type Filter =
-  | ['eq' | 'neq' | 'ilike' | 'is' | 'gte', string, unknown]
+  | ['eq' | 'neq' | 'ilike' | 'is' | 'gte' | 'contains', string, unknown]
   | ['not', string, { operator: string; value: unknown }]
   | ['in', string, unknown[]]
   | ['or', Array<['eq', string, unknown]>, null];
@@ -108,6 +108,11 @@ class QueryBuilder {
     return this;
   }
 
+  contains(col: string, val: Record<string, unknown>): this {
+    this.filters.push(['contains', col, val]);
+    return this;
+  }
+
   /**
    * Supports the simple disjunction shapes the intake pipeline issues, e.g.
    * `or('order_number.eq.1008,external_id.eq.1008')`. Only `.eq.` operands are
@@ -148,6 +153,13 @@ class QueryBuilder {
         // `.or.eq.` operands compare as exact strings; the `%`-free email
         // pattern intake uses is case-insensitive equality.
         return String(row[col] ?? '').toLowerCase() === String(val ?? '').toLowerCase();
+      }
+      if (op === 'contains') {
+        const actual = row[col];
+        if (!actual || typeof actual !== 'object' || Array.isArray(actual)) return false;
+        return Object.entries(val as Record<string, unknown>).every(
+          ([key, expected]) => (actual as Record<string, unknown>)[key] === expected,
+        );
       }
       if (op === 'or') {
         const clauses = col as unknown as Array<['eq', string, unknown]>;
@@ -222,7 +234,10 @@ class QueryBuilder {
 
 export type MemoryClient = {
   from: (table: string) => QueryBuilder;
-  rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: null }>;
+  rpc: (fn: string, args: Record<string, unknown>) => Promise<{
+    data: unknown;
+    error: { message: string; code?: string } | null;
+  }>;
   __store: MemoryStore;
 };
 
@@ -235,6 +250,119 @@ export function createMemoryClient(seed?: MemoryStore): MemoryClient {
     // Minimal RPC shim. `record_domain_event` appends a domain_events row and
     // returns its id, so code paths that emit domain events run end-to-end.
     rpc: async (fn: string, args: Record<string, unknown>) => {
+      if (fn === 'transition_payout_case') {
+        const cases = store.get('support_payout_cases') ?? [];
+        const payoutCase = cases.find(
+          (row) => row.id === args.p_case_id && row.merchant_id === args.p_merchant_id,
+        );
+        if (!payoutCase) return { data: null, error: { message: 'case_not_found' } };
+        if (Number(payoutCase.state_version ?? 1) !== Number(args.p_expected_version)) {
+          return { data: null, error: { message: 'case_version_conflict', code: '40001' } };
+        }
+        const events = store.get('domain_events') ?? [];
+        const existing = events.find(
+          (row) => row.merchant_id === args.p_merchant_id && row.idempotency_key === args.p_idempotency_key,
+        );
+        if (existing) {
+          return { data: { ...(existing.transition_result as Row), domain_event_id: existing.id, replayed: true }, error: null };
+        }
+        const patch = (args.p_patch ?? {}) as Row;
+        const nextVersion = Number(args.p_expected_version) + 1;
+        Object.assign(payoutCase, patch, { state_version: nextVersion });
+        const result = {
+          case_id: payoutCase.id,
+          new_version: nextVersion,
+          status: payoutCase.status,
+          payout_decision_state: payoutCase.payout_decision_state,
+          recovery_state: payoutCase.recovery_state,
+          replayed: false,
+        };
+        const eventId = genUuid();
+        events.push({
+          id: eventId,
+          merchant_id: args.p_merchant_id,
+          event_type: args.p_event_type,
+          aggregate_type: 'case',
+          aggregate_id: args.p_case_id,
+          idempotency_key: args.p_idempotency_key,
+          payload: args.p_event_payload,
+          transition_result: result,
+        });
+        store.set('domain_events', events);
+        const claimEvents = store.get('claim_events') ?? [];
+        claimEvents.push({
+          id: genUuid(),
+          claim_id: args.p_case_id,
+          merchant_id: args.p_merchant_id,
+          event_type: args.p_claim_event_type,
+          note: args.p_reason,
+          metadata: args.p_claim_event_metadata,
+        });
+        store.set('claim_events', claimEvents);
+        return { data: { ...result, domain_event_id: eventId }, error: null };
+      }
+      if (fn === 'record_case_source_outcome') {
+        const outcomes = store.get('case_outcomes') ?? [];
+        const idempotencyKey = String(args.p_idempotency_key);
+        const existing = outcomes.find(
+          (row) => row.merchant_id === args.p_merchant_id && row.idempotency_key === idempotencyKey,
+        );
+        if (existing) {
+          return {
+            data: {
+              outcome_id: existing.id,
+              domain_event_id: existing.domain_event_id,
+              replayed: true,
+            },
+            error: null,
+          };
+        }
+
+        const outcomeId = genUuid();
+        const domainEventId = genUuid();
+        const payload = {
+          outcome_id: outcomeId,
+          outcome_type: args.p_outcome_type,
+          action: args.p_action,
+          amount_minor: args.p_amount_minor,
+          confirmed_loss_minor: args.p_confirmed_loss_minor,
+          currency: args.p_currency,
+          reason: args.p_reason,
+          source_record_id: args.p_source_record_id,
+          source_metadata: args.p_source_metadata,
+        };
+        outcomes.push({
+          id: outcomeId,
+          merchant_id: args.p_merchant_id,
+          support_payout_case_id: args.p_case_id,
+          outcome_type: args.p_outcome_type,
+          action: args.p_action,
+          amount_minor: args.p_amount_minor,
+          confirmed_loss_minor: args.p_confirmed_loss_minor,
+          currency: args.p_currency,
+          reason: args.p_reason,
+          source_record_id: args.p_source_record_id,
+          source_metadata: args.p_source_metadata,
+          occurred_at: args.p_occurred_at,
+          idempotency_key: idempotencyKey,
+          domain_event_id: domainEventId,
+        });
+        store.set('case_outcomes', outcomes);
+
+        const events = store.get('domain_events') ?? [];
+        events.push({
+          id: domainEventId,
+          merchant_id: args.p_merchant_id,
+          event_type: 'case.outcome_reconciled',
+          aggregate_type: 'case',
+          aggregate_id: args.p_case_id,
+          idempotency_key: `case-outcome:${idempotencyKey}`,
+          payload,
+          occurred_at: args.p_occurred_at,
+        });
+        store.set('domain_events', events);
+        return { data: { outcome_id: outcomeId, domain_event_id: domainEventId, replayed: false }, error: null };
+      }
       if (fn === 'record_domain_event') {
         const events = store.get('domain_events') ?? [];
         const idem = args.p_idempotency_key as string;

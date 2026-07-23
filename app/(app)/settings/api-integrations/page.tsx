@@ -1,25 +1,20 @@
 import { redirect } from "next/navigation";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
-import { PERMISSIONS, requirePermission } from "@/lib/permissions";
+import { PERMISSIONS } from "@/lib/permissions";
+import {
+  getRequestUser,
+  requirePagePermission,
+} from "@/lib/auth/requestContext";
 import ApiIntegrationsClient from "@/components/settings/ApiIntegrationsClient";
 import { SettingsPageShell } from "@/components/settings/SettingsPageShell";
 
 export const dynamic = "force-dynamic";
 
 export default async function ApiIntegrationsPage() {
-  const auth = createClient();
-  const {
-    data: { user },
-  } = await auth.auth.getUser();
+  const user = await getRequestUser();
   if (!user) redirect("/login");
 
-  const service = createServiceClient();
-  const { denied } = await requirePermission(
-    service,
-    user.id,
-    PERMISSIONS.MANAGE_SETTINGS,
-  );
-  if (denied) redirect("/settings/account");
+  const ctx = await requirePagePermission(PERMISSIONS.MANAGE_SETTINGS);
+  if (!ctx) redirect("/settings/account");
 
   return (
     <SettingsPageShell

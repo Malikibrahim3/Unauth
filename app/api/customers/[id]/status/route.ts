@@ -1,7 +1,6 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
-import { logAction } from '@/lib/permissions/audit';
 import { fetchMerchantScopedCustomerProfile } from '@/lib/supabase/merchantHelpers';
 import { NextRequest, NextResponse } from 'next/server';
 import { withRequestLogging } from '@/lib/log';
@@ -54,7 +53,10 @@ async function PATCHHandler(
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  const { data, error } = await serviceClient
+  const mutationClient = createServiceClient({
+    audit: { actorId: ctx.userId, actorRole: ctx.role, requestIp: ip },
+  });
+  const { data, error } = await mutationClient
     .from(TABLES.MERCHANT_IDENTITY_STATE)
     .upsert({
       merchant_id: ctx.merchantId,
@@ -69,15 +71,6 @@ async function PATCHHandler(
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-
-  logAction({
-    ctx,
-    action: 'update_customer_status',
-    resourceType: 'customer_profile',
-    resourceId: resolvedParams.id,
-    metadata: { newStatus: body.status },
-    ip,
-  });
 
   return NextResponse.json({
     id: data.identity_id,

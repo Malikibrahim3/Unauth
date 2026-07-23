@@ -7,7 +7,6 @@ import { isZendeskProductionIngestMode } from '@/lib/support/zendesk/resolveMerc
 export { ZENDESK_SUPPORT_SECRET_HEADERS } from '@/lib/support/zendesk/supportConnectionShared';
 import {
   ZENDESK_SUPPORT_SECRET_HEADERS,
-  ZENDESK_WEBHOOK_SECRET_QUERY_PARAM,
 } from '@/lib/support/zendesk/supportConnectionShared';
 
 export function readZendeskWebhookSecretHeader(
@@ -20,15 +19,10 @@ export function readZendeskWebhookSecretHeader(
   return null;
 }
 
-/** Header first, then the secret query param baked into the registered webhook URL. */
 export function readZendeskWebhookSecret(
   headers: Headers | { get(name: string): string | null },
-  webhookSearchParams?: URLSearchParams | null
 ): string | null {
-  const fromHeader = readZendeskWebhookSecretHeader(headers);
-  if (fromHeader) return fromHeader;
-  const fromQuery = webhookSearchParams?.get(ZENDESK_WEBHOOK_SECRET_QUERY_PARAM)?.trim();
-  return fromQuery || null;
+  return readZendeskWebhookSecretHeader(headers);
 }
 
 export function isZendeskGlobalWebhookSecretAllowed(): boolean {

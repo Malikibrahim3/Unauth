@@ -7,7 +7,9 @@ export const platformSettingsSchema = z.object({
     .default("GBP"),
   timezone: z.string().min(1).max(100).default("Europe/London"),
   defaultDateRangeDays: z.number().int().min(1).max(366).default(30),
-  retentionDays: z.number().int().min(30).max(3650).default(730),
+  // Null means no time-based policy has been approved. Never infer a legal
+  // retention period from an application default.
+  retentionDays: z.number().int().min(30).max(3650).nullable().default(null),
   matchingPolicy: z
     .enum(["strict", "balanced", "review_ambiguous"])
     .default("review_ambiguous"),

@@ -64,6 +64,10 @@ export type RecoveryCase = {
   estimated_recoverable_min: number | null;
   estimated_recoverable_max: number | null;
   amount_recovered: number | null;
+  amount_sought_minor: number;
+  amount_approved_minor: number;
+  amount_recovered_minor: number;
+  amount_written_off_minor: number;
   currency: string;
   deadline_at: string | null;
   next_chase_at: string | null;

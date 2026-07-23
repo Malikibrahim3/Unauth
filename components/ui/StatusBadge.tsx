@@ -113,6 +113,12 @@ export const STATUS_TONES: Record<string, StatusTone> = {
   // work-task lifecycle extras
   cancelled: 'neutral',
   snoozed: 'neutral',
+  // provider lifecycle-capability evidence levels
+  implemented: 'warning',
+  automated_tested: 'info',
+  controlled_runtime_verified: 'success',
+  unavailable: 'danger',
+  not_applicable: 'neutral',
 };
 
 export function statusTone(value: string | null | undefined): StatusTone {

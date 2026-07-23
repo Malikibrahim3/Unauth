@@ -68,7 +68,8 @@ export async function retryDeadLetterDelivery(client: SupabaseClient, merchantId
     .from(TABLES.DOMAIN_EVENT_DELIVERIES)
     .update({ status: 'pending', attempts: 0, last_error: null, next_attempt_at: new Date().toISOString(), leased_by: null, leased_until: null })
     .eq('merchant_id', merchantId)
-    .eq('id', deliveryId);
+    .eq('id', deliveryId)
+    .in('status', WORKABLE);
   if (error) throw new Error(`dlq_retry_failed: ${error.message}`);
   return { ok: true as const, status: 'pending' };
 }
@@ -81,7 +82,8 @@ export async function ignoreDeadLetterDelivery(client: SupabaseClient, merchantI
     .from(TABLES.DOMAIN_EVENT_DELIVERIES)
     .update({ status: 'ignored', leased_by: null, leased_until: null })
     .eq('merchant_id', merchantId)
-    .eq('id', deliveryId);
+    .eq('id', deliveryId)
+    .in('status', WORKABLE);
   if (error) throw new Error(`dlq_ignore_failed: ${error.message}`);
   return { ok: true as const, status: 'ignored' };
 }
@@ -95,7 +97,7 @@ export async function replayDeadLetterDelivery(client: SupabaseClient, merchantI
 
   const { data: event, error: eventError } = await client
     .from(TABLES.DOMAIN_EVENTS)
-    .select('id,merchant_id,event_type,aggregate_type,aggregate_id,payload,occurred_at,recorded_at')
+    .select('id,merchant_id,event_type,aggregate_type,aggregate_id,payload,actor_type,actor_id,correlation_id,idempotency_key,occurred_at,recorded_at')
     .eq('merchant_id', merchantId)
     .eq('id', delivery.domain_event_id)
     .maybeSingle();
@@ -109,7 +111,8 @@ export async function replayDeadLetterDelivery(client: SupabaseClient, merchantI
     return { ok: true as const, status: 'completed' };
   } catch (cause) {
     const message = cause instanceof Error ? cause.message : String(cause);
-    await client.rpc('fail_domain_event_delivery', { p_delivery_id: deliveryId, p_error: message.slice(0, 1000), p_backoff_seconds: 30 });
+    const { error: failError } = await client.rpc('fail_domain_event_delivery', { p_delivery_id: deliveryId, p_error: message.slice(0, 1000), p_backoff_seconds: 30 });
+    if (failError) throw new Error(`dlq_replay_failure_record_failed: ${failError.message}; original_error: ${message}`);
     return { ok: false as const, reason: 'replay_failed', error: message };
   }
 }

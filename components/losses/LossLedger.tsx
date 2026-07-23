@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { SourceBadge } from '@/components/sources/SourceBadge';
 import { FreshnessIndicator, type FreshnessState } from '@/components/sources/FreshnessIndicator';
 import { formatMinorCurrencyNullable } from '@/lib/utils/format';
@@ -50,7 +50,6 @@ function formatMinor(minor: number | null, currency: string | null): string {
 
 
 export function LossLedger({ rows }: { rows: LossLedgerRow[] }) {
-  const router = useRouter();
   const [view, setView] = useState<ViewKey>('all');
   const counts = useMemo(() => {
     const map = {} as Record<ViewKey, number>;
@@ -108,15 +107,18 @@ export function LossLedger({ rows }: { rows: LossLedgerRow[] }) {
                 return (
                 <tr
                   key={row.id}
-                  onClick={() => router.push(href)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') router.push(href); }}
-                  tabIndex={0}
-                  role="link"
-                  aria-label={label('lossCategory', row.category)}
-                  className="cursor-pointer hover:bg-[var(--surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
+                  className="hover:bg-[var(--surface-hover)]"
                   style={{ borderTop: '1px solid var(--border-subtle, rgba(0,0,0,0.08))' }}
                 >
-                  <td className="py-2 pr-4 font-medium" style={{ color: 'var(--text-primary)' }}>{label('lossCategory', row.category)}{row.derived ? <span className="ml-2 text-xs text-[var(--warning)]">Reconciliation pending</span> : null}</td>
+                  <td className="py-2 pr-4 font-medium" style={{ color: 'var(--text-primary)' }}>
+                    <Link
+                      href={href}
+                      className="rounded-sm underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
+                    >
+                      {label('lossCategory', row.category)}
+                    </Link>
+                    {row.derived ? <span className="ml-2 text-xs text-[var(--warning)]">Reconciliation pending</span> : null}
+                  </td>
                   <td className="py-2 pr-4" style={{ color: 'var(--text-secondary)' }}>{row.attribution ? label('attribution', row.attribution) : '—'}</td>
                   <td className="py-2 pr-4" style={{ color: 'var(--text-secondary)' }}>
                     {row.counterpartyName ?? (row.counterpartyType ? label('counterparty', row.counterpartyType) : '—')}

@@ -1,6 +1,11 @@
 import { redirect } from 'next/navigation';
-import { createClient, createServiceClient } from '@/lib/supabase/server';
-import { hasPermission, PERMISSIONS, requirePermission } from '@/lib/permissions';
+import { createServiceClient } from '@/lib/supabase/server';
+import { hasPermission, PERMISSIONS } from '@/lib/permissions';
+import {
+  getRequestServiceClient,
+  getRequestUser,
+  requirePagePermission,
+} from '@/lib/auth/requestContext';
 import { TABLES } from '@/lib/supabase/tables';
 import { WorkbenchPage, KeyInsightCallout, SummaryRail, ButtonLink } from '@/components/ui';
 import { TrendingUp } from 'lucide-react';
@@ -82,13 +87,12 @@ async function enrichRecoveryCases(
 }
 
 export default async function RecoveriesPage() {
-  const userClient = createClient();
-  const { data: { user } } = await userClient.auth.getUser();
+  const user = await getRequestUser();
   if (!user) redirect('/login');
 
-  const serviceClient = createServiceClient();
-  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_INBOX);
-  if (denied) redirect('/dashboard');
+  const serviceClient = getRequestServiceClient();
+  const ctx = await requirePagePermission(PERMISSIONS.VIEW_INBOX);
+  if (!ctx) redirect('/dashboard');
   const [canManage, rawRecoveries] = await Promise.all([
     hasPermission(serviceClient, ctx, PERMISSIONS.SUBMIT_PAYOUT_DECISIONS),
     listRecoveryCases(serviceClient, ctx.merchantId),

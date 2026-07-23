@@ -16,7 +16,7 @@ export type TeamMember = {
 
 export type AuditRow = {
   id: string;
-  action: 'invite_team_member' | 'update_team_member_role' | 'remove_team_member';
+  action: 'team_member_invited' | 'team_member_role_changed' | 'team_member_removed';
   resource_id: string | null;
   actor_role: TeamRole;
   actor_user_id: string;
@@ -72,11 +72,13 @@ export function auditText(row: AuditRow) {
   const newRole = typeof row.metadata?.newRole === 'string' ? row.metadata.newRole : null;
   const role = typeof row.metadata?.role === 'string' ? row.metadata.role : null;
 
-  if (row.action === 'invite_team_member') {
+  if (row.action === 'team_member_invited') {
     return `${email} invited as ${role ? ROLE_LABELS[role as TeamRole] ?? role : 'a team member'}`;
   }
-  if (row.action === 'update_team_member_role') {
-    return `Role changed from ${previousRole ?? 'unknown'} to ${newRole ?? 'unknown'}`;
+  if (row.action === 'team_member_role_changed') {
+    const triggerPreviousRole = typeof row.metadata?.previous_role === 'string' ? row.metadata.previous_role : null;
+    const triggerNewRole = typeof row.metadata?.new_role === 'string' ? row.metadata.new_role : null;
+    return `Role changed from ${previousRole ?? triggerPreviousRole ?? 'unknown'} to ${newRole ?? triggerNewRole ?? 'unknown'}`;
   }
   return `${email} removed from the team`;
 }

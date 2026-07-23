@@ -15,8 +15,7 @@ import {
 import { formatFiledDate } from "@/lib/claims/sla";
 import {
   labelize,
-  CLAIM_STATUS_LABELS,
-  CLAIM_TYPE_LABELS,
+  customerClaimSummaryDisplay,
   type RoadmapTransaction,
 } from "@/app/(app)/customers/[id]/customerProfilePageLabels";
 import type {
@@ -183,6 +182,9 @@ export function CustomerProfilePageMainColumn({
   ].filter((row): row is { label: string; value: string; icon: typeof AtSign } => Boolean(row.value));
 
   const visibleActivity = activityLog.filter((entry) => entry.event_type !== 'claim_viewed');
+  const latestClaimDisplay = latestClaim
+    ? customerClaimSummaryDisplay(latestClaim)
+    : null;
 
   return (
     <div className="grid min-w-0 grid-cols-1 items-start gap-3 lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -198,12 +200,12 @@ export function CustomerProfilePageMainColumn({
           <SectionCard title="Dispute context" description="Summary you can reference when responding in Gorgias, Zendesk, or Shopify.">
             <div className="grid grid-cols-2 gap-3">
               <MetricCard label="Open disputes" value={openClaimCount} density="compact" />
-              <MetricCard label="Latest status" value={CLAIM_STATUS_LABELS[latestClaim.status] ?? latestClaim.status} density="compact" />
+              <MetricCard label="Latest status" value={latestClaimDisplay!.status} density="compact" />
             </div>
             <div className="mt-3 rounded-md border border-[var(--border-muted)] bg-[var(--surface-sunken)] p-3">
               <p className="text-[11px] text-[var(--text-tertiary)]">Latest dispute signal</p>
-              <p className="text-sm font-semibold text-[var(--text-primary)]">{CLAIM_TYPE_LABELS[latestClaim.claim_type] ?? latestClaim.claim_type}</p>
-              <p className="font-mono text-[11px] text-[var(--text-tertiary)]">{latestClaim.shopify_order_id ?? latestClaim.order_ref ?? latestClaim.id.slice(0, 8)}</p>
+              <p className="text-sm font-semibold text-[var(--text-primary)]">{latestClaimDisplay!.claimType}</p>
+              <p className="font-mono text-[11px] text-[var(--text-tertiary)]">{latestClaimDisplay!.orderReference}</p>
               <p className="mt-2 text-[11px] text-[var(--text-tertiary)]">Filed {formatFiledDate(latestClaim)}</p>
             </div>
           </SectionCard>
@@ -305,7 +307,25 @@ export function CustomerProfilePageMainColumn({
 
       <aside className="space-y-3 lg:sticky lg:top-20">
         <SectionCard title="Customer details" description="Contact and checkout details observed in your store." density="compact">
-          {contactRows.length ? <dl className="divide-y divide-[var(--border-muted)]">{contactRows.map(({ label, value, icon: Icon }) => <div key={label} className="flex gap-3 py-3 first:pt-0 last:pb-0"><Icon className="mt-0.5 h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden="true" /><div className="min-w-0"><dt className="text-[11px] uppercase tracking-wide text-[var(--text-tertiary)]">{label}</dt><dd className="mt-1 break-words text-sm text-[var(--text-primary)]">{value}</dd></div></div>)}</dl> : <p className="text-sm text-[var(--text-secondary)]">Contact details are unavailable.</p>}
+          {contactRows.length ? (
+            <dl className="divide-y divide-[var(--border-muted)]">
+              {contactRows.map(({ label, value, icon: Icon }) => (
+                <div key={label} className="py-3 first:pt-0 last:pb-0">
+                  <dt className="flex items-center gap-3 text-[11px] uppercase tracking-wide text-[var(--text-tertiary)]">
+                    <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                    <span>{label}</span>
+                  </dt>
+                  <dd className="mt-1 break-words pl-7 text-sm text-[var(--text-primary)]">
+                    {value}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          ) : (
+            <p className="text-sm text-[var(--text-secondary)]">
+              Contact details are unavailable.
+            </p>
+          )}
           {(() => {
             const extras = [
               profile.emails.length > 1 ? `${profile.emails.length} emails` : null,

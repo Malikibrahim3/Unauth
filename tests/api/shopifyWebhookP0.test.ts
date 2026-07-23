@@ -41,8 +41,11 @@ type TableHandler = {
   onInsert?: (payload: any) => void;
   onUpsert?: (payload: any, opts: any) => void;
   onUpdate?: (payload: any) => void;
-  // For processed_webhooks: drives the claim_processed_webhook RPC result.
-  claimDuplicate?: boolean;
+  // For processed_webhooks: drives the leased claim/completion RPCs.
+  claimStatus?: 'claimed' | 'duplicate' | 'in_progress' | 'busy' | 'stale' | 'conflict';
+  claims?: any[];
+  completions?: any[];
+  transitions?: any[];
 };
 
 function makeSupabase(handlers: Record<string, TableHandler> = {}) {
@@ -73,11 +76,38 @@ function makeSupabase(handlers: Record<string, TableHandler> = {}) {
     };
     return builder;
   };
-  // Webhook idempotency now claims atomically via the claim_processed_webhook RPC.
-  // It returns true for a duplicate (already-completed) webhook, false otherwise.
-  const rpc = async (fn: string, _args: any) => {
+  const rpc = async (fn: string, args: any) => {
     if (fn === 'claim_processed_webhook') {
-      return { data: Boolean(handlers.processed_webhooks?.claimDuplicate), error: null };
+      handlers.processed_webhooks?.claims?.push(args);
+      const status = handlers.processed_webhooks?.claimStatus ?? 'claimed';
+      return {
+        data: status === 'claimed'
+          ? { status, claim_token: '10000000-0000-4000-8000-000000000001' }
+          : { status },
+        error: null,
+      };
+    }
+    if (fn === 'complete_processed_webhook') {
+      handlers.processed_webhooks?.completions?.push({
+        status: args.p_status,
+        last_error: args.p_last_error,
+        claim_token: args.p_claim_token,
+      });
+      return { data: true, error: null };
+    }
+    if (fn === 'transition_payout_case') {
+      handlers.support_payout_cases?.transitions?.push(args);
+      return {
+        data: {
+          case_id: args.p_case_id,
+          new_version: args.p_expected_version + 1,
+          status: args.p_patch.status ?? 'open',
+          payout_decision_state: args.p_patch.payout_decision_state ?? 'undecided',
+          recovery_state: args.p_patch.recovery_state ?? 'no_recovery_needed',
+          domain_event_id: '10000000-0000-4000-8000-000000000002',
+        },
+        error: null,
+      };
     }
     return { data: null, error: null };
   };
@@ -100,10 +130,15 @@ function processedWebhooks(
     maybeSingleData: existingStatus
       ? { idempotency_key: 'k', status: existingStatus, attempts: 1 }
       : null,
-    // Only an already-completed webhook is a duplicate at atomic claim time.
-    claimDuplicate: existingStatus === 'completed',
+    claimStatus:
+      existingStatus === 'completed'
+        ? 'duplicate'
+        : existingStatus === 'processing'
+          ? 'in_progress'
+          : 'claimed',
+    completions: capture?.completions,
+    claims: capture?.claims,
     onUpsert: (payload) => capture?.claims?.push(payload),
-    onUpdate: (payload) => capture?.completions?.push(payload),
   };
 }
 
@@ -218,6 +253,43 @@ describe('shopify webhook p0', () => {
     expect(json.duplicate).not.toBe(true);
     expect(completions).toHaveLength(1);
     expect(completions[0].status).toBe('completed');
+  });
+
+  it('asks Shopify to retry while another delivery for the same order is active', async () => {
+    const supabase = makeSupabase({
+      processed_webhooks: { claimStatus: 'busy' },
+    });
+    createServiceClient.mockReturnValue(supabase);
+    const req = signedReq(
+      JSON.stringify({ id: 44, updated_at: '2026-07-22T12:00:00Z' }),
+      'orders/updated',
+      'wid-busy',
+    );
+
+    const res = await POST(req);
+    expect(res.status).toBe(503);
+    expect(res.headers.get('retry-after')).toBe('1');
+  });
+
+  it('records but does not apply an older order snapshot', async () => {
+    const claims: any[] = [];
+    const supabase = makeSupabase({
+      processed_webhooks: { claimStatus: 'stale', claims },
+    });
+    createServiceClient.mockReturnValue(supabase);
+    const req = signedReq(
+      JSON.stringify({ id: 44, updated_at: '2026-07-21T12:00:00Z' }),
+      'orders/updated',
+      'wid-stale',
+    );
+
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toEqual({ ok: true, ignored: 'stale_event' });
+    expect(claims[0]).toMatchObject({
+      p_object_key: 'order:44',
+      p_event_version: Date.parse('2026-07-21T12:00:00Z'),
+    });
   });
 
   it('successful orders/create upserts a source_orders row and finalizes completed', async () => {
@@ -423,15 +495,21 @@ describe('shopify webhook p0', () => {
 
   it('disputes/updated resolves an existing chargeback case via update', async () => {
     const claimInserts: any[] = [];
-    const claimUpdates: any[] = [];
+    const transitions: any[] = [];
     const supabase = makeSupabase({
       store_connections: { maybeSingleData: CONNECTION },
       source_orders: { maybeSingleData: { id: 'order-1', shipping_address_id: null, billing_address_id: null } },
       source_disputes: {},
       support_payout_cases: {
-        maybeSingleData: { id: 'claim-1' }, // existing claim found
+        maybeSingleData: {
+          id: 'claim-1',
+          status: 'escalated',
+          state_version: 1,
+          payout_decision_state: 'undecided',
+          recovery_state: 'no_recovery_needed',
+        }, // existing claim found and transition precondition
         onInsert: (payload) => claimInserts.push(payload),
-        onUpdate: (payload) => claimUpdates.push(payload),
+        transitions,
       },
       claim_events: {},
     });
@@ -443,15 +521,19 @@ describe('shopify webhook p0', () => {
       supabase as any,
     );
 
-    // Existing claim => update path, no insert.
+    // Existing claim => atomic transition path, no insert.
     expect(claimInserts).toHaveLength(0);
-    expect(claimUpdates).toHaveLength(1);
-    expect(claimUpdates[0].status).toBe('resolved_won');
-    expect(typeof claimUpdates[0].updated_at).toBe('string');
+    expect(transitions).toHaveLength(1);
+    expect(transitions[0]).toMatchObject({
+      p_case_id: 'claim-1',
+      p_expected_version: 1,
+      p_patch: { status: 'resolved_won' },
+      p_triggered_by: 'shopify_dispute',
+    });
   });
 
   it('orders/cancelled voids any open claim for the order', async () => {
-    const claimUpdates: any[] = [];
+    const transitions: any[] = [];
     const orderUpdates: any[] = [];
     const supabase = makeSupabase({
       store_connections: { maybeSingleData: CONNECTION },
@@ -465,7 +547,7 @@ describe('shopify webhook p0', () => {
           id: 'claim-void-1', status: 'open', state_version: 1,
           payout_decision_state: 'undecided', recovery_state: 'no_recovery_needed',
         },
-        onUpdate: (payload) => claimUpdates.push(payload),
+        transitions,
       },
     });
 
@@ -477,8 +559,15 @@ describe('shopify webhook p0', () => {
     );
 
     expect(orderUpdates.some((u) => typeof u.cancelled_at === 'string')).toBe(true);
-    expect(claimUpdates).toEqual(
-      expect.arrayContaining([expect.objectContaining({ status: 'voided' })]),
+    expect(transitions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          p_case_id: 'claim-void-1',
+          p_expected_version: 1,
+          p_patch: { status: 'voided' },
+          p_triggered_by: 'shopify_order_cancelled',
+        }),
+      ]),
     );
   });
 

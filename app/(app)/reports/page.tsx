@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/server";
+import { getRequestUser } from "@/lib/auth/requestContext";
 import {
   PERMISSIONS,
   requirePermission,
@@ -24,10 +25,7 @@ export default async function ReportsPage({
 }: {
   searchParams: Promise<{ range?: string; timezone?: string }>;
 }) {
-  const auth = createClient();
-  const {
-    data: { user },
-  } = await auth.auth.getUser();
+  const user = await getRequestUser();
   if (!user) redirect("/login");
   const svc = createServiceClient();
   const { denied, ctx } = await requirePermission(
@@ -70,7 +68,7 @@ export default async function ReportsPage({
           ))}
         </div>
       }
-      actionBarRight={<ExportMenu range={range} />}
+      actionBarRight={<ExportMenu range={range} timezone={timezone} />}
       main={
         <section className="p-3.5 md:p-4">
           <IntelligenceReportView report={report} />

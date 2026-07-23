@@ -27,6 +27,7 @@ import type {
   IntelligenceReport,
   ReportRange,
 } from '@/lib/reporting/intelligence';
+import { financialReportRecordsHref, type FinancialReportMetric } from '@/lib/reporting/intelligence';
 import {
   formatCurrencyCompact,
   formatDateAbsolute,
@@ -65,6 +66,13 @@ const RANGE_LABELS: Record<ReportRange, string> = {
   '30d': 'Last 30 days',
   '90d': 'Last 90 days',
   all: 'All time',
+};
+
+const DASHBOARD_REPORT_METRICS: Record<DashboardMetricKey, FinancialReportMetric> = {
+  exposure: 'exposed',
+  recovered: 'recovered',
+  prevented: 'prevented',
+  realisedLoss: 'confirmed_loss',
 };
 
 function FilterSelect({
@@ -128,12 +136,11 @@ export function DashboardOverview({
       : [],
     [metric, previousTrend, report.generatedAt, report.range, report.trend, selectedCurrency],
   );
-  // All-zero buckets would render a degenerate axis (£0–£0.04 with no line), so
-  // treat them as empty and show the empty-state message instead.
-  const hasChartValues = chartData.some(
-    (bucket) => (bucket.currentMinor ?? 0) !== 0 || (bucket.previousMinor ?? 0) !== 0,
+  const hasChartData = chartData.some(
+    (bucket) => bucket.currentMinor != null || bucket.previousMinor != null,
   );
   const selectedMetric = DASHBOARD_METRICS.find((item) => item.key === metric) ?? DASHBOARD_METRICS[0];
+  const selectedMetricValue = bridgeMetricValue(bridge, metric);
   const workflowGroups = groupWorkflowOperations(report.operations);
   const health = calculateDataHealth(report.coverage, report.reconciliation.ok);
   const needsAction = workflowGroups[0].count;
@@ -218,7 +225,7 @@ export function DashboardOverview({
             </FilterSelect>
           ) : null}
           <div className={styles.exportWrap}>
-            <ExportMenu range={report.range} />
+            <ExportMenu range={report.range} timezone={report.timezone} currency={selectedCurrency} />
           </div>
         </div>
       </div>
@@ -247,7 +254,17 @@ export function DashboardOverview({
             <div className={styles.chartHeader}>
               <div>
                 <span>{selectedMetric.label}</span>
-                <strong>{formatMoney(bridgeMetricValue(bridge, metric) ?? 0, selectedCurrency)}</strong>
+                <strong>{selectedMetricValue == null ? 'Unavailable' : formatMoney(selectedMetricValue, selectedCurrency)}</strong>
+                <Link
+                  href={financialReportRecordsHref({
+                    range: report.range,
+                    currency: selectedCurrency,
+                    metric: DASHBOARD_REPORT_METRICS[metric],
+                  })}
+                  className={styles.textAction}
+                >
+                  View underlying records
+                </Link>
               </div>
               {compare === 'previous' ? (
                 <div className={styles.legend} aria-label="Chart legend">
@@ -258,7 +275,7 @@ export function DashboardOverview({
             </div>
 
             <div className={styles.chartRegion} role="region" aria-label="Payout performance charts">
-              {chartData.length > 0 && hasChartValues ? (
+              {selectedMetricValue != null && chartData.length > 0 && hasChartData ? (
                 <ComboBarLineChart
                   data={chartData.map((bucket) => ({
                     key: bucket.key,

@@ -1,14 +1,17 @@
-import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { TABLES } from "@/lib/supabase/tables";
 import { getCachedConnectionState } from "@/lib/connections/getConnectionState";
 import { getMerchantDataPresence } from "@/lib/supabase/getMerchantDataPresence";
 import { resolveMerchantSetupState } from "@/lib/connections/getMerchantSetupState";
 import { redirect } from "next/navigation";
 import {
-  requirePermission,
   PERMISSIONS,
   resolveDefaultAppPath,
 } from "@/lib/permissions";
+import {
+  getRequestServiceClient,
+  getRequestUser,
+  requirePagePermission,
+} from "@/lib/auth/requestContext";
 import { escapePostgrestFilterValue } from "@/lib/supabase/merchantHelpers";
 import {
   isOrderReferenceSearchTerm,
@@ -90,19 +93,12 @@ export default async function CustomersOverviewPage({
 }: {
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getRequestUser();
   if (!user) redirect("/login");
 
-  const svc = createServiceClient();
-  const { denied, ctx } = await requirePermission(
-    svc,
-    user.id,
-    PERMISSIONS.VIEW_CUSTOMERS,
-  );
-  if (denied) return redirect(await resolveDefaultAppPath(svc, user.id));
+  const svc = getRequestServiceClient();
+  const ctx = await requirePagePermission(PERMISSIONS.VIEW_CUSTOMERS);
+  if (!ctx) return redirect(await resolveDefaultAppPath(svc, user.id));
   // Entitlement, source state, and URL state are independent after tenancy is resolved.
   const [hasCustomerSearch, [connectionState, dataPresence], sp] = await Promise.all([
     merchantHasEntitlement(svc, ctx.merchantId, "CUSTOMER_SEARCH"),

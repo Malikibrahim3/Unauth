@@ -1,26 +1,19 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
-import { PERMISSIONS, requirePermission } from "@/lib/permissions";
+import { PERMISSIONS } from "@/lib/permissions";
+import { getRequestUser, requirePagePermission } from "@/lib/auth/requestContext";
 import { SectionCard } from "@/components/ui";
 import BulkDeleteClient from "@/components/settings/BulkDeleteClient";
+import SubjectErasureClient from "@/components/settings/SubjectErasureClient";
 import { PrivacyBadge } from "@/components/ui/PrivacyBadge";
 import { SettingsPageShell } from "@/components/settings/SettingsPageShell";
 
 export default async function DataPrivacySettingsPage() {
-  const userClient = createClient();
-  const {
-    data: { user },
-  } = await userClient.auth.getUser();
+  const user = await getRequestUser();
   if (!user) redirect("/login");
 
-  const serviceClient = createServiceClient();
-  const { denied } = await requirePermission(
-    serviceClient,
-    user.id,
-    PERMISSIONS.VIEW_AUDIT_TRAIL,
-  );
-  if (denied) redirect("/settings");
+  const ctx = await requirePagePermission(PERMISSIONS.VIEW_AUDIT_TRAIL);
+  if (!ctx) redirect("/settings");
 
   return (
     <SettingsPageShell
@@ -82,15 +75,19 @@ export default async function DataPrivacySettingsPage() {
             className="text-body-sm"
             style={{ color: "var(--text-secondary)" }}
           >
-            Audit runs and associated transaction data are retained according to
-            your plan settings. Workspace removal controls hide eligible
-            operational context while preserving required audit evidence. Full
-            account deletion permanently removes merchant data. Contact support
-            if you need help before closing your account.
+            Only raw ingestion payloads with an explicit deadline are removed
+            automatically after terminal processing. No legal retention period
+            is inferred for canonical case, financial, evidence, or audit
+            records. Workspace removal hides the specific context listed below;
+            full account deletion permanently removes merchant data.
           </p>
           <div className="mt-4">
             <BulkDeleteClient />
           </div>
+        </SectionCard>
+
+        <SectionCard title="Customer data erasure">
+          <SubjectErasureClient />
         </SectionCard>
 
         <SectionCard title="Audit logging">

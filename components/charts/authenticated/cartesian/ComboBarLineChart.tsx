@@ -27,7 +27,7 @@ import {
 export type ComboBarLineDatum = {
   key: string;
   label: string;
-  current: number;
+  current: number | null;
   previous?: number | null;
 };
 
@@ -115,7 +115,7 @@ export function ComboBarLineChart({
               const row = payload[0]?.payload as ComboBarLineDatum;
               return (
                 <ChartTooltip
-                  value={formatTooltip(row.current)}
+                  value={row.current == null ? 'Unavailable' : formatTooltip(row.current)}
                   caption={String(label)}
                   series={
                     comparison && row.previous != null

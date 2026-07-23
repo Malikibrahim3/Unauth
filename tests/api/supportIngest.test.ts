@@ -15,6 +15,12 @@ import {
 jest.mock('@/lib/supabase/server', () => ({
   createServiceClient: jest.fn(),
 }));
+jest.mock('@/lib/ratelimit', () => ({
+  enforceRateLimit: jest.fn(async () => null),
+  getClientIp: jest.fn(() => '127.0.0.1'),
+  limitFromEnv: jest.fn(() => ({ limit: 1000, windowSeconds: 60 })),
+  rateLimitKey: jest.fn(() => 'support-ingest-test'),
+}));
 
 const MERCHANT_ID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 const OTHER_MERCHANT_ID = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
@@ -24,6 +30,9 @@ const INGEST_SECRET = 'test-internal-support-ingest-secret-32chars-min';
 
 const { createServiceClient } = jest.requireMock('@/lib/supabase/server') as {
   createServiceClient: jest.Mock;
+};
+const { enforceRateLimit } = jest.requireMock('@/lib/ratelimit') as {
+  enforceRateLimit: jest.Mock;
 };
 
 function makeSupportIngestSupabase(options?: {
@@ -166,6 +175,7 @@ describe('POST /api/internal/support/ingest', () => {
   it('rejects missing secret', async () => {
     const res = await POST(makeRequest(zendeskBody));
     expect(res.status).toBe(401);
+    expect(enforceRateLimit).not.toHaveBeenCalled();
   });
 
   it('rejects invalid secret', async () => {

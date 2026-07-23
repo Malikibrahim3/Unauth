@@ -127,7 +127,7 @@ export async function performWidgetContextUnlock(
   );
 
   if (!search.ok) {
-    void service.from('access_audit_log').insert({
+    const { error: auditError } = await service.from('access_audit_log').insert({
       merchant_id: params.merchantId,
       query_type: 'gorgias_widget_unlock',
       k_anonymity_satisfied: false,
@@ -137,6 +137,7 @@ export async function performWidgetContextUnlock(
       lookup_type: 'gorgias_widget_unlock',
       request_ip: params.requestIp,
     });
+    if (auditError) throw new Error(`widget_access_audit_failed: ${auditError.message}`);
     return { status: 500, json: { error: 'Search failed' } };
   }
 
@@ -147,7 +148,7 @@ export async function performWidgetContextUnlock(
   );
 
   if (results.length === 0) {
-    void service.from('access_audit_log').insert({
+    const { error: auditError } = await service.from('access_audit_log').insert({
       merchant_id: params.merchantId,
       query_type: 'gorgias_widget_unlock',
       k_anonymity_satisfied: false,
@@ -157,6 +158,7 @@ export async function performWidgetContextUnlock(
       lookup_type: 'gorgias_widget_unlock',
       request_ip: params.requestIp,
     });
+    if (auditError) throw new Error(`widget_access_audit_failed: ${auditError.message}`);
     return {
       status: 404,
       json: {
@@ -211,7 +213,7 @@ export async function performWidgetContextUnlock(
     };
   }
 
-  void service.from('access_audit_log').insert({
+  const { error: auditError } = await service.from('access_audit_log').insert({
     merchant_id: params.merchantId,
     query_type: 'gorgias_widget_unlock',
     k_anonymity_satisfied: true,
@@ -221,6 +223,7 @@ export async function performWidgetContextUnlock(
     lookup_type: 'gorgias_widget_unlock',
     request_ip: params.requestIp,
   });
+  if (auditError) throw new Error(`widget_access_audit_failed: ${auditError.message}`);
 
   return {
     status: 200,

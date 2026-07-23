@@ -209,6 +209,7 @@ export function DataTable<T>({
                 <tr
                   key={key}
                   data-testid={onRowClick && rowTestId ? rowTestId : undefined}
+                  data-row-key={onRowClick && rowTestId ? key : undefined}
                   onClick={onRowClick ? () => onRowClick(row) : undefined}
                   onKeyDown={
                     onRowClick

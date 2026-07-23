@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/server";
+import { getRequestUser } from "@/lib/auth/requestContext";
 import { PERMISSIONS, requirePermission } from "@/lib/permissions";
 import { WorkbenchPage, KeyInsightCallout, SummaryRail } from "@/components/ui";
 import { Bell } from "lucide-react";
@@ -16,10 +17,7 @@ import { selectNotificationActivity } from "@/lib/visualisation/chartSelectors";
 export const dynamic = "force-dynamic";
 
 export default async function NotificationsPage() {
-  const userClient = createClient();
-  const {
-    data: { user },
-  } = await userClient.auth.getUser();
+  const user = await getRequestUser();
   if (!user) redirect("/login");
   const serviceClient = createServiceClient();
   const { denied, ctx } = await requirePermission(

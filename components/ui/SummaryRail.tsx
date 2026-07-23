@@ -99,7 +99,7 @@ function Row({ row }: { row: SummaryRailRow }) {
 
 export function SummaryRail({ sections, className }: { sections: SummaryRailSection[]; className?: string }) {
   return (
-    <div className={cn('grid gap-2.5', className)}>
+    <div className={cn('grid gap-2.5', className)} data-auth-visual="summary-rail">
       {sections.map((section) => (
         <section
           key={section.title}

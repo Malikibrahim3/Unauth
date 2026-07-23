@@ -23,10 +23,16 @@ function makeWorkbench(overrides: Record<string, unknown> = {}) {
     claimIsClosed: false,
     latestOutcome: null,
     decisionData: null,
+    selectedClaim: {
+      currency: 'GBP',
+      assigned_to: null,
+      status: 'open',
+    },
     patch: jest.fn(),
     dispatch: jest.fn(),
     state: {
       decision: 'approved',
+      decisionAmount: '10.00',
       outcome: 'loss',
       notes: '',
       evidenceType: 'tracking',

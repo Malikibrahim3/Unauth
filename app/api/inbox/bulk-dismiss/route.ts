@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
-import { logAction } from '@/lib/permissions/audit';
 
 export async function POST(req: NextRequest) {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown';
@@ -49,22 +48,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  const { error } = await serviceClient
+  const mutationClient = createServiceClient({
+    audit: { actorId: ctx.userId, actorRole: ctx.role, requestIp: ip },
+  });
+  const { error } = await mutationClient
     .from(TABLES.AUDIT_TRANSACTIONS)
     .update({ dismissed_by_merchant: true } as any)
     .in('id', allowedIds);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  for (const id of allowedIds) {
-    logAction({
-      ctx,
-      action: 'dismiss_transaction',
-      resourceType: 'transaction',
-      resourceId: id,
-      ip,
-    });
-  }
 
   return NextResponse.json({ ok: true, dismissed: allowedIds.length });
 }

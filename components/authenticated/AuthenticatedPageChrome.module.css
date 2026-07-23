@@ -220,6 +220,10 @@
   min-width: 0;
 }
 
+.mainPanel {
+  min-width: 0;
+}
+
 .mainPanel > .panelBody > section {
   padding: 13px;
 }

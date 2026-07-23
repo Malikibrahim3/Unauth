@@ -49,6 +49,16 @@ jest.mock('@/lib/support/gorgias/fetchTicket', () => ({
 jest.mock('@/lib/support/gorgias/merchantApiAccess', () => ({
   getActiveGorgiasMerchantApiAccess: jest.fn(),
 }));
+jest.mock('@/lib/support/webhookEventSafety', () => ({
+  claimSupportTicketDelivery: jest.fn(async () => ({
+    status: 'claimed', idempotencyKey: 'gorgias:test:delivery',
+    claimToken: '10000000-0000-4000-8000-000000000001',
+  })),
+  replayedSupportResult: jest.fn((value) => value),
+}));
+jest.mock('@/lib/commerce/processedWebhookHandler', () => ({
+  completeProcessedWebhook: jest.fn(async () => undefined),
+}));
 
 const MERCHANT_ID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 const OTHER_MERCHANT_ID = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
@@ -447,8 +457,7 @@ describe('Gorgias support webhook', () => {
       })
     );
     expect(res.status).toBe(401);
-    const updates = mock.connectionUpdates();
-    expect(updates[0]?.values.last_error).toBe('unauthorized');
+    expect(mock.connectionUpdates()).toHaveLength(0);
   });
 
   it('disables merchant header fallback in production mode', () => {
@@ -560,7 +569,7 @@ describe('Gorgias support webhook', () => {
     expect(res.status).toBe(200);
   });
 
-  it('resolves merchant by payload account id', async () => {
+  it('rejects payload-only account identity before parsing or mutation', async () => {
     const mock = makeGorgiasWebhookSupabase();
     createServiceClient.mockReturnValue(mock.supabase);
 
@@ -570,7 +579,8 @@ describe('Gorgias support webhook', () => {
         { secret: CONNECTION_WEBHOOK_SECRET }
       )
     );
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(400);
+    expect(mock.caseUpserts()).toBe(0);
   });
 
   it('hydrates skeletal Gorgias webhook form payloads before ingesting', async () => {
@@ -596,10 +606,13 @@ describe('Gorgias support webhook', () => {
 
     const res = await POST(
       new NextRequest(
-        `http://localhost/api/gorgias/support-webhook?gorgias_domain=${encodeURIComponent(GORGIAS_DOMAIN)}&unauth_whsec=${encodeURIComponent(CONNECTION_WEBHOOK_SECRET)}`,
+        `http://localhost/api/gorgias/support-webhook?gorgias_domain=${encodeURIComponent(GORGIAS_DOMAIN)}`,
         {
           method: 'POST',
-          headers: { 'content-type': 'application/json' },
+          headers: {
+            'content-type': 'application/json',
+            [GORGIAS_SUPPORT_SECRET_HEADERS[0]]: CONNECTION_WEBHOOK_SECRET,
+          },
           body: JSON.stringify({ ticket: { id: 'g-500', uri: '/api/tickets/g-500/' } }),
         }
       )
@@ -650,10 +663,13 @@ describe('Gorgias support webhook', () => {
 
     const res = await POST(
       new NextRequest(
-        `http://localhost/api/gorgias/support-webhook?gorgias_domain=${encodeURIComponent(GORGIAS_DOMAIN)}&unauth_whsec=${encodeURIComponent(CONNECTION_WEBHOOK_SECRET)}`,
+        `http://localhost/api/gorgias/support-webhook?gorgias_domain=${encodeURIComponent(GORGIAS_DOMAIN)}`,
         {
           method: 'POST',
-          headers: { 'content-type': 'application/json' },
+          headers: {
+            'content-type': 'application/json',
+            [GORGIAS_SUPPORT_SECRET_HEADERS[0]]: CONNECTION_WEBHOOK_SECRET,
+          },
           body: JSON.stringify({ ticket: { id: 'g-500', uri: '/api/tickets/g-500/' } }),
         }
       )
@@ -703,7 +719,15 @@ describe('Gorgias support webhook', () => {
     expect(res.status).toBe(200);
   });
 
-  it('resolves merchant by ticket uri host', async () => {
+  it('rejects a valid connection secret supplied only in the URL query', async () => {
+    const res = await POST(new NextRequest(
+      `http://localhost/api/gorgias/support-webhook?gorgias_domain=${encodeURIComponent(GORGIAS_DOMAIN)}&unauth_whsec=${encodeURIComponent(CONNECTION_WEBHOOK_SECRET)}`,
+      { method: 'POST', body: JSON.stringify(gorgiasTicket) },
+    ));
+    expect(res.status).toBe(401);
+  });
+
+  it('rejects payload-only ticket URI identity before parsing or mutation', async () => {
     const mock = makeGorgiasWebhookSupabase({
       connections: [
         {
@@ -727,7 +751,8 @@ describe('Gorgias support webhook', () => {
         { secret: CONNECTION_WEBHOOK_SECRET }
       )
     );
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(400);
+    expect(mock.caseUpserts()).toBe(0);
   });
 
   it('updates last_sync_at on success', async () => {

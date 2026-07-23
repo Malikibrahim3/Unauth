@@ -11,7 +11,7 @@ jest.mock('@/lib/permissions', () => ({
 }));
 
 jest.mock('@/lib/supabase/merchantHelpers', () => ({
-  fetchMerchantScopedCustomerProfile: jest.fn(),
+  fetchMerchantScopedSourceCustomer: jest.fn(),
 }));
 
 jest.mock('@/lib/support/intake/supportCaseReadModel', () => ({
@@ -20,7 +20,7 @@ jest.mock('@/lib/support/intake/supportCaseReadModel', () => ({
 
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission } from '@/lib/permissions';
-import { fetchMerchantScopedCustomerProfile } from '@/lib/supabase/merchantHelpers';
+import { fetchMerchantScopedSourceCustomer } from '@/lib/supabase/merchantHelpers';
 import { listSupportCasesForCustomerProfile } from '@/lib/support/intake/supportCaseReadModel';
 import { GET } from '@/app/api/customers/[id]/support-cases/route';
 
@@ -59,7 +59,7 @@ describe('GET /api/customers/[id]/support-cases', () => {
   });
 
   it('returns linked support cases for a scoped customer profile', async () => {
-    (fetchMerchantScopedCustomerProfile as jest.Mock).mockResolvedValue({ id: PROFILE_ID });
+    (fetchMerchantScopedSourceCustomer as jest.Mock).mockResolvedValue({ id: PROFILE_ID, merchant_customer_id: null });
     (listSupportCasesForCustomerProfile as jest.Mock).mockResolvedValue([linkedCase]);
 
     const response = await GET(
@@ -71,10 +71,15 @@ describe('GET /api/customers/[id]/support-cases', () => {
     const json = await response.json();
     expect(json.support_cases).toHaveLength(1);
     expect(json.support_cases[0].external_case_id).toBe('g-live-verify-1007');
+    expect(fetchMerchantScopedSourceCustomer).toHaveBeenCalledWith(
+      expect.anything(),
+      MERCHANT_ID,
+      PROFILE_ID,
+    );
   });
 
   it('does not expose raw email or payload fields', async () => {
-    (fetchMerchantScopedCustomerProfile as jest.Mock).mockResolvedValue({ id: PROFILE_ID });
+    (fetchMerchantScopedSourceCustomer as jest.Mock).mockResolvedValue({ id: PROFILE_ID, merchant_customer_id: null });
     (listSupportCasesForCustomerProfile as jest.Mock).mockResolvedValue([linkedCase]);
 
     const response = await GET(
@@ -89,7 +94,7 @@ describe('GET /api/customers/[id]/support-cases', () => {
   });
 
   it('returns 404 when profile is outside merchant scope', async () => {
-    (fetchMerchantScopedCustomerProfile as jest.Mock).mockResolvedValue(null);
+    (fetchMerchantScopedSourceCustomer as jest.Mock).mockResolvedValue(null);
 
     const response = await GET(
       new NextRequest(`http://localhost/api/customers/${PROFILE_ID}/support-cases`),

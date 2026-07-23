@@ -2,7 +2,6 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { createScopedClient } from '@/lib/supabase/scoped';
 import { TABLES } from '@/lib/supabase/tables';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
-import { logAction } from '@/lib/permissions/audit';
 import { NextRequest, NextResponse } from 'next/server';
 import { withRequestLogging } from '@/lib/log';
 
@@ -12,20 +11,40 @@ type Body = {
   confirm?: boolean;
 };
 
-// Map user-facing entity -> canonical v2 table name. All targets carry a
-// merchant_id column and are tenant-scoped by createScopedClient.
-const ALLOWED: Record<string, string> = {
-  customer_notes: 'customer_notes',
-  watchlist: TABLES.WATCHLIST_ENTRIES,
-  watchlist_entries: TABLES.WATCHLIST_ENTRIES,
-  audits: TABLES.PROCESSING_JOBS,
-  processing_jobs: TABLES.PROCESSING_JOBS,
+type RemovalTarget = {
+  table: string;
+  idColumn: 'id' | 'identity_id';
+  patch: () => Record<string, boolean | string | null>;
 };
 
-const SOFT_DELETE_FIELD: Record<string, string> = {
-  customer_notes: 'deleted_by_merchant',
-  [TABLES.WATCHLIST_ENTRIES]: 'removed_by_merchant',
-  [TABLES.PROCESSING_JOBS]: 'hidden_by_merchant',
+// These are view-level removal controls, not data-subject erasure. Use the
+// canonical columns that active read paths actually filter.
+const TARGETS: Record<string, RemovalTarget> = {
+  customer_notes: {
+    table: 'identity_notes',
+    idColumn: 'id',
+    patch: () => ({ deleted_at: new Date().toISOString() }),
+  },
+  watchlist: {
+    table: TABLES.WATCHLIST_ENTRIES,
+    idColumn: 'identity_id',
+    patch: () => ({ on_watchlist: false, display_name: null, display_email: null }),
+  },
+  watchlist_entries: {
+    table: TABLES.WATCHLIST_ENTRIES,
+    idColumn: 'identity_id',
+    patch: () => ({ on_watchlist: false, display_name: null, display_email: null }),
+  },
+  audits: {
+    table: TABLES.PROCESSING_JOBS,
+    idColumn: 'id',
+    patch: () => ({ hidden: true }),
+  },
+  processing_jobs: {
+    table: TABLES.PROCESSING_JOBS,
+    idColumn: 'id',
+    patch: () => ({ hidden: true }),
+  },
 };
 
 async function POSTHandler(req: NextRequest) {
@@ -38,7 +57,10 @@ async function POSTHandler(req: NextRequest) {
   const serviceClient = createServiceClient();
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.BULK_DELETE);
   if (denied) return denied;
-  const scopedClient = createScopedClient(ctx.merchantId, serviceClient);
+  const scopedClient = createScopedClient(
+    ctx.merchantId,
+    createServiceClient({ audit: { actorId: ctx.userId, actorRole: ctx.role, requestIp: ip } }),
+  );
 
   let body: Body;
   try {
@@ -50,47 +72,32 @@ async function POSTHandler(req: NextRequest) {
   const { entity, ids, confirm } = body;
   if (!confirm) return NextResponse.json({ error: 'Confirmation required' }, { status: 400 });
 
-  // If entity === 'all' soft-delete all allowed tables for this merchant.
-  // Every target table is merchant_id-scoped by the scoped client, so the
-  // .eq('merchant_id', …) constraint is injected automatically.
-  const softDeletePatch = (field: string): Record<string, boolean> => ({ [field]: true });
-
   if (entity === 'all') {
-    const tables = Array.from(new Set(Object.values(ALLOWED)));
-    const softDeleteAllTables = async (index: number): Promise<NextResponse | null> => {
-      if (index >= tables.length) return null;
-      const table = tables[index]!;
-      const field = SOFT_DELETE_FIELD[table];
-      if (!field) return softDeleteAllTables(index + 1);
-      const { error } = await scopedClient.from(table).update(softDeletePatch(field));
+    const targets = [TARGETS.customer_notes, TARGETS.watchlist, TARGETS.processing_jobs];
+    const removeAllTargets = async (index: number): Promise<NextResponse | null> => {
+      if (index >= targets.length) return null;
+      const target = targets[index]!;
+      const { error } = await scopedClient.from(target.table).update(target.patch());
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-      return softDeleteAllTables(index + 1);
+      return removeAllTargets(index + 1);
     };
-    const bulkDeleteError = await softDeleteAllTables(0);
+    const bulkDeleteError = await removeAllTargets(0);
     if (bulkDeleteError) return bulkDeleteError;
-    logAction({ ctx, action: 'bulk_delete', metadata: { entity: 'all' }, ip });
     return NextResponse.json({ ok: true });
   }
 
-  const table = ALLOWED[entity as string];
-  if (!table) return NextResponse.json({ error: 'Invalid entity' }, { status: 400 });
-
-  const softField = SOFT_DELETE_FIELD[table];
-  if (!softField) return NextResponse.json({ error: 'Entity does not support deletion' }, { status: 400 });
+  const target = TARGETS[entity as string];
+  if (!target) return NextResponse.json({ error: 'Invalid entity' }, { status: 400 });
+  if (ids && (!Array.isArray(ids) || ids.length > 500 || ids.some((id) => typeof id !== 'string'))) {
+    return NextResponse.json({ error: 'Invalid ids' }, { status: 400 });
+  }
 
   const res =
     ids && Array.isArray(ids) && ids.length > 0
-      ? await scopedClient.from(table).update(softDeletePatch(softField)).in('id', ids)
-      : await scopedClient.from(table).update(softDeletePatch(softField));
+      ? await scopedClient.from(target.table).update(target.patch()).in(target.idColumn, ids)
+      : await scopedClient.from(target.table).update(target.patch());
 
   if (res.error) return NextResponse.json({ error: res.error.message }, { status: 500 });
-
-  logAction({
-    ctx,
-    action: 'bulk_delete',
-    metadata: { entity, idsCount: ids?.length ?? 'all' },
-    ip,
-  });
 
   return NextResponse.json({ ok: true });
 }

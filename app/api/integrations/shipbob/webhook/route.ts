@@ -11,6 +11,7 @@ import {
   shipBobWebhookEventId,
   shipBobWebhookIdempotencyKey,
 } from '@/lib/integrations/providers/shipbobWebhook';
+import { readBoundedWebhookBody, WebhookBodyError } from '@/lib/webhooks/body';
 
 export const maxDuration = 60;
 
@@ -26,7 +27,15 @@ export async function POST(request: NextRequest) {
   const scopedClient = createScopedClient(connection.merchant_id, client);
   const credentials = await getIntegrationCredential(client, connection.merchant_id, 'shipbob', { connectionId: connection.id });
   const secret = typeof credentials?.webhookSecret === 'string' ? credentials.webhookSecret : null;
-  const rawBody = await request.text();
+  let rawBody: string;
+  try {
+    rawBody = await readBoundedWebhookBody(request);
+  } catch (bodyError) {
+    if (bodyError instanceof WebhookBodyError) {
+      return NextResponse.json({ error: bodyError.code }, { status: bodyError.status });
+    }
+    throw bodyError;
+  }
   if (!secret || !verifyShipBobWebhookSignature({
     rawBody,
     secret,

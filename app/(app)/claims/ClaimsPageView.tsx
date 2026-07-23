@@ -198,9 +198,8 @@ export function ClaimsPageView({
           <div>
             {/* Toolbar */}
             <div className="flex flex-wrap items-center justify-between gap-3 px-4 pt-4 pb-3 border-b" style={{ borderColor: 'var(--border-muted)' }}>
-              <div
+              <nav
                 className="flex flex-wrap items-center gap-x-1 gap-y-1"
-                role="tablist"
                 aria-label="Payout case filters"
               >
                 {filterTabs.map((tab) => (
@@ -213,7 +212,7 @@ export function ClaimsPageView({
                     {tab.label}
                   </FilterChip>
                 ))}
-              </div>
+              </nav>
               <div className="flex w-full flex-wrap items-center justify-between gap-3 sm:w-auto sm:justify-start">
                 <SegmentedControl
                   aria-label="Sort payout cases"

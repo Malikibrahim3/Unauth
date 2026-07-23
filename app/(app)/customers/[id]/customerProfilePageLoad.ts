@@ -1,7 +1,11 @@
 import { notFound, redirect } from "next/navigation";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { TABLES } from "@/lib/supabase/tables";
-import { requirePermission, PERMISSIONS } from "@/lib/permissions";
+import { PERMISSIONS } from "@/lib/permissions";
+import {
+  getRequestServiceClient,
+  getRequestUser,
+  requirePagePermission,
+} from "@/lib/auth/requestContext";
 import { buildBehavioralNarrative } from "@/lib/customers/narrative";
 import { riskLevelToNewGrade } from "@/lib/confidence";
 import type { ConfidenceGradeValue } from "@/lib/confidence";
@@ -328,7 +332,7 @@ export async function loadCustomerProfilePage(
     searchParams.source?.trim() === "gorgias" ? "gorgias" : null;
   const gorgiasTicketId = searchParams.ticket_id?.trim() || null;
 
-  const svc = createServiceClient();
+  const svc = getRequestServiceClient();
   let merchantId = "";
 
   if (viewToken) {
@@ -364,18 +368,11 @@ export async function loadCustomerProfilePage(
 
     merchantId = tokenRow.merchant_id;
   } else {
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getRequestUser();
     if (!user) redirect("/login");
 
-    const { denied, ctx } = await requirePermission(
-      svc,
-      user.id,
-      PERMISSIONS.VIEW_CUSTOMERS,
-    );
-    if (denied) {
+    const ctx = await requirePagePermission(PERMISSIONS.VIEW_CUSTOMERS);
+    if (!ctx) {
       return { blocked: true, reason: "access_denied" };
     }
 

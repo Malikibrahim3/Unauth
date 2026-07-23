@@ -3,7 +3,6 @@ import { z } from 'zod';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import { ACTIVE_MERCHANT_COOKIE } from '@/lib/permissions';
-import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 
 const bodySchema = z.object({ merchantId: z.string().uuid() });
 
@@ -16,10 +15,9 @@ export async function POST(request: Request) {
   if (!parsed.success) return NextResponse.json({ error: 'Invalid workspace' }, { status: 400 });
 
   const serviceClient = createServiceClient();
-  // Authorise workspace switching from the caller's current active membership;
-  // the explicit target-membership lookup below is the second boundary check.
-  const current = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_DASHBOARD);
-  if (current.denied) return current.denied;
+  // The exact target membership is the authority. Requiring an already
+  // selected workspace here would lock a legitimate multi-workspace user out
+  // when their cookie/metadata is missing or stale.
   const { data: membership } = await serviceClient
     .from(TABLES.MERCHANT_MEMBERS)
     .select('id')

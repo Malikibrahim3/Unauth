@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
-import { logAction } from '@/lib/permissions/audit';
 import { getClientIp } from '@/lib/ratelimit';
 import { withRequestLogging } from '@/lib/log';
 
@@ -25,7 +24,10 @@ async function DELETEHandler(
 
   const revokedAt = new Date().toISOString();
 
-  const { data, error } = await service
+  const mutationClient = createServiceClient({
+    audit: { actorId: ctx.userId, actorRole: ctx.role, requestIp: ip },
+  });
+  const { data, error } = await mutationClient
     .from(TABLES.MERCHANT_API_KEYS)
     .update({ revoked_at: revokedAt })
     .eq('id', keyId)
@@ -41,15 +43,6 @@ async function DELETEHandler(
   if (!data) {
     return NextResponse.json({ error: 'API key not found' }, { status: 404 });
   }
-
-  logAction({
-    ctx,
-    action: 'revoke_api_key',
-    resourceType: 'merchant_api_key',
-    resourceId: keyId,
-    metadata: { key_prefix: (data as { key_prefix: string }).key_prefix },
-    ip,
-  });
 
   return NextResponse.json({ ok: true });
 }

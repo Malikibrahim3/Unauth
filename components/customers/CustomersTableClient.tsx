@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, ChevronRight, Clock3, ReceiptText } from "lucide-react";
 import { DataTable } from "@/components/ui/DataTable";
@@ -54,8 +55,14 @@ export default function CustomersTableClient({
   const previewId = previewValue?.startsWith("customer:")
     ? previewValue.slice(9)
     : null;
+  const [activePreviewId, setActivePreviewId] = useState<string | null>(previewId);
+
+  useEffect(() => {
+    setActivePreviewId(previewId);
+  }, [previewId]);
 
   const setPreview = (profileId: string | null) => {
+    setActivePreviewId(profileId);
     const next = new URLSearchParams(searchParams.toString());
     if (profileId) next.set("preview", `customer:${profileId}`);
     else next.delete("preview");
@@ -228,7 +235,7 @@ export default function CustomersTableClient({
           </Card>
         ))}
       </div>
-      <CustomerPreviewDrawer id={previewId} onClose={() => setPreview(null)} />
+      <CustomerPreviewDrawer id={activePreviewId} onClose={() => setPreview(null)} />
     </>
   );
 }

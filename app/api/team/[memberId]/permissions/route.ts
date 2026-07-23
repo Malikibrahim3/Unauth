@@ -9,7 +9,6 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS, DELEGATABLE_PERMISSIONS } from '@/lib/permissions';
-import { logAction } from '@/lib/permissions/audit';
 import { createRequestLogger, withRequestLogging } from '@/lib/log';
 
 export const dynamic = 'force-dynamic';
@@ -64,7 +63,16 @@ async function POSTHandler(
   const service = createServiceClient();
   const { denied, ctx } = await requirePermission(service, user.id, PERMISSIONS.GRANT_PERMISSIONS);
   if (denied) return denied;
-  const scopedService = createScopedClient(ctx.merchantId, service);
+  const scopedService = createScopedClient(
+    ctx.merchantId,
+    createServiceClient({
+      audit: {
+        actorId: ctx.userId,
+        actorRole: ctx.role,
+        requestIp: request.headers.get('x-forwarded-for')?.split(',')[0].trim(),
+      },
+    }),
+  );
 
   const body = await request.json().catch(() => ({}));
   const { permission } = body as { permission: string };
@@ -103,14 +111,6 @@ async function POSTHandler(
     return NextResponse.json({ error: 'Failed to grant permission' }, { status: 500 });
   }
 
-  logAction({
-    ctx,
-    action: 'grant_permission',
-    resourceType: 'member',
-    resourceId: memberId,
-    metadata: { permission, granteeUserId: member.user_id },
-  });
-
   return NextResponse.json({ ok: true });
 }
 
@@ -128,7 +128,16 @@ async function DELETEHandler(
   const service = createServiceClient();
   const { denied, ctx } = await requirePermission(service, user.id, PERMISSIONS.GRANT_PERMISSIONS);
   if (denied) return denied;
-  const scopedService = createScopedClient(ctx.merchantId, service);
+  const scopedService = createScopedClient(
+    ctx.merchantId,
+    createServiceClient({
+      audit: {
+        actorId: ctx.userId,
+        actorRole: ctx.role,
+        requestIp: request.headers.get('x-forwarded-for')?.split(',')[0].trim(),
+      },
+    }),
+  );
 
   const body = await request.json().catch(() => ({}));
   const { permission } = body as { permission: string };
@@ -156,14 +165,6 @@ async function DELETEHandler(
     logger.error('permissions.revoke_failed', { error, memberId, permission });
     return NextResponse.json({ error: 'Failed to revoke permission' }, { status: 500 });
   }
-
-  logAction({
-    ctx,
-    action: 'revoke_permission',
-    resourceType: 'member',
-    resourceId: memberId,
-    metadata: { permission, granteeUserId: member.user_id },
-  });
 
   return NextResponse.json({ ok: true });
 }

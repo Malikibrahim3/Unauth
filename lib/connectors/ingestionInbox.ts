@@ -40,6 +40,29 @@ export function hashPayload(payload: unknown): string {
   return createHash('sha256').update(JSON.stringify(payload ?? null)).digest('hex');
 }
 
+function objectValue(value: unknown): Record<string, unknown> {
+  if (typeof value === 'string') {
+    try {
+      return objectValue(JSON.parse(value));
+    } catch {
+      return {};
+    }
+  }
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+}
+
+/** Return a deadline only from a merchant's explicitly stored policy. */
+export function configuredRetentionDeadline(settings: unknown, now = Date.now()): string | null {
+  const platform = objectValue(objectValue(settings).platform);
+  const days = platform.retentionDays;
+  if (typeof days !== 'number' || !Number.isInteger(days) || days < 30 || days > 3650) {
+    return null;
+  }
+  return new Date(now + days * 24 * 60 * 60 * 1000).toISOString();
+}
+
 /**
  * Atomically enqueue an ingestion event. Returns:
  *  - `enqueued` when this call inserted the row;
@@ -50,6 +73,19 @@ export async function enqueueIngestionEvent(
   client: SupabaseClient,
   input: EnqueueIngestionInput,
 ): Promise<EnqueueResult> {
+  let retentionDeadline = input.retentionDeadline;
+  if (retentionDeadline === undefined) {
+    const { data: merchant, error: settingsError } = await client
+      .from(TABLES.MERCHANTS)
+      .select('settings')
+      .eq('id', input.merchantId)
+      .maybeSingle();
+    // Missing/invalid configuration means no time-based purge. Ingestion must
+    // not fail merely because optional lifecycle configuration is unavailable.
+    retentionDeadline = settingsError
+      ? null
+      : configuredRetentionDeadline((merchant as { settings?: unknown } | null)?.settings);
+  }
   const payloadHash = hashPayload(input.payload);
   const row = {
     merchant_id: input.merchantId,
@@ -62,7 +98,7 @@ export async function enqueueIngestionEvent(
     payload_hash: payloadHash,
     payload_ref: input.payloadRef ?? null,
     payload: input.payload ?? null,
-    retention_deadline: input.retentionDeadline ?? null,
+    retention_deadline: retentionDeadline ?? null,
   };
 
   // Atomic idempotent insert: exactly one caller wins; duplicates get no row.

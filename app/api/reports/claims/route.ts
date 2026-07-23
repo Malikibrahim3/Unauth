@@ -6,10 +6,16 @@ import {
   loadIntelligenceReport,
   parseReportRange,
 } from "@/lib/reporting/intelligence";
+import {
+  buildReportExportRows,
+  type ReportExportView,
+} from "@/lib/reporting/export";
+import { normaliseCurrencyOrNull } from "@/lib/canonical/money";
 
 function cell(value: unknown) {
   const text = String(value ?? "");
-  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+  const safe = /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
+  return /[",\n]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
 }
 function csv(rows: unknown[][]) {
   return rows.map((row) => row.map(cell).join(",")).join("\n");
@@ -37,93 +43,36 @@ export async function GET(request: NextRequest) {
   const range = parseReportRange(
     request.nextUrl.searchParams.get("range") ?? undefined,
   );
-  const timezone = request.nextUrl.searchParams.get("timezone") || "UTC";
-  const view = request.nextUrl.searchParams.get("view") || "metrics";
+  const timezoneParam = request.nextUrl.searchParams.get("timezone") || "UTC";
+  const timezone = timezoneParam.length < 80 ? timezoneParam : "UTC";
+  const currencyParam = request.nextUrl.searchParams.get("currency");
+  const currency = currencyParam ? normaliseCurrencyOrNull(currencyParam) : null;
+  if (currencyParam && !currency) {
+    return NextResponse.json({ error: "Use a valid ISO currency code." }, { status: 400 });
+  }
+  const view: ReportExportView =
+    request.nextUrl.searchParams.get("view") === "outcomes"
+      ? "outcomes"
+      : "metrics";
   const report = await loadIntelligenceReport(
-    svc as any,
+    svc,
     permission.ctx.merchantId,
     range,
     timezone,
   );
-  let rows: unknown[][];
-  if (view === "outcomes")
-    rows = [
-      ["category", "currency", "record_count", "amount_minor", "amount"],
-      ...report.causes.map((r) => [
-        r.label,
-        r.currency,
-        r.count,
-        r.amountMinor,
-        (r.amountMinor / 100).toFixed(2),
-      ]),
-    ];
-  else
-    rows = [
-      ["metric", "currency", "value_minor", "value", "case_count"],
-      ...report.bridges.flatMap((b) => [
-        [
-          "requested_exposure",
-          b.currency,
-          b.requestedMinor,
-          (b.requestedMinor / 100).toFixed(2),
-          b.caseIds.length,
-        ],
-        [
-          "customer_compensation",
-          b.currency,
-          b.paidMinor,
-          (b.paidMinor / 100).toFixed(2),
-          b.caseIds.length,
-        ],
-        [
-          "prevented_payout",
-          b.currency,
-          b.preventedMinor,
-          (b.preventedMinor / 100).toFixed(2),
-          b.caseIds.length,
-        ],
-        [
-          "realised_loss",
-          b.currency,
-          b.realisedLossMinor,
-          (b.realisedLossMinor / 100).toFixed(2),
-          b.caseIds.length,
-        ],
-        [
-          "recoverable",
-          b.currency,
-          b.recoverableMinor,
-          (b.recoverableMinor / 100).toFixed(2),
-          b.caseIds.length,
-        ],
-        [
-          "recovered",
-          b.currency,
-          b.recoveredMinor,
-          (b.recoveredMinor / 100).toFixed(2),
-          b.caseIds.length,
-        ],
-        [
-          "outstanding",
-          b.currency,
-          b.outstandingMinor,
-          (b.outstandingMinor / 100).toFixed(2),
-          b.caseIds.length,
-        ],
-        [
-          "written_off",
-          b.currency,
-          b.writtenOffMinor,
-          (b.writtenOffMinor / 100).toFixed(2),
-          b.caseIds.length,
-        ],
-      ]),
-    ];
+  const scopedReport = currency
+    ? {
+        ...report,
+        bridges: report.bridges.filter((row) => row.currency === currency),
+        causes: report.causes.filter((row) => row.currency === currency),
+      }
+    : report;
+  const rows = buildReportExportRows(scopedReport, view);
   await logAction({
     ctx: permission.ctx,
     action: "export_audit",
     resourceType: "report",
-    metadata: { view, range, timezone, rowCount: rows.length - 1 },
+    metadata: { view, range, timezone, currency, rowCount: rows.length - 1 },
   });
   return new NextResponse(csv(rows), {
     headers: {

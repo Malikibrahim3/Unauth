@@ -62,6 +62,7 @@ export function SidebarAside({
         <div className="flex w-full min-w-0 items-center justify-between gap-2">
           <Link
             href="/dashboard"
+            prefetch={false}
             className="flex min-w-0 flex-shrink-0 items-center gap-2 py-0.5"
             title="Unauth"
             onClick={onCloseMobile}
@@ -97,6 +98,7 @@ export function SidebarAside({
         {!isCollapsed && (!shopifyConnected || !helpdeskConnected) ? (
           <Link
             href="/integrations"
+            prefetch={false}
             onClick={onCloseMobile}
             className="flex min-h-6 w-full items-center gap-1.5 rounded-sm px-2 py-1 text-[10px] font-medium leading-tight transition-opacity hover:opacity-80"
             style={{
@@ -172,6 +174,7 @@ export function SidebarAside({
 
         <Link
           href="/help"
+          prefetch={false}
           title={isCollapsed ? 'Help' : undefined}
           onClick={onCloseMobile}
           className={cn(
@@ -188,6 +191,7 @@ export function SidebarAside({
 
         <Link
           href="/settings"
+          prefetch={false}
           title={isCollapsed ? 'Settings' : undefined}
           onClick={onCloseMobile}
           className={cn(
@@ -228,6 +232,7 @@ export function SidebarAside({
               <Link
                 key={href}
                 href={href}
+                prefetch={false}
                 className="text-[10px] text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-secondary)] hover:underline"
               >
                 {label}

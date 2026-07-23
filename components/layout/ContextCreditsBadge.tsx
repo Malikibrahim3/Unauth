@@ -44,6 +44,7 @@ export function ContextCreditsBadge() {
   return (
     <Link
       href="/settings/billing"
+      prefetch={false}
       className="hidden md:flex flex-col items-end text-right leading-tight"
       title="Context credits are used each time Unauth assembles claim context from your connected sources. They reset at the end of your billing period — click to manage in Billing."
     >

@@ -240,7 +240,10 @@ describe('POST /api/account/delete', () => {
     // generic loop deletes support_payout_cases (which they cascade from).
     expect(service.rpcCalls).toEqual(
       expect.arrayContaining([
+        expect.objectContaining({ fn: 'record_account_deletion_receipt' }),
         { fn: 'purge_merchant_source_agnostic', args: { p_merchant_id: MERCHANT_ID } },
+        { fn: 'purge_merchant_audit_projection', args: { p_merchant_id: MERCHANT_ID } },
+        { fn: 'purge_merchant_privacy_records', args: { p_merchant_id: MERCHANT_ID } },
       ]),
     );
     expect(deleteUser).toHaveBeenCalledWith(USER_ID);
@@ -293,9 +296,17 @@ describe('POST /api/account/delete', () => {
       'customer_profiles',
       'customer_profile_audit_appearances',
     ]));
-    // The only RPC the purge may call is the source-agnostic purge; no legacy
-    // orphan-profile RPCs.
-    expect(service.rpcCalls.map((c) => c.fn)).toEqual(['purge_merchant_source_agnostic']);
+    // Only the canonical purge and durable deletion-receipt RPCs are used; no
+    // legacy orphan-profile RPCs.
+    expect(service.rpcCalls.map((c) => c.fn)).toEqual([
+      'record_account_deletion_receipt',
+      'purge_merchant_source_agnostic',
+      'purge_merchant_audit_projection',
+      'purge_merchant_privacy_records',
+      'purge_merchant_source_agnostic',
+      'purge_merchant_audit_projection',
+      'record_account_deletion_receipt',
+    ]);
   });
 
   it('does not delete the auth user when a current v2 cleanup table fails', async () => {

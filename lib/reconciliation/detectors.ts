@@ -200,8 +200,8 @@ export async function detectClosureEligibleCases(client: SupabaseClient, merchan
   // written-off value) on a case that is still open is a conclusive, data-backed
   // signal that the case can be financially closed.
   const summaries = await readRows(
-    client.from(TABLES.CASE_FINANCIAL_SUMMARIES).select('support_payout_case_id,exposed_minor,confirmed_loss_minor,written_off_minor,recovered_minor')
-      .eq('merchant_id', merchantId).eq('exposed_minor', 0).limit(SCAN_LIMIT),
+    client.from(TABLES.CASE_FINANCIAL_SUMMARIES).select('support_payout_case_id,exposed_minor,confirmed_loss_minor,written_off_minor,recovered_minor,known_states')
+      .eq('merchant_id', merchantId).eq('exposed_minor', 0).contains('known_states', ['exposed']).limit(SCAN_LIMIT),
     'reconcile_summaries_read',
   );
   const conclusive = summaries.filter((s) => Number(s.confirmed_loss_minor ?? 0) > 0 || Number(s.written_off_minor ?? 0) > 0 || Number(s.recovered_minor ?? 0) > 0);
@@ -227,7 +227,7 @@ export async function detectClosureEligibleCases(client: SupabaseClient, merchan
 export async function detectDuplicateFinancials(client: SupabaseClient, merchantId: string): Promise<DetectorResult> {
   const entries = await readRows(
     client.from(TABLES.CASE_FINANCIAL_ENTRIES).select('id,support_payout_case_id,source_record_id,direction,amount_minor,state')
-      .eq('merchant_id', merchantId).not('source_record_id', 'is', null).eq('state', 'confirmed').limit(SCAN_LIMIT),
+      .eq('merchant_id', merchantId).not('source_record_id', 'is', null).eq('state', 'confirmed_loss').limit(SCAN_LIMIT),
     'reconcile_financial_entries_read',
   );
   const groups = new Map<string, Row[]>();

@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { INTEGRATION_PROVIDERS } from '@/lib/integrations/registry';
+import { deriveProviderDisplayStage, INTEGRATION_PROVIDERS } from '@/lib/integrations/registry';
+import { listConnectors } from '@/lib/connectors/registry';
 import { buildEvidence } from '@/lib/claim-gate/buildEvidence';
 import { exchangeFedExClientCredentials, fetchFedExDeliveryProof } from '@/lib/integrations/providers/fedex';
 import { exchangeUpsClientCredentials } from '@/lib/integrations/providers/ups';
@@ -76,17 +77,21 @@ function mockClient(tables: Record<string, any[]>) {
 }
 
 describe('integration registry', () => {
-  it('marks built providers live and future providers slot-only', () => {
+  it('marks built providers live/partial and future providers slot-only', () => {
     const byId = Object.fromEntries(INTEGRATION_PROVIDERS.map((provider) => [provider.id, provider]));
     expect(byId.shopify.buildStatus).toBe('live');
     expect(byId.woocommerce.buildStatus).toBe('partial');
     expect(byId.bigcommerce.buildStatus).toBe('partial');
     expect(byId.gorgias.buildStatus).toBe('live');
-    expect(byId.zendesk.buildStatus).toBe('live');
-    expect(byId.freshdesk.buildStatus).toBe('live');
+    // Zendesk/Freshdesk/UPS/FedEx are NOT 'live': no executable adapter (or,
+    // for UPS/FedEx, no sync/webhook lifecycle at all), no real health probe,
+    // no reconciliation, no controlled e2e coverage — see the contract tests
+    // below and docs/audits/unauth-mvp-plus/08-provider-proof-matrix.md.
+    expect(byId.zendesk.buildStatus).toBe('partial');
+    expect(byId.freshdesk.buildStatus).toBe('partial');
     expect(byId.aftership).toBeUndefined();
-    expect(byId.ups.buildStatus).toBe('live');
-    expect(byId.fedex.buildStatus).toBe('live');
+    expect(byId.ups.buildStatus).toBe('partial');
+    expect(byId.fedex.buildStatus).toBe('partial');
     expect(byId.csv_import.buildStatus).toBe('live');
     expect(byId.document_upload.buildStatus).toBe('live');
     expect(byId.self_fulfillment_pack.buildStatus).toBe('live');
@@ -137,6 +142,95 @@ describe('integration registry', () => {
     const allCapabilities = INTEGRATION_PROVIDERS.flatMap((provider) => provider.evidenceCapabilities);
     expect(allCapabilities.join(' ')).not.toMatch(new RegExp(['g', 'ps'].join(''), 'i'));
     expect(allCapabilities.join(' ')).not.toMatch(new RegExp(['lati', 'tude', '|longi', 'tude'].join(''), 'i'));
+  });
+});
+
+describe('provider display stage is derived from evidence level, never hand-set', () => {
+  const byId = Object.fromEntries(INTEGRATION_PROVIDERS.map((provider) => [provider.id, provider]));
+
+  it('every provider has a lifecycle matrix covering all ten dimensions', () => {
+    const DIMENSIONS = [
+      'connect', 'account_verification', 'initial_import', 'incremental_pull', 'webhook',
+      'reconciliation', 'reconnect', 'disconnect', 'freshness_health', 'bounded_writeback',
+    ];
+    for (const provider of INTEGRATION_PROVIDERS) {
+      const lifecycle = provider.lifecycle ?? [];
+      expect(lifecycle.length).toBe(10);
+      expect(lifecycle.map((dim) => dim.id).sort()).toEqual([...DIMENSIONS].sort());
+      for (const dim of lifecycle) {
+        expect(dim.detail.length).toBeGreaterThan(0);
+        expect(['applicable', 'not_applicable']).toContain(dim.applicability);
+        expect(['unavailable', 'implemented', 'automated_tested', 'controlled_runtime_verified']).toContain(dim.evidence);
+      }
+    }
+  });
+
+  it('resolves every current provider to the honest non-Live stage', () => {
+    expect(deriveProviderDisplayStage(byId.shopify)).toBe('beta');
+    expect(deriveProviderDisplayStage(byId.gorgias)).toBe('beta');
+    expect(deriveProviderDisplayStage(byId.shipbob)).toBe('beta');
+    expect(deriveProviderDisplayStage(byId.woocommerce)).toBe('beta');
+    expect(deriveProviderDisplayStage(byId.bigcommerce)).toBe('beta');
+    expect(deriveProviderDisplayStage(byId.zendesk)).toBe('beta');
+    expect(deriveProviderDisplayStage(byId.freshdesk)).toBe('beta');
+    expect(deriveProviderDisplayStage(byId.ups)).toBe('partial');
+    expect(deriveProviderDisplayStage(byId.fedex)).toBe('partial');
+    expect(deriveProviderDisplayStage(byId.csv_import)).toBe('partial');
+    expect(deriveProviderDisplayStage(byId.document_upload)).toBe('partial');
+    expect(deriveProviderDisplayStage(byId.self_fulfillment_pack)).toBe('partial');
+    expect(deriveProviderDisplayStage(byId.stripe)).toBe('planned');
+    expect(deriveProviderDisplayStage(byId.carrier_claims)).toBe('planned');
+    expect(INTEGRATION_PROVIDERS.filter((provider) => deriveProviderDisplayStage(provider) === 'live')).toEqual([]);
+  });
+
+  it('Gorgias reconciliation automated evidence is backed by a real module and test', () => {
+    expect(byId.gorgias.lifecycle?.find((d) => d.id === 'reconciliation')?.evidence).toBe('automated_tested');
+    expect(fs.existsSync(path.join(process.cwd(), 'lib/support/gorgias/reconcileDeletedTickets.ts'))).toBe(true);
+    expect(fs.existsSync(path.join(process.cwd(), 'tests/lib/shopifyGorgiasProductBridge.test.ts'))).toBe(true);
+  });
+
+  it('Gorgias and Shopify health-probe automation is backed by real probe functions', () => {
+    const liveVerification = fs.readFileSync(path.join(process.cwd(), 'lib/connections/liveVerification.ts'), 'utf-8');
+    expect(byId.gorgias.lifecycle?.find((d) => d.id === 'freshness_health')?.evidence).toBe('automated_tested');
+    expect(liveVerification).toContain('export async function verifyGorgiasConnection');
+    expect(byId.shopify.lifecycle?.find((d) => d.id === 'freshness_health')?.evidence).toBe('automated_tested');
+    expect(liveVerification).toContain('export async function verifyShopifyConnection');
+  });
+
+  it('Zendesk and Freshdesk health-probe absence is backed by their real omission from live-verification', () => {
+    const liveVerification = fs.readFileSync(path.join(process.cwd(), 'lib/connections/liveVerification.ts'), 'utf-8');
+    expect(byId.zendesk.lifecycle?.find((d) => d.id === 'freshness_health')?.evidence).toBe('unavailable');
+    expect(byId.freshdesk.lifecycle?.find((d) => d.id === 'freshness_health')?.evidence).toBe('unavailable');
+    // MerchantLiveHealth only ever covers these five providers.
+    expect(liveVerification).toMatch(/shopify: LiveVerificationResult \| null;\s*gorgias: LiveVerificationResult \| null;\s*shipbob: LiveVerificationResult \| null;\s*ups: LiveVerificationResult \| null;\s*fedex: LiveVerificationResult \| null;/);
+    expect(liveVerification).not.toContain('zendesk');
+    expect(liveVerification).not.toContain('freshdesk');
+  });
+
+  it('UPS/FedEx account-verification and freshness claims are backed by the real token-exchange-only probe, not a tracking-API probe', () => {
+    const liveVerification = fs.readFileSync(path.join(process.cwd(), 'lib/connections/liveVerification.ts'), 'utf-8');
+    expect(byId.ups.lifecycle?.find((d) => d.id === 'account_verification')?.evidence).toBe('automated_tested');
+    expect(byId.fedex.lifecycle?.find((d) => d.id === 'account_verification')?.evidence).toBe('automated_tested');
+    // The ups/fedex branch of verifyMerchantIntegrationConnection only calls
+    // refreshCarrierCredentials — it never fetches a tracking number.
+    expect(liveVerification).toMatch(/provider_id === 'ups' \|\| row\.provider_id === 'fedex'[\s\S]{0,200}refreshCarrierCredentials/);
+  });
+
+  it("UPS/FedEx have no sync lifecycle — their adapter's sync/webhook methods are stubs, matching the 'not_applicable' lifecycle claim", () => {
+    const carriers = fs.readFileSync(path.join(process.cwd(), 'lib/connectors/providers/carriers.ts'), 'utf-8');
+    for (const id of ['ups', 'fedex'] as const) {
+      expect(byId[id].lifecycle?.find((d) => d.id === 'initial_import')?.applicability).toBe('not_applicable');
+      expect(byId[id].lifecycle?.find((d) => d.id === 'incremental_pull')?.applicability).toBe('not_applicable');
+      expect(byId[id].lifecycle?.find((d) => d.id === 'webhook')?.applicability).toBe('not_applicable');
+    }
+    expect(carriers).toContain("async initialImport(): Promise<SyncPage | UnsupportedResult> { return RUNTIME_PENDING; }");
+    expect(carriers).toContain("async processWebhook(_ctx: WebhookContext): Promise<IngestionResult | UnsupportedResult> { return RUNTIME_PENDING; }");
+  });
+
+  it('registered connectors keep verificationStatus in the declared enum (no silent new value asserting itself live)', () => {
+    for (const connector of listConnectors()) {
+      expect(['verified', 'partial', 'unverified']).toContain(connector.manifest.verificationStatus);
+    }
   });
 });
 
@@ -338,7 +432,7 @@ describe('evidence assembly', () => {
 
 describe('integration security migration', () => {
   const migration = fs.readFileSync(
-    path.join(process.cwd(), 'supabase/migrations/20260620120000_integration_layer_connectors.sql'),
+    path.join(process.cwd(), 'supabase/migrations/20260720000000_canonical_production_baseline.sql'),
     'utf8',
   );
 
@@ -358,11 +452,11 @@ describe('integration security migration', () => {
       'category_applicability',
       'pack_confirmations',
     ]) {
-      expect(migration).toContain(`alter table public.${table} enable row level security`);
+      expect(migration).toContain(`alter table public."${table}" enable row level security`);
     }
     expect(migration).toContain('carrier_claim_submission_status');
     expect(migration).toContain('recovery_amount_paid');
-    expect(migration).toContain('integration_credentials_no_client_select');
-    expect(migration).toContain('using (false)');
+    expect(migration).toContain('integration_credentials_service_only');
+    expect(migration).toContain('to service_role using (true) with check (true)');
   });
 });

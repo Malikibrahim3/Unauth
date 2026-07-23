@@ -173,6 +173,79 @@ export const createOutcomeSchema = z.object({
   followed_recommendation: z.boolean().nullable().optional(),
 }).and(merchantDecisionSchema);
 
+/**
+ * Canonical merchant authorization input. A decision is not a source outcome:
+ * the compatibility `outcome` field is accepted only as `pending`, while an
+ * observed refund/replacement/payment is recorded through
+ * `record_case_source_outcome` by a verified connector/reconciliation worker.
+ */
+export const recordCaseDecisionSchema = z.object({
+  decision: outcomeDecisionSchema,
+  outcome: z.literal('pending').default('pending'),
+  amount_minor: z.number().int().min(0).nullable().optional(),
+  currency: z.string().trim().length(3).transform((value) => value.toUpperCase()).nullable().optional(),
+  notes: z.string().trim().max(4000).nullable().optional(),
+  recommended_payout_action: z.enum(PAYOUT_RECOMMENDATION_VALUES).nullable().optional(),
+  followed_recommendation: z.boolean().nullable().optional(),
+});
+
+export type RecordMerchantCaseDecisionInput = z.input<typeof recordCaseDecisionSchema> & {
+  merchantId: string;
+  caseId: string;
+  expectedVersion: number;
+  actorUserId: string;
+  idempotencyKey: string;
+  relatedSourceObject: Record<string, unknown>;
+  reversal?: boolean;
+};
+
+export async function recordMerchantCaseDecision(
+  supabase: any,
+  input: RecordMerchantCaseDecisionInput,
+) {
+  const payload = recordCaseDecisionSchema.parse(input);
+  const decision = toV2Decision(payload.decision);
+  const { data, error } = await supabase.rpc('record_case_decision', {
+    p_merchant_id: input.merchantId,
+    p_case_id: input.caseId,
+    p_expected_version: input.expectedVersion,
+    p_decision: decision,
+    p_action: payload.decision,
+    p_amount_minor: payload.amount_minor ?? null,
+    p_currency: payload.currency ?? null,
+    p_reason: payload.notes ?? null,
+    p_actor_user_id: input.actorUserId,
+    p_recommendation_snapshot: {
+      recommended_payout_action: payload.recommended_payout_action ?? null,
+    },
+    p_followed_recommendation: payload.followed_recommendation ?? null,
+    p_related_source_object: input.relatedSourceObject,
+    p_idempotency_key: input.idempotencyKey,
+    p_reversal: input.reversal ?? false,
+  });
+  if (error) throw new Error(`record case decision failed: ${error.message}`);
+  const result = data as {
+    decision_id: string;
+    outcome_id: string;
+    domain_event_id?: string | null;
+    case_id: string;
+    new_version?: number;
+    replayed: boolean;
+  };
+  return {
+    id: result.outcome_id,
+    decision_id: result.decision_id,
+    claim_id: input.caseId,
+    decision,
+    outcome: 'pending' as const,
+    amount_minor: payload.amount_minor ?? null,
+    currency: payload.currency ?? null,
+    domain_event_id: result.domain_event_id ?? null,
+    new_version: result.new_version ?? input.expectedVersion + 1,
+    replayed: result.replayed,
+  };
+}
+
 export const createEvidenceItemSchema = z.object({
   id: z.string().uuid().optional(),
   claim_id: z.string().uuid(),

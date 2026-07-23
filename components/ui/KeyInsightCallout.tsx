@@ -48,6 +48,7 @@ export function KeyInsightCallout({
   return (
     <section
       className={cn('flex flex-wrap items-center gap-3', className)}
+      data-auth-visual="key-insight"
       style={{
         padding: '12px 14px',
         border: '1px solid var(--border)',

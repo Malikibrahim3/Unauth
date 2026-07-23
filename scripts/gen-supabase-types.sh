@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Regenerate lib/supabase/types.ts from the linked Supabase project.
+# Regenerate lib/supabase/types.ts from the proven local Supabase schema.
 #
 # Why a temp file: shell redirection (`> types.ts`) truncates the target to
 # empty BEFORE the generator runs. If `supabase gen types` then fails (most
@@ -9,17 +9,15 @@
 # only move it into place once the command has succeeded AND produced
 # non-empty output, so a failed run leaves the existing types.ts untouched.
 #
-# Usage: SUPABASE_PROJECT_ID=<id> npm run gen:supabase-types
-# See docs/supabase-types-regeneration.md for context.
+# Usage: npm run gen:supabase-types
+#
+# This command is intentionally local-only. Production-derived schema changes
+# first enter the canonical baseline and must pass fresh replay before types are
+# regenerated; the type task never contacts a linked project.
 set -euo pipefail
 
 OUT="lib/supabase/types.ts"
 TMP="lib/supabase/types.tmp.ts"
-
-if [ -z "${SUPABASE_PROJECT_ID:-}" ]; then
-  echo "Set SUPABASE_PROJECT_ID (see docs/supabase-types-regeneration.md)" >&2
-  exit 1
-fi
 
 # Clean up the temp file on any exit (success, failure, or interrupt).
 trap 'rm -f "$TMP"' EXIT
@@ -27,7 +25,7 @@ trap 'rm -f "$TMP"' EXIT
 mkdir -p "$(dirname "$OUT")"
 rm -f "$TMP"
 
-npx supabase gen types typescript --project-id "$SUPABASE_PROJECT_ID" > "$TMP"
+supabase gen types typescript --local > "$TMP"
 
 # Refuse to overwrite a real file with empty output (e.g. auth failed silently).
 if [ ! -s "$TMP" ]; then

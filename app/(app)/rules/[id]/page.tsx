@@ -1,10 +1,13 @@
 import { notFound, redirect } from "next/navigation";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
 import {
   hasPermission,
   PERMISSIONS,
-  requirePermission,
 } from "@/lib/permissions";
+import {
+  getRequestServiceClient,
+  getRequestUser,
+  requirePagePermission,
+} from "@/lib/auth/requestContext";
 import { TABLES } from "@/lib/supabase/tables";
 import {
   RuleVersionWorkbench,
@@ -21,18 +24,11 @@ export default async function RuleDetail({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const auth = createClient();
-  const {
-    data: { user },
-  } = await auth.auth.getUser();
+  const user = await getRequestUser();
   if (!user) redirect("/login");
-  const service = createServiceClient();
-  const { denied, ctx } = await requirePermission(
-    service,
-    user.id,
-    PERMISSIONS.VIEW_SETTINGS,
-  );
-  if (denied || !ctx) redirect("/dashboard");
+  const service = getRequestServiceClient();
+  const ctx = await requirePagePermission(PERMISSIONS.VIEW_SETTINGS);
+  if (!ctx) redirect("/dashboard");
   const { id } = await params;
   const [ruleResult, versionsResult] = await Promise.all([
     service
