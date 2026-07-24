@@ -29,7 +29,7 @@ describe('ShipBob read-only client', () => {
       locations: [{ id: '7', name: 'London', active: true }],
     });
     expect(requests).toHaveLength(3);
-    expect(requests.every(({ url }) => url.startsWith('https://sandbox-api.shipbob.com/2026-01/'))).toBe(true);
+    expect(requests.every(({ url }) => url.startsWith('https://sandbox-api.shipbob.com/2026-07/'))).toBe(true);
     expect(requests.find(({ url }) => url.includes('/order'))?.url).toContain('Limit=1');
     expect(requests.find(({ url }) => url.includes('/order'))?.headers.get('shipbob_channel_id')).toBe('42');
   });
@@ -73,7 +73,7 @@ describe('ShipBob read-only client', () => {
         status: 200,
         headers: new Headers(page === '1'
           ? {
-              'next-page': '/2026-01/order?Limit=100&page=2',
+              'next-page': '/2026-07/order?Limit=100&page=2',
               'page-number': '1',
               'total-pages': '2',
             }
