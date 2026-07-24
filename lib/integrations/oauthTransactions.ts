@@ -3,6 +3,11 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 const TABLE = 'oauth_connection_transactions';
 
+// OAuth providers can involve login, MFA, consent, and an account picker.
+// Keep the transaction one-time and bounded, but do not strand merchants who
+// need more than the original ten-minute default to finish authorization.
+export const OAUTH_TRANSACTION_TTL_SECONDS = 15 * 60;
+
 export type OAuthConnectionEnvironment = 'sandbox' | 'production';
 
 export type OAuthConnectionTransaction = {
@@ -28,7 +33,7 @@ export async function beginOAuthConnectionTransaction(
   serviceClient: SupabaseClient,
   input: Omit<OAuthConnectionTransaction, 'expiresAt'> & { ttlSeconds?: number; state?: string },
 ): Promise<string> {
-  const ttlSeconds = Math.min(Math.max(input.ttlSeconds ?? 600, 60), 900);
+  const ttlSeconds = Math.min(Math.max(input.ttlSeconds ?? OAUTH_TRANSACTION_TTL_SECONDS, 60), OAUTH_TRANSACTION_TTL_SECONDS);
   const state = input.state ?? crypto.randomBytes(32).toString('base64url');
   if (Buffer.byteLength(state, 'utf8') < 32) throw new Error('oauth_transaction_state_too_short');
   const expiresAt = new Date(Date.now() + ttlSeconds * 1000).toISOString();

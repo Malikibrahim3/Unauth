@@ -9,12 +9,12 @@ import {
 } from '@/lib/permissions';
 import { beginOAuthConnectionTransaction } from '@/lib/integrations/oauthTransactions';
 import { getAppUrl } from '@/lib/utils/appUrl';
-import { env } from '@/lib/utils/env';
 import {
   createShipBobOAuthState,
   sealShipBobOAuthState,
   SHIPBOB_READ_SCOPES,
   shipBobCodeChallenge,
+  shipBobOAuthClientCredentials,
   shipBobOAuthBaseUrl,
 } from '@/lib/integrations/providers/shipbobOAuth';
 import { shipBobOAuthCookie, shipBobOAuthCookieOptions } from '@/lib/integrations/shipbobOAuthCookies';
@@ -28,10 +28,6 @@ function redirect(request: NextRequest, key: string): NextResponse {
 }
 
 export async function GET(request: NextRequest) {
-  const clientId = env.SHIPBOB_OAUTH_CLIENT_ID;
-  const clientSecret = env.SHIPBOB_OAUTH_CLIENT_SECRET;
-  if (!clientId || !clientSecret) return redirect(request, 'shipbob_misconfigured');
-
   const userClient = createClient();
   const serviceClient = createServiceClient();
   const { data: { user } } = await userClient.auth.getUser();
@@ -56,6 +52,8 @@ export async function GET(request: NextRequest) {
     testMode: process.env.SHIPBOB_AUTHORIZED_TEST_MODE === 'true',
   });
   const sandbox = environment === 'sandbox';
+  const oauthCredentials = shipBobOAuthClientCredentials(environment);
+  if (!oauthCredentials) return redirect(request, 'shipbob_misconfigured');
   const oauthState = createShipBobOAuthState(sandbox);
   const stateToken = sealShipBobOAuthState({
     oauthState,
@@ -74,7 +72,7 @@ export async function GET(request: NextRequest) {
   });
   await recordShipBobAudit(serviceClient, { merchantId: context.merchantId, actorUserId: user.id, environment, action: 'shipbob_connection_started', status: 'started' });
   const authorizeUrl = new URL(`${shipBobOAuthBaseUrl(sandbox)}/connect/authorize`);
-  authorizeUrl.searchParams.set('client_id', clientId);
+  authorizeUrl.searchParams.set('client_id', oauthCredentials.clientId);
   authorizeUrl.searchParams.set('response_type', 'code');
   // ShipBob upgrades the request to a hybrid `code id_token` response. Without
   // an explicit response mode IdentityServer places the authorization result

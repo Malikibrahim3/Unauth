@@ -1,10 +1,19 @@
 import { createHmac } from 'node:crypto';
 import { verifyShipBobWebhookSignature } from '@/lib/connectors/providers/shipbob/api';
+jest.mock('@/lib/utils/env', () => ({
+  env: {
+    SHIPBOB_SANDBOX_OAUTH_CLIENT_ID: 'sandbox-client',
+    SHIPBOB_SANDBOX_OAUTH_CLIENT_SECRET: 'sandbox-secret',
+    SHIPBOB_PRODUCTION_OAUTH_CLIENT_ID: 'production-client',
+    SHIPBOB_PRODUCTION_OAUTH_CLIENT_SECRET: 'production-secret',
+  },
+}));
 import {
   createShipBobOAuthState,
   openShipBobOAuthState,
   sealShipBobOAuthState,
   SHIPBOB_READ_SCOPES,
+  shipBobOAuthClientCredentials,
 } from '@/lib/integrations/providers/shipbobOAuth';
 
 describe('ShipBob OAuth lifecycle', () => {
@@ -18,6 +27,17 @@ describe('ShipBob OAuth lifecycle', () => {
       'webhooks_write',
       'offline_access',
     ]));
+  });
+
+  it('uses the credential pair for the selected ShipBob environment', () => {
+    expect(shipBobOAuthClientCredentials('sandbox')).toEqual({
+      clientId: 'sandbox-client',
+      clientSecret: 'sandbox-secret',
+    });
+    expect(shipBobOAuthClientCredentials('production')).toEqual({
+      clientId: 'production-client',
+      clientSecret: 'production-secret',
+    });
   });
 
   it('round-trips merchant-bound encrypted OAuth state without relying on a browser cookie', () => {

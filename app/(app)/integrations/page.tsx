@@ -21,6 +21,7 @@ import {
 } from "@/components/integrations/ConnectorRow";
 import { CONNECTOR_GRID_CLASS } from "@/components/integrations/connectorGrid";
 import { DeferredLiveConnectionVerification } from "@/components/integrations/DeferredLiveConnectionVerification";
+import { ShipBobIntegrationBanner } from "@/components/integrations/ShipBobIntegrationBanner";
 import { WorkbenchPage, KeyInsightCallout, SummaryRail } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
@@ -106,6 +107,7 @@ export default async function IntegrationsPage() {
   ];
   return (
     <>
+      <ShipBobIntegrationBanner />
       <DeferredLiveConnectionVerification />
       <WorkbenchPage
       title="Integrations"

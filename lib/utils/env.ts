@@ -44,8 +44,16 @@ const envSchema = z.object({
   BILLING_CONTACT_EMAIL: z.string().email().optional(),
   /** Local/test-only secret for /api/test/e2e-auth — never set in production. */
   E2E_AUTH_SECRET: z.string().min(16).optional(),
+  /** Legacy single-environment ShipBob OAuth pair. Prefer explicit pairs below. */
   SHIPBOB_OAUTH_CLIENT_ID: z.string().min(1).optional(),
   SHIPBOB_OAUTH_CLIENT_SECRET: z.string().min(1).optional(),
+  /** ShipBob OAuth app credentials are environment-specific. */
+  SHIPBOB_SANDBOX_OAUTH_CLIENT_ID: z.string().min(1).optional(),
+  SHIPBOB_SANDBOX_OAUTH_CLIENT_SECRET: z.string().min(1).optional(),
+  SHIPBOB_PRODUCTION_OAUTH_CLIENT_ID: z.string().min(1).optional(),
+  SHIPBOB_PRODUCTION_OAUTH_CLIENT_SECRET: z.string().min(1).optional(),
+  /** Legacy local flag used only to identify the legacy pair as sandbox. */
+  SHIPBOB_SANDBOX: z.string().optional(),
   /** Webhook URL notified when a warehouse pack-confirmation photo is uploaded. */
   PACK_CONFIRMATION_NOTIFY_URL: z.string().url().optional(),
   /** Absolute app URL shadow alias read by claim-gate/collector code paths. */

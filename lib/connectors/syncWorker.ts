@@ -13,8 +13,7 @@ import { TABLES } from '@/lib/supabase/tables';
 import { getConnector } from '@/lib/connectors/registry';
 import { upsertSourceRecord } from '@/lib/sources/sourceRegistry';
 import { getIntegrationCredential } from '@/lib/integrations/auth';
-import { refreshShipBobCredentialsIfNeeded } from '@/lib/integrations/providers/shipbobOAuth';
-import { env } from '@/lib/utils/env';
+import { refreshShipBobCredentialsIfNeeded, shipBobOAuthClientCredentials } from '@/lib/integrations/providers/shipbobOAuth';
 import { persistShipBobCanonicalRecord, updateShipBobConnectionAfterSync } from '@/lib/connectors/providers/shipbob/persistence';
 import { runSyncJobPage, type SyncJobKind, type SyncJobState } from '@/lib/connectors/syncEngine';
 import type { ConnectorAdapter, ConnectorContext, NormalizedRecord } from '@/lib/connectors/types';
@@ -161,14 +160,21 @@ export async function runSyncJob(
  * that, so a stale token would fail every page with shipbob_auth_failed:401.
  */
 async function resolveJobCredentials(client: SupabaseClient, job: SyncJobRow) {
-  if (job.source === 'shipbob' && env.SHIPBOB_OAUTH_CLIENT_ID && env.SHIPBOB_OAUTH_CLIENT_SECRET) {
+  if (job.source === 'shipbob') {
+    const { data: connection } = await client
+      .from('merchant_integrations')
+      .select('environment')
+      .eq('id', job.connection_id)
+      .eq('merchant_id', job.merchant_id)
+      .maybeSingle();
+    const storedEnvironment = connection?.environment === 'sandbox' ? 'sandbox' : 'production';
+    const oauthCredentials = shipBobOAuthClientCredentials(storedEnvironment);
+    if (!oauthCredentials) return getIntegrationCredential(client, job.merchant_id, job.source ?? '', { connectionId: job.connection_id });
     const credentials = await refreshShipBobCredentialsIfNeeded(client, job.merchant_id, {
       connectionId: job.connection_id!,
-      clientId: env.SHIPBOB_OAUTH_CLIENT_ID,
-      clientSecret: env.SHIPBOB_OAUTH_CLIENT_SECRET,
+      clientId: oauthCredentials.clientId,
+      clientSecret: oauthCredentials.clientSecret,
     });
-    const { data: connection } = await client.from('merchant_integrations').select('environment').eq('id', job.connection_id).eq('merchant_id', job.merchant_id).maybeSingle();
-    const storedEnvironment = connection?.environment === 'sandbox' ? 'sandbox' : 'production';
     const credentialEnvironment = credentials?.environment === 'sandbox' ? 'sandbox' : 'production';
     if (storedEnvironment !== credentialEnvironment) throw new Error('shipbob_connection_environment_mismatch');
     return { ...credentials, sandbox: storedEnvironment === 'sandbox', environment: storedEnvironment };

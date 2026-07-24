@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermissionForMerchant } from '@/lib/permissions';
 import { getAppUrl } from '@/lib/utils/appUrl';
-import { env } from '@/lib/utils/env';
 import {
   exchangeShipBobOAuthCode,
   fetchShipBobChannels,
   openShipBobOAuthState,
+  shipBobOAuthClientCredentials,
   type ShipBobOAuthState,
 } from '@/lib/integrations/providers/shipbobOAuth';
 import { recordShipBobAudit } from '@/lib/integrations/providers/shipbobAudit';
@@ -114,7 +114,8 @@ async function handleCallback(request: NextRequest) {
       ?? (request.method === 'POST' ? oauthState.userId : null);
     if (!callbackUserId) return responseError('unauthorized');
     if (oauthState.userId && oauthState.userId !== callbackUserId) return responseError('identity_mismatch');
-    if (!env.SHIPBOB_OAUTH_CLIENT_ID || !env.SHIPBOB_OAUTH_CLIENT_SECRET) return responseError('misconfigured');
+    const oauthCredentials = shipBobOAuthClientCredentials(oauthState.sandbox ? 'sandbox' : 'production');
+    if (!oauthCredentials) return responseError('misconfigured');
 
     const redirectUri = `${getAppUrl()}/api/integrations/shipbob/callback`;
     let transaction;
@@ -143,8 +144,8 @@ async function handleCallback(request: NextRequest) {
     const token = await exchangeShipBobOAuthCode({
       code,
       codeVerifier: oauthState.codeVerifier,
-      clientId: env.SHIPBOB_OAUTH_CLIENT_ID,
-      clientSecret: env.SHIPBOB_OAUTH_CLIENT_SECRET,
+      clientId: oauthCredentials.clientId,
+      clientSecret: oauthCredentials.clientSecret,
       redirectUri,
       sandbox: oauthState.sandbox,
     });

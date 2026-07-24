@@ -4,6 +4,30 @@ import { upsertConnection } from '@/lib/connectors/connectionStore';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createShipBobSubscription, deleteShipBobSubscription, listShipBobSubscriptions, SHIPBOB_WEBHOOK_TOPICS, type ShipBobCredentials } from '@/lib/connectors/providers/shipbob/api';
 import { shipBobEndpoints } from './shipbobEnvironment';
+import { env } from '@/lib/utils/env';
+
+export type ShipBobOAuthEnvironment = 'sandbox' | 'production';
+
+export type ShipBobOAuthClientCredentials = {
+  clientId: string;
+  clientSecret: string;
+};
+
+/** Resolve the OAuth app for the connection's ShipBob environment. */
+export function shipBobOAuthClientCredentials(
+  environment: ShipBobOAuthEnvironment,
+): ShipBobOAuthClientCredentials | null {
+  const sandbox = environment === 'sandbox';
+  const clientId = sandbox
+    ? env.SHIPBOB_SANDBOX_OAUTH_CLIENT_ID
+      ?? (env.SHIPBOB_SANDBOX === 'true' ? env.SHIPBOB_OAUTH_CLIENT_ID : undefined)
+    : env.SHIPBOB_PRODUCTION_OAUTH_CLIENT_ID;
+  const clientSecret = sandbox
+    ? env.SHIPBOB_SANDBOX_OAUTH_CLIENT_SECRET
+      ?? (env.SHIPBOB_SANDBOX === 'true' ? env.SHIPBOB_OAUTH_CLIENT_SECRET : undefined)
+    : env.SHIPBOB_PRODUCTION_OAUTH_CLIENT_SECRET;
+  return clientId && clientSecret ? { clientId, clientSecret } : null;
+}
 
 export const SHIPBOB_READ_SCOPES = [
   'openid',

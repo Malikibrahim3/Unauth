@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { AuthenticatedPageHeader } from '@/components/authenticated/AuthenticatedPageHeader';
 import { AuthenticatedPanel } from '@/components/authenticated/AuthenticatedPanel';
 import pageStyles from '@/components/authenticated/AuthenticatedPageChrome.module.css';
@@ -84,6 +85,14 @@ export default function ShipBobAccountSelectionClient({ selectionId }: { selecti
             </label>
           ) : null}
           {message ? <p role={status === 'error' ? 'alert' : 'status'} className="rounded-[var(--ua-radius-input)] border border-[var(--border-muted)] bg-[var(--surface-sunken)] px-3 py-2.5 text-[11px] leading-5 text-[var(--text-secondary)]">{message}</p> : null}
+          {status === 'error' ? (
+            <Link
+              href="/integrations/shipbob"
+              className="inline-flex h-8 w-fit items-center rounded-[var(--ua-radius-input)] border border-[var(--border)] px-3 text-[11px] font-semibold text-[var(--text-primary)]"
+            >
+              Start ShipBob connection again
+            </Link>
+          ) : null}
           <button
             type="button"
             onClick={() => void submit()}

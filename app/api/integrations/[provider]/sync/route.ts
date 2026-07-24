@@ -24,8 +24,7 @@ import {
   getShipmentTimeline,
 } from '@/lib/integrations/providers/shipbob';
 import { requireIntegrationProvider } from '@/lib/integrations/registry';
-import { refreshShipBobCredentialsIfNeeded } from '@/lib/integrations/providers/shipbobOAuth';
-import { env } from '@/lib/utils/env';
+import { refreshShipBobCredentialsIfNeeded, shipBobOAuthClientCredentials } from '@/lib/integrations/providers/shipbobOAuth';
 import { refreshCarrierCredentials } from '@/lib/integrations/providers/carrierCredentials';
 import type { NormalizedEvidenceItem } from '@/lib/integrations/types';
 import { safeConnectionErrorCode } from '@/lib/integrations/publicErrors';
@@ -109,12 +108,22 @@ export async function POST(
     } else if (provider.id === 'shipbob') {
       // ShipBob OAuth tokens live ~1 hour — refresh before use or this fetch
       // starts failing an hour after the merchant connects.
-      const credentials = env.SHIPBOB_OAUTH_CLIENT_ID && env.SHIPBOB_OAUTH_CLIENT_SECRET
+      const { data: connection } = activeConnectionId
+        ? await serviceClient
+          .from('merchant_integrations')
+          .select('environment')
+          .eq('id', activeConnectionId)
+          .eq('merchant_id', ctx.merchantId)
+          .maybeSingle()
+        : { data: null };
+      const environment = connection?.environment === 'sandbox' ? 'sandbox' : 'production';
+      const oauthCredentials = shipBobOAuthClientCredentials(environment);
+      const credentials = oauthCredentials
         ? activeConnectionId
           ? await refreshShipBobCredentialsIfNeeded(serviceClient, ctx.merchantId, {
               connectionId: activeConnectionId,
-              clientId: env.SHIPBOB_OAUTH_CLIENT_ID,
-              clientSecret: env.SHIPBOB_OAUTH_CLIENT_SECRET,
+              clientId: oauthCredentials.clientId,
+              clientSecret: oauthCredentials.clientSecret,
             })
           : null
         : await getIntegrationCredential(serviceClient, ctx.merchantId, provider.id, { connectionId: activeConnectionId });
