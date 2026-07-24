@@ -230,6 +230,16 @@ export async function fetchShipBobChannels(input: { accessToken: string; sandbox
   return discovered;
 }
 
+export function successfulShipBobOAuthConnectionPatch() {
+  return {
+    last_error: null,
+    last_error_code: null,
+    last_error_message: null,
+    last_error_at: null,
+    last_verification_error: null,
+  };
+}
+
 export async function persistShipBobOAuthConnection(input: {
   client: SupabaseClient;
   merchantId: string;
@@ -324,6 +334,19 @@ export async function persistShipBobOAuthConnection(input: {
     updated_at: new Date().toISOString(),
   }, { onConflict: 'connection_id' });
   if (error) throw new Error(`shipbob_oauth_credential_persist_failed:${error.message}`);
+
+  // A successful OAuth exchange replaces any previously revoked credentials.
+  // Clear the old failure metadata only after the new encrypted credentials
+  // have been stored, otherwise the effective connection status remains
+  // "attention_required" even though the reconnect succeeded.
+  const { error: connectionRecoveryError } = await input.client
+    .from('merchant_integrations')
+    .update(successfulShipBobOAuthConnectionPatch())
+    .eq('id', connectionId)
+    .eq('merchant_id', input.merchantId);
+  if (connectionRecoveryError) {
+    throw new Error(`shipbob_connection_recovery_persist_failed:${connectionRecoveryError.message}`);
+  }
 
   return {
     connectionId,

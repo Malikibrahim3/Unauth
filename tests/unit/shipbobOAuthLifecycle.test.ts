@@ -14,6 +14,7 @@ import {
   sealShipBobOAuthState,
   SHIPBOB_READ_SCOPES,
   shipBobOAuthClientCredentials,
+  successfulShipBobOAuthConnectionPatch,
 } from '@/lib/integrations/providers/shipbobOAuth';
 
 describe('ShipBob OAuth lifecycle', () => {
@@ -37,6 +38,16 @@ describe('ShipBob OAuth lifecycle', () => {
     expect(shipBobOAuthClientCredentials('production')).toEqual({
       clientId: 'production-client',
       clientSecret: 'production-secret',
+    });
+  });
+
+  it('clears revoked-credential metadata after a successful reconnect', () => {
+    expect(successfulShipBobOAuthConnectionPatch()).toEqual({
+      last_error: null,
+      last_error_code: null,
+      last_error_message: null,
+      last_error_at: null,
+      last_verification_error: null,
     });
   });
 

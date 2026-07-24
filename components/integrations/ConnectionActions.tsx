@@ -7,6 +7,10 @@ import { KeyRound, RefreshCw, Unplug } from "lucide-react";
 import { Button, Card, Input, Modal, Select } from "@/components/ui";
 import { getIntegrationProvider } from "@/lib/integrations/registry";
 
+export function isConnectedIntegrationStatus(status: string) {
+  return ["connected", "active", "degraded", "syncing", "attention_required"].includes(status);
+}
+
 export function ConnectionActions({
   providerId,
   providerName,
@@ -19,7 +23,7 @@ export function ConnectionActions({
   canManage: boolean;
 }) {
   const router = useRouter();
-  const connected = ["connected", "active", "degraded", "syncing"].includes(status);
+  const connected = isConnectedIntegrationStatus(status);
   const isCarrier = providerId === "ups" || providerId === "fedex";
   const [disconnecting, setDisconnecting] = useState(false);
   const [credentialOpen, setCredentialOpen] = useState(false);
