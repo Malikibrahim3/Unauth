@@ -23,6 +23,7 @@ export type ResolveExceptionActionInput = {
   action: ExceptionAction;
   selectedCandidateId?: string | null;
   resolution?: string | null;
+  expectedStateVersion?: number | null;
   actorUserId: string;
 };
 
@@ -66,6 +67,7 @@ export async function resolveExceptionAction(client: SupabaseClient, input: Reso
     status: settleStatus,
     resolution: input.resolution ?? (matchStatus ? `match ${matchStatus}` : null),
     resolvedBy: input.actorUserId,
+    expectedStateVersion: isMatch ? null : input.expectedStateVersion ?? null,
   });
   if (!settled.ok) return settled;
 

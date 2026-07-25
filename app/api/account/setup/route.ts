@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient, createClient, createServiceClient } from '@/lib/supabase/server';
 import { upsertMerchantForUser } from '@/lib/account/upsertMerchantForUser';
-import { getMerchantProfileById } from '@/lib/account/merchantProfile';
+import {
+  getMerchantProfileById,
+  mergeMerchantSettings,
+} from '@/lib/account/merchantProfile';
 import { resolveCallerContext } from '@/lib/permissions';
 import { setCategoryApplicability } from '@/lib/integrations/applicability';
+import { getConnectionState } from '@/lib/connections/getConnectionState';
+import { TABLES } from '@/lib/supabase/tables';
 
 interface SetupBody {
   bootstrapOnly?: boolean;
@@ -14,6 +19,7 @@ interface SetupBody {
   primaryFraudConcern?: string;
   usesWms3pl?: boolean;
   usesReturnsPlatform?: boolean;
+  profileComplete?: boolean;
   setupComplete?: boolean;
 }
 
@@ -72,8 +78,54 @@ export async function POST(request: NextRequest) {
         (user.user_metadata?.primary_loss_concern as string | undefined) ??
         (user.user_metadata?.primary_fraud_concern as string | undefined) ??
         null,
-      setupComplete: !isBootstrap && body.setupComplete === true,
+      profileComplete:
+        !isBootstrap && (body.profileComplete === true || body.setupComplete === true),
+      // Final completion is applied only after the selected provider stack is
+      // verified below. Existing completed merchants remain completed.
+      setupComplete: false,
     });
+    let setupComplete = merchant.setup_complete;
+    if (!isBootstrap && body.setupComplete === true && !setupComplete) {
+      const connectionState = await getConnectionState(serviceClient, merchant.id);
+      if (!connectionState.shopify || !connectionState.helpdesk) {
+        return NextResponse.json(
+          {
+            error:
+              'Connect Shopify and one supported helpdesk before completing setup.',
+            requirements: {
+              shopify: connectionState.shopify,
+              helpdesk: connectionState.helpdesk,
+            },
+          },
+          { status: 409 },
+        );
+      }
+      const { data: storedMerchant, error: loadMerchantError } =
+        await serviceClient
+          .from(TABLES.MERCHANTS)
+          .select('settings')
+          .eq('id', merchant.id)
+          .maybeSingle();
+      if (loadMerchantError || !storedMerchant) {
+        throw new Error(
+          `Failed to verify merchant setup: ${loadMerchantError?.message ?? 'merchant missing'}`,
+        );
+      }
+      const { error: completeError } = await serviceClient
+        .from(TABLES.MERCHANTS)
+        .update({
+          settings: mergeMerchantSettings(storedMerchant.settings, {
+            onboarding_profile_complete: true,
+            setup_complete: true,
+          }),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', merchant.id);
+      if (completeError) {
+        throw new Error(`Failed to complete account setup: ${completeError.message}`);
+      }
+      setupComplete = true;
+    }
 
     const metadataPatch: Record<string, unknown> = {
       ...(user.user_metadata ?? {}),
@@ -110,7 +162,12 @@ export async function POST(request: NextRequest) {
     }
     if (body.usesWms3pl !== undefined) metadataPatch.uses_wms_3pl = body.usesWms3pl;
     if (body.usesReturnsPlatform !== undefined) metadataPatch.uses_returns_platform = body.usesReturnsPlatform;
-    metadataPatch.setup_complete = merchant.setup_complete;
+    metadataPatch.onboarding_profile_complete =
+      body.profileComplete === true
+      || body.setupComplete === true
+      || user.user_metadata?.onboarding_profile_complete === true
+      || setupComplete;
+    metadataPatch.setup_complete = setupComplete;
 
     const metadataResult = await adminClient.auth.admin.updateUserById(user.id, {
       user_metadata: metadataPatch,
@@ -120,7 +177,12 @@ export async function POST(request: NextRequest) {
       throw new Error(`Failed to update account metadata: ${metadataResult.error.message}`);
     }
 
-    return NextResponse.json({ ok: true, merchantId: merchant.id, setupComplete: merchant.setup_complete });
+    return NextResponse.json({
+      ok: true,
+      merchantId: merchant.id,
+      profileComplete: metadataPatch.onboarding_profile_complete === true,
+      setupComplete,
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Could not save account setup.';
     return NextResponse.json({ error: message }, { status: 500 });
@@ -153,6 +215,7 @@ export async function GET() {
           name: merchant.name,
           monthly_order_volume: merchant.monthly_order_volume,
           primary_fraud_concern: merchant.primary_fraud_concern,
+          onboarding_profile_complete: merchant.onboarding_profile_complete,
           setup_complete: merchant.setup_complete,
         }
       : null,

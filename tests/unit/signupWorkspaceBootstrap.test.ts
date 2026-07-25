@@ -14,7 +14,10 @@ describe('clean-account workspace bootstrap', () => {
 
   it('creates only an incomplete placeholder workspace during signup', () => {
     expect(setupRoute).toContain('const isBootstrap = body.bootstrapOnly === true');
-    expect(setupRoute).toContain('!isBootstrap && body.setupComplete === true');
+    expect(setupRoute).toContain('profileComplete:');
+    expect(setupRoute).toContain('setupComplete: false');
+    expect(setupRoute).toContain('getConnectionState(serviceClient, merchant.id)');
+    expect(setupRoute).toContain('!connectionState.shopify || !connectionState.helpdesk');
     expect(setupRoute).toContain('!isBootstrap && !isSkipAction && !isDemo');
   });
 });

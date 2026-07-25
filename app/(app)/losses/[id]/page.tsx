@@ -54,11 +54,10 @@ export default async function LossDetailPage({
     <DetailPageShell
       backHref="/losses"
       backLabel="Losses"
-      eyebrow="Loss"
       title={`${enumLabel("lossCategory", model.loss.case_category)} · ${hashId(id)}`}
       subtitle={`${enumLabel("lossStatus", model.loss.status)} · ${humaniseField(model.loss.source_confidence)}`}
       statusBadge={
-        <span className="rounded-md border border-[var(--border)] px-2 py-1 text-xs">
+        <span className="rounded-md border border-[var(--ua-border-default)] px-2 py-1 text-xs">
           {humaniseField(model.loss.financial_state)}
         </span>
       }
@@ -76,7 +75,7 @@ export default async function LossDetailPage({
       <div className="space-y-3">
         <section
           aria-labelledby="loss-financial"
-          className="rounded-[var(--ua-radius-card)] border border-[var(--border)] bg-[var(--surface)] p-4 shadow-[var(--shadow-xs)]"
+          className="rounded-[var(--ua-radius-surface)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] p-4"
         >
           <h2 id="loss-financial" className="font-semibold">
             Financial outcome
@@ -102,20 +101,20 @@ export default async function LossDetailPage({
               ],
             ].map(([term, value]) => (
               <div key={term}>
-                <dt className="text-xs text-[var(--text-secondary)]">{term}</dt>
-                <dd className="mt-1 font-mono font-medium">{value}</dd>
+                <dt className="text-xs text-[var(--ua-text-secondary)]">{term}</dt>
+                <dd className="mt-1 font-sans tabular-nums font-medium">{value}</dd>
               </div>
             ))}
           </dl>
           {model.amounts.length > 1 ? (
-            <p className="mt-3 text-sm text-[var(--warning)]">
+            <p className="mt-3 text-sm text-[var(--ua-warning)]">
               This loss spans multiple currencies. Values are shown separately
               in the ledger and cannot be combined.
             </p>
           ) : null}
         </section>
         <div className="grid gap-3 lg:grid-cols-2">
-          <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
+          <section className="rounded-lg border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] p-4">
             <h2 className="font-semibold">Attribution</h2>
             <p className="mt-3 text-sm">
               <strong>Primary:</strong>{" "}
@@ -123,7 +122,7 @@ export default async function LossDetailPage({
                 ? `${enumLabel("attribution", primary.attribution)} · ${primary.accountable_party_name ?? enumLabel("counterparty", primary.accountable_party_type)}`
                 : enumLabel("attribution", model.loss.attribution)}
             </p>
-            <p className="mt-1 text-sm text-[var(--text-secondary)]">
+            <p className="mt-1 text-sm text-[var(--ua-text-secondary)]">
               Confidence:{" "}
               {primary?.confidence == null
                 ? humaniseField(model.loss.source_confidence)
@@ -138,7 +137,7 @@ export default async function LossDetailPage({
                       {enumLabel("attribution", candidate.attribution)} ·{" "}
                       {candidate.accountable_party_name ??
                         enumLabel("counterparty", candidate.accountable_party_type)}{" "}
-                      <span className="text-[var(--text-secondary)]">
+                      <span className="text-[var(--ua-text-secondary)]">
                         (candidate only; not added to loss totals)
                       </span>
                     </li>
@@ -146,18 +145,18 @@ export default async function LossDetailPage({
                 </ul>
               </>
             ) : (
-              <p className="mt-4 text-sm text-[var(--text-secondary)]">
+              <p className="mt-4 text-sm text-[var(--ua-text-secondary)]">
                 No alternative attribution candidates.
               </p>
             )}
           </section>
-          <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
+          <section className="rounded-lg border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] p-4">
             <h2 className="font-semibold">Connected records</h2>
             <div className="mt-3 flex flex-wrap gap-2">
               {model.loss.support_payout_case_id ? (
                 <Link
                   href={`/claims/${model.loss.support_payout_case_id}`}
-                  className="rounded-md border border-[var(--border)] px-3 py-2 text-sm"
+                  className="rounded-md border border-[var(--ua-border-default)] px-3 py-2 text-sm"
                 >
                   Payout case
                 </Link>
@@ -166,7 +165,7 @@ export default async function LossDetailPage({
                 <Link
                   key={recovery.id}
                   href={`/recoveries/${recovery.id}`}
-                  className="rounded-md border border-[var(--border)] px-3 py-2 text-sm"
+                  className="rounded-md border border-[var(--ua-border-default)] px-3 py-2 text-sm"
                 >
                   Recovery {hashId(recovery.id)}
                 </Link>
@@ -174,10 +173,10 @@ export default async function LossDetailPage({
             </div>
           </section>
         </div>
-        <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
+        <section className="rounded-lg border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] p-4">
           <h2 className="font-semibold">Evidence</h2>
           {model.evidence.length ? (
-            <ul className="mt-3 divide-y divide-[var(--border)]">
+            <ul className="mt-3 divide-y divide-[var(--ua-border-default)]">
               {model.evidence.map((item) => (
                 <li key={item.id} className="py-3 text-sm">
                   <span className="font-medium">
@@ -196,27 +195,27 @@ export default async function LossDetailPage({
               ))}
             </ul>
           ) : (
-            <p className="mt-3 text-sm text-[var(--text-secondary)]">
+            <p className="mt-3 text-sm text-[var(--ua-text-secondary)]">
               No loss-specific evidence is linked. This does not mean evidence
               is complete.
             </p>
           )}
         </section>
-        <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
+        <section className="rounded-lg border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] p-4">
           <h2 className="font-semibold">Activity</h2>
           {model.events.length ? (
             <ol className="mt-3 space-y-3">
               {model.events.map((event) => (
                 <li key={event.id} className="text-sm">
                   <span className="font-medium">{humaniseField(event.event_type)}</span>{" "}
-                  <time className="text-[var(--text-secondary)]">
+                  <time className="text-[var(--ua-text-secondary)]">
                     {formatDateTime(event.created_at)}
                   </time>
                 </li>
               ))}
             </ol>
           ) : (
-            <p className="mt-3 text-sm text-[var(--text-secondary)]">
+            <p className="mt-3 text-sm text-[var(--ua-text-secondary)]">
               No loss activity has been recorded.
             </p>
           )}

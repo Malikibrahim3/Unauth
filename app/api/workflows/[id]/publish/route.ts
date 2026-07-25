@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { TABLES } from '@/lib/supabase/tables';
+import { env } from '@/lib/utils/env';
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = createClient();
@@ -20,7 +21,26 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     conditionCount: Array.isArray(draft.conditions) ? draft.conditions.length : 0,
     actions: (Array.isArray(draft.outputs) ? draft.outputs : []).map((output: { type?: unknown }) => output.type),
   };
-  if (!body.confirm) return NextResponse.json({ confirmationRequired: true, summary, notice: 'Publishing enables bounded workflow outputs for future matching events.' });
+  const publicationEnabled = env.WORKFLOW_PUBLICATION_ENABLED === 'true';
+  if (!body.confirm) {
+    return NextResponse.json({
+      confirmationRequired: publicationEnabled,
+      publicationEnabled,
+      summary,
+      notice: publicationEnabled
+        ? 'Publishing enables bounded workflow outputs for future matching events.'
+        : 'Preview only. Publication remains disabled until workflow replay and idempotency verification is complete.',
+    });
+  }
+  if (!publicationEnabled) {
+    return NextResponse.json(
+      {
+        error: 'workflow_publication_unavailable',
+        message: 'Flow publication is disabled until workflow replay and idempotency verification is complete.',
+      },
+      { status: 503 },
+    );
+  }
 
   const { data, error } = await (service as any).rpc('publish_workflow_definition', {
     p_merchant_id: ctx.merchantId,

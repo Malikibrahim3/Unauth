@@ -96,7 +96,7 @@ export function Modal({
       role="presentation"
       className="fixed inset-0 flex items-center justify-center"
       style={{
-        background: 'color-mix(in srgb, var(--text-primary) 44%, transparent)',
+        background: 'var(--ua-backdrop)',
         backdropFilter: 'blur(4px)',
         zIndex: 'var(--ua-z-modal)' as unknown as number,
       }}
@@ -110,9 +110,9 @@ export function Modal({
         aria-label={ariaLabel ?? title ?? 'Modal'}
         className={cn('ua-card rounded-[var(--ua-radius-overlay)] overflow-hidden flex flex-col max-h-[90vh]', className)}
         style={{
-          background: 'var(--surface)',
-          border: '1px solid var(--border)',
-          boxShadow: 'var(--ua-shadow-modal)',
+          background: 'var(--ua-surface-primary)',
+          border: '1px solid var(--ua-border-default)',
+          boxShadow: 'var(--ua-shadow-overlay)',
           width: MODAL_WIDTHS[size],
           maxWidth: 'calc(100vw - 32px)',
         }}
@@ -121,16 +121,16 @@ export function Modal({
         {(title || description) && (
           <div
             className="flex items-start justify-between gap-3 border-b px-4 py-3"
-            style={{ borderColor: 'var(--border)' }}
+            style={{ borderColor: 'var(--ua-border-default)' }}
           >
             <div className="flex-1 min-w-0">
               {title && (
-                <h2 className="text-h2" style={{ color: 'var(--text-primary)' }}>
+                <h2 className="text-h2" style={{ color: 'var(--ua-text-primary)' }}>
                   {title}
                 </h2>
               )}
               {description && (
-                <p className="mt-1 text-small" style={{ color: 'var(--text-secondary)' }}>
+                <p className="mt-1 text-small" style={{ color: 'var(--ua-text-secondary)' }}>
                   {description}
                 </p>
               )}
@@ -138,10 +138,10 @@ export function Modal({
             <button
               type="button"
               onClick={onClose}
-              className="p-1 rounded-md hover:bg-[var(--surface-hover)] transition-colors flex-shrink-0 focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]"
+              className="p-1 rounded-md hover:bg-[var(--ua-surface-hover)] transition-colors flex-shrink-0 focus-visible:outline-none focus-visible:shadow-[var(--ua-shadow-focus)]"
               aria-label="Close modal"
             >
-              <X className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
+              <X className="w-4 h-4" style={{ color: 'var(--ua-text-secondary)' }} />
             </button>
           </div>
         )}
@@ -153,7 +153,7 @@ export function Modal({
         {(footer || actions) && (
           <div
             className="flex items-center justify-end gap-2 border-t px-4 py-3"
-            style={{ borderColor: 'var(--border)' }}
+            style={{ borderColor: 'var(--ua-border-default)' }}
           >
             {footer ?? (
               <>

@@ -29,7 +29,7 @@ export function ApiKeyRevokeDialog({
     >
       {revokeTarget ? (
         <>
-          <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+          <p className="text-sm" style={{ color: "var(--ua-text-secondary)" }}>
             Integrations using <strong>{revokeTarget.name}</strong> (
             {revokeTarget.key_prefix}) will stop working immediately.
           </p>

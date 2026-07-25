@@ -7,6 +7,7 @@ import { formatClaimDecisionRecommendation } from '@/lib/claims/decision/format'
 import { getRecoveryCaseForSupportPayoutCase } from '@/lib/recoveries/store';
 import { assembleEvidencePack } from '@/lib/payouts/assembleEvidencePack';
 import { listCaseClarificationRequests } from '@/lib/payouts/clarifications';
+import { refreshCaseReconciliation } from '@/lib/reconciliation/caseStore';
 
 export const dynamic = 'force-dynamic';
 
@@ -77,6 +78,15 @@ export async function POST(_request: Request, { params }: { params: Promise<{ cl
       ...result.payoutCase,
       clarificationRequests,
     };
+    let reconciliation = null;
+    try {
+      reconciliation = await refreshCaseReconciliation(serviceClient, ctx.merchantId, claimId);
+    } catch (reconciliationError) {
+      console.error('[claims.decision] reconciliation refresh failed', {
+        claimId,
+        message: reconciliationError instanceof Error ? reconciliationError.message : String(reconciliationError),
+      });
+    }
 
     return NextResponse.json({
       evaluation: result.evaluation,
@@ -87,6 +97,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ cl
       evidencePack,
       recoveryCase,
       recovery_opportunity,
+      reconciliation,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';

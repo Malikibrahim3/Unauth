@@ -105,15 +105,14 @@ export default async function IntegrationHealthDevPreviewPage() {
   return (
     <div>
       <AuthenticatedPageHeader
-        eyebrow="Development tool"
         title="Integration health states"
         subtitle="Real integration components rendered against guarded, in-memory provider states. This route is unavailable in production."
         breadcrumbs={[{ label: "Integrations", href: "/integrations" }, { label: "Status preview" }]}
       />
       <div className={pageStyles.pageBody}>
         <div className={pageStyles.workbenchStack}>
-          <AuthenticatedPanel bodyClassName="px-4 py-3 text-[11px] leading-5 text-[var(--text-secondary)]">
-            <strong className="text-[var(--text-primary)]">Dev-only preview.</strong>{" "}
+          <AuthenticatedPanel bodyClassName="px-4 py-3 text-[length:var(--ua-text-micro-size)] leading-5 text-[var(--ua-text-secondary)]">
+            <strong className="text-[var(--ua-text-primary)]">Dev-only preview.</strong>{" "}
             These states use the real status resolver and presentation components without writing to any connection table.
           </AuthenticatedPanel>
 
@@ -122,7 +121,7 @@ export default async function IntegrationHealthDevPreviewPage() {
             description="On-demand provider with a conclusive credential check."
             bodyClassName="grid gap-3 p-3"
           >
-            <div className="overflow-x-auto rounded-[var(--ua-radius-input)] border border-[var(--border-muted)]">
+            <div className="overflow-x-auto rounded-[var(--ua-radius-control)] border border-[var(--ua-border-subtle)]">
               <ConnectorRow item={connectionVerifiedItem} />
             </div>
             <ConnectionHealthHeader item={connectionVerifiedItem} />
@@ -134,7 +133,7 @@ export default async function IntegrationHealthDevPreviewPage() {
             description="On-demand provider with an inconclusive network-level check."
             bodyClassName="grid gap-3 p-3"
           >
-            <div className="overflow-x-auto rounded-[var(--ua-radius-input)] border border-[var(--border-muted)]">
+            <div className="overflow-x-auto rounded-[var(--ua-radius-control)] border border-[var(--ua-border-subtle)]">
               <ConnectorRow item={verificationUnavailableItem} />
             </div>
             <ConnectionHealthHeader item={verificationUnavailableItem} />

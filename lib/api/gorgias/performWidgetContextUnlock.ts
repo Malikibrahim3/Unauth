@@ -3,8 +3,6 @@ import {
   getContextCreditCost,
   type ContextUnlockType,
 } from '@/lib/billing/contextCredits';
-import { getSubscribedMerchantTier } from '@/lib/billing/getMerchantTier';
-import { TIER_CONFIG } from '@/lib/billing/tiers';
 import {
   creditFailureResponse,
   NETWORK_PAUSED_AT_CAP_MESSAGE,
@@ -61,17 +59,16 @@ export async function performWidgetContextUnlock(
     };
   }
 
-  if (params.contextType === 'evidence_summary') {
-    const tier = await getSubscribedMerchantTier(service, params.merchantId);
-    if (TIER_CONFIG[tier].features.evidence_export_raw !== true) {
-      return {
-        status: 403,
-        json: {
-          error:
-            'Case Reports are available on paid plans (Pro or higher). Upgrade for more monthly context credits.',
-        },
-      };
-    }
+  if (params.contextType === 'full_context') {
+    return {
+      status: 503,
+      json: {
+        error:
+          'Network context is not available in this release. No credits were spent.',
+        contextType: params.contextType,
+        creditsSpent: 0,
+      },
+    };
   }
 
   const creditPrecheck = await precheckContextCredits(

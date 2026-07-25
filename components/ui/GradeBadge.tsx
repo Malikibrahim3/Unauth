@@ -31,7 +31,7 @@ export function GradeBadge({
 
   return (
     <span
-      className={cn('inline-flex items-center font-mono tabular-nums', className)}
+      className={cn('inline-flex items-center font-sans tabular-nums', className)}
       title={title ?? defaultTitle}
       style={gradeBadgeShellStyle({ size, fill: tone.fill, fg: tone.fg, dashed: tone.dashed ?? false })}
     >

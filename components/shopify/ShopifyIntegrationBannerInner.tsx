@@ -21,19 +21,19 @@ const SHOPIFY_ERROR_MESSAGES: Record<string, string> = {
 
 const BANNER_VARIANT_STYLES = {
   success: {
-    background: 'var(--success-bg)',
-    color: 'var(--success)',
-    border: 'var(--success-bd)',
+    background: 'var(--ua-success-bg)',
+    color: 'var(--ua-success)',
+    border: 'var(--ua-success-border)',
   },
   warning: {
-    background: 'var(--warning-bg)',
-    color: 'var(--warning)',
-    border: 'var(--warning-bd)',
+    background: 'var(--ua-warning-bg)',
+    color: 'var(--ua-warning)',
+    border: 'var(--ua-warning-border)',
   },
   error: {
-    background: 'var(--sev-definite-fill)',
-    color: 'var(--success)',
-    border: 'color-mix(in srgb, var(--success) 35%, var(--border))',
+    background: 'var(--ua-severity-definite-bg)',
+    color: 'var(--ua-success)',
+    border: 'color-mix(in srgb, var(--ua-success) 35%, var(--ua-border-default))',
   },
 } as const;
 

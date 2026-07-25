@@ -1,57 +1,97 @@
 /*
- * Type roles. Font stacks relocated verbatim from app/(app)/authenticated.css.
- * --ua-text-* role tokens are new, but each maps to a real, currently-used
- * value (pageShellStyles.ts's PAGE_TITLE_STYLE, and the existing
- * .text-h2/.text-h3/.text-body/.text-small/.text-caption/.text-meta utility
- * classes in app/globals.css:1055-1062) — no new visual language invented.
+ * Quiet Precision type roles (§3.2).
+ * ------------------------------------------------------------------
+ * Inter carries all product UI, including every metric, date, amount,
+ * percentage, table value, and chart value — those use Inter with
+ * `font-variant-numeric: tabular-nums`, never a monospace face.
+ *
+ * Monospace is reserved for source identifiers, hashes, API keys, code, and
+ * machine-formatted payloads. There is no display face in product UI.
+ *
+ * `--font-dm-sans` / `--font-dm-mono` are the next/font CSS variables declared
+ * in app/layout.tsx; despite their historical names they resolve to Inter and
+ * DM Mono respectively. They are referenced only here, so product code never
+ * touches a non-`--ua-*` name.
  */
 .ua-app,
 .ua-auth-surface {
-  --font-sans: var(--font-dm-sans), Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-display: var(--font-bricolage), var(--font-dm-sans), Inter, sans-serif;
+  --ua-font-sans: var(--font-dm-sans), Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --ua-font-mono: var(--font-dm-mono), "SF Mono", Menlo, Consolas, monospace;
 
-  --ua-font-sans: var(--font-sans);
-  --ua-font-mono: var(--font-mono);
+  /* Page title — one per page (§3.2) */
+  --ua-text-page-title-size: 18px;
+  --ua-text-page-title-weight: 600;
+  --ua-text-page-title-leading: 24px;
+  --ua-text-page-title-tracking: 0;
 
-  /* Page title — matches components/ui/pageShellStyles.ts PAGE_TITLE_STYLE */
-  --ua-text-page-title-size: clamp(1.5rem, 2vw, 1.875rem);
-  --ua-text-page-title-weight: 620;
-  --ua-text-page-title-leading: 1.2;
-  --ua-text-page-title-tracking: -0.025em;
+  /* Dialog title — never oversized */
+  --ua-text-dialog-title-size: 18px;
+  --ua-text-dialog-title-weight: 600;
+  --ua-text-dialog-title-leading: 24px;
 
-  /* Section title — matches .text-h2 */
-  --ua-text-section-title-size: 16px;
+  /* Section title — panels and major groups */
+  --ua-text-section-title-size: 15px;
   --ua-text-section-title-weight: 600;
-  --ua-text-section-title-leading: 24px;
-  --ua-text-section-title-tracking: -0.005em;
+  --ua-text-section-title-leading: 20px;
+  --ua-text-section-title-tracking: 0;
 
-  /* Card / panel title — matches .text-h3 (SectionCard header) */
-  --ua-text-card-title-size: 14px;
+  /* Card / panel title — compact, sentence case */
+  --ua-text-card-title-size: 13px;
   --ua-text-card-title-weight: 600;
-  --ua-text-card-title-leading: 20px;
+  --ua-text-card-title-leading: 18px;
   --ua-text-card-title-tracking: 0;
 
-  /* Body — matches .text-body */
+  /* Body — forms and prose */
   --ua-text-body-size: 14px;
   --ua-text-body-weight: 400;
   --ua-text-body-leading: 20px;
   --ua-text-body-tracking: 0;
 
-  /* Small — matches .text-small (SectionCard body, EmptyState description) */
+  /* Compact body / small — tables, toolbars, dense lists */
   --ua-text-small-size: 13px;
   --ua-text-small-weight: 400;
   --ua-text-small-leading: 18px;
   --ua-text-small-tracking: 0;
 
-  /* Caption — matches .text-caption */
-  --ua-text-caption-size: 12px;
-  --ua-text-caption-weight: 500;
-  --ua-text-caption-leading: 16px;
-  --ua-text-caption-tracking: 0.005em;
+  /* Label — form and control labels */
+  --ua-text-label-size: 13px;
+  --ua-text-label-weight: 500;
+  --ua-text-label-leading: 18px;
 
-  /* Micro / eyebrow — matches .text-meta */
-  --ua-text-micro-size: 12px;
+  /* Caption — supporting copy */
+  --ua-text-caption-size: 12px;
+  --ua-text-caption-weight: 400;
+  --ua-text-caption-leading: 16px;
+  --ua-text-caption-tracking: 0;
+
+  /* Micro / metadata — never the sole carrier of meaning */
+  --ua-text-micro-size: 11px;
   --ua-text-micro-weight: 500;
-  --ua-text-micro-leading: 16px;
-  --ua-text-micro-tracking: 0.02em;
+  --ua-text-micro-leading: 14px;
+  --ua-text-micro-tracking: 0;
+
+  /* KPI value — tabular numerals, no display face */
+  --ua-text-kpi-size: 22px;
+  --ua-text-kpi-weight: 500;
+  --ua-text-kpi-leading: 26px;
+
+  /* Large financial total — rare, detail lead only */
+  --ua-text-total-size: 28px;
+  --ua-text-total-weight: 600;
+  --ua-text-total-leading: 32px;
+}
+
+/*
+ * Numerals are tabular everywhere they can be compared down a column. Applying
+ * this at the surface root means a metric, table cell, or chart label never has
+ * to opt in — and never reaches for a monospace face to get alignment.
+ */
+.ua-app,
+.ua-auth-surface {
+  font-variant-numeric: tabular-nums;
+}
+
+.ua-app :where(code, kbd, samp, pre),
+.ua-auth-surface :where(code, kbd, samp, pre) {
+  font-family: var(--ua-font-mono);
 }

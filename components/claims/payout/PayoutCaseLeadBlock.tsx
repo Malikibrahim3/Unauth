@@ -6,13 +6,12 @@ import { PAYOUT_DISCLAIMER } from '@/components/claims/payout/payoutCopy';
 import { PayoutExposureCard } from '@/components/claims/payout/PayoutExposureCard';
 import { EvidenceChecklistCard } from '@/components/claims/payout/EvidenceChecklistCard';
 import { DeliveryEvidenceCard } from '@/components/claims/payout/DeliveryEvidenceCard';
-import { LossAttributionCard } from '@/components/claims/payout/LossAttributionCard';
-import { RecoveryPathCard } from '@/components/claims/payout/RecoveryPathCard';
 import type { RecoveryCase } from '@/lib/recoveries/types';
 
 /**
- * Money-first payout decision lead block for a support payout case. Reads the
- * SupportPayoutCase from the transitional claim decision response.
+ * Compatibility compensation context for a case. The reconciliation summary
+ * above is the source of the three independent answers; this block keeps the
+ * existing value breakdown available while consumers migrate.
  * Advisory throughout — the merchant owns the decision.
  */
 export function PayoutCaseLeadBlock({
@@ -22,6 +21,8 @@ export function PayoutCaseLeadBlock({
   loading,
   stale,
   showEvidence = true,
+  canManage = false,
+  onFindingSaved,
 }: {
   payoutCase: SupportPayoutCase | null | undefined;
   recoveryCase?: RecoveryCase | null;
@@ -29,13 +30,15 @@ export function PayoutCaseLeadBlock({
   loading?: boolean;
   stale?: boolean;
   showEvidence?: boolean;
+  canManage?: boolean;
+  onFindingSaved?: () => void;
 }) {
   if (!payoutCase) {
     if (!loading) return null;
     return (
-      <Card unstyled as="section" variant="flat" className="p-4">
-        <p className="text-caption" style={{ color: 'var(--text-tertiary)' }}>
-          Loading payout exposure…
+      <Card unstyled as="section" variant="panel" className="p-4">
+        <p className="text-caption" style={{ color: 'var(--ua-text-tertiary)' }}>
+          Loading compensation context…
         </p>
       </Card>
     );
@@ -46,18 +49,21 @@ export function PayoutCaseLeadBlock({
   return (
     <div className="space-y-4">
       {stale && (
-        <p className="text-caption" style={{ color: 'var(--warning)' }}>
-          Case context changed - payout exposure may be outdated.
+        <p className="text-caption" style={{ color: 'var(--ua-warning)' }}>
+          Case context changed - compensation context may be outdated.
         </p>
       )}
       <PayoutExposureCard exposure={payoutCase.exposure} requestedActionLabel={requestedActionLabel} />
       {showEvidence ? <EvidenceChecklistCard evidence={payoutCase.evidence} delivery={delivery ?? null} /> : null}
       {payoutCase.claimType === 'item_not_received' || payoutCase.claimType === 'missing_item' ? (
-        <DeliveryEvidenceCard delivery={delivery ?? null} />
+        <DeliveryEvidenceCard
+          delivery={delivery ?? null}
+          caseId={payoutCase.caseId}
+          canManage={canManage}
+          onFindingSaved={onFindingSaved}
+        />
       ) : null}
-      <LossAttributionCard attribution={payoutCase.attribution} />
-      <RecoveryPathCard recovery={payoutCase.recovery} />
-      <p className="text-xs leading-relaxed" style={{ color: 'var(--text-tertiary)' }}>
+      <p className="text-xs leading-relaxed" style={{ color: 'var(--ua-text-tertiary)' }}>
         {PAYOUT_DISCLAIMER}
       </p>
     </div>

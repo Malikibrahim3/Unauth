@@ -22,14 +22,14 @@ export function FreshdeskCredentialFields({
   return (
     <>
       <div>
-        <p className="mb-2 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+        <p className="mb-2 text-xs leading-relaxed" style={{ color: 'var(--ua-text-secondary)' }}>
           Your API key is stored encrypted and used only to validate your account and fetch ticket
           details when needed.
         </p>
         <label
           htmlFor="freshdesk-api-key"
           className="block text-xs font-medium mb-1"
-          style={{ color: 'var(--text-secondary)' }}
+          style={{ color: 'var(--ua-text-secondary)' }}
         >
           Freshdesk API key
         </label>
@@ -39,9 +39,9 @@ export function FreshdeskCredentialFields({
           type="password"
           className="w-full rounded-md px-3 py-2 text-sm font-mono"
           style={{
-            background: 'var(--bg-inset)',
-            border: '1px solid var(--border)',
-            color: 'var(--text)',
+            background: 'var(--ua-surface-secondary)',
+            border: '1px solid var(--ua-border-default)',
+            color: 'var(--ua-text-primary)',
           }}
           placeholder="Your API key"
           value={freshdeskApiKey}
@@ -55,12 +55,12 @@ export function FreshdeskCredentialFields({
           type="button"
           onClick={onToggleCredHelp}
           className="text-xs underline"
-          style={{ color: 'var(--accent)' }}
+          style={{ color: 'var(--ua-action-primary)' }}
         >
           Where do I find this?
         </button>
         {showCredHelp && (
-          <p className="mt-2 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+          <p className="mt-2 text-xs leading-relaxed" style={{ color: 'var(--ua-text-secondary)' }}>
             In Freshdesk, open <strong>Profile Settings</strong> (avatar), then <strong>View profile</strong>{' '}
            , then your API key is listed on the right. You need an admin or agent profile with API access.
           </p>

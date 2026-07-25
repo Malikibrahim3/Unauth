@@ -15,16 +15,16 @@ const UnauthLinearClaimHero = dynamic(() => import('@/components/UnauthLinearCla
 export const metadata: Metadata = {
   title: 'Unauth — Post-Purchase Loss Recovery',
   description:
-    'Unauth catches every claim before it is paid, attributes the loss to whoever owns it, and hands your team the recovery case ready to file.',
+    'Unauth brings order, delivery, support, and financial context into one merchant-controlled payout case with an auditable recovery timeline.',
   openGraph: {
     title: 'Unauth — Post-Purchase Loss Recovery',
     description:
-      'Unauth catches every claim before it is paid, attributes the loss to whoever owns it, and hands your team the recovery case ready to file.',
+      'Unauth brings order, delivery, support, and financial context into one merchant-controlled payout case with an auditable recovery timeline.',
   },
   twitter: {
     title: 'Unauth — Post-Purchase Loss Recovery',
     description:
-      'Unauth catches every claim before it is paid, attributes the loss to whoever owns it, and hands your team the recovery case ready to file.',
+      'Unauth brings order, delivery, support, and financial context into one merchant-controlled payout case with an auditable recovery timeline.',
   },
 };
 

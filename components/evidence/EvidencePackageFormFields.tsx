@@ -37,18 +37,18 @@ function PriorMatchPreviewBanner({
       <div
         className="flex items-center gap-2 rounded-md p-3"
         style={{
-          background: "var(--bg-subtle)",
-          border: "1px solid var(--border-muted)",
+          background: "var(--ua-surface-secondary)",
+          border: "1px solid var(--ua-border-subtle)",
         }}
       >
         <div
           className="h-3 w-3 animate-spin rounded-full border border-t-transparent"
           style={{
-            borderColor: "var(--border)",
-            borderTopColor: "var(--accent)",
+            borderColor: "var(--ua-border-default)",
+            borderTopColor: "var(--ua-action-primary)",
           }}
         />
-        <p className="text-caption" style={{ color: "var(--text-secondary)" }}>
+        <p className="text-caption" style={{ color: "var(--ua-text-secondary)" }}>
           Checking for prior identity matches…
         </p>
       </div>
@@ -60,18 +60,18 @@ function PriorMatchPreviewBanner({
       <div
         className="flex items-start gap-2.5 rounded-md p-3"
         style={{
-          background: "var(--success-bg)",
-          border: "1px solid var(--success-bd)",
+          background: "var(--ua-success-bg)",
+          border: "1px solid var(--ua-success-border)",
         }}
       >
-        <span style={{ color: "var(--success)" }}>✓</span>
+        <span style={{ color: "var(--ua-success)" }}>✓</span>
         <div>
-          <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>
+          <p className="text-sm font-semibold" style={{ color: "var(--ua-text-primary)" }}>
             Prior matching transactions found
           </p>
           <p
             className="text-caption mt-0.5"
-            style={{ color: "var(--text-secondary)" }}
+            style={{ color: "var(--ua-text-secondary)" }}
           >
             This customer has prior orders in your records that share identity
             signals with the selected order.
@@ -86,18 +86,18 @@ function PriorMatchPreviewBanner({
       <div
         className="flex items-start gap-2.5 rounded-md p-3"
         style={{
-          background: "var(--warning-bg)",
-          border: "1px solid var(--warning-bd)",
+          background: "var(--ua-warning-bg)",
+          border: "1px solid var(--ua-warning-border)",
         }}
       >
-        <span style={{ color: "var(--warning)" }}>⚠</span>
+        <span style={{ color: "var(--ua-warning)" }}>⚠</span>
         <div>
-          <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>
+          <p className="text-sm font-semibold" style={{ color: "var(--ua-text-primary)" }}>
             No prior matching transactions detected
           </p>
           <p
             className="text-caption mt-0.5"
-            style={{ color: "var(--text-secondary)" }}
+            style={{ color: "var(--ua-text-secondary)" }}
           >
             No prior transactions with matching signals were found in your
             records for this customer.
@@ -131,7 +131,7 @@ export function EvidencePackageFormFields({
       type="button"
       onClick={onCancel}
       className="text-xs hover:underline"
-      style={{ color: "var(--text-secondary)" }}
+      style={{ color: "var(--ua-text-secondary)" }}
     >
       Cancel
     </button>
@@ -139,7 +139,7 @@ export function EvidencePackageFormFields({
     <Link
       href={`/customers/${profileId}`}
       className="text-xs hover:underline"
-      style={{ color: "var(--text-secondary)" }}
+      style={{ color: "var(--ua-text-secondary)" }}
     >
       Cancel
     </Link>
@@ -150,7 +150,7 @@ export function EvidencePackageFormFields({
       <div>
         <label
           className="mb-2 block text-xs font-semibold"
-          style={{ color: "var(--text-secondary)" }}
+          style={{ color: "var(--ua-text-secondary)" }}
           htmlFor="order-select"
         >
           Disputed order *
@@ -162,9 +162,9 @@ export function EvidencePackageFormFields({
           onChange={(e) => onOrderChange(e.target.value)}
           className="w-full rounded-md px-3 py-2 text-sm"
           style={{
-            background: "var(--bg-inset)",
-            border: "1px solid var(--border)",
-            color: "var(--text)",
+            background: "var(--ua-surface-secondary)",
+            border: "1px solid var(--ua-border-default)",
+            color: "var(--ua-text-primary)",
           }}
           required
         >
@@ -180,7 +180,7 @@ export function EvidencePackageFormFields({
         {!selectedOrderId ? (
           <p
             className="text-caption mt-1.5"
-            style={{ color: "var(--text-tertiary)" }}
+            style={{ color: "var(--ua-text-tertiary)" }}
           >
             Select the order the customer has disputed. Orders marked ★ have a
             refund claim on record.
@@ -201,13 +201,13 @@ export function EvidencePackageFormFields({
         <div
           className="rounded-md p-5"
           style={{
-            background: "var(--bg-subtle)",
-            border: "1px solid var(--border-muted)",
+            background: "var(--ua-surface-secondary)",
+            border: "1px solid var(--ua-border-subtle)",
           }}
         >
           <p
             className="mb-3 text-xs font-semibold"
-            style={{ color: "var(--text-secondary)" }}
+            style={{ color: "var(--ua-text-secondary)" }}
           >
             This package will include
           </p>
@@ -218,24 +218,24 @@ export function EvidencePackageFormFields({
                 className="flex items-center gap-2 text-caption"
               >
                 {item.pending ? (
-                  <span style={{ color: "var(--text-tertiary)" }}>○</span>
+                  <span style={{ color: "var(--ua-text-tertiary)" }}>○</span>
                 ) : item.available ? (
-                  <span style={{ color: "var(--success)" }}>✓</span>
+                  <span style={{ color: "var(--ua-success)" }}>✓</span>
                 ) : (
-                  <span style={{ color: "var(--border)" }}>–</span>
+                  <span style={{ color: "var(--ua-border-default)" }}>–</span>
                 )}
                 <span
                   style={{
                     color: item.available
-                      ? "var(--text)"
-                      : "var(--text-tertiary)",
+                      ? "var(--ua-text-primary)"
+                      : "var(--ua-text-tertiary)",
                   }}
                 >
                   {item.label}
                   {item.optional && !item.available ? (
                     <span
                       className="ml-1"
-                      style={{ color: "var(--text-tertiary)" }}
+                      style={{ color: "var(--ua-text-tertiary)" }}
                     >
                       (add notes below)
                     </span>
@@ -243,7 +243,7 @@ export function EvidencePackageFormFields({
                   {item.pending ? (
                     <span
                       className="ml-1"
-                      style={{ color: "var(--text-tertiary)" }}
+                      style={{ color: "var(--ua-text-tertiary)" }}
                     >
                       (checking…)
                     </span>
@@ -258,13 +258,13 @@ export function EvidencePackageFormFields({
       <div>
         <label
           className="mb-2 block text-xs font-semibold"
-          style={{ color: "var(--text-secondary)" }}
+          style={{ color: "var(--ua-text-secondary)" }}
           htmlFor="notes"
         >
           Merchant note{" "}
           <span
             className="font-normal"
-            style={{ color: "var(--text-tertiary)" }}
+            style={{ color: "var(--ua-text-tertiary)" }}
           >
             (optional · appears in the package · max 500 characters)
           </span>
@@ -277,14 +277,14 @@ export function EvidencePackageFormFields({
           placeholder="Any additional context to include in the evidence package…"
           className="w-full resize-none rounded-md px-3 py-2 text-sm"
           style={{
-            background: "var(--bg-inset)",
-            border: "1px solid var(--border)",
-            color: "var(--text)",
+            background: "var(--ua-surface-secondary)",
+            border: "1px solid var(--ua-border-default)",
+            color: "var(--ua-text-primary)",
           }}
         />
         <p
           className="text-caption mt-1 text-right"
-          style={{ color: "var(--text-tertiary)" }}
+          style={{ color: "var(--ua-text-tertiary)" }}
         >
           {notes.length}/500
         </p>
@@ -294,9 +294,9 @@ export function EvidencePackageFormFields({
         <div
           className="rounded-md border p-3 text-sm"
           style={{
-            background: "var(--risk-critical-bg)",
-            borderColor: "var(--risk-critical-bd)",
-            color: "var(--risk-critical)",
+            background: "var(--ua-risk-critical-bg)",
+            borderColor: "var(--ua-risk-critical-border)",
+            color: "var(--ua-risk-critical)",
           }}
         >
           {error}
@@ -310,12 +310,12 @@ export function EvidencePackageFormFields({
             type="submit"
             disabled={!canSubmit}
             className="rounded-md px-5 py-2.5 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40"
-            style={{ background: "var(--accent)", color: "white" }}
+            style={{ background: "var(--ua-action-primary)", color: "var(--ua-text-inverse)" }}
           >
             {loading ? "Building…" : "Build evidence package"}
           </button>
           {!selectedOrderId ? (
-            <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
+            <p className="text-xs" style={{ color: "var(--ua-text-tertiary)" }}>
               Select an order above to continue
             </p>
           ) : null}

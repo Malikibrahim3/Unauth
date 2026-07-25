@@ -28,9 +28,11 @@ export type FlowIndexRecord = {
 export function FlowsIndexClient({
   flows,
   canManage,
+  publicationEnabled,
 }: {
   flows: FlowIndexRecord[];
   canManage: boolean;
+  publicationEnabled: boolean;
 }) {
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,9 +62,11 @@ export function FlowsIndexClient({
   }
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-muted)] px-4 py-3">
-        <p className="min-w-0 text-xs text-[var(--text-secondary)]">
-          Each family has at most one published version and one editable draft.
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--ua-border-subtle)] px-4 py-3">
+        <p className="min-w-0 text-xs text-[var(--ua-text-secondary)]">
+          {publicationEnabled
+            ? "Each family has at most one published version and one editable draft."
+            : "Preview mode: definitions and dry-run tests are available; live publication is release-gated."}
         </p>
         <div className="flex items-center gap-2">
           <ButtonLink href="/flows/runs" variant="secondary" size="sm">
@@ -83,29 +87,29 @@ export function FlowsIndexClient({
       {error ? (
         <p
           role="alert"
-          className="border-b border-[var(--border-muted)] px-4 py-2 text-sm text-[var(--danger)]"
+          className="border-b border-[var(--ua-border-subtle)] px-4 py-2 text-sm text-[var(--ua-critical)]"
         >
           {error}
         </p>
       ) : null}
       {flows.length ? (
-        <ul className="divide-y divide-[var(--border-muted)]">
+        <ul className="divide-y divide-[var(--ua-border-subtle)]">
           {flows.map((flow) => (
             <li key={flow.name}>
               <Link
                 href={`/flows/${flow.hrefId}`}
-                className="grid gap-3 px-4 py-3 transition-colors hover:bg-[var(--surface-hover)] focus-visible:outline-none focus-visible:shadow-[inset_var(--shadow-focus)] sm:grid-cols-[minmax(0,1fr)_10rem_6rem_auto] sm:items-center"
+                className="grid gap-3 px-4 py-3 transition-colors hover:bg-[var(--ua-surface-hover)] focus-visible:outline-none focus-visible:shadow-[inset_var(--ua-shadow-focus)] sm:grid-cols-[minmax(0,1fr)_10rem_6rem_auto] sm:items-center"
               >
                 <div className="min-w-0">
                   <h2 className="truncate text-sm font-semibold">
                     {flow.name}
                   </h2>
-                  <p className="mt-1 line-clamp-2 text-xs text-[var(--text-secondary)]">
+                  <p className="mt-1 line-clamp-2 text-xs text-[var(--ua-text-secondary)]">
                     {flow.description || "No operator-facing description yet."}
                   </p>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[11px] uppercase tracking-wide text-[var(--text-tertiary)]">
+                  <p className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">
                     Trigger
                   </p>
                   <p className="mt-1 truncate font-mono text-xs">
@@ -113,10 +117,10 @@ export function FlowsIndexClient({
                   </p>
                 </div>
                 <div>
-                  <p className="text-[11px] uppercase tracking-wide text-[var(--text-tertiary)]">
+                  <p className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">
                     Actions
                   </p>
-                  <p className="mt-1 font-mono text-sm">{flow.actionCount}</p>
+                  <p className="mt-1 font-sans tabular-nums text-sm">{flow.actionCount}</p>
                 </div>
                 <div className="flex items-center justify-between gap-3 sm:justify-end">
                   <StatusBadge
@@ -124,10 +128,10 @@ export function FlowsIndexClient({
                     value={flow.status === "published" && !flow.active ? "paused" : flow.active ? "active" : flow.status}
                     size="sm"
                   />
-                  <span className="font-mono text-xs text-[var(--text-tertiary)]">
+                  <span className="font-mono text-xs text-[var(--ua-text-tertiary)]">
                     v{flow.version}
                   </span>
-                  <span aria-hidden="true" className="text-[var(--accent)]">
+                  <span aria-hidden="true" className="text-[var(--ua-action-primary)]">
                     →
                   </span>
                 </div>
@@ -138,7 +142,11 @@ export function FlowsIndexClient({
       ) : (
         <EmptyState
           title="No flows yet"
-          description="Create a workflow, test it safely without affecting live data, then publish it when you're ready. Flows route work — they never decide or issue payouts."
+          description={
+            publicationEnabled
+              ? "Create a workflow, test it safely without affecting live data, then publish it when you're ready. Flows route work — they never decide or issue payouts."
+              : "Create and dry-run a workflow preview without affecting live data. Publication and live execution remain disabled by the release gate."
+          }
           action={
             canManage ? (
               <Button variant="primary" onClick={() => setCreating(true)}>
@@ -152,7 +160,11 @@ export function FlowsIndexClient({
         open={creating}
         onClose={() => setCreating(false)}
         title="New flow draft"
-        description="Build trigger, conditions and bounded actions. Nothing runs until publication."
+        description={
+          publicationEnabled
+            ? "Build trigger, conditions and bounded actions. Nothing runs until publication."
+            : "Build trigger, conditions and bounded actions as a preview. Live publication is currently disabled."
+        }
       >
         <div className="max-h-[75vh] overflow-y-auto">
           <FlowEditor

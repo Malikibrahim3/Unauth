@@ -18,9 +18,9 @@ export function freshnessFromTimestamp(
 }
 
 const STYLES: Record<FreshnessState, { color: string; label: string }> = {
-  current: { color: 'var(--success, #16a34a)', label: 'Up to date' },
-  stale: { color: 'var(--warning, #d97706)', label: 'Stale' },
-  unknown: { color: 'var(--text-tertiary, #9ca3af)', label: 'Unknown' },
+  current: { color: 'var(--ua-success)', label: 'Up to date' },
+  stale: { color: 'var(--ua-warning)', label: 'Stale' },
+  unknown: { color: 'var(--ua-text-tertiary)', label: 'Unknown' },
 };
 
 export function FreshnessIndicator({
@@ -35,8 +35,8 @@ export function FreshnessIndicator({
   const style = STYLES[state];
   return (
     <span
-      className={`inline-flex items-center gap-1.5 text-[11px] ${className ?? ''}`}
-      style={{ color: 'var(--text-tertiary)' }}
+      className={`inline-flex items-center gap-1.5 text-[length:var(--ua-text-micro-size)] ${className ?? ''}`}
+      style={{ color: 'var(--ua-text-tertiary)' }}
       title={`Data freshness: ${style.label}`}
     >
       <span

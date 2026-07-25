@@ -15,9 +15,9 @@ type Props = {
 };
 
 const INPUT_STYLE: CSSProperties = {
-  background: 'var(--bg-inset)',
-  border: '1px solid var(--border)',
-  color: 'var(--text)',
+  background: 'var(--ua-surface-secondary)',
+  border: '1px solid var(--ua-border-default)',
+  color: 'var(--ua-text-primary)',
 };
 
 export function GorgiasSupportSyncCreateForm({
@@ -40,13 +40,13 @@ export function GorgiasSupportSyncCreateForm({
             alt="Gorgias"
             width={40}
             height={40}
-            className="h-9 w-9 rounded-[var(--ua-radius-input)] border border-[var(--border-muted)] object-contain p-1"
+            className="h-9 w-9 rounded-[var(--ua-radius-control)] border border-[var(--ua-border-subtle)] object-contain p-1"
           />
           <div>
-            <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+            <p className="text-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>
               Connect Gorgias
             </p>
-            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+            <p className="text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
               Registers the sidebar widget and ticket webhook automatically.
             </p>
           </div>
@@ -59,14 +59,14 @@ export function GorgiasSupportSyncCreateForm({
           <label
             htmlFor="gorgias-account-domain"
             className="block text-xs font-medium mb-1.5"
-            style={{ color: 'var(--text)' }}
+            style={{ color: 'var(--ua-text-primary)' }}
           >
             Gorgias account domain
           </label>
           <input
             id="gorgias-account-domain"
             required
-            className="h-8 w-full rounded-[var(--ua-radius-input)] px-3 text-[12px] outline-none"
+            className="h-8 w-full rounded-[var(--ua-radius-control)] px-3 text-[length:var(--ua-text-caption-size)] outline-none"
             style={INPUT_STYLE}
             placeholder="acme or acme.gorgias.com"
             value={state.accountOrDomain}
@@ -74,7 +74,7 @@ export function GorgiasSupportSyncCreateForm({
             disabled={!canManage || state.busy}
           />
           {isCreate ? (
-            <p className="mt-1.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
+            <p className="mt-1.5 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
               Your Gorgias subdomain — if your URL is <code>acme.gorgias.com</code>, enter <code>acme</code>.
             </p>
           ) : null}
@@ -86,13 +86,13 @@ export function GorgiasSupportSyncCreateForm({
             <label
               htmlFor="gorgias-display-name"
               className="block text-xs font-medium mb-1.5"
-              style={{ color: 'var(--text)' }}
+              style={{ color: 'var(--ua-text-primary)' }}
             >
-              Display name <span style={{ color: 'var(--text-secondary)' }}>(optional)</span>
+              Display name <span style={{ color: 'var(--ua-text-secondary)' }}>(optional)</span>
             </label>
             <input
               id="gorgias-display-name"
-              className="h-8 w-full rounded-[var(--ua-radius-input)] px-3 text-[12px] outline-none"
+              className="h-8 w-full rounded-[var(--ua-radius-control)] px-3 text-[length:var(--ua-text-caption-size)] outline-none"
               style={INPUT_STYLE}
               placeholder="Acme Gorgias"
               value={state.displayName}
@@ -118,13 +118,13 @@ export function GorgiasSupportSyncCreateForm({
           <button
             type="submit"
             disabled={(!canManage && isCreate) || state.busy}
-            className="inline-flex h-8 items-center rounded-[var(--ua-radius-input)] px-3 text-[11px] font-semibold disabled:opacity-50"
-            style={{ background: 'var(--accent)', color: 'white' }}
+            className="inline-flex h-8 items-center rounded-[var(--ua-radius-control)] px-3 text-[length:var(--ua-text-micro-size)] font-semibold disabled:opacity-50"
+            style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)' }}
           >
             {state.busy ? 'Connecting…' : submitLabel}
           </button>
           {isCreate && !canManage ? (
-            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+            <p className="text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
               Manage settings permission required.
             </p>
           ) : null}

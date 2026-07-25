@@ -35,23 +35,23 @@ export function EmptyState({
       <div className={cn('px-4 py-8', className)}>
         <h2
           className="flex items-center gap-2 text-body-sm font-semibold"
-          style={{ color: 'var(--text)' }}
+          style={{ color: 'var(--ua-text-primary)' }}
         >
           {icon ? (
-            <span aria-hidden="true" className="shrink-0" style={{ color: 'var(--ua-accent)' }}>
+            <span aria-hidden="true" className="shrink-0" style={{ color: 'var(--ua-action-primary)' }}>
               {icon}
             </span>
           ) : (
             <span
               aria-hidden="true"
               className="h-1.5 w-1.5 shrink-0 rounded-full"
-              style={{ background: 'var(--ua-accent)' }}
+              style={{ background: 'var(--ua-action-primary)' }}
             />
           )}
           {title}
         </h2>
         {description && (
-          <p className="text-caption mt-1" style={{ color: 'var(--text-secondary)' }}>
+          <p className="text-caption mt-1" style={{ color: 'var(--ua-text-secondary)' }}>
             {description}
           </p>
         )}
@@ -73,39 +73,39 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        'ua-empty-state flex flex-col items-center justify-center text-center py-[var(--space-8)] px-[var(--space-6)]',
+        'ua-empty-state flex flex-col items-center justify-center text-center py-[var(--ua-space-10)] px-[var(--ua-space-6)]',
         className,
       )}
     >
       {icon ? (
         <span
-          className="ua-empty-visual mb-[var(--space-4)] flex h-12 w-12 items-center justify-center rounded-[var(--ua-radius-card)]"
-          style={{ color: 'var(--ua-brand-deep)' }}
+          className="ua-empty-visual mb-[var(--ua-space-4)] flex h-12 w-12 items-center justify-center rounded-[var(--ua-radius-surface)]"
+          style={{ color: 'var(--ua-text-primary)' }}
           aria-hidden="true"
         >
           {icon}
         </span>
       ) : (
-        <span className="ua-empty-visual mb-[var(--space-4)] grid h-12 w-12 grid-cols-2 place-content-center gap-1 rounded-[var(--ua-radius-card)]" aria-hidden="true">
+        <span className="ua-empty-visual mb-[var(--ua-space-4)] grid h-12 w-12 grid-cols-2 place-content-center gap-1 rounded-[var(--ua-radius-surface)]" aria-hidden="true">
           <span className="h-2 w-2 rounded-sm bg-[var(--ua-text-secondary)]" />
           <span className="h-2 w-2 rounded-sm bg-[var(--ua-text-tertiary)]" />
           <span className="h-2 w-2 rounded-sm bg-[var(--ua-border-strong)]" />
           <span className="h-2 w-2 rounded-sm bg-[var(--ua-text-disabled)]" />
         </span>
       )}
-      <h3 className="text-h2" style={{ color: 'var(--text-primary)' }}>
+      <h3 className="text-h2" style={{ color: 'var(--ua-text-primary)' }}>
         {title}
       </h3>
       {description && (
         <p
-          className="mt-[var(--space-2)] text-small"
-          style={{ maxWidth: 360, color: 'var(--text-secondary)' }}
+          className="mt-[var(--ua-space-2)] text-small"
+          style={{ maxWidth: 360, color: 'var(--ua-text-secondary)' }}
         >
           {description}
         </p>
       )}
-      {action && <div className="mt-[var(--space-5)]">{action}</div>}
-      {footer && <div className="mt-[var(--space-5)] w-full">{footer}</div>}
+      {action && <div className="mt-[var(--ua-space-5)]">{action}</div>}
+      {footer && <div className="mt-[var(--ua-space-5)] w-full">{footer}</div>}
     </div>
   );
 }

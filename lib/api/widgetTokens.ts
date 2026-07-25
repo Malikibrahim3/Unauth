@@ -60,6 +60,27 @@ export async function validateWidgetToken(
     return { status: 401, message: 'Invalid or revoked widget token' };
   }
 
+  if (!data.api_key_id) {
+    return { status: 401, message: 'Invalid or revoked widget token' };
+  }
+
+  const { data: apiKey, error: apiKeyError } = await service
+    .from(TABLES.MERCHANT_API_KEYS)
+    .select('id, merchant_id, revoked_at')
+    .eq('id', data.api_key_id)
+    .eq('merchant_id', data.merchant_id)
+    .maybeSingle() as unknown as {
+    data: { id: string; merchant_id: string; revoked_at: string | null } | null;
+    error: { message: string } | null;
+  };
+
+  if (apiKeyError) {
+    return { status: 500, message: 'Widget token validation failed' };
+  }
+  if (!apiKey || apiKey.revoked_at) {
+    return { status: 401, message: 'Invalid or revoked widget token' };
+  }
+
   return {
     merchantId: data.merchant_id,
     apiKeyId: data.api_key_id,

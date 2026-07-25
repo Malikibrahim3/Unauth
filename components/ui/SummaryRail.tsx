@@ -13,11 +13,11 @@ import { type StatusTone } from './StatusBadge';
  */
 
 const DOT: Record<StatusTone, string> = {
-  neutral: 'var(--text-tertiary)',
+  neutral: 'var(--ua-text-tertiary)',
   info: 'var(--ua-info)',
   warning: 'var(--ua-warning)',
   success: 'var(--ua-success)',
-  danger: 'var(--risk-critical-fg)',
+  danger: 'var(--ua-risk-critical)',
 };
 
 export interface SummaryRailRow {
@@ -45,11 +45,11 @@ export interface SummaryRailSection {
 function Row({ row }: { row: SummaryRailRow }) {
   const dotColour = row.tone ? DOT[row.tone] : undefined;
   const pct = row.bar != null ? Math.max(0, Math.min(1, row.bar)) * 100 : null;
-  const fill = row.barColourVar ? `var(${row.barColourVar})` : (dotColour ?? 'var(--accent)');
+  const fill = row.barColourVar ? `var(${row.barColourVar})` : (dotColour ?? 'var(--ua-action-primary)');
 
   const head = (
     <div className="flex items-center justify-between gap-3">
-      <span className="flex min-w-0 items-center gap-2" style={{ color: 'var(--text-secondary)', fontSize: 12 }}>
+      <span className="flex min-w-0 items-center gap-2" style={{ color: 'var(--ua-text-secondary)', fontSize: 12 }}>
         {dotColour ? (
           <span
             aria-hidden="true"
@@ -62,7 +62,7 @@ function Row({ row }: { row: SummaryRailRow }) {
       {row.value != null ? (
         <span
           className="shrink-0 tabular-nums"
-          style={{ color: 'var(--text-primary)', fontSize: 12, fontWeight: 600, fontFamily: 'var(--ua-font-mono)' }}
+          style={{ color: 'var(--ua-text-primary)', fontSize: 12, fontWeight: 600, fontFamily: 'var(--ua-font-sans)', fontVariantNumeric: 'tabular-nums' }}
         >
           {row.value}
         </span>
@@ -76,9 +76,9 @@ function Row({ row }: { row: SummaryRailRow }) {
       {pct != null ? (
         <div
           className="mt-1.5 overflow-hidden"
-          style={{ height: 3, borderRadius: 'var(--ua-radius-pill)', background: 'var(--ua-chart-track)' }}
+          style={{ height: 3, borderRadius: 'var(--ua-radius-round)', background: 'var(--ua-chart-track)' }}
         >
-          <div style={{ width: `${pct}%`, height: '100%', background: fill, borderRadius: 'var(--ua-radius-pill)' }} />
+          <div style={{ width: `${pct}%`, height: '100%', background: fill, borderRadius: 'var(--ua-radius-round)' }} />
         </div>
       ) : null}
     </>
@@ -88,7 +88,7 @@ function Row({ row }: { row: SummaryRailRow }) {
     return (
       <Link
         href={row.href}
-        className="-mx-1.5 block rounded-[var(--ua-radius-sm)] px-1.5 py-1 hover:bg-[var(--surface-sunken)] focus-visible:shadow-[inset_var(--shadow-focus)] focus-visible:outline-none"
+        className="-mx-1.5 block rounded-[var(--ua-radius-control)] px-1.5 py-1 hover:bg-[var(--ua-surface-muted)] focus-visible:shadow-[inset_var(--ua-shadow-focus)] focus-visible:outline-none"
       >
         {body}
       </Link>
@@ -105,13 +105,13 @@ export function SummaryRail({ sections, className }: { sections: SummaryRailSect
           key={section.title}
           style={{
             padding: 14,
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--ua-radius-card)',
-            background: 'var(--surface)',
-            boxShadow: 'var(--shadow-xs)',
+            border: '1px solid var(--ua-border-default)',
+            borderRadius: 'var(--ua-radius-surface)',
+            background: 'var(--ua-surface-primary)',
+            boxShadow: 'none',
           }}
         >
-          <h2 style={{ margin: 0, color: 'var(--text-primary)', fontSize: 12, fontWeight: 650 }}>{section.title}</h2>
+          <h2 style={{ margin: 0, color: 'var(--ua-text-primary)', fontSize: 13, lineHeight: '18px', fontWeight: 600 }}>{section.title}</h2>
           {section.children ? <div className="mt-3">{section.children}</div> : null}
           {section.rows && section.rows.length > 0 ? (
             <div className="mt-3 space-y-2.5">
@@ -121,7 +121,7 @@ export function SummaryRail({ sections, className }: { sections: SummaryRailSect
             </div>
           ) : null}
           {section.footnote ? (
-            <p className="mt-3" style={{ margin: '12px 0 0', color: 'var(--text-tertiary)', fontSize: 11, lineHeight: 1.45 }}>
+            <p className="mt-3" style={{ margin: '12px 0 0', color: 'var(--ua-text-tertiary)', fontSize: 11, lineHeight: 1.45 }}>
               {section.footnote}
             </p>
           ) : null}

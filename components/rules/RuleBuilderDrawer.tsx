@@ -5,7 +5,8 @@ import { AlertTriangle, Plus } from 'lucide-react';
 import { Button, Drawer, Input, Card } from '@/components/ui';
 import type { ConditionOperator, MerchantRule, RuleAction, RuleCondition } from '@/lib/rules-engine';
 import { RULE_FIELDS } from '@/lib/rules/fields';
-import { ACTION_LABELS, ACTION_TONES, summarizeConditions } from '@/lib/rules/summary';
+import { ACTION_LABELS, summarizeConditions } from '@/lib/rules/summary';
+import { cn } from '@/lib/utils';
 import { ConditionBlock } from './ConditionBlock';
 
 export interface RuleDraftPayload {
@@ -111,9 +112,9 @@ export function RuleBuilderDrawer({
       footer={
         <div className="flex items-center justify-between gap-3 px-5 py-4">
           {error ? (
-            <span className="text-caption" style={{ color: 'var(--risk-high)' }}>{error}</span>
+            <span className="text-caption" style={{ color: 'var(--ua-risk-high)' }}>{error}</span>
           ) : (
-            <span className="text-caption" style={{ color: 'var(--text-tertiary)' }}>
+            <span className="text-caption" style={{ color: 'var(--ua-text-tertiary)' }}>
               Unauth runs your rules — you own the decision.
             </span>
           )}
@@ -145,10 +146,10 @@ export function RuleBuilderDrawer({
             rows={2}
             className="w-full resize-none px-3 py-2 text-sm focus:outline-none"
             style={{
-              background: 'var(--surface-sunken)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-md)',
-              color: 'var(--text-primary)',
+              background: 'var(--ua-surface-muted)',
+              border: '1px solid var(--ua-border-default)',
+              borderRadius: 'var(--ua-radius-control)',
+              color: 'var(--ua-text-primary)',
             }}
           />
         </Field>
@@ -156,13 +157,13 @@ export function RuleBuilderDrawer({
         {/* Conditions */}
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <span className="text-body-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+            <span className="text-body-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>
               When these conditions match
             </span>
             {conditions.length > 1 && (
               <div
-                className="inline-flex overflow-hidden rounded-[var(--radius-md)]"
-                style={{ border: '1px solid var(--border)' }}
+                className="inline-flex overflow-hidden rounded-[var(--ua-radius-control)]"
+                style={{ border: '1px solid var(--ua-border-default)' }}
               >
                 <SegmentButton active={operator === 'and'} onClick={() => setOperator('and')}>
                   Match ALL
@@ -185,8 +186,8 @@ export function RuleBuilderDrawer({
 
           {conditions.length === 0 && (
             <div
-              className="flex items-start gap-2 rounded-[var(--radius-md)] p-3 text-caption"
-              style={{ background: 'var(--surface-sunken)', color: 'var(--risk-medium, var(--text-secondary))' }}
+              className="flex items-start gap-2 rounded-[var(--ua-radius-control)] p-3 text-caption"
+              style={{ background: 'var(--ua-surface-muted)', color: 'var(--ua-risk-medium, var(--ua-text-secondary))' }}
             >
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               <span>This rule has no conditions — it will match every case and always recommend <strong>{ACTION_LABELS[action]}</strong>.</span>
@@ -210,18 +211,14 @@ export function RuleBuilderDrawer({
           <div className="grid grid-cols-3 gap-2">
             {ACTIONS.map((a) => {
               const active = action === a;
-              const tone = ACTION_TONES[a];
               return (
                 <button
                   key={a}
                   type="button"
+                  role="radio"
+                  aria-checked={active}
                   onClick={() => setAction(a)}
-                  className="rounded-[var(--radius-md)] px-3 py-2 text-body-sm font-medium transition-colors"
-                  style={{
-                    background: active ? `var(--risk-${tone === 'success' ? 'low' : tone === 'warning' ? 'medium' : 'high'}-bg, var(--surface-sunken))` : 'var(--surface-sunken)',
-                    border: `1px solid ${active ? `var(--risk-${tone === 'success' ? 'low' : tone === 'warning' ? 'medium' : 'high'}, var(--accent))` : 'var(--border)'}`,
-                    color: active ? 'var(--text-primary)' : 'var(--text-secondary)',
-                  }}
+                  className={cn('ua-option-tile', active && 'is-selected')}
                 >
                   {ACTION_LABELS[a]}
                 </button>
@@ -231,14 +228,14 @@ export function RuleBuilderDrawer({
         </Field>
 
         {/* Live preview */}
-        <Card unstyled variant="inset" className="p-4">
-          <span className="text-caption font-semibold uppercase tracking-wide" style={{ color: 'var(--text-tertiary)' }}>
+        <Card unstyled variant="muted" className="p-4">
+          <span className="text-caption font-semibold" style={{ color: 'var(--ua-text-tertiary)' }}>
             Preview
           </span>
-          <p className="mt-2 text-body-sm" style={{ color: 'var(--text-primary)' }}>
+          <p className="mt-2 text-body-sm" style={{ color: 'var(--ua-text-primary)' }}>
             If {preview}
           </p>
-          <p className="mt-3 text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+          <p className="mt-3 text-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>
             Recommended: {ACTION_LABELS[action]}
           </p>
         </Card>
@@ -261,13 +258,13 @@ function Field({
 }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-body-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+      <span className="text-body-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>
         {label}
-        {required && <span style={{ color: 'var(--risk-high)' }}> *</span>}
+        {required && <span style={{ color: 'var(--ua-risk-high)' }}> *</span>}
       </span>
       {children}
       {hint && (
-        <span className="text-caption" style={{ color: 'var(--text-tertiary)' }}>{hint}</span>
+        <span className="text-caption" style={{ color: 'var(--ua-text-tertiary)' }}>{hint}</span>
       )}
     </label>
   );
@@ -288,8 +285,8 @@ function SegmentButton({
       onClick={onClick}
       className="px-2.5 py-1 text-caption font-medium transition-colors"
       style={{
-        background: active ? 'var(--accent)' : 'transparent',
-        color: active ? 'var(--accent-contrast, #fff)' : 'var(--text-secondary)',
+        background: active ? 'var(--ua-action-primary)' : 'transparent',
+        color: active ? 'var(--ua-action-primary-fg)' : 'var(--ua-text-secondary)',
       }}
     >
       {children}

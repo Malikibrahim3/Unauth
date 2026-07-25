@@ -37,6 +37,7 @@ export const TABLES = {
   EVIDENCE_DOWNLOAD_TOKENS: 'evidence_download_tokens',
   PROFILE_VIEW_TOKENS: 'profile_view_tokens',
   MERCHANT_WIDGET_TOKENS: 'merchant_widget_tokens',
+  ACCESS_AUDIT_LOG: 'access_audit_log',
   SUPPORT_PROVIDER_CONNECTIONS: 'helpdesk_connections',
   MERCHANT_SHOPIFY_CONNECTIONS: 'store_connections',
   SUPPORT_CASE_INTAKE: 'source_tickets',
@@ -61,6 +62,8 @@ export const TABLES = {
   RECOVERY_CASES: 'recovery_cases',
   RECOVERY_CASE_EVENTS: 'recovery_case_events',
   CASE_CLARIFICATION_REQUESTS: 'case_clarification_requests',
+  CASE_INVESTIGATION_DISPATCHES: 'case_investigation_dispatches',
+  CASE_INVESTIGATION_ATTACHMENTS: 'case_investigation_attachments',
   MERCHANT_INTEGRATIONS: 'merchant_integrations',
   INTEGRATION_CREDENTIALS: 'integration_credentials',
   INTEGRATION_EVIDENCE_ITEMS: 'integration_evidence_items',
@@ -106,6 +109,7 @@ export const TABLES = {
   SOURCE_FULFILLMENTS: 'source_fulfillments',
   SOURCE_REFUNDS: 'source_refunds',
   SOURCE_SHIPMENTS: 'source_shipments',
+  SOURCE_SHIPMENT_LINES: 'source_shipment_lines',
   SOURCE_TRACKING_EVENTS: 'source_tracking_events',
   SOURCE_RETURNS: 'source_returns',
   SOURCE_DISPUTES: 'source_disputes',
@@ -117,6 +121,7 @@ export const TABLES = {
   CASE_OUTCOMES: 'case_outcomes',
   LOSS_ATTRIBUTION_CANDIDATES: 'loss_attribution_candidates',
   WORK_TASKS: 'work_tasks',
+  WORK_SAVED_VIEWS: 'work_saved_views',
   CASE_EXCEPTIONS: 'case_exceptions',
   CASE_COMMENTS: 'case_comments',
   CASE_COMMENT_EVENTS: 'case_comment_events',
@@ -127,6 +132,10 @@ export const TABLES = {
   WORKFLOW_RUNS: 'workflow_runs',
   WORKFLOW_STEP_RUNS: 'workflow_step_runs',
   CONNECTOR_ACTION_RUNS: 'connector_action_runs',
+  CASE_CLAIMED_ITEMS: 'case_claimed_items',
+  CASE_RECOMMENDATION_SNAPSHOTS: 'case_recommendation_snapshots',
+  CASE_OUTCOME_EVENTS: 'case_outcome_events',
+  PROVIDER_CREDIT_RECORDS: 'provider_credit_records',
 } as const;
 
 /** Step 3 compatibility / derived views — see PHASE_2_IMPLEMENTATION_SPEC.md */
@@ -143,6 +152,7 @@ export const STORAGE_BUCKETS = {
   EVIDENCE_PACKAGES: 'evidence-packages',
   INTEGRATION_DOCUMENTS: 'integration-documents',
   PACK_CONFIRMATION_PHOTOS: 'pack-confirmation-photos',
+  INVESTIGATION_EVIDENCE: 'investigation-evidence',
 } as const;
 
 export const COLUMNS = {

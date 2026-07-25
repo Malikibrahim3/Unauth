@@ -72,13 +72,30 @@ describe('performWidgetContextUnlock', () => {
       merchantId: 'm1',
       apiKeyId: 'k1',
       requestIp: '1.2.3.4',
-      contextType: 'full_context',
+      contextType: 'evidence_summary',
       rawEmail: 'a@b.com',
       ticketRef: 'T-100',
     });
 
     expect(result.status).toBe(402);
     expect(runWidgetContextProfileSearch).not.toHaveBeenCalled();
+  });
+
+  it('gates unproven network context before checking or spending credits', async () => {
+    const result = await performWidgetContextUnlock(service as never, {
+      merchantId: 'm1',
+      apiKeyId: 'k1',
+      requestIp: '1.2.3.4',
+      contextType: 'full_context',
+      rawEmail: 'a@b.com',
+      ticketRef: 'T-100',
+    });
+
+    expect(result.status).toBe(503);
+    expect(result.json).toMatchObject({ creditsSpent: 0 });
+    expect(precheckContextCredits).not.toHaveBeenCalled();
+    expect(runWidgetContextProfileSearch).not.toHaveBeenCalled();
+    expect(spendContextCreditsAfterSuccess).not.toHaveBeenCalled();
   });
 
   it('does not spend credits when search returns no usable profiles', async () => {

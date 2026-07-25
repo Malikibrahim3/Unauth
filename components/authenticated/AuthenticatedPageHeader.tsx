@@ -2,12 +2,14 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 import styles from './AuthenticatedPageChrome.module.css';
 
+export type Breadcrumb = { label: string; href?: string };
+
 type AuthenticatedPageHeaderProps = {
   title: string;
   subtitle?: ReactNode;
   eyebrow?: string;
   actions?: ReactNode;
-  breadcrumbs?: Array<{ label: string; href?: string }>;
+  breadcrumbs?: Breadcrumb[];
   meta?: ReactNode;
   tabs?: ReactNode;
   capabilityId?: string;

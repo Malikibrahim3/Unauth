@@ -3,7 +3,7 @@
 import { type ReactNode, type CSSProperties, type ElementType } from 'react';
 import { cn } from '@/lib/utils';
 
-export type CardVariant = 'raised' | 'overlay' | 'flat' | 'muted' | 'inset' | 'plain';
+export type CardVariant = 'panel' | 'muted' | 'overlay' | 'plain';
 export type CardDensity = 'compact' | 'default' | 'relaxed';
 
 interface CardProps {
@@ -19,47 +19,41 @@ interface CardProps {
 }
 
 const CARD_STYLES: Record<CardVariant, CSSProperties> = {
-  raised: {
-    background: 'var(--surface-raised)',
-    border: '1px solid color-mix(in srgb, var(--border) 88%, var(--text-primary))',
-    boxShadow: 'none',
+  /** A bordered working surface on the canvas. Flat — elevation is for overlays. */
+  panel: {
+    background: 'var(--ua-surface-primary)',
+    border: '1px solid var(--ua-border-default)',
+    boxShadow: 'var(--ua-shadow-none)',
   },
+  /** A recessed group inside a panel. */
+  muted: {
+    background: 'var(--ua-surface-muted)',
+    border: '1px solid var(--ua-border-subtle)',
+    boxShadow: 'var(--ua-shadow-none)',
+  },
+  /** A floating surface — the only variant that lifts. */
   overlay: {
-    background: 'var(--surface)',
-    border: '1px solid var(--border)',
+    background: 'var(--ua-surface-primary)',
+    border: '1px solid var(--ua-border-default)',
     boxShadow: 'var(--ua-shadow-overlay)',
   },
-  flat: {
-    background: 'var(--surface)',
-    border: '1px solid var(--border)',
-    boxShadow: 'none',
-  },
-  muted: {
-    background: 'var(--surface-sunken)',
-    border: '1px solid var(--border-muted)',
-    boxShadow: 'none',
-  },
-  inset: {
-    background: 'var(--surface-sunken)',
-    border: '1px solid var(--border-muted)',
-    boxShadow: 'none',
-  },
+  /** No chrome; the caller owns the surface. */
   plain: {
     background: 'transparent',
     border: '0',
-    boxShadow: 'none',
+    boxShadow: 'var(--ua-shadow-none)',
   },
 };
 
 const CARD_PADDING: Record<CardDensity, string> = {
-  compact: 'var(--space-3)',
-  default: 'var(--space-4)',
-  relaxed: 'var(--space-5)',
+  compact: 'var(--ua-space-3)',
+  default: 'var(--ua-space-4)',
+  relaxed: 'var(--ua-space-5)',
 };
 
 export function Card({
   children,
-  variant = 'raised',
+  variant = 'panel',
   density = 'default',
   as: Component = 'div',
   unstyled = false,
@@ -70,7 +64,7 @@ export function Card({
   const padding = CARD_PADDING[density];
   return (
     <Component
-      className={cn('ua-card rounded-[var(--ua-radius-card)]', className)}
+      className={cn('ua-card rounded-[var(--ua-radius-surface)]', className)}
       style={{
         ...CARD_STYLES[variant],
         ...(unstyled ? {} : { padding }),

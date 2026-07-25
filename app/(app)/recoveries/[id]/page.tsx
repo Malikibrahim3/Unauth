@@ -25,8 +25,8 @@ interface Props {
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{label}</p>
-      <p className="text-sm" style={{ color: 'var(--text-primary)' }}>{value}</p>
+      <p className="text-xs" style={{ color: 'var(--ua-text-tertiary)' }}>{label}</p>
+      <p className="text-sm" style={{ color: 'var(--ua-text-primary)' }}>{value}</p>
     </div>
   );
 }
@@ -65,7 +65,6 @@ export default async function RecoveryDetailPage({ params }: Props) {
 
   return (
     <WorkbenchPage
-      eyebrow="Recovery"
       title={recoveryTitle}
       subtitle={`${RECOVERY_OWNER_LABELS[recovery.owner_type] ?? 'Owner'} · ${RECOVERY_STATUS_LABELS[recovery.status] ?? recovery.status}`}
       kpiItems={[
@@ -79,8 +78,8 @@ export default async function RecoveryDetailPage({ params }: Props) {
       main={
         <div className="flex flex-col gap-3">
           <SetBreadcrumbLabel label={recoveryTitle} />
-          <section className="rounded-[var(--ua-radius-card)] p-4" style={{ border: '1px solid var(--border-subtle, rgba(0,0,0,0.08))' }}>
-            <h2 className="mb-3 text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Recovery details</h2>
+          <section className="rounded-[var(--ua-radius-surface)] p-4" style={{ border: '1px solid var(--ua-border-subtle)' }}>
+            <h2 className="mb-3 text-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>Recovery details</h2>
             <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
               <Row label="Status" value={RECOVERY_STATUS_LABELS[recovery.status] ?? recovery.status} />
               <Row label="Owner" value={RECOVERY_OWNER_LABELS[recovery.owner_type] ?? recovery.owner_type} />
@@ -90,11 +89,11 @@ export default async function RecoveryDetailPage({ params }: Props) {
               <Row label="Evidence complete" value={recovery.evidence_complete ? 'Yes' : 'No'} />
             </div>
             <div className="mt-4 flex flex-wrap gap-3 text-xs">
-              <a href={`/claims/${recovery.support_payout_case_id}`} className="rounded-md px-2.5 py-1 no-underline" style={{ border: '1px solid var(--border-subtle, rgba(0,0,0,0.08))', color: 'var(--text-secondary)' }}>
+              <a href={`/claims/${recovery.support_payout_case_id}`} className="rounded-md px-2.5 py-1 no-underline" style={{ border: '1px solid var(--ua-border-subtle)', color: 'var(--ua-text-secondary)' }}>
                 Open payout case
               </a>
               {recovery.loss_case_id ? (
-                <a href={`/losses/${recovery.loss_case_id}`} className="rounded-md px-2.5 py-1 no-underline" style={{ border: '1px solid var(--border-subtle, rgba(0,0,0,0.08))', color: 'var(--text-secondary)' }}>
+                <a href={`/losses/${recovery.loss_case_id}`} className="rounded-md px-2.5 py-1 no-underline" style={{ border: '1px solid var(--ua-border-subtle)', color: 'var(--ua-text-secondary)' }}>
                   Open linked loss
                 </a>
               ) : null}
@@ -102,11 +101,11 @@ export default async function RecoveryDetailPage({ params }: Props) {
           </section>
 
           {missing.length > 0 ? (
-            <section className="rounded-[var(--ua-radius-card)] p-4" style={{ border: '1px solid var(--border-subtle, rgba(0,0,0,0.08))' }}>
-              <h2 className="mb-2 text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Missing evidence</h2>
+            <section className="rounded-[var(--ua-radius-surface)] p-4" style={{ border: '1px solid var(--ua-border-subtle)' }}>
+              <h2 className="mb-2 text-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>Missing evidence</h2>
               <ul className="flex flex-wrap gap-1.5">
                 {missing.map((key) => (
-                  <li key={key} className="rounded-md px-2 py-0.5 text-xs" style={{ backgroundColor: 'var(--surface-muted, rgba(0,0,0,0.04))', color: 'var(--text-secondary)' }}>
+                  <li key={key} className="rounded-md px-2 py-0.5 text-xs" style={{ backgroundColor: 'var(--ua-surface-muted)', color: 'var(--ua-text-secondary)' }}>
                     {humanizeEvidenceKey(key)}
                   </li>
                 ))}
@@ -114,25 +113,25 @@ export default async function RecoveryDetailPage({ params }: Props) {
             </section>
           ) : null}
 
-          <section className="rounded-lg p-4" style={{ border: '1px solid var(--border-subtle, rgba(0,0,0,0.08))' }}><h2 className="mb-3 text-sm font-semibold">Correspondence</h2>{(correspondenceRows ?? []).length ? <ul className="space-y-2">{(correspondenceRows ?? []).map((item: { id: string; direction: string; source_provider: string; source_record_id: string; subject: string | null; source_url: string | null }) => <li key={item.id} className="text-sm"><span className="font-medium capitalize">{item.direction}</span> · {item.source_provider} · {item.subject ?? item.source_record_id}{item.source_url ? <a className="ml-2 underline" href={item.source_url}>Source</a> : null}</li>)}</ul> : <p className="text-sm text-[var(--text-tertiary)]">No external correspondence is linked.</p>}</section>
-          <section className="rounded-lg p-4" style={{ border: '1px solid var(--border-subtle, rgba(0,0,0,0.08))' }}><h2 className="mb-3 text-sm font-semibold">Tasks</h2>{(taskRows ?? []).length ? <ul className="space-y-2">{(taskRows ?? []).map((task: { id: string; title: string; status: string; due_at: string | null }) => <li key={task.id} className="text-sm"><span className="font-medium">{task.title}</span> · {label('workflowStatus', task.status)}{task.due_at ? ` · due ${formatDateAbsolute(task.due_at)}` : ''}</li>)}</ul> : <p className="text-sm text-[var(--text-tertiary)]">No recovery tasks are linked.</p>}</section>
+          <section className="rounded-lg p-4" style={{ border: '1px solid var(--ua-border-subtle)' }}><h2 className="mb-3 text-sm font-semibold">Correspondence</h2>{(correspondenceRows ?? []).length ? <ul className="space-y-2">{(correspondenceRows ?? []).map((item: { id: string; direction: string; source_provider: string; source_record_id: string; subject: string | null; source_url: string | null }) => <li key={item.id} className="text-sm"><span className="font-medium capitalize">{item.direction}</span> · {item.source_provider} · {item.subject ?? item.source_record_id}{item.source_url ? <a className="ml-2 underline" href={item.source_url}>Source</a> : null}</li>)}</ul> : <p className="text-sm text-[var(--ua-text-tertiary)]">No external correspondence is linked.</p>}</section>
+          <section className="rounded-lg p-4" style={{ border: '1px solid var(--ua-border-subtle)' }}><h2 className="mb-3 text-sm font-semibold">Tasks</h2>{(taskRows ?? []).length ? <ul className="space-y-2">{(taskRows ?? []).map((task: { id: string; title: string; status: string; due_at: string | null }) => <li key={task.id} className="text-sm"><span className="font-medium">{task.title}</span> · {label('workflowStatus', task.status)}{task.due_at ? ` · due ${formatDateAbsolute(task.due_at)}` : ''}</li>)}</ul> : <p className="text-sm text-[var(--ua-text-tertiary)]">No recovery tasks are linked.</p>}</section>
 
-          <section className="rounded-lg p-4" style={{ border: '1px solid var(--border-subtle, rgba(0,0,0,0.08))' }}>
-            <h2 className="mb-3 text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Activity</h2>
+          <section className="rounded-lg p-4" style={{ border: '1px solid var(--ua-border-subtle)' }}>
+            <h2 className="mb-3 text-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>Activity</h2>
             {events.length === 0 ? (
-              <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>No recovery activity yet.</p>
+              <p className="text-sm" style={{ color: 'var(--ua-text-tertiary)' }}>No recovery activity yet.</p>
             ) : (
               <ul className="flex flex-col gap-2">
                 {events.map((event) => (
                   <li key={event.id} className="flex items-start justify-between gap-3 text-sm">
-                    <span style={{ color: 'var(--text-primary)' }}>
+                    <span style={{ color: 'var(--ua-text-primary)' }}>
                       {label('workflowStatus', event.event_type)}
                       {event.from_status && event.to_status ? (
-                        <span style={{ color: 'var(--text-tertiary)' }}> · from {label('recoveryStatus', event.from_status)} to {label('recoveryStatus', event.to_status)}</span>
+                        <span style={{ color: 'var(--ua-text-tertiary)' }}> · from {label('recoveryStatus', event.from_status)} to {label('recoveryStatus', event.to_status)}</span>
                       ) : null}
-                      {event.note ? <span style={{ color: 'var(--text-secondary)' }}> — {event.note}</span> : null}
+                      {event.note ? <span style={{ color: 'var(--ua-text-secondary)' }}> — {event.note}</span> : null}
                     </span>
-                    <span className="shrink-0 text-xs" style={{ color: 'var(--text-tertiary)' }}>{formatDateTime(event.created_at)}</span>
+                    <span className="shrink-0 text-xs" style={{ color: 'var(--ua-text-tertiary)' }}>{formatDateTime(event.created_at)}</span>
                   </li>
                 ))}
               </ul>

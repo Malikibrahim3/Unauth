@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { AlertTriangle, Bell, CheckCheck, Clock3, FileCheck2, RefreshCw, RotateCcw, UserRoundCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { Badge, Button, PanelCard } from '@/components/ui';
+import { Badge, Button, Panel } from '@/components/ui';
 import { formatDateTime } from '@/lib/utils/format';
 
 export type NotificationItem = { id: string; kind: string; title: string; body: string | null; target_href: string; read_at: string | null; created_at: string };
@@ -65,21 +65,21 @@ export function NotificationCentre({ initialNotifications }: { initialNotificati
   }
 
   return <div className="space-y-4">
-    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-muted)] px-4 py-3">
-      <div className="inline-flex rounded-md border border-[var(--border)] bg-[var(--surface-sunken)] p-0.5" role="tablist" aria-label="Notification filters">
-        {([{ value: 'all', label: `All ${notifications.length}` }, { value: 'unread', label: `Unread ${unread}` }] as const).map((item) => <button key={item.value} type="button" role="tab" aria-selected={filter === item.value} onClick={() => setFilter(item.value)} className="rounded px-3 py-1.5 text-xs font-semibold" style={{ background: filter === item.value ? 'var(--surface)' : 'transparent', color: filter === item.value ? 'var(--text-primary)' : 'var(--text-secondary)' }}>{item.label}</button>)}
+    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--ua-border-subtle)] px-4 py-3">
+      <div className="inline-flex rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] p-0.5" role="tablist" aria-label="Notification filters">
+        {([{ value: 'all', label: `All ${notifications.length}` }, { value: 'unread', label: `Unread ${unread}` }] as const).map((item) => <button key={item.value} type="button" role="tab" aria-selected={filter === item.value} onClick={() => setFilter(item.value)} className="rounded px-3 py-1.5 text-xs font-semibold" style={{ background: filter === item.value ? 'var(--ua-surface-primary)' : 'transparent', color: filter === item.value ? 'var(--ua-text-primary)' : 'var(--ua-text-secondary)' }}>{item.label}</button>)}
       </div>
-      <div className="flex items-center gap-2"><Link href="/settings/notifications" className="text-xs font-semibold text-[var(--accent)] hover:underline">Preferences</Link>{unread > 0 ? <Button variant="secondary" size="sm" leadingIcon={<CheckCheck className="h-3.5 w-3.5" />} loading={busy === 'all'} onClick={markAllRead}>Mark all read</Button> : null}</div>
+      <div className="flex items-center gap-2"><Link href="/settings/notifications" className="text-xs font-semibold text-[var(--ua-action-primary)] hover:underline">Preferences</Link>{unread > 0 ? <Button variant="secondary" size="sm" leadingIcon={<CheckCheck className="h-3.5 w-3.5" />} loading={busy === 'all'} onClick={markAllRead}>Mark all read</Button> : null}</div>
     </div>
-    <p aria-live="polite" className="px-4 text-xs text-[var(--text-secondary)]">{message}</p>
-    {visible.length ? <ul className="divide-y divide-[var(--border-muted)]">{visible.map((item) => {
+    <p aria-live="polite" className="px-4 text-xs text-[var(--ua-text-secondary)]">{message}</p>
+    {visible.length ? <ul className="divide-y divide-[var(--ua-border-subtle)]">{visible.map((item) => {
       const meta = KIND_META[item.kind] ?? { label: item.kind.replaceAll('_', ' '), icon: Bell };
       const Icon = meta.icon;
-      return <li key={item.id}><button type="button" onClick={() => open(item)} disabled={busy === item.id} className="group grid w-full gap-3 px-4 py-4 text-left transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-60 sm:grid-cols-[2rem_minmax(0,1fr)_auto]">
-        <span className="relative flex h-8 w-8 items-center justify-center rounded-md border border-[var(--border-muted)] bg-[var(--surface)]"><Icon className="h-4 w-4 text-[var(--text-secondary)]" />{!item.read_at ? <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border-2 border-[var(--surface)] bg-[var(--accent)]"><span className="sr-only">Unread</span></span> : null}</span>
-        <span className="min-w-0"><span className="flex flex-wrap items-center gap-2"><strong className="text-sm text-[var(--text-primary)]">{item.title}</strong><Badge tone="info" size="sm">{meta.label}</Badge></span>{item.body ? <span className="mt-1 block max-w-3xl text-sm text-[var(--text-secondary)]">{item.body}</span> : null}<span className="mt-1 block text-xs text-[var(--text-tertiary)]">{formatDateTime(item.created_at)}</span></span>
-        <span className="self-center text-xs font-semibold text-[var(--accent)]">{busy === item.id ? 'Opening…' : destinationLabel(item.target_href)}</span>
+      return <li key={item.id}><button type="button" onClick={() => open(item)} disabled={busy === item.id} className="group grid w-full gap-3 px-4 py-4 text-left transition-colors hover:bg-[var(--ua-surface-muted)] disabled:opacity-60 sm:grid-cols-[2rem_minmax(0,1fr)_auto]">
+        <span className="relative flex h-8 w-8 items-center justify-center rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-primary)]"><Icon className="h-4 w-4 text-[var(--ua-text-secondary)]" />{!item.read_at ? <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border-2 border-[var(--ua-surface-primary)] bg-[var(--ua-action-primary)]"><span className="sr-only">Unread</span></span> : null}</span>
+        <span className="min-w-0"><span className="flex flex-wrap items-center gap-2"><strong className="text-sm text-[var(--ua-text-primary)]">{item.title}</strong><Badge tone="info" size="sm">{meta.label}</Badge></span>{item.body ? <span className="mt-1 block max-w-3xl text-sm text-[var(--ua-text-secondary)]">{item.body}</span> : null}<span className="mt-1 block text-xs text-[var(--ua-text-tertiary)]">{formatDateTime(item.created_at)}</span></span>
+        <span className="self-center text-xs font-semibold text-[var(--ua-action-primary)]">{busy === item.id ? 'Opening…' : destinationLabel(item.target_href)}</span>
       </button></li>;
-    })}</ul> : <PanelCard variant="plain" className="mx-4 p-6 text-center"><Bell className="mx-auto h-6 w-6 text-[var(--text-tertiary)]" /><h2 className="mt-3 text-sm font-semibold">{filter === 'unread' ? 'You are caught up' : 'No notifications yet'}</h2><p className="mx-auto mt-1 max-w-lg text-sm text-[var(--text-secondary)]">{filter === 'unread' ? 'New assignments, evidence, decisions, deadlines, recovery outcomes and connection issues will appear here.' : 'Nothing needs your attention yet. We\'ll notify you when a case does.'}</p>{filter === 'unread' ? <Button className="mt-4" variant="secondary" size="sm" onClick={() => setFilter('all')}>View all</Button> : <Link className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-[var(--accent)]" href="/settings/notifications"><RefreshCw className="h-3.5 w-3.5" /> Review preferences</Link>}</PanelCard>}
+    })}</ul> : <Panel variant="panel" className="mx-4 p-6 text-center"><Bell className="mx-auto h-6 w-6 text-[var(--ua-text-tertiary)]" /><h2 className="mt-3 text-sm font-semibold">{filter === 'unread' ? 'You are caught up' : 'No notifications yet'}</h2><p className="mx-auto mt-1 max-w-lg text-sm text-[var(--ua-text-secondary)]">{filter === 'unread' ? 'New assignments, evidence, decisions, deadlines, recovery outcomes and connection issues will appear here.' : 'Nothing needs your attention yet. We\'ll notify you when a case does.'}</p>{filter === 'unread' ? <Button className="mt-4" variant="secondary" size="sm" onClick={() => setFilter('all')}>View all</Button> : <Link className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-[var(--ua-action-primary)]" href="/settings/notifications"><RefreshCw className="h-3.5 w-3.5" /> Review preferences</Link>}</Panel>}
   </div>;
 }

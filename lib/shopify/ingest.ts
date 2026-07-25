@@ -440,6 +440,15 @@ async function processRefundTopic(
       return sum + (Number.isFinite(amount) ? amount : 0);
     }, 0) ?? 0,
   );
+  const transactionStatuses = Array.isArray(payload.transactions)
+    ? payload.transactions
+      .map((transaction: any) => String(transaction?.status ?? transaction?.state ?? '').trim().toLowerCase())
+      .filter(Boolean)
+    : [];
+  const transactionState = transactionStatuses.length > 0
+    && transactionStatuses.every((status: string) => ['success', 'succeeded', 'processed', 'paid', 'completed'].includes(status))
+    ? 'success'
+    : 'pending';
   const { data: refund, error } = await supabase
     .from('source_refunds')
     .upsert(
@@ -470,6 +479,8 @@ async function processRefundTopic(
       amount_minor: Number.isFinite(refundedAmount) ? Math.round(refundedAmount * 100) : null,
       currency: payload.currency ?? payload.order?.currency ?? null,
       reason: payload.note ?? payload.reason ?? null,
+      transaction_state: transactionState,
+      transaction_count: transactionStatuses.length,
       case_origin: 'connector',
     },
     occurredAt: payload.created_at ?? new Date().toISOString(),

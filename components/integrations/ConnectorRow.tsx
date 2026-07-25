@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { CONNECTOR_GRID_CLASS } from "@/components/integrations/connectorGrid";
 import type { ConnectorCatalogueItem } from "@/lib/connectors/catalogue";
 import type { EffectiveConnectionBadge } from "@/lib/connections/effectiveStatus";
+import type { ConnectionReadModel } from "@/lib/connections/readModel";
 import { useLiveConnectionStatus } from "@/components/integrations/useLiveConnectionStatus";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { ProviderLogo } from "@/components/identity/ProviderLogo";
@@ -15,6 +16,7 @@ import type { IntegrationCategory } from "@/lib/integrations/types";
 export type CatalogueRowItem = ConnectorCatalogueItem & {
   badge: EffectiveConnectionBadge;
   noteTone?: "warning" | "danger" | null;
+  readModel?: ConnectionReadModel;
 };
 
 const CATEGORY_LABELS: Record<IntegrationCategory, string> = {
@@ -43,17 +45,17 @@ export function ConnectorRow({ item }: { item: CatalogueRowItem }) {
     [item.badge, item.lastError, item.noteTone],
   );
   const live = useLiveConnectionStatus(item.id, initialLiveState);
-  const noteColor = live.noteTone === "warning" ? "var(--ua-warning)" : "var(--danger)";
+  const noteColor = live.noteTone === "warning" ? "var(--ua-warning)" : "var(--ua-critical)";
   return (
     <Link
       href={`/integrations/${item.id}`}
-      className={`ua-table-row ${CONNECTOR_GRID_CLASS} items-center border-b border-[var(--border-muted)] px-4 py-3 text-sm last:border-b-0 hover:bg-[var(--surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--focus-ring)]`}
+      className={`ua-table-row ${CONNECTOR_GRID_CLASS} items-center border-b border-[var(--ua-border-subtle)] px-4 py-3 text-sm last:border-b-0 hover:bg-[var(--ua-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--ua-border-focus)]`}
     >
       <div className="flex min-w-0 items-center gap-3">
         <ProviderLogo provider={item.id} name={item.name} />
         <div className="min-w-0">
-          <p className="font-semibold text-[var(--text-primary)]">{item.name}</p>
-          <p className="mt-0.5 truncate text-xs capitalize text-[var(--text-tertiary)]">
+          <p className="font-semibold text-[var(--ua-text-primary)]">{item.name}</p>
+          <p className="mt-0.5 truncate text-xs capitalize text-[var(--ua-text-tertiary)]">
             {item.account ?? categoryLabel(item.category)}
           </p>
         </div>
@@ -62,7 +64,7 @@ export function ConnectorRow({ item }: { item: CatalogueRowItem }) {
         <StatusBadge family="workflowStatus" value={live.status} />
       </div>
       <div className="min-w-0 md:col-span-2 xl:col-span-1">
-        <p className="line-clamp-2 text-xs leading-relaxed text-[var(--text-secondary)]">
+        <p className="line-clamp-2 text-xs leading-relaxed text-[var(--ua-text-secondary)]">
           {item.description}
         </p>
         {live.note ? (
@@ -75,14 +77,14 @@ export function ConnectorRow({ item }: { item: CatalogueRowItem }) {
           </p>
         ) : null}
       </div>
-      <p className="text-left font-semibold tabular-nums text-[var(--text-primary)] xl:text-right">
-        <span className="mr-1 text-[10px] font-medium uppercase tracking-wide text-[var(--text-tertiary)] xl:hidden">
+      <p className="text-left font-semibold tabular-nums text-[var(--ua-text-primary)] xl:text-right">
+        <span className="mr-1 text-[length:var(--ua-text-micro-size)] font-medium text-[var(--ua-text-tertiary)] xl:hidden">
           Imported
         </span>
         {formatNumber(item.importedRecords)}
       </p>
-      <p className="text-xs font-medium text-[var(--text-secondary)]">
-        <span className="mr-1 text-[10px] uppercase tracking-wide text-[var(--text-tertiary)] xl:hidden">
+      <p className="text-xs font-medium text-[var(--ua-text-secondary)]">
+        <span className="mr-1 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)] xl:hidden">
           Last activity
         </span>
         {item.lastDataReceivedAt
@@ -93,7 +95,7 @@ export function ConnectorRow({ item }: { item: CatalogueRowItem }) {
               ? "Not measurable"
               : "No activity yet"}
       </p>
-      <span className="hidden text-right text-[var(--text-tertiary)] xl:block">
+      <span className="hidden text-right text-[var(--ua-text-tertiary)] xl:block">
         <span className="sr-only">View connection</span>
       </span>
     </Link>

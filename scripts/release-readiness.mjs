@@ -74,6 +74,7 @@ const checks = [
   ['Two-merchant tenant boundary runtime', 'npm', ['run', 'verify:tenant-boundaries']],
   ['Webhook concurrency and replay runtime', 'npm', ['run', 'verify:webhook-event-safety']],
   ['Privacy erasure and retention runtime', 'npm', ['run', 'verify:privacy-erasure']],
+  ['Release 1 investigation lifecycle runtime', 'npm', ['run', 'verify:investigations-runtime']],
   ['Source-to-recovery PostgreSQL runtime', 'npm', ['run', 'verify:source-to-recovery']],
   ['Atomic P0 evidence ledger', 'npm', ['run', 'verify:p0-ledger']],
   ['Local migration rollout/monitoring/rollback rehearsal', 'npm', ['run', 'verify:rollout-rehearsal']],

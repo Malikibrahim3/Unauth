@@ -3,6 +3,10 @@ import { z } from 'zod';
 import { createServiceClient } from '@/lib/supabase/server';
 import { isValidatedApiKey, validateApiKey } from '@/lib/api/validateApiKey';
 import { evaluatePublicGate, PublicGateError } from '@/lib/claim-gate/publicGate';
+import {
+  isPublicClaimGateEnabled,
+  publicClaimGateUnavailableBody,
+} from '@/lib/claim-gate/releaseGate';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -26,6 +30,12 @@ const requestSchema = z.object({
 export async function POST(request: NextRequest) {
   const auth = await validateApiKey(request);
   if (!isValidatedApiKey(auth)) return auth;
+  if (!isPublicClaimGateEnabled()) {
+    return NextResponse.json(publicClaimGateUnavailableBody(), {
+      status: 503,
+      headers: { 'Retry-After': '3600' },
+    });
+  }
 
   let body: unknown;
   try {

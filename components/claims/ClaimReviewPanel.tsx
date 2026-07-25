@@ -30,7 +30,11 @@ export default function ClaimReviewPanel({
       <ClaimReviewToast wb={wb} />
       <ClaimReviewHeader wb={wb} />
       <div className="mx-auto grid w-full max-w-[1500px] grid-cols-1 items-start gap-3.5 px-3 pb-6 pt-3 md:px-5 min-[1100px]:grid-cols-[minmax(0,1fr)_360px]">
-        <ClaimReviewContextColumn wb={wb} financialSummaries={financialSummaries} />
+        <ClaimReviewContextColumn
+          wb={wb}
+          financialSummaries={financialSummaries}
+          canManage={canManage}
+        />
         <ClaimReviewActionRail wb={wb} canManage={canManage} />
         <ClaimReviewFormSection wb={wb} />
         {initialClaimId ? <CaseComments caseId={initialClaimId} canComment={canManage} /> : null}

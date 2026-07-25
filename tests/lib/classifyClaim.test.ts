@@ -13,6 +13,16 @@ describe('classifyClaimType', () => {
     expect(result.confidence).toBeGreaterThan(0.8);
   });
 
+  it('distinguishes a missing item inside a delivered parcel from whole-parcel INR', () => {
+    const result = classifyClaimType('The parcel arrived, but one item is missing from the box');
+    expect(result.claimType).toBe('missing_item');
+    expect(result.confidence).toBeGreaterThan(0.9);
+  });
+
+  it('keeps a missing parcel as whole-parcel INR', () => {
+    expect(classifyClaimType('The parcel is missing and never arrived').claimType).toBe('INR');
+  });
+
   it('classifies "completely smashed" as damaged with high confidence', () => {
     const result = classifyClaimType('item came completely smashed');
     expect(result.claimType).toBe('damaged');

@@ -41,18 +41,18 @@ export default function ChromeSetupClient({ hasApiKeys, keyPrefixes }: Props) {
     return (
       <div
         className="rounded-md border p-5"
-        style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
+        style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-surface-primary)' }}
       >
-        <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>
+        <p className="text-sm font-medium" style={{ color: 'var(--ua-text-primary)' }}>
           You need an API key first
         </p>
-        <p className="mt-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
+        <p className="mt-2 text-sm" style={{ color: 'var(--ua-text-secondary)' }}>
           Create a key in API &amp; Integrations, then return here to install the extension.
         </p>
         <Link
           href="/settings/integrations"
-          className="mt-3 inline-flex h-8 items-center rounded-[var(--ua-radius-input)] px-3 text-[11px] font-semibold"
-          style={{ background: 'var(--accent)', color: 'white' }}
+          className="mt-3 inline-flex h-8 items-center rounded-[var(--ua-radius-control)] px-3 text-[length:var(--ua-text-micro-size)] font-semibold"
+          style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)' }}
         >
           Settings → API &amp; Integrations
         </Link>
@@ -65,8 +65,8 @@ export default function ChromeSetupClient({ hasApiKeys, keyPrefixes }: Props) {
   return (
     <div className="space-y-3">
       <p
-        className="rounded-[var(--ua-radius-input)] border px-4 py-3 text-[11px]"
-        style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+        className="rounded-[var(--ua-radius-control)] border px-4 py-3 text-[length:var(--ua-text-micro-size)]"
+        style={{ borderColor: 'var(--ua-border-default)', color: 'var(--ua-text-secondary)' }}
       >
         Available for manual install while Chrome Web Store listing is pending.
       </p>
@@ -76,23 +76,23 @@ export default function ChromeSetupClient({ hasApiKeys, keyPrefixes }: Props) {
           type="button"
           onClick={() => void downloadZip()}
           disabled={downloading}
-          className="inline-flex h-8 items-center gap-2 rounded-[var(--ua-radius-input)] px-3 text-[11px] font-semibold disabled:opacity-60"
-          style={{ background: 'var(--accent)', color: 'white' }}
+          className="inline-flex h-8 items-center gap-2 rounded-[var(--ua-radius-control)] px-3 text-[length:var(--ua-text-micro-size)] font-semibold disabled:opacity-60"
+          style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)' }}
         >
           <Download className="h-4 w-4" />
           {downloading ? 'Preparing zip…' : 'Download Chrome extension (.zip)'}
         </button>
         {downloadError && (
-          <p className="mt-2 text-sm" style={{ color: 'var(--success)' }}>
+          <p className="mt-2 text-sm" style={{ color: 'var(--ua-success)' }}>
             {downloadError}
           </p>
         )}
-        <p className="mt-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
+        <p className="mt-2 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
           Unzip the download on your computer, then follow the steps below in Chrome.
         </p>
       </div>
 
-      <ol className="list-decimal space-y-2 pl-5 text-[12px] leading-5" style={{ color: 'var(--text)' }}>
+      <ol className="list-decimal space-y-2 pl-5 text-[length:var(--ua-text-caption-size)] leading-5" style={{ color: 'var(--ua-text-primary)' }}>
         <li>Download the extension zip above and unzip it.</li>
         <li>
           In Chrome, open <strong>Extensions</strong> (from the puzzle icon or browser menu).
@@ -108,20 +108,20 @@ export default function ChromeSetupClient({ hasApiKeys, keyPrefixes }: Props) {
 
       <div
         className="rounded-md border p-4 text-sm"
-        style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
+        style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-surface-primary)' }}
       >
-        <p style={{ color: 'var(--text)' }}>
+        <p style={{ color: 'var(--ua-text-primary)' }}>
           Use key:{' '}
-          <span className="font-mono text-xs" style={{ color: 'var(--text-secondary)' }}>
+          <span className="font-mono text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
             {displayPrefix}
           </span>
         </p>
         {keyPrefixes.length > 1 && (
-          <p className="mt-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
+          <p className="mt-2 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
             Additional keys: {keyPrefixes.slice(1).join(', ')}
           </p>
         )}
-        <p className="mt-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
+        <p className="mt-2 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
           Paste the full secret you saved when the key was created - only the prefix is shown here.
         </p>
       </div>

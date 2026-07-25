@@ -1,6 +1,7 @@
 import { createHmac } from 'crypto';
 import { NextRequest } from 'next/server';
-import { processWebhook, POST } from '@/app/api/shopify/webhooks/route';
+import { POST } from '@/app/api/shopify/webhooks/route';
+import { processWebhook } from '@/lib/shopify/processWebhook';
 
 jest.mock('@/lib/supabase/server', () => ({
   createServiceClient: jest.fn(),

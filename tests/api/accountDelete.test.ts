@@ -230,6 +230,7 @@ describe('POST /api/account/delete', () => {
       'source_replacements',
       'source_shipments',
       'source_tracking_events',
+      'source_shipment_lines',
       'source_returns',
       'source_messages',
       'merchant_customers',
@@ -242,6 +243,7 @@ describe('POST /api/account/delete', () => {
       expect.arrayContaining([
         expect.objectContaining({ fn: 'record_account_deletion_receipt' }),
         { fn: 'purge_merchant_source_agnostic', args: { p_merchant_id: MERCHANT_ID } },
+        { fn: 'purge_merchant_reconciliation_history', args: { p_merchant_id: MERCHANT_ID } },
         { fn: 'purge_merchant_audit_projection', args: { p_merchant_id: MERCHANT_ID } },
         { fn: 'purge_merchant_privacy_records', args: { p_merchant_id: MERCHANT_ID } },
       ]),
@@ -301,9 +303,11 @@ describe('POST /api/account/delete', () => {
     expect(service.rpcCalls.map((c) => c.fn)).toEqual([
       'record_account_deletion_receipt',
       'purge_merchant_source_agnostic',
+      'purge_merchant_reconciliation_history',
       'purge_merchant_audit_projection',
       'purge_merchant_privacy_records',
       'purge_merchant_source_agnostic',
+      'purge_merchant_reconciliation_history',
       'purge_merchant_audit_projection',
       'record_account_deletion_receipt',
     ]);

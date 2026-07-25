@@ -424,6 +424,7 @@ export function gradeHeadline(grade: ConfidenceGrade | null): string {
 
 export const CLAIM_TYPE_LABELS: Record<ClaimType, string> = {
   INR: 'Item not received',
+  missing_item: 'Item missing from parcel',
   damaged: 'Item arrived damaged',
   wrong_item: 'Wrong item received',
   not_as_described: 'Item not as described',

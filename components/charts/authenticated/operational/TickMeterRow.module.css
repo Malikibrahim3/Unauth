@@ -1,6 +1,37 @@
-.header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px; }
-.label { color: var(--text-secondary); font-size: 13px; }
-.value { font-size: 13px; font-weight: 500; color: var(--text-primary); }
-.row { display: flex; gap: 2px; }
-.row > * { width: 3px; height: 14px; flex: 1 1 auto; max-width: 3px; border-radius: 1px; }
-.tickEmpty { background: var(--ua-chart-track); }
+.header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--ua-space-1);
+}
+
+.label {
+  color: var(--ua-text-secondary);
+  font-size: var(--ua-text-small-size);
+  line-height: var(--ua-text-small-leading);
+}
+
+.value {
+  font-size: var(--ua-text-small-size);
+  line-height: var(--ua-text-small-leading);
+  font-weight: 500;
+  color: var(--ua-text-primary);
+}
+
+/*
+ * Spec §8.3: a progress/capacity view is one flat fill on a neutral track. The
+ * previous treatment drew ~56 discrete ticks, which reads as a patterned track
+ * (§16.4 deletion ledger) and made a precise value look quantised.
+ */
+.track {
+  position: relative;
+  height: 6px;
+  overflow: hidden;
+  background: var(--ua-chart-track);
+  border-radius: var(--ua-radius-xs);
+}
+
+.fill {
+  height: 100%;
+  border-radius: var(--ua-radius-xs);
+}

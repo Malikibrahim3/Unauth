@@ -14,19 +14,19 @@ import { cn } from '@/lib/utils';
 export type KeyInsightTone = 'neutral' | 'info' | 'warning' | 'success' | 'danger';
 
 const TONE: Record<KeyInsightTone, { bg: string; fg: string; bd: string }> = {
-  neutral: { bg: 'var(--surface-sunken)', fg: 'var(--ua-text-secondary)', bd: 'var(--border)' },
+  neutral: { bg: 'var(--ua-surface-muted)', fg: 'var(--ua-text-secondary)', bd: 'var(--ua-border-default)' },
   info: { bg: 'var(--ua-info-bg)', fg: 'var(--ua-info)', bd: 'var(--ua-info-border)' },
   warning: { bg: 'var(--ua-warning-bg)', fg: 'var(--ua-warning)', bd: 'var(--ua-warning-border)' },
   success: { bg: 'var(--ua-success-bg)', fg: 'var(--ua-success)', bd: 'var(--ua-success-border)' },
   // danger follows the risk-critical family, not --ua-critical — they match in
   // light mode but diverge in dark (see StatusBadge for the same note).
-  danger: { bg: 'var(--risk-critical-bg)', fg: 'var(--risk-critical-fg)', bd: 'var(--risk-critical-bd)' },
+  danger: { bg: 'var(--ua-risk-critical-bg)', fg: 'var(--ua-risk-critical)', bd: 'var(--ua-risk-critical-border)' },
 };
 
 interface KeyInsightCalloutProps {
   /** The insight sentence. Emphasise figures with <strong> (rendered in mono/tabular). */
   children: ReactNode;
-  /** Small uppercase label above the sentence, e.g. "Needs attention". */
+  /** Small sentence-case metadata label above the sentence, e.g. "Needs attention". */
   eyebrow?: string;
   /** Optional leading icon (e.g. a lucide icon at size 16). Tinted by tone. */
   icon?: ReactNode;
@@ -51,10 +51,10 @@ export function KeyInsightCallout({
       data-auth-visual="key-insight"
       style={{
         padding: '12px 14px',
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--ua-radius-card)',
-        background: 'var(--surface)',
-        boxShadow: 'var(--shadow-xs)',
+        border: '1px solid var(--ua-border-default)',
+        borderRadius: 'var(--ua-radius-surface)',
+        background: 'var(--ua-surface-primary)',
+        boxShadow: 'none',
       }}
     >
       {icon ? (
@@ -64,7 +64,7 @@ export function KeyInsightCallout({
           style={{
             width: 30,
             height: 30,
-            borderRadius: 'var(--ua-radius-card)',
+            borderRadius: 'var(--ua-radius-surface)',
             background: t.bg,
             color: t.fg,
             border: `1px solid ${t.bd}`,
@@ -78,12 +78,11 @@ export function KeyInsightCallout({
           <p
             className="m-0"
             style={{
-              color: 'var(--text-tertiary)',
-              fontSize: 10,
-              fontWeight: 650,
-              letterSpacing: '0.08em',
-              lineHeight: 1,
-              textTransform: 'uppercase',
+              color: 'var(--ua-text-tertiary)',
+              fontSize: 'var(--ua-text-micro-size)',
+              fontWeight: 'var(--ua-text-micro-weight)' as unknown as number,
+              letterSpacing: 'var(--ua-text-micro-tracking)',
+              lineHeight: 'var(--ua-text-micro-leading)',
               marginBottom: 4,
             }}
           >
@@ -91,8 +90,8 @@ export function KeyInsightCallout({
           </p>
         ) : null}
         <p
-          className="m-0 [&_strong]:font-semibold [&_strong]:tabular-nums [&_strong]:text-[var(--text-primary)]"
-          style={{ color: 'var(--text-secondary)', fontSize: 13, lineHeight: 1.45 }}
+          className="m-0 [&_strong]:font-semibold [&_strong]:tabular-nums [&_strong]:text-[var(--ua-text-primary)]"
+          style={{ color: 'var(--ua-text-secondary)', fontSize: 13, lineHeight: 1.45 }}
         >
           {children}
         </p>
@@ -100,7 +99,7 @@ export function KeyInsightCallout({
       {detail ? (
         <div
           className="shrink-0"
-          style={{ color: 'var(--text-tertiary)', fontSize: 11, lineHeight: 1.4 }}
+          style={{ color: 'var(--ua-text-tertiary)', fontSize: 11, lineHeight: 1.4 }}
         >
           {detail}
         </div>

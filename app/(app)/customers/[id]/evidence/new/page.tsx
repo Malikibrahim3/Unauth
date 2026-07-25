@@ -13,9 +13,9 @@ function ProfileDrawerLink({ profileId, disputedOrder }: { profileId: string; di
     ? `/customers/${profileId}?buildEvidence=1&disputedOrder=${encodeURIComponent(disputedOrder)}`
     : `/customers/${profileId}?buildEvidence=1`;
   return (
-    <p className="text-[11px] text-[var(--text-secondary)]">
+    <p className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-secondary)]">
       Prefer the profile view?{' '}
-      <Link href={href} className="font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+      <Link href={href} className="font-semibold hover:underline" style={{ color: 'var(--ua-action-primary)' }}>
         Open as a side panel on the customer profile
       </Link>
     </p>
@@ -33,7 +33,6 @@ function EvidenceNewPageContent({ profileId }: { profileId: string }) {
   return (
     <div>
       <AuthenticatedPageHeader
-        eyebrow="Evidence workflow"
         title="Build evidence package"
         subtitle="Collect merchant-owned records and prepare a reviewable case package."
         breadcrumbs={[{ label: 'Customers', href: '/customers' }, { label: 'Profile', href: `/customers/${profileId}` }, { label: 'New evidence' }]}
@@ -51,7 +50,7 @@ function EvidenceNewPageContent({ profileId }: { profileId: string }) {
 export default function EvidenceNewPage({ params }: PageProps) {
   const { id } = use(params);
   return (
-    <Suspense fallback={<div className="p-5 text-xs text-[var(--text-secondary)]">Loading…</div>}>
+    <Suspense fallback={<div className="p-5 text-xs text-[var(--ua-text-secondary)]">Loading…</div>}>
       <EvidenceNewPageContent profileId={id} />
     </Suspense>
   );

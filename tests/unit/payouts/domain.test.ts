@@ -111,12 +111,20 @@ describe('buildEvidenceChecklist', () => {
 });
 
 describe('deriveLossAttribution', () => {
-  it('INR delivered with POD → delivery confirmed evidence, high confidence', () => {
-    const res = deriveLossAttribution(makeContext(), 'item_not_received');
-    expect(res.label).toBe('delivery_confirmed_evidence');
-    expect(res.confidence).toBe('high');
+  it('INR delivered with merchant-reviewed consistent POD remains unresolved', () => {
+    const res = deriveLossAttribution(makeContext({
+      delivery: { deliveryPhotoFinding: 'consistent' },
+    }), 'item_not_received');
+    expect(res.label).toBe('unknown');
+    expect(res.confidence).toBe('needs_more_evidence');
     expect(res.isAdvisory).toBe(true);
     expect(res.networkBenchmark).toBeNull();
+  });
+
+  it('INR with an uninterpreted POD artefact remains inconclusive', () => {
+    const res = deriveLossAttribution(makeContext(), 'item_not_received');
+    expect(res.label).toBe('unknown');
+    expect(res.confidence).toBe('needs_more_evidence');
   });
 
   it('INR with no delivery signal → unknown / needs_more_evidence', () => {
@@ -133,13 +141,13 @@ describe('deriveLossAttribution', () => {
     expect(res.confidence).toBe('low');
   });
 
-  it('wrong item delivered + inspection → warehouse mispick', () => {
+  it('wrong item delivered + inspection remains unresolved without pick proof', () => {
     const ctx = makeContext({
       claim: { type: 'wrong_item' },
       evidence: { hasCustomerEvidence: true, customerEvidenceItems: 1, merchantEvidenceItems: 1, deliveryEvidenceItems: 0, totalEvidenceItems: 2, hasDeliveryEvidence: false },
     });
     const res = deriveLossAttribution(ctx, 'wrong_item');
-    expect(res.label).toBe('warehouse_mispick');
+    expect(res.label).toBe('unknown');
   });
 
   it('always returns at least one reason and never banned language', () => {
@@ -154,23 +162,23 @@ describe('deriveLossAttribution', () => {
     }
   });
 
-  it('reclassifies a weak customer_claim to repeat_claimant when merchant claim frequency is elevated', () => {
+  it('keeps a weak customer claim separate from frequency signals', () => {
     const ctx = makeContext({
       claim: { type: 'chargeback' },
       history: { merchantPriorClaimCount: 3, networkClaimCount: 1 },
     });
     const res = deriveLossAttribution(ctx, 'chargeback');
-    expect(res.label).toBe('repeat_claimant');
-    expect(res.confidence).toBe('medium');
+    expect(res.label).toBe('customer_claim');
+    expect(res.confidence).toBe('low');
   });
 
-  it('reclassifies a weak customer_claim to repeat_claimant on network-wide frequency alone', () => {
+  it('does not use network-wide frequency to assign responsibility', () => {
     const ctx = makeContext({
       claim: { type: 'chargeback' },
       history: { merchantPriorClaimCount: 0, networkClaimCount: 4 },
     });
     const res = deriveLossAttribution(ctx, 'chargeback');
-    expect(res.label).toBe('repeat_claimant');
+    expect(res.label).toBe('customer_claim');
   });
 
   it('does not reclassify to repeat_claimant when claim frequency is unremarkable', () => {
@@ -182,14 +190,14 @@ describe('deriveLossAttribution', () => {
     expect(res.label).toBe('customer_claim');
   });
 
-  it('never reclassifies a strong type-based attribution to repeat_claimant', () => {
+  it('does not assign warehouse responsibility from inspection alone', () => {
     const ctx = makeContext({
       claim: { type: 'wrong_item' },
       evidence: { hasCustomerEvidence: true, customerEvidenceItems: 1, merchantEvidenceItems: 1, deliveryEvidenceItems: 0, totalEvidenceItems: 2, hasDeliveryEvidence: false },
       history: { merchantPriorClaimCount: 10, networkClaimCount: 10 },
     });
     const res = deriveLossAttribution(ctx, 'wrong_item');
-    expect(res.label).toBe('warehouse_mispick');
+    expect(res.label).toBe('unknown');
   });
 });
 
@@ -237,13 +245,15 @@ describe('deriveRecoveryPath', () => {
     expect(rec.likelyOwner).toBe('unknown');
   });
 
-  it('delivery confirmed evidence → not recoverable, merchant owns it', () => {
-    const ctx = makeContext();
+  it('delivery evidence without physical proof → needs more evidence', () => {
+    const ctx = makeContext({
+      delivery: { deliveryPhotoFinding: 'consistent' },
+    });
     const evidence = buildEvidenceChecklist(ctx, 'item_not_received');
     const attribution = deriveLossAttribution(ctx, 'item_not_received');
     const rec = deriveRecoveryPath(attribution, evidence);
-    expect(rec.recoverability).toBe('not_recoverable');
-    expect(rec.likelyOwner).toBe('merchant');
+    expect(rec.recoverability).toBe('needs_more_evidence');
+    expect(rec.likelyOwner).toBe('unknown');
   });
 
   it('carrier damage at medium confidence → recoverable from carrier', () => {
@@ -273,5 +283,16 @@ describe('buildSupportPayoutCase', () => {
   it('honors a missing_item claim type override', () => {
     const c = buildSupportPayoutCase(makeContext(), { claimTypeOverride: 'missing_item' });
     expect(c.claimType).toBe('missing_item');
+  });
+
+  it('uses the normalized case issue to distinguish missing_item without an override', () => {
+    const c = buildSupportPayoutCase(makeContext({
+      claim: {
+        type: 'item_not_received',
+        reasonNormalized: 'missing_item',
+      },
+    }));
+    expect(c.claimType).toBe('missing_item');
+    expect(c.attribution.label).toBe('unknown');
   });
 });

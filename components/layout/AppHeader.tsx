@@ -93,7 +93,7 @@ export default function AppHeader({
         'ua-app-header sticky top-0 z-40 flex h-12 items-center gap-3',
         'border-b pl-14 pr-4 md:px-4',
       )}
-      style={{ borderBottomColor: 'var(--border)' }}
+      style={{ borderBottomColor: 'var(--ua-border-default)' }}
     >
       {/* Sidebar collapse toggle */}
       {onToggleSidebar && (
@@ -103,9 +103,9 @@ export default function AppHeader({
           onClick={onToggleSidebar}
           className={cn(
             'flex h-7 w-7 items-center justify-center rounded-md',
-            'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]',
-            'transition-colors duration-[var(--duration-fast)]',
-            'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
+            'text-[var(--ua-text-tertiary)] hover:text-[var(--ua-text-primary)]',
+            'transition-colors duration-[var(--ua-duration-fast)]',
+            'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ua-border-focus)] focus-visible:outline-offset-2',
             'flex-shrink-0',
           )}
         >
@@ -121,7 +121,7 @@ export default function AppHeader({
             <span key={seg.href ?? seg.label} className="flex items-center gap-0">
               {i > 0 && (
                 <ChevronRight
-                  className="mx-1.5 h-3 w-3 flex-shrink-0 text-[var(--text-tertiary)]"
+                  className="mx-1.5 h-3 w-3 flex-shrink-0 text-[var(--ua-text-tertiary)]"
                   aria-hidden="true"
                 />
               )}
@@ -130,8 +130,8 @@ export default function AppHeader({
                   className={cn(
                     'truncate',
                     isLast
-                      ? 'text-[13px] font-semibold text-[var(--text-primary)]'
-                      : 'text-caption text-[var(--text-secondary)]',
+                      ? 'text-[length:var(--ua-text-small-size)] font-semibold text-[var(--ua-text-primary)]'
+                      : 'text-caption text-[var(--ua-text-secondary)]',
                   )}
                   aria-current={isLast ? 'page' : undefined}
                 >
@@ -142,9 +142,9 @@ export default function AppHeader({
                   href={seg.href}
                   prefetch={false}
                   className={cn(
-                    'text-caption truncate text-[var(--text-secondary)]',
-                    'hover:text-[var(--text-primary)] transition-colors duration-[var(--duration-fast)]',
-                    'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2 rounded-sm',
+                    'text-caption truncate text-[var(--ua-text-secondary)]',
+                    'hover:text-[var(--ua-text-primary)] transition-colors duration-[var(--ua-duration-fast)]',
+                    'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ua-border-focus)] focus-visible:outline-offset-2 rounded-sm',
                   )}
                 >
                   {seg.label}
@@ -179,14 +179,14 @@ export default function AppHeader({
         onClick={openPalette}
         className={cn(
           'flex h-7 items-center gap-1.5 px-2',
-          'border border-[var(--border)]',
-          'text-caption text-[var(--text-tertiary)]',
-          'hover:border-[var(--border)] hover:text-[var(--text-primary)]',
-          'transition-colors duration-[var(--duration-fast)]',
-          'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
+          'border border-[var(--ua-border-default)]',
+          'text-caption text-[var(--ua-text-tertiary)]',
+          'hover:border-[var(--ua-border-default)] hover:text-[var(--ua-text-primary)]',
+          'transition-colors duration-[var(--ua-duration-fast)]',
+          'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ua-border-focus)] focus-visible:outline-offset-2',
           'flex-shrink-0',
         )}
-        style={{ background: 'var(--surface-sunken)', borderRadius: 6 }}
+        style={{ background: 'var(--ua-surface-primary)', borderRadius: 'var(--ua-radius-control)' }}
       >
         <Search size={14} aria-hidden="true" />
         <span className="hidden sm:inline">Search</span>
@@ -197,8 +197,8 @@ export default function AppHeader({
         href="/notifications"
         prefetch={false}
         aria-label={resolvedUnreadCount > 0 ? `Notifications, ${resolvedUnreadCount} unread` : 'Notifications'}
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
-        style={{ borderColor: 'var(--border)', background: 'var(--surface-sunken)' }}
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border text-[var(--ua-text-tertiary)] hover:text-[var(--ua-text-primary)]"
+        style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-surface-primary)' }}
       >
         <Bell size={14} aria-hidden="true" />
         {resolvedUnreadCount > 0 ? <span className="sr-only">{resolvedUnreadCount} unread</span> : null}
@@ -219,16 +219,16 @@ function deriveFromPathname(pathname: string): BreadcrumbSegment[] {
   const segmentMap: Record<string, string> = {
     dashboard:   'Overview',
     customers:   'Customers',
-    claims:      'Payout Control',
+    claims:      'Cases',
     watchlist:   'Customer context',
-    inbox:       'Payout Control',
+    inbox:       'Cases',
     store:       'Dashboard',
     reports:     'Reports',
     notifications: 'Notifications',
     recoveries:  'Recoveries',
     partners:    'Partners',
     rules:       'Rules',
-    chargebacks: 'Payout Control',
+    chargebacks: 'Cases',
     onboarding:  'Onboarding',
     help:        'Help',
     settings:    'Settings',
@@ -237,8 +237,8 @@ function deriveFromPathname(pathname: string): BreadcrumbSegment[] {
   const pathMap: Record<string, string> = {
     'settings/audit-trail': 'Audit trail',
     'settings/data-privacy': 'Data & privacy',
-    chargebacks: 'Payout Control',
-    'evidence-packages': 'Payout Control',
+    chargebacks: 'Cases',
+    'evidence-packages': 'Cases',
   };
 
   const parts = pathname.split('/').filter(Boolean);
@@ -262,7 +262,7 @@ const SINGULAR_ENTITY_LABELS: Record<string, string> = {
   recoveries: 'Recovery',
   rules: 'Rule',
   flows: 'Flow',
-  claims: 'Case',
+  claims: 'Payout case',
   chargebacks: 'Case',
   customers: 'Customer',
   orders: 'Order',

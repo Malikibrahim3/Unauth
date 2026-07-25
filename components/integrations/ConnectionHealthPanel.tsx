@@ -18,15 +18,15 @@ function humanizeLabel(value: string | null | undefined): string {
  */
 export function ConnectionHealthHeader({ item }: { item: CatalogueRowItem }) {
   return (
-    <header className="flex flex-wrap items-start justify-between gap-3 rounded-[var(--ua-radius-card)] border border-[var(--border)] bg-[var(--surface)] p-4 shadow-[var(--shadow-xs)]">
+    <header className="flex flex-wrap items-start justify-between gap-3 rounded-[var(--ua-radius-surface)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] p-4">
       <div className="flex min-w-0 items-start gap-3">
         <ProviderLogo provider={item.id} name={item.name} size="md" />
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--text-tertiary)]">
+          <p className="text-[length:var(--ua-text-micro-size)] font-semibold text-[var(--ua-text-tertiary)]">
             {humanizeLabel(item.category)} · {humanizeLabel(item.stage)}
           </p>
-          <h1 className="mt-1 text-lg font-semibold tracking-[-0.02em]">{item.name}</h1>
-          <p className="mt-1 max-w-2xl text-[11px] leading-5 text-[var(--text-secondary)]">
+          <h1 className="mt-1 text-lg font-semibold">{item.name}</h1>
+          <p className="mt-1 max-w-2xl text-[length:var(--ua-text-micro-size)] leading-5 text-[var(--ua-text-secondary)]">
             {item.description}
           </p>
         </div>
@@ -51,22 +51,22 @@ export function ConnectionHealthGrid({ item }: { item: CatalogueRowItem }) {
   return (
     <>
       {item.lastError ? (
-        <Card unstyled as="section" variant="flat" className="border-[var(--danger)] p-4">
-          <h2 className="text-sm font-semibold text-[var(--danger)]">Action required</h2>
-          <p role="alert" className="mt-1 text-sm text-[var(--text-secondary)]">
+        <Card unstyled as="section" variant="panel" className="border-[var(--ua-critical)] p-4">
+          <h2 className="text-sm font-semibold text-[var(--ua-critical)]">Action required</h2>
+          <p role="alert" className="mt-1 text-sm text-[var(--ua-text-secondary)]">
             {item.lastError}
           </p>
         </Card>
       ) : null}
-      <section className="overflow-hidden rounded-[var(--ua-radius-card)] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-xs)]" aria-labelledby="connection-health-title">
-        <div className="border-b border-[var(--border-muted)] px-4 py-3">
+      <section className="overflow-hidden rounded-[var(--ua-radius-surface)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)]" aria-labelledby="connection-health-title">
+        <div className="border-b border-[var(--ua-border-subtle)] px-4 py-3">
           <h2 id="connection-health-title" className="text-xs font-semibold">Connection health</h2>
         </div>
         <dl className="grid sm:grid-cols-2 lg:grid-cols-4">
           {healthItems.map(([label, value], index) => (
-            <div key={label} className={`min-w-0 p-3.5 ${index ? "border-t border-[var(--border-muted)] sm:border-l sm:border-t-0" : ""}`}>
-              <dt className="text-[10px] text-[var(--text-tertiary)]">{label}</dt>
-              <dd className="mt-1 truncate text-[11px] font-semibold">{value}</dd>
+            <div key={label} className={`min-w-0 p-3.5 ${index ? "border-t border-[var(--ua-border-subtle)] sm:border-l sm:border-t-0" : ""}`}>
+              <dt className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">{label}</dt>
+              <dd className="mt-1 truncate text-[length:var(--ua-text-micro-size)] font-semibold">{value}</dd>
             </div>
           ))}
         </dl>

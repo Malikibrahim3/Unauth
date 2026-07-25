@@ -16,7 +16,7 @@ export default function AccountProfileSection({ state, dispatch, onSave }: Props
     <SectionCard title="Profile" description="Store details and review preferences">
       <form onSubmit={onSave} className="space-y-5">
         <div>
-          <label htmlFor="account-email" className="block text-xs font-semibold mb-1" style={{ color: 'var(--text)' }}>
+          <label htmlFor="account-email" className="block text-xs font-semibold mb-1" style={{ color: 'var(--ua-text-primary)' }}>
             Email address
           </label>
           <Input
@@ -26,15 +26,15 @@ export default function AccountProfileSection({ state, dispatch, onSave }: Props
             disabled
             className="opacity-50 cursor-not-allowed"
           />
-          <p className="mt-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
+          <p className="mt-1 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
             To change your email, contact{' '}
-            <a href="mailto:support@unauth.app" className="underline" style={{ color: 'var(--accent)' }}>support@unauth.app</a>.
+            <a href="mailto:support@unauth.app" className="underline" style={{ color: 'var(--ua-action-primary)' }}>support@unauth.app</a>.
           </p>
         </div>
 
         <div>
-          <label htmlFor="account-store-name" className="block text-xs font-semibold mb-1" style={{ color: 'var(--text)' }}>
-            Store / business name <span style={{ color: 'var(--risk-critical)' }}>*</span>
+          <label htmlFor="account-store-name" className="block text-xs font-semibold mb-1" style={{ color: 'var(--ua-text-primary)' }}>
+            Store / business name <span style={{ color: 'var(--ua-risk-critical)' }}>*</span>
           </label>
           <Input
             id="account-store-name"
@@ -47,7 +47,7 @@ export default function AccountProfileSection({ state, dispatch, onSave }: Props
         </div>
 
         <div>
-          <label htmlFor="account-monthly-volume" className="block text-xs font-semibold mb-1" style={{ color: 'var(--text)' }}>
+          <label htmlFor="account-monthly-volume" className="block text-xs font-semibold mb-1" style={{ color: 'var(--ua-text-primary)' }}>
             Monthly order volume
           </label>
           <Select
@@ -63,7 +63,7 @@ export default function AccountProfileSection({ state, dispatch, onSave }: Props
         </div>
 
         <div>
-          <label htmlFor="account-loss-concern" className="block text-xs font-semibold mb-1" style={{ color: 'var(--text)' }}>
+          <label htmlFor="account-loss-concern" className="block text-xs font-semibold mb-1" style={{ color: 'var(--ua-text-primary)' }}>
             Primary review focus
           </label>
           <Select
@@ -79,7 +79,7 @@ export default function AccountProfileSection({ state, dispatch, onSave }: Props
         </div>
 
         {state.saveError ? (
-          <p className="text-xs" style={{ color: 'var(--risk-critical)' }}>{state.saveError}</p>
+          <p className="text-xs" style={{ color: 'var(--ua-risk-critical)' }}>{state.saveError}</p>
         ) : null}
 
         <div className="flex items-center gap-3">
@@ -87,7 +87,7 @@ export default function AccountProfileSection({ state, dispatch, onSave }: Props
             {state.saving ? 'Saving…' : 'Save changes'}
           </Button>
           {state.saveSuccess ? (
-            <span className="text-xs flex items-center gap-1" style={{ color: 'var(--success)' }}>
+            <span className="text-xs flex items-center gap-1" style={{ color: 'var(--ua-success)' }}>
               <Check className="h-3.5 w-3.5" /> Saved
             </span>
           ) : null}

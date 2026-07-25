@@ -1,4 +1,4 @@
-import { aggregateMoneyBridges, buildReportTrend, dashboardPreviousPeriodWindow, parseReportRange, reportCutoff, REPORT_DEFINITIONS } from '@/lib/reporting/intelligence';
+import { aggregateMoneyBridges, buildReportTrend, dashboardPreviousPeriodWindow, normalizeReportTimezone, parseReportRange, reportCutoff, reportDateKey, REPORT_DEFINITIONS } from '@/lib/reporting/intelligence';
 
 describe('intelligence reporting contracts',()=>{
  it('never combines currencies and calculates outstanding from canonical categories',()=>{
@@ -69,6 +69,17 @@ describe('intelligence reporting contracts',()=>{
   expect(result[0]).toMatchObject({currency:'GBP',requestedMinor:2500});
  });
  it('uses exact UTC instants at period boundaries',()=>{expect(reportCutoff('7d',new Date('2026-07-12T12:00:00.000Z'))).toBe('2026-07-05T12:00:00.000Z');expect(reportCutoff('all')).toBeNull();});
+ it('buckets trend instants in the selected report timezone',()=>{
+  expect(reportDateKey('2026-07-01T00:30:00.000Z','America/Los_Angeles')).toBe('2026-06-30');
+  expect(reportDateKey('2026-07-01T00:30:00.000Z','Asia/Tokyo')).toBe('2026-07-01');
+  expect(normalizeReportTimezone('not/a-timezone')).toBe('UTC');
+  const result=buildReportTrend(
+   [{id:'a',submitted_at:'2026-07-01T00:30:00.000Z'}],
+   [{support_payout_case_id:'a',currency:'GBP',exposed_minor:100,known_states:['exposed']}],
+   'America/Los_Angeles',
+  );
+  expect(result[0].date).toBe('2026-06-30');
+ });
  it('builds a previous period with the same exact duration',()=>{
   expect(dashboardPreviousPeriodWindow('30d',new Date('2026-07-16T12:30:00.000Z'))).toEqual({
    range:'30d',

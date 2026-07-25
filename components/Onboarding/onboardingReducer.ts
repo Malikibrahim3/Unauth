@@ -22,11 +22,20 @@ export function createInitialOnboardingState(input: {
   initialPrimaryConcern: string;
   initialUsesWms3pl: string;
   initialUsesReturnsPlatform: string;
+  profileComplete: boolean;
+  shopifyConnected: boolean;
+  helpdeskConnected: boolean;
   shopifyShopDomain: string;
 }): OnboardingState {
+  const activeStep = !input.profileComplete
+    ? 0
+    : !input.shopifyConnected
+      ? 1
+      : 2;
+
   return {
-    activeStep: 0,
-    profileSaved: false,
+    activeStep,
+    profileSaved: input.profileComplete,
     storeName: input.initialStoreName,
     platform: input.initialPlatform,
     annualVolume: input.initialAnnualVolume,

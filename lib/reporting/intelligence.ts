@@ -61,6 +61,31 @@ type Client={from:(table:string)=>any};
 const RANGE_DAYS:Record<Exclude<ReportRange,'all'>,number>={ '7d':7,'30d':30,'90d':90 };
 export function parseReportRange(value:string|undefined):ReportRange{return REPORT_RANGES.includes(value as ReportRange)?value as ReportRange:'30d'}
 export function reportCutoff(range:ReportRange, now=new Date()):string|null { if(range==='all')return null; return new Date(now.getTime()-RANGE_DAYS[range]*86400000).toISOString(); }
+export function normalizeReportTimezone(value:string|null|undefined):string {
+  const candidate=typeof value==='string'&&value.length>0&&value.length<80?value:'UTC';
+  try {
+    new Intl.DateTimeFormat('en-GB',{timeZone:candidate}).format(new Date(0));
+    return candidate;
+  } catch {
+    return 'UTC';
+  }
+}
+export function reportDateKey(value:string|Date,timezone='UTC'):string {
+  const date=value instanceof Date?value:new Date(value);
+  if(Number.isNaN(date.getTime()))return'';
+  const formatter=new Intl.DateTimeFormat('en-GB',{
+    timeZone:normalizeReportTimezone(timezone),
+    year:'numeric',
+    month:'2-digit',
+    day:'2-digit',
+  });
+  const parts=Object.fromEntries(
+    formatter.formatToParts(date)
+      .filter(part=>part.type==='year'||part.type==='month'||part.type==='day')
+      .map(part=>[part.type,part.value]),
+  );
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
 export function dashboardPreviousPeriodWindow(
   range: ReportRange,
   now = new Date(),
@@ -107,7 +132,7 @@ export function financialMetricCaseIds(bridge:MoneyBridge, metric:FinancialRepor
   return bridge.caseIdsByState?.[metric] ?? [];
 }
 
-export function financialReportRecordsHref(input:{range:ReportRange;currency:string;metric:FinancialReportMetric;category?:string}):string {
+export function financialReportRecordsHref(input:{range:ReportRange;currency:string;metric:FinancialReportMetric;category?:string;timezone?:string}):string {
   const params = new URLSearchParams({
     kind: 'case',
     dimension: input.category ? 'category' : 'financial',
@@ -116,6 +141,7 @@ export function financialReportRecordsHref(input:{range:ReportRange;currency:str
     currency: input.currency,
   });
   if (input.category) params.set('value', input.category);
+  if (input.timezone) params.set('timezone', normalizeReportTimezone(input.timezone));
   return `/reports/records?${params.toString()}`;
 }
 
@@ -209,14 +235,19 @@ export function buildReportTrend(
     confirmed_loss_minor?: number | null;
     known_states?: string[] | null;
   }>,
+  timezone = 'UTC',
 ): ReportTrendPoint[] {
+  const normalizedTimezone=normalizeReportTimezone(timezone);
   const financialByCase = new Map(financial.map((row) => [row.support_payout_case_id, row]));
   const trendMap = new Map<string, ReportTrendPoint>();
   for (const payoutCase of cases) {
     const entry = financialByCase.get(payoutCase.id);
     const currency = normaliseCurrencyOrNull(entry?.currency);
     if (!entry || !currency) continue;
-    const date = String(payoutCase.submitted_at || payoutCase.created_at || payoutCase.updated_at || '').slice(0, 10);
+    const date = reportDateKey(
+      String(payoutCase.submitted_at || payoutCase.created_at || payoutCase.updated_at || ''),
+      normalizedTimezone,
+    );
     if (!date) continue;
     const key = `${currency}:${date}`;
     const point = trendMap.get(key) ?? {
@@ -245,6 +276,7 @@ export async function loadDashboardPeriodComparison(
   merchantId: string,
   range: ReportRange,
   asOf = new Date(),
+  timezone = 'UTC',
 ): Promise<DashboardPeriodComparison | null> {
   const window = dashboardPreviousPeriodWindow(range, asOf);
   if (!window) return null;
@@ -285,14 +317,14 @@ export async function loadDashboardPeriodComparison(
   return {
     ...window,
     bridges: aggregateMoneyBridges(financial as Array<Record<string, any>>),
-    trend: buildReportTrend(cases, financial),
+    trend: buildReportTrend(cases, financial, timezone),
   };
 }
 
-function lossCategoryFor(claimType:string|null|undefined): string {
-  if (['item_not_received','missing_parcel'].includes(claimType ?? '')) return 'delivery_loss';
-  if (claimType === 'chargeback') return 'chargeback_or_payment_dispute';
-  if (['wrong_item','damaged','not_as_described'].includes(claimType ?? '')) return 'fulfilment_or_warehouse_error';
+function lossCategoryFor(caseIssue:string|null|undefined): string {
+  if (['item_not_received','missing_parcel'].includes(caseIssue ?? '')) return 'delivery_loss';
+  if (caseIssue === 'chargeback') return 'chargeback_or_payment_dispute';
+  if (['missing_item','wrong_item','damaged','not_as_described'].includes(caseIssue ?? '')) return 'fulfilment_or_warehouse_error';
   return 'supplier_or_vendor_issue';
 }
 
@@ -316,6 +348,7 @@ function addRank(
 /** Canonical reporting projection. Money never crosses currency boundaries. */
 export async function loadIntelligenceReport(client:Client,merchantId:string,range:ReportRange,timezone='UTC',options:{asOf?:Date}={}):Promise<IntelligenceReport>{
   const asOf=options.asOf??new Date();
+  const normalizedTimezone=normalizeReportTimezone(timezone);
   const cutoff=reportCutoff(range,asOf);
   let casesQuery=client.from(TABLES.MERCHANT_CLAIMS).select('id,status,claim_type,reason_normalized,loss_attribution,currency,submitted_at,created_at,updated_at').eq('merchant_id',merchantId).order('updated_at',{ascending:false}).limit(10000);
   if(cutoff)casesQuery=casesQuery.gte('submitted_at',cutoff);
@@ -328,23 +361,24 @@ export async function loadIntelligenceReport(client:Client,merchantId:string,ran
     const knownStates=Array.isArray(f?.known_states)?f.known_states.map(String):[];
     const currency=normaliseCurrencyOrNull(f?.currency);
     if(!f||!currency||!knownStates.includes('confirmed_loss'))continue;
-    const key=lossCategoryFor(c.claim_type);
+    const key=lossCategoryFor(c.reason_normalized??c.claim_type);
     addRank(
       causesMap,key,label('lossCategory',key),Number(f.confirmed_loss_minor||0),currency,
-      financialReportRecordsHref({range,currency,metric:'confirmed_loss',category:key}),String(c.id),
+      financialReportRecordsHref({range,currency,metric:'confirmed_loss',category:key,timezone:normalizedTimezone}),String(c.id),
     );
   }
   const trend=buildReportTrend(
     cases as Array<{id:string;submitted_at?:string|null;created_at?:string|null;updated_at?:string|null}>,
     financial as Array<{support_payout_case_id:string;currency?:string|null;exposed_minor?:number|null;recovered_minor?:number|null;prevented_minor?:number|null;confirmed_loss_minor?:number|null;known_states?:string[]|null}>,
+    normalizedTimezone,
   );
   const statuses=new Map<string,number>();for(const c of cases)statuses.set(c.status,(statuses.get(c.status)??0)+1);
   const {data:recoveryData}=await client.from(TABLES.RECOVERY_CASES).select('id,status,recovery_type,currency,amount_recovered_minor,updated_at').eq('merchant_id',merchantId).limit(10000);const recoveryMap=new Map<string,RankedRow>();
-  for(const r of (recoveryData??[]) as Array<Record<string,any>>){if(cutoff&&r.updated_at<cutoff)continue;const currency=normaliseCurrencyOrNull(r.currency);if(!currency)continue;const status=String(r.status||'unknown');addRank(recoveryMap,status,label('recoveryStatus',status),Number(r.amount_recovered_minor||0),currency,`/reports/records?kind=recovery&dimension=status&value=${encodeURIComponent(status)}&range=${range}&currency=${currency}`,String(r.id))}
+  for(const r of (recoveryData??[]) as Array<Record<string,any>>){if(cutoff&&r.updated_at<cutoff)continue;const currency=normaliseCurrencyOrNull(r.currency);if(!currency)continue;const status=String(r.status||'unknown');addRank(recoveryMap,status,label('recoveryStatus',status),Number(r.amount_recovered_minor||0),currency,`/reports/records?kind=recovery&dimension=status&value=${encodeURIComponent(status)}&range=${range}&currency=${currency}&timezone=${encodeURIComponent(normalizedTimezone)}`,String(r.id))}
   const coverageSpecs=[[TABLES.SOURCE_ORDERS,'Orders','/orders'],[TABLES.SOURCE_TICKETS,'Tickets','/tickets'],[TABLES.SOURCE_SHIPMENTS,'Shipments','/shipments'],[TABLES.SOURCE_REFUNDS,'Refunds','/refunds'],[TABLES.SOURCE_RETURNS,'Returns','/returns'],[TABLES.MERCHANT_CLAIMS,'Payout cases','/claims']] as const;const staleBefore=new Date(Date.now()-48*3600000).toISOString();
   const coverage:CoverageRow[]=await Promise.all(coverageSpecs.map(async([table,objectType,href])=>{const date=table===TABLES.SOURCE_REFUNDS?'ingested_at':'updated_at';const [all,fresh,latest]=await Promise.all([client.from(table).select('id',{count:'exact',head:true}).eq('merchant_id',merchantId),client.from(table).select('id',{count:'exact',head:true}).eq('merchant_id',merchantId).gte(date,staleBefore),client.from(table).select(`id,${date}`).eq('merchant_id',merchantId).order(date,{ascending:false}).limit(1)]);const records=all.count??0;const freshRecords=fresh.count??0;return{objectType,records,freshRecords,staleRecords:Math.max(0,records-freshRecords),latestAt:(latest.data as Array<Record<string,any>>|null)?.[0]?.[date]??null,href};}));
   const issues:string[]=[];const invalidCurrencyRows=financial.filter(row=>!normaliseCurrencyOrNull(row.currency)).length;if(invalidCurrencyRows)issues.push(`${invalidCurrencyRows} financial record${invalidCurrencyRows===1?' has':'s have'} a missing or invalid currency and ${invalidCurrencyRows===1?'was':'were'} excluded`);for(const b of bridges){if(b.paidMinor>b.exposedMinor&&b.knownStates.includes('exposed')&&b.exposedMinor>0)issues.push(`${b.currency}: paid compensation exceeds recorded exposure`);if(b.recoveredMinor>b.recoverableMinor&&b.recoverableMinor>0)issues.push(`${b.currency}: recovered exceeds recoverable amount`);const trendExposure=trend.filter(point=>point.currency===b.currency).reduce((sum,point)=>sum+point.exposureMinor,0);const trendRecovered=trend.filter(point=>point.currency===b.currency).reduce((sum,point)=>sum+point.recoveredMinor,0);if(trendExposure!==b.exposedMinor||trendRecovered!==b.recoveredMinor)issues.push(`${b.currency}: chart totals do not reconcile with the financial value strip`)}
-  return{range,timezone,generatedAt:asOf.toISOString(),bridges,trend,causes:[...causesMap.values()].sort((a,b)=>b.amountMinor-a.amountMinor||b.count-a.count),operations:[...statuses].map(([key,count])=>({key,label:label('caseStatus',key),count,href:`/reports/records?kind=case&dimension=status&value=${encodeURIComponent(key)}&range=${range}`})).sort((a,b)=>b.count-a.count),recoveries:[...recoveryMap.values()].sort((a,b)=>b.amountMinor-a.amountMinor||b.count-a.count),coverage,reconciliation:{ok:issues.length===0,issues},recordCount:cases.length};
+  return{range,timezone:normalizedTimezone,generatedAt:asOf.toISOString(),bridges,trend,causes:[...causesMap.values()].sort((a,b)=>b.amountMinor-a.amountMinor||b.count-a.count),operations:[...statuses].map(([key,count])=>({key,label:label('caseStatus',key),count,href:`/reports/records?kind=case&dimension=status&value=${encodeURIComponent(key)}&range=${range}&timezone=${encodeURIComponent(normalizedTimezone)}`})).sort((a,b)=>b.count-a.count),recoveries:[...recoveryMap.values()].sort((a,b)=>b.amountMinor-a.amountMinor||b.count-a.count),coverage,reconciliation:{ok:issues.length===0,issues},recordCount:cases.length};
 }
 
 export const REPORT_DEFINITIONS=[

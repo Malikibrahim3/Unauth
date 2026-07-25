@@ -259,6 +259,7 @@ export async function captureTicketIdentitySignalsV2(
 
 const TICKET_CLAIM_TYPE_MAP: Record<string, string> = {
   INR: 'item_not_received',
+  missing_item: 'item_not_received',
   damaged: 'damaged',
   wrong_item: 'wrong_item',
   not_as_described: 'not_as_described',

@@ -36,7 +36,7 @@ export default function ExportMenu({ range, timezone = 'UTC', currency = null }:
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="focus-visible:!outline focus-visible:!outline-2 focus-visible:!outline-offset-2 focus-visible:!outline-[var(--accent)]"
+        className="focus-visible:!outline focus-visible:!outline-2 focus-visible:!outline-offset-2 focus-visible:!outline-[var(--ua-action-primary)]"
       >
         Export
       </Button>
@@ -44,19 +44,19 @@ export default function ExportMenu({ range, timezone = 'UTC', currency = null }:
         <div
           role="menu"
           className="absolute right-0 z-20 mt-1 min-w-[220px] rounded-md border py-1 shadow-lg"
-          style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
+          style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-surface-primary)' }}
         >
           <p
-            className="px-3 pb-1 pt-1.5 text-xs font-bold uppercase tracking-wider"
-            style={{ color: 'var(--text-tertiary)' }}
+            className="px-3 pb-1 pt-1.5 text-[length:var(--ua-text-micro-size)] font-bold"
+            style={{ color: 'var(--ua-text-tertiary)' }}
           >
             Payout reports
           </p>
           <a
             role="menuitem"
             href={`/api/reports/claims?${exportParams.toString()}`}
-            className="block px-3 py-2 text-xs hover:bg-[var(--surface)]"
-            style={{ color: 'var(--text)' }}
+            className="block px-3 py-2 text-xs hover:bg-[var(--ua-surface-primary)]"
+            style={{ color: 'var(--ua-text-primary)' }}
             onClick={() => setOpen(false)}
           >
             Financial bridge CSV
@@ -65,18 +65,18 @@ export default function ExportMenu({ range, timezone = 'UTC', currency = null }:
           <a
             role="menuitem"
             href={`/api/reports/claims?${exportParams.toString()}&view=outcomes`}
-            className="block px-3 py-2 text-xs hover:bg-[var(--surface)]"
-            style={{ color: 'var(--text)' }}
+            className="block px-3 py-2 text-xs hover:bg-[var(--ua-surface-primary)]"
+            style={{ color: 'var(--ua-text-primary)' }}
             onClick={() => setOpen(false)}
           >
             Loss causes CSV
             <span className="ml-1 opacity-60">- category, currency, records, realised loss</span>
           </a>
 
-          <div className="my-1 border-t" style={{ borderColor: 'var(--border)' }} />
+          <div className="my-1 border-t" style={{ borderColor: 'var(--ua-border-default)' }} />
           <p
-            className="px-3 pb-1 pt-0.5 text-xs font-bold uppercase tracking-wider"
-            style={{ color: 'var(--text-tertiary)' }}
+            className="px-3 pb-1 pt-0.5 text-[length:var(--ua-text-micro-size)] font-bold"
+            style={{ color: 'var(--ua-text-tertiary)' }}
           >
             Activity log
           </p>
@@ -84,8 +84,8 @@ export default function ExportMenu({ range, timezone = 'UTC', currency = null }:
             role="menuitem"
             href="/api/audit-trail?format=csv&limit=200"
             prefetch={false}
-            className="block px-3 py-2 text-xs hover:bg-[var(--surface)]"
-            style={{ color: 'var(--text)' }}
+            className="block px-3 py-2 text-xs hover:bg-[var(--ua-surface-primary)]"
+            style={{ color: 'var(--ua-text-primary)' }}
             onClick={() => setOpen(false)}
           >
             Audit trail CSV

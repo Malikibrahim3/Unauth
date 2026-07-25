@@ -96,7 +96,6 @@ export default async function RulesPage() {
       ]}
       primaryVisual={
         <KeyInsightCallout
-          eyebrow="Rule lifecycle"
           tone={draftRules > 0 ? 'warning' : publishedCoverage > 0 ? 'success' : 'neutral'}
           icon={<ShieldCheck size={16} />}
         >

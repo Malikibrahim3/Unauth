@@ -1,15 +1,8 @@
 /**
- * Plot-geometry SSOT for the Autumn chart language (T1–T10).
+ * Plot-geometry SSOT for the authenticated chart language (T1–T10).
  * Every hardcoded plot dimension in a chart component must come from here —
  * panel-level chrome (radii, shadows, control heights) still comes from --ua-* tokens.
  */
-
-// T2 — hatch texture
-export const HATCH_STROKE = 1;
-export const HATCH_PITCH = 5;
-export const HATCH_ANGLE = 45;
-export const HATCH_AREA_OPACITY = 0.4;
-export const HATCH_REMAINDER_OPACITY = 0.55;
 
 // T3 — trend line
 export const TREND_LINE_WIDTH = 2;
@@ -17,18 +10,13 @@ export const TREND_HOVER_DOT_R = 4;
 export const TREND_HOVER_DOT_RING = 2;
 export const TREND_MAX_SERIES = 3;
 
-// T4 — cap-top bars + dashed comparison
-export const BAR_MAX_W = 24;
-export const BAR_TOP_RADIUS = 2;
-export const BAR_CAP_H = 2;
-export const BAR_FILL_TOP_OPACITY = 0.22;
-export const BAR_FILL_BASE_OPACITY = 0.04;
+// T4 — flat bars + dashed comparison
+/** Spec §8.3: bars carry a 4px radius at the data end only. */
+export const BAR_END_RADIUS = 4;
 export const COMPARISON_DASH: [number, number] = [5, 4];
 export const COMPARISON_LINE_WIDTH = 1.5;
 export const COMPARISON_DOT_R = 2.5;
 export const COMPARISON_DOT_RING = 2;
-export const BAR_GROUP_GAP = 2;
-export const BAR_STACK_GAP = 2;
 
 // T5 — dot-matrix
 export const MATRIX_CELL = 7;
@@ -63,8 +51,7 @@ export const SEGMENT_MAX = 6;
 export const LEGEND_DOT_SIZE = 6;
 
 // T9 — metric tab strip
-export const TAB_ICON_CHIP = 26;
-export const TAB_ICON_CHIP_RADIUS = 4;
+export const TAB_ICON_CHIP = 24;
 export const TAB_ICON_SIZE = 14;
 
 // T10 — cursor + tooltip
@@ -72,7 +59,6 @@ export const CURSOR_DASH: [number, number] = [4, 4];
 export const CURSOR_WIDTH = 1;
 export const TOOLTIP_PADDING_Y = 8;
 export const TOOLTIP_PADDING_X = 10;
-export const AXIS_PILL_RADIUS = 4;
 
 // T1 — cartesian frame
 export const PLOT_PAD_TOP = 12;

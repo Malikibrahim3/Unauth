@@ -37,9 +37,9 @@ export function Tooltip({ content, children, delay = 300, className }: TooltipPr
         <span
           role="tooltip"
           className={cn(
-            'absolute bottom-full left-1/2 -translate-x-1/2 mb-1 z-[var(--z-tooltip)]',
-            'bg-[var(--text-primary)] text-[white] text-meta',
-            'px-[8px] py-[4px] rounded-[var(--radius-1)] whitespace-nowrap pointer-events-none',
+            'absolute bottom-full left-1/2 -translate-x-1/2 mb-1 z-[var(--ua-z-tooltip)]',
+            'bg-[var(--ua-text-primary)] text-[var(--ua-text-inverse)] text-meta',
+            'px-[var(--ua-space-2)] py-[var(--ua-space-1)] rounded-[var(--ua-radius-xs)] whitespace-nowrap pointer-events-none',
             className,
           )}
         >

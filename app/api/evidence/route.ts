@@ -16,8 +16,6 @@ import { buildNarrative } from '@/lib/evidence/narrative'
 import { renderEvidencePDF } from '@/lib/evidence/pdf'
 import { enforceRateLimit, limitFromEnv, rateLimitKey } from '@/lib/ratelimit'
 import { precheckContextCredits, spendContextCreditsAfterSuccess } from '@/lib/billing/contextUnlockFlow'
-import { getSubscribedMerchantTier } from '@/lib/billing/getMerchantTier'
-import { TIER_CONFIG } from '@/lib/billing/tiers'
 import { deleteEvidencePackageArtifacts } from '@/lib/evidence/cleanupArtifacts'
 
 export const dynamic = 'force-dynamic'
@@ -58,17 +56,6 @@ async function POSTHandler(request: NextRequest) {
     return NextResponse.json(
       { error: 'customerProfileId and disputedOrderId are required' },
       { status: 400 }
-    )
-  }
-
-  const tier = await getSubscribedMerchantTier(serviceRole, ctx.merchantId)
-  if (TIER_CONFIG[tier].features.evidence_export_raw !== true) {
-    return NextResponse.json(
-      {
-        error:
-          'Case Reports require Pro or higher. Upgrade for case-scoped exports and more monthly context credits.',
-      },
-      { status: 403 },
     )
   }
 

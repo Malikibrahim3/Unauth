@@ -23,8 +23,9 @@ export type Money = { amount: number; currency: string | null };
 /**
  * Product-level claim type = canonical DB claim types plus `missing_item`
  * (a partial-order shortfall, distinct from whole-order item_not_received).
- * `missing_item` is never stored in `claim_type`; it is supplied by a caller
- * (e.g. demo/tests or a future ticket classifier) via an override.
+ * `missing_item` is never stored in `claim_type`; the compatibility column
+ * remains `item_not_received`. It is resolved from the authoritative
+ * `reason_normalized` case issue (or an explicit caller override).
  */
 export type PayoutClaimType = ClaimTypeValue | 'missing_item';
 

@@ -40,7 +40,6 @@ export function buildDeliveryFromFulfillment(row: {
     : null;
   const trackingNumber = row.tracking_number?.trim() || null;
   const status = deriveDeliveryStatus(row.status, row.shipment_status, deliveredAt);
-  const hasProofOfDelivery = status === 'delivered' && Boolean(deliveredAt);
   let daysSinceDelivery: number | null = null;
   if (deliveredAt) {
     const then = Date.parse(deliveredAt);
@@ -55,7 +54,10 @@ export function buildDeliveryFromFulfillment(row: {
     trackingUrl: null,
     deliveredAt,
     hasTracking: Boolean(trackingNumber),
-    hasProofOfDelivery,
+    // A delivered scan and timestamp prove only that the carrier reported a
+    // delivery event. POD requires a distinct artefact such as a photo,
+    // signature, or provider-supplied proof document.
+    hasProofOfDelivery: false,
     daysSinceDelivery,
     trackingProvider: null,
     trackingProviderConnected: false,
@@ -66,6 +68,9 @@ export function buildDeliveryFromFulfillment(row: {
     estimatedDeliveryAt: null,
     trackingGap: trackingNumber ? null : 'no_tracking_number',
     deliveryPhotoAvailable: false,
+    deliveryPhotoFinding: null,
+    deliveryPhotoFindingRationale: null,
+    deliveryPhotoFindingAt: null,
     signatureAvailable: false,
     gpsSupported: false,
   };

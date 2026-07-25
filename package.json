@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "NODE_OPTIONS=--max-old-space-size=8192 next dev --webpack",
     "dev:turbo": "NODE_OPTIONS=--max-old-space-size=8192 next dev",
-    "build": "NODE_OPTIONS=--max-old-space-size=8192 next build",
+    "build": "NODE_OPTIONS=--max-old-space-size=8192 next build --webpack",
     "start": "NODE_OPTIONS=--max-old-space-size=8192 next start",
     "lint": "eslint app components lib",
     "lint:authenticated-design": "node scripts/check-authenticated-design.mjs",
@@ -22,6 +22,7 @@
     "verify:tenant-boundaries": "node scripts/verify-tenant-boundaries.mjs",
     "verify:webhook-event-safety": "node scripts/verify-webhook-event-safety.mjs",
     "verify:privacy-erasure": "node scripts/verify-privacy-erasure-runtime.mjs",
+    "verify:investigations-runtime": "node scripts/verify-investigations-runtime.mjs",
     "verify:source-to-recovery": "node scripts/verify-source-to-recovery-runtime.mjs",
     "verify:p0-ledger": "node scripts/verify-p0-ledger.mjs",
     "verify:rollout-rehearsal": "node scripts/verify-local-rollout-rehearsal.mjs",

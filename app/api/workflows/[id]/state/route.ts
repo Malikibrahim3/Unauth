@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { TABLES } from '@/lib/supabase/tables';
+import { env } from '@/lib/utils/env';
 
 const schema = z.object({ action: z.enum(['pause', 'resume']) });
 
@@ -15,6 +16,18 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (denied || !ctx) return denied ?? NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: 'Pause or resume action required' }, { status: 400 });
+  if (
+    parsed.data.action === 'resume'
+    && env.WORKFLOW_PUBLICATION_ENABLED !== 'true'
+  ) {
+    return NextResponse.json(
+      {
+        error: 'workflow_activation_unavailable',
+        message: 'Flow activation is disabled until workflow replay and idempotency verification is complete.',
+      },
+      { status: 503 },
+    );
+  }
   const { id } = await params;
   const { data, error } = await service.from(TABLES.WORKFLOW_DEFINITIONS).update({
     active: parsed.data.action === 'resume',

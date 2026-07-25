@@ -18,10 +18,8 @@ export default async function ApiIntegrationsPage() {
 
   return (
     <SettingsPageShell
-      eyebrow="Developer access"
       title="API access"
       subtitle="Create and revoke merchant-scoped credentials for approved custom integrations. Secrets are shown once and every change is written to the audit trail."
-      breadcrumbs={[{ label: "Settings", href: "/settings/account" }, { label: "API access" }]}
     >
       <ApiIntegrationsClient />
     </SettingsPageShell>

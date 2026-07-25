@@ -16,40 +16,10 @@ import { logGorgiasWebhookResult } from '@/lib/support/intake/webhookLog';
 import { enforceRateLimit, getClientIp, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
 import { createServiceClient } from '@/lib/supabase/server';
 import { evaluatePublicGate } from '@/lib/claim-gate/publicGate';
+import { isPublicClaimGateEnabled } from '@/lib/claim-gate/releaseGate';
 import { resolveGorgiasTicketCustomerEmail } from '@/lib/support/gorgias/ticketCustomerEmail';
-import { matchOrder } from '@/lib/relationships/matchOrder';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { resolveUnambiguousEmailOrder } from '@/lib/support/gorgias/resolveUnambiguousEmailOrder';
 import { readBoundedWebhookBody, WebhookBodyError } from '@/lib/webhooks/body';
-
-type GateOrderReference = {
-  id: string;
-  external_id: string;
-  order_number: string | null;
-  placed_at: string | null;
-  ingested_at: string | null;
-};
-
-export async function resolveUnambiguousEmailOrder(
-  client: SupabaseClient,
-  merchantId: string,
-  email: string,
-): Promise<GateOrderReference | null> {
-  // Route through the shared matcher so email → order matching is consistent
-  // everywhere. An email that matches several orders is `ambiguous` and yields
-  // no auto-anchor (§8 — never silently pick one). Only a single match anchors.
-  const result = await matchOrder(client, { merchantId, email });
-  if (result.status === 'ambiguous' || result.candidates.length !== 1) return null;
-  const orderId = result.candidates[0].entityId;
-
-  const { data, error } = await client
-    .from('source_orders')
-    .select('id,external_id,order_number,placed_at,ingested_at')
-    .eq('merchant_id', merchantId)
-    .eq('id', orderId)
-    .maybeSingle();
-  if (error) throw new Error(`gorgias_email_order_lookup_failed: ${error.message}`);
-  return (data as GateOrderReference | null) ?? null;
-}
 
 // Map a support-classified claim type to a claim-gate type. Returns null for
 // anything we can't confidently map, so the caller SKIPS auto gate-evaluation
@@ -212,7 +182,12 @@ export async function POST(request: NextRequest) {
         }
       }
     }
-    if (result.is_claim && gateClaimType && (gateOrderName || gateOrderId)) {
+    if (
+      isPublicClaimGateEnabled()
+      && result.is_claim
+      && gateClaimType
+      && (gateOrderName || gateOrderId)
+    ) {
       try {
         await evaluatePublicGate({
           client: serviceClient,

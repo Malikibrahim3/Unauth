@@ -12,20 +12,20 @@ export function LossAttributionCard({ attribution }: { attribution: LossAttribut
     attribution.label === 'unknown' || attribution.confidence === 'needs_more_evidence';
 
   return (
-    <Card unstyled as="section" variant="flat" className="p-4">
+    <Card unstyled as="section" variant="panel" className="p-4">
       <div className="flex items-center justify-between mb-2">
-        <p className="text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>
+        <p className="text-caption font-semibold" style={{ color: 'var(--ua-text-secondary)' }}>
           Loss attribution (advisory)
         </p>
         <StatusBadge family="confidence" value={attribution.confidence} />
       </div>
 
-      <p className="font-semibold text-base" style={{ color: 'var(--text)' }}>
+      <p className="font-semibold text-base" style={{ color: 'var(--ua-text-primary)' }}>
         {LOSS_ATTRIBUTION_DISPLAY[attribution.label]}
       </p>
 
       {isUnknown && (
-        <p className="mt-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
+        <p className="mt-1 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
           The loss point can&apos;t be pinpointed from the available evidence.
         </p>
       )}
@@ -33,7 +33,7 @@ export function LossAttributionCard({ attribution }: { attribution: LossAttribut
       {attribution.reasons.length > 0 && (
         <ul className="mt-2 space-y-1">
           {attribution.reasons.map((r) => (
-            <li key={r.code} className="text-xs flex gap-1.5" style={{ color: 'var(--text-secondary)' }}>
+            <li key={r.code} className="text-xs flex gap-1.5" style={{ color: 'var(--ua-text-secondary)' }}>
               <span aria-hidden>·</span>
               <span>{r.text}</span>
             </li>

@@ -13,12 +13,8 @@ import {
 import {
   FL_DEMO_PRODUCT_CARDS,
 } from '@/app/(public)/landing/_lib/foundationContent';
-import {
-  MockBrowserFrame,
-  StepBadge,
-  type StepBadgeVariant,
-  uiTokens,
-} from '@/components/ui';
+import { type StepBadgeVariant, uiTokens } from '@/components/ui';
+import { MockBrowserFrame, StepBadge } from '@/components/ui/LandingPrimitives';
 
 const demo = FL_DEMO_PRODUCT_CARDS;
 
@@ -210,7 +206,7 @@ function ArrivalCard({ scale }: { scale?: number }) {
         <ContextRow icon={<PackageCheck size={14} />} label="Item-not-received detected" />
       </div>
       <CardNote>
-        A connected workflow queued the payout. Unauth applies the merchant&apos;s control before it clears.
+        A connected workflow queued the payout. Unauth puts the merchant&apos;s evidence and rule context in front of the decision.
       </CardNote>
     </FeatureCard>
   );

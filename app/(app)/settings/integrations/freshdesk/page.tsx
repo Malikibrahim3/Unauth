@@ -18,14 +18,8 @@ export default async function FreshdeskIntegrationPage() {
 
   return (
     <SettingsPageShell
-      eyebrow="Integrations"
       title="Freshdesk"
       subtitle="Ingest support tickets for claim detection and dispute context."
-      breadcrumbs={[
-        { label: 'Settings', href: '/settings/account' },
-        { label: 'Integrations', href: '/integrations' },
-        { label: 'Freshdesk' },
-      ]}
     >
       <div className="space-y-3">
         <FreshdeskSupportSyncClient canManage={canManageFreshdesk} />

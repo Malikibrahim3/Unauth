@@ -31,6 +31,7 @@ export const PERMISSIONS = {
   VIEW_TEAM:              'view_team',
   VIEW_SETTINGS:          'view_settings',
   VIEW_AUDIT_TRAIL:       'view_audit_trail',   // ← owner/admin only by default
+  MANAGE_WORK_VIEWS:      'manage_work_views',
 
   // ── Data actions ─────────────────────────────────────────────────────────
   EXPORT_AUDIT:           'export_audit',
@@ -69,9 +70,6 @@ const VIEWER_PERMISSIONS: Permission[] = [
   PERMISSIONS.VIEW_CHARGEBACKS,
   PERMISSIONS.VIEW_INBOX,
   PERMISSIONS.VIEW_SAVED,
-  PERMISSIONS.VIEW_TEAM,
-  PERMISSIONS.VIEW_SETTINGS,
-  PERMISSIONS.EXPORT_AUDIT,
   PERMISSIONS.LOOKUP_CUSTOMER,
 ];
 
@@ -88,12 +86,16 @@ const ANALYST_PERMISSIONS: Permission[] = [
 
 const ADMIN_PERMISSIONS: Permission[] = [
   ...ANALYST_PERMISSIONS,
+  PERMISSIONS.VIEW_TEAM,
+  PERMISSIONS.VIEW_SETTINGS,
   PERMISSIONS.VIEW_AUDIT_TRAIL,
+  PERMISSIONS.EXPORT_AUDIT,
   PERMISSIONS.DELETE_CUSTOMER_NOTE,
   PERMISSIONS.HIDE_JOB,
   PERMISSIONS.BULK_DELETE,
   PERMISSIONS.MANAGE_TEAM,
   PERMISSIONS.MANAGE_SETTINGS,
+  PERMISSIONS.MANAGE_WORK_VIEWS,
 ];
 
 const OWNER_PERMISSIONS: Permission[] = [
@@ -136,6 +138,7 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   manage_team:             'Manage Team Members',
   manage_settings:         'Manage Account Settings',
   grant_permissions:       'Grant / Revoke Permissions',
+  manage_work_views:       'Manage shared Work views',
 };
 
 // Permissions that can be delegated (owners can give these to lower-role users)
@@ -152,6 +155,28 @@ export interface CallerContext {
   merchantId: string;
   role:       Role;
   memberId:   string | null; // null for account owner
+}
+
+async function logDeniedPermission(
+  serviceClient: SupabaseClient,
+  ctx: CallerContext,
+  permission: Permission,
+): Promise<void> {
+  try {
+    await serviceClient.from(TABLES.ACCESS_AUDIT_LOG).insert({
+      merchant_id: ctx.merchantId,
+      identity_id: null,
+      query_type: 'permission_denied',
+      lookup_type: permission,
+      k_anonymity_satisfied: false,
+      result_returned: false,
+      queried_hashes: [],
+      matched_merchant_count: 0,
+      request_ip: null,
+    });
+  } catch {
+    // Authorization must still fail closed if the audit projection is unavailable.
+  }
 }
 
 /**
@@ -365,6 +390,7 @@ export async function requirePermission(
   const allowed = await hasPermission(serviceClient, ctx, permission);
 
   if (!allowed) {
+    await logDeniedPermission(serviceClient, ctx, permission);
     return {
       denied: NextResponse.json(
         { error: `Forbidden — you do not have the '${permission}' permission.` },
@@ -402,6 +428,7 @@ export async function requirePermissionForMerchant(
   }
 
   if (!(await hasPermission(serviceClient, ctx, permission))) {
+    await logDeniedPermission(serviceClient, ctx, permission);
     return {
       denied: NextResponse.json(
         { error: `Forbidden — you do not have the '${permission}' permission.` },

@@ -9,15 +9,15 @@ import { label, type LabelFamily } from '@/lib/ui/labels';
 export type StatusTone = 'neutral' | 'info' | 'warning' | 'success' | 'danger';
 
 const TONE_STYLE: Record<StatusTone, { bg: string; fg: string; bd: string }> = {
-  neutral: { bg: 'var(--surface-sunken)', fg: 'var(--ua-text-secondary)', bd: 'var(--border)' },
+  neutral: { bg: 'var(--ua-surface-muted)', fg: 'var(--ua-text-secondary)', bd: 'var(--ua-border-default)' },
   info: { bg: 'var(--ua-info-bg)', fg: 'var(--ua-info)', bd: 'var(--ua-info-border)' },
   warning: { bg: 'var(--ua-warning-bg)', fg: 'var(--ua-warning)', bd: 'var(--ua-warning-border)' },
   success: { bg: 'var(--ua-success-bg)', fg: 'var(--ua-success)', bd: 'var(--ua-success-border)' },
   // NOTE: danger intentionally stays on the risk-critical-* family, not
-  // --ua-critical* — --critical and --risk-critical-fg (etc.) are equal in
+  // --ua-critical* — --ua-critical and --ua-risk-critical (etc.) are equal in
   // light mode but diverge in dark mode; forcing this onto --ua-critical*
   // would be a real dark-mode colour regression, not a no-op alias swap.
-  danger: { bg: 'var(--risk-critical-bg)', fg: 'var(--risk-critical-fg)', bd: 'var(--risk-critical-bd)' },
+  danger: { bg: 'var(--ua-risk-critical-bg)', fg: 'var(--ua-risk-critical)', bd: 'var(--ua-risk-critical-border)' },
 };
 
 /**
@@ -28,6 +28,10 @@ const TONE_STYLE: Record<StatusTone, { bg: string; fg: string; bd: string }> = {
 export const STATUS_TONES: Record<string, StatusTone> = {
   // neutral — dormant / queued
   draft: 'neutral',
+  unconfirmed: 'neutral',
+  corrected: 'info',
+  sent: 'warning',
+  response_received: 'warning',
   open: 'neutral',
   pending: 'neutral',
   detected: 'neutral',
@@ -162,7 +166,7 @@ export function StatusBadge({ family, value, tone, size = 'md', className }: Sta
         fontWeight: 500,
         lineHeight: 1,
         whiteSpace: 'nowrap',
-        borderRadius: 'var(--ua-radius-pill)',
+        borderRadius: 'var(--ua-radius-round)',
         background: t.bg,
         color: t.fg,
         border: `1px solid ${t.bd}`,
@@ -194,7 +198,7 @@ export function PriorityChip({
     return <StatusBadge family="workPriority" value={value} tone={value === 'urgent' ? 'danger' : 'warning'} size={size} />;
   }
   return (
-    <span style={{ fontSize: size === 'sm' ? 11 : 12, color: 'var(--text-secondary)' }}>
+    <span style={{ fontSize: size === 'sm' ? 11 : 12, color: 'var(--ua-text-secondary)' }}>
       {label('workPriority', value)}
     </span>
   );

@@ -85,11 +85,11 @@ export default function CustomerNotes({ customerProfileId }: CustomerNotesProps)
   const { draft, saving, savedMsg, deletingId, selectedIds, bulkDeleting } = state;
 
   return (
-    <div className="rounded-md p-4 space-y-3 border" style={{ borderColor: 'var(--border-muted)' }}>
+    <div className="rounded-md p-4 space-y-3 border" style={{ borderColor: 'var(--ua-border-subtle)' }}>
       {selectedIds.size > 0 && (
         <div className="flex items-center justify-end gap-3">
           <div className="flex items-center gap-2">
-            <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+            <span className="text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
               {selectedIds.size} selected
             </span>
             <button
@@ -97,7 +97,7 @@ export default function CustomerNotes({ customerProfileId }: CustomerNotesProps)
               onClick={bulkDeleteSelected}
               disabled={bulkDeleting}
               className="text-xs font-semibold rounded px-2 py-1 disabled:opacity-50"
-              style={{ background: 'var(--risk-critical-bg)', color: 'var(--risk-critical)', border: '1px solid var(--risk-critical-bd)' }}
+              style={{ background: 'var(--ua-risk-critical-bg)', color: 'var(--ua-risk-critical)', border: '1px solid var(--ua-risk-critical-border)' }}
             >
               {bulkDeleting ? 'Deleting…' : 'Delete selected'}
             </button>
@@ -106,7 +106,7 @@ export default function CustomerNotes({ customerProfileId }: CustomerNotesProps)
               onClick={() => dispatch({ type: 'clearSelected' })}
               disabled={bulkDeleting}
               className="text-xs font-semibold"
-              style={{ color: 'var(--text-secondary)' }}
+              style={{ color: 'var(--ua-text-secondary)' }}
             >
               Clear
             </button>
@@ -114,10 +114,10 @@ export default function CustomerNotes({ customerProfileId }: CustomerNotesProps)
         </div>
       )}
 
-      {loading && <p className="text-caption" style={{ color: 'var(--text-tertiary)' }}>Loading…</p>}
+      {loading && <p className="text-caption" style={{ color: 'var(--ua-text-tertiary)' }}>Loading…</p>}
 
       {!loading && notes.length === 0 && (
-        <p className="text-caption" style={{ color: 'var(--text-tertiary)' }}>
+        <p className="text-caption" style={{ color: 'var(--ua-text-tertiary)' }}>
           No notes yet. Add a quick note to remind yourself &mdash; these stay private to your store.
         </p>
       )}
@@ -125,7 +125,7 @@ export default function CustomerNotes({ customerProfileId }: CustomerNotesProps)
       {notes.map((note) => {
         const checked = selectedIds.has(note.id);
         return (
-          <div key={note.id} className="flex items-start justify-between gap-2 text-sm pb-2" style={{ borderBottom: '1px solid var(--border-muted)' }}>
+          <div key={note.id} className="flex items-start justify-between gap-2 text-sm pb-2" style={{ borderBottom: '1px solid var(--ua-border-subtle)' }}>
             <label className="flex items-start gap-2 min-w-0">
               <input
                 type="checkbox"
@@ -135,8 +135,8 @@ export default function CustomerNotes({ customerProfileId }: CustomerNotesProps)
                 }}
               />
               <div className="min-w-0">
-                <span className="text-xs mr-2" style={{ color: 'var(--text-tertiary)' }}>{formatNoteDate(note.created_at)}</span>
-                <span style={{ color: 'var(--text)' }}>{note.body}</span>
+                <span className="text-xs mr-2" style={{ color: 'var(--ua-text-tertiary)' }}>{formatNoteDate(note.created_at)}</span>
+                <span style={{ color: 'var(--ua-text-primary)' }}>{note.body}</span>
               </div>
             </label>
             <button
@@ -144,7 +144,7 @@ export default function CustomerNotes({ customerProfileId }: CustomerNotesProps)
               onClick={() => deleteNote(note.id)}
               disabled={deletingId === note.id || bulkDeleting}
               className="text-xs flex-shrink-0"
-              style={{ color: 'var(--text-tertiary)' }}
+              style={{ color: 'var(--ua-text-tertiary)' }}
               title="Delete note"
             >
               &times;
@@ -161,7 +161,7 @@ export default function CustomerNotes({ customerProfileId }: CustomerNotesProps)
           placeholder="Add a note…"
           rows={2}
           className="w-full text-sm rounded px-3 py-2 focus:outline-none resize-none"
-          style={{ border: '1px solid var(--border)', background: 'var(--bg-inset)', color: 'var(--text)' }}
+          style={{ border: '1px solid var(--ua-border-default)', background: 'var(--ua-surface-secondary)', color: 'var(--ua-text-primary)' }}
         />
         <div className="flex items-center gap-3">
           <button
@@ -169,11 +169,11 @@ export default function CustomerNotes({ customerProfileId }: CustomerNotesProps)
             onClick={saveNote}
             disabled={saving || !draft.trim()}
             className="px-3 py-1.5 text-xs font-semibold rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            style={{ background: 'var(--accent)', color: 'white' }}
+            style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)' }}
           >
             {saving ? 'Saving…' : 'Save note'}
           </button>
-          {savedMsg && <span className="text-xs" style={{ color: 'var(--success)' }}>{savedMsg}</span>}
+          {savedMsg && <span className="text-xs" style={{ color: 'var(--ua-success)' }}>{savedMsg}</span>}
         </div>
       </div>
     </div>

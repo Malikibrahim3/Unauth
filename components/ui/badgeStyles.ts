@@ -11,48 +11,54 @@ type BadgeTone =
 
 type BadgeSize = 'sm' | 'md';
 
-// Sentence-case to match StatusBadge — status/label pills read as words, not
-// shouted all-caps. (Was uppercase+700; that clashed with the sentence-case
-// StatusBadge on the same screens.)
+/*
+ * Sentence case to match StatusBadge — these read as words, not shouted caps.
+ *
+ * Geometry is split by family (§6.3, §6.7): a *status* keeps the round pill so
+ * it reads as a state, while generic metadata and source labels take the control
+ * radius. When everything was round, status, metadata and filters were
+ * indistinguishable at a glance — six pills on one card meaning three different
+ * things.
+ */
 export const BADGE_LAYOUT_STYLE: Record<BadgeSize, CSSProperties> = {
   sm: {
-    height: 'var(--badge-height-sm)',
-    paddingLeft: 'var(--space-1)',
-    paddingRight: 'var(--space-1)',
+    height: 'var(--ua-badge-height-sm)',
+    paddingLeft: 'var(--ua-space-1)',
+    paddingRight: 'var(--ua-space-1)',
     fontSize: 11,
     fontWeight: 500,
     whiteSpace: 'nowrap',
-    borderRadius: 'var(--badge-radius)',
+    borderRadius: 'var(--ua-badge-radius-meta)',
   },
   md: {
-    height: 'var(--badge-height-md)',
-    paddingLeft: 'var(--space-2)',
-    paddingRight: 'var(--space-2)',
+    height: 'var(--ua-badge-height)',
+    paddingLeft: 'var(--ua-space-2)',
+    paddingRight: 'var(--ua-space-2)',
     fontSize: 12,
     fontWeight: 500,
     whiteSpace: 'nowrap',
-    borderRadius: 'var(--badge-radius)',
+    borderRadius: 'var(--ua-badge-radius-meta)',
   },
 };
 
 const CHIP_STYLES: Record<BadgeTone, { background: string; color: string; border: string }> = {
-  neutral: { background: 'var(--surface-sunken)', color: 'var(--text-secondary)', border: 'var(--border)' },
-  info: { background: 'var(--privacy-fill)', color: 'var(--privacy-ink)', border: 'var(--privacy-border)' },
-  accent: { background: 'var(--surface-selected)', color: 'var(--text-primary)', border: 'var(--accent-border)' },
-  success: { background: 'var(--sev-clear-fill)', color: 'var(--neutral)', border: 'var(--risk-low-bd)' },
-  warning: { background: 'var(--sev-probable-fill)', color: 'var(--warning)', border: 'var(--risk-high-bd)' },
-  danger: { background: 'var(--sev-definite-fill)', color: 'var(--risk-critical-fg)', border: 'var(--risk-critical-bd)' },
-  critical: { background: 'var(--risk-critical)', color: 'white', border: 'var(--risk-critical)' },
+  neutral: { background: 'var(--ua-surface-muted)', color: 'var(--ua-text-secondary)', border: 'var(--ua-border-default)' },
+  info: { background: 'var(--ua-privacy-bg)', color: 'var(--ua-privacy)', border: 'var(--ua-privacy-border)' },
+  accent: { background: 'var(--ua-surface-selected)', color: 'var(--ua-text-primary)', border: 'var(--ua-border-default)' },
+  success: { background: 'var(--ua-severity-clear-bg)', color: 'var(--ua-neutral)', border: 'var(--ua-risk-low-border)' },
+  warning: { background: 'var(--ua-severity-probable-bg)', color: 'var(--ua-warning)', border: 'var(--ua-risk-high-border)' },
+  danger: { background: 'var(--ua-severity-definite-bg)', color: 'var(--ua-risk-critical)', border: 'var(--ua-risk-critical-border)' },
+  critical: { background: 'var(--ua-risk-critical)', color: 'var(--ua-text-inverse)', border: 'var(--ua-risk-critical)' },
 };
 
 const SOLID_STYLES: Record<BadgeTone, { background: string; color: string }> = {
-  neutral: { background: 'var(--surface-sunken)', color: 'var(--text-primary)' },
-  info: { background: 'var(--privacy-ink)', color: 'white' },
-  accent: { background: 'var(--accent)', color: 'white' },
-  success: { background: 'var(--neutral)', color: 'var(--text-primary)' },
-  warning: { background: 'var(--warning)', color: 'white' },
-  danger: { background: 'var(--risk-critical)', color: 'white' },
-  critical: { background: 'var(--risk-critical)', color: 'white' },
+  neutral: { background: 'var(--ua-surface-muted)', color: 'var(--ua-text-primary)' },
+  info: { background: 'var(--ua-privacy)', color: 'var(--ua-text-inverse)' },
+  accent: { background: 'var(--ua-action-primary)', color: 'var(--ua-action-primary-fg)' },
+  success: { background: 'var(--ua-neutral)', color: 'var(--ua-text-inverse)' },
+  warning: { background: 'var(--ua-warning)', color: 'var(--ua-text-inverse)' },
+  danger: { background: 'var(--ua-risk-critical)', color: 'var(--ua-text-inverse)' },
+  critical: { background: 'var(--ua-risk-critical)', color: 'var(--ua-text-inverse)' },
 };
 
 export function badgeToneStyle(

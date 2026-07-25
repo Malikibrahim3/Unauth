@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { HelpCircle, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Breadcrumb } from '@/components/ui/PageHeader';
+import type { Breadcrumb } from '@/components/authenticated/AuthenticatedPageHeader';
 import { AuthenticatedPageHeader } from '@/components/authenticated/AuthenticatedPageHeader';
 import styles from '@/components/authenticated/AuthenticatedPageChrome.module.css';
 

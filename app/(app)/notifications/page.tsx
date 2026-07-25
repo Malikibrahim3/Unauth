@@ -39,7 +39,6 @@ export default async function NotificationsPage() {
   const activityTrend = activityDays.map((day) => day.unread);
   return (
     <WorkbenchPage
-      eyebrow="Work"
       title="Notifications"
       navItems={WORKBENCH_NAV_ITEMS}
       kpiItems={
@@ -61,7 +60,6 @@ export default async function NotificationsPage() {
       primaryVisual={
         notifications.length === 0 ? undefined : (
           <KeyInsightCallout
-            eyebrow="Notifications"
             tone={unread > 0 ? 'info' : 'neutral'}
             icon={<Bell size={16} />}
           >

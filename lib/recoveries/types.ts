@@ -59,6 +59,7 @@ export type RecoveryCase = {
   recovery_type: PartnerRecoveryType;
   owner_type: RecoveryOwnerType;
   status: RecoveryCaseStatus;
+  provider_claim_stage?: ProviderClaimStage;
   merchant_loss_amount: number;
   eligible_loss_amount: number | null;
   estimated_recoverable_min: number | null;
@@ -95,6 +96,17 @@ export type RecoveryCase = {
     ticket_external_id?: string | null;
   } | null;
 };
+
+export const PROVIDER_CLAIM_STAGES = [
+  'prepared',
+  'sent',
+  'acknowledged',
+  'approved',
+  'credited',
+  'reconciled',
+  'closed_unrecoverable',
+] as const;
+export type ProviderClaimStage = (typeof PROVIDER_CLAIM_STAGES)[number];
 
 export type RecoveryCaseEvent = {
   id: string;

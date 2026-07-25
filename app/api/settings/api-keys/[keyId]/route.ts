@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
-import { TABLES } from '@/lib/supabase/tables';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { getClientIp } from '@/lib/ratelimit';
 import { withRequestLogging } from '@/lib/log';
@@ -27,16 +26,16 @@ async function DELETEHandler(
   const mutationClient = createServiceClient({
     audit: { actorId: ctx.userId, actorRole: ctx.role, requestIp: ip },
   });
-  const { data, error } = await mutationClient
-    .from(TABLES.MERCHANT_API_KEYS)
-    .update({ revoked_at: revokedAt })
-    .eq('id', keyId)
-    .eq('merchant_id', ctx.merchantId)
-    .is('revoked_at', null)
-    .select('id, key_prefix, name')
-    .maybeSingle();
+  const { data, error } = await mutationClient.rpc('revoke_merchant_api_key', {
+    p_merchant_id: ctx.merchantId,
+    p_api_key_id: keyId,
+    p_revoked_at: revokedAt,
+  });
 
   if (error) {
+    if (error.code === 'P0002' || error.message?.includes('api_key_not_found')) {
+      return NextResponse.json({ error: 'API key not found' }, { status: 404 });
+    }
     return NextResponse.json({ error: 'Failed to revoke API key' }, { status: 500 });
   }
 

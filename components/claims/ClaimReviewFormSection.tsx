@@ -23,7 +23,7 @@ export function ClaimReviewFormSection({ wb }: { wb: ClaimReviewWorkbench }) {
     <Card unstyled
       id="source-case-details"
       as="section"
-      variant="flat"
+      variant="panel"
       className="order-3 min-w-0 overflow-hidden p-0 min-[1100px]:col-start-1 min-[1100px]:row-start-2"
     >
       <button
@@ -31,12 +31,12 @@ export function ClaimReviewFormSection({ wb }: { wb: ClaimReviewWorkbench }) {
         onClick={() => patch({ claimFormOpen: !claimFormOpen })}
         className="w-full flex items-center justify-between px-4 py-2.5 text-left"
       >
-        <span className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>{claimId ? 'Edit claim details' : 'Connected source intake'}</span>
-        <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{claimFormOpen ? '▲' : '▼'}</span>
+        <span className="text-xs font-semibold" style={{ color: 'var(--ua-text-secondary)' }}>{claimId ? 'Edit claim details' : 'Connected source intake'}</span>
+        <span className="text-xs" style={{ color: 'var(--ua-text-secondary)' }}>{claimFormOpen ? '▲' : '▼'}</span>
       </button>
       {claimFormOpen && (
-        <div className="px-4 pb-4 pt-0 border-t space-y-3" style={{ borderColor: 'var(--border-muted)' }}>
-          <Card unstyled variant="inset" className="px-3 py-2 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+        <div className="px-4 pb-4 pt-0 border-t space-y-3" style={{ borderColor: 'var(--ua-border-subtle)' }}>
+          <Card unstyled variant="muted" className="px-3 py-2 text-xs leading-relaxed" style={{ color: 'var(--ua-text-secondary)' }}>
             Case facts are created from connected order, helpdesk, payment, returns, carrier, warehouse, or correspondence sources. Missing data stays marked unavailable until a connector or matched source record supplies it.
           </Card>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -60,7 +60,7 @@ export function ClaimReviewFormSection({ wb }: { wb: ClaimReviewWorkbench }) {
                   {orderOptions.map((o) => <option key={o.id} value={o.id}>{formatOrderOption(o)}</option>)}
                 </select>
               ) : (
-                <Card unstyled id="claim-order" variant="inset" className="px-2 py-1.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                <Card unstyled id="claim-order" variant="muted" className="px-2 py-1.5 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
                   No connected order record is available for this context.
                 </Card>
               )}

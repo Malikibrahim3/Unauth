@@ -101,9 +101,19 @@ export type ClaimEvidenceInput = {
   contentHash?: string | null;
   sourceMetadata?: Record<string, unknown>;
   createdBy?: string | null;
+  title?: string | null;
+  summary?: string | null;
+  sourceSystem?: string | null;
+  sourceRecordId?: string | null;
+  sourceCreatedAt?: string | null;
+  structuredValue?: Record<string, unknown> | null;
+  externalUrl?: string | null;
 };
 
 function claimEvidenceRow(input: ClaimEvidenceInput) {
+  const metadataSource = typeof input.sourceMetadata?.source === 'string'
+    ? input.sourceMetadata.source
+    : null;
   return {
     ...(input.id ? { id: input.id } : {}),
     merchant_id: input.merchantId,
@@ -111,6 +121,13 @@ function claimEvidenceRow(input: ClaimEvidenceInput) {
     evidence_type: input.evidenceType,
     storage_path: input.storagePath ?? null,
     content_hash: input.contentHash ?? null,
+    title: input.title ?? null,
+    summary: input.summary ?? null,
+    source_system: input.sourceSystem ?? metadataSource ?? 'manual',
+    source_record_id: input.sourceRecordId ?? null,
+    source_created_at: input.sourceCreatedAt ?? null,
+    external_url: input.externalUrl ?? null,
+    structured_value: input.structuredValue ?? {},
     source_metadata: { ...(input.sourceMetadata ?? {}), origin_store: CLAIM_EVIDENCE_ORIGIN },
     created_by: input.createdBy ?? null,
   };

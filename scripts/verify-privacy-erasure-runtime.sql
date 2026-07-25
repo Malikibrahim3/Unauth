@@ -92,6 +92,108 @@ insert into public.evidence_items (
   ('40000000-0000-4000-8000-000000000051', '40000000-0000-4000-8000-000000000017', '40000000-0000-4000-8000-000000000010', 'runtime', 'ticket_messages', 'Private evidence A', 'private summary A', '{"private":"merchant-a"}', '40000000-0000-4000-8000-000000000010/private-a.pdf', '{"private":"merchant-a"}', '{"private":"merchant-a"}'),
   ('40000000-0000-4000-8000-000000000052', '40000000-0000-4000-8000-000000000027', '40000000-0000-4000-8000-000000000020', 'runtime', 'ticket_messages', 'Private evidence B', 'private summary B', '{"private":"merchant-b"}', '40000000-0000-4000-8000-000000000020/private-b.pdf', '{"private":"merchant-b"}', '{"private":"merchant-b"}');
 
+insert into public.case_clarification_requests (
+  id, merchant_id, support_payout_case_id, is_primary, target_type, target_name,
+  status, evidence_gap, recommended_reason, requested_evidence, request_summary,
+  subject, request_body, recipient, source_channel, sent_at, due_at,
+  external_reference, external_url, response_outcome, response_body,
+  response_summary, responder_name, idempotency_key, metadata
+) values
+  (
+    '40000000-0000-4000-8000-000000000061',
+    '40000000-0000-4000-8000-000000000010',
+    '40000000-0000-4000-8000-000000000017',
+    true, 'carrier', 'Private Carrier A', 'waiting_response',
+    'Private delivery detail A', 'Private recommendation A',
+    array['private customer photo'], 'Private request A',
+    'Private subject A', 'Private request body A',
+    'shared-subject@example.invalid', 'email', now(), now() + interval '1 day',
+    'PRIVATE-REFERENCE-A', 'https://example.invalid/private-investigation-a',
+    'issue_confirmed', 'Private response body A', 'Private response A',
+    'Private responder A', 'privacy-investigation-a',
+    '{"provider_message_id":"private-provider-message-a"}'
+  ),
+  (
+    '40000000-0000-4000-8000-000000000062',
+    '40000000-0000-4000-8000-000000000020',
+    '40000000-0000-4000-8000-000000000027',
+    true, 'carrier', 'Private Carrier B', 'waiting_response',
+    'Private delivery detail B', 'Private recommendation B',
+    array['private customer photo'], 'Private request B',
+    'Private subject B', 'Private request body B',
+    'shared-subject@example.invalid', 'email', now(), now() + interval '1 day',
+    'PRIVATE-REFERENCE-B', 'https://example.invalid/private-investigation-b',
+    'issue_confirmed', 'Private response body B', 'Private response B',
+    'Private responder B', 'privacy-investigation-b',
+    '{"provider_message_id":"private-provider-message-b"}'
+  );
+
+insert into public.case_investigation_attachments (
+  id, merchant_id, support_payout_case_id, investigation_id, file_path,
+  original_filename, safe_filename, content_type, size_bytes, content_hash,
+  safety_status, safety_detail, idempotency_key
+) values
+  (
+    '40000000-0000-4000-8000-000000000063',
+    '40000000-0000-4000-8000-000000000010',
+    '40000000-0000-4000-8000-000000000017',
+    '40000000-0000-4000-8000-000000000061',
+    '40000000-0000-4000-8000-000000000010/investigations/private-a.pdf',
+    'private-customer-a.pdf', 'private-customer-a.pdf', 'application/pdf',
+    1234, repeat('a', 64), 'clean', 'synthetic clean file',
+    'privacy-attachment-a'
+  ),
+  (
+    '40000000-0000-4000-8000-000000000064',
+    '40000000-0000-4000-8000-000000000020',
+    '40000000-0000-4000-8000-000000000027',
+    '40000000-0000-4000-8000-000000000062',
+    '40000000-0000-4000-8000-000000000020/investigations/private-b.pdf',
+    'private-customer-b.pdf', 'private-customer-b.pdf', 'application/pdf',
+    5678, repeat('b', 64), 'clean', 'synthetic clean file',
+    'privacy-attachment-b'
+  );
+
+insert into public.case_investigation_dispatches (
+  id, merchant_id, investigation_id, dispatch_kind, channel, idempotency_key,
+  request_hash, status, attempt_count, last_error
+) values
+  (
+    '40000000-0000-4000-8000-000000000065',
+    '40000000-0000-4000-8000-000000000010',
+    '40000000-0000-4000-8000-000000000061',
+    'initial_request', 'email', 'privacy-dispatch-a', repeat('c', 64),
+    'failed', 1, 'private failure detail A'
+  ),
+  (
+    '40000000-0000-4000-8000-000000000066',
+    '40000000-0000-4000-8000-000000000020',
+    '40000000-0000-4000-8000-000000000062',
+    'initial_request', 'email', 'privacy-dispatch-b', repeat('d', 64),
+    'failed', 1, 'private failure detail B'
+  );
+
+insert into public.domain_events (
+  id, merchant_id, event_type, aggregate_type, aggregate_id,
+  idempotency_key, payload
+) values
+  (
+    '40000000-0000-4000-8000-000000000067',
+    '40000000-0000-4000-8000-000000000010',
+    'investigation.response_recorded', 'case_investigation',
+    '40000000-0000-4000-8000-000000000061',
+    'privacy-investigation-domain-a',
+    '{"response_body":"Private response body A","customer":"Shared Subject"}'
+  ),
+  (
+    '40000000-0000-4000-8000-000000000068',
+    '40000000-0000-4000-8000-000000000020',
+    'investigation.response_recorded', 'case_investigation',
+    '40000000-0000-4000-8000-000000000062',
+    'privacy-investigation-domain-b',
+    '{"response_body":"Private response body B","customer":"Shared Subject"}'
+  );
+
 do $acceptance$
 declare
   v_result jsonb;
@@ -102,6 +204,7 @@ declare
 begin
   if has_function_privilege('anon', 'public.erase_merchant_data_subject(uuid,uuid,uuid,text,timestamp with time zone)', 'execute')
      or has_function_privilege('authenticated', 'public.erase_merchant_data_subject(uuid,uuid,uuid,text,timestamp with time zone)', 'execute')
+     or has_function_privilege('authenticated', 'public.erase_release1_merchant_data_subject(uuid,uuid,uuid,text,timestamp with time zone)', 'execute')
      or has_function_privilege('authenticated', 'public.purge_expired_ingestion_payloads(integer)', 'execute') then
     raise exception 'privacy maintenance RPC remains client-executable';
   end if;
@@ -109,7 +212,7 @@ begin
   select count(*) into v_other_claim_count from public.support_payout_cases
    where merchant_id = '40000000-0000-4000-8000-000000000020';
 
-  v_result := public.erase_merchant_data_subject(
+  v_result := public.erase_release1_merchant_data_subject(
     '40000000-0000-4000-8000-000000000010',
     '40000000-0000-4000-8000-000000000011',
     '40000000-0000-4000-8000-000000000001',
@@ -121,7 +224,12 @@ begin
      or (v_result->'counts'->>'source_customers')::integer <> 1
      or (v_result->'counts'->>'cases_preserved')::integer <> 1
      or (v_result->'counts'->>'financial_entries_preserved')::integer <> 1
-     or (v_result->'counts'->>'storage_objects_queued')::integer <> 1 then
+     or (v_result->'counts'->>'storage_objects_queued')::integer <> 1
+     or (v_result->'counts'->>'investigations_redacted')::integer <> 1
+     or (v_result->'counts'->>'investigation_attachments_redacted')::integer <> 1
+     or (v_result->'counts'->>'investigation_dispatches_redacted')::integer <> 1
+     or (v_result->'counts'->>'investigation_events_redacted')::integer <> 1
+     or (v_result->'counts'->>'investigation_storage_objects_queued')::integer <> 1 then
     raise exception 'erasure result is incomplete: %', v_result;
   end if;
 
@@ -168,6 +276,43 @@ begin
        and structured_value = '{"privacy_state":"erased"}'::jsonb
   ) then raise exception 'subject evidence was not redacted'; end if;
 
+  if not exists (
+    select 1 from public.case_clarification_requests
+     where id = '40000000-0000-4000-8000-000000000061'
+       and target_name is null
+       and subject = '[redacted by data subject erasure]'
+       and request_body = '[redacted by data subject erasure]'
+       and recipient is null and external_url is null
+       and response_body is null and response_summary is null
+       and metadata = '{"privacy_state":"erased"}'::jsonb
+  ) then raise exception 'subject investigation content was not redacted'; end if;
+
+  if not exists (
+    select 1 from public.case_investigation_attachments
+     where id = '40000000-0000-4000-8000-000000000063'
+       and file_path = 'privacy-erased/40000000-0000-4000-8000-000000000063'
+       and external_url is null and original_filename is null
+       and safety_status = 'rejected'
+  ) or not exists (
+    select 1 from public.privacy_storage_cleanup_jobs
+     where erasure_receipt_id = (v_result ->> 'receipt_id')::uuid
+       and bucket = 'investigation-evidence'
+       and object_path = '40000000-0000-4000-8000-000000000010/investigations/private-a.pdf'
+  ) then raise exception 'investigation attachment was not redacted and queued'; end if;
+
+  if not exists (
+    select 1 from public.case_investigation_dispatches
+     where id = '40000000-0000-4000-8000-000000000065'
+       and idempotency_key = 'privacy-erased:40000000-0000-4000-8000-000000000065'
+       and last_error is null
+  ) then raise exception 'investigation dispatch detail was not redacted'; end if;
+
+  if not exists (
+    select 1 from public.domain_events
+     where id = '40000000-0000-4000-8000-000000000067'
+       and payload = '{"privacy_state":"erased"}'::jsonb
+  ) then raise exception 'investigation domain event was not redacted'; end if;
+
   if (select count(*) from public.data_subject_erasure_receipts
        where merchant_id = '40000000-0000-4000-8000-000000000010'
          and idempotency_key = 'runtime-erasure-a') <> 1 then
@@ -175,7 +320,7 @@ begin
   end if;
 
   -- Same request is idempotent and returns the original receipt.
-  v_replay := public.erase_merchant_data_subject(
+  v_replay := public.erase_release1_merchant_data_subject(
     '40000000-0000-4000-8000-000000000010',
     '40000000-0000-4000-8000-000000000011',
     '40000000-0000-4000-8000-000000000001',
@@ -206,6 +351,17 @@ begin
        select 1 from public.domain_events
         where id = '40000000-0000-4000-8000-000000000042'
           and payload = '{"private":"merchant-b"}'::jsonb
+     )
+     or not exists (
+       select 1 from public.case_clarification_requests
+        where id = '40000000-0000-4000-8000-000000000062'
+          and subject = 'Private subject B'
+          and response_body = 'Private response body B'
+     )
+     or not exists (
+       select 1 from public.case_investigation_attachments
+        where id = '40000000-0000-4000-8000-000000000064'
+          and file_path = '40000000-0000-4000-8000-000000000020/investigations/private-b.pdf'
      ) then
     raise exception 'merchant B was changed by merchant A subject erasure';
   end if;

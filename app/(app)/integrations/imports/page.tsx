@@ -36,7 +36,6 @@ export default async function ImportsPage() {
   return (
     <div>
       <AuthenticatedPageHeader
-        eyebrow="Manual source ingestion"
         title="Import records"
         subtitle="Validate and map orders, refunds or customers before any write. Valid rows import independently; invalid rows remain visible and every persisted record carries CSV provenance."
         breadcrumbs={[{ label: "Integrations", href: "/integrations" }, { label: "Import records" }]}

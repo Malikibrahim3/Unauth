@@ -1,6 +1,5 @@
 'use client';
 
-import { useId, useMemo } from 'react';
 import {
   Bar,
   CartesianGrid,
@@ -14,11 +13,7 @@ import {
 import { useChartTheme } from '../core/useChartTheme';
 import { ChartTooltip } from '../core/ChartTooltip';
 import {
-  BAR_CAP_H,
-  BAR_FILL_BASE_OPACITY,
-  BAR_FILL_TOP_OPACITY,
-  BAR_MAX_W,
-  BAR_TOP_RADIUS,
+  BAR_END_RADIUS,
   COMPARISON_DASH,
   COMPARISON_DOT_R,
   COMPARISON_LINE_WIDTH,
@@ -33,7 +28,7 @@ export type ComboBarLineDatum = {
 
 type ComboBarLineChartProps = {
   data: ComboBarLineDatum[];
-  /** e.g. '--ua-chart-orange' */
+  /** e.g. '--ua-chart-4' */
   colourVar: string;
   /** Axis tick formatter — should be compact (e.g. $18k). */
   valueFormatter: (value: number) => string;
@@ -43,7 +38,7 @@ type ComboBarLineChartProps = {
   height?: number;
 };
 
-/** T4 — cap-top gradient bars + dashed comparison overlay. The flagship dashboard/reports combo chart. */
+/** Quiet Precision combo chart: flat bars, restrained axes, and optional comparison line. */
 export function ComboBarLineChart({
   data,
   colourVar,
@@ -54,57 +49,38 @@ export function ComboBarLineChart({
 }: ComboBarLineChartProps) {
   const formatTooltip = tooltipFormatter ?? valueFormatter;
   const theme = useChartTheme();
-  const gradientId = useId();
-  const hue = (theme as Record<string, string>)[colourVar] || 'var(--ua-chart-blue)';
-
-  const CapTopBar = useMemo(
-    () =>
-      function CapTopBarShape(rawProps: unknown) {
-        const { x = 0, y = 0, width = 0, height: h = 0 } = rawProps as {
-          x?: number;
-          y?: number;
-          width?: number;
-          height?: number;
-        };
-        if (h <= 0) return <></>;
-        const r = Math.min(BAR_TOP_RADIUS, width / 2);
-        return (
-          <g>
-            <path
-              d={`M${x},${y + h} L${x},${y + r} Q${x},${y} ${x + r},${y} L${x + width - r},${y} Q${x + width},${y} ${x + width},${y + r} L${x + width},${y + h} Z`}
-              fill={`url(#${gradientId})`}
-            />
-            <rect x={x} y={y} width={width} height={Math.min(BAR_CAP_H, h)} rx={1} fill={hue} />
-          </g>
-        );
-      },
-    [gradientId, hue],
-  );
+  const hue = (theme as Record<string, string>)[colourVar] || 'var(--ua-chart-1)';
 
   return (
     <div style={{ width: '100%', height }}>
       <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart data={data} margin={{ top: 12, right: 8, bottom: 2, left: 0 }} barCategoryGap="20%">
-          <defs>
-            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={hue} stopOpacity={BAR_FILL_TOP_OPACITY} />
-              <stop offset="100%" stopColor={hue} stopOpacity={BAR_FILL_BASE_OPACITY} />
-            </linearGradient>
-          </defs>
+        <ComposedChart
+          data={data}
+          margin={{ top: 8, right: 8, bottom: 2, left: 0 }}
+          barCategoryGap="28%"
+        >
           <CartesianGrid stroke={theme['--ua-chart-grid']} vertical={false} />
           <XAxis
             dataKey="label"
             axisLine={false}
             tickLine={false}
-            minTickGap={22}
-            tick={{ fontSize: 10, fill: theme['--text-tertiary'], fontFamily: 'var(--ua-font-mono)' }}
+            minTickGap={16}
+            tick={{
+              fontSize: 11,
+              fill: theme['--ua-text-tertiary'],
+              fontFamily: 'var(--ua-font-sans)',
+            }}
           />
           <YAxis
             axisLine={false}
             tickLine={false}
-            width={40}
+            width={44}
             tickCount={5}
-            tick={{ fontSize: 10, fill: theme['--text-tertiary'], fontFamily: 'var(--ua-font-mono)' }}
+            tick={{
+              fontSize: 11,
+              fill: theme['--ua-text-tertiary'],
+              fontFamily: 'var(--ua-font-sans)',
+            }}
             tickFormatter={valueFormatter}
           />
           <Tooltip
@@ -119,22 +95,29 @@ export function ComboBarLineChart({
                   caption={String(label)}
                   series={
                     comparison && row.previous != null
-                      ? [{ label: 'Previous', value: formatTooltip(row.previous), colour: 'var(--icon-muted)' }]
+                      ? [{ label: 'Previous', value: formatTooltip(row.previous), colour: 'var(--ua-icon-secondary)' }]
                       : undefined
                   }
                 />
               );
             }}
           />
-          <Bar dataKey="current" shape={CapTopBar} maxBarSize={BAR_MAX_W} isAnimationActive={false} />
+          <Bar
+            dataKey="current"
+            fill={hue}
+            /* Spec §8.3: 4px data-end radius. */
+            radius={[BAR_END_RADIUS, BAR_END_RADIUS, 0, 0]}
+            maxBarSize={30}
+            isAnimationActive={false}
+          />
           {comparison ? (
             <Line
               type="linear"
               dataKey="previous"
-              stroke="var(--icon-muted)"
+              stroke="var(--ua-icon-secondary)"
               strokeWidth={COMPARISON_LINE_WIDTH}
               strokeDasharray={COMPARISON_DASH.join(' ')}
-              dot={{ r: COMPARISON_DOT_R, fill: 'var(--icon-muted)', stroke: 'var(--surface)', strokeWidth: 2 }}
+              dot={{ r: COMPARISON_DOT_R, fill: 'var(--ua-icon-secondary)', stroke: 'var(--ua-surface-primary)', strokeWidth: 2 }}
               activeDot={{ r: COMPARISON_DOT_R + 1 }}
               connectNulls
               isAnimationActive={false}

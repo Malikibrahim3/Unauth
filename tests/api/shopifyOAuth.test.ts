@@ -182,6 +182,16 @@ describe('Shopify OAuth routes', () => {
         'http://localhost:3000/integrations?shopify_error=public_domain',
       );
     });
+
+    it('preserves the allowlisted onboarding return path', async () => {
+      const req = new NextRequest(
+        'http://localhost:3000/api/shopify/install?shop=bad.store.example&returnTo=%2Fonboarding',
+      );
+      const res = await installGET(req);
+      expect(await extractFallbackHref(res)).toBe(
+        'http://localhost:3000/onboarding?shopify_error=public_domain',
+      );
+    });
   });
 
   describe('callback route', () => {
@@ -236,6 +246,52 @@ describe('Shopify OAuth routes', () => {
         `http://localhost:3000/api/shopify/callback?${params.toString()}`,
         {
           headers: { cookie: 'shopify_oauth_state=other-state' },
+        } as RequestInit,
+      );
+
+      const res = await callbackGET(req);
+      expect(await extractFallbackHref(res)).toBe(
+        'http://localhost:3000/integrations?shopify_error=invalid_state',
+      );
+    });
+
+    it('returns a callback to onboarding only when the signed flow set the allowlisted cookie', async () => {
+      const params = buildOAuthCallbackParams({
+        shop: 'merchant-a.myshopify.com',
+        code: 'auth-code',
+        state: 'expected-state',
+        secret: 'test-api-secret',
+      });
+      const req = new NextRequest(
+        `http://localhost:3000/api/shopify/callback?${params.toString()}`,
+        {
+          headers: {
+            cookie:
+              'shopify_oauth_state=other-state; shopify_oauth_return_to=%2Fonboarding',
+          },
+        } as RequestInit,
+      );
+
+      const res = await callbackGET(req);
+      expect(await extractFallbackHref(res)).toBe(
+        'http://localhost:3000/onboarding?shopify_error=invalid_state',
+      );
+    });
+
+    it('rejects arbitrary OAuth return paths', async () => {
+      const params = buildOAuthCallbackParams({
+        shop: 'merchant-a.myshopify.com',
+        code: 'auth-code',
+        state: 'expected-state',
+        secret: 'test-api-secret',
+      });
+      const req = new NextRequest(
+        `http://localhost:3000/api/shopify/callback?${params.toString()}`,
+        {
+          headers: {
+            cookie:
+              'shopify_oauth_state=other-state; shopify_oauth_return_to=https%3A%2F%2Fevil.example',
+          },
         } as RequestInit,
       );
 

@@ -132,9 +132,18 @@ export default async function ClaimsPage({
     : 'active';
   const ownerFilter = resolvedParams.owner === 'me' || resolvedParams.owner === 'unassigned' ? resolvedParams.owner : null;
   const viewedFilter = resolvedParams.viewed === 'unread' || resolvedParams.viewed === 'viewed' ? resolvedParams.viewed : null;
-  const sort = resolvedParams.sort === 'age' || resolvedParams.sort === 'filed_desc' ? resolvedParams.sort : 'updated';
+  const sort = resolvedParams.sort === 'age' || resolvedParams.sort === 'filed_desc' || resolvedParams.sort === 'value'
+    ? resolvedParams.sort
+    : 'updated';
   const slaFilter = resolvedParams.sla === 'overdue' || resolvedParams.sla === 'approaching' ? resolvedParams.sla : null;
-  const orderColumn = sort === 'age' || sort === 'filed_desc' ? 'submitted_at' : 'updated_at';
+  /*
+   * `sort=value` orders by exposure so the largest decisions surface first. It
+   * was previously accepted in links but never honoured here, so the queue
+   * silently fell back to `updated`.
+   */
+  const orderColumn = sort === 'value'
+    ? 'amount_at_risk'
+    : sort === 'age' || sort === 'filed_desc' ? 'submitted_at' : 'updated_at';
   const orderAscending = sort === 'age';
   const page = Math.max(1, parseInt(resolvedParams.page ?? '1', 10));
   const requestedPageSize = parseInt(resolvedParams.pageSize ?? String(DEFAULT_PAGE_SIZE), 10);
@@ -216,9 +225,15 @@ export default async function ClaimsPage({
   const sourceTicketIds = Array.from(new Set(claimRows.flatMap((c) => (c.source_ticket_id ? [c.source_ticket_id] : []))));
   const identityIds = Array.from(new Set(claimRows.flatMap((c) => (c.identity_id ? [c.identity_id] : []))));
 
-  // Generation 2: the four lookups below each depend only on the claim rows,
+  // Generation 2: the lookups below each depend only on the claim rows,
   // not on each other — run them concurrently.
-  const [{ data: outcomeRows }, { data: orderRows }, { data: ticketRows }, { data: stateRows }] =
+  const [
+    { data: outcomeRows },
+    { data: orderRows },
+    { data: ticketRows },
+    { data: stateRows },
+    { data: investigationRows, error: investigationRowsError },
+  ] =
     await Promise.all([
       claimIds.length > 0
         ? serviceClient
@@ -247,7 +262,19 @@ export default async function ClaimsPage({
             .eq('merchant_id', ctx.merchantId)
             .in('identity_id', identityIds)
         : Promise.resolve({ data: [] }),
+      claimIds.length > 0
+        ? serviceClient
+            .from(TABLES.CASE_CLARIFICATION_REQUESTS)
+            .select('support_payout_case_id,status,target_type,target_name,is_primary,due_at,evidence_gap,response_summary,updated_at,partner:partners(name)')
+            .eq('merchant_id', ctx.merchantId)
+            .in('support_payout_case_id', claimIds)
+            .order('is_primary', { ascending: false })
+            .order('updated_at', { ascending: false })
+        : Promise.resolve({ data: [], error: null }),
     ]);
+  if (investigationRowsError) {
+    console.error('Claims investigation summary query failed', investigationRowsError);
+  }
 
   // claim_outcomes has a UNIQUE claim_id (one row per claim) — no latest-by-updated_at dedupe needed.
   const latestOutcomeByClaimId = new Map<string, { decision: string; outcome: string; updated_at: string }>();
@@ -292,10 +319,80 @@ export default async function ClaimsPage({
     if (row.display_name) displayNameByIdentityId.set(row.identity_id, row.display_name);
   }
 
+  type InvestigationQueueRow = {
+    support_payout_case_id: string;
+    status: string;
+    target_type: string;
+    target_name: string | null;
+    is_primary: boolean;
+    due_at: string | null;
+    evidence_gap: string;
+    response_summary: string | null;
+    updated_at: string;
+    partner: { name: string } | null;
+  };
+  type InvestigationQueueSummary = {
+    open: number;
+    overdue: number;
+    awaitingReview: number;
+    waitingTarget: string | null;
+    waitingParty: string | null;
+    nextDueAt: string | null;
+    evidenceGap: string | null;
+    latestResponse: string | null;
+  };
+  const investigationByClaimId = new Map<string, InvestigationQueueSummary>();
+  const nowMs = Date.now();
+  for (const row of (investigationRows ?? []) as unknown as InvestigationQueueRow[]) {
+    const summary = investigationByClaimId.get(row.support_payout_case_id) ?? {
+      open: 0,
+      overdue: 0,
+      awaitingReview: 0,
+      waitingTarget: null,
+      waitingParty: null,
+      nextDueAt: null,
+      evidenceGap: null,
+      latestResponse: null,
+    };
+    const isOpen = !['closed', 'cancelled'].includes(row.status);
+    if (isOpen) summary.open += 1;
+    if (row.status === 'response_received') summary.awaitingReview += 1;
+    if (
+      row.status === 'waiting_response'
+      && row.due_at
+      && Date.parse(row.due_at) < nowMs
+    ) {
+      summary.overdue += 1;
+    }
+    if (
+      row.status === 'waiting_response'
+      && row.due_at
+      && (!summary.nextDueAt || row.due_at < summary.nextDueAt)
+    ) {
+      summary.nextDueAt = row.due_at;
+    }
+    if (
+      isOpen
+      && (
+        summary.waitingTarget === null
+        || row.is_primary
+      )
+    ) {
+      summary.waitingTarget = row.target_type;
+      summary.waitingParty = row.partner?.name ?? row.target_name;
+      summary.evidenceGap = row.evidence_gap;
+    }
+    if (!summary.latestResponse && row.response_summary) {
+      summary.latestResponse = row.response_summary;
+    }
+    investigationByClaimId.set(row.support_payout_case_id, summary);
+  }
+
   // Map v2 rows onto the view-model the JSX expects. customer_id = identity_id,
   // shopify_order_id = order_number, shop_domain = null (no v2 source).
   const claims: ClaimRow[] = claimRows.map((c) => {
     const order = c.source_order_id ? orderById.get(c.source_order_id) ?? null : null;
+    const investigation = investigationByClaimId.get(c.id);
     return {
       id: c.id,
       // Identity is the customer key when resolved; otherwise fall back to a
@@ -326,6 +423,14 @@ export default async function ClaimsPage({
       assigned_to: c.assigned_to,
       assigned_at: c.assigned_at,
       snoozed_until: c.snoozed_until,
+      investigation_open_count: investigation?.open ?? 0,
+      investigation_overdue_count: investigation?.overdue ?? 0,
+      investigation_awaiting_review_count: investigation?.awaitingReview ?? 0,
+      investigation_waiting_target: investigation?.waitingTarget ?? null,
+      investigation_waiting_party: investigation?.waitingParty ?? null,
+      investigation_next_due_at: investigation?.nextDueAt ?? null,
+      investigation_evidence_gap: investigation?.evidenceGap ?? null,
+      investigation_latest_response: investigation?.latestResponse ?? null,
     };
   });
 

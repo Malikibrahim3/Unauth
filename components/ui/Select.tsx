@@ -10,15 +10,15 @@ export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSel
       <select
         ref={ref}
         className={cn(
-          'w-full px-3 text-sm focus:outline-none transition-colors duration-[var(--duration-fast)] focus:bg-[var(--surface)] focus:border-[var(--text-primary)] appearance-none',
+          'w-full px-3 text-sm focus:outline-none transition-colors duration-[var(--ua-duration-fast)] focus:bg-[var(--ua-surface-primary)] focus:border-[var(--ua-text-primary)] appearance-none',
           className,
         )}
         style={{
           height: 'var(--ua-control-height-input)',
-          background: 'var(--surface-sunken)',
-          border: '1px solid var(--border)',
+          background: 'var(--ua-surface-primary)',
+          border: '1px solid var(--ua-border-default)',
           borderRadius: 'var(--ua-radius-control)',
-          color: 'var(--text-primary)',
+          color: 'var(--ua-text-primary)',
           paddingRight: 32,
           ...style,
         }}
@@ -28,7 +28,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSel
         size={14}
         aria-hidden="true"
         className="pointer-events-none absolute right-2.5"
-        style={{ color: 'var(--icon-muted)' }}
+        style={{ color: 'var(--ua-icon-secondary)' }}
       />
     </span>
   ),

@@ -18,14 +18,14 @@ export interface AnalyticsBarChartProps {
 export function AnalyticsBarChart({
   data,
   height = 180,
-  defaultColor = 'var(--accent)',
+  defaultColor = 'var(--ua-action-primary)',
   valueFormatter,
   emptyLabel = 'No data yet',
 }: AnalyticsBarChartProps) {
   const fmt = valueFormatter ?? ((n: number) => formatNumber(n));
   if (!data || data.length === 0) {
     return (
-      <div style={{ height, display: 'grid', placeItems: 'center', color: 'var(--text-tertiary)', fontSize: 12 }}>
+      <div style={{ height, display: 'grid', placeItems: 'center', color: 'var(--ua-text-tertiary)', fontSize: 12 }}>
         {emptyLabel}
       </div>
     );
@@ -35,7 +35,7 @@ export function AnalyticsBarChart({
     <div style={{ height, display: 'flex', alignItems: 'flex-end', gap: 10, padding: '8px 0' }}>
       {data.map((d) => (
         <div key={d.label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end', gap: 6 }}>
-          <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>{fmt(d.value)}</span>
+          <span style={{ fontSize: 10, fontFamily: 'var(--ua-font-sans)', fontVariantNumeric: 'tabular-nums', color: 'var(--ua-text-secondary)' }}>{fmt(d.value)}</span>
           <div
             style={{
               width: '70%',
@@ -46,7 +46,7 @@ export function AnalyticsBarChart({
               borderTopRightRadius: 'var(--ua-radius-xs)',
             }}
           />
-          <span style={{ fontSize: 10, color: 'var(--text-tertiary)', textAlign: 'center' }}>{d.label}</span>
+          <span style={{ fontSize: 10, color: 'var(--ua-text-tertiary)', textAlign: 'center' }}>{d.label}</span>
         </div>
       ))}
     </div>

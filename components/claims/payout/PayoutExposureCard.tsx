@@ -24,20 +24,20 @@ export function PayoutExposureCard({
   return (
     <section
       className="rounded-md p-4 border"
-      style={{ borderColor: 'var(--border-muted)', background: 'var(--surface)' }}
+      style={{ borderColor: 'var(--ua-border-subtle)', background: 'var(--ua-surface-primary)' }}
     >
-      <p className="text-caption font-semibold mb-3" style={{ color: 'var(--text-secondary)' }}>
-        Payout exposure
+      <p className="text-caption font-semibold mb-3" style={{ color: 'var(--ua-text-secondary)' }}>
+        Customer concession context
       </p>
 
       {hasAmount ? (
         <>
           <div className="flex flex-wrap items-end gap-x-6 gap-y-2">
             <div>
-              <p className="text-xs mb-0.5" style={{ color: 'var(--text-secondary)' }}>
-                Estimated total loss
+              <p className="text-xs mb-0.5" style={{ color: 'var(--ua-text-secondary)' }}>
+                Estimated value at issue
               </p>
-              <p className="font-mono tabular-nums font-semibold" style={{ fontSize: 28, letterSpacing: '-0.02em', color: 'var(--text)' }}>
+              <p className="font-sans tabular-nums font-semibold" style={{ fontSize: 28, letterSpacing: '-0.02em', color: 'var(--ua-text-primary)' }}>
                 {formatPayoutMoney(exposure.total)}
               </p>
             </div>
@@ -57,10 +57,10 @@ export function PayoutExposureCard({
                 <span
                   key={c.kind}
                   className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs"
-                  style={{ background: 'var(--bg-inset)', color: 'var(--text-secondary)' }}
+                  style={{ background: 'var(--ua-surface-secondary)', color: 'var(--ua-text-secondary)' }}
                 >
-                  <span style={{ color: 'var(--text)' }}>{COMPONENT_LABELS[c.kind] ?? c.kind}</span>
-                  <span className="font-mono tabular-nums">
+                  <span style={{ color: 'var(--ua-text-primary)' }}>{COMPONENT_LABELS[c.kind] ?? c.kind}</span>
+                  <span className="font-sans tabular-nums">
                     {formatPayoutMoney({ amount: c.amount, currency: exposure.total.currency })}
                   </span>
                 </span>
@@ -69,13 +69,13 @@ export function PayoutExposureCard({
           )}
         </>
       ) : (
-        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-          Amount not available yet — add the refund or replacement value to estimate exposure.
+        <p className="text-sm" style={{ color: 'var(--ua-text-secondary)' }}>
+          Amount not available yet — add the refund or replacement value to estimate the customer concession.
         </p>
       )}
 
-      <p className="mt-3 text-xs" style={{ color: 'var(--text-secondary)' }}>
-        Customer requested: <span style={{ color: 'var(--text)' }}>{requestedActionLabel}</span>
+      <p className="mt-3 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
+        Customer requested: <span style={{ color: 'var(--ua-text-primary)' }}>{requestedActionLabel}</span>
       </p>
     </section>
   );

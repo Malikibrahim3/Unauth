@@ -63,7 +63,7 @@ export const APP_ROUTES = {
     icon: Home,
     sidebar: true,
     commandPalette: true,
-    commandDescription: 'Payout exposure, recovery, and prevention metrics',
+    commandDescription: 'Customer concessions, reconciled recovery, and net unrecovered loss',
   },
   work: {
     key: 'work',
@@ -74,7 +74,7 @@ export const APP_ROUTES = {
     icon: ListChecks,
     sidebar: true,
     commandPalette: true,
-    commandDescription: 'Open tasks across payout cases, losses, and recoveries',
+    commandDescription: 'Open tasks across cases, evidence, outcomes, and recoveries',
   },
   customers: {
     key: 'customers',
@@ -87,21 +87,21 @@ export const APP_ROUTES = {
     icon: Users,
     sidebar: true,
     commandPalette: true,
-    commandDescription: 'Customer context for support payout decisions',
+    commandDescription: 'Customer context for case reconciliation',
   },
   claims: {
     key: 'claims',
     href: '/claims',
-    label: 'Payout Control',
-    pageTitle: 'Payout Control',
+    label: 'Cases',
+    pageTitle: 'Case reconciliation',
     permission: PERMISSIONS.VIEW_INBOX,
     aliases: ['/inbox'],
     tier: 'pro',
-    tierLabel: 'Payout Control',
+    tierLabel: 'Cases',
     icon: FileWarning,
     sidebar: true,
     commandPalette: true,
-    commandDescription: 'Control support payouts, evidence, and recovery cases',
+    commandDescription: 'Reconcile claims, evidence, customer actions, responsibility, and recovery work',
     badgeKey: 'claims',
   },
   losses: {
@@ -181,7 +181,7 @@ export const APP_ROUTES = {
     icon: SlidersHorizontal,
     sidebar: true,
     commandPalette: true,
-    commandDescription: 'Configure merchant-owned payout and recovery rules',
+    commandDescription: 'Configure merchant-owned customer and recovery rules',
   },
   flows: {
     key: 'flows',
@@ -202,7 +202,7 @@ export const APP_ROUTES = {
 export const COMMAND_PALETTE_FILTERS = [
   {
     label: 'Cases missing evidence',
-    description: 'Open payout cases waiting on evidence',
+    description: 'Open cases waiting on evidence',
     href: '/claims?queue=evidence',
   },
   {
@@ -234,7 +234,7 @@ export function getCommandPaletteNavItems(permissions?: ReadonlySet<Permission>)
     if (!r.commandPalette) continue;
     if (r.permission && permissions && !permissions.has(r.permission)) continue;
     items.push({
-      label: r.key === 'dashboard' ? 'Payout overview' : r.label,
+      label: r.key === 'dashboard' ? 'Operations overview' : r.label,
       description: r.commandDescription ?? r.label,
       href: r.href,
     });

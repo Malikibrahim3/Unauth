@@ -236,7 +236,7 @@ describe('cross-module financial integrity', () => {
       event_type: 'refund.created',
       aggregate_type: 'refund',
       aggregate_id: null,
-      payload: { source_order_id: 'order-1', amount_minor: 2500, currency: 'GBP', case_origin: 'connector' },
+      payload: { source_order_id: 'order-1', amount_minor: 2500, currency: 'GBP', transaction_state: 'success', case_origin: 'connector' },
     };
     await refundProjection(client, refundEvent);
     await refundProjection(client, refundEvent);
@@ -246,5 +246,12 @@ describe('cross-module financial integrity', () => {
     const outcomes = rowsOf(memory, TABLES.DOMAIN_EVENTS).filter((row) => row.event_type === 'case.outcome_reconciled');
     expect(outcomes).toHaveLength(1);
     expect(rowsOf(memory, TABLES.CASE_OUTCOMES)).toHaveLength(1);
+
+    await financialProjection(client, outcomes[0] as unknown as DomainEventRecord);
+    expect(rowsOf(memory, TABLES.CASE_FINANCIAL_ENTRIES)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ ledger_kind: 'customer_concession', state: 'paid' }),
+      expect.objectContaining({ ledger_kind: 'merchant_economic_loss', state: 'confirmed_loss' }),
+    ]));
+    expect(rowsOf(memory, TABLES.CASE_FINANCIAL_ENTRIES)).toHaveLength(2);
   });
 });

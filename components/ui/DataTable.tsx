@@ -50,7 +50,7 @@ const ROW_HEIGHT: Record<TableDensity, number> = {
 };
 
 const SKELETON_ROW_BORDER = {
-  borderBottom: "1px solid var(--border-muted)",
+  borderBottom: "1px solid var(--ua-border-subtle)",
 } as const;
 const SORT_ICON_STYLE = { opacity: 1 } as const;
 const SORT_ICON_MUTED_STYLE = { opacity: 0.35 } as const;
@@ -143,10 +143,10 @@ export function DataTable<T>({
   return (
     <div
       className={cn(
-        "w-full overflow-x-auto rounded-[var(--ua-radius-card)] border bg-[var(--surface)]",
+        "w-full overflow-x-auto rounded-[var(--ua-radius-surface)] border bg-[var(--ua-surface-primary)]",
         className,
       )}
-      style={{ borderColor: "var(--border)", boxShadow: "none" }}
+      style={{ borderColor: "var(--ua-border-default)", boxShadow: "none" }}
     >
       <table className="w-full border-separate" style={DATA_TABLE_STYLE}>
         <thead>
@@ -163,7 +163,7 @@ export function DataTable<T>({
                 {col.sortable && onSort ? (
                   <button
                     type="button"
-                    className="inline-flex items-center rounded-sm text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
+                    className="inline-flex items-center rounded-sm text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ua-border-focus)]"
                     onClick={() => onSort(col.key)}
                     aria-label={`Sort by ${col.header}${sortKey === col.key ? `, currently ${sortDir === "asc" ? "ascending" : "descending"}` : ""}`}
                   >
@@ -225,21 +225,21 @@ export function DataTable<T>({
                   aria-selected={onRowClick ? isSelected : undefined}
                   style={{
                     height: rowH,
-                    borderBottom: "1px solid var(--border-muted)",
+                    borderBottom: "1px solid var(--ua-border-subtle)",
                     background: isSelected
-                      ? "var(--surface-hover)"
-                      : "var(--surface)",
+                      ? "var(--ua-surface-hover)"
+                      : "var(--ua-surface-primary)",
                     cursor: onRowClick ? "pointer" : undefined,
                     boxShadow: isSelected
-                      ? "inset 2px 0 0 var(--accent)"
+                      ? "inset 2px 0 0 var(--ua-action-primary)"
                       : "none",
                     transition: ROW_TRANSITION,
                   }}
                   className={
                     onRowClick
                       ? cn(
-                          "focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--focus-ring)]",
-                          !isSelected && "hover:bg-[var(--surface-hover)]",
+                          "focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--ua-border-focus)]",
+                          !isSelected && "hover:bg-[var(--ua-surface-hover)]",
                         )
                       : undefined
                   }
@@ -248,7 +248,7 @@ export function DataTable<T>({
                     <td
                       key={col.key}
                       style={{
-                        padding: "0 var(--space-4)",
+                        padding: "0 var(--ua-space-4)",
                         verticalAlign: "middle",
                         textAlign:
                           col.align === "right"
@@ -256,7 +256,7 @@ export function DataTable<T>({
                             : col.align === "center"
                               ? "center"
                               : "left",
-                        color: "var(--text-primary)",
+                        color: "var(--ua-text-primary)",
                       }}
                     >
                       {col.render(row)}
@@ -264,7 +264,7 @@ export function DataTable<T>({
                   ))}
                   {rowActions ? (
                     <td
-                      style={{ padding: "0 var(--space-3)", verticalAlign: "middle", textAlign: "right", width: 48 }}
+                      style={{ padding: "0 var(--ua-space-3)", verticalAlign: "middle", textAlign: "right", width: 48 }}
                       onClick={(e) => e.stopPropagation()}
                     >
                       <RowActionsMenu actions={rowActions(row)} />

@@ -3,6 +3,7 @@ import { DM_Mono, Inter, Inter_Tight } from 'next/font/google';
 import ThemeBootstrap from '@/components/common/ThemeBootstrap';
 import ScrollToTop from '@/components/navigation/ScrollToTop';
 import './globals.css';
+import '../styles/authenticated/index.css';
 
 // Ramp redesign — Inter is the closest free analog to Ramp's neutral grotesque.
 // Loaded into the existing CSS-var names so globals.css needs no font wiring changes:

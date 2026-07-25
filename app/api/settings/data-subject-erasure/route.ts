@@ -36,7 +36,7 @@ async function POSTHandler(request: NextRequest) {
       requestIp: getClientIp(request.headers),
     },
   });
-  const { data, error } = await auditedService.rpc('erase_merchant_data_subject', {
+  const { data, error } = await auditedService.rpc('erase_release1_merchant_data_subject', {
     p_merchant_id: ctx.merchantId,
     p_subject_id: parsed.data.subjectId,
     p_actor_user_id: ctx.userId,

@@ -21,9 +21,9 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
 
   return (
     <div className="min-h-full">
-      <div className="border-b border-[var(--border)] bg-[var(--surface)] px-3 py-2 md:px-5">
+      <div className="border-b border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-3 py-2 md:px-5">
         <nav className="flex items-center gap-1.5 overflow-x-auto" aria-label="Settings">
-          <span className="mr-1 shrink-0 text-[10px] font-semibold uppercase tracking-[0.07em] text-[var(--text-tertiary)]">Settings</span>
+          <span className="mr-1 shrink-0 text-[length:var(--ua-text-micro-size)] font-semibold text-[var(--ua-text-tertiary)]">Settings</span>
           {TABS.map((tab) => {
             const active = pathname === tab.href || pathname.startsWith(`${tab.href}/`);
             return (
@@ -31,11 +31,11 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
                 key={tab.href}
                 href={tab.href}
                 aria-current={active ? 'page' : undefined}
-                className="inline-flex h-7 shrink-0 items-center whitespace-nowrap rounded-[var(--ua-radius-input)] border px-2.5 text-[11px] font-medium transition-colors"
+                className="inline-flex h-7 shrink-0 items-center whitespace-nowrap rounded-[var(--ua-radius-control)] border px-2.5 text-[length:var(--ua-text-micro-size)] font-medium transition-colors"
                 style={{
-                  borderColor: active ? 'var(--border)' : 'transparent',
-                  background: active ? 'var(--surface)' : 'transparent',
-                  color: active ? 'var(--text-primary)' : 'var(--text-secondary)',
+                  borderColor: active ? 'var(--ua-border-default)' : 'transparent',
+                  background: active ? 'var(--ua-surface-primary)' : 'transparent',
+                  color: active ? 'var(--ua-text-primary)' : 'var(--ua-text-secondary)',
                   fontWeight: active ? 600 : 500,
                 }}
               >

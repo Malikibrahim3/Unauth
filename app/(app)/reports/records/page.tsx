@@ -10,6 +10,7 @@ import {
 import { TABLES } from "@/lib/supabase/tables";
 import {
   isFinancialReportMetric,
+  normalizeReportTimezone,
   parseReportRange,
   reportCutoff,
 } from "@/lib/reporting/intelligence";
@@ -69,6 +70,7 @@ export default async function ReportRecords({
       ? "confirmed_loss"
       : "exposed";
   const range = parseReportRange(sp.range);
+  const timezone = normalizeReportTimezone(sp.timezone);
   const cutoff = reportCutoff(range);
   const page = Math.max(1, Number(sp.page) || 1);
   const from = (page - 1) * 50;
@@ -166,17 +168,16 @@ export default async function ReportRecords({
   return (
     <div>
       <AuthenticatedPageHeader
-        eyebrow="Report drill-down"
         title={recordTitle}
         subtitle={
           <>
           {formatNumber(total)} exact matching records ·{" "}
           {range === "all" ? "all time" : range}{" "}
-          {sp.currency ? `· ${sp.currency.toUpperCase()}` : ""}
+          {sp.currency ? `· ${sp.currency.toUpperCase()}` : ""} · {timezone}
           </>
         }
         breadcrumbs={[
-          { label: "Reports", href: `/reports?range=${range}` },
+          { label: "Reports", href: `/reports?range=${range}&timezone=${encodeURIComponent(timezone)}` },
           { label: recordTitle },
         ]}
       />
@@ -187,14 +188,14 @@ export default async function ReportRecords({
           capabilityId="reports.records.table"
         >
           {loadFailed ? (
-            <div role="alert" className="border-b border-[var(--danger)] px-4 py-3 text-sm">
+            <div role="alert" className="border-b border-[var(--ua-critical)] px-4 py-3 text-sm">
               These report records could not be loaded. Retry the page; the summary value has not been changed.
             </div>
           ) : null}
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[650px] text-[11px]">
+            <table className="w-full min-w-[650px] text-[length:var(--ua-text-micro-size)]">
           <thead>
-            <tr className="border-b border-[var(--border)] bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
+            <tr className="border-b border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] text-[var(--ua-text-tertiary)]">
               <th className="px-4 py-2.5 text-left font-medium">Record</th>
               <th className="px-3 py-2.5 text-left font-medium">Type</th>
               <th className="px-3 py-2.5 text-left font-medium">State</th>
@@ -204,10 +205,10 @@ export default async function ReportRecords({
           </thead>
           <tbody>
             {rows.map((r) => (
-              <tr key={r.id} className="border-b border-[var(--border-muted)] last:border-b-0 hover:bg-[var(--surface-hover)]">
+              <tr key={r.id} className="border-b border-[var(--ua-border-subtle)] last:border-b-0 hover:bg-[var(--ua-surface-hover)]">
                 <td className="px-4 py-3">
                   <Link
-                    className="font-mono font-semibold text-[var(--text-primary)] hover:text-[var(--accent)]"
+                    className="font-mono font-semibold text-[var(--ua-text-primary)] hover:text-[var(--ua-action-primary)]"
                     href={
                       kind === "recovery"
                         ? `/recoveries/${r.id}`
@@ -217,7 +218,7 @@ export default async function ReportRecords({
                     {r.id}
                   </Link>
                 </td>
-                <td className="px-3 py-3 text-[var(--text-secondary)]">
+                <td className="px-3 py-3 text-[var(--ua-text-secondary)]">
                   {(r.recordType ?? "—").replaceAll("_", " ")}
                 </td>
                 <td className="px-3 py-3 capitalize">{(r.status ?? "—").replaceAll("_", " ")}</td>
@@ -228,7 +229,7 @@ export default async function ReportRecords({
                       ? formatCurrencyNullable(r.amountMajor, r.currency)
                       : "Unavailable"}
                 </td>
-                <td className="px-4 py-3 text-right text-[var(--text-secondary)]">
+                <td className="px-4 py-3 text-right text-[var(--ua-text-secondary)]">
                   {r.updatedAt ? formatDateTime(r.updatedAt) : "Unavailable"}
                 </td>
               </tr>
@@ -237,12 +238,12 @@ export default async function ReportRecords({
         </table>
           </div>
           {!loadFailed && !rows.length ? (
-            <p className="px-4 py-10 text-center text-xs text-[var(--text-secondary)]">No records match this report slice.</p>
+            <p className="px-4 py-10 text-center text-xs text-[var(--ua-text-secondary)]">No records match this report slice.</p>
           ) : null}
-          <nav className="flex min-h-12 items-center justify-between border-t border-[var(--border-muted)] px-4 text-[11px] font-semibold">
+          <nav className="flex min-h-12 items-center justify-between border-t border-[var(--ua-border-subtle)] px-4 text-[length:var(--ua-text-micro-size)] font-semibold">
         {page > 1 ? (
           <Link
-            className="rounded-[var(--ua-radius-input)] border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1.5 hover:bg-[var(--surface-hover)]"
+            className="rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2.5 py-1.5 hover:bg-[var(--ua-surface-hover)]"
             href={`?${new URLSearchParams({ ...sp, page: String(page - 1) } as Record<string, string>)}`}
           >
             Previous
@@ -252,7 +253,7 @@ export default async function ReportRecords({
         )}
         {from + rows.length < total ? (
           <Link
-            className="rounded-[var(--ua-radius-input)] border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1.5 hover:bg-[var(--surface-hover)]"
+            className="rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2.5 py-1.5 hover:bg-[var(--ua-surface-hover)]"
             href={`?${new URLSearchParams({ ...sp, page: String(page + 1) } as Record<string, string>)}`}
           >
             Next

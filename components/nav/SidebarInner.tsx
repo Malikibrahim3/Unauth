@@ -87,7 +87,7 @@ function SidebarInnerContent({
       tierFuture: route.future,
       showDevAccess: !enforceGates && Boolean(route.tier),
       badge: route.key === 'claims' ? claimsCount || undefined : undefined,
-      badgeTitle: route.key === 'claims' ? 'Open payout cases for review' : undefined,
+      badgeTitle: route.key === 'claims' ? 'Open cases for review' : undefined,
     })),
   }));
 
@@ -132,9 +132,9 @@ function SidebarInnerContent({
         className={cn(
           'md:hidden fixed top-3 left-3 z-50',
           'flex h-9 w-9 items-center justify-center rounded-md',
-          'bg-[var(--surface)] border border-[var(--border-muted)]',
-          'text-[var(--icon-muted)] hover:text-[var(--icon)]',
-          'shadow-sm transition-colors',
+          'bg-[var(--ua-surface-primary)] border border-[var(--ua-border-subtle)]',
+          'text-[var(--ua-icon-secondary)] hover:text-[var(--ua-icon-primary)]',
+          'transition-colors',
         )}
       >
         <Menu className="h-5 w-5" aria-hidden="true" />
@@ -143,7 +143,7 @@ function SidebarInnerContent({
       {mobileOpen ? (
         <>
           <div
-            className="md:hidden fixed inset-0 z-40 bg-black/40"
+            className="md:hidden fixed inset-0 z-40 bg-[var(--ua-backdrop)]"
             aria-hidden="true"
             onClick={() => setMobileOpen(false)}
           />

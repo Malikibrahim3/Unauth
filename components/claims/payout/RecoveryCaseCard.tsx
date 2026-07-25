@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { ArrowRight, RefreshCw } from "lucide-react";
-import { Badge, Button, PanelCard } from "@/components/ui";
+import { useRef, useState } from "react";
+import { Badge, Button, Panel } from "@/components/ui";
 import { formatCurrencyNullable, formatDate } from "@/lib/utils/format";
 import { RECOVERY_TYPE_LABELS } from "@/lib/partners/types";
 import { humanizeEvidenceKey } from "@/components/claims/payout/payoutCopy";
@@ -12,6 +13,10 @@ import {
   type RecoveryCase,
 } from "@/lib/recoveries/types";
 import type { SupportPayoutCase } from "@/lib/payouts/types";
+import {
+  mutateInvestigation,
+  newInvestigationIdempotencyKey,
+} from "@/lib/investigations/client";
 
 function dateLabel(value: string | null | undefined) {
   if (!value) return "No date set";
@@ -23,12 +28,21 @@ export function RecoveryCaseCard({
   payoutCase,
   loading,
   onRefresh,
+  caseId,
+  canManage = false,
 }: {
   recoveryCase: RecoveryCase | null;
   payoutCase: SupportPayoutCase | null;
   loading: boolean;
   onRefresh: () => void;
+  caseId: string;
+  canManage?: boolean;
 }) {
+  const [opening, setOpening] = useState(false);
+  const [handoffMessage, setHandoffMessage] = useState<string | null>(null);
+  const handoffKeyRef = useRef(
+    newInvestigationIdempotencyKey(`recovery-handoff:${caseId}`),
+  );
   const recovery = payoutCase?.recovery ?? null;
   const preventionOnly =
     recovery?.recoverability === "not_recoverable" ||
@@ -43,19 +57,39 @@ export function RecoveryCaseCard({
     (recovery?.recoverability === "recoverable" ||
       recovery?.recoverability === "possibly_recoverable");
 
+  async function openRecoveryHandoff() {
+    if (!canOpenRecovery || !canManage || opening) return;
+    setOpening(true);
+    setHandoffMessage(null);
+    const result = await mutateInvestigation(
+      `/api/claims/${encodeURIComponent(caseId)}/recovery-handoff`,
+      {},
+      handoffKeyRef.current,
+    );
+    setOpening(false);
+    if (!result.ok) {
+      setHandoffMessage(result.error);
+      return;
+    }
+    setHandoffMessage(
+      "Recovery handoff opened. No external claim or partner submission was performed.",
+    );
+    onRefresh();
+  }
+
   return (
-    <PanelCard as="section" variant="app" className="p-4">
+    <Panel as="section" variant="panel" className="p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p
             className="text-caption font-semibold"
-            style={{ color: "var(--text-secondary)" }}
+            style={{ color: "var(--ua-text-secondary)" }}
           >
             Recovery / Chase-Up
           </p>
           <p
             className="mt-1 text-xs"
-            style={{ color: "var(--text-secondary)" }}
+            style={{ color: "var(--ua-text-secondary)" }}
           >
             Linked operational tracking for recoverable payout losses.
           </p>
@@ -64,44 +98,50 @@ export function RecoveryCaseCard({
           type="button"
           variant="secondary"
           size="sm"
-          onClick={onRefresh}
-          loading={loading}
+          onClick={
+            !recoveryCase && canOpenRecovery && canManage
+              ? () => void openRecoveryHandoff()
+              : onRefresh
+          }
+          loading={loading || opening}
           leadingIcon={<RefreshCw />}
         >
-          Check route
+          {!recoveryCase && canOpenRecovery && canManage
+            ? "Open recovery handoff"
+            : "Check route"}
         </Button>
       </div>
 
       {recoveryCase ? (
         <>
-          <div className="mt-4 grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
+          <div className="mt-4 grid grid-cols-2 gap-3 text-sm md:grid-cols-5">
             <div>
-              <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
+              <p className="text-xs" style={{ color: "var(--ua-text-tertiary)" }}>
                 Status
               </p>
               <p
                 className="font-semibold"
-                style={{ color: "var(--text-primary)" }}
+                style={{ color: "var(--ua-text-primary)" }}
               >
                 {RECOVERY_STATUS_LABELS[recoveryCase.status]}
               </p>
             </div>
             <div>
-              <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
+              <p className="text-xs" style={{ color: "var(--ua-text-tertiary)" }}>
                 Owner
               </p>
               <p
                 className="font-semibold"
-                style={{ color: "var(--text-primary)" }}
+                style={{ color: "var(--ua-text-primary)" }}
               >
                 {RECOVERY_OWNER_LABELS[recoveryCase.owner_type]}
               </p>
             </div>
             <div>
-              <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
+              <p className="text-xs" style={{ color: "var(--ua-text-tertiary)" }}>
                 Recoverable
               </p>
-              <p className="font-mono" style={{ color: "var(--text-primary)" }}>
+              <p className="font-sans tabular-nums" style={{ color: "var(--ua-text-primary)" }}>
                 {formatCurrencyNullable(
                   recoveryCase.estimated_recoverable_max,
                   recoveryCase.currency,
@@ -109,11 +149,19 @@ export function RecoveryCaseCard({
               </p>
             </div>
             <div>
-              <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
+              <p className="text-xs" style={{ color: "var(--ua-text-tertiary)" }}>
                 Deadline
               </p>
-              <p style={{ color: "var(--text-primary)" }}>
+              <p style={{ color: "var(--ua-text-primary)" }}>
                 {dateLabel(recoveryCase.deadline_at)}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs" style={{ color: "var(--ua-text-tertiary)" }}>
+                Provider claim
+              </p>
+              <p className="font-semibold" style={{ color: "var(--ua-text-primary)" }}>
+                {(recoveryCase.provider_claim_stage ?? 'prepared').replaceAll('_', ' ')}
               </p>
             </div>
           </div>
@@ -132,7 +180,7 @@ export function RecoveryCaseCard({
             <div className="mt-3">
               <p
                 className="mb-1 text-xs"
-                style={{ color: "var(--text-tertiary)" }}
+                style={{ color: "var(--ua-text-tertiary)" }}
               >
                 Missing evidence
               </p>
@@ -146,7 +194,7 @@ export function RecoveryCaseCard({
           <Link
             href="/recoveries"
             className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold hover:underline"
-            style={{ color: "var(--accent)" }}
+            style={{ color: "var(--ua-action-primary)" }}
           >
             Open recovery board{" "}
             <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
@@ -157,13 +205,13 @@ export function RecoveryCaseCard({
           <div>
             <p
               className="font-semibold"
-              style={{ color: "var(--text-primary)" }}
+              style={{ color: "var(--ua-text-primary)" }}
             >
               Recovery case can be opened
             </p>
             <p
               className="mt-1 text-xs"
-              style={{ color: "var(--text-secondary)" }}
+              style={{ color: "var(--ua-text-secondary)" }}
             >
               {RECOVERY_OWNER_LABELS[
                 recovery.likelyOwner as keyof typeof RECOVERY_OWNER_LABELS
@@ -176,7 +224,7 @@ export function RecoveryCaseCard({
             <div>
               <p
                 className="mb-1 text-xs"
-                style={{ color: "var(--text-tertiary)" }}
+                style={{ color: "var(--ua-text-tertiary)" }}
               >
                 Required for recovery
               </p>
@@ -187,21 +235,27 @@ export function RecoveryCaseCard({
               </div>
             </div>
           ) : null}
-          <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-            Use “Check route” to open the recovery case and add it to the
-            recovery board.
+          <p className="text-xs" style={{ color: "var(--ua-text-tertiary)" }}>
+            Confirm responsibility and a canonical loss, then explicitly open
+            the internal recovery handoff. Unauth will not submit a provider
+            claim automatically.
           </p>
+          {handoffMessage ? (
+            <p role="status" className="text-xs" style={{ color: "var(--ua-text-secondary)" }}>
+              {handoffMessage}
+            </p>
+          ) : null}
         </div>
       ) : preventionOnly ? (
-        <p className="mt-4 text-sm" style={{ color: "var(--text-secondary)" }}>
+        <p className="mt-4 text-sm" style={{ color: "var(--ua-text-secondary)" }}>
           Prevention opportunity: this loss appears unrecoverable but can inform
           future policy or partner review.
         </p>
       ) : (
-        <p className="mt-4 text-sm" style={{ color: "var(--text-secondary)" }}>
+        <p className="mt-4 text-sm" style={{ color: "var(--ua-text-secondary)" }}>
           No external recovery route currently identified.
         </p>
       )}
-    </PanelCard>
+    </Panel>
   );
 }

@@ -96,6 +96,94 @@ const dashboardRemapVar = /var\(--dashboard-[a-z-]+\)/g;
 // weren't wired up for that chart.
 const rechartsDefaultTell = /#8884d8|#82ca9d|<Tooltip\s*\/>/g;
 
+// ── Spec §17.1 rules ────────────────────────────────────────────────────────
+
+// 1. Forbidden legacy token namespace. `--ua-*` is the only authenticated
+//    visual namespace (§14.2). Everything else is either a public/landing
+//    token or a component-local data-derived property, and the latter must be
+//    declared here so the rule stays exhaustive rather than advisory.
+const LOCAL_CUSTOM_PROPS = new Set([
+  // Data-derived geometry assigned inline by a component.
+  '--bars', '--columns', '--health-columns', '--step-text',
+  '--data-currency', '--data-date', '--data-id',
+  // next/font handles — referenced only inside typography.css.
+  '--font-dm-sans', '--font-dm-mono',
+  // Third-party (reactflow) internals.
+  '--xy-edge-stroke-default', '--xy-node-boxshadow-default',
+  '--radix-accordion-content-height',
+]);
+const anyCustomPropRef = /var\((--[a-zA-Z0-9-]+)/g;
+
+// 2. Landing primitives must never reach product UI (§6.11, §16.3).
+const landingPrimitiveImport = /from\s+['"](?:@\/components\/ui\/LandingPrimitives|\.\/LandingPrimitives|\.\.\/ui\/LandingPrimitives)['"]/g;
+
+// 3. Chart textures, gradients, and glow (§16.4).
+const chartTexture = /<(?:linearGradient|radialGradient|pattern)\b|linear-gradient\(|radial-gradient\(|feGaussianBlur|\bhatch/gi;
+
+// 4. Arbitrary Tailwind values carrying a *design* literal rather than a
+//    token. Structural layout dimensions (grid templates, container widths,
+//    element sizing) are not design tokens and stay permitted; colour, radius,
+//    shadow, type size, leading, tracking, and spacing are all token-backed.
+//    A value is acceptable when it is composed *entirely* of --ua-* tokens
+//    (including inside color-mix()/inset wrappers) and contains no raw literal.
+const arbitraryDesignValueCandidate =
+  /\b(?:text|leading|tracking|bg|border|divide|ring|outline|shadow|rounded|gap|gap-x|gap-y|p|px|py|pt|pb|pl|pr|m|mx|my|mt|mb|ml|mr|space-x|space-y|duration|ease)-\[[^\]]+\]/g;
+const rawVisualLiteral = /#[0-9a-fA-F]{3,8}\b|\b(?:rgba?|hsla?)\(|\b\d+(?:\.\d+)?(?:px|em|rem)\b|\b(?:white|black)\b/;
+function isArbitraryDesignViolation(text) {
+  if (!/var\(--ua-/.test(text)) return true;
+  return rawVisualLiteral.test(text);
+}
+
+// 5. Type must be sentence case: no uppercase + letter-spacing eyebrows (§3.2).
+//    Matches the Tailwind `uppercase` class and the CSS `text-transform`
+//    declaration — not `String.prototype.toUpperCase`, which title-cases a
+//    label rather than shouting it.
+const upperCaseEyebrow = /(?<![A-Za-z.])uppercase\b/g;
+
+// 6. Hand-rolled tables outside the canonical table primitives (§6.6).
+//    Counted by the ratchet rather than failed outright: ten product tables
+//    still predate DataTable, and migrating a financial/audit table is a
+//    behaviour change, not a restyle. The count may only go down.
+const handRolledTable = /<table\b/g;
+const TABLE_PRIMITIVE_FILES = new Set([
+  'components/ui/DataTable.tsx',
+  'components/ui/DataTableServer.tsx',
+  // §8.1 requires every chart to expose an accessible data table; this is that
+  // table, not a hand-rolled data grid.
+  'components/charts/authenticated/ChartPanel.tsx',
+  // Canonical low-level skeleton geometry.
+  'components/navigation/skeletons/primitives.tsx',
+]);
+
+// 7. Route-local skeleton markup (§6.9) — extends the animate-pulse check to
+//    any loading.tsx that hand-builds geometry instead of using a shared
+//    skeleton primitive.
+// Matches either a skeleton module path or a skeleton named import from the
+// design-system barrel.
+const sharedSkeletonImport =
+  /from\s+['"][^'"]*(?:pageSkeletons|OperationalRouteSkeleton|WorkbenchPageSkeleton|Skeleton)['"]|import\s*\{[^}]*\b(?:LoadingSkeleton|LoadingState|Skeleton|[A-Za-z]+Skeleton)\b[^}]*\}/;
+
+/*
+ * Ratchet for pre-existing arbitrary-value and uppercase debt.
+ *
+ * Unlike a per-file grandfather list, a single number cannot be quietly
+ * extended to admit a new violation: any new hit pushes the count over the
+ * ceiling and fails the build. Lower these as the debt is paid; never raise
+ * them.
+ */
+const RATCHET = {
+  // Structural layout dimensions are permitted; these are the remaining
+  // design literals (element sizing, container widths, grid templates).
+  arbitraryDesignValue: 0,
+  // Sentence case is the rule (§3.2) — this must stay at zero.
+  upperCaseEyebrow: 0,
+  // Product tables still to migrate onto DataTable / DataTableServer (§6.6).
+  // Tracked in docs/REVIEW_quiet_precision_implementation.md; migrating a
+  // financial or audit table is a behaviour change, not a restyle, so each is
+  // done deliberately. This number may only go down.
+  handRolledTable: 10,
+};
+
 const allowedExtensions = new Set(['.ts', '.tsx', '.css']);
 
 async function filesUnder(path) {
@@ -130,6 +218,8 @@ function findMatches(source, expression) {
 
 const files = (await Promise.all(scanRoots.map(filesUnder))).flat();
 const failures = [];
+const ratchetCounts = { arbitraryDesignValue: 0, upperCaseEyebrow: 0, handRolledTable: 0 };
+const ratchetHits = { arbitraryDesignValue: [], upperCaseEyebrow: [], handRolledTable: [] };
 
 for (const file of files) {
   const normalized = relative(ROOT, join(ROOT, file));
@@ -192,6 +282,60 @@ for (const file of files) {
     failures.push(`${normalized}: route-local pulse markup — select a shared geometry-matched skeleton instead`);
   }
 
+  // §17.1 — forbidden legacy token namespace.
+  if (normalized !== 'styles/authenticated/typography.css') {
+    for (const { line, text } of findMatches(source, anyCustomPropRef)) {
+      const name = text.replace('var(', '');
+      if (name.startsWith('--ua-') || LOCAL_CUSTOM_PROPS.has(name)) continue;
+      failures.push(
+        `${normalized}:${line} forbidden legacy token: ${name} — authenticated code may only read var(--ua-*); public tokens stay in app/globals.css`,
+      );
+    }
+  }
+
+  // §17.1 — landing primitives in product UI.
+  for (const { line, text } of findMatches(source, landingPrimitiveImport)) {
+    failures.push(
+      `${normalized}:${line} landing primitive import: ${text} — use Panel / EvidenceRow / AuthenticatedPanel; LandingPrimitives is public-only`,
+    );
+  }
+
+  // §17.1 — obsolete chart textures and gradients.
+  for (const { line, text } of findMatches(source, chartTexture)) {
+    failures.push(
+      `${normalized}:${line} chart texture/gradient: ${text} — Quiet Precision charts use flat fills and solid/dashed strokes only`,
+    );
+  }
+
+  // §17.1 — hand-rolled tables (ratcheted; see RATCHET).
+  if (!TABLE_PRIMITIVE_FILES.has(normalized) && extname(file) !== '.css') {
+    for (const { line, text } of findMatches(source, handRolledTable)) {
+      ratchetCounts.handRolledTable += 1;
+      ratchetHits.handRolledTable.push(`${normalized}:${line} ${text}`);
+    }
+  }
+
+  // §17.1 — route-local skeleton markup.
+  if (normalized.startsWith('app/(app)/') && normalized.endsWith('/loading.tsx')) {
+    if (/animate-pulse/.test(source)) {
+      failures.push(`${normalized}: route-local pulse markup — use a shared geometry-matched skeleton instead`);
+    } else if (!sharedSkeletonImport.test(source)) {
+      failures.push(`${normalized}: route-local skeleton geometry — import a shared skeleton that mirrors the resolved page composition`);
+    }
+  }
+
+  // Ratcheted counts — see RATCHET above.
+  for (const [rule, expression] of [
+    ['arbitraryDesignValue', arbitraryDesignValueCandidate],
+    ['upperCaseEyebrow', upperCaseEyebrow],
+  ]) {
+    for (const { line, text } of findMatches(source, expression)) {
+      if (rule === 'arbitraryDesignValue' && !isArbitraryDesignViolation(text)) continue;
+      ratchetCounts[rule] += 1;
+      ratchetHits[rule].push(`${normalized}:${line} ${text}`);
+    }
+  }
+
   for (const dep of deprecatedImports) {
     const importPattern = new RegExp(
       `import\\s*\\{[^}]*\\b(${dep.names.join('|')})\\b[^}]*\\}\\s*from\\s*['"]${dep.module.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}['"]`,
@@ -203,9 +347,22 @@ for (const file of files) {
   }
 }
 
+for (const [rule, ceiling] of Object.entries(RATCHET)) {
+  const actual = ratchetCounts[rule];
+  if (actual > ceiling) {
+    const hits = (ratchetHits[rule] ?? []).slice(0, 12).map((h) => `\n    ${h}`).join('');
+    failures.push(
+      `ratchet exceeded: ${rule} is ${actual}, ceiling is ${ceiling} — fix the value; do not raise the ceiling${hits}`,
+    );
+  }
+}
+
 if (failures.length) {
   console.error('Authenticated design guard failed:\n' + failures.join('\n'));
   process.exit(1);
 }
 
-console.log(`Authenticated design guard passed (${files.length} files checked).`);
+const ratchetReport = Object.entries(RATCHET)
+  .map(([rule, ceiling]) => `${rule} ${ratchetCounts[rule]}/${ceiling}`)
+  .join(', ');
+console.log(`Authenticated design guard passed (${files.length} files checked; ratchet: ${ratchetReport}).`);

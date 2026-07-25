@@ -23,30 +23,30 @@ export default function AccountDangerSection({
       title="Account"
       description="Destructive actions"
       style={{
-        borderColor: "color-mix(in srgb, var(--success) 30%, var(--border))",
+        borderColor: "color-mix(in srgb, var(--ua-success) 30%, var(--ua-border-default))",
       }}
     >
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <AlertTriangle
             className="h-4 w-4"
-            style={{ color: "var(--risk-critical)" }}
+            style={{ color: "var(--ua-risk-critical)" }}
           />
           <h2
             className="text-sm font-semibold"
-            style={{ color: "var(--risk-critical)" }}
+            style={{ color: "var(--ua-risk-critical)" }}
           >
             Danger zone
           </h2>
         </div>
 
         <div>
-          <p className="text-sm font-medium" style={{ color: "var(--text)" }}>
+          <p className="text-sm font-medium" style={{ color: "var(--ua-text-primary)" }}>
             Delete your account
           </p>
           <p
             className="text-xs mt-0.5"
-            style={{ color: "var(--text-secondary)" }}
+            style={{ color: "var(--ua-text-secondary)" }}
           >
             This permanently deletes your imported history, customer records,
             case evidence, and notes. This action cannot be undone.
@@ -57,12 +57,12 @@ export default function AccountDangerSection({
           <label
             htmlFor="account-delete-confirm"
             className="block text-xs mb-1.5"
-            style={{ color: "var(--text-secondary)" }}
+            style={{ color: "var(--ua-text-secondary)" }}
           >
             Type{" "}
             <span
               className="font-mono font-bold"
-              style={{ color: "var(--text)" }}
+              style={{ color: "var(--ua-text-primary)" }}
             >
               DELETE
             </span>{" "}
@@ -82,9 +82,9 @@ export default function AccountDangerSection({
               placeholder="DELETE"
               className="w-full rounded-md px-3 py-2 text-sm focus:outline-none sm:w-40"
               style={{
-                background: "var(--bg-inset)",
-                border: "1px solid var(--border)",
-                color: "var(--text)",
+                background: "var(--ua-surface-secondary)",
+                border: "1px solid var(--ua-border-default)",
+                color: "var(--ua-text-primary)",
               }}
             />
             <Button
@@ -100,7 +100,7 @@ export default function AccountDangerSection({
           {state.deleteError ? (
             <p
               role="alert"
-              className="mt-2 text-xs text-[var(--risk-critical)]"
+              className="mt-2 text-xs text-[var(--ua-risk-critical)]"
             >
               {state.deleteError}
             </p>

@@ -27,14 +27,8 @@ export default async function ChromeIntegrationPage() {
 
   return (
     <SettingsPageShell
-      eyebrow="Integrations"
       title="Chrome Extension"
       subtitle="Look up any customer email from any tab — Gorgias, Zendesk, Shopify, Gmail."
-      breadcrumbs={[
-        { label: 'Settings', href: '/settings/account' },
-        { label: 'Integrations', href: '/integrations' },
-        { label: 'Chrome Extension' },
-      ]}
     >
       <div className="space-y-3">
         <ChromeSetupClient hasApiKeys={keyPrefixes.length > 0} keyPrefixes={keyPrefixes} />

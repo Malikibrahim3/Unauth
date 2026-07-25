@@ -42,9 +42,15 @@ function plannedEntriesForEvent(event: DomainEventRecord): PlannedEntry[] {
       return [{ state: 'recovered', amountMinor, direction: 'credit', suffix: 'source-recovered' }];
     }
     if (!PAYOUT_ACTIONS.has(action)) return [];
-    const planned: PlannedEntry[] = [
-      { state: 'paid', amountMinor, direction: 'debit', suffix: 'paid' },
-    ];
+    const sourceMetadata = payload.source_metadata && typeof payload.source_metadata === 'object'
+      ? payload.source_metadata as Record<string, unknown>
+      : {};
+    // Shopify/source projections now write the canonical customer-concession
+    // entry before preserving the legacy case.outcome_reconciled event. Keep
+    // the legacy paid summary without writing a second concession entry.
+    const planned: PlannedEntry[] = typeof sourceMetadata.reconciliation_outcome_id === 'string'
+      ? []
+      : [{ state: 'paid', amountMinor, direction: 'debit', suffix: 'paid' }];
     const confirmedLossMinor = finiteMinor(payload.confirmed_loss_minor);
     if (confirmedLossMinor != null && confirmedLossMinor > 0) {
       planned.push({
@@ -96,6 +102,7 @@ async function appendEntry(
   if (existing) return false;
 
   const payload = event.payload ?? {};
+  const action = typeof payload.action === 'string' ? payload.action : null;
   const { error } = await client.from(TABLES.CASE_FINANCIAL_ENTRIES).insert({
     merchant_id: event.merchant_id,
     support_payout_case_id: caseId,
@@ -109,6 +116,19 @@ async function appendEntry(
     effective_at: event.occurred_at ?? new Date().toISOString(),
     reverses_entry_id: options.reversesEntryId ?? null,
     idempotency_key: idempotencyKey,
+    ledger_kind: plan.state === 'confirmed_loss'
+      ? 'merchant_economic_loss'
+      : plan.state === 'paid'
+        ? 'customer_concession'
+        : plan.state === 'recovered'
+          ? 'provider_recovery'
+          : 'legacy',
+    component_type: action || null,
+    valuation_basis: plan.state === 'paid' || plan.state === 'confirmed_loss' ? 'payout_value' : null,
+    quantity: 1,
+    case_outcome_event_id: typeof (payload.source_metadata as Record<string, unknown> | undefined)?.reconciliation_outcome_id === 'string'
+      ? (payload.source_metadata as Record<string, unknown>).reconciliation_outcome_id
+      : null,
     metadata: {
       event_type: event.event_type,
       decision_id: typeof payload.decision_id === 'string' ? payload.decision_id : null,

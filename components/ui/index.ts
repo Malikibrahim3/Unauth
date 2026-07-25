@@ -33,13 +33,15 @@ export { GradeBadge } from './GradeBadge';
 export { MetricCard } from './MetricCard';
 export { MetricGroup } from './MetricGroup';
 export type { MetricGroupItem } from './MetricGroup';
+export { Panel } from './Panel';
+export type { PanelVariant } from './Panel';
+export { EvidenceRow } from './EvidenceRow';
 export { SectionCard } from './SectionCard';
 export { KeyInsightCallout } from './KeyInsightCallout';
 export type { KeyInsightTone } from './KeyInsightCallout';
 export { SummaryRail } from './SummaryRail';
 export type { SummaryRailRow, SummaryRailSection } from './SummaryRail';
-export { PageHeader } from './PageHeader';
-export type { Breadcrumb } from './PageHeader';
+export type { Breadcrumb } from '@/components/authenticated/AuthenticatedPageHeader';
 export { AuthenticatedPageHeader } from '@/components/authenticated/AuthenticatedPageHeader';
 export { AuthenticatedPanel } from '@/components/authenticated/AuthenticatedPanel';
 export { DataTable } from './DataTable';
@@ -64,17 +66,10 @@ export { StatusBadge, PriorityChip, STATUS_TONES, statusTone } from './StatusBad
 export type { StatusTone } from './StatusBadge';
 export { uiTokens } from './tokens';
 export type { StepBadgeVariant } from './tokens';
-export {
-  EvidenceLine,
-  KanbanBoard,
-  KanbanColumn,
-  MockBrowserFrame,
-  PanelCard,
-  SectionBody,
-  SectionEyebrow,
-  SectionHeadline,
-  StepBadge,
-  TagPill,
-  ThreadPanel,
-} from './LandingPrimitives';
-export type { KanbanCardItem, KanbanColumnItem, ThreadPanelMessage } from './LandingPrimitives';
+
+/*
+ * `components/ui/LandingPrimitives.tsx` is public/marketing only and is
+ * deliberately NOT re-exported here. Product surfaces use `Panel` for
+ * structural surfaces and `EvidenceRow` for evidence/checklist rows. Public
+ * pages import the landing family from its own module.
+ */

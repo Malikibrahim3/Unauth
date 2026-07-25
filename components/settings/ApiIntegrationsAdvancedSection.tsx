@@ -143,10 +143,10 @@ export default function ApiIntegrationsAdvancedSection() {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-sm font-semibold" style={{ color: "var(--text)" }}>
+        <h2 className="text-sm font-semibold" style={{ color: "var(--ua-text-primary)" }}>
           Advanced &amp; optional
         </h2>
-        <p className="mt-1 text-xs" style={{ color: "var(--text-secondary)" }}>
+        <p className="mt-1 text-xs" style={{ color: "var(--ua-text-secondary)" }}>
           API keys for custom integrations. Not required for the core Shopify +
           Gorgias workflow.
         </p>
@@ -159,12 +159,12 @@ export default function ApiIntegrationsAdvancedSection() {
           style={{
             background:
               state.message.type === "error"
-                ? "var(--danger-bg)"
-                : "var(--success-bg)",
+                ? "var(--ua-critical-bg)"
+                : "var(--ua-success-bg)",
             color:
               state.message.type === "error"
-                ? "var(--danger-fg)"
-                : "var(--success-fg)",
+                ? "var(--ua-critical)"
+                : "var(--ua-success)",
           }}
         >
           {state.message.text}

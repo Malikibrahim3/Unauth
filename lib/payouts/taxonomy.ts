@@ -10,6 +10,7 @@ export const SUPPORT_PAYOUT_CASE_REASONS = [
   'missing_item',
   'damaged_item',
   'wrong_item',
+  'not_as_described',
   'late_delivery',
   'refund_request',
   'reship_request',
@@ -117,6 +118,8 @@ export function toSupportPayoutCaseReason(
       return 'damaged_item';
     case 'wrong_item':
       return 'wrong_item';
+    case 'not_as_described':
+      return 'not_as_described';
     case 'late_delivery':
       return 'late_delivery';
     case 'refund_request':
@@ -163,6 +166,8 @@ export function toStoredClaimType(reason: string | null | undefined): ClaimTypeV
     case 'warehouse_error':
     case 'replacement_request':
       return 'wrong_item';
+    case 'not_as_described':
+      return 'not_as_described';
     case 'refund_request':
     case 'returnless_refund':
     case 'store_credit_request':

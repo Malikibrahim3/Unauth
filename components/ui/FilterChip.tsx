@@ -29,7 +29,7 @@ const chipClass = (active: boolean, disabled: boolean, className?: string) =>
 
 /** Interactive dataset filter. Its selected state is neutral, never semantic. */
 export function FilterChip({ children, active = false, count, href, disabled = false, onClick, className, 'aria-label': ariaLabel }: FilterChipProps) {
-  const content = <>{children}{count != null ? <span className="tabular-nums text-[12px] opacity-75">{count}</span> : null}</>;
+  const content = <>{children}{count != null ? <span className="tabular-nums text-[length:var(--ua-text-caption-size)] opacity-75">{count}</span> : null}</>;
   if (href) {
     return (
       <Link

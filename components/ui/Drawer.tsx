@@ -90,7 +90,7 @@ export function Drawer({
           type="button"
           aria-label="Close panel"
           className="absolute inset-0 cursor-default border-0 p-0 backdrop-blur-[3px]"
-          style={{ background: 'color-mix(in srgb, var(--text-primary) 42%, transparent)' }}
+          style={{ background: 'var(--ua-backdrop)' }}
           onClick={onClose}
         />
       ) : null}
@@ -100,19 +100,19 @@ export function Drawer({
         className="relative z-10 flex h-full max-h-full flex-col"
         style={{
           width: typeof width === 'number' ? `min(${width}px, 100vw)` : width,
-          background: 'var(--surface)',
-          borderLeft: '1px solid var(--border-muted)',
-          boxShadow: 'var(--ua-shadow-drawer)',
+          background: 'var(--ua-surface-primary)',
+          borderLeft: '1px solid var(--ua-border-subtle)',
+          boxShadow: 'var(--ua-shadow-overlay)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
         {title && (
           <div
-            className="flex items-center justify-between border-b border-[var(--border-muted)] shrink-0"
+            className="flex items-center justify-between border-b border-[var(--ua-border-subtle)] shrink-0"
             style={{
               height: 56,
-              padding: '0 var(--space-5)',
-              background: 'var(--surface)',
+              padding: '0 var(--ua-space-5)',
+              background: 'var(--ua-surface-primary)',
               // The body below is the only scroll container, so the header
               // stays fixed in the flex layout without Safari's sticky
               // positioning bug moving it into the middle of the drawer.
@@ -120,11 +120,11 @@ export function Drawer({
               zIndex: 'var(--ua-z-header)' as unknown as number,
             }}
           >
-            <h2 id={titleId} className="text-h3" style={{ color: 'var(--text-primary)' }}>{title}</h2>
+            <h2 id={titleId} className="text-h3" style={{ color: 'var(--ua-text-primary)' }}>{title}</h2>
             <button
               type="button"
               onClick={onClose}
-              className="flex h-11 w-11 items-center justify-center rounded-[var(--ua-radius-control)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)] transition-colors focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]"
+              className="flex h-11 w-11 items-center justify-center rounded-[var(--ua-radius-control)] text-[var(--ua-text-tertiary)] hover:text-[var(--ua-text-primary)] hover:bg-[var(--ua-surface-hover)] transition-colors focus-visible:outline-none focus-visible:shadow-[var(--ua-shadow-focus)]"
               aria-label="Close"
             >
               <X className="w-4 h-4" />
@@ -136,7 +136,7 @@ export function Drawer({
 
         {footer && (
           <div
-            className="shrink-0 bg-[var(--surface)] border-t border-[var(--border-muted)]"
+            className="shrink-0 bg-[var(--ua-surface-primary)] border-t border-[var(--ua-border-subtle)]"
             // The footer is outside the scrollable body and is already held
             // at the bottom by the drawer's flex column layout.
             style={{ position: 'relative', zIndex: 'var(--ua-z-header)' as unknown as number }}

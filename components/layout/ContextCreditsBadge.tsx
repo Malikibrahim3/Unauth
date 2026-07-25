@@ -41,6 +41,11 @@ export function ContextCreditsBadge() {
   const low = remaining <= Math.max(5, Math.floor(limit * 0.1));
   const warn = usageRatio >= 0.8 && remaining > 0;
 
+  // Context is an implementation detail until it needs an operator action.
+  // Keeping a healthy quota out of the global header reduces ambient anxiety
+  // and preserves the signal for the moment it matters.
+  if (!low && !warn) return null;
+
   return (
     <Link
       href="/settings/billing"
@@ -48,18 +53,18 @@ export function ContextCreditsBadge() {
       className="hidden md:flex flex-col items-end text-right leading-tight"
       title="Context credits are used each time Unauth assembles claim context from your connected sources. They reset at the end of your billing period — click to manage in Billing."
     >
-      <span className="text-[11px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-tertiary)' }}>
-        {credits.label}
+      <span className="text-[length:var(--ua-text-micro-size)] font-medium" style={{ color: 'var(--ua-text-tertiary)' }}>
+        Context usage
       </span>
       <span
         className="text-xs font-semibold"
-        style={{ color: low || warn ? 'var(--warning)' : 'var(--text-secondary)' }}
+        style={{ color: low || warn ? 'var(--ua-warning)' : 'var(--ua-text-secondary)' }}
       >
         {remaining} of {limit} remaining
       </span>
       {warn || low ? (
-        <span className="text-[11px] font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
-          {low ? 'Upgrade or top up' : 'Top up or upgrade'}
+        <span className="text-[length:var(--ua-text-micro-size)] font-semibold hover:underline" style={{ color: 'var(--ua-action-primary)' }}>
+          {low ? 'Upgrade or top up' : 'Review usage'}
         </span>
       ) : null}
     </Link>

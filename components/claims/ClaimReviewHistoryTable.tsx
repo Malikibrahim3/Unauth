@@ -29,7 +29,7 @@ export function ClaimReviewHistoryTable({
 }) {
   if (history.length === 0) {
     return (
-      <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+      <p className="text-sm" style={{ color: "var(--ua-text-secondary)" }}>
         No claims recorded for this customer yet.
       </p>
     );
@@ -39,7 +39,7 @@ export function ClaimReviewHistoryTable({
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr style={{ color: "var(--text-secondary)" }}>
+          <tr style={{ color: "var(--ua-text-secondary)" }}>
             <th className="text-left py-2 pr-3 text-xs font-semibold">
               Order ref
             </th>
@@ -65,8 +65,8 @@ export function ClaimReviewHistoryTable({
             return (
               <tr
                 key={h.id}
-                className="cursor-pointer border-t hover:bg-[var(--bg-subtle)] focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--focus-ring)]"
-                style={{ borderColor: "var(--border-muted)" }}
+                className="cursor-pointer border-t hover:bg-[var(--ua-surface-secondary)] focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--ua-border-focus)]"
+                style={{ borderColor: "var(--ua-border-subtle)" }}
                 onClick={() => onSelectClaim(h.id)}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
@@ -93,7 +93,7 @@ export function ClaimReviewHistoryTable({
                 </td>
                 <td
                   className="py-2 pr-3 text-xs"
-                  style={{ color: "var(--text-secondary)" }}
+                  style={{ color: "var(--ua-text-secondary)" }}
                 >
                   <span>{formatFiledDate(h)}</span>
                   <span className="block">{formatClaimAge(h)}</span>
@@ -118,8 +118,8 @@ export function ClaimReviewHistoryTable({
                     : "-"}
                 </td>
                 <td
-                  className="py-2 text-xs font-mono"
-                  style={{ color: "var(--text-secondary)" }}
+                  className="py-2 text-xs font-sans tabular-nums"
+                  style={{ color: "var(--ua-text-secondary)" }}
                 >
                   {h.updated_at ? formatDateAbsolute(new Date(h.updated_at)) : "—"}
                 </td>

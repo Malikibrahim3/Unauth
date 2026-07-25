@@ -36,19 +36,19 @@ function CopyRow({
     <div className="space-y-1.5">
       <p
         className="text-xs font-medium"
-        style={{ color: "var(--text-secondary)" }}
+        style={{ color: "var(--ua-text-secondary)" }}
       >
         {label}
       </p>
       <div
         className="flex items-center gap-2 rounded-lg px-3 py-2"
         style={{
-          background: "color-mix(in srgb, var(--text) 5%, transparent)",
+          background: "color-mix(in srgb, var(--ua-text-primary) 5%, transparent)",
         }}
       >
         <span
           className={`flex-1 truncate text-xs ${mono ? "font-mono" : ""}`}
-          style={{ color: "var(--text)" }}
+          style={{ color: "var(--ua-text-primary)" }}
         >
           {value}
         </span>
@@ -57,7 +57,7 @@ function CopyRow({
           aria-label={copied ? `${label} copied` : `Copy ${label}`}
           onClick={() => onCopy(field, value)}
           className="shrink-0 ml-1"
-          style={{ color: copied ? "var(--success)" : "var(--text-secondary)" }}
+          style={{ color: copied ? "var(--ua-success)" : "var(--ua-text-secondary)" }}
         >
           {copied ? (
             <Check className="h-3.5 w-3.5" />
@@ -81,22 +81,22 @@ export function GorgiasWebhookSetupPanel({
     <div className="space-y-5">
       {/* Warning banner */}
       <Card unstyled
-        variant="inset"
+        variant="muted"
         className="flex gap-3 px-4 py-3"
         style={{
-          borderColor: "color-mix(in srgb, var(--warning) 35%, var(--border))",
-          background: "color-mix(in srgb, var(--warning) 8%, var(--surface))",
+          borderColor: "color-mix(in srgb, var(--ua-warning) 35%, var(--ua-border-default))",
+          background: "color-mix(in srgb, var(--ua-warning) 8%, var(--ua-surface-primary))",
         }}
       >
         <AlertTriangle
           className="h-4 w-4 shrink-0 mt-0.5"
-          style={{ color: "var(--warning)" }}
+          style={{ color: "var(--ua-warning)" }}
         />
         <div className="space-y-1">
-          <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>
+          <p className="text-sm font-semibold" style={{ color: "var(--ua-text-primary)" }}>
             Copy your secret now
           </p>
-          <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
+          <p className="text-xs" style={{ color: "var(--ua-text-secondary)" }}>
             {secret.warning} This secret is shown once — if you lose it, rotate
             it from the connection settings.
           </p>
@@ -104,12 +104,12 @@ export function GorgiasWebhookSetupPanel({
       </Card>
 
       {/* Credentials to copy */}
-      <Card unstyled variant="flat" className="divide-y p-4 space-y-3">
+      <Card unstyled variant="panel" className="divide-y p-4 space-y-3">
         <p
-          className="text-xs font-semibold uppercase tracking-wider pb-3"
+          className="text-[length:var(--ua-text-micro-size)] font-semibold pb-3"
           style={{
-            color: "var(--text-secondary)",
-            borderColor: "var(--border)",
+            color: "var(--ua-text-secondary)",
+            borderColor: "var(--ua-border-default)",
           }}
         >
           Webhook credentials
@@ -142,11 +142,11 @@ export function GorgiasWebhookSetupPanel({
       </Card>
 
       {/* Setup steps */}
-      <Card unstyled variant="flat" className="divide-y p-0">
+      <Card unstyled variant="panel" className="divide-y p-0">
         <div className="px-4 py-2.5">
           <p
-            className="text-xs font-semibold uppercase tracking-wider"
-            style={{ color: "var(--text-secondary)" }}
+            className="text-[length:var(--ua-text-micro-size)] font-semibold"
+            style={{ color: "var(--ua-text-secondary)" }}
           >
             How to configure in Gorgias
           </p>
@@ -161,21 +161,21 @@ export function GorgiasWebhookSetupPanel({
           <div
             key={step}
             className="flex gap-3 px-4 py-3"
-            style={{ borderColor: "var(--border)" }}
+            style={{ borderColor: "var(--ua-border-default)" }}
           >
             <span
               className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold mt-0.5"
               style={{
                 background:
-                  "color-mix(in srgb, var(--text-secondary) 10%, transparent)",
-                color: "var(--text-secondary)",
+                  "color-mix(in srgb, var(--ua-text-secondary) 10%, transparent)",
+                color: "var(--ua-text-secondary)",
               }}
             >
               {i + 1}
             </span>
             <p
               className="text-xs leading-relaxed"
-              style={{ color: "var(--text-secondary)" }}
+              style={{ color: "var(--ua-text-secondary)" }}
             >
               {step}
             </p>
@@ -187,7 +187,7 @@ export function GorgiasWebhookSetupPanel({
         type="button"
         onClick={onDismiss}
         className="text-xs font-medium underline"
-        style={{ color: "var(--text-secondary)" }}
+        style={{ color: "var(--ua-text-secondary)" }}
       >
         I saved the secret — hide this panel
       </button>

@@ -48,14 +48,14 @@ function RankedTable({
   empty: string;
 }) {
   return (
-    <section className="border-t border-[var(--border-muted)] pt-5">
+    <section className="border-t border-[var(--ua-border-subtle)] pt-5">
       <h2 className="text-lg font-semibold">{title}</h2>
-      <p className="mt-1 text-sm text-[var(--text-secondary)]">{description}</p>
+      <p className="mt-1 text-sm text-[var(--ua-text-secondary)]">{description}</p>
       {rows.length ? (
         <div className="mt-3 overflow-x-auto">
           <table className="w-full min-w-[520px] text-sm">
             <thead>
-              <tr className="border-b border-[var(--border)] text-left text-[var(--text-secondary)]">
+              <tr className="border-b border-[var(--ua-border-default)] text-left text-[var(--ua-text-secondary)]">
                 <th className="py-2 font-medium">Category</th>
                 <th className="py-2 text-right font-medium">Records</th>
                 <th className="py-2 text-right font-medium">Value</th>
@@ -65,15 +65,15 @@ function RankedTable({
               {rows.map((r) => (
                 <tr
                   key={`${r.key}:${r.currency}`}
-                  className="border-b border-[var(--border-muted)]"
+                  className="border-b border-[var(--ua-border-subtle)]"
                 >
                   <th scope="row" className="py-3 text-left font-medium">
-                    <Link className="text-[var(--text-primary)] hover:text-[var(--accent)]" href={r.href}>{r.label}</Link>
+                    <Link className="text-[var(--ua-text-primary)] hover:text-[var(--ua-action-primary)]" href={r.href}>{r.label}</Link>
                   </th>
                   <td className="py-3 text-right tabular-nums">{r.count}</td>
                   <td className="py-3 text-right tabular-nums">
                     {money(r.amountMinor, r.currency)}{" "}
-                    <span className="text-xs text-[var(--text-secondary)]">
+                    <span className="text-xs text-[var(--ua-text-secondary)]">
                       {currencyLabel(r.currency)}
                     </span>
                   </td>
@@ -83,7 +83,7 @@ function RankedTable({
           </table>
         </div>
       ) : (
-        <p className="mt-3 text-sm text-[var(--text-secondary)]">{empty}</p>
+        <p className="mt-3 text-sm text-[var(--ua-text-secondary)]">{empty}</p>
       )}
     </section>
   );
@@ -104,16 +104,16 @@ export function IntelligenceReportView({
             <h2 id="bridge-title" className="text-lg font-semibold">
               Value this period
             </h2>
-            <p className="mt-1 text-sm text-[var(--text-secondary)]">
+            <p className="mt-1 text-sm text-[var(--ua-text-secondary)]">
               {report.range === "all" ? "All time" : `Last ${report.range}`}
             </p>
           </div>
-          <p className="text-xs text-[var(--text-secondary)]">
+          <p className="text-xs text-[var(--ua-text-secondary)]">
             Generated {formatDateTime(report.generatedAt)}
           </p>
         </div>
         {!report.reconciliation.ok ? (
-          <div role="alert" className="mt-3 border border-[var(--danger)] p-3">
+          <div role="alert" className="mt-3 border border-[var(--ua-critical)] p-3">
             <p className="font-semibold">
               Ledger reconciliation needs attention
             </p>
@@ -135,27 +135,29 @@ export function IntelligenceReportView({
                       range: report.range,
                       currency: b.currency,
                       metric: "exposed",
+                      timezone: report.timezone,
                     })}
-                    className="text-sm font-medium text-[var(--accent)]"
+                    className="text-sm font-medium text-[var(--ua-action-primary)]"
                   >
                     {financialMetricCaseIds(b, "exposed").length} underlying exposed {financialMetricCaseIds(b, "exposed").length === 1 ? "case" : "cases"}
                   </Link>
                 </div>
-                <dl className="mt-2 grid overflow-hidden border-y border-[var(--border)] sm:grid-cols-2 lg:grid-cols-4">
+                <dl className="mt-2 grid overflow-hidden border-y border-[var(--ua-border-default)] sm:grid-cols-2 lg:grid-cols-4">
                   {STEPS.map(({ key, state, label, definition }, index) => {
                     const known = financialMetricIsKnown(b, state);
                     return (
                     <div
                       key={key}
-                      className={`min-h-24 py-4 sm:px-4 ${index > 0 ? "border-t border-[var(--border-muted)] sm:border-l sm:border-t-0" : ""}`}
+                      className={`min-h-24 py-4 sm:px-4 ${index > 0 ? "border-t border-[var(--ua-border-subtle)] sm:border-l sm:border-t-0" : ""}`}
                     >
-                      <dt className="text-xs font-medium text-[var(--text-secondary)]">
+                      <dt className="text-xs font-medium text-[var(--ua-text-secondary)]">
                         <Link
-                          className="hover:text-[var(--accent)]"
+                          className="hover:text-[var(--ua-action-primary)]"
                           href={financialReportRecordsHref({
                             range: report.range,
                             currency: b.currency,
                             metric: state,
+                            timezone: report.timezone,
                           })}
                         >
                           {label}
@@ -163,11 +165,11 @@ export function IntelligenceReportView({
                       </dt>
                       <dd
                         className="mt-2 text-xl font-semibold tabular-nums"
-                        style={known && b[key] === 0 ? { color: "var(--text-tertiary)" } : undefined}
+                        style={known && b[key] === 0 ? { color: "var(--ua-text-tertiary)" } : undefined}
                       >
                         {known ? money(b[key] as number, b.currency) : "Unavailable"}
                       </dd>
-                      <dd className="mt-1 text-xs text-[var(--text-secondary)]">
+                      <dd className="mt-1 text-xs text-[var(--ua-text-secondary)]">
                         {definition}
                       </dd>
                     </div>
@@ -178,30 +180,29 @@ export function IntelligenceReportView({
             ))}
           </div>
         ) : (
-          <p className="mt-4 text-sm text-[var(--text-secondary)]">
-            No canonical financial entries were found for payout cases in this
-            period. Missing ledger data is not reported as zero.
+          <p className="mt-4 text-sm text-[var(--ua-text-secondary)]">
+            No canonical financial entries were found for payout cases in this period. Missing ledger data is not reported as zero.
           </p>
         )}
       </section>
       <DashboardCharts report={report} />
-      <section className="border-t border-[var(--border-muted)] pt-5">
-        <h2 className="text-lg font-semibold">Needs attention</h2>
-        <div className="ua-section-panel mt-3 max-w-2xl divide-y divide-[var(--border-muted)] overflow-hidden rounded-lg">
+      <section className="border-t border-[var(--ua-border-subtle)] pt-5">
+        <h2 className="text-[length:var(--ua-text-section-title-size)] font-semibold leading-[var(--ua-text-section-title-leading)]">Needs attention</h2>
+        <div className="mt-3 divide-y divide-[var(--ua-border-subtle)] border-t border-[var(--ua-border-subtle)]">
           {report.operations.slice(0, compact ? 4 : 8).map((row) => (
             <Link
               key={row.key}
               href={row.href}
-              className="ua-table-row flex items-center justify-between gap-4 p-3.5 hover:bg-[var(--surface-hover)]"
+              className="ua-table-row flex items-center justify-between gap-4 p-3.5 hover:bg-[var(--ua-surface-hover)]"
             >
               <span className="text-sm">{row.label}</span>
-              <span className="text-sm font-semibold tabular-nums text-[var(--accent)]">{row.count} {row.count === 1 ? 'case' : 'cases'}</span>
+              <span className="text-sm font-semibold tabular-nums text-[var(--ua-action-primary)]">{row.count} {row.count === 1 ? 'case' : 'cases'}</span>
             </Link>
           ))}
         </div>
         {!report.operations.length ? (
-          <p className="text-sm text-[var(--text-secondary)]">
-            No payout-case records were found in the selected period.
+          <p className="text-sm text-[var(--ua-text-secondary)]">
+            No reconciliation-case records were found in the selected period.
           </p>
         ) : null}
       </section>
@@ -218,9 +219,9 @@ export function IntelligenceReportView({
         empty="No recovery records were updated in this period."
       /> : null}
       {!compact ? (
-        <section className="border-t border-[var(--border-muted)] pt-5">
+        <section className="border-t border-[var(--ua-border-subtle)] pt-5">
           <h2 className="text-lg font-semibold">Report definitions</h2>
-          <div className="mt-3 divide-y divide-[var(--border-muted)] border-y border-[var(--border-muted)]">
+          <div className="mt-3 divide-y divide-[var(--ua-border-subtle)] border-y border-[var(--ua-border-subtle)]">
             {REPORT_DEFINITIONS.map((d) => (
               <details key={d.id} className="py-3">
                 <summary className="cursor-pointer font-medium">
@@ -228,21 +229,21 @@ export function IntelligenceReportView({
                 </summary>
                 <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
                   <div>
-                    <dt className="text-[var(--text-secondary)]">Definition</dt>
+                    <dt className="text-[var(--ua-text-secondary)]">Definition</dt>
                     <dd>{d.definition}</dd>
                   </div>
                   <div>
-                    <dt className="text-[var(--text-secondary)]">Numerator</dt>
+                    <dt className="text-[var(--ua-text-secondary)]">Numerator</dt>
                     <dd>{d.numerator}</dd>
                   </div>
                   <div>
-                    <dt className="text-[var(--text-secondary)]">
+                    <dt className="text-[var(--ua-text-secondary)]">
                       Denominator
                     </dt>
                     <dd>{d.denominator}</dd>
                   </div>
                   <div>
-                    <dt className="text-[var(--text-secondary)]">Time basis</dt>
+                    <dt className="text-[var(--ua-text-secondary)]">Time basis</dt>
                     <dd>{d.timeBasis}</dd>
                   </div>
                 </dl>

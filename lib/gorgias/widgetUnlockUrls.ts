@@ -43,7 +43,9 @@ export function buildGorgiasWidgetUnlockUrlSet(
   };
   return {
     basic_unlock_url: buildGorgiasWidgetUnlockActionUrl({ ...common, contextType: 'basic_context' }),
-    full_unlock_url: buildGorgiasWidgetUnlockActionUrl({ ...common, contextType: 'full_context' }),
+    // Retained for compatibility with already-registered Gorgias templates.
+    // Empty keeps the unproven network action hidden and prevents credit spend.
+    full_unlock_url: '',
     evidence_unlock_url: buildGorgiasWidgetUnlockActionUrl({
       ...common,
       contextType: 'evidence_summary',

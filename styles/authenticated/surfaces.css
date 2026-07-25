@@ -1,24 +1,23 @@
 /*
- * Cards, panels, metric surfaces, side rails, detail blocks. Relocated
- * verbatim from app/(app)/authenticated.css.
+ * Cards, panels, metric surfaces, side rails, and detail blocks. These are
+ * deliberately flat; depth is reserved for overlays and drawers.
  */
 .ua-app .ua-app-sidebar {
-  background: var(--surface-muted);
+  background: var(--ua-shell);
 }
 
 .ua-app .ua-app-header {
-  background: color-mix(in srgb, var(--surface) 96%, transparent);
-  backdrop-filter: blur(10px);
+  background: var(--ua-shell);
+  backdrop-filter: none;
 }
 
 @media (min-width: 768px) {
   .ua-app aside.ua-app-sidebar:not(.w-14) {
-    width: 208px;
+    width: 200px;
   }
 }
 
-/* Shared dashboard-derived presentation primitives. These are additive so
- * existing components retain their data, state, and interaction contracts. */
+/* Shared authenticated presentation primitives. */
 .ua-page-frame {
   width: 100%;
   max-width: 1500px;
@@ -33,73 +32,73 @@
   gap: 10px;
   margin-inline: -20px;
   padding: 10px 20px;
-  border-block: 1px solid var(--border-muted);
-  background: color-mix(in srgb, var(--surface) 54%, transparent);
+  border-block: 1px solid var(--ua-border-subtle);
+  background: var(--ua-surface-secondary);
 }
 
 .ua-card {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: var(--surface);
-  box-shadow: var(--shadow-xs);
+  border: 1px solid var(--ua-border-default);
+  border-radius: var(--ua-radius-surface);
+  background: var(--ua-surface-primary);
+  box-shadow: var(--ua-shadow-none);
 }
 
 .ua-section-heading {
-  color: var(--text-primary);
-  font-size: 14px;
-  font-weight: 650;
-  letter-spacing: -0.015em;
+  color: var(--ua-text-primary);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 20px;
 }
 
 .ua-kpi-value {
-  color: var(--text-primary);
-  font-size: clamp(24px, 2.4vw, 32px);
-  font-weight: 680;
-  letter-spacing: -0.045em;
-  line-height: 1;
+  color: var(--ua-text-primary);
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 26px;
+  font-variant-numeric: tabular-nums;
 }
 
 .ua-form-section {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: var(--surface);
-  box-shadow: var(--shadow-xs);
+  border: 1px solid var(--ua-border-default);
+  border-radius: var(--ua-radius-surface);
+  background: var(--ua-surface-primary);
+  box-shadow: var(--ua-shadow-none);
 }
 
 .ua-sticky-actions {
   position: sticky;
   bottom: 0;
   z-index: var(--ua-z-header);
-  border-top: 1px solid var(--border);
-  background: color-mix(in srgb, var(--surface) 94%, transparent);
-  backdrop-filter: blur(10px);
+  border-top: 1px solid var(--ua-border-default);
+  background: var(--ua-surface-primary);
+  backdrop-filter: none;
 }
 
 .ua-identity-tile {
   overflow: hidden;
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  background: var(--surface);
-  color: var(--brand-deep);
+  border: 1px solid var(--ua-border-default);
+  border-radius: var(--ua-radius-control);
+  background: var(--ua-surface-primary);
+  color: var(--ua-text-primary);
 }
 
 .ua-focal-panel {
-  border: 1px solid var(--border-default);
-  background: var(--surface);
+  border: 1px solid var(--ua-border-default);
+  background: var(--ua-surface-primary);
 }
 
 .ua-section-panel {
-  border: 1px solid var(--border);
-  background: var(--surface);
+  border: 1px solid var(--ua-border-default);
+  background: var(--ua-surface-primary);
 }
 
 .ua-panel-header {
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  background: var(--ua-surface-primary);
+  border-bottom: 1px solid var(--ua-border-default);
 }
 
 .ua-metric-card {
-  background: var(--surface);
+  background: var(--ua-surface-primary);
 }
 
 /* Operational data should arrive with a little momentum, not theatrical motion. */
@@ -129,6 +128,6 @@
 }
 
 .ua-empty-visual {
-  background: var(--surface-muted);
-  border: 1px solid var(--border-default);
+  background: var(--ua-surface-muted);
+  border: 1px solid var(--ua-border-default);
 }

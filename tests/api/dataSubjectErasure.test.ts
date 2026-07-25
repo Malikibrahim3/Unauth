@@ -79,7 +79,7 @@ describe('POST /api/settings/data-subject-erasure', () => {
     const { rpc } = setup();
     const response = await POST(request({ subjectId: SUBJECT_ID, idempotencyKey: 'request-123', confirm: 'ERASE' }));
     expect(response.status).toBe(200);
-    expect(rpc).toHaveBeenCalledWith('erase_merchant_data_subject', expect.objectContaining({
+    expect(rpc).toHaveBeenCalledWith('erase_release1_merchant_data_subject', expect.objectContaining({
       p_merchant_id: MERCHANT_ID,
       p_subject_id: SUBJECT_ID,
       p_actor_user_id: USER_ID,

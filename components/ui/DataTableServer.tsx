@@ -50,10 +50,10 @@ export function DataTableServer<T>({
   return (
     <div
       className={cn(
-        "w-full overflow-x-auto rounded-[var(--ua-radius-card)] border bg-[var(--surface)]",
+        "w-full overflow-x-auto rounded-[var(--ua-radius-surface)] border bg-[var(--ua-surface-primary)]",
         className,
       )}
-      style={{ borderColor: "var(--border)", boxShadow: "none" }}
+      style={{ borderColor: "var(--ua-border-default)", boxShadow: "none" }}
     >
       <table className="w-full border-separate" style={DATA_TABLE_STYLE}>
         <thead>
@@ -85,15 +85,15 @@ export function DataTableServer<T>({
                 key={getRowKey(row)}
                 style={{
                   height: ROW_HEIGHT[density],
-                  borderBottom: "1px solid var(--border-muted)",
-                  background: "var(--surface)",
+                  borderBottom: "1px solid var(--ua-border-subtle)",
+                  background: "var(--ua-surface-primary)",
                 }}
               >
                 {columns.map((column) => (
                   <td
                     key={column.key}
                     style={{
-                      padding: "0 var(--space-4)",
+                      padding: "0 var(--ua-space-4)",
                       verticalAlign: "middle",
                       textAlign:
                         column.align === "right"
@@ -101,7 +101,7 @@ export function DataTableServer<T>({
                           : column.align === "center"
                             ? "center"
                             : "left",
-                      color: "var(--text-primary)",
+                      color: "var(--ua-text-primary)",
                     }}
                   >
                     {column.render(row)}

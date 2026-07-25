@@ -2,14 +2,14 @@
  * Claim classification signals derived from ticket text.
  *
  * This is an ADDITIVE signal layer. It produces the Unauth claim-intelligence
- * enum (`INR | damaged | wrong_item | not_as_described | other`) plus a
+ * enum (`INR | missing_item | damaged | wrong_item | not_as_described | other`) plus a
  * confidence score, and never replaces the existing `claim_reason` normaliser
  * in normalizeTicket.ts (which feeds live commerce-linking logic).
  *
  * Pure functions only — no I/O — so they are cheap to unit test.
  */
 
-export const CLAIM_TYPES = ['INR', 'damaged', 'wrong_item', 'not_as_described', 'other'] as const;
+export const CLAIM_TYPES = ['INR', 'missing_item', 'damaged', 'wrong_item', 'not_as_described', 'other'] as const;
 export type ClaimType = (typeof CLAIM_TYPES)[number];
 
 export const CLAIM_OUTCOMES = ['approved', 'denied', 'pending', 'unknown'] as const;
@@ -26,10 +26,18 @@ type WeightedPattern = { re: RegExp; weight: number };
 // Highest-signal phrases score near the top of the range; generic single tokens
 // score lower so a specific phrase always beats a loose keyword in a mixed ticket.
 const CLAIM_TYPE_PATTERNS: Record<Exclude<ClaimType, 'other'>, WeightedPattern[]> = {
+  missing_item: [
+    { re: /\b(missing|short|absent) (item|product|piece|unit)\b/, weight: 0.96 },
+    { re: /\b(item|product|piece|unit) (is |was )?(missing|not in|left out of) (from )?(the |my )?(box|parcel|package|order)\b/, weight: 0.95 },
+    { re: /\b(box|parcel|package|order) (arrived|came|was delivered|turned up)[\w\s,;-]*\b(missing|without) (an? |one |the )?(item|product|piece|unit)\b/, weight: 0.97 },
+    { re: /\b(received|got) (the |my )?(box|parcel|package|order)[\w\s,;-]*\bbut\b[\w\s,;-]*\b(item|product|piece|unit) (is |was )?(missing|absent)\b/, weight: 0.98 },
+    { re: /\bpartial (order|delivery) (missing|short)\b/, weight: 0.94 },
+    { re: /\bshort[- ]?(pick|picked|shipment|shipped)\b/, weight: 0.93 },
+  ],
   INR: [
     { re: /\bitem not received\b/, weight: 0.92 },
     { re: /\bnever (arrived|received|came|showed up|got here|turned up|delivered)\b/, weight: 0.9 },
-    { re: /\bmissing (package|parcel|order|item|delivery)\b/, weight: 0.9 },
+    { re: /\bmissing (package|parcel|order|delivery)\b/, weight: 0.9 },
     { re: /\b(item|order|package|parcel|delivery) (not|never) (received|arrived|delivered)\b/, weight: 0.9 },
     { re: /\b(hasn'?t|haven'?t|didn'?t|did not|has not|have not) (arrived|come|been delivered|shown up|showed up)\b/, weight: 0.86 },
     { re: /\bwhere(?:'?s| is| are)? my (order|package|parcel|item|stuff|delivery)\b/, weight: 0.85 },
@@ -81,6 +89,7 @@ const CLAIM_MARKERS: RegExp[] = [
   /\bdamaged\b/,
   /\bwhere(?:'?s| is)\b/,
   /\bwrong item\b/,
+  /\bmissing item\b/,
   /\bmissing (package|parcel)\b/,
   /\bnot delivered\b/,
 ];

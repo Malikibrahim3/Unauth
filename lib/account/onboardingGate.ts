@@ -1,5 +1,6 @@
 interface OnboardingGateInput {
   hasMerchantContext: boolean;
+  profileComplete?: boolean | null;
   setupComplete?: boolean | null;
   auditRunCount?: number | null;
   shopifyConnected: boolean;
@@ -14,6 +15,7 @@ interface OnboardingGateInput {
  */
 export function shouldRequireOnboarding({
   hasMerchantContext,
+  profileComplete,
   setupComplete,
   auditRunCount,
   shopifyConnected: _shopifyConnected,
@@ -21,5 +23,6 @@ export function shouldRequireOnboarding({
 }: OnboardingGateInput): boolean {
   if (!hasMerchantContext) return true;
   if (setupComplete === true) return false;
+  if (profileComplete === true) return false;
   return (auditRunCount ?? 0) === 0;
 }

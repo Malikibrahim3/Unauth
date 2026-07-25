@@ -42,13 +42,13 @@ export function ApiKeyCreateDialog({
         <>
           <p
             className="text-xs font-medium"
-            style={{ color: "var(--text-secondary)" }}
+            style={{ color: "var(--ua-text-secondary)" }}
           >
             API Key (for Chrome, Zendesk, direct API)
           </p>
           <pre
             className="mt-2 overflow-x-auto rounded-md p-3 text-xs"
-            style={{ background: "var(--bg-inset)", color: "var(--text)" }}
+            style={{ background: "var(--ua-surface-secondary)", color: "var(--ua-text-primary)" }}
           >
             {state.createdSecret}
           </pre>
@@ -56,13 +56,13 @@ export function ApiKeyCreateDialog({
             <>
               <p
                 className="mt-4 text-xs font-medium"
-                style={{ color: "var(--text-secondary)" }}
+                style={{ color: "var(--ua-text-secondary)" }}
               >
                 Widget Token (for Gorgias widget URL only)
               </p>
               <pre
                 className="mt-2 overflow-x-auto rounded-md p-3 text-xs"
-                style={{ background: "var(--bg-inset)", color: "var(--text)" }}
+                style={{ background: "var(--ua-surface-secondary)", color: "var(--ua-text-primary)" }}
               >
                 {state.createdWidgetToken}
               </pre>
@@ -102,13 +102,13 @@ export function ApiKeyCreateDialog({
         <form onSubmit={onCreate}>
           <h3
             className="text-sm font-semibold"
-            style={{ color: "var(--text)" }}
+            style={{ color: "var(--ua-text-primary)" }}
           >
             Create API key
           </h3>
           <label
             className="mt-4 block text-xs font-medium"
-            style={{ color: "var(--text-secondary)" }}
+            style={{ color: "var(--ua-text-secondary)" }}
           >
             Label
             <input
@@ -120,9 +120,9 @@ export function ApiKeyCreateDialog({
               placeholder="e.g. Gorgias integration"
               className="mt-1 w-full rounded-md px-3 py-2 text-sm"
               style={{
-                background: "var(--bg-inset)",
-                border: "1px solid var(--border)",
-                color: "var(--text)",
+                background: "var(--ua-surface-secondary)",
+                border: "1px solid var(--ua-border-default)",
+                color: "var(--ua-text-primary)",
               }}
             />
           </label>
@@ -131,7 +131,7 @@ export function ApiKeyCreateDialog({
               type="button"
               onClick={onClose}
               className="rounded-md border px-3 py-2 text-sm"
-              style={{ borderColor: "var(--border)", color: "var(--text)" }}
+              style={{ borderColor: "var(--ua-border-default)", color: "var(--ua-text-primary)" }}
             >
               Cancel
             </button>
@@ -139,7 +139,7 @@ export function ApiKeyCreateDialog({
               type="submit"
               disabled={state.creating || !state.keyName.trim()}
               className="rounded-md px-3 py-2 text-sm font-medium disabled:opacity-50"
-              style={{ background: "var(--accent)", color: "white" }}
+              style={{ background: "var(--ua-action-primary)", color: "var(--ua-text-inverse)" }}
             >
               {state.creating ? "Creating…" : "Create key"}
             </button>

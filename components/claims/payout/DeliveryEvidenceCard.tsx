@@ -3,11 +3,18 @@
 import type { ClaimDecisionContext } from "@/lib/claims/decision/types";
 import { formatDeliveryEvidenceLine } from "@/lib/integrations/trackingEvidenceSlice";
 import { formatDateAbsolute } from "@/lib/utils/format";
+import { DeliveryPhotoFinding } from "@/components/claims/investigations/DeliveryPhotoFinding";
 
 export function DeliveryEvidenceCard({
   delivery,
+  caseId,
+  canManage = false,
+  onFindingSaved,
 }: {
   delivery: ClaimDecisionContext["delivery"];
+  caseId?: string;
+  canManage?: boolean;
+  onFindingSaved?: () => void;
 }) {
   const line = formatDeliveryEvidenceLine(delivery);
   if (!delivery) return null;
@@ -16,17 +23,17 @@ export function DeliveryEvidenceCard({
     <section
       className="rounded-md p-4 border"
       style={{
-        borderColor: "var(--border-muted)",
-        background: "var(--surface)",
+        borderColor: "var(--ua-border-subtle)",
+        background: "var(--ua-surface-primary)",
       }}
     >
       <p
         className="text-caption font-semibold mb-3"
-        style={{ color: "var(--text-secondary)" }}
+        style={{ color: "var(--ua-text-secondary)" }}
       >
         Delivery evidence
       </p>
-      <p className="text-sm font-medium" style={{ color: "var(--text)" }}>
+      <p className="text-sm font-medium" style={{ color: "var(--ua-text-primary)" }}>
         {line}
       </p>
       <dl className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
@@ -51,8 +58,8 @@ export function DeliveryEvidenceCard({
         />
       </dl>
       <div
-        className="mt-3 flex flex-wrap gap-2 text-[11px]"
-        style={{ color: "var(--text-tertiary)" }}
+        className="mt-3 flex flex-wrap gap-2 text-[length:var(--ua-text-micro-size)]"
+        style={{ color: "var(--ua-text-tertiary)" }}
       >
         <CapabilityPill
           label="Delivery photo"
@@ -85,6 +92,16 @@ export function DeliveryEvidenceCard({
           }
         />
       </div>
+      {caseId && delivery.deliveryPhotoAvailable ? (
+        <DeliveryPhotoFinding
+          caseId={caseId}
+          finding={delivery.deliveryPhotoFinding}
+          rationale={delivery.deliveryPhotoFindingRationale}
+          recordedAt={delivery.deliveryPhotoFindingAt}
+          canManage={canManage}
+          onSaved={onFindingSaved}
+        />
+      ) : null}
     </section>
   );
 }
@@ -92,8 +109,8 @@ export function DeliveryEvidenceCard({
 function Detail({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt style={{ color: "var(--text-tertiary)" }}>{label}</dt>
-      <dd className="font-medium" style={{ color: "var(--text-secondary)" }}>
+      <dt style={{ color: "var(--ua-text-tertiary)" }}>{label}</dt>
+      <dd className="font-medium" style={{ color: "var(--ua-text-secondary)" }}>
         {value}
       </dd>
     </div>
@@ -118,7 +135,7 @@ function CapabilityPill({
   return (
     <span
       className="rounded-full border px-2 py-0.5"
-      style={{ borderColor: "var(--border-muted)" }}
+      style={{ borderColor: "var(--ua-border-subtle)" }}
     >
       {copy}
     </span>

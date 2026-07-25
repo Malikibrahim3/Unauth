@@ -1,10 +1,12 @@
 # Unauth
 
-Unauth is a source-agnostic post-purchase payout-control, loss, and recovery platform for ecommerce merchants.
+Unauth is a source-agnostic evidence reconciliation, decision-support, and recovery-control platform for ecommerce merchants.
 
-It brings commerce, helpdesk, fulfillment, payment, and manually imported records into one merchant-scoped operational model. Unauth explains payout exposure, applies merchant-owned rules, records evidence and decisions, attributes losses, and manages recoveries. The merchant always controls the outcome.
+It brings commerce, helpdesk, fulfillment, payment, and manually imported records into one merchant-scoped operational model. Unauth reconciles identities, events, and money; gives the merchant separate customer-action, responsibility, and recovery recommendations; observes the outcome the merchant actually took; and tracks provider credits through reconciliation. The merchant always controls the outcome.
 
-The signed-in product is organized around **Overview**, **Work**, **Payout Control**, **Losses**, **Recovery**, **Customers**, **Rules and Flows**, **Reports**, **Integrations**, and **Settings**. Provider-specific integrations feed the same cases, records, timeline, and financial ledger; no provider defines the product model.
+The signed-in product is organized around **Overview**, **Work**, **Cases**, **Losses**, **Recovery**, **Customers**, **Rules and Flows**, **Reports**, **Integrations**, and **Settings**. Provider-specific integrations feed the same cases, records, timeline, and financial ledger; no provider defines the product model.
+
+Unauth does not ask AI to guess who is at fault. APIs show what systems recorded, not always what was physically inside a parcel. When the evidence is incomplete, Unauth says **responsibility unresolved** and requests the exact missing artifact.
 
 ## Local development
 

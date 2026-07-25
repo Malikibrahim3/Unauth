@@ -17,6 +17,7 @@ export interface MerchantSetupInput {
   platform?: string | null;
   monthlyOrderVolume?: string | null;
   primaryFraudConcern?: string | null;
+  profileComplete?: boolean;
   setupComplete?: boolean;
 }
 
@@ -48,11 +49,16 @@ export async function upsertMerchantForUser(
     cleanValue(input.primaryFraudConcern) ?? cleanValue(existingProfile?.primary_fraud_concern);
   const setupComplete =
     input.setupComplete === true || Boolean(existingProfile?.setup_complete);
+  const profileComplete =
+    input.profileComplete === true
+    || setupComplete
+    || Boolean(existingProfile?.onboarding_profile_complete);
 
   const settingsPatch = {
     platform,
     monthly_order_volume: monthlyOrderVolume,
     primary_fraud_concern: primaryFraudConcern,
+    onboarding_profile_complete: profileComplete,
     setup_complete: setupComplete,
   };
 

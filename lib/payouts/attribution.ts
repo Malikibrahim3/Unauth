@@ -39,6 +39,7 @@ type DeliveryFacts = {
   inTransit: boolean;
   hasCustomerEvidence: boolean;
   hasInspection: boolean;
+  deliveryPhotoFinding: 'consistent' | 'inconsistent' | 'unclear' | null;
 };
 
 function deliveryFacts(context: ClaimDecisionContext): DeliveryFacts {
@@ -51,23 +52,44 @@ function deliveryFacts(context: ClaimDecisionContext): DeliveryFacts {
     inTransit: d?.status === 'in_transit' || d?.status === 'pending',
     hasCustomerEvidence: context.evidence.hasCustomerEvidence === true,
     hasInspection: context.evidence.merchantEvidenceItems > 0,
+    deliveryPhotoFinding: d?.deliveryPhotoFinding ?? null,
   };
 }
 
 function attributeItemNotReceived(f: DeliveryFacts): Draft {
-  if (f.hasPod) {
+  if (f.deliveryPhotoFinding === 'inconsistent') {
     return {
-      label: 'delivery_confirmed_evidence',
-      confidence: 'high',
-      reasons: [reason('delivered_with_pod', 'Delivered with proof of delivery on file', 'delivery.hasProofOfDelivery')],
+      label: 'carrier_loss',
+      confidence: 'medium',
+      reasons: [
+        reason('delivery_photo_inconsistent', 'Merchant review found the delivery photo inconsistent with the intended address', 'delivery.deliveryPhotoFinding'),
+        reason('carrier_location_needed', 'Carrier location or driver evidence is still required before confirmation', null),
+      ],
     };
   }
+  if (f.deliveryPhotoFinding === 'unclear') {
+    return unclear([
+      reason('delivery_photo_unclear', 'The delivery photo was reviewed but remains unclear', 'delivery.deliveryPhotoFinding'),
+    ]);
+  }
+  if (f.hasPod && f.deliveryPhotoFinding === 'consistent') {
+    return unclear([
+      reason(
+        'delivery_artifact_not_dispositive',
+        'A delivery artefact is on file and was marked consistent, but it does not by itself establish the contents of the parcel or customer receipt',
+        'delivery.deliveryPhotoFinding',
+      ),
+    ]);
+  }
+  if (f.hasPod) {
+    return unclear([
+      reason('pod_not_interpreted', 'A delivery artefact is on file, but it has not established delivery to the intended address', 'delivery.hasProofOfDelivery'),
+    ]);
+  }
   if (f.delivered) {
-    return {
-      label: 'delivery_confirmed_evidence',
-      confidence: 'medium',
-      reasons: [reason('delivered_no_pod', 'Marked delivered but no proof of delivery on file', 'delivery.status')],
-    };
+    return unclear([
+      reason('delivered_no_pod', 'Carrier marked the parcel delivered, but no supporting delivery artefact is on file', 'delivery.status'),
+    ]);
   }
   if (f.inTransit && f.hasTracking) {
     return {
@@ -91,21 +113,16 @@ function attributeItemNotReceived(f: DeliveryFacts): Draft {
 
 function attributeMissingItem(f: DeliveryFacts): Draft {
   if (f.delivered && f.hasCustomerEvidence) {
-    return {
-      label: 'warehouse_missing_item',
-      confidence: 'medium',
-      reasons: [
-        reason('delivered_short_pick', 'Parcel delivered but customer reports a missing item', 'delivery.status'),
-        reason('no_pick_record', 'Pick/pack or weight record not available to confirm (not tracked)', null),
-      ],
-    };
+    return unclear([
+      reason('delivered_missing_item_claim', 'Parcel delivered but customer reports a missing item', 'delivery.status'),
+      reason('physical_pack_evidence_missing', 'The available records do not include a pick/pack scan, parcel weight, or physical pack artifact', null),
+    ]);
   }
   if (f.delivered) {
-    return {
-      label: 'customer_claim',
-      confidence: 'low',
-      reasons: [reason('delivered_no_statement', 'Delivered with no customer statement on file', 'delivery.status')],
-    };
+    return unclear([
+      reason('delivered_no_statement', 'Delivered with no customer statement on file', 'delivery.status'),
+      reason('physical_pack_evidence_missing', 'A delivery scan does not establish what was inside the parcel', null),
+    ]);
   }
   return unclear([reason('no_delivery_signal', 'No delivery confirmation available', 'delivery')]);
 }
@@ -140,14 +157,10 @@ function attributeDamaged(f: DeliveryFacts): Draft {
 
 function attributeWrongItem(f: DeliveryFacts): Draft {
   if (f.delivered && f.hasInspection) {
-    return {
-      label: 'warehouse_mispick',
-      confidence: 'medium',
-      reasons: [
-        reason('delivered_with_inspection', 'Delivered and a return/inspection record is on file', 'evidence'),
-        reason('no_pick_record', 'Pick/pack record not available to confirm at high confidence (not tracked)', null),
-      ],
-    };
+    return unclear([
+      reason('delivered_with_inspection', 'Delivered and a return/inspection record is on file', 'evidence'),
+      reason('physical_pick_evidence_missing', 'The inspection does not establish which item was picked or packed', null),
+    ]);
   }
   if (f.delivered && f.hasCustomerEvidence) {
     return {
@@ -191,43 +204,6 @@ function attributePolicyOrCustomer(label: LossAttributionLabel, code: string, te
   return { label, confidence: 'low', reasons: [reason(code, text, null)] };
 }
 
-/**
- * A customer_claim result means no carrier/warehouse/policy signal was strong
- * enough to attribute the loss elsewhere. Before settling there, check whether
- * this identity's own claim frequency is itself the more likely explanation —
- * this only reclassifies the weak catch-all bucket, never a claim already
- * attributed to a carrier, warehouse, or policy cause.
- */
-const REPEAT_CLAIMANT_MIN_PRIOR_CLAIMS = 3;
-
-function applyRepeatClaimantSignal(draft: Draft, context: ClaimDecisionContext): Draft {
-  if (draft.label !== 'customer_claim') return draft;
-
-  const { merchantPriorClaimCount, networkClaimCount, daysSinceLastClaim } = context.history;
-  const merchantFrequency = merchantPriorClaimCount >= REPEAT_CLAIMANT_MIN_PRIOR_CLAIMS;
-  const networkFrequency = networkClaimCount != null && networkClaimCount >= REPEAT_CLAIMANT_MIN_PRIOR_CLAIMS;
-  if (!merchantFrequency && !networkFrequency) return draft;
-
-  const reasons: LossAttributionReason[] = [
-    merchantFrequency
-      ? reason(
-          'repeat_at_merchant',
-          `${merchantPriorClaimCount} prior claim(s) at this merchant, including this one`,
-          'history.merchantPriorClaimCount',
-        )
-      : reason(
-          'repeat_across_network',
-          `${networkClaimCount} prior claim(s) for this identity across merchants`,
-          'history.networkClaimCount',
-        ),
-  ];
-  if (daysSinceLastClaim != null) {
-    reasons.push(reason('claim_recency', `Last claim ${daysSinceLastClaim} day(s) ago`, 'history.daysSinceLastClaim'));
-  }
-
-  return { label: 'repeat_claimant', confidence: 'medium', reasons };
-}
-
 export function deriveLossAttribution(
   context: ClaimDecisionContext,
   claimType: PayoutClaimType | null,
@@ -264,8 +240,6 @@ export function deriveLossAttribution(
       draft = unclear([reason('unmapped_claim_type', 'Claim type does not map to a specific loss point', 'claim.type')]);
       break;
   }
-
-  draft = applyRepeatClaimantSignal(draft, context);
 
   return {
     label: draft.label,

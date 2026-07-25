@@ -38,14 +38,14 @@ export const FL_NAV = {
 export const FL_HERO = {
   eyebrow: '',
   headlineLines: [
-    'Your team loses it. Your AI loses it faster.',
-    'Unauth gets it back.',
+    'Decide post-purchase payouts',
+    'with the full evidence in front of you.',
   ],
   subtitle:
-    'Post-purchase payout control: surface the exposure, apply your rules, recover carrier and supplier losses, and prevent the leaks — before anyone pays out.',
+    'Unauth brings order, delivery, support, and financial context into one merchant-controlled case, applies your rules, and keeps loss ownership and recovery work in the same auditable timeline.',
   body: '',
   primaryCta: 'Request access',
-  secondaryCta: 'See how it works',
+  secondaryCta: 'Walk through a case',
   pinnedCta: 'Request access',
   contactCta: 'Request access',
   orderHistoryCard: {
@@ -84,8 +84,8 @@ export const FL_HERO_FLOATING_CARDS = {
   },
   crossMerchant: {
     label: '03 EVIDENCE, NOT AUTOMATION',
-    title: 'No automated decisions',
-    details: ['Unauth explains — you decide', 'Final action stays with your team'],
+      title: 'Merchant-controlled decisions',
+      details: ['Unauth recommends and records', 'Final action stays with your team'],
   },
   priorClaims: {
     label: '04 AUDIT TRAIL',
@@ -97,7 +97,7 @@ export const FL_HERO_FLOATING_CARDS = {
 /* ── Network hero (canvas section) ─────────────────────────────────────── */
 
 export const FL_NETWORK_HERO = {
-  title: 'Three kinds of money, all leaking quietly. Unauth catches each one.',
+  title: 'Three kinds of money, all leaking quietly. Unauth makes each one visible.',
   lead:
     'A refund or reship request should not depend on scattered screenshots and memory. Unauth links the ticket to order history, delivery evidence, loss ownership, merchant policy, and recoverability before the agent replies.',
   stats: [
@@ -121,7 +121,7 @@ export const FL_NETWORK_HERO = {
 
 export const FL_CLAIM_DECISION_LOOP = {
   eyebrow: 'How it works',
-  headline: "None of this is possible after the fact. It only works if you catch the claim before it's paid.",
+  headline: 'The decision is strongest while the evidence is still fresh.',
   subhead:
     "You cannot recover a loss you have already refunded and forgotten. The evidence goes stale. The carrier's claim window closes. The pattern stays invisible.",
   steps: [
@@ -137,13 +137,13 @@ export const FL_CLAIM_DECISION_LOOP = {
     },
     {
       number: '03',
-      title: 'Safe claims pass straight through',
-      body: 'First-time customer, low value, clean delivery? Cleared instantly. Nothing slows down that should not.',
+      title: 'Clear evidence is ready first',
+      body: 'First-time customer, low value, clean delivery? The recommendation is clear and the case stays ready for your team to decide.',
     },
     {
       number: '04',
-      title: 'Risky claims are held',
-      body: 'Your AI agent is stopped from auto-refunding. A human sees the order, evidence, claim history, exact rule, loss owner, and recovery case.',
+      title: 'Unclear cases need review',
+      body: 'A recommendation with missing or conflicting evidence stays in the queue. Your team sees the order, evidence, exact rule, loss owner, and recovery case.',
     },
     {
       number: '05',
@@ -383,8 +383,8 @@ export const FL_HOW_IT_WORKS = {
     {
       id: '3.0',
       title: 'Enrich',
-      body: 'Claims enrich automatically',
-      note: 'Every inbound claim is checked against order history, delivery context, claim history, and recovery context.',
+      body: 'Case context is assembled',
+      note: 'Every inbound case can be checked against order history, delivery context, claim history, and recovery context.',
     },
     {
       id: '4.0',
@@ -403,7 +403,7 @@ export const FL_HOW_IT_WORKS = {
 
 export const FL_FIGURES = {
   label: 'See the losses before they disappear',
-  body: 'Connect your store and helpdesk. Unauth starts catching claims before they are paid, attributes every loss, and builds the recovery queue while the evidence is still fresh.',
+  body: 'Connect your store and helpdesk. Unauth assembles the evidence, attributes each loss, and keeps recovery work visible while the evidence is still fresh.',
   figures: [
     {
       value: '£6.2k',
@@ -532,7 +532,7 @@ export const FL_PRICING_FAQ = {
 
 export const FL_FINAL = {
   headlineLines: ['SEE WHERE THE MONEY', 'SHOULD COME BACK FROM.'],
-  body: 'Connect your store and helpdesk. Unauth catches every claim before it is paid, attributes the loss, and hands your team the recovery case while the window is still open.',
+  body: 'Connect your store and helpdesk. Unauth puts every case in front of your team with the evidence, loss ownership, and recovery next step while the window is still open.',
   cta: 'Request access',
 } as const;
 
@@ -540,12 +540,12 @@ export const FL_FAQ = {
   heading: 'Common questions',
   items: [
     {
-      q: 'How does Unauth actually get money back?',
-      a: "For every claim it works out who owns the loss — carrier, warehouse, customer, or a policy override. Where a loss is recoverable, it assembles the claim with the deadline attached. Lost-in-transit parcels are the carrier's liability. Wrong-item shipments are the 3PL's. Unauth builds the case so you go and collect it instead of writing it off. You stay in control of submitting.",
+      q: 'How does Unauth support recovery?',
+      a: "For every case it shows who may own the loss — carrier, warehouse, customer, or a policy override. Where a loss may be recoverable, it assembles the evidence with the deadline attached. Lost-in-transit parcels may be the carrier's liability; wrong-item shipments may be the 3PL's. Unauth prepares the case so your team can decide whether to submit it.",
     },
     {
-      q: 'Why does it have to catch the claim before it\'s paid?',
-      a: "Because you cannot recover a loss you have already refunded and forgotten. The carrier's claim window closes. The evidence goes stale. The pattern stays invisible. Catching it before the refund is the only moment the money is still yours to keep or recover.",
+      q: 'Why does timing matter?',
+      a: "Because you cannot recover a loss you have already refunded and forgotten. The carrier's claim window closes. Evidence goes stale. Keeping the case visible while your team is deciding protects the recovery option without taking the decision away from you.",
     },
     {
       q: 'How does the customer history work — do you track people across other stores?',
@@ -553,7 +553,7 @@ export const FL_FAQ = {
     },
     {
       q: 'We already use Yuma or Gorgias AI. Why add this?',
-      a: "They close tickets fast. Unauth decides which ones they are allowed to close without a human — and flags the recoverable ones before the money is gone. They turn resolution up. The gate makes sure the risky and recoverable claims still stop. They work together.",
+      a: "They close tickets fast. Unauth adds evidence, recommendations, and recovery context before your team records the outcome. They work together while the merchant keeps the final decision.",
     },
     {
       q: 'Will this slow down legitimate claims?',

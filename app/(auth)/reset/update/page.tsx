@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { PanelCard } from '@/components/ui';
+import { Panel } from '@/components/ui';
 import { createClient } from '@/lib/supabase/client';
 import { AuthError, authButtonStyle, authInputClassName } from '../../AuthShell';
 
@@ -53,12 +53,12 @@ export default function UpdatePasswordPage() {
   }
 
   return (
-    <PanelCard as="section" variant="app" className="p-6">
-      <h1 className="text-3xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">Set new password</h1>
+    <Panel as="section" variant="panel" className="p-6">
+      <h1 className="text-[length:var(--ua-text-page-title-size)] font-semibold leading-6 tracking-normal text-[var(--ua-text-primary)]">Set new password</h1>
 
       <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
         <div>
-          <label htmlFor="reset-update-password" className="mb-2 block text-sm font-medium text-[var(--text-secondary)]">
+          <label htmlFor="reset-update-password" className="mb-2 block text-sm font-medium text-[var(--ua-text-secondary)]">
             New password
           </label>
           <Input
@@ -78,7 +78,7 @@ export default function UpdatePasswordPage() {
         </div>
 
         <div>
-          <label htmlFor="reset-update-confirm" className="mb-2 block text-sm font-medium text-[var(--text-secondary)]">
+          <label htmlFor="reset-update-confirm" className="mb-2 block text-sm font-medium text-[var(--ua-text-secondary)]">
             Confirm password
           </label>
           <Input
@@ -108,6 +108,6 @@ export default function UpdatePasswordPage() {
           {loading ? 'Updating password' : 'Update password'}
         </Button>
       </form>
-    </PanelCard>
+    </Panel>
   );
 }

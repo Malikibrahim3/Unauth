@@ -63,9 +63,9 @@ export function AvatarMenu({ email, className }: AvatarMenuProps) {
         onClick={() => setOpen((v) => !v)}
         className={cn(
           'flex h-7 w-7 items-center justify-center rounded-full',
-          'bg-[var(--action-primary)] text-[var(--text-inverse)]',
+          'bg-[var(--ua-action-primary)] text-[var(--ua-text-inverse)]',
           'text-xs font-bold leading-none',
-          'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
+          'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ua-border-focus)] focus-visible:outline-offset-2',
           'transition-opacity hover:opacity-90',
           'select-none',
         )}
@@ -78,14 +78,14 @@ export function AvatarMenu({ email, className }: AvatarMenuProps) {
           role="menu"
           className={cn(
             'absolute right-0 top-full mt-1 z-50',
-            'w-48 rounded-[var(--radius-2)] border border-[var(--border)]',
-            'bg-[var(--surface)] shadow-[var(--shadow-2)]',
+            'w-48 rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)]',
+            'bg-[var(--ua-surface-primary)] shadow-[var(--ua-shadow-overlay)]',
             'py-1',
           )}
         >
           {email && (
-            <div className="px-3 py-2 border-b border-[var(--border-muted)]">
-              <p className="text-caption text-[var(--text-secondary)] truncate">{email}</p>
+            <div className="px-3 py-2 border-b border-[var(--ua-border-subtle)]">
+              <p className="text-caption text-[var(--ua-text-secondary)] truncate">{email}</p>
             </div>
           )}
 
@@ -95,8 +95,8 @@ export function AvatarMenu({ email, className }: AvatarMenuProps) {
             onClick={() => setOpen(false)}
             className={cn(
               'flex w-full items-center gap-2 px-3 py-2',
-              'text-body-sm text-[var(--text)]',
-              'hover:bg-[var(--bg-subtle)] transition-colors duration-[var(--duration-fast)]',
+              'text-body-sm text-[var(--ua-text-primary)]',
+              'hover:bg-[var(--ua-surface-secondary)] transition-colors duration-[var(--ua-duration-fast)]',
             )}
           >
             Account settings
@@ -108,8 +108,8 @@ export function AvatarMenu({ email, className }: AvatarMenuProps) {
             onClick={handleSignOut}
             className={cn(
               'flex w-full items-center gap-2 px-3 py-2',
-              'text-body-sm text-[var(--risk-critical-fg)]',
-              'hover:bg-[var(--bg-subtle)] transition-colors duration-[var(--duration-fast)]',
+              'text-body-sm text-[var(--ua-risk-critical)]',
+              'hover:bg-[var(--ua-surface-secondary)] transition-colors duration-[var(--ua-duration-fast)]',
             )}
           >
             Sign out

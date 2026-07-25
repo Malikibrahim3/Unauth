@@ -53,6 +53,7 @@ function mapRecoveryCase(row: unknown): RecoveryCase {
   const r = row as RecoveryCase;
   return {
     ...r,
+    provider_claim_stage: r.provider_claim_stage ?? 'prepared',
     merchant_loss_amount: Number(r.merchant_loss_amount ?? 0),
     eligible_loss_amount: r.eligible_loss_amount == null ? null : Number(r.eligible_loss_amount),
     estimated_recoverable_min: r.estimated_recoverable_min == null ? null : Number(r.estimated_recoverable_min),

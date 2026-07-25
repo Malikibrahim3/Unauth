@@ -11,8 +11,15 @@ const ACTIVE_MIGRATIONS = [
   '20260722300000_privacy_erasure_retention.sql',
   '20260722400000_source_to_recovery_integrity.sql',
   '20260722500000_ownership_transfer_integrity.sql',
+  '20260723100000_release1_relationship_credential_integrity.sql',
+  '20260723150000_release1_case_issue_correction.sql',
+  '20260723200000_release1_investigations.sql',
+  '20260723300000_release1_responsibility_recovery.sql',
+  '20260723400000_release1_investigation_email_dispatch.sql',
+  '20260723500000_release1_investigation_privacy.sql',
+  '20260723600000_release1_reporting_truthfulness.sql',
 ];
-const EXPECTED_SCHEMA_HASH = '268f248ddb10d292172af9adc559e96b8e5f227723ee775ba985f0ba765f236d';
+const EXPECTED_SCHEMA_HASH = '349e2ecaea756975ba84ce36928f3a80bbdeb039975dd472e28f5a32c7ecd9ee';
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
@@ -86,23 +93,23 @@ const counts = Object.fromEntries(sql(`
 `).split('\n').map((line) => line.split('|')));
 
 const expectedCounts = {
-  tables: '135',
+  tables: '137',
   views: '2',
   sequences: '2',
   enums: '45',
-  columns: '1889',
-  not_null_columns: '1075',
-  constraints: '685',
-  indexes: '499',
-  functions: '72',
-  triggers: '88',
-  policies: '147',
+  columns: '1956',
+  not_null_columns: '1103',
+  constraints: '726',
+  indexes: '514',
+  functions: '84',
+  triggers: '95',
+  policies: '152',
 };
 assertEqual(JSON.stringify(counts), JSON.stringify(expectedCounts), 'canonical object manifest');
 
 assertEqual(
-  sql(`select string_agg(id || ':' || public::text || ':' || coalesce(file_size_limit::text, '-') || ':' || coalesce(array_to_string(allowed_mime_types, ','), '-'), ';' order by id) from storage.buckets where id in ('merchant-csv-uploads-2','evidence-packages','integration-documents','pack-confirmation-photos')`),
-  'evidence-packages:false:104857600:application/pdf;integration-documents:false:-:-;merchant-csv-uploads-2:false:524288000:text/csv,application/csv,text/plain;pack-confirmation-photos:false:-:-',
+  sql(`select string_agg(id || ':' || public::text || ':' || coalesce(file_size_limit::text, '-') || ':' || coalesce(array_to_string(allowed_mime_types, ','), '-'), ';' order by id) from storage.buckets where id in ('merchant-csv-uploads-2','evidence-packages','integration-documents','pack-confirmation-photos','investigation-evidence')`),
+  'evidence-packages:false:104857600:application/pdf;integration-documents:false:-:-;investigation-evidence:false:10485760:application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,image/jpeg,image/png,image/webp;merchant-csv-uploads-2:false:524288000:text/csv,application/csv,text/plain;pack-confirmation-photos:false:-:-',
   'storage bucket supplement',
 );
 assertEqual(
@@ -121,8 +128,8 @@ assertEqual(
   'scheduled maintenance',
 );
 assertEqual(
-  sql(`select count(*) from pg_trigger t join pg_class c on c.oid=t.tgrelid join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and t.tgname='trg_durable_audit' and c.relkind='r'`),
-  '26',
+  sql(`select count(*) from pg_trigger t join pg_class c on c.oid=t.tgrelid join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and t.tgname in ('trg_durable_audit','trg_case_investigations_durable_audit','trg_case_investigation_dispatches_durable_audit','trg_case_investigation_attachments_durable_audit') and c.relkind='r'`),
+  '29',
   'durable trigger inventory',
 );
 assertEqual(sql(`select to_regclass('public.customer_notes') is null`), 't', 'phantom customer_notes exclusion');

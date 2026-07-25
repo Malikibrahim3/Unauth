@@ -4,8 +4,9 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import {
   Badge,
+  EmptyState,
   Modal,
-  PanelCard,
+  Panel,
 } from "@/components/ui";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
@@ -192,7 +193,17 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
 
   return (
     <div>
-      <p className="mb-3 text-xs" style={{ color: "var(--text-tertiary)" }}>
+      {recoveries.length === 0 ? (
+        <div className="rounded-xl border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)]">
+          <EmptyState
+            icon={<span aria-hidden="true">↗</span>}
+            title="No recovery cases yet"
+            description="Recovery cases appear when a source-backed loss has a possible recovery route. Connect your sources or review a payout case to start the handoff."
+            action={<Link href="/integrations" className="inline-flex h-9 items-center rounded-[var(--ua-radius-control)] bg-[var(--ua-action-primary)] px-3 text-sm font-semibold text-[var(--ua-action-primary-fg)]">Review integrations</Link>}
+          />
+        </div>
+      ) : null}
+      <p className="mb-3 text-xs" style={{ color: "var(--ua-text-tertiary)" }}>
         Cards update automatically as your connected tools sync new evidence and
         status.
       </p>
@@ -200,30 +211,30 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
         <p
           role="alert"
           className="mb-3 text-xs"
-          style={{ color: "var(--danger)" }}
+          style={{ color: "var(--ua-critical)" }}
         >
           {message}
         </p>
       ) : null}
-      <div className="grid gap-4 xl:grid-cols-3 2xl:grid-cols-5">
+      {recoveries.length > 0 ? <div className="grid gap-4 xl:grid-cols-3 2xl:grid-cols-5">
         {RECOVERY_BOARD_COLUMNS.map((column) => {
           const rows = rowsState.filter((item) =>
             column.statuses.includes(item.status),
           );
           return (
-            <PanelCard
+            <Panel
               as="section"
-              variant="app"
+              variant="panel"
               key={column.key}
               className="min-w-0 overflow-hidden p-0"
             >
               <div
                 className="flex items-center justify-between gap-3 border-b px-3 py-2"
-                style={{ borderColor: "var(--border-muted)" }}
+                style={{ borderColor: "var(--ua-border-subtle)" }}
               >
                 <p
                   className="text-xs font-semibold"
-                  style={{ color: "var(--text-secondary)" }}
+                  style={{ color: "var(--ua-text-secondary)" }}
                 >
                   {column.label}
                 </p>
@@ -233,7 +244,7 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
                 {rows.length === 0 ? (
                   <p
                     className="px-2 py-6 text-center text-xs"
-                    style={{ color: "var(--text-tertiary)" }}
+                    style={{ color: "var(--ua-text-tertiary)" }}
                   >
                     No cases
                   </p>
@@ -244,10 +255,10 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
                       item.support_payout_case?.ticket_external_id ??
                       item.support_payout_case_id.slice(0, 8);
                     return (
-                      <PanelCard
+                      <Panel
                         as="article"
                         key={item.id}
-                        variant="appInset"
+                        variant="inset"
                         className="p-3"
                       >
                         <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
@@ -255,13 +266,13 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
                             <Link
                               href={`/recoveries/${item.id}`}
                               className="block whitespace-nowrap text-xs font-semibold no-underline hover:underline"
-                              style={{ color: "var(--text-primary)" }}
+                              style={{ color: "var(--ua-text-primary)" }}
                             >
                               {orderLabel}
                             </Link>
                             <p
-                              className="mt-0.5 text-[11px]"
-                              style={{ color: "var(--text-tertiary)" }}
+                              className="mt-0.5 text-[length:var(--ua-text-micro-size)]"
+                              style={{ color: "var(--ua-text-tertiary)" }}
                             >
                               {RECOVERY_TYPE_LABELS[item.recovery_type]} ·{" "}
                               {RECOVERY_OWNER_LABELS[item.owner_type]}
@@ -271,12 +282,12 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
                         </div>
                         <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
                           <div>
-                            <p style={{ color: "var(--text-tertiary)" }}>
+                            <p style={{ color: "var(--ua-text-tertiary)" }}>
                               Loss
                             </p>
                             <p
-                              className="font-mono"
-                              style={{ color: "var(--text-primary)" }}
+                              className="font-sans tabular-nums"
+                              style={{ color: "var(--ua-text-primary)" }}
                             >
                               {formatCurrencyNullable(
                                 item.merchant_loss_amount,
@@ -285,12 +296,12 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
                             </p>
                           </div>
                           <div>
-                            <p style={{ color: "var(--text-tertiary)" }}>
+                            <p style={{ color: "var(--ua-text-tertiary)" }}>
                               Recoverable
                             </p>
                             <p
-                              className="font-mono"
-                              style={{ color: "var(--text-primary)" }}
+                              className="font-sans tabular-nums"
+                              style={{ color: "var(--ua-text-primary)" }}
                             >
                               {formatCurrencyNullable(
                                 item.estimated_recoverable_max,
@@ -299,18 +310,18 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
                             </p>
                           </div>
                           <div>
-                            <p style={{ color: "var(--text-tertiary)" }}>
+                            <p style={{ color: "var(--ua-text-tertiary)" }}>
                               Deadline
                             </p>
-                            <p style={{ color: "var(--text-primary)" }}>
+                            <p style={{ color: "var(--ua-text-primary)" }}>
                               {dateLabel(item.deadline_at)}
                             </p>
                           </div>
                           <div>
-                            <p style={{ color: "var(--text-tertiary)" }}>
+                            <p style={{ color: "var(--ua-text-tertiary)" }}>
                               Last source update
                             </p>
-                            <p style={{ color: "var(--text-primary)" }}>
+                            <p style={{ color: "var(--ua-text-primary)" }}>
                               {dateLabel(item.updated_at)}
                             </p>
                           </div>
@@ -329,10 +340,10 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
                             onClick={() =>
                               setContextCaseId(item.support_payout_case_id)
                             }
-                            className="rounded-md px-2 py-0.5 text-[11px]"
+                            className="rounded-md px-2 py-0.5 text-[length:var(--ua-text-micro-size)]"
                             style={{
-                              border: "1px solid var(--border-muted)",
-                              color: "var(--text-secondary)",
+                              border: "1px solid var(--ua-border-subtle)",
+                              color: "var(--ua-text-secondary)",
                             }}
                           >
                             Case context
@@ -352,16 +363,16 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
                               return (
                                 <div
                                   className="mt-3 flex items-center gap-1.5 border-t pt-3"
-                                  style={{ borderColor: "var(--border-muted)" }}
+                                  style={{ borderColor: "var(--ua-border-subtle)" }}
                                 >
                                   <button
                                     type="button"
-                                    className="rounded-md px-2.5 py-1 text-[11px] font-medium"
+                                    className="rounded-md px-2.5 py-1 text-[length:var(--ua-text-micro-size)] font-medium"
                                     style={{
-                                      border: "1px solid var(--border-muted)",
+                                      border: "1px solid var(--ua-border-subtle)",
                                       color: isDanger(primary.action)
-                                        ? "var(--risk-critical-fg)"
-                                        : "var(--text-secondary)",
+                                        ? "var(--ua-risk-critical)"
+                                        : "var(--ua-text-secondary)",
                                     }}
                                     disabled={primaryBusy}
                                     onClick={() => runAction(item, primary)}
@@ -387,15 +398,15 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
                               );
                             })()
                           : null}
-                      </PanelCard>
+                      </Panel>
                     );
                   })
                 )}
               </div>
-            </PanelCard>
+            </Panel>
           );
         })}
-      </div>
+      </div> : null}
       {contextCaseId ? (
         <CaseContextDrawer
           caseId={contextCaseId}
@@ -433,7 +444,7 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
         <dl className="space-y-2 text-sm">
           <div className="flex justify-between gap-4">
             <dt>Amount pursued</dt>
-            <dd className="font-mono">
+            <dd className="font-sans tabular-nums">
               {pending
                 ? (formatCurrencyNullable(
                     pending.item.amount_sought_minor / 100,
@@ -444,7 +455,7 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
           </div>
           <div className="flex justify-between gap-4">
             <dt>Recovered</dt>
-            <dd className="font-mono">
+            <dd className="font-sans tabular-nums">
               {pending
                 ? (formatCurrencyNullable(
                     pending.item.amount_recovered_minor / 100,
@@ -455,7 +466,7 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
           </div>
         </dl>
         {pending?.option.amountKind ? (
-          <label className="mt-4 block text-xs font-medium text-[var(--text-secondary)]">
+          <label className="mt-4 block text-xs font-medium text-[var(--ua-text-secondary)]">
             {pending.option.amountKind === "approved" ? "Approved amount" : "Cumulative amount received"}
             <div className="mt-1 grid grid-cols-[1fr_auto] gap-2">
               <input
@@ -464,26 +475,26 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
                 step="0.01"
                 value={pending.amount}
                 onChange={(event) => setPending({ ...pending, amount: event.target.value })}
-                className="rounded-[var(--ua-radius-input)] border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-sm text-[var(--text-primary)] focus-visible:shadow-[var(--shadow-focus)]"
+                className="rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2 py-1.5 text-sm text-[var(--ua-text-primary)] focus-visible:shadow-[var(--ua-shadow-focus)]"
               />
-              <span className="flex items-center rounded-[var(--ua-radius-input)] border border-[var(--border)] bg-[var(--surface-sunken)] px-3 font-semibold">
+              <span className="flex items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] px-3 font-semibold">
                 {pending.item.currency}
               </span>
             </div>
           </label>
         ) : null}
         {pending?.option.requiresNote ? (
-          <label className="mt-4 block text-xs font-medium text-[var(--text-secondary)]">
+          <label className="mt-4 block text-xs font-medium text-[var(--ua-text-secondary)]">
             Reason
             <textarea
               value={pending.note}
               onChange={(event) => setPending({ ...pending, note: event.target.value })}
-              className="mt-1 min-h-20 w-full rounded-[var(--ua-radius-input)] border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-sm text-[var(--text-primary)] focus-visible:shadow-[var(--shadow-focus)]"
+              className="mt-1 min-h-20 w-full rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2 py-1.5 text-sm text-[var(--ua-text-primary)] focus-visible:shadow-[var(--ua-shadow-focus)]"
               placeholder="Record the source reference or reason"
             />
           </label>
         ) : null}
-        <p className="mt-4 text-xs text-[var(--text-secondary)]">
+        <p className="mt-4 text-xs text-[var(--ua-text-secondary)]">
           Closing unrecoverable does not delete prior evidence, correspondence,
           or financial activity.
         </p>

@@ -129,10 +129,11 @@ export function renderGorgiasWidgetHtml(ctx: ClaimWidgetRenderContext): string {
       <div class="grade">—</div>
       <table class="cmp">
         <tbody>
-          <tr><th>${escapeHtml(rowLabels.payout_exposure)}</th><td>—</td></tr>
-          <tr><th>${escapeHtml(rowLabels.evidence_checklist)}</th><td>—</td></tr>
-          <tr><th>${escapeHtml(rowLabels.recommendation)}</th><td>—</td></tr>
-          <tr><th>${escapeHtml(rowLabels.recovery_path)}</th><td>—</td></tr>
+          <tr><th>${escapeHtml(rowLabels.customer_action)}</th><td>—</td></tr>
+          <tr><th>${escapeHtml(rowLabels.responsibility)}</th><td>—</td></tr>
+          <tr><th>${escapeHtml(rowLabels.recovery_recommendation)}</th><td>—</td></tr>
+          <tr><th>${escapeHtml(rowLabels.why)}</th><td>—</td></tr>
+          <tr><th>${escapeHtml(rowLabels.missing_evidence)}</th><td>—</td></tr>
         </tbody>
       </table>
       ${ctaUrl ? `<a class="cta" href="${escapeHtml(ctaUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(ctaLabel)}</a>` : ''}

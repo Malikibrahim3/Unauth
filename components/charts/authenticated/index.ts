@@ -1,7 +1,6 @@
 export { ChartPanel, ChartLegend, ChartState } from './ChartPanel';
 export { RankedContributionChart } from './RankedContributionChart';
 export type { AuthChartDatum, AuthChartTableRow, AuthChartTone } from './types';
-export { HatchDefs, hatchFill, type HatchHue } from './core/HatchDefs';
 export { BlockRailChart, type BlockRailBlock, type BlockRailPin } from './operational/BlockRailChart';
 export { TickMeterRow } from './operational/TickMeterRow';
 export { SegmentCompositionCard, type SegmentCompositionSegment, type SegmentCompositionRow } from './operational/SegmentCompositionCard';

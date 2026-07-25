@@ -102,32 +102,32 @@ export default function AgreementSettingsPage() {
         <form
           ref={formRef}
           onSubmit={handleSubmit}
-          className="space-y-3 rounded-[var(--ua-radius-card)] border p-4"
-          style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
+          className="space-y-3 rounded-[var(--ua-radius-surface)] border p-4"
+          style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-surface-primary)' }}
         >
           <div className="flex items-center gap-3">
             <span
-              className="grid h-8 w-8 place-items-center rounded-[var(--ua-radius-input)] border"
-              style={{ borderColor: 'var(--border)', color: 'var(--accent)' }}
+              className="grid h-8 w-8 place-items-center rounded-[var(--ua-radius-control)] border"
+              style={{ borderColor: 'var(--ua-border-default)', color: 'var(--ua-action-primary)' }}
             >
               <FileText className="h-5 w-5" aria-hidden />
             </span>
             <div>
-              <h2 className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>Upload agreement</h2>
-              <p className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+              <h2 className="text-[length:var(--ua-text-small-size)] font-semibold" style={{ color: 'var(--ua-text-primary)' }}>Upload agreement</h2>
+              <p className="text-[length:var(--ua-text-micro-size)]" style={{ color: 'var(--ua-text-secondary)' }}>
                 Upload the source PDF, then enter the terms you have verified.
               </p>
             </div>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <label className="space-y-1 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+            <label className="space-y-1 text-sm font-medium" style={{ color: 'var(--ua-text-primary)' }}>
               Agreement type
               <select
                 name="agreement_type"
                 required
-                className="w-full rounded-[var(--radius-sm)] border px-3 py-2 text-sm"
-                style={{ borderColor: 'var(--border)', background: 'var(--bg-canvas)' }}
+                className="w-full rounded-[var(--ua-radius-control)] border px-3 py-2 text-sm"
+                style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-canvas)' }}
                 defaultValue="COURIER"
               >
                 {agreementTypes.map(([value, label]) => (
@@ -135,69 +135,69 @@ export default function AgreementSettingsPage() {
                 ))}
               </select>
             </label>
-            <label className="space-y-1 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+            <label className="space-y-1 text-sm font-medium" style={{ color: 'var(--ua-text-primary)' }}>
               Counterparty
               <input
                 name="counterparty_name"
-                className="w-full rounded-[var(--radius-sm)] border px-3 py-2 text-sm"
-                style={{ borderColor: 'var(--border)', background: 'var(--bg-canvas)' }}
+                className="w-full rounded-[var(--ua-radius-control)] border px-3 py-2 text-sm"
+                style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-canvas)' }}
                 placeholder="DHL, ShipBob, Stripe"
               />
             </label>
-            <label className="space-y-1 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+            <label className="space-y-1 text-sm font-medium" style={{ color: 'var(--ua-text-primary)' }}>
               Service
               <input
                 name="service_name"
-                className="w-full rounded-[var(--radius-sm)] border px-3 py-2 text-sm"
-                style={{ borderColor: 'var(--border)', background: 'var(--bg-canvas)' }}
+                className="w-full rounded-[var(--ua-radius-control)] border px-3 py-2 text-sm"
+                style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-canvas)' }}
                 placeholder="Express, pick-pack, dispute handling"
               />
             </label>
-            <label className="space-y-1 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+            <label className="space-y-1 text-sm font-medium" style={{ color: 'var(--ua-text-primary)' }}>
               Version
               <input
                 name="version_label"
-                className="w-full rounded-[var(--radius-sm)] border px-3 py-2 text-sm"
-                style={{ borderColor: 'var(--border)', background: 'var(--bg-canvas)' }}
+                className="w-full rounded-[var(--ua-radius-control)] border px-3 py-2 text-sm"
+                style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-canvas)' }}
                 placeholder="2026 master services agreement"
               />
             </label>
-            <label className="space-y-1 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+            <label className="space-y-1 text-sm font-medium" style={{ color: 'var(--ua-text-primary)' }}>
               Effective from
               <input
                 name="effective_from"
                 type="date"
-                className="w-full rounded-[var(--radius-sm)] border px-3 py-2 text-sm"
-                style={{ borderColor: 'var(--border)', background: 'var(--bg-canvas)' }}
+                className="w-full rounded-[var(--ua-radius-control)] border px-3 py-2 text-sm"
+                style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-canvas)' }}
               />
             </label>
-            <label className="space-y-1 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+            <label className="space-y-1 text-sm font-medium" style={{ color: 'var(--ua-text-primary)' }}>
               Effective to
               <input
                 name="effective_to"
                 type="date"
-                className="w-full rounded-[var(--radius-sm)] border px-3 py-2 text-sm"
-                style={{ borderColor: 'var(--border)', background: 'var(--bg-canvas)' }}
+                className="w-full rounded-[var(--ua-radius-control)] border px-3 py-2 text-sm"
+                style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-canvas)' }}
               />
             </label>
           </div>
 
           <label
-            className="flex min-h-24 cursor-pointer flex-col items-center justify-center gap-2 rounded-[var(--ua-radius-input)] border border-dashed p-4 text-center"
-            style={{ borderColor: 'var(--border)', background: 'var(--bg-canvas)', color: 'var(--text-secondary)' }}
+            className="flex min-h-24 cursor-pointer flex-col items-center justify-center gap-2 rounded-[var(--ua-radius-control)] border border-dashed p-4 text-center"
+            style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-canvas)', color: 'var(--ua-text-secondary)' }}
           >
             <Upload className="h-6 w-6" aria-hidden />
-            <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Choose PDF (10 MB max)</span>
+            <span className="text-sm font-medium" style={{ color: 'var(--ua-text-primary)' }}>Choose PDF (10 MB max)</span>
             <input name="file" type="file" required className="sr-only" accept=".pdf,application/pdf" />
           </label>
 
           {uploadState.status === 'error' ? (
-            <p className="rounded-[var(--radius-sm)] border px-3 py-2 text-sm" style={{ borderColor: 'var(--risk-critical-bd)', color: 'var(--risk-critical)' }}>
+            <p className="rounded-[var(--ua-radius-control)] border px-3 py-2 text-sm" style={{ borderColor: 'var(--ua-risk-critical-border)', color: 'var(--ua-risk-critical)' }}>
               {uploadState.message}
             </p>
           ) : null}
           {uploadState.status === 'success' ? (
-            <p className="flex items-center gap-2 rounded-[var(--radius-sm)] border px-3 py-2 text-sm" style={{ borderColor: 'var(--success)', color: 'var(--success)' }}>
+            <p className="flex items-center gap-2 rounded-[var(--ua-radius-control)] border px-3 py-2 text-sm" style={{ borderColor: 'var(--ua-success)', color: 'var(--ua-success)' }}>
               <CheckCircle2 className="h-4 w-4" aria-hidden />
               Agreement uploaded. Enter its verified terms to activate it.
             </p>
@@ -206,31 +206,31 @@ export default function AgreementSettingsPage() {
           <button
             type="submit"
             disabled={uploadState.status === 'saving'}
-            className="inline-flex h-8 items-center gap-2 rounded-[var(--ua-radius-input)] px-3 text-[11px] font-semibold text-white disabled:opacity-60"
-            style={{ background: 'var(--accent)' }}
+            className="inline-flex h-8 items-center gap-2 rounded-[var(--ua-radius-control)] px-3 text-[length:var(--ua-text-micro-size)] font-semibold text-[var(--ua-action-primary-fg)] disabled:opacity-60"
+            style={{ background: 'var(--ua-action-primary)' }}
           >
             <Upload className="h-4 w-4" aria-hidden />
             {uploadState.status === 'saving' ? 'Uploading...' : 'Upload agreement'}
           </button>
         </form>
 
-        <section className="rounded-[var(--ua-radius-card)] border p-4" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
-          <h2 className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>Verified terms</h2>
+        <section className="rounded-[var(--ua-radius-surface)] border p-4" style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-surface-primary)' }}>
+          <h2 className="text-[length:var(--ua-text-small-size)] font-semibold" style={{ color: 'var(--ua-text-primary)' }}>Verified terms</h2>
           {uploadState.status !== 'success' ? (
-            <div className="mt-4 space-y-3 text-sm" style={{ color: 'var(--text-secondary)' }}>
+            <div className="mt-4 space-y-3 text-sm" style={{ color: 'var(--ua-text-secondary)' }}>
               <p>Upload a PDF first. Unapproved documents never affect claim decisions.</p>
               <p>After upload, enter the recovery rule exactly as it appears in the agreement.</p>
             </div>
           ) : (
             <form onSubmit={handleRuleSubmit} className="mt-3 space-y-3">
-              <label className="block space-y-1 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+              <label className="block space-y-1 text-sm font-medium" style={{ color: 'var(--ua-text-primary)' }}>
                 Rule name
-                <input name="rule_name" required maxLength={160} className="w-full rounded-[var(--radius-sm)] border px-3 py-2" style={{ borderColor: 'var(--border)', background: 'var(--bg-canvas)' }} placeholder="Lost parcel recovery eligibility" />
+                <input name="rule_name" required maxLength={160} className="w-full rounded-[var(--ua-radius-control)] border px-3 py-2" style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-canvas)' }} placeholder="Lost parcel recovery eligibility" />
               </label>
               <div className="grid gap-3 sm:grid-cols-2">
-                <label className="space-y-1 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                <label className="space-y-1 text-sm font-medium" style={{ color: 'var(--ua-text-primary)' }}>
                   Claim type
-                  <select name="applies_to_claim_type" className="w-full rounded-[var(--radius-sm)] border px-3 py-2" style={{ borderColor: 'var(--border)', background: 'var(--bg-canvas)' }} defaultValue="LOST_PARCEL">
+                  <select name="applies_to_claim_type" className="w-full rounded-[var(--ua-radius-control)] border px-3 py-2" style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-canvas)' }} defaultValue="LOST_PARCEL">
                     <option value="LOST_PARCEL">Lost parcel</option>
                     <option value="ITEM_NOT_RECEIVED">Item not received</option>
                     <option value="DELIVERED_NOT_RECEIVED">Delivered not received</option>
@@ -243,9 +243,9 @@ export default function AgreementSettingsPage() {
                     <option value="ANY">Any claim</option>
                   </select>
                 </label>
-                <label className="space-y-1 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                <label className="space-y-1 text-sm font-medium" style={{ color: 'var(--ua-text-primary)' }}>
                   Rule effect
-                  <select name="rule_type" className="w-full rounded-[var(--radius-sm)] border px-3 py-2" style={{ borderColor: 'var(--border)', background: 'var(--bg-canvas)' }} defaultValue="RECOVERY_ELIGIBILITY">
+                  <select name="rule_type" className="w-full rounded-[var(--ua-radius-control)] border px-3 py-2" style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-canvas)' }} defaultValue="RECOVERY_ELIGIBILITY">
                     <option value="RECOVERY_ELIGIBILITY">Recovery eligibility</option>
                     <option value="EVIDENCE_REQUIREMENT">Evidence requirement</option>
                     <option value="DEADLINE">Deadline</option>
@@ -254,34 +254,34 @@ export default function AgreementSettingsPage() {
                     <option value="ESCALATION">Escalation</option>
                   </select>
                 </label>
-                <label className="space-y-1 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                <label className="space-y-1 text-sm font-medium" style={{ color: 'var(--ua-text-primary)' }}>
                   Recovery status
-                  <select name="recovery_eligible" className="w-full rounded-[var(--radius-sm)] border px-3 py-2" style={{ borderColor: 'var(--border)', background: 'var(--bg-canvas)' }} defaultValue="eligible">
+                  <select name="recovery_eligible" className="w-full rounded-[var(--ua-radius-control)] border px-3 py-2" style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-canvas)' }} defaultValue="eligible">
                     <option value="eligible">Eligible</option>
                     <option value="not_eligible">Not eligible</option>
                     <option value="pending_evidence">Pending evidence</option>
                   </select>
                 </label>
-                <label className="space-y-1 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                <label className="space-y-1 text-sm font-medium" style={{ color: 'var(--ua-text-primary)' }}>
                   Claim deadline (days)
-                  <input name="deadline_days" type="number" min={1} max={3650} className="w-full rounded-[var(--radius-sm)] border px-3 py-2" style={{ borderColor: 'var(--border)', background: 'var(--bg-canvas)' }} placeholder="30" />
+                  <input name="deadline_days" type="number" min={1} max={3650} className="w-full rounded-[var(--ua-radius-control)] border px-3 py-2" style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-canvas)' }} placeholder="30" />
                 </label>
               </div>
-              <label className="block space-y-1 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+              <label className="block space-y-1 text-sm font-medium" style={{ color: 'var(--ua-text-primary)' }}>
                 Recovery route
-                <input name="recovery_route" required maxLength={120} className="w-full rounded-[var(--radius-sm)] border px-3 py-2" style={{ borderColor: 'var(--border)', background: 'var(--bg-canvas)' }} placeholder="CARRIER_CLAIM" />
+                <input name="recovery_route" required maxLength={120} className="w-full rounded-[var(--ua-radius-control)] border px-3 py-2" style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-canvas)' }} placeholder="CARRIER_CLAIM" />
               </label>
-              <label className="block space-y-1 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+              <label className="block space-y-1 text-sm font-medium" style={{ color: 'var(--ua-text-primary)' }}>
                 Required evidence (comma separated)
-                <input name="required_evidence" className="w-full rounded-[var(--radius-sm)] border px-3 py-2" style={{ borderColor: 'var(--border)', background: 'var(--bg-canvas)' }} placeholder="tracking scan, invoice, proof of value" />
+                <input name="required_evidence" className="w-full rounded-[var(--ua-radius-control)] border px-3 py-2" style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-canvas)' }} placeholder="tracking scan, invoice, proof of value" />
               </label>
-              <label className="block space-y-1 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+              <label className="block space-y-1 text-sm font-medium" style={{ color: 'var(--ua-text-primary)' }}>
                 Decision reason
-                <textarea name="reason" required maxLength={1000} rows={3} className="w-full rounded-[var(--radius-sm)] border px-3 py-2" style={{ borderColor: 'var(--border)', background: 'var(--bg-canvas)' }} placeholder="Describe the verified agreement term." />
+                <textarea name="reason" required maxLength={1000} rows={3} className="w-full rounded-[var(--ua-radius-control)] border px-3 py-2" style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-canvas)' }} placeholder="Describe the verified agreement term." />
               </label>
-              {ruleState.status === 'error' ? <p className="text-sm" style={{ color: 'var(--risk-critical)' }}>{ruleState.message}</p> : null}
-              {ruleState.status === 'success' ? <p className="text-sm" style={{ color: 'var(--success)' }}>Agreement rule approved and active.</p> : null}
-              <button type="submit" disabled={ruleState.status === 'saving' || ruleState.status === 'success'} className="rounded-[var(--radius-sm)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60" style={{ background: 'var(--accent)' }}>
+              {ruleState.status === 'error' ? <p className="text-sm" style={{ color: 'var(--ua-risk-critical)' }}>{ruleState.message}</p> : null}
+              {ruleState.status === 'success' ? <p className="text-sm" style={{ color: 'var(--ua-success)' }}>Agreement rule approved and active.</p> : null}
+              <button type="submit" disabled={ruleState.status === 'saving' || ruleState.status === 'success'} className="rounded-[var(--ua-radius-control)] px-4 py-2 text-sm font-semibold text-[var(--ua-action-primary-fg)] disabled:opacity-60" style={{ background: 'var(--ua-action-primary)' }}>
                 {ruleState.status === 'saving' ? 'Activating...' : 'Approve and activate'}
               </button>
             </form>

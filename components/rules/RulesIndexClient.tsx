@@ -63,9 +63,9 @@ export function RulesIndexClient({
 
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-muted)] px-4 py-3">
-        <p className="flex min-w-0 items-center gap-2 text-xs text-[var(--text-secondary)]">
-          <ShieldCheck aria-hidden="true" className="h-4 w-4 shrink-0 text-[var(--success)]" />
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--ua-border-subtle)] px-4 py-3">
+        <p className="flex min-w-0 items-center gap-2 text-xs text-[var(--ua-text-secondary)]">
+          <ShieldCheck aria-hidden="true" className="h-4 w-4 shrink-0 text-[var(--ua-success)]" />
           Published versions are immutable; changes begin as drafts.
         </p>
         {canManage ? (
@@ -82,36 +82,36 @@ export function RulesIndexClient({
       {error ? (
         <p
           role="alert"
-          className="border-b border-[var(--border-muted)] bg-[var(--surface)] px-4 py-2 text-sm text-[var(--danger)]"
+          className="border-b border-[var(--ua-border-subtle)] bg-[var(--ua-surface-primary)] px-4 py-2 text-sm text-[var(--ua-critical)]"
         >
           {error}
         </p>
       ) : null}
       {rules.length > 0 ? (
-        <ul className="divide-y divide-[var(--border-muted)]">
+        <ul className="divide-y divide-[var(--ua-border-subtle)]">
           {rules.map((rule) => (
             <li key={rule.id}>
               <Link
                 href={`/rules/${rule.id}`}
-                className="grid gap-3 px-4 py-3 transition-colors hover:bg-[var(--surface-hover)] focus-visible:outline-none focus-visible:shadow-[inset_var(--shadow-focus)] sm:grid-cols-[minmax(0,1fr)_7rem_7rem_auto] sm:items-center"
+                className="grid gap-3 px-4 py-3 transition-colors hover:bg-[var(--ua-surface-hover)] focus-visible:outline-none focus-visible:shadow-[inset_var(--ua-shadow-focus)] sm:grid-cols-[minmax(0,1fr)_7rem_7rem_auto] sm:items-center"
               >
                 <div className="min-w-0">
-                  <h2 className="truncate text-sm font-semibold text-[var(--text-primary)]">
+                  <h2 className="truncate text-sm font-semibold text-[var(--ua-text-primary)]">
                     {rule.name}
                   </h2>
-                  <p className="mt-1 line-clamp-2 text-xs text-[var(--text-secondary)]">
+                  <p className="mt-1 line-clamp-2 text-xs text-[var(--ua-text-secondary)]">
                     {rule.description ||
                       "No description — add intent and scope in the next draft."}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[11px] uppercase tracking-wide text-[var(--text-tertiary)]">
+                  <p className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">
                     Priority
                   </p>
-                  <p className="mt-1 font-mono text-sm">{rule.priority + 1}</p>
+                  <p className="mt-1 font-sans tabular-nums text-sm">{rule.priority + 1}</p>
                 </div>
                 <div>
-                  <p className="text-[11px] uppercase tracking-wide text-[var(--text-tertiary)]">
+                  <p className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">
                     Version
                   </p>
                   <p className="mt-1 font-mono text-sm">
@@ -122,10 +122,10 @@ export function RulesIndexClient({
                   <div className="flex flex-col items-end gap-1">
                     <StatusBadge family="workflowStatus" value={rule.currentStatus} size="sm" />
                     {rule.hasDraft && rule.publishedVersion ? (
-                      <span className="text-[11px] text-[var(--text-tertiary)]">Draft over v{rule.publishedVersion}</span>
+                      <span className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">Draft over v{rule.publishedVersion}</span>
                     ) : null}
                   </div>
-                  <span aria-hidden="true" className="text-[var(--accent)]">
+                  <span aria-hidden="true" className="text-[var(--ua-action-primary)]">
                     →
                   </span>
                 </div>

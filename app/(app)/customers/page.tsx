@@ -422,9 +422,10 @@ export default async function CustomersOverviewPage({
     // Case counts degrade to zero — the directory still renders.
   }
 
-  // One merchant-wide order projection supplies both full-directory KPIs and
-  // page rows. This avoids trusting source_customers.orders_count, which may be
-  // stale or absent even when canonical source_orders exist.
+  // One bounded order projection for the scanned customer slice supplies both
+  // full-directory KPIs and page rows. This avoids trusting
+  // source_customers.orders_count, which may be stale or absent even when
+  // canonical source_orders exist.
   const scannedCustomerIds = new Set(scanned.map((customer) => customer.id));
   const scannedMerchantCustomerIds = new Set(
     scanned.flatMap((customer) => customer.merchant_customer_id ? [customer.merchant_customer_id] : []),
@@ -438,13 +439,34 @@ export default async function CustomersOverviewPage({
     { count: number; last: string | null; totals: Map<string, number> }
   >();
   try {
-    const { data: orderRows } = (await svc
-      .from("source_orders")
-      .select("id, source_customer_id, merchant_customer_id, placed_at, total_price, currency")
-      .eq("merchant_id", ctx.merchantId)
-      .limit(10000)) as unknown as { data: OrderAggRow[] | null };
+    // The directory is already bounded to the scanned customer slice. Fetch
+    // only orders that can belong to those rows instead of downloading every
+    // order in the merchant, which made this page scale with historical volume.
+    const [canonicalOrders, sourceOrders] = await Promise.all([
+      scannedMerchantCustomerIds.size > 0
+        ? svc
+            .from(TABLES.SOURCE_ORDERS)
+            .select("id, source_customer_id, merchant_customer_id, placed_at, total_price, currency")
+            .eq("merchant_id", ctx.merchantId)
+            .in("merchant_customer_id", [...scannedMerchantCustomerIds])
+            .limit(10000)
+        : Promise.resolve({ data: [] as OrderAggRow[] }),
+      scannedCustomerIds.size > 0
+        ? svc
+            .from(TABLES.SOURCE_ORDERS)
+            .select("id, source_customer_id, merchant_customer_id, placed_at, total_price, currency")
+            .eq("merchant_id", ctx.merchantId)
+            .in("source_customer_id", [...scannedCustomerIds])
+            .limit(10000)
+        : Promise.resolve({ data: [] as OrderAggRow[] }),
+    ]) as unknown as [
+      { data: OrderAggRow[] | null },
+      { data: OrderAggRow[] | null },
+    ];
+    const orderRows = [...(canonicalOrders.data ?? []), ...(sourceOrders.data ?? [])];
+    const uniqueOrderRows = [...new Map(orderRows.map((row) => [row.id, row])).values()];
 
-    for (const order of orderRows ?? []) {
+    for (const order of uniqueOrderRows) {
       const add = (
         map: Map<string, { count: number; last: string | null; totals: Map<string, number> }>,
         key: string,

@@ -17,17 +17,17 @@ export function ClaimGateHero() {
               className={foundationStyles.hero2Headline}
               style={{ maxWidth: 760 }}
             >
-              Sits between the queued outcome
+              Evidence sits beside the decision
               <br />
-              and the payout. Every time.
+              before the payout is recorded.
             </h2>
           </Reveal>
           <Reveal delay={120}>
             <p
               className={`${foundationStyles.heroSubtitle} ${foundationStyles.hero2Subtitle}`}
             >
-              The gate applies your rules to every payout case. Your team keeps
-              control of the outcome.
+              Unauth applies your rules to every payout case and makes the
+              recommendation explainable. Your team keeps control of the outcome.
             </p>
           </Reveal>
         </div>

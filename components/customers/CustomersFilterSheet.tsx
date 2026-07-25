@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { CustomersFilterSheetInner } from '@/components/customers/CustomersFilterSheetInner';
 
 const FILTER_FALLBACK = (
-  <div className="h-10 w-full max-w-xl animate-pulse rounded-md" style={{ background: 'var(--bg-subtle)' }} />
+  <div className="h-10 w-full max-w-xl animate-pulse rounded-md" style={{ background: 'var(--ua-surface-secondary)' }} />
 );
 
 function CustomersFilterSheetContent() {

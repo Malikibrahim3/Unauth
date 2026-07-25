@@ -68,6 +68,7 @@ export const recoveryProjection: DomainEventHandler = async (client, event) => {
     client,
     merchantId: event.merchant_id,
     supportPayoutCaseId: event.aggregate_id,
+    explicitHandoff: false,
   });
   if (recovery) {
     const amount = recovery.estimated_recoverable_max ?? recovery.estimated_recoverable_min ?? recovery.eligible_loss_amount ?? 0;
@@ -94,5 +95,8 @@ export const recoveryProjection: DomainEventHandler = async (client, event) => {
   }
   return recovery
     ? { applied: true, detail: `recovery:${recovery.id}` }
-    : { applied: false, detail: 'not_recoverable' };
+    : {
+        applied: false,
+        detail: 'canonical_loss_ready_explicit_recovery_handoff_required',
+      };
 };

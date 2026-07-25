@@ -39,10 +39,8 @@ export default async function AuditTrailPage() {
 
   return (
     <SettingsPageShell
-      eyebrow="Append-only · merchant scoped"
       title="Audit trail"
       subtitle="Review merchant-scoped user actions and claim lifecycle events with actor attribution."
-      breadcrumbs={[{ label: "Settings", href: "/settings/account" }, { label: "Audit trail" }]}
     >
       <AuditTrailClient actorsByUserId={actorsByUserId} />
     </SettingsPageShell>

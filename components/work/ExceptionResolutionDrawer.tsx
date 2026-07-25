@@ -1,0 +1,205 @@
+'use client';
+
+import { useMemo, useState } from 'react';
+import Link from 'next/link';
+import { AlertTriangle, ExternalLink, UserRound, X } from 'lucide-react';
+import { Drawer, Button, Input, Select, StatusBadge } from '@/components/ui';
+import type { WorkQueueItem } from '@/components/work/WorkQueue';
+import { humanise, label } from '@/lib/ui/labels';
+import { formatDateTime } from '@/lib/utils/format';
+
+type Candidate = {
+  id: string;
+  entity_type?: string;
+  entity_id?: string;
+  confidence?: number | null;
+};
+
+type ResolutionAction = 'confirm' | 'reject' | 'resolve' | 'dismiss';
+
+function candidatesFor(item: WorkQueueItem): Candidate[] {
+  const value = item.exceptionContext?.candidates;
+  if (!Array.isArray(value)) return [];
+  return value.filter((candidate): candidate is Candidate => {
+    if (!candidate || typeof candidate !== 'object') return false;
+    const row = candidate as Record<string, unknown>;
+    return typeof row.id === 'string';
+  });
+}
+
+function isMatchException(item: WorkQueueItem) {
+  return item.exceptionContext?.is_match_exception === true || item.exceptionType === 'match_uncertainty';
+}
+
+export function ExceptionResolutionDrawer({
+  item,
+  onClose,
+  onUpdated,
+}: {
+  item: WorkQueueItem | null;
+  onClose: () => void;
+  onUpdated: () => void;
+}) {
+  const [candidateId, setCandidateId] = useState('');
+  const [note, setNote] = useState('');
+  const [busy, setBusy] = useState<ResolutionAction | 'assign' | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const candidates = useMemo(() => (item ? candidatesFor(item) : []), [item]);
+  const matchException = item ? isMatchException(item) : false;
+
+  function resetForNextItem() {
+    setCandidateId('');
+    setNote('');
+    setError(null);
+    setBusy(null);
+  }
+
+  async function assign(release = false) {
+    if (!item) return;
+    setBusy('assign');
+    setError(null);
+    try {
+      const response = await fetch(`/api/ops/exceptions/${item.id}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(release ? { release: true } : { assignToMe: true }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.error ?? 'Unable to update assignment');
+      onUpdated();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Unable to update assignment');
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function resolve(action: ResolutionAction) {
+    if (!item) return;
+    if (action === 'confirm' && !candidateId) {
+      setError('Select the candidate that matches this exception before confirming.');
+      return;
+    }
+    setBusy(action);
+    setError(null);
+    try {
+      const response = await fetch(`/api/ops/exceptions/${item.id}`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'Idempotency-Key': `exception-${item.id}-${action}` },
+        body: JSON.stringify({
+          action,
+          selectedCandidateId: candidateId || null,
+          resolution: note.trim() || null,
+          expectedStateVersion: item.exceptionStateVersion ?? null,
+        }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.error ?? 'Unable to resolve exception');
+      onUpdated();
+      resetForNextItem();
+      onClose();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Unable to resolve exception');
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <Drawer
+      open={Boolean(item)}
+      onClose={() => {
+        resetForNextItem();
+        onClose();
+      }}
+      title={item ? 'Review integration exception' : undefined}
+      width="min(600px, 100vw)"
+      footer={item ? (
+        <div className="flex flex-wrap items-center justify-end gap-2 px-5 py-3">
+          <Button variant="secondary" size="sm" onClick={() => void resolve(matchException ? 'reject' : 'dismiss')} loading={busy === 'reject' || busy === 'dismiss'}>
+            {matchException ? 'Reject match' : 'Dismiss'}
+          </Button>
+          <Button variant="primary" size="sm" onClick={() => void resolve(matchException ? 'confirm' : 'resolve')} loading={busy === 'confirm' || busy === 'resolve'} disabled={matchException && !candidateId}>
+            {matchException ? 'Confirm match' : 'Resolve exception'}
+          </Button>
+        </div>
+      ) : undefined}
+      aria-label="Review integration exception"
+    >
+      {item ? (
+        <div className="space-y-5 p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <StatusBadge family="workflowStatus" value={item.status} size="sm" />
+                <span className="text-xs text-[var(--ua-text-tertiary)]">{label('exceptionType', item.exceptionType ?? 'other')}</span>
+              </div>
+              <h3 className="mt-2 text-base font-semibold text-[var(--ua-text-primary)]">{item.title}</h3>
+              {item.description ? <p className="mt-1 text-sm leading-6 text-[var(--ua-text-secondary)]">{item.description}</p> : null}
+            </div>
+            <AlertTriangle className="mt-1 shrink-0 text-[var(--ua-warning)]" size={18} aria-hidden="true" />
+          </div>
+
+          <div className="grid gap-3 rounded-lg border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] p-3 text-sm sm:grid-cols-2">
+            <div>
+              <div className="text-xs text-[var(--ua-text-tertiary)]">Source</div>
+              <div className="mt-1 font-medium text-[var(--ua-text-primary)]">{humanise(item.source ?? 'automation')}</div>
+            </div>
+            <div>
+              <div className="text-xs text-[var(--ua-text-tertiary)]">Raised</div>
+              <div className="mt-1 font-medium text-[var(--ua-text-primary)]">{item.createdAt ? formatDateTime(item.createdAt) : '—'}</div>
+            </div>
+            <div>
+              <div className="text-xs text-[var(--ua-text-tertiary)]">Owner</div>
+              <div className="mt-1 font-medium text-[var(--ua-text-primary)]">{item.ownerUserId ? 'Assigned' : 'Unassigned'}</div>
+            </div>
+            <div>
+              <div className="text-xs text-[var(--ua-text-tertiary)]">Deadline</div>
+              <div className="mt-1 font-medium text-[var(--ua-text-primary)]">{item.dueAt ? formatDateTime(item.dueAt) : 'No deadline recorded'}</div>
+            </div>
+          </div>
+
+          {item.objectHref ? (
+            <Link href={item.objectHref} className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--ua-text-primary)] underline underline-offset-2">
+              Open linked case <ExternalLink size={14} aria-hidden="true" />
+            </Link>
+          ) : (
+            <p className="rounded-md border border-[var(--ua-warning-border)] bg-[var(--ua-warning-bg)] p-3 text-sm text-[var(--ua-warning)]">
+              This exception is not linked to a case yet. Resolve the missing decision here; the underlying source record remains unchanged until the action succeeds.
+            </p>
+          )}
+
+          {matchException && candidates.length > 0 ? (
+            <label className="block text-sm font-medium text-[var(--ua-text-primary)]">
+              Candidate match <span className="text-[var(--ua-critical)]" aria-hidden="true">*</span>
+              <Select value={candidateId} onChange={(event) => setCandidateId(event.target.value)} className="mt-1">
+                <option value="">Select a candidate…</option>
+                {candidates.map((candidate) => (
+                  <option key={candidate.id} value={candidate.id}>
+                    {humanise(candidate.entity_type ?? 'record')} {candidate.entity_id ? candidate.entity_id.slice(0, 12) : candidate.id.slice(0, 12)}{candidate.confidence != null ? ` · ${Math.round(candidate.confidence * 100)}% confidence` : ''}
+                  </option>
+                ))}
+              </Select>
+              <span className="mt-1 block text-xs font-normal text-[var(--ua-text-tertiary)]">Confirming writes the selected relationship and audit event together.</span>
+            </label>
+          ) : null}
+
+          <label className="block text-sm font-medium text-[var(--ua-text-primary)]">
+            Resolution note <span className="text-xs font-normal text-[var(--ua-text-tertiary)]">(optional)</span>
+            <Input value={note} onChange={(event) => setNote(event.target.value)} className="mt-1" placeholder="Record the missing decision or source detail" maxLength={2000} />
+          </label>
+
+          <div className="flex flex-wrap items-center gap-2 border-t border-[var(--ua-border-subtle)] pt-4">
+            <Button variant="secondary" size="sm" onClick={() => void assign(Boolean(item.ownerUserId))} loading={busy === 'assign'} leadingIcon={item.ownerUserId ? <X size={14} /> : <UserRound size={14} />}>
+              {item.ownerUserId ? 'Release assignment' : 'Assign to me'}
+            </Button>
+            {item.supportPayoutCaseId ? <span className="text-xs text-[var(--ua-text-tertiary)]">Case-linked decisions also appear in the case audit timeline.</span> : null}
+          </div>
+
+          {error ? <p role="alert" className="rounded-md border border-[var(--ua-critical)] bg-[var(--ua-risk-critical-bg)] p-3 text-sm text-[var(--ua-risk-critical)]">{error}</p> : null}
+        </div>
+      ) : null}
+    </Drawer>
+  );
+}

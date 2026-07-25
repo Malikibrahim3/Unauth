@@ -28,7 +28,7 @@ function Bone({ className }: { className?: string }) {
   return (
     <div
       className={`animate-pulse rounded-md ${className ?? ""}`}
-      style={{ background: "var(--bg-subtle, var(--border))" }}
+      style={{ background: "var(--ua-surface-secondary, var(--ua-border-default))" }}
       aria-hidden="true"
     />
   );
@@ -38,7 +38,7 @@ function TeamMembersSkeleton() {
   return (
     <div
       className="divide-y"
-      style={{ borderColor: "var(--border-muted)" }}
+      style={{ borderColor: "var(--ua-border-subtle)" }}
       aria-busy="true"
     >
       {[1, 2, 3].map((i) => (
@@ -80,30 +80,30 @@ export function TeamMembersSection({
     <section
       className="rounded-md border"
       style={{
-        background: "var(--surface)",
-        borderColor: "var(--border-muted)",
+        background: "var(--ua-surface-primary)",
+        borderColor: "var(--ua-border-subtle)",
       }}
     >
       <div
         className="flex items-center justify-between border-b px-4 py-3"
-        style={{ borderColor: "var(--border-muted)" }}
+        style={{ borderColor: "var(--ua-border-subtle)" }}
       >
         <div>
           <h2
             className="text-sm font-semibold"
-            style={{ color: "var(--text)" }}
+            style={{ color: "var(--ua-text-primary)" }}
           >
             {title}
           </h2>
           <p
             className="mt-1 text-xs"
-            style={{ color: "var(--text-secondary)" }}
+            style={{ color: "var(--ua-text-secondary)" }}
           >
             {subtitle}
           </p>
         </div>
         {showIcon ? (
-          <Shield className="h-5 w-5" style={{ color: "var(--icon-muted)" }} />
+          <Shield className="h-5 w-5" style={{ color: "var(--ua-icon-secondary)" }} />
         ) : null}
       </div>
 
@@ -111,15 +111,15 @@ export function TeamMembersSection({
         <TeamMembersSkeleton />
       ) : members.length === 0 ? (
         <p
-            className="px-4 py-5 text-[12px]"
-          style={{ color: "var(--text-secondary)" }}
+            className="px-4 py-5 text-[length:var(--ua-text-caption-size)]"
+          style={{ color: "var(--ua-text-secondary)" }}
         >
           {emptyMessage}
         </p>
       ) : (
         <div
           className="divide-y"
-          style={{ borderColor: "var(--border-muted)" }}
+          style={{ borderColor: "var(--ua-border-subtle)" }}
         >
           {members.map((member) => (
             <TeamMemberRow

@@ -82,6 +82,14 @@ export type ClaimRow = {
   assigned_at?: string | null;
   snoozed_until?: string | null;
   snooze_reason?: string | null;
+  investigation_open_count?: number;
+  investigation_overdue_count?: number;
+  investigation_awaiting_review_count?: number;
+  investigation_waiting_target?: string | null;
+  investigation_waiting_party?: string | null;
+  investigation_next_due_at?: string | null;
+  investigation_evidence_gap?: string | null;
+  investigation_latest_response?: string | null;
 };
 
 export type CustomerProfileSummary = {
@@ -100,32 +108,32 @@ export type EvidencePackageRow = {
 };
 
 export const STATUS_META: Record<string, { label: string; bg: string; text: string }> = {
-  new: { label: 'New', bg: 'var(--surface)', text: 'var(--text-secondary)' },
-  evidence_needed: { label: 'Needs evidence', bg: 'var(--warning-bg)', text: 'var(--warning)' },
-  awaiting_customer_evidence: { label: 'Awaiting customer', bg: 'var(--warning-bg)', text: 'var(--warning)' },
-  awaiting_carrier_response: { label: 'Awaiting carrier', bg: 'var(--info-bg)', text: 'var(--info)' },
-  awaiting_3pl_response: { label: 'Awaiting 3PL', bg: 'var(--info-bg)', text: 'var(--info)' },
-  awaiting_supplier_response: { label: 'Awaiting supplier', bg: 'var(--info-bg)', text: 'var(--info)' },
-  ready_for_decision: { label: 'Ready for decision', bg: 'var(--success-bg)', text: 'var(--success)' },
-  manual_review: { label: 'Manual review', bg: 'var(--warning-bg)', text: 'var(--warning)' },
-  decision_recorded: { label: 'Decision recorded', bg: 'var(--surface)', text: 'var(--text-secondary)' },
-  recovery_opened: { label: 'Recovery opened', bg: 'var(--surface)', text: 'var(--text-secondary)' },
-  closed: { label: 'Closed', bg: 'var(--surface)', text: 'var(--text-secondary)' },
-  open: { label: 'Active', bg: 'var(--surface)', text: 'var(--text-secondary)' },
-  pending: { label: 'Waiting on source data', bg: 'var(--warning-bg)', text: 'var(--warning)' },
-  escalated: { label: 'High evidence', bg: 'var(--sev-probable-fill)', text: 'var(--sev-probable)' },
-  resolved_refunded: { label: 'Resolved: refunded', bg: 'var(--success-bg)', text: 'var(--success)' },
-  resolved_won: { label: 'Resolved: won', bg: 'var(--success-bg)', text: 'var(--success)' },
-  resolved_lost: { label: 'Resolved: lost', bg: 'var(--risk-critical-bg)', text: 'var(--risk-critical-fg)' },
-  resolved_denied: { label: 'Resolved: denied', bg: 'var(--surface)', text: 'var(--text-secondary)' },
-  resolved_exchanged: { label: 'Resolved: exchanged', bg: 'var(--success-bg)', text: 'var(--success)' },
-  voided: { label: 'Voided', bg: 'var(--surface)', text: 'var(--text-secondary)' },
-  stale: { label: 'Stale', bg: 'var(--surface)', text: 'var(--text-secondary)' },
+  new: { label: 'New', bg: 'var(--ua-surface-primary)', text: 'var(--ua-text-secondary)' },
+  evidence_needed: { label: 'Needs evidence', bg: 'var(--ua-warning-bg)', text: 'var(--ua-warning)' },
+  awaiting_customer_evidence: { label: 'Awaiting customer', bg: 'var(--ua-warning-bg)', text: 'var(--ua-warning)' },
+  awaiting_carrier_response: { label: 'Awaiting carrier', bg: 'var(--ua-info-bg)', text: 'var(--ua-info)' },
+  awaiting_3pl_response: { label: 'Awaiting 3PL', bg: 'var(--ua-info-bg)', text: 'var(--ua-info)' },
+  awaiting_supplier_response: { label: 'Awaiting supplier', bg: 'var(--ua-info-bg)', text: 'var(--ua-info)' },
+  ready_for_decision: { label: 'Ready for decision', bg: 'var(--ua-success-bg)', text: 'var(--ua-success)' },
+  manual_review: { label: 'Manual review', bg: 'var(--ua-warning-bg)', text: 'var(--ua-warning)' },
+  decision_recorded: { label: 'Decision recorded', bg: 'var(--ua-surface-primary)', text: 'var(--ua-text-secondary)' },
+  recovery_opened: { label: 'Recovery opened', bg: 'var(--ua-surface-primary)', text: 'var(--ua-text-secondary)' },
+  closed: { label: 'Closed', bg: 'var(--ua-surface-primary)', text: 'var(--ua-text-secondary)' },
+  open: { label: 'Active', bg: 'var(--ua-surface-primary)', text: 'var(--ua-text-secondary)' },
+  pending: { label: 'Waiting on source data', bg: 'var(--ua-warning-bg)', text: 'var(--ua-warning)' },
+  escalated: { label: 'High evidence', bg: 'var(--ua-severity-probable-bg)', text: 'var(--ua-severity-probable)' },
+  resolved_refunded: { label: 'Resolved: refunded', bg: 'var(--ua-success-bg)', text: 'var(--ua-success)' },
+  resolved_won: { label: 'Resolved: won', bg: 'var(--ua-success-bg)', text: 'var(--ua-success)' },
+  resolved_lost: { label: 'Resolved: lost', bg: 'var(--ua-risk-critical-bg)', text: 'var(--ua-risk-critical)' },
+  resolved_denied: { label: 'Resolved: denied', bg: 'var(--ua-surface-primary)', text: 'var(--ua-text-secondary)' },
+  resolved_exchanged: { label: 'Resolved: exchanged', bg: 'var(--ua-success-bg)', text: 'var(--ua-success)' },
+  voided: { label: 'Voided', bg: 'var(--ua-surface-primary)', text: 'var(--ua-text-secondary)' },
+  stale: { label: 'Stale', bg: 'var(--ua-surface-primary)', text: 'var(--ua-text-secondary)' },
 };
 
 export const SLA_COLOUR_MAP: Record<string, { bg: string; text: string }> = {
-  normal: { bg: 'var(--surface)', text: 'var(--text-secondary)' },
-  approaching: { bg: 'var(--warning-bg)', text: 'var(--warning)' },
-  overdue: { bg: 'var(--warning-bg)', text: 'var(--warning)' },
-  resolved: { bg: 'var(--success-bg)', text: 'var(--success)' },
+  normal: { bg: 'var(--ua-surface-primary)', text: 'var(--ua-text-secondary)' },
+  approaching: { bg: 'var(--ua-warning-bg)', text: 'var(--ua-warning)' },
+  overdue: { bg: 'var(--ua-warning-bg)', text: 'var(--ua-warning)' },
+  resolved: { bg: 'var(--ua-success-bg)', text: 'var(--ua-success)' },
 };

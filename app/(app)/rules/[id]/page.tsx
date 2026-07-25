@@ -63,7 +63,6 @@ export default async function RuleDetail({
     <div>
       <SetBreadcrumbLabel label={display.name} />
       <AuthenticatedPageHeader
-        eyebrow="Policy configuration"
         title={display.name}
         subtitle={display.description || "No description. Add one in the next draft so operators understand intent and scope."}
       />

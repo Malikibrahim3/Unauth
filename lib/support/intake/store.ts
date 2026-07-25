@@ -187,7 +187,7 @@ const upsertCaseSchema = z.object({
   sentiment_score: z.number().nullable().optional(),
   chargeback_threatened: z.boolean().optional(),
   is_claim: z.boolean().optional(),
-  claim_type: z.enum(['INR', 'damaged', 'wrong_item', 'not_as_described', 'other']).nullable().optional(),
+  claim_type: z.enum(['INR', 'missing_item', 'damaged', 'wrong_item', 'not_as_described', 'other']).nullable().optional(),
   claim_type_confidence: z.number().min(0).max(1).nullable().optional(),
   provided_evidence: z.boolean().nullable().optional(),
   accepted_first_resolution: z.boolean().nullable().optional(),

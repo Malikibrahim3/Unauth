@@ -57,15 +57,15 @@ export function CaseFinancialHistoryCard({
     .at(-1);
 
   return (
-    <Card unstyled as="section" variant="flat" className="p-4" aria-labelledby="case-financial-history-title">
+    <Card unstyled as="section" variant="panel" className="p-4" aria-labelledby="case-financial-history-title">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h2 id="case-financial-history-title" className="text-sm font-semibold">Financial history</h2>
-          <p className="mt-1 text-xs text-[var(--text-secondary)]">
-            Canonical append-only totals. Approval is not payment; partner approval is not recovered cash.
+          <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">
+            Canonical append-only totals. Customer concessions, economic loss, and provider recovery remain distinct; approval is not recovered cash.
           </p>
         </div>
-        <Link href="/reports?range=all" className="text-xs font-semibold text-[var(--accent)]">
+        <Link href="/reports?range=all" className="text-xs font-semibold text-[var(--ua-action-primary)]">
           View reconciled reports
         </Link>
       </div>
@@ -81,7 +81,7 @@ export function CaseFinancialHistoryCard({
                   const value = financialMetricValue(bridge, metric);
                   return (
                     <div key={metric}>
-                      <dt className="text-[11px] text-[var(--text-secondary)]">{LABELS[metric]}</dt>
+                      <dt className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-secondary)]">{LABELS[metric]}</dt>
                       <dd className="text-xs font-semibold tabular-nums">
                         {known && value != null
                           ? formatMinorCurrencyNullable(value, bridge.currency)
@@ -94,11 +94,11 @@ export function CaseFinancialHistoryCard({
             </div>
           ))}
           {updatedAt ? (
-            <p className="text-[11px] text-[var(--text-tertiary)]">Projection updated {formatDateTime(updatedAt)}</p>
+            <p className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">Projection updated {formatDateTime(updatedAt)}</p>
           ) : null}
         </div>
       ) : (
-        <p className="mt-3 text-xs text-[var(--text-secondary)]">
+        <p className="mt-3 text-xs text-[var(--ua-text-secondary)]">
           No canonical financial entries are available for this case. Missing values are not reported as zero.
         </p>
       )}

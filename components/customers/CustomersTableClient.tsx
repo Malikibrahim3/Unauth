@@ -77,14 +77,14 @@ export default function CustomersTableClient({
       header: "Customer",
       render: (p: CustomerRow) => (
         <div className="flex items-center gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--surface-sunken)] text-xs font-semibold text-[var(--text-primary)] ring-1 ring-[var(--border-muted)]">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--ua-surface-muted)] text-xs font-semibold text-[var(--ua-text-primary)] ring-1 ring-[var(--ua-border-subtle)]">
             {customerInitials(p)}
           </span>
           <div className="min-w-0">
-            <div className="truncate text-sm font-semibold text-[var(--text)]">
+            <div className="truncate text-sm font-semibold text-[var(--ua-text-primary)]">
               {p.names?.[0] ?? "Unnamed customer"}
             </div>
-            <div className="truncate text-xs text-[var(--text-secondary)]">
+            <div className="truncate text-xs text-[var(--ua-text-secondary)]">
               {p.primary_email ?? "Contact unavailable"}
             </div>
           </div>
@@ -98,7 +98,7 @@ export default function CustomersTableClient({
       render: (p: CustomerRow) => (
         <div className="text-right">
           <div className="num font-semibold">{p.total_orders}</div>
-          <div className="mt-0.5 text-[11px] text-[var(--text-tertiary)]">completed in store</div>
+          <div className="mt-0.5 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">completed in store</div>
         </div>
       ),
     },
@@ -116,7 +116,7 @@ export default function CustomersTableClient({
                 : "—"}
           </div>
           {!p.has_mixed_currency && p.total_spent_currency && p.total_orders > 0 ? (
-            <div className="mt-0.5 text-[11px] text-[var(--text-tertiary)]">
+            <div className="mt-0.5 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">
               {formatCurrency(p.total_spent / p.total_orders, p.total_spent_currency)} avg. order
             </div>
           ) : null}
@@ -133,7 +133,7 @@ export default function CustomersTableClient({
             <OpenCasesBadge count={p.payout_cases_open} />
             <span className="num font-semibold">{p.payout_cases_total}</span>
           </span>
-          <span className="text-[11px] text-[var(--text-tertiary)]">
+          <span className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">
             {p.total_orders > 0
               ? `${p.payout_cases_total} ${p.payout_cases_total === 1 ? "case" : "cases"} across ${p.total_orders} ${p.total_orders === 1 ? "order" : "orders"}`
               : "No order baseline"}
@@ -146,8 +146,8 @@ export default function CustomersTableClient({
       header: "Last order",
       align: "right" as const,
       render: (p: CustomerRow) => (
-        <span className="inline-flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
-          <Clock3 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" aria-hidden="true" />
+        <span className="inline-flex items-center gap-1.5 text-xs text-[var(--ua-text-secondary)]">
+          <Clock3 className="h-3.5 w-3.5 text-[var(--ua-text-tertiary)]" aria-hidden="true" />
           {p.last_order_at ? formatDate(p.last_order_at) : "No order date"}
         </span>
       ),
@@ -158,7 +158,7 @@ export default function CustomersTableClient({
       align: "right" as const,
       render: () => (
         <ChevronRight
-          className="ml-auto h-4 w-4 text-[var(--text-tertiary)]"
+          className="ml-auto h-4 w-4 text-[var(--ua-text-tertiary)]"
           aria-hidden="true"
         />
       ),
@@ -172,8 +172,8 @@ export default function CustomersTableClient({
         className="hidden sm:block overflow-hidden border"
         data-testid="customers-table"
         style={{
-          background: "var(--surface)",
-          borderColor: "var(--border-muted)",
+          background: "var(--ua-surface-primary)",
+          borderColor: "var(--ua-border-subtle)",
           borderRadius: 4,
         }}
       >
@@ -194,23 +194,23 @@ export default function CustomersTableClient({
             as="button"
             type="button"
             key={p.id}
-            variant="flat"
+            variant="panel"
             className="w-full cursor-pointer p-4 text-left transition-colors"
             onClick={() => setPreview(p.id)}
           >
             <div className="flex items-start justify-between gap-3 mb-3">
               <div className="flex min-w-0 items-center gap-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--surface-sunken)] text-xs font-semibold ring-1 ring-[var(--border-muted)]">{customerInitials(p)}</span>
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--ua-surface-muted)] text-xs font-semibold ring-1 ring-[var(--ua-border-subtle)]">{customerInitials(p)}</span>
                 <div className="min-w-0">
                 <span
                   className="text-sm font-semibold"
-                  style={{ color: "var(--text)" }}
+                  style={{ color: "var(--ua-text-primary)" }}
                 >
                   {p.names?.[0] ?? "-"}
                 </span>
                 <p
                   className="text-xs truncate mt-0.5"
-                  style={{ color: "var(--text-secondary)" }}
+                  style={{ color: "var(--ua-text-secondary)" }}
                 >
                   {p.primary_email ?? "-"}
                 </p>
@@ -218,14 +218,14 @@ export default function CustomersTableClient({
               </div>
               <OpenCasesBadge count={p.payout_cases_open} />
             </div>
-            <div className="grid grid-cols-3 gap-px overflow-hidden rounded-md border border-[var(--border-muted)] bg-[var(--border-muted)] text-xs">
-              <div className="bg-[var(--surface)] p-2"><span className="block font-semibold text-[var(--text)]">{p.total_orders}</span><span className="text-[var(--text-tertiary)]">Orders</span></div>
-              <div className="bg-[var(--surface)] p-2"><span className="block font-semibold text-[var(--text)]">{p.payout_cases_total}</span><span className="text-[var(--text-tertiary)]">Cases</span></div>
-              <div className="bg-[var(--surface)] p-2"><span className="block truncate font-semibold text-[var(--text)]">{p.last_order_at ? formatDate(p.last_order_at) : "—"}</span><span className="text-[var(--text-tertiary)]">Last order</span></div>
+            <div className="grid grid-cols-3 gap-px overflow-hidden rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-border-subtle)] text-xs">
+              <div className="bg-[var(--ua-surface-primary)] p-2"><span className="block font-semibold text-[var(--ua-text-primary)]">{p.total_orders}</span><span className="text-[var(--ua-text-tertiary)]">Orders</span></div>
+              <div className="bg-[var(--ua-surface-primary)] p-2"><span className="block font-semibold text-[var(--ua-text-primary)]">{p.payout_cases_total}</span><span className="text-[var(--ua-text-tertiary)]">Cases</span></div>
+              <div className="bg-[var(--ua-surface-primary)] p-2"><span className="block truncate font-semibold text-[var(--ua-text-primary)]">{p.last_order_at ? formatDate(p.last_order_at) : "—"}</span><span className="text-[var(--ua-text-tertiary)]">Last order</span></div>
             </div>
             <div
               className="mt-3 flex justify-end text-xs font-semibold"
-              style={{ color: "var(--text)" }}
+              style={{ color: "var(--ua-text-primary)" }}
             >
               <span className="inline-flex items-center gap-1">
                 <ReceiptText className="h-3.5 w-3.5" aria-hidden="true" />

@@ -8,9 +8,9 @@ type AuthShellProps = {
 
 export function AuthShell({ children }: AuthShellProps) {
   return (
-    <main className="min-h-screen bg-[var(--fl-bg)] text-[var(--fl-ink)]">
+    <main className="ua-auth-surface min-h-screen bg-[var(--ua-canvas)] text-[var(--ua-text-primary)]">
       <div className="mx-auto flex min-h-screen w-full max-w-[440px] flex-col px-5 py-6 sm:px-6">
-        <Link href="/" className="mb-12 inline-flex w-fit">
+        <Link href="/" className="mb-8 inline-flex w-fit">
           <UnauthLogo variant="light" size="nav" />
         </Link>
         <div className="flex flex-1 flex-col justify-center pb-12">{children}</div>
@@ -23,19 +23,19 @@ export function AuthError({ id, children }: { id?: string; children?: ReactNode 
   if (!children) return null;
 
   return (
-    <p id={id} className="mt-2 text-sm leading-5 text-[var(--risk-critical-fg)]">
+    <p id={id} className="mt-2 text-sm leading-5 text-[var(--ua-risk-critical)]">
       {children}
     </p>
   );
 }
 
 export const authInputClassName =
-  'h-12 rounded-[var(--radius-md)] border-[var(--border)] bg-[var(--surface)] px-3.5 text-[16px] text-[var(--text-primary)] shadow-none placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:bg-[var(--surface)] focus:ring-[var(--shadow-focus)]';
+  'h-9 rounded-[var(--ua-radius-control)] border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-3 text-sm text-[var(--ua-text-primary)] shadow-none placeholder:text-[var(--ua-text-tertiary)] focus:border-[var(--ua-action-primary)] focus:bg-[var(--ua-surface-primary)] focus:ring-[var(--ua-shadow-focus)]';
 
 export const authButtonStyle = {
-  background: 'var(--accent)',
-  color: '#FFFFFF',
-  borderColor: 'var(--accent)',
-  borderRadius: 'var(--radius-md)',
-  boxShadow: 'var(--landing-shadow-cta)',
+  background: 'var(--ua-action-primary)',
+  color: 'var(--ua-action-primary-fg)',
+  borderColor: 'var(--ua-action-primary)',
+  borderRadius: 'var(--ua-radius-control)',
+  boxShadow: 'none',
 } as const;

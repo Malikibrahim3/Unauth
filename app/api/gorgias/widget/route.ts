@@ -12,13 +12,14 @@ import {
   claimWidgetToJson,
   formatClaimRecommendationUnavailable,
   formatNoPayoutCaseFields,
+  formatReconciliationWidgetFields,
   formatPayoutWidgetDecision,
   formatRecommendationFields,
   type GorgiasWidgetJsonPayload,
   type GorgiasWidgetLinkContext,
   type GorgiasWidgetJsonOptions,
 } from '@/lib/gorgias/widgetJson';
-import { evaluateClaimDecision } from '@/lib/claims/decision/evaluate';
+import { previewClaimDecision } from '@/lib/claims/decision/evaluate';
 import { inferWidgetTicketClaimLike } from '@/lib/claims/decision/claimLikeness';
 import { resolveClaimForTicketDecision } from '@/lib/claims/decision/resolveClaim';
 import { fetchActiveMerchantRules } from '@/lib/rules/store';
@@ -32,6 +33,9 @@ import { isUsableWidgetEmailParam } from '@/lib/support/gorgias/ticketCustomerEm
 import { getMerchantGorgiasSupportConnection } from '@/lib/support/gorgias/settingsConnection';
 import { isGorgiasHelpdeskLinkedForWidget } from '@/lib/support/gorgias/helpdeskLinkStatus';
 import { TABLES } from '@/lib/supabase/tables';
+import { buildInvestigationWidgetField } from '@/lib/investigations/widget';
+import { getReconciliationReadModel } from '@/lib/reconciliation/caseStore';
+import { env } from '@/lib/utils/env';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -48,6 +52,11 @@ const JSON_RESPONSE_HEADERS = {
 } as const;
 
 const GORGIAS_WIDGET_JSON_FALLBACK: GorgiasWidgetJsonPayload = {
+  customer_action: 'Customer action: Case context unavailable',
+  responsibility: 'Responsibility: Unresolved',
+  recovery_recommendation: 'Recovery: Case context unavailable',
+  why: 'Why: Reconnect Gorgias in Unauth settings',
+  missing_evidence: 'Missing evidence: Connection context required',
   identity: 'Case context preview unavailable',
   claims: 'Claim history unavailable',
   orders: 'Order context unavailable',
@@ -66,14 +75,15 @@ const GORGIAS_WIDGET_JSON_FALLBACK: GorgiasWidgetJsonPayload = {
   evidence_checklist: '—',
   loss_attribution: '—',
   recovery_path: '—',
+  investigation_summary: 'Investigation context unavailable',
   cta_label: 'Open Unauth settings →',
   cta_url: `${process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') ?? ''}/settings/integrations/gorgias`,
   basic_unlock_url: '',
   full_unlock_url: '',
   evidence_unlock_url: '',
-  basic_unlock_label: 'Open full case →',
-  full_unlock_label: 'Open full case →',
-  evidence_unlock_label: 'Open full case →',
+  basic_unlock_label: 'View Store Check →',
+  full_unlock_label: 'Network Check unavailable',
+  evidence_unlock_label: 'Generate Case Report →',
 };
 
 type WidgetReturnContext = {
@@ -158,7 +168,9 @@ async function enrichWidgetJsonOptions(
   base: GorgiasWidgetJsonOptions,
 ): Promise<GorgiasWidgetJsonOptions> {
   const snapshot = await getContextCreditSnapshot(service, merchantId);
-  const showNetworkIntelligence = TIER_ORDER[snapshot.tier] >= TIER_ORDER['growth'];
+  const showNetworkIntelligence =
+    env.NETWORK_CONTEXT_ENABLED === 'true'
+    && TIER_ORDER[snapshot.tier] >= TIER_ORDER['growth'];
   return { ...base, showNetworkIntelligence };
 }
 
@@ -201,11 +213,18 @@ function returnJsonForResult(input: {
     GorgiasWidgetJsonPayload,
     'payout_exposure' | 'evidence_checklist' | 'recommendation' | 'recovery_path'
   >;
+  investigationFields?: Pick<GorgiasWidgetJsonPayload, 'investigation_summary'>;
+  reconciliationFields?: Pick<
+    GorgiasWidgetJsonPayload,
+    'customer_action' | 'responsibility' | 'recovery_recommendation' | 'why' | 'missing_evidence'
+  >;
 }): NextResponse {
   const body = {
     ...claimWidgetToJson(input.result, input.linkContext, input.widgetJsonOptions),
     ...(input.recommendationFields ?? {}),
     ...(input.payoutFields ?? {}),
+    ...(input.investigationFields ?? {}),
+    ...(input.reconciliationFields ?? {}),
   };
   const status = input.status ?? 200;
   const state = input.result.ok ? 'ok' : input.result.kind;
@@ -460,6 +479,12 @@ export async function GET(request: NextRequest) {
     let payoutFields:
       | Pick<GorgiasWidgetJsonPayload, 'payout_exposure' | 'evidence_checklist' | 'recommendation' | 'recovery_path'>
       | undefined;
+    let investigationFields:
+      | Pick<GorgiasWidgetJsonPayload, 'investigation_summary'>
+      | undefined;
+    let reconciliationFields:
+      | Pick<GorgiasWidgetJsonPayload, 'customer_action' | 'responsibility' | 'recovery_recommendation' | 'why' | 'missing_evidence'>
+      | undefined;
     if (result.ok) {
       try {
         const resolution = await resolveClaimForTicketDecision(service, {
@@ -485,12 +510,29 @@ export async function GET(request: NextRequest) {
 
         if (resolution.status === 'resolved' && resolution.claimId) {
           linkContext.claimId = resolution.claimId;
-          const claimEval = await evaluateClaimDecision({
-            client: service,
-            merchantId: authResult.merchantId,
-            claimId: resolution.claimId,
-            source: 'gorgias_widget',
-          });
+          const [claimEval, claimInvestigationFields] = await Promise.all([
+            previewClaimDecision({
+              client: service,
+              merchantId: authResult.merchantId,
+              claimId: resolution.claimId,
+            }),
+            buildInvestigationWidgetField(
+              service,
+              authResult.merchantId,
+              resolution.claimId,
+            ),
+          ]);
+          investigationFields = claimInvestigationFields;
+          try {
+            const reconciliation = await getReconciliationReadModel(
+              service,
+              authResult.merchantId,
+              resolution.claimId,
+            );
+            reconciliationFields = formatReconciliationWidgetFields(reconciliation?.recommendations);
+          } catch (reconciliationError) {
+            gorgiasWidgetLogError('reconciliation_read_failed', reconciliationError);
+          }
           if (claimEval) {
             recommendationFields = formatRecommendationFields(
               claimEval.evaluation,
@@ -548,6 +590,8 @@ export async function GET(request: NextRequest) {
       widgetJsonOptions: enrichedJsonOptions,
       recommendationFields,
       payoutFields,
+      investigationFields,
+      reconciliationFields,
     });
   } catch (err) {
     gorgiasWidgetLogError('fatal_error', err);

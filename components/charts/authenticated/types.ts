@@ -1,4 +1,4 @@
-export type AuthChartTone = 'orange' | 'blue' | 'green' | 'yellow' | 'red' | 'violet' | 'neutral';
+export type AuthChartTone = 'attention' | 'primary' | 'positive' | 'negative' | 'secondary' | 'neutral';
 
 export type AuthChartDatum = {
   label: string;

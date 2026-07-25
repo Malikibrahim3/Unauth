@@ -76,6 +76,7 @@ const CURRENT_V2_MERCHANT_DELETE_TABLES: string[] = [
   // Canonical entity model (Phase 3) — children before parents. All have
   // merchant_id; FKs are cascade/set-null so any residual dependents follow.
   'source_tracking_events',
+  'source_shipment_lines',
   'source_messages',
   'source_order_lines',
   'source_transactions',
@@ -93,6 +94,7 @@ const CURRENT_V2_MERCHANT_DELETE_TABLES: string[] = [
   'work_tasks',
   'recovery_tasks',
   'evidence_links',
+  'case_claimed_items',
   'loss_attribution_candidates',
   'loss_sources',
   'evidence_items',
@@ -111,6 +113,8 @@ const CURRENT_V2_MERCHANT_DELETE_TABLES: string[] = [
   // a direct DELETE here trips the immutability trigger.
   'loss_cases',
   'recovery_cases',
+  'case_investigation_dispatches',
+  'case_investigation_attachments',
   'case_clarification_requests',
   'integration_evidence_items',
   'pack_confirmations',
@@ -258,6 +262,7 @@ export async function POST(request: NextRequest) {
         removeStoragePrefix(service, STORAGE_BUCKETS.EVIDENCE_PACKAGES, `api-keys/${merchantId}`),
         removeStoragePrefix(service, STORAGE_BUCKETS.INTEGRATION_DOCUMENTS, merchantId),
         removeStoragePrefix(service, STORAGE_BUCKETS.PACK_CONFIRMATION_PHOTOS, merchantId),
+        removeStoragePrefix(service, STORAGE_BUCKETS.INVESTIGATION_EVIDENCE, merchantId),
         removeStorageObjects(
           service,
           STORAGE_BUCKETS.EVIDENCE_PACKAGES,
@@ -299,6 +304,13 @@ export async function POST(request: NextRequest) {
         throw new Error(`source-agnostic purge failed: ${purgeError.message}`);
       }
 
+      const { error: reconciliationPurgeError } = await service.rpc('purge_merchant_reconciliation_history', {
+        p_merchant_id: merchantId,
+      });
+      if (reconciliationPurgeError) {
+        throw new Error(`reconciliation history purge failed: ${reconciliationPurgeError.message}`);
+      }
+
       const { error: auditPurgeError } = await service.rpc('purge_merchant_audit_projection', {
         p_merchant_id: merchantId,
       });
@@ -326,6 +338,12 @@ export async function POST(request: NextRequest) {
       });
       if (finalEventPurgeError) {
         throw new Error(`final source-agnostic purge failed: ${finalEventPurgeError.message}`);
+      }
+      const { error: finalReconciliationPurgeError } = await service.rpc('purge_merchant_reconciliation_history', {
+        p_merchant_id: merchantId,
+      });
+      if (finalReconciliationPurgeError) {
+        throw new Error(`final reconciliation history purge failed: ${finalReconciliationPurgeError.message}`);
       }
       const { error: finalAuditPurgeError } = await service.rpc('purge_merchant_audit_projection', {
         p_merchant_id: merchantId,

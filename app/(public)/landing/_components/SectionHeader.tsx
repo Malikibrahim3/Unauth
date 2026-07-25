@@ -1,4 +1,4 @@
-import { SectionBody, SectionEyebrow, SectionHeadline } from '@/components/ui';
+import { SectionBody, SectionEyebrow, SectionHeadline } from '@/components/ui/LandingPrimitives';
 
 /**
  * Consistent section opener: mono eyebrow, display headline, measured body.

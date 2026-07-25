@@ -2,8 +2,10 @@
 
 import { useEffect, useReducer, cloneElement, type ReactElement } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Check, ShoppingBag, Headphones, Store, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { ButtonLink } from '@/components/ui/ButtonLink';
 import { ORDER_VOLUME_OPTIONS, LOSS_CONCERN_OPTIONS } from '@/lib/constants/merchantProfile';
 import {
   createInitialOnboardingState,
@@ -18,6 +20,7 @@ interface OnboardingClientProps {
   initialPrimaryConcern?: string;
   initialUsesWms3pl?: string;
   initialUsesReturnsPlatform?: string;
+  initialProfileComplete?: boolean;
   shopifyConnected?: boolean;
   shopifyShopDomain?: string;
   helpdeskConnected?: boolean;
@@ -35,19 +38,19 @@ const STEPS = [
     id: 'shopify',
     label: 'Connect Shopify',
     icon: ShoppingBag,
-    body: 'Connect Shopify so Unauth can show order history, refund patterns, and customer signals inside every Gorgias ticket.',
+    body: 'Connect Shopify so Unauth can ingest order, customer, fulfilment, and refund evidence.',
   },
   {
-    id: 'gorgias',
-    label: 'Connect Gorgias',
+    id: 'helpdesk',
+    label: 'Connect helpdesk',
     icon: Headphones,
-    body: 'Connect Gorgias so your support agents see claim context — prior orders, claim rate, trust indicators — without leaving the ticket.',
+    body: 'Connect one supported helpdesk so agents can open the read-only claim context widget from their support workflow.',
   },
   {
     id: 'done',
-    label: 'Widget is live',
+    label: 'Setup verified',
     icon: Check,
-    body: 'Your Gorgias claim context widget is ready. Agents will see Unauth intelligence inside every support ticket automatically.',
+    body: 'Your selected commerce and support connections have been verified. Integration health remains visible in Settings.',
   },
 ] as const;
 
@@ -59,12 +62,14 @@ export default function OnboardingClient({
   initialPrimaryConcern = '',
   initialUsesWms3pl = '',
   initialUsesReturnsPlatform = '',
+  initialProfileComplete = false,
   shopifyConnected = false,
   shopifyShopDomain = '',
   helpdeskConnected = false,
   helpdeskProvider = null,
 }: OnboardingClientProps) {
   void userId;
+  const router = useRouter();
   const [state, dispatch] = useReducer(
     onboardingReducer,
     {
@@ -74,6 +79,9 @@ export default function OnboardingClient({
       initialPrimaryConcern,
       initialUsesWms3pl,
       initialUsesReturnsPlatform,
+      profileComplete: initialProfileComplete,
+      shopifyConnected,
+      helpdeskConnected,
       shopifyShopDomain,
     },
     (input) => createInitialOnboardingState(input),
@@ -95,7 +103,30 @@ export default function OnboardingClient({
     dispatch({ type: 'patch', patch: { shopDomain: shopifyShopDomain } });
   }, [shopifyShopDomain]);
 
-  const maxReachableStep = !shopifyConnected ? 1 : !helpdeskConnected ? 2 : 3;
+  useEffect(() => {
+    function handleShopifyOAuth(event: MessageEvent) {
+      if (
+        event.origin === window.location.origin
+        && event.data
+        && typeof event.data === 'object'
+        && event.data.type === 'shopify_oauth_complete'
+      ) {
+        router.refresh();
+      }
+    }
+
+    window.addEventListener('message', handleShopifyOAuth);
+    return () => window.removeEventListener('message', handleShopifyOAuth);
+  }, [router]);
+
+  const maxReachableStep =
+    activeStep === 3
+      ? 3
+      : !state.profileSaved
+        ? 0
+        : !shopifyConnected
+          ? 1
+          : 2;
 
   async function saveProfileAndContinue() {
     if (!storeName.trim() || !platform || !annualVolume || !primaryConcern) {
@@ -113,7 +144,8 @@ export default function OnboardingClient({
         primaryLossConcern: primaryConcern,
         usesWms3pl: usesWms3pl ? usesWms3pl === 'yes' : undefined,
         usesReturnsPlatform: usesReturnsPlatform ? usesReturnsPlatform === 'yes' : undefined,
-        setupComplete: true,
+        profileComplete: true,
+        setupComplete: false,
       }),
     });
     const payload = await response.json().catch(() => ({}));
@@ -122,32 +154,55 @@ export default function OnboardingClient({
       dispatch({ type: 'patch', patch: { error: payload.error ?? 'Could not save your store details.' } });
       return;
     }
-    dispatch({ type: 'patch', patch: { activeStep: 1 } });
+    dispatch({ type: 'patch', patch: { activeStep: 1, profileSaved: true } });
+    router.refresh();
+  }
+
+  async function completeSetup() {
+    dispatch({ type: 'patch', patch: { loading: true, error: '' } });
+    const response = await fetch('/api/account/setup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ setupComplete: true }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || payload.setupComplete !== true) {
+      dispatch({
+        type: 'patch',
+        patch: {
+          loading: false,
+          error: payload.error ?? 'Could not verify the selected connections.',
+        },
+      });
+      return;
+    }
+    dispatch({ type: 'patch', patch: { activeStep: 3, loading: false } });
+    router.refresh();
   }
 
   const current = STEPS[activeStep];
   const CurrentIcon = current.icon;
 
   return (
-    <main className="min-h-screen" style={{ background: 'var(--bg-canvas)' }}>
-      <header className="flex h-[52px] items-center justify-between border-b border-[var(--border-muted)] bg-[var(--surface)] px-4 sm:px-5">
-        <div className="flex items-center gap-2 text-[12px] font-semibold text-[var(--text-primary)]">
-          <span className="grid h-7 w-7 place-items-center rounded-[var(--ua-radius-input)] bg-[var(--brand-deep)] text-[10px] font-bold text-white">U</span>
+    <main className="min-h-screen" style={{ background: 'var(--ua-canvas)' }}>
+      <header className="flex h-12 items-center justify-between border-b border-[var(--ua-border-subtle)] bg-[var(--ua-shell)] px-4 sm:px-5">
+        <div className="flex items-center gap-2 text-[length:var(--ua-text-caption-size)] font-semibold text-[var(--ua-text-primary)]">
+          <span className="grid h-7 w-7 place-items-center rounded-[var(--ua-radius-control)] bg-[var(--ua-surface-inverse)] text-[10px] font-bold text-[var(--ua-text-inverse)]">U</span>
           Unauth
         </div>
-        <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--text-tertiary)]">Workspace setup</span>
+        <span className="text-[length:var(--ua-text-micro-size)] font-semibold text-[var(--ua-text-tertiary)]">Workspace setup</span>
       </header>
       <div className="mx-auto max-w-[1500px] px-3 pb-7 pt-4 sm:px-5">
       <div className="mb-4">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--text-tertiary)]">Welcome to Unauth</p>
-        <h1 className="mt-1 text-[20px] font-semibold tracking-[-0.025em] text-[var(--text-primary)]">
+        <p className="text-[length:var(--ua-text-micro-size)] font-semibold text-[var(--ua-text-tertiary)]">Welcome to Unauth</p>
+        <h1 className="mt-1 text-[length:var(--ua-text-page-title-size)] font-semibold leading-6 tracking-normal text-[var(--ua-text-primary)]">
           Get set up
         </h1>
-        <p className="mt-1 max-w-[62ch] text-[12px] leading-5 text-[var(--text-secondary)]">
-          A few quick steps to bring payout control into every support ticket.
+        <p className="mt-1 max-w-[62ch] text-sm leading-5 text-[var(--ua-text-secondary)]">
+          Save your store profile, connect your evidence source, and verify a supported helpdesk.
         </p>
         <div
-          className="mt-3 h-1 overflow-hidden rounded-full bg-[var(--surface-sunken)]"
+          className="mt-3 h-1 overflow-hidden rounded-full bg-[var(--ua-surface-muted)]"
           role="progressbar"
           aria-label="Setup progress"
           aria-valuemin={1}
@@ -155,20 +210,20 @@ export default function OnboardingClient({
           aria-valuenow={activeStep + 1}
           aria-valuetext={`Step ${activeStep + 1} of ${STEPS.length}`}
         >
-          <div className="h-full rounded-full bg-[var(--accent)] transition-[width] duration-150" style={{ width: `${((activeStep + 1) / STEPS.length) * 100}%` }} />
+          <div className="h-full rounded-full bg-[var(--ua-action-primary)] transition-[width] duration-150" style={{ width: `${((activeStep + 1) / STEPS.length) * 100}%` }} />
         </div>
       </div>
       <div className="grid gap-3 lg:grid-cols-[208px_minmax(0,1fr)]">
         {/* Sidebar checklist */}
         <aside
-          className="rounded-[var(--ua-radius-card)] border p-3"
-          style={{ background: 'var(--surface-muted)', borderColor: 'var(--border)' }}
+          className="rounded-[var(--ua-radius-surface)] border p-3"
+          style={{ background: 'var(--ua-surface-muted)', borderColor: 'var(--ua-border-default)' }}
         >
           <div className="mb-3 flex items-start justify-between gap-3 px-1">
             <div>
-              <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--text-tertiary)]">Checklist</p>
-              <p className="mt-1 text-[10px] leading-4" style={{ color: 'var(--text-tertiary)' }}>
-                Add payout control to your Gorgias tickets
+              <p className="text-[length:var(--ua-text-micro-size)] font-semibold text-[var(--ua-text-tertiary)]">Checklist</p>
+              <p className="mt-1 text-xs leading-4" style={{ color: 'var(--ua-text-tertiary)' }}>
+                Verify the connections used by your team
               </p>
             </div>
           </div>
@@ -185,19 +240,19 @@ export default function OnboardingClient({
                   type="button"
                   disabled={!reachable}
                   onClick={() => reachable && dispatch({ type: 'patch', patch: { activeStep: index } })}
-                  className="grid w-full grid-cols-[22px_minmax(0,1fr)_auto] items-center gap-2 rounded-[var(--ua-radius-input)] border px-2 py-2 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                  className="grid w-full grid-cols-[22px_minmax(0,1fr)_auto] items-center gap-2 rounded-[var(--ua-radius-control)] border px-2 py-2 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                   style={{
-                    background: active ? 'var(--surface-selected)' : 'var(--surface-sunken)',
-                    borderColor: active ? 'var(--accent-border)' : 'var(--border)',
+                    background: active ? 'var(--ua-surface-selected)' : 'var(--ua-surface-muted)',
+                    borderColor: active ? 'var(--ua-border-default)' : 'var(--ua-border-default)',
                   }}
                 >
-                  <span className="flex h-[22px] w-[22px] items-center justify-center rounded-[var(--ua-radius-control)]" style={{ background: done ? 'var(--sev-clear-fill)' : 'var(--surface-sunken)', color: done ? 'var(--neutral)' : 'var(--text-tertiary)' }}>
+                  <span className="flex h-[22px] w-[22px] items-center justify-center rounded-[var(--ua-radius-control)]" style={{ background: done ? 'var(--ua-severity-clear-bg)' : 'var(--ua-surface-muted)', color: done ? 'var(--ua-neutral)' : 'var(--ua-text-tertiary)' }}>
                     {done ? <Check className="h-3.5 w-3.5" /> : <Icon className="h-3.5 w-3.5" />}
                   </span>
                   <span className="min-w-0">
-                    <span className="block text-[11px] font-medium" style={{ color: active ? 'var(--text-primary)' : 'var(--text-secondary)' }}>{step.label}</span>
+                    <span className="block text-[length:var(--ua-text-micro-size)] font-medium" style={{ color: active ? 'var(--ua-text-primary)' : 'var(--ua-text-secondary)' }}>{step.label}</span>
                   </span>
-                  <span className="t-mono" style={{ color: 'var(--text-tertiary)' }}>{String(index + 1).padStart(2, '0')}</span>
+                  <span className="font-sans text-xs tabular-nums" style={{ color: 'var(--ua-text-tertiary)' }}>{String(index + 1).padStart(2, '0')}</span>
                 </button>
               );
             })}
@@ -206,15 +261,15 @@ export default function OnboardingClient({
         </aside>
 
         {/* Step content */}
-        <section className="rounded-[var(--ua-radius-card)] border p-4" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-          <div className="mb-4 flex items-start gap-3 border-b border-[var(--border-muted)] pb-3">
-            <span className="flex h-8 w-8 items-center justify-center rounded-[var(--ua-radius-input)]" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>
+        <section className="rounded-[var(--ua-radius-surface)] border p-4" style={{ background: 'var(--ua-surface-primary)', borderColor: 'var(--ua-border-default)' }}>
+          <div className="mb-4 flex items-start gap-3 border-b border-[var(--ua-border-subtle)] pb-3">
+            <span className="flex h-8 w-8 items-center justify-center rounded-[var(--ua-radius-control)]" style={{ background: 'var(--ua-surface-selected)', color: 'var(--ua-action-primary)' }}>
               <CurrentIcon className="h-4 w-4" />
             </span>
             <div>
-              <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--text-tertiary)]">Step {activeStep + 1} of {STEPS.length}</p>
-              <h2 className="mt-1 text-[13px] font-semibold text-[var(--text-primary)]">{current.label}</h2>
-              <p className="mt-1 max-w-2xl text-[11px] leading-5" style={{ color: 'var(--text-secondary)' }}>{current.body}</p>
+              <p className="text-[length:var(--ua-text-micro-size)] font-semibold text-[var(--ua-text-tertiary)]">Step {activeStep + 1} of {STEPS.length}</p>
+              <h2 className="mt-1 text-[length:var(--ua-text-small-size)] font-semibold text-[var(--ua-text-primary)]">{current.label}</h2>
+              <p className="mt-1 max-w-2xl text-[length:var(--ua-text-small-size)] leading-[var(--ua-text-small-leading)]" style={{ color: 'var(--ua-text-secondary)' }}>{current.body}</p>
             </div>
           </div>
 
@@ -269,7 +324,7 @@ export default function OnboardingClient({
                   <option value="no">No, we handle returns ourselves</option>
                 </select>
               </Field>
-              {error && <p className="md:col-span-2 t-caption" style={{ color: 'var(--risk-critical-fg)' }}>{error}</p>}
+              {error && <p className="md:col-span-2 text-xs leading-4" style={{ color: 'var(--ua-risk-critical)' }}>{error}</p>}
               <div className="md:col-span-2 flex justify-end">
                 <Button
                   type="button"
@@ -285,22 +340,22 @@ export default function OnboardingClient({
           {activeStep === 1 && (
             <div className="space-y-4">
               {shopifyConnected ? (
-                <div className="rounded-md border px-4 py-3" style={{ background: 'var(--sev-clear-fill)', borderColor: 'var(--neutral)' }}>
+                <div className="rounded-[var(--ua-radius-surface)] border px-4 py-3" style={{ background: 'var(--ua-severity-clear-bg)', borderColor: 'var(--ua-neutral)' }}>
                   <div className="flex items-center gap-2">
-                    <Check className="h-4 w-4" style={{ color: 'var(--neutral)' }} />
-                    <p className="text-body-sm font-semibold" style={{ color: 'var(--neutral)' }}>
+                    <Check className="h-4 w-4" style={{ color: 'var(--ua-neutral)' }} />
+                    <p className="text-body-sm font-semibold" style={{ color: 'var(--ua-neutral)' }}>
                       Shopify connected — {shopifyShopDomain}
                     </p>
                   </div>
-                  <p className="t-caption mt-1" style={{ color: 'var(--text-secondary)' }}>
+                  <p className="text-xs leading-4 mt-1" style={{ color: 'var(--ua-text-secondary)' }}>
                     Orders, customers, and refund history are syncing automatically.
                   </p>
                 </div>
               ) : (
-                <div className="rounded-md border p-4 space-y-3" style={{ background: 'var(--surface-sunken)', borderColor: 'var(--border)' }}>
-                  <p className="text-body-sm" style={{ color: 'var(--text-secondary)' }}>
+                <div className="rounded-[var(--ua-radius-surface)] border p-4 space-y-3" style={{ background: 'var(--ua-surface-muted)', borderColor: 'var(--ua-border-default)' }}>
+                  <p className="text-body-sm" style={{ color: 'var(--ua-text-secondary)' }}>
                     Enter your Shopify store domain to connect. You can also connect from{' '}
-                    <Link href="/settings/integrations" className="underline underline-offset-2" style={{ color: 'var(--accent)' }}>
+                    <Link href="/settings/integrations" className="underline underline-offset-2" style={{ color: 'var(--ua-action-primary)' }}>
                       Settings → Integrations
                     </Link>
                     {' '}at any time.
@@ -311,13 +366,13 @@ export default function OnboardingClient({
                       onChange={(e) => dispatch({ type: 'patch', patch: { shopDomain: e.target.value } })}
                       aria-label="Shopify store domain"
                       placeholder="your-store.myshopify.com"
-                      className="h-8 w-full rounded-[var(--ua-radius-input)] border px-3 text-[12px] outline-none"
-                      style={{ background: 'var(--surface-sunken)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+                      className="h-9 w-full rounded-[var(--ua-radius-control)] border px-3 text-sm outline-none"
+                      style={{ background: 'var(--ua-surface-primary)', borderColor: 'var(--ua-border-default)', color: 'var(--ua-text-primary)' }}
                     />
                     <a
-                      href={`/api/shopify/install?shop=${encodeURIComponent(shopDomain.trim())}`}
-                      className="inline-flex h-8 items-center justify-center gap-1.5 rounded-[var(--ua-radius-input)] border px-3 text-[11px] font-semibold"
-                      style={{ borderColor: 'var(--accent)', color: 'var(--text-inverse)', background: 'var(--accent)', whiteSpace: 'nowrap' }}
+                      href={`/api/shopify/install?shop=${encodeURIComponent(shopDomain.trim())}&returnTo=${encodeURIComponent('/onboarding')}`}
+                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[var(--ua-radius-control)] border px-3 text-xs font-semibold"
+                      style={{ borderColor: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)', background: 'var(--ua-action-primary)', whiteSpace: 'nowrap' }}
                     >
                       <ShoppingBag className="h-4 w-4" />
                       Connect Shopify
@@ -338,10 +393,10 @@ export default function OnboardingClient({
           {activeStep === 2 && (
             <div className="space-y-4">
               {helpdeskConnected ? (
-                <div className="rounded-md border px-4 py-3" style={{ background: 'var(--sev-clear-fill)', borderColor: 'var(--neutral)' }}>
+                <div className="rounded-[var(--ua-radius-surface)] border px-4 py-3" style={{ background: 'var(--ua-severity-clear-bg)', borderColor: 'var(--ua-neutral)' }}>
                   <div className="flex items-center gap-2">
-                    <Check className="h-4 w-4" style={{ color: 'var(--neutral)' }} />
-                    <p className="text-body-sm font-semibold" style={{ color: 'var(--neutral)' }}>
+                    <Check className="h-4 w-4" style={{ color: 'var(--ua-neutral)' }} />
+                    <p className="text-body-sm font-semibold" style={{ color: 'var(--ua-neutral)' }}>
                       {helpdeskProvider === 'zendesk'
                         ? 'Zendesk connected'
                         : helpdeskProvider === 'freshdesk'
@@ -349,30 +404,30 @@ export default function OnboardingClient({
                           : 'Gorgias connected'}
                     </p>
                   </div>
-                  <p className="t-caption mt-1" style={{ color: 'var(--text-secondary)' }}>
-                    Agents will see claim context inside every support ticket automatically.
+                  <p className="text-xs leading-4 mt-1" style={{ color: 'var(--ua-text-secondary)' }}>
+                    The helpdesk connection is available for the read-only claim context workflow.
                   </p>
                 </div>
               ) : (
-                <div className="rounded-md border p-4 space-y-3" style={{ background: 'var(--surface-sunken)', borderColor: 'var(--border)' }}>
-                  <p className="text-body-sm" style={{ color: 'var(--text-secondary)' }}>
-                    Connect Gorgias from the integrations page. Once connected, Unauth will automatically add a claim context card to every Gorgias ticket — showing order history, prior claims, and trust indicators for the customer.
+                <div className="rounded-[var(--ua-radius-surface)] border p-4 space-y-3" style={{ background: 'var(--ua-surface-muted)', borderColor: 'var(--ua-border-default)' }}>
+                  <p className="text-body-sm" style={{ color: 'var(--ua-text-secondary)' }}>
+                    Connect Gorgias from its integration settings, or choose another supported helpdesk from Integrations.
                   </p>
-                  <p className="t-caption" style={{ color: 'var(--text-tertiary)' }}>
+                  <p className="text-xs leading-4" style={{ color: 'var(--ua-text-tertiary)' }}>
                     You can also add Zendesk or Freshdesk later from the same page.
                   </p>
                   <Link
-                    href="/settings/integrations/gorgias"
-                    className="inline-flex h-8 items-center gap-2 rounded-[var(--ua-radius-input)] px-3 text-[11px] font-semibold"
-                    style={{ background: 'var(--accent)', borderColor: 'var(--accent)', border: '1px solid', color: 'var(--text-inverse)' }}
+                    href="/settings/integrations/gorgias?returnTo=%2Fonboarding"
+                    className="inline-flex h-9 items-center gap-2 rounded-[var(--ua-radius-control)] px-3 text-xs font-semibold"
+                    style={{ background: 'var(--ua-action-primary)', borderColor: 'var(--ua-action-primary)', border: '1px solid', color: 'var(--ua-text-inverse)' }}
                   >
                     <Headphones className="h-4 w-4" />
                     Set up Gorgias integration
                   </Link>
                   <Link
                     href="/integrations"
-                    className="inline-flex h-8 items-center gap-2 rounded-[var(--ua-radius-input)] border px-3 text-[11px] font-semibold"
-                    style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+                    className="inline-flex h-9 items-center gap-2 rounded-[var(--ua-radius-control)] border px-3 text-xs font-semibold"
+                    style={{ borderColor: 'var(--ua-border-default)', color: 'var(--ua-text-primary)' }}
                   >
                     Skip for now and choose another integration
                     <ArrowRight className="h-4 w-4" />
@@ -381,31 +436,29 @@ export default function OnboardingClient({
               )}
               {helpdeskConnected && (
                 <div className="flex justify-end">
-                  <Button type="button" onClick={() => dispatch({ type: 'patch', patch: { activeStep: 3 } })}>
-                    Continue <ArrowRight className="h-4 w-4 ml-1" />
+                  <Button type="button" onClick={completeSetup} loading={loading}>
+                    {loading ? 'Verifying…' : 'Verify and complete'} <ArrowRight className="h-4 w-4 ml-1" />
                   </Button>
                 </div>
               )}
+              {error && <p className="text-xs leading-4" style={{ color: 'var(--ua-risk-critical)' }}>{error}</p>}
             </div>
           )}
 
           {activeStep === 3 && (
             <div className="space-y-4">
-              <div className="rounded-md border px-4 py-3" style={{ background: 'var(--sev-clear-fill)', borderColor: 'var(--neutral)' }}>
-                <p className="t-subhead" style={{ color: 'var(--neutral)' }}>Setup complete</p>
-                <p className="text-body-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-                  Your Gorgias agents will now see claim context automatically. You can review integration status and add more sources from Settings.
+              <div className="rounded-[var(--ua-radius-surface)] border px-4 py-3" style={{ background: 'var(--ua-severity-clear-bg)', borderColor: 'var(--ua-neutral)' }}>
+                <p className="text-[length:var(--ua-text-section-title-size)] font-semibold leading-5" style={{ color: 'var(--ua-neutral)' }}>Setup complete</p>
+                <p className="text-body-sm mt-1" style={{ color: 'var(--ua-text-secondary)' }}>
+                  Shopify and your selected helpdesk are connected. Review connection health and configure any provider-specific widget placement from Settings.
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <Link
-                  href="/dashboard"
-                  className="btn-accent inline-flex h-8 items-center gap-2 rounded-[var(--ua-radius-input)] px-3 text-[11px] font-semibold"
-                >
+                <ButtonLink href="/dashboard" size="md">
                   Go to claim overview
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-                <Link href="/settings/integrations" className="t-caption hover:underline" style={{ color: 'var(--text-tertiary)' }}>
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </ButtonLink>
+                <Link href="/settings/integrations" className="text-xs leading-4 hover:underline" style={{ color: 'var(--ua-text-tertiary)' }}>
                   Manage integrations
                 </Link>
               </div>
@@ -421,14 +474,14 @@ export default function OnboardingClient({
 function Field({ label, children }: { label: string; children: ReactElement<any> }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-[10px] font-semibold" style={{ color: 'var(--text-tertiary)' }}>{label}</span>
+      <span className="mb-1.5 block text-[length:var(--ua-text-small-size)] font-medium leading-[var(--ua-text-small-leading)]" style={{ color: 'var(--ua-text-tertiary)' }}>{label}</span>
       {cloneElement(children, {
         'aria-label': label,
-        className: 'h-8 w-full rounded-[var(--ua-radius-input)] border px-3 text-[12px] outline-none',
+        className: 'h-9 w-full rounded-[var(--ua-radius-control)] border px-3 text-sm outline-none',
         style: {
-          background: 'var(--surface-sunken)',
-          borderColor: 'var(--border)',
-          color: 'var(--text-primary)',
+          background: 'var(--ua-surface-primary)',
+          borderColor: 'var(--ua-border-default)',
+          color: 'var(--ua-text-primary)',
         },
       })}
     </label>

@@ -3,13 +3,12 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { getRequestUser } from "@/lib/auth/requestContext";
 import { PERMISSIONS, requirePermission } from "@/lib/permissions";
 import { TABLES } from "@/lib/supabase/tables";
-import { WorkbenchPage, KeyInsightCallout, SummaryRail } from "@/components/ui";
-import { AlertTriangle, Clock } from "lucide-react";
+import { WorkbenchPage, SummaryRail } from "@/components/ui";
 import { WorkQueue, type WorkQueueItem, type WorkViewCounts } from "@/components/work/WorkQueue";
 import { countOpenExceptions, listExceptions } from "@/lib/exceptions/store";
+import { countWorkViews } from "@/lib/work/store";
 import { formatNumber } from "@/lib/utils/format";
 import { shortRef, hashId } from "@/lib/ui/displayRef";
-import { selectDeadlineBands } from "@/lib/visualisation/chartSelectors";
 
 export const dynamic = "force-dynamic";
 type TaskRow = {
@@ -27,6 +26,7 @@ type TaskRow = {
   loss_case_id: string | null;
   recovery_case_id: string | null;
   blocking_reason: string | null;
+  source_metadata: Record<string, unknown> | null;
 };
 
 export default async function WorkPage({
@@ -46,11 +46,11 @@ export default async function WorkPage({
   const params = await searchParams;
   const view = params.view ?? "open";
   const page = Math.max(1, Number(params.page) || 1);
-  const pageSize = 100;
+  const pageSize = 25;
   let query = serviceClient
     .from(TABLES.WORK_TASKS)
     .select(
-      "id,title,description,owner_role,owner_user_id,status,priority,due_at,created_at,source,support_payout_case_id,loss_case_id,recovery_case_id,blocking_reason",
+      "id,title,description,owner_role,owner_user_id,status,priority,due_at,created_at,source,support_payout_case_id,loss_case_id,recovery_case_id,blocking_reason,source_metadata",
       { count: "exact" },
     )
     .eq("merchant_id", ctx.merchantId)
@@ -73,25 +73,27 @@ export default async function WorkPage({
       .gte("due_at", start.toISOString())
       .lt("due_at", end.toISOString());
   }
+  if (view === "overdue") query = query.lt("due_at", new Date().toISOString());
+  if (view === "no-sla") query = query.is("due_at", null);
   const includeExceptions =
-    view === "open" || view === "integration-exceptions";
-  const [taskResult, openExceptionCount, exceptionRows, countRowsResult] =
+    view === "open" || view === "integration-exceptions" || view === "overdue" || view === "no-sla";
+  const exceptionDeadline = view === "overdue"
+    ? { dueBefore: new Date().toISOString() }
+    : view === "no-sla"
+      ? { dueIsNull: true }
+      : {};
+  const [taskResult, openExceptionCount, exceptionRows, filteredExceptionCount] =
     await Promise.all([
       view === "integration-exceptions"
         ? Promise.resolve({ data: [], count: 0 })
         : query.range((page - 1) * pageSize, page * pageSize - 1),
       countOpenExceptions(serviceClient, ctx.merchantId),
       includeExceptions
-        ? listExceptions(serviceClient, ctx.merchantId, {
-            status: "open",
-            limit: pageSize,
-          })
+        ? listExceptions(serviceClient, ctx.merchantId, { status: "open", limit: pageSize, ...exceptionDeadline })
         : Promise.resolve([]),
-      serviceClient
-        .from(TABLES.WORK_TASKS)
-        .select("status,owner_user_id,due_at,blocking_reason,title")
-        .eq("merchant_id", ctx.merchantId)
-        .limit(10000),
+      includeExceptions
+        ? countOpenExceptions(serviceClient, ctx.merchantId, exceptionDeadline)
+        : Promise.resolve(0),
     ]);
   const tasks: WorkQueueItem[] = ((taskResult.data ?? []) as TaskRow[]).map(
     (row) => ({
@@ -111,7 +113,11 @@ export default async function WorkPage({
         : row.loss_case_id
           ? `/losses/${row.loss_case_id}`
           : row.support_payout_case_id
-            ? `/claims/${row.support_payout_case_id}`
+            ? (
+                typeof row.source_metadata?.investigation_id === "string"
+                  ? `/claims/${row.support_payout_case_id}#investigation-${encodeURIComponent(row.source_metadata.investigation_id)}`
+                  : `/claims/${row.support_payout_case_id}`
+              )
             : null,
       objectLabel: row.recovery_case_id
         ? `Recovery ${hashId(row.recovery_case_id)}`
@@ -124,38 +130,21 @@ export default async function WorkPage({
       source: row.source,
     }),
   );
-  const { data: countRowsData } = countRowsResult;
-  const countRows = (countRowsData ?? []) as Array<{
-    status: string;
-    owner_user_id: string | null;
-    due_at: string | null;
-    blocking_reason: string | null;
-    title: string;
-  }>;
-  const activeRows = countRows.filter((row) => row.status !== "completed" && row.status !== "cancelled");
-  const todayStart = new Date();
-  todayStart.setUTCHours(0, 0, 0, 0);
-  const todayEnd = new Date(todayStart);
-  todayEnd.setUTCDate(todayEnd.getUTCDate() + 1);
+  const viewCountResult = await countWorkViews(serviceClient, ctx.merchantId, user.id, openExceptionCount);
   const viewCounts: WorkViewCounts = {
-    open: activeRows.length + openExceptionCount,
-    mine: activeRows.filter((row) => row.owner_user_id === user.id).length,
-    unassigned: activeRows.filter((row) => !row.owner_user_id).length,
-    "due-today": activeRows.filter((row) => {
-      const due = row.due_at ? Date.parse(row.due_at) : Number.NaN;
-      return Number.isFinite(due) && due >= todayStart.getTime() && due < todayEnd.getTime();
-    }).length,
-    blocked: activeRows.filter((row) => row.status === "blocked").length,
-    "evidence-needed": activeRows.filter((row) => row.blocking_reason?.toLowerCase().includes("evidence")).length,
-    "decision-needed": activeRows.filter((row) => `${row.title} ${row.blocking_reason ?? ""}`.toLowerCase().includes("decision")).length,
-    "integration-exceptions": openExceptionCount,
-    completed: countRows.filter((row) => row.status === "completed").length,
+    open: viewCountResult.open,
+    mine: viewCountResult.mine,
+    unassigned: viewCountResult.unassigned,
+    "due-today": viewCountResult["due-today"],
+    overdue: viewCountResult.overdue,
+    "no-sla": viewCountResult["no-sla"],
+    blocked: viewCountResult.blocked,
+    "evidence-needed": viewCountResult["evidence-needed"],
+    "decision-needed": viewCountResult["decision-needed"],
+    "integration-exceptions": viewCountResult["integration-exceptions"],
+    completed: viewCountResult.completed,
   };
-  const deadlineBands = selectDeadlineBands(
-    activeRows.map((row) => ({ dueAt: row.due_at })),
-    todayStart.getTime(),
-    todayEnd.getTime(),
-  );
+  const deadlineBands = viewCountResult.deadlineBands;
   const exceptions: WorkQueueItem[] = exceptionRows.map((row) => ({
     id: row.id,
     kind: "exception",
@@ -164,8 +153,8 @@ export default async function WorkPage({
     ownerRole: row.assigned_to ? "assigned" : null,
     ownerUserId: row.assigned_to,
     status: row.status,
-    priority: "high",
-    dueAt: null,
+    priority: row.priority ?? "high",
+    dueAt: row.due_at ?? null,
     createdAt: row.created_at,
     supportPayoutCaseId: row.support_payout_case_id,
     objectHref: row.support_payout_case_id
@@ -176,6 +165,9 @@ export default async function WorkPage({
       : "Integration exception",
     blockingReason: row.exception_type.replaceAll("_", " "),
     source: row.source_system ?? "automation",
+    exceptionType: row.exception_type,
+    exceptionContext: (row.context ?? null) as Record<string, unknown> | null,
+    exceptionStateVersion: row.state_version ?? null,
   }));
   const items =
     view === "integration-exceptions" ? exceptions : [...tasks, ...exceptions];
@@ -185,8 +177,6 @@ export default async function WorkPage({
     deadlineBands.upcoming +
     deadlineBands.unscheduled +
     deadlineBands.invalid;
-  const deadlineTone =
-    deadlineBands.overdue > 0 ? "danger" : deadlineBands.dueToday > 0 ? "warning" : "neutral";
   return (
     <WorkbenchPage
       title="Work"
@@ -195,7 +185,7 @@ export default async function WorkPage({
           label: "Matching work",
           value: formatNumber(
             (taskResult.count ?? 0) +
-              (includeExceptions ? openExceptionCount : 0),
+              (includeExceptions ? filteredExceptionCount : 0),
           ),
           hint: "In this view",
         },
@@ -205,17 +195,6 @@ export default async function WorkPage({
           hint: "Merchant decisions required",
         },
       ]}
-      primaryVisual={
-        <KeyInsightCallout
-          eyebrow="Deadline risk"
-          tone={deadlineTone}
-          icon={deadlineTone === "danger" ? <AlertTriangle size={16} /> : <Clock size={16} />}
-        >
-          <strong>{formatNumber(deadlineBands.overdue)}</strong> overdue and{" "}
-          <strong>{formatNumber(deadlineBands.dueToday)}</strong> due today
-          {deadlineBands.upcoming > 0 ? <> · {formatNumber(deadlineBands.upcoming)} upcoming</> : null}.
-        </KeyInsightCallout>
-      }
       rail={
         <SummaryRail
           sections={[
@@ -228,7 +207,7 @@ export default async function WorkPage({
                 { label: "No deadline", value: formatNumber(deadlineBands.unscheduled), tone: "neutral", bar: bandTotal ? deadlineBands.unscheduled / bandTotal : 0 },
                 ...(deadlineBands.invalid > 0 ? [{ label: "Invalid deadline", value: formatNumber(deadlineBands.invalid), tone: "warning" as const, bar: bandTotal ? deadlineBands.invalid / bandTotal : 0 }] : []),
               ],
-              footnote: "Active tasks grouped by recorded deadline. Integration exceptions are counted separately.",
+              footnote: "Open work grouped by its recorded deadline. Exceptions without a deadline stay visible as unscheduled.",
             },
           ]}
         />
@@ -238,7 +217,7 @@ export default async function WorkPage({
           items={items}
           total={
             (taskResult.count ?? 0) +
-            (includeExceptions ? openExceptionCount : 0)
+            (includeExceptions ? filteredExceptionCount : 0)
           }
           view={view}
           viewCounts={viewCounts}

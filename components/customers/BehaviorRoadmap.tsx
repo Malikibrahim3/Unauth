@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { Badge, PanelCard } from '@/components/ui';
+import { Badge, Panel } from '@/components/ui';
 import { formatCurrencyNullable, formatDateMode } from '@/lib/utils/format';
 import { labelFor } from '@/lib/copy/labels';
 
@@ -33,13 +33,13 @@ interface BehaviorRoadmapProps {
 }
 
 const GLYPHS: Record<BehaviorRoadmapEventType, { symbol: string; color: string; tag?: string }> = {
-  order_placed: { symbol: '■', color: 'var(--sev-neutral)' },
-  order_refunded: { symbol: '●', color: 'var(--warning)' },
-  chargeback_filed: { symbol: '✕', color: 'var(--warning)' },
-  identity_change: { symbol: '◆', color: 'var(--warning)' },
-  watchlist_add: { symbol: '✓', color: 'var(--neutral)' },
-  cross_merchant_signal: { symbol: '◆', color: 'color-mix(in srgb, var(--sev-neutral) 60%, transparent)' },
-  note_added: { symbol: '■', color: 'var(--text-tertiary)' },
+  order_placed: { symbol: '■', color: 'var(--ua-severity-possible)' },
+  order_refunded: { symbol: '●', color: 'var(--ua-warning)' },
+  chargeback_filed: { symbol: '✕', color: 'var(--ua-warning)' },
+  identity_change: { symbol: '◆', color: 'var(--ua-warning)' },
+  watchlist_add: { symbol: '✓', color: 'var(--ua-neutral)' },
+  cross_merchant_signal: { symbol: '◆', color: 'color-mix(in srgb, var(--ua-severity-possible) 60%, transparent)' },
+  note_added: { symbol: '■', color: 'var(--ua-text-tertiary)' },
 };
 
 export default function BehaviorRoadmap({ events }: BehaviorRoadmapProps) {
@@ -55,11 +55,11 @@ export default function BehaviorRoadmap({ events }: BehaviorRoadmapProps) {
   }, [events]);
 
   return (
-    <PanelCard variant="app" className="overflow-hidden p-0">
-      <div className="border-b px-4 py-3" style={{ borderColor: 'var(--border)' }}>
+    <Panel variant="panel" className="overflow-hidden p-0">
+      <div className="border-b px-4 py-3" style={{ borderColor: 'var(--ua-border-default)' }}>
         <div className="flex items-center justify-between gap-3">
-          <p className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>Order & claim history</p>
-          <p className="t-mono" style={{ color: 'var(--text-secondary)' }}>{events.length} events</p>
+          <p className="text-[length:var(--ua-text-small-size)] font-semibold" style={{ color: 'var(--ua-text-primary)' }}>Order & claim history</p>
+          <p className="t-mono" style={{ color: 'var(--ua-text-secondary)' }}>{events.length} events</p>
         </div>
         {patternTags.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1.5">
@@ -79,24 +79,24 @@ export default function BehaviorRoadmap({ events }: BehaviorRoadmapProps) {
             <li
               key={event.id}
               className="relative grid min-h-8 grid-cols-[60px_18px_minmax(0,1fr)_auto] items-start gap-2 border-b px-3 py-2 last:border-b-0"
-              style={{ borderColor: 'var(--border)' }}
+              style={{ borderColor: 'var(--ua-border-default)' }}
             >
               <time className="t-mono pt-0.5" style={{ color: 'var(--data-date)' }}>
                 {formatDateMode(event.date, 'table')}
               </time>
               <span aria-hidden="true" className="relative flex h-5 items-center justify-center">
                 {index < events.length - 1 && (
-                  <span className="absolute left-1/2 top-4 h-[calc(100%+16px)] w-px -translate-x-1/2" style={{ background: 'var(--border)' }} />
+                  <span className="absolute left-1/2 top-4 h-[calc(100%+16px)] w-px -translate-x-1/2" style={{ background: 'var(--ua-border-default)' }} />
                 )}
                 <span style={{ color: glyph.color, fontSize: 12, lineHeight: 1 }}>{glyph.symbol}</span>
               </span>
               <button
                 type="button"
                 onClick={() => setExpandedId(expanded ? null : event.id)}
-                className="min-w-0 text-left focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                className="min-w-0 text-left focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-[var(--ua-action-primary)]"
               >
                 <div className="flex min-w-0 items-center gap-2">
-                  <span className="truncate text-body-sm" style={{ color: 'var(--text-primary)' }}>{event.title}</span>
+                  <span className="truncate text-body-sm" style={{ color: 'var(--ua-text-primary)' }}>{event.title}</span>
                   {event.amount != null && (
                     <span className="t-mono shrink-0" style={{ color: 'var(--data-currency)' }}>
                       {formatCurrencyNullable(event.amount)}
@@ -104,13 +104,13 @@ export default function BehaviorRoadmap({ events }: BehaviorRoadmapProps) {
                   )}
                 </div>
                 {event.subtitle && (
-                  <p className="mt-0.5 truncate t-caption" style={{ color: 'var(--text-tertiary)' }}>{event.subtitle}</p>
+                  <p className="mt-0.5 truncate t-caption" style={{ color: 'var(--ua-text-tertiary)' }}>{event.subtitle}</p>
                 )}
                 {expanded && (
-                  <div className="mt-2 rounded-sm border px-3 py-2" style={{ background: 'var(--surface-sunken)', borderColor: 'var(--border)' }}>
-                    {event.detail && <p className="text-body-sm" style={{ color: 'var(--text-secondary)' }}>{event.detail}</p>}
+                  <div className="mt-2 rounded-sm border px-3 py-2" style={{ background: 'var(--ua-surface-muted)', borderColor: 'var(--ua-border-default)' }}>
+                    {event.detail && <p className="text-body-sm" style={{ color: 'var(--ua-text-secondary)' }}>{event.detail}</p>}
                     {event.evidence?.length ? (
-                      <p className="mt-1 t-caption" style={{ color: 'var(--text-tertiary)' }}>
+                      <p className="mt-1 t-caption" style={{ color: 'var(--ua-text-tertiary)' }}>
                         {event.evidence.map(labelFor).join(' · ')}
                       </p>
                     ) : null}
@@ -119,16 +119,16 @@ export default function BehaviorRoadmap({ events }: BehaviorRoadmapProps) {
               </button>
               <div className="flex items-center gap-2 pt-0.5">
                 {event.source && (
-                  <span className="rounded-sm border px-1.5 py-0.5 text-xs font-medium uppercase" style={{ background: 'var(--surface-sunken)', borderColor: 'var(--border)', color: 'var(--text-tertiary)' }}>
+                  <span className="rounded-sm border px-1.5 py-0.5 text-[length:var(--ua-text-micro-size)] font-medium" style={{ background: 'var(--ua-surface-muted)', borderColor: 'var(--ua-border-default)', color: 'var(--ua-text-tertiary)' }}>
                     {event.source}
                   </span>
                 )}
-                {expanded ? <ChevronDown className="h-3.5 w-3.5" style={{ color: 'var(--text-tertiary)' }} /> : <ChevronRight className="h-3.5 w-3.5" style={{ color: 'var(--text-tertiary)' }} />}
+                {expanded ? <ChevronDown className="h-3.5 w-3.5" style={{ color: 'var(--ua-text-tertiary)' }} /> : <ChevronRight className="h-3.5 w-3.5" style={{ color: 'var(--ua-text-tertiary)' }} />}
               </div>
             </li>
           );
         })}
       </ol>
-    </PanelCard>
+    </Panel>
   );
 }

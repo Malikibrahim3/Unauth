@@ -25,13 +25,13 @@ function InsightBandSkeleton() {
       className="flex items-center gap-3"
       style={{
         padding: '12px 14px',
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--ua-radius-card)',
-        background: 'var(--surface)',
-        boxShadow: 'var(--shadow-xs)',
+        border: '1px solid var(--ua-border-default)',
+        borderRadius: 'var(--ua-radius-surface)',
+        background: 'var(--ua-surface-primary)',
+        boxShadow: 'none',
       }}
     >
-      <Bone className="h-[30px] w-[30px] rounded-[var(--ua-radius-card)]" />
+      <Bone className="h-[30px] w-[30px] rounded-[var(--ua-radius-surface)]" />
       <Bone className="h-3 w-64 max-w-full" />
     </div>
   );
@@ -47,10 +47,10 @@ function RailSkeleton() {
             key={cardKey}
             style={{
               padding: 14,
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--ua-radius-card)',
-              background: 'var(--surface)',
-              boxShadow: 'var(--shadow-xs)',
+              border: '1px solid var(--ua-border-default)',
+              borderRadius: 'var(--ua-radius-surface)',
+              background: 'var(--ua-surface-primary)',
+              boxShadow: 'none',
             }}
           >
             <Bone className="h-3 w-24" />

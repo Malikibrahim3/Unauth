@@ -10,6 +10,12 @@ import { enforceRateLimit, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
 import { logPublicApiAccess } from '@/lib/api/v1/audit';
 import { env } from '@/lib/utils/env';
 import { makeSignedToken, hashSignedToken } from '@/lib/api/signedAccess';
+import {
+  creditFailureResponse,
+  precheckContextCredits,
+  spendContextCreditsAfterSuccess,
+} from '@/lib/billing/contextUnlockFlow';
+import { deleteEvidencePackageArtifacts } from '@/lib/evidence/cleanupArtifacts';
 
 export type EvidenceAuth = {
   merchantId: string;
@@ -26,7 +32,14 @@ export type EvidenceBody = {
 
 export type EvidenceResult =
   | { ok: true; body: Record<string, unknown> }
-  | { ok: false; status: number; error: string; detail?: string };
+  | {
+      ok: false;
+      status: number;
+      error: string;
+      detail?: string;
+      requiredCredits?: number;
+      remainingCredits?: number | null;
+    };
 
 async function issueEvidenceDownloadUrl(
   service: SupabaseClient,
@@ -123,6 +136,20 @@ export async function performV1EvidenceCreate(
     return { ok: false, status: 400, error: 'Invalid email address' };
   }
   const queriedHashes = [hashIdentifier(normEmail)];
+  const creditPrecheck = await precheckContextCredits(
+    service,
+    auth.merchantId,
+    'evidence_summary',
+  );
+  if (!creditPrecheck.ok) {
+    return {
+      ok: false,
+      status: creditPrecheck.status,
+      error: creditPrecheck.error,
+      requiredCredits: creditPrecheck.creditsRequired,
+      remainingCredits: creditPrecheck.snapshot.remaining,
+    };
+  }
 
   const profileId = await resolveProfileIdByEmail(service, auth.merchantId, normEmail);
   if (!profileId) {
@@ -221,6 +248,36 @@ export async function performV1EvidenceCreate(
   }
 
   const row = inserted as { id: string; created_at: string };
+  const creditSpend = await spendContextCreditsAfterSuccess(service, {
+    merchantId: auth.merchantId,
+    contextType: 'evidence_summary',
+    customerRef: profileId,
+    orderRef: disputedOrderId,
+    metadata: {
+      request_source: 'api',
+      api_key_id: auth.apiKeyId,
+      evidence_package_id: row.id,
+    },
+  });
+  if (!creditSpend.ok) {
+    await deleteEvidencePackageArtifacts(scoped, service, {
+      packageId: row.id,
+      storagePath: uploadError ? null : storagePath,
+    });
+    const failure = creditFailureResponse({
+      contextType: 'evidence_summary',
+      creditsRequired: creditSpend.creditsRequired,
+      remaining: creditSpend.snapshot.remaining,
+      error: 'Not enough context credits remaining to generate this case report.',
+    });
+    return {
+      ok: false,
+      status: 402,
+      error: String(failure.error),
+      requiredCredits: creditSpend.creditsRequired,
+      remainingCredits: creditSpend.snapshot.remaining,
+    };
+  }
 
   await logPublicApiAccess(service, {
     merchantId: auth.merchantId,
@@ -245,6 +302,8 @@ export async function performV1EvidenceCreate(
       matched_prior_signals: pkg.ce3.qualifyingSignals,
       pdf_url: `${appBase}/api/v1/evidence/${row.id}/pdf`,
       download_url: downloadUrl,
+      credits_spent: creditSpend.creditsSpent,
+      remaining_credits: creditSpend.snapshot.remaining,
       created_at: row.created_at ?? new Date().toISOString(),
     },
   };
