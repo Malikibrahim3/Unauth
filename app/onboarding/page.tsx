@@ -69,6 +69,9 @@ export default async function OnboardingPage() {
 
   if (!shouldRequireOnboarding({
     hasMerchantContext: !!ctx,
+    // A saved profile unlocks connector settings in the app shell, but does
+    // not complete the onboarding journey itself.
+    profileComplete: false,
     setupComplete,
     auditRunCount: (jobs ?? []).length,
     shopifyConnected: connectionState.shopify,
@@ -106,6 +109,9 @@ export default async function OnboardingPage() {
           : applicability.has('returns')
             ? 'yes'
             : ''
+      }
+      initialProfileComplete={
+        merchant?.onboarding_profile_complete === true || setupComplete
       }
       shopifyConnected={connectionState.shopify}
       shopifyShopDomain={connectionState.shopDomain ?? ''}

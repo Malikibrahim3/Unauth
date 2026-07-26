@@ -38,6 +38,19 @@ describe('shouldRequireOnboarding', () => {
     ).toBe(false);
   });
 
+  it('allows a saved profile to enter connector settings before final setup verification', () => {
+    expect(
+      shouldRequireOnboarding({
+        hasMerchantContext: true,
+        profileComplete: true,
+        setupComplete: false,
+        auditRunCount: 0,
+        shopifyConnected: false,
+        helpdeskConnected: false,
+      }),
+    ).toBe(false);
+  });
+
   it('requires onboarding only for merchants with incomplete setup and no audit history', () => {
     expect(
       shouldRequireOnboarding({

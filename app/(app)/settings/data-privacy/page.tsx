@@ -17,10 +17,8 @@ export default async function DataPrivacySettingsPage() {
 
   return (
     <SettingsPageShell
-      eyebrow="Workspace governance"
       title="Data & privacy"
       subtitle="How Unauth handles merchant and customer data, retention, and compliance."
-      breadcrumbs={[{ label: "Settings", href: "/settings/account" }, { label: "Data & privacy" }]}
     >
       <div className="space-y-3">
         <SectionCard title="How payout-case data is scoped">
@@ -29,9 +27,9 @@ export default async function DataPrivacySettingsPage() {
             <span
               className="inline-flex items-center rounded-sm border px-2 py-0.5 text-mono-sm"
               style={{
-                background: "var(--privacy-fill)",
-                borderColor: "var(--privacy-border)",
-                color: "var(--privacy-ink)",
+                background: "var(--ua-privacy-bg)",
+                borderColor: "var(--ua-privacy-border)",
+                color: "var(--ua-privacy)",
               }}
             >
               tenant scoped
@@ -40,8 +38,8 @@ export default async function DataPrivacySettingsPage() {
           <div
             className="rounded-md border p-4 text-mono-sm"
             style={{
-              background: "var(--surface)",
-              borderColor: "var(--border-muted)",
+              background: "var(--ua-surface-primary)",
+              borderColor: "var(--ua-border-subtle)",
               color: "var(--data-id)",
             }}
           >
@@ -50,7 +48,7 @@ export default async function DataPrivacySettingsPage() {
           </div>
           <p
             className="mt-3 text-body-sm"
-            style={{ color: "var(--text-secondary)" }}
+            style={{ color: "var(--ua-text-secondary)" }}
           >
             Customer identifiers are used to link merchant-owned orders, support
             tickets, evidence, decisions, and outcomes to the correct payout
@@ -61,7 +59,7 @@ export default async function DataPrivacySettingsPage() {
         <SectionCard title="Data scope">
           <p
             className="text-body-sm"
-            style={{ color: "var(--text-secondary)" }}
+            style={{ color: "var(--ua-text-secondary)" }}
           >
             Unauth processes connected store, helpdesk, evidence, decision, and
             recovery data to support payout-case review for your store. Customer
@@ -73,7 +71,7 @@ export default async function DataPrivacySettingsPage() {
         <SectionCard title="Retention, removal & deletion">
           <p
             className="text-body-sm"
-            style={{ color: "var(--text-secondary)" }}
+            style={{ color: "var(--ua-text-secondary)" }}
           >
             Only raw ingestion payloads with an explicit deadline are removed
             automatically after terminal processing. No legal retention period
@@ -93,7 +91,7 @@ export default async function DataPrivacySettingsPage() {
         <SectionCard title="Audit logging">
           <p
             className="text-body-sm"
-            style={{ color: "var(--text-secondary)" }}
+            style={{ color: "var(--ua-text-secondary)" }}
           >
             User actions, claim decisions, evidence attachments, and exports are
             recorded in an append-only audit trail for compliance review.
@@ -101,7 +99,7 @@ export default async function DataPrivacySettingsPage() {
           <Link
             href="/settings/audit-trail"
             className="mt-3 inline-block text-sm font-semibold hover:underline"
-            style={{ color: "var(--accent)" }}
+            style={{ color: "var(--ua-action-primary)" }}
           >
             View audit trail
           </Link>
@@ -110,13 +108,13 @@ export default async function DataPrivacySettingsPage() {
         <SectionCard title="Legal documents">
           <ul
             className="space-y-2 text-body-sm"
-            style={{ color: "var(--text-secondary)" }}
+            style={{ color: "var(--ua-text-secondary)" }}
           >
             <li>
               <Link
                 href="/legal/privacy"
                 className="font-semibold hover:underline"
-                style={{ color: "var(--accent)" }}
+                style={{ color: "var(--ua-action-primary)" }}
               >
                 Privacy policy
               </Link>
@@ -125,7 +123,7 @@ export default async function DataPrivacySettingsPage() {
               <Link
                 href="/legal/data-handling"
                 className="font-semibold hover:underline"
-                style={{ color: "var(--accent)" }}
+                style={{ color: "var(--ua-action-primary)" }}
               >
                 Data handling statement
               </Link>
@@ -134,7 +132,7 @@ export default async function DataPrivacySettingsPage() {
               <Link
                 href="/legal/dpa"
                 className="font-semibold hover:underline"
-                style={{ color: "var(--accent)" }}
+                style={{ color: "var(--ua-action-primary)" }}
               >
                 Data processing agreement (DPA)
               </Link>

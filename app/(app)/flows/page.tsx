@@ -17,6 +17,7 @@ import {
 import { WorkbenchPage, KeyInsightCallout, SummaryRail } from "@/components/ui";
 import { Workflow } from "lucide-react";
 import { formatNumber } from '@/lib/utils/format';
+import { env } from '@/lib/utils/env';
 
 export const dynamic = "force-dynamic";
 
@@ -79,10 +80,15 @@ export default async function FlowsPage() {
   const draftFlows = flows.filter((flow) => flow.hasDraft).length;
   const maxActionCount = Math.max(1, ...flows.map((flow) => flow.actionCount));
   const topFlows = [...flows].sort((a, b) => b.actionCount - a.actionCount).slice(0, 6);
+  const publicationEnabled = env.WORKFLOW_PUBLICATION_ENABLED === 'true';
   return (
     <WorkbenchPage
       title="Flows"
-      subtitle="Route tasks, evidence, deadlines, and notifications. Test safely — nothing changes until you publish."
+      subtitle={
+        publicationEnabled
+          ? "Route tasks, evidence, deadlines, and notifications. Test safely — nothing changes until you publish."
+          : "Preview workflow definitions and run dry tests. Publication and live execution are release-gated."
+      }
       kpiItems={[
         { label: 'Flows', value: formatNumber(flows.length), hint: 'Configured workflow families' },
         { label: 'Active', value: formatNumber(activeFlows), hint: 'Running published versions' },
@@ -90,12 +96,17 @@ export default async function FlowsPage() {
       ]}
       primaryVisual={
         <KeyInsightCallout
-          eyebrow="Flows"
-          tone={draftFlows > 0 ? 'warning' : 'neutral'}
+          tone={!publicationEnabled || draftFlows > 0 ? 'warning' : 'neutral'}
           icon={<Workflow size={16} />}
         >
-          <strong>{formatNumber(activeFlows)}</strong> of <strong>{formatNumber(flows.length)}</strong> flows active
-          {draftFlows > 0 ? <> · <strong>{formatNumber(draftFlows)}</strong> with draft changes</> : null}.
+          {publicationEnabled ? (
+            <>
+              <strong>{formatNumber(activeFlows)}</strong> of <strong>{formatNumber(flows.length)}</strong> flows active
+              {draftFlows > 0 ? <> · <strong>{formatNumber(draftFlows)}</strong> with draft changes</> : null}.
+            </>
+          ) : (
+            <>Preview mode · live execution disabled by the release gate.</>
+          )}
         </KeyInsightCallout>
       }
       rail={
@@ -114,7 +125,13 @@ export default async function FlowsPage() {
           ]}
         />
       }
-      main={<FlowsIndexClient flows={flows} canManage={canManage} />}
+      main={
+        <FlowsIndexClient
+          flows={flows}
+          canManage={canManage}
+          publicationEnabled={publicationEnabled}
+        />
+      }
     />
   );
 }

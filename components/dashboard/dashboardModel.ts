@@ -20,35 +20,35 @@ export const DASHBOARD_METRICS: Array<{
   description: string;
   /** Bare --ua-chart-* custom property name, resolved via useChartTheme for Recharts. */
   colourVar: string;
-  tone: 'orange' | 'green' | 'blue' | 'red';
+  tone: 'primary' | 'positive' | 'secondary' | 'negative';
 }> = [
   {
     key: 'exposure',
     label: 'Payout exposure',
     description: 'Known current exposure in this period',
-    colourVar: '--ua-chart-orange',
-    tone: 'orange',
+    colourVar: '--ua-chart-1',
+    tone: 'primary',
   },
   {
     key: 'recovered',
     label: 'Recovered',
     description: 'Received and reconciled',
-    colourVar: '--ua-chart-green',
-    tone: 'green',
+    colourVar: '--ua-chart-2',
+    tone: 'positive',
   },
   {
     key: 'prevented',
     label: 'Prevented',
     description: 'Not paid after review',
-    colourVar: '--ua-chart-blue',
-    tone: 'blue',
+    colourVar: '--ua-chart-3',
+    tone: 'secondary',
   },
   {
     key: 'realisedLoss',
     label: 'Realised loss',
     description: 'Ledger-confirmed merchant loss',
-    colourVar: '--ua-chart-red',
-    tone: 'red',
+    colourVar: '--ua-chart-5',
+    tone: 'negative',
   },
 ];
 
@@ -183,7 +183,7 @@ export type WorkflowGroup = {
   key: 'needs-action' | 'waiting' | 'in-progress' | 'completed';
   label: string;
   count: number;
-  tone: 'orange' | 'yellow' | 'blue' | 'green';
+  tone: 'attention' | 'primary' | 'positive' | 'neutral';
   rows: IntelligenceReport['operations'];
 };
 
@@ -210,10 +210,10 @@ export function groupWorkflowOperations(
   operations: IntelligenceReport['operations'],
 ): WorkflowGroup[] {
   const groups: WorkflowGroup[] = [
-    { key: 'needs-action', label: 'Needs action', count: 0, tone: 'orange', rows: [] },
-    { key: 'waiting', label: 'Waiting', count: 0, tone: 'yellow', rows: [] },
-    { key: 'in-progress', label: 'In progress', count: 0, tone: 'blue', rows: [] },
-    { key: 'completed', label: 'Completed', count: 0, tone: 'green', rows: [] },
+    { key: 'needs-action', label: 'Needs action', count: 0, tone: 'attention', rows: [] },
+    { key: 'waiting', label: 'Waiting', count: 0, tone: 'neutral', rows: [] },
+    { key: 'in-progress', label: 'In progress', count: 0, tone: 'primary', rows: [] },
+    { key: 'completed', label: 'Completed', count: 0, tone: 'positive', rows: [] },
   ];
   for (const operation of operations) {
     const index = COMPLETED_STATUSES.has(operation.key)

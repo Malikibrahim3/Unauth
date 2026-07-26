@@ -11,6 +11,7 @@ const actionSchema = z.object({
   action: z.enum(['confirm', 'reject', 'resolve', 'dismiss']),
   selectedCandidateId: z.string().uuid().nullable().optional(),
   resolution: z.string().trim().max(2000).nullable().optional(),
+  expectedStateVersion: z.number().int().positive().nullable().optional(),
 });
 
 const STATUS_BY_REASON: Record<string, number> = {
@@ -18,6 +19,7 @@ const STATUS_BY_REASON: Record<string, number> = {
   already_settled: 409,
   not_a_match_exception: 422,
   candidate_required: 422,
+  version_conflict: 409,
 };
 
 /**
@@ -44,6 +46,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     action: parsed.data.action,
     selectedCandidateId: parsed.data.selectedCandidateId ?? null,
     resolution: parsed.data.resolution ?? null,
+    expectedStateVersion: parsed.data.expectedStateVersion ?? null,
     actorUserId: user.id,
   });
   if (!result.ok) {

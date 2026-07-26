@@ -42,7 +42,7 @@ export default function BulkDeleteClient() {
 
   return (
     <div className="space-y-3">
-      <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+      <p className="text-sm" style={{ color: "var(--ua-text-secondary)" }}>
         Hide customer notes, saved customer context, or import and sync job
         cards from active workspace views. This is not customer-data erasure;
         audit and financial records remain available for accountability.
@@ -60,7 +60,7 @@ export default function BulkDeleteClient() {
           value={entity}
           onChange={(e) => setEntity(e.target.value)}
           className="rounded px-2 py-1 border"
-          style={{ background: "var(--surface)" }}
+          style={{ background: "var(--ua-surface-primary)" }}
         >
           {OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>
@@ -76,7 +76,7 @@ export default function BulkDeleteClient() {
           checked={confirmChecked}
           onChange={(e) => setConfirmChecked(e.target.checked)}
         />
-        <span className="text-sm" style={{ color: "var(--text-secondary)" }}>
+        <span className="text-sm" style={{ color: "var(--ua-text-secondary)" }}>
           I understand this removes the selected data from active workspace
           views.
         </span>
@@ -88,7 +88,7 @@ export default function BulkDeleteClient() {
           onClick={handleDelete}
           disabled={loading}
           className="rounded px-3 py-2 font-semibold"
-          style={{ background: "var(--risk-critical)", color: "white" }}
+          style={{ background: "var(--ua-risk-critical)", color: "var(--ua-text-inverse)" }}
         >
           {loading ? "Removing…" : "Remove selected data"}
         </button>
@@ -98,7 +98,7 @@ export default function BulkDeleteClient() {
         <p
           role="status"
           className="mt-1 text-sm"
-          style={{ color: "var(--text-secondary)" }}
+          style={{ color: "var(--ua-text-secondary)" }}
         >
           {message}
         </p>

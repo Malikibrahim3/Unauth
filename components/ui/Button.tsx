@@ -5,7 +5,7 @@ import { type ButtonHTMLAttributes, forwardRef, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { BUTTON_ICON_SIZES, getButtonPresentation } from './buttonStyles';
 
-export type ButtonVariant = 'primary' | 'cta' | 'secondary' | 'ghost' | 'danger' | 'link';
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'link';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {

@@ -21,9 +21,16 @@ const EXPECTED_MIGRATIONS = [
   '20260722300000_privacy_erasure_retention.sql',
   '20260722400000_source_to_recovery_integrity.sql',
   '20260722500000_ownership_transfer_integrity.sql',
+  '20260723100000_release1_relationship_credential_integrity.sql',
+  '20260723150000_release1_case_issue_correction.sql',
+  '20260723200000_release1_investigations.sql',
+  '20260723300000_release1_responsibility_recovery.sql',
+  '20260723400000_release1_investigation_email_dispatch.sql',
+  '20260723500000_release1_investigation_privacy.sql',
+  '20260723600000_release1_reporting_truthfulness.sql',
 ];
 const EXPECTED_SCHEMA_HASH =
-  '268f248ddb10d292172af9adc559e96b8e5f227723ee775ba985f0ba765f236d';
+  '349e2ecaea756975ba84ce36928f3a80bbdeb039975dd472e28f5a32c7ecd9ee';
 const BASELINE_VERSIONS = EXPECTED_MIGRATIONS.slice(0, 2).map((file) => file.slice(0, 14));
 const FORWARD_MIGRATIONS = EXPECTED_MIGRATIONS.slice(2);
 
@@ -160,10 +167,13 @@ const monitor = sql(`
   select
     (select count(*) from pg_index where not indisvalid or not indisready)::text || '|' ||
     (select count(*) from pg_trigger t join pg_class c on c.oid=t.tgrelid
-      where t.tgname='trg_durable_audit' and c.relkind='r')::text || '|' ||
+      where t.tgname in ('trg_durable_audit','trg_case_investigations_durable_audit',
+        'trg_case_investigation_dispatches_durable_audit',
+        'trg_case_investigation_attachments_durable_audit')
+        and c.relkind='r')::text || '|' ||
     (select count(*) from pg_policies where schemaname='public')::text
 `);
-assertEqual(monitor, '0|26|147', 'post-rollout monitoring invariants');
+assertEqual(monitor, '0|29|152', 'post-rollout monitoring invariants');
 
 try {
   // Reconstruct the exact pre-rollout shape: the production-derived baseline
@@ -303,10 +313,13 @@ try {
       select
         (select count(*) from pg_index where not indisvalid or not indisready)::text || '|' ||
         (select count(*) from pg_trigger t join pg_class c on c.oid=t.tgrelid
-          where t.tgname='trg_durable_audit' and c.relkind='r')::text || '|' ||
+          where t.tgname in ('trg_durable_audit','trg_case_investigations_durable_audit',
+            'trg_case_investigation_dispatches_durable_audit',
+            'trg_case_investigation_attachments_durable_audit')
+            and c.relkind='r')::text || '|' ||
         (select count(*) from pg_policies where schemaname='public')::text
     `),
-    '0|26|147',
+    '0|29|152',
     'rehearsed post-rollout monitoring invariants',
   );
 } catch (error) {

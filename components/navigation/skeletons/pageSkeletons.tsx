@@ -23,7 +23,7 @@ export function DashboardLoadingSkeleton() {
         <Bone className="h-4 w-20" />
       </header>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 border-y border-[var(--border-muted)] py-2.5">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-y border-[var(--ua-border-subtle)] py-2.5">
         <div className="flex flex-wrap gap-2">
           <Bone className="h-[30px] w-28 rounded-md" />
           <Bone className="h-[30px] w-32 rounded-md" />
@@ -34,7 +34,7 @@ export function DashboardLoadingSkeleton() {
         </div>
       </div>
 
-      <section className="overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface)]">
+      <section className="overflow-hidden rounded-lg border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)]">
         <div className="flex items-start justify-between gap-3 p-4 pb-2">
           <div className="space-y-1.5">
             <Bone className="h-3.5 w-36" />
@@ -49,9 +49,9 @@ export function DashboardLoadingSkeleton() {
         <div className="p-4 pt-2">
           <Bone className="h-[250px] w-full rounded-md" />
         </div>
-        <div className="grid grid-cols-2 border-t border-[var(--border-muted)] lg:grid-cols-4">
+        <div className="grid grid-cols-2 border-t border-[var(--ua-border-subtle)] lg:grid-cols-4">
           {[...Array(4)].map((_, index) => (
-            <div key={index} className="space-y-2 border-l border-[var(--border-muted)] p-3 first:border-l-0">
+            <div key={index} className="space-y-2 border-l border-[var(--ua-border-subtle)] p-3 first:border-l-0">
               <Bone className="h-2.5 w-24" />
               <Bone className="h-5 w-20" />
               <Bone className="h-2.5 w-28 max-w-full" />
@@ -62,7 +62,7 @@ export function DashboardLoadingSkeleton() {
 
       <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-2">
         {[0, 1].map((card) => (
-          <section key={card} className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
+          <section key={card} className="rounded-lg border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] p-4">
             <div className="flex items-start justify-between">
               <div className="space-y-2">
                 <Bone className="h-3.5 w-32" />
@@ -72,7 +72,7 @@ export function DashboardLoadingSkeleton() {
               <Bone className="h-7 w-16 rounded-md" />
             </div>
             <Bone className="mt-5 h-12 w-full rounded-sm" />
-            <div className="mt-4 grid grid-cols-3 gap-3 border-t border-[var(--border-muted)] pt-3">
+            <div className="mt-4 grid grid-cols-3 gap-3 border-t border-[var(--ua-border-subtle)] pt-3">
               <Bone className="h-8 w-full" />
               <Bone className="h-8 w-full" />
               <Bone className="h-8 w-full" />
@@ -95,8 +95,8 @@ export function StoreLoadingSkeleton() {
       <header
         className="rounded-md"
         style={{
-          background: "var(--bg-canvas)",
-          borderBottom: "1px solid var(--border)",
+          background: "var(--ua-canvas)",
+          borderBottom: "1px solid var(--ua-border-default)",
           padding: "16px 24px",
         }}
       >
@@ -120,8 +120,8 @@ export function StoreLoadingSkeleton() {
           <section
             className="rounded-md border p-4"
             style={{
-              borderColor: "var(--border)",
-              background: "var(--surface)",
+              borderColor: "var(--ua-border-default)",
+              background: "var(--ua-surface-primary)",
             }}
           >
             <Bone className="h-4 w-28 mb-1" />
@@ -134,7 +134,7 @@ export function StoreLoadingSkeleton() {
                 <div
                   key={i}
                   className="flex items-center gap-3 rounded-md border px-3 py-2.5"
-                  style={{ borderColor: "var(--border-muted)" }}
+                  style={{ borderColor: "var(--ua-border-subtle)" }}
                 >
                   <Bone className="h-8 w-8 shrink-0 rounded-md" />
                   <div className="flex-1 space-y-1.5">
@@ -152,8 +152,8 @@ export function StoreLoadingSkeleton() {
               key={i}
               className="rounded-md border p-4 space-y-3"
               style={{
-                borderColor: "var(--border)",
-                background: "var(--surface)",
+                borderColor: "var(--ua-border-default)",
+                background: "var(--ua-surface-primary)",
               }}
             >
               <Bone className="h-4 w-32" />
@@ -177,8 +177,8 @@ export function WatchlistLoadingSkeleton() {
     >
       <header
         style={{
-          background: "var(--bg-canvas)",
-          borderBottom: "1px solid var(--border)",
+          background: "var(--ua-canvas)",
+          borderBottom: "1px solid var(--ua-border-default)",
           padding: "16px 24px",
         }}
       >
@@ -236,7 +236,7 @@ export function CustomersLoadingSkeleton() {
       <div className="p-4 space-y-4">
         <div
           className="rounded-md border p-4 space-y-3"
-          style={{ borderColor: "var(--border)", background: "var(--surface)" }}
+          style={{ borderColor: "var(--ua-border-default)", background: "var(--ua-surface-primary)" }}
         >
           <div className="flex justify-between gap-3">
             <Bone className="h-4 w-48" />
@@ -246,7 +246,7 @@ export function CustomersLoadingSkeleton() {
         </div>
         <div
           className="flex flex-wrap items-center gap-2 rounded-md border px-3 py-2"
-          style={{ borderColor: "var(--border)", background: "var(--surface)" }}
+          style={{ borderColor: "var(--ua-border-default)", background: "var(--ua-surface-primary)" }}
         >
           <Bone className="h-3 w-12" />
           {[...Array(4)].map((_, i) => (
@@ -295,7 +295,7 @@ export function ClaimsLoadingSkeleton() {
         </div>
         <div
           className="flex flex-wrap gap-2 border-b pb-3"
-          style={{ borderColor: "var(--border-muted)" }}
+          style={{ borderColor: "var(--ua-border-subtle)" }}
         >
           {[...Array(8)].map((_, i) => (
             <Bone key={i} className="h-7 w-24 rounded-full" />
@@ -338,7 +338,7 @@ export function ReportsLoadingSkeleton() {
     <WorkbenchPageSkeleton showActions kpiCount={0}>
       <div
         className="flex gap-1 border-b px-4"
-        style={{ borderColor: "var(--border)", background: "var(--surface)" }}
+        style={{ borderColor: "var(--ua-border-default)", background: "var(--ua-surface-primary)" }}
       >
         {[...Array(3)].map((_, i) => (
           <Bone
@@ -355,8 +355,8 @@ export function ReportsLoadingSkeleton() {
               key={i}
               className="rounded-md border p-4 space-y-2"
               style={{
-                borderColor: "var(--border)",
-                background: "var(--surface)",
+                borderColor: "var(--ua-border-default)",
+                background: "var(--ua-surface-primary)",
               }}
             >
               <Bone className="h-3 w-20" />
@@ -393,7 +393,7 @@ export function ChargebacksLoadingSkeleton() {
       <div>
         <div
           className="border-b p-4 space-y-3"
-          style={{ borderColor: "var(--border)" }}
+          style={{ borderColor: "var(--ua-border-default)" }}
         >
           <Bone className="h-4 w-36" />
           <Bone className="h-16 w-full max-w-lg" />
@@ -421,18 +421,18 @@ export function UploadLoadingSkeleton() {
     <WorkbenchPageSkeleton showActions kpiCount={0}>
       <div className="mx-auto w-full max-w-[1500px] space-y-3 p-4">
         <div
-          className="rounded-[var(--radius-2)] px-5 py-4 space-y-2"
+          className="rounded-[var(--ua-radius-control)] px-5 py-4 space-y-2"
           style={{
-            background: "var(--bg-subtle)",
-            border: "1px solid var(--border-muted)",
+            background: "var(--ua-surface-secondary)",
+            border: "1px solid var(--ua-border-subtle)",
           }}
         >
           <Bone className="h-5 w-64" />
           <Bone className="h-3 w-full" />
         </div>
         <div
-          className="flex flex-col items-center gap-3 rounded-[var(--ua-radius-card)] border border-dashed p-6"
-          style={{ borderColor: "var(--border)", background: "var(--surface)" }}
+          className="flex flex-col items-center gap-3 rounded-[var(--ua-radius-surface)] border border-dashed p-6"
+          style={{ borderColor: "var(--ua-border-default)", background: "var(--ua-surface-primary)" }}
         >
           <Bone className="h-12 w-12 rounded-full" />
           <Bone className="h-4 w-48" />
@@ -445,7 +445,7 @@ export function UploadLoadingSkeleton() {
             <div
               key={i}
               className="flex items-center justify-between rounded-md border px-4 py-3"
-              style={{ borderColor: "var(--border-muted)" }}
+              style={{ borderColor: "var(--ua-border-subtle)" }}
             >
               <div className="space-y-1.5">
                 <Bone className="h-4 w-40" />
@@ -508,8 +508,8 @@ export function NetworkIntelligenceLoadingSkeleton() {
             key={i}
             className="rounded-md border p-4 space-y-2"
             style={{
-              borderColor: "var(--border)",
-              background: "var(--surface)",
+              borderColor: "var(--ua-border-default)",
+              background: "var(--ua-surface-primary)",
             }}
           >
             <Bone className="h-3 w-28" />
@@ -618,7 +618,7 @@ function SettingsGeometrySkeleton({ mode }: { mode: 'form' | 'list' }) {
               {mode === 'form' ? Array.from({ length: 3 }, (_, index) => (
                 <div key={index} className="space-y-1.5"><Bone className="h-2.5 w-24" /><Bone className="h-8 w-full" /></div>
               )) : Array.from({ length: 5 }, (_, index) => (
-                <div key={index} className="flex min-h-14 items-center justify-between gap-4 border-b border-[var(--border-muted)] py-2 last:border-0">
+                <div key={index} className="flex min-h-14 items-center justify-between gap-4 border-b border-[var(--ua-border-subtle)] py-2 last:border-0">
                   <div className="space-y-1.5"><Bone className="h-3 w-36" /><Bone className="h-2.5 w-52 max-w-full" /></div><Bone className="h-8 w-24" />
                 </div>
               ))}
@@ -649,8 +649,8 @@ export function GraphLoadingSkeleton() {
             key={i}
             className="rounded-md border p-4 space-y-2"
             style={{
-              borderColor: "var(--border)",
-              background: "var(--surface)",
+              borderColor: "var(--ua-border-default)",
+              background: "var(--ua-surface-primary)",
             }}
           >
             <Bone className="h-3 w-24" />

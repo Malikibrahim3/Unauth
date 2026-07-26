@@ -1,8 +1,8 @@
 export type ShipBobEnvironment = 'sandbox' | 'production';
 
 export const SHIPBOB_ENDPOINTS: Record<ShipBobEnvironment, { authorizationHost: string; apiBaseUrl: string }> = {
-  sandbox: { authorizationHost: 'https://authstage.shipbob.com', apiBaseUrl: 'https://sandbox-api.shipbob.com/2026-01' },
-  production: { authorizationHost: 'https://auth.shipbob.com', apiBaseUrl: 'https://api.shipbob.com/2026-01' },
+  sandbox: { authorizationHost: 'https://authstage.shipbob.com', apiBaseUrl: 'https://sandbox-api.shipbob.com/2026-07' },
+  production: { authorizationHost: 'https://auth.shipbob.com', apiBaseUrl: 'https://api.shipbob.com/2026-07' },
 };
 
 export function shipBobEndpoints(environment: ShipBobEnvironment) {

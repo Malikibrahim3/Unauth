@@ -9,6 +9,8 @@ export interface EmailPayload {
   text: string;
   from?: string;
   replyTo?: string;
+  /** Provider-level deduplication key. Resend retains keys for 24 hours. */
+  idempotencyKey?: string;
 }
 
 export interface EmailSendResult {
@@ -34,11 +36,20 @@ export async function sendEmail(payload: EmailPayload): Promise<EmailSendResult>
   }
 
   try {
+    if (
+      payload.idempotencyKey
+      && (payload.idempotencyKey.length > 256 || payload.idempotencyKey.trim().length < 1)
+    ) {
+      return { ok: false, skipped: false, error: 'Email idempotency key is invalid.' };
+    }
     const response = await fetch(RESEND_API_URL, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
+        ...(payload.idempotencyKey
+          ? { 'Idempotency-Key': payload.idempotencyKey }
+          : {}),
       },
       body: JSON.stringify({
         from: payload.from ?? env.AUDIT_EMAIL_FROM ?? 'Unauth <hello@unauth.co>',

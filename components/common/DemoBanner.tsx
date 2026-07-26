@@ -3,11 +3,11 @@
 export default function DemoBanner() {
   return (
     <div
-      className="flex items-center justify-between px-6 py-2.5 text-sm border-b"
+      className="flex items-center justify-between gap-3 border-b px-4 py-1.5 text-[length:var(--ua-text-caption-size)] leading-[var(--ua-text-caption-leading)] sm:px-6"
       style={{
-        background: 'var(--info-bg)',
-        borderColor: 'var(--info-bd)',
-        color: 'var(--info)',
+        background: 'var(--ua-info-bg)',
+        borderColor: 'var(--ua-info-border)',
+        color: 'var(--ua-info)',
       }}
     >
       <span>

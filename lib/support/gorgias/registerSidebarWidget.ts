@@ -118,14 +118,15 @@ export async function refreshGorgiasSidebarWidgetTemplate(input: {
 }
 
 /** Gorgias sidebar card title — shown to agents in the helpdesk. */
-export const GORGIAS_SIDEBAR_CARD_TITLE = 'Unauth payout decision';
+export const GORGIAS_SIDEBAR_CARD_TITLE = 'Unauth case';
 
 /** Row labels in buildGorgiasSidebarWidgetTemplate (must align with widget JSON field paths). */
 export const GORGIAS_SIDEBAR_ROW_LABELS = {
-  payout_exposure: 'Case',
-  evidence_checklist: 'Evidence',
-  recommendation: 'Rule',
-  recovery_path: 'Recovery',
+  customer_action: 'Customer action',
+  responsibility: 'Responsibility',
+  recovery_recommendation: 'Recovery',
+  why: 'Why',
+  missing_evidence: 'Missing evidence',
 } as const;
 
 export function buildGorgiasSidebarWidgetTemplate(appBaseUrl: string) {
@@ -149,18 +150,20 @@ export function buildGorgiasSidebarWidgetTemplate(appBaseUrl: string) {
           custom: {
             links: [
               { url: '{{basic_unlock_url}}', label: '{{basic_unlock_label}}' },
-              { url: '{{full_unlock_url}}', label: '{{full_unlock_label}}' },
               { url: '{{evidence_unlock_url}}', label: '{{evidence_unlock_label}}' },
               { url: ctaUrl, label: ctaLabel },
             ],
           },
         },
         widgets: [
-          // Compressed 4-line payout decision card (see docs/PRODUCT.md §11).
-          { path: 'payout_exposure', title: labels.payout_exposure, type: 'text' },
-          { path: 'evidence_checklist', title: labels.evidence_checklist, type: 'text' },
-          { path: 'recommendation', title: labels.recommendation, type: 'text' },
-          { path: 'recovery_path', title: labels.recovery_path, type: 'text' },
+          // Compact evidence-reconciliation card. Legacy payout fields remain
+          // in the JSON payload for older integrations but are not the visible
+          // product contract anymore.
+          { path: 'customer_action', title: labels.customer_action, type: 'text' },
+          { path: 'responsibility', title: labels.responsibility, type: 'text' },
+          { path: 'recovery_recommendation', title: labels.recovery_recommendation, type: 'text' },
+          { path: 'why', title: labels.why, type: 'text' },
+          { path: 'missing_evidence', title: labels.missing_evidence, type: 'text' },
         ],
       },
     ],

@@ -61,7 +61,7 @@ export function SourceMark({
   return (
     <span className="inline-flex min-w-0 items-center gap-2">
       <ProviderLogo provider={source} name={display} size="sm" />
-      {!compact ? <span className="truncate capitalize text-xs font-medium text-[var(--text-secondary)]">{display}</span> : null}
+      {!compact ? <span className="truncate capitalize text-xs font-medium text-[var(--ua-text-secondary)]">{display}</span> : null}
     </span>
   );
 }

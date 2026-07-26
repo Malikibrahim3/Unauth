@@ -11,7 +11,7 @@ import {
 type SaveState = "idle" | "saving" | "saved" | "error";
 
 const INPUT_CLASS =
-  "mt-1.5 h-8 w-full rounded-[var(--ua-radius-input)] border border-[var(--border)] bg-[var(--surface)] px-3 text-[12px] text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--accent)_18%,transparent)] disabled:cursor-not-allowed disabled:opacity-60";
+  "mt-1.5 h-8 w-full rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-3 text-[length:var(--ua-text-caption-size)] text-[var(--ua-text-primary)] outline-none focus:border-[var(--ua-action-primary)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--ua-action-primary)_18%,transparent)] disabled:cursor-not-allowed disabled:opacity-60";
 
 function Field({
   label,
@@ -23,10 +23,10 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <label className="block text-[12px] font-medium text-[var(--text-primary)]">
+    <label className="block text-[length:var(--ua-text-caption-size)] font-medium text-[var(--ua-text-primary)]">
       {label}
       {children}
-      <span className="mt-1 block text-xs font-normal leading-relaxed text-[var(--text-tertiary)]">
+      <span className="mt-1 block text-xs font-normal leading-relaxed text-[var(--ua-text-tertiary)]">
         {help}
       </span>
     </label>
@@ -143,12 +143,12 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
     <form onSubmit={save} className="space-y-3">
       {!canManage ? (
         <Card unstyled
-          variant="inset"
+          variant="muted"
           className="flex items-center justify-between gap-3 p-4"
         >
           <div>
             <p className="text-sm font-semibold">Read-only access</p>
-            <p className="mt-1 text-xs text-[var(--text-secondary)]">
+            <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">
               An owner or admin with Manage settings permission can change these
               defaults.
             </p>
@@ -158,8 +158,8 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
       ) : null}
       {loading ? (
         <Card unstyled
-          variant="inset"
-          className="p-4 text-sm text-[var(--text-secondary)]"
+          variant="muted"
+          className="p-4 text-sm text-[var(--ua-text-secondary)]"
           role="status"
         >
           Loading workspace defaults…
@@ -304,10 +304,10 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
         description="Write access and health notifications remain explicit workspace choices."
       >
         <div className="space-y-3">
-          <label className="flex items-start gap-3 rounded-md border border-[var(--border-muted)] p-3">
+          <label className="flex items-start gap-3 rounded-md border border-[var(--ua-border-subtle)] p-3">
             <input
               type="checkbox"
-              className="mt-0.5 h-4 w-4 accent-[var(--accent)]"
+              className="mt-0.5 h-4 w-4 accent-[var(--ua-action-primary)]"
               disabled={!canManage || loading || state === "saving"}
               checked={settings.connectorWritebackEnabled}
               onChange={(event) =>
@@ -318,16 +318,16 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
               <span className="block text-sm font-medium">
                 Allow controlled connector write-back
               </span>
-              <span className="mt-0.5 block text-xs text-[var(--text-tertiary)]">
+              <span className="mt-0.5 block text-xs text-[var(--ua-text-tertiary)]">
                 Only provider capabilities explicitly marked write-supported can
                 use this permission.
               </span>
             </span>
           </label>
-          <label className="flex items-start gap-3 rounded-md border border-[var(--border-muted)] p-3">
+          <label className="flex items-start gap-3 rounded-md border border-[var(--ua-border-subtle)] p-3">
             <input
               type="checkbox"
-              className="mt-0.5 h-4 w-4 accent-[var(--accent)]"
+              className="mt-0.5 h-4 w-4 accent-[var(--ua-action-primary)]"
               disabled={!canManage || loading || state === "saving"}
               checked={settings.webhookHealthAlerts}
               onChange={(event) =>
@@ -338,7 +338,7 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
               <span className="block text-sm font-medium">
                 Alert on webhook health failures
               </span>
-              <span className="mt-0.5 block text-xs text-[var(--text-tertiary)]">
+              <span className="mt-0.5 block text-xs text-[var(--ua-text-tertiary)]">
                 Create in-app notifications for failed, stale, or repeatedly
                 retried ingestion.
               </span>
@@ -360,7 +360,7 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
         {message ? (
           <p
             role={state === "error" ? "alert" : "status"}
-            className={`text-sm ${state === "error" ? "text-[var(--risk-critical)]" : "text-[var(--success)]"}`}
+            className={`text-sm ${state === "error" ? "text-[var(--ua-risk-critical)]" : "text-[var(--ua-success)]"}`}
           >
             {message}
           </p>

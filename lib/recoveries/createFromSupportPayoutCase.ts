@@ -21,6 +21,7 @@ type SupportPayoutCaseRow = {
   id: string;
   merchant_id: string;
   claim_type: string;
+  reason_normalized: string | null;
   status: string;
   amount_at_risk: number | null;
   total_estimated_loss: number | null;
@@ -32,6 +33,7 @@ type SupportPayoutCaseRow = {
   recovery_owner: string | null;
   recovery_required_evidence: string[] | null;
   recovery_next_action: string | null;
+  responsibility_confirmation_state: string;
 };
 
 const EXTERNAL_RECOVERY_OWNERS = new Set(['carrier', 'three_pl', 'warehouse', 'supplier', 'returns_provider']);
@@ -51,6 +53,7 @@ function num(value: unknown): number | null {
 }
 
 function ruleClaimTypeForClaim(claimType: string, requestedAction: string | null): PartnerRuleClaimType {
+  if (claimType === 'missing_item') return 'missing_item';
   if (claimType === 'damaged') return 'damaged_item';
   if (claimType === 'wrong_item') return 'wrong_item';
   if (claimType === 'item_not_received') return 'item_not_received';
@@ -59,6 +62,10 @@ function ruleClaimTypeForClaim(claimType: string, requestedAction: string | null
   if (requestedAction === 'store_credit') return 'store_credit_request';
   if (requestedAction === 'replacement' || requestedAction === 'reship') return 'replacement_request';
   return 'other';
+}
+
+function productClaimTypeForRow(row: SupportPayoutCaseRow): string {
+  return row.reason_normalized === 'missing_item' ? 'missing_item' : row.claim_type;
 }
 
 function recoveryTypeForRow(row: SupportPayoutCaseRow): PartnerRecoveryType {
@@ -91,10 +98,11 @@ function ownerTypeForOwner(owner: string): RecoveryOwnerType {
 }
 
 function supportPayoutCaseFromRow(row: SupportPayoutCaseRow): SupportPayoutCase {
+  const productClaimType = productClaimTypeForRow(row);
   const lossAmount = num(row.total_estimated_loss) ?? num(row.amount_at_risk) ?? 0;
   const requiredEvidence = row.recovery_required_evidence ?? [];
   const evidence: EvidenceChecklistResult = {
-    claimType: row.claim_type as SupportPayoutCase['claimType'],
+    claimType: productClaimType as SupportPayoutCase['claimType'],
     items: requiredEvidence.map((key) => ({
       key,
       label: key.replaceAll('_', ' '),
@@ -112,7 +120,7 @@ function supportPayoutCaseFromRow(row: SupportPayoutCaseRow): SupportPayoutCase 
   const draft: Parameters<typeof withWorkflow>[0] = {
     caseId: row.id,
     merchantId: row.merchant_id,
-    claimType: row.claim_type as SupportPayoutCase['claimType'],
+    claimType: productClaimType as SupportPayoutCase['claimType'],
     exposure: {
       total: { amount: lossAmount, currency: row.currency },
       components: lossAmount > 0
@@ -176,6 +184,8 @@ export async function maybeCreateRecoveryCaseFromSupportPayoutCase(input: {
   client: SupabaseClient;
   merchantId: string;
   supportPayoutCaseId: string;
+  /** New recovery creation is allowed only from the explicit merchant handoff. */
+  explicitHandoff: boolean;
 }): Promise<RecoveryCase | null> {
   const existing = await getRecoveryCaseForSupportPayoutCase(
     input.client,
@@ -203,10 +213,11 @@ export async function maybeCreateRecoveryCaseFromSupportPayoutCase(input: {
     }
     return existing;
   }
+  if (!input.explicitHandoff) return null;
 
   const { data: row, error } = await input.client
     .from(TABLES.MERCHANT_CLAIMS)
-    .select('id, merchant_id, claim_type, status, amount_at_risk, total_estimated_loss, currency, requested_action, loss_attribution, attribution_confidence, recoverability, recovery_owner, recovery_required_evidence, recovery_next_action')
+    .select('id, merchant_id, claim_type, reason_normalized, status, amount_at_risk, total_estimated_loss, currency, requested_action, loss_attribution, attribution_confidence, recoverability, recovery_owner, recovery_required_evidence, recovery_next_action, responsibility_confirmation_state')
     .eq('id', input.supportPayoutCaseId)
     .eq('merchant_id', input.merchantId)
     .maybeSingle();
@@ -214,6 +225,7 @@ export async function maybeCreateRecoveryCaseFromSupportPayoutCase(input: {
   if (!row) return null;
 
   const payoutRow = row as SupportPayoutCaseRow;
+  if (payoutRow.responsibility_confirmation_state === 'unconfirmed') return null;
   if (!shouldCreateRecoveryCaseFromRow(payoutRow)) return null;
 
   // A financial recovery must attach to a canonical loss record. Without one
@@ -237,7 +249,7 @@ export async function maybeCreateRecoveryCaseFromSupportPayoutCase(input: {
   const evidencePresent = Array.from(new Set((evidenceRes.data ?? []).map((item) => String(item.evidence_type))));
   const supportPayoutCase = supportPayoutCaseFromRow(payoutRow);
   const recoveryType = recoveryTypeForRow(payoutRow);
-  const claimType = ruleClaimTypeForClaim(payoutRow.claim_type, payoutRow.requested_action);
+  const claimType = ruleClaimTypeForClaim(productClaimTypeForRow(payoutRow), payoutRow.requested_action);
   const partnerRule = await findBestPartnerRecoveryRule(input.client, {
     merchantId: input.merchantId,
     recoveryType,

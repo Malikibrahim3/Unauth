@@ -71,13 +71,49 @@ export function claimNextAction(
   _latestOutcome: { decision: string; outcome: string; updated_at: string } | null,
   _currentUserId: string,
 ): ClaimEvidenceStatus {
-  const nextActionLabel = isPayoutCaseNextAction(claim.next_action)
+  const projectedNextAction = isPayoutCaseNextAction(claim.next_action)
     ? PAYOUT_CASE_NEXT_ACTION_LABELS[claim.next_action]
     : fallbackNextActionLabel(claim.status);
   const stateLabel = isPayoutCaseStatus(claim.status)
     ? PAYOUT_CASE_STATUS_LABELS[claim.status]
     : claim.status.replace(/_/g, ' ');
   const waitingDays = daysWaiting(claim);
+  if ((claim.investigation_awaiting_review_count ?? 0) > 0) {
+    return {
+      evidenceStatus: `${claim.investigation_awaiting_review_count} investigation response${claim.investigation_awaiting_review_count === 1 ? '' : 's'} ready`,
+      reviewState: claim.investigation_latest_response
+        ? sanitizeMerchantText(claim.investigation_latest_response)
+        : 'Evidence state: External response needs review',
+      nextActionLabel: 'Review investigation response',
+      daysWaiting: waitingDays,
+    };
+  }
+  if ((claim.investigation_overdue_count ?? 0) > 0) {
+    const party = claim.investigation_waiting_party
+      ?? claim.investigation_waiting_target?.replaceAll('_', ' ')
+      ?? 'external party';
+    return {
+      evidenceStatus: `${claim.investigation_overdue_count} overdue investigation${claim.investigation_overdue_count === 1 ? '' : 's'}`,
+      reviewState: claim.investigation_evidence_gap
+        ? sanitizeMerchantText(claim.investigation_evidence_gap)
+        : `Evidence state: Waiting on ${party}`,
+      nextActionLabel: `Chase ${party}`,
+      daysWaiting: waitingDays,
+    };
+  }
+  if ((claim.investigation_open_count ?? 0) > 0 && claim.investigation_waiting_target) {
+    const party = claim.investigation_waiting_party
+      ?? claim.investigation_waiting_target.replaceAll('_', ' ');
+    return {
+      evidenceStatus: `${claim.investigation_open_count} open investigation${claim.investigation_open_count === 1 ? '' : 's'}`,
+      reviewState: claim.investigation_evidence_gap
+        ? sanitizeMerchantText(claim.investigation_evidence_gap)
+        : `Evidence state: Waiting on ${party}`,
+      nextActionLabel: `Waiting on ${party}`,
+      daysWaiting: waitingDays,
+    };
+  }
+  const nextActionLabel = projectedNextAction;
   const snoozedUntil = claim.snoozed_until ? new Date(claim.snoozed_until) : null;
   if (snoozedUntil && snoozedUntil.getTime() > Date.now()) {
     return {

@@ -7,12 +7,12 @@ import {
   requirePagePermission,
 } from '@/lib/auth/requestContext';
 import { TABLES } from '@/lib/supabase/tables';
-import { WorkbenchPage, KeyInsightCallout, SummaryRail, ButtonLink } from '@/components/ui';
-import { TrendingUp } from 'lucide-react';
+import { WorkbenchPage, SummaryRail, ButtonLink } from '@/components/ui';
 import { TickMeterRow } from '@/components/charts/authenticated';
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { formatCurrencyNullable, formatNumber, sumSameCurrency } from '@/lib/utils/format';
 import { listRecoveryCases } from '@/lib/recoveries/store';
+import { RECOVERY_BOARD_COLUMNS } from '@/lib/recoveries/status';
 import { RecoveryBoardClient } from '@/app/(app)/recoveries/RecoveryBoardClient';
 import type { RecoveryCase } from '@/lib/recoveries/types';
 
@@ -109,18 +109,19 @@ export default async function RecoveriesPage() {
   const recovered = recoveredSum.total;
   const currency = recoverableSum.currency;
   const mixedHint = recoverableSum.mixedCount > 0 ? ` · ${recoverableSum.mixedCount} case${recoverableSum.mixedCount === 1 ? '' : 's'} in other currencies excluded` : '';
-  const recoveryDistribution = recoveries.reduce(
-    (counts, item) => {
-      if (['paid', 'closed_unrecoverable'].includes(item.status)) counts.closed += 1;
-      else if (item.status === 'evidence_needed' || item.evidence_missing.length > 0) counts.evidence += 1;
-      else if (item.status === 'chase_due') counts.chase += 1;
-      else counts.ready += 1;
-      return counts;
-    },
-    { evidence: 0, chase: 0, ready: 0, closed: 0 },
-  );
-  const stageTotal = recoveryDistribution.evidence + recoveryDistribution.ready + recoveryDistribution.chase + recoveryDistribution.closed;
-  const recoveredPct = estimatedRecoverable > 0 ? Math.round((recovered / estimatedRecoverable) * 100) : null;
+  /*
+   * The rail must reconcile with the board it sits beside. Both now derive from
+   * RECOVERY_BOARD_COLUMNS, so every case lands in exactly one stage and the two
+   * totals agree by construction. The previous reducer used its own four buckets
+   * plus an `evidence_missing` override, which reclassified cases the board had
+   * already placed elsewhere — the board summed to 8 while the rail summed to 10.
+   */
+  const stageRows = RECOVERY_BOARD_COLUMNS.map((column) => ({
+    key: column.key,
+    label: column.label,
+    count: recoveries.filter((item) => column.statuses.includes(item.status)).length,
+  })).filter((row) => row.count > 0);
+  const stageTotal = stageRows.reduce((sum, row) => sum + row.count, 0);
 
   return (
     <WorkbenchPage
@@ -138,19 +139,8 @@ export default async function RecoveriesPage() {
         { label: 'Missing source data', value: formatNumber(missingSourceData), hint: 'Waiting on a connected source' },
         { label: 'Needs correspondence', value: formatNumber(needsCorrespondence), hint: 'Draft chase requests' },
         { label: 'Estimated recovery', value: formatCurrencyNullable(estimatedRecoverable || null, currency) ?? '—', hint: `Upper estimate${mixedHint}` },
-        { label: 'Approved recovery', value: formatCurrencyNullable(recovered || null, currency) ?? '—', hint: `Confirmed to date${mixedHint}` },
+        { label: 'Recovered value', value: formatCurrencyNullable(recovered || null, currency) ?? '—', hint: `Received or credited${mixedHint}` },
       ]}
-      primaryVisual={
-        <KeyInsightCallout
-          eyebrow="Recovery"
-          tone={recoveredPct != null && recoveredPct >= 50 ? 'success' : 'info'}
-          icon={<TrendingUp size={16} />}
-        >
-          <strong>{formatCurrencyNullable(recovered || null, currency) ?? '—'}</strong> recovered
-          {estimatedRecoverable > 0 ? <> of <strong>{formatCurrencyNullable(estimatedRecoverable, currency) ?? '—'}</strong> recoverable ({recoveredPct}%)</> : null}
-          {' '}· <strong>{formatNumber(needsCorrespondence)}</strong> awaiting a chase.
-        </KeyInsightCallout>
-      }
       rail={
         <SummaryRail
           sections={[
@@ -162,7 +152,7 @@ export default async function RecoveriesPage() {
                       label="Recovered"
                       percent={(recovered / estimatedRecoverable) * 100}
                       displayValue={`${Math.round((recovered / estimatedRecoverable) * 100)}%`}
-                      tone="green"
+                      tone="positive"
                       caption={
                         recovered / estimatedRecoverable >= 0.5
                           ? 'Most recoverable value has come back'
@@ -175,20 +165,30 @@ export default async function RecoveriesPage() {
               : []),
             {
               title: 'Stage volume',
-              rows: [
-                { label: 'Needs evidence', value: formatNumber(recoveryDistribution.evidence), tone: 'danger', bar: stageTotal ? recoveryDistribution.evidence / stageTotal : 0, href: '/recoveries?stage=evidence' },
-                { label: 'Ready / active', value: formatNumber(recoveryDistribution.ready), tone: 'info', bar: stageTotal ? recoveryDistribution.ready / stageTotal : 0, href: '/recoveries?stage=ready' },
-                { label: 'Chase due', value: formatNumber(recoveryDistribution.chase), tone: 'warning', bar: stageTotal ? recoveryDistribution.chase / stageTotal : 0, href: '/recoveries?stage=chase' },
-                { label: 'Closed', value: formatNumber(recoveryDistribution.closed), tone: 'success', bar: stageTotal ? recoveryDistribution.closed / stageTotal : 0, href: '/recoveries?stage=closed' },
-              ],
-              footnote: 'Current case counts by operational stage.',
+              /*
+               * A distribution, not a severity scale — the bars stay neutral so
+               * the rail does not read as five competing alarms (§3.1: colour
+               * explains status, it does not decorate).
+               */
+              /*
+               * No href: `?stage=` was never read by any code, so the previous
+               * rows linked to a parameter that navigated nowhere. This is a
+               * distribution readout; the board beside it is the navigation.
+               */
+              rows: stageRows.map((row) => ({
+                label: row.label,
+                value: formatNumber(row.count),
+                tone: 'neutral' as const,
+                bar: stageTotal ? row.count / stageTotal : 0,
+              })),
+              footnote: `${formatNumber(stageTotal)} open case${stageTotal === 1 ? '' : 's'} grouped by the board stage they sit in.`,
             },
           ]}
         />
       }
       main={<RecoveryBoardClient recoveries={recoveries} canManage={canManage} />}
       footer={
-        <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+        <p className="text-xs" style={{ color: 'var(--ua-text-tertiary)' }}>
           Cases update automatically as your connected tools sync new evidence and status. Missing evidence stays marked as missing until a source provides it.
         </p>
       }

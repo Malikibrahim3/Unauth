@@ -65,7 +65,7 @@ describe("app route registry", () => {
 [
   "Overview",
   "Work",
-  "Payout Control",
+  "Cases",
   "Losses",
   "Recovery",
   "Customers",

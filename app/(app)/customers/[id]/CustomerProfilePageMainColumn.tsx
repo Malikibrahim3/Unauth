@@ -2,7 +2,7 @@ import { Activity, AtSign, CreditCard, ExternalLink, Fingerprint, MapPin, Phone,
 import Link from "next/link";
 import CustomerNotes from "@/components/audit/CustomerNotes";
 import CustomerSupportCasesSection from "@/components/customers/CustomerSupportCasesSection";
-import { Badge, PanelCard } from "@/components/ui";
+import { Badge, Panel } from "@/components/ui";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { MetricCard } from "@/components/ui/MetricCard";
@@ -28,7 +28,7 @@ import type {
   MerchantSignalPill,
   PossibleMatchRow,
 } from "@/app/(app)/customers/[id]/customerProfilePageLoad";
-import type { CustomerIntelligencePanel } from "@/app/api/customers/[id]/route";
+import type { CustomerIntelligencePanel } from "@/lib/customers/intelligencePanel";
 import type { ConfidenceGradeValue } from "@/lib/confidence";
 import type { BehaviorRoadmapEvent } from "@/components/customers/BehaviorRoadmap";
 
@@ -67,16 +67,16 @@ function CompactTransactionList({
   }
 
   return (
-    <div className="overflow-x-auto rounded-md border border-[var(--border)]">
+    <div className="overflow-x-auto rounded-md border border-[var(--ua-border-default)]">
       <table className="w-full min-w-[640px] text-left text-sm">
-        <thead className="bg-[var(--surface-sunken)] text-[11px] uppercase tracking-wide text-[var(--text-tertiary)]"><tr><th className="px-3 py-2">Order</th><th className="px-3 py-2">Date</th><th className="px-3 py-2">Delivery</th><th className="px-3 py-2">Outcome</th><th className="px-3 py-2 text-right">Amount</th></tr></thead>
-        <tbody className="divide-y divide-[var(--border-muted)]">
+        <thead className="bg-[var(--ua-surface-muted)] text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]"><tr><th className="px-3 py-2">Order</th><th className="px-3 py-2">Date</th><th className="px-3 py-2">Delivery</th><th className="px-3 py-2">Outcome</th><th className="px-3 py-2 text-right">Amount</th></tr></thead>
+        <tbody className="divide-y divide-[var(--ua-border-subtle)]">
       {transactions.slice(0, 25).map((tx) => {
         const lineItems = (tx.line_items ?? []).filter((line) => line.title);
         const shownItems = lineItems.slice(0, 2);
         const extraItems = lineItems.length - shownItems.length;
         return (
-        <tr key={tx.order_id} className="hover:bg-[var(--surface-hover)]">
+        <tr key={tx.order_id} className="hover:bg-[var(--ua-surface-hover)]">
           <td className="px-3 py-2.5">
             <div className="flex items-center gap-1.5">
               <Link href={`/orders/${tx.source_order_id}`} className="font-mono text-xs font-semibold underline-offset-2 hover:underline">{tx.order_id}</Link>
@@ -87,25 +87,25 @@ function CompactTransactionList({
                   rel="noreferrer"
                   aria-label={`Open order in ${tx.external_source ?? "source"}`}
                   title={`Open in ${tx.external_source ?? "source"}`}
-                  className="text-[var(--accent)] hover:text-[var(--text-primary)]"
+                  className="text-[var(--ua-action-primary)] hover:text-[var(--ua-text-primary)]"
                 >
                   <ExternalLink className="h-3.5 w-3.5" />
                 </a>
               ) : null}
             </div>
-            {tx.via_email ? <span className="mt-1 block max-w-[190px] truncate text-[11px] text-[var(--text-tertiary)]">via {tx.via_email}</span> : null}
+            {tx.via_email ? <span className="mt-1 block max-w-[190px] truncate text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">via {tx.via_email}</span> : null}
             {shownItems.length > 0 ? (
-              <p className="mt-1 max-w-[220px] truncate text-[11px] text-[var(--text-tertiary)]">
+              <p className="mt-1 max-w-[220px] truncate text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">
                 {shownItems.map((line) => `${line.quantity ? `${line.quantity}× ` : ""}${line.title}`).join(", ")}
                 {extraItems > 0 ? ` +${extraItems} more` : ""}
               </p>
             ) : null}
           </td>
-          <td className="px-3 py-2.5 text-[var(--text-secondary)]">{formatDateAbsolute(tx.processed_at)}</td>
+          <td className="px-3 py-2.5 text-[var(--ua-text-secondary)]">{formatDateAbsolute(tx.processed_at)}</td>
           <td className="px-3 py-2.5">
             {tx.shipment ? (
-              <span className="flex items-center gap-1 text-[11px] text-[var(--text-secondary)]">
-                <Truck className="h-3 w-3 shrink-0 text-[var(--text-tertiary)]" aria-hidden="true" />
+              <span className="flex items-center gap-1 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-secondary)]">
+                <Truck className="h-3 w-3 shrink-0 text-[var(--ua-text-tertiary)]" aria-hidden="true" />
                 {labelize(tx.shipment.status ?? "unknown")}
                 {tx.shipment.carrier ? ` · ${tx.shipment.carrier}` : ""}
                 {tx.shipment.external_href ? (
@@ -115,16 +115,16 @@ function CompactTransactionList({
                     rel="noreferrer"
                     aria-label={`Open fulfilment in ${tx.shipment.external_source ?? "source"}`}
                     title={`Open in ${tx.shipment.external_source ?? "source"}`}
-                    className="ml-0.5 text-[var(--accent)] hover:text-[var(--text-primary)]"
+                    className="ml-0.5 text-[var(--ua-action-primary)] hover:text-[var(--ua-text-primary)]"
                   >
                     <ExternalLink className="h-3 w-3" />
                   </a>
                 ) : null}
               </span>
-            ) : <span className="text-[11px] text-[var(--text-tertiary)]">—</span>}
+            ) : <span className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">—</span>}
           </td>
           <td className="px-3 py-2.5">
-            {tx.chargeback_filed ? <Badge tone="danger" size="sm">Chargeback</Badge> : tx.refund_claimed ? <Badge tone="warning" size="sm">Payout case</Badge> : <span className="text-[11px] text-[var(--text-tertiary)]">—</span>}
+            {tx.chargeback_filed ? <Badge tone="danger" size="sm">Chargeback</Badge> : tx.refund_claimed ? <Badge tone="warning" size="sm">Payout case</Badge> : <span className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">—</span>}
           </td>
           <td className="px-3 py-2.5 text-right font-semibold tabular-nums">{formatMoneyOrDash(Math.round((Number(tx.order_value) || 0) * 100), tx.currency)}</td>
         </tr>
@@ -140,11 +140,11 @@ function ChangesStrip({ events }: { events: BehaviorRoadmapEvent[] }) {
   const changes = events.filter((event) => event.type !== "order_placed").slice(0, 8);
   if (changes.length === 0) return null;
   return (
-    <ul className="mt-3 divide-y divide-[var(--border-muted)] rounded-md border border-[var(--border)]">
+    <ul className="mt-3 divide-y divide-[var(--ua-border-subtle)] rounded-md border border-[var(--ua-border-default)]">
       {changes.map((event) => (
         <li key={event.id} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
-          <span className="min-w-0 truncate text-[var(--text-primary)]">{event.title}{event.subtitle ? <span className="ml-1.5 text-[11px] text-[var(--text-tertiary)]">{event.subtitle}</span> : null}</span>
-          <span className="shrink-0 text-[11px] text-[var(--text-tertiary)]">{formatDateAbsolute(event.date)}</span>
+          <span className="min-w-0 truncate text-[var(--ua-text-primary)]">{event.title}{event.subtitle ? <span className="ml-1.5 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">{event.subtitle}</span> : null}</span>
+          <span className="shrink-0 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">{formatDateAbsolute(event.date)}</span>
         </li>
       ))}
     </ul>
@@ -189,7 +189,7 @@ export function CustomerProfilePageMainColumn({
   return (
     <div className="grid min-w-0 grid-cols-1 items-start gap-3 lg:grid-cols-[minmax(0,1fr)_320px]">
       <div className="min-w-0 space-y-3">
-        <SectionCard title="Orders" description="What this customer bought, when it happened, and whether the order led to a payout case." actions={<span className="text-xs text-[var(--text-tertiary)]">Latest {Math.min(transactions.length, 25)} of {transactions.length}</span>}>
+        <SectionCard title="Orders" description="What this customer bought, when it happened, and whether the order led to a payout case." actions={<span className="text-xs text-[var(--ua-text-tertiary)]">Latest {Math.min(transactions.length, 25)} of {transactions.length}</span>}>
           <CompactTransactionList transactions={transactions} />
           <ChangesStrip events={roadmapEvents} />
         </SectionCard>
@@ -202,11 +202,11 @@ export function CustomerProfilePageMainColumn({
               <MetricCard label="Open disputes" value={openClaimCount} density="compact" />
               <MetricCard label="Latest status" value={latestClaimDisplay!.status} density="compact" />
             </div>
-            <div className="mt-3 rounded-md border border-[var(--border-muted)] bg-[var(--surface-sunken)] p-3">
-              <p className="text-[11px] text-[var(--text-tertiary)]">Latest dispute signal</p>
-              <p className="text-sm font-semibold text-[var(--text-primary)]">{latestClaimDisplay!.claimType}</p>
-              <p className="font-mono text-[11px] text-[var(--text-tertiary)]">{latestClaimDisplay!.orderReference}</p>
-              <p className="mt-2 text-[11px] text-[var(--text-tertiary)]">Filed {formatFiledDate(latestClaim)}</p>
+            <div className="mt-3 rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-3">
+              <p className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">Latest dispute signal</p>
+              <p className="text-sm font-semibold text-[var(--ua-text-primary)]">{latestClaimDisplay!.claimType}</p>
+              <p className="font-mono text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">{latestClaimDisplay!.orderReference}</p>
+              <p className="mt-2 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">Filed {formatFiledDate(latestClaim)}</p>
             </div>
           </SectionCard>
         ) : null}
@@ -272,32 +272,32 @@ export function CustomerProfilePageMainColumn({
                   description = labelize(entry.event_type);
               }
               return (
-                <PanelCard
+                <Panel
                   key={entry.id}
                   as="li"
-                  variant="appInset"
+                  variant="inset"
                   className="flex items-start gap-3 p-3"
                 >
                   <Activity
                     className="mt-0.5 h-4 w-4 shrink-0"
-                    style={{ color: "var(--text-secondary)" }}
+                    style={{ color: "var(--ua-text-secondary)" }}
                   />
                   <div className="min-w-0 flex-1">
                     <p
                       className="text-body-sm"
-                      style={{ color: "var(--text)" }}
+                      style={{ color: "var(--ua-text-primary)" }}
                     >
                       {description}
                     </p>
                     <p
                       className="text-caption"
-                      style={{ color: "var(--text-tertiary)" }}
+                      style={{ color: "var(--ua-text-tertiary)" }}
                       title={formatDateTime(entry.created_at)}
                     >
                       {formatDateMode(entry.created_at, "recent")}
                     </p>
                   </div>
-                </PanelCard>
+                </Panel>
               );
             })}
           </ol>
@@ -308,21 +308,21 @@ export function CustomerProfilePageMainColumn({
       <aside className="space-y-3 lg:sticky lg:top-20">
         <SectionCard title="Customer details" description="Contact and checkout details observed in your store." density="compact">
           {contactRows.length ? (
-            <dl className="divide-y divide-[var(--border-muted)]">
+            <dl className="divide-y divide-[var(--ua-border-subtle)]">
               {contactRows.map(({ label, value, icon: Icon }) => (
                 <div key={label} className="py-3 first:pt-0 last:pb-0">
-                  <dt className="flex items-center gap-3 text-[11px] uppercase tracking-wide text-[var(--text-tertiary)]">
+                  <dt className="flex items-center gap-3 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">
                     <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
                     <span>{label}</span>
                   </dt>
-                  <dd className="mt-1 break-words pl-7 text-sm text-[var(--text-primary)]">
+                  <dd className="mt-1 break-words pl-7 text-sm text-[var(--ua-text-primary)]">
                     {value}
                   </dd>
                 </div>
               ))}
             </dl>
           ) : (
-            <p className="text-sm text-[var(--text-secondary)]">
+            <p className="text-sm text-[var(--ua-text-secondary)]">
               Contact details are unavailable.
             </p>
           )}
@@ -332,23 +332,23 @@ export function CustomerProfilePageMainColumn({
               profile.phones.length > 1 ? `${profile.phones.length} phones` : null,
               profile.addresses.length > 1 ? `${profile.addresses.length} addresses` : null,
             ].filter((v): v is string => Boolean(v));
-            return extras.length ? <p className="mt-3 border-t border-[var(--border-muted)] pt-3 text-xs text-[var(--text-secondary)]">Also observed: {extras.join(', ')} across this store history.</p> : null;
+            return extras.length ? <p className="mt-3 border-t border-[var(--ua-border-subtle)] pt-3 text-xs text-[var(--ua-text-secondary)]">Also observed: {extras.join(', ')} across this store history.</p> : null;
           })()}
         </SectionCard>
 
         <SectionCard id="identity" title="Identity" description="Identifiers linked from merchant-owned activity." density="compact">
-          {profile.sibling_count ? <div className="flex gap-2 rounded-md bg-[var(--info-bg)] p-3 text-xs text-[var(--text-secondary)]"><Fingerprint className="h-4 w-4 shrink-0 text-[var(--info)]" aria-hidden="true" /><span>{profile.sibling_count + 1} source customer records were resolved into this profile.</span></div> : null}
+          {profile.sibling_count ? <div className="flex gap-2 rounded-md bg-[var(--ua-info-bg)] p-3 text-xs text-[var(--ua-text-secondary)]"><Fingerprint className="h-4 w-4 shrink-0 text-[var(--ua-info)]" aria-hidden="true" /><span>{profile.sibling_count + 1} source customer records were resolved into this profile.</span></div> : null}
           {variantCount > 0 ? <div className={profile.sibling_count ? "mt-2" : ""}><Badge tone="info" size="sm">{variantCount} identity change{variantCount === 1 ? '' : 's'}</Badge></div> : null}
           {identitySignalSummary.length ? (
-            <div className={`overflow-x-auto ${profile.sibling_count || variantCount > 0 ? "mt-3 border-t border-[var(--border-muted)] pt-3" : ""}`}>
+            <div className={`overflow-x-auto ${profile.sibling_count || variantCount > 0 ? "mt-3 border-t border-[var(--ua-border-subtle)] pt-3" : ""}`}>
               <table className="w-full min-w-[280px] text-left text-xs">
-                <thead className="text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]"><tr><th className="py-1 pr-2">Type</th><th className="py-1 pr-2 text-right">Distinct</th><th className="py-1 text-right">Last seen</th></tr></thead>
-                <tbody className="divide-y divide-[var(--border-muted)]">
+                <thead className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]"><tr><th className="py-1 pr-2">Type</th><th className="py-1 pr-2 text-right">Distinct</th><th className="py-1 text-right">Last seen</th></tr></thead>
+                <tbody className="divide-y divide-[var(--ua-border-subtle)]">
                   {identitySignalSummary.map((row) => (
                     <tr key={row.signalType}>
-                      <td className="py-1.5 pr-2 text-[var(--text-primary)]">{labelize(row.signalType)}</td>
-                      <td className="py-1.5 pr-2 text-right tabular-nums text-[var(--text-secondary)]">{row.distinctCount}</td>
-                      <td className="py-1.5 text-right tabular-nums text-[var(--text-tertiary)]">{formatDateAbsolute(row.lastSeenAt)}</td>
+                      <td className="py-1.5 pr-2 text-[var(--ua-text-primary)]">{labelize(row.signalType)}</td>
+                      <td className="py-1.5 pr-2 text-right tabular-nums text-[var(--ua-text-secondary)]">{row.distinctCount}</td>
+                      <td className="py-1.5 text-right tabular-nums text-[var(--ua-text-tertiary)]">{formatDateAbsolute(row.lastSeenAt)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -356,11 +356,11 @@ export function CustomerProfilePageMainColumn({
             </div>
           ) : null}
           {linkedAccounts.length ? (
-            <ul className="mt-3 space-y-1.5 border-t border-[var(--border-muted)] pt-3">
+            <ul className="mt-3 space-y-1.5 border-t border-[var(--ua-border-subtle)] pt-3">
               {linkedAccounts.map((account) => (
-                <li key={`${account.entityType}-${account.entityValue}`} className="flex items-center justify-between gap-2 text-xs text-[var(--text-secondary)]">
+                <li key={`${account.entityType}-${account.entityValue}`} className="flex items-center justify-between gap-2 text-xs text-[var(--ua-text-secondary)]">
                   <span className="min-w-0 truncate">{account.entityValue}</span>
-                  <span className="shrink-0 tabular-nums text-[var(--text-tertiary)]">{Math.round(account.confidence * 100)}%</span>
+                  <span className="shrink-0 tabular-nums text-[var(--ua-text-tertiary)]">{Math.round(account.confidence * 100)}%</span>
                 </li>
               ))}
             </ul>
@@ -368,26 +368,26 @@ export function CustomerProfilePageMainColumn({
         </SectionCard>
 
         <SectionCard title="Observed changes" description="New identifiers first seen across the order history." density="compact">
-          {identityTimeline.length ? <ol className="space-y-3">{identityTimeline.slice(-6).reverse().map((entry) => <li key={`${entry.date}-${entry.field}-${entry.value}`} className="flex gap-3"><span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${entry.isVariant ? 'bg-[var(--warning)]' : 'bg-[var(--text-tertiary)]'}`} /><div className="min-w-0"><p className="truncate text-xs font-medium text-[var(--text-primary)]">{entry.value}</p><p className="mt-0.5 text-[11px] text-[var(--text-tertiary)]">{entry.isVariant ? 'New ' : 'First '} {labelize(entry.field)} · {formatDateAbsolute(entry.date)}</p></div></li>)}</ol> : <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]"><ShoppingBag className="h-4 w-4" aria-hidden="true" />No identifier history yet.</div>}
+          {identityTimeline.length ? <ol className="space-y-3">{identityTimeline.slice(-6).reverse().map((entry) => <li key={`${entry.date}-${entry.field}-${entry.value}`} className="flex gap-3"><span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${entry.isVariant ? 'bg-[var(--ua-warning)]' : 'bg-[var(--ua-text-tertiary)]'}`} /><div className="min-w-0"><p className="truncate text-xs font-medium text-[var(--ua-text-primary)]">{entry.value}</p><p className="mt-0.5 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">{entry.isVariant ? 'New ' : 'First '} {labelize(entry.field)} · {formatDateAbsolute(entry.date)}</p></div></li>)}</ol> : <div className="flex items-center gap-2 text-sm text-[var(--ua-text-secondary)]"><ShoppingBag className="h-4 w-4" aria-hidden="true" />No identifier history yet.</div>}
         </SectionCard>
 
         {possibleMatches.length ? (
           <SectionCard title="Possible matches" description="Other store records that share some evidence but weren't merged automatically." density="compact">
             <ul className="space-y-2">
               {possibleMatches.slice(0, 5).map((match) => (
-                <li key={match.candidateId} className="rounded-md border border-[var(--border-muted)] bg-[var(--surface-sunken)] p-2.5">
+                <li key={match.candidateId} className="rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-2.5">
                   <div className="flex items-center justify-between gap-2">
-                    <Link href={`/customers/${match.candidateId}`} className="min-w-0 truncate text-xs font-semibold text-[var(--text-primary)] hover:underline">
+                    <Link href={`/customers/${match.candidateId}`} className="min-w-0 truncate text-xs font-semibold text-[var(--ua-text-primary)] hover:underline">
                       {match.displayName || match.email || 'Unnamed customer'}
                     </Link>
-                    {match.confidence != null ? <span className="shrink-0 text-[11px] tabular-nums text-[var(--text-tertiary)]">{Math.round(match.confidence * 100)}%</span> : null}
+                    {match.confidence != null ? <span className="shrink-0 text-[length:var(--ua-text-micro-size)] tabular-nums text-[var(--ua-text-tertiary)]">{Math.round(match.confidence * 100)}%</span> : null}
                   </div>
-                  {match.email && match.displayName ? <p className="mt-0.5 truncate text-[11px] text-[var(--text-tertiary)]">{match.email}</p> : null}
+                  {match.email && match.displayName ? <p className="mt-0.5 truncate text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">{match.email}</p> : null}
                   {match.matchedTypes.length ? <div className="mt-1.5 flex flex-wrap gap-1">{match.matchedTypes.map((type) => <Badge key={type} tone="neutral" size="sm">{labelize(type)}</Badge>)}</div> : null}
                 </li>
               ))}
             </ul>
-            {possibleMatches.length > 5 ? <p className="mt-2 text-xs text-[var(--text-tertiary)]">+{possibleMatches.length - 5} more not shown</p> : null}
+            {possibleMatches.length > 5 ? <p className="mt-2 text-xs text-[var(--ua-text-tertiary)]">+{possibleMatches.length - 5} more not shown</p> : null}
           </SectionCard>
         ) : null}
 

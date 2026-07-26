@@ -219,22 +219,22 @@ export default function FreshdeskSupportSyncClient({ canManage }: Props) {
     <div className="space-y-5">
       {state.message ? (
         <Card unstyled
-          variant="inset"
+          variant="muted"
           className="px-4 py-3 text-sm"
           style={{
             borderColor:
               state.message.type === 'error'
-                ? 'color-mix(in srgb, var(--risk-critical) 30%, var(--border))'
+                ? 'color-mix(in srgb, var(--ua-risk-critical) 30%, var(--ua-border-default))'
                 : state.message.type === 'warning'
-                ? 'color-mix(in srgb, var(--warning) 30%, var(--border))'
-                : 'color-mix(in srgb, var(--success) 30%, var(--border))',
+                ? 'color-mix(in srgb, var(--ua-warning) 30%, var(--ua-border-default))'
+                : 'color-mix(in srgb, var(--ua-success) 30%, var(--ua-border-default))',
             background:
               state.message.type === 'error'
-                ? 'color-mix(in srgb, var(--risk-critical) 6%, var(--surface))'
+                ? 'color-mix(in srgb, var(--ua-risk-critical) 6%, var(--ua-surface-primary))'
                 : state.message.type === 'warning'
-                ? 'color-mix(in srgb, var(--warning) 6%, var(--surface))'
-                : 'color-mix(in srgb, var(--success) 6%, var(--surface))',
-            color: 'var(--text)',
+                ? 'color-mix(in srgb, var(--ua-warning) 6%, var(--ua-surface-primary))'
+                : 'color-mix(in srgb, var(--ua-success) 6%, var(--ua-surface-primary))',
+            color: 'var(--ua-text-primary)',
           }}
         >
           {state.message.text}
@@ -244,13 +244,13 @@ export default function FreshdeskSupportSyncClient({ canManage }: Props) {
       {loading ? (
         <div className="space-y-3">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 animate-pulse rounded-[var(--ua-radius-input)]" style={{ background: 'var(--border)' }} />
+            <div className="h-9 w-9 animate-pulse rounded-[var(--ua-radius-control)]" style={{ background: 'var(--ua-border-default)' }} />
             <div className="space-y-1.5 flex-1">
-              <div className="h-4 w-40 rounded animate-pulse" style={{ background: 'var(--border)' }} />
-              <div className="h-3 w-24 rounded animate-pulse" style={{ background: 'var(--border)' }} />
+              <div className="h-4 w-40 rounded animate-pulse" style={{ background: 'var(--ua-border-default)' }} />
+              <div className="h-3 w-24 rounded animate-pulse" style={{ background: 'var(--ua-border-default)' }} />
             </div>
           </div>
-          <div className="h-32 animate-pulse rounded-[var(--ua-radius-card)]" style={{ background: 'var(--border)' }} />
+          <div className="h-32 animate-pulse rounded-[var(--ua-radius-surface)]" style={{ background: 'var(--ua-border-default)' }} />
         </div>
       ) : state.ephemeralSecret ? (
         <FreshdeskWebhookSetupPanel

@@ -34,11 +34,13 @@ describe('Gorgias payout field formatters', () => {
     expect(formatEvidenceChecklist(c.evidence)).toContain('request evidence');
   });
 
-  it('formats attribution with confidence and never a verdict', () => {
-    const c = buildSupportPayoutCase(makeContext());
+  it('keeps consistent delivery artefacts non-dispositive', () => {
+    const c = buildSupportPayoutCase(makeContext({
+      delivery: { deliveryPhotoFinding: 'consistent' },
+    }));
     const s = formatLossAttribution(c.attribution);
-    expect(s).toContain('Delivery evidence on file');
-    expect(s).toContain('confidence: high');
+    expect(s).toContain('delivery artefact is on file');
+    expect(s).toContain('needs more evidence');
   });
 
   it('formats needs-more-evidence attribution', () => {

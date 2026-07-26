@@ -204,6 +204,8 @@ function inferRequestedActionFromReason(reason: string | null): string | null {
       return 'refund';
     case 'missing_parcel':
       return 'reship';
+    case 'missing_item':
+      return 'replacement';
     case 'wrong_item':
       return 'replacement';
     case 'damaged_item':

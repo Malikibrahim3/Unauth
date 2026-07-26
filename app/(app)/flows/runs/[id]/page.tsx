@@ -43,7 +43,6 @@ export default async function Run({
   return (
     <div>
       <AuthenticatedPageHeader
-        eyebrow="Execution detail"
         title="Flow run"
         subtitle={`Started ${formatDateTime(run.started_at)}`}
         breadcrumbs={[{ label: "Flows", href: "/flows" }, { label: "Run history", href: "/flows/runs" }, { label: id }]}
@@ -57,24 +56,24 @@ export default async function Run({
                 ["Event", String(run.domain_event_id ?? "Unavailable")],
                 ["Started", formatDateTime(run.started_at)],
               ].map(([label, value], index) => (
-                <div key={label} className={`min-w-0 p-4 ${index ? "border-t border-[var(--border-muted)] sm:border-l sm:border-t-0" : ""}`}>
-                  <dt className="text-[10px] font-medium text-[var(--text-tertiary)]">{label}</dt>
+                <div key={label} className={`min-w-0 p-4 ${index ? "border-t border-[var(--ua-border-subtle)] sm:border-l sm:border-t-0" : ""}`}>
+                  <dt className="text-[length:var(--ua-text-micro-size)] font-medium text-[var(--ua-text-tertiary)]">{label}</dt>
                   <dd className="mt-1 break-all text-xs font-semibold">{value}</dd>
                 </div>
               ))}
             </dl>
           </AuthenticatedPanel>
-          {run.error ? <p role="alert" className="rounded-[var(--ua-radius-card)] border border-[var(--danger)] bg-[var(--danger-bg)] p-3 text-xs">{run.error}</p> : null}
+          {run.error ? <p role="alert" className="rounded-[var(--ua-radius-surface)] border border-[var(--ua-critical)] bg-[var(--ua-critical-bg)] p-3 text-xs">{run.error}</p> : null}
           <AuthenticatedPanel title="Execution steps" description={`${steps.length} recorded ${steps.length === 1 ? "step" : "steps"}.`}>
-            <ol className="divide-y divide-[var(--border-muted)]">
+            <ol className="divide-y divide-[var(--ua-border-subtle)]">
               {steps.map((s: any) => (
                 <li key={s.id} className="p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <strong className="text-xs">Step {s.step_index + 1}: {s.output_type}</strong>
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.06em] text-[var(--text-tertiary)]">{s.status}</span>
+                    <span className="text-[length:var(--ua-text-micro-size)] font-semibold text-[var(--ua-text-tertiary)]">{s.status}</span>
                   </div>
-                  {s.error ? <p role="alert" className="mt-2 text-xs text-[var(--danger)]">{s.error}</p> : null}
-                  <pre className="mt-3 max-h-64 overflow-auto rounded-[var(--ua-radius-input)] border border-[var(--border-muted)] bg-[var(--surface-sunken)] p-3 text-[10px] leading-4">{JSON.stringify(s.result, null, 2)}</pre>
+                  {s.error ? <p role="alert" className="mt-2 text-xs text-[var(--ua-critical)]">{s.error}</p> : null}
+                  <pre className="mt-3 max-h-64 overflow-auto rounded-[var(--ua-radius-control)] border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-3 text-[length:var(--ua-text-micro-size)] leading-4">{JSON.stringify(s.result, null, 2)}</pre>
                 </li>
               ))}
             </ol>

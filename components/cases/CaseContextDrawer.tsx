@@ -66,7 +66,7 @@ export function CaseContextDrawer({
         <div className="p-4">
           <Link
             href={`/claims/${caseId}`}
-            className="inline-flex min-h-10 items-center rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white"
+            className="inline-flex min-h-10 items-center rounded-md bg-[var(--ua-action-primary)] px-4 py-2 text-sm font-semibold text-[var(--ua-action-primary-fg)]"
           >
             Open full case
           </Link>
@@ -75,26 +75,26 @@ export function CaseContextDrawer({
     >
       <div className="space-y-6 p-4 sm:p-5">
         {error ? (
-          <p role="alert" className="text-sm text-[var(--danger)]">
+          <p role="alert" className="text-sm text-[var(--ua-critical)]">
             {error}
           </p>
         ) : null}
         {!data && !error ? (
-          <p role="status" className="text-sm text-[var(--text-tertiary)]">
+          <p role="status" className="text-sm text-[var(--ua-text-tertiary)]">
             Loading case context…
           </p>
         ) : null}
         {data ? (
           <>
-            <section className="grid grid-cols-2 gap-4 rounded-lg border border-[var(--border-muted)] bg-[var(--surface-sunken)] p-4">
+            <section className="grid grid-cols-2 gap-4 rounded-lg border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-4">
               <div>
-                <p className="text-xs text-[var(--text-tertiary)]">Status</p>
+                <p className="text-xs text-[var(--ua-text-tertiary)]">Status</p>
                 <p className="text-sm font-medium capitalize">
                   {title(data.case.status)}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-[var(--text-tertiary)]">Exposure</p>
+                <p className="text-xs text-[var(--ua-text-tertiary)]">Exposure</p>
                 <p className="text-sm font-medium">
                   {formatCurrencyNullable(
                     data.case.amount_at_risk,
@@ -103,7 +103,7 @@ export function CaseContextDrawer({
                 </p>
               </div>
               <div className="col-span-2">
-                <p className="text-xs text-[var(--text-tertiary)]">
+                <p className="text-xs text-[var(--ua-text-tertiary)]">
                   Next action
                 </p>
                 <p className="text-sm">
@@ -128,14 +128,14 @@ export function CaseContextDrawer({
                     .map((item) => (
                       <li
                         key={item.id}
-                        className="rounded-md border border-[var(--border)] p-3 text-sm"
+                        className="rounded-md border border-[var(--ua-border-default)] p-3 text-sm"
                       >
                         <p className="font-medium">{item.title}</p>
-                        <p className="text-xs text-[var(--text-tertiary)]">
+                        <p className="text-xs text-[var(--ua-text-tertiary)]">
                           {item.occurredAt.slice(0, 10)} · {item.sourceSystem}
                         </p>
                         {item.summary ? (
-                          <p className="mt-1 text-xs text-[var(--text-secondary)]">
+                          <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">
                             {item.summary}
                           </p>
                         ) : null}
@@ -143,7 +143,7 @@ export function CaseContextDrawer({
                     ))}
                 </ul>
               ) : (
-                <p className="text-sm text-[var(--text-tertiary)]">
+                <p className="text-sm text-[var(--ua-text-tertiary)]">
                   No activity yet.
                 </p>
               )}

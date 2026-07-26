@@ -70,7 +70,7 @@ export function RowActionsMenu({
           e.stopPropagation();
           setOpen((v) => !v);
         }}
-        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] disabled:opacity-40"
+        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[var(--ua-text-secondary)] hover:bg-[var(--ua-surface-hover)] hover:text-[var(--ua-text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ua-border-focus)] disabled:opacity-40"
       >
         <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
       </button>
@@ -78,8 +78,8 @@ export function RowActionsMenu({
         <div
           role="menu"
           aria-label={label}
-          className="absolute right-0 top-9 z-[var(--z-dropdown)] min-w-[168px] overflow-hidden rounded-lg border bg-[var(--surface)] py-1 shadow-[var(--shadow-md)]"
-          style={{ borderColor: "var(--border)" }}
+          className="absolute right-0 top-9 z-[var(--ua-z-dropdown)] min-w-[168px] overflow-hidden rounded-lg border bg-[var(--ua-surface-primary)] py-1 shadow-[var(--ua-shadow-overlay)]"
+          style={{ borderColor: "var(--ua-border-default)" }}
         >
           {actions.map((action, index) => (
             <button
@@ -102,8 +102,8 @@ export function RowActionsMenu({
                   moveFocus(-1, index);
                 }
               }}
-              className="flex w-full items-center px-3 py-1.5 text-left text-sm hover:bg-[var(--surface-hover)] focus-visible:bg-[var(--surface-hover)] focus-visible:outline-none disabled:opacity-40"
-              style={{ color: action.tone === "danger" ? "var(--risk-critical-fg)" : "var(--text-primary)" }}
+              className="flex w-full items-center px-3 py-1.5 text-left text-sm hover:bg-[var(--ua-surface-hover)] focus-visible:bg-[var(--ua-surface-hover)] focus-visible:outline-none disabled:opacity-40"
+              style={{ color: action.tone === "danger" ? "var(--ua-risk-critical)" : "var(--ua-text-primary)" }}
             >
               {action.label}
             </button>

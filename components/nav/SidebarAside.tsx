@@ -41,11 +41,11 @@ export function SidebarAside({
     <aside
       className={cn(
         'ua-app-sidebar relative flex h-full flex-shrink-0 flex-col',
-        'border-r border-[var(--border)]',
+        'border-r border-[var(--ua-border-default)]',
         isMobile
           ? 'w-72'
           : cn(
-              'transition-[width] duration-[390ms] ease-[var(--ease-out)]',
+              'transition-[width] duration-[var(--ua-duration-slow)] ease-[var(--ua-ease-standard)]',
               'overflow-hidden',
               isCollapsed ? 'w-14' : 'w-60',
             ),
@@ -55,7 +55,7 @@ export function SidebarAside({
     >
       <div
         className={cn(
-          'flex flex-shrink-0 border-b border-[var(--border)] px-3',
+          'flex flex-shrink-0 border-b border-[var(--ua-border-default)] px-3',
           isCollapsed ? 'h-14 flex-col items-center justify-center gap-1 py-1.5' : 'flex-col gap-1.5 py-2',
         )}
       >
@@ -76,9 +76,9 @@ export function SidebarAside({
               onClick={onToggleCollapse}
               className={cn(
                 'flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-sm',
-                'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]',
-                'transition-colors duration-[var(--duration-fast)]',
-                'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
+                'text-[var(--ua-text-tertiary)] hover:text-[var(--ua-text-secondary)]',
+                'transition-colors duration-[var(--ua-duration-fast)]',
+                'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ua-border-focus)] focus-visible:outline-offset-2',
               )}
             >
               <ChevronRight className="h-3.5 w-3.5 rotate-180" aria-hidden="true" />
@@ -87,11 +87,11 @@ export function SidebarAside({
         </div>
 
         {!isCollapsed && merchantName ? (
-          <div className="flex min-h-8 w-full items-center gap-2 rounded-md border border-[var(--border-muted)] bg-[var(--surface)] px-2 py-1 shadow-[var(--shadow-xs)]" title={merchantName}>
-            <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-md bg-[var(--surface-selected)] text-[9px] font-bold text-[var(--brand-deep)]">
+          <div className="flex min-h-8 w-full items-center gap-2 rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-primary)] px-2 py-1" title={merchantName}>
+            <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-md bg-[var(--ua-surface-selected)] text-[length:var(--ua-text-micro-size)] font-bold text-[var(--ua-text-primary)]">
               {merchantName.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase()}
             </span>
-            <span className="min-w-0 truncate text-[11px] font-semibold leading-tight text-[var(--text-secondary)]">{merchantName}</span>
+            <span className="min-w-0 truncate text-[length:var(--ua-text-micro-size)] font-semibold leading-tight text-[var(--ua-text-secondary)]">{merchantName}</span>
           </div>
         ) : null}
 
@@ -100,17 +100,17 @@ export function SidebarAside({
             href="/integrations"
             prefetch={false}
             onClick={onCloseMobile}
-            className="flex min-h-6 w-full items-center gap-1.5 rounded-sm px-2 py-1 text-[10px] font-medium leading-tight transition-opacity hover:opacity-80"
+            className="flex min-h-6 w-full items-center gap-1.5 rounded-sm px-2 py-1 text-[length:var(--ua-text-micro-size)] font-medium leading-tight transition-opacity hover:opacity-80"
             style={{
-              background: 'color-mix(in srgb, var(--warning) 10%, transparent)',
-              color: 'var(--warning)',
-              border: '1px solid color-mix(in srgb, var(--warning) 25%, transparent)',
+              background: 'color-mix(in srgb, var(--ua-warning) 10%, transparent)',
+              color: 'var(--ua-warning)',
+              border: '1px solid color-mix(in srgb, var(--ua-warning) 25%, transparent)',
             }}
             title="Connect your store and helpdesk to go live"
           >
             <span
               className="h-1.5 w-1.5 rounded-full shrink-0"
-              style={{ background: 'var(--warning)' }}
+              style={{ background: 'var(--ua-warning)' }}
               aria-hidden="true"
             />
             <span className="truncate">
@@ -125,7 +125,7 @@ export function SidebarAside({
 
         {isCollapsed && merchantName ? (
           <div
-            className="flex h-[22px] w-[22px] items-center justify-center rounded-md bg-[var(--surface-selected)] text-[9px] font-bold leading-none text-[var(--brand-deep)]"
+            className="flex h-[22px] w-[22px] items-center justify-center rounded-md bg-[var(--ua-surface-selected)] text-[length:var(--ua-text-micro-size)] font-bold leading-none text-[var(--ua-text-primary)]"
             title={merchantName}
           >
             {merchantName
@@ -162,12 +162,12 @@ export function SidebarAside({
 
       <div
         className={cn(
-          'flex flex-shrink-0 flex-col border-t border-[var(--border)]',
+          'flex flex-shrink-0 flex-col border-t border-[var(--ua-border-default)]',
           isCollapsed ? 'items-center gap-1 p-2' : 'gap-0.5 p-2',
         )}
       >
         {!isCollapsed ? (
-          <div className="px-2 py-1 text-[11px] text-[var(--text-tertiary)] truncate">
+          <div className="px-2 py-1 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)] truncate">
             {userEmail}
           </div>
         ) : null}
@@ -179,13 +179,13 @@ export function SidebarAside({
           onClick={onCloseMobile}
           className={cn(
             'flex h-8 items-center gap-3 rounded-sm px-2',
-            'text-[11px] text-[var(--text-secondary)] hover:text-[var(--text-primary)]',
-            'transition-colors duration-[var(--duration-fast)]',
-            'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
+            'text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-secondary)] hover:text-[var(--ua-text-primary)]',
+            'transition-colors duration-[var(--ua-duration-fast)]',
+            'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ua-border-focus)] focus-visible:outline-offset-2',
             isCollapsed && 'justify-center',
           )}
         >
-          <HelpCircle className="h-4 w-4 flex-shrink-0 text-[var(--text-tertiary)]" aria-hidden="true" />
+          <HelpCircle className="h-4 w-4 flex-shrink-0 text-[var(--ua-text-tertiary)]" aria-hidden="true" />
           {!isCollapsed && <span>Help</span>}
         </Link>
 
@@ -196,13 +196,13 @@ export function SidebarAside({
           onClick={onCloseMobile}
           className={cn(
             'flex h-8 items-center gap-3 rounded-sm px-2',
-            'text-[11px] text-[var(--text-secondary)] hover:text-[var(--text-primary)]',
-            'transition-colors duration-[var(--duration-fast)]',
-            'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
+            'text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-secondary)] hover:text-[var(--ua-text-primary)]',
+            'transition-colors duration-[var(--ua-duration-fast)]',
+            'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ua-border-focus)] focus-visible:outline-offset-2',
             isCollapsed && 'justify-center',
           )}
         >
-          <Settings className="h-4 w-4 flex-shrink-0 text-[var(--text-tertiary)]" aria-hidden="true" />
+          <Settings className="h-4 w-4 flex-shrink-0 text-[var(--ua-text-tertiary)]" aria-hidden="true" />
           {!isCollapsed && <span>Settings</span>}
         </Link>
 
@@ -212,13 +212,13 @@ export function SidebarAside({
           title={isCollapsed ? 'Sign out' : undefined}
           className={cn(
             'flex h-8 w-full items-center gap-3 rounded-sm px-2',
-            'text-[11px] text-[var(--text-secondary)] hover:text-[var(--text-primary)]',
-            'transition-colors duration-[var(--duration-fast)]',
-            'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
+            'text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-secondary)] hover:text-[var(--ua-text-primary)]',
+            'transition-colors duration-[var(--ua-duration-fast)]',
+            'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ua-border-focus)] focus-visible:outline-offset-2',
             isCollapsed && 'justify-center',
           )}
         >
-          <LogOut className="h-4 w-4 flex-shrink-0 text-[var(--text-tertiary)]" aria-hidden="true" />
+          <LogOut className="h-4 w-4 flex-shrink-0 text-[var(--ua-text-tertiary)]" aria-hidden="true" />
           {!isCollapsed && <span>Sign out</span>}
         </button>
 
@@ -233,7 +233,7 @@ export function SidebarAside({
                 key={href}
                 href={href}
                 prefetch={false}
-                className="text-[10px] text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-secondary)] hover:underline"
+                className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)] transition-colors hover:text-[var(--ua-text-secondary)] hover:underline"
               >
                 {label}
               </Link>
@@ -248,9 +248,9 @@ export function SidebarAside({
             onClick={onToggleCollapse}
             className={cn(
               'mt-1 flex h-7 w-7 items-center justify-center rounded-sm',
-              'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]',
-              'transition-colors duration-[var(--duration-fast)]',
-              'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
+              'text-[var(--ua-text-tertiary)] hover:text-[var(--ua-text-secondary)]',
+              'transition-colors duration-[var(--ua-duration-fast)]',
+              'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ua-border-focus)] focus-visible:outline-offset-2',
             )}
           >
             <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />

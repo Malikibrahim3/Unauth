@@ -25,7 +25,7 @@ export function SlaBadge({ claim }: { claim: ClaimRecord }) {
 
 export function FieldLabel({ children, htmlFor }: { children: ReactNode; htmlFor?: string }) {
   return (
-    <label htmlFor={htmlFor} className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>
+    <label htmlFor={htmlFor} className="block text-xs font-semibold mb-1" style={{ color: 'var(--ua-text-secondary)' }}>
       {children}
     </label>
   );
@@ -50,28 +50,28 @@ export function RailSection({
 }) {
   return (
     <Card unstyled
-      variant="flat"
+      variant="panel"
       className={`overflow-hidden p-0 ${id === 'manage' ? 'ua-focal-panel' : ''}`}
       style={{
-        borderColor: highlighted ? 'var(--text-primary)' : id === 'manage' ? 'var(--accent-border)' : 'var(--border-muted)',
-        boxShadow: highlighted ? '0 0 0 1px var(--text-primary)' : undefined,
+        borderColor: highlighted ? 'var(--ua-text-primary)' : id === 'manage' ? 'var(--ua-border-default)' : 'var(--ua-border-subtle)',
+        boxShadow: undefined,
       }}
     >
       <button
         type="button"
         onClick={() => onToggle(id)}
         className="w-full flex items-center justify-between px-3 py-2 text-left"
-        style={{ background: id === 'manage' ? 'linear-gradient(90deg, var(--brand-signal-soft), var(--surface))' : 'var(--surface)' }}
+        style={{ background: id === 'manage' ? 'var(--ua-surface-selected)' : 'var(--ua-surface-primary)' }}
         aria-expanded={open}
       >
         <span className="flex items-center gap-1.5 min-w-0">
-          <span className="text-xs font-semibold uppercase tracking-wide truncate" style={{ color: 'var(--text-secondary)' }}>{title}</span>
+          <span className="text-[length:var(--ua-text-micro-size)] font-semibold truncate" style={{ color: 'var(--ua-text-secondary)' }}>{title}</span>
           {badge}
         </span>
-        <span className="text-xs shrink-0 ml-2" style={{ color: 'var(--text-secondary)' }}>{open ? '▲' : '▼'}</span>
+        <span className="text-xs shrink-0 ml-2" style={{ color: 'var(--ua-text-secondary)' }}>{open ? '▲' : '▼'}</span>
       </button>
       {open && (
-        <div className="px-3 pb-3 pt-0 border-t" style={{ borderColor: 'var(--border-muted)' }}>
+        <div className="px-3 pb-3 pt-0 border-t" style={{ borderColor: 'var(--ua-border-subtle)' }}>
           {children}
         </div>
       )}
@@ -81,9 +81,9 @@ export function RailSection({
 
 export function CaseIntelTile({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <Card unstyled variant="inset" className="min-w-0 px-3 py-2.5">
-      <p className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--text-secondary)' }}>{label}</p>
-      <div className="text-sm leading-snug" style={{ color: 'var(--text)' }}>{children}</div>
+    <Card unstyled variant="muted" className="min-w-0 px-3 py-2.5">
+      <p className="text-[length:var(--ua-text-micro-size)] font-semibold mb-1" style={{ color: 'var(--ua-text-secondary)' }}>{label}</p>
+      <div className="text-sm leading-snug" style={{ color: 'var(--ua-text-primary)' }}>{children}</div>
     </Card>
   );
 }
@@ -122,7 +122,7 @@ export function ClaimLifecycleStatusBar({
   if (claimIsClosed) {
     return (
       <div className="space-y-2">
-        <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Claim archived. Reopen to continue evidence review.</p>
+        <p className="text-xs" style={{ color: 'var(--ua-text-secondary)' }}>Claim archived. Reopen to continue evidence review.</p>
         <textarea
           id="claim-reopen-note"
           className="w-full px-2 py-1.5 rounded-md text-xs resize-none"
@@ -194,9 +194,9 @@ export function ClaimLifecycleStatusBar({
             onClick={() => setStatusToSet(item.value)}
             className="rounded-md border px-2 py-0.5 text-xs font-semibold disabled:opacity-50"
             style={{
-              borderColor: statusToSet === item.value ? 'var(--accent)' : 'var(--border-muted)',
-              background: 'var(--surface)',
-              color: statusToSet === item.value ? 'var(--accent)' : 'var(--text-secondary)',
+              borderColor: statusToSet === item.value ? 'var(--ua-action-primary)' : 'var(--ua-border-subtle)',
+              background: 'var(--ua-surface-primary)',
+              color: statusToSet === item.value ? 'var(--ua-action-primary)' : 'var(--ua-text-secondary)',
             }}
           >
             {item.label}

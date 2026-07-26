@@ -31,7 +31,8 @@ import {
   inferGorgiasEventType,
   ingestGorgiasSupportWebhook,
 } from '@/lib/support/gorgias/ingestWebhook';
-import { POST, resolveUnambiguousEmailOrder } from '@/app/api/gorgias/support-webhook/route';
+import { POST } from '@/app/api/gorgias/support-webhook/route';
+import { resolveUnambiguousEmailOrder } from '@/lib/support/gorgias/resolveUnambiguousEmailOrder';
 import type { GorgiasSupportConnectionRow } from '@/lib/support/gorgias/resolveConnection';
 import {
   resolveSupportLinkingTable,

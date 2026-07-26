@@ -1,24 +1,23 @@
 /*
- * Canvas, base text rendering, selection, focus treatment, reduced motion,
- * and other shared structural defaults. Relocated verbatim from
- * app/(app)/authenticated.css.
+ * Quiet Precision canvas, text rendering, selection, focus treatment, and
+ * reduced-motion defaults for every authenticated route.
  */
 .ua-app {
   min-height: 100vh;
-  background: var(--surface-base);
-  color: var(--text-primary);
-  font-family: var(--font-sans);
+  background: var(--ua-canvas);
+  color: var(--ua-text-primary);
+  font-family: var(--ua-font-sans);
   font-feature-settings: "ss01" 1, "cv11" 1;
 }
 
 .ua-app main {
-  background: var(--surface-base);
+  background: var(--ua-canvas);
 }
 
 .ua-app ::selection,
 .ua-auth-surface ::selection {
-  background: var(--accent-border);
-  color: var(--text-primary);
+  background: var(--ua-border-default);
+  color: var(--ua-text-primary);
 }
 
 /* box-shadow (not outline) so the ring always follows an element's
@@ -27,30 +26,47 @@
 .ua-app :where(button, a, input, select, textarea, [tabindex]):focus-visible,
 .ua-auth-surface :where(button, a, input, select, textarea, [tabindex]):focus-visible {
   outline: none;
-  box-shadow: var(--shadow-focus);
+  box-shadow: var(--ua-shadow-focus);
 }
 
 .ua-app .ua-mark,
 .ua-auth-surface .ua-mark {
-  --ua-logo-ink: #17191c;
-  --ua-logo-dot: var(--brand-signal);
+  --ua-logo-ink: var(--ua-text-primary);
+  --ua-logo-dot: var(--ua-action-primary);
+  font-family: var(--ua-font-sans);
+}
+
+.ua-app .ua-mark.primary,
+.ua-app .ua-mark.mono-dark,
+.ua-auth-surface .ua-mark.primary,
+.ua-auth-surface .ua-mark.mono-dark {
+  --ua-logo-ink: var(--ua-text-primary);
+  --ua-logo-dot: var(--ua-text-primary);
+}
+
+.ua-app .ua-mark.reversed,
+.ua-app .ua-mark.mono-light,
+.ua-auth-surface .ua-mark.reversed,
+.ua-auth-surface .ua-mark.mono-light {
+  --ua-logo-ink: var(--ua-text-inverse);
+  --ua-logo-dot: var(--ua-text-inverse);
 }
 
 .ua-app .ua-operational-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: #c9cac3 transparent;
+  scrollbar-color: var(--ua-border-strong) transparent;
 }
 
 :root[data-theme="dark"] .ua-app .ua-mark,
 :root[data-theme="dark"] .ua-auth-surface .ua-mark {
-  --ua-logo-ink: var(--text-primary);
-  --ua-logo-dot: var(--brand-signal);
+  --ua-logo-ink: var(--ua-text-primary);
+  --ua-logo-dot: var(--ua-action-primary);
 }
 
 :root[data-theme="dark"] .ua-app ::selection,
 :root[data-theme="dark"] .ua-auth-surface ::selection {
-  background: var(--accent-border);
-  color: var(--text-primary);
+  background: var(--ua-border-default);
+  color: var(--ua-text-primary);
 }
 
 @media (prefers-reduced-motion: reduce) {

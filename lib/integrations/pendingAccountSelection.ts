@@ -3,6 +3,11 @@ import { decryptIntegrationCredentials, encryptIntegrationCredentials } from '@/
 
 const TABLE = 'pending_provider_account_selections';
 
+// Channel selection happens after the provider OAuth round trip. Give a
+// merchant enough time to choose the right channel, while keeping the
+// credential-bearing handoff short-lived and bounded server-side.
+export const PENDING_ACCOUNT_SELECTION_TTL_SECONDS = 30 * 60;
+
 export type DiscoveredProviderAccount = { id: string; name: string | null };
 
 export type PendingAccountSelection = {
@@ -38,7 +43,9 @@ export async function createPendingAccountSelection(
   },
 ): Promise<string> {
   if (input.accounts.length < 2) throw new Error('pending_account_selection_requires_multiple_accounts');
-  const expiresAt = new Date(Date.now() + Math.min(Math.max(input.ttlSeconds ?? 600, 60), 900) * 1000).toISOString();
+  const expiresAt = new Date(
+    Date.now() + Math.min(Math.max(input.ttlSeconds ?? PENDING_ACCOUNT_SELECTION_TTL_SECONDS, 60), PENDING_ACCOUNT_SELECTION_TTL_SECONDS) * 1000,
+  ).toISOString();
   const { data, error } = await serviceClient.from(TABLE).insert({
     merchant_id: input.merchantId,
     user_id: input.userId,

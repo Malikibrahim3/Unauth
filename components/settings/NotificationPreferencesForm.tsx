@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Bell, MailX } from "lucide-react";
-import { PanelCard } from "@/components/ui";
+import { Panel } from "@/components/ui";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { AuthenticatedPanel } from "@/components/authenticated/AuthenticatedPanel";
 import type { NotificationKind } from "@/lib/collaboration/notificationPreferences";
@@ -103,16 +103,16 @@ export function NotificationPreferencesForm({ initial }: { initial: Pref[] }) {
     <div className="space-y-3">
       <p
         aria-live="polite"
-        className="min-h-4 px-1 text-[10px] text-[var(--text-secondary)]"
+        className="min-h-4 px-1 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-secondary)]"
       >
         {status}
       </p>
       <AuthenticatedPanel
         title="In-app delivery"
         description="Choose which case updates appear in your notification inbox."
-        actions={<Bell className="h-3.5 w-3.5 text-[var(--accent)]" aria-hidden="true" />}
+        actions={<Bell className="h-3.5 w-3.5 text-[var(--ua-action-primary)]" aria-hidden="true" />}
       >
-      <div className="divide-y divide-[var(--border-muted)]">
+      <div className="divide-y divide-[var(--ua-border-subtle)]">
         {KINDS.map((item) => {
           const pref = prefs.get(item.kind) ?? {
             kind: item.kind,
@@ -123,16 +123,16 @@ export function NotificationPreferencesForm({ initial }: { initial: Pref[] }) {
           return (
             <div
               key={item.kind}
-              className="flex min-h-[62px] items-center justify-between gap-4 px-4 py-3 hover:bg-[var(--surface-hover)]"
+              className="flex min-h-[62px] items-center justify-between gap-4 px-4 py-3 hover:bg-[var(--ua-surface-hover)]"
             >
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-[11px] font-semibold">{item.label}</h2>
+                  <h2 className="text-[length:var(--ua-text-micro-size)] font-semibold">{item.label}</h2>
                   {isSaving ? (
                     <StatusBadge family="workflowStatus" value="saving" size="sm" />
                   ) : null}
                 </div>
-                <p className="mt-1 text-[10px] leading-4 text-[var(--text-secondary)]">
+                <p className="mt-1 text-[length:var(--ua-text-micro-size)] leading-4 text-[var(--ua-text-secondary)]">
                   {item.description}
                 </p>
               </div>
@@ -146,12 +146,12 @@ export function NotificationPreferencesForm({ initial }: { initial: Pref[] }) {
                 className="relative mt-0.5 h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-60"
                 style={{
                   background: pref.in_app_enabled
-                    ? "var(--accent)"
-                    : "var(--border)",
+                    ? "var(--ua-action-primary)"
+                    : "var(--ua-border-default)",
                 }}
               >
                 <span
-                  className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform"
+                  className="absolute top-0.5 h-5 w-5 rounded-full border border-[var(--ua-border-default)] bg-[var(--ua-surface-inverse)] transition-transform"
                   style={{ left: pref.in_app_enabled ? 22 : 2 }}
                 />
               </button>
@@ -160,18 +160,18 @@ export function NotificationPreferencesForm({ initial }: { initial: Pref[] }) {
         })}
       </div>
       </AuthenticatedPanel>
-      <PanelCard variant="app" className="flex items-start gap-3 p-3.5">
-        <MailX className="mt-0.5 h-4 w-4 text-[var(--text-tertiary)]" />
+      <Panel variant="panel" className="flex items-start gap-3 p-3.5">
+        <MailX className="mt-0.5 h-4 w-4 text-[var(--ua-text-tertiary)]" />
         <div>
-          <h2 className="text-[11px] font-semibold">
+          <h2 className="text-[length:var(--ua-text-micro-size)] font-semibold">
             Email delivery is not enabled
           </h2>
-          <p className="mt-1 text-[10px] text-[var(--text-secondary)]">
+          <p className="mt-1 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-secondary)]">
             Email notifications are coming later. Your in-app preferences stay
             active in the meantime.
           </p>
         </div>
-      </PanelCard>
+      </Panel>
     </div>
   );
 }

@@ -1,4 +1,3 @@
-import "../../styles/authenticated/index.css";
 import { AuthUiCohortTelemetry } from "@/components/product/AuthUiCohortTelemetry";
 
 export default function OnboardingRouteLayout({

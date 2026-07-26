@@ -4,7 +4,7 @@ import { test, expect } from '@playwright/test';
 const SIDEBAR_ROUTES = [
   { href: '/dashboard', heading: 'Overview' },
   { href: '/work', heading: 'Work' },
-  { href: '/claims', heading: 'Payout Control' },
+  { href: '/claims', heading: 'Payout decisions' },
   { href: '/losses', heading: 'Losses' },
   { href: '/recoveries', heading: 'Recovery' },
   { href: '/customers', heading: 'Customers' },
@@ -54,6 +54,6 @@ test.describe('Sidebar route matrix', () => {
     await page.locator('nav[aria-label="Main navigation"] a[href="/claims"]').first().click();
     await page.waitForURL('**/claims**', { timeout: 30_000 });
     expect(page.url()).not.toMatch(/\/customers\/?$/);
-    await expect(page.locator('main h1').first()).toContainText('Payout Control', { timeout: 60_000 });
+    await expect(page.locator('main h1').first()).toContainText('Payout decisions', { timeout: 60_000 });
   });
 });

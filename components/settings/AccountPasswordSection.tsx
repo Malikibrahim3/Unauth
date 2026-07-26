@@ -15,12 +15,12 @@ export default function AccountPasswordSection({ state, dispatch, onSubmit }: Pr
     <SectionCard title="Security" description="Password and access controls">
       <form onSubmit={onSubmit} className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Change password</h2>
+          <h2 className="text-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>Change password</h2>
           <button
             type="button"
             onClick={() => dispatch({ type: 'patch', patch: { showPasswords: !state.showPasswords } })}
             className="text-xs flex items-center gap-1"
-            style={{ color: 'var(--text-secondary)' }}
+            style={{ color: 'var(--ua-text-secondary)' }}
           >
             {state.showPasswords ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
             {state.showPasswords ? 'Hide' : 'Show'}
@@ -33,7 +33,7 @@ export default function AccountPasswordSection({ state, dispatch, onSubmit }: Pr
             { label: 'Confirm new password', value: state.confirmPassword, field: 'confirmPassword' as const, placeholder: 'Repeat new password' },
           ].map(({ label, value, field, placeholder }) => (
             <div key={label}>
-              <label htmlFor={`account-${label.toLowerCase().replace(/\s+/g, '-')}`} className="block text-xs font-semibold mb-1" style={{ color: 'var(--text)' }}>{label}</label>
+              <label htmlFor={`account-${label.toLowerCase().replace(/\s+/g, '-')}`} className="block text-xs font-semibold mb-1" style={{ color: 'var(--ua-text-primary)' }}>{label}</label>
               <Input
                 id={`account-${label.toLowerCase().replace(/\s+/g, '-')}`}
                 type={state.showPasswords ? 'text' : 'password'}
@@ -46,10 +46,10 @@ export default function AccountPasswordSection({ state, dispatch, onSubmit }: Pr
         </div>
 
         {state.passwordError ? (
-          <p className="text-xs" style={{ color: 'var(--risk-critical)' }}>{state.passwordError}</p>
+          <p className="text-xs" style={{ color: 'var(--ua-risk-critical)' }}>{state.passwordError}</p>
         ) : null}
         {state.passwordSuccess ? (
-          <p className="text-xs flex items-center gap-1" style={{ color: 'var(--success)' }}>
+          <p className="text-xs flex items-center gap-1" style={{ color: 'var(--ua-success)' }}>
             <Check className="h-3.5 w-3.5" /> {state.passwordSuccess}
           </p>
         ) : null}

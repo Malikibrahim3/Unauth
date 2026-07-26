@@ -56,6 +56,9 @@ export type ClaimDecisionContext = {
       | 'carrier_unsupported'
       | null;
     deliveryPhotoAvailable: boolean;
+    deliveryPhotoFinding: 'consistent' | 'inconsistent' | 'unclear' | null;
+    deliveryPhotoFindingRationale: string | null;
+    deliveryPhotoFindingAt: string | null;
     signatureAvailable: boolean;
     gpsSupported: boolean;
   } | null;

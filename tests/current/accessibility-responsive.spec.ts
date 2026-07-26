@@ -86,7 +86,7 @@ test.describe("release accessibility and responsive gates", () => {
         ).axe;
         const result = await axe.run("main", {
           resultTypes: ["violations"],
-          runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21aa"] },
+          runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"] },
         });
         return result.violations
           .filter(

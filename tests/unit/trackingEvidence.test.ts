@@ -118,9 +118,49 @@ describe('direct carrier tracking evidence', () => {
     ], { provider: 'ups', providerConnected: true, trackingNumber: '1Z999' }));
 
     expect(delivery).toMatchObject({ status: 'delivered', scanCount: 6, carrierDirectConnected: true });
+    expect(delivery?.hasProofOfDelivery).toBe(false);
     const payoutCase = buildSupportPayoutCase(makeContext({ delivery }));
     const checklist = buildEvidenceChecklist(makeContext({ delivery }), 'item_not_received');
-    expect(payoutCase.deliveryEvidenceLine).toContain('Delivered');
+    expect(payoutCase.deliveryEvidenceLine).toMatch(/carrier reported delivered/i);
     expect(checklist.items.find((item) => item.key === 'tracking')?.state).toBe('present');
+  });
+
+  it('sets POD only when a retrieved proof artefact accompanies the delivered scan', () => {
+    const delivery = mergeDeliveryWithTrackingEvidence(
+      {
+        status: 'success',
+        shipment_status: 'delivered',
+        tracking_company: 'UPS',
+        tracking_number: '1ZPROOF',
+        occurred_at: '2026-07-14T12:00:00.000Z',
+      },
+      parseCarrierEvidenceRows(
+        [
+          {
+            evidence_type: 'delivery_status',
+            summary: 'Delivered',
+            value: 'Delivered',
+            occurred_at: '2026-07-14T12:00:00.000Z',
+            raw_reference: '1ZPROOF',
+            source_provider: 'ups',
+          },
+          {
+            evidence_type: 'signature',
+            summary: 'Signature retrieved',
+            value: 'base64-signature',
+            occurred_at: '2026-07-14T12:00:00.000Z',
+            raw_reference: '1ZPROOF',
+            source_provider: 'ups',
+          },
+        ],
+        { provider: 'ups', providerConnected: true, trackingNumber: '1ZPROOF' },
+      ),
+    );
+
+    expect(delivery).toMatchObject({
+      status: 'delivered',
+      signatureAvailable: true,
+      hasProofOfDelivery: true,
+    });
   });
 });

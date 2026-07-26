@@ -1,24 +1,46 @@
 ---
-description: Authenticated design system rules — styles/authenticated/ is the sole source of truth for signed-in product styling
+description: Quiet Precision product UI — binding replacement rules for every product route, component, and state
 globs:
   - "app/(app)/**"
   - "app/onboarding/**"
+  - "app/(auth)/**"
   - "components/**"
   - "styles/authenticated/**"
 alwaysApply: true
 ---
-# Authenticated Design System
+# Quiet Precision product UI
 
-`styles/authenticated/` is the sole source of truth for every visual value used by the authenticated (signed-in) product. Read `styles/authenticated/README.md` before touching authenticated styling.
+Read `styles/authenticated/README.md` and
+`docs/IMPL_quiet_precision_product_ui.md` before touching product UI. They are
+the binding replacement contract; current authenticated runtime appearance is
+governed by it.
 
-- All authenticated design values (colour, radius, shadow, spacing, control height, typography) come from `styles/authenticated/`. Never invent a new one locally.
-- Pages compose primitives; they do not invent new visual systems.
-- Hardcoded authenticated colours, arbitrary `rounded-[...]` radii, and arbitrary inline shadows are prohibited except the documented data-visualisation / provider-brand exceptions in the README, and are enforced by `npm run lint:authenticated-design`.
-- Status badges (`StatusBadge`) and filter chips are separate component types — one is non-interactive, one is interactive. Do not style one as the other.
-- Buttons use `Button`/`ButtonLink`. Authenticated tables use `DataTable`.
-- Marketing tokens (`--landing-*`, `--fl-*`, `components/ui/tokens.ts`, `components/ui/LandingPrimitives.tsx`) must not be imported into new authenticated code, and authenticated tokens must not leak into public landing pages.
-- New component variants get documented in `styles/authenticated/README.md`.
-- Visible focus states are mandatory on every interactive control.
-- `npm run lint:authenticated-design` must pass before completing any authenticated styling change.
+- Quiet Precision is monochrome, compact, border-led, and ink-first. Semantic
+  colour is restrained and never decorative or the only carrier of meaning.
+- `--ua-*` is the sole product visual token namespace. Static hardcoded
+  colours, radii, shadows, arbitrary visual values, duplicate aliases,
+  page-level palettes, and landing-token dependencies are prohibited.
+- Pages compose the documented index, board, record-detail, settings,
+  reporting, entry, and embedded families. No page invents a visual system.
+- Use canonical actions, fields, selection controls, panels, KPI groups,
+  tables, badges, overlays, feedback, and route-state primitives.
+- `StatusBadge` is non-interactive; `FilterChip` is interactive.
+- `Button`/`ButtonLink`/`IconButton` share one action contract.
+- `DataTable`/`DataTableServer` are the table foundations.
+- Product imports from `components/ui/LandingPrimitives.tsx`, `--landing-*`,
+  and `--fl-*` are prohibited.
+- Charts use flat low-chroma marks, visible/direct labels, truthful states, and
+  accessible data. Gradients, hatch/texture, glow, decorative matrices, and
+  obsolete treatment conventions are prohibited.
+- A UI change includes descendants, skeletons, empty/error states, overlays,
+  responsive layouts, light/dark, focus, reduced motion, and forced colours.
+- Do not preserve visual compatibility aliases, parallel themes, rollout
+  flags, active old screenshots, or active rules for the superseded design.
+- Preserve permissions, routes, query state, mutations, exports, deep links,
+  provenance, financial truth, audit history, keyboard access, and mobile
+  access.
+- Add or update the component/state in `/dev/design-system`, then run
+  `npm run lint:authenticated-design` and the functional parity gate.
 
-The maintained token, exception, and component rules are in `styles/authenticated/README.md`; do not link new work to historical audit documents.
+Public marketing/editorial pages remain isolated and are not a source of
+product tokens or primitives.

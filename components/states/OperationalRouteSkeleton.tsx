@@ -26,8 +26,8 @@ export function OperationalRouteSkeleton({
       <div className="mx-auto w-full max-w-[1500px] space-y-3 px-3 pb-6 pt-4 sm:px-5" aria-busy="true" aria-label={title}>
         <div className="space-y-2"><Bone className="h-2.5 w-20" /><Bone className="h-5 w-44" /><Bone className="h-3 w-72 max-w-full" /></div>
         <div className="grid gap-3.5 lg:grid-cols-[minmax(0,1fr)_310px]">
-          <div className="space-y-3">{Array.from({ length: Math.max(3, rows) }, (_, index) => <Bone key={index} className="h-16 w-full border border-[var(--border-muted)] bg-[var(--surface)]" />)}</div>
-          <Bone className="h-64 w-full border border-[var(--border-muted)] bg-[var(--surface)]" />
+          <div className="space-y-3">{Array.from({ length: Math.max(3, rows) }, (_, index) => <Bone key={index} className="h-16 w-full border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-primary)]" />)}</div>
+          <Bone className="h-64 w-full border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-primary)]" />
         </div>
       </div>
     );

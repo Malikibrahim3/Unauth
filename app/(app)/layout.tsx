@@ -32,7 +32,6 @@ import {
   getDevPreviewFromCookieValue,
 } from "@/lib/product/devPreview";
 import { resolvePermissions } from "@/lib/permissions";
-import "../../styles/authenticated/index.css";
 
 export const dynamic = "force-dynamic";
 
@@ -132,10 +131,13 @@ export default async function AppLayout({
   const merchantComplete =
     merchantProfile?.setup_complete === true ||
     user.user_metadata?.setup_complete === true;
+  const profileComplete =
+    merchantProfile?.onboarding_profile_complete === true || merchantComplete;
 
   if (
     shouldRequireOnboarding({
       hasMerchantContext: !!ctx,
+      profileComplete,
       setupComplete: merchantComplete,
       auditRunCount: (jobs ?? []).length,
       shopifyConnected: connectionState.shopify,
@@ -178,7 +180,6 @@ export default async function AppLayout({
     : getDevPreviewFromCookieValue(cookieStore.get(DEV_TIER_COOKIE)?.value);
 
   return (
-    <ToastProvider>
     <NavigationProvider>
       <DevPreviewProvider value={devPreview}>
         <div
@@ -187,58 +188,59 @@ export default async function AppLayout({
           data-ui-cohorts={[...authUiRollout.enabled].join(',') || 'none'}
           data-ui-rollout-source={authUiRollout.source}
         >
-          <AuthUiCohortTelemetry />
-          <Sidebar
-            merchantName={displayMerchantName ?? null}
-            userEmail={user.email ?? ""}
-            shopifyConnected={connectionState.orderSourceConnected}
-            helpdeskConnected={connectionState.helpdesk}
-            permissions={permissions}
-          />
+          <ToastProvider>
+            <AuthUiCohortTelemetry />
+            <Sidebar
+              merchantName={displayMerchantName ?? null}
+              userEmail={user.email ?? ""}
+              shopifyConnected={connectionState.orderSourceConnected}
+              helpdeskConnected={connectionState.helpdesk}
+              permissions={permissions}
+            />
 
-          <AmplitudeInit
-            merchantId={merchantProfile?.id ?? null}
-            storeName={merchantProfile?.name ?? null}
-            monthlyOrderVolume={merchantProfile?.monthly_order_volume ?? null}
-            primaryConcern={merchantProfile?.primary_fraud_concern ?? null}
-          />
+            <AmplitudeInit
+              merchantId={merchantProfile?.id ?? null}
+              storeName={merchantProfile?.name ?? null}
+              monthlyOrderVolume={merchantProfile?.monthly_order_volume ?? null}
+              primaryConcern={merchantProfile?.primary_fraud_concern ?? null}
+            />
 
-          <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-            <BreadcrumbOverrideProvider>
-              <AppHeader
-                merchantName={displayMerchantName ?? null}
-                environment={process.env.VERCEL_ENV ?? "development"}
-                isDemo={allDemo}
-                userEmail={user.email ?? null}
-                workspaces={workspaces}
-                activeMerchantId={ctx?.merchantId ?? null}
-                unreadCount={0}
-                permissions={permissions}
-              />
+            <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+              <BreadcrumbOverrideProvider>
+                <AppHeader
+                  merchantName={displayMerchantName ?? null}
+                  environment={process.env.VERCEL_ENV ?? "development"}
+                  isDemo={allDemo}
+                  userEmail={user.email ?? null}
+                  workspaces={workspaces}
+                  activeMerchantId={ctx?.merchantId ?? null}
+                  unreadCount={0}
+                  permissions={permissions}
+                />
 
-              {allDemo && (
-                <div className="flex-shrink-0">
-                  <DemoBanner />
-                </div>
-              )}
+                {allDemo && (
+                  <div className="flex-shrink-0">
+                    <DemoBanner />
+                  </div>
+                )}
 
-              <BillingStatusBanner />
+                <BillingStatusBanner />
 
-              <main
-                id="app-scroll-container"
-                className="ua-operational-scrollbar min-w-0 flex-1 overflow-y-auto overflow-x-hidden"
-              >
-                <ConnectionStateProvider value={connectionState}>
-                  <DemoModeProvider value={allDemo}>
-                    {children}
-                  </DemoModeProvider>
-                </ConnectionStateProvider>
-              </main>
-            </BreadcrumbOverrideProvider>
-          </div>
+                <main
+                  id="app-scroll-container"
+                  className="ua-operational-scrollbar min-w-0 flex-1 overflow-y-auto overflow-x-hidden"
+                >
+                  <ConnectionStateProvider value={connectionState}>
+                    <DemoModeProvider value={allDemo}>
+                      {children}
+                    </DemoModeProvider>
+                  </ConnectionStateProvider>
+                </main>
+              </BreadcrumbOverrideProvider>
+            </div>
+          </ToastProvider>
         </div>
       </DevPreviewProvider>
     </NavigationProvider>
-    </ToastProvider>
   );
 }

@@ -42,7 +42,7 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
   if (!canManage) {
     return (
       <RailSection id="manage" title="Decision" open={state.railOpen.manage ?? false} onToggle={(id) => dispatch({ type: 'toggleRail', id })}>
-        <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+        <p className="text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
           You have read-only access. Recording decisions, evidence, and transitions requires the payout-decision permission.
         </p>
       </RailSection>
@@ -104,7 +104,7 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
                 aria-label="Decision amount"
                 placeholder="Amount"
               />
-              <span className="flex min-w-12 items-center justify-center rounded-md border border-[var(--border)] bg-[var(--surface-sunken)] px-2 text-xs font-semibold">
+              <span className="flex min-w-12 items-center justify-center rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] px-2 text-xs font-semibold">
                 {currency ?? '—'}
               </span>
             </div>
@@ -112,8 +112,8 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
           <textarea className="min-h-20 w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()}
             placeholder={decisionRequiresRationale(state.decision as MerchantDecision) ? 'Rationale (required)' : 'Decision rationale (optional)'} value={state.notes}
             onChange={(e) => patch({ notes: e.target.value })} onBlur={() => setDecisionTouched(true)} aria-label="Decision rationale" />
-          {decisionTouched && validationMessage ? <p role="alert" className="text-xs text-[var(--danger)]">{validationMessage}</p> : null}
-          {decisionTouched && !amountValid ? <p role="alert" className="text-xs text-[var(--danger)]">Enter a non-negative amount and known ISO currency.</p> : null}
+          {decisionTouched && validationMessage ? <p role="alert" className="text-xs text-[var(--ua-critical)]">{validationMessage}</p> : null}
+          {decisionTouched && !amountValid ? <p role="alert" className="text-xs text-[var(--ua-critical)]">Enter a non-negative amount and known ISO currency.</p> : null}
           <button type="button" disabled={disabled || !validation.success || !amountValid}
             onClick={() => setConfirming(true)}
             className="w-full px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-60" style={btnStyle('primary')}>
@@ -121,8 +121,8 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
           </button>
         </div>
 
-        <details className="order-3 rounded-md border border-[var(--border-muted)] p-3">
-          <summary className="cursor-pointer text-xs font-semibold text-[var(--text-secondary)]">Manage evidence and lifecycle</summary>
+        <details className="order-3 rounded-md border border-[var(--ua-border-subtle)] p-3">
+          <summary className="cursor-pointer text-xs font-semibold text-[var(--ua-text-secondary)]">Manage evidence and lifecycle</summary>
           <div className="mt-3 space-y-4">
         {/* Add evidence */}
         <div className="space-y-1.5">
@@ -206,7 +206,7 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
         ) : null}
           </div>
         </details>
-        <a href="#source-case-details" className="order-4 text-xs font-semibold text-[var(--accent)]">View source data</a>
+        <a href="#source-case-details" className="order-4 text-xs font-semibold text-[var(--ua-action-primary)]">View source data</a>
       </div>
       <Modal
         open={confirming}
@@ -223,10 +223,10 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
       >
         <dl className="space-y-3 text-sm">
           <div className="flex justify-between gap-4"><dt>Decision</dt><dd className="font-medium">{DECISION_VERB[state.decision] ?? state.decision}</dd></div>
-          <div className="flex justify-between gap-4"><dt>Authorized value</dt><dd className="font-mono font-medium">{monetaryDecision && amountValid ? formatClaimMoney(amount, currency) : 'Not applicable'}</dd></div>
+          <div className="flex justify-between gap-4"><dt>Authorized value</dt><dd className="font-sans tabular-nums font-medium">{monetaryDecision && amountValid ? formatClaimMoney(amount, currency) : 'Not applicable'}</dd></div>
           <div className="flex justify-between gap-4"><dt>External action</dt><dd className="font-medium">None</dd></div>
         </dl>
-        <div className="mt-4 rounded-md border border-[var(--border)] bg-[var(--surface-sunken)] p-3 text-xs text-[var(--text-secondary)]">
+        <div className="mt-4 rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] p-3 text-xs text-[var(--ua-text-secondary)]">
           The approval stage is recorded in the append-only ledger. Paid value, realised loss, prevented value, and recovery are recorded only after their separate source or observation evidence arrives.
         </div>
       </Modal>
@@ -244,10 +244,10 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
           },
         }]}
       >
-        <p className="text-sm text-[var(--text-secondary)]">
-          New decision: <strong className="text-[var(--text-primary)]">{DECISION_VERB[state.reverseDecision] ?? state.reverseDecision}</strong>
+        <p className="text-sm text-[var(--ua-text-secondary)]">
+          New decision: <strong className="text-[var(--ua-text-primary)]">{DECISION_VERB[state.reverseDecision] ?? state.reverseDecision}</strong>
         </p>
-        <p className="mt-2 text-sm text-[var(--text-secondary)]">
+        <p className="mt-2 text-sm text-[var(--ua-text-secondary)]">
           Rationale: {state.reverseNote.trim() || 'A rationale is required before recording a reversal.'}
         </p>
       </Modal>

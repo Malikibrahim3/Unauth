@@ -6,7 +6,7 @@ import { SourceBadge } from '@/components/sources/SourceBadge';
 import { FreshnessIndicator, type FreshnessState } from '@/components/sources/FreshnessIndicator';
 import { formatMinorCurrencyNullable } from '@/lib/utils/format';
 import { label } from '@/lib/ui/labels';
-import { StatusBadge } from '@/components/ui/StatusBadge';
+import { EmptyState, StatusBadge } from '@/components/ui';
 
 export type LossLedgerRow = {
   id: string;
@@ -72,26 +72,34 @@ export function LossLedger({ rows }: { rows: LossLedgerRow[] }) {
               onClick={() => setView(v.key)}
               className="rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
               style={{
-                color: active ? 'var(--text-primary)' : 'var(--text-secondary)',
-                backgroundColor: active ? 'var(--surface-muted, rgba(0,0,0,0.06))' : 'transparent',
+                color: active ? 'var(--ua-text-primary)' : 'var(--ua-text-secondary)',
+                backgroundColor: active ? 'var(--ua-surface-muted)' : 'transparent',
               }}
             >
               {v.label}
-              <span className="ml-1.5" style={{ color: 'var(--text-tertiary)' }}>{counts[v.key]}</span>
+              <span className="ml-1.5" style={{ color: 'var(--ua-text-tertiary)' }}>{counts[v.key]}</span>
             </button>
           );
         })}
       </div>
 
-      {visible.length === 0 ? (
-        <p className="py-8 text-center text-sm" style={{ color: 'var(--text-tertiary)' }}>
+      {rows.length === 0 ? (
+        <div className="rounded-xl border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)]">
+          <EmptyState
+            title="No loss records yet"
+            description="Loss records appear after a payout case has a confirmed or estimated loss. Connect your sources to keep the ledger current."
+            action={<Link href="/integrations" className="inline-flex h-9 items-center rounded-[var(--ua-radius-control)] bg-[var(--ua-action-primary)] px-3 text-sm font-semibold text-[var(--ua-action-primary-fg)]">Review integrations</Link>}
+          />
+        </div>
+      ) : visible.length === 0 ? (
+        <p className="py-8 text-center text-sm" style={{ color: 'var(--ua-text-tertiary)' }}>
           No loss records in this view.
         </p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm" style={{ borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ color: 'var(--text-tertiary)', textAlign: 'left' }}>
+              <tr style={{ color: 'var(--ua-text-tertiary)', textAlign: 'left' }}>
                 <th className="py-2 pr-4 font-medium">Category</th>
                 <th className="py-2 pr-4 font-medium">Attribution</th>
                 <th className="py-2 pr-4 font-medium">Owner</th>
@@ -107,24 +115,24 @@ export function LossLedger({ rows }: { rows: LossLedgerRow[] }) {
                 return (
                 <tr
                   key={row.id}
-                  className="hover:bg-[var(--surface-hover)]"
-                  style={{ borderTop: '1px solid var(--border-subtle, rgba(0,0,0,0.08))' }}
+                  className="hover:bg-[var(--ua-surface-hover)]"
+                  style={{ borderTop: '1px solid var(--ua-border-subtle)' }}
                 >
-                  <td className="py-2 pr-4 font-medium" style={{ color: 'var(--text-primary)' }}>
+                  <td className="py-2 pr-4 font-medium" style={{ color: 'var(--ua-text-primary)' }}>
                     <Link
                       href={href}
-                      className="rounded-sm underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
+                      className="rounded-sm underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ua-border-focus)]"
                     >
                       {label('lossCategory', row.category)}
                     </Link>
-                    {row.derived ? <span className="ml-2 text-xs text-[var(--warning)]">Reconciliation pending</span> : null}
+                    {row.derived ? <span className="ml-2 text-xs text-[var(--ua-warning)]">Reconciliation pending</span> : null}
                   </td>
-                  <td className="py-2 pr-4" style={{ color: 'var(--text-secondary)' }}>{row.attribution ? label('attribution', row.attribution) : '—'}</td>
-                  <td className="py-2 pr-4" style={{ color: 'var(--text-secondary)' }}>
+                  <td className="py-2 pr-4" style={{ color: 'var(--ua-text-secondary)' }}>{row.attribution ? label('attribution', row.attribution) : '—'}</td>
+                  <td className="py-2 pr-4" style={{ color: 'var(--ua-text-secondary)' }}>
                     {row.counterpartyName ?? (row.counterpartyType ? label('counterparty', row.counterpartyType) : '—')}
                   </td>
                   <td className="py-2 pr-4"><StatusBadge family="lossStatus" value={row.status} size="sm" /></td>
-                  <td className="py-2 pr-4 text-right tabular-nums" style={{ color: 'var(--text-primary)' }}>
+                  <td className="py-2 pr-4 text-right tabular-nums" style={{ color: 'var(--ua-text-primary)' }}>
                     {formatMinor(row.realisedLossMinor ?? row.estimatedLossMinor, row.currency)}
                   </td>
                   <td className="py-2 pr-4 text-right tabular-nums">{formatMinor(row.recoverableMinor, row.currency)}</td>

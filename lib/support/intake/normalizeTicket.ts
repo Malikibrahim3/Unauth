@@ -33,6 +33,7 @@ export type NormalizedCaseStatus = (typeof NORMALIZED_CASE_STATUSES)[number];
 
 export const NORMALIZED_CLAIM_REASONS = [
   'missing_parcel',
+  'missing_item',
   'refund_request',
   'return_request',
   'wrong_item',
@@ -267,6 +268,13 @@ export function normalizeClaimReasonFromText(
 ): NormalizedClaimReason | null {
   const haystack = `${text}\n${tags.join(' ')}`.toLowerCase();
 
+  if (
+    /\b(missing item|item missing|short[- ]?pick|short shipment|partial (order|delivery) missing|left out of (the )?(box|parcel|package|order))\b/.test(
+      haystack
+    )
+  ) {
+    return 'missing_item';
+  }
   if (
     /\b(inr|item not received|not received|never received|missing parcel|parcel missing|delivered not received|didn'?t receive)\b/.test(
       haystack

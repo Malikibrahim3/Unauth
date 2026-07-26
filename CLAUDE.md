@@ -19,7 +19,8 @@ Read `docs/PRODUCT.md` and `ARCHITECTURE.md` before changing product behavior, s
 - Routes: `lib/appRoutes.ts`; legacy redirects: `next.config.js`
 - Database conventions: `lib/supabase`; migration history: `supabase/migrations`
 - Environment validation: `lib/utils/env.ts`
-- Authenticated UI: `styles/authenticated/README.md`
+- Product UI: `styles/authenticated/README.md` (binding rules) and
+  `docs/IMPL_quiet_precision_product_ui.md` (complete implementation contract)
 - Engine weights and thresholds: `lib/engine/weights.ts`
 - Identity normalization and hashing: `lib/identity/normalise.ts` and `lib/identity/hash.ts`
 
@@ -31,6 +32,12 @@ Use the validated `env` object in server application code. Scripts and tests may
 
 Keep applied migrations immutable and add forward migrations. Authorization must be checked before using service-role access, and every database operation must be merchant-scoped.
 
-Read `styles/authenticated/README.md` before signed-in UI changes. Use its tokens and shared primitives, keep public landing styles isolated, preserve keyboard and mobile access, and run `npm run lint:authenticated-design`.
+Read `styles/authenticated/README.md` and
+`docs/IMPL_quiet_precision_product_ui.md` before product UI changes. Quiet
+Precision is a hard replacement: use its canonical tokens, primitives, page
+families, states, responsive rules, and accessibility contract; do not treat
+the pre-migration runtime appearance as precedent or preserve visual
+compatibility aliases. Keep public landing styles isolated, preserve keyboard
+and mobile access, and run `npm run lint:authenticated-design`.
 
 Before completion run the relevant focused tests, then the full validation gate in `docs/TESTING.md`.

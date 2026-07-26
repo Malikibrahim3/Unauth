@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/lib/supabase/tables';
 import { getCaseRelatedRecords } from '@/lib/cases/relatedRecords';
 import { claimEventsToTimeline, commerceEventsToTimeline, domainEventsToTimeline, mergeTimeline, recoveryEventsToTimeline, ticketEventsToTimeline, workTasksToTimeline } from '@/lib/cases/timeline';
+import { getReconciliationReadModel } from '@/lib/reconciliation/caseStore';
 
 export async function getCaseReadModel(client: SupabaseClient, merchantId: string, caseId: string) {
   const { data: payoutCase, error: caseError } = await client
@@ -66,6 +67,17 @@ export async function getCaseReadModel(client: SupabaseClient, merchantId: strin
   if (outcomeResult.error) throw new Error(`case_read_model_outcome_failed: ${outcomeResult.error.message}`);
   if (lossResult.error) throw new Error(`case_read_model_loss_failed: ${lossResult.error.message}`);
   if (recoveryResult.error) throw new Error(`case_read_model_recovery_failed: ${recoveryResult.error.message}`);
+  let reconciliation = null;
+  try {
+    reconciliation = await getReconciliationReadModel(client, merchantId, caseId);
+  } catch (error) {
+    // The pivot is additive and can be deployed behind the migration. Keep
+    // the compatibility case read model available during that short window.
+    console.warn('case_read_model_reconciliation_unavailable', {
+      caseId,
+      message: error instanceof Error ? error.message : String(error),
+    });
+  }
   return {
     case: payoutCase,
     relatedRecords,
@@ -99,5 +111,6 @@ export async function getCaseReadModel(client: SupabaseClient, merchantId: strin
       losses: lossResult.data ?? [],
       recoveries: recoveryResult.data ?? [],
     },
+    reconciliation,
   };
 }

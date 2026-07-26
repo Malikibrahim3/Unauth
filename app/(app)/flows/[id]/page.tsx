@@ -16,6 +16,7 @@ import {
 } from "@/components/rules/FlowVersionWorkbench";
 import { AuthenticatedPageHeader } from "@/components/authenticated/AuthenticatedPageHeader";
 import pageStyles from "@/components/authenticated/AuthenticatedPageChrome.module.css";
+import { env } from "@/lib/utils/env";
 
 export const dynamic = "force-dynamic";
 
@@ -53,21 +54,25 @@ export default async function FlowDetail({
   return (
     <div>
       <AuthenticatedPageHeader
-        eyebrow="Workflow configuration"
         title={current.name}
         subtitle={current.description || "No operator-facing description yet. Add intent and expected work in the next draft."}
         breadcrumbs={[{ label: "Flows", href: "/flows" }, { label: current.name }]}
         actions={
         <Link
           href={`/flows/runs?workflow=${id}`}
-          className="inline-flex h-7 items-center rounded-[var(--ua-radius-input)] border border-[var(--border)] bg-[var(--surface)] px-2.5 text-[11px] font-semibold shadow-[var(--shadow-xs)] hover:bg-[var(--surface-hover)]"
+          className="inline-flex h-7 items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2.5 text-[length:var(--ua-text-micro-size)] font-semibold hover:bg-[var(--ua-surface-hover)]"
         >
           Run history
         </Link>
         }
       />
       <div className={pageStyles.pageBody}>
-        <FlowVersionWorkbench versions={versions} currentId={id} canManage={canManage} />
+        <FlowVersionWorkbench
+          versions={versions}
+          currentId={id}
+          canManage={canManage}
+          publicationEnabled={env.WORKFLOW_PUBLICATION_ENABLED === "true"}
+        />
       </div>
     </div>
   );

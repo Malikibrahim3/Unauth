@@ -158,6 +158,41 @@ export async function persistShipBobCanonicalRecord(
       updated_at: new Date().toISOString(),
     }, { onConflict: 'merchant_id,source_account_id,external_id' });
     if (error) throw new Error(`shipbob_source_shipment_persist_failed:${error.message}`);
+    const { data: shipment } = await client.from('source_shipments')
+      .select('id')
+      .eq('merchant_id', job.merchantId)
+      .eq('source_account_id', job.sourceAccountId)
+      .eq('external_id', record.externalId)
+      .maybeSingle();
+    const lineItems = [raw.line_items, raw.items, raw.products, raw.contents]
+      .find((value) => Array.isArray(value)) as unknown[] | undefined;
+    if (shipment?.id && lineItems) {
+      for (const [index, candidate] of lineItems.entries()) {
+        const line = candidate && typeof candidate === 'object' ? candidate as Record<string, unknown> : {};
+        const quantity = number(line.quantity ?? line.quantity_recorded ?? line.fulfillable_quantity);
+        if (quantity == null || quantity <= 0) continue;
+        const externalLineId = text(line.id ?? line.line_id ?? line.external_id) ?? `${record.externalId}:${index}`;
+        const { error: lineError } = await client.from('source_shipment_lines').upsert({
+          merchant_id: job.merchantId,
+          source_shipment_id: shipment.id,
+          source_order_line_id: null,
+          source_fulfillment_id: null,
+          external_id: externalLineId,
+          external_product_ref: text(line.product_id ?? line.product_ref),
+          sku: text(line.sku ?? line.product_sku ?? line.variant_sku),
+          variant_ref: text(line.variant_id ?? line.variant_ref),
+          quantity_recorded: Math.floor(quantity),
+          record_kind: 'system_record',
+          evidence_basis: 'system_record',
+          source_record_id: sourceRecordId,
+          source_created_at: text(line.created_at ?? raw.created_at),
+          source_updated_at: text(line.updated_at ?? raw.updated_at_source),
+          raw_metadata: line,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'merchant_id,source_shipment_id,external_id,record_kind' });
+        if (lineError) throw new Error(`shipbob_source_shipment_line_persist_failed:${lineError.message}`);
+      }
+    }
     return;
   }
 

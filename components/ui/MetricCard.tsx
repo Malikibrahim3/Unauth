@@ -23,9 +23,9 @@ interface MetricCardProps {
 }
 
 const TONE_COLOR: Record<DeltaProps['tone'], string> = {
-  positive: 'var(--risk-low-fg)',
-  negative: 'var(--risk-critical-fg)',
-  neutral:  'var(--text-secondary)',
+  positive: 'var(--ua-risk-low)',
+  negative: 'var(--ua-risk-critical)',
+  neutral:  'var(--ua-text-secondary)',
 };
 
 const ARROW_ICON: Record<DeltaProps['direction'], typeof ArrowUp> = {
@@ -36,16 +36,16 @@ const ARROW_ICON: Record<DeltaProps['direction'], typeof ArrowUp> = {
 
 export function MetricCard({ label, value, delta, hint, icon, density = 'default', size, microchart, className }: MetricCardProps) {
   const isHero = size === 'hero';
-  const padding = isHero ? 'var(--space-5)' : density === 'compact' ? 'var(--space-3)' : 'var(--space-4)';
+  const padding = isHero ? 'var(--ua-space-5)' : density === 'compact' ? 'var(--ua-space-3)' : 'var(--ua-space-4)';
   const displayValue = value;
 
   return (
     <div
       className={cn('ua-metric-card group', className)}
       style={{
-        background: 'var(--surface)',
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--ua-radius-card)',
+        background: 'var(--ua-surface-primary)',
+        border: '1px solid var(--ua-border-default)',
+        borderRadius: 'var(--ua-radius-surface)',
         padding,
         boxShadow: 'none',
       }}
@@ -55,7 +55,7 @@ export function MetricCard({ label, value, delta, hint, icon, density = 'default
         style={{
           fontSize: 12,
           fontWeight: 500,
-          color: 'var(--text-tertiary)',
+          color: 'var(--ua-text-tertiary)',
           lineHeight: 1,
         }}
       >
@@ -69,9 +69,9 @@ export function MetricCard({ label, value, delta, hint, icon, density = 'default
         style={{
           fontSize: isHero ? 24 : 23,
           fontWeight: 600,
-          color: 'var(--text-primary)',
+          color: 'var(--ua-text-primary)',
           letterSpacing: '-0.01em',
-          fontFamily: 'var(--font-sans)',
+          fontFamily: 'var(--ua-font-sans)',
         }}
       >
         {displayValue}
@@ -97,7 +97,7 @@ export function MetricCard({ label, value, delta, hint, icon, density = 'default
       )}
 
       {hint && (
-        <p className="mt-1" style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{hint}</p>
+        <p className="mt-1" style={{ fontSize: 12, color: 'var(--ua-text-tertiary)' }}>{hint}</p>
       )}
     </div>
   );

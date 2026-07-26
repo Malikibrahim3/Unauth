@@ -142,7 +142,7 @@ export async function buildClaimDecisionContext(
     getStoredIntegrationViews(client, merchantId).then((views) => ({ data: views, error: null })),
     client
       .from('evidence_items')
-      .select('evidence_type')
+      .select('evidence_type,structured_value,summary,source_created_at,created_at')
       .eq('claim_id', claimId)
       .eq('merchant_id', merchantId)
       .or(CLAIM_EVIDENCE_ORIGIN_FILTER),
@@ -182,6 +182,34 @@ export async function buildClaimDecisionContext(
   delivery = mergeDeliveryWithTrackingEvidence(fulfillmentRes.data, trackingSlice);
 
   const evidenceItems = evidenceRes.error ? [] : (evidenceRes.data ?? []);
+  const photoFinding = evidenceItems
+    .filter((item) => item.evidence_type === 'delivery_photo_finding')
+    .toSorted((left, right) => {
+      const leftAt = Date.parse(left.source_created_at ?? left.created_at ?? '');
+      const rightAt = Date.parse(right.source_created_at ?? right.created_at ?? '');
+      return (Number.isFinite(rightAt) ? rightAt : 0) - (Number.isFinite(leftAt) ? leftAt : 0);
+    })[0];
+  const photoFindingValue = photoFinding?.structured_value
+    && typeof photoFinding.structured_value === 'object'
+    && !Array.isArray(photoFinding.structured_value)
+    ? photoFinding.structured_value as Record<string, unknown>
+    : null;
+  const normalizedPhotoFinding = ['consistent', 'inconsistent', 'unclear'].includes(
+    String(photoFindingValue?.finding),
+  )
+    ? photoFindingValue?.finding as 'consistent' | 'inconsistent' | 'unclear'
+    : null;
+  if (delivery && normalizedPhotoFinding) {
+    delivery = {
+      ...delivery,
+      deliveryPhotoFinding: normalizedPhotoFinding,
+      deliveryPhotoFindingRationale:
+        typeof photoFindingValue?.rationale === 'string'
+          ? photoFindingValue.rationale
+          : photoFinding?.summary ?? null,
+      deliveryPhotoFindingAt: photoFinding?.source_created_at ?? photoFinding?.created_at ?? null,
+    };
+  }
   let customerEvidenceItems = 0;
   let deliveryEvidenceItems = 0;
   let merchantEvidenceItems = 0;

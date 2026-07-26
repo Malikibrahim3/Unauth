@@ -6,7 +6,7 @@ import type {
   ObjectFact,
   ObjectSummary,
 } from "@/lib/relationships/objectSummary";
-import { PanelCard } from "@/components/ui";
+import { Panel } from "@/components/ui";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatCurrencyNullable, formatDateTime, formatNumber } from "@/lib/utils/format";
 import { AuthenticatedPageHeader } from "@/components/authenticated/AuthenticatedPageHeader";
@@ -69,7 +69,7 @@ export function ConnectedObjectDetail({
             href={object.provenance.sourceUrl}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex h-7 items-center gap-1.5 rounded-[var(--ua-radius-input)] border border-[var(--border)] bg-[var(--surface)] px-2.5 text-[11px] font-semibold shadow-[var(--shadow-xs)] hover:bg-[var(--surface-hover)]"
+            className="inline-flex h-7 items-center gap-1.5 rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2.5 text-[length:var(--ua-text-micro-size)] font-semibold hover:bg-[var(--ua-surface-hover)]"
           >
             Open in {label(object.provenance.sourceSystem)}{" "}
             <ExternalLink className="h-3 w-3" />
@@ -84,40 +84,40 @@ export function ConnectedObjectDetail({
             {object.facts.map((item) => (
               <div key={item.label} className={pageStyles.kpiItem}>
                 <dt className={pageStyles.kpiLabel}>{item.label}</dt>
-                <dd className="mt-2 break-words text-xs font-semibold text-[var(--text-primary)]">{factValue(item)}</dd>
+                <dd className="mt-2 break-words text-xs font-semibold text-[var(--ua-text-primary)]">{factValue(item)}</dd>
               </div>
             ))}
           </dl>
         ) : (
-          <PanelCard
-            variant="appInset"
-            className="p-4 text-xs text-[var(--text-secondary)]"
+          <Panel
+            variant="inset"
+            className="p-4 text-xs text-[var(--ua-text-secondary)]"
           >
             This source supplied no additional typed facts.
-          </PanelCard>
+          </Panel>
         )}
         <div className={pageStyles.workbenchGrid}>
           <AuthenticatedPanel title="Lifecycle" capabilityId="object.lifecycle">
           {object.timeline.length ? (
-            <ol className="relative divide-y divide-[var(--border-muted)] before:absolute before:bottom-5 before:left-[21px] before:top-5 before:w-px before:bg-[var(--border)]">
+            <ol className="relative divide-y divide-[var(--ua-border-subtle)] before:absolute before:bottom-5 before:left-[21px] before:top-5 before:w-px before:bg-[var(--ua-border-default)]">
               {object.timeline.map((item) => (
                 <li
                   key={`${item.label}-${item.at ?? 'unknown'}-${item.detail ?? ''}`}
                   className="relative grid grid-cols-[1.75rem_minmax(0,1fr)] gap-2.5 px-3 py-3"
                 >
-                  <span className="z-10 mt-1 h-2 w-2 justify-self-center rounded-full bg-[var(--accent)] ring-[3px] ring-[var(--surface)]" />
+                  <span className="z-10 mt-1 h-2 w-2 justify-self-center rounded-full bg-[var(--ua-action-primary)] ring-2 ring-[var(--ua-surface-primary)]" />
                   <div>
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <strong className="text-[11px]">{item.label}</strong>
+                      <strong className="text-[length:var(--ua-text-micro-size)]">{item.label}</strong>
                       <time
-                        className="font-mono text-[10px] text-[var(--text-tertiary)]"
+                        className="font-mono text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]"
                         dateTime={item.at ?? undefined}
                       >
                         {item.at ? formatDateTime(item.at) : "Time unavailable"}
                       </time>
                     </div>
                     {item.detail ? (
-                      <p className="mt-1 text-[10px] text-[var(--text-secondary)]">
+                      <p className="mt-1 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-secondary)]">
                         {label(item.detail)}
                       </p>
                     ) : null}
@@ -126,16 +126,16 @@ export function ConnectedObjectDetail({
               ))}
             </ol>
           ) : (
-            <PanelCard
-              variant="appInset"
-              className="m-3 p-4 text-xs text-[var(--text-secondary)]"
+            <Panel
+              variant="inset"
+              className="m-3 p-4 text-xs text-[var(--ua-text-secondary)]"
             >
               No source lifecycle timestamps are available.
-            </PanelCard>
+            </Panel>
           )}
           </AuthenticatedPanel>
           <AuthenticatedPanel title="Data source" capabilityId="object.provenance">
-          <p className="p-4 text-[11px] leading-5 text-[var(--text-secondary)]">
+          <p className="p-4 text-[length:var(--ua-text-micro-size)] leading-5 text-[var(--ua-text-secondary)]">
             From {label(object.provenance?.sourceSystem ?? object.provider ?? "imported data")}
             {sourceUpdatedAt
               ? ` · updated ${formatDateTime(sourceUpdatedAt)}`
@@ -145,22 +145,22 @@ export function ConnectedObjectDetail({
         </div>
       <AuthenticatedPanel title="Evidence used by payout cases" capabilityId="object.evidence">
         {object.evidence.length ? (
-          <div className="grid divide-y divide-[var(--border-muted)] sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+          <div className="grid divide-y divide-[var(--ua-border-subtle)] sm:grid-cols-2 sm:divide-x sm:divide-y-0">
             {object.evidence.map((item) => (
               <div key={item.id} className="p-3.5">
                 <div className="flex items-start justify-between gap-2">
-                  <strong className="text-[11px]">{item.title}</strong>
+                  <strong className="text-[length:var(--ua-text-micro-size)]">{item.title}</strong>
                   <StatusBadge family="confidence" value={item.confidence} size="sm" />
                 </div>
-                <p className="mt-1 text-[10px] leading-4 text-[var(--text-secondary)]">
+                <p className="mt-1 text-[length:var(--ua-text-micro-size)] leading-4 text-[var(--ua-text-secondary)]">
                   {item.summary}
                 </p>
-                <p className="mt-2 text-[10px] text-[var(--text-tertiary)]">
+                <p className="mt-2 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">
                   {label(item.provider)} · {label(item.type)}
                   {item.occurredAt ? ` · ${formatDateTime(item.occurredAt)}` : ""}
                 </p>
                 {item.reference ? (
-                  <p className="mt-1 break-all font-mono text-[10px] text-[var(--text-tertiary)]">
+                  <p className="mt-1 break-all font-mono text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">
                     {item.reference}
                   </p>
                 ) : null}
@@ -168,37 +168,37 @@ export function ConnectedObjectDetail({
             ))}
           </div>
         ) : (
-          <PanelCard
-            variant="appInset"
-            className="m-3 p-4 text-xs text-[var(--text-secondary)]"
+          <Panel
+            variant="inset"
+            className="m-3 p-4 text-xs text-[var(--ua-text-secondary)]"
           >
             No evidence linked yet.
-          </PanelCard>
+          </Panel>
         )}
       </AuthenticatedPanel>
       <AuthenticatedPanel title="Connected records" capabilityId="object.connected-records">
         {object.connected.length ? (
-          <ul className="divide-y divide-[var(--border-muted)]">
+          <ul className="divide-y divide-[var(--ua-border-subtle)]">
             {object.connected.map((connected) => (
               <li key={`${connected.type}:${connected.id}`}>
-                <div className="flex min-h-12 items-center gap-3 px-4 py-2.5 hover:bg-[var(--surface-hover)]">
+                <div className="flex min-h-12 items-center gap-3 px-4 py-2.5 hover:bg-[var(--ua-surface-hover)]">
                   <Link
                     href={`${connected.href}?return=${encodeURIComponent(`/${object.type}s/${object.id}`)}`}
                     className="flex min-w-0 flex-1 flex-col items-start justify-between gap-2 sm:flex-row sm:items-center sm:gap-4"
                   >
                     <span className="min-w-0">
-                      <span className="block text-[10px] capitalize text-[var(--text-secondary)]">
+                      <span className="block text-[length:var(--ua-text-micro-size)] capitalize text-[var(--ua-text-secondary)]">
                         {label(connected.type)}
                       </span>
-                      <span className="break-all text-[11px] font-semibold">
+                      <span className="break-all text-[length:var(--ua-text-micro-size)] font-semibold">
                         {connected.reference}
                       </span>
                     </span>
-                    <span className="flex shrink-0 items-center gap-2 text-[10px]">
+                    <span className="flex shrink-0 items-center gap-2 text-[length:var(--ua-text-micro-size)]">
                       {connected.state ? (
                         <StatusBadge family="workflowStatus" value={connected.state} size="sm" />
                       ) : null}
-                      <span className="text-[var(--accent)]">Open</span>
+                      <span className="text-[var(--ua-action-primary)]">Open</span>
                     </span>
                   </Link>
                   {connected.externalHref ? (
@@ -208,7 +208,7 @@ export function ConnectedObjectDetail({
                       rel="noreferrer"
                       aria-label={`Open ${label(connected.type)} in ${label(connected.externalSource ?? "source")}`}
                       title={`Open in ${label(connected.externalSource ?? "source")}`}
-                      className="shrink-0 rounded p-1 text-[var(--accent)] hover:bg-[var(--surface)]"
+                      className="shrink-0 rounded p-1 text-[var(--ua-action-primary)] hover:bg-[var(--ua-surface-primary)]"
                     >
                       <ExternalLink className="h-3.5 w-3.5" />
                     </a>
@@ -218,13 +218,13 @@ export function ConnectedObjectDetail({
             ))}
           </ul>
         ) : (
-          <PanelCard
-            variant="appInset"
-            className="m-3 p-4 text-xs text-[var(--text-secondary)]"
+          <Panel
+            variant="inset"
+            className="m-3 p-4 text-xs text-[var(--ua-text-secondary)]"
           >
             No connected records were found in this merchant’s synchronized
             sources.
-          </PanelCard>
+          </Panel>
         )}
       </AuthenticatedPanel>
         </div>

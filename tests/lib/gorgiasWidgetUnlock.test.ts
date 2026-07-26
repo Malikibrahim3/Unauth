@@ -38,9 +38,9 @@ describe('Gorgias widget unlock links', () => {
       },
     );
     expect(payload.basic_unlock_url).toContain('basic_context');
-    expect(payload.full_unlock_url).toContain('full_context');
+    expect(payload.full_unlock_url).toBe('');
     expect(payload.evidence_unlock_url).toContain('evidence_summary');
-    expect(payload.basic_unlock_label).toBe('Open full case →');
+    expect(payload.basic_unlock_label).toBe('View Store Check →');
     expect(payload.basic_unlock_url).toContain('basic_context');
   });
 
@@ -88,7 +88,7 @@ describe('Gorgias widget unlock links', () => {
     expect(payload.identity).toContain('DEFINITE');
     expect(payload.orders).toContain('9');
     expect(payload.orders).not.toContain('20');
-    expect(payload.ce3_evidence).toContain('Additional identity context available');
+    expect(payload.ce3_evidence).toContain('Store order evidence available');
     expect(payload.primary_reason).toContain('Item not received');
     expect(payload.cta_url).toContain('source=gorgias');
     expect(payload.cta_url).toContain('ticket_id=T-1');
@@ -107,32 +107,34 @@ describe('Gorgias widget unlock links', () => {
     expect(template.widgets[0].title).toBe(GORGIAS_SIDEBAR_CARD_TITLE);
     const rowTitles = template.widgets[0].widgets.map((w: { title: string }) => w.title);
     expect(rowTitles).toEqual([
-      GORGIAS_SIDEBAR_ROW_LABELS.payout_exposure,
-      GORGIAS_SIDEBAR_ROW_LABELS.evidence_checklist,
-      GORGIAS_SIDEBAR_ROW_LABELS.recommendation,
-      GORGIAS_SIDEBAR_ROW_LABELS.recovery_path,
+      GORGIAS_SIDEBAR_ROW_LABELS.customer_action,
+      GORGIAS_SIDEBAR_ROW_LABELS.responsibility,
+      GORGIAS_SIDEBAR_ROW_LABELS.recovery_recommendation,
+      GORGIAS_SIDEBAR_ROW_LABELS.why,
+      GORGIAS_SIDEBAR_ROW_LABELS.missing_evidence,
     ]);
     const blob = JSON.stringify(template);
     expect(blob).not.toMatch(/Claims on record|Identity Intelligence/i);
   });
 
-  it('sidebar template registers three unlock links plus app CTA', () => {
+  it('sidebar template omits the unproven network unlock', () => {
     const template = buildGorgiasSidebarWidgetTemplate('https://app.unauth.test');
     const links = template.widgets[0].meta.custom.links;
-    expect(links).toHaveLength(4);
+    expect(links).toHaveLength(3);
     expect(links[0]).toEqual({ url: '{{basic_unlock_url}}', label: '{{basic_unlock_label}}' });
-    expect(links[1]).toEqual({ url: '{{full_unlock_url}}', label: '{{full_unlock_label}}' });
-    expect(links[2]).toEqual({ url: '{{evidence_unlock_url}}', label: '{{evidence_unlock_label}}' });
+    expect(links[1]).toEqual({ url: '{{evidence_unlock_url}}', label: '{{evidence_unlock_label}}' });
+    expect(JSON.stringify(links)).not.toContain('full_unlock_url');
   });
 
-  it('unlock URL set covers all context types', () => {
+  it('unlock URL set keeps the compatibility field empty while network context is gated', () => {
     const set = buildGorgiasWidgetUnlockUrlSet({
       appBaseUrl: 'https://app.unauth.test',
       widgetToken: 'wt',
       email: 'x@y.com',
       ticketRef: '1',
     });
-    expect(set.basic_unlock_url).not.toBe(set.full_unlock_url);
+    expect(set.basic_unlock_url).toContain('basic_context');
+    expect(set.full_unlock_url).toBe('');
     expect(set.evidence_unlock_url).toContain('evidence_summary');
   });
 });

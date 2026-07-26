@@ -33,6 +33,7 @@ export type TrackingProviderSlice = {
   gap: TrackingGapReason;
   deliveryPhotoAvailable: boolean;
   signatureAvailable: boolean;
+  proofOfDeliveryAvailable: boolean;
   gpsSupported: boolean;
 };
 
@@ -79,6 +80,7 @@ export function emptyTrackingProviderSlice(provider: TrackingProviderSlice['prov
     gap: null,
     deliveryPhotoAvailable: false,
     signatureAvailable: false,
+    proofOfDeliveryAvailable: false,
     gpsSupported: false,
   };
 }
@@ -114,6 +116,7 @@ export function parseCarrierEvidenceRows(
   const trackingRow = rows.find((row) => row.evidence_type === 'tracking_number');
   const photoRow = rows.find((row) => row.evidence_type === 'delivery_photo');
   const signatureRow = rows.find((row) => row.evidence_type === 'signature');
+  const proofRow = rows.find((row) => row.evidence_type === 'proof_of_delivery');
 
   if (!statusRow && !eventsRow && !trackingRow) {
     slice.gap = 'tracking_not_found';
@@ -142,6 +145,7 @@ export function parseCarrierEvidenceRows(
 
   slice.deliveryPhotoAvailable = photoRow?.value != null;
   slice.signatureAvailable = signatureRow?.value != null;
+  slice.proofOfDeliveryAvailable = proofRow?.value != null;
   slice.gpsSupported = false;
   return slice;
 }
@@ -174,6 +178,9 @@ export function mergeDeliveryWithTrackingEvidence(
     estimatedDeliveryAt: null,
     trackingGap: null,
     deliveryPhotoAvailable: false,
+    deliveryPhotoFinding: null,
+    deliveryPhotoFindingRationale: null,
+    deliveryPhotoFindingAt: null,
     signatureAvailable: false,
     gpsSupported: false,
   };
@@ -186,7 +193,13 @@ export function mergeDeliveryWithTrackingEvidence(
     : base.status;
   const deliveredAt = tracking.deliveredAt ?? base.deliveredAt;
   const carrier = tracking.carrier ?? base.carrier;
-  const hasProofOfDelivery = status === 'delivered' && Boolean(deliveredAt);
+  const hasProofOfDelivery =
+    status === 'delivered' &&
+    (
+      tracking.proofOfDeliveryAvailable ||
+      tracking.deliveryPhotoAvailable ||
+      tracking.signatureAvailable
+    );
 
   let daysSinceDelivery: number | null = null;
   if (deliveredAt) {
@@ -218,6 +231,9 @@ export function mergeDeliveryWithTrackingEvidence(
     estimatedDeliveryAt: tracking.estimatedDeliveryAt,
     trackingGap: gap,
     deliveryPhotoAvailable: tracking.deliveryPhotoAvailable,
+    deliveryPhotoFinding: base.deliveryPhotoFinding,
+    deliveryPhotoFindingRationale: base.deliveryPhotoFindingRationale,
+    deliveryPhotoFindingAt: base.deliveryPhotoFindingAt,
     signatureAvailable: tracking.signatureAvailable,
     gpsSupported: tracking.gpsSupported,
   };
@@ -256,7 +272,17 @@ export function formatDeliveryEvidenceLine(delivery: DeliverySlice | null): stri
     const exceptions = delivery.exceptionCount > 0
       ? ` · exception: ${delivery.exceptionCount} event(s)`
       : ' · no exception events';
-    return `Delivery evidence: Delivered on ${delivered}${scans}${exceptions}`;
+    const artefacts = [
+      delivery.deliveryPhotoAvailable ? 'photo' : null,
+      delivery.signatureAvailable ? 'signature' : null,
+    ].filter(Boolean);
+    const proof = artefacts.length > 0
+      ? ` · artefact: ${artefacts.join(' + ')}`
+      : ' · no delivery artefact';
+    const finding = delivery.deliveryPhotoFinding
+      ? ` · photo finding: ${delivery.deliveryPhotoFinding}`
+      : '';
+    return `Delivery evidence: Carrier reported delivered on ${delivered}${scans}${exceptions}${proof}${finding}`;
   }
 
   if (status === 'in_transit') {

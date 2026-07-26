@@ -42,10 +42,10 @@ function SupportCaseCards({ cases }: { cases: PublicSupportCaseContext[] }) {
           <div
             key={supportCase.id}
             className="rounded-md border p-3 text-sm"
-            style={{ borderColor: 'var(--border-muted)', background: 'var(--bg-inset)' }}
+            style={{ borderColor: 'var(--ua-border-subtle)', background: 'var(--ua-surface-secondary)' }}
           >
             <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-              <p className="font-semibold" style={{ color: 'var(--text)' }}>
+              <p className="font-semibold" style={{ color: 'var(--ua-text-primary)' }}>
                 {PROVIDER_LABELS[supportCase.provider] ?? supportCase.provider} ·{' '}
                 {supportCase.external_case_id}
               </p>
@@ -55,7 +55,7 @@ function SupportCaseCards({ cases }: { cases: PublicSupportCaseContext[] }) {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-xs underline"
-                  style={{ color: 'var(--accent)' }}
+                  style={{ color: 'var(--ua-action-primary)' }}
                 >
                   Open in {PROVIDER_LABELS[supportCase.provider] ?? supportCase.provider}
                 </a>
@@ -63,35 +63,35 @@ function SupportCaseCards({ cases }: { cases: PublicSupportCaseContext[] }) {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
               <div>
-                <span style={{ color: 'var(--text-secondary)' }}>Status: </span>
-                <span style={{ color: 'var(--text)' }}>{supportCase.case_status ?? '—'}</span>
+                <span style={{ color: 'var(--ua-text-secondary)' }}>Status: </span>
+                <span style={{ color: 'var(--ua-text-primary)' }}>{supportCase.case_status ?? '—'}</span>
               </div>
               <div>
-                <span style={{ color: 'var(--text-secondary)' }}>Link: </span>
-                <span style={{ color: 'var(--text)' }}>{supportCase.link_status}</span>
+                <span style={{ color: 'var(--ua-text-secondary)' }}>Link: </span>
+                <span style={{ color: 'var(--ua-text-primary)' }}>{supportCase.link_status}</span>
               </div>
               <div>
-                <span style={{ color: 'var(--text-secondary)' }}>Claim reason: </span>
-                <span style={{ color: 'var(--text)' }}>{supportCase.claim_reason ?? '—'}</span>
+                <span style={{ color: 'var(--ua-text-secondary)' }}>Claim reason: </span>
+                <span style={{ color: 'var(--ua-text-primary)' }}>{supportCase.claim_reason ?? '—'}</span>
               </div>
               <div>
-                <span style={{ color: 'var(--text-secondary)' }}>Order ref: </span>
-                <span style={{ color: 'var(--text)' }}>{supportCase.order_ref ?? supportCase.shopify_order_id ?? '—'}</span>
+                <span style={{ color: 'var(--ua-text-secondary)' }}>Order ref: </span>
+                <span style={{ color: 'var(--ua-text-primary)' }}>{supportCase.order_ref ?? supportCase.shopify_order_id ?? '—'}</span>
               </div>
             </div>
             {supportCase.customer_message_summary ? (
-              <p className="mt-2 text-xs" style={{ color: 'var(--text)' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>Customer message: </span>
+              <p className="mt-2 text-xs" style={{ color: 'var(--ua-text-primary)' }}>
+                <span style={{ color: 'var(--ua-text-secondary)' }}>Customer message: </span>
                 {supportCase.customer_message_summary}
               </p>
             ) : null}
             {supportCase.agent_notes_summary ? (
-              <p className="mt-1 text-xs" style={{ color: 'var(--text)' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>Outcome notes: </span>
+              <p className="mt-1 text-xs" style={{ color: 'var(--ua-text-primary)' }}>
+                <span style={{ color: 'var(--ua-text-secondary)' }}>Outcome notes: </span>
                 {supportCase.agent_notes_summary}
               </p>
             ) : null}
-            <p className="mt-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
+            <p className="mt-1 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
               Tags: {formatTags(supportCase.tags)}
               {supportCase.claim_candidate ? ' · Claim candidate (review only)' : ''}
             </p>
@@ -115,7 +115,7 @@ export default function SupportCaseContextList({
 }) {
   if (cases.length === 0) {
     if (bare && emptyMessage) {
-      return <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{emptyMessage}</p>;
+      return <p className="text-sm" style={{ color: 'var(--ua-text-secondary)' }}>{emptyMessage}</p>;
     }
     return null;
   }
@@ -127,10 +127,10 @@ export default function SupportCaseContextList({
   return (
     <section
       className="rounded-md p-4 border"
-      style={{ borderColor: 'var(--border-muted)', background: 'var(--surface)' }}
+      style={{ borderColor: 'var(--ua-border-subtle)', background: 'var(--ua-surface-primary)' }}
     >
       {title ? (
-        <p className="text-caption font-semibold mb-3" style={{ color: 'var(--text-secondary)' }}>
+        <p className="text-caption font-semibold mb-3" style={{ color: 'var(--ua-text-secondary)' }}>
           {title}
         </p>
       ) : null}

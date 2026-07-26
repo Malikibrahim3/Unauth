@@ -414,38 +414,38 @@ export function RuleVersionWorkbench({
           className="rounded-md border px-3 py-2 text-sm"
           style={{
             borderColor:
-              message.tone === "error" ? "var(--danger)" : "var(--success)",
+              message.tone === "error" ? "var(--ua-critical)" : "var(--ua-success)",
             color:
               message.tone === "error"
-                ? "var(--danger)"
-                : "var(--text-primary)",
-            background: "var(--surface)",
+                ? "var(--ua-critical)"
+                : "var(--ua-text-primary)",
+            background: "var(--ua-surface-primary)",
           }}
         >
           {message.text}
         </div>
       ) : null}
-      <Card unstyled variant="flat" className="p-4">
+      <Card unstyled variant="panel" className="p-4">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <StatusBadge family="workflowStatus" value={display.status} />
-              <span className="font-mono text-xs text-[var(--text-tertiary)]">
+              <span className="font-mono text-xs text-[var(--ua-text-tertiary)]">
                 v{display.version}
               </span>
               {draft && published ? (
-                <span className="text-xs text-[var(--text-secondary)]">
+                <span className="text-xs text-[var(--ua-text-secondary)]">
                   Published v{published.version} remains active
                 </span>
               ) : null}
             </div>
-            <p className="mt-2 max-w-3xl text-sm text-[var(--text-secondary)]">
+            <p className="mt-2 max-w-3xl text-sm text-[var(--ua-text-secondary)]">
               When{" "}
-              <strong className="text-[var(--text-primary)]">
+              <strong className="text-[var(--ua-text-primary)]">
                 {display.condition_operator === "or" ? "any" : "all"}
               </strong>{" "}
               conditions match, recommend{" "}
-              <strong className="text-[var(--text-primary)]">
+              <strong className="text-[var(--ua-text-primary)]">
                 {ACTION_LABELS[display.action]}
               </strong>
               . Recommendations never execute a payout.
@@ -489,14 +489,14 @@ export function RuleVersionWorkbench({
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
         <Card unstyled
           as="section"
-          variant="flat"
+          variant="panel"
           className="p-4"
           aria-labelledby="rule-conditions-title"
         >
           <h2 id="rule-conditions-title" className="text-sm font-semibold">
             Readable policy
           </h2>
-          <p className="mt-1 text-xs text-[var(--text-tertiary)]">
+          <p className="mt-1 text-xs text-[var(--ua-text-tertiary)]">
             Required fields are checked before the first-match recommendation
             runs.
           </p>
@@ -504,9 +504,9 @@ export function RuleVersionWorkbench({
             {display.conditions.map((condition, index) => (
               <li
                 key={condition.id ?? `${condition.field}-${index}`}
-                className="grid gap-1 rounded-md border border-[var(--border-muted)] bg-[var(--surface-sunken)] px-3 py-2.5 sm:grid-cols-[2rem_1fr]"
+                className="grid gap-1 rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] px-3 py-2.5 sm:grid-cols-[2rem_1fr]"
               >
-                <span className="font-mono text-xs text-[var(--text-tertiary)]">
+                <span className="font-mono text-xs text-[var(--ua-text-tertiary)]">
                   {index + 1}
                 </span>
                 <span className="text-sm">{readableCondition(condition)}</span>
@@ -514,7 +514,7 @@ export function RuleVersionWorkbench({
             ))}
           </ol>
           {display.conditions.length === 0 ? (
-            <p className="mt-4 text-sm text-[var(--warning)]">
+            <p className="mt-4 text-sm text-[var(--ua-warning)]">
               No conditions: this rule would match every evaluated case.
             </p>
           ) : null}
@@ -522,7 +522,7 @@ export function RuleVersionWorkbench({
 
         <Card unstyled
           as="section"
-          variant="flat"
+          variant="panel"
           className="p-4"
           aria-labelledby="draft-diff-title"
         >
@@ -530,31 +530,31 @@ export function RuleVersionWorkbench({
             Draft impact
           </h2>
           {!draft ? (
-            <p className="mt-3 text-sm text-[var(--text-secondary)]">
+            <p className="mt-3 text-sm text-[var(--ua-text-secondary)]">
               No draft. Published v{published?.version ?? "—"} is the only
               active configuration.
             </p>
           ) : !published ? (
-            <p className="mt-3 text-sm text-[var(--text-secondary)]">
+            <p className="mt-3 text-sm text-[var(--ua-text-secondary)]">
               This is the first version. Simulate it, then review the publish
               confirmation.
             </p>
           ) : changes.length === 0 ? (
-            <p className="mt-3 text-sm text-[var(--text-secondary)]">
+            <p className="mt-3 text-sm text-[var(--ua-text-secondary)]">
               Draft and published configuration are identical.
             </p>
           ) : (
             <dl className="mt-3 space-y-3">
               {changes.map(([label, before, after]) => (
                 <div key={label}>
-                  <dt className="text-xs font-semibold text-[var(--text-tertiary)]">
+                  <dt className="text-xs font-semibold text-[var(--ua-text-tertiary)]">
                     {label}
                   </dt>
                   <dd className="mt-1 text-xs">
-                    <span className="line-through text-[var(--text-tertiary)]">
+                    <span className="line-through text-[var(--ua-text-tertiary)]">
                       {before}
                     </span>
-                    <span className="mx-1 text-[var(--text-tertiary)]">to</span>
+                    <span className="mx-1 text-[var(--ua-text-tertiary)]">to</span>
                     <strong>{after}</strong>
                   </dd>
                 </div>
@@ -577,23 +577,23 @@ export function RuleVersionWorkbench({
 
       <Card unstyled
         as="section"
-        variant="flat"
+        variant="panel"
         className="overflow-hidden p-0"
         aria-labelledby="version-history-title"
       >
-        <div className="flex items-center gap-2 border-b border-[var(--border-muted)] px-4 py-3">
+        <div className="flex items-center gap-2 border-b border-[var(--ua-border-subtle)] px-4 py-3">
           <History className="h-4 w-4" />
           <h2 id="version-history-title" className="text-sm font-semibold">
             Immutable version history
           </h2>
         </div>
-        <div className="divide-y divide-[var(--border-muted)]">
+        <div className="divide-y divide-[var(--ua-border-subtle)]">
           {versions.map((version) => (
             <div
               key={version.id}
               className="grid gap-2 px-4 py-3 sm:grid-cols-[7rem_8rem_1fr_auto] sm:items-center"
             >
-              <strong className="font-mono text-sm">
+              <strong className="font-sans text-sm tabular-nums">
                 Version {version.version}
               </strong>
               <StatusBadge
@@ -602,7 +602,7 @@ export function RuleVersionWorkbench({
                 size="sm"
                 className="justify-self-start"
               />
-              <span className="text-xs text-[var(--text-secondary)]">
+              <span className="text-xs text-[var(--ua-text-secondary)]">
                 {version.published_at
                   ? `Published ${formatDateTime(version.published_at)}`
                   : `Created ${formatDateTime(version.created_at)}`}
@@ -672,7 +672,7 @@ export function RuleVersionWorkbench({
                           [condition.field]: event.target.value,
                         }))
                       }
-                      className="mt-1 w-full rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm"
+                      className="mt-1 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-3 py-2 text-sm"
                     >
                       <option value="true">Yes</option>
                       <option value="false">No</option>
@@ -692,7 +692,7 @@ export function RuleVersionWorkbench({
                           [condition.field]: event.target.value,
                         }))
                       }
-                      className="mt-1 w-full rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm"
+                      className="mt-1 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-3 py-2 text-sm"
                     >
                       {def.options?.map((option) => (
                         <option key={option.value} value={option.value}>
@@ -724,9 +724,9 @@ export function RuleVersionWorkbench({
                         [condition.field]: event.target.value || UNAVAILABLE,
                       }))
                     }
-                    className="mt-1 w-full rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm"
+                    className="mt-1 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-3 py-2 text-sm"
                   />
-                  <span className="mt-1 block text-[11px] text-[var(--text-tertiary)]">
+                  <span className="mt-1 block text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">
                     Clear the field to simulate unavailable source data.
                   </span>
                 </label>
@@ -734,18 +734,18 @@ export function RuleVersionWorkbench({
             })}
           </div>
         ) : (
-          <p className="text-sm text-[var(--warning)]">
+          <p className="text-sm text-[var(--ua-warning)]">
             This rule has no conditions and therefore matches every evaluated
             case.
           </p>
         )}
         {simulation ? (
-          <div className="mt-4 rounded-md border border-[var(--border-muted)] bg-[var(--surface-sunken)] p-3">
+          <div className="mt-4 rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-3">
             <div className="flex items-center gap-2">
               {simulation.simulation.matched ? (
-                <CheckCircle2 className="h-4 w-4 text-[var(--success)]" />
+                <CheckCircle2 className="h-4 w-4 text-[var(--ua-success)]" />
               ) : (
-                <AlertTriangle className="h-4 w-4 text-[var(--warning)]" />
+                <AlertTriangle className="h-4 w-4 text-[var(--ua-warning)]" />
               )}
               <strong className="text-sm">
                 {simulation.simulation.matched
@@ -753,7 +753,7 @@ export function RuleVersionWorkbench({
                   : "Did not match"}
               </strong>
             </div>
-            <p className="mt-1 text-xs text-[var(--text-secondary)]">
+            <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">
               Tested version {simulation.version} ·{" "}
               {simulation.simulation.writesPerformed} writes performed
             </p>
@@ -784,7 +784,7 @@ export function RuleVersionWorkbench({
               {publishPreview.dataRequirements.join(", ") || "None"}
             </p>
             {publishPreview.conflicts.length > 0 ? (
-              <div className="rounded-md border border-[var(--warning)] bg-[var(--warning-bg)] p-3">
+              <div className="rounded-md border border-[var(--ua-warning)] bg-[var(--ua-warning-bg)] p-3">
                 <p className="font-semibold">
                   {publishPreview.conflicts.length} conflict
                   {publishPreview.conflicts.length === 1 ? "" : "s"} require
@@ -799,12 +799,12 @@ export function RuleVersionWorkbench({
                 </ul>
               </div>
             ) : (
-              <p className="flex items-center gap-2 text-[var(--success)]">
+              <p className="flex items-center gap-2 text-[var(--ua-success)]">
                 <CheckCircle2 className="h-4 w-4" /> No same-priority condition
                 conflicts detected.
               </p>
             )}
-            <p className="text-xs text-[var(--text-secondary)]">
+            <p className="text-xs text-[var(--ua-text-secondary)]">
               Only future evaluations use this version. Historical decisions
               retain their original rule evidence.
             </p>

@@ -7,12 +7,9 @@
  * their own styling directly in TSX using the tokens in tokens.css
  * (--ua-shadow-overlay/-drawer/-modal, --ua-radius-overlay, --ua-z-*).
  * Z-index values are intentionally NOT duplicated here — they already
- * live once, shared and non-conflicting, in app/globals.css (--z-sticky,
- * --z-dropdown, --z-drawer, --z-modal, --z-toast).
- *
- * Known gap (see styles/authenticated/README.md, section
- * on the "AUTHENTICATED APP UI REBUILD" globals.css block): Toast's
- * notification container currently renders as a DOM sibling of `.ua-app`
- * rather than a descendant, so it does not inherit this scope's tokens
- * today. Not fixed in this pass — flagged as a follow-up.
+ * live once, shared and non-conflicting, in app/globals.css (--ua-z-header,
+ * --ua-z-dropdown, --ua-z-drawer, --ua-z-modal, --ua-z-toast).
+ * The app layout keeps ToastProvider inside `.ua-app`, so its fixed
+ * notification container inherits the same contract as every other product
+ * overlay.
  */

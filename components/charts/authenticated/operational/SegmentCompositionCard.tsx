@@ -34,14 +34,14 @@ export function SegmentCompositionCard({ segments, headline, rows }: SegmentComp
       {headline ? (
         <div className={styles.segmentHeadline}>
           <strong className={styles.mono}>{headline.value}</strong>
-          {headline.delta ? <span style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>{headline.delta}</span> : null}
+          {headline.delta ? <span style={{ color: 'var(--ua-text-tertiary)', fontSize: 12 }}>{headline.delta}</span> : null}
         </div>
       ) : null}
 
       <div className={styles.segmentBar} role="img" aria-label={segments.map((s) => `${s.label}: ${s.value}`).join(', ')}>
         {segments.map((segment) => {
           const width = total > 0 ? Math.max(4, (segment.value / total) * 100) : 0;
-          const body = <span className={styles[segment.tone]} style={{ display: 'block', width: '100%', height: '100%', borderRadius: 3 }} />;
+          const body = <span className={styles[segment.tone]} style={{ display: 'block', width: '100%', height: '100%', borderRadius: 'var(--ua-radius-control)' }} />;
           return (
             <div key={segment.key} className={styles.segmentSeg} style={{ width: `${width}%`, background: 'transparent' }}>
               {segment.href ? (
@@ -77,10 +77,10 @@ export function SegmentCompositionCard({ segments, headline, rows }: SegmentComp
                     style={{
                       color:
                         row.deltaTone === 'positive'
-                          ? 'var(--risk-low-fg)'
+                          ? 'var(--ua-risk-low)'
                           : row.deltaTone === 'negative'
-                            ? 'var(--risk-critical-fg)'
-                            : 'var(--text-secondary)',
+                            ? 'var(--ua-risk-critical)'
+                            : 'var(--ua-text-secondary)',
                       fontSize: 12,
                     }}
                   >

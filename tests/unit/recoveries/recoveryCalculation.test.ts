@@ -50,7 +50,9 @@ describe('calculateRecoveryEstimate', () => {
   });
 
   it('returns zero recovery for prevention-only merchant policy cases', () => {
-    const payoutCase = buildSupportPayoutCase(makeContext(), { refundAmount: 80 });
+    const payoutCase = buildSupportPayoutCase(makeContext({
+      claim: { type: 'refund_request' },
+    }), { refundAmount: 80 });
     const estimate = calculateRecoveryEstimate({
       supportPayoutCase: payoutCase,
       evidencePresent: ['tracking', 'proof_of_delivery'],

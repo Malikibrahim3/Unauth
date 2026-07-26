@@ -694,6 +694,27 @@ select pg_temp.assert_true(
    )),
   'loss-category drill-down reconciles to the confirmed-loss summary'
 );
+update public.support_payout_cases
+set reason_normalized = 'missing_item'
+where id = '82000000-0000-4000-8000-000000000001'
+  and merchant_id = '81000000-0000-4000-8000-000000000001';
+select pg_temp.assert_true(
+  not exists (
+    select 1 from public.get_financial_report_records(
+      '81000000-0000-4000-8000-000000000001', null, 'GBP',
+      'confirmed_loss', 'delivery_loss', 50, 0
+    )
+  ),
+  'normalized missing item is not reported as whole-parcel delivery loss'
+);
+select pg_temp.assert_true(
+  (select amount_minor = 4500 and total_count = 1
+   from public.get_financial_report_records(
+     '81000000-0000-4000-8000-000000000001', null, 'GBP',
+     'confirmed_loss', 'fulfilment_or_warehouse_error', 50, 0
+   )),
+  'normalized missing item reaches fulfilment and warehouse reporting'
+);
 select pg_temp.assert_true(
   (select amount_minor = 4500 and total_count = 1
    from public.get_financial_report_records(

@@ -14,7 +14,7 @@ import type {
 } from '@/app/(app)/reports/reportsPageTypes';
 
 /**
- * State-aware "finish setup" copy for payout-control reports. Mirrors the
+ * State-aware "finish setup" copy for evidence-reconciliation reports. Mirrors the
  * dashboard CTA so a data-present merchant sees existing context plus the
  * right next step, never a dead empty gate.
  */
@@ -22,21 +22,21 @@ export function liveSetupCta(connection: ConnectionState): { title: string; body
   if (connection.bothConnected) return null;
   if (connection.orderSourceOnlyConnected) {
     return {
-      title: 'Connect your helpdesk to complete payout reporting',
-      body: 'Order data is flowing. Add your helpdesk to report on support payout cases, evidence gaps, decisions, and outcomes.',
+        title: 'Connect your helpdesk to complete case reporting',
+        body: 'Order data is flowing. Add your helpdesk to report on reconciliation cases, evidence gaps, decisions, and outcomes.',
       label: 'Connect helpdesk',
     };
   }
   if (connection.helpdeskOnlyConnected) {
     return {
-      title: 'Connect an order source to complete payout reporting',
-      body: 'Support cases are flowing from your helpdesk. Add an order source to attach order value, exposure, fulfillment evidence, and recovery context.',
+      title: 'Connect an order source to complete case reporting',
+      body: 'Support cases are flowing from your helpdesk. Add an order source to attach order value, evidence, and recovery context.',
       label: 'Connect order source',
     };
   }
   return {
-    title: 'Connect an order source and helpdesk for payout reporting',
-    body: 'Reports combine store orders, support cases, evidence, decisions, and recoveries. Connect both sources to monitor new payout work as it happens.',
+    title: 'Connect an order source and helpdesk for case reporting',
+    body: 'Reports combine store orders, support cases, evidence, decisions, outcomes, and recoveries. Connect both sources to monitor reconciliation work as it happens.',
     label: 'Connect sources',
   };
 }

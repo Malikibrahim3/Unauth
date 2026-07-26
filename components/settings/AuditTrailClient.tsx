@@ -143,9 +143,9 @@ export default function AuditTrailClient({
             href={exportHref}
             className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs font-semibold hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
             style={{
-              borderColor: "var(--border)",
-              color: "var(--text-secondary)",
-              outlineColor: "var(--accent)",
+              borderColor: "var(--ua-border-default)",
+              color: "var(--ua-text-secondary)",
+              outlineColor: "var(--ua-action-primary)",
             }}
           >
             <Download className="h-3.5 w-3.5" />
@@ -157,7 +157,7 @@ export default function AuditTrailClient({
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <Filter
           className="h-4 w-4"
-          style={{ color: "var(--text-tertiary)" }}
+          style={{ color: "var(--ua-text-tertiary)" }}
           aria-hidden="true"
         />
         <label className="sr-only" htmlFor="audit-resource-filter">
@@ -169,10 +169,10 @@ export default function AuditTrailClient({
           onChange={(event) => setResourceType(event.target.value)}
           className="rounded-md px-3 py-1.5 text-xs focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
           style={{
-            background: "var(--surface-sunken)",
-            border: "1px solid var(--border)",
-            color: "var(--text-primary)",
-            outlineColor: "var(--accent)",
+            background: "var(--ua-surface-muted)",
+            border: "1px solid var(--ua-border-default)",
+            color: "var(--ua-text-primary)",
+            outlineColor: "var(--ua-action-primary)",
           }}
         >
           {RESOURCE_FILTERS.map((option) => (
@@ -184,29 +184,29 @@ export default function AuditTrailClient({
       </div>
 
       {loading ? (
-        <p className="text-sm" style={{ color: "var(--text-tertiary)" }}>
+        <p className="text-sm" style={{ color: "var(--ua-text-tertiary)" }}>
           Loading audit events…
         </p>
       ) : error ? (
-        <p className="text-sm" style={{ color: "var(--risk-critical-fg)" }}>
+        <p className="text-sm" style={{ color: "var(--ua-risk-critical)" }}>
           {error}
         </p>
       ) : rows.length === 0 ? (
-        <p className="text-sm" style={{ color: "var(--text-tertiary)" }}>
+        <p className="text-sm" style={{ color: "var(--ua-text-tertiary)" }}>
           No audit events recorded yet.
         </p>
       ) : (
         <div
-          className="overflow-x-auto rounded-[var(--radius-md)] border bg-[var(--surface)]"
-          style={{ borderColor: "var(--border)", boxShadow: "var(--shadow-1)" }}
+          className="overflow-x-auto rounded-[var(--ua-radius-surface)] border bg-[var(--ua-surface-primary)]"
+          style={{ borderColor: "var(--ua-border-default)" }}
         >
           <table className="w-full text-sm">
             <thead>
               <tr
                 style={{
-                  background: "var(--surface)",
-                  color: "var(--text-tertiary)",
-                  borderBottom: "1px solid var(--border)",
+                  background: "var(--ua-surface-primary)",
+                  color: "var(--ua-text-tertiary)",
+                  borderBottom: "1px solid var(--ua-border-default)",
                 }}
               >
                 <th
@@ -244,7 +244,7 @@ export default function AuditTrailClient({
                   <Fragment key={rowKey}>
                     <tr
                       className="border-t"
-                      style={{ borderColor: "var(--border-muted)" }}
+                      style={{ borderColor: "var(--ua-border-subtle)" }}
                     >
                       <td className="px-2 py-3">
                         {details.length > 0 ? (
@@ -253,8 +253,8 @@ export default function AuditTrailClient({
                             onClick={() =>
                               setExpandedId(isExpanded ? null : rowKey)
                             }
-                            className="inline-flex h-7 w-7 items-center justify-center rounded-md hover:bg-[var(--surface)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
-                            style={{ outlineColor: "var(--accent)" }}
+                            className="inline-flex h-7 w-7 items-center justify-center rounded-md hover:bg-[var(--ua-surface-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
+                            style={{ outlineColor: "var(--ua-action-primary)" }}
                             aria-expanded={isExpanded}
                             aria-label={
                               isExpanded ? "Hide metadata" : "Show metadata"
@@ -270,25 +270,25 @@ export default function AuditTrailClient({
                       </td>
                       <td
                         className="px-4 py-3 text-xs whitespace-nowrap"
-                        style={{ color: "var(--text-tertiary)" }}
+                        style={{ color: "var(--ua-text-tertiary)" }}
                       >
                         {formatTimestamp(row.created_at)}
                       </td>
                       <td
                         className="px-4 py-3 font-semibold"
-                        style={{ color: "var(--text-primary)" }}
+                        style={{ color: "var(--ua-text-primary)" }}
                       >
                         {auditActionLabel(row.action, row.resource_type)}
                       </td>
                       <td
                         className="px-4 py-3 text-xs"
-                        style={{ color: "var(--text-secondary)" }}
+                        style={{ color: "var(--ua-text-secondary)" }}
                       >
                         {claimHref ? (
                           <Link
                             href={claimHref}
                             className="font-medium hover:underline"
-                            style={{ color: "var(--accent)" }}
+                            style={{ color: "var(--ua-action-primary)" }}
                             title={`Open claim ${row.resource_id?.slice(0, 8) ?? ""}`}
                           >
                             {auditResourceSummary(
@@ -305,13 +305,13 @@ export default function AuditTrailClient({
                       </td>
                       <td
                         className="px-4 py-3 text-xs"
-                        style={{ color: "var(--text-secondary)" }}
+                        style={{ color: "var(--ua-text-secondary)" }}
                       >
                         {actorLabel(row)}
                       </td>
                       <td
                         className="px-4 py-3 text-xs max-w-xs truncate"
-                        style={{ color: "var(--text-secondary)" }}
+                        style={{ color: "var(--ua-text-secondary)" }}
                         title={rowSummary(row)}
                       >
                         {rowSummary(row)}
@@ -321,8 +321,8 @@ export default function AuditTrailClient({
                       <tr
                         className="border-t"
                         style={{
-                          borderColor: "var(--border-muted)",
-                          background: "var(--surface)",
+                          borderColor: "var(--ua-border-subtle)",
+                          background: "var(--ua-surface-primary)",
                         }}
                       >
                         <td colSpan={6} className="px-4 py-3">
@@ -330,14 +330,14 @@ export default function AuditTrailClient({
                             {details.map(([key, value]) => (
                               <div key={key}>
                                 <dt
-                                  className="text-xs font-semibold uppercase tracking-wide"
-                                  style={{ color: "var(--text-tertiary)" }}
+                                  className="text-[length:var(--ua-text-micro-size)] font-semibold"
+                                  style={{ color: "var(--ua-text-tertiary)" }}
                                 >
                                   {key.replace(/_/g, " ")}
                                 </dt>
                                 <dd
                                   className="mt-0.5 font-mono text-xs break-all"
-                                  style={{ color: "var(--text-secondary)" }}
+                                  style={{ color: "var(--ua-text-secondary)" }}
                                 >
                                   {typeof value === "object"
                                     ? JSON.stringify(value)

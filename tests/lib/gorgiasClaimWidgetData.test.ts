@@ -575,13 +575,14 @@ describe('buildGorgiasSidebarWidgetTemplate', () => {
   it('uses context-unlock card title and row labels without legacy risk wording', () => {
     const template = buildGorgiasSidebarWidgetTemplate('https://app.unauth.test');
     const json = JSON.stringify(template);
-    expect(template.widgets[0].title).toBe('Unauth payout decision');
+    expect(template.widgets[0].title).toBe('Unauth case');
     const rowTitles = template.widgets[0].widgets.map((w: { title: string }) => w.title);
     expect(rowTitles).toEqual([
-      'Case',
-      'Evidence',
-      'Rule',
+      'Customer action',
+      'Responsibility',
       'Recovery',
+      'Why',
+      'Missing evidence',
     ]);
     expect(json).not.toContain('Claims on record');
     expect(json).not.toContain('Identity Intelligence');
@@ -589,7 +590,7 @@ describe('buildGorgiasSidebarWidgetTemplate', () => {
       url: '{{basic_unlock_url}}',
       label: '{{basic_unlock_label}}',
     });
-    expect(template.widgets[0].meta.custom.links[3]).toEqual({
+    expect(template.widgets[0].meta.custom.links).toContainEqual({
       url: '{{cta_url}}',
       label: '{{cta_label}}',
     });

@@ -24,8 +24,8 @@ export function WorkbenchNav({ items, activeKey }: WorkbenchNavProps) {
             href={item.href}
             className="border-b-2 pb-3 text-body-sm transition-colors"
             style={{
-              borderBottomColor: active ? 'var(--text-primary)' : 'transparent',
-              color: active ? 'var(--text-primary)' : 'var(--text-secondary)',
+              borderBottomColor: active ? 'var(--ua-text-primary)' : 'transparent',
+              color: active ? 'var(--ua-text-primary)' : 'var(--ua-text-secondary)',
               fontWeight: active ? 600 : 500,
               letterSpacing: active ? '0' : undefined,
               whiteSpace: 'nowrap',

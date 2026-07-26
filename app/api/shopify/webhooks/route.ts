@@ -3,7 +3,7 @@ import { createServiceClient } from '@/lib/supabase/server';
 import { verifyShopifyWebhookHmac } from '@/lib/shopify/webhooks';
 import { enforceRateLimit, getClientIp, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
 import { claimProcessedWebhook, completeProcessedWebhook } from '@/lib/commerce/processedWebhookHandler';
-import { processShopifyWebhook } from '@/lib/shopify/ingest';
+import { processWebhook } from '@/lib/shopify/processWebhook';
 import { readBoundedWebhookBody, WebhookBodyError } from '@/lib/webhooks/body';
 
 function safeWebhookErrorCode(error: unknown): string {
@@ -24,15 +24,6 @@ function shopifyObjectVersion(
     return null;
   }
   return { objectKey: `order:${String(id)}`, eventVersion };
-}
-
-export async function processWebhook(
-  rawBody: string,
-  shopDomain: string,
-  topic: string,
-  supabaseClient?: ReturnType<typeof createServiceClient>,
-) {
-  return processShopifyWebhook({ rawBody, shopDomain, topic, supabaseClient });
 }
 
 export async function POST(request: NextRequest) {

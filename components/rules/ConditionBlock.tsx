@@ -77,8 +77,8 @@ export function ConditionBlock({ condition, onChange, onRemove, disabled }: Cond
 
   return (
     <div
-      className="flex flex-col gap-2 rounded-[var(--radius-md)] p-3"
-      style={{ background: 'var(--surface-sunken)', border: '1px solid var(--border-muted)' }}
+      className="flex flex-col gap-2 rounded-[var(--ua-radius-control)] p-3"
+      style={{ background: 'var(--ua-surface-muted)', border: '1px solid var(--ua-border-subtle)' }}
     >
       <div className="flex items-start gap-2">
         <div className="grid flex-1 grid-cols-2 gap-2">
@@ -134,7 +134,7 @@ export function ConditionBlock({ condition, onChange, onRemove, disabled }: Cond
           onClick={onRemove}
           disabled={disabled}
           aria-label="Remove condition"
-          className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--radius-sm)] text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-hover)] hover:text-[var(--risk-high)]"
+          className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--ua-radius-control)] text-[var(--ua-text-tertiary)] transition-colors hover:bg-[var(--ua-surface-hover)] hover:text-[var(--ua-risk-high)]"
         >
           <Trash2 className="h-4 w-4" />
         </button>
@@ -162,9 +162,9 @@ export function ConditionBlock({ condition, onChange, onRemove, disabled }: Cond
                 onClick={() => toggleMulti(opt.value)}
                 className="rounded-full px-2.5 py-1 text-caption font-medium transition-colors"
                 style={{
-                  background: active ? 'var(--accent)' : 'var(--surface)',
-                  color: active ? 'var(--accent-contrast, #fff)' : 'var(--text-secondary)',
-                  border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
+                  background: active ? 'var(--ua-action-primary)' : 'var(--ua-surface-primary)',
+                  color: active ? 'var(--ua-action-primary-fg)' : 'var(--ua-text-secondary)',
+                  border: `1px solid ${active ? 'var(--ua-action-primary)' : 'var(--ua-border-default)'}`,
                 }}
               >
                 {opt.label}

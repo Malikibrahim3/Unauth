@@ -48,15 +48,15 @@ export default async function ReportsPage({
   return (
     <WorkbenchPage
       title="Reports"
-      subtitle="Reconciled payout, loss, and recovery performance."
+      subtitle="Customer concessions, economic loss, and recovery reconciliation."
       actionBarLeft={
         <div className="flex min-w-max items-center gap-1.5" aria-label="Report scope">
-          <span className="mr-1 text-[10px] font-medium text-[var(--text-tertiary)]">Date range</span>
+          <span className="mr-1 text-[length:var(--ua-text-micro-size)] font-medium text-[var(--ua-text-tertiary)]">Date range</span>
           {REPORT_RANGES.map((r) => (
             <Link
               key={r}
               aria-current={r === range ? "page" : undefined}
-              href={`/reports?range=${r}&timezone=${encodeURIComponent(timezone)}`}
+              href={`/reports?range=${r}&timezone=${encodeURIComponent(report.timezone)}`}
               className={cn(
                 filterChipContract.base,
                 filterChipContract.hover,
@@ -68,7 +68,7 @@ export default async function ReportsPage({
           ))}
         </div>
       }
-      actionBarRight={<ExportMenu range={range} timezone={timezone} />}
+      actionBarRight={<ExportMenu range={range} timezone={report.timezone} />}
       main={
         <section className="p-3.5 md:p-4">
           <IntelligenceReportView report={report} />

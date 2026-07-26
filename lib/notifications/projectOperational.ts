@@ -14,6 +14,46 @@ type ProjectionSummary = {
   muted: number;
 };
 
+type OverdueTaskRow = {
+  id: string;
+  title: string;
+  status: string;
+  due_at: string;
+  owner_user_id: string | null;
+  support_payout_case_id: string | null;
+  recovery_case_id: string | null;
+  priority: string;
+};
+
+async function listAllOverdueTasks(
+  client: SupabaseClient,
+  merchantId: string,
+  now: string,
+): Promise<OverdueTaskRow[]> {
+  const pageSize = 250;
+  const rows: OverdueTaskRow[] = [];
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await client
+      .from(TABLES.WORK_TASKS)
+      .select(
+        'id,title,status,due_at,owner_user_id,support_payout_case_id,recovery_case_id,priority',
+      )
+      .eq('merchant_id', merchantId)
+      .in('status', ['open', 'in_progress', 'blocked'])
+      .not('due_at', 'is', null)
+      .lte('due_at', now)
+      .order('due_at', { ascending: true })
+      .order('id', { ascending: true })
+      .range(offset, offset + pageSize - 1);
+    if (error) {
+      throw new Error(`operational_notification_task_scan_failed: ${error.message}`);
+    }
+    const page = (data ?? []) as OverdueTaskRow[];
+    rows.push(...page);
+    if (page.length < pageSize) return rows;
+  }
+}
+
 async function requestNotification(
   client: SupabaseClient,
   merchantId: string,
@@ -58,19 +98,9 @@ export async function projectOperationalNotifications(
   if (!fallbackRecipient) return { requested: 0, projected: 0, muted: 0 };
 
   const now = new Date().toISOString();
-  const [tasksResult, claimsResult, recoveriesResult, integrationsResult] =
+  const [overdueTasks, claimsResult, recoveriesResult, integrationsResult] =
     await Promise.all([
-      client
-        .from(TABLES.WORK_TASKS)
-        .select(
-          "id,title,status,due_at,owner_user_id,support_payout_case_id,recovery_case_id,priority",
-        )
-        .eq("merchant_id", merchantId)
-        .in("status", ["open", "in_progress", "blocked"])
-        .not("due_at", "is", null)
-        .lte("due_at", now)
-        .order("due_at", { ascending: true })
-        .limit(3),
+      listAllOverdueTasks(client, merchantId, now),
       client
         .from(TABLES.MERCHANT_CLAIMS)
         .select("id,status,amount_at_risk,currency,updated_at")
@@ -107,7 +137,6 @@ export async function projectOperationalNotifications(
         .limit(3),
     ]);
   for (const result of [
-    tasksResult,
     claimsResult,
     recoveriesResult,
     integrationsResult,
@@ -119,7 +148,7 @@ export async function projectOperationalNotifications(
   }
 
   const jobs: Array<Promise<{ applied: boolean; detail: string }>> = [];
-  for (const task of tasksResult.data ?? []) {
+  for (const task of overdueTasks) {
     const recipient = task.owner_user_id ?? fallbackRecipient;
     const target = task.support_payout_case_id
       ? `/claims/${task.support_payout_case_id}`

@@ -21,6 +21,9 @@ export type Partner = {
   contact_email: string | null;
   contact_url: string | null;
   notes: string | null;
+  default_contact_channel?: 'email' | 'portal' | 'manual' | 'api' | null;
+  response_sla_hours?: number | null;
+  contact_instructions?: string | null;
   status: PartnerStatus;
   created_at: string;
   updated_at: string;

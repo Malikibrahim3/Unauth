@@ -168,10 +168,10 @@ export function FlowEditor({
 
   return (
     <form onSubmit={submit} className="space-y-5">
-      <Card unstyled variant="flat" className="p-4">
+      <Card unstyled variant="panel" className="p-4">
         <h2 className="text-sm font-semibold">Flow identity and trigger</h2>
         <div className="mt-3 grid gap-4 sm:grid-cols-2">
-          <label className="text-xs font-semibold text-[var(--text-secondary)]">
+          <label className="text-xs font-semibold text-[var(--ua-text-secondary)]">
             Flow name
             <Input
               className="mt-1"
@@ -181,10 +181,10 @@ export function FlowEditor({
               placeholder="e.g. Chase carrier evidence"
             />
           </label>
-          <label className="text-xs font-semibold text-[var(--text-secondary)]">
+          <label className="text-xs font-semibold text-[var(--ua-text-secondary)]">
             Trigger
             <select
-              className="mt-1 w-full rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)]"
+              className="mt-1 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-3 py-2 text-sm text-[var(--ua-text-primary)]"
               value={trigger}
               onChange={(event) => setTrigger(event.target.value)}
             >
@@ -196,10 +196,10 @@ export function FlowEditor({
             </select>
           </label>
         </div>
-        <label className="mt-4 block text-xs font-semibold text-[var(--text-secondary)]">
+        <label className="mt-4 block text-xs font-semibold text-[var(--ua-text-secondary)]">
           Description (shown to your team)
           <textarea
-            className="mt-1 min-h-20 w-full rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)]"
+            className="mt-1 min-h-20 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-3 py-2 text-sm text-[var(--ua-text-primary)]"
             value={description}
             onChange={(event) => setDescription(event.target.value)}
             placeholder="What work does this route, and why?"
@@ -207,11 +207,11 @@ export function FlowEditor({
         </label>
       </Card>
 
-      <Card unstyled variant="flat" className="p-4">
+      <Card unstyled variant="panel" className="p-4">
         <div className="flex items-center justify-between gap-3">
           <div>
             <h2 className="text-sm font-semibold">Conditions</h2>
-            <p className="mt-1 text-xs text-[var(--text-tertiary)]">
+            <p className="mt-1 text-xs text-[var(--ua-text-tertiary)]">
               All conditions must match. Use source event fields such as
               case.status or shipment.carrier.
             </p>
@@ -241,7 +241,7 @@ export function FlowEditor({
             {conditions.map((condition, index) => (
               <div
                 key={condition._editorKey}
-                className="grid gap-2 rounded-md border border-[var(--border-muted)] bg-[var(--surface-sunken)] p-3 sm:grid-cols-[minmax(0,1fr)_9rem_minmax(0,1fr)_auto]"
+                className="grid gap-2 rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-3 sm:grid-cols-[minmax(0,1fr)_9rem_minmax(0,1fr)_auto]"
               >
                 <Input
                   aria-label={`Condition ${index + 1} field`}
@@ -259,7 +259,7 @@ export function FlowEditor({
                 />
                 <select
                   aria-label={`Condition ${index + 1} operator`}
-                  className="rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm"
+                  className="rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-3 py-2 text-sm"
                   value={condition.operator}
                   onChange={(event) =>
                     setConditions((current) =>
@@ -313,7 +313,7 @@ export function FlowEditor({
                     }
                   />
                 ) : (
-                  <span className="self-center text-xs text-[var(--text-tertiary)]">
+                  <span className="self-center text-xs text-[var(--ua-text-tertiary)]">
                     No comparison value
                   </span>
                 )}
@@ -334,18 +334,18 @@ export function FlowEditor({
             ))}
           </div>
         ) : (
-          <p className="mt-3 rounded-md border border-[var(--warning)] bg-[var(--warning-bg)] p-3 text-xs text-[var(--warning)]">
+          <p className="mt-3 rounded-md border border-[var(--ua-warning)] bg-[var(--ua-warning-bg)] p-3 text-xs text-[var(--ua-warning)]">
             No conditions: every event with this trigger will run the actions
             below.
           </p>
         )}
       </Card>
 
-      <Card unstyled variant="flat" className="p-4">
+      <Card unstyled variant="panel" className="p-4">
         <div className="flex items-center justify-between gap-3">
           <div>
             <h2 className="text-sm font-semibold">Bounded actions</h2>
-            <p className="mt-1 text-xs text-[var(--text-tertiary)]">
+            <p className="mt-1 text-xs text-[var(--ua-text-tertiary)]">
               Flows can route work, request evidence, set deadlines, or request
               a notification. They cannot make or execute payout decisions.
             </p>
@@ -375,24 +375,24 @@ export function FlowEditor({
         </div>
       </Card>
 
-      <Card unstyled variant="inset" className="p-4">
-        <p className="text-xs font-semibold text-[var(--text-secondary)]">
+      <Card unstyled variant="muted" className="p-4">
+        <p className="text-xs font-semibold text-[var(--ua-text-secondary)]">
           Readable summary
         </p>
         <ol className="mt-2 grid gap-2 text-sm sm:grid-cols-3">
           {summary.map((item, index) => (
             <li
               key={item}
-              className="rounded-md border border-[var(--border-muted)] bg-[var(--surface)] px-3 py-2"
+              className="rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-primary)] px-3 py-2"
             >
-              <span className="mr-2 font-mono text-xs text-[var(--text-tertiary)]">
+              <span className="mr-2 font-mono text-xs text-[var(--ua-text-tertiary)]">
                 {index + 1}
               </span>
               {item}
             </li>
           ))}
         </ol>
-        <ul className="mt-2 space-y-1 text-xs text-[var(--text-secondary)]">
+        <ul className="mt-2 space-y-1 text-xs text-[var(--ua-text-secondary)]">
           {outputs.map((output, index) => (
             <li key={output._editorKey}>
               Action {index + 1}: {outputLabel(output)}
@@ -401,7 +401,7 @@ export function FlowEditor({
         </ul>
       </Card>
       {error ? (
-        <p role="alert" className="text-sm text-[var(--danger)]">
+        <p role="alert" className="text-sm text-[var(--ua-critical)]">
           {error}
         </p>
       ) : null}
@@ -456,12 +456,12 @@ function ActionEditor({
       });
   }
   return (
-    <div className="rounded-md border border-[var(--border-muted)] bg-[var(--surface-sunken)] p-3">
+    <div className="rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-3">
       <div className="flex items-center justify-between gap-3">
-        <label className="text-xs font-semibold text-[var(--text-secondary)]">
+        <label className="text-xs font-semibold text-[var(--ua-text-secondary)]">
           Action {index + 1}
           <select
-            className="ml-2 rounded-md border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-sm text-[var(--text-primary)]"
+            className="ml-2 rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2 py-1.5 text-sm text-[var(--ua-text-primary)]"
             value={output.type}
             onChange={(event) =>
               changeType(event.target.value as FlowOutputDraft["type"])
@@ -495,7 +495,7 @@ function ActionEditor({
           />
           <select
             aria-label={`Action ${index + 1} priority`}
-            className="rounded-md border border-[var(--border)] bg-[var(--surface)] px-2 text-sm"
+            className="rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2 text-sm"
             value={output.priority}
             onChange={(event) =>
               update({
@@ -509,7 +509,7 @@ function ActionEditor({
             <option value="high">High</option>
             <option value="urgent">Urgent</option>
           </select>
-          <label className="text-xs font-medium text-[var(--text-secondary)]">
+          <label className="text-xs font-medium text-[var(--ua-text-secondary)]">
             Due in (hours)
             <Input
               className="mt-1"
@@ -549,7 +549,7 @@ function ActionEditor({
           />
         </div>
       ) : output.type === "set_deadline" ? (
-        <label className="mt-3 block max-w-xs text-xs font-medium text-[var(--text-secondary)]">
+        <label className="mt-3 block max-w-xs text-xs font-medium text-[var(--ua-text-secondary)]">
           Deadline (hours)
           <Input
             className="mt-1"
@@ -575,7 +575,7 @@ function ActionEditor({
           />
           <select
             aria-label={`Action ${index + 1} notification kind`}
-            className="rounded-md border border-[var(--border)] bg-[var(--surface)] px-2 text-sm"
+            className="rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2 text-sm"
             value={output.kind}
             onChange={(event) =>
               update({

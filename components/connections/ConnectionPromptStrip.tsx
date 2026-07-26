@@ -36,24 +36,24 @@ export function ConnectionPromptStrip({ connection, hasExistingProfiles }: Conne
     <div
       className="flex items-center justify-between gap-4 px-4 py-2.5 border-b text-sm"
       style={{
-        background: 'color-mix(in srgb, var(--warning, #b45309) 8%, var(--surface))',
-        borderColor: 'color-mix(in srgb, var(--warning, #b45309) 20%, transparent)',
-        color: 'var(--text-secondary)',
-        fontFamily: 'DM Sans, system-ui, sans-serif',
+        background: 'color-mix(in srgb, var(--ua-warning) 8%, var(--ua-surface-primary))',
+        borderColor: 'color-mix(in srgb, var(--ua-warning) 20%, transparent)',
+        color: 'var(--ua-text-secondary)',
+        fontFamily: 'var(--ua-font-sans)',
       }}
     >
       <div className="flex items-center gap-2 min-w-0">
         <span
           className="h-1.5 w-1.5 rounded-full shrink-0"
-          style={{ background: 'var(--warning, #b45309)' }}
+          style={{ background: 'var(--ua-warning)' }}
           aria-hidden="true"
         />
-        <span className="leading-snug" style={{ color: 'var(--text-primary)' }}>{message}</span>
+        <span className="leading-snug" style={{ color: 'var(--ua-text-primary)' }}>{message}</span>
       </div>
       <Link
         href="/integrations"
         className="shrink-0 text-sm font-semibold whitespace-nowrap hover:opacity-80 transition-opacity"
-        style={{ color: 'var(--accent)' }}
+        style={{ color: 'var(--ua-action-primary)' }}
       >
         Complete setup
       </Link>

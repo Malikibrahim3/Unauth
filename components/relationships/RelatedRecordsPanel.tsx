@@ -41,24 +41,24 @@ function freshnessLabel(freshness: string | null): string {
 export function RelatedRecordsPanel({ records }: { records: RelatedRecord[] }) {
   if (records.length === 0) {
     return (
-      <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 text-[13px] text-[var(--text-secondary)]">
+      <div className="rounded-lg border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] p-4 text-[length:var(--ua-text-small-size)] text-[var(--ua-text-secondary)]">
         No related records yet.
       </div>
     );
   }
 
   return (
-    <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)]">
-      <ul className="divide-y divide-[var(--border-muted)]">
+    <div className="rounded-lg border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)]">
+      <ul className="divide-y divide-[var(--ua-border-subtle)]">
         {records.map((r) => {
           const label = ENTITY_LABELS[r.entityType] ?? r.entityType;
           const inner = (
             <div className="flex items-center gap-3 px-4 py-3">
               <div className="min-w-0">
-                <p className="truncate text-[13px] font-semibold text-[var(--text-primary)]">
+                <p className="truncate text-[length:var(--ua-text-small-size)] font-semibold text-[var(--ua-text-primary)]">
                   {label}
                 </p>
-                <p className="mt-0.5 text-[11px] text-[var(--text-tertiary)]">
+                <p className="mt-0.5 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">
                   {r.sourceSystem ?? "unknown source"} ·{" "}
                   {freshnessLabel(r.freshness)}
                   {r.matchMethod ? ` · ${r.matchMethod}` : ""}
@@ -77,7 +77,7 @@ export function RelatedRecordsPanel({ records }: { records: RelatedRecord[] }) {
                   href={r.sourceUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="block hover:bg-[var(--surface-hover)]"
+                  className="block hover:bg-[var(--ua-surface-hover)]"
                 >
                   {inner}
                 </a>

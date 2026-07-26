@@ -59,28 +59,28 @@ export function CommandPaletteResultsList({
         <button
           type="button"
           className={cn('flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors')}
-          style={{ background: state.activeIdx === searchRowIdx ? 'var(--bg-subtle)' : 'transparent' }}
+          style={{ background: state.activeIdx === searchRowIdx ? 'var(--ua-surface-secondary)' : 'transparent' }}
           onClick={onSearchSubmit}
           onMouseEnter={() => dispatch({ type: 'setActiveIdx', activeIdx: searchRowIdx })}
         >
           <span
             className="flex h-7 w-7 items-center justify-center rounded-md shrink-0"
-            style={{ background: 'var(--bg-subtle)', color: 'var(--icon-muted)' }}
+            style={{ background: 'var(--ua-surface-secondary)', color: 'var(--ua-icon-secondary)' }}
           >
             <Search size={14} aria-hidden="true" />
           </span>
           <div className="min-w-0">
-            <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>
+            <p className="text-sm font-medium" style={{ color: 'var(--ua-text-primary)' }}>
               Search customers for &ldquo;{state.query}&rdquo;
             </p>
-            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Browse all matching profiles</p>
+            <p className="text-xs" style={{ color: 'var(--ua-text-secondary)' }}>Browse all matching profiles</p>
           </div>
         </button>
       ) : null}
 
       {state.customerResults.length > 0 ? (
         <>
-          <p className="px-4 pt-2 pb-1 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
+          <p className="px-4 pt-2 pb-1 text-[length:var(--ua-text-micro-size)] font-semibold" style={{ color: 'var(--ua-text-tertiary)' }}>
             Customers
           </p>
           {state.customerResults.map((c, i) => (
@@ -88,19 +88,19 @@ export function CommandPaletteResultsList({
               key={c.id}
               type="button"
               className="flex w-full items-center gap-3 px-4 py-2 text-left transition-colors"
-              style={{ background: state.activeIdx === customerStartIdx + i ? 'var(--bg-subtle)' : 'transparent' }}
+              style={{ background: state.activeIdx === customerStartIdx + i ? 'var(--ua-surface-secondary)' : 'transparent' }}
               onMouseEnter={() => dispatch({ type: 'setActiveIdx', activeIdx: customerStartIdx + i })}
               onClick={() => onCustomerSelect(c)}
             >
               <span
                 className="flex h-7 w-7 items-center justify-center rounded-full shrink-0 text-xs font-bold"
-                style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}
+                style={{ background: 'var(--ua-surface-secondary)', color: 'var(--ua-text-secondary)' }}
               >
                 {(c.name?.[0] ?? '?').toUpperCase()}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>{c.name}</p>
-                {c.email ? <p className="text-xs truncate" style={{ color: 'var(--text-secondary)' }}>{c.email}</p> : null}
+                <p className="text-sm font-medium truncate" style={{ color: 'var(--ua-text-primary)' }}>{c.name}</p>
+                {c.email ? <p className="text-xs truncate" style={{ color: 'var(--ua-text-secondary)' }}>{c.email}</p> : null}
               </div>
             </button>
           ))}
@@ -118,7 +118,7 @@ export function CommandPaletteResultsList({
             const Icon = type === 'order' ? Hash : FileText;
             return (
               <div key={type}>
-                <p className="px-4 pt-2 pb-1 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
+                <p className="px-4 pt-2 pb-1 text-[length:var(--ua-text-micro-size)] font-semibold" style={{ color: 'var(--ua-text-tertiary)' }}>
                   {label}
                 </p>
                 {group.map((item, i) => (
@@ -126,7 +126,7 @@ export function CommandPaletteResultsList({
                     key={item.id}
                     type="button"
                     className="flex w-full items-center gap-3 px-4 py-2 text-left transition-colors"
-                    style={{ background: state.activeIdx === baseIdx + i ? 'var(--bg-subtle)' : 'transparent' }}
+                    style={{ background: state.activeIdx === baseIdx + i ? 'var(--ua-surface-secondary)' : 'transparent' }}
                     onMouseEnter={() => dispatch({ type: 'setActiveIdx', activeIdx: baseIdx + i })}
                     onClick={() => {
                       onClose();
@@ -135,13 +135,13 @@ export function CommandPaletteResultsList({
                   >
                     <span
                       className="flex h-7 w-7 items-center justify-center rounded-md shrink-0 text-xs"
-                      style={{ background: 'var(--bg-subtle)', color: 'var(--icon-muted)' }}
+                      style={{ background: 'var(--ua-surface-secondary)', color: 'var(--ua-icon-secondary)' }}
                     >
                       <Icon size={13} aria-hidden="true" />
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>{item.label}</p>
-                      {item.sublabel ? <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{item.sublabel}</p> : null}
+                      <p className="text-sm font-medium truncate" style={{ color: 'var(--ua-text-primary)' }}>{item.label}</p>
+                      {item.sublabel ? <p className="text-xs" style={{ color: 'var(--ua-text-secondary)' }}>{item.sublabel}</p> : null}
                     </div>
                   </button>
                 ))}
@@ -152,13 +152,13 @@ export function CommandPaletteResultsList({
       ) : null}
 
       {state.searchError ? (
-        <p role="alert" className="px-4 py-2 text-xs" style={{ color: 'var(--danger)' }}>{state.searchError}</p>
+        <p role="alert" className="px-4 py-2 text-xs" style={{ color: 'var(--ua-critical)' }}>{state.searchError}</p>
       ) : null}
 
       {filteredNav.length > 0 || !state.query.trim() ? (
         <>
           {state.customerResults.length > 0 || state.query.trim() ? (
-            <p className="px-4 pt-2 pb-1 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
+            <p className="px-4 pt-2 pb-1 text-[length:var(--ua-text-micro-size)] font-semibold" style={{ color: 'var(--ua-text-tertiary)' }}>
               Navigate
             </p>
           ) : null}
@@ -167,19 +167,19 @@ export function CommandPaletteResultsList({
               key={`${item.href}:${item.label}`}
               type="button"
               className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors"
-              style={{ background: state.activeIdx === navStartIdx + i ? 'var(--bg-subtle)' : 'transparent' }}
+              style={{ background: state.activeIdx === navStartIdx + i ? 'var(--ua-surface-secondary)' : 'transparent' }}
               onMouseEnter={() => dispatch({ type: 'setActiveIdx', activeIdx: navStartIdx + i })}
               onClick={() => onNavSelect(item)}
             >
               <span
                 className="flex h-7 w-7 items-center justify-center rounded-md shrink-0"
-                style={{ background: 'var(--bg-subtle)', color: 'var(--icon-muted)' }}
+                style={{ background: 'var(--ua-surface-secondary)', color: 'var(--ua-icon-secondary)' }}
               >
                 {item.icon}
               </span>
               <div className="min-w-0">
-                <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>{item.label}</p>
-                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{item.description}</p>
+                <p className="text-sm font-medium" style={{ color: 'var(--ua-text-primary)' }}>{item.label}</p>
+                <p className="text-xs" style={{ color: 'var(--ua-text-secondary)' }}>{item.description}</p>
               </div>
             </button>
           ))}
@@ -187,7 +187,7 @@ export function CommandPaletteResultsList({
       ) : null}
 
       {filteredNav.length === 0 && state.customerResults.length === 0 && state.query.trim() && !state.searchingCustomers ? (
-        <p className="px-4 py-6 text-center text-sm" style={{ color: 'var(--text-secondary)' }}>
+        <p className="px-4 py-6 text-center text-sm" style={{ color: 'var(--ua-text-secondary)' }}>
           No results for &ldquo;{state.query}&rdquo;
         </p>
       ) : null}

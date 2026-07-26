@@ -59,7 +59,7 @@ describe('renderGorgiasWidgetHtml', () => {
       link: { widgetToken: 'wt', email: 'a@b.com', ticketRef: null, orderRef: null },
     });
 
-    expect(html).toContain('Unauth payout decision');
+    expect(html).toContain('Unauth case');
     expect(html).toContain('Open case');
     expect(html).toContain('9 orders at your store');
     expect(html).not.toContain('DEFINITE');

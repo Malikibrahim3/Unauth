@@ -45,12 +45,12 @@ export function SyncStatusDisconnectedView({
   if (variant === 'inline') {
     return (
       <>
-        <div className="pt-3 mt-3 border-t space-y-3" style={{ borderColor: 'var(--border)' }}>
+        <div className="pt-3 mt-3 border-t space-y-3" style={{ borderColor: 'var(--ua-border-default)' }}>
           <button
             type="button"
             onClick={onOpenModal}
             className="inline-flex items-center rounded-md px-3 py-1.5 text-xs font-semibold"
-            style={{ background: 'var(--accent)', color: 'white' }}
+            style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)' }}
             data-testid="open-connect-shopify-modal"
           >
             {actionLabel}
@@ -67,7 +67,7 @@ export function SyncStatusDisconnectedView({
     <>
       <div
         className="rounded-md p-5 border space-y-4"
-        style={{ borderColor: 'var(--border-muted)', background: 'var(--surface)' }}
+        style={{ borderColor: 'var(--ua-border-subtle)', background: 'var(--ua-surface-primary)' }}
       >
         <div className="flex items-start gap-3">
           <div
@@ -75,22 +75,22 @@ export function SyncStatusDisconnectedView({
             style={{
               background:
                 linkState === 'installed_unlinked'
-                  ? 'var(--sev-possible)'
-                  : 'var(--text-secondary)',
+                  ? 'var(--ua-severity-possible)'
+                  : 'var(--ua-text-secondary)',
             }}
           />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+            <p className="text-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>
               {title}
             </p>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--ua-text-secondary)' }}>
               {description}
             </p>
             <button
               type="button"
               onClick={onOpenModal}
               className="inline-flex items-center mt-3 rounded-md px-3 py-1.5 text-xs font-semibold"
-              style={{ background: 'var(--accent)', color: 'white' }}
+            style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)' }}
               data-testid="open-connect-shopify-modal"
             >
               {actionLabel}

@@ -1,7 +1,7 @@
 'use client';
 
-import Link from 'next/link';
 import { Plug } from 'lucide-react';
+import { ButtonLink } from '@/components/ui/ButtonLink';
 import type { ConnectionState } from '@/lib/connections/getConnectionState';
 import { type MerchantSetupState, shouldFullGate } from '@/lib/connections/setupState';
 import { ConnectionPromptStrip } from './ConnectionPromptStrip';
@@ -48,54 +48,53 @@ function GatePanel({ missing, pageName, pageDescription }: {
   pageDescription?: string;
 }) {
   const isDangerous = missing === 'helpdesk';
+  const helpdeskName = 'support platform';
+  const commerceName = 'commerce platform';
 
   const headline = isDangerous
-    ? `Shopify is connected — connect Gorgias to activate ${pageName}`
-    : `Connect Shopify + Gorgias to use ${pageName}`;
+    ? `Your ${commerceName} is connected — connect your ${helpdeskName} to activate ${pageName}`
+    : `Connect your ${commerceName} and ${helpdeskName} to use ${pageName}`;
 
   const body = pageDescription ?? (
     isDangerous
-    ? `Connect Gorgias so your agents see claim context — order history, prior claims, and trust indicators — inside every support ticket.`
-      : `${pageName} requires Shopify for order data and Gorgias for support payout context. Both are required to activate evidence-backed payout control.`
+    ? `Connect your ${helpdeskName} so agents see order history, prior cases, and evidence context inside each support workflow.`
+      : `${pageName} needs a commerce source for order data and a support source for case context. Both activate evidence-backed payout decisions.`
   );
 
   return (
     <div className="mx-auto w-full max-w-[1500px] px-3 pb-6 pt-4 sm:px-5">
       <div
-        className="w-full space-y-3 rounded-[var(--ua-radius-card)] border p-4"
+        className="w-full space-y-3 rounded-[var(--ua-radius-surface)] border p-4"
         style={{
-          background: 'var(--surface)',
-          borderColor: 'var(--border)',
+          background: 'var(--ua-surface-primary)',
+          borderColor: 'var(--ua-border-default)',
         }}
       >
         <div
-          className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--ua-radius-input)]"
-          style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+          className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--ua-radius-control)]"
+          style={{ background: 'var(--ua-surface-primary)', border: '1px solid var(--ua-border-default)' }}
         >
-          <Plug className="h-4 w-4" style={{ color: 'var(--text-secondary)' }} />
+          <Plug className="h-4 w-4" style={{ color: 'var(--ua-text-secondary)' }} />
         </div>
 
         <div className="space-y-2">
           <h2
             className="text-base font-semibold leading-snug"
-            style={{ color: 'var(--text-primary)', fontFamily: 'DM Sans, system-ui, sans-serif' }}
+            style={{ color: 'var(--ua-text-primary)', fontFamily: 'var(--ua-font-sans)' }}
           >
             {headline}
           </h2>
           <p
-            className="max-w-2xl text-[12px] leading-5"
-            style={{ color: 'var(--text-secondary)', fontFamily: 'DM Sans, system-ui, sans-serif' }}
+            className="max-w-2xl text-[length:var(--ua-text-caption-size)] leading-5"
+            style={{ color: 'var(--ua-text-secondary)', fontFamily: 'var(--ua-font-sans)' }}
           >
             {body}
           </p>
         </div>
 
-        <Link
-          href={isDangerous ? '/settings/integrations/gorgias' : '/settings/integrations'}
-          className="btn-accent inline-flex h-8 items-center gap-2 rounded-[var(--ua-radius-input)] px-3 text-[11px] font-semibold transition-opacity hover:opacity-90"
-        >
-          {isDangerous ? 'Connect Gorgias' : 'Set up Shopify + Gorgias'}
-        </Link>
+        <ButtonLink href={isDangerous ? '/integrations' : '/settings/integrations'} size="sm" className="shrink-0">
+          {isDangerous ? 'Connect support source' : 'Set up source connections'}
+        </ButtonLink>
       </div>
     </div>
   );

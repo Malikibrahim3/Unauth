@@ -29,9 +29,9 @@ export function SectionCard({
       id={id}
       className={cn("overflow-hidden", className)}
       style={{
-        background: "var(--surface)",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--ua-radius-card)",
+        background: "var(--ua-surface-primary)",
+        border: "1px solid var(--ua-border-default)",
+        borderRadius: "var(--ua-radius-surface)",
         boxShadow: "none",
         ...style,
       }}
@@ -40,18 +40,18 @@ export function SectionCard({
       <div
         className="ua-panel-header flex flex-wrap items-start justify-between gap-3 sm:items-center"
         style={{
-          borderBottom: "1px solid var(--border-muted)",
-          padding: "var(--space-3) var(--space-4)",
+          borderBottom: "1px solid var(--ua-border-subtle)",
+          padding: "var(--ua-space-3) var(--ua-space-4)",
         }}
       >
         <div className="min-w-0 flex-1">
-          <div className="text-h3" style={{ color: "var(--text-primary)" }}>
+          <div className="text-h3" style={{ color: "var(--ua-text-primary)" }}>
             {title}
           </div>
           {description && (
             <p
               className="mt-1 text-small"
-              style={{ color: "var(--text-secondary)" }}
+              style={{ color: "var(--ua-text-secondary)" }}
             >
               {description}
             </p>
@@ -65,7 +65,7 @@ export function SectionCard({
       </div>
 
       {/* Body */}
-      <div className={cn(bodyPadding, "bg-[var(--surface)]")}>{children}</div>
+      <div className={cn(bodyPadding, "bg-[var(--ua-surface-primary)]")}>{children}</div>
     </section>
   );
 }

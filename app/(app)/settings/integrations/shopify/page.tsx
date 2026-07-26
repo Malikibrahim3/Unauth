@@ -21,14 +21,8 @@ export default async function ShopifyIntegrationPage() {
 
   return (
     <SettingsPageShell
-      eyebrow="Integrations"
       title="Shopify"
       subtitle="Sync orders, customers, refunds, and fulfillment events in real time."
-      breadcrumbs={[
-        { label: 'Settings', href: '/settings/account' },
-        { label: 'Integrations', href: '/integrations' },
-        { label: 'Shopify' },
-      ]}
     >
       <div className="space-y-3">
         <Suspense fallback={null}>

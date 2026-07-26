@@ -143,12 +143,12 @@ export function CustomerPreviewDrawer({
         customer ? (
           <div className="flex w-full gap-2 p-4">
             <Link
-              className="flex-1 rounded-md bg-[var(--accent)] px-3 py-2 text-center text-sm font-semibold text-[var(--accent-fg-on-500)]"
+              className="flex-1 rounded-md bg-[var(--ua-action-primary)] px-3 py-2 text-center text-sm font-semibold text-[var(--ua-action-primary-fg)]"
               href={`/customers/${customer.id}?return=${encodeURIComponent(returnUrl)}`}
             >
               Open full profile
             </Link>
-            {customer.openCases.length === 1 ? <Link className="rounded-md border border-[var(--border)] px-3 py-2 text-sm font-semibold" href={customer.openCases[0].href}>Open case</Link> : null}
+            {customer.openCases.length === 1 ? <Link className="rounded-md border border-[var(--ua-border-default)] px-3 py-2 text-sm font-semibold" href={customer.openCases[0].href}>Open case</Link> : null}
           </div>
         ) : undefined
       }
@@ -160,22 +160,22 @@ export function CustomerPreviewDrawer({
             className="space-y-3"
             aria-label="Loading customer preview"
           >
-            <div className="h-5 w-2/3 animate-pulse bg-[var(--bg-subtle)]" />
-            <div className="h-20 animate-pulse bg-[var(--bg-subtle)]" />
-            <div className="h-32 animate-pulse bg-[var(--bg-subtle)]" />
+            <div className="h-5 w-2/3 animate-pulse bg-[var(--ua-surface-secondary)]" />
+            <div className="h-20 animate-pulse bg-[var(--ua-surface-secondary)]" />
+            <div className="h-32 animate-pulse bg-[var(--ua-surface-secondary)]" />
           </div>
         ) : null}
 
         {state.error ? (
           <div role="alert">
             <p className="font-semibold">{state.error}</p>
-            <p className="mt-1 text-sm text-[var(--text-secondary)]">
+            <p className="mt-1 text-sm text-[var(--ua-text-secondary)]">
               The customer may have been merged, deleted, or you may no longer
               have access.
             </p>
             <button
               type="button"
-              className="mt-3 font-semibold text-[var(--accent)]"
+              className="mt-3 font-semibold text-[var(--ua-action-primary)]"
               onClick={() => setRetryKey((value) => value + 1)}
             >
               Retry preview
@@ -185,21 +185,21 @@ export function CustomerPreviewDrawer({
 
         {customer ? (
           <>
-            <div className="rounded-lg border border-[var(--border-muted)] bg-[var(--surface-sunken)] p-4">
+            <div className="rounded-lg border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-4">
               <div className="flex items-center gap-3">
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--surface)] text-sm font-semibold text-[var(--text-primary)] ring-1 ring-[var(--border)]">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--ua-surface-primary)] text-sm font-semibold text-[var(--ua-text-primary)] ring-1 ring-[var(--ua-border-default)]">
                   {customer.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'C'}
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{customer.email ?? "Contact unavailable"}</p>
-                  <p className="mt-1 flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
+                  <p className="mt-1 flex items-center gap-1.5 text-xs text-[var(--ua-text-secondary)]">
                     <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
                     Since {customer.firstSeen ? formatDateAbsolute(customer.firstSeen) : 'unavailable'}
                     {customer.lastOrderAt ? ` · Last order ${formatDate(customer.lastOrderAt)}` : ''}
                   </p>
                 </div>
               </div>
-              <div className="mt-3 flex flex-wrap gap-1.5 border-t border-[var(--border-muted)] pt-3">
+              <div className="mt-3 flex flex-wrap gap-1.5 border-t border-[var(--ua-border-subtle)] pt-3">
                 {customer.openCases.length
                   ? <Badge tone="warning" size="sm" dot>{customer.openCases.length} open case{customer.openCases.length === 1 ? '' : 's'}</Badge>
                   : <Badge tone="success" size="sm" dot>No open cases</Badge>}
@@ -213,25 +213,25 @@ export function CustomerPreviewDrawer({
                 ['Lifetime value', primaryTotal ? amount(primaryTotal.value, primaryTotal.currency) : '—'],
                 ['Avg order', primaryTotal ? amount(primaryTotal.value / Math.max(primaryTotal.orders, 1), primaryTotal.currency) : '—'],
                 ['Case rate', `${customer.stats.caseRate}%`],
-              ].map(([name, value]) => <div key={name} className="min-w-0 rounded-md border border-[var(--border-muted)] bg-[var(--surface)] p-3"><dt className="truncate text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">{name}</dt><dd className="mt-1 truncate text-lg font-semibold tabular-nums">{value}</dd></div>)}
+              ].map(([name, value]) => <div key={name} className="min-w-0 rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-primary)] p-3"><dt className="truncate text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">{name}</dt><dd className="mt-1 truncate text-lg font-semibold tabular-nums">{value}</dd></div>)}
             </dl>
 
             {customer.openExposureByCurrency.length ? (
-              <div className="flex items-center justify-between gap-3 rounded-md border border-[var(--warning-border,var(--border))] bg-[var(--warning-bg,var(--surface-sunken))] px-3 py-2 text-sm">
-                <span className="inline-flex items-center gap-1.5 text-[var(--warning)]"><TriangleAlert className="h-3.5 w-3.5" aria-hidden="true" /> Open case exposure</span>
+              <div className="flex items-center justify-between gap-3 rounded-md border border-[var(--ua-warning-border,var(--ua-border-default))] bg-[var(--ua-warning-bg,var(--ua-surface-muted))] px-3 py-2 text-sm">
+                <span className="inline-flex items-center gap-1.5 text-[var(--ua-warning)]"><TriangleAlert className="h-3.5 w-3.5" aria-hidden="true" /> Open case exposure</span>
                 <strong className="tabular-nums">{customer.openExposureByCurrency.map((item) => amount(item.value, item.currency)).join(' · ')}</strong>
               </div>
             ) : null}
 
             {customer.openCases.length ? (
-              <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
-                <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-[var(--text-secondary)]" aria-hidden="true" /><h3 className="font-semibold">Payout cases requiring attention</h3></div><Badge tone="warning" size="sm">Action needed</Badge></div>
-                <ul className="mt-2 divide-y divide-[var(--border-muted)]">
+              <section className="rounded-lg border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] p-4">
+                <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-[var(--ua-text-secondary)]" aria-hidden="true" /><h3 className="font-semibold">Payout cases requiring attention</h3></div><Badge tone="warning" size="sm">Action needed</Badge></div>
+                <ul className="mt-2 divide-y divide-[var(--ua-border-subtle)]">
                   {customer.openCases.map((item) => (
                     <li key={item.id}>
                       <Link
                         href={item.href}
-                        className="flex items-center justify-between gap-3 py-3 hover:text-[var(--accent)]"
+                        className="flex items-center justify-between gap-3 py-3 hover:text-[var(--ua-action-primary)]"
                       >
                         <span>
                           {item.reference}
@@ -245,10 +245,10 @@ export function CustomerPreviewDrawer({
               </section>
             ) : null}
 
-            <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
-              <div className="flex items-center gap-2"><ReceiptText className="h-4 w-4 text-[var(--text-secondary)]" aria-hidden="true" /><h3 className="font-semibold">Recent store activity</h3></div>
+            <section className="rounded-lg border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] p-4">
+              <div className="flex items-center gap-2"><ReceiptText className="h-4 w-4 text-[var(--ua-text-secondary)]" aria-hidden="true" /><h3 className="font-semibold">Recent store activity</h3></div>
               {customer.recent.length ? (
-                <ul className="mt-2 divide-y divide-[var(--border-muted)]">
+                <ul className="mt-2 divide-y divide-[var(--ua-border-subtle)]">
                   {customer.recent.map((item) => {
                     const items = item.lineItems ?? [];
                     const shown = items.slice(0, 2);
@@ -262,23 +262,23 @@ export function CustomerPreviewDrawer({
                         >
                         <span className="min-w-0">
                           <span className="font-medium">Order {item.reference}</span>
-                          <small className="mt-0.5 block text-[var(--text-secondary)]">
+                          <small className="mt-0.5 block text-[var(--ua-text-secondary)]">
                             {formatDate(item.at)}
                           </small>
                           {shown.length > 0 ? (
-                            <small className="mt-1 block truncate text-[var(--text-tertiary)]">
+                            <small className="mt-1 block truncate text-[var(--ua-text-tertiary)]">
                               {shown.map((line) => `${line.quantity ? `${line.quantity}× ` : ""}${line.title}`).join(", ")}
                               {extra > 0 ? ` +${extra} more` : ""}
                             </small>
                           ) : null}
                           {item.shipmentStatus ? (
-                            <small className="mt-1 block text-[var(--text-tertiary)]">
+                            <small className="mt-1 block text-[var(--ua-text-tertiary)]">
                               {item.shipmentStatus}{item.shipmentCarrier ? ` · ${item.shipmentCarrier}` : ""}
                             </small>
                           ) : null}
                           {item.caseState ? <small className="mt-1 block"><StatusBadge family="caseStatus" value={item.caseState} size="sm" /></small> : null}
                         </span>
-                          <span className="text-right"><strong className="block tabular-nums">{amount(item.amount, item.currency)}</strong>{item.caseType ? <small className="mt-1 block text-[var(--text-secondary)]">{item.caseType}</small> : null}</span>
+                          <span className="text-right"><strong className="block tabular-nums">{amount(item.amount, item.currency)}</strong>{item.caseType ? <small className="mt-1 block text-[var(--ua-text-secondary)]">{item.caseType}</small> : null}</span>
                         </Link>
                         {item.externalHref ? (
                           <a
@@ -287,7 +287,7 @@ export function CustomerPreviewDrawer({
                             rel="noreferrer"
                             aria-label={`Open order in ${item.externalSource ?? "source"}`}
                             title={`Open in ${item.externalSource ?? "source"}`}
-                            className="shrink-0 rounded p-1 text-[var(--accent)] hover:bg-[var(--surface-sunken)]"
+                            className="shrink-0 rounded p-1 text-[var(--ua-action-primary)] hover:bg-[var(--ua-surface-muted)]"
                           >
                             <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
                           </a>
@@ -299,7 +299,7 @@ export function CustomerPreviewDrawer({
                             rel="noreferrer"
                             aria-label={`Open fulfilment in ${item.shipmentSource ?? "source"}`}
                             title={`Open fulfilment in ${item.shipmentSource ?? "source"}`}
-                            className="shrink-0 rounded p-1 text-[var(--accent)] hover:bg-[var(--surface-sunken)]"
+                            className="shrink-0 rounded p-1 text-[var(--ua-action-primary)] hover:bg-[var(--ua-surface-muted)]"
                           >
                             <ReceiptText className="h-3.5 w-3.5" aria-hidden="true" />
                           </a>
@@ -309,15 +309,15 @@ export function CustomerPreviewDrawer({
                   );})}
                 </ul>
               ) : (
-                <p className="mt-2 text-sm text-[var(--text-secondary)]">
+                <p className="mt-2 text-sm text-[var(--ua-text-secondary)]">
                   No recent activity was found.
                 </p>
               )}
             </section>
 
             {customer.identitySignalCounts?.length || customer.sources.length ? (
-              <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4">
-                <div className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-[var(--text-secondary)]" aria-hidden="true" /><h3 className="font-semibold">Identity</h3></div>
+              <section className="rounded-lg border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] p-4">
+                <div className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-[var(--ua-text-secondary)]" aria-hidden="true" /><h3 className="font-semibold">Identity</h3></div>
                 {customer.identitySignalCounts?.length ? (
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {customer.identitySignalCounts.map((row) => (
@@ -326,7 +326,7 @@ export function CustomerPreviewDrawer({
                   </div>
                 ) : null}
                 {customer.sources.length ? (
-                  <ul className="mt-3 divide-y divide-[var(--border-muted)] border-t border-[var(--border-muted)] pt-1">
+                  <ul className="mt-3 divide-y divide-[var(--ua-border-subtle)] border-t border-[var(--ua-border-subtle)] pt-1">
                     {customer.sources.map((source, index) => (
                       <li key={`${source.provider}-${source.externalId}-${index}`} className="flex items-center justify-between gap-3 py-2 text-sm">
                         <span className="min-w-0 truncate"><span className="capitalize">{source.provider}</span>{source.email ? ` · ${source.email}` : ""}</span>
@@ -338,7 +338,7 @@ export function CustomerPreviewDrawer({
                 {customer.stats.possibleMatchCount ? (
                   <Link
                     href={`/customers/${customer.id}?return=${encodeURIComponent(returnUrl)}#identity`}
-                    className="mt-3 flex items-center justify-between gap-2 border-t border-[var(--border-muted)] pt-3 text-sm font-medium text-[var(--accent)] hover:underline"
+                    className="mt-3 flex items-center justify-between gap-2 border-t border-[var(--ua-border-subtle)] pt-3 text-sm font-medium text-[var(--ua-action-primary)] hover:underline"
                   >
                     {customer.stats.possibleMatchCount} possible match{customer.stats.possibleMatchCount === 1 ? '' : 'es'} held separately
                     <ArrowUpRight className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />

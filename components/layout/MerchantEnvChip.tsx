@@ -22,24 +22,25 @@ interface MerchantEnvChipProps {
 export function MerchantEnvChip({ merchantName, environment, isDemo, className }: MerchantEnvChipProps) {
   if (!merchantName) return null;
 
+  // Sentence case (§3.2) — the chip used to rely on a CSS text-transform.
   const pill = isDemo
-    ? 'demo'
+    ? 'Demo'
     : environment && environment !== 'production'
-      ? environment.slice(0, 4)
+      ? `${environment.charAt(0).toUpperCase()}${environment.slice(1)}`
       : null;
 
   return (
     <div
       className={cn(
         'hidden sm:flex items-center gap-1.5 h-7 px-2 rounded-md flex-shrink-0',
-        'border border-[var(--border)] bg-[var(--bg-inset)]',
+        'border border-[var(--ua-border-default)] bg-[var(--ua-surface-secondary)]',
         'select-none',
         className,
       )}
       title={pill ? `${merchantName} · ${pill}` : merchantName}
     >
       {/* Merchant name */}
-      <span className="text-caption font-medium text-[var(--text)] max-w-[120px] truncate">
+      <span className="text-caption font-medium text-[var(--ua-text-primary)] max-w-[120px] truncate">
         {merchantName}
       </span>
 
@@ -48,8 +49,8 @@ export function MerchantEnvChip({ merchantName, environment, isDemo, className }
         <span
           className={cn(
             'inline-flex items-center rounded px-1 py-px',
-            'text-xs font-semibold uppercase leading-none tracking-wide',
-            'bg-[var(--info-bg)] border border-[var(--info-bd)] text-[var(--info)]',
+            'text-[length:var(--ua-text-micro-size)] font-semibold leading-none',
+            'bg-[var(--ua-info-bg)] border border-[var(--ua-info-border)] text-[var(--ua-info)]',
           )}
         >
           {pill}

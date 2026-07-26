@@ -3,7 +3,11 @@ import crypto from 'crypto';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { backfillShopifyMerchantIdentities } from '@/lib/shopify/backfill';
 import { shopifyDebugLog } from '@/lib/shopify/debugLog';
-import { clearShopifyOAuthCookieOptions } from '@/lib/shopify/oauthCookies';
+import {
+  clearShopifyOAuthCookieOptions,
+  normalizeShopifyOAuthReturnPath,
+  SHOPIFY_OAUTH_RETURN_COOKIE,
+} from '@/lib/shopify/oauthCookies';
 import { registerShopifyWebhooks } from '@/lib/shopify/webhooks';
 import { getAppUrl } from '@/lib/utils/appUrl';
 import { exchangeShopifyOAuthAccessToken, fetchShopifyGrantedScopes } from '@/lib/shopify/exchangeOAuthAccessToken';
@@ -37,9 +41,12 @@ function verifyOAuthHmac(params: URLSearchParams, secret: string): boolean {
   return received.length === expected.length && crypto.timingSafeEqual(expected, received);
 }
 
-function oauthCompleteResponse(params: Record<string, string>): NextResponse {
+function oauthCompleteResponse(
+  params: Record<string, string>,
+  returnPath = INTEGRATIONS_PATH,
+): NextResponse {
   const appUrl = getAppUrl();
-  const fallbackUrl = new URL(INTEGRATIONS_PATH, appUrl);
+  const fallbackUrl = new URL(returnPath, appUrl);
   for (const [key, value] of Object.entries(params)) {
     fallbackUrl.searchParams.set(key, value);
   }
@@ -106,9 +113,17 @@ function oauthCompleteResponse(params: Record<string, string>): NextResponse {
 
 function clearOAuthCookies(response: NextResponse): void {
   response.cookies.set('shopify_oauth_state', '', clearShopifyOAuthCookieOptions());
+  response.cookies.set(
+    SHOPIFY_OAUTH_RETURN_COOKIE,
+    '',
+    clearShopifyOAuthCookieOptions(),
+  );
 }
 
 export async function GET(request: NextRequest) {
+  const returnPath = normalizeShopifyOAuthReturnPath(
+    request.cookies.get(SHOPIFY_OAUTH_RETURN_COOKIE)?.value,
+  );
   const params = request.nextUrl.searchParams;
   const code = params.get('code');
   const shopParam = params.get('shop');
@@ -126,7 +141,7 @@ export async function GET(request: NextRequest) {
   });
 
   if (!code || !shop || !state || !hmac || !timestamp) {
-    const response = oauthCompleteResponse({ shopify_error: 'missing_params' });
+    const response = oauthCompleteResponse({ shopify_error: 'missing_params' }, returnPath);
     clearOAuthCookies(response);
     return response;
   }
@@ -134,7 +149,7 @@ export async function GET(request: NextRequest) {
   const stateCookie = request.cookies.get('shopify_oauth_state')?.value;
   if (!stateCookie || stateCookie !== state) {
     shopifyDebugLog('callback.state_invalid', { hasStateCookie: Boolean(stateCookie) });
-    const response = oauthCompleteResponse({ shopify_error: 'invalid_state' });
+    const response = oauthCompleteResponse({ shopify_error: 'invalid_state' }, returnPath);
     clearOAuthCookies(response);
     return response;
   }
@@ -142,7 +157,7 @@ export async function GET(request: NextRequest) {
   const apiKey = process.env.SHOPIFY_API_KEY;
   const apiSecret = process.env.SHOPIFY_API_SECRET;
   if (!apiKey || !apiSecret) {
-    const response = oauthCompleteResponse({ shopify_error: 'misconfigured' });
+    const response = oauthCompleteResponse({ shopify_error: 'misconfigured' }, returnPath);
     clearOAuthCookies(response);
     return response;
   }
@@ -150,7 +165,7 @@ export async function GET(request: NextRequest) {
   const hmacValid = verifyOAuthHmac(params, apiSecret);
   shopifyDebugLog('callback.hmac_valid', { callbackHmacValid: hmacValid, callbackShopDomain: shop });
   if (!hmacValid) {
-    const response = oauthCompleteResponse({ shopify_error: 'invalid_hmac' });
+    const response = oauthCompleteResponse({ shopify_error: 'invalid_hmac' }, returnPath);
     clearOAuthCookies(response);
     return response;
   }
@@ -160,7 +175,7 @@ export async function GET(request: NextRequest) {
     const userClient = createClient();
     const { data: { user } } = await userClient.auth.getUser();
     if (!user) {
-      const response = oauthCompleteResponse({ shopify_error: 'unauthorized' });
+      const response = oauthCompleteResponse({ shopify_error: 'unauthorized' }, returnPath);
       clearOAuthCookies(response);
       return response;
     }
@@ -175,7 +190,10 @@ export async function GET(request: NextRequest) {
         providerAccountId: shop,
       });
     } catch {
-      const response = oauthCompleteResponse({ shopify_error: 'invalid_or_replayed_state' });
+      const response = oauthCompleteResponse(
+        { shopify_error: 'invalid_or_replayed_state' },
+        returnPath,
+      );
       clearOAuthCookies(response);
       return response;
     }
@@ -186,7 +204,7 @@ export async function GET(request: NextRequest) {
       PERMISSIONS.MANAGE_SETTINGS,
     );
     if (authorization.denied) {
-      const response = oauthCompleteResponse({ shopify_error: 'forbidden' });
+      const response = oauthCompleteResponse({ shopify_error: 'forbidden' }, returnPath);
       clearOAuthCookies(response);
       return response;
     }
@@ -199,7 +217,10 @@ export async function GET(request: NextRequest) {
         status: tokenExchange.status,
         reason: tokenExchange.reason,
       });
-      const response = oauthCompleteResponse({ shopify_error: 'token_exchange_failed' });
+      const response = oauthCompleteResponse(
+        { shopify_error: 'token_exchange_failed' },
+        returnPath,
+      );
       clearOAuthCookies(response);
       return response;
     }
@@ -226,7 +247,7 @@ export async function GET(request: NextRequest) {
         merchantConnectionUpserted: false,
         merchantConnectionActive: false,
       });
-      const response = oauthCompleteResponse({ shopify_error: persisted.error });
+      const response = oauthCompleteResponse({ shopify_error: persisted.error }, returnPath);
       clearOAuthCookies(response);
       return response;
     }
@@ -282,7 +303,7 @@ export async function GET(request: NextRequest) {
     if (!identityBackfillSuccess) successParams.shopify_warning = 'backfill_failed';
     if (!webhookRegistrationSuccess) successParams.shopify_warning = 'webhook_registration_failed';
 
-    const response = oauthCompleteResponse(successParams);
+    const response = oauthCompleteResponse(successParams, returnPath);
     clearOAuthCookies(response);
     return response;
   } catch (error) {
@@ -291,7 +312,7 @@ export async function GET(request: NextRequest) {
         ?? 'shopify_callback_failed',
       shop,
     });
-    const response = oauthCompleteResponse({ shopify_error: 'callback_failed' });
+    const response = oauthCompleteResponse({ shopify_error: 'callback_failed' }, returnPath);
     clearOAuthCookies(response);
     return response;
   }

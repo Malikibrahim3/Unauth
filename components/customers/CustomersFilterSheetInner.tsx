@@ -76,18 +76,18 @@ export function CustomersFilterSheetInner({
         placeholder={`Search by ${labelFor('email').toLowerCase()}, ${labelFor('name').toLowerCase()}, or order reference…`}
         defaultValue={searchParams.get('q') ?? ''}
         onChange={(e) => makeDebounced('q', 2)(e.target.value)}
-        className="h-9 min-w-[280px] rounded-md px-3 text-[13px] focus:outline-none"
-        style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}
-        onFocus={(e) => { e.target.style.borderColor = 'var(--border-strong)'; e.target.style.outline = '2px solid var(--focus-ring)'; e.target.style.outlineOffset = '2px'; }}
-        onBlur={(e) => { e.target.style.borderColor = 'var(--border)'; e.target.style.outline = 'none'; }}
+        className="h-9 min-w-[280px] rounded-md px-3 text-[length:var(--ua-text-small-size)] focus:outline-none"
+        style={{ background: 'var(--ua-surface-primary)', border: '1px solid var(--ua-border-default)', color: 'var(--ua-text-primary)' }}
+        onFocus={(e) => { e.target.style.borderColor = 'var(--ua-border-strong)'; e.target.style.outline = '2px solid var(--ua-border-focus)'; e.target.style.outlineOffset = '2px'; }}
+        onBlur={(e) => { e.target.style.borderColor = 'var(--ua-border-default)'; e.target.style.outline = 'none'; }}
       />
 
       <select
         aria-label="Sort customers"
         value={sortValue}
         onChange={(e) => updateParam('sort', e.target.value)}
-        className="h-9 rounded-md px-3 text-[13px] focus:outline-none"
-        style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}
+        className="h-9 rounded-md px-3 text-[length:var(--ua-text-small-size)] focus:outline-none"
+        style={{ background: 'var(--ua-surface-primary)', border: '1px solid var(--ua-border-default)', color: 'var(--ua-text-primary)' }}
       >
         {SORT_OPTIONS.map(({ value, label }) => (
           <option key={value} value={value}>{label}</option>

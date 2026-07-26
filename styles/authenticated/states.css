@@ -9,11 +9,20 @@
  *     --ua-* aliases as part of this pass)
  *   - components/ui/LoadingState.tsx (in practice only exports
  *     ErrorBoundaryUI — an error-state component, not a loading spinner)
- *   - components/navigation/skeletons/* (legacy route wrappers pending
- *     migration to LoadingSkeleton)
- *   - components/states/OperationalRouteSkeleton.tsx (compatibility wrapper)
+ *   - components/navigation/skeletons/* (route wrappers retained for
+ *     route-level loading geometry)
+ *   - components/states/OperationalRouteSkeleton.tsx (route wrapper)
  *   - components/ui/DataTable.tsx's own SkeletonRows
- * DataTable and the legacy navigation wrappers remain compatibility consumers;
- * new route states must use LoadingSkeleton directly or through
+ * DataTable and the navigation wrappers consume the same tokenized geometry;
+ * new route states should use LoadingSkeleton directly or through
  * OperationalRouteSkeleton.
  */
+
+/* Authenticated loading is quiet and geometry-first. The public site may keep
+ * its own motion language, but product skeletons never shimmer or gradient. */
+.ua-app .skeleton,
+.ua-auth-surface .skeleton {
+  background: var(--ua-surface-muted);
+  background-image: none;
+  animation: none;
+}

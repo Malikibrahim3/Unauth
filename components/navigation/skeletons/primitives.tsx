@@ -11,7 +11,7 @@ export function Bone({
   return (
     <div
       className={cn('skeleton rounded-md', className)}
-      style={{ background: 'var(--bg-subtle)', ...style }}
+      style={{ background: 'var(--ua-surface-secondary)', ...style }}
       aria-hidden="true"
     />
   );
@@ -39,7 +39,7 @@ export function MetricCardGridSkeleton({
         <div
           key={cardKey}
           className="rounded-md border p-4 space-y-2"
-          style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
+          style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-surface-primary)' }}
         >
           <Bone className="h-3 w-20" />
           <Bone className="h-7 w-16" />
@@ -60,10 +60,10 @@ export function TableSkeleton({
   minWidth?: string;
 }) {
   return (
-    <div className="overflow-x-auto rounded-md border" style={{ borderColor: 'var(--border-muted)' }}>
+    <div className="overflow-x-auto rounded-md border" style={{ borderColor: 'var(--ua-border-subtle)' }}>
       <table className="w-full text-sm" style={{ minWidth }}>
-        <thead style={{ background: 'var(--bg-subtle)' }}>
-          <tr style={{ borderBottom: '1px solid var(--border-muted)' }}>
+        <thead style={{ background: 'var(--ua-surface-secondary)' }}>
+          <tr style={{ borderBottom: '1px solid var(--ua-border-subtle)' }}>
             {columns.map((col, i) => (
               <th key={skeletonColumnKey(i, col)} className={cn('px-4 py-2.5 text-left', col.className)} style={{ width: col.width }}>
                 <Bone className="h-3 w-16" />
@@ -73,7 +73,7 @@ export function TableSkeleton({
         </thead>
         <tbody>
           {TABLE_ROW_KEYS.slice(0, rows).map((rowKey) => (
-            <tr key={rowKey} className="border-t" style={{ borderColor: 'var(--border-muted)' }}>
+            <tr key={rowKey} className="border-t" style={{ borderColor: 'var(--ua-border-subtle)' }}>
               {columns.map((col, colIdx) => (
                 <td key={`${rowKey}-${skeletonColumnKey(colIdx, col)}`} className={cn('px-4 py-3', col.className)}>
                   <Bone className={cn('h-4', colIdx === 0 ? 'w-36' : 'w-20')} />
@@ -100,11 +100,11 @@ export function SectionCardSkeleton({
   return (
     <section
       className="rounded-md border overflow-hidden"
-      style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
+      style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-surface-primary)' }}
     >
       <div
         className="flex flex-wrap items-start justify-between gap-3 border-b px-4 py-3"
-        style={{ borderColor: 'var(--border)' }}
+        style={{ borderColor: 'var(--ua-border-default)' }}
       >
         <div className="space-y-1.5 min-w-0">
           <Bone className={cn('h-4', titleWidth)} />

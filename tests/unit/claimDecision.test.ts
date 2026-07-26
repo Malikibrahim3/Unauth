@@ -100,7 +100,7 @@ describe('deriveDeliveryStatus', () => {
 });
 
 describe('buildDeliveryFromFulfillment', () => {
-  it('sets hasTracking when tracking number exists', () => {
+  it('keeps a delivered scan distinct from proof of delivery', () => {
     const d = buildDeliveryFromFulfillment({
       status: 'success',
       shipment_status: 'delivered',
@@ -109,7 +109,7 @@ describe('buildDeliveryFromFulfillment', () => {
       occurred_at: '2026-06-01T00:00:00.000Z',
     });
     expect(d.hasTracking).toBe(true);
-    expect(d.hasProofOfDelivery).toBe(true);
+    expect(d.hasProofOfDelivery).toBe(false);
     expect(d.status).toBe('delivered');
   });
 });

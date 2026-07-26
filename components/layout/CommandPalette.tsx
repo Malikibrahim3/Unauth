@@ -80,10 +80,10 @@ export default function CommandPalette({
     <dialog
       ref={dialogRef}
       aria-label="Command palette"
-      className="fixed left-1/2 top-[20%] z-50 w-full max-w-lg -translate-x-1/2 rounded-md border-0 p-0 shadow-2xl overflow-hidden backdrop:bg-black/40"
+      className="fixed left-1/2 top-[20%] z-50 w-full max-w-lg -translate-x-1/2 rounded-md border-0 p-0 shadow-[var(--ua-shadow-overlay)] overflow-hidden backdrop:bg-[var(--ua-backdrop)]"
       style={{
-        background: "var(--surface)",
-        border: "1px solid var(--border)",
+        background: "var(--ua-surface-primary)",
+        border: "1px solid var(--ua-border-default)",
       }}
       onClose={onClose}
       onCancel={(e) => {

@@ -34,7 +34,7 @@ export function shipBobToken(credentials: ShipBobCredentials): string | null {
 }
 
 export function shipBobApiBaseUrl(sandbox: boolean): string {
-  return sandbox ? 'https://sandbox-api.shipbob.com/2026-01' : 'https://api.shipbob.com/2026-01';
+  return sandbox ? 'https://sandbox-api.shipbob.com/2026-07' : 'https://api.shipbob.com/2026-07';
 }
 
 function queryString(params: Record<string, string | null | undefined>): string {

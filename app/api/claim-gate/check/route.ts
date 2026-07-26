@@ -13,6 +13,10 @@ import { createAccountabilityWorkflow } from '@/lib/accountability/store';
 import type { ClaimGateActorType, ClaimGateRequest, GateStatus } from '@/lib/claim-gate/types';
 import type { GateRecommendation } from '@/lib/claim-gate/buildRecommendation';
 import type { AccountabilityResult } from '@/lib/accountability/types';
+import {
+  isPublicClaimGateEnabled,
+  publicClaimGateUnavailableBody,
+} from '@/lib/claim-gate/releaseGate';
 
 export const dynamic = 'force-dynamic';
 
@@ -137,6 +141,12 @@ function accountabilitySummary(accountability: AccountabilityResult) {
 export async function POST(req: NextRequest) {
   const auth = await validateApiKey(req);
   if (!isValidatedApiKey(auth)) return auth;
+  if (!isPublicClaimGateEnabled()) {
+    return NextResponse.json(publicClaimGateUnavailableBody(), {
+      status: 503,
+      headers: { 'Retry-After': '3600' },
+    });
+  }
 
   const serviceClient = createServiceClient();
   let parsed: z.infer<typeof requestSchema>;

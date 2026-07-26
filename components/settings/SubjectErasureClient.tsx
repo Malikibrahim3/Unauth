@@ -47,7 +47,7 @@ export default function SubjectErasureClient() {
 
   return (
     <div className="space-y-3">
-      <p className="text-body-sm" style={{ color: "var(--text-secondary)" }}>
+      <p className="text-body-sm" style={{ color: "var(--ua-text-secondary)" }}>
         Enter the canonical customer ID shown in the customer URL. Direct
         identifiers and linked evidence are redacted for this workspace;
         monetary entries and a non-PII receipt remain for reconciliation.
@@ -62,7 +62,7 @@ export default function SubjectErasureClient() {
           value={subjectId}
           onChange={(event) => setSubjectId(event.target.value)}
           placeholder="00000000-0000-0000-0000-000000000000"
-          className="mt-1 block h-8 w-full rounded-[var(--ua-radius-input)] border border-[var(--border)] bg-[var(--surface)] px-3 text-sm outline-none focus:border-[var(--accent)] focus:shadow-[var(--shadow-focus)]"
+          className="mt-1 block h-8 w-full rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-3 text-sm outline-none focus:border-[var(--ua-action-primary)] focus:shadow-[var(--ua-shadow-focus)]"
         />
       </label>
       <label className="block text-xs font-medium" htmlFor="privacy-subject-confirm">
@@ -73,7 +73,7 @@ export default function SubjectErasureClient() {
           autoComplete="off"
           value={confirmation}
           onChange={(event) => setConfirmation(event.target.value)}
-          className="mt-1 block h-8 w-full rounded-[var(--ua-radius-input)] border border-[var(--border)] bg-[var(--surface)] px-3 text-sm outline-none focus:border-[var(--accent)] focus:shadow-[var(--shadow-focus)]"
+          className="mt-1 block h-8 w-full rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-3 text-sm outline-none focus:border-[var(--ua-action-primary)] focus:shadow-[var(--ua-shadow-focus)]"
         />
       </label>
       <Button
@@ -86,7 +86,7 @@ export default function SubjectErasureClient() {
         Erase customer data
       </Button>
       {message ? (
-        <p role="status" aria-live="polite" className="text-sm" style={{ color: "var(--text-secondary)" }}>
+        <p role="status" aria-live="polite" className="text-sm" style={{ color: "var(--ua-text-secondary)" }}>
           {message}
         </p>
       ) : null}

@@ -6,7 +6,7 @@ import type { MerchantSetupState } from '@/lib/connections/getMerchantSetupState
 import CustomersTableClient from '@/components/customers/CustomersTableClient';
 import { CustomersPageWorkbench } from '@/app/(app)/customers/CustomersPageWorkbench';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
-import { Badge, ButtonLink, PanelCard, WorkbenchEmptyState, KeyInsightCallout, SummaryRail } from '@/components/ui';
+import { Badge, ButtonLink, Panel, WorkbenchEmptyState, KeyInsightCallout, SummaryRail } from '@/components/ui';
 import { Users } from 'lucide-react';
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { FilterChip } from '@/app/(app)/customers/CustomersOverviewFilterChip';
@@ -80,7 +80,6 @@ export function CustomersOverviewPageView({
       ]}
       primaryVisual={
         <KeyInsightCallout
-          eyebrow="Case context"
           tone={kpis.openCaseCustomers > 0 ? 'info' : 'neutral'}
           icon={<Users size={16} />}
         >
@@ -110,8 +109,8 @@ export function CustomersOverviewPageView({
       {/* match band copy belongs on customer scoring surfaces, not risk labels. */}
       {/* ── Compact filter bar ─────────────────────────────────────── */}
       {totalCount > 0 && (
-        <PanelCard variant="app" className="flex h-auto min-h-10 flex-wrap items-center gap-2 px-3 py-2">
-          <span className="text-xs font-medium mr-1" style={{ color: 'var(--text-tertiary)' }}>Filters</span>
+        <Panel variant="panel" className="flex h-auto min-h-10 flex-wrap items-center gap-2 px-3 py-2">
+          <span className="text-xs font-medium mr-1" style={{ color: 'var(--ua-text-tertiary)' }}>Filters</span>
           {[
             { label: 'Open payout cases', href: '?openClaims=1', highlight: openClaimsOnly },
             { label: 'Has refunds', href: '?hasRefunds=1', highlight: hasRefunds },
@@ -128,22 +127,22 @@ export function CustomersOverviewPageView({
             </Link>
           ))}
           {!connectionState.helpdesk && (
-            <span className="ml-auto text-xs" style={{ color: 'var(--text-tertiary)' }}>
+            <span className="ml-auto text-xs" style={{ color: 'var(--ua-text-tertiary)' }}>
               Payout case counts include connected helpdesk data only.
             </span>
           )}
-        </PanelCard>
+        </Panel>
       )}
 
       {/* ── Active filter chips ───────────────────────────────────── */}
       {!noFilters && (
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>Active filters:</span>
+          <span className="text-xs" style={{ color: 'var(--ua-text-secondary)' }}>Active filters:</span>
           {hasRefunds && <FilterChip label="Has refunds" removeHref={buildRemoveHref(sp, 'hasRefunds')} />}
           {hasChargebacks && <FilterChip label="Has chargebacks" removeHref={buildRemoveHref(sp, 'hasChargebacks')} />}
           {openClaimsOnly && <FilterChip label="Open payout cases" removeHref={buildRemoveHref(sp, 'openClaims')} />}
           {q && <FilterChip label={`Search: "${q}"`} removeHref={buildRemoveHref(sp, 'q')} />}
-          <Link href="/customers" className="text-xs hover:underline" style={{ color: 'var(--text-secondary)' }}>Clear all</Link>
+          <Link href="/customers" className="text-xs hover:underline" style={{ color: 'var(--ua-text-secondary)' }}>Clear all</Link>
         </div>
       )}
 
@@ -157,7 +156,7 @@ export function CustomersOverviewPageView({
           }
           action={
             <div className="flex items-center gap-4">
-              <Link href={pageActions.primary.href} className="text-xs font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+              <Link href={pageActions.primary.href} className="text-xs font-semibold hover:underline" style={{ color: 'var(--ua-action-primary)' }}>
                 {pageActions.primary.label}
               </Link>
             </div>
@@ -168,7 +167,7 @@ export function CustomersOverviewPageView({
           title="No customers found"
           description="No customers meet the filters you've applied. Adjust or clear them to see more."
           action={
-            <Link href="/customers" className="text-xs font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+            <Link href="/customers" className="text-xs font-semibold hover:underline" style={{ color: 'var(--ua-action-primary)' }}>
               Clear all filters
             </Link>
           }
@@ -176,10 +175,10 @@ export function CustomersOverviewPageView({
       ) : (
         <>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+            <p className="text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
               {`Showing ${from}–${to} of ${formatNumber(totalCount)} customers`}
             </p>
-            <div className="flex flex-wrap items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
+            <div className="flex flex-wrap items-center gap-2 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
               <Suspense fallback={null}>
                 <PageSizeSelect pathname="/customers" pageSize={PAGE_SIZE} />
               </Suspense>

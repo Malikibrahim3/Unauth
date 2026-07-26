@@ -10,6 +10,20 @@ const envSchema = z.object({
   // Optional locally, required in production/preview
   RESEND_API_KEY: z.string().min(1).optional(),
   CRON_SECRET: z.string().min(1).optional(),
+  INVESTIGATION_MALWARE_SCAN_URL: z.string().url().optional(),
+  INVESTIGATION_MALWARE_SCAN_TOKEN: z.string().min(16).optional(),
+  /** Keep false/unset until the Release 1 investigation workflow is enabled for a controlled cohort. */
+  INVESTIGATIONS_ENABLED: z.string().optional(),
+  /** Independent external-action kill switch; merchant email settings cannot override it. */
+  INVESTIGATION_EMAIL_DISPATCH_ENABLED: z.string().optional(),
+  /** Keep false/unset until a generic ingestion processor is deployed and proven. */
+  GENERIC_EVENT_INGESTION_ENABLED: z.string().optional(),
+  /** Keep false/unset until published flows have replay and idempotency proof. */
+  WORKFLOW_PUBLICATION_ENABLED: z.string().optional(),
+  /** Keep false/unset while the legacy/public gate bypasses canonical transitions. */
+  PUBLIC_CLAIM_GATE_ENABLED: z.string().optional(),
+  /** Keep false/unset until cross-merchant context has product, privacy, and runtime approval. */
+  NETWORK_CONTEXT_ENABLED: z.string().optional(),
   UPSTASH_REDIS_REST_URL: z.string().url().optional(),
   UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
   INTERNAL_HMAC_SECRET: z.string().min(32).optional(),
@@ -44,8 +58,16 @@ const envSchema = z.object({
   BILLING_CONTACT_EMAIL: z.string().email().optional(),
   /** Local/test-only secret for /api/test/e2e-auth — never set in production. */
   E2E_AUTH_SECRET: z.string().min(16).optional(),
+  /** Legacy single-environment ShipBob OAuth pair. Prefer explicit pairs below. */
   SHIPBOB_OAUTH_CLIENT_ID: z.string().min(1).optional(),
   SHIPBOB_OAUTH_CLIENT_SECRET: z.string().min(1).optional(),
+  /** ShipBob OAuth app credentials are environment-specific. */
+  SHIPBOB_SANDBOX_OAUTH_CLIENT_ID: z.string().min(1).optional(),
+  SHIPBOB_SANDBOX_OAUTH_CLIENT_SECRET: z.string().min(1).optional(),
+  SHIPBOB_PRODUCTION_OAUTH_CLIENT_ID: z.string().min(1).optional(),
+  SHIPBOB_PRODUCTION_OAUTH_CLIENT_SECRET: z.string().min(1).optional(),
+  /** Legacy local flag used only to identify the legacy pair as sandbox. */
+  SHIPBOB_SANDBOX: z.string().optional(),
   /** Webhook URL notified when a warehouse pack-confirmation photo is uploaded. */
   PACK_CONFIRMATION_NOTIFY_URL: z.string().url().optional(),
   /** Absolute app URL shadow alias read by claim-gate/collector code paths. */
@@ -66,6 +88,8 @@ const envSchema = z.object({
     const required: Array<keyof typeof env> = [
       'RESEND_API_KEY',
       'CRON_SECRET',
+      'INVESTIGATION_MALWARE_SCAN_URL',
+      'INVESTIGATION_MALWARE_SCAN_TOKEN',
       'UPSTASH_REDIS_REST_URL',
       'UPSTASH_REDIS_REST_TOKEN',
       'INTERNAL_HMAC_SECRET',

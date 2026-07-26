@@ -9,7 +9,7 @@ import {
 import { buildBehavioralNarrative } from "@/lib/customers/narrative";
 import { riskLevelToNewGrade } from "@/lib/confidence";
 import type { ConfidenceGradeValue } from "@/lib/confidence";
-import type { CustomerIntelligencePanel } from "@/app/api/customers/[id]/route";
+import type { CustomerIntelligencePanel } from "@/lib/customers/intelligencePanel";
 import { ACTIVE_CLAIM_STATUSES } from "@/lib/claims/sla";
 import {
   parseAndVerifySignedToken,

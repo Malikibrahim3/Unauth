@@ -13,7 +13,7 @@ export default function RouteProgressBar({ active }: { active: boolean }) {
     >
       <div
         className="h-full w-1/3 animate-[nav-progress_1.2s_ease-in-out_infinite]"
-        style={{ background: 'var(--accent)' }}
+        style={{ background: 'var(--ua-action-primary)' }}
       />
     </div>
   );

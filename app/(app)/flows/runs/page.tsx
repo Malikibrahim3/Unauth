@@ -34,28 +34,27 @@ export default async function Runs({
   return (
     <div>
       <AuthenticatedPageHeader
-        eyebrow="Automation"
         title="Flow runs"
         subtitle="Execution history and operator-visible outcomes."
         breadcrumbs={[{ label: "Flows", href: "/flows" }, { label: "Run history" }]}
       />
       <div className={pageStyles.pageBody}>
         <AuthenticatedPanel title="Recent runs" description="Up to 100 executions in this scope.">
-          <div className="divide-y divide-[var(--border-muted)]">
+          <div className="divide-y divide-[var(--ua-border-subtle)]">
         {runs.map((r: any) => (
           <Link
             key={r.id}
             href={`/flows/runs/${r.id}`}
-            className="grid min-h-12 items-center gap-2 px-4 py-2.5 text-[11px] hover:bg-[var(--surface-hover)] sm:grid-cols-4"
+            className="grid min-h-12 items-center gap-2 px-4 py-2.5 text-[length:var(--ua-text-micro-size)] hover:bg-[var(--ua-surface-hover)] sm:grid-cols-4"
           >
             <span className="font-mono text-xs">{r.id}</span>
             <span className="capitalize">{r.status}</span>
-            <span className="text-[var(--text-secondary)]">{formatDateTime(r.started_at)}</span>
-            <span className="text-right font-semibold text-[var(--text-secondary)]">{r.error ? "Failed — inspect" : "Inspect"}</span>
+            <span className="text-[var(--ua-text-secondary)]">{formatDateTime(r.started_at)}</span>
+            <span className="text-right font-semibold text-[var(--ua-text-secondary)]">{r.error ? "Failed — inspect" : "Inspect"}</span>
           </Link>
         ))}
           </div>
-          {!runs.length ? <p className="px-4 py-10 text-center text-xs text-[var(--text-secondary)]">No flow runs found for this scope.</p> : null}
+          {!runs.length ? <p className="px-4 py-10 text-center text-xs text-[var(--ua-text-secondary)]">No flow runs found for this scope.</p> : null}
         </AuthenticatedPanel>
       </div>
     </div>

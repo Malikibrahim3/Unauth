@@ -3,14 +3,14 @@ import { cn } from '@/lib/utils';
 import type { ButtonSize, ButtonVariant } from './Button';
 
 const BUTTON_BASE =
-  'ua-jitter inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-colors duration-[var(--duration-fast)] focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)] disabled:cursor-not-allowed select-none';
+  'ua-jitter inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-colors duration-[var(--ua-duration-fast)] focus-visible:outline-none focus-visible:shadow-[var(--ua-shadow-focus)] disabled:cursor-not-allowed select-none';
 
-// A genuinely inert disabled look (muted surface + tertiary text), not a faded
-// accent — a 50%-opacity orange primary reads as "enabled but light".
+// Disabled controls stay visibly inert through neutral surface and tertiary
+// text rather than opacity-only treatment.
 const DISABLED_STYLE: CSSProperties = {
-  background: 'var(--surface-sunken)',
-  color: 'var(--text-tertiary)',
-  border: '1px solid var(--border)',
+  background: 'var(--ua-surface-muted)',
+  color: 'var(--ua-text-tertiary)',
+  border: '1px solid var(--ua-border-default)',
 };
 
 const BUTTON_SIZES: Record<ButtonSize, { height: string; px: string; fontSize: number }> = {
@@ -26,10 +26,9 @@ export const BUTTON_ICON_SIZES: Record<ButtonSize, string> = {
 };
 
 const BUTTON_VARIANT_CLASSES: Record<ButtonVariant, string> = {
-  primary: 'hover:bg-[var(--ua-accent-hover)] active:bg-[var(--ua-accent-hover)]',
-  cta: 'hover:bg-[var(--ua-accent-hover)] active:bg-[var(--ua-accent-hover)]',
-  secondary: 'hover:bg-[var(--surface-hover)] active:bg-[var(--surface-sunken)]',
-  ghost: 'hover:bg-[var(--surface-hover)] active:bg-[var(--surface-sunken)]',
+  primary: 'hover:bg-[var(--ua-action-primary-hover)] active:bg-[var(--ua-action-primary-hover)]',
+  secondary: 'hover:bg-[var(--ua-surface-hover)] active:bg-[var(--ua-surface-muted)]',
+  ghost: 'hover:bg-[var(--ua-surface-hover)] active:bg-[var(--ua-surface-muted)]',
   danger: 'hover:opacity-90 active:opacity-80',
   link: 'underline-offset-4 hover:underline p-0',
 };
@@ -38,26 +37,18 @@ function buttonVariantStyle(variant: ButtonVariant): CSSProperties {
   switch (variant) {
     case 'primary':
       return {
-        background: 'var(--ua-accent)',
-        color: 'white',
-        border: '1px solid var(--ua-accent)',
-      };
-    // Lime brand CTA — sparing: marketing CTAs, "New X" marquee actions.
-    case 'cta':
-      return {
-        background: 'var(--ua-accent)',
-        color: 'var(--ua-accent-fg)',
-        border: '1px solid var(--ua-accent)',
-        fontWeight: 600,
+        background: 'var(--ua-action-primary)',
+        color: 'var(--ua-action-primary-fg)',
+        border: '1px solid var(--ua-action-primary)',
       };
     case 'secondary':
-      return { background: 'var(--surface)', color: 'var(--text-primary)', border: '1px solid var(--border)' };
+      return { background: 'var(--ua-surface-primary)', color: 'var(--ua-text-primary)', border: '1px solid var(--ua-border-default)' };
     case 'ghost':
-      return { background: 'transparent', color: 'var(--text-secondary)' };
+      return { background: 'transparent', color: 'var(--ua-text-secondary)' };
     case 'danger':
-      return { background: 'var(--risk-critical)', color: 'white', border: '1px solid var(--risk-critical)' };
+      return { background: 'var(--ua-risk-critical)', color: 'var(--ua-text-inverse)', border: '1px solid var(--ua-risk-critical)' };
     case 'link':
-      return { background: 'transparent', color: 'var(--text-secondary)' };
+      return { background: 'transparent', color: 'var(--ua-text-secondary)' };
   }
 }
 

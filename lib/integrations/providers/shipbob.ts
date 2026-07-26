@@ -94,8 +94,8 @@ export type ShipBobReturn = {
 function shipBobBaseUrl(sandbox?: boolean): string {
   const isSandbox = sandbox === true;
   return isSandbox
-    ? 'https://sandbox-api.shipbob.com/2026-01'
-    : 'https://api.shipbob.com/2026-01';
+    ? 'https://sandbox-api.shipbob.com/2026-07'
+    : 'https://api.shipbob.com/2026-07';
 }
 
 function firstString(...values: unknown[]): string | undefined {

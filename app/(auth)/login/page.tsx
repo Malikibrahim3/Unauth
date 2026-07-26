@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { PanelCard } from "@/components/ui";
+import { Panel } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 import { AuthError, authButtonStyle, authInputClassName } from "../AuthShell";
 import { safeRedirectPath } from "@/lib/auth/safeRedirect";
@@ -78,8 +78,8 @@ function LoginPageInner() {
   }
 
   return (
-    <PanelCard as="section" variant="app" className="p-6">
-      <h1 className="text-3xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
+    <Panel as="section" variant="panel" className="p-6">
+      <h1 className="text-[length:var(--ua-text-page-title-size)] font-semibold leading-6 tracking-normal text-[var(--ua-text-primary)]">
         Sign in
       </h1>
 
@@ -87,7 +87,7 @@ function LoginPageInner() {
         <div>
           <label
             htmlFor="login-email"
-            className="mb-2 block text-sm font-medium text-[var(--text-secondary)]"
+            className="mb-2 block text-sm font-medium text-[var(--ua-text-secondary)]"
           >
             Email
           </label>
@@ -115,7 +115,7 @@ function LoginPageInner() {
         <div>
           <label
             htmlFor="login-password"
-            className="mb-2 block text-sm font-medium text-[var(--text-secondary)]"
+            className="mb-2 block text-sm font-medium text-[var(--ua-text-secondary)]"
           >
             Password
           </label>
@@ -156,21 +156,21 @@ function LoginPageInner() {
         </Button>
       </form>
 
-      <p className="mt-5 text-sm text-[var(--text-secondary)]">
+      <p className="mt-5 text-sm text-[var(--ua-text-secondary)]">
         Forgot password?{" "}
         <Link
           href="/reset"
-          className="font-medium text-[var(--accent)] underline-offset-4 hover:underline"
+          className="font-medium text-[var(--ua-action-primary)] underline-offset-4 hover:underline"
         >
           Reset it
         </Link>{" "}· Don&apos;t have an account?{" "}
         <Link
           href="/signup"
-          className="font-medium text-[var(--accent)] underline-offset-4 hover:underline"
+          className="font-medium text-[var(--ua-action-primary)] underline-offset-4 hover:underline"
         >
           Create one
         </Link>
       </p>
-    </PanelCard>
+    </Panel>
   );
 }

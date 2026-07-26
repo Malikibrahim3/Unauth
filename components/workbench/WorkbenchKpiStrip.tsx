@@ -8,7 +8,7 @@ export interface WorkbenchKpiItem {
   hint?: string;
   /** Optional lightweight trend sparkline (≥2 points) rendered beside the value. */
   trend?: number[];
-  /** Chart token for the sparkline stroke (default --ua-chart-blue). */
+  /** Chart token for the sparkline stroke (default --ua-chart-1). */
   trendColourVar?: string;
 }
 

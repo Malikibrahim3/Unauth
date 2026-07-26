@@ -35,7 +35,7 @@ export default function FoundationHero2() {
         <div className={styles.hero2SummaryItem}>
           <h3 className={styles.hero2SummaryTitle}>Money kept</h3>
           <p className={styles.hero2SummaryBody}>
-            Reflex refunds and repeat-claim reships get stopped before they leave your account.
+            Reflex refunds and repeat-claim reships get reviewed with the evidence in front of your team.
           </p>
         </div>
         <div className={styles.hero2SummaryItem}>

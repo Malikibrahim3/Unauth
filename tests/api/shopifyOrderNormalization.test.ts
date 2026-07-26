@@ -1,4 +1,4 @@
-import { processWebhook } from '@/app/api/shopify/webhooks/route';
+import { processWebhook } from '@/lib/shopify/processWebhook';
 
 /**
  * The Shopify webhook order path was rewritten onto the v2 source_* model

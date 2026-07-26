@@ -42,7 +42,11 @@ function evaluateWithRule(
 
 describe('MVP scenarios (widget → case → recovery)', () => {
   it('scenario 1 — strong POD INR: internal review, not recoverable, no recovery case', () => {
-    const ctx = makeContext({ claim: { amountAtRisk: 86 }, order: { totalAmount: 86 } });
+    const ctx = makeContext({
+      claim: { amountAtRisk: 86 },
+      order: { totalAmount: 86 },
+      delivery: { deliveryPhotoFinding: 'consistent' },
+    });
     const { evaluation, payoutCase } = evaluateWithRule(
       ctx,
       { action: 'manual_review', name: 'Strong POD + £75+ order' },
@@ -50,15 +54,15 @@ describe('MVP scenarios (widget → case → recovery)', () => {
     );
 
     expect(payoutCase.evidence.strength).toBe('strong');
-    expect(payoutCase.attribution.label).toBe('delivery_confirmed_evidence');
-    expect(payoutCase.recovery.recoverability).toBe('not_recoverable');
+    expect(payoutCase.attribution.label).toBe('unknown');
+    expect(payoutCase.recovery.recoverability).toBe('needs_more_evidence');
     expect(payoutCase.recommendation?.action).toBe('escalate_internal_review');
 
     const widget = formatPayoutWidgetDecision(evaluation, payoutCase, 1);
     expect(formatDecisionLine1(payoutCase)).toContain('at risk');
     expect(widget.evidence_checklist).toContain('Evidence:');
     expect(widget.recommendation).toContain('Escalate internal review');
-    expect(widget.recovery_path).toContain('not recoverable');
+    expect(widget.recovery_path).toContain('needs more evidence');
 
     expect(
       shouldCreateRecoveryCaseFromRow({
@@ -153,7 +157,7 @@ describe('MVP scenarios (widget → case → recovery)', () => {
       { requestedActions: ['replacement'] },
     );
 
-    expect(payoutCase.attribution.label).toBe('warehouse_mispick');
+    expect(payoutCase.attribution.label).toBe('unknown');
     expect(payoutCase.recommendation?.action).toBe('ask_3pl_for_clarification');
     const widget = formatPayoutWidgetDecision(evaluation, payoutCase, 1);
     expect(widget.recommendation).toContain('Ask 3PL for clarification');

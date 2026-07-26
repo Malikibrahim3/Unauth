@@ -202,6 +202,20 @@ const workPriority: Record<string, string> = {
   low: 'Low',
 };
 
+const exceptionType: Record<string, string> = {
+  unmatched_refund: 'Refund could not be matched',
+  ambiguous_replacement: 'Replacement needs a match',
+  conflicting_financials: 'Financial records conflict',
+  match_uncertainty: 'Record match needs review',
+  missing_recovery_result: 'Recovery result is missing',
+  stale_source_data: 'Source data is stale',
+  responsibility_judgement: 'Responsibility needs a decision',
+  unsupported_external_outcome: 'External outcome needs recording',
+  write_off_reason: 'Write-off reason is missing',
+  policy_override: 'Policy override needs recording',
+  other: 'Integration issue',
+};
+
 // Shared operational vocabulary for surfaces whose lifecycle is not tied to a
 // single database table. Keeping these values here prevents each integration,
 // import and rules screen from inventing its own casing and wording.
@@ -248,6 +262,12 @@ const workflowStatus: Record<string, string> = {
   cancelled: 'Cancelled',
   snoozed: 'Snoozed',
   draft: 'Draft',
+  unconfirmed: 'Unconfirmed',
+  confirmed: 'Confirmed',
+  corrected: 'Corrected',
+  sent: 'Sent',
+  waiting_response: 'Waiting on response',
+  response_received: 'Response received',
   retired: 'Retired',
   discarded: 'Discarded',
   created: 'Created',
@@ -317,8 +337,16 @@ const confidence: Record<string, string> = {
   unmatched: 'Unmatched',
 };
 
+/** Workspace invitation lifecycle (spec §6.7 — one central mapping per domain). */
+const inviteStatus: Record<string, string> = {
+  active: 'Active',
+  pending: 'Pending',
+  revoked: 'Revoked',
+};
+
 const MAPS = {
   caseStatus,
+  inviteStatus,
   requestedAction,
   recoverability,
   recoveryStatus,
@@ -329,6 +357,7 @@ const MAPS = {
   attribution,
   recoveryRoute: attribution,
   workPriority,
+  exceptionType,
   workflowStatus,
   evidenceStrength,
   confidence,

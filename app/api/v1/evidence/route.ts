@@ -46,7 +46,16 @@ async function POSTHandler(request: NextRequest) {
   if (!result.ok) {
     return withV1Cors(
       NextResponse.json(
-        { error: result.error, ...(result.detail ? { detail: result.detail } : {}) },
+        {
+          error: result.error,
+          ...(result.detail ? { detail: result.detail } : {}),
+          ...(result.requiredCredits != null
+            ? { requiredCredits: result.requiredCredits }
+            : {}),
+          ...(result.remainingCredits !== undefined
+            ? { remainingCredits: result.remainingCredits }
+            : {}),
+        },
         { status: result.status }
       ),
       request

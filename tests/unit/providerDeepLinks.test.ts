@@ -17,14 +17,14 @@ const context: SourceLinkContext = {
   integrations: [{
     id: 'shipbob-connection',
     providerId: 'shipbob',
-    providerBaseUrl: 'https://sandbox-api.shipbob.com/2026-01',
+    providerBaseUrl: 'https://sandbox-api.shipbob.com/2026-07',
     environment: 'sandbox',
   }],
   sourceAccounts: [{
     id: 'shipbob-account',
     connectionId: 'shipbob-connection',
     providerId: 'shipbob',
-    baseUrl: 'https://sandbox-api.shipbob.com/2026-01',
+    baseUrl: 'https://sandbox-api.shipbob.com/2026-07',
     environment: 'sandbox',
   }],
 };
@@ -88,4 +88,3 @@ describe('provider deep links', () => {
     })).toBe('https://webstage.shipbob.dev/app/merchant/#/order-shipment-management/orders/23344444/shipments/107287561');
   });
 });
-

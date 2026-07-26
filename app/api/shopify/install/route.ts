@@ -10,6 +10,8 @@ import {
 import { shopifyDebugLog } from "@/lib/shopify/debugLog";
 import {
   clearShopifyOAuthCookieOptions,
+  normalizeShopifyOAuthReturnPath,
+  SHOPIFY_OAUTH_RETURN_COOKIE,
   shopifyOAuthCookieOptions,
 } from "@/lib/shopify/oauthCookies";
 import { normalizeShopInput } from "@/lib/shopify/normalizeShopInput";
@@ -20,9 +22,12 @@ import { safeConnectionErrorCode } from "@/lib/integrations/publicErrors";
 
 const INTEGRATIONS_URL = "/integrations";
 
-function oauthCompleteResponse(params: Record<string, string>): NextResponse {
+function oauthCompleteResponse(
+  params: Record<string, string>,
+  returnPath = INTEGRATIONS_URL,
+): NextResponse {
   const appUrl = getAppUrl();
-  const fallbackUrl = new URL(INTEGRATIONS_URL, appUrl);
+  const fallbackUrl = new URL(returnPath, appUrl);
   for (const [key, value] of Object.entries(params)) {
     fallbackUrl.searchParams.set(key, value);
   }
@@ -84,6 +89,9 @@ function oauthCompleteResponse(params: Record<string, string>): NextResponse {
 
 export async function GET(request: NextRequest) {
   const shopParam = request.nextUrl.searchParams.get("shop") ?? "";
+  const returnPath = normalizeShopifyOAuthReturnPath(
+    request.nextUrl.searchParams.get("returnTo"),
+  );
   const normalized = normalizeShopInput(shopParam);
 
   shopifyDebugLog("shopify.install.started", {
@@ -94,7 +102,7 @@ export async function GET(request: NextRequest) {
   if (normalized.error !== null) {
     const reason =
       normalized.error === "public_domain" ? "public_domain" : "invalid_shop";
-    return oauthCompleteResponse({ shopify_error: reason });
+    return oauthCompleteResponse({ shopify_error: reason }, returnPath);
   }
 
   const shop = normalized.domain;
@@ -107,7 +115,7 @@ export async function GET(request: NextRequest) {
       shopifyDebugLog("shopify.install.misconfigured", {
         missing: "SHOPIFY_API_KEY",
       });
-      return oauthCompleteResponse({ shopify_error: "misconfigured" });
+      return oauthCompleteResponse({ shopify_error: "misconfigured" }, returnPath);
     }
 
     const redirectUri = `${appUrl.replace(/\/$/, "")}/api/shopify/callback`;
@@ -118,7 +126,7 @@ export async function GET(request: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
-      return oauthCompleteResponse({ shopify_error: "unauthorized" });
+      return oauthCompleteResponse({ shopify_error: "unauthorized" }, returnPath);
     }
     const selectedMerchantId = request.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value ?? null;
     const merchantContext = await ensureMerchantContextForUser(
@@ -127,7 +135,7 @@ export async function GET(request: NextRequest) {
       selectedMerchantId,
     );
     if (!merchantContext) {
-      return oauthCompleteResponse({ shopify_error: "missing_merchant" });
+      return oauthCompleteResponse({ shopify_error: "missing_merchant" }, returnPath);
     }
     const authorization = await requirePermissionForMerchant(
       serviceClient,
@@ -136,7 +144,7 @@ export async function GET(request: NextRequest) {
       PERMISSIONS.MANAGE_SETTINGS,
     );
     if (authorization.denied) {
-      return oauthCompleteResponse({ shopify_error: "forbidden" });
+      return oauthCompleteResponse({ shopify_error: "forbidden" }, returnPath);
     }
 
     const state = await beginOAuthConnectionTransaction(serviceClient, {
@@ -165,6 +173,11 @@ export async function GET(request: NextRequest) {
       state,
       shopifyOAuthCookieOptions(600),
     );
+    response.cookies.set(
+      SHOPIFY_OAUTH_RETURN_COOKIE,
+      returnPath,
+      shopifyOAuthCookieOptions(600),
+    );
 
     return response;
   } catch (error) {
@@ -173,9 +186,17 @@ export async function GET(request: NextRequest) {
         ?? "shopify_install_failed",
       shop,
     });
-    const response = oauthCompleteResponse({ shopify_error: "install_failed" });
+    const response = oauthCompleteResponse(
+      { shopify_error: "install_failed" },
+      returnPath,
+    );
     response.cookies.set(
       "shopify_oauth_state",
+      "",
+      clearShopifyOAuthCookieOptions(),
+    );
+    response.cookies.set(
+      SHOPIFY_OAUTH_RETURN_COOKIE,
       "",
       clearShopifyOAuthCookieOptions(),
     );

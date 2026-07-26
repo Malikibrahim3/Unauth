@@ -3,7 +3,7 @@ import { decryptBigCommerceOAuthCredentials } from '@/lib/commerce/credentialCry
 import { getIntegrationCredential } from '@/lib/integrations/auth';
 import { refreshCarrierCredentials } from '@/lib/integrations/providers/carrierCredentials';
 import { verifyShipBobPat } from '@/lib/integrations/providers/shipbob';
-import { refreshShipBobCredentialsIfNeeded } from '@/lib/integrations/providers/shipbobOAuth';
+import { refreshShipBobCredentialsIfNeeded, shipBobOAuthClientCredentials } from '@/lib/integrations/providers/shipbobOAuth';
 import { SHOPIFY_REST_API_VERSION } from '@/lib/shopify/apiVersion';
 import {
   decryptGorgiasApiCredentials,
@@ -13,7 +13,6 @@ import {
   gorgiasApiRequest,
   GorgiasSidebarRegistrationError,
 } from '@/lib/support/gorgias/registerSidebarWidget';
-import { env } from '@/lib/utils/env';
 
 export type LiveVerificationStatus = 'verified' | 'failed' | 'inconclusive';
 
@@ -139,14 +138,16 @@ export async function verifyMerchantIntegrationConnection(
         : { status: 'failed', reason: 'missing_credentials' };
     }
 
-    const credentials = env.SHIPBOB_OAUTH_CLIENT_ID && env.SHIPBOB_OAUTH_CLIENT_SECRET
+    const connectionEnvironment = row.environment === 'sandbox' ? 'sandbox' : 'production';
+    const oauthCredentials = shipBobOAuthClientCredentials(connectionEnvironment);
+    const credentials = oauthCredentials
       ? await withProbeDeadline(dependencies.refreshShipBobCredentialsIfNeeded(
           client,
           row.merchant_id,
           {
             connectionId: row.id,
-            clientId: env.SHIPBOB_OAUTH_CLIENT_ID,
-            clientSecret: env.SHIPBOB_OAUTH_CLIENT_SECRET,
+            clientId: oauthCredentials.clientId,
+            clientSecret: oauthCredentials.clientSecret,
           },
         ))
       : await dependencies.getIntegrationCredential(client, row.merchant_id, 'shipbob', {
@@ -159,7 +160,6 @@ export async function verifyMerchantIntegrationConnection(
         : '';
     if (!token) return { status: 'failed', reason: 'missing_credentials' };
     const storedEnvironment = credentials?.environment === 'sandbox' ? 'sandbox' : 'production';
-    const connectionEnvironment = row.environment === 'sandbox' ? 'sandbox' : 'production';
     if (storedEnvironment !== connectionEnvironment) {
       return { status: 'failed', reason: 'environment_mismatch' };
     }

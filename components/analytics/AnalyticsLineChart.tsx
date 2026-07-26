@@ -17,14 +17,14 @@ export interface AnalyticsLineChartProps {
 export function AnalyticsLineChart({
   data,
   height = 200,
-  color = 'var(--accent)',
+  color = 'var(--ua-action-primary)',
   valueFormatter,
   emptyLabel = 'No data yet',
 }: AnalyticsLineChartProps) {
   const fmt = valueFormatter ?? ((n: number) => String(n));
   if (!data || data.length === 0) {
     return (
-      <div style={{ height, display: 'grid', placeItems: 'center', color: 'var(--text-tertiary)', fontSize: 12 }}>
+      <div style={{ height, display: 'grid', placeItems: 'center', color: 'var(--ua-text-tertiary)', fontSize: 12 }}>
         {emptyLabel}
       </div>
     );
@@ -50,9 +50,9 @@ export function AnalyticsLineChart({
           <circle key={p.d.label} cx={p.x} cy={p.y} r={1.2} fill={color} />
         ))}
       </svg>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--text-tertiary)', marginTop: 4 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--ua-text-tertiary)', marginTop: 4 }}>
         <span>{data[0].label}</span>
-        <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>{fmt(data[data.length - 1].value)}</span>
+        <span style={{ fontFamily: 'var(--ua-font-sans)', fontVariantNumeric: 'tabular-nums', color: 'var(--ua-text-secondary)' }}>{fmt(data[data.length - 1].value)}</span>
         <span>{data[data.length - 1].label}</span>
       </div>
     </div>

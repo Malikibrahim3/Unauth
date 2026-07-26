@@ -210,7 +210,7 @@ export default async function LossesPage() {
       }
       main={<LossLedger rows={rows} />}
       footer={
-        <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+        <p className="text-xs" style={{ color: 'var(--ua-text-tertiary)' }}>
           Each loss is attributed to one recovery owner. Other possible owners are kept as candidates so the loss is never counted twice.
         </p>
       }

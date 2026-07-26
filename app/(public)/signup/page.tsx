@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { PanelCard } from '@/components/ui';
+import { Panel } from '@/components/ui';
 import { AuthError, AuthShell, authButtonStyle, authInputClassName } from '@/app/(auth)/AuthShell';
 import { createClient } from '@/lib/supabase/client';
 
@@ -90,8 +90,8 @@ export default function SignupPage() {
 
   return (
     <AuthShell>
-      <PanelCard as="section" variant="app" className="p-6">
-        <h1 className="text-3xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">Create your account</h1>
+      <Panel as="section" variant="panel" className="p-6">
+        <h1 className="text-[18px] font-semibold leading-6 tracking-normal text-[var(--text-primary)]">Create your account</h1>
 
         <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
           <div>
@@ -171,7 +171,7 @@ export default function SignupPage() {
             Sign in
           </Link>
         </p>
-      </PanelCard>
+      </Panel>
     </AuthShell>
   );
 }

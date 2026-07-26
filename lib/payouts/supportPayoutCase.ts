@@ -13,6 +13,7 @@ import { buildEvidenceChecklist } from '@/lib/payouts/evidenceChecklist';
 import { computePayoutExposure } from '@/lib/payouts/exposure';
 import { deriveRecoveryPath } from '@/lib/payouts/recovery';
 import { reconcileRequestedActions } from '@/lib/payouts/requestedAction';
+import { toStoredClaimType, toSupportPayoutCaseReason } from '@/lib/payouts/taxonomy';
 import { derivePayoutWorkflow, withWorkflow } from '@/lib/payouts/workflow';
 import {
   PAYOUT_CONFIG_VERSION,
@@ -22,15 +23,23 @@ import {
 } from '@/lib/payouts/types';
 
 /**
- * Resolve the product-level claim type. Uses the caller override first (e.g. a
- * future ticket classifier or demo/tests that distinguish `missing_item`),
- * otherwise the canonical DB claim type. Returns null when unknown.
+ * Resolve the product-level claim type. The normalized case issue is
+ * authoritative because the compatibility `claim_type` column intentionally
+ * stores both whole-parcel INR and partial-order missing-item as
+ * `item_not_received`.
  */
 export function resolvePayoutClaimType(
   context: ClaimDecisionContext,
   override?: PayoutClaimType | null,
 ): PayoutClaimType | null {
   if (override) return override;
+  const normalizedIssue = toSupportPayoutCaseReason(
+    context.claim.type,
+    context.claim.reasonNormalized,
+  );
+  if (normalizedIssue === 'missing_item') return 'missing_item';
+  const issueClaimType = toStoredClaimType(normalizedIssue);
+  if (issueClaimType) return issueClaimType;
   const raw = context.claim.type;
   if (!raw) return null;
   return toCanonicalClaimType(raw);

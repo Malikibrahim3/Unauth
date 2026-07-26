@@ -42,6 +42,12 @@ import {
  * no credit-amount language in user-facing copy.
  */
 export type GorgiasWidgetJsonPayload = {
+  /** Release 1 reconciliation card: three independent answers and their gaps. */
+  customer_action: string;
+  responsibility: string;
+  recovery_recommendation: string;
+  why: string;
+  missing_evidence: string;
   /** PRIMARY: identity confidence grade + what it matched on. */
   identity: string;
   /** Clean-state confirmation or a one-line factual claims summary. */
@@ -80,6 +86,8 @@ export type GorgiasWidgetJsonPayload = {
   loss_attribution: string;
   /** Lightweight recovery route (recoverability, owner, next step), or '—'. */
   recovery_path: string;
+  /** Read-only case investigation state, waiting party, deadline, gap, and latest response. */
+  investigation_summary: string;
   cta_label: string;
   cta_url: string;
   /** Browser-openable GET unlock links (Gorgias custom.links). */
@@ -115,9 +123,9 @@ export function isCreditGatedWidgetPreview(options?: GorgiasWidgetJsonOptions): 
 }
 
 const UNLOCK_LABELS = {
-  basic_unlock_label: 'Open full case →',
-  full_unlock_label: 'Open full case →',
-  evidence_unlock_label: 'Open full case →',
+  basic_unlock_label: 'View Store Check →',
+  full_unlock_label: 'Network Check unavailable',
+  evidence_unlock_label: 'Generate Case Report →',
 } as const;
 
 const NO_NETWORK_LABEL = 'No network history found';
@@ -185,6 +193,11 @@ function evidenceDisplayFields(
   };
 }
 
+/**
+ * The shape a caller must supply. Every field that `withUnlockFields` fills from
+ * a defaults block is omitted here — including the reconciliation row labels,
+ * which callers never build themselves.
+ */
 type WidgetCorePayload = Omit<
   GorgiasWidgetJsonPayload,
   | 'basic_unlock_url'
@@ -199,6 +212,12 @@ type WidgetCorePayload = Omit<
   | 'evidence_checklist'
   | 'loss_attribution'
   | 'recovery_path'
+  | 'investigation_summary'
+  | 'customer_action'
+  | 'responsibility'
+  | 'recovery_recommendation'
+  | 'why'
+  | 'missing_evidence'
 >;
 
 /**
@@ -221,6 +240,15 @@ const PAYOUT_DEFAULTS = {
   evidence_checklist: 'Evidence: —',
   loss_attribution: '—',
   recovery_path: 'Recovery: —',
+  investigation_summary: 'Investigation: —',
+} as const;
+
+const RECONCILIATION_DEFAULTS = {
+  customer_action: 'Customer action: Reconcile this case in Unauth',
+  responsibility: 'Responsibility: Unresolved until the records are matched',
+  recovery_recommendation: 'Recovery: No recommendation available yet',
+  why: 'Why: No reconciled case evidence is available yet',
+  missing_evidence: 'Missing evidence: Open the case to see the exact next artifact',
 } as const;
 
 export function formatNoPayoutCaseFields(): Pick<
@@ -232,6 +260,74 @@ export function formatNoPayoutCaseFields(): Pick<
     evidence_checklist: PAYOUT_DEFAULTS.evidence_checklist,
     recommendation: RECOMMENDATION_DEFAULTS.recommendation,
     recovery_path: PAYOUT_DEFAULTS.recovery_path,
+  };
+}
+
+export type ReconciliationWidgetSnapshot = {
+  headline?: string | null;
+  explanation?: string | null;
+  assessment_state?: string | null;
+  missing_evidence?: string[] | null;
+  reason_codes?: string[] | null;
+};
+
+export type ReconciliationWidgetFields = Pick<
+  GorgiasWidgetJsonPayload,
+  'customer_action' | 'responsibility' | 'recovery_recommendation' | 'why' | 'missing_evidence'
+>;
+
+function formatSnapshotLine(prefix: string, snapshot: ReconciliationWidgetSnapshot | null | undefined, fallback: string): string {
+  if (!snapshot?.headline) return fallback;
+  const state = snapshot.assessment_state ? ` · ${snapshot.assessment_state}` : '';
+  return `${prefix}: ${snapshot.headline}${state}`;
+}
+
+/**
+ * Formats the canonical reconciliation read model for the compact Gorgias
+ * card. It intentionally keeps the legacy payout fields available to older
+ * API consumers while the visible card is driven by these five fields.
+ */
+export function formatReconciliationWidgetFields(input: {
+  customerAction?: ReconciliationWidgetSnapshot | null;
+  responsibility?: ReconciliationWidgetSnapshot | null;
+  recovery?: ReconciliationWidgetSnapshot | null;
+} | null | undefined): ReconciliationWidgetFields {
+  const customerAction = input?.customerAction;
+  const responsibility = input?.responsibility;
+  const recovery = input?.recovery;
+  const reasons = [
+    ...(customerAction?.reason_codes ?? []),
+    ...(responsibility?.reason_codes ?? []),
+    ...(recovery?.reason_codes ?? []),
+  ];
+  const missing = [
+    ...(customerAction?.missing_evidence ?? []),
+    ...(responsibility?.missing_evidence ?? []),
+    ...(recovery?.missing_evidence ?? []),
+  ].filter(Boolean);
+  return {
+    customer_action: formatSnapshotLine(
+      'Customer action',
+      customerAction,
+      RECONCILIATION_DEFAULTS.customer_action,
+    ),
+    responsibility: formatSnapshotLine(
+      'Responsibility',
+      responsibility,
+      RECONCILIATION_DEFAULTS.responsibility,
+    ),
+    recovery_recommendation: formatSnapshotLine(
+      'Recovery',
+      recovery,
+      RECONCILIATION_DEFAULTS.recovery_recommendation,
+    ),
+    why: `Why: ${[customerAction?.explanation, responsibility?.explanation, recovery?.explanation, reasons.length > 0 ? `signals ${truncateList(reasons)}` : null]
+      .filter(Boolean)
+      .slice(0, 2)
+      .join(' · ') || 'No reconciled case evidence is available yet'}`,
+    missing_evidence: missing.length > 0
+      ? `Missing evidence: ${truncateList([...new Set(missing)])}`
+      : 'Missing evidence: None identified',
   };
 }
 
@@ -321,8 +417,6 @@ function buildContextSummary(
 
   if (showNetworkIntelligence && network && network.merchantCount > 0) {
     parts.push(`network signal: seen at ${network.merchantCount} ${pluralWord(network.merchantCount, 'merchant', 'merchants')}`);
-  } else if (!showNetworkIntelligence && network && network.merchantCount > 0) {
-    parts.push('network intelligence available on Growth');
   }
 
   return parts.join(' · ') || 'Store context available — open in Unauth for details';
@@ -354,6 +448,7 @@ function withUnlockFields(
 ): GorgiasWidgetJsonPayload {
   return {
     ...RECOMMENDATION_DEFAULTS,
+    ...RECONCILIATION_DEFAULTS,
     ...PAYOUT_DEFAULTS,
     ...payload,
     ...UNLOCK_LABELS,
@@ -664,7 +759,9 @@ function baseCta(
   link?: GorgiasWidgetLinkContext,
 ): Pick<GorgiasWidgetJsonPayload, 'cta_label' | 'cta_url'> {
   const claimId = link?.claimId?.trim();
-  const base = appUrl('/claims');
+  const base = claimId
+    ? appUrl(`/claims/${encodeURIComponent(claimId)}`)
+    : appUrl('/claims');
   if (!link) {
     return { cta_label: 'Open case →', cta_url: base };
   }
@@ -675,10 +772,11 @@ function baseCta(
   if (claimId) {
     extras.push(`focus=${encodeURIComponent(claimId)}`);
   }
-  const sep = '?';
+  const sep = base.includes('?') ? '&' : '?';
+  const fragment = claimId ? '#case-investigations' : '';
   return {
     cta_label: 'Open case →',
-    cta_url: `${base}${sep}${extras.join('&')}`,
+    cta_url: `${base}${sep}${extras.join('&')}${fragment}`,
   };
 }
 
@@ -695,7 +793,6 @@ function buildNetworkEvidenceField(
     }
     return NO_CROSS_STORE_LABEL;
   }
-  if (network && network.merchantCount > 0) return 'Additional identity context available';
   if (ce3EvidenceAvailable) return 'Store order evidence available';
   return '—';
 }

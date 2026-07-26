@@ -24,12 +24,12 @@ export function CommandPaletteInputBar({
   return (
     <div
       className="flex items-center gap-3 px-4 py-3"
-      style={{ borderBottom: '1px solid var(--border-muted)' }}
+      style={{ borderBottom: '1px solid var(--ua-border-subtle)' }}
     >
       <Search
         size={16}
         aria-hidden="true"
-        style={{ color: 'var(--icon-muted)', flexShrink: 0 }}
+        style={{ color: 'var(--ua-icon-secondary)', flexShrink: 0 }}
       />
       <input
         ref={inputRef}
@@ -43,15 +43,15 @@ export function CommandPaletteInputBar({
           onScheduleSearch(nextQuery);
         }}
         onKeyDown={onKeyDown}
-        className="flex-1 bg-transparent text-sm outline-none placeholder:opacity-50 focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
-        style={{ color: 'var(--text)' }}
+        className="flex-1 bg-transparent text-sm outline-none placeholder:opacity-50 focus-visible:ring-2 focus-visible:ring-[var(--ua-action-primary)]"
+        style={{ color: 'var(--ua-text-primary)' }}
         autoComplete="off"
         spellCheck={false}
       />
       {searchingCustomers ? (
         <div
           className="w-3 h-3 rounded-full border border-t-transparent animate-spin"
-          style={{ borderColor: 'var(--border)', borderTopColor: 'var(--accent)' }}
+          style={{ borderColor: 'var(--ua-border-default)', borderTopColor: 'var(--ua-action-primary)' }}
         />
       ) : null}
       {query ? (
@@ -62,14 +62,14 @@ export function CommandPaletteInputBar({
             dispatch({ type: 'searchClear' });
           }}
           className="text-xs px-1.5 py-0.5 rounded"
-          style={{ color: 'var(--text-tertiary)', background: 'var(--bg-subtle)' }}
+          style={{ color: 'var(--ua-text-tertiary)', background: 'var(--ua-surface-secondary)' }}
         >
           Clear
         </button>
       ) : null}
       <kbd
         className="hidden sm:inline font-mono text-xs px-1.5 py-0.5 rounded"
-        style={{ color: 'var(--text-tertiary)', background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
+        style={{ color: 'var(--ua-text-tertiary)', background: 'var(--ua-surface-secondary)', border: '1px solid var(--ua-border-default)' }}
       >
         esc
       </kbd>
@@ -81,15 +81,15 @@ export function CommandPaletteFooter() {
   return (
     <div
       className="flex items-center gap-4 px-4 py-2"
-      style={{ borderTop: '1px solid var(--border-muted)', background: 'var(--bg-subtle)' }}
+      style={{ borderTop: '1px solid var(--ua-border-subtle)', background: 'var(--ua-surface-secondary)' }}
     >
-      <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+      <span className="text-xs" style={{ color: 'var(--ua-text-tertiary)' }}>
         <kbd className="font-mono mr-1">↑↓</kbd>navigate
       </span>
-      <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+      <span className="text-xs" style={{ color: 'var(--ua-text-tertiary)' }}>
         <kbd className="font-mono mr-1">↵</kbd>open
       </span>
-      <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+      <span className="text-xs" style={{ color: 'var(--ua-text-tertiary)' }}>
         <kbd className="font-mono mr-1">esc</kbd>close
       </span>
     </div>

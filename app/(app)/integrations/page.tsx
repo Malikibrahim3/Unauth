@@ -15,19 +15,30 @@ import { formatNumber } from "@/lib/utils/format";
 import {
   resolveEffectiveConnectionStatus,
 } from "@/lib/connections/effectiveStatus";
+import { resolveConnectionReadModel } from "@/lib/connections/readModel";
 import {
   ConnectorRow,
   type CatalogueRowItem,
 } from "@/components/integrations/ConnectorRow";
 import { CONNECTOR_GRID_CLASS } from "@/components/integrations/connectorGrid";
 import { DeferredLiveConnectionVerification } from "@/components/integrations/DeferredLiveConnectionVerification";
+import { ShipBobIntegrationBanner } from "@/components/integrations/ShipBobIntegrationBanner";
 import { WorkbenchPage, KeyInsightCallout, SummaryRail } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
-// Post-merge bucket sets — grouping only, the finer badge drives the copy.
-const ACTIVE_BUCKETS = new Set(["connected"]);
-const ATTENTION_BUCKETS = new Set(["error", "attention_required"]);
+// A provider is operational only when the badge can be backed by a fresh
+// signal. The coarse bucket intentionally stays useful for API consumers,
+// while this page groups on the merchant-facing two-axis state.
+const OPERATIONAL_BADGES = new Set(["healthy", "connection_verified"]);
+const ATTENTION_BADGES = new Set([
+  "error",
+  "not_syncing",
+  "stale",
+  "sync_pending",
+  "no_data",
+  "verification_unavailable",
+]);
 
 export default async function IntegrationsPage() {
   const user = await getRequestUser();
@@ -40,26 +51,39 @@ export default async function IntegrationsPage() {
     // Stored sync and freshness state renders immediately; the deferred live
     // verification endpoint refreshes those canonical rows after first paint.
     const effective = resolveEffectiveConnectionStatus(null, item.syncState, item.freshness);
-    return { ...item, status: effective.bucket, badge: effective.badge, lastError: effective.note, noteTone: effective.noteTone };
+    return {
+      ...item,
+      status: effective.bucket,
+      badge: effective.badge,
+      lastError: effective.note,
+      noteTone: effective.noteTone,
+      readModel: resolveConnectionReadModel({
+        providerId: item.id,
+        syncState: item.syncState,
+        freshness: item.freshness,
+        lastVerifiedAt: item.lastVerifiedAt,
+        importedRecords: item.importedRecords,
+      }),
+    };
   });
-  const connected = catalogue.filter((item) => ACTIVE_BUCKETS.has(item.status));
-  const attention = catalogue.filter((item) => ATTENTION_BUCKETS.has(item.status));
+  const connected = catalogue.filter((item) => item.readModel?.operational === "healthy");
+  const attention = catalogue.filter((item) => item.readModel?.operational === "attention");
   const manual = catalogue.filter(
     (item) =>
       item.category === "documents" &&
-      !ACTIVE_BUCKETS.has(item.status) &&
-      !ATTENTION_BUCKETS.has(item.status),
+      !OPERATIONAL_BADGES.has(item.badge) &&
+      !ATTENTION_BADGES.has(item.badge),
   );
   const planned = catalogue.filter(
     (item) =>
       item.stage === "planned" &&
-      !ACTIVE_BUCKETS.has(item.status) &&
-      !ATTENTION_BUCKETS.has(item.status),
+      !OPERATIONAL_BADGES.has(item.badge) &&
+      !ATTENTION_BADGES.has(item.badge),
   );
   const available = catalogue.filter(
     (item) =>
-      !ACTIVE_BUCKETS.has(item.status) &&
-      !ATTENTION_BUCKETS.has(item.status) &&
+      !OPERATIONAL_BADGES.has(item.badge) &&
+      !ATTENTION_BADGES.has(item.badge) &&
       item.category !== "documents" &&
       item.stage !== "planned" &&
       item.connectEnabled,
@@ -81,9 +105,9 @@ export default async function IntegrationsPage() {
       items: attention,
     },
     {
-      title: "Connected",
+      title: "Operational",
       description:
-        "Live accounts with source freshness and imported-record evidence.",
+        "Live accounts with a fresh source signal and imported-record evidence.",
       items: connected,
     },
     {
@@ -106,6 +130,7 @@ export default async function IntegrationsPage() {
   ];
   return (
     <>
+      <ShipBobIntegrationBanner />
       <DeferredLiveConnectionVerification />
       <WorkbenchPage
       title="Integrations"
@@ -113,24 +138,23 @@ export default async function IntegrationsPage() {
       actions={
         <Link
           href="/integrations/imports"
-          className="inline-flex h-7 items-center rounded-[var(--ua-radius-input)] border border-[var(--border)] bg-[var(--surface)] px-2.5 text-[11px] font-semibold text-[var(--text-primary)] shadow-[var(--shadow-xs)]"
+          className="inline-flex h-7 items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2.5 text-[length:var(--ua-text-micro-size)] font-semibold text-[var(--ua-text-primary)]"
           data-capability-id="integrations.import"
         >
           Import records
         </Link>
       }
       kpiItems={[
-        { label: "Connected providers", value: formatNumber(connected.length), hint: "Live provider accounts" },
+        { label: "Operational providers", value: formatNumber(connected.length), hint: "Fresh source signals" },
         { label: "Imported records", value: formatNumber(imported), hint: "Across connected sources" },
         { label: "Covered categories", value: formatNumber(categories), hint: "Operational evidence types" },
       ]}
       primaryVisual={
         <KeyInsightCallout
-          eyebrow="Source health"
           tone={attention.length > 0 ? 'warning' : connected.length > 0 ? 'success' : 'neutral'}
           icon={<Cable size={16} />}
         >
-          <strong>{formatNumber(connected.length)}</strong> providers connected
+          <strong>{formatNumber(connected.length)}</strong> providers operational
           {attention.length > 0 ? <> · <strong>{formatNumber(attention.length)}</strong> need attention</> : null}
           {' '}· <strong>{formatNumber(imported)}</strong> records imported.
         </KeyInsightCallout>
@@ -142,7 +166,7 @@ export default async function IntegrationsPage() {
               title: 'Source health',
               rows: [
                 { label: 'Needs attention', value: formatNumber(attention.length), tone: 'danger', bar: catalogue.length ? attention.length / catalogue.length : 0 },
-                { label: 'Connected', value: formatNumber(connected.length), tone: 'success', bar: catalogue.length ? connected.length / catalogue.length : 0 },
+                { label: 'Operational', value: formatNumber(connected.length), tone: 'success', bar: catalogue.length ? connected.length / catalogue.length : 0 },
                 { label: 'Available', value: formatNumber(available.length), tone: 'neutral', bar: catalogue.length ? available.length / catalogue.length : 0 },
                 { label: 'Manual evidence', value: formatNumber(manual.length), tone: 'neutral', bar: catalogue.length ? manual.length / catalogue.length : 0 },
                 { label: 'Planned', value: formatNumber(planned.length), tone: 'neutral', bar: catalogue.length ? planned.length / catalogue.length : 0 },
@@ -153,7 +177,7 @@ export default async function IntegrationsPage() {
         />
       }
       main={
-        <div className="divide-y divide-[var(--border-muted)]">
+        <div className="divide-y divide-[var(--ua-border-subtle)]">
         {groups.map((group) =>
         group.items.length ? (
           <section
@@ -162,30 +186,30 @@ export default async function IntegrationsPage() {
             className="p-4"
           >
             <div className="flex items-start gap-2.5">
-              <span className="mt-0.5 flex h-7 w-7 items-center justify-center rounded-md bg-[var(--surface-selected)] text-[var(--brand-deep)]">
+              <span className="mt-0.5 flex h-7 w-7 items-center justify-center rounded-md bg-[var(--ua-surface-selected)] text-[var(--ua-text-primary)]">
                 {group.title === "Manual evidence" ? <FileUp size={15} aria-hidden="true" /> : <Cable size={15} aria-hidden="true" />}
               </span>
               <div>
               <h2
                 id={`connector-${group.title.toLowerCase().replaceAll(" ", "-")}`}
-                className="text-[13px] font-semibold"
+                className="text-[length:var(--ua-text-small-size)] font-semibold"
               >
                 {group.title}{" "}
-                <span className="text-xs tabular-nums text-[var(--text-tertiary)]">
+                <span className="text-xs tabular-nums text-[var(--ua-text-tertiary)]">
                   {group.items.length}
                 </span>
               </h2>
-              <p className="mt-1 text-xs text-[var(--text-secondary)]">
+              <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">
                 {group.description}
               </p>
-              <p className="mt-1 text-[11px] font-medium text-[var(--brand-deep)] xl:hidden">
+              <p className="mt-1 text-[length:var(--ua-text-micro-size)] font-medium text-[var(--ua-text-primary)] xl:hidden">
                 Open a provider for full coverage and freshness details
               </p>
               </div>
             </div>
-            <div className="mt-3 overflow-x-auto rounded-[var(--ua-radius-card)] border border-[var(--border)]">
+            <div className="mt-3 overflow-x-auto rounded-[var(--ua-radius-surface)] border border-[var(--ua-border-default)]">
               <div className="hidden xl:block">
-                <div className={`ua-panel-header ${CONNECTOR_GRID_CLASS} px-4 py-2.5 text-[11px] font-semibold text-[var(--text-tertiary)]`}>
+                <div className={`ua-panel-header ${CONNECTOR_GRID_CLASS} px-4 py-2.5 text-[length:var(--ua-text-micro-size)] font-semibold text-[var(--ua-text-tertiary)]`}>
                   <span>Provider</span>
                   <span>Status</span>
                   <span>Coverage</span>

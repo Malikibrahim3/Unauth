@@ -14,14 +14,14 @@ export function CustomerProfileBlockedView({ reason }: { reason: CustomerProfile
     return (
       <div>
         <AuthenticatedPageHeader eyebrow="Customer record" title="Access denied" subtitle="You do not have permission to view this customer profile." />
-        <div className={pageStyles.pageBody}><AuthenticatedPanel bodyClassName="p-4 text-[11px] text-[var(--text-secondary)]">Your current workspace role does not include this record.</AuthenticatedPanel></div>
+        <div className={pageStyles.pageBody}><AuthenticatedPanel bodyClassName="p-4 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-secondary)]">Your current workspace role does not include this record.</AuthenticatedPanel></div>
       </div>
     );
   }
   return (
     <div>
       <AuthenticatedPageHeader eyebrow="Customer record" title="Link expired" subtitle="This link has expired. Ask your team for a new one from Unauth." />
-      <div className={pageStyles.pageBody}><AuthenticatedPanel bodyClassName="p-4"><a href="https://unauth.co" className="text-[11px] font-semibold underline" style={{ color: 'var(--text)' }}>Go to unauth.co</a></AuthenticatedPanel></div>
+      <div className={pageStyles.pageBody}><AuthenticatedPanel bodyClassName="p-4"><a href="https://unauth.co" className="text-[length:var(--ua-text-micro-size)] font-semibold underline" style={{ color: 'var(--ua-text-primary)' }}>Go to unauth.co</a></AuthenticatedPanel></div>
     </div>
   );
 }

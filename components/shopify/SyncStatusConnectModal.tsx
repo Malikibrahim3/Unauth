@@ -63,7 +63,7 @@ export function SyncStatusConnectModal({
   return (
     <dialog
       ref={dialogRef}
-      className="fixed inset-0 z-50 m-0 flex max-h-none max-w-none items-center justify-center border-0 bg-transparent p-4 backdrop:bg-black/45 open:flex"
+      className="fixed inset-0 z-50 m-0 flex max-h-none max-w-none items-center justify-center border-0 bg-transparent p-4 backdrop:bg-[var(--ua-backdrop)] open:flex"
       aria-labelledby="connect-shopify-title"
       onClose={onClose}
     >
@@ -75,13 +75,13 @@ export function SyncStatusConnectModal({
       />
       <div
         className="relative w-full max-w-md rounded-md p-6 shadow-xl"
-        style={{ background: 'var(--surface)', border: '1px solid var(--border-muted)' }}
+        style={{ background: 'var(--ua-surface-primary)', border: '1px solid var(--ua-border-subtle)' }}
       >
         <button
           type="button"
           onClick={onClose}
           className="absolute top-4 right-4 rounded p-1 opacity-50 hover:opacity-100"
-          style={{ color: 'var(--text-secondary)' }}
+          style={{ color: 'var(--ua-text-secondary)' }}
           aria-label="Close"
         >
           <X className="h-4 w-4" />
@@ -90,11 +90,11 @@ export function SyncStatusConnectModal({
         <h2
           id="connect-shopify-title"
           className="text-base font-semibold mb-1"
-          style={{ color: 'var(--text)' }}
+          style={{ color: 'var(--ua-text-primary)' }}
         >
           Connect Shopify
         </h2>
-        <p className="text-xs mb-5" style={{ color: 'var(--text-secondary)' }}>
+        <p className="text-xs mb-5" style={{ color: 'var(--ua-text-secondary)' }}>
           We use this only to send you to the correct Shopify approval screen.
         </p>
 
@@ -103,7 +103,7 @@ export function SyncStatusConnectModal({
             <label
               htmlFor="shopify-admin-url"
               className="block text-xs font-semibold mb-1.5"
-              style={{ color: 'var(--text)' }}
+              style={{ color: 'var(--ua-text-primary)' }}
             >
               Shopify Admin URL
             </label>
@@ -116,20 +116,20 @@ export function SyncStatusConnectModal({
               placeholder="admin.shopify.com/store/your-store"
               className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-1"
               style={{
-                borderColor: inputError ? 'var(--success)' : 'var(--border-muted)',
-                background: 'var(--bg-inset)',
-                color: 'var(--text)',
+                borderColor: inputError ? 'var(--ua-success)' : 'var(--ua-border-subtle)',
+                background: 'var(--ua-surface-secondary)',
+                color: 'var(--ua-text-primary)',
               }}
               autoComplete="off"
               spellCheck={false}
               data-testid="shopify-admin-url-input"
             />
             {inputError ? (
-              <p className="mt-1.5 text-xs" style={{ color: 'var(--success)' }} role="alert">
+              <p className="mt-1.5 text-xs" style={{ color: 'var(--ua-success)' }} role="alert">
                 {inputError}
               </p>
             ) : (
-              <p className="mt-1.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
+              <p className="mt-1.5 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
                 Paste the Shopify Admin URL for the store you want to connect. You can find it in Shopify Admin, usually as{' '}
                 <code className="font-mono">admin.shopify.com/store/your-store</code>.
               </p>
@@ -141,14 +141,14 @@ export function SyncStatusConnectModal({
               type="button"
               onClick={onClose}
               className="rounded-md px-4 py-2 text-xs font-medium"
-              style={{ color: 'var(--text-secondary)', background: 'var(--bg-inset)' }}
+              style={{ color: 'var(--ua-text-secondary)', background: 'var(--ua-surface-secondary)' }}
             >
               Cancel
             </button>
             <button
               type="submit"
               className="rounded-md px-4 py-2 text-xs font-semibold"
-              style={{ background: 'var(--accent)', color: 'white' }}
+              style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)' }}
               data-testid="shopify-connect-submit"
             >
               Continue to Shopify

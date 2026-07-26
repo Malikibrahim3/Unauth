@@ -13,8 +13,8 @@ describe('ShipBob per-connection environment', () => {
   });
 
   it('selects disjoint endpoint families', () => {
-    expect(shipBobEndpoints('sandbox')).toEqual({ authorizationHost: 'https://authstage.shipbob.com', apiBaseUrl: 'https://sandbox-api.shipbob.com/2026-01' });
-    expect(shipBobEndpoints('production')).toEqual({ authorizationHost: 'https://auth.shipbob.com', apiBaseUrl: 'https://api.shipbob.com/2026-01' });
+    expect(shipBobEndpoints('sandbox')).toEqual({ authorizationHost: 'https://authstage.shipbob.com', apiBaseUrl: 'https://sandbox-api.shipbob.com/2026-07' });
+    expect(shipBobEndpoints('production')).toEqual({ authorizationHost: 'https://auth.shipbob.com', apiBaseUrl: 'https://api.shipbob.com/2026-07' });
   });
 
   it('preserves explicit sandbox credentials and defaults legacy credentials safely', () => {

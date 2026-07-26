@@ -39,7 +39,7 @@ export default async function DashboardPage({
   const [report, comparison] = await Promise.all([
     loadIntelligenceReport(svc, ctx.merchantId, range, timezone, { asOf }),
     compare === "previous"
-      ? loadDashboardPeriodComparison(svc, ctx.merchantId, range, asOf)
+      ? loadDashboardPeriodComparison(svc, ctx.merchantId, range, asOf, timezone)
       : Promise.resolve(null),
   ]);
   const requestedCurrency = sp.currency?.toUpperCase();

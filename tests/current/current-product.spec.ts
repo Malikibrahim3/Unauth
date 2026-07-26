@@ -4,7 +4,7 @@ const CURRENT_ROUTES = [
   { path: "/dashboard", heading: "Overview" },
   { path: "/work", heading: "Work" },
   { path: "/exceptions", heading: "Work" },
-  { path: "/claims", heading: "Payout Control" },
+  { path: "/claims", heading: "Payout decisions" },
   { path: "/losses", heading: "Losses" },
   { path: "/recoveries", heading: "Recovery board" },
   { path: "/customers", heading: "Customers" },

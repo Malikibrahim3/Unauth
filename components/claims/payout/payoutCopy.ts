@@ -15,14 +15,14 @@ import { formatCurrency } from '@/lib/utils/format';
 import { evidenceKeyLabel } from '@/lib/payouts/config';
 
 export const PAYOUT_DISCLAIMER =
-  'Loss attribution and recovery route are advisory estimates from the available evidence. Your team owns the decision.';
+  'Compensation context and recovery route are recommendations from the available evidence. Responsibility remains separate and your team owns the customer decision.';
 
 export type PayoutTone = 'success' | 'warning' | 'neutral';
 
 export const TONE_STYLE: Record<PayoutTone, { bg: string; color: string }> = {
-  success: { bg: 'var(--success-bg)', color: 'var(--success)' },
-  warning: { bg: 'var(--warning-bg)', color: 'var(--warning)' },
-  neutral: { bg: 'var(--bg-inset)', color: 'var(--text-secondary)' },
+  success: { bg: 'var(--ua-success-bg)', color: 'var(--ua-success)' },
+  warning: { bg: 'var(--ua-warning-bg)', color: 'var(--ua-warning)' },
+  neutral: { bg: 'var(--ua-surface-secondary)', color: 'var(--ua-text-secondary)' },
 };
 
 export function strengthTone(strength: EvidenceStrength): PayoutTone {

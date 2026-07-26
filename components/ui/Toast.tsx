@@ -32,9 +32,9 @@ interface ToastContextValue {
 const ToastContext = createContext<ToastContextValue | null>(null);
 
 const TONE: Record<ToastTone, { border: string; icon: ReactNode }> = {
-  success: { border: "var(--success)", icon: <CheckCircle2 className="h-4 w-4" style={{ color: "var(--success)" }} /> },
-  info: { border: "var(--info)", icon: <Info className="h-4 w-4" style={{ color: "var(--info)" }} /> },
-  danger: { border: "var(--risk-critical-fg)", icon: <TriangleAlert className="h-4 w-4" style={{ color: "var(--risk-critical-fg)" }} /> },
+  success: { border: "var(--ua-success)", icon: <CheckCircle2 className="h-4 w-4" style={{ color: "var(--ua-success)" }} /> },
+  info: { border: "var(--ua-info)", icon: <Info className="h-4 w-4" style={{ color: "var(--ua-info)" }} /> },
+  danger: { border: "var(--ua-risk-critical)", icon: <TriangleAlert className="h-4 w-4" style={{ color: "var(--ua-risk-critical)" }} /> },
 };
 
 export function ToastProvider({ children }: { children: ReactNode }) {
@@ -70,21 +70,21 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             key={item.id}
             role="status"
             aria-live="polite"
-            className="ua-toast pointer-events-auto flex items-start gap-2.5 rounded-lg border bg-[var(--surface)] p-3 shadow-[var(--ua-shadow-toast)]"
-            style={{ borderColor: "var(--border)", borderLeft: `3px solid ${TONE[item.tone].border}` }}
+            className="ua-toast pointer-events-auto flex items-start gap-2.5 rounded-lg border bg-[var(--ua-surface-primary)] p-3 shadow-[var(--ua-shadow-menu)]"
+            style={{ borderColor: "var(--ua-border-default)", borderLeft: `3px solid ${TONE[item.tone].border}` }}
           >
             <span className="mt-0.5 shrink-0">{TONE[item.tone].icon}</span>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-[var(--text-primary)]">{item.title}</p>
+              <p className="text-sm font-semibold text-[var(--ua-text-primary)]">{item.title}</p>
               {item.description ? (
-                <p className="mt-0.5 text-xs text-[var(--text-secondary)]">{item.description}</p>
+                <p className="mt-0.5 text-xs text-[var(--ua-text-secondary)]">{item.description}</p>
               ) : null}
             </div>
             <button
               type="button"
               aria-label="Dismiss notification"
               onClick={() => dismiss(item.id)}
-              className="shrink-0 rounded p-0.5 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
+              className="shrink-0 rounded p-0.5 text-[var(--ua-text-tertiary)] hover:text-[var(--ua-text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ua-border-focus)]"
             >
               <X className="h-3.5 w-3.5" />
             </button>

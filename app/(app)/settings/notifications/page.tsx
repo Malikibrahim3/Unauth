@@ -12,10 +12,8 @@ export default async function NotificationPreferencesPage() {
   const values = await listNotificationPreferences(service, ctx.merchantId, user.id);
   return (
     <SettingsPageShell
-      eyebrow="Personal settings"
       title="Notification preferences"
       subtitle="Choose which typed operational events create an in-app item for your account. Preferences never change another team member’s inbox."
-      breadcrumbs={[{ label: 'Notifications', href: '/notifications' }, { label: 'Preferences' }]}
     >
       <NotificationPreferencesForm initial={values} />
     </SettingsPageShell>

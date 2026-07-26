@@ -37,12 +37,12 @@ function ChecklistRow({ item }: { item: ChecklistItem }) {
     <div className="flex items-center gap-3 py-2.5">
       <div className="shrink-0">
         {item.ok ? (
-          <CheckCircle2 className="h-4 w-4" style={{ color: 'var(--success)' }} />
+          <CheckCircle2 className="h-4 w-4" style={{ color: 'var(--ua-success)' }} />
         ) : (
-          <Circle className="h-4 w-4" style={{ color: 'var(--border)' }} />
+          <Circle className="h-4 w-4" style={{ color: 'var(--ua-border-default)' }} />
         )}
       </div>
-      <span className="flex-1 text-sm" style={{ color: 'var(--text)' }}>
+      <span className="flex-1 text-sm" style={{ color: 'var(--ua-text-primary)' }}>
         {item.label}
       </span>
       <Badge tone={item.ok ? 'success' : 'warning'} size="sm" dot>{item.status}</Badge>
@@ -86,30 +86,30 @@ export function FreshdeskSupportSyncConnectionDetails({
           alt="Freshdesk"
           width={40}
           height={40}
-          className="h-9 w-9 shrink-0 rounded-[var(--ua-radius-input)] border border-[var(--border-muted)] object-contain p-1"
+          className="h-9 w-9 shrink-0 rounded-[var(--ua-radius-control)] border border-[var(--ua-border-subtle)] object-contain p-1"
         />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+            <p className="text-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>
               {freshdeskAccountLabel(connection)}
             </p>
             <StatusBadge family="workflowStatus" value={isActive ? 'connected' : connection.status} />
           </div>
-          <p className="mt-0.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
+          <p className="mt-0.5 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
             Last synced {formatFreshdeskWhen(connection.last_sync_at)}
           </p>
         </div>
       </div>
 
       {/* Setup checklist */}
-      <Card unstyled variant="flat" className="divide-y overflow-hidden p-0">
+      <Card unstyled variant="panel" className="divide-y overflow-hidden p-0">
         <div className="px-4 py-2.5">
-          <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
+          <p className="text-[length:var(--ua-text-micro-size)] font-semibold" style={{ color: 'var(--ua-text-secondary)' }}>
             Setup checklist
           </p>
         </div>
         {checklist.map((item) => (
-          <div key={item.label} className="px-4" style={{ borderColor: 'var(--border)' }}>
+          <div key={item.label} className="px-4" style={{ borderColor: 'var(--ua-border-default)' }}>
             <ChecklistRow item={item} />
           </div>
         ))}
@@ -117,17 +117,17 @@ export function FreshdeskSupportSyncConnectionDetails({
 
       {/* Webhook endpoint info when active */}
       {isActive ? (
-        <Card unstyled variant="flat" className="space-y-2 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
+        <Card unstyled variant="panel" className="space-y-2 p-4">
+          <p className="text-[length:var(--ua-text-micro-size)] font-semibold" style={{ color: 'var(--ua-text-secondary)' }}>
             Webhook endpoint
           </p>
           <div
             className="rounded-lg px-3 py-2 font-mono text-xs"
-            style={{ background: 'color-mix(in srgb, var(--text) 5%, transparent)', color: 'var(--text)' }}
+            style={{ background: 'color-mix(in srgb, var(--ua-text-primary) 5%, transparent)', color: 'var(--ua-text-primary)' }}
           >
             <p>{connection.webhook_url}</p>
           </div>
-          <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+          <p className="text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
             Add header <code className="font-mono">{FRESHDESK_SUPPORT_WEBHOOK_HEADER_NAME}</code> with your webhook secret to authenticate requests.
           </p>
         </Card>
@@ -135,13 +135,13 @@ export function FreshdeskSupportSyncConnectionDetails({
 
       {/* Danger zone */}
       {canManage ? (
-        <div className="flex flex-wrap gap-2 border-t pt-4" style={{ borderColor: 'var(--border)' }}>
+        <div className="flex flex-wrap gap-2 border-t pt-4" style={{ borderColor: 'var(--ua-border-default)' }}>
           <button
             type="button"
             disabled={state.busy || syncing || !isActive || !connection.freshdesk_api_configured}
             onClick={onSyncNow}
             className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium disabled:opacity-50"
-            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+            style={{ borderColor: 'var(--ua-border-default)', color: 'var(--ua-text-secondary)' }}
           >
             <RefreshCw className={`h-3.5 w-3.5 ${syncing ? 'animate-spin' : ''}`} />
             {syncing ? 'Syncing tickets' : 'Sync tickets now'}
@@ -151,7 +151,7 @@ export function FreshdeskSupportSyncConnectionDetails({
             disabled={state.busy}
             onClick={onRotateSecret}
             className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium disabled:opacity-50"
-            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+            style={{ borderColor: 'var(--ua-border-default)', color: 'var(--ua-text-secondary)' }}
           >
             <RefreshCw className="h-3.5 w-3.5" />
             Rotate secret
@@ -162,8 +162,8 @@ export function FreshdeskSupportSyncConnectionDetails({
             onClick={onDisableConnection}
             className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium disabled:opacity-50"
             style={{
-              borderColor: 'color-mix(in srgb, var(--risk-critical) 30%, var(--border))',
-              color: 'var(--risk-critical-fg)',
+              borderColor: 'color-mix(in srgb, var(--ua-risk-critical) 30%, var(--ua-border-default))',
+              color: 'var(--ua-risk-critical)',
             }}
           >
             <Unplug className="h-3.5 w-3.5" />
@@ -174,12 +174,12 @@ export function FreshdeskSupportSyncConnectionDetails({
 
       {/* Reconnect form when disabled */}
       {canManage && isDisabledOrError ? (
-        <Card unstyled variant="flat" className="space-y-4 p-4">
+        <Card unstyled variant="panel" className="space-y-4 p-4">
           <div>
-            <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+            <p className="text-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>
               Reconnect Freshdesk
             </p>
-            <p className="mt-0.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
+            <p className="mt-0.5 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
               Update your credentials to re-enable the connection.
             </p>
           </div>

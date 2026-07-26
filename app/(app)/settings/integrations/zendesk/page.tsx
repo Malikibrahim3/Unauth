@@ -17,14 +17,8 @@ export default async function ZendeskIntegrationPage() {
 
   return (
     <SettingsPageShell
-      eyebrow="Integrations"
       title="Zendesk"
       subtitle="Show payout case context, evidence gaps, and recommendations on support tickets."
-      breadcrumbs={[
-        { label: 'Settings', href: '/settings/account' },
-        { label: 'Integrations', href: '/integrations' },
-        { label: 'Zendesk' },
-      ]}
     >
       <div className="space-y-3">
         <ZendeskSetupClient canManage={canManage} />

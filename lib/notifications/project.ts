@@ -29,14 +29,102 @@ export type NotificationDomainEvent = {
   merchant_id: string;
   event_type: string;
   payload: unknown;
+  actor_id?: string | null;
 };
+
+async function investigationNotificationRequest(
+  client: SupabaseClient,
+  event: NotificationDomainEvent,
+): Promise<NotificationRequest | null> {
+  if (![
+    'investigation.sent',
+    'investigation.send_failed',
+    'investigation.response_recorded',
+  ].includes(event.event_type)) {
+    return null;
+  }
+  const payload = event.payload && typeof event.payload === 'object'
+    ? event.payload as Record<string, unknown>
+    : {};
+  const caseId = typeof payload.case_id === 'string' ? payload.case_id : null;
+  const investigationId = typeof payload.investigation_id === 'string'
+    ? payload.investigation_id
+    : null;
+  if (!caseId || !investigationId) return null;
+
+  const [{ data: payoutCase }, { data: members, error: memberError }] =
+    await Promise.all([
+      client
+        .from(TABLES.MERCHANT_CLAIMS)
+        .select('assigned_to')
+        .eq('merchant_id', event.merchant_id)
+        .eq('id', caseId)
+        .maybeSingle(),
+      client
+        .from(TABLES.MERCHANT_MEMBERS)
+        .select('user_id,role,created_at')
+        .eq('merchant_id', event.merchant_id)
+        .eq('invite_status', 'active')
+        .order('created_at', { ascending: true }),
+    ]);
+  if (memberError) {
+    throw new Error(`investigation_notification_members_failed: ${memberError.message}`);
+  }
+  const recipient = payoutCase?.assigned_to
+    ?? (members ?? []).find((member) => member.role === 'owner')?.user_id
+    ?? (members ?? [])[0]?.user_id
+    ?? null;
+  if (!recipient) return null;
+
+  const target = typeof payload.target_type === 'string'
+    ? payload.target_type.replaceAll('_', ' ')
+    : 'external party';
+  const dueAt = typeof payload.due_at === 'string' ? payload.due_at : null;
+  if (event.event_type === 'investigation.sent') {
+    return notificationRequestSchema.parse({
+      recipient_user_id: recipient,
+      kind: 'approaching_deadline',
+      title: `Investigation sent · ${target}`,
+      body: dueAt
+        ? `A response is due ${new Date(dueAt).toLocaleString('en-GB')}. Work will track the deadline separately from the customer decision.`
+        : 'The request was accepted and is now waiting for a response.',
+      target_href: `/claims/${caseId}#investigation-${investigationId}`,
+      deduplication_key: `investigation-sent:${investigationId}:${event.id}`,
+    });
+  }
+  if (event.event_type === 'investigation.send_failed') {
+    return notificationRequestSchema.parse({
+      recipient_user_id: recipient,
+      kind: 'sync_failure',
+      title: `Investigation email failed · ${target}`,
+      body: 'The request remains a draft. Retry with the same logical send key or use copy/manual send.',
+      target_href: `/claims/${caseId}#investigation-${investigationId}`,
+      deduplication_key: `investigation-send-failed:${investigationId}:${event.id}`,
+    });
+  }
+  return notificationRequestSchema.parse({
+    recipient_user_id: recipient,
+    kind: 'evidence_update',
+    title: `Investigation response ready · ${target}`,
+    body: 'Review the structured response, evidence provenance, and refreshed responsibility recommendation.',
+    target_href: `/claims/${caseId}#investigation-${investigationId}`,
+    deduplication_key: `investigation-response:${investigationId}:${event.id}`,
+  });
+}
 
 export async function projectNotificationFromEvent(
   client: SupabaseClient,
   event: NotificationDomainEvent,
 ) {
-  if (event.event_type !== "notification.requested")
-    return { applied: false, detail: "ignored" };
+  if (event.event_type !== "notification.requested") {
+    const request = await investigationNotificationRequest(client, event);
+    if (!request) return { applied: false, detail: "ignored" };
+    return projectNotificationFromEvent(client, {
+      ...event,
+      event_type: 'notification.requested',
+      payload: request,
+    });
+  }
   const parsed = notificationRequestSchema.safeParse(event.payload);
   if (!parsed.success)
     throw new Error("notification_requested_payload_invalid");

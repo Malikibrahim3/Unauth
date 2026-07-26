@@ -146,7 +146,7 @@ export function renderWidgetUnlockHtml(input: {
     ${body}
     ${input.ticketRef ? renderReturnToTicketBlock(input.gorgiasTicketUrl) : ''}
     <p class="disclaimer">${escapeHtml(CONTEXT_REVIEW_DISCLAIMER)}</p>
-    <p class="disclaimer">Cost for this unlock type: ${getContextCreditCost(input.contextType)} credit(s).</p>
+    ${input.error ? '' : `<p class="disclaimer">Cost for this unlock type: ${getContextCreditCost(input.contextType)} credit(s).</p>`}
   </div>
 </body>
 </html>`;

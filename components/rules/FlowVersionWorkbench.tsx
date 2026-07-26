@@ -95,10 +95,12 @@ export function FlowVersionWorkbench({
   versions,
   currentId,
   canManage,
+  publicationEnabled,
 }: {
   versions: WorkflowVersionRecord[];
   currentId: string;
   canManage: boolean;
+  publicationEnabled: boolean;
 }) {
   const router = useRouter();
   const current =
@@ -112,6 +114,7 @@ export function FlowVersionWorkbench({
   const [publishPreview, setPublishPreview] = useState<{
     summary: { trigger: string; conditionCount: number; actions: string[] };
     notice: string;
+    publicationEnabled: boolean;
   } | null>(null);
   const [sampleValues, setSampleValues] = useState<Record<string, string>>(() =>
     Object.fromEntries(
@@ -330,34 +333,44 @@ export function FlowVersionWorkbench({
           className="rounded-md border px-3 py-2 text-sm"
           style={{
             borderColor:
-              message.tone === "error" ? "var(--danger)" : "var(--success)",
+              message.tone === "error" ? "var(--ua-critical)" : "var(--ua-success)",
             color:
               message.tone === "error"
-                ? "var(--danger)"
-                : "var(--text-primary)",
+                ? "var(--ua-critical)"
+                : "var(--ua-text-primary)",
           }}
         >
           {message.text}
         </p>
       ) : null}
-      <Card unstyled variant="flat" className="p-4">
+      {!publicationEnabled ? (
+        <p
+          role="status"
+          className="rounded-md border border-[var(--ua-warning)] bg-[var(--ua-surface-muted)] px-3 py-2 text-sm text-[var(--ua-text-primary)]"
+        >
+          <strong>Preview:</strong> drafts and dry-run tests are available, but
+          publication, activation, and live execution stay disabled until the
+          replay and idempotency release gate passes.
+        </p>
+      ) : null}
+      <Card unstyled variant="panel" className="p-4">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <StatusBadge family="workflowStatus" value={display.status === "published" && !display.active ? "paused" : display.status} />
-              <span className="font-mono text-xs text-[var(--text-tertiary)]">
+              <span className="font-sans text-xs tabular-nums text-[var(--ua-text-tertiary)]">
                 v{display.version}
               </span>
               {draft && published ? (
-                <span className="text-xs text-[var(--text-secondary)]">
+                <span className="text-xs text-[var(--ua-text-secondary)]">
                   Published v{published.version} remains{" "}
                   {published.active ? "active" : "paused"}
                 </span>
               ) : null}
             </div>
-            <p className="mt-2 text-sm text-[var(--text-secondary)]">
+            <p className="mt-2 text-sm text-[var(--ua-text-secondary)]">
               Trigger{" "}
-              <strong className="font-mono text-[var(--text-primary)]">
+              <strong className="font-mono text-[var(--ua-text-primary)]">
                 {display.trigger_event_type}
               </strong>{" "}
               · {display.conditions.length} condition
@@ -390,7 +403,7 @@ export function FlowVersionWorkbench({
                 loading={busy === "preview"}
                 onClick={previewPublish}
               >
-                Review publish
+                {publicationEnabled ? "Review publish" : "Review preview"}
               </Button>
             ) : null}
             {canManage && published ? (
@@ -404,6 +417,7 @@ export function FlowVersionWorkbench({
                   )
                 }
                 loading={busy === (published.active ? "pause" : "resume")}
+                disabled={!published.active && !publicationEnabled}
                 onClick={() =>
                   changeState(published.active ? "pause" : "resume")
                 }
@@ -415,19 +429,19 @@ export function FlowVersionWorkbench({
         </div>
       </Card>
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <Card unstyled as="section" variant="flat" className="p-4">
+        <Card unstyled as="section" variant="panel" className="p-4">
           <h2 className="text-sm font-semibold">Structured flow</h2>
           <ol className="mt-4 space-y-3">
-            <li className="rounded-md border border-[var(--border-muted)] bg-[var(--surface-sunken)] p-3">
+            <li className="rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-3">
               <strong className="text-sm">1. Trigger</strong>
-              <p className="mt-1 text-xs text-[var(--text-secondary)]">
+              <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">
                 {display.trigger_event_type.replaceAll("_", " ")}
               </p>
             </li>
-            <li className="rounded-md border border-[var(--border-muted)] bg-[var(--surface-sunken)] p-3">
+            <li className="rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-3">
               <strong className="text-sm">2. Match all conditions</strong>
               {display.conditions.length ? (
-                <ul className="mt-2 space-y-1 text-xs text-[var(--text-secondary)]">
+                <ul className="mt-2 space-y-1 text-xs text-[var(--ua-text-secondary)]">
                   {withOccurrenceKeys(
                     display.conditions,
                     (condition) =>
@@ -437,7 +451,7 @@ export function FlowVersionWorkbench({
                   ))}
                 </ul>
               ) : (
-                <p className="mt-1 text-xs text-[var(--warning)]">
+                <p className="mt-1 text-xs text-[var(--ua-warning)]">
                   No conditions — every trigger event matches.
                 </p>
               )}
@@ -447,7 +461,7 @@ export function FlowVersionWorkbench({
             ).map(({ item: output, key }, index) => (
               <li
                 key={key}
-                className="rounded-md border border-[var(--border-muted)] bg-[var(--surface-sunken)] p-3"
+                className="rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-3"
               >
                 <strong className="text-sm">
                   {index + 3}. {actionSummary(output)}
@@ -456,48 +470,48 @@ export function FlowVersionWorkbench({
             ))}
           </ol>
         </Card>
-        <Card unstyled as="section" variant="flat" className="p-4">
+        <Card unstyled as="section" variant="panel" className="p-4">
           <h2 className="text-sm font-semibold">Draft impact</h2>
           {!draft ? (
-            <p className="mt-3 text-sm text-[var(--text-secondary)]">
+            <p className="mt-3 text-sm text-[var(--ua-text-secondary)]">
               No draft. Published v{published?.version ?? "—"} is the configured
               definition.
             </p>
           ) : !published ? (
-            <p className="mt-3 text-sm text-[var(--text-secondary)]">
+            <p className="mt-3 text-sm text-[var(--ua-text-secondary)]">
               First version: test it before publication.
             </p>
           ) : changes.length ? (
             <dl className="mt-3 space-y-3">
               {changes.map(([label, before, after]) => (
                 <div key={label}>
-                  <dt className="text-xs font-semibold text-[var(--text-tertiary)]">
+                  <dt className="text-xs font-semibold text-[var(--ua-text-tertiary)]">
                     {label}
                   </dt>
                   <dd className="mt-1 text-xs">
-                    <span className="line-through text-[var(--text-tertiary)]">
+                    <span className="line-through text-[var(--ua-text-tertiary)]">
                       {before}
                     </span>
-                    <span className="mx-1 text-[var(--text-tertiary)]">to</span>
+                    <span className="mx-1 text-[var(--ua-text-tertiary)]">to</span>
                     <strong>{after}</strong>
                   </dd>
                 </div>
               ))}
             </dl>
           ) : (
-            <p className="mt-3 text-sm text-[var(--text-secondary)]">
+            <p className="mt-3 text-sm text-[var(--ua-text-secondary)]">
               Draft and published definitions are identical.
             </p>
           )}
         </Card>
       </div>
-      <Card unstyled as="section" variant="flat" className="overflow-hidden p-0">
-        <div className="border-b border-[var(--border-muted)] px-4 py-3">
+      <Card unstyled as="section" variant="panel" className="overflow-hidden p-0">
+        <div className="border-b border-[var(--ua-border-subtle)] px-4 py-3">
           <h2 className="text-sm font-semibold">
             Version history and rollback
           </h2>
         </div>
-        <div className="divide-y divide-[var(--border-muted)]">
+        <div className="divide-y divide-[var(--ua-border-subtle)]">
           {versions.map((version) => (
             <div
               key={version.id}
@@ -507,7 +521,7 @@ export function FlowVersionWorkbench({
                 Version {version.version}
               </strong>
               <StatusBadge family="workflowStatus" value={version.status === "published" && !version.active ? "paused" : version.status} size="sm" />
-              <span className="text-xs text-[var(--text-secondary)]">
+              <span className="text-xs text-[var(--ua-text-secondary)]">
                 {version.published_at
                   ? `Published ${formatDateTime(version.published_at)}`
                   : `Created ${formatDateTime(version.created_at)}`}
@@ -561,11 +575,11 @@ export function FlowVersionWorkbench({
             {display.conditions.map((condition) => (
               <label
                 key={condition.field}
-                className="text-xs font-semibold text-[var(--text-secondary)]"
+                className="text-xs font-semibold text-[var(--ua-text-secondary)]"
               >
                 <span>{FIELD_LABELS[condition.field] ?? condition.field.replaceAll("_", " ")}</span>
                 <input
-                  className="mt-1 w-full rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-3 py-2 text-sm"
                   value={sampleValues[condition.field] ?? ""}
                   onChange={(event) =>
                     setSampleValues((currentValues) => ({
@@ -578,18 +592,18 @@ export function FlowVersionWorkbench({
             ))}
           </div>
         ) : (
-          <p className="text-sm text-[var(--warning)]">
+          <p className="text-sm text-[var(--ua-warning)]">
             This flow has no conditions, so every event with the configured
             trigger will match.
           </p>
         )}
         {testResult ? (
-          <div className="mt-4 rounded-md border border-[var(--border-muted)] bg-[var(--surface-sunken)] p-3">
+          <div className="mt-4 rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-3">
             <p className="flex items-center gap-2 text-sm font-semibold">
-              <CheckCircle2 className="h-4 w-4 text-[var(--success)]" />
+              <CheckCircle2 className="h-4 w-4 text-[var(--ua-success)]" />
               {testResult.matched ? "Event matched" : "Event did not match"}
             </p>
-            <p className="mt-1 text-xs text-[var(--text-secondary)]">
+            <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">
               {testResult.matched
                 ? `${testResult.plannedActions.length} actions planned`
                 : "No actions planned"}{" "}
@@ -601,17 +615,25 @@ export function FlowVersionWorkbench({
       <Modal
         open={Boolean(publishPreview)}
         onClose={() => setPublishPreview(null)}
-        title="Publish flow version"
-        description="Atomic publication retires the previous version only if the new version activates successfully."
-        actions={[
-          {
-            label:
-              busy === "publish"
-                ? "Publishing…"
-                : `Publish v${draft?.version ?? ""}`,
-            onClick: publish,
-          },
-        ]}
+        title={publicationEnabled ? "Publish flow version" : "Flow publication preview"}
+        description={
+          publicationEnabled
+            ? "Atomic publication retires the previous version only if the new version activates successfully."
+            : "This is a read-only preview. Publication and live execution are disabled by the release gate."
+        }
+        actions={
+          publicationEnabled
+            ? [
+                {
+                  label:
+                    busy === "publish"
+                      ? "Publishing…"
+                      : `Publish v${draft?.version ?? ""}`,
+                  onClick: publish,
+                },
+              ]
+            : []
+        }
       >
         {publishPreview ? (
           <div className="space-y-3 text-sm">
@@ -631,9 +653,8 @@ export function FlowVersionWorkbench({
                 .map((action) => action.replaceAll("_", " "))
                 .join(", ")}
             </p>
-            <p className="text-xs text-[var(--text-secondary)]">
-              Only future matching events use this version. Test runs and
-              historical runs remain unchanged.
+            <p className="text-xs text-[var(--ua-text-secondary)]">
+              {publishPreview.notice}
             </p>
           </div>
         ) : null}

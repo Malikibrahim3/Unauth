@@ -21,12 +21,12 @@ export function IntegrationEvidenceSourcePanel({
   if (connected.length === 0) return null;
 
   return (
-    <Card unstyled as="section" variant="flat" className="p-4">
+    <Card unstyled as="section" variant="panel" className="p-4">
       <div className="mb-3 flex items-center justify-between gap-3">
-        <p className="text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>
+        <p className="text-caption font-semibold" style={{ color: 'var(--ua-text-secondary)' }}>
           Connected evidence sources
         </p>
-        <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+        <span className="text-xs" style={{ color: 'var(--ua-text-tertiary)' }}>
           {connected.length} source{connected.length === 1 ? '' : 's'}
         </span>
       </div>
@@ -40,12 +40,12 @@ export function IntegrationEvidenceSourcePanel({
             ...attemptedUnavailable.map((item) => item.message),
           ];
           return (
-            <Card unstyled key={source.providerId} as="li" variant="inset" className="p-3 text-sm">
+            <Card unstyled key={source.providerId} as="li" variant="muted" className="p-3 text-sm">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="font-semibold" style={{ color: 'var(--text)' }}>{source.providerName}</span>
+                <span className="font-semibold" style={{ color: 'var(--ua-text-primary)' }}>{source.providerName}</span>
                 <StatusBadge family="workflowStatus" value="connected" size="sm" />
               </div>
-              <p className="mt-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
+              <p className="mt-1 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
                 {summaries.length > 0 ? summaries.map(labelSummary).join(' · ') : 'Connected, no matching evidence found for this case yet'}
               </p>
             </Card>

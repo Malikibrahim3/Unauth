@@ -127,7 +127,7 @@ export function PanelCard({
 }: {
   children: ReactNode;
   as?: ElementType;
-  variant?: 'kanban' | 'surface' | 'dark' | 'app' | 'appMuted' | 'appInset' | 'plain';
+  variant?: 'kanban' | 'surface' | 'dark' | 'plain';
   className?: string;
   style?: CSSProperties;
   type?: 'button' | 'submit' | 'reset';
@@ -141,9 +141,6 @@ export function PanelCard({
     surface:
       'rounded-[var(--radius-lg)] border border-[var(--border-default)] bg-[var(--surface-raised)] px-5 py-5',
     dark: 'rounded-[var(--radius-lg)] border border-white/12 bg-white/5 px-5 py-5',
-    app: cn(uiTokens.app.card, uiTokens.app.border),
-    appMuted: cn(uiTokens.app.cardMuted, uiTokens.app.borderMuted),
-    appInset: cn(uiTokens.app.cardInset, uiTokens.app.borderMuted),
     plain: '',
   }[variant];
 

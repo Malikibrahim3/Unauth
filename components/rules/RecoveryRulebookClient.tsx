@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus } from 'lucide-react';
+import { Pencil, Plus } from 'lucide-react';
 import { Button, Input, Modal, Select } from '@/components/ui';
 import {
   PARTNER_RULE_CLAIM_TYPES,
@@ -21,6 +21,14 @@ type Props = {
   partners: Partner[];
   rules: PartnerRecoveryRule[];
   canManage: boolean;
+  investigationSettings: InvestigationSettings;
+  emailDispatchAvailable: boolean;
+};
+
+export type InvestigationSettings = {
+  investigation_response_sla_hours: number;
+  investigation_reply_to: string | null;
+  investigation_email_enabled: boolean;
 };
 
 function splitList(value: string): string[] {
@@ -30,13 +38,25 @@ function splitList(value: string): string[] {
     .filter(Boolean);
 }
 
-export function RecoveryRulebookClient({ partners, rules, canManage }: Props) {
+export function RecoveryRulebookClient({
+  partners,
+  rules,
+  canManage,
+  investigationSettings: initialInvestigationSettings,
+  emailDispatchAvailable,
+}: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [partnerModalOpen, setPartnerModalOpen] = useState(false);
+  const [editingPartner, setEditingPartner] = useState<Partner | null>(null);
   const [ruleModalOpen, setRuleModalOpen] = useState(false);
   const [partnerName, setPartnerName] = useState('');
   const [partnerType, setPartnerType] = useState<PartnerType>('carrier');
+  const [partnerEmail, setPartnerEmail] = useState('');
+  const [partnerUrl, setPartnerUrl] = useState('');
+  const [partnerChannel, setPartnerChannel] = useState<'email' | 'portal' | 'manual' | 'api'>('manual');
+  const [partnerSlaHours, setPartnerSlaHours] = useState('48');
+  const [partnerInstructions, setPartnerInstructions] = useState('');
   const [ruleName, setRuleName] = useState('');
   const [rulePartnerId, setRulePartnerId] = useState('');
   const [recoveryType, setRecoveryType] = useState<PartnerRecoveryType>('carrier_claim');
@@ -44,19 +64,78 @@ export function RecoveryRulebookClient({ partners, rules, canManage }: Props) {
   const [requiredEvidence, setRequiredEvidence] = useState('tracking, proof_of_value');
   const [claimableCosts, setClaimableCosts] = useState('refund, replacement_shipping');
   const [deadlineDays, setDeadlineDays] = useState('14');
+  const [settings, setSettings] = useState(initialInvestigationSettings);
+  const [settingsMessage, setSettingsMessage] = useState<string | null>(null);
+  const [partnerError, setPartnerError] = useState<string | null>(null);
 
-  async function createPartner() {
+  function resetPartnerForm(partner?: Partner | null) {
+    setEditingPartner(partner ?? null);
+    setPartnerName(partner?.name ?? '');
+    setPartnerType(partner?.partner_type ?? 'carrier');
+    setPartnerEmail(partner?.contact_email ?? '');
+    setPartnerUrl(partner?.contact_url ?? '');
+    setPartnerChannel(partner?.default_contact_channel ?? 'manual');
+    setPartnerSlaHours(String(partner?.response_sla_hours ?? 48));
+    setPartnerInstructions(partner?.contact_instructions ?? '');
+    setPartnerError(null);
+  }
+
+  function openPartnerModal(partner?: Partner | null) {
+    resetPartnerForm(partner);
+    setPartnerModalOpen(true);
+  }
+
+  async function savePartner() {
     if (!partnerName.trim()) return;
     setBusy(true);
-    await fetch('/api/partners', {
-      method: 'POST',
+    setPartnerError(null);
+    const response = await fetch(
+      editingPartner
+        ? `/api/partners/${encodeURIComponent(editingPartner.id)}`
+        : '/api/partners',
+      {
+      method: editingPartner ? 'PATCH' : 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: partnerName, partner_type: partnerType }),
+      body: JSON.stringify({
+        name: partnerName,
+        partner_type: partnerType,
+        contact_email: partnerEmail,
+        contact_url: partnerUrl,
+        default_contact_channel: partnerChannel,
+        response_sla_hours: Number(partnerSlaHours),
+        contact_instructions: partnerInstructions,
+      }),
     });
-    setPartnerName('');
+    const body = (await response.json().catch(() => ({}))) as { error?: string };
     setBusy(false);
+    if (!response.ok) {
+      setPartnerError(body.error ?? 'Unable to save partner.');
+      return;
+    }
     setPartnerModalOpen(false);
+    resetPartnerForm();
     router.refresh();
+  }
+
+  async function saveInvestigationSettings() {
+    setBusy(true);
+    setSettingsMessage(null);
+    const response = await fetch('/api/settings/investigations', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(settings),
+    });
+    const body = (await response.json().catch(() => ({}))) as {
+      settings?: InvestigationSettings;
+      error?: string;
+    };
+    setBusy(false);
+    if (!response.ok || !body.settings) {
+      setSettingsMessage(body.error ?? 'Unable to save investigation settings.');
+      return;
+    }
+    setSettings(body.settings);
+    setSettingsMessage('Investigation settings saved.');
   }
 
   async function createRule() {
@@ -87,32 +166,32 @@ export function RecoveryRulebookClient({ partners, rules, canManage }: Props) {
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
-      <section className="rounded-[var(--ua-radius-card)] border" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
-        <div className="flex items-center justify-between border-b px-4 py-3" style={{ borderColor: 'var(--border-muted)' }}>
-          <p className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>Recovery rules</p>
+      <section className="rounded-[var(--ua-radius-surface)] border" style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-surface-primary)' }}>
+        <div className="flex items-center justify-between border-b px-4 py-3" style={{ borderColor: 'var(--ua-border-subtle)' }}>
+          <p className="text-xs font-semibold" style={{ color: 'var(--ua-text-secondary)' }}>Recovery rules</p>
           {canManage ? (
             <Button type="button" variant="secondary" size="sm" leadingIcon={<Plus />} onClick={() => setRuleModalOpen(true)}>Add rule</Button>
           ) : null}
         </div>
-        <div className="divide-y" style={{ borderColor: 'var(--border-muted)' }}>
+        <div className="divide-y" style={{ borderColor: 'var(--ua-border-subtle)' }}>
           {rules.length === 0 ? (
-            <p className="p-4 text-sm" style={{ color: 'var(--text-tertiary)' }}>No partner recovery rules configured yet.</p>
+            <p className="p-4 text-sm" style={{ color: 'var(--ua-text-tertiary)' }}>No partner recovery rules configured yet.</p>
           ) : rules.map((rule) => (
             <article key={rule.id} className="grid gap-3 p-4 md:grid-cols-[1fr_auto]">
               <div className="min-w-0">
-                <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>{rule.rule_name}</p>
-                <p className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                <p className="font-semibold" style={{ color: 'var(--ua-text-primary)' }}>{rule.rule_name}</p>
+                <p className="mt-1 text-xs" style={{ color: 'var(--ua-text-tertiary)' }}>
                   {RECOVERY_TYPE_LABELS[rule.recovery_type]} · {rule.applies_to_claim_type.replaceAll('_', ' ')} · {rule.partner?.name ?? 'Default rule'}
                 </p>
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {rule.required_evidence.slice(0, 5).map((item) => (
-                    <span key={item} className="rounded-[var(--ua-radius-input)] px-2 py-0.5 text-[11px]" style={{ background: 'var(--bg-inset)', color: 'var(--text-secondary)' }}>
+                    <span key={item} className="rounded-[var(--ua-radius-control)] px-2 py-0.5 text-[length:var(--ua-text-micro-size)]" style={{ background: 'var(--ua-surface-secondary)', color: 'var(--ua-text-secondary)' }}>
                       {item.replaceAll('_', ' ')}
                     </span>
                   ))}
                 </div>
               </div>
-              <div className="text-xs md:text-right" style={{ color: 'var(--text-tertiary)' }}>
+              <div className="text-xs md:text-right" style={{ color: 'var(--ua-text-tertiary)' }}>
                 <p>{rule.active ? 'Active' : 'Inactive'}</p>
                 <p>{rule.deadline_days ?? '-'} day deadline</p>
                 <p>{rule.confidence} confidence</p>
@@ -123,22 +202,126 @@ export function RecoveryRulebookClient({ partners, rules, canManage }: Props) {
       </section>
 
       <aside className="space-y-4">
-        <section className="rounded-[var(--ua-radius-card)] border p-4" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
+        <section className="rounded-[var(--ua-radius-surface)] border p-4" style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-surface-primary)' }}>
           <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>Partners</p>
+            <p className="text-xs font-semibold" style={{ color: 'var(--ua-text-secondary)' }}>Partners</p>
             {canManage ? (
-              <Button type="button" variant="secondary" size="sm" leadingIcon={<Plus />} onClick={() => setPartnerModalOpen(true)}>Add partner</Button>
+              <Button type="button" variant="secondary" size="sm" leadingIcon={<Plus />} onClick={() => openPartnerModal()}>Add partner</Button>
             ) : null}
           </div>
           <div className="mt-3 space-y-2">
             {partners.length === 0 ? (
-              <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>No partners configured.</p>
+              <p className="text-sm" style={{ color: 'var(--ua-text-tertiary)' }}>No partners configured.</p>
             ) : partners.map((partner) => (
-              <div key={partner.id} className="rounded-[var(--ua-radius-card)] border px-3 py-2" style={{ borderColor: 'var(--border-muted)', background: 'var(--surface-sunken)' }}>
-                <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{partner.name}</p>
-                <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{PARTNER_TYPE_LABELS[partner.partner_type]}</p>
+              <div key={partner.id} className="rounded-[var(--ua-radius-surface)] border px-3 py-2.5" style={{ borderColor: 'var(--ua-border-subtle)', background: 'var(--ua-surface-muted)' }}>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>{partner.name}</p>
+                    <p className="text-xs" style={{ color: 'var(--ua-text-tertiary)' }}>
+                      {PARTNER_TYPE_LABELS[partner.partner_type]}
+                      {partner.default_contact_channel ? ` · ${partner.default_contact_channel}` : ''}
+                      {partner.response_sla_hours ? ` · ${partner.response_sla_hours}h SLA` : ''}
+                    </p>
+                    {partner.contact_email || partner.contact_url ? (
+                      <p className="mt-1 truncate text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
+                        {partner.contact_email ?? partner.contact_url}
+                      </p>
+                    ) : null}
+                  </div>
+                  {canManage ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      aria-label={`Edit ${partner.name}`}
+                      leadingIcon={<Pencil />}
+                      onClick={() => openPartnerModal(partner)}
+                    >
+                      Edit
+                    </Button>
+                  ) : null}
+                </div>
               </div>
             ))}
+          </div>
+        </section>
+
+        <section className="rounded-[var(--ua-radius-surface)] border p-4" style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-surface-primary)' }}>
+          <p className="text-xs font-semibold" style={{ color: 'var(--ua-text-secondary)' }}>
+            Investigation delivery
+          </p>
+          <p className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--ua-text-tertiary)' }}>
+            {emailDispatchAvailable
+              ? 'Email remains disabled until a reply-to address is configured. Manual and portal sends stay available.'
+              : 'Outbound email is disabled for this environment. Existing settings are retained; manual and portal sends remain separate.'}
+          </p>
+          <div className="mt-3 grid gap-3">
+            <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
+              Default response SLA (hours)
+              <Input
+                type="number"
+                min="1"
+                max="2160"
+                disabled={!canManage || busy}
+                value={settings.investigation_response_sla_hours}
+                onChange={(event) => setSettings((current) => ({
+                  ...current,
+                  investigation_response_sla_hours: Number(event.target.value),
+                }))}
+              />
+            </label>
+            <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
+              Reply-to address
+              <Input
+                type="email"
+                placeholder="operations@example.com"
+                disabled={!canManage || busy}
+                value={settings.investigation_reply_to ?? ''}
+                onChange={(event) => setSettings((current) => ({
+                  ...current,
+                  investigation_reply_to: event.target.value || null,
+                }))}
+              />
+            </label>
+            <label className="flex items-start gap-2 text-sm" style={{ color: 'var(--ua-text-secondary)' }}>
+              <input
+                className="mt-0.5 h-4 w-4 accent-[var(--ua-action-primary)]"
+                type="checkbox"
+                disabled={
+                  !canManage
+                  || busy
+                  || !emailDispatchAvailable
+                  || !settings.investigation_reply_to
+                }
+                checked={settings.investigation_email_enabled}
+                onChange={(event) => setSettings((current) => ({
+                  ...current,
+                  investigation_email_enabled: event.target.checked,
+                }))}
+              />
+              <span>
+                <span className="block font-medium">Enable configured outbound email</span>
+                <span className="block text-xs" style={{ color: 'var(--ua-text-tertiary)' }}>
+                  {emailDispatchAvailable
+                    ? 'Requests only become sent after provider acceptance.'
+                    : 'Requires the controlled environment transport gate.'}
+                </span>
+              </span>
+            </label>
+            {canManage ? (
+              <Button type="button" size="sm" loading={busy} onClick={() => void saveInvestigationSettings()}>
+                Save investigation settings
+              </Button>
+            ) : null}
+            {settingsMessage ? (
+              <p
+                role={settingsMessage.includes('saved') ? 'status' : 'alert'}
+                className="text-xs"
+                style={{ color: settingsMessage.includes('saved') ? 'var(--ua-success)' : 'var(--ua-risk-critical)' }}
+              >
+                {settingsMessage}
+              </p>
+            ) : null}
           </div>
         </section>
       </aside>
@@ -146,24 +329,69 @@ export function RecoveryRulebookClient({ partners, rules, canManage }: Props) {
       {canManage ? (
         <Modal
           open={partnerModalOpen}
-          onClose={() => setPartnerModalOpen(false)}
-          title="Add partner"
-          description="Recovery counterparties you chase losses with — carriers, 3PLs, suppliers."
-          size="sm"
+          onClose={() => {
+            setPartnerModalOpen(false);
+            resetPartnerForm();
+          }}
+          title={editingPartner ? 'Edit partner' : 'Add partner'}
+          description="Contact and deadline defaults are snapshotted onto each investigation request."
+          size="md"
           actions={[
-            { label: busy ? 'Adding…' : 'Add partner', onClick: () => void createPartner(), disabled: busy || !partnerName.trim() },
+            {
+              label: busy ? 'Saving…' : editingPartner ? 'Save partner' : 'Add partner',
+              onClick: () => void savePartner(),
+              disabled: busy || !partnerName.trim() || !partnerSlaHours,
+            },
           ]}
         >
           <div className="grid gap-3">
-            <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+            {partnerError ? (
+              <p role="alert" className="rounded-md border border-[var(--ua-risk-critical-border)] bg-[var(--ua-risk-critical-bg)] p-3 text-sm text-[var(--ua-risk-critical)]">
+                {partnerError}
+              </p>
+            ) : null}
+            <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
               Partner name
               <Input aria-label="Partner name" placeholder="e.g. Royal Mail" value={partnerName} onChange={(event) => setPartnerName(event.target.value)} />
             </label>
-            <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+            <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
               Partner type
               <Select aria-label="Partner type" value={partnerType} onChange={(event) => setPartnerType(event.target.value as PartnerType)}>
                 {PARTNER_TYPES.map((type) => <option key={type} value={type}>{PARTNER_TYPE_LABELS[type]}</option>)}
               </Select>
+            </label>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
+                Contact email
+                <Input type="email" placeholder="claims@partner.com" value={partnerEmail} onChange={(event) => setPartnerEmail(event.target.value)} />
+              </label>
+              <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
+                Portal URL
+                <Input type="url" placeholder="https://partner.example/claims" value={partnerUrl} onChange={(event) => setPartnerUrl(event.target.value)} />
+              </label>
+              <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
+                Default channel
+                <Select value={partnerChannel} onChange={(event) => setPartnerChannel(event.target.value as typeof partnerChannel)}>
+                  <option value="manual">Manual / copy</option>
+                  <option value="email">Email</option>
+                  <option value="portal">Partner portal</option>
+                  <option value="api">External API reference</option>
+                </Select>
+              </label>
+              <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
+                Response SLA (hours)
+                <Input type="number" min="1" max="2160" value={partnerSlaHours} onChange={(event) => setPartnerSlaHours(event.target.value)} />
+              </label>
+            </div>
+            <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
+              Contact instructions
+              <textarea
+                className="min-h-24 rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] p-2 text-sm text-[var(--ua-text-primary)]"
+                maxLength={4000}
+                placeholder="Reference format, portal steps, or escalation contact."
+                value={partnerInstructions}
+                onChange={(event) => setPartnerInstructions(event.target.value)}
+              />
             </label>
           </div>
         </Modal>
@@ -181,40 +409,40 @@ export function RecoveryRulebookClient({ partners, rules, canManage }: Props) {
           ]}
         >
           <div className="grid gap-3">
-            <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+            <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
               Rule name
               <Input aria-label="Rule name" placeholder="e.g. Royal Mail non-delivery" value={ruleName} onChange={(event) => setRuleName(event.target.value)} />
             </label>
             <div className="grid gap-3 sm:grid-cols-2">
-              <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+              <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
                 Partner
                 <Select aria-label="Rule partner" value={rulePartnerId} onChange={(event) => setRulePartnerId(event.target.value)}>
                   <option value="">Default rule</option>
                   {partners.map((partner) => <option key={partner.id} value={partner.id}>{partner.name}</option>)}
                 </Select>
               </label>
-              <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+              <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
                 Recovery type
                 <Select aria-label="Recovery type" value={recoveryType} onChange={(event) => setRecoveryType(event.target.value as PartnerRecoveryType)}>
                   {RECOVERY_TYPES.map((type) => <option key={type} value={type}>{RECOVERY_TYPE_LABELS[type]}</option>)}
                 </Select>
               </label>
-              <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+              <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
                 Applies to claim type
                 <Select aria-label="Claim type" value={claimType} onChange={(event) => setClaimType(event.target.value as PartnerRuleClaimType)}>
                   {PARTNER_RULE_CLAIM_TYPES.map((type) => <option key={type} value={type}>{type.replaceAll('_', ' ')}</option>)}
                 </Select>
               </label>
-              <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+              <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
                 Deadline (days)
                 <Input aria-label="Deadline days" type="number" min="0" placeholder="14" value={deadlineDays} onChange={(event) => setDeadlineDays(event.target.value)} />
               </label>
             </div>
-            <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+            <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
               Required evidence
               <Input aria-label="Required evidence" placeholder="Required evidence, comma separated" value={requiredEvidence} onChange={(event) => setRequiredEvidence(event.target.value)} />
             </label>
-            <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+            <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
               Claimable costs
               <Input aria-label="Claimable costs" placeholder="Claimable costs, comma separated" value={claimableCosts} onChange={(event) => setClaimableCosts(event.target.value)} />
             </label>

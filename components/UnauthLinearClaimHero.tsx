@@ -3,15 +3,8 @@
 import { ArrowRight } from 'lucide-react';
 import MobileCollapse from '@/app/(public)/landing/_components/foundation/MobileCollapse';
 import foundationStyles from '@/app/(public)/landing/_components/foundation/foundation.module.css';
-import {
-  KanbanBoard,
-  SectionBody,
-  SectionEyebrow,
-  SectionHeadline,
-  ThreadPanel,
-  type KanbanColumnItem,
-  type ThreadPanelMessage,
-} from '@/components/ui';
+import { type KanbanColumnItem, type ThreadPanelMessage } from '@/components/ui/LandingPrimitives';
+import { KanbanBoard, SectionBody, SectionEyebrow, SectionHeadline, ThreadPanel } from '@/components/ui/LandingPrimitives';
 
 const claimThreadMessages: ThreadPanelMessage[] = [
   {
@@ -24,7 +17,7 @@ const claimThreadMessages: ThreadPanelMessage[] = [
     avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&h=80&fit=crop&crop=face',
     name: 'support',
     time: '2:15 PM',
-    message: 'Held. Full claim history surfaced. Human review before any refund.',
+    message: 'Review required. Full claim history surfaced before the team records an outcome.',
   },
   {
     avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=80&h=80&fit=crop&crop=face',
@@ -92,7 +85,7 @@ const claimColumns: KanbanColumnItem[] = [
             Last claim: 3 days ago
           </>
         ),
-        tags: ['Item not received', 'Blocked', 'Repeat pattern'],
+        tags: ['Item not received', 'Review', 'Repeat pattern'],
         evidence: {
           confirmed: true,
           line: 'Carrier confirmation attached',
@@ -110,7 +103,7 @@ const claimColumns: KanbanColumnItem[] = [
             Last claim: 2 days ago
           </>
         ),
-        tags: ['Item not received', 'Blocked', 'Repeat pattern'],
+        tags: ['Item not received', 'Review', 'Repeat pattern'],
         evidence: {
           confirmed: true,
           line: 'Address mismatch flagged',

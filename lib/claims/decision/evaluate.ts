@@ -28,7 +28,19 @@ export type ClaimDecisionEvaluation = {
   payoutCase: SupportPayoutCase;
   ruleCount: number;
   evaluatedAt: string;
-  auditStatus: RuleAuditStatus;
+  auditStatus: RuleAuditStatus | 'not_written';
+};
+
+type ComputeClaimDecisionInput = {
+  client: SupabaseClient;
+  merchantId: string;
+  claimId: string;
+  payoutInput?: BuildSupportPayoutCaseInput;
+};
+
+type ComputedClaimDecision = Omit<ClaimDecisionEvaluation, 'auditStatus'> & {
+  signals: ReturnType<typeof claimDecisionContextToSignals>;
+  rules: Awaited<ReturnType<typeof fetchActiveMerchantRules>>;
 };
 
 async function persistSupportPayoutCaseDecision(input: {
@@ -38,32 +50,44 @@ async function persistSupportPayoutCaseDecision(input: {
   payoutCase: SupportPayoutCase;
 }): Promise<void> {
   const { payoutCase } = input;
-  const { error } = await input.client
+  const { error: recommendationError } = await input.client
     .from(TABLES.MERCHANT_CLAIMS)
     .update({
       total_estimated_loss: payoutCase.exposure.total.amount,
       requested_action: payoutCase.requestedAction.primary,
       requires_review: payoutCase.exposure.aboveReviewThreshold,
-      loss_attribution: payoutCase.attribution.label,
-      attribution_confidence: payoutCase.attribution.confidence,
-      recoverability: payoutCase.recovery.recoverability,
-      recovery_owner: payoutCase.recovery.likelyOwner,
-      recovery_required_evidence: payoutCase.recovery.requiredEvidence,
-      recovery_next_action: payoutCase.recovery.suggestedNextAction,
       recommended_payout_action: payoutCase.recommendation?.action ?? null,
       recommended_rule_name: payoutCase.recommendation?.ruleName ?? null,
       recommended_rule_id: payoutCase.recommendation?.ruleId ?? null,
-      status: payoutCase.status,
-      payout_decision_state: payoutCase.payoutDecisionState,
-      recovery_state: payoutCase.recoveryState,
       next_action: payoutCase.nextAction,
       next_action_reason: payoutCase.nextActionReason,
     })
     .eq('id', input.claimId)
     .eq('merchant_id', input.merchantId);
 
-  if (error) {
-    throw new Error(`Failed to persist payout case decision: ${error.message}`);
+  if (recommendationError) {
+    throw new Error(`Failed to persist payout case recommendation: ${recommendationError.message}`);
+  }
+
+  // Attribution and the derived recovery route remain advisory until a
+  // merchant confirms or corrects responsibility. A later evaluation must
+  // never overwrite that explicit, audited human decision.
+  const { error: attributionError } = await input.client
+    .from(TABLES.MERCHANT_CLAIMS)
+    .update({
+      loss_attribution: payoutCase.attribution.label,
+      attribution_confidence: payoutCase.attribution.confidence,
+      recoverability: payoutCase.recovery.recoverability,
+      recovery_owner: payoutCase.recovery.likelyOwner,
+      recovery_required_evidence: payoutCase.recovery.requiredEvidence,
+      recovery_next_action: payoutCase.recovery.suggestedNextAction,
+    })
+    .eq('id', input.claimId)
+    .eq('merchant_id', input.merchantId)
+    .eq('responsibility_confirmation_state', 'unconfirmed');
+
+  if (attributionError) {
+    throw new Error(`Failed to persist payout case attribution: ${attributionError.message}`);
   }
 }
 
@@ -71,6 +95,67 @@ const DELIVERY_CLAIM_TYPES_FOR_TRACKING_SYNC = new Set([
   'item_not_received',
   'missing_parcel',
 ]);
+
+async function computeClaimDecision(
+  input: ComputeClaimDecisionInput,
+): Promise<ComputedClaimDecision | null> {
+  const context = await buildClaimDecisionContext(
+    input.client,
+    input.merchantId,
+    input.claimId,
+  );
+  if (!context) return null;
+
+  const payoutCaseBase = buildSupportPayoutCase(context, input.payoutInput);
+  const signals = claimDecisionContextToSignals(context, payoutCaseBase);
+  const rules = await fetchActiveMerchantRules(input.client, input.merchantId);
+  const evaluation = evaluateRules(signals, rules);
+  const recommendation = resolvePayoutRecommendation(evaluation, payoutCaseBase);
+  const workflow = derivePayoutWorkflow({
+    claimType: payoutCaseBase.claimType,
+    currentStatus: context.claim.status,
+    evidence: payoutCaseBase.evidence,
+    recovery: payoutCaseBase.recovery,
+    requestedAction: payoutCaseBase.requestedAction,
+    exposureAboveReviewThreshold: payoutCaseBase.exposure.aboveReviewThreshold,
+    evaluation,
+    agentDecision: payoutCaseBase.agentDecision,
+  });
+  const payoutCase = withWorkflow(
+    { ...payoutCaseBase, recommendation },
+    workflow,
+    payoutCaseBase.clarificationRequests,
+  );
+
+  return {
+    context,
+    evaluation,
+    payoutCase,
+    ruleCount: rules.length,
+    evaluatedAt: new Date().toISOString(),
+    signals,
+    rules,
+  };
+}
+
+/**
+ * Pure read-path preview. It performs no evidence sync, case update, or audit
+ * write and is therefore safe for widget GET rendering.
+ */
+export async function previewClaimDecision(
+  input: ComputeClaimDecisionInput,
+): Promise<ClaimDecisionEvaluation | null> {
+  const result = await computeClaimDecision(input);
+  if (!result) return null;
+  return {
+    context: result.context,
+    evaluation: result.evaluation,
+    payoutCase: result.payoutCase,
+    ruleCount: result.ruleCount,
+    evaluatedAt: result.evaluatedAt,
+    auditStatus: 'not_written',
+  };
+}
 
 export async function evaluateClaimDecision(input: {
   client: SupabaseClient;
@@ -109,34 +194,9 @@ export async function evaluateClaimDecision(input: {
     }
   }
 
-  const context = await buildClaimDecisionContext(
-    input.client,
-    input.merchantId,
-    input.claimId,
-  );
-  if (!context) return null;
-
-  const payoutCaseBase = buildSupportPayoutCase(context, input.payoutInput);
-  const signals = claimDecisionContextToSignals(context, payoutCaseBase);
-  const rules = await fetchActiveMerchantRules(input.client, input.merchantId);
-  const evaluation = evaluateRules(signals, rules);
-  const recommendation = resolvePayoutRecommendation(evaluation, payoutCaseBase);
-  const workflow = derivePayoutWorkflow({
-    claimType: payoutCaseBase.claimType,
-    currentStatus: context.claim.status,
-    evidence: payoutCaseBase.evidence,
-    recovery: payoutCaseBase.recovery,
-    requestedAction: payoutCaseBase.requestedAction,
-    exposureAboveReviewThreshold: payoutCaseBase.exposure.aboveReviewThreshold,
-    evaluation,
-    agentDecision: payoutCaseBase.agentDecision,
-  });
-  const payoutCase = withWorkflow(
-    { ...payoutCaseBase, recommendation },
-    workflow,
-    payoutCaseBase.clarificationRequests,
-  );
-  const evaluatedAt = new Date().toISOString();
+  const computed = await computeClaimDecision(input);
+  if (!computed) return null;
+  const { context, evaluation, payoutCase, ruleCount, evaluatedAt, signals, rules } = computed;
 
   await persistSupportPayoutCaseDecision({
     client: input.client,
@@ -162,7 +222,7 @@ export async function evaluateClaimDecision(input: {
     context,
     evaluation,
     payoutCase,
-    ruleCount: rules.length,
+    ruleCount,
     evaluatedAt,
     auditStatus,
   };

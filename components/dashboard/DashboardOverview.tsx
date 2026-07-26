@@ -28,6 +28,10 @@ import type {
   ReportRange,
 } from '@/lib/reporting/intelligence';
 import { financialReportRecordsHref, type FinancialReportMetric } from '@/lib/reporting/intelligence';
+import { ButtonLink } from '@/components/ui/ButtonLink';
+import { MetricGroup } from '@/components/ui/MetricGroup';
+import { DataTable } from '@/components/ui/DataTable';
+import { AuthenticatedPanel } from '@/components/authenticated/AuthenticatedPanel';
 import {
   formatCurrencyCompact,
   formatDateAbsolute,
@@ -144,6 +148,9 @@ export function DashboardOverview({
   const workflowGroups = groupWorkflowOperations(report.operations);
   const health = calculateDataHealth(report.coverage, report.reconciliation.ok);
   const needsAction = workflowGroups[0].count;
+  const readyForDecision = report.operations
+    .filter((operation) => /ready/i.test(operation.label))
+    .reduce((sum, operation) => sum + operation.count, 0);
   const actionPercent = report.recordCount > 0
     ? Math.round((needsAction / report.recordCount) * 100)
     : null;
@@ -158,19 +165,16 @@ export function DashboardOverview({
   }
 
   return (
-    <div className={`${styles.dashboardPilot} ua-dashboard-pilot`}>
+    <div className={styles.dashboardPilot}>
       <header className={styles.pageHeading}>
         <div>
           <h1>Overview</h1>
           <p>Payout exposure, recovery, workflow, and source health.</p>
         </div>
         <div className={styles.headingActions}>
-          <Link href="/work" className={styles.secondaryAction} data-capability-id="work.open-header">
+          <ButtonLink href="/work" size="sm" data-capability-id="work.open-header">
             Open work
-          </Link>
-          <Link href="/claims?sort=value" className={styles.secondaryAction} data-capability-id="claims.review-high-value">
-            Review high-value cases
-          </Link>
+          </ButtonLink>
           <Link
             href={`/reports?range=${report.range}&timezone=${encodeURIComponent(report.timezone)}`}
             className={styles.textAction}
@@ -180,6 +184,32 @@ export function DashboardOverview({
           </Link>
         </div>
       </header>
+
+      <MetricGroup
+        className="mb-4"
+        items={[
+          {
+            label: 'Cases in period',
+            value: formatNumber(report.recordCount),
+            description: report.range === 'all' ? 'All time' : `Last ${report.range}`,
+          },
+          {
+            label: 'Need action',
+            value: formatNumber(needsAction),
+            description: actionPercent == null ? 'No cases in this period' : `${actionPercent}% of cases`,
+          },
+          {
+            label: 'Ready for decision',
+            value: formatNumber(readyForDecision),
+            description: 'Evidence complete',
+          },
+          {
+            label: 'Source freshness',
+            value: health.freshnessPercent == null ? 'Unavailable' : `${health.freshnessPercent}%`,
+            description: `${formatNumber(health.staleRecords)} stale records`,
+          },
+        ]}
+      />
 
       <div className={styles.filterBar} aria-label="Dashboard filters">
         <div className={styles.filterGroup}>
@@ -260,6 +290,7 @@ export function DashboardOverview({
                     range: report.range,
                     currency: selectedCurrency,
                     metric: DASHBOARD_REPORT_METRICS[metric],
+                    timezone: report.timezone,
                   })}
                   className={styles.textAction}
                 >
@@ -374,7 +405,7 @@ export function DashboardOverview({
 
           {health.freshnessPercent != null ? (
             <BlockRailChart
-              blocks={[{ key: 'fresh', label: 'Fresh records', value: health.freshRecords, tone: 'blue' }]}
+              blocks={[{ key: 'fresh', label: 'Fresh records', value: health.freshRecords, tone: 'primary' }]}
               remainder={health.staleRecords}
               pins={[{ label: `${health.freshnessPercent}%`, emphasis: true }]}
               compact
@@ -395,6 +426,48 @@ export function DashboardOverview({
           </div>
         </section>
       </div>
+
+      {/*
+        §12.1 requires a priority work table on /dashboard. Without it the page
+        ended above the fold with empty canvas and gave the operator no way into
+        the actual queue from the summary.
+      */}
+      <AuthenticatedPanel
+        title="Priority work"
+        description="Open cases grouped by the next step, most pressing first."
+        actions={<ButtonLink href="/work" variant="secondary" size="sm">Open work</ButtonLink>}
+        className="mt-4"
+      >
+        {report.operations.length ? (
+          <DataTable
+            density="compact"
+            rows={report.operations.slice(0, 8)}
+            getRowKey={(row) => row.key}
+            columns={[
+              {
+                key: 'label',
+                header: 'Next step',
+                render: (row) => (
+                  <Link href={row.href} className="font-medium underline underline-offset-2">
+                    {row.label}
+                  </Link>
+                ),
+              },
+              {
+                key: 'count',
+                header: 'Cases',
+                align: 'right',
+                width: '120px',
+                render: (row) => (
+                  <span className="tabular-nums">{formatNumber(row.count)}</span>
+                ),
+              },
+            ]}
+          />
+        ) : (
+          <p className={styles.cardEmpty}>No open cases in this period.</p>
+        )}
+      </AuthenticatedPanel>
 
       <Modal
         open={healthOpen}

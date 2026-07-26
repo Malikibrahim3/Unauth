@@ -11,19 +11,19 @@ type TeamAuditTrailSectionProps = {
 
 export function TeamAuditTrailSection({ auditTrail }: TeamAuditTrailSectionProps) {
   return (
-    <section className="rounded-md border" style={{ background: 'var(--surface)', borderColor: 'var(--border-muted)' }}>
-      <div className="border-b px-4 py-3" style={{ borderColor: 'var(--border-muted)' }}>
-        <h2 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Role audit</h2>
-        <p className="mt-1 text-xs" style={{ color: 'var(--text-secondary)' }}>Recent invites, role changes, and removals.</p>
+    <section className="rounded-md border" style={{ background: 'var(--ua-surface-primary)', borderColor: 'var(--ua-border-subtle)' }}>
+      <div className="border-b px-4 py-3" style={{ borderColor: 'var(--ua-border-subtle)' }}>
+        <h2 className="text-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>Role audit</h2>
+        <p className="mt-1 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>Recent invites, role changes, and removals.</p>
       </div>
-      <div className="divide-y" style={{ borderColor: 'var(--border-muted)' }}>
+      <div className="divide-y" style={{ borderColor: 'var(--ua-border-subtle)' }}>
         {auditTrail.length === 0 ? (
-          <p className="px-4 py-5 text-[12px]" style={{ color: 'var(--text-secondary)' }}>No team role changes yet.</p>
+          <p className="px-4 py-5 text-[length:var(--ua-text-caption-size)]" style={{ color: 'var(--ua-text-secondary)' }}>No team role changes yet.</p>
         ) : (
           auditTrail.map((row) => (
             <div key={row.id} className="px-4 py-2.5">
-              <p className="text-[12px]" style={{ color: 'var(--text)' }}>{auditText(row)}</p>
-              <p className="mt-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
+              <p className="text-[length:var(--ua-text-caption-size)]" style={{ color: 'var(--ua-text-primary)' }}>{auditText(row)}</p>
+              <p className="mt-1 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
                 {formatTeamDate(row.created_at)} by {ROLE_LABELS[row.actor_role] ?? row.actor_role}
               </p>
             </div>

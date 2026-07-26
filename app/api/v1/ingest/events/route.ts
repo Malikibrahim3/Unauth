@@ -4,6 +4,7 @@ import { authenticateIngest, MAX_INGEST_BODY_BYTES, tooLargeResponse } from '@/l
 import { validateEventEnvelope } from '@/lib/api/v1/ingest/eventSchema';
 import { acceptEvent } from '@/lib/api/v1/ingest/acceptEvent';
 import { readBoundedWebhookBody, WebhookBodyError } from '@/lib/webhooks/body';
+import { env } from '@/lib/utils/env';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +17,18 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: NextRequest) {
   const auth = await authenticateIngest(req);
   if (auth instanceof NextResponse) return auth;
+  if (env.GENERIC_EVENT_INGESTION_ENABLED !== 'true') {
+    return NextResponse.json(
+      {
+        error: 'generic_event_ingestion_unavailable',
+        message: 'Generic event acceptance is disabled until the event processor is enabled. Use the canonical entity ingestion endpoints.',
+      },
+      {
+        status: 503,
+        headers: { 'Retry-After': '3600' },
+      },
+    );
+  }
 
   let rawBody: string;
   try {

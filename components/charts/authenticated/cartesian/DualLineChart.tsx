@@ -23,7 +23,7 @@ type DualLineChartProps = {
   height?: number;
 };
 
-/** T3 multi-series rules — max 3 lines, no hatch, legend mandatory (rendered by the caller via ChartLegend). */
+/** T3 multi-series rules — max 3 lines with a visible caller-owned legend. */
 export function DualLineChart({ data, series, valueFormatter, height = 240 }: DualLineChartProps) {
   const theme = useChartTheme();
 
@@ -37,18 +37,18 @@ export function DualLineChart({ data, series, valueFormatter, height = 240 }: Du
             axisLine={false}
             tickLine={false}
             minTickGap={22}
-            tick={{ fontSize: 10, fill: theme['--text-tertiary'], fontFamily: 'var(--ua-font-mono)' }}
+            tick={{ fontSize: 10, fill: theme['--ua-text-tertiary'], fontFamily: 'var(--ua-font-sans)' }}
           />
           <YAxis
             axisLine={false}
             tickLine={false}
             width={40}
             tickCount={5}
-            tick={{ fontSize: 10, fill: theme['--text-tertiary'], fontFamily: 'var(--ua-font-mono)' }}
+            tick={{ fontSize: 10, fill: theme['--ua-text-tertiary'], fontFamily: 'var(--ua-font-sans)' }}
             tickFormatter={valueFormatter}
           />
           <Tooltip
-            cursor={{ stroke: theme['--border-strong'], strokeDasharray: '4 4' }}
+            cursor={{ stroke: theme['--ua-border-strong'], strokeDasharray: '4 4' }}
             isAnimationActive={false}
             content={({ active, payload, label }) => {
               if (!active || !payload?.length) return null;
@@ -60,7 +60,7 @@ export function DualLineChart({ data, series, valueFormatter, height = 240 }: Du
                     value: (payload[0]?.payload as DualLinePoint)?.[s.key] == null
                       ? 'Unavailable'
                       : valueFormatter(Number((payload[0]?.payload as DualLinePoint)[s.key])),
-                    colour: (theme as Record<string, string>)[s.colourVar] || 'var(--ua-chart-blue)',
+                    colour: (theme as Record<string, string>)[s.colourVar] || 'var(--ua-chart-1)',
                   }))}
                 />
               );
@@ -72,12 +72,12 @@ export function DualLineChart({ data, series, valueFormatter, height = 240 }: Du
               type="monotone"
               dataKey={s.key}
               name={s.label}
-              stroke={(theme as Record<string, string>)[s.colourVar] || 'var(--ua-chart-blue)'}
+              stroke={(theme as Record<string, string>)[s.colourVar] || 'var(--ua-chart-1)'}
               strokeWidth={TREND_LINE_WIDTH}
               strokeLinecap="round"
               strokeLinejoin="round"
               dot={false}
-              activeDot={{ r: TREND_HOVER_DOT_R, strokeWidth: 2, stroke: theme['--surface'] }}
+              activeDot={{ r: TREND_HOVER_DOT_R, strokeWidth: 2, stroke: theme['--ua-surface-primary'] }}
               isAnimationActive={false}
             />
           ))}

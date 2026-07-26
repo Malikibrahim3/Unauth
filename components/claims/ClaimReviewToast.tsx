@@ -13,13 +13,13 @@ export function ClaimReviewToast({ wb }: { wb: ClaimReviewWorkbench }) {
         right: 16,
         height: 40,
         padding: '0 16px',
-        borderRadius: 'var(--radius-md)',
+        borderRadius: 'var(--ua-radius-overlay)',
         fontSize: 13,
         fontWeight: 500,
-        boxShadow: 'var(--shadow-md)',
-        color: messageTone === 'success' ? 'var(--success)' : messageTone === 'error' ? 'var(--success)' : 'var(--text-secondary)',
-        border: `1px solid ${messageTone === 'success' ? 'var(--success-bd)' : messageTone === 'error' ? 'var(--risk-critical-bd)' : 'var(--border-muted)'}`,
-        background: messageTone === 'success' ? 'var(--success-bg)' : messageTone === 'error' ? 'var(--risk-critical-bg)' : 'var(--surface)',
+        boxShadow: 'var(--ua-shadow-menu)',
+        color: messageTone === 'success' ? 'var(--ua-success)' : messageTone === 'error' ? 'var(--ua-success)' : 'var(--ua-text-secondary)',
+        border: `1px solid ${messageTone === 'success' ? 'var(--ua-success-border)' : messageTone === 'error' ? 'var(--ua-risk-critical-border)' : 'var(--ua-border-subtle)'}`,
+        background: messageTone === 'success' ? 'var(--ua-success-bg)' : messageTone === 'error' ? 'var(--ua-risk-critical-bg)' : 'var(--ua-surface-primary)',
       }}
     >
       <span>{wb.state.message}</span>

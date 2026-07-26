@@ -176,13 +176,13 @@ export function CanonicalCsvImportClient({
         ].map((step, index) => (
           <li
             key={step.label}
-            className="flex items-center gap-2 rounded-md border border-[var(--border-muted)] bg-[var(--surface-sunken)] px-3 py-2 text-xs"
+            className="flex items-center gap-2 rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] px-3 py-2 text-xs"
           >
             <span
               className="flex h-5 w-5 items-center justify-center rounded-full font-mono"
               style={{
-                background: step.complete ? "var(--success)" : "var(--surface)",
-                color: step.complete ? "white" : "var(--text-secondary)",
+                background: step.complete ? "var(--ua-success)" : "var(--ua-surface-primary)",
+                color: step.complete ? "white" : "var(--ua-text-secondary)",
               }}
             >
               {step.complete ? "✓" : index + 1}
@@ -192,13 +192,13 @@ export function CanonicalCsvImportClient({
         ))}
       </ol>
 
-      <Card unstyled as="section" variant="flat" className="p-4">
+      <Card unstyled as="section" variant="panel" className="p-4">
         <h2 className="text-sm font-semibold">1. Source file</h2>
         <div className="mt-3 grid gap-4 sm:grid-cols-2">
-          <label className="text-xs font-semibold text-[var(--text-secondary)]">
+          <label className="text-xs font-semibold text-[var(--ua-text-secondary)]">
             Dataset
             <select
-              className="mt-1 w-full rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm capitalize"
+              className="mt-1 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-3 py-2 text-sm capitalize"
               value={dataset}
               onChange={(event) => changeDataset(event.target.value as Dataset)}
             >
@@ -209,10 +209,10 @@ export function CanonicalCsvImportClient({
               ))}
             </select>
           </label>
-          <label className="text-xs font-semibold text-[var(--text-secondary)]">
+          <label className="text-xs font-semibold text-[var(--ua-text-secondary)]">
             Import name
             <input
-              className="mt-1 w-full rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-3 py-2 text-sm"
               value={importName}
               onChange={(event) => setImportName(event.target.value)}
               placeholder="e.g. June order backfill"
@@ -220,12 +220,12 @@ export function CanonicalCsvImportClient({
             />
           </label>
         </div>
-        <label className="mt-4 flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-[var(--border)] bg-[var(--surface-sunken)] px-4 py-8 text-center focus-within:ring-2 focus-within:ring-[var(--accent)]">
-          <Upload className="h-5 w-5 text-[var(--accent)]" />
+        <label className="mt-4 flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] px-4 py-8 text-center focus-within:ring-2 focus-within:ring-[var(--ua-action-primary)]">
+          <Upload className="h-5 w-5 text-[var(--ua-action-primary)]" />
           <span className="mt-2 text-sm font-semibold">
             {fileName ?? "Choose a CSV file"}
           </span>
-          <span className="mt-1 text-xs text-[var(--text-secondary)]">
+          <span className="mt-1 text-xs text-[var(--ua-text-secondary)]">
             UTF-8 text; row and file-size limits are revalidated by the server.
           </span>
           <input
@@ -236,11 +236,11 @@ export function CanonicalCsvImportClient({
           />
         </label>
         <details className="mt-3">
-          <summary className="cursor-pointer text-xs font-semibold text-[var(--accent)]">
+          <summary className="cursor-pointer text-xs font-semibold text-[var(--ua-action-primary)]">
             Paste CSV text instead
           </summary>
           <textarea
-            className="mt-2 h-36 w-full rounded-md border border-[var(--border)] bg-[var(--surface)] p-3 font-mono text-xs"
+            className="mt-2 h-36 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] p-3 font-mono text-xs"
             value={csv}
             onChange={(event) => {
               const value = event.target.value;
@@ -256,11 +256,11 @@ export function CanonicalCsvImportClient({
       </Card>
 
       {headers.length > 0 ? (
-        <Card unstyled as="section" variant="flat" className="p-4">
+        <Card unstyled as="section" variant="panel" className="p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-sm font-semibold">2. Column mapping</h2>
-              <p className="mt-1 text-xs text-[var(--text-secondary)]">
+              <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">
                 Exact header names are mapped automatically. Ignored columns are
                 never persisted.
               </p>
@@ -278,10 +278,10 @@ export function CanonicalCsvImportClient({
                 <span className="truncate font-mono" title={header}>
                   {header}
                 </span>
-                <span className="text-[var(--text-tertiary)]">maps to</span>
+                <span className="text-[var(--ua-text-tertiary)]">maps to</span>
                 <select
                   aria-label={`Map ${header}`}
-                  className="min-w-0 rounded-md border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5"
+                  className="min-w-0 rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2 py-1.5"
                   value={mapping[header] ?? ""}
                   onChange={(event) => {
                     setMapping((current) => ({
@@ -306,11 +306,11 @@ export function CanonicalCsvImportClient({
       ) : null}
 
       {csv ? (
-        <Card unstyled as="section" variant="flat" className="p-4">
+        <Card unstyled as="section" variant="panel" className="p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-sm font-semibold">3. Validate and import</h2>
-              <p className="mt-1 text-xs text-[var(--text-secondary)]">
+              <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">
                 Validation performs no writes. Import commits only valid,
                 deduplicated rows with CSV provenance.
               </p>
@@ -338,7 +338,7 @@ export function CanonicalCsvImportClient({
           {error ? (
             <p
               role="alert"
-              className="mt-3 rounded-md border border-[var(--danger)] px-3 py-2 text-sm text-[var(--danger)]"
+              className="mt-3 rounded-md border border-[var(--ua-critical)] px-3 py-2 text-sm text-[var(--ua-critical)]"
             >
               {error}
             </p>
@@ -354,34 +354,34 @@ export function CanonicalCsvImportClient({
                 ].map(([label, value]) => (
                   <Card unstyled
                     key={String(label)}
-                    variant="inset"
+                    variant="muted"
                     className="p-3"
                   >
-                    <dt className="text-[11px] text-[var(--text-tertiary)]">
+                    <dt className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">
                       {label}
                     </dt>
-                    <dd className="mt-1 font-mono text-lg font-semibold">
+                    <dd className="mt-1 font-sans text-lg font-semibold tabular-nums">
                       {value}
                     </dd>
                   </Card>
                 ))}
               </dl>
               {result.errors.length ? (
-                <div className="mt-3 max-h-56 overflow-auto rounded-md border border-[var(--border)]">
+                <div className="mt-3 max-h-56 overflow-auto rounded-md border border-[var(--ua-border-default)]">
                   <table className="w-full text-xs">
-                    <thead className="sticky top-0 bg-[var(--surface-sunken)]">
+                    <thead className="sticky top-0 bg-[var(--ua-surface-muted)]">
                       <tr>
                         <th className="px-3 py-2 text-left">Row</th>
                         <th className="px-3 py-2 text-left">Field</th>
                         <th className="px-3 py-2 text-left">Issue</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[var(--border-muted)]">
+                    <tbody className="divide-y divide-[var(--ua-border-subtle)]">
                       {result.errors.map((item) => (
                         <tr key={`${item.row}-${item.field}-${item.code}-${item.message}`}>
                           <td className="px-3 py-2 font-mono">{item.row}</td>
                           <td className="px-3 py-2 font-mono">{item.field}</td>
-                          <td className="px-3 py-2 text-[var(--danger)]">
+                          <td className="px-3 py-2 text-[var(--ua-critical)]">
                             {item.message}
                           </td>
                         </tr>
@@ -390,7 +390,7 @@ export function CanonicalCsvImportClient({
                   </table>
                 </div>
               ) : (
-                <p className="mt-3 flex items-center gap-2 text-sm text-[var(--success)]">
+                <p className="mt-3 flex items-center gap-2 text-sm text-[var(--ua-success)]">
                   <CheckCircle2 className="h-4 w-4" /> Every row passed
                   validation.
                 </p>
@@ -400,14 +400,14 @@ export function CanonicalCsvImportClient({
           {committed ? (
             <div
               role="status"
-              className="mt-4 rounded-md border border-[var(--success)] bg-[var(--success-bg)] p-3"
+              className="mt-4 rounded-md border border-[var(--ua-success)] bg-[var(--ua-success-bg)] p-3"
             >
               <p className="flex items-center gap-2 text-sm font-semibold">
                 <CheckCircle2 className="h-4 w-4" /> Imported{" "}
                 {committed.persisted} record
                 {committed.persisted === 1 ? "" : "s"}
               </p>
-              <p className="mt-1 font-mono text-xs text-[var(--text-secondary)]">
+              <p className="mt-1 font-mono text-xs text-[var(--ua-text-secondary)]">
                 Job {committed.job_id} · {committed.duplicates_skipped}{" "}
                 duplicates skipped · {committed.error_count} invalid rows
                 retained in validation output
@@ -425,7 +425,7 @@ export function CanonicalCsvImportClient({
           </h2>
         </div>
         {history.length ? (
-          <div className="mt-3 divide-y divide-[var(--border-muted)] rounded-lg border border-[var(--border)]">
+          <div className="mt-3 divide-y divide-[var(--ua-border-subtle)] rounded-lg border border-[var(--ua-border-default)]">
             {history.map((job) => (
               <div
                 key={job.id}
@@ -435,12 +435,12 @@ export function CanonicalCsvImportClient({
                   <p className="text-sm font-medium">
                     {job.label ?? "CSV import"}
                   </p>
-                  <p className="mt-1 font-mono text-[11px] text-[var(--text-tertiary)]">
+                  <p className="mt-1 font-mono text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">
                     {job.id}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="font-mono text-xs">
+                  <span className="font-sans text-xs tabular-nums">
                     {job.processed_rows ?? 0}/{job.total_rows ?? 0} imported ·{" "}
                     {job.failed_rows ?? 0} invalid
                   </span>
@@ -451,8 +451,8 @@ export function CanonicalCsvImportClient({
           </div>
         ) : (
           <Card unstyled
-            variant="inset"
-            className="mt-3 p-4 text-sm text-[var(--text-secondary)]"
+            variant="muted"
+            className="mt-3 p-4 text-sm text-[var(--ua-text-secondary)]"
           >
             No CSV import jobs recorded yet.
           </Card>

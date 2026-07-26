@@ -21,8 +21,7 @@ import {
   type ShipBobTimelineEvent,
 } from '@/lib/integrations/providers/shipbob';
 import { stableEvidenceId } from '@/lib/integrations/stableEvidenceId';
-import { refreshShipBobCredentialsIfNeeded } from '@/lib/integrations/providers/shipbobOAuth';
-import { env } from '@/lib/utils/env';
+import { refreshShipBobCredentialsIfNeeded, shipBobOAuthClientCredentials } from '@/lib/integrations/providers/shipbobOAuth';
 
 const DEFAULT_CURRENCY = 'GBP';
 const CARRIER_CLAIM_WINDOWS_DAYS: Record<string, number> = {
@@ -530,12 +529,22 @@ export async function buildEvidence(input: {
       ? refreshCarrierCredentials(input.client, { merchantId: input.merchantId, connectionId: fedexConnectionId, providerId: 'fedex' })
       : null,
   ]);
+  const { data: shipbobConnection } = shipbobConnectionId
+    ? await input.client
+      .from('merchant_integrations')
+      .select('environment')
+      .eq('id', shipbobConnectionId)
+      .eq('merchant_id', input.merchantId)
+      .maybeSingle()
+    : { data: null };
+  const shipbobEnvironment = shipbobConnection?.environment === 'sandbox' ? 'sandbox' : 'production';
+  const shipbobOAuthCredentials = shipBobOAuthClientCredentials(shipbobEnvironment);
   const shipbobCredentials = shipbobConnectionId
-    ? env.SHIPBOB_OAUTH_CLIENT_ID && env.SHIPBOB_OAUTH_CLIENT_SECRET
+    ? shipbobOAuthCredentials
       ? await refreshShipBobCredentialsIfNeeded(input.client, input.merchantId, {
           connectionId: shipbobConnectionId,
-          clientId: env.SHIPBOB_OAUTH_CLIENT_ID,
-          clientSecret: env.SHIPBOB_OAUTH_CLIENT_SECRET,
+          clientId: shipbobOAuthCredentials.clientId,
+          clientSecret: shipbobOAuthCredentials.clientSecret,
         })
       : await getIntegrationCredential(input.client, input.merchantId, 'shipbob', { connectionId: shipbobConnectionId })
     : null;
