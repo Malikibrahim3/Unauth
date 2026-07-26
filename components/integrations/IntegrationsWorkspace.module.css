@@ -98,6 +98,10 @@
   min-width: 0;
 }
 
+.searchInput {
+  padding-left: 34px;
+}
+
 .surface {
   min-width: 0;
   overflow: hidden;
@@ -271,6 +275,10 @@
   grid-template-columns: minmax(0, 1fr);
   gap: 10px;
   padding: 12px;
+}
+
+.subsectionGrid {
+  padding: 0;
 }
 
 .catalogueCard {

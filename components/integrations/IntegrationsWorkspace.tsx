@@ -59,7 +59,7 @@ function FilterToolbar({
           onChange={(event) => onQueryChange(event.target.value)}
           placeholder="Search integrations or use cases"
           aria-label="Search integrations or use cases"
-          style={{ paddingLeft: 34 }}
+          className={styles.searchInput}
         />
         <Search
           size={15}
@@ -239,7 +239,7 @@ function BrowseView({ items }: { items: CatalogueRowItem[] }) {
               </div>
               <span className={styles.surfaceMeta}>{planned.length}</span>
             </div>
-            <div className={styles.cardGrid} style={{ padding: 0 }}>{planned.map((item) => <CatalogueCard key={item.id} item={item} />)}</div>
+            <div className={`${styles.cardGrid} ${styles.subsectionGrid}`}>{planned.map((item) => <CatalogueCard key={item.id} item={item} />)}</div>
           </div>
         ) : null}
         <div className={styles.importCallout}>

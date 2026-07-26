@@ -155,9 +155,8 @@ export default async function ConnectionPage({
           variant="muted"
           className="p-4 text-sm text-[var(--ua-text-secondary)]"
         >
-          This connector is planned. Capability rows document scope, but
-          credential and sync controls remain unavailable until verification is
-          complete.
+          This connector is coming soon. It is visible so you can understand
+          the intended coverage; setup and syncing are not available yet.
         </Card>
       ) : (
         <ConnectionActions
