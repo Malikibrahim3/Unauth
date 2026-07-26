@@ -2,13 +2,39 @@
 
 /**
  * Root global error boundary. Catches errors thrown in the root layout itself,
- * where nested error.tsx boundaries cannot help. Must render its own <html>/<body>
- * because the root layout is what failed. Self-contained inline styles only —
- * the app shell / CSS variables are not guaranteed to be available here.
+ * where nested error.tsx boundaries cannot help, and is also what renders when a
+ * nested boundary's own chunk fails to load. It must render its own
+ * <html>/<body> because the root layout is what failed.
+ *
+ * Every value below is `var(--ua-token, #literal)`: when the authenticated
+ * stylesheet did load, the real tokens win; when it did not, the literal is the
+ * Quiet Precision value rather than a stale one. The body carries `ua-app` so
+ * the token scope resolves whenever the stylesheet is present.
+ *
+ * This file previously hardcoded the pre-Quiet-Precision palette outright — a
+ * cream canvas, warm espresso ink, the retired green logo chip and a saturated
+ * orange button — so the one screen a user sees when the app breaks was the one
+ * screen still wearing the old design. Keep the literals below in step with
+ * styles/authenticated/tokens.css.
  *
  * No error message or stack is shown to the user; only the digest (a safe,
  * non-sensitive correlation id) is surfaced for support.
  */
+
+const INK = 'var(--ua-text-primary, #202020)';
+const INK_SECONDARY = 'var(--ua-text-secondary, #626262)';
+const INK_TERTIARY = 'var(--ua-text-tertiary, #767676)';
+const CANVAS = 'var(--ua-canvas, #fafafa)';
+const SURFACE = 'var(--ua-surface-primary, #ffffff)';
+const BORDER = 'var(--ua-border-default, #dedede)';
+const BORDER_SUBTLE = 'var(--ua-border-subtle, #ebebeb)';
+const ACTION = 'var(--ua-action-primary, #242424)';
+const ACTION_FG = 'var(--ua-action-primary-fg, #ffffff)';
+const RADIUS_CONTROL = 'var(--ua-radius-control, 6px)';
+const RADIUS_SURFACE = 'var(--ua-radius-surface, 10px)';
+const FONT =
+  'var(--ua-font-sans, Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif)';
+
 export default function GlobalError({
   error,
   reset,
@@ -19,80 +45,120 @@ export default function GlobalError({
   return (
     <html lang="en">
       <body
+        className="ua-app"
         style={{
           margin: 0,
           minHeight: '100vh',
-          background: '#f7f5f0',
-          color: '#181715',
-          fontFamily:
-            'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+          background: CANVAS,
+          color: INK,
+          fontFamily: FONT,
+          WebkitFontSmoothing: 'antialiased',
         }}
       >
-        <header style={{ height: 52, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', background: '#fff', borderBottom: '1px solid #e8e4dc' }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 650 }}>
-            <span style={{ width: 28, height: 28, display: 'inline-grid', placeItems: 'center', borderRadius: 6, background: '#345d50', color: '#fff', fontSize: 10 }}>U</span>
-            Unauth
-          </span>
-          <span style={{ color: '#8a857c', fontSize: 10, fontWeight: 650, letterSpacing: '0.08em', textTransform: 'uppercase' }}>System status</span>
-        </header>
-        <main
+        <header
           style={{
-            maxWidth: 1500,
-            margin: '0 auto',
-            padding: 20,
+            height: 48,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '0 20px',
+            background: SURFACE,
+            borderBottom: `1px solid ${BORDER_SUBTLE}`,
           }}
         >
-          <p style={{ fontSize: 10, fontWeight: 650, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#8a857c', margin: 0 }}>Recoverable error</p>
-          <h1 style={{ fontSize: 20, lineHeight: 1.2, fontWeight: 650, letterSpacing: '-0.025em', margin: '5px 0 4px' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600 }}>
+            <span
+              style={{
+                width: 22,
+                height: 22,
+                display: 'inline-grid',
+                placeItems: 'center',
+                borderRadius: RADIUS_CONTROL,
+                background: ACTION,
+                color: ACTION_FG,
+                fontSize: 11,
+                fontWeight: 600,
+              }}
+            >
+              U
+            </span>
+            Unauth
+          </span>
+          <span style={{ color: INK_TERTIARY, fontSize: 11, fontWeight: 500 }}>System status</span>
+        </header>
+        <main style={{ maxWidth: 1500, margin: '0 auto', padding: 20 }}>
+          {/* Sentence case, no letter spacing (§3.2). */}
+          <p style={{ fontSize: 11, fontWeight: 500, color: INK_TERTIARY, margin: 0 }}>Recoverable error</p>
+          <h1 style={{ fontSize: 18, lineHeight: '24px', fontWeight: 600, letterSpacing: 0, margin: '4px 0' }}>
             Something went wrong
           </h1>
-          <p style={{ maxWidth: 620, fontSize: 12, lineHeight: 1.6, color: '#666159', margin: '0 0 14px' }}>
+          <p style={{ maxWidth: 620, fontSize: 13, lineHeight: '18px', color: INK_SECONDARY, margin: '0 0 16px' }}>
             We hit an unexpected error loading the app. Your data is safe — please try again.
           </p>
-          <section style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', padding: 14, borderRadius: 8, border: '1px solid #e5e1d8', background: '#fff' }}>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              onClick={() => reset()}
-              style={{
-                appearance: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                background: '#FF5A0A',
-                color: '#fff',
-                height: 32,
-                fontSize: 11,
-                fontWeight: 650,
-                padding: '0 12px',
-                borderRadius: 6,
-              }}
-            >
-              Try again
-            </button>
-            <a
-              href="/dashboard"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                textDecoration: 'none',
-                background: 'transparent',
-                color: '#1a1a1a',
-                height: 30,
-                fontSize: 11,
-                fontWeight: 650,
-                padding: '0 12px',
-                borderRadius: 6,
-                border: '1px solid #e0ddd7',
-              }}
-            >
-              Go to dashboard
-            </a>
-          </div>
-          {error?.digest ? (
-            <p style={{ fontSize: 10, color: '#9a958d', margin: 0, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>
-              Reference: {error.digest}
-            </p>
-          ) : null}
+          <section
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+              flexWrap: 'wrap',
+              padding: 16,
+              borderRadius: RADIUS_SURFACE,
+              border: `1px solid ${BORDER}`,
+              background: SURFACE,
+            }}
+          >
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => reset()}
+                style={{
+                  appearance: 'none',
+                  cursor: 'pointer',
+                  background: ACTION,
+                  color: ACTION_FG,
+                  border: `1px solid ${ACTION}`,
+                  height: 34,
+                  fontSize: 13,
+                  fontWeight: 500,
+                  padding: '0 16px',
+                  borderRadius: RADIUS_CONTROL,
+                  fontFamily: 'inherit',
+                }}
+              >
+                Try again
+              </button>
+              <a
+                href="/dashboard"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  textDecoration: 'none',
+                  background: SURFACE,
+                  color: INK,
+                  height: 34,
+                  fontSize: 13,
+                  fontWeight: 500,
+                  padding: '0 16px',
+                  borderRadius: RADIUS_CONTROL,
+                  border: `1px solid ${BORDER}`,
+                }}
+              >
+                Go to dashboard
+              </a>
+            </div>
+            {error?.digest ? (
+              <p
+                style={{
+                  fontSize: 12,
+                  color: INK_TERTIARY,
+                  margin: 0,
+                  fontFamily: 'var(--ua-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace)',
+                }}
+              >
+                Reference: {error.digest}
+              </p>
+            ) : null}
           </section>
         </main>
       </body>

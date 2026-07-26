@@ -29,14 +29,14 @@
    * Do not reintroduce a warm tint here. If a surface needs warmth it is
    * carrying a status, and that belongs in status.css.
    *
-   * `--ua-shell` sits one step BELOW `--ua-canvas` on purpose: the sidebar and
-   * header read as chrome, which is what lets a white panel — and the white
-   * selected nav row — register as lifted against them. Pull the shell up to
-   * near-white and the selected row loses its fill contrast and has to lean
-   * entirely on its hairline.
+   * `--ua-shell` is white: the sidebar and header are the same paper as the
+   * panels, and the only thing separating them is a hairline. That means the
+   * selected nav row cannot use fill to stand out — it carries its own hairline,
+   * `--ua-shadow-raised` and a 1px rise instead (§4.2.1), which is what makes a
+   * white chip legible on white.
    */
   --ua-canvas: #fafafa;
-  --ua-shell: #f6f6f6;
+  --ua-shell: #ffffff;
   --ua-surface-primary: #ffffff;
   --ua-surface-secondary: #fafafa;
   --ua-surface-muted: #f4f4f4;
@@ -109,7 +109,7 @@
 
   /* ── Depth (§3.5). Inline surfaces are flat; only floating layers lift. */
   --ua-shadow-none: none;
-  --ua-shadow-raised: 0 1px 2px rgb(20 20 20 / 7%), 0 3px 8px rgb(20 20 20 / 5%);
+  --ua-shadow-raised: 0 1px 2px rgb(20 20 20 / 9%), 0 4px 10px rgb(20 20 20 / 7%);
   --ua-shadow-float: 0 4px 14px rgb(20 20 20 / 8%);
   --ua-shadow-menu: 0 8px 24px rgb(20 20 20 / 12%);
   --ua-shadow-overlay: 0 24px 64px rgb(20 20 20 / 18%);

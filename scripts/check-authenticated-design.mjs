@@ -1,10 +1,16 @@
-import { readFile, readdir } from 'node:fs/promises';
+import { readFile, readdir, stat } from 'node:fs/promises';
 import { extname, join, relative } from 'node:path';
 
 const ROOT = process.cwd();
 const scanRoots = [
   'app/(app)',
+  'app/(auth)',
   'app/onboarding',
+  // Root-level boundaries (global-error, not-found, layout) render product
+  // chrome and must obey the product contract. They were outside every scan
+  // root until 2026-07-26, which is how global-error.tsx kept the entire
+  // pre-Quiet-Precision palette — cream canvas, orange button — intact.
+  'app/root-files',
   'styles/authenticated',
   'components/charts/authenticated',
   ...[
@@ -36,6 +42,18 @@ const ignored = new Set([
 // scoped documented exception instead (see styles/authenticated/README.md's
 // "Exception mechanism" section: data-viz literals and third-party brand
 // marks are the only sanctioned categories).
+/*
+ * Documented exception (styles/authenticated/README.md "Exception mechanism"):
+ * the root error boundary renders when the root layout — and therefore possibly
+ * the stylesheet — has failed, so it cannot rely on custom properties resolving.
+ * It uses `var(--ua-token, #literal)` throughout; the literals are the current
+ * Quiet Precision values and must be kept in step with tokens.css. This is the
+ * only file permitted a palette literal fallback.
+ */
+const stylesheetIndependentBoundaries = new Set([
+  'app/global-error.tsx',
+]);
+
 const hardcodedColorGrandfathered = new Set([
   'app/(app)/help/integrations/siena/page.tsx',
   'app/(app)/help/integrations/yuma/page.tsx',
@@ -67,7 +85,7 @@ const arbitraryRadiusGrandfathered = new Set([
 // says so.
 const deprecatedImports = [];
 
-const oldPalette = /#(?:7b2d26|5e2018|a85040|f4e6e0|f8f5ee|fdfbf6|d8d0bd|4a4640|8a8472|ead8d2|8a2828|c45c4c|a84035|18150f|211d16)\b|var\(--(?:copper-(?:bright|mid|dim|glow)|brand-rust(?:-hover|-soft)?)\)/gi;
+const oldPalette = /#(?:7b2d26|5e2018|a85040|f4e6e0|f8f5ee|fdfbf6|d8d0bd|4a4640|8a8472|ead8d2|8a2828|c45c4c|a84035|18150f|211d16|ff5a0a|f7f5f0|181715|e8e4dc|345d50|8a857c|666159|e5e1d8|e0ddd7|9a958d|fbfbfa|f8f8f6)\b|var\(--(?:copper-(?:bright|mid|dim|glow)|brand-rust(?:-hover|-soft)?)\)/gi;
 const landingDependency = /var\(--(?:landing-|fl-)/g;
 // Hex / rgb(a) / hsl(a) literals, and inline color/background/border style
 // props holding a literal instead of a var() reference. Data-viz series
@@ -186,7 +204,24 @@ const RATCHET = {
 
 const allowedExtensions = new Set(['.ts', '.tsx', '.css']);
 
+const ROOT_LEVEL_APP_FILES = [
+  'app/global-error.tsx',
+  'app/not-found.tsx',
+  'app/layout.tsx',
+];
+
 async function filesUnder(path) {
+  // Pseudo-root: an explicit list of root-level app files rather than a folder.
+  if (path === 'app/root-files') {
+    const present = [];
+    for (const file of ROOT_LEVEL_APP_FILES) {
+      try {
+        const info = await stat(join(ROOT, file));
+        if (info.isFile()) present.push(file);
+      } catch { /* optional file */ }
+    }
+    return present;
+  }
   const absolute = join(ROOT, path);
   let entries;
   try {
@@ -236,7 +271,7 @@ for (const file of files) {
     }
   }
 
-  if (!hardcodedColorGrandfathered.has(normalized)) {
+  if (!hardcodedColorGrandfathered.has(normalized) && !stylesheetIndependentBoundaries.has(normalized)) {
     for (const { line, text } of findMatches(source, hardcodedColor)) {
       failures.push(`${normalized}:${line} hardcoded colour: ${text} — use a var(--ua-*) token, or a documented data-viz/brand-mark exception`);
     }

@@ -30,8 +30,7 @@ import type {
 import { financialReportRecordsHref, type FinancialReportMetric } from '@/lib/reporting/intelligence';
 import { ButtonLink } from '@/components/ui/ButtonLink';
 import { MetricGroup } from '@/components/ui/MetricGroup';
-import { DataTable } from '@/components/ui/DataTable';
-import { AuthenticatedPanel } from '@/components/authenticated/AuthenticatedPanel';
+import { RankedContributionChart } from '@/components/charts/authenticated/RankedContributionChart';
 import {
   formatCurrencyCompact,
   formatDateAbsolute,
@@ -432,42 +431,28 @@ export function DashboardOverview({
         ended above the fold with empty canvas and gave the operator no way into
         the actual queue from the summary.
       */}
-      <AuthenticatedPanel
-        title="Priority work"
-        description="Open cases grouped by the next step, most pressing first."
-        actions={<ButtonLink href="/work" variant="secondary" size="sm">Open work</ButtonLink>}
-        className="mt-4"
-      >
-        {report.operations.length ? (
-          <DataTable
-            density="compact"
-            rows={report.operations.slice(0, 8)}
-            getRowKey={(row) => row.key}
-            columns={[
-              {
-                key: 'label',
-                header: 'Next step',
-                render: (row) => (
-                  <Link href={row.href} className="font-medium underline underline-offset-2">
-                    {row.label}
-                  </Link>
-                ),
-              },
-              {
-                key: 'count',
-                header: 'Cases',
-                align: 'right',
-                width: '120px',
-                render: (row) => (
-                  <span className="tabular-nums">{formatNumber(row.count)}</span>
-                ),
-              },
-            ]}
-          />
-        ) : (
-          <p className={styles.cardEmpty}>No open cases in this period.</p>
-        )}
-      </AuthenticatedPanel>
+      {/*
+        §12.1's priority work view. Ranked bars rather than a label + count table:
+        the operator's question here is "where is the backlog concentrated", which
+        is a comparison, and a column of numbers makes them do that comparison
+        themselves. ChartPanel still exposes the exact counts and the per-status
+        links in its accessible table.
+      */}
+      <div className="mt-4">
+        <RankedContributionChart
+          id="dashboard-priority-work"
+          title="Priority work"
+          description="Open cases by the next step they are waiting on."
+          items={report.operations.slice(0, 6).map((operation, index) => ({
+            label: operation.label,
+            value: operation.count,
+            displayValue: `${formatNumber(operation.count)} ${operation.count === 1 ? 'case' : 'cases'}`,
+            href: operation.href,
+            tone: index === 0 ? 'attention' : 'neutral',
+          }))}
+          annotation={{ value: formatNumber(report.recordCount), label: ' cases in period' }}
+        />
+      </div>
 
       <Modal
         open={healthOpen}

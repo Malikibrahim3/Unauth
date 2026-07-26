@@ -12,8 +12,9 @@ import {
   REPORT_DEFINITIONS,
 } from "@/lib/reporting/intelligence";
 import { normaliseCurrencyOrNull } from "@/lib/canonical/money";
-import { formatDateTime, formatMinorCurrencyNullable } from "@/lib/utils/format";
+import { formatDateTime, formatMinorCurrencyNullable, formatNumber } from "@/lib/utils/format";
 import { DashboardCharts } from "@/components/reporting/DashboardCharts";
+import { RankedContributionChart } from "@/components/charts/authenticated/RankedContributionChart";
 
 function money(minor: number, currency: string) {
   return formatMinorCurrencyNullable(minor, currency);
@@ -186,25 +187,33 @@ export function IntelligenceReportView({
         )}
       </section>
       <DashboardCharts report={report} />
+      {/*
+        Open work by next step. This was a flat list of label + count rows, which
+        made the reader compare numbers in their head; ranked bars make the shape
+        of the backlog readable at a glance and still expose the exact counts and
+        the per-status links through ChartPanel's accessible table.
+      */}
       <section className="border-t border-[var(--ua-border-subtle)] pt-5">
-        <h2 className="text-[length:var(--ua-text-section-title-size)] font-semibold leading-[var(--ua-text-section-title-leading)]">Needs attention</h2>
-        <div className="mt-3 divide-y divide-[var(--ua-border-subtle)] border-t border-[var(--ua-border-subtle)]">
-          {report.operations.slice(0, compact ? 4 : 8).map((row) => (
-            <Link
-              key={row.key}
-              href={row.href}
-              className="ua-table-row flex items-center justify-between gap-4 p-3.5 hover:bg-[var(--ua-surface-hover)]"
-            >
-              <span className="text-sm">{row.label}</span>
-              <span className="text-sm font-semibold tabular-nums text-[var(--ua-action-primary)]">{row.count} {row.count === 1 ? 'case' : 'cases'}</span>
-            </Link>
-          ))}
-        </div>
-        {!report.operations.length ? (
-          <p className="text-sm text-[var(--ua-text-secondary)]">
-            No reconciliation-case records were found in the selected period.
-          </p>
-        ) : null}
+        <RankedContributionChart
+          id="operations-attention"
+          title="Needs attention"
+          description="Open cases by the next step they are waiting on."
+          items={report.operations.slice(0, compact ? 4 : 8).map((row, index) => ({
+            label: row.label,
+            value: row.count,
+            displayValue: `${formatNumber(row.count)} ${row.count === 1 ? 'case' : 'cases'}`,
+            href: row.href,
+            tone: index === 0 ? 'attention' : 'neutral',
+          }))}
+          annotation={
+            report.operations.length
+              ? {
+                  value: formatNumber(report.operations.reduce((sum, row) => sum + row.count, 0)),
+                  label: ' open',
+                }
+              : undefined
+          }
+        />
       </section>
       {!compact ? <RankedTable
         title="Loss causes"

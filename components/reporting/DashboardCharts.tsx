@@ -200,6 +200,9 @@ function RecoveryLedger({ bridge }: { bridge: MoneyBridge }) {
     { label: 'Recovered', value: recovered, conversion: conversion(recovered, recoverable) },
   ];
   const hasKnownValue = rows.some((row) => row.value != null);
+  // Scale every stage against the first stage that has a known value, so a null
+  // exposure does not collapse the whole funnel to zero width.
+  const baseline = rows.find((row) => row.value != null)?.value ?? 0;
 
   return (
     <section className="ua-section-panel rounded-[var(--ua-radius-surface)] xl:col-span-12" aria-labelledby={`recovery-ledger-${bridge.currency}`}>
@@ -207,25 +210,50 @@ function RecoveryLedger({ bridge }: { bridge: MoneyBridge }) {
         <h3 id={`recovery-ledger-${bridge.currency}`} className="text-sm font-semibold">Recovery progression</h3>
         <p className="mt-0.5 text-xs text-[var(--ua-text-secondary)]">Reconciled value through the recovery workflow</p>
       </div>
-      {hasKnownValue ? <dl className="grid sm:grid-cols-3">
-        {rows.map((row, index) => (
-          <div key={row.label} className={`p-4 ${index > 0 ? 'border-t border-[var(--ua-border-subtle)] sm:border-l sm:border-t-0' : ''}`}>
-            <dt className="text-xs font-medium text-[var(--ua-text-secondary)]">{row.label}</dt>
-            <dd className={`mt-1 text-xl font-semibold ${dvStyles.mono}`}>
-              {row.value == null ? 'Unavailable' : formatMoney(row.value, bridge.currency)}
-            </dd>
-            <dd className="mt-1 min-h-4 text-xs text-[var(--ua-text-tertiary)]">
-              {row.value == null
-                ? 'No known ledger value'
-                : row.conversion
-                  ? `${row.conversion} of previous stage`
-                  : index === 0
-                    ? 'Known current exposure'
-                    : 'Conversion unavailable'}
-            </dd>
-          </div>
-        ))}
-      </dl> : (
+      {hasKnownValue ? <>
+        {/*
+          A proportional funnel, not three loose numbers. Each stage bar is drawn
+          against the first known stage, so the drop-off from exposed to pursued
+          to recovered is visible rather than something the reader has to compute.
+          Bars use one flat fill on a neutral track (§8.3); the value and the
+          stage-to-stage conversion stay in text beside them.
+        */}
+        <dl className="grid gap-3 p-4">
+          {rows.map((row, index) => {
+            const share = row.value != null && baseline ? Math.max(1.5, (row.value / baseline) * 100) : 0;
+            return (
+              <div key={row.label} className="grid grid-cols-[92px_minmax(0,1fr)_auto] items-center gap-3">
+                <dt className="text-xs font-medium text-[var(--ua-text-secondary)]">{row.label}</dt>
+                <dd className="min-w-0">
+                  <div className="h-2 overflow-hidden rounded-[var(--ua-radius-xs)] bg-[var(--ua-chart-track)]">
+                    <div
+                      className="h-full rounded-[var(--ua-radius-xs)]"
+                      style={{
+                        width: `${share}%`,
+                        background: index === rows.length - 1 ? 'var(--ua-chart-2)' : 'var(--ua-chart-1)',
+                      }}
+                    />
+                  </div>
+                </dd>
+                <dd className="flex items-baseline gap-2 whitespace-nowrap">
+                  <span className={`text-sm font-semibold tabular-nums ${dvStyles.mono}`}>
+                    {row.value == null ? 'Unavailable' : formatMoney(row.value, bridge.currency)}
+                  </span>
+                  <span className="text-xs text-[var(--ua-text-tertiary)]">
+                    {row.value == null
+                      ? 'no known value'
+                      : row.conversion
+                        ? `${row.conversion} of previous`
+                        : index === 0
+                          ? 'known exposure'
+                          : ''}
+                  </span>
+                </dd>
+              </div>
+            );
+          })}
+        </dl>
+      </> : (
         <p className="px-4 py-5 text-sm text-[var(--ua-text-secondary)]">Recovery values are unavailable for this period.</p>
       )}
     </section>
