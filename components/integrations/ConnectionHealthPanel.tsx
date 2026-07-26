@@ -39,6 +39,7 @@ export function ConnectionHealthHeader({ item }: { item: CatalogueRowItem }) {
 /** The provider-detail page's "Action required" note + "Connection health"
  * timestamp grid — same reuse rationale as ConnectionHealthHeader above. */
 export function ConnectionHealthGrid({ item }: { item: CatalogueRowItem }) {
+  const attentionTone = item.noteTone === "warning" || item.badge === "stale" || item.badge === "not_syncing" || item.badge === "sync_pending";
   const healthItems = [
     ["Account", item.account ?? (item.connectionCount ? `${item.connectionCount} connected account${item.connectionCount === 1 ? "" : "s"}` : "Not connected")],
     ["Records imported", formatNumber(item.importedRecords)],
@@ -51,8 +52,10 @@ export function ConnectionHealthGrid({ item }: { item: CatalogueRowItem }) {
   return (
     <>
       {item.lastError ? (
-        <Card unstyled as="section" variant="panel" className="border-[var(--ua-critical)] p-4">
-          <h2 className="text-sm font-semibold text-[var(--ua-critical)]">Action required</h2>
+        <Card unstyled as="section" variant="panel" className={`${attentionTone ? "border-[var(--ua-warning-border)] bg-[var(--ua-warning-bg)]" : "border-[var(--ua-critical-border)] bg-[var(--ua-critical-bg)]"} p-4`}>
+          <h2 className={`text-sm font-semibold ${attentionTone ? "text-[var(--ua-warning)]" : "text-[var(--ua-critical)]"}`}>
+            {attentionTone ? "Connection needs attention" : "Connection error"}
+          </h2>
           <p role="alert" className="mt-1 text-sm text-[var(--ua-text-secondary)]">
             {item.lastError}
           </p>

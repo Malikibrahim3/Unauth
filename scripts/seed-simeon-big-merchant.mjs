@@ -6,7 +6,10 @@
  * merchant's own onboarding answers (monthly_order_volume: over_250k). Follows
  * the same conventions as scripts/seed-demo-v2.mjs: deterministic ids (safe to
  * re-run/upsert), sample_data tagging, GBP amounts, and case_financial_summaries
- * / notifications / source_shipments so no authenticated page renders empty.
+ * / case_financial_entries / notifications / source_shipments so no authenticated
+ * page renders empty. Financial summaries mirror those canonical ledger rows;
+ * the reporting layer derives known states from the ledger for the current
+ * production baseline, which predates the newer summary projection columns.
  *
  * Usage:
  *   node scripts/seed-simeon-big-merchant.mjs
@@ -640,6 +643,76 @@ function buildCanonicalOutcomeRows() {
     idempotency_key: `${SEED_PREFIX}:outcome:${c.key}`, effective_at: daysAgoIso(Math.max(1, c.ticketDaysAgo - 4), 16), recorded_at: daysAgoIso(Math.max(1, c.ticketDaysAgo - 4), 16) }));
 }
 
+function buildFinancialEntryRows() {
+  const rows = [];
+
+  for (const c of CASE_PLANS) {
+    const caseId = uuid(`case:${c.key}`);
+    const resolved = c.status.startsWith('resolved_');
+    const requested = Math.round(c.amount * 100);
+    const approved = c.outcome && c.outcome.decision === 'approved' ? requested : 0;
+    const paid = c.outcome?.amountRefunded ? Math.round(c.outcome.amountRefunded * 100) : 0;
+    const recovered = c.recovery?.recovered ? Math.round(c.recovery.recovered * 100) : 0;
+    const recoverable = c.recovery ? Math.round(c.recovery.max * 100) : 0;
+    const prevented = c.recoverability === 'not_recoverable' && !c.outcome ? requested : 0;
+    const effectiveAt = daysAgoIso(Math.max(1, c.ticketDaysAgo - 5), 16);
+    const lossCaseId = c.outcome || c.recovery ? uuid(`loss:${c.key}`) : null;
+    const recoveryCaseId = c.recovery ? uuid(`recovery:${c.key}`) : null;
+
+    const addEntry = (state, amountMinor, options = {}) => {
+      if (!amountMinor) return;
+      rows.push({
+        id: uuid(`financial-entry:${state}:${c.key}`),
+        merchant_id: MERCHANT_ID,
+        support_payout_case_id: caseId,
+        loss_case_id: lossCaseId,
+        recovery_case_id: recoveryCaseId,
+        state,
+        amount_minor: amountMinor,
+        currency: 'GBP',
+        direction: options.direction ?? 'memo',
+        effective_at: effectiveAt,
+        recorded_at: effectiveAt,
+        metadata: {
+          seed: SEED_TAG,
+          sample_data: true,
+          source: 'seed-simeon-big-merchant',
+          archetype: c.archetypeKey,
+          financial_state: state,
+          component_type: c.requestedAction,
+          ledger_kind: options.ledgerKind ?? 'legacy',
+          valuation_basis: options.valuationBasis ?? null,
+        },
+      });
+    };
+
+    addEntry('requested', requested);
+    if (!resolved) {
+      addEntry('exposed', requested);
+      addEntry('estimated_loss', requested);
+    }
+    addEntry('approved', approved);
+    addEntry('paid', paid, {
+      direction: 'debit',
+      ledgerKind: 'customer_concession',
+      valuationBasis: 'payout_value',
+    });
+    addEntry('confirmed_loss', resolved ? paid : 0, {
+      direction: 'debit',
+      ledgerKind: 'merchant_economic_loss',
+      valuationBasis: 'payout_value',
+    });
+    addEntry('recoverable', recoverable);
+    addEntry('recovered', recovered, {
+      direction: 'credit',
+      ledgerKind: 'provider_recovery',
+    });
+    addEntry('prevented', prevented);
+  }
+
+  return rows;
+}
+
 function buildFinancialSummaryRows() {
   return CASE_PLANS.map((c) => {
     const requested = Math.round(c.amount * 100);
@@ -661,7 +734,7 @@ function buildFinancialSummaryRows() {
       recoverable_minor: recoverableMinor,
       recovered_minor: recoveredMinor,
       prevented_minor: c.recoverability === 'not_recoverable' && !c.outcome ? requested : 0,
-      written_off_minor: c.outcome?.outcome === 'suspected_fraud' ? 0 : 0,
+      written_off_minor: 0,
       last_event_id: null,
       updated_at: daysAgoIso(1, 16),
     };
@@ -836,6 +909,7 @@ async function seed() {
   await upsertRows('work_tasks', buildWorkTaskRows());
   await insertImmutableRows('case_decisions', buildCanonicalDecisionRows());
   await insertImmutableRows('case_outcomes', buildCanonicalOutcomeRows());
+  await insertImmutableRows('case_financial_entries', buildFinancialEntryRows());
   await upsertRows('case_financial_summaries', buildFinancialSummaryRows());
   await upsertRows('source_shipments', buildShipmentRows());
   await upsertRows('notifications', buildNotificationRows());

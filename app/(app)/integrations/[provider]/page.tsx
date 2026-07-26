@@ -26,7 +26,6 @@ import { formatDateTime } from "@/lib/utils/format";
 import { ConnectionHealthGrid } from "@/components/integrations/ConnectionHealthPanel";
 import { AuthenticatedPageHeader } from "@/components/authenticated/AuthenticatedPageHeader";
 import pageStyles from "@/components/authenticated/AuthenticatedPageChrome.module.css";
-import { LIFECYCLE_CAPABILITY_LABELS } from "@/lib/ui/labels";
 
 export const dynamic = "force-dynamic";
 
@@ -187,12 +186,12 @@ export default async function ConnectionPage({
       <section aria-labelledby="capability-matrix-title">
         <div>
           <h2 id="capability-matrix-title" className="text-base font-semibold">
-            Capability contract
+            Data available to Unauth
           </h2>
           <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">
-            What this connection can contribute to payout cases is shown in
-            merchant language. Unsupported autonomous payout actions remain
-            blocked.
+            These are the records this connection can contribute to case
+            evidence. Unauth does not make customer or payout decisions
+            automatically.
           </p>
         </div>
         <div className="mt-3 hidden md:block">
@@ -222,68 +221,6 @@ export default async function ConnectionPage({
                 <StatusBadge family="workflowStatus" value={capability.support} size="sm" />
               </div>
               <p className="mt-2 text-xs text-[var(--ua-text-secondary)]">Available to the connected case workflow.</p>
-            </Card>
-          ))}
-        </div>
-      </section>
-      <section aria-labelledby="lifecycle-matrix-title">
-        <div>
-          <h2 id="lifecycle-matrix-title" className="text-base font-semibold">
-            Lifecycle capabilities
-          </h2>
-          <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">
-            The lifecycle below explains which operational surfaces are
-            available and whether they are currently verified.
-          </p>
-        </div>
-        {item.runtimeVerificationPending ? (
-          <Card unstyled variant="muted" className="mt-3 p-3 text-xs text-[var(--ua-text-secondary)]">
-            <strong className="text-[var(--ua-text-primary)]">Runtime verification pending</strong>
-            <p className="mt-1">
-              Missing controlled proof: {item.pendingRuntimeCapabilities
-                .map((id) => LIFECYCLE_CAPABILITY_LABELS[id] ?? id)
-                .join(", ")}.
-            </p>
-          </Card>
-        ) : null}
-        <div className="mt-3 hidden md:block">
-          <DataTableServer
-            rows={item.lifecycle}
-            getRowKey={(dim) => dim.id}
-            density="compact"
-            columns={[
-              {
-                key: "dimension",
-                header: "Capability",
-                render: (dim) => <span className="font-medium">{LIFECYCLE_CAPABILITY_LABELS[dim.id] ?? dim.id}</span>,
-              },
-              {
-                key: "state",
-                header: "Evidence level",
-                render: (dim) => <StatusBadge family="workflowStatus" value={dim.applicability === "not_applicable" ? "not_applicable" : dim.evidence} size="sm" />,
-              },
-              {
-                key: "detail",
-                header: "What this means",
-                render: (dim) => (
-                  <div>
-                    <span className="text-xs text-[var(--ua-text-secondary)]">{dim.detail}</span>
-                    {dim.runtimeEvidence ? <small className="mt-1 block text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">Verified in a controlled runtime check.</small> : null}
-                  </div>
-                ),
-              },
-            ]}
-          />
-        </div>
-        <div className="mt-3 grid gap-2 md:hidden">
-          {item.lifecycle.map((dim) => (
-            <Card unstyled key={dim.id} variant="panel" className="p-3">
-              <div className="flex items-start justify-between gap-2">
-                <strong className="text-sm">{LIFECYCLE_CAPABILITY_LABELS[dim.id] ?? dim.id}</strong>
-                <StatusBadge family="workflowStatus" value={dim.applicability === "not_applicable" ? "not_applicable" : dim.evidence} size="sm" />
-              </div>
-              <p className="mt-2 text-xs text-[var(--ua-text-secondary)]">{dim.detail}</p>
-              {dim.runtimeEvidence ? <p className="mt-2 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">Verified in a controlled runtime check.</p> : null}
             </Card>
           ))}
         </div>

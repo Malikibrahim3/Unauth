@@ -270,6 +270,51 @@ export function buildReportTrend(
   return [...trendMap.values()].sort((a, b) => a.currency.localeCompare(b.currency) || a.date.localeCompare(b.date));
 }
 
+/**
+ * The reconstructed production baseline does not yet have the later
+ * `case_financial_summaries.known_states` projection column. Derive the
+ * presence of each state from the canonical append-only ledger instead of
+ * treating missing metadata as zero. This keeps reporting truthful while the
+ * production migration history is being rolled forward.
+ */
+async function attachKnownFinancialStates(
+  client: Client,
+  merchantId: string,
+  financialRows: Array<Record<string, any>>,
+): Promise<Array<Record<string, any>>> {
+  if (!financialRows.length) return financialRows;
+  const caseIds = financialRows
+    .map((row) => typeof row.support_payout_case_id === 'string' ? row.support_payout_case_id : null)
+    .filter((value): value is string => Boolean(value));
+  if (!caseIds.length) return financialRows.map((row) => ({ ...row, known_states: [] }));
+
+  const { data: entryData, error } = await client
+    .from(TABLES.CASE_FINANCIAL_ENTRIES)
+    .select('support_payout_case_id,currency,state')
+    .eq('merchant_id', merchantId)
+    .in('support_payout_case_id', caseIds);
+  if (error) return financialRows.map((row) => ({ ...row, known_states: [] }));
+
+  const statesByCaseCurrency = new Map<string, Set<string>>();
+  for (const entry of (entryData ?? []) as Array<Record<string, any>>) {
+    const caseId = typeof entry.support_payout_case_id === 'string' ? entry.support_payout_case_id : null;
+    const currency = normaliseCurrencyOrNull(entry.currency);
+    const state = typeof entry.state === 'string' ? entry.state : null;
+    if (!caseId || !currency || !state) continue;
+    const key = `${caseId}:${currency}`;
+    const states = statesByCaseCurrency.get(key) ?? new Set<string>();
+    states.add(state);
+    statesByCaseCurrency.set(key, states);
+  }
+
+  return financialRows.map((row) => {
+    const caseId = typeof row.support_payout_case_id === 'string' ? row.support_payout_case_id : '';
+    const currency = normaliseCurrencyOrNull(row.currency);
+    const states = currency ? statesByCaseCurrency.get(`${caseId}:${currency}`) : null;
+    return { ...row, known_states: states ? [...states].sort() : [] };
+  });
+}
+
 /** Previous-period financial projection used by the dashboard comparison. */
 export async function loadDashboardPeriodComparison(
   client: Client,
@@ -299,11 +344,11 @@ export async function loadDashboardPeriodComparison(
   const { data: financialData } = caseIds.length
     ? await client
         .from(TABLES.CASE_FINANCIAL_SUMMARIES)
-        .select('support_payout_case_id,currency,requested_minor,exposed_minor,prevented_minor,confirmed_loss_minor,recovered_minor,known_states')
+        .select('support_payout_case_id,currency,requested_minor,exposed_minor,prevented_minor,confirmed_loss_minor,recovered_minor')
         .eq('merchant_id', merchantId)
         .in('support_payout_case_id', caseIds)
     : { data: [] };
-  const financial = (financialData ?? []) as Array<{
+  const financial = await attachKnownFinancialStates(client, merchantId, (financialData ?? []) as Array<Record<string, any>>) as Array<{
     support_payout_case_id: string;
     currency?: string | null;
     requested_minor?: number | null;
@@ -353,8 +398,8 @@ export async function loadIntelligenceReport(client:Client,merchantId:string,ran
   let casesQuery=client.from(TABLES.MERCHANT_CLAIMS).select('id,status,claim_type,reason_normalized,loss_attribution,currency,submitted_at,created_at,updated_at').eq('merchant_id',merchantId).order('updated_at',{ascending:false}).limit(10000);
   if(cutoff)casesQuery=casesQuery.gte('submitted_at',cutoff);
   const {data:caseData}=await casesQuery; const cases=(caseData??[]) as Array<Record<string,any>>; const caseIds=cases.map(c=>c.id);
-  const {data:financialData}=caseIds.length?await client.from(TABLES.CASE_FINANCIAL_SUMMARIES).select('support_payout_case_id,currency,requested_minor,exposed_minor,approved_minor,paid_minor,estimated_loss_minor,prevented_minor,confirmed_loss_minor,recoverable_minor,recovered_minor,written_off_minor,known_states,updated_at').eq('merchant_id',merchantId).in('support_payout_case_id',caseIds):{data:[]};
-  const financial=(financialData??[]) as Array<Record<string,any>>; const bridges=aggregateMoneyBridges(financial);
+  const {data:financialData}=caseIds.length?await client.from(TABLES.CASE_FINANCIAL_SUMMARIES).select('support_payout_case_id,currency,requested_minor,exposed_minor,approved_minor,paid_minor,estimated_loss_minor,prevented_minor,confirmed_loss_minor,recoverable_minor,recovered_minor,written_off_minor,updated_at').eq('merchant_id',merchantId).in('support_payout_case_id',caseIds):{data:[]};
+  const financial=await attachKnownFinancialStates(client,merchantId,(financialData??[]) as Array<Record<string,any>>); const bridges=aggregateMoneyBridges(financial);
   const financialByCase=new Map(financial.map(r=>[r.support_payout_case_id,r])); const causesMap=new Map<string,RankedRow>();
   for(const c of cases){
     const f=financialByCase.get(c.id);

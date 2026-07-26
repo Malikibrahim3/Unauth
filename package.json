@@ -40,6 +40,7 @@
     "test:identity": "jest tests/identity --runInBand",
     "test:merchant-readiness": "npm run test:csv-blind",
     "seed:demo": "node scripts/seed-demo-v2.mjs",
+    "seed:simeon": "node scripts/seed-simeon-big-merchant.mjs",
     "prepare:release-e2e": "RELEASE_E2E_LOCAL=1 node scripts/prepare-release-e2e.mjs",
     "seed:shopify": "ts-node --project tsconfig.scripts.json --transpile-only scripts/seed-shopify-orders.ts",
     "test:critical": "playwright test --config=tests/playwright.config.ts --project=desktop tests/current/current-product.spec.ts",

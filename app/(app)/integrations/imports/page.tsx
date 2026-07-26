@@ -3,10 +3,12 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { getRequestUser } from "@/lib/auth/requestContext";
 import { PERMISSIONS, requirePermission } from "@/lib/permissions";
 import { TABLES } from "@/lib/supabase/tables";
+import { loadConnectorCatalogue } from "@/lib/connectors/catalogue";
 import {
   CanonicalCsvImportClient,
   type ImportHistoryItem,
 } from "@/components/imports/CanonicalCsvImportClient";
+import { IntegrationsTabs } from "@/components/integrations/IntegrationsTabs";
 import { AuthenticatedPageHeader } from "@/components/authenticated/AuthenticatedPageHeader";
 import pageStyles from "@/components/authenticated/AuthenticatedPageChrome.module.css";
 
@@ -23,7 +25,8 @@ export default async function ImportsPage() {
     PERMISSIONS.MANAGE_SETTINGS,
   );
   if (denied || !ctx) redirect("/integrations");
-  const { data, error } = await service
+  const [{ data, error }, catalogue] = await Promise.all([
+    service
     .from(TABLES.PROCESSING_JOBS)
     .select(
       "id,label,status,total_rows,processed_rows,failed_rows,created_at,completed_at",
@@ -31,7 +34,9 @@ export default async function ImportsPage() {
     .eq("merchant_id", ctx.merchantId)
     .eq("job_kind", "csv_import")
     .order("created_at", { ascending: false })
-    .limit(20);
+    .limit(20),
+    loadConnectorCatalogue(service, ctx.merchantId),
+  ]);
   if (error) throw new Error(`import_history_failed: ${error.message}`);
   return (
     <div>
@@ -39,6 +44,13 @@ export default async function ImportsPage() {
         title="Import records"
         subtitle="Validate and map orders, refunds or customers before any write. Valid rows import independently; invalid rows remain visible and every persisted record carries CSV provenance."
         breadcrumbs={[{ label: "Integrations", href: "/integrations" }, { label: "Import records" }]}
+        tabs={
+          <IntegrationsTabs
+            active="imports"
+            connectedCount={catalogue.filter((item) => item.connectionCount > 0 || item.connectionId !== null || item.status !== "not_connected").length}
+            catalogueCount={catalogue.filter((item) => item.category !== "documents").length}
+          />
+        }
       />
       <div className={pageStyles.pageBody}>
         <CanonicalCsvImportClient history={(data ?? []) as ImportHistoryItem[]} />
