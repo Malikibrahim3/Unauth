@@ -103,7 +103,7 @@
   --ua-critical-bg: #4d2e2e;
   --ua-critical-border: #7d4f4f;
 
-  --ua-neutral: #b8b8b3;
+  --ua-neutral: #b8b8b8;
   --ua-neutral-bg: #272727;
   --ua-neutral-border: #363636;
 
@@ -135,7 +135,7 @@
   --ua-severity-definite-bg: #254438;
   --ua-severity-probable: #d1ac57;
   --ua-severity-probable-bg: #4c4128;
-  --ua-severity-possible: #b8b8b3;
+  --ua-severity-possible: #b8b8b8;
   --ua-severity-possible-bg: #272727;
   --ua-severity-clear: #72ba9e;
   --ua-severity-clear-bg: #254438;

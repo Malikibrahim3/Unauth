@@ -100,11 +100,17 @@ export function SidebarAside({
             href="/integrations"
             prefetch={false}
             onClick={onCloseMobile}
-            className="flex min-h-6 w-full items-center gap-1.5 rounded-sm px-2 py-1 text-[length:var(--ua-text-micro-size)] font-medium leading-tight transition-opacity hover:opacity-80"
+            className="flex min-h-6 w-full items-center gap-1.5 rounded-[var(--ua-radius-control)] px-2 py-1 text-[length:var(--ua-text-micro-size)] font-medium leading-tight transition-colors duration-[var(--ua-duration-fast)] hover:bg-[var(--ua-surface-hover)]"
+            /*
+             * A neutral chip, not a tinted one. The warning dot carries the
+             * state; washing the whole pill in 10% olive put a cream block in
+             * the sidebar of every unconnected workspace, which is decoration
+             * doing a glyph's job (§3.1).
+             */
             style={{
-              background: 'color-mix(in srgb, var(--ua-warning) 10%, transparent)',
-              color: 'var(--ua-warning)',
-              border: '1px solid color-mix(in srgb, var(--ua-warning) 25%, transparent)',
+              background: 'var(--ua-surface-primary)',
+              color: 'var(--ua-text-secondary)',
+              border: '1px solid var(--ua-border-default)',
             }}
             title="Connect your store and helpdesk to go live"
           >

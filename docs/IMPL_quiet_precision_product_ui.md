@@ -380,6 +380,23 @@ The sidebar is a quiet navigation rail:
 
 Collapsed mode preserves tooltips, active state, badges, keyboard access, and workspace identity. Hover-expansion must never cause content reflow; an explicit toggle remains available.
 
+#### 4.2.1 Selected navigation row (amended 2026-07-26)
+
+The selected sidebar row is the **one inline surface permitted to carry depth**.
+It renders as `--ua-surface-primary` against the `--ua-shell` sidebar, with a
+`--ua-border-default` hairline, `--ua-shadow-raised`, and a 1px upward
+translate. Selection is therefore carried by four channels — fill, border,
+elevation and type weight — and never by colour alone (§9.1).
+
+Constraints:
+
+- `--ua-shadow-raised` exists only for this role. Do not use it on panels, cards,
+  table rows, or KPI cells; those stay flat per §3.5.
+- Unselected rows keep a transparent 1px border so gaining the border on
+  selection does not shift the label.
+- The rise is 1px and the transition uses `--ua-duration-base`. It must stay
+  below the threshold where it reads as a hover toy rather than a state.
+
 ### 4.3 Utility header
 
 The utility header contains:
