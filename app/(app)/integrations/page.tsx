@@ -26,7 +26,7 @@ import pageStyles from "@/components/authenticated/AuthenticatedPageChrome.modul
 
 export const dynamic = "force-dynamic";
 
-function resolveView(value: string | undefined, hasConnections: boolean): IntegrationsView {
+function resolveView(value: string | undefined, hasConnections: boolean): Exclude<IntegrationsView, "imports"> {
   if (value === "browse") return "browse";
   if (value === "connected") return "connected";
   return hasConnections ? "connected" : "browse";
