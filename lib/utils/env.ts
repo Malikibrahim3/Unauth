@@ -88,8 +88,6 @@ const envSchema = z.object({
     const required: Array<keyof typeof env> = [
       'RESEND_API_KEY',
       'CRON_SECRET',
-      'INVESTIGATION_MALWARE_SCAN_URL',
-      'INVESTIGATION_MALWARE_SCAN_TOKEN',
       'UPSTASH_REDIS_REST_URL',
       'UPSTASH_REDIS_REST_TOKEN',
       'INTERNAL_HMAC_SECRET',
@@ -103,6 +101,21 @@ const envSchema = z.object({
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: `${key} is required in ${env.VERCEL_ENV}`,
+          path: [key],
+        });
+      }
+    }
+  }
+
+  if (env.INVESTIGATIONS_ENABLED === 'true') {
+    for (const key of [
+      'INVESTIGATION_MALWARE_SCAN_URL',
+      'INVESTIGATION_MALWARE_SCAN_TOKEN',
+    ] as const) {
+      if (!env[key]) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `${key} is required when investigations are enabled`,
           path: [key],
         });
       }
