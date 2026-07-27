@@ -235,9 +235,9 @@
 }
 
 .ua-metric-card--hero .ua-metric-card__value {
-  font-size: var(--ua-text-total-size);
-  font-weight: var(--ua-text-total-weight);
-  line-height: var(--ua-text-total-leading);
+  font-size: var(--ua-text-hero-value-size);
+  font-weight: var(--ua-text-hero-value-weight);
+  line-height: var(--ua-text-hero-value-leading);
 }
 
 .ua-metric-card__hint {
@@ -309,9 +309,9 @@
 .ua-metric-group__label {
   margin: 0;
   color: var(--ua-text-secondary);
-  font-size: var(--ua-text-small-size);
+  font-size: var(--ua-text-dense-size);
   font-weight: 500;
-  line-height: var(--ua-text-small-leading);
+  line-height: var(--ua-text-dense-leading);
 }
 
 .ua-metric-group__value {
@@ -349,6 +349,66 @@
 
   .ua-metric-group__item:first-child {
     border-left: 0;
+  }
+}
+
+/*
+ * Adaptive KPI group (§5.3). The group sizes to its content: a metric grid must
+ * never show a blank cell at 1–6 metrics, and a one-metric page gets intentional
+ * surrounding whitespace instead of three empty tracks.
+ *
+ * Borders are drawn per item (left except first-in-row, top except first row), so
+ * every wrapped layout below restates which items begin a row.
+ */
+.ua-metric-group[data-count="1"] {
+  max-width: 360px;
+}
+
+/*
+ * 1024–1279px: four metrics become two-by-two, five take a six-track grid with
+ * 2/2/2 then 3/3 spans, and six become three-by-two (§5.3). Above 1280px every
+ * count keeps equal columns, which the rule block above already provides.
+ */
+@media (min-width: 768px) and (max-width: 1279px) {
+  .ua-metric-group[data-count="4"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ua-metric-group[data-count="4"] .ua-metric-group__item:nth-child(2n + 1) {
+    border-left: 0;
+  }
+
+  .ua-metric-group[data-count="4"] .ua-metric-group__item:nth-child(n + 3) {
+    border-top: 1px solid var(--ua-border-subtle);
+  }
+
+  .ua-metric-group[data-count="5"] {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .ua-metric-group[data-count="5"] .ua-metric-group__item:nth-child(-n + 3) {
+    grid-column: span 2;
+  }
+
+  .ua-metric-group[data-count="5"] .ua-metric-group__item:nth-child(n + 4) {
+    grid-column: span 3;
+    border-top: 1px solid var(--ua-border-subtle);
+  }
+
+  .ua-metric-group[data-count="5"] .ua-metric-group__item:nth-child(4) {
+    border-left: 0;
+  }
+
+  .ua-metric-group[data-count="6"] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .ua-metric-group[data-count="6"] .ua-metric-group__item:nth-child(3n + 1) {
+    border-left: 0;
+  }
+
+  .ua-metric-group[data-count="6"] .ua-metric-group__item:nth-child(n + 4) {
+    border-top: 1px solid var(--ua-border-subtle);
   }
 }
 

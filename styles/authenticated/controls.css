@@ -18,12 +18,15 @@
 }
 
 .ua-app :where(button):active:not(:disabled) {
+  /* §7.2 — a press is an 80ms fill/inset response. Nothing translates. */
   transform: none;
+  transition-duration: var(--ua-duration-press);
 }
 
 /*
- * Canonical option tile (spec §6.2). Selection is carried by fill, border and
- * text weight — never by a semantic hue, so the tile never reads as a status.
+ * Canonical option tile. Selection is carried by the accent fill, border and
+ * text weight (§4.2) — never by a semantic hue, so the tile never reads as a
+ * status.
  */
 .ua-app .ua-option-tile,
 .ua-auth-surface .ua-option-tile {
@@ -39,8 +42,8 @@
   border: 1px solid var(--ua-border-default);
   border-radius: var(--ua-radius-control);
   color: var(--ua-text-secondary);
-  font-size: var(--ua-text-small-size);
-  line-height: var(--ua-text-small-leading);
+  font-size: var(--ua-text-dense-size);
+  line-height: var(--ua-text-dense-leading);
   font-weight: 500;
 }
 
@@ -51,9 +54,9 @@
 
 .ua-app .ua-option-tile.is-selected,
 .ua-auth-surface .ua-option-tile.is-selected {
-  background: var(--ua-surface-selected);
-  border-color: var(--ua-border-strong);
-  color: var(--ua-text-primary);
+  background: var(--ua-accent-100);
+  border-color: var(--ua-accent-200);
+  color: var(--ua-accent-800);
   font-weight: 600;
 }
 

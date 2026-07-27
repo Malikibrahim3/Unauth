@@ -106,7 +106,7 @@ export function GorgiasWebhookSetupPanel({
       {/* Credentials to copy */}
       <Card unstyled variant="panel" className="divide-y p-4 space-y-3">
         <p
-          className="text-[length:var(--ua-text-micro-size)] font-semibold pb-3"
+          className="text-[length:var(--ua-text-metadata-size)] font-semibold pb-3"
           style={{
             color: "var(--ua-text-secondary)",
             borderColor: "var(--ua-border-default)",
@@ -145,7 +145,7 @@ export function GorgiasWebhookSetupPanel({
       <Card unstyled variant="panel" className="divide-y p-0">
         <div className="px-4 py-2.5">
           <p
-            className="text-[length:var(--ua-text-micro-size)] font-semibold"
+            className="text-[length:var(--ua-text-metadata-size)] font-semibold"
             style={{ color: "var(--ua-text-secondary)" }}
           >
             How to configure in Gorgias

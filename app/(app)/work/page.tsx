@@ -5,8 +5,9 @@ import { PERMISSIONS, requirePermission } from "@/lib/permissions";
 import { TABLES } from "@/lib/supabase/tables";
 import { WorkbenchPage } from "@/components/ui";
 import { WorkQueue, type WorkQueueItem, type WorkViewCounts } from "@/components/work/WorkQueue";
+import { WorkQueuePulse } from "@/components/work/WorkQueuePulse";
 import { countOpenExceptions, listExceptions } from "@/lib/exceptions/store";
-import { countWorkViews } from "@/lib/work/store";
+import { countWorkDueBands, countWorkViews } from "@/lib/work/store";
 import { formatNumber } from "@/lib/utils/format";
 import { shortRef, hashId } from "@/lib/ui/displayRef";
 import { now } from "@/lib/time/clock";
@@ -78,6 +79,30 @@ export default async function WorkPage({
   }
   if (view === "overdue") query = query.lt("due_at", asOf.toISOString());
   if (view === "no-sla") query = query.is("due_at", null);
+  /*
+   * Deadline bands selected from the queue pulse (§6.8). These are presentation
+   * filters on this route using the same boundaries as the server aggregate, so
+   * a band's count and its filtered row set always agree.
+   */
+  if (view === "due-1-3" || view === "due-4-7" || view === "due-later") {
+    const todayStart = new Date(asOf);
+    todayStart.setUTCHours(0, 0, 0, 0);
+    const dayAfterToday = new Date(todayStart);
+    dayAfterToday.setUTCDate(dayAfterToday.getUTCDate() + 1);
+    const dayFour = new Date(todayStart);
+    dayFour.setUTCDate(dayFour.getUTCDate() + 4);
+    const dayEight = new Date(todayStart);
+    dayEight.setUTCDate(dayEight.getUTCDate() + 8);
+    if (view === "due-1-3") {
+      query = query
+        .gte("due_at", dayAfterToday.toISOString())
+        .lt("due_at", dayFour.toISOString());
+    } else if (view === "due-4-7") {
+      query = query.gte("due_at", dayFour.toISOString()).lt("due_at", dayEight.toISOString());
+    } else {
+      query = query.gte("due_at", dayEight.toISOString());
+    }
+  }
   const includeExceptions =
     view === "open" || view === "integration-exceptions" || view === "overdue" || view === "no-sla";
   const exceptionDeadline = view === "overdue"
@@ -99,6 +124,7 @@ export default async function WorkPage({
         : Promise.resolve(0),
       loadWorkOwnerDirectory(serviceClient, ctx.merchantId),
     ]);
+  const dueBands = await countWorkDueBands(serviceClient, ctx.merchantId, asOf);
   const tasks: WorkQueueItem[] = ((taskResult.data ?? []) as TaskRow[]).map(
     (row) => ({
       id: row.id,
@@ -196,6 +222,7 @@ export default async function WorkPage({
           hint: "Merchant decisions required",
         },
       ]}
+      primaryVisual={<WorkQueuePulse bands={dueBands} view={view} />}
       main={
         <WorkQueue
           items={items}

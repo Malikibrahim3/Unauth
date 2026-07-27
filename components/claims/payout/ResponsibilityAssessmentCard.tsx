@@ -276,7 +276,7 @@ export function ResponsibilityAssessmentCard({
         <div className="flex items-start gap-3">
           <Scale className="mt-0.5 shrink-0 text-[var(--ua-action-primary)]" size={18} aria-hidden="true" />
           <div>
-            <p className="text-[length:var(--ua-text-micro-size)] font-semibold text-[var(--ua-text-secondary)]">
+            <p className="text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-secondary)]">
               Responsibility
             </p>
             <h2 className="mt-1 text-base font-semibold text-[var(--ua-text-primary)]">

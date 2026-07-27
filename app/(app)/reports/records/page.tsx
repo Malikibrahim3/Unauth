@@ -216,7 +216,7 @@ export default async function ReportRecords({
             </div>
           ) : null}
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[650px] text-[length:var(--ua-text-micro-size)]">
+            <table className="w-full min-w-[650px] text-[length:var(--ua-text-metadata-size)]">
           <thead>
             <tr className="border-b border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] text-[var(--ua-text-tertiary)]">
               <th className="px-4 py-2.5 text-left font-medium">Record</th>
@@ -265,7 +265,7 @@ export default async function ReportRecords({
           {!loadFailed && !rows.length ? (
             <p className="px-4 py-10 text-center text-xs text-[var(--ua-text-secondary)]">No records match this report slice.</p>
           ) : null}
-          <nav className="flex min-h-12 items-center justify-between border-t border-[var(--ua-border-subtle)] px-4 text-[length:var(--ua-text-micro-size)] font-semibold">
+          <nav className="flex min-h-12 items-center justify-between border-t border-[var(--ua-border-subtle)] px-4 text-[length:var(--ua-text-metadata-size)] font-semibold">
         {page > 1 ? (
           <Link
             className="rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2.5 py-1.5 hover:bg-[var(--ua-surface-hover)]"

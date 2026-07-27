@@ -7,13 +7,13 @@
 
 .label {
   color: var(--ua-text-secondary);
-  font-size: var(--ua-text-small-size);
-  line-height: var(--ua-text-small-leading);
+  font-size: var(--ua-text-dense-size);
+  line-height: var(--ua-text-dense-leading);
 }
 
 .value {
-  font-size: var(--ua-text-small-size);
-  line-height: var(--ua-text-small-leading);
+  font-size: var(--ua-text-dense-size);
+  line-height: var(--ua-text-dense-leading);
   font-weight: 500;
   color: var(--ua-text-primary);
 }
@@ -25,7 +25,8 @@
  */
 .track {
   position: relative;
-  height: 6px;
+  /* §6.3 mini-meter weight — 6px read as a hairline, not a bar. */
+  height: 8px;
   overflow: hidden;
   background: var(--ua-chart-track);
   border-radius: var(--ua-radius-xs);

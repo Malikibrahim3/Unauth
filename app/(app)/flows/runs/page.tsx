@@ -47,7 +47,7 @@ export default async function Runs({
           <Link
             key={r.id}
             href={`/flows/runs/${r.id}`}
-            className="grid min-h-12 items-center gap-2 px-4 py-2.5 text-[length:var(--ua-text-micro-size)] hover:bg-[var(--ua-surface-hover)] sm:grid-cols-4"
+            className="grid min-h-12 items-center gap-2 px-4 py-2.5 text-[length:var(--ua-text-metadata-size)] hover:bg-[var(--ua-surface-hover)] sm:grid-cols-4"
           >
             <span className="font-mono text-xs">Run {hashId(r.id)}</span>
             <span>{label("workflowStatus", String(r.status ?? "unknown"))}</span>

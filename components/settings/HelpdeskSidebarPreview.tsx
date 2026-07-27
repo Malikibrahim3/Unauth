@@ -26,7 +26,7 @@ export default function HelpdeskSidebarPreview({ providerLabel }: HelpdeskSideba
           >
             <p className="text-sm font-bold">Case context available</p>
             <p className="mt-1">Open the case in Unauth to review store and case context.</p>
-            <p className="mt-3 text-[length:var(--ua-text-micro-size)] font-semibold">Context actions</p>
+            <p className="mt-3 text-[length:var(--ua-text-metadata-size)] font-semibold">Context actions</p>
             <ul className="mt-1 list-disc space-y-0.5 pl-4 normal-case">
               <li>View Store Check — 1 credit</li>
               <li>Generate Case Report — 3 credits</li>
@@ -53,7 +53,7 @@ export default function HelpdeskSidebarPreview({ providerLabel }: HelpdeskSideba
             <UnauthLogo kind="wordmark" tone="white" height={13} alt="" decorative />
           </div>
         </div>
-        <p className="max-w-xs text-[length:var(--ua-text-micro-size)] leading-5" style={{ color: 'var(--ua-text-secondary)' }}>
+        <p className="max-w-xs text-[length:var(--ua-text-metadata-size)] leading-5" style={{ color: 'var(--ua-text-secondary)' }}>
           Approximate appearance inside {providerLabel} (~300px sidebar). The widget is a context
           entry point, not a decisioning tool.
         </p>

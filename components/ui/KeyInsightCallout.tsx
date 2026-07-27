@@ -79,10 +79,10 @@ export function KeyInsightCallout({
             className="m-0"
             style={{
               color: 'var(--ua-text-tertiary)',
-              fontSize: 'var(--ua-text-micro-size)',
-              fontWeight: 'var(--ua-text-micro-weight)' as unknown as number,
-              letterSpacing: 'var(--ua-text-micro-tracking)',
-              lineHeight: 'var(--ua-text-micro-leading)',
+              fontSize: 'var(--ua-text-metadata-size)',
+              fontWeight: 'var(--ua-text-metadata-weight)' as unknown as number,
+              letterSpacing: 'var(--ua-text-metadata-tracking)',
+              lineHeight: 'var(--ua-text-metadata-leading)',
               marginBottom: 4,
             }}
           >

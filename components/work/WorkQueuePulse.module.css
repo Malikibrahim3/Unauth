@@ -1,0 +1,137 @@
+/*
+ * Queue pulse geometry. §6.3 gives a compact operational visual 140–180px; the
+ * frame below lands in that range at every supported width, and the stacked bar
+ * itself is 14px — above the 12px absolute bar floor, not a 3px rail.
+ */
+.frame {
+  display: grid;
+  gap: var(--ua-space-3);
+  padding: var(--ua-space-5);
+  border: 1px solid var(--ua-border-default);
+  border-radius: var(--ua-radius-surface);
+  background: var(--ua-surface-primary);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ua-space-4);
+}
+
+.title {
+  margin: 0;
+  color: var(--ua-text-primary);
+  font-size: var(--ua-text-chart-title-size);
+  font-weight: var(--ua-text-chart-title-weight);
+  line-height: var(--ua-text-chart-title-leading);
+}
+
+.subtitle {
+  margin: var(--ua-space-1) 0 0;
+  color: var(--ua-text-secondary);
+  font-size: var(--ua-text-caption-size);
+  line-height: var(--ua-text-caption-leading);
+}
+
+.state {
+  margin: 0;
+  color: var(--ua-text-secondary);
+  font-size: var(--ua-text-dense-size);
+  line-height: var(--ua-text-dense-leading);
+}
+
+.stack {
+  display: flex;
+  gap: var(--ua-space-0-5);
+  height: 14px;
+}
+
+.segment {
+  min-width: 4px;
+  border-radius: var(--ua-radius-xs);
+  background: var(--ua-chart-neutral-500);
+  transition: background-color var(--ua-duration-base) var(--ua-ease-standard);
+}
+
+/* Past its deadline is genuinely critical; a future deadline is not (§3.3). */
+.segment[data-band="overdue"] { background: var(--ua-critical); }
+.segment[data-band="due-today"] { background: var(--ua-chart-neutral-900); }
+.segment[data-band="due-1-3"] { background: var(--ua-chart-neutral-700); }
+.segment[data-band="due-4-7"] { background: var(--ua-chart-neutral-500); }
+.segment[data-band="due-later"] { background: var(--ua-chart-neutral-300); }
+.segment[data-band="no-sla"] { background: var(--ua-chart-track); }
+
+/* Selection is accent, never semantic (§3.3). */
+.segment[data-selected="true"] { background: var(--ua-chart-primary); }
+
+.bands {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ua-space-1-5) var(--ua-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 1280px) {
+  .bands {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+.band {
+  display: flex;
+  align-items: center;
+  gap: var(--ua-space-1-5);
+  min-height: var(--ua-control-height-sm);
+  padding-inline: var(--ua-space-2);
+  border: 1px solid transparent;
+  border-radius: var(--ua-radius-control);
+  color: var(--ua-text-secondary);
+  font-size: var(--ua-text-metadata-size);
+  transition: background-color var(--ua-duration-base) var(--ua-ease-standard),
+    border-color var(--ua-duration-base) var(--ua-ease-standard),
+    color var(--ua-duration-base) var(--ua-ease-standard);
+}
+
+.band:hover {
+  background: var(--ua-surface-hover);
+  color: var(--ua-text-primary);
+}
+
+.band[aria-current="page"] {
+  border-color: var(--ua-accent-200);
+  background: var(--ua-accent-100);
+  color: var(--ua-accent-800);
+  font-weight: 500;
+}
+
+.bandKey {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: var(--ua-radius-round);
+  background: var(--ua-chart-neutral-500);
+}
+
+.bandKey[data-band="overdue"] { background: var(--ua-critical); }
+.bandKey[data-band="due-today"] { background: var(--ua-chart-neutral-900); }
+.bandKey[data-band="due-1-3"] { background: var(--ua-chart-neutral-700); }
+.bandKey[data-band="due-4-7"] { background: var(--ua-chart-neutral-500); }
+.bandKey[data-band="due-later"] { background: var(--ua-chart-neutral-300); }
+.bandKey[data-band="no-sla"] { background: var(--ua-border-default); }
+
+.bandLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bandCount {
+  margin-left: auto;
+  color: var(--ua-text-primary);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}

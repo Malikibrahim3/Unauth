@@ -150,7 +150,7 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
       {/* Setup steps */}
       <Card unstyled variant="panel" className="divide-y overflow-hidden p-0">
         <div className="px-4 py-2.5">
-          <p className="text-[length:var(--ua-text-micro-size)] font-semibold" style={{ color: 'var(--ua-text-secondary)' }}>
+          <p className="text-[length:var(--ua-text-metadata-size)] font-semibold" style={{ color: 'var(--ua-text-secondary)' }}>
             Setup steps
           </p>
         </div>
@@ -208,7 +208,7 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
         <a
           href={ZENDESK_ZIP_PATH}
           download="unauth-zendesk-app.zip"
-          className="inline-flex h-8 items-center gap-2 rounded-[var(--ua-radius-control)] px-3 text-[length:var(--ua-text-micro-size)] font-semibold"
+          className="inline-flex h-8 items-center gap-2 rounded-[var(--ua-radius-control)] px-3 text-[length:var(--ua-text-metadata-size)] font-semibold"
           style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)' }}
         >
           <Download className="h-4 w-4" />
@@ -218,7 +218,7 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
           type="button"
           onClick={() => void verifyInstall()}
           disabled={verifying || sidebarVerified}
-          className="inline-flex h-8 items-center gap-2 rounded-[var(--ua-radius-control)] border px-3 text-[length:var(--ua-text-micro-size)] font-semibold disabled:opacity-60"
+          className="inline-flex h-8 items-center gap-2 rounded-[var(--ua-radius-control)] border px-3 text-[length:var(--ua-text-metadata-size)] font-semibold disabled:opacity-60"
           style={{ borderColor: 'var(--ua-border-default)', color: 'var(--ua-text-primary)' }}
         >
           {sidebarVerified ? (
@@ -236,7 +236,7 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
           href="https://support.zendesk.com/hc/en-us/articles/4408843303194"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex h-8 items-center gap-1.5 rounded-[var(--ua-radius-control)] border px-3 text-[length:var(--ua-text-micro-size)] font-medium"
+          className="inline-flex h-8 items-center gap-1.5 rounded-[var(--ua-radius-control)] border px-3 text-[length:var(--ua-text-metadata-size)] font-medium"
           style={{ borderColor: 'var(--ua-border-default)', color: 'var(--ua-text-secondary)' }}
         >
           Zendesk docs

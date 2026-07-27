@@ -53,7 +53,7 @@ export function ContextCreditsBadge() {
       className="hidden md:flex flex-col items-end text-right leading-tight"
       title="Context credits are used each time Unauth assembles claim context from your connected sources. They reset at the end of your billing period — click to manage in Billing."
     >
-      <span className="text-[length:var(--ua-text-micro-size)] font-medium" style={{ color: 'var(--ua-text-tertiary)' }}>
+      <span className="text-[length:var(--ua-text-metadata-size)] font-medium" style={{ color: 'var(--ua-text-tertiary)' }}>
         Context usage
       </span>
       <span
@@ -63,7 +63,7 @@ export function ContextCreditsBadge() {
         {remaining} of {limit} remaining
       </span>
       {warn || low ? (
-        <span className="text-[length:var(--ua-text-micro-size)] font-semibold hover:underline" style={{ color: 'var(--ua-action-primary)' }}>
+        <span className="text-[length:var(--ua-text-metadata-size)] font-semibold hover:underline" style={{ color: 'var(--ua-action-primary)' }}>
           {low ? 'Upgrade or top up' : 'Review usage'}
         </span>
       ) : null}

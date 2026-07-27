@@ -65,7 +65,7 @@ export function RailSection({
         aria-expanded={open}
       >
         <span className="flex items-center gap-1.5 min-w-0">
-          <span className="text-[length:var(--ua-text-micro-size)] font-semibold truncate" style={{ color: 'var(--ua-text-secondary)' }}>{title}</span>
+          <span className="text-[length:var(--ua-text-metadata-size)] font-semibold truncate" style={{ color: 'var(--ua-text-secondary)' }}>{title}</span>
           {badge}
         </span>
         <span className="text-xs shrink-0 ml-2" style={{ color: 'var(--ua-text-secondary)' }}>{open ? '▲' : '▼'}</span>
@@ -82,7 +82,7 @@ export function RailSection({
 export function CaseIntelTile({ label, children }: { label: string; children: ReactNode }) {
   return (
     <Card unstyled variant="muted" className="min-w-0 px-3 py-2.5">
-      <p className="text-[length:var(--ua-text-micro-size)] font-semibold mb-1" style={{ color: 'var(--ua-text-secondary)' }}>{label}</p>
+      <p className="text-[length:var(--ua-text-metadata-size)] font-semibold mb-1" style={{ color: 'var(--ua-text-secondary)' }}>{label}</p>
       <div className="text-sm leading-snug" style={{ color: 'var(--ua-text-primary)' }}>{children}</div>
     </Card>
   );

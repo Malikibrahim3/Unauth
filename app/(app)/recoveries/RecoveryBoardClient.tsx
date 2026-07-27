@@ -275,7 +275,7 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
                               {orderLabel}
                             </Link>
                             <p
-                              className="mt-0.5 text-[length:var(--ua-text-micro-size)]"
+                              className="mt-0.5 text-[length:var(--ua-text-metadata-size)]"
                               style={{ color: "var(--ua-text-tertiary)" }}
                             >
                               {RECOVERY_TYPE_LABELS[item.recovery_type]} ·{" "}
@@ -344,7 +344,7 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
                             onClick={() =>
                               setContextCaseId(item.support_payout_case_id)
                             }
-                            className="rounded-md px-2 py-0.5 text-[length:var(--ua-text-micro-size)]"
+                            className="rounded-md px-2 py-0.5 text-[length:var(--ua-text-metadata-size)]"
                             style={{
                               border: "1px solid var(--ua-border-subtle)",
                               color: "var(--ua-text-secondary)",
@@ -371,7 +371,7 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
                                 >
                                   <button
                                     type="button"
-                                    className="rounded-md px-2.5 py-1 text-[length:var(--ua-text-micro-size)] font-medium"
+                                    className="rounded-md px-2.5 py-1 text-[length:var(--ua-text-metadata-size)] font-medium"
                                     style={{
                                       border: "1px solid var(--ua-border-subtle)",
                                       color: isDanger(primary.action)
@@ -480,7 +480,7 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
                 {pending.item.currency}
               </span>
             </div>
-            <span className="mt-1 block text-[length:var(--ua-text-micro-size)] font-normal text-[var(--ua-text-tertiary)]">
+            <span className="mt-1 block text-[length:var(--ua-text-metadata-size)] font-normal text-[var(--ua-text-tertiary)]">
               Enter {pending.item.currency} in major units.
             </span>
           </label>

@@ -47,7 +47,7 @@ export default function ExportMenu({ range, timezone = 'UTC', currency = null }:
           style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-surface-primary)' }}
         >
           <p
-            className="px-3 pb-1 pt-1.5 text-[length:var(--ua-text-micro-size)] font-bold"
+            className="px-3 pb-1 pt-1.5 text-[length:var(--ua-text-metadata-size)] font-bold"
             style={{ color: 'var(--ua-text-tertiary)' }}
           >
             Case reports
@@ -75,7 +75,7 @@ export default function ExportMenu({ range, timezone = 'UTC', currency = null }:
 
           <div className="my-1 border-t" style={{ borderColor: 'var(--ua-border-default)' }} />
           <p
-            className="px-3 pb-1 pt-0.5 text-[length:var(--ua-text-micro-size)] font-bold"
+            className="px-3 pb-1 pt-0.5 text-[length:var(--ua-text-metadata-size)] font-bold"
             style={{ color: 'var(--ua-text-tertiary)' }}
           >
             Activity log

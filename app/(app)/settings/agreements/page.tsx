@@ -113,8 +113,8 @@ export default function AgreementSettingsPage() {
               <FileText className="h-5 w-5" aria-hidden />
             </span>
             <div>
-              <h2 className="text-[length:var(--ua-text-small-size)] font-semibold" style={{ color: 'var(--ua-text-primary)' }}>Upload agreement</h2>
-              <p className="text-[length:var(--ua-text-micro-size)]" style={{ color: 'var(--ua-text-secondary)' }}>
+              <h2 className="text-[length:var(--ua-text-dense-size)] font-semibold" style={{ color: 'var(--ua-text-primary)' }}>Upload agreement</h2>
+              <p className="text-[length:var(--ua-text-metadata-size)]" style={{ color: 'var(--ua-text-secondary)' }}>
                 Upload the source PDF, then enter the terms you have verified.
               </p>
             </div>
@@ -206,7 +206,7 @@ export default function AgreementSettingsPage() {
           <button
             type="submit"
             disabled={uploadState.status === 'saving'}
-            className="inline-flex h-8 items-center gap-2 rounded-[var(--ua-radius-control)] px-3 text-[length:var(--ua-text-micro-size)] font-semibold text-[var(--ua-action-primary-fg)] disabled:opacity-60"
+            className="inline-flex h-8 items-center gap-2 rounded-[var(--ua-radius-control)] px-3 text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-action-primary-fg)] disabled:opacity-60"
             style={{ background: 'var(--ua-action-primary)' }}
           >
             <Upload className="h-4 w-4" aria-hidden />
@@ -215,7 +215,7 @@ export default function AgreementSettingsPage() {
         </form>
 
         <section className="rounded-[var(--ua-radius-surface)] border p-4" style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-surface-primary)' }}>
-          <h2 className="text-[length:var(--ua-text-small-size)] font-semibold" style={{ color: 'var(--ua-text-primary)' }}>Verified terms</h2>
+          <h2 className="text-[length:var(--ua-text-dense-size)] font-semibold" style={{ color: 'var(--ua-text-primary)' }}>Verified terms</h2>
           {uploadState.status !== 'success' ? (
             <div className="mt-4 space-y-3 text-sm" style={{ color: 'var(--ua-text-secondary)' }}>
               <p>Upload a PDF first. Unapproved documents never affect claim decisions.</p>

@@ -13,7 +13,7 @@ function ProfileDrawerLink({ profileId, disputedOrder }: { profileId: string; di
     ? `/customers/${profileId}?buildEvidence=1&disputedOrder=${encodeURIComponent(disputedOrder)}`
     : `/customers/${profileId}?buildEvidence=1`;
   return (
-    <p className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-secondary)]">
+    <p className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-secondary)]">
       Prefer the profile view?{' '}
       <Link href={href} className="font-semibold hover:underline" style={{ color: 'var(--ua-action-primary)' }}>
         Open as a side panel on the customer profile

@@ -331,7 +331,7 @@ export default function AuditTrailClient({
                             {details.map(([key, value]) => (
                               <div key={key}>
                                 <dt
-                                  className="text-[length:var(--ua-text-micro-size)] font-semibold"
+                                  className="text-[length:var(--ua-text-metadata-size)] font-semibold"
                                   style={{ color: "var(--ua-text-tertiary)" }}
                                 >
                                   {key.replace(/_/g, " ")}

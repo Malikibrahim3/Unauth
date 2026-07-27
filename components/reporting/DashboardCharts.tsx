@@ -106,8 +106,8 @@ export function DashboardCharts({ report }: { report: IntelligenceReport }) {
                         recoveredMinor: point.recoveredMinor,
                       }))}
                       series={[
-                        { key: 'exposureMinor', label: 'Exposure', colourVar: '--ua-chart-1' },
-                        { key: 'recoveredMinor', label: 'Recovered', colourVar: '--ua-chart-2' },
+                        { key: 'exposureMinor', label: 'Exposure', colourVar: '--ua-chart-primary' },
+                        { key: 'recoveredMinor', label: 'Recovered', colourVar: '--ua-success' },
                       ]}
                       valueFormatter={(value) => compactMoney(value, bridge.currency)}
                       height={260}
@@ -232,7 +232,7 @@ function RecoveryLedger({ bridge }: { bridge: MoneyBridge }) {
                       className="h-full rounded-[var(--ua-radius-xs)]"
                       style={{
                         width: `${share}%`,
-                        background: index === rows.length - 1 ? 'var(--ua-chart-2)' : 'var(--ua-chart-1)',
+                        background: index === rows.length - 1 ? 'var(--ua-success)' : 'var(--ua-chart-primary)',
                       }}
                     />
                   </div>

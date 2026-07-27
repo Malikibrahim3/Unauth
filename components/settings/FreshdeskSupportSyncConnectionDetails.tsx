@@ -104,7 +104,7 @@ export function FreshdeskSupportSyncConnectionDetails({
       {/* Setup checklist */}
       <Card unstyled variant="panel" className="divide-y overflow-hidden p-0">
         <div className="px-4 py-2.5">
-          <p className="text-[length:var(--ua-text-micro-size)] font-semibold" style={{ color: 'var(--ua-text-secondary)' }}>
+          <p className="text-[length:var(--ua-text-metadata-size)] font-semibold" style={{ color: 'var(--ua-text-secondary)' }}>
             Setup checklist
           </p>
         </div>
@@ -118,7 +118,7 @@ export function FreshdeskSupportSyncConnectionDetails({
       {/* Webhook endpoint info when active */}
       {isActive ? (
         <Card unstyled variant="panel" className="space-y-2 p-4">
-          <p className="text-[length:var(--ua-text-micro-size)] font-semibold" style={{ color: 'var(--ua-text-secondary)' }}>
+          <p className="text-[length:var(--ua-text-metadata-size)] font-semibold" style={{ color: 'var(--ua-text-secondary)' }}>
             Webhook endpoint
           </p>
           <div

@@ -69,7 +69,7 @@ function CompactTransactionList({
   return (
     <div className="overflow-x-auto rounded-md border border-[var(--ua-border-default)]">
       <table className="w-full min-w-[640px] text-left text-sm">
-        <thead className="bg-[var(--ua-surface-muted)] text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]"><tr><th className="px-3 py-2">Order</th><th className="px-3 py-2">Date</th><th className="px-3 py-2">Delivery</th><th className="px-3 py-2">Outcome</th><th className="px-3 py-2 text-right">Amount</th></tr></thead>
+        <thead className="bg-[var(--ua-surface-muted)] text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]"><tr><th className="px-3 py-2">Order</th><th className="px-3 py-2">Date</th><th className="px-3 py-2">Delivery</th><th className="px-3 py-2">Outcome</th><th className="px-3 py-2 text-right">Amount</th></tr></thead>
         <tbody className="divide-y divide-[var(--ua-border-subtle)]">
       {transactions.slice(0, 25).map((tx) => {
         const lineItems = (tx.line_items ?? []).filter((line) => line.title);
@@ -93,9 +93,9 @@ function CompactTransactionList({
                 </a>
               ) : null}
             </div>
-            {tx.via_email ? <span className="mt-1 block max-w-[190px] truncate text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">via {tx.via_email}</span> : null}
+            {tx.via_email ? <span className="mt-1 block max-w-[190px] truncate text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">via {tx.via_email}</span> : null}
             {shownItems.length > 0 ? (
-              <p className="mt-1 max-w-[220px] truncate text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">
+              <p className="mt-1 max-w-[220px] truncate text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">
                 {shownItems.map((line) => `${line.quantity ? `${line.quantity}× ` : ""}${line.title}`).join(", ")}
                 {extraItems > 0 ? ` +${extraItems} more` : ""}
               </p>
@@ -104,7 +104,7 @@ function CompactTransactionList({
           <td className="px-3 py-2.5 text-[var(--ua-text-secondary)]">{formatDateAbsolute(tx.processed_at)}</td>
           <td className="px-3 py-2.5">
             {tx.shipment ? (
-              <span className="flex items-center gap-1 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-secondary)]">
+              <span className="flex items-center gap-1 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-secondary)]">
                 <Truck className="h-3 w-3 shrink-0 text-[var(--ua-text-tertiary)]" aria-hidden="true" />
                 {labelize(tx.shipment.status ?? "unknown")}
                 {tx.shipment.carrier ? ` · ${tx.shipment.carrier}` : ""}
@@ -121,10 +121,10 @@ function CompactTransactionList({
                   </a>
                 ) : null}
               </span>
-            ) : <span className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">—</span>}
+            ) : <span className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">—</span>}
           </td>
           <td className="px-3 py-2.5">
-            {tx.chargeback_filed ? <Badge tone="danger" size="sm">Chargeback</Badge> : tx.refund_claimed ? <Badge tone="warning" size="sm">Case</Badge> : <span className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">—</span>}
+            {tx.chargeback_filed ? <Badge tone="danger" size="sm">Chargeback</Badge> : tx.refund_claimed ? <Badge tone="warning" size="sm">Case</Badge> : <span className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">—</span>}
           </td>
           <td className="px-3 py-2.5 text-right font-semibold tabular-nums">{formatMoneyOrDash(Math.round((Number(tx.order_value) || 0) * 100), tx.currency)}</td>
         </tr>
@@ -143,8 +143,8 @@ function ChangesStrip({ events }: { events: BehaviorRoadmapEvent[] }) {
     <ul className="mt-3 divide-y divide-[var(--ua-border-subtle)] rounded-md border border-[var(--ua-border-default)]">
       {changes.map((event) => (
         <li key={event.id} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
-          <span className="min-w-0 truncate text-[var(--ua-text-primary)]">{event.title}{event.subtitle ? <span className="ml-1.5 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">{event.subtitle}</span> : null}</span>
-          <span className="shrink-0 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">{formatDateAbsolute(event.date)}</span>
+          <span className="min-w-0 truncate text-[var(--ua-text-primary)]">{event.title}{event.subtitle ? <span className="ml-1.5 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">{event.subtitle}</span> : null}</span>
+          <span className="shrink-0 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">{formatDateAbsolute(event.date)}</span>
         </li>
       ))}
     </ul>
@@ -203,10 +203,10 @@ export function CustomerProfilePageMainColumn({
               <MetricCard label="Latest status" value={latestClaimDisplay!.status} density="compact" />
             </div>
             <div className="mt-3 rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-3">
-              <p className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">Latest dispute signal</p>
+              <p className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">Latest dispute signal</p>
               <p className="text-sm font-semibold text-[var(--ua-text-primary)]">{latestClaimDisplay!.claimType}</p>
-              <p className="font-mono text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">{latestClaimDisplay!.orderReference}</p>
-              <p className="mt-2 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">Filed {formatFiledDate(latestClaim)}</p>
+              <p className="font-mono text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">{latestClaimDisplay!.orderReference}</p>
+              <p className="mt-2 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">Filed {formatFiledDate(latestClaim)}</p>
             </div>
           </SectionCard>
         ) : null}
@@ -311,7 +311,7 @@ export function CustomerProfilePageMainColumn({
             <dl className="divide-y divide-[var(--ua-border-subtle)]">
               {contactRows.map(({ label, value, icon: Icon }) => (
                 <div key={label} className="py-3 first:pt-0 last:pb-0">
-                  <dt className="flex items-center gap-3 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">
+                  <dt className="flex items-center gap-3 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">
                     <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
                     <span>{label}</span>
                   </dt>
@@ -342,7 +342,7 @@ export function CustomerProfilePageMainColumn({
           {identitySignalSummary.length ? (
             <div className={`overflow-x-auto ${profile.sibling_count || variantCount > 0 ? "mt-3 border-t border-[var(--ua-border-subtle)] pt-3" : ""}`}>
               <table className="w-full min-w-[280px] text-left text-xs">
-                <thead className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]"><tr><th className="py-1 pr-2">Type</th><th className="py-1 pr-2 text-right">Distinct</th><th className="py-1 text-right">Last seen</th></tr></thead>
+                <thead className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]"><tr><th className="py-1 pr-2">Type</th><th className="py-1 pr-2 text-right">Distinct</th><th className="py-1 text-right">Last seen</th></tr></thead>
                 <tbody className="divide-y divide-[var(--ua-border-subtle)]">
                   {identitySignalSummary.map((row) => (
                     <tr key={row.signalType}>
@@ -368,7 +368,7 @@ export function CustomerProfilePageMainColumn({
         </SectionCard>
 
         <SectionCard title="Observed changes" description="New identifiers first seen across the order history." density="compact">
-          {identityTimeline.length ? <ol className="space-y-3">{identityTimeline.slice(-6).reverse().map((entry) => <li key={`${entry.date}-${entry.field}-${entry.value}`} className="flex gap-3"><span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${entry.isVariant ? 'bg-[var(--ua-warning)]' : 'bg-[var(--ua-text-tertiary)]'}`} /><div className="min-w-0"><p className="truncate text-xs font-medium text-[var(--ua-text-primary)]">{entry.value}</p><p className="mt-0.5 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">{entry.isVariant ? 'New ' : 'First '} {labelize(entry.field)} · {formatDateAbsolute(entry.date)}</p></div></li>)}</ol> : <div className="flex items-center gap-2 text-sm text-[var(--ua-text-secondary)]"><ShoppingBag className="h-4 w-4" aria-hidden="true" />No identifier history yet.</div>}
+          {identityTimeline.length ? <ol className="space-y-3">{identityTimeline.slice(-6).reverse().map((entry) => <li key={`${entry.date}-${entry.field}-${entry.value}`} className="flex gap-3"><span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${entry.isVariant ? 'bg-[var(--ua-warning)]' : 'bg-[var(--ua-text-tertiary)]'}`} /><div className="min-w-0"><p className="truncate text-xs font-medium text-[var(--ua-text-primary)]">{entry.value}</p><p className="mt-0.5 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">{entry.isVariant ? 'New ' : 'First '} {labelize(entry.field)} · {formatDateAbsolute(entry.date)}</p></div></li>)}</ol> : <div className="flex items-center gap-2 text-sm text-[var(--ua-text-secondary)]"><ShoppingBag className="h-4 w-4" aria-hidden="true" />No identifier history yet.</div>}
         </SectionCard>
 
         {possibleMatches.length ? (
@@ -380,9 +380,9 @@ export function CustomerProfilePageMainColumn({
                     <Link href={`/customers/${match.candidateId}`} className="min-w-0 truncate text-xs font-semibold text-[var(--ua-text-primary)] hover:underline">
                       {match.displayName || match.email || 'Unnamed customer'}
                     </Link>
-                    {match.confidence != null ? <span className="shrink-0 text-[length:var(--ua-text-micro-size)] tabular-nums text-[var(--ua-text-tertiary)]">{Math.round(match.confidence * 100)}%</span> : null}
+                    {match.confidence != null ? <span className="shrink-0 text-[length:var(--ua-text-metadata-size)] tabular-nums text-[var(--ua-text-tertiary)]">{Math.round(match.confidence * 100)}%</span> : null}
                   </div>
-                  {match.email && match.displayName ? <p className="mt-0.5 truncate text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">{match.email}</p> : null}
+                  {match.email && match.displayName ? <p className="mt-0.5 truncate text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">{match.email}</p> : null}
                   {match.matchedTypes.length ? <div className="mt-1.5 flex flex-wrap gap-1">{match.matchedTypes.map((type) => <Badge key={type} tone="neutral" size="sm">{labelize(type)}</Badge>)}</div> : null}
                 </li>
               ))}

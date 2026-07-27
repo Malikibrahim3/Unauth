@@ -1,13 +1,22 @@
-# Quiet Precision product design rules
+# Living Precision product design rules
 
-**Status:** Binding contract implemented across product surfaces.
-**Implementation specification:** [`../../docs/IMPL_quiet_precision_product_ui.md`](../../docs/IMPL_quiet_precision_product_ui.md)
+**Status:** Binding contract. Implemented: the LP1 foundation (tokens,
+accent/semantic separation, chart palette, motion tokens, route-progress
+feedback), the adaptive KPI group, §6.3 bar geometry, and the Work/Reports
+route visuals. Not implemented: surface consolidation, the §6.7 chart primitive
+set, LP4–LP6 routes, and the whole capture programme. The as-built ledger lives
+in §12.10 of the implementation spec — that is the only place a completion claim
+is valid.
+**Implementation specification:** [`../../docs/IMPL_living_precision_product_ui.md`](../../docs/IMPL_living_precision_product_ui.md)
+**Superseded:** [`../../docs/IMPL_quiet_precision_product_ui.md`](../../docs/IMPL_quiet_precision_product_ui.md) — retained as
+implementation history only. Where the two disagree on colour, chart palette,
+motion, or composition, Living Precision wins (see its §0.1).
 
 This file is the concise source of truth for product UI. It supersedes every earlier authenticated palette, chart language, component appearance, and migration-era compatibility rule. Shared authenticated runtime output now follows this contract; route-specific work must extend it rather than fork it.
 
 ## Scope
 
-Quiet Precision governs:
+Living Precision governs:
 
 - `app/(app)/**`;
 - `app/onboarding/**`;
@@ -20,13 +29,15 @@ The public landing, pricing, and legal/editorial pages remain a separate design 
 
 ## Non-negotiable ethos
 
-Quiet Precision is:
+Living Precision is:
 
 - a neutral near-white/graphite shell;
 - compact, information-dense, and calm;
 - organised by spacing, one-pixel borders, restrained fills, and modest type;
-- led by near-black primary actions;
-- coloured only when colour communicates status, category, provider identity, or data;
+- led by one violet product accent, with near-black reserved for the
+  high-stakes commit action;
+- otherwise coloured only when colour communicates status, category, provider
+  identity, or data;
 - flat in normal content and elevated only for floating layers.
 
 It is not:
@@ -165,7 +176,7 @@ Consolidate loading, empty, error, and not-found implementations into geometry-a
 
 ## Data visualisation
 
-Quiet Precision replaces every previous chart treatment.
+Living Precision replaces every previous chart treatment. The analytical palette is the accent plus a neutral ramp (§6.2); there is no numbered chart-slot palette, and a semantic hue enters a chart only when the encoded value is itself success, warning, or critical.
 
 - Charts are flat, restrained, and question-led.
 - Neutral axes/grid/panel chrome; low-chroma data marks.
@@ -234,4 +245,4 @@ Before completing product UI work:
 5. Run `npm run lint`, `npm run typecheck`, `npm run lint:authenticated-design`, `npm run verify:ui-parity`, focused tests, and relevant browser tests.
 6. Search the in-scope tree for the deletion ledger.
 
-A page is finished only when it is functionally intact, visually native to Quiet Precision, accessible, responsive, and free of superseded styling in all descendants and states.
+A page is finished only when it is functionally intact, visually native to Living Precision, accessible, responsive, and free of superseded styling in all descendants and states.

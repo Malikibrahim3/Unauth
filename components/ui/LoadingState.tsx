@@ -35,7 +35,7 @@ export function ErrorBoundaryUI({
       <AuthenticatedPageHeader title={title} subtitle={description} />
       <div className={pageStyles.pageBody}>
         <AuthenticatedPanel bodyClassName="grid gap-3 p-4" capabilityId="error.recovery">
-          <div role="alert" className="rounded-[var(--ua-radius-control)] border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] px-3 py-2 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-secondary)]">
+          <div role="alert" className="rounded-[var(--ua-radius-control)] border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] px-3 py-2 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-secondary)]">
             Nothing was changed. If this keeps happening, contact support.
           </div>
           <div className="flex flex-wrap gap-2">
@@ -44,7 +44,7 @@ export function ErrorBoundaryUI({
             </Button>
             <Link
               href="/dashboard"
-              className="inline-flex h-8 items-center justify-center rounded-[var(--ua-radius-control)] border px-3 text-[length:var(--ua-text-micro-size)] font-semibold transition-colors"
+              className="inline-flex h-8 items-center justify-center rounded-[var(--ua-radius-control)] border px-3 text-[length:var(--ua-text-metadata-size)] font-semibold transition-colors"
               style={{
                 borderColor: 'var(--ua-border-default)',
                 color: 'var(--ua-text-primary)',

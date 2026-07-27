@@ -5,7 +5,13 @@ import { type ButtonHTMLAttributes, forwardRef, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { BUTTON_ICON_SIZES, getButtonPresentation } from './buttonStyles';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'link';
+/*
+ * Living Precision §3.2: `primary` is the ordinary accent forward action;
+ * `commit` is the neutral near-black high-stakes action for financial
+ * decisions, irreversible workflow steps, and confirmation. A region must not
+ * show both at equal emphasis.
+ */
+export type ButtonVariant = 'primary' | 'commit' | 'secondary' | 'ghost' | 'danger' | 'link';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {

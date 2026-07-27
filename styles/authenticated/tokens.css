@@ -1,5 +1,5 @@
 /*
- * Quiet Precision authenticated design tokens.
+ * Living Precision authenticated design tokens.
  * ------------------------------------------------------------------
  * `--ua-*` is the ONLY authenticated visual token namespace, and every token
  * below carries a literal value. There is no alias layer: no `--accent`,
@@ -11,24 +11,27 @@
  * Semantic, risk, and severity tokens live in status.css; type-role tokens live
  * in typography.css. Both follow the same literal-value rule.
  *
- * Values are the target tables in docs/IMPL_quiet_precision_product_ui.md §3.
+ * Values are the target tables in docs/IMPL_living_precision_product_ui.md §3,
+ * §6.2, and §7.1. That document supersedes the Quiet Precision clause that
+ * forbade a product accent: violet is now the single product accent, and
+ * near-black survives only as the high-stakes *commit* action.
  */
 .ua-desktop-boundary {
   /* The unsupported-width notice sits outside `.ua-app`, so it needs the
    * small neutral subset below before the authenticated subtree mounts. */
-  --ua-canvas: #fafafa;
+  --ua-canvas: #f7f7f8;
   --ua-surface-primary: #ffffff;
-  --ua-border-default: #d5d5d5;
+  --ua-border-default: #d8d8dc;
   --ua-radius-surface: 10px;
   --ua-space-2: 8px;
   --ua-space-6: 24px;
-  --ua-text-primary: #202020;
-  --ua-text-secondary: #5e5e5e;
-  --ua-text-tertiary: #686868;
-  --ua-text-page-title-size: 18px;
-  --ua-text-page-title-leading: 24px;
-  --ua-text-micro-size: 11px;
-  --ua-text-micro-leading: 14px;
+  --ua-text-primary: #18181b;
+  --ua-text-secondary: #52525b;
+  --ua-text-tertiary: #71717a;
+  --ua-text-page-title-size: 20px;
+  --ua-text-page-title-leading: 28px;
+  --ua-text-metadata-size: 11px;
+  --ua-text-metadata-leading: 15px;
   --ua-text-body-size: 14px;
   --ua-text-body-leading: 20px;
   --ua-font-sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -41,86 +44,100 @@
   /*
    * ── Surfaces (§3.1) ──────────────────────────────────────────────────
    *
-   * Every neutral is achromatic: R = G = B, exactly. The previous scale sat
-   * 1–5 steps warm (blue below red/green), which read as cream rather than
-   * white and fought the reference's clean, paper-white feel. The scale is also
-   * lifted toward white — the canvas moved 243 → 249 — so white panels sit on a
-   * near-white page and are read by their hairline, not by a grey backdrop.
-   *
-   * Do not reintroduce a warm tint here. If a surface needs warmth it is
-   * carrying a status, and that belongs in status.css.
+   * The neutral ramp is very slightly cool (zinc), not achromatic: it sits
+   * under a violet accent, and a dead-grey ramp reads dirty beside it. Do not
+   * reintroduce a warm tint. If a surface needs warmth it is carrying a
+   * status, and that belongs in status.css.
    *
    * `--ua-shell` is white: the sidebar and header are the same paper as the
-   * panels, and the only thing separating them is a hairline. That means the
-   * selected nav row cannot use fill to stand out — it carries its own hairline,
-   * `--ua-shadow-raised` and a 1px rise instead (§4.2.1), which is what makes a
-   * white chip legible on white.
+   * panels, separated only by a hairline. The selected nav row is now carried
+   * by the accent wash plus a 2px accent marker (§4.2), not by a white-on-white
+   * lift.
    */
-  --ua-canvas: #fafafa;
+  --ua-canvas: #f7f7f8;
   --ua-shell: #ffffff;
   --ua-surface-primary: #ffffff;
-  --ua-surface-secondary: #fafafa;
-  --ua-surface-muted: #f4f4f4;
-  --ua-surface-hover: #f5f5f5;
-  --ua-surface-selected: #ebebeb;
-  --ua-surface-inverse: #242424;
-  --ua-backdrop: rgb(24 24 24 / 14%);
+  --ua-surface-secondary: #f4f4f5;
+  --ua-surface-muted: #eeeef0;
+  --ua-surface-hover: #f1f1f3;
+  --ua-surface-selected: #ececee;
+  --ua-surface-inverse: #18181b;
+  --ua-backdrop: rgb(24 24 27 / 18%);
 
   /* ── Ink (§3.1) ───────────────────────────────────────────────────── */
-  --ua-text-primary: #202020;
-  --ua-text-secondary: #5e5e5e;
-  --ua-text-tertiary: #686868;
-  --ua-text-disabled: #a5a5a5;
+  --ua-text-primary: #18181b;
+  --ua-text-secondary: #52525b;
+  --ua-text-tertiary: #71717a;
+  --ua-text-disabled: #a1a1aa;
   --ua-text-inverse: #ffffff;
-  --ua-text-link: #2d2d2d;
-  --ua-icon-primary: #343434;
-  --ua-icon-secondary: #707070;
+  --ua-text-link: #3c3c96;
+  --ua-icon-primary: #3f3f46;
+  --ua-icon-secondary: #71717a;
+
+  /* ── Lines (§3.1) ─────────────────────────────────────────────────── */
+  --ua-border-subtle: #e7e7ea;
+  --ua-border-default: #d8d8dc;
+  --ua-border-strong: #a5a5ae;
+  --ua-border-focus: #5b5bd6;
 
   /*
-   * ── Lines (§3.1, §3.5) ───────────────────────────────────────────────
-   * Held at their previous lightness — only the warm cast is removed. On a
-   * near-white canvas the hairline is what separates surfaces, so these must
-   * not be lightened further.
+   * ── Accent (§3.2) ────────────────────────────────────────────────────
+   * One product accent. It identifies current selection, current comparison
+   * period, interaction, and product-owned primary data. It never carries
+   * success, warning, failure, risk, or freshness meaning — those are the
+   * status.css triplets.
    */
-  --ua-border-subtle: #ebebeb;
-  --ua-border-default: #d5d5d5;
-  --ua-border-strong: #949494;
-  --ua-border-focus: #202020;
+  --ua-accent-50: #f5f4ff;
+  --ua-accent-100: #f0efff;
+  --ua-accent-200: #dedcff;
+  --ua-accent-300: #c2beff;
+  --ua-accent-400: #8784e1;
+  --ua-accent-500: #5b5bd6;
+  --ua-accent-600: #4949b8;
+  --ua-accent-700: #3c3c96;
+  --ua-accent-800: #303078;
+  --ua-accent-fg: #ffffff;
 
-  /* ── Action. Product action is ink; hue is reserved for meaning. ──── */
-  --ua-action-primary: #242424;
-  --ua-action-primary-hover: #151515;
-  --ua-action-primary-pressed: #080808;
+  /*
+   * ── Action roles (§3.2) ──────────────────────────────────────────────
+   * `primary` is the ordinary forward action and is now the accent.
+   * `commit` is the neutral high-stakes action for financial decisions,
+   * irreversible workflow steps, and confirmation. A region may not show both
+   * at equal emphasis.
+   */
+  --ua-action-primary: #5b5bd6;
+  --ua-action-primary-hover: #4949b8;
+  --ua-action-primary-pressed: #3c3c96;
   --ua-action-primary-fg: #ffffff;
+  --ua-action-commit: #18181b;
+  --ua-action-commit-hover: #09090b;
+  --ua-action-commit-pressed: #000000;
+  --ua-action-commit-fg: #ffffff;
 
-  /* ── Data visualisation (§8.2). Numbered slots, never hue names. ─── */
-  --ua-chart-1: #4f6fa8;
-  --ua-chart-2: #2f7a68;
-  --ua-chart-3: #705d96;
-  --ua-chart-4: #936b25;
-  --ua-chart-5: #a05252;
-  --ua-chart-neutral: #8a8e93;
-  --ua-chart-track: #f5f5f5;
-  --ua-chart-grid: #ebebeb;
+  /*
+   * ── Data visualisation (§6.2) ────────────────────────────────────────
+   * Role-named, never numbered slots and never hue names. Current/primary
+   * data is the accent; every comparison and supporting series is neutral.
+   * Semantic hues enter a chart only when the encoded value is itself
+   * success, warning, or critical — they are read from status.css.
+   */
+  --ua-chart-primary: #5b5bd6;
+  --ua-chart-primary-soft: #8784e1;
+  --ua-chart-neutral-900: #555a64;
+  --ua-chart-neutral-700: #747984;
+  --ua-chart-neutral-500: #898e98;
+  --ua-chart-neutral-300: #c8cbd0;
+  --ua-chart-grid: #e7e7ea;
+  --ua-chart-track: #f1f1f3;
 
-  /* Sequential ramps — 4 mark-carrying steps. Steps 1–2 are heat-only
-   * extensions and may recede below 2:1; never use them for discrete marks. */
-  --ua-chart-ramp-primary-1: #e9f0fb;
-  --ua-chart-ramp-primary-2: #c3d3ec;
-  --ua-chart-ramp-primary-3: #86a5d0;
-  --ua-chart-ramp-primary-4: #4f6fa8;
-  --ua-chart-ramp-attention-1: #fff4d6;
-  --ua-chart-ramp-attention-2: #ead9a9;
-  --ua-chart-ramp-attention-3: #c7a65b;
-  --ua-chart-ramp-attention-4: #936b25;
-  --ua-chart-heat-primary-0: #e9f0fb;
-  --ua-chart-heat-primary-1: #c3d3ec;
-  --ua-chart-heat-primary-2: #86a5d0;
-  --ua-chart-heat-attention-0: #fff4d6;
-  --ua-chart-heat-attention-1: #ead9a9;
-  --ua-chart-heat-attention-2: #c7a65b;
+  /* Sequential accent ramp — 4 mark-carrying steps. Step 1 is a heat-only
+   * extension and may recede below 2:1; never use it for a discrete mark. */
+  --ua-chart-ramp-1: #f0efff;
+  --ua-chart-ramp-2: #c2beff;
+  --ua-chart-ramp-3: #8784e1;
+  --ua-chart-ramp-4: #5b5bd6;
 
-  /* ── Geometry (§3.4) ──────────────────────────────────────────────── */
+  /* ── Geometry (§3.6) ──────────────────────────────────────────────── */
   --ua-radius-none: 0px;
   --ua-radius-xs: 4px;
   --ua-radius-control: 6px;
@@ -128,29 +145,30 @@
   --ua-radius-overlay: 14px;
   --ua-radius-round: 9999px;
 
-  /* ── Depth (§3.5). Inline surfaces are flat; only floating layers lift. */
+  /* ── Depth (§3.8). Inline surfaces are flat; only floating layers lift. */
   --ua-shadow-none: none;
-  --ua-shadow-raised: 0 1px 2px rgb(20 20 20 / 9%), 0 4px 10px rgb(20 20 20 / 7%);
-  --ua-shadow-float: 0 4px 14px rgb(20 20 20 / 8%);
-  --ua-shadow-menu: 0 8px 24px rgb(20 20 20 / 12%);
-  --ua-shadow-overlay: 0 24px 64px rgb(20 20 20 / 18%);
+  --ua-shadow-raised: 0 1px 2px rgb(24 24 27 / 9%), 0 4px 10px rgb(24 24 27 / 7%);
+  --ua-shadow-float: 0 4px 14px rgb(24 24 27 / 8%);
+  --ua-shadow-menu: 0 8px 24px rgb(24 24 27 / 12%);
+  --ua-shadow-overlay: 0 24px 64px rgb(24 24 27 / 18%);
   --ua-shadow-focus: 0 0 0 2px var(--ua-surface-primary), 0 0 0 4px var(--ua-border-focus);
 
   /* ── Control dimensions (§3.6) ────────────────────────────────────── */
   --ua-control-height-sm: 30px;
-  --ua-control-height-md: 34px;
+  --ua-control-height-md: 36px;
   --ua-control-height-lg: 40px;
-  --ua-control-height-input: 38px;
+  --ua-control-height-input: 36px;
   --ua-control-height-icon: 32px;
-  --ua-table-header-height: 34px;
-  --ua-table-row-height: 40px;
+  --ua-table-header-height: 36px;
+  --ua-table-row-height: 44px;
+  --ua-table-row-height-rich: 56px;
   --ua-utility-header-height: 48px;
   --ua-sidebar-width: 200px;
   --ua-sidebar-width-collapsed: 52px;
 
-  /* Badges (§6.7). Status keeps round geometry so it reads as a state;
-   * metadata and source chips take control radius so the three families stay
-   * visually distinct rather than collapsing into one pill vocabulary. */
+  /* Badges. Status keeps round geometry so it reads as a state; metadata and
+   * source chips take control radius so the three families stay visually
+   * distinct rather than collapsing into one pill vocabulary. */
   --ua-badge-height-sm: 20px;
   --ua-badge-height: 22px;
   --ua-badge-radius-status: var(--ua-radius-round);
@@ -160,7 +178,7 @@
   --ua-control-padding-x-md: var(--ua-space-4);
   --ua-control-padding-x-lg: var(--ua-space-5);
 
-  /* ── Spacing (§3.3) ──────────────────────────────────────────────── */
+  /* ── Spacing (§3.6) ──────────────────────────────────────────────── */
   --ua-space-0: 0px;
   --ua-space-0-5: 2px;
   --ua-space-1: 4px;
@@ -175,11 +193,25 @@
   --ua-space-10: 40px;
   --ua-space-12: 48px;
 
-  /* ── Motion (§3.8) ───────────────────────────────────────────────── */
+  /*
+   * ── Motion (§7.1) ────────────────────────────────────────────────────
+   * Call sites pick a *role*, never a number. The JS mirror of these values
+   * lives in one module (lib/design/motion.ts) for library call sites only.
+   */
+  --ua-duration-instant: 0ms;
+  --ua-duration-press: 80ms;
   --ua-duration-fast: 100ms;
   --ua-duration-base: 160ms;
   --ua-duration-slow: 220ms;
+  --ua-duration-data: 360ms;
+  --ua-duration-highlight: 700ms;
+  --ua-duration-spinner: 800ms;
+  --ua-duration-skeleton: 1600ms;
+  --ua-duration-live: 2400ms;
   --ua-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ua-ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --ua-ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --ua-ease-linear: linear;
 
   /* ── Layers ──────────────────────────────────────────────────────── */
   --ua-z-base: 0;
@@ -193,65 +225,70 @@
 }
 
 /*
- * Dark mode is a neutral relational inversion of the same hierarchy and
- * geometry — not a second aesthetic. Only colour tokens are restated.
+ * Dark mode (§3.4) preserves the same roles and proportions — not a second art
+ * direction. Only colour tokens are restated.
  */
 :root[data-theme="dark"] .ua-app,
 :root[data-theme="dark"] .ua-auth-surface {
   color-scheme: dark;
 
-  --ua-canvas: #101010;
-  --ua-shell: #151515;
-  --ua-surface-primary: #1b1b1b;
-  --ua-surface-secondary: #202020;
-  --ua-surface-muted: #272727;
-  --ua-surface-hover: #252525;
-  --ua-surface-selected: #303030;
-  --ua-surface-inverse: #f2f2f2;
+  --ua-canvas: #111113;
+  --ua-shell: #151517;
+  --ua-surface-primary: #1b1b1e;
+  --ua-surface-secondary: #222226;
+  --ua-surface-muted: #29292e;
+  --ua-surface-hover: #26262b;
+  --ua-surface-selected: #2d2d33;
+  --ua-surface-inverse: #f5f5f6;
   --ua-backdrop: rgb(0 0 0 / 46%);
 
-  --ua-text-primary: #f3f3f3;
-  --ua-text-secondary: #b8b8b8;
-  --ua-text-tertiary: #929292;
-  --ua-text-disabled: #626262;
-  --ua-text-inverse: #171717;
-  --ua-text-link: #f0f0f0;
-  --ua-icon-primary: #d8d8d8;
-  --ua-icon-secondary: #949494;
+  --ua-text-primary: #f5f5f6;
+  --ua-text-secondary: #b8b8c0;
+  --ua-text-tertiary: #92929b;
+  --ua-text-disabled: #62626b;
+  --ua-text-inverse: #151517;
+  --ua-text-link: #8f8cf2;
+  --ua-icon-primary: #e4e4e7;
+  --ua-icon-secondary: #a1a1aa;
 
-  --ua-border-subtle: #292929;
-  --ua-border-default: #363636;
-  --ua-border-strong: #565656;
-  --ua-border-focus: #f2f2f2;
+  --ua-border-subtle: #29292e;
+  --ua-border-default: #37373e;
+  --ua-border-strong: #585864;
+  --ua-border-focus: #9b99ff;
 
-  --ua-action-primary: #f2f2f2;
-  --ua-action-primary-hover: #ffffff;
-  --ua-action-primary-pressed: #dadada;
-  --ua-action-primary-fg: #171717;
+  --ua-accent-50: #201f35;
+  --ua-accent-100: #29284d;
+  --ua-accent-200: #474477;
+  --ua-accent-300: #5d5a93;
+  --ua-accent-400: #7674cc;
+  --ua-accent-500: #9b99ff;
+  --ua-accent-600: #b2b0ff;
+  --ua-accent-700: #8f8cf2;
+  --ua-accent-800: #c8c7ff;
+  --ua-accent-fg: #151517;
 
-  --ua-chart-1: #86a3d4;
-  --ua-chart-2: #67ae99;
-  --ua-chart-3: #a595c5;
-  --ua-chart-4: #c9a35d;
-  --ua-chart-5: #d28686;
-  --ua-chart-neutral: #8f949a;
-  --ua-chart-track: #272727;
-  --ua-chart-grid: #292929;
+  --ua-action-primary: #9b99ff;
+  --ua-action-primary-hover: #b2b0ff;
+  --ua-action-primary-pressed: #8f8cf2;
+  --ua-action-primary-fg: #151517;
+  --ua-action-commit: #f5f5f6;
+  --ua-action-commit-hover: #ffffff;
+  --ua-action-commit-pressed: #d4d4d8;
+  --ua-action-commit-fg: #151517;
 
-  --ua-chart-ramp-primary-1: #23303f;
-  --ua-chart-ramp-primary-2: #3a5273;
-  --ua-chart-ramp-primary-3: #5b7cad;
-  --ua-chart-ramp-primary-4: #86a3d4;
-  --ua-chart-ramp-attention-1: #33291a;
-  --ua-chart-ramp-attention-2: #57472a;
-  --ua-chart-ramp-attention-3: #8d7340;
-  --ua-chart-ramp-attention-4: #c9a35d;
-  --ua-chart-heat-primary-0: #23303f;
-  --ua-chart-heat-primary-1: #3a5273;
-  --ua-chart-heat-primary-2: #5b7cad;
-  --ua-chart-heat-attention-0: #33291a;
-  --ua-chart-heat-attention-1: #57472a;
-  --ua-chart-heat-attention-2: #8d7340;
+  --ua-chart-primary: #9b99ff;
+  --ua-chart-primary-soft: #7674cc;
+  --ua-chart-neutral-900: #d6d6dc;
+  --ua-chart-neutral-700: #a8a8b1;
+  --ua-chart-neutral-500: #7a7a85;
+  --ua-chart-neutral-300: #4e4e57;
+  --ua-chart-grid: #303036;
+  --ua-chart-track: #29292e;
+
+  --ua-chart-ramp-1: #29284d;
+  --ua-chart-ramp-2: #474477;
+  --ua-chart-ramp-3: #7674cc;
+  --ua-chart-ramp-4: #9b99ff;
 
   /* Floating layers need more separation against a dark canvas. */
   --ua-shadow-raised: 0 1px 2px rgb(0 0 0 / 32%), 0 3px 8px rgb(0 0 0 / 26%);

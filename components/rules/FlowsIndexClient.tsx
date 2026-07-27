@@ -109,7 +109,7 @@ export function FlowsIndexClient({
                   </p>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">
+                  <p className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">
                     Trigger
                   </p>
                   <p className="mt-1 truncate font-mono text-xs">
@@ -117,7 +117,7 @@ export function FlowsIndexClient({
                   </p>
                 </div>
                 <div>
-                  <p className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">
+                  <p className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">
                     Actions
                   </p>
                   <p className="mt-1 font-sans tabular-nums text-sm">{flow.actionCount}</p>

@@ -109,11 +109,11 @@ export function CustomerProfilePageHero({
         title={displayName}
         subtitle={profile.primary_email ?? 'Email unavailable'}
         breadcrumbs={[{ label: 'Customers', href: '/customers' }, { label: displayName }]}
-        actions={<>{status}{!viewToken && primaryAction ? <Link href={primaryAction.href} className="inline-flex h-8 items-center rounded-[var(--ua-radius-control)] bg-[var(--ua-action-primary)] px-3 text-[length:var(--ua-text-micro-size)] font-semibold text-[var(--ua-action-primary-fg)]">{primaryAction.label}</Link> : null}</>}
+        actions={<>{status}{!viewToken && primaryAction ? <Link href={primaryAction.href} className="inline-flex h-8 items-center rounded-[var(--ua-radius-control)] bg-[var(--ua-action-primary)] px-3 text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-action-primary-fg)]">{primaryAction.label}</Link> : null}</>}
         meta={
           <>
-            <span className="inline-flex items-center gap-1.5 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]"><CalendarDays className="h-3 w-3" aria-hidden="true" />Customer since {formatDateAbsolute(profile.first_seen)} · Last active {formatDateAbsolute(profile.last_seen)}</span>
-            {gorgiasSource === 'gorgias' ? <span className="inline-flex items-center gap-1.5 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-secondary)]"><Info className="h-3 w-3" aria-hidden="true" />From Gorgias{gorgiasTicketId ? ` · case #${gorgiasTicketId}` : ''}</span> : null}
+            <span className="inline-flex items-center gap-1.5 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]"><CalendarDays className="h-3 w-3" aria-hidden="true" />Customer since {formatDateAbsolute(profile.first_seen)} · Last active {formatDateAbsolute(profile.last_seen)}</span>
+            {gorgiasSource === 'gorgias' ? <span className="inline-flex items-center gap-1.5 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-secondary)]"><Info className="h-3 w-3" aria-hidden="true" />From Gorgias{gorgiasTicketId ? ` · case #${gorgiasTicketId}` : ''}</span> : null}
           </>
         }
       />

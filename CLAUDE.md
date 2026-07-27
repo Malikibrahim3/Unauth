@@ -20,7 +20,9 @@ Read `docs/PRODUCT.md` and `ARCHITECTURE.md` before changing product behavior, s
 - Database conventions: `lib/supabase`; migration history: `supabase/migrations`
 - Environment validation: `lib/utils/env.ts`
 - Product UI: `styles/authenticated/README.md` (binding rules) and
-  `docs/IMPL_quiet_precision_product_ui.md` (complete implementation contract)
+  `docs/IMPL_living_precision_product_ui.md` (complete implementation contract;
+  supersedes `docs/IMPL_quiet_precision_product_ui.md`, which is retained only
+  as implementation history)
 - Engine weights and thresholds: `lib/engine/weights.ts`
 - Identity normalization and hashing: `lib/identity/normalise.ts` and `lib/identity/hash.ts`
 
@@ -33,11 +35,14 @@ Use the validated `env` object in server application code. Scripts and tests may
 Keep applied migrations immutable and add forward migrations. Authorization must be checked before using service-role access, and every database operation must be merchant-scoped.
 
 Read `styles/authenticated/README.md` and
-`docs/IMPL_quiet_precision_product_ui.md` before product UI changes. Quiet
+`docs/IMPL_living_precision_product_ui.md` before product UI changes. Living
 Precision is a hard replacement: use its canonical tokens, primitives, page
 families, states, responsive rules, and accessibility contract; do not treat
 the pre-migration runtime appearance as precedent or preserve visual
-compatibility aliases. Keep public landing styles isolated, preserve keyboard
-and mobile access, and run `npm run lint:authenticated-design`.
+compatibility aliases. Violet is the one product accent and near-black survives
+only as the high-stakes commit action; semantic colour carries meaning and never
+becomes a categorical chart colour. Keep public landing styles isolated,
+preserve keyboard and mobile access, and run
+`npm run lint:authenticated-design`.
 
 Before completion run the relevant focused tests, then the full validation gate in `docs/TESTING.md`.

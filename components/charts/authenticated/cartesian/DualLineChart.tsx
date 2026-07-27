@@ -60,7 +60,7 @@ export function DualLineChart({ data, series, valueFormatter, height = 240 }: Du
                     value: (payload[0]?.payload as DualLinePoint)?.[s.key] == null
                       ? 'Unavailable'
                       : valueFormatter(Number((payload[0]?.payload as DualLinePoint)[s.key])),
-                    colour: (theme as Record<string, string>)[s.colourVar] || 'var(--ua-chart-1)',
+                    colour: (theme as Record<string, string>)[s.colourVar] || 'var(--ua-chart-primary)',
                   }))}
                 />
               );
@@ -72,7 +72,7 @@ export function DualLineChart({ data, series, valueFormatter, height = 240 }: Du
               type="monotone"
               dataKey={s.key}
               name={s.label}
-              stroke={(theme as Record<string, string>)[s.colourVar] || 'var(--ua-chart-1)'}
+              stroke={(theme as Record<string, string>)[s.colourVar] || 'var(--ua-chart-primary)'}
               strokeWidth={TREND_LINE_WIDTH}
               strokeLinecap="round"
               strokeLinejoin="round"

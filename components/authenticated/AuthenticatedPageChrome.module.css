@@ -21,10 +21,10 @@
 .eyebrow {
   margin: 0 0 4px;
   color: var(--ua-text-tertiary);
-  font-size: var(--ua-text-micro-size);
-  font-weight: var(--ua-text-micro-weight);
-  letter-spacing: var(--ua-text-micro-tracking);
-  line-height: var(--ua-text-micro-leading);
+  font-size: var(--ua-text-metadata-size);
+  font-weight: var(--ua-text-metadata-weight);
+  letter-spacing: var(--ua-text-metadata-tracking);
+  line-height: var(--ua-text-metadata-leading);
 }
 
 .title {

@@ -96,10 +96,10 @@ export function SidebarAside({
 
         {!isCollapsed && merchantName ? (
           <div className="flex min-h-8 w-full items-center gap-2 rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-primary)] px-2 py-1" title={merchantName}>
-            <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-md bg-[var(--ua-surface-selected)] text-[length:var(--ua-text-micro-size)] font-bold text-[var(--ua-text-primary)]">
+            <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-md bg-[var(--ua-surface-selected)] text-[length:var(--ua-text-metadata-size)] font-bold text-[var(--ua-text-primary)]">
               {merchantName.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase()}
             </span>
-            <span className="min-w-0 truncate text-[length:var(--ua-text-micro-size)] font-semibold leading-tight text-[var(--ua-text-secondary)]">{merchantName}</span>
+            <span className="min-w-0 truncate text-[length:var(--ua-text-metadata-size)] font-semibold leading-tight text-[var(--ua-text-secondary)]">{merchantName}</span>
           </div>
         ) : null}
 
@@ -108,7 +108,7 @@ export function SidebarAside({
             href="/integrations"
             prefetch={false}
             onClick={onCloseMobile}
-            className="flex min-h-6 w-full items-center gap-1.5 rounded-[var(--ua-radius-control)] px-2 py-1 text-[length:var(--ua-text-micro-size)] font-medium leading-tight transition-colors duration-[var(--ua-duration-fast)] hover:bg-[var(--ua-surface-hover)]"
+            className="flex min-h-6 w-full items-center gap-1.5 rounded-[var(--ua-radius-control)] px-2 py-1 text-[length:var(--ua-text-metadata-size)] font-medium leading-tight transition-colors duration-[var(--ua-duration-fast)] hover:bg-[var(--ua-surface-hover)]"
             /*
              * A neutral chip, not a tinted one. The warning dot carries the
              * state; washing the whole pill in 10% olive put a cream block in
@@ -148,7 +148,7 @@ export function SidebarAside({
 
         {isCollapsed && merchantName ? (
           <div
-            className="flex h-[22px] w-[22px] items-center justify-center rounded-md bg-[var(--ua-surface-selected)] text-[length:var(--ua-text-micro-size)] font-bold leading-none text-[var(--ua-text-primary)]"
+            className="flex h-[22px] w-[22px] items-center justify-center rounded-md bg-[var(--ua-surface-selected)] text-[length:var(--ua-text-metadata-size)] font-bold leading-none text-[var(--ua-text-primary)]"
             title={merchantName}
           >
             {merchantName
@@ -190,7 +190,7 @@ export function SidebarAside({
         )}
       >
         {!isCollapsed ? (
-          <div className="px-2 py-1 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)] truncate">
+          <div className="px-2 py-1 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)] truncate">
             <span className="block truncate" title={userName ?? userEmail}>
               {userName ?? 'Workspace operator'}
             </span>
@@ -204,7 +204,7 @@ export function SidebarAside({
           onClick={onCloseMobile}
           className={cn(
             'flex h-8 items-center gap-3 rounded-sm px-2',
-            'text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-secondary)] hover:text-[var(--ua-text-primary)]',
+            'text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-secondary)] hover:text-[var(--ua-text-primary)]',
             'transition-colors duration-[var(--ua-duration-fast)]',
             'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ua-border-focus)] focus-visible:outline-offset-2',
             isCollapsed && 'justify-center',
@@ -220,7 +220,7 @@ export function SidebarAside({
           title={isCollapsed ? 'Sign out' : undefined}
           className={cn(
             'flex h-8 w-full items-center gap-3 rounded-sm px-2',
-            'text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-secondary)] hover:text-[var(--ua-text-primary)]',
+            'text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-secondary)] hover:text-[var(--ua-text-primary)]',
             'transition-colors duration-[var(--ua-duration-fast)]',
             'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ua-border-focus)] focus-visible:outline-offset-2',
             isCollapsed && 'justify-center',
@@ -241,7 +241,7 @@ export function SidebarAside({
                 key={href}
                 href={href}
                 prefetch={false}
-                className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)] transition-colors hover:text-[var(--ua-text-secondary)] hover:underline"
+                className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)] transition-colors hover:text-[var(--ua-text-secondary)] hover:underline"
               >
                 {label}
               </Link>

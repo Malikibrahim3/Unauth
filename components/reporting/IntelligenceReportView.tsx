@@ -39,6 +39,66 @@ const STEPS = [
   { key: "outstandingMinor", state: "outstanding", label: financialStageLabel("outstanding_recovery"), definition: financialStageDefinition("outstanding_recovery") },
   { key: "finalNetLossMinor", state: "final_net_loss", label: financialStageLabel("final_net_loss"), definition: financialStageDefinition("final_net_loss") },
 ] satisfies Array<{ key: keyof MoneyBridge; state: FinancialReportMetric; label: string; definition: string }>;
+
+/*
+ * §5.3: seven or more metrics means "reduce to four headline metrics and move the
+ * remainder into a supporting breakdown". Twelve equal-weight stage cells filled
+ * three rows and pushed the primary chart below the fold, so the four totals a
+ * merchant actually decides on lead, and the full ledger stays one disclosure
+ * away — no value is removed, and every drill-down link is preserved.
+ */
+const HEADLINE_KEYS = new Set<keyof MoneyBridge>([
+  'exposedMinor',
+  'realisedLossMinor',
+  'recoveredMinor',
+  'finalNetLossMinor',
+]);
+const HEADLINE_STEPS = STEPS.filter((step) => HEADLINE_KEYS.has(step.key));
+const SUPPORTING_STEPS = STEPS.filter((step) => !HEADLINE_KEYS.has(step.key));
+
+function StageCell({
+  step,
+  bridge,
+  report,
+  index,
+  dense,
+}: {
+  step: (typeof STEPS)[number];
+  bridge: MoneyBridge;
+  report: IntelligenceReport;
+  index: number;
+  dense?: boolean;
+}) {
+  const known = financialMetricIsKnown(bridge, step.state);
+  return (
+    <div
+      className={`${dense ? 'py-3' : 'min-h-24 py-4'} sm:px-4 ${index > 0 ? "border-t border-[var(--ua-border-subtle)] sm:border-l sm:border-t-0" : ""}`}
+    >
+      <dt className="text-xs font-medium text-[var(--ua-text-secondary)]">
+        <Link
+          className="hover:text-[var(--ua-action-primary)]"
+          href={financialReportRecordsHref({
+            range: report.range,
+            currency: bridge.currency,
+            metric: step.state,
+            timezone: report.timezone,
+          })}
+        >
+          {step.label}
+        </Link>
+      </dt>
+      <dd
+        className={`mt-2 font-semibold tabular-nums ${dense ? 'text-base' : 'text-xl'}`}
+        style={known && bridge[step.key] === 0 ? { color: "var(--ua-text-tertiary)" } : undefined}
+      >
+        {known ? money(bridge[step.key] as number, bridge.currency) : "Unavailable"}
+      </dd>
+      {dense ? null : (
+        <dd className="mt-1 text-xs text-[var(--ua-text-secondary)]">{step.definition}</dd>
+      )}
+    </div>
+  );
+}
 function RankedTable({
   title,
   description,
@@ -143,39 +203,20 @@ export function IntelligenceReportView({
                   </Link>
                 </div>
                 <dl className="mt-2 grid overflow-hidden border-y border-[var(--ua-border-default)] sm:grid-cols-2 lg:grid-cols-4">
-                  {STEPS.map(({ key, state, label, definition }, index) => {
-                    const known = financialMetricIsKnown(b, state);
-                    return (
-                    <div
-                      key={key}
-                      className={`min-h-24 py-4 sm:px-4 ${index > 0 ? "border-t border-[var(--ua-border-subtle)] sm:border-l sm:border-t-0" : ""}`}
-                    >
-                      <dt className="text-xs font-medium text-[var(--ua-text-secondary)]">
-                        <Link
-                          className="hover:text-[var(--ua-action-primary)]"
-                          href={financialReportRecordsHref({
-                            range: report.range,
-                            currency: b.currency,
-                            metric: state,
-                            timezone: report.timezone,
-                          })}
-                        >
-                          {label}
-                        </Link>
-                      </dt>
-                      <dd
-                        className="mt-2 text-xl font-semibold tabular-nums"
-                        style={known && b[key] === 0 ? { color: "var(--ua-text-tertiary)" } : undefined}
-                      >
-                        {known ? money(b[key] as number, b.currency) : "Unavailable"}
-                      </dd>
-                      <dd className="mt-1 text-xs text-[var(--ua-text-secondary)]">
-                        {definition}
-                      </dd>
-                    </div>
-                    );
-                  })}
+                  {HEADLINE_STEPS.map((step, index) => (
+                    <StageCell key={step.key} step={step} bridge={b} report={report} index={index} />
+                  ))}
                 </dl>
+                <details className="mt-3 border-b border-[var(--ua-border-subtle)] pb-2">
+                  <summary className="cursor-pointer py-2 text-[length:var(--ua-text-dense-size)] font-medium text-[var(--ua-text-secondary)]">
+                    All {STEPS.length} financial stages for {b.currency}
+                  </summary>
+                  <dl className="mt-1 grid overflow-hidden sm:grid-cols-2 lg:grid-cols-4">
+                    {SUPPORTING_STEPS.map((step, index) => (
+                      <StageCell key={step.key} step={step} bridge={b} report={report} index={index} dense />
+                    ))}
+                  </dl>
+                </details>
               </div>
             ))}
           </div>

@@ -44,18 +44,9 @@ export function WorkbenchPage({
   rail,
   footer,
 }: WorkbenchPageProps) {
-  const kpiColsClass = kpiItems
-    ? kpiItems.length <= 4
-      ? 'grid-cols-2 md:grid-cols-4'
-      : kpiItems.length === 5
-        ? 'grid-cols-2 md:grid-cols-5'
-        : kpiItems.length === 6
-          ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-6'
-          : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4'
-    : undefined;
-  const resolvedKpiStrip = kpiItems
-    ? <WorkbenchKpiStrip items={kpiItems} colsClassName={kpiColsClass} />
-    : kpiStrip;
+  // Column geometry belongs to the adaptive KPI group (§5.3), not to a
+  // page-level class ladder that produced blank cells at 1, 3, and 7+ metrics.
+  const resolvedKpiStrip = kpiItems ? <WorkbenchKpiStrip items={kpiItems} /> : kpiStrip;
   const resolvedActionBar =
     actionBarLeft != null || actionBarMiddle != null || actionBarRight != null ? (
       <WorkbenchActionBar left={actionBarLeft} middle={actionBarMiddle} right={actionBarRight} />

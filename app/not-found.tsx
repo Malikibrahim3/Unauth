@@ -25,7 +25,7 @@ export default function NotFound() {
           <div className="flex flex-wrap items-center justify-center gap-3">
             <Link
               href="/dashboard"
-              className="inline-flex h-[var(--ua-control-height-md)] items-center rounded-[var(--ua-radius-control)] px-4 text-[length:var(--ua-text-small-size)] font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
+              className="inline-flex h-[var(--ua-control-height-md)] items-center rounded-[var(--ua-radius-control)] px-4 text-[length:var(--ua-text-dense-size)] font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
               style={{
                 background: 'var(--ua-action-primary)',
                 color: 'var(--ua-action-primary-fg)',
@@ -37,7 +37,7 @@ export default function NotFound() {
             </Link>
             <Link
               href="/"
-              className="inline-flex h-[var(--ua-control-height-md)] items-center rounded-[var(--ua-radius-control)] border px-4 text-[length:var(--ua-text-small-size)] font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
+              className="inline-flex h-[var(--ua-control-height-md)] items-center rounded-[var(--ua-radius-control)] border px-4 text-[length:var(--ua-text-dense-size)] font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
               style={{
                 borderColor: 'var(--ua-border-default)',
                 background: 'var(--ua-surface-primary)',
@@ -49,7 +49,7 @@ export default function NotFound() {
             </Link>
             <Link
               href="/login"
-              className="inline-flex h-[var(--ua-control-height-md)] items-center rounded-[var(--ua-radius-control)] border px-4 text-[length:var(--ua-text-small-size)] font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
+              className="inline-flex h-[var(--ua-control-height-md)] items-center rounded-[var(--ua-radius-control)] border px-4 text-[length:var(--ua-text-dense-size)] font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
               style={{
                 borderColor: 'var(--ua-border-default)',
                 background: 'var(--ua-surface-primary)',

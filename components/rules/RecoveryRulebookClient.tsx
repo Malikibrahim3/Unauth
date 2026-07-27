@@ -185,7 +185,7 @@ export function RecoveryRulebookClient({
                 </p>
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {rule.required_evidence.slice(0, 5).map((item) => (
-                    <span key={item} className="rounded-[var(--ua-radius-control)] px-2 py-0.5 text-[length:var(--ua-text-micro-size)]" style={{ background: 'var(--ua-surface-secondary)', color: 'var(--ua-text-secondary)' }}>
+                    <span key={item} className="rounded-[var(--ua-radius-control)] px-2 py-0.5 text-[length:var(--ua-text-metadata-size)]" style={{ background: 'var(--ua-surface-secondary)', color: 'var(--ua-text-secondary)' }}>
                       {item.replaceAll('_', ' ')}
                     </span>
                   ))}

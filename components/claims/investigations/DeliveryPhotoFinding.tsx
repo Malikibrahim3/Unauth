@@ -95,7 +95,7 @@ export function DeliveryPhotoFinding({
             {rationale}
           </p>
         ) : null}
-        <p className="mt-2 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">
+        <p className="mt-2 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">
           This records a human observation and refreshes the advisory recommendation. It does not decide the customer outcome.
         </p>
       </div>

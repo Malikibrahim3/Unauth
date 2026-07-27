@@ -109,6 +109,27 @@ const obsoleteVisualSummary = /OperationalVisualSummary|data-visual-summary/g;
 const echartsImport = /from\s+['"]echarts(?:-for-react)?['"]/g;
 // The --dashboard-* remap layer was deleted (§12.2); components read --ua-chart-* directly.
 const dashboardRemapVar = /var\(--dashboard-[a-z-]+\)/g;
+/*
+ * Living Precision §3.8 source-token migration. Every token below was deleted
+ * or renamed in the same merge unit that moved its consumers, so any surviving
+ * reference is a regression, not debt:
+ *   --ua-chart-1…5 / --ua-chart-neutral   → role-named §6.2 chart tokens
+ *   --ua-chart-ramp-primary/attention-*   → the single --ua-chart-ramp-1…4 accent ramp
+ *   --ua-chart-heat-*                     → the same accent ramp
+ *   --ua-violet*                          → accent roles (selection) or status roles (meaning)
+ *   --ua-text-micro/small/card-title/total → metadata / dense / chart-title / hero-value
+ * There is no alias layer, and adding one back is the failure this rule exists
+ * to catch.
+ */
+/*
+ * §7.2 (LP-MOT-02). A press is a fill response, a hover is a colour response,
+ * and a selection transitions colour — none of them translate, lift, or animate
+ * layout. `transition-all` sweeps in width/height/transform/border, which is how
+ * the old nav lift and control shake survived every previous cleanup.
+ */
+const forbiddenMotion = /\bua-jitter\b|\btransition-all\b|hover:-?translate-|hover:shadow-|ua-hover-lift|ua-hover-glow/g;
+const deletedTokenRef =
+  /--ua-chart-(?:[1-5]|neutral)(?![-0-9a-z])|--ua-chart-(?:ramp-(?:primary|attention)|heat)-|--ua-violet\b|--ua-text-(?:micro|small|card-title|total)-/g;
 // Recharts' own default palette/tooltip must never render — a lint tell for the Autumn
 // restyle (§13.3d): the library defaults are always a sign useChartTheme()/ChartTooltip
 // weren't wired up for that chart.
@@ -305,6 +326,18 @@ for (const file of files) {
 
   for (const { line, text } of findMatches(source, dashboardRemapVar)) {
     failures.push(`${normalized}:${line} deleted remap token: ${text} — the --dashboard-* layer was removed (§12); read --ua-chart-* directly`);
+  }
+
+  for (const { line, text } of findMatches(source, forbiddenMotion)) {
+    failures.push(
+      `${normalized}:${line} forbidden motion: ${text} — §7.2 allows colour/background/border transitions only; no lift, shake, or animated layout`,
+    );
+  }
+
+  for (const { line, text } of findMatches(source, deletedTokenRef)) {
+    failures.push(
+      `${normalized}:${line} deleted or renamed token: ${text} — see docs/IMPL_living_precision_product_ui.md §3.8; move the consumer to the current role token instead of restoring an alias`,
+    );
   }
 
   if (chartLibraryAllowed) {

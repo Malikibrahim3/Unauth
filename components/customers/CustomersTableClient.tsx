@@ -98,7 +98,7 @@ export default function CustomersTableClient({
       render: (p: CustomerRow) => (
         <div className="text-right">
           <div className="num font-semibold">{p.total_orders}</div>
-          <div className="mt-0.5 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">completed in store</div>
+          <div className="mt-0.5 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">completed in store</div>
         </div>
       ),
     },
@@ -116,7 +116,7 @@ export default function CustomersTableClient({
                 : "—"}
           </div>
           {!p.has_mixed_currency && p.total_spent_currency && p.total_orders > 0 ? (
-            <div className="mt-0.5 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">
+            <div className="mt-0.5 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">
               {formatCurrency(p.total_spent / p.total_orders, p.total_spent_currency)} avg. order
             </div>
           ) : null}
@@ -133,7 +133,7 @@ export default function CustomersTableClient({
             <OpenCasesBadge count={p.payout_cases_open} />
             <span className="num font-semibold">{p.payout_cases_total}</span>
           </span>
-          <span className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">
+          <span className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">
             {p.total_orders > 0
               ? `${p.payout_cases_total} ${p.payout_cases_total === 1 ? "case" : "cases"} across ${p.total_orders} ${p.total_orders === 1 ? "order" : "orders"}`
               : "No order baseline"}

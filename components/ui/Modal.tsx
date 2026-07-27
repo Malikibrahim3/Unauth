@@ -8,7 +8,9 @@ import { Button } from '@/components/ui/Button';
 interface ModalAction {
   label: string;
   onClick: () => void;
-  variant?: 'primary' | 'secondary' | 'danger';
+  /** `commit` is the neutral high-stakes action (§3.2) — financial decisions,
+   *  irreversible workflow steps, and confirmation. */
+  variant?: 'primary' | 'commit' | 'secondary' | 'danger';
   disabled?: boolean;
 }
 

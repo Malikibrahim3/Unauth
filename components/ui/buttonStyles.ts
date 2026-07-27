@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import type { ButtonSize, ButtonVariant } from './Button';
 
 const BUTTON_BASE =
-  'ua-jitter inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-colors duration-[var(--ua-duration-fast)] focus-visible:outline-none focus-visible:shadow-[var(--ua-shadow-focus)] disabled:cursor-not-allowed select-none';
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-colors duration-[var(--ua-duration-fast)] focus-visible:outline-none focus-visible:shadow-[var(--ua-shadow-focus)] disabled:cursor-not-allowed select-none';
 
 // Disabled controls stay visibly inert through neutral surface and tertiary
 // text rather than opacity-only treatment.
@@ -26,7 +26,8 @@ export const BUTTON_ICON_SIZES: Record<ButtonSize, string> = {
 };
 
 const BUTTON_VARIANT_CLASSES: Record<ButtonVariant, string> = {
-  primary: 'hover:bg-[var(--ua-action-primary-hover)] active:bg-[var(--ua-action-primary-hover)]',
+  primary: 'hover:bg-[var(--ua-action-primary-hover)] active:bg-[var(--ua-action-primary-pressed)]',
+  commit: 'hover:bg-[var(--ua-action-commit-hover)] active:bg-[var(--ua-action-commit-pressed)]',
   secondary: 'hover:bg-[var(--ua-surface-hover)] active:bg-[var(--ua-surface-muted)]',
   ghost: 'hover:bg-[var(--ua-surface-hover)] active:bg-[var(--ua-surface-muted)]',
   danger: 'hover:opacity-90 active:opacity-80',
@@ -41,12 +42,18 @@ function buttonVariantStyle(variant: ButtonVariant): CSSProperties {
         color: 'var(--ua-action-primary-fg)',
         border: '1px solid var(--ua-action-primary)',
       };
+    case 'commit':
+      return {
+        background: 'var(--ua-action-commit)',
+        color: 'var(--ua-action-commit-fg)',
+        border: '1px solid var(--ua-action-commit)',
+      };
     case 'secondary':
       return { background: 'var(--ua-surface-primary)', color: 'var(--ua-text-primary)', border: '1px solid var(--ua-border-default)' };
     case 'ghost':
       return { background: 'transparent', color: 'var(--ua-text-secondary)' };
     case 'danger':
-      return { background: 'var(--ua-risk-critical)', color: 'var(--ua-text-inverse)', border: '1px solid var(--ua-risk-critical)' };
+      return { background: 'var(--ua-critical)', color: 'var(--ua-text-inverse)', border: '1px solid var(--ua-critical)' };
     case 'link':
       return { background: 'transparent', color: 'var(--ua-text-secondary)' };
   }

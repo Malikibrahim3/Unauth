@@ -21,7 +21,7 @@
 .panelHeading h2 {
   margin: 0;
   color: var(--ua-text-primary);
-  font-size: var(--ua-text-small-size);
+  font-size: var(--ua-text-dense-size);
   font-weight: 600;
   letter-spacing: -0.01em;
 }
@@ -34,7 +34,7 @@
 }
 .annotation {
   color: var(--ua-text-secondary);
-  font-size: var(--ua-text-small-size);
+  font-size: var(--ua-text-dense-size);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
@@ -54,7 +54,7 @@
   margin: 0;
   padding: 0;
   color: var(--ua-text-secondary);
-  font-size: var(--ua-text-small-size);
+  font-size: var(--ua-text-dense-size);
   list-style: none;
 }
 .legendList li { display: inline-flex; align-items: center; gap: 5px; }
@@ -63,30 +63,33 @@
 .compactPlot { min-height: 132px; padding: 13px 15px; }
 
 /*
- * Series slots are named by role (spec §8.2), never by hue, so a recolour can
- * never invalidate the meaning a chart is carrying.
+ * Series slots are named by role (Living Precision §6.2), never by hue, so a recolour can
+ * never invalidate the meaning a chart is carrying. `primary`/`secondary`/
+ * `neutral` are analytical roles and read the accent/neutral chart ramp;
+ * `positive`/`attention`/`negative` exist only for values that genuinely
+ * encode success, warning, or critical, and so read the semantic triplets.
  */
-.primary { background: var(--ua-chart-1); color: var(--ua-chart-1); }
-.positive { background: var(--ua-chart-2); color: var(--ua-chart-2); }
-.secondary { background: var(--ua-chart-3); color: var(--ua-chart-3); }
-.attention { background: var(--ua-chart-4); color: var(--ua-chart-4); }
-.negative { background: var(--ua-chart-5); color: var(--ua-chart-5); }
-.neutral { background: var(--ua-chart-neutral); color: var(--ua-chart-neutral); }
+.primary { background: var(--ua-chart-primary); color: var(--ua-chart-primary); }
+.positive { background: var(--ua-success); color: var(--ua-success); }
+.secondary { background: var(--ua-chart-primary-soft); color: var(--ua-chart-primary-soft); }
+.attention { background: var(--ua-warning); color: var(--ua-warning); }
+.negative { background: var(--ua-critical); color: var(--ua-critical); }
+.neutral { background: var(--ua-chart-neutral-700); color: var(--ua-chart-neutral-700); }
 
 /* Text-only tone colours (no background) — for values/labels that carry a hue,
  * distinct from the .orange/.blue/… dot-swatch classes above which set both. */
-.toneTextPrimary { color: var(--ua-chart-1); }
-.toneTextPositive { color: var(--ua-chart-2); }
-.toneTextSecondary { color: var(--ua-chart-3); }
-.toneTextAttention { color: var(--ua-chart-4); }
-.toneTextNegative { color: var(--ua-chart-5); }
-.toneTextNeutral { color: var(--ua-chart-neutral); }
+.toneTextPrimary { color: var(--ua-chart-primary); }
+.toneTextPositive { color: var(--ua-success); }
+.toneTextSecondary { color: var(--ua-chart-primary-soft); }
+.toneTextAttention { color: var(--ua-warning); }
+.toneTextNegative { color: var(--ua-critical); }
+.toneTextNeutral { color: var(--ua-chart-neutral-700); }
 
 /* ════════ T1–T10 shared grammar (geometry constants: core/geometry.ts) ════════ */
 
 /* T1 — quiet cartesian frame */
-.frameYAxis { width: 36px; flex: 0 0 36px; color: var(--ua-text-tertiary); font: var(--ua-text-small-size)/1.3 var(--ua-font-sans); font-variant-numeric: tabular-nums; text-align: right; }
-.frameXLabel { color: var(--ua-text-tertiary); font: var(--ua-text-small-size)/1.3 var(--ua-font-sans); font-variant-numeric: tabular-nums; }
+.frameYAxis { width: 36px; flex: 0 0 36px; color: var(--ua-text-tertiary); font: var(--ua-text-dense-size)/1.3 var(--ua-font-sans); font-variant-numeric: tabular-nums; text-align: right; }
+.frameXLabel { color: var(--ua-text-tertiary); font: var(--ua-text-dense-size)/1.3 var(--ua-font-sans); font-variant-numeric: tabular-nums; }
 .frameXLabel[data-active="true"] { color: var(--ua-text-primary); font-weight: 500; }
 .frameGrid { background: transparent; }
 
@@ -94,7 +97,7 @@
 .mono { font-family: var(--ua-font-sans); font-variant-numeric: tabular-nums; }
 
 /* Interpretive caption (T7) — the one audited italic in the product */
-.caption { color: var(--ua-text-tertiary); font-size: var(--ua-text-small-size); font-style: normal; }
+.caption { color: var(--ua-text-tertiary); font-size: var(--ua-text-dense-size); font-style: normal; }
 
 /* T9 — panel-level tab strip slot */
 .tabStrip { display: flex; border-bottom: 1px solid var(--ua-border-subtle); }
@@ -104,17 +107,17 @@
 .pinRow { display: flex; align-items: flex-end; gap: 3px; padding: 0 15px; }
 .pin { display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .pinLine { width: 1px; background: var(--ua-border-strong); }
-.pinLabel { color: var(--ua-text-secondary); font: var(--ua-text-small-size)/1.2 var(--ua-font-sans); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pinLabel { color: var(--ua-text-secondary); font: var(--ua-text-dense-size)/1.2 var(--ua-font-sans); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .pinLabel[data-emphasis="true"] { color: var(--ua-text-primary); font-weight: 500; }
 
 /* T10 — cursor + tooltip grammar (CSS-chart hover layer; Recharts uses ChartCursor/ChartTooltip) */
 .cursorLine { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1px dashed var(--ua-border-strong); pointer-events: none; }
 .tooltipCard { position: absolute; z-index: 5; display: grid; gap: 2px; padding: 8px 10px; border: 1px solid var(--ua-border-default); border-radius: var(--ua-radius-surface); background: var(--ua-surface-primary); box-shadow: var(--ua-shadow-overlay); pointer-events: none; white-space: nowrap; }
 .tooltipValue { color: var(--ua-text-primary); font: 600 14px/1.2 var(--ua-font-sans); font-variant-numeric: tabular-nums; }
-.tooltipCaption { color: var(--ua-text-tertiary); font-size: var(--ua-text-small-size); }
-.tooltipSeriesRow { display: flex; align-items: center; gap: 6px; color: var(--ua-text-secondary); font-size: var(--ua-text-small-size); }
+.tooltipCaption { color: var(--ua-text-tertiary); font-size: var(--ua-text-dense-size); }
+.tooltipSeriesRow { display: flex; align-items: center; gap: 6px; color: var(--ua-text-secondary); font-size: var(--ua-text-dense-size); }
 .tooltipSeriesRow i { display: inline-block; width: 10px; height: 2px; }
-.axisPill { display: inline-block; padding: 2px 6px; border-radius: var(--ua-radius-control); background: var(--ua-surface-inverse); color: var(--ua-text-inverse); font: var(--ua-text-small-size)/1.3 var(--ua-font-sans); font-variant-numeric: tabular-nums; }
+.axisPill { display: inline-block; padding: 2px 6px; border-radius: var(--ua-radius-control); background: var(--ua-surface-inverse); color: var(--ua-text-inverse); font: var(--ua-text-dense-size)/1.3 var(--ua-font-sans); font-variant-numeric: tabular-nums; }
 
 .chartState {
   display: grid;
@@ -123,7 +126,7 @@
   gap: 4px;
   text-align: center;
 }
-.chartState strong { color: var(--ua-text-primary); font-size: var(--ua-text-small-size); }
+.chartState strong { color: var(--ua-text-primary); font-size: var(--ua-text-dense-size); }
 .chartState span { max-width: 440px; color: var(--ua-text-tertiary); font-size: var(--ua-text-caption-size); line-height: 1.45; }
 
 .dataDetails {
@@ -148,45 +151,45 @@
 /* Deadline risk */
 .riskChart { display: grid; gap: 11px; }
 .riskRow { display: grid; grid-template-columns: minmax(90px, 0.36fr) minmax(140px, 1fr) 38px; align-items: center; gap: 10px; }
-.riskLabel { min-width: 0; color: var(--ua-text-secondary); font-size: var(--ua-text-small-size); }
-.riskLabel strong { display: block; overflow: hidden; color: var(--ua-text-primary); font-size: var(--ua-text-small-size); text-overflow: ellipsis; white-space: nowrap; }
+.riskLabel { min-width: 0; color: var(--ua-text-secondary); font-size: var(--ua-text-dense-size); }
+.riskLabel strong { display: block; overflow: hidden; color: var(--ua-text-primary); font-size: var(--ua-text-dense-size); text-overflow: ellipsis; white-space: nowrap; }
 .riskLabel span { display: block; margin-top: 2px; color: var(--ua-text-tertiary); }
 .riskTrack { position: relative; height: 15px; overflow: hidden; border-radius: var(--ua-radius-control); background: var(--ua-chart-track); }
 .riskFill { height: 100%; border-radius: var(--ua-radius-control); }
-.riskValue { color: var(--ua-text-primary); font-size: var(--ua-text-small-size); font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+.riskValue { color: var(--ua-text-primary); font-size: var(--ua-text-dense-size); font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
 
 /* Vertical comparison */
 .columnChart { display: grid; min-height: 148px; grid-template-columns: repeat(var(--columns), minmax(34px, 1fr)); align-items: end; gap: 8px; padding: 8px 2px 0; border-bottom: 1px solid var(--ua-chart-grid); }
 .column { display: grid; height: 140px; grid-template-rows: 1fr auto auto; align-items: end; gap: 5px; text-align: center; }
 .columnBar { width: min(30px, 72%); margin-inline: auto; border-radius: var(--ua-radius-control) var(--ua-radius-control) 0 0; }
-.column strong { color: var(--ua-text-primary); font-size: var(--ua-text-small-size); font-variant-numeric: tabular-nums; }
+.column strong { color: var(--ua-text-primary); font-size: var(--ua-text-dense-size); font-variant-numeric: tabular-nums; }
 .column span { min-height: 24px; color: var(--ua-text-tertiary); font-size: var(--ua-text-caption-size); line-height: 1.25; }
 
 /* Ranked contribution */
 .rankedChart { display: grid; gap: 10px; }
 .rankedRow { display: grid; grid-template-columns: minmax(110px, 0.42fr) minmax(150px, 1fr) minmax(74px, auto); align-items: center; gap: 10px; }
-.rankedName { overflow: hidden; color: var(--ua-text-secondary); font-size: var(--ua-text-small-size); text-overflow: ellipsis; white-space: nowrap; }
-.rankedTrack { height: 9px; border-radius: var(--ua-radius-control) 0 0 var(--ua-radius-control); background: var(--ua-chart-track); overflow: hidden; }
+.rankedName { overflow: hidden; color: var(--ua-text-secondary); font-size: var(--ua-text-dense-size); text-overflow: ellipsis; white-space: nowrap; }
+.rankedTrack { height: 12px; border-radius: var(--ua-radius-control) 0 0 var(--ua-radius-control); background: var(--ua-chart-track); overflow: hidden; }
 .rankedFill { height: 100%; border-radius: 0 var(--ua-radius-control) var(--ua-radius-control) 0; }
-.rankedValue { color: var(--ua-text-primary); font-size: var(--ua-text-small-size); font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+.rankedValue { color: var(--ua-text-primary); font-size: var(--ua-text-dense-size); font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
 
 /* Lollipop/range plot */
 .rangePlot { display: grid; gap: 15px; padding-top: 5px; }
 .rangeScale { display: grid; grid-template-columns: minmax(110px, 0.34fr) 1fr 42px; gap: 10px; color: var(--ua-text-tertiary); font-size: var(--ua-text-caption-size); }
 .rangeTicks { display: flex; justify-content: space-between; }
 .rangeRow { display: grid; grid-template-columns: minmax(110px, 0.34fr) 1fr 42px; align-items: center; gap: 10px; }
-.rangeLabel { color: var(--ua-text-secondary); font-size: var(--ua-text-small-size); }
+.rangeLabel { color: var(--ua-text-secondary); font-size: var(--ua-text-dense-size); }
 .rangeTrack { position: relative; height: 16px; border-bottom: 1px solid var(--ua-chart-grid); }
 .rangeLine { position: absolute; bottom: -1px; left: 0; height: 2px; border-radius: var(--ua-radius-control); }
 .rangeDot { position: absolute; bottom: -4px; width: 8px; height: 8px; margin-left: -4px; border: 2px solid var(--ua-surface-primary); border-radius: 50%; box-shadow: 0 0 0 1px currentColor; }
-.rangeValue { color: var(--ua-text-primary); font-size: var(--ua-text-small-size); font-weight: 600; text-align: right; }
+.rangeValue { color: var(--ua-text-primary); font-size: var(--ua-text-dense-size); font-weight: 600; text-align: right; }
 
 /* Status matrix */
 .statusMatrix { display: grid; grid-template-columns: repeat(12, minmax(12px, 1fr)); gap: 2px; }
 .statusCell { min-height: 28px; border: 1px solid color-mix(in srgb, currentColor 28%, transparent); border-radius: var(--ua-radius-control); opacity: 0.9; }
 .matrixKey { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 11px; }
 .matrixKey div { display: flex; align-items: center; justify-content: flex-start; gap: 6px; color: var(--ua-text-tertiary); font-size: var(--ua-text-caption-size); }
-.matrixKey strong { color: var(--ua-text-primary); font-size: var(--ua-text-small-size); }
+.matrixKey strong { color: var(--ua-text-primary); font-size: var(--ua-text-dense-size); }
 
 /* Mini bar sequence */
 .sequence { display: grid; min-height: 145px; grid-template-columns: repeat(var(--bars), minmax(18px, 1fr)); align-items: end; gap: 2px; padding-top: 8px; border-bottom: 1px solid var(--ua-chart-grid); }
@@ -199,9 +202,9 @@
 .healthMatrix > div { min-width: 0; padding: 8px 9px; border-right: 1px solid var(--ua-border-subtle); border-bottom: 1px solid var(--ua-border-subtle); }
 .healthMatrixRow { display: contents; }
 .healthMatrixRow > div { min-width: 0; padding: 8px 9px; border-right: 1px solid var(--ua-border-subtle); border-bottom: 1px solid var(--ua-border-subtle); }
-.healthHeader { color: var(--ua-text-tertiary); font-size: var(--ua-text-small-size); font-weight: 600; }
-.healthProvider { color: var(--ua-text-primary); font-size: var(--ua-text-small-size); font-weight: 600; }
-.healthCell { display: flex; align-items: center; gap: 6px; color: var(--ua-text-secondary); font-size: var(--ua-text-small-size); }
+.healthHeader { color: var(--ua-text-tertiary); font-size: var(--ua-text-dense-size); font-weight: 600; }
+.healthProvider { color: var(--ua-text-primary); font-size: var(--ua-text-dense-size); font-weight: 600; }
+.healthCell { display: flex; align-items: center; gap: 6px; color: var(--ua-text-secondary); font-size: var(--ua-text-dense-size); }
 .healthCell i { width: 10px; height: 10px; flex: 0 0 auto; border-radius: var(--ua-radius-control); }
 
 @media (max-width: 700px) {
@@ -221,7 +224,7 @@
 .segmentBar { display: flex; height: 10px; gap: 4px; }
 .segmentSeg { height: 100%; min-width: 4px; border-radius: var(--ua-radius-control); }
 .segmentSeg a { display: block; width: 100%; height: 100%; border-radius: var(--ua-radius-control); }
-.dotLegend { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 8px 0 0; padding: 0; color: var(--ua-text-secondary); font-size: var(--ua-text-small-size); list-style: none; }
+.dotLegend { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 8px 0 0; padding: 0; color: var(--ua-text-secondary); font-size: var(--ua-text-dense-size); list-style: none; }
 .dotLegend li { display: inline-flex; align-items: center; gap: 5px; }
 .dotLegend i { width: 6px; height: 6px; border-radius: 50%; }
 .rankedList { display: grid; gap: 7px; margin-top: 12px; }

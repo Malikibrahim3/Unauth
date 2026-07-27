@@ -121,7 +121,9 @@ export function ExceptionResolutionDrawer({
           <Button variant="secondary" size="sm" onClick={() => void resolve(matchException ? 'reject' : 'dismiss')} loading={busy === 'reject' || busy === 'dismiss'}>
             {matchException ? 'Reject match' : 'Dismiss'}
           </Button>
-          <Button variant="primary" size="sm" onClick={() => void resolve(matchException ? 'confirm' : 'resolve')} loading={busy === 'confirm' || busy === 'resolve'} disabled={matchException && !candidateId}>
+          {/* Confirming an identity match or resolving an exception is recorded
+              in audit history and is not casually undone — commit (§3.2). */}
+          <Button variant="commit" size="sm" onClick={() => void resolve(matchException ? 'confirm' : 'resolve')} loading={busy === 'confirm' || busy === 'resolve'} disabled={matchException && !candidateId}>
             {matchException ? 'Confirm match' : 'Resolve exception'}
           </Button>
         </div>

@@ -69,7 +69,7 @@ export function ConnectedObjectDetail({
             href={object.provenance.sourceUrl}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex h-7 items-center gap-1.5 rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2.5 text-[length:var(--ua-text-micro-size)] font-semibold hover:bg-[var(--ua-surface-hover)]"
+            className="inline-flex h-7 items-center gap-1.5 rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2.5 text-[length:var(--ua-text-metadata-size)] font-semibold hover:bg-[var(--ua-surface-hover)]"
           >
             Open in {label(object.provenance.sourceSystem)}{" "}
             <ExternalLink className="h-3 w-3" />
@@ -108,16 +108,16 @@ export function ConnectedObjectDetail({
                   <span className="z-10 mt-1 h-2 w-2 justify-self-center rounded-full bg-[var(--ua-action-primary)] ring-2 ring-[var(--ua-surface-primary)]" />
                   <div>
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <strong className="text-[length:var(--ua-text-micro-size)]">{item.label}</strong>
+                      <strong className="text-[length:var(--ua-text-metadata-size)]">{item.label}</strong>
                       <time
-                        className="font-mono text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]"
+                        className="font-mono text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]"
                         dateTime={item.at ?? undefined}
                       >
                         {item.at ? formatDateTime(item.at) : "Time unavailable"}
                       </time>
                     </div>
                     {item.detail ? (
-                      <p className="mt-1 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-secondary)]">
+                      <p className="mt-1 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-secondary)]">
                         {label(item.detail)}
                       </p>
                     ) : null}
@@ -135,7 +135,7 @@ export function ConnectedObjectDetail({
           )}
           </AuthenticatedPanel>
           <AuthenticatedPanel title="Data source" capabilityId="object.provenance">
-          <p className="p-4 text-[length:var(--ua-text-micro-size)] leading-5 text-[var(--ua-text-secondary)]">
+          <p className="p-4 text-[length:var(--ua-text-metadata-size)] leading-5 text-[var(--ua-text-secondary)]">
             From {label(object.provenance?.sourceSystem ?? object.provider ?? "imported data")}
             {sourceUpdatedAt
               ? ` · updated ${formatDateTime(sourceUpdatedAt)}`
@@ -149,18 +149,18 @@ export function ConnectedObjectDetail({
             {object.evidence.map((item) => (
               <div key={item.id} className="p-3.5">
                 <div className="flex items-start justify-between gap-2">
-                  <strong className="text-[length:var(--ua-text-micro-size)]">{item.title}</strong>
+                  <strong className="text-[length:var(--ua-text-metadata-size)]">{item.title}</strong>
                   <StatusBadge family="confidence" value={item.confidence} size="sm" />
                 </div>
-                <p className="mt-1 text-[length:var(--ua-text-micro-size)] leading-4 text-[var(--ua-text-secondary)]">
+                <p className="mt-1 text-[length:var(--ua-text-metadata-size)] leading-4 text-[var(--ua-text-secondary)]">
                   {item.summary}
                 </p>
-                <p className="mt-2 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">
+                <p className="mt-2 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">
                   {label(item.provider)} · {label(item.type)}
                   {item.occurredAt ? ` · ${formatDateTime(item.occurredAt)}` : ""}
                 </p>
                 {item.reference ? (
-                  <p className="mt-1 break-all font-mono text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">
+                  <p className="mt-1 break-all font-mono text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">
                     {item.reference}
                   </p>
                 ) : null}
@@ -187,14 +187,14 @@ export function ConnectedObjectDetail({
                     className="flex min-w-0 flex-1 flex-col items-start justify-between gap-2 sm:flex-row sm:items-center sm:gap-4"
                   >
                     <span className="min-w-0">
-                      <span className="block text-[length:var(--ua-text-micro-size)] capitalize text-[var(--ua-text-secondary)]">
+                      <span className="block text-[length:var(--ua-text-metadata-size)] capitalize text-[var(--ua-text-secondary)]">
                         {label(connected.type)}
                       </span>
-                      <span className="break-all text-[length:var(--ua-text-micro-size)] font-semibold">
+                      <span className="break-all text-[length:var(--ua-text-metadata-size)] font-semibold">
                         {connected.reference}
                       </span>
                     </span>
-                    <span className="flex shrink-0 items-center gap-2 text-[length:var(--ua-text-micro-size)]">
+                    <span className="flex shrink-0 items-center gap-2 text-[length:var(--ua-text-metadata-size)]">
                       {connected.state ? (
                         <StatusBadge family="workflowStatus" value={connected.state} size="sm" />
                       ) : null}

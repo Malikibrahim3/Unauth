@@ -331,7 +331,7 @@ export default async function ConnectionPage({
                     {issue.last_error ??
                       "Source event needs retry or operator review."}
                   </p>
-                  <p className="mt-1 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">
+                  <p className="mt-1 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">
                     {formatDateTime(issue.received_at)}
                   </p>
                 </Card>

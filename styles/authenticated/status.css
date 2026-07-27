@@ -1,83 +1,91 @@
 /*
- * Quiet Precision semantic, risk, and severity tokens.
+ * Living Precision semantic, risk, and severity tokens.
  * ------------------------------------------------------------------
  * Every token carries a literal value in the `--ua-*` namespace. No legacy
  * `--success`/`--warning`/`--danger`/`--risk-*`/`--sev-*` name is defined here.
  *
- * Each meaning ships as a foreground / soft fill / border triplet (§3.1) and
+ * Each meaning ships as a foreground / soft fill / border triplet (§3.3) and
  * must always be paired with text, a glyph, or both — colour never carries a
- * state on its own.
+ * state on its own. These are the ONLY hues besides the accent: a semantic
+ * colour never becomes an ordinary categorical chart colour, and a selected
+ * item is accent, never semantic.
  *
  * The risk and severity ladders are ordered domain scales, kept separate from
  * the bare semantic triplets so a five-step risk reading is never confused with
- * a binary pass/fail state.
+ * a binary pass/fail state. Their mapping onto the Living Precision triplets is
+ * fixed by §3.8 ("Domain status compatibility").
+ *
+ * `--ua-violet*` is deleted (§3.8): product-owned selection uses the accent
+ * roles in tokens.css and semantic state uses the triplets below.
  */
 .ua-app,
 .ua-auth-surface {
-  /* ── Semantic triplets (§3.1) ─────────────────────────────────────── */
-  --ua-info: #355c96;
-  --ua-info-bg: #eaf2ff;
-  --ua-info-border: #cadaf2;
-  --ua-info-line: #86a5d0;
+  /* ── Semantic triplets (§3.3) ─────────────────────────────────────── */
+  --ua-info: #326b9b;
+  --ua-info-bg: #edf5fc;
+  --ua-info-border: #c7ddee;
+  --ua-info-line: #6c9cc4;
 
-  --ua-success: #246b4d;
-  --ua-success-bg: #e9f6ef;
-  --ua-success-border: #c7e5d4;
+  --ua-success: #217a5b;
+  --ua-success-bg: #ebf7f1;
+  --ua-success-border: #bfe3d2;
+  --ua-success-line: #4e9e7e;
 
-  --ua-warning: #775a12;
-  --ua-warning-bg: #fff6d8;
-  --ua-warning-border: #ead99b;
+  --ua-warning: #8a6116;
+  --ua-warning-bg: #fff7df;
+  --ua-warning-border: #ead89b;
+  --ua-warning-line: #c09a3e;
 
-  --ua-critical: #963f3f;
-  --ua-critical-bg: #fcecec;
-  --ua-critical-border: #eac5c5;
+  --ua-critical: #b04444;
+  --ua-critical-bg: #fff0f0;
+  --ua-critical-border: #e8c2c2;
+  --ua-critical-line: #c97a7a;
 
-  --ua-neutral: #61656b;
-  --ua-neutral-bg: #f0f1f2;
-  --ua-neutral-border: #d9dbde;
+  /* Unknown / unavailable is neutral — never warning, never critical. */
+  --ua-neutral: #62626b;
+  --ua-neutral-bg: #f1f1f3;
+  --ua-neutral-border: #d8d8dc;
+  --ua-neutral-line: #9a9aa3;
 
-  --ua-violet: #68558e;
-  --ua-violet-bg: #f1edfa;
-  --ua-violet-border: #d9d0ec;
+  /* ── Risk ladder — critical/high map to Critical, medium to Warning,
+   *    low to Success (§3.8). ───────────────────────────────────────── */
+  --ua-risk-critical: #b04444;
+  --ua-risk-critical-bg: #fff0f0;
+  --ua-risk-critical-border: #e8c2c2;
+  --ua-risk-critical-line: #c97a7a;
 
-  /* ── Risk ladder — five ordered steps ─────────────────────────────── */
-  --ua-risk-critical: #963f3f;
-  --ua-risk-critical-bg: #fcecec;
-  --ua-risk-critical-border: #eac5c5;
-  --ua-risk-critical-line: #c47d7d;
+  --ua-risk-high: #b04444;
+  --ua-risk-high-bg: #fff0f0;
+  --ua-risk-high-border: #e8c2c2;
+  --ua-risk-high-line: #c97a7a;
 
-  --ua-risk-high: #a05252;
-  --ua-risk-high-bg: #fcecec;
-  --ua-risk-high-border: #eac5c5;
-  --ua-risk-high-line: #c47d7d;
+  --ua-risk-medium: #8a6116;
+  --ua-risk-medium-bg: #fff7df;
+  --ua-risk-medium-border: #ead89b;
+  --ua-risk-medium-line: #c09a3e;
 
-  --ua-risk-medium: #775a12;
-  --ua-risk-medium-bg: #fff6d8;
-  --ua-risk-medium-border: #ead99b;
-  --ua-risk-medium-line: #c7a65b;
+  --ua-risk-low: #217a5b;
+  --ua-risk-low-bg: #ebf7f1;
+  --ua-risk-low-border: #bfe3d2;
+  --ua-risk-low-line: #4e9e7e;
 
-  --ua-risk-low: #246b4d;
-  --ua-risk-low-bg: #e9f6ef;
-  --ua-risk-low-border: #c7e5d4;
-  --ua-risk-low-line: #74a88f;
-
-  /* ── Severity / confidence ladder ─────────────────────────────────── */
-  --ua-severity-definite: #246b4d;
-  --ua-severity-definite-bg: #e9f6ef;
-  --ua-severity-probable: #775a12;
-  --ua-severity-probable-bg: #fff6d8;
-  --ua-severity-possible: #61656b;
-  --ua-severity-possible-bg: #f0f1f2;
-  --ua-severity-clear: #246b4d;
-  --ua-severity-clear-bg: #e9f6ef;
+  /* ── Severity / confidence ladder (§3.8) ──────────────────────────── */
+  --ua-severity-definite: #217a5b;
+  --ua-severity-definite-bg: #ebf7f1;
+  --ua-severity-probable: #8a6116;
+  --ua-severity-probable-bg: #fff7df;
+  --ua-severity-possible: #62626b;
+  --ua-severity-possible-bg: #f1f1f3;
+  --ua-severity-clear: #217a5b;
+  --ua-severity-clear-bg: #ebf7f1;
 
   /* ── Privacy and watchlist read as informational, not as alarms ───── */
-  --ua-privacy: #355c96;
-  --ua-privacy-bg: #eaf2ff;
-  --ua-privacy-border: #cadaf2;
-  --ua-watchlist: #355c96;
-  --ua-watchlist-bg: #eaf2ff;
-  --ua-watchlist-border: #cadaf2;
+  --ua-privacy: #326b9b;
+  --ua-privacy-bg: #edf5fc;
+  --ua-privacy-border: #c7ddee;
+  --ua-watchlist: #326b9b;
+  --ua-watchlist-bg: #edf5fc;
+  --ua-watchlist-border: #c7ddee;
 }
 
 .ua-status-badge {
@@ -98,7 +106,7 @@
 
 .ua-status-badge--sm {
   height: var(--ua-badge-height-sm);
-  font-size: var(--ua-text-micro-size);
+  font-size: var(--ua-text-metadata-size);
 }
 
 .ua-status-badge__dot {
@@ -115,7 +123,7 @@
 }
 
 .ua-priority-text--sm {
-  font-size: var(--ua-text-micro-size);
+  font-size: var(--ua-text-metadata-size);
 }
 
 /*
@@ -124,64 +132,64 @@
  */
 :root[data-theme="dark"] .ua-app,
 :root[data-theme="dark"] .ua-auth-surface {
-  --ua-info: #83a2d4;
-  --ua-info-bg: #29374c;
-  --ua-info-border: #536f98;
-  --ua-info-line: #83a2d4;
+  --ua-info: #8fc3ea;
+  --ua-info-bg: #1d3040;
+  --ua-info-border: #31536b;
+  --ua-info-line: #8fc3ea;
 
-  --ua-success: #72ba9e;
-  --ua-success-bg: #254438;
-  --ua-success-border: #477d67;
+  --ua-success: #79cfa8;
+  --ua-success-bg: #18372b;
+  --ua-success-border: #2d5a46;
+  --ua-success-line: #79cfa8;
 
-  --ua-warning: #d1ac57;
-  --ua-warning-bg: #4c4128;
-  --ua-warning-border: #78683d;
+  --ua-warning: #e6c36a;
+  --ua-warning-bg: #3b3019;
+  --ua-warning-border: #635027;
+  --ua-warning-line: #e6c36a;
 
-  --ua-critical: #d78d8d;
-  --ua-critical-bg: #4d2e2e;
-  --ua-critical-border: #7d4f4f;
+  --ua-critical: #f09595;
+  --ua-critical-bg: #422326;
+  --ua-critical-border: #6c3438;
+  --ua-critical-line: #f09595;
 
-  --ua-neutral: #b8b8b8;
-  --ua-neutral-bg: #272727;
-  --ua-neutral-border: #363636;
+  --ua-neutral: #b4b4be;
+  --ua-neutral-bg: #29292e;
+  --ua-neutral-border: #44444d;
+  --ua-neutral-line: #b4b4be;
 
-  --ua-violet: #b3a3cf;
-  --ua-violet-bg: #322b40;
-  --ua-violet-border: #5b4f75;
+  --ua-risk-critical: #f09595;
+  --ua-risk-critical-bg: #422326;
+  --ua-risk-critical-border: #6c3438;
+  --ua-risk-critical-line: #f09595;
 
-  --ua-risk-critical: #d78d8d;
-  --ua-risk-critical-bg: #4d2e2e;
-  --ua-risk-critical-border: #7d4f4f;
-  --ua-risk-critical-line: #b66f6f;
+  --ua-risk-high: #f09595;
+  --ua-risk-high-bg: #422326;
+  --ua-risk-high-border: #6c3438;
+  --ua-risk-high-line: #f09595;
 
-  --ua-risk-high: #d78d8d;
-  --ua-risk-high-bg: #4d2e2e;
-  --ua-risk-high-border: #7d4f4f;
-  --ua-risk-high-line: #b66f6f;
+  --ua-risk-medium: #e6c36a;
+  --ua-risk-medium-bg: #3b3019;
+  --ua-risk-medium-border: #635027;
+  --ua-risk-medium-line: #e6c36a;
 
-  --ua-risk-medium: #d1ac57;
-  --ua-risk-medium-bg: #4c4128;
-  --ua-risk-medium-border: #78683d;
-  --ua-risk-medium-line: #a48742;
+  --ua-risk-low: #79cfa8;
+  --ua-risk-low-bg: #18372b;
+  --ua-risk-low-border: #2d5a46;
+  --ua-risk-low-line: #79cfa8;
 
-  --ua-risk-low: #72ba9e;
-  --ua-risk-low-bg: #254438;
-  --ua-risk-low-border: #477d67;
-  --ua-risk-low-line: #5f9b80;
+  --ua-severity-definite: #79cfa8;
+  --ua-severity-definite-bg: #18372b;
+  --ua-severity-probable: #e6c36a;
+  --ua-severity-probable-bg: #3b3019;
+  --ua-severity-possible: #b4b4be;
+  --ua-severity-possible-bg: #29292e;
+  --ua-severity-clear: #79cfa8;
+  --ua-severity-clear-bg: #18372b;
 
-  --ua-severity-definite: #72ba9e;
-  --ua-severity-definite-bg: #254438;
-  --ua-severity-probable: #d1ac57;
-  --ua-severity-probable-bg: #4c4128;
-  --ua-severity-possible: #b8b8b8;
-  --ua-severity-possible-bg: #272727;
-  --ua-severity-clear: #72ba9e;
-  --ua-severity-clear-bg: #254438;
-
-  --ua-privacy: #83a2d4;
-  --ua-privacy-bg: #29374c;
-  --ua-privacy-border: #536f98;
-  --ua-watchlist: #83a2d4;
-  --ua-watchlist-bg: #29374c;
-  --ua-watchlist-border: #536f98;
+  --ua-privacy: #8fc3ea;
+  --ua-privacy-bg: #1d3040;
+  --ua-privacy-border: #31536b;
+  --ua-watchlist: #8fc3ea;
+  --ua-watchlist-bg: #1d3040;
+  --ua-watchlist-border: #31536b;
 }

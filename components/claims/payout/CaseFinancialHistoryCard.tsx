@@ -83,7 +83,7 @@ export function CaseFinancialHistoryCard({
                   const value = financialMetricValue(bridge, metric);
                   return (
                     <div key={metric}>
-                      <dt className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-secondary)]">{LABELS[metric]}</dt>
+                      <dt className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-secondary)]">{LABELS[metric]}</dt>
                       <dd className="text-xs font-semibold tabular-nums">
                         {known && value != null
                           ? formatMinorCurrencyNullable(value, bridge.currency)
@@ -96,7 +96,7 @@ export function CaseFinancialHistoryCard({
             </div>
           ))}
           {updatedAt ? (
-            <p className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">Projection updated {formatDateTime(updatedAt)}</p>
+            <p className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">Projection updated {formatDateTime(updatedAt)}</p>
           ) : null}
         </div>
       ) : (

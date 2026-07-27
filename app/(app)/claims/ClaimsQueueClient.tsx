@@ -202,7 +202,7 @@ export function ClaimsQueueClient({
                 {ops.nextActionLabel}
               </p>
               <p
-                className="text-[length:var(--ua-text-micro-size)] mb-1.5"
+                className="text-[length:var(--ua-text-metadata-size)] mb-1.5"
                 style={{ color: "var(--ua-text-tertiary)" }}
               >
                 {sourceSystemLabel(c)}
@@ -213,7 +213,7 @@ export function ClaimsQueueClient({
               </p>
               {(c.investigation_open_count ?? 0) > 0 ? (
                 <p
-                  className="mb-1.5 text-[length:var(--ua-text-micro-size)]"
+                  className="mb-1.5 text-[length:var(--ua-text-metadata-size)]"
                   style={{
                     color: (c.investigation_overdue_count ?? 0) > 0
                       ? "var(--ua-warning)"

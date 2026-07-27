@@ -60,7 +60,7 @@ export default function BehaviorRoadmap({ events }: BehaviorRoadmapProps) {
     <Panel variant="panel" className="overflow-hidden p-0">
       <div className="border-b px-4 py-3" style={{ borderColor: 'var(--ua-border-default)' }}>
         <div className="flex items-center justify-between gap-3">
-          <p className="text-[length:var(--ua-text-small-size)] font-semibold" style={{ color: 'var(--ua-text-primary)' }}>Order & case history</p>
+          <p className="text-[length:var(--ua-text-dense-size)] font-semibold" style={{ color: 'var(--ua-text-primary)' }}>Order & case history</p>
           <p className="t-mono" style={{ color: 'var(--ua-text-secondary)' }}>{events.length} events</p>
         </div>
         {patternTags.length > 0 && (
@@ -121,7 +121,7 @@ export default function BehaviorRoadmap({ events }: BehaviorRoadmapProps) {
               </button>
               <div className="flex items-center gap-2 pt-0.5">
                 {event.source && (
-                  <span className="rounded-sm border px-1.5 py-0.5 text-[length:var(--ua-text-micro-size)] font-medium" style={{ background: 'var(--ua-surface-muted)', borderColor: 'var(--ua-border-default)', color: 'var(--ua-text-tertiary)' }}>
+                  <span className="rounded-sm border px-1.5 py-0.5 text-[length:var(--ua-text-metadata-size)] font-medium" style={{ background: 'var(--ua-surface-muted)', borderColor: 'var(--ua-border-default)', color: 'var(--ua-text-tertiary)' }}>
                     {event.source}
                   </span>
                 )}

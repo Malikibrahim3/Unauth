@@ -13,12 +13,12 @@ type TickMeterRowProps = {
 };
 
 const TONE_FILL_VAR: Record<AuthChartTone, string> = {
-  primary: '--ua-chart-1',
-  positive: '--ua-chart-2',
-  secondary: '--ua-chart-3',
-  attention: '--ua-chart-4',
-  negative: '--ua-chart-5',
-  neutral: '--ua-chart-neutral',
+  primary: '--ua-chart-primary',
+  positive: '--ua-success',
+  secondary: '--ua-chart-primary-soft',
+  attention: '--ua-warning',
+  negative: '--ua-critical',
+  neutral: '--ua-chart-neutral-700',
 };
 
 /**

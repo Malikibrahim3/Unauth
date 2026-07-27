@@ -13,7 +13,9 @@ import {
 import { useChartTheme } from '../core/useChartTheme';
 import { ChartTooltip } from '../core/ChartTooltip';
 import {
+  BAR_CATEGORY_GAP,
   BAR_END_RADIUS,
+  BAR_MAX_SIZE,
   COMPARISON_DASH,
   COMPARISON_DOT_R,
   COMPARISON_LINE_WIDTH,
@@ -28,7 +30,7 @@ export type ComboBarLineDatum = {
 
 type ComboBarLineChartProps = {
   data: ComboBarLineDatum[];
-  /** e.g. '--ua-chart-4' */
+  /** e.g. '--ua-warning' */
   colourVar: string;
   /** Axis tick formatter — should be compact (e.g. $18k). */
   valueFormatter: (value: number) => string;
@@ -49,7 +51,7 @@ export function ComboBarLineChart({
 }: ComboBarLineChartProps) {
   const formatTooltip = tooltipFormatter ?? valueFormatter;
   const theme = useChartTheme();
-  const hue = (theme as Record<string, string>)[colourVar] || 'var(--ua-chart-1)';
+  const hue = (theme as Record<string, string>)[colourVar] || 'var(--ua-chart-primary)';
 
   return (
     <div style={{ width: '100%', height }}>
@@ -57,7 +59,7 @@ export function ComboBarLineChart({
         <ComposedChart
           data={data}
           margin={{ top: 8, right: 8, bottom: 2, left: 0 }}
-          barCategoryGap="28%"
+          barCategoryGap={BAR_CATEGORY_GAP}
         >
           <CartesianGrid stroke={theme['--ua-chart-grid']} vertical={false} />
           <XAxis
@@ -107,14 +109,14 @@ export function ComboBarLineChart({
             fill={hue}
             /* Spec §8.3: 4px data-end radius. */
             radius={[BAR_END_RADIUS, BAR_END_RADIUS, 0, 0]}
-            maxBarSize={30}
+            maxBarSize={BAR_MAX_SIZE}
             isAnimationActive={false}
           />
           {comparison ? (
             <Line
               type="linear"
               dataKey="previous"
-              stroke="var(--ua-icon-secondary)"
+              stroke="var(--ua-chart-neutral-500)"
               strokeWidth={COMPARISON_LINE_WIDTH}
               strokeDasharray={COMPARISON_DASH.join(' ')}
               dot={{ r: COMPARISON_DOT_R, fill: 'var(--ua-icon-secondary)', stroke: 'var(--ua-surface-primary)', strokeWidth: 2 }}

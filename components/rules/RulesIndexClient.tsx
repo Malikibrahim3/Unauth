@@ -105,13 +105,13 @@ export function RulesIndexClient({
                   </p>
                 </div>
                 <div>
-                  <p className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">
+                  <p className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">
                     Priority
                   </p>
                   <p className="mt-1 font-sans tabular-nums text-sm">{rule.priority + 1}</p>
                 </div>
                 <div>
-                  <p className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">
+                  <p className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">
                     Version
                   </p>
                   <p className="mt-1 font-mono text-sm">
@@ -122,7 +122,7 @@ export function RulesIndexClient({
                   <div className="flex flex-col items-end gap-1">
                     <StatusBadge family="workflowStatus" value={rule.currentStatus} size="sm" />
                     {rule.hasDraft && rule.publishedVersion ? (
-                      <span className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">Draft over v{rule.publishedVersion}</span>
+                      <span className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">Draft over v{rule.publishedVersion}</span>
                     ) : null}
                   </div>
                   <span aria-hidden="true" className="text-[var(--ua-action-primary)]">
