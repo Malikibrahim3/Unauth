@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import type { IntelligenceReport, MoneyBridge } from '@/lib/reporting/intelligence';
 import { financialMetricValue, financialReportRecordsHref } from '@/lib/reporting/intelligence';
+import { buildDashboardChartBuckets } from '@/components/dashboard/dashboardModel';
 import {
   formatDateAbsolute,
   formatMoney,
@@ -18,7 +19,14 @@ import { TIME_RANGE_LABELS } from '@/lib/ui/merchantCopy';
 type CurrencyCharts = {
   bridge: MoneyBridge;
   causes: Array<{ name: string; valueMinor: number }>;
-  trend: Array<{ date: string; exposureMinor: number | null; recoveredMinor: number | null }>;
+  trend: Array<{
+    key: string;
+    date: string;
+    label: string;
+    exposureMinor: number | null;
+    recoveredMinor: number | null;
+  }>;
+  observations: Array<{ date: string; exposureMinor: number | null; recoveredMinor: number | null }>;
 };
 
 function compactMoney(valueMinor: number, currency: string) {
@@ -30,21 +38,52 @@ function conversion(numerator: number | null, denominator: number | null): strin
   return `${Math.round((numerator / denominator) * 100)}%`;
 }
 
+function chartCadenceLabel(range: IntelligenceReport['range']): string {
+  if (range === '90d') return 'Weekly ledger value';
+  if (range === 'all') return 'Monthly ledger value';
+  return 'Daily ledger value';
+}
+
 function chartData(report: IntelligenceReport): CurrencyCharts[] {
-  return report.bridges.map((bridge) => ({
-    bridge,
-    trend: report.trend
+  return report.bridges.map((bridge) => {
+    const observations = report.trend
       .filter((point) => point.currency === bridge.currency)
       .map((point) => ({
         date: point.date,
         exposureMinor: point.knownStates.includes('exposed') ? point.exposureMinor : null,
         recoveredMinor: point.knownStates.includes('recovered') ? point.recoveredMinor : null,
+      }));
+    const exposureBuckets = buildDashboardChartBuckets({
+      current: report.trend,
+      range: report.range,
+      currency: bridge.currency,
+      metric: 'exposure',
+      asOf: report.generatedAt,
+    });
+    const recoveredBuckets = buildDashboardChartBuckets({
+      current: report.trend,
+      range: report.range,
+      currency: bridge.currency,
+      metric: 'recovered',
+      asOf: report.generatedAt,
+    });
+
+    return {
+      bridge,
+      trend: exposureBuckets.map((bucket, index) => ({
+        key: bucket.key,
+        date: bucket.key,
+        label: bucket.label,
+        exposureMinor: bucket.currentMinor,
+        recoveredMinor: recoveredBuckets[index]?.currentMinor ?? null,
       })),
-    causes: report.causes
-      .filter((row) => row.currency === bridge.currency && row.amountMinor > 0)
-      .slice(0, 5)
-      .map((row) => ({ name: row.label, valueMinor: row.amountMinor })),
-  }));
+      observations,
+      causes: report.causes
+        .filter((row) => row.currency === bridge.currency && row.amountMinor > 0)
+        .slice(0, 5)
+        .map((row) => ({ name: row.label, valueMinor: row.amountMinor })),
+    };
+  });
 }
 
 export function DashboardCharts({ report }: { report: IntelligenceReport }) {
@@ -65,7 +104,7 @@ export function DashboardCharts({ report }: { report: IntelligenceReport }) {
 
   return (
     <section className="space-y-6" aria-label="Case financial charts">
-      {groups.map(({ bridge, trend, causes }) => (
+      {groups.map(({ bridge, trend, observations, causes }) => (
         <div key={bridge.currency} className="space-y-4">
           <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-[var(--ua-border-subtle)] pb-2">
             <h2 className="text-base font-semibold">Case financials</h2>
@@ -87,21 +126,22 @@ export function DashboardCharts({ report }: { report: IntelligenceReport }) {
               titleId={`exposure-recovered-${bridge.currency}`}
             >
               <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-3">
-                <p className="text-xs text-[var(--ua-text-secondary)]">Daily ledger value</p>
+                <p className="text-xs text-[var(--ua-text-secondary)]">{chartCadenceLabel(report.range)}</p>
                 <ChartLegend items={[{ label: 'Exposure', tone: 'primary' }, { label: 'Recovered', tone: 'positive' }]} />
               </div>
               {trend.some((point) => point.exposureMinor != null || point.recoveredMinor != null) ? (
                 <>
-                  {trend.some((point) => point.exposureMinor == null || point.recoveredMinor == null) ? (
+                  {trend.some((point) => point.exposureMinor == null && point.recoveredMinor == null)
+                    || observations.some((point) => point.exposureMinor == null || point.recoveredMinor == null) ? (
                     <p className="px-4 pt-2 text-xs text-[var(--ua-text-secondary)]" role="status">
-                      Unavailable daily values are shown as gaps, not zero.
+                      Gaps indicate that no reconciled value was recorded for that bucket; they are not zero.
                     </p>
                   ) : null}
                   <div className="px-2 pb-2 pt-1">
                     <DualLineChart
                       data={trend.map<DualLinePoint>((point) => ({
-                        key: point.date,
-                        label: formatDateAbsolute(point.date),
+                        key: point.key,
+                        label: point.label,
                         exposureMinor: point.exposureMinor,
                         recoveredMinor: point.recoveredMinor,
                       }))}
@@ -113,12 +153,12 @@ export function DashboardCharts({ report }: { report: IntelligenceReport }) {
                       height={260}
                     />
                   </div>
-                  <ReportChartDataTable currency={bridge.currency} trend={trend} />
+                  <ReportChartDataTable currency={bridge.currency} trend={observations} />
                 </>
               ) : trend.length ? (
                 <>
                   <ChartEmpty message="Dated exposure and recovery values are unavailable for this period." />
-                  <ReportChartDataTable currency={bridge.currency} trend={trend} />
+                  <ReportChartDataTable currency={bridge.currency} trend={observations} />
                 </>
               ) : (
                 <ChartEmpty message="No dated exposure or recovery entries were recorded in this period." />

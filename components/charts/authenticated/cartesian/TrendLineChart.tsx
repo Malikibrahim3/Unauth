@@ -11,7 +11,7 @@ import {
 } from 'recharts';
 import { useChartTheme } from '../core/useChartTheme';
 import { ChartTooltip } from '../core/ChartTooltip';
-import { TREND_HOVER_DOT_R, TREND_LINE_WIDTH } from '../core/geometry';
+import { TREND_HOVER_DOT_R, TREND_LINE_WIDTH, Y_LABEL_GUTTER, Y_LABEL_TICK_MARGIN } from '../core/geometry';
 
 export type TrendPoint = { key: string; label: string; value: number };
 
@@ -30,7 +30,7 @@ export function TrendLineChart({ data, colourVar, valueFormatter, height = 220 }
   return (
     <div style={{ width: '100%', height }}>
       <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart data={data} margin={{ top: 12, right: 8, bottom: 2, left: 0 }}>
+        <ComposedChart data={data} margin={{ top: 12, right: 8, bottom: 2, left: 0 }} accessibilityLayer>
           <CartesianGrid stroke={theme['--ua-chart-grid']} vertical={false} />
           <XAxis
             dataKey="label"
@@ -42,7 +42,8 @@ export function TrendLineChart({ data, colourVar, valueFormatter, height = 220 }
           <YAxis
             axisLine={false}
             tickLine={false}
-            width={40}
+            width={Y_LABEL_GUTTER}
+            tickMargin={Y_LABEL_TICK_MARGIN}
             tickCount={5}
             tick={{ fontSize: 13, fill: theme['--ua-text-tertiary'], fontFamily: 'var(--ua-font-sans)' }}
             tickFormatter={valueFormatter}

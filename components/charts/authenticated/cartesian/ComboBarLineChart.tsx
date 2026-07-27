@@ -19,6 +19,8 @@ import {
   COMPARISON_DASH,
   COMPARISON_DOT_R,
   COMPARISON_LINE_WIDTH,
+  Y_LABEL_GUTTER,
+  Y_LABEL_TICK_MARGIN,
 } from '../core/geometry';
 
 export type ComboBarLineDatum = {
@@ -60,6 +62,7 @@ export function ComboBarLineChart({
           data={data}
           margin={{ top: 8, right: 8, bottom: 2, left: 0 }}
           barCategoryGap={BAR_CATEGORY_GAP}
+          accessibilityLayer
         >
           <CartesianGrid stroke={theme['--ua-chart-grid']} vertical={false} />
           <XAxis
@@ -76,7 +79,8 @@ export function ComboBarLineChart({
           <YAxis
             axisLine={false}
             tickLine={false}
-            width={44}
+            width={Y_LABEL_GUTTER}
+            tickMargin={Y_LABEL_TICK_MARGIN}
             tickCount={5}
             tick={{
               fontSize: 13,
