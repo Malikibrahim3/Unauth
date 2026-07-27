@@ -242,7 +242,7 @@ export default function TeamManagementClient() {
     <div className="flex flex-col gap-4">
       {message ? (
         <output
-          className="block rounded-[var(--ua-radius-control)] border px-3 py-2 text-[length:var(--ua-text-small-size)]"
+          className="block rounded-[var(--ua-radius-control)] border px-3 py-2 text-[length:var(--ua-text-dense-size)]"
           style={{
             background: message.type === 'success' ? 'var(--ua-success-bg)' : 'var(--ua-critical-bg)',
             borderColor: message.type === 'success' ? 'var(--ua-success-border)' : 'var(--ua-critical-border)',

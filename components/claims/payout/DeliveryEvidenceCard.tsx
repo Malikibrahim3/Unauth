@@ -58,7 +58,7 @@ export function DeliveryEvidenceCard({
         />
       </dl>
       <div
-        className="mt-3 flex flex-wrap gap-2 text-[length:var(--ua-text-micro-size)]"
+        className="mt-3 flex flex-wrap gap-2 text-[length:var(--ua-text-metadata-size)]"
         style={{ color: "var(--ua-text-tertiary)" }}
       >
         <CapabilityPill

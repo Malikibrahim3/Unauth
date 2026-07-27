@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, Suspense } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import RouteProgressBar from './RouteProgressBar';
+import RoutePendingNotice from './RoutePendingNotice';
 
 type NavigationContextValue = {
   pendingHref: string | null;
@@ -11,8 +12,6 @@ type NavigationContextValue = {
 };
 
 const NavigationContext = createContext<NavigationContextValue | null>(null);
-
-const PENDING_TIMEOUT_MS = 3_500;
 
 function NavigationSync({
   onRouteChange,
@@ -46,11 +45,12 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
     setPendingHref(null);
   }, [pathname]);
 
-  useEffect(() => {
-    if (!pendingHref) return;
-    const timer = window.setTimeout(() => setPendingHref(null), PENDING_TIMEOUT_MS);
-    return () => window.clearTimeout(timer);
-  }, [pendingHref]);
+  /*
+   * Living Precision §7.3: pending state is cleared by an actual route change
+   * (the effects above), never by a timeout. A navigation that stalls keeps its
+   * progress line and, at 8s, gains RoutePendingNotice — the previous 3.5s
+   * timer made the product look finished while it was still waiting.
+   */
 
   const beginNavigation = useCallback(
     (href: string) => {
@@ -73,6 +73,7 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
         <NavigationSync onRouteChange={handleRouteChange} />
       </Suspense>
       <RouteProgressBar active={pendingHref !== null} />
+      <RoutePendingNotice pendingHref={pendingHref} />
       {children}
     </NavigationContext.Provider>
   );

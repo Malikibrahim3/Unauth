@@ -52,7 +52,7 @@ export default async function ReportsPage({
       subtitle="Customer concessions, economic loss, and recovery reconciliation."
       actionBarLeft={
         <div className="flex min-w-max items-center gap-1.5" aria-label="Report scope">
-          <span className="mr-1 text-[length:var(--ua-text-micro-size)] font-medium text-[var(--ua-text-tertiary)]">Date range</span>
+          <span className="mr-1 text-[length:var(--ua-text-metadata-size)] font-medium text-[var(--ua-text-tertiary)]">Date range</span>
           {REPORT_RANGES.map((r) => (
             <Link
               key={r}

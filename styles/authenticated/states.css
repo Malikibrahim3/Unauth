@@ -38,17 +38,17 @@
 .ua-operational-state__title {
   margin: 0;
   color: var(--ua-text-primary);
-  font-size: var(--ua-text-small-size);
+  font-size: var(--ua-text-dense-size);
   font-weight: 600;
-  line-height: var(--ua-text-small-leading);
+  line-height: var(--ua-text-dense-leading);
 }
 
 .ua-operational-state__description {
   max-width: 60ch;
   margin: 0;
   color: var(--ua-text-secondary);
-  font-size: var(--ua-text-small-size);
-  line-height: var(--ua-text-small-leading);
+  font-size: var(--ua-text-dense-size);
+  line-height: var(--ua-text-dense-leading);
 }
 
 .ua-operational-state__action {
@@ -66,13 +66,14 @@
 }
 
 .ua-empty-state__compact-icon {
-  color: var(--ua-action-primary);
+  /* Not an action, so not the accent (§3.2 prohibits decorative accent icons). */
+  color: var(--ua-icon-secondary);
 }
 
 .ua-empty-state__compact-icon--dot {
   width: var(--ua-space-1-5);
   height: var(--ua-space-1-5);
-  background: var(--ua-action-primary);
+  background: var(--ua-icon-secondary);
 }
 
 .ua-empty-state__description {

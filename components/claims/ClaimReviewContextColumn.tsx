@@ -234,7 +234,7 @@ export function ClaimReviewContextColumn({
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-[var(--ua-text-primary)]">{claimEventLabel(event.event_type)}</p>
                   <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">{claimEventSummary(event)}</p>
-                  <p className="mt-1 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">Source: {eventSourceLabel(event)}</p>
+                  <p className="mt-1 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">Source: {eventSourceLabel(event)}</p>
                 </div>
                 <div className="text-right text-xs text-[var(--ua-text-secondary)]">
                   <p>{event.created_at ? formatDateTime(event.created_at) : "—"}</p>

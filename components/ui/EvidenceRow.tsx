@@ -23,7 +23,7 @@ export function EvidenceRow({
   return (
     <div
       className={cn(
-        'flex min-h-[var(--ua-table-row-height)] items-center gap-[var(--ua-space-2-5)] text-[length:var(--ua-text-small-size)] leading-[var(--ua-text-small-leading)] text-[var(--ua-text-secondary)]',
+        'flex min-h-[var(--ua-table-row-height)] items-center gap-[var(--ua-space-2-5)] text-[length:var(--ua-text-dense-size)] leading-[var(--ua-text-dense-leading)] text-[var(--ua-text-secondary)]',
         className,
       )}
     >

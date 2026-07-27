@@ -50,8 +50,8 @@ export function ClaimReviewHeader({ wb }: { wb: ClaimReviewWorkbench }) {
                 </h1>
                 <StatusPill status={selectedClaim.status} />
               </div>
-              <p className="mt-0.5 text-[length:var(--ua-text-micro-size)] font-medium text-[var(--ua-text-secondary)]">{caseDisplay({ customer_name: customerName, ref: selectedClaim.shopify_order_id ?? selectedClaim.order_ref, id: selectedClaim.id })}</p>
-              <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-secondary)]">
+              <p className="mt-0.5 text-[length:var(--ua-text-metadata-size)] font-medium text-[var(--ua-text-secondary)]">{caseDisplay({ customer_name: customerName, ref: selectedClaim.shopify_order_id ?? selectedClaim.order_ref, id: selectedClaim.id })}</p>
+              <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-secondary)]">
                 {selectedClaim.amount_at_risk != null && selectedClaim.currency ? <span className="rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2 py-1 font-semibold tabular-nums text-[var(--ua-text-primary)]">{formatClaimMoney(selectedClaim.amount_at_risk, selectedClaim.currency)} value at issue</span> : null}
                 <span className="rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2 py-1">Requested: {selectedClaim.requested_action && selectedClaim.requested_action !== 'unknown' ? label('requestedAction', selectedClaim.requested_action) : 'Not specified'}</span>
                 {selectedClaim.created_at || selectedClaim.submitted_at ? <span className="rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2 py-1">Opened {formatDateAbsolute(selectedClaim.created_at ?? selectedClaim.submitted_at ?? '')}</span> : null}
@@ -81,7 +81,7 @@ export function ClaimReviewHeader({ wb }: { wb: ClaimReviewWorkbench }) {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Link href={customerProfileHref} className="inline-flex h-7 items-center rounded-[var(--ua-radius-control)] px-2.5 text-[length:var(--ua-text-micro-size)] font-semibold" style={{ border: '1px solid var(--ua-border-default)', color: 'var(--ua-text-primary)' }}>
+          <Link href={customerProfileHref} className="inline-flex h-7 items-center rounded-[var(--ua-radius-control)] px-2.5 text-[length:var(--ua-text-metadata-size)] font-semibold" style={{ border: '1px solid var(--ua-border-default)', color: 'var(--ua-text-primary)' }}>
             Open customer profile
           </Link>
           <RowActionsMenu

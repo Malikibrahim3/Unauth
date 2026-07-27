@@ -22,11 +22,11 @@ export function ConnectionHealthHeader({ item }: { item: CatalogueRowItem }) {
       <div className="flex min-w-0 items-start gap-3">
         <ProviderLogo provider={item.id} name={item.name} size="md" />
         <div>
-          <p className="text-[length:var(--ua-text-micro-size)] font-semibold text-[var(--ua-text-tertiary)]">
+          <p className="text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-tertiary)]">
             {humanizeLabel(item.category)} · {humanizeLabel(item.stage)}
           </p>
           <h1 className="mt-1 text-lg font-semibold">{item.name}</h1>
-          <p className="mt-1 max-w-2xl text-[length:var(--ua-text-micro-size)] leading-5 text-[var(--ua-text-secondary)]">
+          <p className="mt-1 max-w-2xl text-[length:var(--ua-text-metadata-size)] leading-5 text-[var(--ua-text-secondary)]">
             {item.description}
           </p>
         </div>
@@ -68,8 +68,8 @@ export function ConnectionHealthGrid({ item }: { item: CatalogueRowItem }) {
         <dl className="grid sm:grid-cols-2 lg:grid-cols-4">
           {healthItems.map(([label, value], index) => (
             <div key={label} className={`min-w-0 p-3.5 ${index ? "border-t border-[var(--ua-border-subtle)] sm:border-l sm:border-t-0" : ""}`}>
-              <dt className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">{label}</dt>
-              <dd className="mt-1 truncate text-[length:var(--ua-text-micro-size)] font-semibold">{value}</dd>
+              <dt className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">{label}</dt>
+              <dd className="mt-1 truncate text-[length:var(--ua-text-metadata-size)] font-semibold">{value}</dd>
             </div>
           ))}
         </dl>

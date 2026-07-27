@@ -40,38 +40,44 @@ export function SidebarNavItem({
       onNavigate={onNavigate}
       className={cn(
         'group relative flex h-7 items-center gap-2 rounded-[var(--ua-radius-control)] px-2.5',
-        'text-[length:var(--ua-text-micro-size)] leading-none',
-        'transition-all duration-[var(--ua-duration-base)] ease-[var(--ua-ease-standard)]',
+        'text-[length:var(--ua-text-metadata-size)] leading-none',
+        // §7.2 — a selected row transitions colour, never layout. The previous
+        // all-property transition also animated the border and transform, which is
+        // what made the old lift visibly settle.
+        'transition-colors duration-[var(--ua-duration-base)] ease-[var(--ua-ease-standard)]',
         'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ua-border-focus)] focus-visible:outline-offset-2',
         active
           ? 'font-semibold text-[var(--ua-text-primary)]'
-          // Hover shows the white fill; selection adds the hairline, the lift and
-          // the weight on top. `--ua-surface-hover` is tuned for rows on white and
-          // is invisible against the shell, so the nav ladder uses white directly.
-          : 'font-medium text-[var(--ua-text-secondary)] hover:bg-[var(--ua-surface-primary)] hover:text-[var(--ua-text-primary)]',
+          // `--ua-surface-hover` is tuned for rows on white and is invisible
+          // against the white shell, so the hover step uses the neutral
+          // selected fill; the accent is reserved for the active row.
+          : 'font-medium text-[var(--ua-text-secondary)] hover:bg-[var(--ua-surface-hover)] hover:text-[var(--ua-text-primary)]',
         collapsed && 'justify-center',
       )}
       /*
-       * The selected row lifts off the shell: white fill, a hairline, a tight
-       * shadow and a 1px rise. Four channels carry the selection (fill, border,
-       * elevation, weight), so it never depends on colour alone (§9.1).
-       *
-       * This is the one inline surface allowed to have depth — see §4.2 of the
-       * implementation spec. Inactive rows keep a transparent border of the same
-       * width so gaining the border does not shift the label by a pixel.
+       * Living Precision §4.2: the active row is an `--ua-accent-100` wash, a 2px
+       * `--ua-accent-500` leading marker, and primary ink — no lift, no shadow,
+       * no white-on-white chip. Three channels carry the selection (fill, marker,
+       * weight), so it never depends on colour alone. Inactive rows keep a
+       * transparent border of the same width so gaining the border does not
+       * shift the label by a pixel.
        */
       style={
         active
           ? {
-              background: 'var(--ua-surface-primary)',
+              background: 'var(--ua-accent-100)',
               color: 'var(--ua-text-primary)',
-              border: '1px solid var(--ua-border-default)',
-              boxShadow: 'var(--ua-shadow-raised)',
-              transform: 'translateY(-1px)',
+              border: '1px solid var(--ua-accent-200)',
             }
           : { border: '1px solid transparent' }
       }
     >
+      {active ? (
+        <span
+          aria-hidden="true"
+          className="absolute inset-y-1 left-0 w-0.5 rounded-full bg-[var(--ua-accent-500)]"
+        />
+      ) : null}
       <Icon
         className={cn(
           'h-4 w-4 flex-shrink-0',
@@ -93,7 +99,7 @@ export function SidebarNavItem({
                 'inline-flex h-[18px] min-w-[18px] items-center justify-center',
                 'rounded-full px-1.5',
                 'bg-[var(--ua-text-primary)] text-[var(--ua-text-inverse)]',
-                'text-[length:var(--ua-text-micro-size)] font-semibold tabular-nums',
+                'text-[length:var(--ua-text-metadata-size)] font-semibold tabular-nums',
               )}
             >
               {item.badge > 99 ? '99+' : item.badge}
@@ -119,7 +125,7 @@ export function SidebarGroupLabel({ label, collapsed }: { label: string; collaps
     <div className="mt-4 mb-1 px-3">
       {/* Metadata role, sentence case, no letter spacing (§3.2, §4.2). */}
       <span
-        className="block text-[length:var(--ua-text-micro-size)] font-medium leading-[var(--ua-text-micro-leading)] text-[var(--ua-text-tertiary)]"
+        className="block text-[length:var(--ua-text-metadata-size)] font-medium leading-[var(--ua-text-metadata-leading)] text-[var(--ua-text-tertiary)]"
       >
         {label}
       </span>

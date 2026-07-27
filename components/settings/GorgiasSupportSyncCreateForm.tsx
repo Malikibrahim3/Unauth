@@ -118,7 +118,7 @@ export function GorgiasSupportSyncCreateForm({
           <button
             type="submit"
             disabled={(!canManage && isCreate) || state.busy}
-            className="inline-flex h-8 items-center rounded-[var(--ua-radius-control)] px-3 text-[length:var(--ua-text-micro-size)] font-semibold disabled:opacity-50"
+            className="inline-flex h-8 items-center rounded-[var(--ua-radius-control)] px-3 text-[length:var(--ua-text-metadata-size)] font-semibold disabled:opacity-50"
             style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)' }}
           >
             {state.busy ? 'Connecting…' : submitLabel}

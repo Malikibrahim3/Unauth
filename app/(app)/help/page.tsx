@@ -51,21 +51,21 @@ export default function HelpIndexPage() {
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-xs font-semibold text-[var(--ua-text-primary)]">{title}</span>
-                    <span className="mt-1 block text-[length:var(--ua-text-micro-size)] leading-4 text-[var(--ua-text-secondary)]">{description}</span>
+                    <span className="mt-1 block text-[length:var(--ua-text-metadata-size)] leading-4 text-[var(--ua-text-secondary)]">{description}</span>
                   </span>
-                  <span className="flex-none text-[length:var(--ua-text-micro-size)] font-semibold text-[var(--ua-text-tertiary)] group-hover:text-[var(--ua-text-primary)]">Read</span>
+                  <span className="flex-none text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-tertiary)] group-hover:text-[var(--ua-text-primary)]">Read</span>
                 </Link>
               ))}
             </div>
           </AuthenticatedPanel>
           <AuthenticatedPanel title="Still stuck?" description="Talk to the Unauth support team.">
             <div className="p-4">
-              <p className="text-[length:var(--ua-text-micro-size)] leading-5 text-[var(--ua-text-secondary)]">
+              <p className="text-[length:var(--ua-text-metadata-size)] leading-5 text-[var(--ua-text-secondary)]">
                 Email us and we&apos;ll get back to you within one business day.
               </p>
               <a
                 href="mailto:support@unauth.app"
-                    className="mt-3 inline-flex h-7 items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2.5 text-[length:var(--ua-text-micro-size)] font-semibold text-[var(--ua-text-primary)] hover:bg-[var(--ua-surface-hover)]"
+                    className="mt-3 inline-flex h-7 items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2.5 text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-primary)] hover:bg-[var(--ua-surface-hover)]"
               >
                 support@unauth.app
               </a>

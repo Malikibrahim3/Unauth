@@ -2,31 +2,36 @@
 
 import { useEffect, useState } from 'react';
 
+/*
+ * Living Precision §6.2: charts are drawn from the accent plus a neutral ramp.
+ * The semantic triplets are listed too, but only because a series may *encode*
+ * success, warning, or critical — they are never categorical series colours.
+ * The old numbered chart slots are deleted; do not reintroduce a positional
+ * palette.
+ */
 const CHART_TOKENS = [
-  '--ua-chart-4',
-  '--ua-chart-1',
-  '--ua-chart-2',
-  '--ua-chart-4',
-  '--ua-chart-5',
-  '--ua-chart-3',
-  '--ua-chart-neutral',
+  '--ua-chart-primary',
+  '--ua-chart-primary-soft',
+  '--ua-chart-neutral-900',
+  '--ua-chart-neutral-700',
+  '--ua-chart-neutral-500',
+  '--ua-chart-neutral-300',
   '--ua-chart-track',
   '--ua-chart-grid',
-  '--ua-chart-ramp-attention-1',
-  '--ua-chart-ramp-attention-2',
-  '--ua-chart-ramp-attention-3',
-  '--ua-chart-ramp-attention-4',
-  '--ua-chart-ramp-primary-1',
-  '--ua-chart-ramp-primary-2',
-  '--ua-chart-ramp-primary-3',
-  '--ua-chart-ramp-primary-4',
+  '--ua-chart-ramp-1',
+  '--ua-chart-ramp-2',
+  '--ua-chart-ramp-3',
+  '--ua-chart-ramp-4',
+  '--ua-success',
+  '--ua-warning',
+  '--ua-critical',
+  '--ua-info',
   '--ua-text-primary',
   '--ua-text-secondary',
   '--ua-text-tertiary',
   '--ua-border-strong',
   '--ua-border-subtle',
   '--ua-border-default',
-  '--ua-surface-primary',
   '--ua-surface-primary',
   '--ua-icon-secondary',
 ] as const;
@@ -47,9 +52,10 @@ function readTheme(): ChartTheme {
 }
 
 /**
- * Resolves --ua-chart-* (and the handful of ink/border tokens Recharts needs) to hex
- * once per mount, and again whenever data-theme flips. Recharts components must never
- * hardcode a hex value or read the deleted --dashboard-* remap layer — this is the bridge.
+ * Resolves --ua-chart-* (and the handful of ink/border/status tokens Recharts needs)
+ * to hex once per mount, and again whenever data-theme flips. Recharts components must
+ * never hardcode a hex value or read the deleted --dashboard-* remap layer — this is
+ * the bridge.
  */
 export function useChartTheme(): ChartTheme {
   const [theme, setTheme] = useState<ChartTheme>(readTheme);

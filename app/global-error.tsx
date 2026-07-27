@@ -21,14 +21,14 @@
  * non-sensitive correlation id) is surfaced for support.
  */
 
-const INK = 'var(--ua-text-primary, #202020)';
-const INK_SECONDARY = 'var(--ua-text-secondary, #626262)';
-const INK_TERTIARY = 'var(--ua-text-tertiary, #767676)';
-const CANVAS = 'var(--ua-canvas, #fafafa)';
+const INK = 'var(--ua-text-primary, #18181b)';
+const INK_SECONDARY = 'var(--ua-text-secondary, #52525b)';
+const INK_TERTIARY = 'var(--ua-text-tertiary, #71717a)';
+const CANVAS = 'var(--ua-canvas, #f7f7f8)';
 const SURFACE = 'var(--ua-surface-primary, #ffffff)';
-const BORDER = 'var(--ua-border-default, #dedede)';
-const BORDER_SUBTLE = 'var(--ua-border-subtle, #ebebeb)';
-const ACTION = 'var(--ua-action-primary, #242424)';
+const BORDER = 'var(--ua-border-default, #d8d8dc)';
+const BORDER_SUBTLE = 'var(--ua-border-subtle, #e7e7ea)';
+const ACTION = 'var(--ua-action-primary, #5b5bd6)';
 const ACTION_FG = 'var(--ua-action-primary-fg, #ffffff)';
 const RADIUS_CONTROL = 'var(--ua-radius-control, 6px)';
 const RADIUS_SURFACE = 'var(--ua-radius-surface, 10px)';

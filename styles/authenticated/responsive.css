@@ -34,9 +34,9 @@
 .ua-desktop-required__eyebrow {
   margin: 0 0 var(--ua-space-2);
   color: var(--ua-text-tertiary);
-  font-size: var(--ua-text-micro-size);
+  font-size: var(--ua-text-metadata-size);
   font-weight: 500;
-  line-height: var(--ua-text-micro-leading);
+  line-height: var(--ua-text-metadata-leading);
 }
 
 .ua-desktop-required h1 {

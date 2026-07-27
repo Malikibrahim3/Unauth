@@ -726,7 +726,7 @@ export function RuleVersionWorkbench({
                     }
                     className="mt-1 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-3 py-2 text-sm"
                   />
-                  <span className="mt-1 block text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">
+                  <span className="mt-1 block text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">
                     Clear the field to simulate unavailable source data.
                   </span>
                 </label>

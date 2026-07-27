@@ -217,7 +217,7 @@ export function ReconciliationSummaryCard({
             Update recommendations
           </Button>
         ) : (
-          <p className="max-w-44 text-right text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">
+          <p className="max-w-44 text-right text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">
             {loading ? 'Loading case evidence…' : 'Read-only access: recommendations cannot be updated.'}
           </p>
         )}
@@ -345,7 +345,7 @@ export function ReconciliationSummaryCard({
               placeholder="Optional"
               aria-describedby="case-outcome-amount-hint"
             />
-            <span id="case-outcome-amount-hint" className="mt-1 block text-[length:var(--ua-text-micro-size)] font-normal text-[var(--ua-text-tertiary)]">
+            <span id="case-outcome-amount-hint" className="mt-1 block text-[length:var(--ua-text-metadata-size)] font-normal text-[var(--ua-text-tertiary)]">
               Enter {currency?.toUpperCase() ?? 'the case currency'} in major units.
             </span>
           </label>

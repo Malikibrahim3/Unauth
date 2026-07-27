@@ -8,7 +8,7 @@ export function UpgradeCard({ entitlement }: { entitlement: Entitlement }) {
       style={{ borderColor: 'var(--ua-border-subtle)', background: 'var(--ua-surface-primary)' }}
     >
       <p
-        className="text-[length:var(--ua-text-micro-size)] font-medium leading-[var(--ua-text-micro-leading)]"
+        className="text-[length:var(--ua-text-metadata-size)] font-medium leading-[var(--ua-text-metadata-leading)]"
         style={{ color: 'var(--ua-text-secondary)' }}
       >
         {getFeatureAccessLabel(entitlement)}

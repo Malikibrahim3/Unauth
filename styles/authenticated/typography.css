@@ -1,5 +1,5 @@
 /*
- * Quiet Precision type roles (§3.2).
+ * Living Precision type roles (§3.5).
  * ------------------------------------------------------------------
  * Inter carries all product UI, including every metric, date, amount,
  * percentage, table value, and chart value — those use Inter with
@@ -18,28 +18,34 @@
   --ua-font-sans: var(--font-dm-sans), Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --ua-font-mono: var(--font-dm-mono), "SF Mono", Menlo, Consolas, monospace;
 
-  /* Page title — one per page (§3.2) */
-  --ua-text-page-title-size: 18px;
+  /* Page title — one per page (§3.5) */
+  --ua-text-page-title-size: 20px;
   --ua-text-page-title-weight: 600;
-  --ua-text-page-title-leading: 24px;
+  --ua-text-page-title-leading: 28px;
   --ua-text-page-title-tracking: 0;
+
+  /* Detail identity — the record/customer a detail route is about */
+  --ua-text-detail-identity-size: 18px;
+  --ua-text-detail-identity-weight: 600;
+  --ua-text-detail-identity-leading: 26px;
+  --ua-text-detail-identity-tracking: 0;
 
   /* Dialog title — never oversized */
   --ua-text-dialog-title-size: 18px;
   --ua-text-dialog-title-weight: 600;
-  --ua-text-dialog-title-leading: 24px;
+  --ua-text-dialog-title-leading: 26px;
 
   /* Section title — panels and major groups */
   --ua-text-section-title-size: 15px;
   --ua-text-section-title-weight: 600;
-  --ua-text-section-title-leading: 20px;
+  --ua-text-section-title-leading: 22px;
   --ua-text-section-title-tracking: 0;
 
-  /* Card / panel title — compact, sentence case */
-  --ua-text-card-title-size: 13px;
-  --ua-text-card-title-weight: 600;
-  --ua-text-card-title-leading: 18px;
-  --ua-text-card-title-tracking: 0;
+  /* Card / chart title — compact, sentence case */
+  --ua-text-chart-title-size: 13px;
+  --ua-text-chart-title-weight: 600;
+  --ua-text-chart-title-leading: 18px;
+  --ua-text-chart-title-tracking: 0;
 
   /* Body — forms and prose */
   --ua-text-body-size: 14px;
@@ -48,10 +54,10 @@
   --ua-text-body-tracking: 0;
 
   /* Compact body / small — tables, toolbars, dense lists */
-  --ua-text-small-size: 13px;
-  --ua-text-small-weight: 400;
-  --ua-text-small-leading: 18px;
-  --ua-text-small-tracking: 0;
+  --ua-text-dense-size: 13px;
+  --ua-text-dense-weight: 400;
+  --ua-text-dense-leading: 18px;
+  --ua-text-dense-tracking: 0;
 
   /* Label — form and control labels */
   --ua-text-label-size: 13px;
@@ -64,21 +70,21 @@
   --ua-text-caption-leading: 16px;
   --ua-text-caption-tracking: 0;
 
-  /* Micro / metadata — never the sole carrier of meaning */
-  --ua-text-micro-size: 11px;
-  --ua-text-micro-weight: 500;
-  --ua-text-micro-leading: 14px;
-  --ua-text-micro-tracking: 0;
+  /* Metadata — tertiary information, never the sole carrier of meaning */
+  --ua-text-metadata-size: 11px;
+  --ua-text-metadata-weight: 500;
+  --ua-text-metadata-leading: 15px;
+  --ua-text-metadata-tracking: 0;
 
   /* KPI value — tabular numerals, no display face */
-  --ua-text-kpi-size: 22px;
-  --ua-text-kpi-weight: 500;
-  --ua-text-kpi-leading: 26px;
+  --ua-text-kpi-size: 24px;
+  --ua-text-kpi-weight: 600;
+  --ua-text-kpi-leading: 30px;
 
-  /* Large financial total — rare, detail lead only */
-  --ua-text-total-size: 28px;
-  --ua-text-total-weight: 600;
-  --ua-text-total-leading: 32px;
+  /* Hero financial value — one exceptional total per product, not per page */
+  --ua-text-hero-value-size: 30px;
+  --ua-text-hero-value-weight: 600;
+  --ua-text-hero-value-leading: 36px;
 }
 
 /*

@@ -59,15 +59,15 @@ export function TeamMembersTable({
             <div className="flex min-w-0 items-center gap-2.5">
               <span
                 aria-hidden="true"
-                className="grid h-6 w-6 shrink-0 place-items-center rounded-[var(--ua-radius-round)] bg-[var(--ua-surface-secondary)] text-[length:var(--ua-text-micro-size)] font-medium text-[var(--ua-text-secondary)]"
+                className="grid h-6 w-6 shrink-0 place-items-center rounded-[var(--ua-radius-round)] bg-[var(--ua-surface-secondary)] text-[length:var(--ua-text-metadata-size)] font-medium text-[var(--ua-text-secondary)]"
               >
                 {initials(member.invited_email)}
               </span>
-              <span className="min-w-0 truncate text-[length:var(--ua-text-small-size)] font-medium text-[var(--ua-text-primary)]">
+              <span className="min-w-0 truncate text-[length:var(--ua-text-dense-size)] font-medium text-[var(--ua-text-primary)]">
                 {member.invited_email}
               </span>
               {member.is_account_owner ? (
-                <span className="shrink-0 rounded-[var(--ua-badge-radius-meta)] border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-secondary)] px-1.5 py-px text-[length:var(--ua-text-micro-size)] font-medium text-[var(--ua-text-secondary)]">
+                <span className="shrink-0 rounded-[var(--ua-badge-radius-meta)] border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-secondary)] px-1.5 py-px text-[length:var(--ua-text-metadata-size)] font-medium text-[var(--ua-text-secondary)]">
                   Account owner
                 </span>
               ) : null}
@@ -84,7 +84,7 @@ export function TeamMembersTable({
               canManageTeam && !isOwnerRow && (isAccountOwner || member.role !== 'owner');
             if (!canChange) {
               return (
-                <span className="text-[length:var(--ua-text-small-size)] text-[var(--ua-text-secondary)]">
+                <span className="text-[length:var(--ua-text-dense-size)] text-[var(--ua-text-secondary)]">
                   {ROLE_LABELS[member.role]}
                 </span>
               );
@@ -118,7 +118,7 @@ export function TeamMembersTable({
           header: 'Joined',
           width: '160px',
           render: (member) => (
-            <span className="text-[length:var(--ua-text-small-size)] tabular-nums text-[var(--ua-text-secondary)]">
+            <span className="text-[length:var(--ua-text-dense-size)] tabular-nums text-[var(--ua-text-secondary)]">
               {formatTeamDate(member.accepted_at ?? member.created_at)}
             </span>
           ),

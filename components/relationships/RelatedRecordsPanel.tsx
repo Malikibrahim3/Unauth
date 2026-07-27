@@ -41,7 +41,7 @@ function freshnessLabel(freshness: string | null): string {
 export function RelatedRecordsPanel({ records }: { records: RelatedRecord[] }) {
   if (records.length === 0) {
     return (
-      <div className="rounded-lg border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] p-4 text-[length:var(--ua-text-small-size)] text-[var(--ua-text-secondary)]">
+      <div className="rounded-lg border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] p-4 text-[length:var(--ua-text-dense-size)] text-[var(--ua-text-secondary)]">
         No related records yet.
       </div>
     );
@@ -55,10 +55,10 @@ export function RelatedRecordsPanel({ records }: { records: RelatedRecord[] }) {
           const inner = (
             <div className="flex items-center gap-3 px-4 py-3">
               <div className="min-w-0">
-                <p className="truncate text-[length:var(--ua-text-small-size)] font-semibold text-[var(--ua-text-primary)]">
+                <p className="truncate text-[length:var(--ua-text-dense-size)] font-semibold text-[var(--ua-text-primary)]">
                   {label}
                 </p>
-                <p className="mt-0.5 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">
+                <p className="mt-0.5 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">
                   {r.sourceSystem ?? "source not identified"} ·{" "}
                   {freshnessLabel(r.freshness)}
                   {r.matchMethod ? ` · ${r.matchMethod}` : ""}

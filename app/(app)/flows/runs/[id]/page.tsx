@@ -59,7 +59,7 @@ export default async function Run({
                 ["Started", formatDateTime(run.started_at)],
               ].map(([label, value], index) => (
                 <div key={label} className={`min-w-0 p-4 ${index ? "border-t border-[var(--ua-border-subtle)] sm:border-l sm:border-t-0" : ""}`}>
-                  <dt className="text-[length:var(--ua-text-micro-size)] font-medium text-[var(--ua-text-tertiary)]">{label}</dt>
+                  <dt className="text-[length:var(--ua-text-metadata-size)] font-medium text-[var(--ua-text-tertiary)]">{label}</dt>
                   <dd className="mt-1 break-all text-xs font-semibold">{value}</dd>
                 </div>
               ))}
@@ -72,10 +72,10 @@ export default async function Run({
                 <li key={s.id} className="p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <strong className="text-xs">Step {s.step_index + 1}: {label("workflowStatus", String(s.output_type ?? "action"))}</strong>
-                    <span className="text-[length:var(--ua-text-micro-size)] font-semibold text-[var(--ua-text-tertiary)]">{label("workflowStatus", String(s.status ?? "unknown"))}</span>
+                    <span className="text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-tertiary)]">{label("workflowStatus", String(s.status ?? "unknown"))}</span>
                   </div>
                   {s.error ? <p role="alert" className="mt-2 text-xs text-[var(--ua-critical)]">{s.error}</p> : null}
-                  <pre className="mt-3 max-h-64 overflow-auto rounded-[var(--ua-radius-control)] border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-3 text-[length:var(--ua-text-micro-size)] leading-4">{JSON.stringify(s.result, null, 2)}</pre>
+                  <pre className="mt-3 max-h-64 overflow-auto rounded-[var(--ua-radius-control)] border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-3 text-[length:var(--ua-text-metadata-size)] leading-4">{JSON.stringify(s.result, null, 2)}</pre>
                 </li>
               ))}
             </ol>

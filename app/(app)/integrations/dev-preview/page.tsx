@@ -111,7 +111,7 @@ export default async function IntegrationHealthDevPreviewPage() {
       />
       <div className={pageStyles.pageBody}>
         <div className={pageStyles.workbenchStack}>
-          <AuthenticatedPanel bodyClassName="px-4 py-3 text-[length:var(--ua-text-micro-size)] leading-5 text-[var(--ua-text-secondary)]">
+          <AuthenticatedPanel bodyClassName="px-4 py-3 text-[length:var(--ua-text-metadata-size)] leading-5 text-[var(--ua-text-secondary)]">
             <strong className="text-[var(--ua-text-primary)]">Dev-only preview.</strong>{" "}
             These states use the real status resolver and presentation components without writing to any connection table.
           </AuthenticatedPanel>

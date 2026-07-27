@@ -188,11 +188,11 @@ export default function OnboardingClient({
     <main className="min-h-screen" style={{ background: 'var(--ua-canvas)' }}>
       <header className="flex h-12 items-center justify-between border-b border-[var(--ua-border-subtle)] bg-[var(--ua-shell)] px-4 sm:px-5">
         <UnauthLogo kind="lockup" tone="auto" height={20} alt="Unauth" />
-        <span className="text-[length:var(--ua-text-micro-size)] font-semibold text-[var(--ua-text-tertiary)]">Workspace setup</span>
+        <span className="text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-tertiary)]">Workspace setup</span>
       </header>
       <div className="mx-auto max-w-[1500px] px-3 pb-7 pt-4 sm:px-5">
       <div className="mb-4">
-        <p className="text-[length:var(--ua-text-micro-size)] font-semibold text-[var(--ua-text-tertiary)]">Welcome to Unauth</p>
+        <p className="text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-tertiary)]">Welcome to Unauth</p>
         <h1 className="mt-1 text-[length:var(--ua-text-page-title-size)] font-semibold leading-6 tracking-normal text-[var(--ua-text-primary)]">
           Get set up
         </h1>
@@ -219,7 +219,7 @@ export default function OnboardingClient({
         >
           <div className="mb-3 flex items-start justify-between gap-3 px-1">
             <div>
-              <p className="text-[length:var(--ua-text-micro-size)] font-semibold text-[var(--ua-text-tertiary)]">Checklist</p>
+              <p className="text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-tertiary)]">Checklist</p>
               <p className="mt-1 text-xs leading-4" style={{ color: 'var(--ua-text-tertiary)' }}>
                 Verify the connections used by your team
               </p>
@@ -248,7 +248,7 @@ export default function OnboardingClient({
                     {done ? <Check className="h-3.5 w-3.5" /> : <Icon className="h-3.5 w-3.5" />}
                   </span>
                   <span className="min-w-0">
-                    <span className="block text-[length:var(--ua-text-micro-size)] font-medium" style={{ color: active ? 'var(--ua-text-primary)' : 'var(--ua-text-secondary)' }}>{step.label}</span>
+                    <span className="block text-[length:var(--ua-text-metadata-size)] font-medium" style={{ color: active ? 'var(--ua-text-primary)' : 'var(--ua-text-secondary)' }}>{step.label}</span>
                   </span>
                   <span className="font-sans text-xs tabular-nums" style={{ color: 'var(--ua-text-tertiary)' }}>{String(index + 1).padStart(2, '0')}</span>
                 </button>
@@ -265,9 +265,9 @@ export default function OnboardingClient({
               <CurrentIcon className="h-4 w-4" />
             </span>
             <div>
-              <p className="text-[length:var(--ua-text-micro-size)] font-semibold text-[var(--ua-text-tertiary)]">Step {activeStep + 1} of {STEPS.length}</p>
-              <h2 className="mt-1 text-[length:var(--ua-text-small-size)] font-semibold text-[var(--ua-text-primary)]">{current.label}</h2>
-              <p className="mt-1 max-w-2xl text-[length:var(--ua-text-small-size)] leading-[var(--ua-text-small-leading)]" style={{ color: 'var(--ua-text-secondary)' }}>{current.body}</p>
+              <p className="text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-tertiary)]">Step {activeStep + 1} of {STEPS.length}</p>
+              <h2 className="mt-1 text-[length:var(--ua-text-dense-size)] font-semibold text-[var(--ua-text-primary)]">{current.label}</h2>
+              <p className="mt-1 max-w-2xl text-[length:var(--ua-text-dense-size)] leading-[var(--ua-text-dense-leading)]" style={{ color: 'var(--ua-text-secondary)' }}>{current.body}</p>
             </div>
           </div>
 
@@ -472,7 +472,7 @@ export default function OnboardingClient({
 function Field({ label, children }: { label: string; children: ReactElement<any> }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-[length:var(--ua-text-small-size)] font-medium leading-[var(--ua-text-small-leading)]" style={{ color: 'var(--ua-text-tertiary)' }}>{label}</span>
+      <span className="mb-1.5 block text-[length:var(--ua-text-dense-size)] font-medium leading-[var(--ua-text-dense-leading)]" style={{ color: 'var(--ua-text-tertiary)' }}>{label}</span>
       {cloneElement(children, {
         'aria-label': label,
         className: 'h-9 w-full rounded-[var(--ua-radius-control)] border px-3 text-sm outline-none',

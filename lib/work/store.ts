@@ -116,3 +116,63 @@ export async function countWorkViews(
     },
   };
 }
+
+/**
+ * Due-band aggregate for the Work queue pulse (§6.8: "When will the queue
+ * become risky?").
+ *
+ * This is a server aggregate over the full scoped active task set, as §6.8's
+ * aggregate-ownership table requires — a chart built from the current 25-row
+ * page would be a claim about the whole queue made from a paginated slice.
+ * Bands are mutually exclusive and cover the population, so the pulse never
+ * needs an "Other".
+ */
+export type WorkDueBandKey = 'overdue' | 'due-today' | 'due-1-3' | 'due-4-7' | 'due-later' | 'no-sla';
+
+export async function countWorkDueBands(
+  client: SupabaseClient,
+  merchantId: string,
+  asOf: Date,
+): Promise<Record<WorkDueBandKey, number>> {
+  const todayStart = new Date(asOf);
+  todayStart.setUTCHours(0, 0, 0, 0);
+  const dayAfterToday = new Date(todayStart);
+  dayAfterToday.setUTCDate(dayAfterToday.getUTCDate() + 1);
+  const dayFour = new Date(todayStart);
+  dayFour.setUTCDate(dayFour.getUTCDate() + 4);
+  const dayEight = new Date(todayStart);
+  dayEight.setUTCDate(dayEight.getUTCDate() + 8);
+
+  const [overdue, dueToday, days1to3, days4to7, later, unscheduled] = await Promise.all([
+    readCount(active(base(client, merchantId)).lt('due_at', asOf.toISOString()), 'band_overdue'),
+    readCount(
+      active(base(client, merchantId))
+        .gte('due_at', asOf.toISOString())
+        .lt('due_at', dayAfterToday.toISOString()),
+      'band_due_today',
+    ),
+    readCount(
+      active(base(client, merchantId))
+        .gte('due_at', dayAfterToday.toISOString())
+        .lt('due_at', dayFour.toISOString()),
+      'band_days_1_3',
+    ),
+    readCount(
+      active(base(client, merchantId))
+        .gte('due_at', dayFour.toISOString())
+        .lt('due_at', dayEight.toISOString()),
+      'band_days_4_7',
+    ),
+    readCount(active(base(client, merchantId)).gte('due_at', dayEight.toISOString()), 'band_later'),
+    readCount(active(base(client, merchantId)).is('due_at', null), 'band_unscheduled'),
+  ]);
+
+  return {
+    overdue,
+    'due-today': dueToday,
+    'due-1-3': days1to3,
+    'due-4-7': days4to7,
+    'due-later': later,
+    'no-sla': unscheduled,
+  };
+}

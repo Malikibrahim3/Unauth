@@ -135,7 +135,7 @@ async function resolveCaseSearchIds(
   ] = await Promise.all([
     // Postgres cannot apply `ilike` to the UUID case id. Fetch the small,
     // merchant-scoped id set and match both the storage id and the short case
-    // reference rendered in the UI (for example, `Case #A1B2C`).
+    // reference rendered in the UI (for example, the short code in `Case A1B2C`).
     serviceClient.from(TABLES.MERCHANT_CLAIMS).select('id').eq('merchant_id', merchantId).limit(1000),
     serviceClient.from(TABLES.SOURCE_ORDERS).select('id').eq('merchant_id', merchantId).ilike('order_number', pattern).limit(100),
     serviceClient.from(TABLES.SOURCE_ORDERS).select('id').eq('merchant_id', merchantId).ilike('external_id', pattern).limit(100),

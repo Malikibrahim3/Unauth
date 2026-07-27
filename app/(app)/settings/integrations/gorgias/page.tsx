@@ -34,7 +34,7 @@ export default async function GorgiasIntegrationPage({
           <div className="flex justify-end">
             <Link
               href={returnTo}
-              className="inline-flex h-8 items-center rounded-[var(--ua-radius-control)] border px-3 text-[length:var(--ua-text-micro-size)] font-semibold"
+              className="inline-flex h-8 items-center rounded-[var(--ua-radius-control)] border px-3 text-[length:var(--ua-text-metadata-size)] font-semibold"
               style={{ borderColor: 'var(--ua-border-default)', color: 'var(--ua-text-primary)' }}
             >
               Return to onboarding

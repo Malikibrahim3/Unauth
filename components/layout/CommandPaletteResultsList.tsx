@@ -80,7 +80,7 @@ export function CommandPaletteResultsList({
 
       {state.customerResults.length > 0 ? (
         <>
-          <p className="px-4 pt-2 pb-1 text-[length:var(--ua-text-micro-size)] font-semibold" style={{ color: 'var(--ua-text-tertiary)' }}>
+          <p className="px-4 pt-2 pb-1 text-[length:var(--ua-text-metadata-size)] font-semibold" style={{ color: 'var(--ua-text-tertiary)' }}>
             Customers
           </p>
           {state.customerResults.map((c, i) => (
@@ -118,7 +118,7 @@ export function CommandPaletteResultsList({
             const Icon = type === 'order' ? Hash : FileText;
             return (
               <div key={type}>
-                <p className="px-4 pt-2 pb-1 text-[length:var(--ua-text-micro-size)] font-semibold" style={{ color: 'var(--ua-text-tertiary)' }}>
+                <p className="px-4 pt-2 pb-1 text-[length:var(--ua-text-metadata-size)] font-semibold" style={{ color: 'var(--ua-text-tertiary)' }}>
                   {label}
                 </p>
                 {group.map((item, i) => (
@@ -158,7 +158,7 @@ export function CommandPaletteResultsList({
       {filteredNav.length > 0 || !state.query.trim() ? (
         <>
           {state.customerResults.length > 0 || state.query.trim() ? (
-            <p className="px-4 pt-2 pb-1 text-[length:var(--ua-text-micro-size)] font-semibold" style={{ color: 'var(--ua-text-tertiary)' }}>
+            <p className="px-4 pt-2 pb-1 text-[length:var(--ua-text-metadata-size)] font-semibold" style={{ color: 'var(--ua-text-tertiary)' }}>
               Navigate
             </p>
           ) : null}

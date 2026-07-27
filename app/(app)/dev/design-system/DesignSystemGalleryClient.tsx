@@ -50,16 +50,22 @@ import {
 } from '@/components/charts/authenticated/core/geometry';
 
 /*
- * Spec §8.2 defines five numbered series slots plus neutral. Slots are named by
- * position and role, never by hue, so a recolour never invalidates the meaning.
+ * Living Precision §6.2: the analytical palette is the accent plus a neutral
+ * ramp. Current/primary data is accent; every comparison series is neutral.
+ * The three semantic hues below are listed last because they enter a chart only
+ * when the encoded value is itself success, warning, or critical — they are
+ * never categorical series colours, and there is no numbered slot palette.
  */
 const CHART_SLOTS = [
-  { token: '--ua-chart-1', label: '1 · primary' },
-  { token: '--ua-chart-2', label: '2 · positive' },
-  { token: '--ua-chart-3', label: '3 · secondary' },
-  { token: '--ua-chart-4', label: '4 · attention' },
-  { token: '--ua-chart-5', label: '5 · failure' },
-  { token: '--ua-chart-neutral', label: 'neutral' },
+  { token: '--ua-chart-primary', label: 'Current / primary series' },
+  { token: '--ua-chart-primary-soft', label: 'Related secondary series' },
+  { token: '--ua-chart-neutral-900', label: 'Strong comparison' },
+  { token: '--ua-chart-neutral-700', label: 'Secondary comparison' },
+  { token: '--ua-chart-neutral-500', label: 'Tertiary series' },
+  { token: '--ua-chart-neutral-300', label: 'Baseline / context only' },
+  { token: '--ua-success', label: 'Encoded success only' },
+  { token: '--ua-warning', label: 'Encoded warning only' },
+  { token: '--ua-critical', label: 'Encoded critical only' },
 ] as const;
 
 function GallerySection({ title, children }: { title: string; children: React.ReactNode }) {
@@ -101,24 +107,50 @@ const SURFACE_SWATCHES = [
   ['Surface selected', '--ua-surface-selected'],
 ] as const;
 
+/* §3.2 — one product accent. Every selection, focus, link, forward action, and
+ * current data series comes from this scale; nothing else introduces a hue. */
+const ACCENT_SWATCHES = [
+  ['Accent 50', '--ua-accent-50'],
+  ['Accent 100 · selected bg', '--ua-accent-100'],
+  ['Accent 200 · selected border', '--ua-accent-200'],
+  ['Accent 300', '--ua-accent-300'],
+  ['Accent 400', '--ua-accent-400'],
+  ['Accent 500 · primary', '--ua-accent-500'],
+  ['Accent 600 · hover', '--ua-accent-600'],
+  ['Accent 700 · pressed / link', '--ua-accent-700'],
+  ['Accent 800 · accent text', '--ua-accent-800'],
+] as const;
+
+const ACTION_SWATCHES = [
+  ['Action primary', '--ua-action-primary'],
+  ['Action primary hover', '--ua-action-primary-hover'],
+  ['Action commit', '--ua-action-commit'],
+  ['Action commit hover', '--ua-action-commit-hover'],
+] as const;
+
 const SEMANTIC_SWATCHES = [
   ['Success', '--ua-success-bg'],
   ['Warning', '--ua-warning-bg'],
   ['Critical', '--ua-critical-bg'],
   ['Info', '--ua-info-bg'],
+  ['Unknown / unavailable', '--ua-neutral-bg'],
 ] as const;
 
 const TYPE_ROLES = [
   ['Page title', '--ua-text-page-title-size', '--ua-text-page-title-weight'],
   ['Section title', '--ua-text-section-title-size', '--ua-text-section-title-weight'],
-  ['Card title', '--ua-text-card-title-size', '--ua-text-card-title-weight'],
+  ['Detail identity', '--ua-text-detail-identity-size', '--ua-text-detail-identity-weight'],
+  ['Card / chart title', '--ua-text-chart-title-size', '--ua-text-chart-title-weight'],
   ['Body', '--ua-text-body-size', '--ua-text-body-weight'],
-  ['Small', '--ua-text-small-size', '--ua-text-small-weight'],
+  ['Dense body', '--ua-text-dense-size', '--ua-text-dense-weight'],
+  ['Label', '--ua-text-label-size', '--ua-text-label-weight'],
   ['Caption', '--ua-text-caption-size', '--ua-text-caption-weight'],
-  ['Micro', '--ua-text-micro-size', '--ua-text-micro-weight'],
+  ['Metadata', '--ua-text-metadata-size', '--ua-text-metadata-weight'],
+  ['KPI value', '--ua-text-kpi-size', '--ua-text-kpi-weight'],
+  ['Hero financial value', '--ua-text-hero-value-size', '--ua-text-hero-value-weight'],
 ] as const;
 
-/* The canonical scale (spec §3.4). One entry per token — no aliases. */
+/* The canonical scale (§3.6). One entry per token — no aliases. */
 const RADIUS_SCALE = [
   ['none', '--ua-radius-none'],
   ['xs', '--ua-radius-xs'],
@@ -152,6 +184,18 @@ export function DesignSystemGalleryClient() {
 
       <GallerySection title="Colour — surfaces">
         {SURFACE_SWATCHES.map(([name, v]) => (
+          <Swatch key={v} name={name} cssVar={v} />
+        ))}
+      </GallerySection>
+
+      <GallerySection title="Colour — accent (§3.2)">
+        {ACCENT_SWATCHES.map(([name, v]) => (
+          <Swatch key={v} name={name} cssVar={v} />
+        ))}
+      </GallerySection>
+
+      <GallerySection title="Colour — action roles (§3.2)">
+        {ACTION_SWATCHES.map(([name, v]) => (
           <Swatch key={v} name={name} cssVar={v} />
         ))}
       </GallerySection>
@@ -347,7 +391,7 @@ export function DesignSystemGalleryClient() {
           {CHART_SLOTS.map((slot) => (
             <div key={slot.token} style={{ textAlign: 'center' }}>
               <svg width="56" height="56" aria-hidden="true">
-                <rect width="56" height="56" fill={`var(${slot.token})`} fillOpacity={slot.token === '--ua-chart-neutral' ? 0.35 : 0.18} />
+                <rect width="56" height="56" fill={`var(${slot.token})`} fillOpacity={slot.token === '--ua-chart-neutral-700' ? 0.35 : 0.18} />
               </svg>
               <p className="text-caption" style={{ color: 'var(--ua-text-tertiary)' }}>{slot.label}</p>
             </div>
@@ -357,9 +401,9 @@ export function DesignSystemGalleryClient() {
 
       <GallerySection title="T3 trend line + flat area wash">
         <svg width="240" height="90" aria-hidden="true">
-          <polygon points="0,70 40,50 80,58 120,30 160,40 200,20 240,32 240,90 0,90" fill="var(--ua-chart-1)" fillOpacity="0.08" />
-          <polyline points="0,70 40,50 80,58 120,30 160,40 200,20 240,32" fill="none" stroke="var(--ua-chart-1)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          <circle cx="200" cy="20" r="4" fill="var(--ua-chart-1)" stroke="var(--ua-surface-primary)" strokeWidth="2" />
+          <polygon points="0,70 40,50 80,58 120,30 160,40 200,20 240,32 240,90 0,90" fill="var(--ua-chart-primary)" fillOpacity="0.08" />
+          <polyline points="0,70 40,50 80,58 120,30 160,40 200,20 240,32" fill="none" stroke="var(--ua-chart-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <circle cx="200" cy="20" r="4" fill="var(--ua-chart-primary)" stroke="var(--ua-surface-primary)" strokeWidth="2" />
         </svg>
       </GallerySection>
 
@@ -367,7 +411,7 @@ export function DesignSystemGalleryClient() {
         <svg width="220" height="100" aria-hidden="true">
           {[60, 40, 75, 30, 55].map((h, i) => (
             <g key={i}>
-              <rect x={10 + i * 42} y={90 - h} width={30} height={h} fill="var(--ua-chart-4)" fillOpacity="0.72" rx={6} />
+              <rect x={10 + i * 42} y={90 - h} width={30} height={h} fill="var(--ua-warning)" fillOpacity="0.72" rx={6} />
             </g>
           ))}
           <polyline points="22,55 64,60 106,35 148,50 190,45" fill="none" stroke="var(--ua-icon-secondary)" strokeWidth="1.5" strokeDasharray="5 4" />
@@ -378,7 +422,7 @@ export function DesignSystemGalleryClient() {
         <div style={{ display: 'grid', gridTemplateColumns: `repeat(13, ${MATRIX_CELL}px)`, gap: MATRIX_GAP }}>
           {Array.from({ length: 52 }, (_, i) => {
             const intensity = (i * 7) % 5;
-            const bg = intensity === 0 ? 'var(--ua-chart-track)' : `var(--ua-chart-ramp-primary-${Math.min(intensity, 4)})`;
+            const bg = intensity === 0 ? 'var(--ua-chart-track)' : `var(--ua-chart-ramp-${Math.min(intensity, 4)})`;
             return <div key={i} style={{ width: MATRIX_CELL, height: MATRIX_CELL, borderRadius: MATRIX_RADIUS, background: bg }} />;
           })}
         </div>
@@ -387,7 +431,7 @@ export function DesignSystemGalleryClient() {
       <GallerySection title="T6 block rail with pins + neutral remainder">
         <svg width="320" height={RAIL_HEIGHT + 30} aria-hidden="true">
           <g transform="translate(0,26)">
-            <rect x="0" y="0" width="180" height={RAIL_HEIGHT} rx={RAIL_BLOCK_RADIUS} fill="var(--ua-chart-1)" />
+            <rect x="0" y="0" width="180" height={RAIL_HEIGHT} rx={RAIL_BLOCK_RADIUS} fill="var(--ua-chart-primary)" />
             <rect x={180 + RAIL_BLOCK_GAP} y="0" width={320 - 180 - RAIL_BLOCK_GAP} height={RAIL_HEIGHT} rx={RAIL_BLOCK_RADIUS} fill="var(--ua-chart-track)" />
             <line x1="180" y1="-16" x2="180" y2="0" stroke="var(--ua-border-strong)" strokeWidth="1" />
           </g>
@@ -403,7 +447,7 @@ export function DesignSystemGalleryClient() {
           </div>
           <div style={{ display: 'flex', gap: TICK_GAP }}>
             {Array.from({ length: 40 }, (_, i) => (
-              <div key={i} style={{ width: TICK_W, height: TICK_H, borderRadius: TICK_RADIUS, background: i < 29 ? 'var(--ua-chart-2)' : 'var(--ua-chart-track)' }} />
+              <div key={i} style={{ width: TICK_W, height: TICK_H, borderRadius: TICK_RADIUS, background: i < 29 ? 'var(--ua-success)' : 'var(--ua-chart-track)' }} />
             ))}
           </div>
           <p className={chartStyles.caption} style={{ marginTop: 4 }}>Most cases carried full evidence</p>
@@ -413,9 +457,9 @@ export function DesignSystemGalleryClient() {
       <GallerySection title="T8 segment composition + dot legend">
         <div style={{ width: 280 }}>
           <div style={{ display: 'flex', height: SEGMENT_BAR_H, gap: SEGMENT_GAP }}>
-            <div style={{ flex: 3, borderRadius: SEGMENT_RADIUS, background: 'var(--ua-chart-4)' }} />
-            <div style={{ flex: 2, borderRadius: SEGMENT_RADIUS, background: 'var(--ua-chart-1)' }} />
-            <div style={{ flex: 1, borderRadius: SEGMENT_RADIUS, background: 'var(--ua-chart-neutral)' }} />
+            <div style={{ flex: 3, borderRadius: SEGMENT_RADIUS, background: 'var(--ua-warning)' }} />
+            <div style={{ flex: 2, borderRadius: SEGMENT_RADIUS, background: 'var(--ua-chart-primary)' }} />
+            <div style={{ flex: 1, borderRadius: SEGMENT_RADIUS, background: 'var(--ua-chart-neutral-700)' }} />
           </div>
           <ul style={{ display: 'flex', gap: 12, marginTop: 8, padding: 0, listStyle: 'none' }}>
             {[CHART_SLOTS[0], CHART_SLOTS[3], CHART_SLOTS[5]].map((slot) => (
@@ -442,7 +486,7 @@ export function DesignSystemGalleryClient() {
 
       <GallerySection title="T10 cursor + tooltip">
         <div style={{ position: 'relative', width: 200, height: 90, borderBottom: '1px dashed var(--ua-border-strong)' }}>
-          <ChartTooltip value="$4,820" caption="Jul 14" series={[{ label: 'Exposure', value: '$4,820', colour: 'var(--ua-chart-4)' }]} />
+          <ChartTooltip value="$4,820" caption="Jul 14" series={[{ label: 'Exposure', value: '$4,820', colour: 'var(--ua-warning)' }]} />
         </div>
       </GallerySection>
 

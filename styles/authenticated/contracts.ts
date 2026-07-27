@@ -15,30 +15,37 @@
  * @see components/ui/badgeStyles.ts
  */
 
-/** FilterChip is the canonical neutral interactive filter primitive. */
+/**
+ * FilterChip is the canonical interactive filter primitive. Living Precision
+ * §4.2: a selected filter is accent-100 fill, accent-200 border, accent-800
+ * text — selection is accent, never semantic and never a neutral-only hairline.
+ */
 export const filterChipContract = {
-  base: 'inline-flex h-7 items-center gap-1.5 rounded-[var(--ua-radius-control)] border px-2.5 text-[length:var(--ua-text-micro-size)] font-medium transition-colors',
+  base: 'inline-flex h-7 items-center gap-1.5 rounded-[var(--ua-radius-control)] border px-2.5 text-[length:var(--ua-text-metadata-size)] font-medium transition-colors',
   unselected:
     'border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] text-[var(--ua-text-secondary)]',
   hover: 'hover:bg-[var(--ua-surface-hover)]',
   focus: 'focus-visible:outline-none focus-visible:shadow-[var(--ua-shadow-focus)]',
   selected:
-    'border-[var(--ua-border-strong)] bg-[var(--ua-surface-primary)] text-[var(--ua-text-primary)] shadow-[var(--ua-shadow-none)]',
+    'border-[var(--ua-accent-200)] bg-[var(--ua-accent-100)] text-[var(--ua-accent-800)] shadow-[var(--ua-shadow-none)]',
   disabled: 'opacity-50 cursor-not-allowed pointer-events-none',
 } as const;
 
 /** SegmentedControl is for mutually exclusive view/sort choices, not route tabs. */
 export const segmentedControlContract = {
   root: 'inline-flex items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-secondary)] p-0.5',
-  item: 'inline-flex items-center justify-center rounded-[var(--ua-radius-control)] px-2.5 text-[length:var(--ua-text-micro-size)] font-medium text-[var(--ua-text-secondary)] transition-colors',
+  item: 'inline-flex items-center justify-center rounded-[var(--ua-radius-control)] px-2.5 text-[length:var(--ua-text-metadata-size)] font-medium text-[var(--ua-text-secondary)] transition-colors',
   itemHeight: 'h-[var(--ua-control-height-sm)]',
-  selectedItem: 'bg-[var(--ua-surface-primary)] text-[var(--ua-text-primary)] shadow-[var(--ua-shadow-none)]',
+  // §4.2 — the selected segment is the same accent selection language as a
+  // selected filter, so one selection idiom reads across the product.
+  selectedItem: 'bg-[var(--ua-accent-100)] text-[var(--ua-accent-800)] shadow-[var(--ua-shadow-none)]',
 } as const;
 
 export const tabContract = {
   root: 'flex min-w-0 items-center gap-5 border-b border-[var(--ua-border-default)]',
-  item: 'inline-flex h-[var(--ua-control-height-md)] items-center border-b-2 border-transparent px-0.5 text-[length:var(--ua-text-small-size)] font-medium text-[var(--ua-text-secondary)] transition-colors hover:text-[var(--ua-text-primary)] focus-visible:outline-none',
-  active: 'border-[var(--ua-text-primary)] text-[var(--ua-text-primary)]',
+  item: 'inline-flex h-[var(--ua-control-height-md)] items-center border-b-2 border-transparent px-0.5 text-[length:var(--ua-text-dense-size)] font-medium text-[var(--ua-text-secondary)] transition-colors hover:text-[var(--ua-text-primary)] focus-visible:outline-none',
+  // §4.2 — primary ink plus a 2px accent underline.
+  active: 'border-[var(--ua-accent-500)] text-[var(--ua-text-primary)]',
 } as const;
 
 export type FilterChipContract = typeof filterChipContract;
@@ -46,7 +53,7 @@ export type SegmentedControlContract = typeof segmentedControlContract;
 
 /** Reviewable product rules used by tests and implementation checklists. */
 export const authenticatedDesignEthos = {
-  reference: 'quiet-precision',
+  reference: 'living-precision',
   shell: '200px neutral rail, 48px utility header, near-white canvas, dense flat surfaces',
   functionality: 'committed routes, actions, permissions, data semantics, and keyboard access remain unchanged',
   visuals: 'one purpose-selected primary visual on most data-rich operational pages; shared grammar without repeated compositions',

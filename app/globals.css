@@ -10,12 +10,25 @@
 
     /* Surfaces & lines */
     --brand-ink:        #1A1814;
+    /*
+     * Living Precision LP-FND-09: one product identity. The interaction accent
+     * below is the product's violet (--ua-accent-500 / #5B5BD6) so that a public
+     * product CTA, the signup form, onboarding, and the app itself read as one
+     * system rather than two brands meeting at the login boundary.
+     *
+     * `--brand-rust` is retained for genuinely editorial, non-product branding
+     * only. It must not appear in a product CTA, a dashboard mockup, or product
+     * screenshot chrome.
+     */
+    --brand-product:       #5B5BD6;
+    --brand-product-hover: #4949B8;
+    --brand-product-soft:  #F0EFFF;
     --brand-rust:       #7B2D26;
     --brand-rust-hover: #5E2018;
     --brand-rust-soft:  #F4E6E0;
-    --action-ink:       #7B2D26;
-    --action-ink-hover: #5E2018;
-    --action-ink-soft:  #F4E6E0;
+    --action-ink:       #3C3C96;
+    --action-ink-hover: #4949B8;
+    --action-ink-soft:  #F0EFFF;
     --data-neutral:     #6B6560;
     --data-neutral-soft:#E7E0D8;
     --brand-paper:      #F6F5F3;
@@ -25,7 +38,7 @@
     --bg-surface-alt:   #F0EEEA;
     --bg-surface-sunk:  #E8E6E2;
     --bg-hover:         #EFE8DA;
-    --bg-selected:      #F4E6E0;
+    --bg-selected:      #F0EFFF;
 
     --border-subtle:    #E5DECE;
     --border-default:   #D8D0BD;
@@ -37,20 +50,20 @@
     --text-subtle:      #9A9088;
     --text-disabled:    #C2BAB0;
     --text-inverse:     #FFFFFF;
-    --text-link:        #A85040;
+    --text-link:        #3C3C96;
 
     /* Legacy aliases — retire usage over time */
     --text-primary:     var(--text);
     --text-secondary:   #3F3933;
     --text-tertiary:    var(--text-muted);
 
-    /* Accent — Unauth rust */
-    --accent-50:        #FAF0EC;
-    --accent-100:       #F4E6E0;
-    --accent-200:       #EBCBC2;
-    --accent-500:       #7B2D26;
-    --accent-600:       #6B251F;
-    --accent-700:       #5E2018;
+    /* Product violet ramp (LP-FND-09); editorial rust lives in --brand-rust. */
+    --accent-50:        #F5F4FF;
+    --accent-100:       #F0EFFF;
+    --accent-200:       #DEDCFF;
+    --accent-500:       #5B5BD6;
+    --accent-600:       #4949B8;
+    --accent-700:       #3C3C96;
     --accent-fg-on-500: #FFFFFF;
 
     /* Risk / status palette */
@@ -121,7 +134,7 @@
     --shadow-2:      0 2px 4px rgba(26,24,20,0.04), 0 12px 28px rgba(26,24,20,0.08);
     --shadow-drawer: -8px 0 24px rgba(20,24,33,0.10), -16px 0 48px rgba(20,24,33,0.08);
     --shadow-modal:  0 8px 24px rgba(20,24,33,0.12), 0 16px 48px rgba(20,24,33,0.14);
-    --shadow-focus:  0 0 0 3px rgba(123,45,38,0.24);
+    --shadow-focus:  0 0 0 3px rgba(91,91,214,0.24);
 
     /* Motion */
     --duration-fast:    100ms;
@@ -166,12 +179,12 @@
     --icon:             #4A3F38;
     --icon-muted:       #9A8F87;
 
-    /* ── Brand accent (single) — primary rust accent ── */
-    --accent:           var(--brand-rust);
-    --accent-hover:     var(--brand-rust-hover);
-    --accent-soft:      var(--brand-rust-soft);
-    --accent-subtle:    var(--accent-50);
-    --accent-soft-hover: color-mix(in srgb, var(--brand-rust) 12%, transparent);
+    /* ── Interaction accent (single) — the product violet (LP-FND-09) ── */
+    --accent:           var(--brand-product);
+    --accent-hover:     var(--brand-product-hover);
+    --accent-soft:      var(--brand-product-soft);
+    --accent-subtle:    var(--brand-product-soft);
+    --accent-soft-hover: color-mix(in srgb, var(--brand-product) 12%, transparent);
 
     /* ── Risk tiers (only valid semantic use of red/amber/green) ── */
     --risk-critical:    #9F1D1D;
@@ -208,7 +221,7 @@
     --warning-bd:       #E5D194;
 
     /* ── Focus & shadow base ── */
-    --focus-ring:       var(--brand-rust);
+    --focus-ring:       var(--brand-product);
     --shadow-color:     25 15% 11%;
 
     /* ── Shadows ── */
@@ -354,9 +367,9 @@
     --landing-line-faint:  #EFEADD;
     --landing-border:      var(--border-default); /* #D8D0BD */
 
-    /* Accent — burgundy (aliases of brand tokens) */
-    --landing-accent:       var(--brand-rust);       /* #7B2D26 */
-    --landing-accent-hover: var(--brand-rust-hover); /* #5E2018 */
+    /* Accent — the product violet (LP-FND-09), not the editorial rust */
+    --landing-accent:       var(--brand-product);       /* #5B5BD6 */
+    --landing-accent-hover: var(--brand-product-hover); /* #4949B8 */
     --landing-accent-fg:    var(--brand-paper);      /* text/icon on accent bg */
 
     /* Dark section (§1 + audit form) */
@@ -397,7 +410,7 @@
     --landing-amber:          #C07838;         /* amber/orange warning */
     --landing-orange:         #D67448;         /* orange trend indicator */
     --landing-green-bright:   #3A7A40;         /* bright green status dot */
-    --landing-accent-dark:    #A85040;         /* darker rust (hashing active state) */
+    --landing-accent-dark:    #8784E1;         /* product violet, dark-section active state */
     /* Card surface overlays — rgba so opacity is preserved */
     --landing-card-bg:        rgba(22,21,16,0.96);   /* glass card background */
     --landing-card-hd:        rgba(15,14,10,0.65);   /* card header tint */
@@ -444,9 +457,9 @@
 
     /* Shadows — landing-specific depth levels */
     --landing-shadow-card:  0 2px 4px rgba(26,24,20,0.04), 0 8px 24px rgba(26,24,20,0.08), 0 24px 48px rgba(26,24,20,0.08);
-    --landing-shadow-panel: 0 22px 54px -26px rgba(26,24,20,0.18), 0 44px 96px -48px rgba(123,45,38,0.10);
-    --landing-shadow-hero:  0 1px 0 rgba(123,45,38,0.10), 0 4px 12px -4px rgba(123,45,38,0.08), 0 28px 68px -24px rgba(26,24,20,0.18), 0 62px 130px -54px rgba(123,45,38,0.14);
-    --landing-shadow-cta:   0 1px 0 #7B2D26, 0 8px 24px -12px rgba(123,45,38,0.40);
+    --landing-shadow-panel: 0 22px 54px -26px rgba(26,24,20,0.18), 0 44px 96px -48px rgba(91,91,214,0.10);
+    --landing-shadow-hero:  0 1px 0 rgba(91,91,214,0.10), 0 4px 12px -4px rgba(91,91,214,0.08), 0 28px 68px -24px rgba(26,24,20,0.18), 0 62px 130px -54px rgba(91,91,214,0.14);
+    --landing-shadow-cta:   0 1px 0 #3C3C96, 0 8px 24px -12px rgba(91,91,214,0.40);
 
     /* ══════════════════════════════════════════════════════════════════════
      * Foundation landing rebuild (--fl-*) — editorial display system.
@@ -479,13 +492,15 @@
     --fl-nav-ink: rgba(246,243,238,0.92);
     --fl-nav-ink-dim: rgba(246,243,238,0.62);
 
-    /* Brand accent — burnt copper/rust, intentionally separate from app accent */
-    --fl-brand:         #A85040;
-    --fl-brand-deep:    #7B2D26;
-    --fl-brand-hover:   #5E2018;
-    --fl-brand-soft:    #F4E6E0;
-    --fl-brand-wash:    rgba(168, 80, 64, 0.14);
-    --fl-brand-glow:    rgba(168, 80, 64, 0.32);
+    /* Product-facing brand accent — the same violet used by the app. The warm
+       editorial character comes from paper, ink and imagery, not a second CTA
+       colour system. */
+    --fl-brand:         #5B5BD6;
+    --fl-brand-deep:    #4949B8;
+    --fl-brand-hover:   #3C3C96;
+    --fl-brand-soft:    #F0EFFF;
+    --fl-brand-wash:    rgba(91, 91, 214, 0.14);
+    --fl-brand-glow:    rgba(91, 91, 214, 0.32);
     --fl-purple:        var(--fl-brand-deep);
     --fl-purple-hover:  var(--fl-brand-hover);
     --fl-purple-card:   var(--fl-brand-deep);
@@ -546,7 +561,7 @@
     --bg-surface-alt:   #FAFAFA;
     --bg-surface-sunk:  #F7F7F7;
     --bg-hover:         #F6F6F6;
-    --bg-selected:      #F4E6E0;
+    --bg-selected:      #F0EFFF;
     --bg-subtle:        #FAFAFA;
     --bg-muted:         #F7F7F7;
     --bg-inset:         #FFFFFF;
@@ -567,7 +582,7 @@
     --text-subtle:      #6B6560;
     --text-disabled:    #C2BAB0;
     --text-inverse:     #FFFFFF;
-    --text-link:        #7B2D26;
+    --text-link:        #3C3C96;
     --ink-primary:      #1A1814;
     --ink-secondary:    #6B6560;
     --ink-tertiary:     #6B6560;
@@ -575,29 +590,33 @@
     --icon:             #6B6560;
     --icon-muted:       #6B6560;
 
-    /* Brand / Interactive — rust accent */
-    --accent:           #A85040;
-    --accent-hover:     #7B2D26;
-    --accent-soft:      #F4E6E0;
-    --accent-border:    #EBCBC2;
-    --accent-subtle:    #FAF0EC;
-    --accent-50:        #FAF0EC;
-    --accent-100:       #F4E6E0;
-    --accent-200:       #EBCBC2;
-    --accent-500:       #A85040;
-    --accent-600:       #7B2D26;
-    --accent-700:       #5E2018;
+    /*
+     * Brand / Interactive — the product violet (LP-FND-09). This is the effective
+     * declaration: it re-states --accent-* later in the same :root than the ramp
+     * above, so a change made only to the first block has no visible effect.
+     */
+    --accent:           #5B5BD6;
+    --accent-hover:     #4949B8;
+    --accent-soft:      #F0EFFF;
+    --accent-border:    #DEDCFF;
+    --accent-subtle:    #F5F4FF;
+    --accent-50:        #F5F4FF;
+    --accent-100:       #F0EFFF;
+    --accent-200:       #DEDCFF;
+    --accent-500:       #5B5BD6;
+    --accent-600:       #4949B8;
+    --accent-700:       #3C3C96;
     --accent-fg-on-500: #FFFFFF;
-    --action-primary:      #A85040;
-    --action-primary-hover:#7B2D26;
-    --action-primary-soft: #F4E6E0;
-    --action-ink:          #A85040;
-    --action-ink-hover:    #7B2D26;
-    --action-ink-soft:     #F4E6E0;
+    --action-primary:      #5B5BD6;
+    --action-primary-hover:#4949B8;
+    --action-primary-soft: #F0EFFF;
+    --action-ink:          #3C3C96;
+    --action-ink-hover:    #4949B8;
+    --action-ink-soft:     #F0EFFF;
 
     /* Focus */
-    --focus-ring:       #A85040;
-    --shadow-focus:     0 0 0 3px rgba(168,80,64,0.22);
+    --focus-ring:       #5B5BD6;
+    --shadow-focus:     0 0 0 3px rgba(91,91,214,0.22);
 
     /* Status — evidence semantics (green = evidence ready, amber = limited, red = severe only) */
     --success:          #18794E;
@@ -682,11 +701,11 @@
     --background: #F4F3F1; --foreground: #1A1814;
     --card: #FFFFFF; --card-foreground: #1A1814;
     --popover: #FFFFFF; --popover-foreground: #1A1814;
-    --primary: #A85040; --primary-foreground: #FFFFFF;
+    --primary: var(--action-primary); --primary-foreground: #FFFFFF;
     --secondary: #EFEDEB; --secondary-foreground: #1A1814;
     --muted: #EFEDEB; --muted-foreground: #6B6560;
     --destructive: #CE2C31; --destructive-foreground: #FFFFFF;
-    --input: #E3DED8; --ring: #A85040;
+    --input: #E3DED8; --ring: var(--focus-ring);
 
     /* Semantic compatibility aliases used by operational surfaces. */
     --danger: var(--risk-critical-fg);
@@ -1312,7 +1331,7 @@
   width: 1px;
   height: 1em;
   margin-left: 1px;
-  background: #7B2D26;
+  background: var(--accent-500);
   vertical-align: -0.12em;
   animation: ua-caret-blink 900ms steps(1, end) infinite;
 }
@@ -1457,7 +1476,7 @@
 
 /* ── Ledger row separators ── */
 .ua-ledger-row + .ua-ledger-row {
-  border-top: 1px solid rgba(123,45,38,0.10);
+  border-top: 1px solid rgba(91,91,214,0.10);
 }
 
 /* Stagger helpers */
@@ -1769,7 +1788,7 @@
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(circle at 50% 50%, rgba(123, 45, 38, 0.08), transparent 50%);
+    radial-gradient(circle at 50% 50%, rgba(91, 91, 214, 0.08), transparent 50%);
   mask-image: radial-gradient(circle at 50% 50%, #000 0%, transparent 90%);
 }
 
@@ -1799,7 +1818,7 @@
   inset: 0 0 auto 0;
   height: 2px;
   pointer-events: none;
-  background: linear-gradient(90deg, rgba(123,45,38,0.70), rgba(123,45,38,0.20), transparent);
+  background: linear-gradient(90deg, rgba(91,91,214,0.70), rgba(91,91,214,0.20), transparent);
   opacity: 1;
 }
 
@@ -1818,7 +1837,7 @@
   inset: 0 0 auto 0;
   height: 2px;
   pointer-events: none;
-  background: linear-gradient(90deg, rgba(182,81,42,0.80), rgba(182,81,42,0.20), transparent);
+  background: linear-gradient(90deg, rgba(91,91,214,0.80), rgba(91,91,214,0.20), transparent);
   opacity: 1;
 }
 
@@ -3624,7 +3643,6 @@ nextjs-portal {
   /* Other animated elements */
   .ua-pulse,
   .ua-caret,
-  .ua-jitter,
   .ua-hover-lift,
   .ua-hover-glow,
   .ua-parallax-layer,
@@ -3665,17 +3683,11 @@ nextjs-portal {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  /* A restrained press response for high-frequency operational controls. */
-  @keyframes ua-control-jitter {
-    0%, 100% { transform: translate3d(0, 0, 0); }
-    35% { transform: translate3d(-1px, 0, 0); }
-    70% { transform: translate3d(1px, 0, 0); }
-  }
-
-  .ua-jitter:not(:disabled):active {
-    animation: ua-control-jitter 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-  }
-
+  /*
+   * The `.ua-jitter` press shake was deleted for Living Precision §7.2: a button
+   * press is an 80ms fill/inset response, and "no translation, shake, or label
+   * movement" is explicit. Product controls acknowledge a press through colour.
+   */
   button,
   a,
   summary,

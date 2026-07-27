@@ -6,7 +6,7 @@ type SparkTrendProps = {
 };
 
 /** Server SVG sparkline for MetricCard/WorkbenchKpiStrip microchart slots. */
-export function SparkTrend({ values, colourVar = '--ua-chart-1', width = 60, height = 20 }: SparkTrendProps) {
+export function SparkTrend({ values, colourVar = '--ua-chart-primary', width = 60, height = 20 }: SparkTrendProps) {
   if (values.length < 2) return null;
   const max = Math.max(...values);
   const min = Math.min(...values);

@@ -113,7 +113,7 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
                   {currency ?? '—'}
                 </span>
               </div>
-              <p className="text-[length:var(--ua-text-micro-size)] font-normal text-[var(--ua-text-tertiary)]">
+              <p className="text-[length:var(--ua-text-metadata-size)] font-normal text-[var(--ua-text-tertiary)]">
                 Enter {currency ?? 'the case currency'} in major units.
               </p>
             </>
@@ -121,7 +121,7 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
           <textarea className="min-h-20 w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()}
             placeholder={decisionRequiresRationale(state.decision as MerchantDecision) ? 'Rationale (required)' : 'Decision rationale (optional)'} value={state.notes}
             onChange={(e) => patch({ notes: e.target.value })} onBlur={() => setDecisionTouched(true)} aria-label="Decision rationale" />
-          <p id="manage-decision-requirement" className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">
+          <p id="manage-decision-requirement" className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">
             {!claimId
               ? 'Select or save a case before recording a decision.'
               : !hasDecision
@@ -236,6 +236,9 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
         description="This records your authorization and its value. It does not send a refund, replacement, credit, or external claim."
         actions={[{
           label: busy ? 'Recording…' : 'Confirm & record',
+          // §3.2 — authorizing a monetary decision into the append-only ledger is
+          // the canonical commit action, not an ordinary accent forward action.
+          variant: 'commit',
           onClick: () => {
             setConfirming(false);
             void onOutcome();

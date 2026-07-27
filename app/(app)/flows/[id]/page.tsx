@@ -60,7 +60,7 @@ export default async function FlowDetail({
         actions={
         <Link
           href={`/flows/runs?workflow=${id}`}
-          className="inline-flex h-7 items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2.5 text-[length:var(--ua-text-micro-size)] font-semibold hover:bg-[var(--ua-surface-hover)]"
+          className="inline-flex h-7 items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2.5 text-[length:var(--ua-text-metadata-size)] font-semibold hover:bg-[var(--ua-surface-hover)]"
         >
           Run history
         </Link>

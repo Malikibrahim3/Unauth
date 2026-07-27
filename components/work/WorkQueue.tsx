@@ -84,17 +84,25 @@ const date = (value: string | null) =>
     ? formatDateAbsolute(value)
     : "—";
 
+/*
+ * "Due today" is a calendar-day statement, not a 24-hour window. The previous
+ * `remaining < 86400000` test labelled a deadline tomorrow morning as due today,
+ * which now visibly contradicts the queue pulse's due bands — the bands and the
+ * row label must use the same boundary (§6.6: distinct states stay distinct).
+ */
 function dueState(value: string | null, asOfMs = nowMs()) {
   if (!value)
     return { label: "No deadline", className: "text-[var(--ua-text-tertiary)]" };
   const due = Date.parse(value);
-  const remaining = due - asOfMs;
-  if (remaining < 0)
+  if (due - asOfMs < 0)
     return {
       label: `Overdue · ${date(value)}`,
       className: "text-[var(--ua-critical)]",
     };
-  if (remaining < 86400000)
+  const tomorrow = new Date(asOfMs);
+  tomorrow.setUTCHours(0, 0, 0, 0);
+  tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+  if (due < tomorrow.getTime())
     return {
       label: `Due today · ${date(value)}`,
       className: "text-[var(--ua-warning)]",
@@ -385,15 +393,17 @@ export function WorkQueue({
             key={key}
             href={`/work?view=${key}`}
             aria-current={view === key ? "page" : undefined}
-            className="inline-flex h-7 items-center whitespace-nowrap rounded-[var(--ua-radius-control)] border px-2.5 text-[length:var(--ua-text-micro-size)] font-medium"
+            className="inline-flex h-7 items-center whitespace-nowrap rounded-[var(--ua-radius-control)] border px-2.5 text-[length:var(--ua-text-metadata-size)] font-medium"
             style={{
               background:
-                view === key ? "var(--ua-surface-selected)" : "var(--ua-surface-primary)",
-              borderColor: "var(--ua-border-default)",
+                view === key ? "var(--ua-accent-100)" : "var(--ua-surface-primary)",
+              borderColor:
+                view === key ? "var(--ua-accent-200)" : "var(--ua-border-default)",
+              color: view === key ? "var(--ua-accent-800)" : undefined,
             }}
           >
             {label}
-            <span className="ml-1.5 tabular-nums text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">{formatNumber(viewCounts[key])}</span>
+            <span className="ml-1.5 tabular-nums text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">{formatNumber(viewCounts[key])}</span>
           </Link>
         ))}
         {!primaryViews.some(([key]) => key === view) ? (() => {
@@ -402,11 +412,11 @@ export function WorkQueue({
             <Link
               href={`/work?view=${current[0]}`}
               aria-current="page"
-              className="inline-flex h-7 items-center whitespace-nowrap rounded-[var(--ua-radius-control)] border px-2.5 text-[length:var(--ua-text-micro-size)] font-medium"
+              className="inline-flex h-7 items-center whitespace-nowrap rounded-[var(--ua-radius-control)] border px-2.5 text-[length:var(--ua-text-metadata-size)] font-medium"
               style={{ background: 'var(--ua-surface-selected)', borderColor: 'var(--ua-border-default)' }}
             >
               {current[1]}
-              <span className="ml-1.5 tabular-nums text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">{formatNumber(viewCounts[current[0]])}</span>
+              <span className="ml-1.5 tabular-nums text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">{formatNumber(viewCounts[current[0]])}</span>
             </Link>
           ) : null;
         })() : null}
@@ -415,40 +425,40 @@ export function WorkQueue({
           aria-expanded={moreViewsOpen}
           aria-controls="work-more-views"
           onClick={() => setMoreViewsOpen((open) => !open)}
-          className="inline-flex h-7 items-center whitespace-nowrap rounded-[var(--ua-radius-control)] border px-2.5 text-[length:var(--ua-text-micro-size)] font-semibold text-[var(--ua-text-primary)] hover:bg-[var(--ua-surface-hover)]"
+          className="inline-flex h-7 items-center whitespace-nowrap rounded-[var(--ua-radius-control)] border px-2.5 text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-primary)] hover:bg-[var(--ua-surface-hover)]"
           style={{ borderColor: 'var(--ua-border-default)', background: moreViewsOpen ? 'var(--ua-surface-selected)' : 'var(--ua-surface-primary)' }}
         >
           More views
-          <span className="ml-1.5 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">{extraViews.length + savedViews.length}</span>
+          <span className="ml-1.5 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">{extraViews.length + savedViews.length}</span>
         </button>
         <button
           type="button"
           onClick={() => setSaveOpen(true)}
-          className="inline-flex h-7 items-center whitespace-nowrap rounded-[var(--ua-radius-control)] border border-dashed px-2.5 text-[length:var(--ua-text-micro-size)] font-semibold text-[var(--ua-text-primary)] hover:bg-[var(--ua-surface-hover)]"
+          className="inline-flex h-7 items-center whitespace-nowrap rounded-[var(--ua-radius-control)] border border-dashed px-2.5 text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-primary)] hover:bg-[var(--ua-surface-hover)]"
         >
           Save view
         </button>
       </nav>
       {moreViewsOpen ? (
         <div id="work-more-views" className="mb-3 flex flex-wrap items-center gap-1.5 border-y border-[var(--ua-border-subtle)] py-2" role="group" aria-label="More Work views">
-          <span className="mr-1 text-[length:var(--ua-text-micro-size)] font-semibold text-[var(--ua-text-tertiary)]">More</span>
+          <span className="mr-1 text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-tertiary)]">More</span>
           {extraViews.map(([key, label]) => (
             <Link
               key={key}
               href={`/work?view=${key}`}
               aria-current={view === key ? 'page' : undefined}
-              className="inline-flex h-7 items-center whitespace-nowrap rounded-[var(--ua-radius-control)] border px-2.5 text-[length:var(--ua-text-micro-size)] font-medium"
-              style={{ background: view === key ? 'var(--ua-surface-selected)' : 'var(--ua-surface-primary)', borderColor: 'var(--ua-border-default)' }}
+              className="inline-flex h-7 items-center whitespace-nowrap rounded-[var(--ua-radius-control)] border px-2.5 text-[length:var(--ua-text-metadata-size)] font-medium"
+              style={{ background: view === key ? 'var(--ua-accent-100)' : 'var(--ua-surface-primary)', borderColor: view === key ? 'var(--ua-accent-200)' : 'var(--ua-border-default)' }}
             >
               {label}
-              <span className="ml-1.5 tabular-nums text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">{formatNumber(viewCounts[key])}</span>
+              <span className="ml-1.5 tabular-nums text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">{formatNumber(viewCounts[key])}</span>
             </Link>
           ))}
           {savedViews.map((saved) => {
             const savedView = typeof saved.definition?.view === 'string' ? saved.definition.view : 'open';
-            return <Link key={saved.id} href={`/work?view=${encodeURIComponent(savedView)}`} className="inline-flex h-7 items-center gap-1.5 rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-selected)] px-2.5 text-[length:var(--ua-text-micro-size)] font-medium text-[var(--ua-text-primary)] hover:bg-[var(--ua-surface-hover)]">{saved.name}{saved.is_shared ? <span className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">Shared</span> : null}</Link>;
+            return <Link key={saved.id} href={`/work?view=${encodeURIComponent(savedView)}`} className="inline-flex h-7 items-center gap-1.5 rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-selected)] px-2.5 text-[length:var(--ua-text-metadata-size)] font-medium text-[var(--ua-text-primary)] hover:bg-[var(--ua-surface-hover)]">{saved.name}{saved.is_shared ? <span className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">Shared</span> : null}</Link>;
           })}
-          {savedViewsState === 'ready' && savedViews.length === 0 ? <span className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">No saved views yet.</span> : null}
+          {savedViewsState === 'ready' && savedViews.length === 0 ? <span className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">No saved views yet.</span> : null}
         </div>
       ) : null}
       {savedViewsState === 'unavailable' ? (
@@ -676,12 +686,12 @@ export function WorkQueue({
                       </td>
                       <td className="px-3 py-2.5">
                         <span className="flex min-w-0 items-center gap-2">
-                          {item.ownerUserId || item.ownerRole ? <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[var(--ua-border-default)] bg-[var(--ua-surface-selected)] text-[length:var(--ua-text-micro-size)] font-bold text-[var(--ua-text-primary)]">
+                          {item.ownerUserId || item.ownerRole ? <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[var(--ua-border-default)] bg-[var(--ua-surface-selected)] text-[length:var(--ua-text-metadata-size)] font-bold text-[var(--ua-text-primary)]">
                             {(item.ownerInitials ?? (item.ownerName ? item.ownerName.slice(0, 2) : title(item.ownerRole).slice(0, 2))).toUpperCase()}
                           </span> : null}
                           <span className="min-w-0 truncate" title={item.ownerUserId ? `${item.ownerName ?? 'Assigned'}${item.ownerRole ? ` · ${title(item.ownerRole)}` : ''}` : item.ownerRole ? title(item.ownerRole) : "Unassigned"}>
                             {item.ownerUserId ? item.ownerName ?? "Assigned" : item.ownerRole ? title(item.ownerRole) : "Unassigned"}
-                            {item.ownerUserId && item.ownerRole ? <span className="ml-1 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">· {title(item.ownerRole)}</span> : null}
+                            {item.ownerUserId && item.ownerRole ? <span className="ml-1 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">· {title(item.ownerRole)}</span> : null}
                           </span>
                         </span>
                       </td>

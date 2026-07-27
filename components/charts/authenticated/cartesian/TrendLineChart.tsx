@@ -25,7 +25,7 @@ type TrendLineChartProps = {
 /** T3 — restrained single-series trend line with a flat area wash. */
 export function TrendLineChart({ data, colourVar, valueFormatter, height = 220 }: TrendLineChartProps) {
   const theme = useChartTheme();
-  const hue = (theme as Record<string, string>)[colourVar] || 'var(--ua-chart-1)';
+  const hue = (theme as Record<string, string>)[colourVar] || 'var(--ua-chart-primary)';
 
   return (
     <div style={{ width: '100%', height }}>

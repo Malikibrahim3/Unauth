@@ -212,7 +212,12 @@ export function DashboardOverview({
             value: operation.count,
             displayValue: `${formatNumber(operation.count)} ${operation.count === 1 ? 'case' : 'cases'}`,
             href: operation.href,
-            tone: index === 0 ? 'attention' : 'neutral',
+            /*
+             * §6.8 Overview priority: "no semantic hue unless the bar encodes a
+             * semantic state". Ranking first is not a warning — the leading bar
+             * takes the analytical accent and the rest stay neutral.
+             */
+            tone: index === 0 ? 'primary' : 'neutral',
           }))}
           annotation={{ value: formatNumber(report.recordCount), label: ' cases in period' }}
         />

@@ -365,7 +365,7 @@ export function CaseInvestigationsCard({
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-[length:var(--ua-text-micro-size)] font-semibold text-[var(--ua-text-secondary)]">
+          <p className="text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-secondary)]">
             Investigations
           </p>
           <h2 className="mt-1 text-base font-semibold text-[var(--ua-text-primary)]">
@@ -472,7 +472,7 @@ export function CaseInvestigationsCard({
                             value={overdue ? 'overdue' : investigation.status}
                           />
                           {investigation.is_primary ? (
-                            <span className="rounded-full border border-[var(--ua-border-default)] px-2 py-0.5 text-[length:var(--ua-text-micro-size)] font-medium text-[var(--ua-text-secondary)]">
+                            <span className="rounded-full border border-[var(--ua-border-default)] px-2 py-0.5 text-[length:var(--ua-text-metadata-size)] font-medium text-[var(--ua-text-secondary)]">
                               Primary
                             </span>
                           ) : null}

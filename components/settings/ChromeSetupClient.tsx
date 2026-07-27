@@ -51,7 +51,7 @@ export default function ChromeSetupClient({ hasApiKeys, keyPrefixes }: Props) {
         </p>
         <Link
           href="/settings/integrations"
-          className="mt-3 inline-flex h-8 items-center rounded-[var(--ua-radius-control)] px-3 text-[length:var(--ua-text-micro-size)] font-semibold"
+          className="mt-3 inline-flex h-8 items-center rounded-[var(--ua-radius-control)] px-3 text-[length:var(--ua-text-metadata-size)] font-semibold"
           style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)' }}
         >
           Settings → API &amp; Integrations
@@ -65,7 +65,7 @@ export default function ChromeSetupClient({ hasApiKeys, keyPrefixes }: Props) {
   return (
     <div className="space-y-3">
       <p
-        className="rounded-[var(--ua-radius-control)] border px-4 py-3 text-[length:var(--ua-text-micro-size)]"
+        className="rounded-[var(--ua-radius-control)] border px-4 py-3 text-[length:var(--ua-text-metadata-size)]"
         style={{ borderColor: 'var(--ua-border-default)', color: 'var(--ua-text-secondary)' }}
       >
         Available for manual install while Chrome Web Store listing is pending.
@@ -76,7 +76,7 @@ export default function ChromeSetupClient({ hasApiKeys, keyPrefixes }: Props) {
           type="button"
           onClick={() => void downloadZip()}
           disabled={downloading}
-          className="inline-flex h-8 items-center gap-2 rounded-[var(--ua-radius-control)] px-3 text-[length:var(--ua-text-micro-size)] font-semibold disabled:opacity-60"
+          className="inline-flex h-8 items-center gap-2 rounded-[var(--ua-radius-control)] px-3 text-[length:var(--ua-text-metadata-size)] font-semibold disabled:opacity-60"
           style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)' }}
         >
           <Download className="h-4 w-4" />

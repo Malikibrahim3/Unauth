@@ -1005,7 +1005,7 @@
 .heroEyebrow svg,
 .heroEyebrowIcon {
   flex-shrink: 0;
-  color: #a85040;
+  color: var(--landing-accent, #5b5bd6);
   stroke: currentColor;
 }
 
@@ -1102,13 +1102,15 @@
   max-width: 430px;
 }
 
+/* Product CTA — the product violet, so the public entry point and the app it
+   leads into are one identity (LP-FND-09). Editorial rust stays elsewhere. */
 .heroCtaPrimary {
   composes: heroFont;
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
   border-radius: 9999px;
-  background: #a85040;
+  background: var(--landing-accent, #5b5bd6);
   padding: 0.625rem 1.25rem;
   font-weight: 600;
   font-size: 14px;
@@ -1119,7 +1121,7 @@
 }
 
 .heroCtaPrimary:hover {
-  background: #7b2d26;
+  background: var(--landing-accent-hover, #4949b8);
 }
 
 .heroCtaSecondary {
@@ -1274,8 +1276,8 @@
   height: 30px;
   flex-shrink: 0;
   border-radius: 999px;
-  background: #f4e6e0;
-  color: #7b2d26;
+  background: var(--accent-100, #f0efff);
+  color: var(--accent-700, #3c3c96);
 }
 
 .heroNavMenuBtn {
@@ -1306,7 +1308,7 @@
   padding: 0 12px 0 22px;
   border-color: transparent;
   background: #080807;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(168, 80, 64, 0.18);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(91, 91, 214, 0.18);
 }
 
 .heroNavbarLight .heroNavCta:hover {
@@ -1322,8 +1324,8 @@
 .heroNavbarLight .heroNavCtaArrow {
   width: 26px;
   height: 26px;
-  background: #f4e6e0;
-  color: #7b2d26;
+  background: var(--accent-100, #f0efff);
+  color: var(--accent-700, #3c3c96);
 }
 
 .heroNavbarLight .heroNavMenuBtn {
@@ -2053,9 +2055,9 @@
     height: 42px;
     width: 42px;
     border-radius: 11px;
-    border: 1px solid color-mix(in srgb, var(--landing-accent, #7b2d26) 18%, transparent);
-    background: var(--accent-50, #faf0ec);
-    color: var(--landing-accent, #7b2d26);
+    border: 1px solid color-mix(in srgb, var(--landing-accent, #5b5bd6) 18%, transparent);
+    background: var(--accent-50, #f5f4ff);
+    color: var(--landing-accent, #5b5bd6);
     cursor: pointer;
     transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease,
       transform 0.12s ease, box-shadow 0.2s ease;
@@ -2067,10 +2069,10 @@
   }
 
   [data-collapse][data-expanded='true'] .collapseToggle {
-    background: var(--landing-accent, #7b2d26);
-    border-color: var(--landing-accent, #7b2d26);
+    background: var(--landing-accent, #5b5bd6);
+    border-color: var(--landing-accent, #5b5bd6);
     color: #ffffff;
-    box-shadow: 0 6px 18px color-mix(in srgb, var(--landing-accent, #7b2d26) 28%, transparent);
+    box-shadow: 0 6px 18px color-mix(in srgb, var(--landing-accent, #5b5bd6) 28%, transparent);
   }
 
   .collapseIcon {

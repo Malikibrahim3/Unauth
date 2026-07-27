@@ -103,7 +103,7 @@ export function NotificationPreferencesForm({ initial }: { initial: Pref[] }) {
     <div className="space-y-3">
       <p
         aria-live="polite"
-        className="min-h-4 px-1 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-secondary)]"
+        className="min-h-4 px-1 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-secondary)]"
       >
         {status}
       </p>
@@ -127,12 +127,12 @@ export function NotificationPreferencesForm({ initial }: { initial: Pref[] }) {
             >
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-[length:var(--ua-text-micro-size)] font-semibold">{item.label}</h2>
+                  <h2 className="text-[length:var(--ua-text-metadata-size)] font-semibold">{item.label}</h2>
                   {isSaving ? (
                     <StatusBadge family="workflowStatus" value="saving" size="sm" />
                   ) : null}
                 </div>
-                <p className="mt-1 text-[length:var(--ua-text-micro-size)] leading-4 text-[var(--ua-text-secondary)]">
+                <p className="mt-1 text-[length:var(--ua-text-metadata-size)] leading-4 text-[var(--ua-text-secondary)]">
                   {item.description}
                 </p>
               </div>
@@ -163,10 +163,10 @@ export function NotificationPreferencesForm({ initial }: { initial: Pref[] }) {
       <Panel variant="panel" className="flex items-start gap-3 p-3.5">
         <MailX className="mt-0.5 h-4 w-4 text-[var(--ua-text-tertiary)]" />
         <div>
-          <h2 className="text-[length:var(--ua-text-micro-size)] font-semibold">
+          <h2 className="text-[length:var(--ua-text-metadata-size)] font-semibold">
             Email delivery is not enabled
           </h2>
-          <p className="mt-1 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-secondary)]">
+          <p className="mt-1 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-secondary)]">
             Email notifications are coming later. Your in-app preferences stay
             active in the meantime.
           </p>

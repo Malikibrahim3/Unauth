@@ -5,7 +5,8 @@
  */
 
 // T3 — trend line
-export const TREND_LINE_WIDTH = 2;
+/** §6.3 — the primary line is 2.25px; comparison lines stay 1.5–2px. */
+export const TREND_LINE_WIDTH = 2.25;
 export const TREND_HOVER_DOT_R = 4;
 export const TREND_HOVER_DOT_RING = 2;
 export const TREND_MAX_SERIES = 3;
@@ -13,6 +14,22 @@ export const TREND_MAX_SERIES = 3;
 // T4 — flat bars + dashed comparison
 /** Spec §8.3: bars carry a 4px radius at the data end only. */
 export const BAR_END_RADIUS = 4;
+/*
+ * Living Precision §6.3 bar weight. A bar that reads as a hairline reads as
+ * decoration: bandwidth (72–82% target, 65% floor) takes precedence over
+ * stretching a few columns across a wide plot, and no desktop bar goes below
+ * 12px. The previous 30px cap with a 28% category gap produced ~65% bandwidth
+ * at best and thin columns at worst.
+ */
+export const BAR_CATEGORY_GAP = '18%';
+/** Low-cardinality vertical columns: 36–44px, default 42px. */
+export const BAR_MAX_SIZE = 42;
+/** Absolute desktop floor for a mark-carrying bar. */
+export const BAR_MIN_SIZE = 12;
+/** Ranked and progress bars. */
+export const RANKED_BAR_HEIGHT = 12;
+/** Mini meters. */
+export const METER_HEIGHT = 8;
 export const COMPARISON_DASH: [number, number] = [5, 4];
 export const COMPARISON_LINE_WIDTH = 1.5;
 export const COMPARISON_DOT_R = 2.5;

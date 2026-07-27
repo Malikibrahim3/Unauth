@@ -8,18 +8,16 @@ export interface WorkbenchKpiItem {
   hint?: string;
   /** Optional lightweight trend sparkline (≥2 points) rendered beside the value. */
   trend?: number[];
-  /** Chart token for the sparkline stroke (default --ua-chart-1). */
+  /** Chart token for the sparkline stroke (default --ua-chart-primary). */
   trendColourVar?: string;
 }
 
 interface WorkbenchKpiStripProps {
   items: WorkbenchKpiItem[];
-  /** Retained for call-site compatibility; column geometry is now owned by MetricGroup. */
-  colsClassName?: string;
 }
 
-export function WorkbenchKpiStrip({ items, colsClassName = 'grid-cols-2 md:grid-cols-5' }: WorkbenchKpiStripProps) {
-  void colsClassName;
+/** Column geometry is owned by MetricGroup's adaptive KPI contract (§5.3). */
+export function WorkbenchKpiStrip({ items }: WorkbenchKpiStripProps) {
   return <MetricGroup
     items={items.map((item) => ({
       label: item.label,

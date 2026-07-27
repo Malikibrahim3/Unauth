@@ -62,7 +62,7 @@ export default function ShipBobAccountSelectionClient({ selectionId }: { selecti
         title="Choose a ShipBob channel"
         subtitle="The selected channel owns this connection, its imports, webhooks, records, health, and audit history."
         breadcrumbs={[{ label: 'Integrations', href: '/integrations' }, { label: 'ShipBob' }, { label: 'Select channel' }]}
-        meta={<span className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">Environment · {environment}</span>}
+        meta={<span className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">Environment · {environment}</span>}
       />
       <div className={pageStyles.pageBody}>
         <AuthenticatedPanel
@@ -71,7 +71,7 @@ export default function ShipBobAccountSelectionClient({ selectionId }: { selecti
           bodyClassName="grid max-w-2xl gap-3 p-4"
         >
           {accounts.length > 0 ? (
-            <label className="grid gap-1.5 text-[length:var(--ua-text-micro-size)] font-semibold text-[var(--ua-text-primary)]">
+            <label className="grid gap-1.5 text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-primary)]">
               Channel
               <select
                 value={selected}
@@ -83,11 +83,11 @@ export default function ShipBobAccountSelectionClient({ selectionId }: { selecti
               </select>
             </label>
           ) : null}
-          {message ? <p role={status === 'error' ? 'alert' : 'status'} className="rounded-[var(--ua-radius-control)] border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] px-3 py-2.5 text-[length:var(--ua-text-micro-size)] leading-5 text-[var(--ua-text-secondary)]">{message}</p> : null}
+          {message ? <p role={status === 'error' ? 'alert' : 'status'} className="rounded-[var(--ua-radius-control)] border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] px-3 py-2.5 text-[length:var(--ua-text-metadata-size)] leading-5 text-[var(--ua-text-secondary)]">{message}</p> : null}
           {status === 'error' ? (
             <Link
               href="/integrations/shipbob"
-              className="inline-flex h-8 w-fit items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] px-3 text-[length:var(--ua-text-micro-size)] font-semibold text-[var(--ua-text-primary)]"
+              className="inline-flex h-8 w-fit items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] px-3 text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-primary)]"
             >
               Start ShipBob connection again
             </Link>
@@ -96,7 +96,7 @@ export default function ShipBobAccountSelectionClient({ selectionId }: { selecti
             type="button"
             onClick={() => void submit()}
             disabled={status !== 'ready' || !selected}
-            className="inline-flex h-8 w-fit items-center rounded-[var(--ua-radius-control)] bg-[var(--ua-action-primary)] px-3 text-[length:var(--ua-text-micro-size)] font-semibold text-[var(--ua-action-primary-fg)] disabled:opacity-50"
+            className="inline-flex h-8 w-fit items-center rounded-[var(--ua-radius-control)] bg-[var(--ua-action-primary)] px-3 text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-action-primary-fg)] disabled:opacity-50"
           >
             {status === 'saving' ? 'Connecting…' : 'Connect selected channel'}
           </button>

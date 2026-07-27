@@ -35,7 +35,7 @@ export function FreshnessIndicator({
   const style = STYLES[state];
   return (
     <span
-      className={`inline-flex items-center gap-1.5 text-[length:var(--ua-text-micro-size)] ${className ?? ''}`}
+      className={`inline-flex items-center gap-1.5 text-[length:var(--ua-text-metadata-size)] ${className ?? ''}`}
       style={{ color: 'var(--ua-text-tertiary)' }}
       title={`Data freshness: ${style.label}`}
     >

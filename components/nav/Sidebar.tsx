@@ -11,7 +11,7 @@ function SidebarSkeleton({ merchantName }: Pick<SidebarProps, "merchantName">) {
         <UnauthLogo kind="lockup" tone="auto" height={18} alt="" decorative />
         <div className="mt-1.5 flex h-8 items-center gap-2 rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2">
           <span className="h-[22px] w-[22px] rounded-[var(--ua-radius-control)] bg-[var(--ua-surface-selected)]" aria-hidden="true" />
-          <span className="truncate text-[length:var(--ua-text-micro-size)] font-semibold text-[var(--ua-text-secondary)]">{merchantName ?? "Workspace"}</span>
+          <span className="truncate text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-secondary)]">{merchantName ?? "Workspace"}</span>
         </div>
       </div>
       <div className="flex-1 space-y-5 p-3" aria-hidden="true">

@@ -48,7 +48,7 @@ export function OperationalCaseDemo() {
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:py-12">
         <div className="grid gap-8 lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)] lg:items-start">
           <header className="lg:sticky lg:top-24">
-            <p className="text-[length:var(--ua-text-micro-size)] font-semibold text-[var(--ua-text-tertiary)]">Operational preview</p>
+            <p className="text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-tertiary)]">Operational preview</p>
             <h1 className="mt-3 text-[length:var(--ua-text-page-title-size)] font-semibold leading-6 tracking-normal">Decide with the full case in front of you.</h1>
             <p className="mt-3 max-w-xl text-sm leading-5 text-[var(--ua-text-secondary)]">Walk through how Unauth assembles evidence, explains a recommendation, and keeps the merchant decision and recovery handoff together.</p>
             <div className="mt-6 rounded-[var(--ua-radius-surface)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] p-4">
@@ -63,7 +63,7 @@ export function OperationalCaseDemo() {
             <div className="border-b border-[var(--ua-border-subtle)] p-4 sm:p-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="text-[length:var(--ua-text-micro-size)] font-medium text-[var(--ua-text-tertiary)]">Synthetic case · {MERCHANT_CASE_V1.caseReference}</p>
+                  <p className="text-[length:var(--ua-text-metadata-size)] font-medium text-[var(--ua-text-tertiary)]">Synthetic case · {MERCHANT_CASE_V1.caseReference}</p>
                   <h2 id="demo-case-title" className="mt-1 text-[length:var(--ua-text-section-title-size)] font-semibold leading-5">{current.title}</h2>
                 </div>
                 <StatusBadge family="workflowStatus" value={isFinal ? 'complete' : 'in_progress'} size="sm" />
@@ -76,7 +76,7 @@ export function OperationalCaseDemo() {
                     <li key={item.id}>
                       <button type="button" onClick={() => setStep(item.id)} className="w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ua-border-focus)]" aria-current={active ? 'step' : undefined}>
                         <span className={`block h-1 rounded-full ${active ? 'bg-[var(--ua-surface-inverse)]' : complete ? 'bg-[var(--ua-success)]' : 'bg-[var(--ua-surface-selected)]'}`} />
-                        <span className={`mt-2 hidden text-[length:var(--ua-text-micro-size)] leading-4 sm:block ${active ? 'font-semibold text-[var(--ua-text-primary)]' : 'text-[var(--ua-text-tertiary)]'}`}>{item.label}</span>
+                        <span className={`mt-2 hidden text-[length:var(--ua-text-metadata-size)] leading-4 sm:block ${active ? 'font-semibold text-[var(--ua-text-primary)]' : 'text-[var(--ua-text-tertiary)]'}`}>{item.label}</span>
                         <span className="sr-only">{item.label}{active ? ' (current)' : complete ? ' (complete)' : ''}</span>
                       </button>
                     </li>
@@ -124,7 +124,7 @@ function EvidenceStep() {
   return <div className="space-y-5">
     <p className="text-sm leading-6 text-[var(--ua-text-secondary)]">Every fact keeps a source and timestamp. A missing fact is visible as a gap, not filled with a guess.</p>
     <div className="space-y-2">
-      {MERCHANT_CASE_V1.sources.map((source) => <div key={source.label} className="grid gap-2 rounded-[var(--ua-radius-surface)] border border-[var(--ua-border-default)] p-3 sm:grid-cols-[110px_minmax(0,1fr)_80px] sm:items-center"><span className="text-[length:var(--ua-text-micro-size)] font-semibold text-[var(--ua-text-tertiary)]">{source.label}</span><span className="text-sm text-[var(--ua-text-secondary)]">{source.fact}</span><span className="text-xs text-[var(--ua-text-tertiary)] sm:text-right">{source.time}</span></div>)}
+      {MERCHANT_CASE_V1.sources.map((source) => <div key={source.label} className="grid gap-2 rounded-[var(--ua-radius-surface)] border border-[var(--ua-border-default)] p-3 sm:grid-cols-[110px_minmax(0,1fr)_80px] sm:items-center"><span className="text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-tertiary)]">{source.label}</span><span className="text-sm text-[var(--ua-text-secondary)]">{source.fact}</span><span className="text-xs text-[var(--ua-text-tertiary)] sm:text-right">{source.time}</span></div>)}
     </div>
     <div className="flex items-start gap-2 rounded-[var(--ua-radius-surface)] border border-[var(--ua-warning-border)] bg-[var(--ua-warning-bg)] p-3 text-sm text-[var(--ua-warning)]"><CircleAlert className="mt-0.5 shrink-0" size={16} aria-hidden="true" />Parcel contents are not confirmed by the available sources.</div>
   </div>;
@@ -133,7 +133,7 @@ function EvidenceStep() {
 function RecommendationStep() {
   return <div className="space-y-5">
     <p className="text-sm leading-6 text-[var(--ua-text-secondary)]">The recommendation is an explainable starting point for the merchant, not an outcome that executes on its own.</p>
-    <div className="rounded-[var(--ua-radius-surface)] border border-[var(--ua-info-border)] bg-[var(--ua-info-bg)] p-4"><div className="flex flex-wrap items-center justify-between gap-3"><span className="text-[length:var(--ua-text-micro-size)] font-semibold text-[var(--ua-info)]">Recommended action</span><StatusBadge family="caseStatus" value="evidence_needed" size="sm" /></div><p className="mt-2 text-[length:var(--ua-text-section-title-size)] font-semibold leading-5 text-[var(--ua-text-primary)]">{MERCHANT_CASE_V1.recommendation.action}</p><p className="mt-1 text-sm leading-5 text-[var(--ua-text-secondary)]">{MERCHANT_CASE_V1.recommendation.rationale}</p></div>
+    <div className="rounded-[var(--ua-radius-surface)] border border-[var(--ua-info-border)] bg-[var(--ua-info-bg)] p-4"><div className="flex flex-wrap items-center justify-between gap-3"><span className="text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-info)]">Recommended action</span><StatusBadge family="caseStatus" value="evidence_needed" size="sm" /></div><p className="mt-2 text-[length:var(--ua-text-section-title-size)] font-semibold leading-5 text-[var(--ua-text-primary)]">{MERCHANT_CASE_V1.recommendation.action}</p><p className="mt-1 text-sm leading-5 text-[var(--ua-text-secondary)]">{MERCHANT_CASE_V1.recommendation.rationale}</p></div>
     <dl className="grid gap-3 sm:grid-cols-2"><Fact label="Matched rule" value={MERCHANT_CASE_V1.recommendation.rule} /><Fact label="Confidence" value={MERCHANT_CASE_V1.recommendation.confidence} tone="warning" /><Fact label="Evidence gap" value={MERCHANT_CASE_V1.recommendation.gap} /></dl>
   </div>;
 }
@@ -157,5 +157,5 @@ function RecoveryStep({ decision }: { decision: string | null }) {
 }
 
 function Fact({ label, value, tone }: { label: string; value: string; tone?: 'warning' }) {
-  return <div className="rounded-[var(--ua-radius-surface)] border border-[var(--ua-border-default)] p-3"><dt className="text-[length:var(--ua-text-micro-size)] font-medium text-[var(--ua-text-tertiary)]">{label}</dt><dd className={`mt-1 text-sm font-medium leading-5 ${tone === 'warning' ? 'text-[var(--ua-warning)]' : 'text-[var(--ua-text-primary)]'}`}>{value}</dd></div>;
+  return <div className="rounded-[var(--ua-radius-surface)] border border-[var(--ua-border-default)] p-3"><dt className="text-[length:var(--ua-text-metadata-size)] font-medium text-[var(--ua-text-tertiary)]">{label}</dt><dd className={`mt-1 text-sm font-medium leading-5 ${tone === 'warning' ? 'text-[var(--ua-warning)]' : 'text-[var(--ua-text-primary)]'}`}>{value}</dd></div>;
 }

@@ -325,7 +325,9 @@ export function CanonicalCsvImportClient({
                 Validate
               </Button>
               <Button
-                variant="primary"
+                /* Writing deduplicated rows into the merchant ledger is
+                   irreversible — commit, not an accent forward action (§3.2). */
+                variant="commit"
                 loading={busy === "commit"}
                 disabled={!result || result.valid_count === 0 || Boolean(busy)}
                 onClick={commit}
@@ -357,7 +359,7 @@ export function CanonicalCsvImportClient({
                     variant="muted"
                     className="p-3"
                   >
-                    <dt className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">
+                    <dt className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">
                       {label}
                     </dt>
                     <dd className="mt-1 font-sans text-lg font-semibold tabular-nums">
@@ -435,7 +437,7 @@ export function CanonicalCsvImportClient({
                   <p className="text-sm font-medium">
                     {job.label ?? "CSV import"}
                   </p>
-                  <p className="mt-1 font-mono text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">
+                  <p className="mt-1 font-mono text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">
                     {job.id}
                   </p>
                 </div>

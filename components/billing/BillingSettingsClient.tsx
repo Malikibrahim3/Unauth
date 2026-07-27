@@ -271,7 +271,7 @@ export default function BillingSettingsClient() {
         {state.canTopUp && (
           <button
             type="button"
-            className="mt-3 h-8 rounded-[var(--ua-radius-control)] px-3 text-[length:var(--ua-text-micro-size)] font-semibold"
+            className="mt-3 h-8 rounded-[var(--ua-radius-control)] px-3 text-[length:var(--ua-text-metadata-size)] font-semibold"
             style={{
               background: "var(--ua-action-primary)",
               color: "var(--ua-canvas)",
@@ -373,7 +373,7 @@ export default function BillingSettingsClient() {
                 <div className="mt-2 flex gap-2">
                   <button
                     type="button"
-                    className="h-7 rounded-[var(--ua-radius-control)] px-3 text-[length:var(--ua-text-micro-size)]"
+                    className="h-7 rounded-[var(--ua-radius-control)] px-3 text-[length:var(--ua-text-metadata-size)]"
                     style={{ background: "var(--ua-risk-high)", color: "var(--ua-text-inverse)" }}
                     disabled={actionLoading === "cancel"}
                     onClick={() => void runAction("cancel")}
@@ -382,7 +382,7 @@ export default function BillingSettingsClient() {
                   </button>
                   <button
                     type="button"
-                    className="text-[length:var(--ua-text-micro-size)] underline"
+                    className="text-[length:var(--ua-text-metadata-size)] underline"
                     onClick={() => setShowCancelConfirm(false)}
                   >
                     Keep plan
@@ -422,7 +422,7 @@ function PlanButton({
   return (
     <button
       type="button"
-      className="block min-h-8 w-full rounded-[var(--ua-radius-control)] px-3 py-1.5 text-left text-[length:var(--ua-text-micro-size)] font-semibold"
+      className="block min-h-8 w-full rounded-[var(--ua-radius-control)] px-3 py-1.5 text-left text-[length:var(--ua-text-metadata-size)] font-semibold"
       style={{
         background: variant === "primary" ? "var(--ua-action-primary)" : "var(--ua-surface-primary)",
         color:

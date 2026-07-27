@@ -214,7 +214,7 @@ export function CustomerPreviewDrawer({
                 ['Lifetime value', primaryTotal ? amount(primaryTotal.value, primaryTotal.currency) : '—'],
                 ['Avg order', primaryTotal ? amount(primaryTotal.value / Math.max(primaryTotal.orders, 1), primaryTotal.currency) : '—'],
                 ['Case rate', `${customer.stats.caseRate}%`],
-              ].map(([name, value]) => <div key={name} className="min-w-0 rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-primary)] p-3"><dt className="truncate text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">{name}</dt><dd className="mt-1 truncate text-lg font-semibold tabular-nums">{value}</dd></div>)}
+              ].map(([name, value]) => <div key={name} className="min-w-0 rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-primary)] p-3"><dt className="truncate text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">{name}</dt><dd className="mt-1 truncate text-lg font-semibold tabular-nums">{value}</dd></div>)}
             </dl>
 
             {customer.openExposureByCurrency.length ? (

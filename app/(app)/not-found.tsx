@@ -12,18 +12,18 @@ export default function AppNotFound() {
       />
       <div className={pageStyles.pageBody}>
         <AuthenticatedPanel bodyClassName="flex flex-wrap items-center justify-between gap-3 p-4">
-          <p className="text-[length:var(--ua-text-micro-size)] leading-5 text-[var(--ua-text-secondary)]">No record or workflow state was changed.</p>
+          <p className="text-[length:var(--ua-text-metadata-size)] leading-5 text-[var(--ua-text-secondary)]">No record or workflow state was changed.</p>
           <div className="flex flex-wrap items-center gap-2">
               <Link
                 href="/dashboard"
-                className="inline-flex h-8 items-center rounded-[var(--ua-radius-control)] px-3 text-[length:var(--ua-text-micro-size)] font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
+                className="inline-flex h-8 items-center rounded-[var(--ua-radius-control)] px-3 text-[length:var(--ua-text-metadata-size)] font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
                 style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)', outlineColor: 'var(--ua-action-primary)' }}
               >
                 Go to Overview
               </Link>
               <Link
                 href="/claims"
-                className="inline-flex h-8 items-center rounded-[var(--ua-radius-control)] border px-3 text-[length:var(--ua-text-micro-size)] font-semibold hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
+                className="inline-flex h-8 items-center rounded-[var(--ua-radius-control)] border px-3 text-[length:var(--ua-text-metadata-size)] font-semibold hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
                 style={{ borderColor: 'var(--ua-border-subtle)', color: 'var(--ua-text-primary)', outlineColor: 'var(--ua-action-primary)' }}
               >
                 Go to Cases
