@@ -95,10 +95,13 @@
     .evidence-result a { color: #c8763a; }
     .muted { color: #a89890; font-size: 12px; }
     .brand {
-      font-size: 10px;
-      color: #6b5c54;
       margin-top: 10px;
       text-align: right;
+    }
+    .brand img {
+      display: inline-block;
+      width: 64px;
+      height: auto;
     }
     .loading-card {
       background: #1f1814;
@@ -114,7 +117,7 @@
 </head>
 <body>
   <div id="root"></div>
-  <p class="brand">Unauth</p>
+  <div class="brand"><img src="logo-small.png" alt="Unauth" /></div>
   <script>
     (function () {
       var APP_BASE = 'https://unauth-pi.vercel.app';

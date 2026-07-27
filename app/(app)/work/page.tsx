@@ -3,12 +3,14 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { getRequestUser } from "@/lib/auth/requestContext";
 import { PERMISSIONS, requirePermission } from "@/lib/permissions";
 import { TABLES } from "@/lib/supabase/tables";
-import { WorkbenchPage, SummaryRail } from "@/components/ui";
+import { WorkbenchPage } from "@/components/ui";
 import { WorkQueue, type WorkQueueItem, type WorkViewCounts } from "@/components/work/WorkQueue";
 import { countOpenExceptions, listExceptions } from "@/lib/exceptions/store";
 import { countWorkViews } from "@/lib/work/store";
 import { formatNumber } from "@/lib/utils/format";
 import { shortRef, hashId } from "@/lib/ui/displayRef";
+import { now } from "@/lib/time/clock";
+import { loadWorkOwnerDirectory } from "@/lib/work/owners";
 
 export const dynamic = "force-dynamic";
 type TaskRow = {
@@ -47,6 +49,7 @@ export default async function WorkPage({
   const view = params.view ?? "open";
   const page = Math.max(1, Number(params.page) || 1);
   const pageSize = 25;
+  const asOf = now();
   let query = serviceClient
     .from(TABLES.WORK_TASKS)
     .select(
@@ -65,7 +68,7 @@ export default async function WorkPage({
   if (view === "decision-needed")
     query = query.or("title.ilike.%decision%,blocking_reason.ilike.%decision%");
   if (view === "due-today") {
-    const start = new Date();
+    const start = new Date(asOf);
     start.setUTCHours(0, 0, 0, 0);
     const end = new Date(start);
     end.setUTCDate(end.getUTCDate() + 1);
@@ -73,16 +76,16 @@ export default async function WorkPage({
       .gte("due_at", start.toISOString())
       .lt("due_at", end.toISOString());
   }
-  if (view === "overdue") query = query.lt("due_at", new Date().toISOString());
+  if (view === "overdue") query = query.lt("due_at", asOf.toISOString());
   if (view === "no-sla") query = query.is("due_at", null);
   const includeExceptions =
     view === "open" || view === "integration-exceptions" || view === "overdue" || view === "no-sla";
   const exceptionDeadline = view === "overdue"
-    ? { dueBefore: new Date().toISOString() }
+    ? { dueBefore: asOf.toISOString() }
     : view === "no-sla"
       ? { dueIsNull: true }
       : {};
-  const [taskResult, openExceptionCount, exceptionRows, filteredExceptionCount] =
+  const [taskResult, openExceptionCount, exceptionRows, filteredExceptionCount, ownerDirectory] =
     await Promise.all([
       view === "integration-exceptions"
         ? Promise.resolve({ data: [], count: 0 })
@@ -94,6 +97,7 @@ export default async function WorkPage({
       includeExceptions
         ? countOpenExceptions(serviceClient, ctx.merchantId, exceptionDeadline)
         : Promise.resolve(0),
+      loadWorkOwnerDirectory(serviceClient, ctx.merchantId),
     ]);
   const tasks: WorkQueueItem[] = ((taskResult.data ?? []) as TaskRow[]).map(
     (row) => ({
@@ -103,6 +107,8 @@ export default async function WorkPage({
       description: row.description,
       ownerRole: row.owner_role,
       ownerUserId: row.owner_user_id,
+      ownerName: row.owner_user_id ? ownerDirectory.get(row.owner_user_id)?.name ?? null : null,
+      ownerInitials: row.owner_user_id ? ownerDirectory.get(row.owner_user_id)?.initials ?? null : null,
       status: row.status,
       priority: row.priority,
       dueAt: row.due_at,
@@ -144,7 +150,6 @@ export default async function WorkPage({
     "integration-exceptions": viewCountResult["integration-exceptions"],
     completed: viewCountResult.completed,
   };
-  const deadlineBands = viewCountResult.deadlineBands;
   const exceptions: WorkQueueItem[] = exceptionRows.map((row) => ({
     id: row.id,
     kind: "exception",
@@ -152,6 +157,8 @@ export default async function WorkPage({
     description: row.detail,
     ownerRole: row.assigned_to ? "assigned" : null,
     ownerUserId: row.assigned_to,
+    ownerName: row.assigned_to ? ownerDirectory.get(row.assigned_to)?.name ?? null : null,
+    ownerInitials: row.assigned_to ? ownerDirectory.get(row.assigned_to)?.initials ?? null : null,
     status: row.status,
     priority: row.priority ?? "high",
     dueAt: row.due_at ?? null,
@@ -171,12 +178,6 @@ export default async function WorkPage({
   }));
   const items =
     view === "integration-exceptions" ? exceptions : [...tasks, ...exceptions];
-  const bandTotal =
-    deadlineBands.overdue +
-    deadlineBands.dueToday +
-    deadlineBands.upcoming +
-    deadlineBands.unscheduled +
-    deadlineBands.invalid;
   return (
     <WorkbenchPage
       title="Work"
@@ -195,23 +196,6 @@ export default async function WorkPage({
           hint: "Merchant decisions required",
         },
       ]}
-      rail={
-        <SummaryRail
-          sections={[
-            {
-              title: "Deadline risk",
-              rows: [
-                { label: "Overdue", value: formatNumber(deadlineBands.overdue), tone: "danger", bar: bandTotal ? deadlineBands.overdue / bandTotal : 0 },
-                { label: "Due today", value: formatNumber(deadlineBands.dueToday), tone: "warning", bar: bandTotal ? deadlineBands.dueToday / bandTotal : 0 },
-                { label: "Upcoming", value: formatNumber(deadlineBands.upcoming), tone: "info", bar: bandTotal ? deadlineBands.upcoming / bandTotal : 0 },
-                { label: "No deadline", value: formatNumber(deadlineBands.unscheduled), tone: "neutral", bar: bandTotal ? deadlineBands.unscheduled / bandTotal : 0 },
-                ...(deadlineBands.invalid > 0 ? [{ label: "Invalid deadline", value: formatNumber(deadlineBands.invalid), tone: "warning" as const, bar: bandTotal ? deadlineBands.invalid / bandTotal : 0 }] : []),
-              ],
-              footnote: "Open work grouped by its recorded deadline. Exceptions without a deadline stay visible as unscheduled.",
-            },
-          ]}
-        />
-      }
       main={
         <WorkQueue
           items={items}
@@ -221,6 +205,9 @@ export default async function WorkPage({
           }
           view={view}
           viewCounts={viewCounts}
+          page={page}
+          pageSize={pageSize}
+          asOf={asOf.toISOString()}
         />
       }
     />

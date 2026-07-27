@@ -18,39 +18,6 @@ interface CardProps {
   [key: string]: unknown;
 }
 
-const CARD_STYLES: Record<CardVariant, CSSProperties> = {
-  /** A bordered working surface on the canvas. Flat — elevation is for overlays. */
-  panel: {
-    background: 'var(--ua-surface-primary)',
-    border: '1px solid var(--ua-border-default)',
-    boxShadow: 'var(--ua-shadow-none)',
-  },
-  /** A recessed group inside a panel. */
-  muted: {
-    background: 'var(--ua-surface-muted)',
-    border: '1px solid var(--ua-border-subtle)',
-    boxShadow: 'var(--ua-shadow-none)',
-  },
-  /** A floating surface — the only variant that lifts. */
-  overlay: {
-    background: 'var(--ua-surface-primary)',
-    border: '1px solid var(--ua-border-default)',
-    boxShadow: 'var(--ua-shadow-overlay)',
-  },
-  /** No chrome; the caller owns the surface. */
-  plain: {
-    background: 'transparent',
-    border: '0',
-    boxShadow: 'var(--ua-shadow-none)',
-  },
-};
-
-const CARD_PADDING: Record<CardDensity, string> = {
-  compact: 'var(--ua-space-3)',
-  default: 'var(--ua-space-4)',
-  relaxed: 'var(--ua-space-5)',
-};
-
 export function Card({
   children,
   variant = 'panel',
@@ -61,15 +28,16 @@ export function Card({
   style,
   ...props
 }: CardProps) {
-  const padding = CARD_PADDING[density];
   return (
     <Component
-      className={cn('ua-card rounded-[var(--ua-radius-surface)]', className)}
-      style={{
-        ...CARD_STYLES[variant],
-        ...(unstyled ? {} : { padding }),
-        ...style,
-      }}
+      className={cn(
+        'ua-card',
+        `ua-card--${variant}`,
+        !unstyled && `ua-card--density-${density}`,
+        unstyled && 'ua-card--unstyled',
+        className,
+      )}
+      style={style}
       {...props}
     >
       {children}

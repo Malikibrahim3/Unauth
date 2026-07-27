@@ -9,7 +9,7 @@
     "scripting"
   ],
   "host_permissions": [
-    "https://app.unauth.co/*"
+    "http://localhost:3000/*"
   ],
   "action": {
     "default_popup": "popup/popup.html",

@@ -11,13 +11,13 @@ const claimThreadMessages: ThreadPanelMessage[] = [
     avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop&crop=face',
     name: 'maya',
     time: '2:14 PM',
-    message: 'Item not received — delivered with signature, 4th claim this quarter.',
+    message: 'Item not received — delivered with signature, 4th case this quarter.',
   },
   {
     avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&h=80&fit=crop&crop=face',
     name: 'support',
     time: '2:15 PM',
-    message: 'Review required. Full claim history surfaced before the team records an outcome.',
+    message: 'Review required. Full case history surfaced before the team records an outcome.',
   },
   {
     avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=80&h=80&fit=crop&crop=face',
@@ -37,15 +37,15 @@ const claimColumns: KanbanColumnItem[] = [
         id: 'C-9103',
         title: (
           <>
-            3 claims · £218 absorbed
+            3 cases · £218 absorbed
             <br />
-            Last claim: 12 days ago
+            Last case: 12 days ago
           </>
         ),
         tags: ['Wrong item', 'Flagged', '2nd offense'],
         evidence: {
           confirmed: false,
-          line: 'Delivery confirmed — no dispute filed',
+          line: 'Delivery confirmed — no chargeback filed',
           timestamp: '2d',
         },
         avatar:
@@ -55,9 +55,9 @@ const claimColumns: KanbanColumnItem[] = [
         id: 'C-3890',
         title: (
           <>
-            2 claims · £134 absorbed
+            2 cases · £134 absorbed
             <br />
-            Last claim: 8 days ago
+            Last case: 8 days ago
           </>
         ),
         tags: ['Late delivery', 'Flagged', '2nd offense'],
@@ -80,9 +80,9 @@ const claimColumns: KanbanColumnItem[] = [
         id: 'C-4821',
         title: (
           <>
-            4 claims · £341 absorbed
+            4 cases · £341 absorbed
             <br />
-            Last claim: 3 days ago
+            Last case: 3 days ago
           </>
         ),
         tags: ['Item not received', 'Review', 'Repeat pattern'],
@@ -98,9 +98,9 @@ const claimColumns: KanbanColumnItem[] = [
         id: 'C-6614',
         title: (
           <>
-            5 claims · £490 absorbed
+            5 cases · £490 absorbed
             <br />
-            Last claim: 2 days ago
+            Last case: 2 days ago
           </>
         ),
         tags: ['Item not received', 'Review', 'Repeat pattern'],
@@ -123,12 +123,12 @@ const claimColumns: KanbanColumnItem[] = [
         id: 'C-2277',
         title: (
           <>
-            1 claim · £47 absorbed
+            1 case · £47 absorbed
             <br />
-            Last claim: 41 days ago
+            Last case: 41 days ago
           </>
         ),
-        tags: ['Damaged', 'Cleared', 'First claim'],
+        tags: ['Damaged', 'Cleared', 'First case'],
         evidence: {
           confirmed: true,
           line: 'Delivery photo verified',
@@ -151,13 +151,13 @@ export default function UnauthLinearClaimHero() {
         <div className="mb-[42px] grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_auto] lg:items-end">
           <div className="max-w-[690px]">
             <SectionEyebrow className={foundationStyles.landingSectionEyebrow}>
-              CLAIM INTELLIGENCE
+              CASE INTELLIGENCE
             </SectionEyebrow>
             <SectionHeadline className={foundationStyles.landingSectionTitle}>
-              Your best customers don&apos;t claim four times a quarter.
+              Your best customers don&apos;t open four cases a quarter.
             </SectionHeadline>
             <SectionBody className={`${foundationStyles.landingSectionLead} max-w-[620px]`}>
-              Unauth tracks every claim this customer has filed with you — by type, value, and outcome.
+              Unauth tracks every case this customer has opened with you — by type, value, and outcome.
               A pattern that looks like bad luck once is visible as behaviour by the third time. Your team
               sees the history before the refund. Not after.
             </SectionBody>
@@ -180,12 +180,12 @@ export default function UnauthLinearClaimHero() {
 
       {/* Mobile (≤768px) — Stripe-style collapse: title + artifact, tap to reveal copy */}
       <main className="relative z-10 px-4 pb-16 pt-14 min-[769px]:hidden">
-        <MobileCollapse collapsedLabel="See the claim flow">
+        <MobileCollapse collapsedLabel="See the case flow">
           <SectionEyebrow className={foundationStyles.landingSectionEyebrow}>
-            CLAIM INTELLIGENCE
+            CASE INTELLIGENCE
           </SectionEyebrow>
           <SectionHeadline className={`${foundationStyles.landingSectionTitle} mt-3 pr-14`}>
-            Your best customers don&apos;t claim four times a quarter.
+            Your best customers don&apos;t open four cases a quarter.
           </SectionHeadline>
 
           <div className="mt-8 flex flex-col gap-7">
@@ -200,7 +200,7 @@ export default function UnauthLinearClaimHero() {
           <div className={foundationStyles.collapseDetails}>
             <div className={foundationStyles.collapseDetailsInner}>
               <SectionBody className={foundationStyles.landingSectionLead}>
-                Unauth tracks every claim this customer has filed with you — by type, value, and outcome.
+                Unauth tracks every case this customer has opened with you — by type, value, and outcome.
                 A pattern that looks like bad luck once is visible as behaviour by the third time. Your
                 team sees the history before the refund. Not after.
               </SectionBody>

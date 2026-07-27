@@ -1,3 +1,23 @@
+import { reportDataQuality } from '@/lib/observability/dataQuality';
+import {
+  DATA_STATE_COPY,
+  ENTITY_LABELS,
+  FINANCIAL_STAGE_DEFINITIONS,
+  PROVIDER_LABELS,
+  TIME_RANGE_LABELS,
+  countLabel,
+  entityLabel,
+  financialStageDefinition,
+  financialStageLabel,
+  formatCount,
+  formatMajorUnitInput,
+  majorToMinor,
+  parseMajorUnitInput,
+  pluralize,
+  providerLabel,
+  sentenceCaseEventTitle,
+  sourceLabel,
+} from '@/lib/ui/merchantCopy';
 /**
  * One label layer for every enum the UI renders (WS0.2).
  *
@@ -13,23 +33,46 @@
 import { CLAIM_TYPE_LABELS } from '@/lib/claims/claimTypes';
 
 export { CLAIM_TYPE_LABELS };
+export {
+  DATA_STATE_COPY,
+  ENTITY_LABELS,
+  FINANCIAL_STAGE_DEFINITIONS,
+  PROVIDER_LABELS,
+  TIME_RANGE_LABELS,
+  countLabel,
+  entityLabel,
+  financialStageDefinition,
+  financialStageLabel,
+  formatCount,
+  formatMajorUnitInput,
+  majorToMinor,
+  parseMajorUnitInput,
+  pluralize,
+  providerLabel,
+  sentenceCaseEventTitle,
+  sourceLabel,
+};
 
-const isDev = process.env.NODE_ENV !== 'production';
 
 /**
  * Last-resort humaniser: "awaiting_carrier_response" → "Awaiting carrier
- * response". Warns in dev so an unmapped value is caught during development
- * rather than shipped raw.
+ * response".
+ *
+ * RUN-12: reaching this function is a contract failure, not a normal path — a
+ * persisted enum value with no merchant-facing label. It still returns a safe,
+ * explicit label rather than raw snake_case, but the failure is reported to
+ * monitoring instead of a development-only console warning, because unmapped
+ * values are precisely the thing that only shows up in production data.
  */
-export function humanise(value: string): string {
+export function humanise(value: string, family?: string): string {
   if (!value) return '';
   const spaced = value.replace(/[_-]+/g, ' ').trim().toLowerCase();
   const humanised = spaced.charAt(0).toUpperCase() + spaced.slice(1);
-  if (isDev) {
-    console.warn(
-      `[labels] humanise() fallback for "${value}" — add it to the appropriate map in lib/ui/labels.ts`,
-    );
-  }
+  reportDataQuality({
+    kind: 'label.enum_unmapped',
+    subject: family ? `${family}.${value}` : value,
+    detail: 'A persisted enum value has no merchant-facing label; add it to the appropriate map in lib/ui/labels.ts.',
+  });
   return humanised;
 }
 
@@ -61,6 +104,7 @@ const caseStatus: Record<string, string> = {
 
 const requestedAction: Record<string, string> = {
   replacement: 'Replacement',
+  reship: 'Reship',
   store_credit: 'Store credit',
   discount: 'Discount',
   refund: 'Refund',
@@ -266,6 +310,7 @@ const workflowStatus: Record<string, string> = {
   confirmed: 'Confirmed',
   corrected: 'Corrected',
   sent: 'Sent',
+  delivered: 'Delivered',
   waiting_response: 'Waiting on response',
   response_received: 'Response received',
   retired: 'Retired',
@@ -319,11 +364,17 @@ export const LIFECYCLE_CAPABILITY_LABELS: Record<string, string> = {
   bounded_writeback: 'Bounded write-back',
 };
 
+/*
+ * RUN-12: must cover `EvidenceStrength` in lib/payouts/types.ts exactly. It
+ * previously listed `partial` and `insufficient`, which the domain never
+ * produces, while omitting `moderate` and `missing`, which it does — so a real
+ * case rendered an unlabelled badge.
+ */
 const evidenceStrength: Record<string, string> = {
   strong: 'Strong',
-  partial: 'Partial',
+  moderate: 'Moderate',
   weak: 'Weak',
-  insufficient: 'Insufficient',
+  missing: 'Missing',
   needs_more_evidence: 'Needs more evidence',
 };
 
@@ -335,6 +386,14 @@ const confidence: Record<string, string> = {
   probable: 'Probable',
   ambiguous: 'Needs review',
   unmatched: 'Unmatched',
+};
+
+const assessmentState: Record<string, string> = {
+  known: 'Known',
+  likely: 'Likely',
+  blocked: 'Blocked',
+  not_evaluated: 'Not evaluated',
+  unknown: 'Not evaluated',
 };
 
 /** Workspace invitation lifecycle (spec §6.7 — one central mapping per domain). */
@@ -361,6 +420,7 @@ const MAPS = {
   workflowStatus,
   evidenceStrength,
   confidence,
+  assessmentState,
   claimType: CLAIM_TYPE_LABELS as Record<string, string>,
 } as const;
 
@@ -372,5 +432,5 @@ export type LabelFamily = keyof typeof MAPS;
  */
 export function label(family: LabelFamily, value: string | null | undefined): string {
   if (value == null || value === '') return '';
-  return MAPS[family][value] ?? humanise(value);
+  return MAPS[family][value] ?? humanise(value, family);
 }

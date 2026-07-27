@@ -1,0 +1,53 @@
+{
+  "artifact": "phase-01-browser-runtime",
+  "generatedFrom": "npm run evidence:phase1",
+  "build": "production (next start)",
+  "viewport": "1440x900",
+  "merchantId": "f1000000-0000-4000-8000-000000000001",
+  "consoleErrors": 3,
+  "hydrationWarnings": 0,
+  "requiredRequestFailures": 0,
+  "unexpectedWrites": 0,
+  "detail": {
+    "consoleErrors": [
+      "[data-quality] money.currency_missing subject=null — A money value was rendered without a usable currency code; showing the unavailable marker instead of a default currency.",
+      "[data-quality] label.enum_unmapped subject=evidenceStrength.missing — A persisted enum value has no merchant-facing label; add it to the appropriate map in lib/ui/labels.ts.",
+      "[data-quality] label.enum_unmapped subject=evidenceStrength.missing — A persisted enum value has no merchant-facing label; add it to the appropriate map in lib/ui/labels.ts."
+    ],
+    "hydrationWarnings": [],
+    "requestFailures": [],
+    "writes": []
+  },
+  "perRoute": {
+    "work": {
+      "path": "/work",
+      "consoleErrors": 0,
+      "hydrationWarnings": 0,
+      "requiredRequestFailures": 0
+    },
+    "cases": {
+      "path": "/claims",
+      "consoleErrors": 1,
+      "hydrationWarnings": 0,
+      "requiredRequestFailures": 0
+    },
+    "caseDetail": {
+      "path": "/claims/f1000600-0000-4000-8000-000000000001",
+      "consoleErrors": 1,
+      "hydrationWarnings": 0,
+      "requiredRequestFailures": 0
+    },
+    "customers": {
+      "path": "/customers",
+      "consoleErrors": 0,
+      "hydrationWarnings": 0,
+      "requiredRequestFailures": 0
+    },
+    "caseDetailUnambiguous": {
+      "path": "/claims/f1000600-0000-4000-8000-000000000002",
+      "consoleErrors": 1,
+      "hydrationWarnings": 0,
+      "requiredRequestFailures": 0
+    }
+  }
+}

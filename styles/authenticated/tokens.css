@@ -13,35 +13,78 @@
  *
  * Values are the target tables in docs/IMPL_quiet_precision_product_ui.md §3.
  */
+.ua-desktop-boundary {
+  /* The unsupported-width notice sits outside `.ua-app`, so it needs the
+   * small neutral subset below before the authenticated subtree mounts. */
+  --ua-canvas: #fafafa;
+  --ua-surface-primary: #ffffff;
+  --ua-border-default: #d5d5d5;
+  --ua-radius-surface: 10px;
+  --ua-space-2: 8px;
+  --ua-space-6: 24px;
+  --ua-text-primary: #202020;
+  --ua-text-secondary: #5e5e5e;
+  --ua-text-tertiary: #686868;
+  --ua-text-page-title-size: 18px;
+  --ua-text-page-title-leading: 24px;
+  --ua-text-micro-size: 11px;
+  --ua-text-micro-leading: 14px;
+  --ua-text-body-size: 14px;
+  --ua-text-body-leading: 20px;
+  --ua-font-sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
 .ua-app,
 .ua-auth-surface {
   color-scheme: light;
 
-  /* ── Surfaces (§3.1) ──────────────────────────────────────────────── */
-  --ua-canvas: #f3f3f2;
-  --ua-shell: #f8f8f7;
+  /*
+   * ── Surfaces (§3.1) ──────────────────────────────────────────────────
+   *
+   * Every neutral is achromatic: R = G = B, exactly. The previous scale sat
+   * 1–5 steps warm (blue below red/green), which read as cream rather than
+   * white and fought the reference's clean, paper-white feel. The scale is also
+   * lifted toward white — the canvas moved 243 → 249 — so white panels sit on a
+   * near-white page and are read by their hairline, not by a grey backdrop.
+   *
+   * Do not reintroduce a warm tint here. If a surface needs warmth it is
+   * carrying a status, and that belongs in status.css.
+   *
+   * `--ua-shell` is white: the sidebar and header are the same paper as the
+   * panels, and the only thing separating them is a hairline. That means the
+   * selected nav row cannot use fill to stand out — it carries its own hairline,
+   * `--ua-shadow-raised` and a 1px rise instead (§4.2.1), which is what makes a
+   * white chip legible on white.
+   */
+  --ua-canvas: #fafafa;
+  --ua-shell: #ffffff;
   --ua-surface-primary: #ffffff;
-  --ua-surface-secondary: #f7f7f6;
-  --ua-surface-muted: #f1f1f0;
-  --ua-surface-hover: #f5f5f4;
-  --ua-surface-selected: #ececea;
+  --ua-surface-secondary: #fafafa;
+  --ua-surface-muted: #f4f4f4;
+  --ua-surface-hover: #f5f5f5;
+  --ua-surface-selected: #ebebeb;
   --ua-surface-inverse: #242424;
   --ua-backdrop: rgb(24 24 24 / 14%);
 
   /* ── Ink (§3.1) ───────────────────────────────────────────────────── */
   --ua-text-primary: #202020;
-  --ua-text-secondary: #626262;
-  --ua-text-tertiary: #767676;
-  --ua-text-disabled: #a6a6a2;
+  --ua-text-secondary: #5e5e5e;
+  --ua-text-tertiary: #686868;
+  --ua-text-disabled: #a5a5a5;
   --ua-text-inverse: #ffffff;
   --ua-text-link: #2d2d2d;
   --ua-icon-primary: #343434;
-  --ua-icon-secondary: #858581;
+  --ua-icon-secondary: #707070;
 
-  /* ── Lines (§3.1, §3.5) ───────────────────────────────────────────── */
-  --ua-border-subtle: #ececea;
-  --ua-border-default: #dededb;
-  --ua-border-strong: #bdbdb8;
+  /*
+   * ── Lines (§3.1, §3.5) ───────────────────────────────────────────────
+   * Held at their previous lightness — only the warm cast is removed. On a
+   * near-white canvas the hairline is what separates surfaces, so these must
+   * not be lightened further.
+   */
+  --ua-border-subtle: #ebebeb;
+  --ua-border-default: #d5d5d5;
+  --ua-border-strong: #949494;
   --ua-border-focus: #202020;
 
   /* ── Action. Product action is ink; hue is reserved for meaning. ──── */
@@ -57,8 +100,8 @@
   --ua-chart-4: #936b25;
   --ua-chart-5: #a05252;
   --ua-chart-neutral: #8a8e93;
-  --ua-chart-track: #f1f1f0;
-  --ua-chart-grid: #ececea;
+  --ua-chart-track: #f5f5f5;
+  --ua-chart-grid: #ebebeb;
 
   /* Sequential ramps — 4 mark-carrying steps. Steps 1–2 are heat-only
    * extensions and may recede below 2:1; never use them for discrete marks. */
@@ -87,6 +130,7 @@
 
   /* ── Depth (§3.5). Inline surfaces are flat; only floating layers lift. */
   --ua-shadow-none: none;
+  --ua-shadow-raised: 0 1px 2px rgb(20 20 20 / 9%), 0 4px 10px rgb(20 20 20 / 7%);
   --ua-shadow-float: 0 4px 14px rgb(20 20 20 / 8%);
   --ua-shadow-menu: 0 8px 24px rgb(20 20 20 / 12%);
   --ua-shadow-overlay: 0 24px 64px rgb(20 20 20 / 18%);
@@ -163,26 +207,26 @@
   --ua-surface-muted: #272727;
   --ua-surface-hover: #252525;
   --ua-surface-selected: #303030;
-  --ua-surface-inverse: #f2f2f0;
+  --ua-surface-inverse: #f2f2f2;
   --ua-backdrop: rgb(0 0 0 / 46%);
 
-  --ua-text-primary: #f3f3f1;
-  --ua-text-secondary: #b8b8b3;
-  --ua-text-tertiary: #92928d;
-  --ua-text-disabled: #62625e;
+  --ua-text-primary: #f3f3f3;
+  --ua-text-secondary: #b8b8b8;
+  --ua-text-tertiary: #929292;
+  --ua-text-disabled: #626262;
   --ua-text-inverse: #171717;
-  --ua-text-link: #f0f0ed;
-  --ua-icon-primary: #d8d8d4;
-  --ua-icon-secondary: #94948f;
+  --ua-text-link: #f0f0f0;
+  --ua-icon-primary: #d8d8d8;
+  --ua-icon-secondary: #949494;
 
   --ua-border-subtle: #292929;
   --ua-border-default: #363636;
-  --ua-border-strong: #565652;
-  --ua-border-focus: #f2f2f0;
+  --ua-border-strong: #565656;
+  --ua-border-focus: #f2f2f2;
 
-  --ua-action-primary: #f2f2f0;
+  --ua-action-primary: #f2f2f2;
   --ua-action-primary-hover: #ffffff;
-  --ua-action-primary-pressed: #dadad6;
+  --ua-action-primary-pressed: #dadada;
   --ua-action-primary-fg: #171717;
 
   --ua-chart-1: #86a3d4;
@@ -210,6 +254,7 @@
   --ua-chart-heat-attention-2: #8d7340;
 
   /* Floating layers need more separation against a dark canvas. */
+  --ua-shadow-raised: 0 1px 2px rgb(0 0 0 / 32%), 0 3px 8px rgb(0 0 0 / 26%);
   --ua-shadow-float: 0 4px 14px rgb(0 0 0 / 40%);
   --ua-shadow-menu: 0 8px 24px rgb(0 0 0 / 50%);
   --ua-shadow-overlay: 0 24px 64px rgb(0 0 0 / 60%);

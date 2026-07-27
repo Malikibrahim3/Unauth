@@ -101,6 +101,7 @@ export interface CustomerEventStreamItem {
   title: string;
   subtitle?: string;
   amount?: number | null;
+  currency?: string | null;
   tier?: string;
   evidence?: string[];
   detail?: string;
@@ -503,6 +504,8 @@ export function getEventStream(input: {
     orderId: string;
     processedAt: string;
     orderValue?: number | null;
+    /** RUN-09: money never travels without the currency it was observed in. */
+    currency?: string | null;
     riskLevel?: string | null;
     refundRequested?: boolean;
     refundReason?: string | null;
@@ -541,6 +544,7 @@ export function getEventStream(input: {
         ? order.refundReason ?? 'Refund requested'
         : order.address ?? order.email ?? undefined,
       amount: order.orderValue ?? null,
+      currency: order.currency ?? null,
       tier: order.riskLevel ?? undefined,
       evidence: order.fraudFlags?.slice(0, 3) ?? [],
       detail: order.cardLast4 ? `Payment ending ${order.cardLast4}` : undefined,

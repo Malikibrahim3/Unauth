@@ -9,7 +9,8 @@ import type { Decision, Outcome, EvidenceType, EvidenceSource, ClaimStatus } fro
 import type { ClaimReviewWorkbench } from '@/components/claims/claimReviewWorkbench';
 import { Modal } from '@/components/ui/Modal';
 import { decisionRequiresRationale, merchantDecisionSchema, type MerchantDecision } from '@/lib/claims/decision/merchantDecision';
-import { formatClaimMoney } from '@/components/claims/claimReviewStyles';
+import { formatMinorCurrencyNullable } from '@/lib/utils/format';
+import { parseMajorUnitInput } from '@/lib/ui/merchantCopy';
 
 // Merchant-selectable decisions/outcomes are an explicit neutral allowlist —
 // accusation vocabulary is deliberately excluded (see docs/PRODUCT.md).
@@ -23,7 +24,7 @@ const EVIDENCE_SOURCE_OPTIONS = Object.keys(EVIDENCE_SOURCE_LABELS) as EvidenceS
 // claimReviewLabels is intentionally uniform, so it can't label a picker).
 const DECISION_VERB: Record<string, string> = {
   approved: 'Approve payout', denied: 'Deny under policy', escalated: 'Escalate for review',
-  partial_refund: 'Partial refund', full_refund: 'Full refund', chargeback_disputed: 'Dispute chargeback',
+  partial_refund: 'Partial refund', full_refund: 'Full refund', chargeback_disputed: 'Record chargeback dispute',
   internal_watch: 'Internal watch', no_action: 'No action',
 };
 
@@ -43,7 +44,7 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
     return (
       <RailSection id="manage" title="Decision" open={state.railOpen.manage ?? false} onToggle={(id) => dispatch({ type: 'toggleRail', id })}>
         <p className="text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
-          You have read-only access. Recording decisions, evidence, and transitions requires the payout-decision permission.
+          You have read-only access. Recording decisions, evidence, and transitions requires the decision permission.
         </p>
       </RailSection>
     );
@@ -52,12 +53,13 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
   const recoveryCase = (decisionData?.recoveryCase as { id?: string } | null | undefined) ?? null;
   const hasOutcome = Boolean(latestOutcome);
   const disabled = busy || !claimId;
+  const hasDecision = DECISION_OPTIONS.includes(state.decision);
   const validation = merchantDecisionSchema.safeParse({ decision: state.decision, outcome: 'pending', notes: state.notes });
   const validationMessage = validation.success ? null : validation.error.issues[0]?.message ?? 'Check the decision details.';
   const currency = wb.selectedClaim?.currency ?? null;
-  const amount = Number(state.decisionAmount);
   const monetaryDecision = ['approved', 'partial_refund', 'full_refund', 'denied', 'no_action'].includes(state.decision);
-  const amountValid = !monetaryDecision || (Number.isFinite(amount) && amount >= 0 && Boolean(currency));
+  const amountMinor = monetaryDecision ? parseMajorUnitInput(state.decisionAmount, currency) : null;
+  const amountValid = !monetaryDecision || (amountMinor != null && amountMinor >= 0 && Boolean(currency));
 
   return (
     <RailSection id="manage" title="Decision" open={state.railOpen.manage ?? true} onToggle={(id) => dispatch({ type: 'toggleRail', id })}>
@@ -82,39 +84,58 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
         {/* Record decision + outcome */}
         <div className="order-1 space-y-1.5">
           <FieldLabel htmlFor="manage-decision">Merchant decision</FieldLabel>
-          <select id="manage-decision" className="w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()}
+            <select id="manage-decision" className="w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()}
             value={state.decision} onChange={(e) => {
               setDecisionTouched(true);
               const decision = e.target.value as Decision;
               patch({ decision, outcome: 'pending' as Outcome });
-            }} aria-label="Decision">
+            }} aria-label="Decision" aria-describedby="manage-decision-requirement">
+            <option value="">Choose a decision…</option>
             {DECISION_OPTIONS.map((d) => <option key={d} value={d}>{DECISION_VERB[d] ?? d}</option>)}
           </select>
           {monetaryDecision ? (
-            <div className="grid grid-cols-[1fr_auto] gap-1.5">
-              <input
-                type="number"
-                min={0}
-                step="0.01"
-                className="w-full rounded-md px-2 py-1.5 text-xs"
-                style={inputStyle()}
-                value={state.decisionAmount}
-                onChange={(event) => patch({ decisionAmount: event.target.value })}
-                onBlur={() => setDecisionTouched(true)}
-                aria-label="Decision amount"
-                placeholder="Amount"
-              />
-              <span className="flex min-w-12 items-center justify-center rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] px-2 text-xs font-semibold">
-                {currency ?? '—'}
-              </span>
-            </div>
+            <>
+              <div className="grid grid-cols-[1fr_auto] gap-1.5">
+                <input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  inputMode="decimal"
+                  className="w-full rounded-md px-2 py-1.5 text-xs"
+                  style={inputStyle()}
+                  value={state.decisionAmount}
+                  onChange={(event) => patch({ decisionAmount: event.target.value })}
+                  onBlur={() => setDecisionTouched(true)}
+                  aria-label="Decision amount"
+                  placeholder="Amount"
+                />
+                <span className="flex min-w-12 items-center justify-center rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] px-2 text-xs font-semibold">
+                  {currency ?? '—'}
+                </span>
+              </div>
+              <p className="text-[length:var(--ua-text-micro-size)] font-normal text-[var(--ua-text-tertiary)]">
+                Enter {currency ?? 'the case currency'} in major units.
+              </p>
+            </>
           ) : null}
           <textarea className="min-h-20 w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()}
             placeholder={decisionRequiresRationale(state.decision as MerchantDecision) ? 'Rationale (required)' : 'Decision rationale (optional)'} value={state.notes}
             onChange={(e) => patch({ notes: e.target.value })} onBlur={() => setDecisionTouched(true)} aria-label="Decision rationale" />
-          {decisionTouched && validationMessage ? <p role="alert" className="text-xs text-[var(--ua-critical)]">{validationMessage}</p> : null}
+          <p id="manage-decision-requirement" className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">
+            {!claimId
+              ? 'Select or save a case before recording a decision.'
+              : !hasDecision
+                ? 'Choose a decision before recording it.'
+                : !amountValid
+                  ? 'Enter a non-negative amount and known ISO currency.'
+                  : !validation.success
+                    ? validationMessage ?? 'Add a rationale before recording it.'
+                  : 'This records the merchant decision; it does not send an external refund or replacement.'}
+          </p>
+          {decisionTouched && validationMessage && hasDecision ? <p role="alert" className="text-xs text-[var(--ua-critical)]">{validationMessage}</p> : null}
           {decisionTouched && !amountValid ? <p role="alert" className="text-xs text-[var(--ua-critical)]">Enter a non-negative amount and known ISO currency.</p> : null}
-          <button type="button" disabled={disabled || !validation.success || !amountValid}
+          <button type="button" disabled={disabled || !hasDecision || !validation.success || !amountValid}
+            aria-describedby="manage-decision-requirement"
             onClick={() => setConfirming(true)}
             className="w-full px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-60" style={btnStyle('primary')}>
             Record decision
@@ -223,7 +244,7 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
       >
         <dl className="space-y-3 text-sm">
           <div className="flex justify-between gap-4"><dt>Decision</dt><dd className="font-medium">{DECISION_VERB[state.decision] ?? state.decision}</dd></div>
-          <div className="flex justify-between gap-4"><dt>Authorized value</dt><dd className="font-sans tabular-nums font-medium">{monetaryDecision && amountValid ? formatClaimMoney(amount, currency) : 'Not applicable'}</dd></div>
+          <div className="flex justify-between gap-4"><dt>Authorized value</dt><dd className="font-sans tabular-nums font-medium">{monetaryDecision && amountValid ? formatMinorCurrencyNullable(amountMinor, currency) : 'Not applicable'}</dd></div>
           <div className="flex justify-between gap-4"><dt>External action</dt><dd className="font-medium">None</dd></div>
         </dl>
         <div className="mt-4 rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] p-3 text-xs text-[var(--ua-text-secondary)]">

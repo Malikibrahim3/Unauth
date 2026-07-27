@@ -62,15 +62,14 @@ describe('report export reconciliation', () => {
     const find = (metric: string, currency = 'GBP') =>
       metricRows.find((row) => row[index.metric_or_category] === metric && row[index.currency] === currency)!;
 
-    expect(find('exposed')[index.value_minor]).toBe(1000);
-    expect(find('exposed')[index.record_count]).toBe(2);
-    expect(find('exposed')[index.record_ids]).toBe('case-1;case-2');
-    expect(find('paid')[index.known]).toBe(false);
-    expect(find('paid')[index.value_minor]).toBe('');
-    expect(find('paid')[index.value]).toBe('unavailable');
-    expect(find('recovered')[index.value_minor]).toBe(500);
-    expect(find('recovered')[index.record_ids]).toBe('case-3');
-    expect(find('exposed', 'USD')[index.value_minor]).toBe(900);
+    expect(header).not.toContain('value_minor');
+    expect(find('Maximum exposure')[index.value]).toBe('£10.00');
+    expect(find('Maximum exposure')[index.record_count]).toBe(2);
+    expect(find('Maximum exposure')[index.record_ids]).toBe('#CASE1;#CASE2');
+    expect(find('Observed payout')[index.known]).toBe(false);
+    expect(find('Observed payout')[index.value]).toBe('Unavailable');
+    expect(find('Recovered cash')[index.value]).toBe('£5.00');
+    expect(find('Maximum exposure', 'USD')[index.value]).toBe('US$9.00');
     expect(metricRows.every((row) => row[index.report_version] === REPORT_EXPORT_VERSION)).toBe(true);
     expect(metricRows.every((row) => row[index.generated_at] === '2026-07-22T12:00:00.000Z')).toBe(true);
     expect(metricRows.every((row) => String(row[index.definition]).length > 20)).toBe(true);
@@ -81,9 +80,9 @@ describe('report export reconciliation', () => {
     const header = rows[0] as string[];
     const index = Object.fromEntries(header.map((key, position) => [key, position]));
     const row = rows[1];
-    expect(row[index.metric_or_category]).toBe('delivery_loss');
-    expect(row[index.value_minor]).toBe(700);
+    expect(row[index.metric_or_category]).toBe('Delivery loss');
+    expect(row[index.value]).toBe('£7.00');
     expect(row[index.record_count]).toBe(1);
-    expect(row[index.record_ids]).toBe('case-1');
+    expect(row[index.record_ids]).toBe('#CASE1');
   });
 });

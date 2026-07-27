@@ -114,6 +114,7 @@ export type ClaimRecord = {
   claim_type?: string;
   customer_claim_reason?: string | null;
   normalized_reason?: string | null;
+  customer_name?: string | null;
   shopify_order_id?: string | null;
   order_ref?: string | null;
   source_ticket_ref?: string | null;

@@ -31,6 +31,39 @@ const SERVER_SNAPSHOT_IDLE: FetchSnapshot<unknown> = {
 
 const store = new Map<string, StoreEntry>();
 
+/*
+ * RUN-10: the route-ready signal needs to know whether any shared client
+ * resource is still in flight. Every panel that loads through this module
+ * participates automatically, so readiness cannot be claimed while a required
+ * panel is still showing "Loading …".
+ */
+const pendingKeys = new Set<string>();
+const pendingListeners = new Set<() => void>();
+
+function notifyPending() {
+  for (const listener of pendingListeners) listener();
+}
+
+export function markResourcePending(key: string) {
+  if (pendingKeys.has(key)) return;
+  pendingKeys.add(key);
+  notifyPending();
+}
+
+export function markResourceSettled(key: string) {
+  if (!pendingKeys.delete(key)) return;
+  notifyPending();
+}
+
+export function pendingResourceCount(): number {
+  return pendingKeys.size;
+}
+
+export function subscribeToPendingResources(listener: () => void): () => void {
+  pendingListeners.add(listener);
+  return () => pendingListeners.delete(listener);
+}
+
 function getEntry(key: string): StoreEntry {
   let entry = store.get(key);
   if (!entry) {
@@ -66,6 +99,7 @@ function runLoad<T>(key: string, loader: () => Promise<T>) {
 
   entry.loading = true;
   entry.error = null;
+  markResourcePending(key);
   notify(entry);
 
   entry.promise = loader()
@@ -80,6 +114,7 @@ function runLoad<T>(key: string, loader: () => Promise<T>) {
     .finally(() => {
       entry.loading = false;
       entry.promise = null;
+      markResourceSettled(key);
       notify(entry);
     });
 }

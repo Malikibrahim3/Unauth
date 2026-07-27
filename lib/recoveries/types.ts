@@ -82,6 +82,7 @@ export type RecoveryCase = {
   internal_owner_user_id: string | null;
   created_at: string;
   updated_at: string;
+  last_source_event_at: string | null;
   partner?: Partner | null;
   support_payout_case?: {
     id: string;

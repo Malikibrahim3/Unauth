@@ -104,7 +104,7 @@ export function deriveRecoveryPath(
       attribution.label === 'customer_claim'
         ? 'Resolve directly with the customer; no third-party recovery applies.'
         : attribution.label === 'repeat_claimant'
-          ? "Review this customer's claim history before approving; no third-party recovery applies."
+          ? "Review this customer's case history before recording a decision; no third-party recovery applies."
           : attribution.label === 'policy_override'
             ? "Flag for internal review — payout was approved against the merchant's own rule recommendation."
             : 'Apply your merchant policy; no third-party recovery applies.';

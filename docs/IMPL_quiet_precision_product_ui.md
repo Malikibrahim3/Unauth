@@ -130,26 +130,26 @@ The application is monochrome by default. Neutral surfaces carry structure; sema
 
 | Token | Value | Use |
 |---|---:|---|
-| `--ua-canvas` | `#F3F3F2` | Main viewport behind product surfaces |
-| `--ua-shell` | `#F8F8F7` | Sidebar and utility-header shell |
+| `--ua-canvas` | `#FAFAFA` | Main viewport behind product surfaces |
+| `--ua-shell` | `#FFFFFF` | Sidebar and utility-header shell |
 | `--ua-surface-primary` | `#FFFFFF` | Main panels, dialogs, menus |
-| `--ua-surface-secondary` | `#F7F7F6` | KPI tiles, table heads, inset groups |
-| `--ua-surface-muted` | `#F1F1F0` | Disabled or strongly recessed areas |
-| `--ua-surface-hover` | `#F5F5F4` | Neutral hover |
-| `--ua-surface-selected` | `#ECECEA` | Selected neutral item |
+| `--ua-surface-secondary` | `#FAFAFA` | KPI tiles, table heads, inset groups |
+| `--ua-surface-muted` | `#F4F4F4` | Disabled or strongly recessed areas |
+| `--ua-surface-hover` | `#F5F5F5` | Neutral hover |
+| `--ua-surface-selected` | `#EBEBEB` | Selected neutral item |
 | `--ua-surface-inverse` | `#242424` | Primary action and inverse chips |
 | `--ua-backdrop` | `rgb(24 24 24 / 14%)` | Modal/drawer scrim |
 | `--ua-text-primary` | `#202020` | Headings and primary content |
-| `--ua-text-secondary` | `#626262` | Body support and labels |
-| `--ua-text-tertiary` | `#767676` | Non-essential metadata |
-| `--ua-text-disabled` | `#A6A6A2` | Disabled content only |
+| `--ua-text-secondary` | `#5E5E5E` | Body support and labels |
+| `--ua-text-tertiary` | `#686868` | Non-essential metadata; still readable in compressed captures |
+| `--ua-text-disabled` | `#A5A5A5` | Disabled content only |
 | `--ua-text-inverse` | `#FFFFFF` | Content on inverse surfaces |
 | `--ua-text-link` | `#2D2D2D` | Underlined or otherwise identified links |
 | `--ua-icon-primary` | `#343434` | Primary icons |
-| `--ua-icon-secondary` | `#858581` | Supporting icons |
-| `--ua-border-subtle` | `#ECECEA` | Internal separators |
-| `--ua-border-default` | `#DEDEDB` | Controls and panel boundaries |
-| `--ua-border-strong` | `#BDBDB8` | Selected/active boundary |
+| `--ua-icon-secondary` | `#707070` | Supporting icons |
+| `--ua-border-subtle` | `#EBEBEB` | Internal separators |
+| `--ua-border-default` | `#D5D5D5` | Controls and panel boundaries |
+| `--ua-border-strong` | `#949494` | Selected/active boundary |
 | `--ua-border-focus` | `#202020` | Keyboard focus |
 | `--ua-action-primary` | `#242424` | Primary button |
 | `--ua-action-primary-hover` | `#151515` | Primary hover |
@@ -379,6 +379,23 @@ The sidebar is a quiet navigation rail:
 - User identity, help, settings, and sign out live in a stable footer region.
 
 Collapsed mode preserves tooltips, active state, badges, keyboard access, and workspace identity. Hover-expansion must never cause content reflow; an explicit toggle remains available.
+
+#### 4.2.1 Selected navigation row (amended 2026-07-26)
+
+The selected sidebar row is the **one inline surface permitted to carry depth**.
+It renders as `--ua-surface-primary` against the `--ua-shell` sidebar, with a
+`--ua-border-default` hairline, `--ua-shadow-raised`, and a 1px upward
+translate. Selection is therefore carried by four channels — fill, border,
+elevation and type weight — and never by colour alone (§9.1).
+
+Constraints:
+
+- `--ua-shadow-raised` exists only for this role. Do not use it on panels, cards,
+  table rows, or KPI cells; those stay flat per §3.5.
+- Unselected rows keep a transparent 1px border so gaining the border on
+  selection does not shift the label.
+- The rise is 1px and the transition uses `--ua-duration-base`. It must stay
+  below the threshold where it reads as a hover toy rather than a state.
 
 ### 4.3 Utility header
 

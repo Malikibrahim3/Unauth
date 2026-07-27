@@ -1,4 +1,13 @@
-import { label, humanise } from '@/lib/ui/labels';
+import {
+  DATA_STATE_COPY,
+  FINANCIAL_STAGE_DEFINITIONS,
+  countLabel,
+  financialStageDefinition,
+  financialStageLabel,
+  label,
+  humanise,
+  parseMajorUnitInput,
+} from '@/lib/ui/labels';
 
 describe('ui label layer', () => {
   it('maps case statuses to merchant-facing copy', () => {
@@ -32,6 +41,38 @@ describe('ui label layer', () => {
   it('returns empty string for null/undefined', () => {
     expect(label('caseStatus', null)).toBe('');
     expect(label('caseStatus', undefined)).toBe('');
+  });
+
+  it('keeps the six financial stages distinct in merchant-facing copy', () => {
+    expect(financialStageLabel('recommendation')).toBe('Recommendation');
+    expect(financialStageLabel('merchant_decision')).toBe('Merchant decision');
+    expect(financialStageLabel('source_observed_outcome')).toBe('Source-observed outcome');
+    expect(financialStageLabel('confirmed_loss')).toBe('Confirmed loss');
+    expect(financialStageLabel('eligible_recovery')).toBe('Eligible recovery');
+    expect(financialStageLabel('recovered_cash')).toBe('Recovered cash');
+    expect(financialStageDefinition('recovered_cash')).toContain('received');
+    expect(Object.keys(FINANCIAL_STAGE_DEFINITIONS)).toEqual(expect.arrayContaining([
+      'recommendation',
+      'merchant_decision',
+      'source_observed_outcome',
+      'confirmed_loss',
+      'eligible_recovery',
+      'recovered_cash',
+    ]));
+  });
+
+  it('keeps zero, unavailable, and inapplicable states separate', () => {
+    expect(DATA_STATE_COPY.zero.label).toBe('0');
+    expect(DATA_STATE_COPY.unavailable.label).toBe('Unavailable');
+    expect(DATA_STATE_COPY.inapplicable.label).toBe('—');
+    expect(DATA_STATE_COPY.zero.description).not.toBe(DATA_STATE_COPY.unavailable.description);
+  });
+
+  it('pluralises counts and keeps money input in major units', () => {
+    expect(countLabel(0, 'item')).toBe('0 items');
+    expect(countLabel(1, 'item')).toBe('1 item');
+    expect(countLabel(2, 'item')).toBe('2 items');
+    expect(parseMajorUnitInput('55.00', 'GBP')).toBe(5500);
   });
 
   it('maps every shipped loss and recovery enum without using the fallback', () => {

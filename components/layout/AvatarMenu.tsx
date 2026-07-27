@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
 
 interface AvatarMenuProps {
+  name?: string | null;
   email?: string | null;
   className?: string;
 }
@@ -16,7 +17,7 @@ interface AvatarMenuProps {
  * Items: account settings link + sign-out.
  * Per §5.3 of the Amplitude Core Design Amplification Plan.
  */
-export function AvatarMenu({ email, className }: AvatarMenuProps) {
+export function AvatarMenu({ name, email, className }: AvatarMenuProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -48,10 +49,11 @@ export function AvatarMenu({ email, className }: AvatarMenuProps) {
     router.push('/login');
   }
 
-  // Derive initials from email
-  const initials = email
-    ? email.split('@')[0].slice(0, 2).toUpperCase()
-    : '?';
+  const initials = name
+    ? name.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase()
+    : email
+      ? email.split('@')[0].slice(0, 2).toUpperCase()
+      : '?';
 
   return (
     <div ref={ref} className={cn('relative flex-shrink-0', className)}>
@@ -83,9 +85,10 @@ export function AvatarMenu({ email, className }: AvatarMenuProps) {
             'py-1',
           )}
         >
-          {email && (
+          {(name || email) && (
             <div className="px-3 py-2 border-b border-[var(--ua-border-subtle)]">
-              <p className="text-caption text-[var(--ua-text-secondary)] truncate">{email}</p>
+              {name ? <p className="text-body-sm font-semibold text-[var(--ua-text-primary)] truncate">{name}</p> : null}
+              {email ? <p className="text-caption text-[var(--ua-text-secondary)] truncate">{email}</p> : null}
             </div>
           )}
 

@@ -214,7 +214,18 @@ export type CaseClarificationRequest = {
   response_received_at?: string | null;
   created_at: string;
   updated_at: string;
+  partner_id?: string | null;
+  /**
+   * Resolved from `partners` by a second merchant-scoped read (RUN-02). `null`
+   * means the request was never addressed to a partner; `unresolved` means the
+   * partner row is gone but the investigation history remains.
+   */
+  partner?: CaseClarificationPartner | null;
 };
+
+export type CaseClarificationPartner =
+  | { id: string; name: string; partner_type: string | null; status: string | null }
+  | { id: string; unresolved: true };
 
 // ---------------------------------------------------------------------------
 // Payout exposure

@@ -11,13 +11,15 @@ import {
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { RowActionsMenu } from "@/components/ui/RowActionsMenu";
 import { CaseContextDrawer } from "@/components/cases/CaseContextDrawer";
-import { formatCurrencyNullable, formatDate } from "@/lib/utils/format";
+import { formatCurrencyNullable, formatDate, formatMinorCurrencyNullable } from "@/lib/utils/format";
 import { RECOVERY_TYPE_LABELS } from "@/lib/partners/types";
 import {
   RECOVERY_OWNER_LABELS,
   type RecoveryCase,
 } from "@/lib/recoveries/types";
 import { RECOVERY_BOARD_COLUMNS } from "@/lib/recoveries/status";
+import { shortRef } from "@/lib/ui/displayRef";
+import { formatMajorUnitInput, parseMajorUnitInput } from "@/lib/ui/merchantCopy";
 
 type Props = {
   recoveries: RecoveryCase[];
@@ -145,7 +147,7 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
         ?? `${retryScope}:${crypto.randomUUID()}`;
       retryKeysRef.current[retryScope] = idempotencyKey;
       const defaultAmount = option.amountKind === "approved"
-        ? String(item.amount_sought_minor / 100)
+        ? formatMajorUnitInput(item.amount_sought_minor, item.currency)
         : "";
       setPending({ item, option, note: "", amount: defaultAmount, idempotencyKey });
       return;
@@ -158,7 +160,9 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
       ?? retryKeysRef.current[retryScope]
       ?? `${retryScope}:${crypto.randomUUID()}`;
     retryKeysRef.current[retryScope] = idempotencyKey;
-    const amountMajor = active?.amount ? Number(active.amount) : null;
+    const amountMinor = active?.amount
+      ? parseMajorUnitInput(active.amount, item.currency)
+      : null;
     setBusyId(`${item.id}:${option.action}`);
     setMessage(null);
     try {
@@ -168,8 +172,8 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
         body: JSON.stringify({
           action: option.action,
           note: active?.note.trim() || undefined,
-          amountMinor: option.amountKind && amountMajor != null && Number.isFinite(amountMajor)
-            ? Math.round(amountMajor * 100)
+          amountMinor: option.amountKind && amountMinor != null && amountMinor >= 0
+            ? amountMinor
             : undefined,
           idempotencyKey,
         }),
@@ -198,7 +202,7 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
           <EmptyState
             icon={<span aria-hidden="true">↗</span>}
             title="No recovery cases yet"
-            description="Recovery cases appear when a source-backed loss has a possible recovery route. Connect your sources or review a payout case to start the handoff."
+            description="Recovery cases appear when a source-backed loss has a possible recovery route. Connect your sources or review a case to start the handoff."
             action={<Link href="/integrations" className="inline-flex h-9 items-center rounded-[var(--ua-radius-control)] bg-[var(--ua-action-primary)] px-3 text-sm font-semibold text-[var(--ua-action-primary-fg)]">Review integrations</Link>}
           />
         </div>
@@ -253,7 +257,7 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
                     const orderLabel =
                       item.support_payout_case?.order_number ??
                       item.support_payout_case?.ticket_external_id ??
-                      item.support_payout_case_id.slice(0, 8);
+                      shortRef(null, item.support_payout_case_id);
                     return (
                       <Panel
                         as="article"
@@ -322,7 +326,7 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
                               Last source update
                             </p>
                             <p style={{ color: "var(--ua-text-primary)" }}>
-                              {dateLabel(item.updated_at)}
+                              {dateLabel(item.last_source_event_at)}
                             </p>
                           </div>
                         </div>
@@ -330,7 +334,7 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
                           <Badge tone={item.evidence_complete ? "success" : "warning"} size="sm" dot>
                             {item.evidence_complete
                               ? "Evidence complete"
-                              : `${item.evidence_missing.length} evidence missing`}
+                              : `${item.evidence_missing.length} ${item.evidence_missing.length === 1 ? 'item' : 'items'} missing`}
                           </Badge>
                           {item.partner?.name ? (
                             <Badge size="sm">{item.partner.name}</Badge>
@@ -430,7 +434,7 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
                   disabled:
                     (pending.option.requiresNote && pending.note.trim().length < 3)
                     || (Boolean(pending.option.amountKind)
-                      && (!Number.isFinite(Number(pending.amount)) || Number(pending.amount) < 0)),
+                      && (parseMajorUnitInput(pending.amount, pending.item.currency) == null || parseMajorUnitInput(pending.amount, pending.item.currency)! < 0)),
                   onClick: () =>
                     void runAction(pending.item, {
                       ...pending.option,
@@ -446,10 +450,7 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
             <dt>Amount pursued</dt>
             <dd className="font-sans tabular-nums">
               {pending
-                ? (formatCurrencyNullable(
-                    pending.item.amount_sought_minor / 100,
-                    pending.item.currency,
-                  ) ?? "—")
+                ? formatMinorCurrencyNullable(pending.item.amount_sought_minor, pending.item.currency)
                 : "—"}
             </dd>
           </div>
@@ -457,10 +458,7 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
             <dt>Recovered</dt>
             <dd className="font-sans tabular-nums">
               {pending
-                ? (formatCurrencyNullable(
-                    pending.item.amount_recovered_minor / 100,
-                    pending.item.currency,
-                  ) ?? "—")
+                ? formatMinorCurrencyNullable(pending.item.amount_recovered_minor, pending.item.currency)
                 : "—"}
             </dd>
           </div>
@@ -473,6 +471,7 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
                 type="number"
                 min={0}
                 step="0.01"
+                inputMode="decimal"
                 value={pending.amount}
                 onChange={(event) => setPending({ ...pending, amount: event.target.value })}
                 className="rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2 py-1.5 text-sm text-[var(--ua-text-primary)] focus-visible:shadow-[var(--ua-shadow-focus)]"
@@ -481,6 +480,9 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
                 {pending.item.currency}
               </span>
             </div>
+            <span className="mt-1 block text-[length:var(--ua-text-micro-size)] font-normal text-[var(--ua-text-tertiary)]">
+              Enter {pending.item.currency} in major units.
+            </span>
           </label>
         ) : null}
         {pending?.option.requiresNote ? (

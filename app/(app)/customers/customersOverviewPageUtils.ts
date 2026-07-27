@@ -10,7 +10,7 @@ export function resolveCustomerActions(
   if (connection.bothConnected) {
     return {
       primary: { label: 'Open cases', href: '/claims' },
-      subtitle: 'Merchant-owned customer context for loss-case decisions - order history, claim history, prior outcomes, and evidence patterns.',
+      subtitle: 'Merchant-owned customer context for loss decisions — order history, case history, prior outcomes, and evidence patterns.',
     };
   }
   if (connection.orderSourceOnlyConnected) {

@@ -21,7 +21,7 @@ export default async function DataPrivacySettingsPage() {
       subtitle="How Unauth handles merchant and customer data, retention, and compliance."
     >
       <div className="space-y-3">
-        <SectionCard title="How payout-case data is scoped">
+        <SectionCard title="How case data is scoped">
           <div className="mb-4 flex flex-wrap items-center gap-2">
             <PrivacyBadge value="Merchant-owned context" />
             <span
@@ -43,16 +43,15 @@ export default async function DataPrivacySettingsPage() {
               color: "var(--data-id)",
             }}
           >
-            source record -&gt; normalise -&gt; tenant scope -&gt; support
-            payout case context
+            source record -&gt; normalise -&gt; workspace scope -&gt; case context
           </div>
           <p
             className="mt-3 text-body-sm"
             style={{ color: "var(--ua-text-secondary)" }}
           >
             Customer identifiers are used to link merchant-owned orders, support
-            tickets, evidence, decisions, and outcomes to the correct payout
-            case. Access remains scoped to your merchant workspace.
+            tickets, evidence, decisions, and outcomes to the correct case.
+            Access remains scoped to your workspace.
           </p>
         </SectionCard>
 
@@ -62,7 +61,7 @@ export default async function DataPrivacySettingsPage() {
             style={{ color: "var(--ua-text-secondary)" }}
           >
             Unauth processes connected store, helpdesk, evidence, decision, and
-            recovery data to support payout-case review for your store. Customer
+            recovery data to support case review for your workspace. Customer
             history is supporting context for support decisions, not a reusable
             denial list.
           </p>

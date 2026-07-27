@@ -1,18 +1,20 @@
 'use client';
 
 import Link from 'next/link';
-import { ChevronRight, HelpCircle, LogOut, Settings } from 'lucide-react';
+import { ChevronRight, HelpCircle, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UnauthLogo } from '@/components/ui/UnauthLogo';
 import { SidebarGroupLabel, SidebarNavItem, type NavItemView } from '@/components/nav/SidebarNavItem';
+import type { ConnectionState } from '@/lib/connections/getConnectionState';
+import { providerLabel } from '@/lib/ui/merchantCopy';
 
 type SidebarAsideProps = {
   isMobile: boolean;
   isCollapsed: boolean;
   merchantName: string | null;
+  userName?: string | null;
   userEmail: string;
-  shopifyConnected: boolean;
-  helpdeskConnected: boolean;
+  connectionState: Pick<ConnectionState, 'orderSourceConnected' | 'helpdesk' | 'helpdeskProvider'>;
   groups: Array<{ label: string; items: NavItemView[] }>;
   isActive: (href: string) => boolean;
   onCloseMobile: () => void;
@@ -26,9 +28,9 @@ export function SidebarAside({
   isMobile,
   isCollapsed,
   merchantName,
+  userName,
   userEmail,
-  shopifyConnected,
-  helpdeskConnected,
+  connectionState,
   groups,
   isActive,
   onCloseMobile,
@@ -67,7 +69,13 @@ export function SidebarAside({
             title="Unauth"
             onClick={onCloseMobile}
           >
-            <UnauthLogo variant="mono-dark" size={isCollapsed ? 9 : 12} />
+            <UnauthLogo
+              kind={isCollapsed ? 'symbol' : 'lockup'}
+              tone="auto"
+              height={isCollapsed ? 20 : 18}
+              alt=""
+              decorative
+            />
           </Link>
           {!isCollapsed && (
             <button
@@ -95,30 +103,45 @@ export function SidebarAside({
           </div>
         ) : null}
 
-        {!isCollapsed && (!shopifyConnected || !helpdeskConnected) ? (
+        {!isCollapsed ? (
           <Link
             href="/integrations"
             prefetch={false}
             onClick={onCloseMobile}
-            className="flex min-h-6 w-full items-center gap-1.5 rounded-sm px-2 py-1 text-[length:var(--ua-text-micro-size)] font-medium leading-tight transition-opacity hover:opacity-80"
+            className="flex min-h-6 w-full items-center gap-1.5 rounded-[var(--ua-radius-control)] px-2 py-1 text-[length:var(--ua-text-micro-size)] font-medium leading-tight transition-colors duration-[var(--ua-duration-fast)] hover:bg-[var(--ua-surface-hover)]"
+            /*
+             * A neutral chip, not a tinted one. The warning dot carries the
+             * state; washing the whole pill in 10% olive put a cream block in
+             * the sidebar of every unconnected workspace, which is decoration
+             * doing a glyph's job (§3.1).
+             */
             style={{
-              background: 'color-mix(in srgb, var(--ua-warning) 10%, transparent)',
-              color: 'var(--ua-warning)',
-              border: '1px solid color-mix(in srgb, var(--ua-warning) 25%, transparent)',
+              background: 'var(--ua-surface-primary)',
+              color: 'var(--ua-text-secondary)',
+              border: '1px solid var(--ua-border-default)',
             }}
-            title="Connect your store and helpdesk to go live"
+            title={connectionState.helpdesk
+              ? `${connectionState.helpdeskProvider ? providerLabel(connectionState.helpdeskProvider) : 'Helpdesk'} is connected. Review integrations.`
+              : connectionState.orderSourceConnected
+                ? 'Helpdesk is not connected. Review integrations to connect a support source.'
+                : 'Store and helpdesk are not connected. Review integrations to connect both sources.'}
+            aria-label={connectionState.helpdesk
+              ? `${connectionState.helpdeskProvider ? providerLabel(connectionState.helpdeskProvider) : 'Helpdesk'} connected. Review integrations.`
+              : connectionState.orderSourceConnected
+                ? 'Helpdesk not connected. Review integrations.'
+                : 'Store and helpdesk not connected. Review integrations.'}
           >
             <span
               className="h-1.5 w-1.5 rounded-full shrink-0"
-              style={{ background: 'var(--ua-warning)' }}
+              style={{ background: connectionState.helpdesk ? 'var(--ua-success)' : 'var(--ua-warning)' }}
               aria-hidden="true"
             />
             <span className="truncate">
-              {!shopifyConnected && !helpdeskConnected
-                ? 'Connect sources'
-                : !helpdeskConnected
+              {connectionState.helpdesk
+                ? `${connectionState.helpdeskProvider ? providerLabel(connectionState.helpdeskProvider) : 'Helpdesk'} connected`
+                : connectionState.orderSourceConnected
                   ? 'Helpdesk not connected'
-                  : 'Store not connected'}
+                  : 'Connect sources'}
             </span>
           </Link>
         ) : null}
@@ -168,7 +191,9 @@ export function SidebarAside({
       >
         {!isCollapsed ? (
           <div className="px-2 py-1 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)] truncate">
-            {userEmail}
+            <span className="block truncate" title={userName ?? userEmail}>
+              {userName ?? 'Workspace operator'}
+            </span>
           </div>
         ) : null}
 
@@ -187,23 +212,6 @@ export function SidebarAside({
         >
           <HelpCircle className="h-4 w-4 flex-shrink-0 text-[var(--ua-text-tertiary)]" aria-hidden="true" />
           {!isCollapsed && <span>Help</span>}
-        </Link>
-
-        <Link
-          href="/settings"
-          prefetch={false}
-          title={isCollapsed ? 'Settings' : undefined}
-          onClick={onCloseMobile}
-          className={cn(
-            'flex h-8 items-center gap-3 rounded-sm px-2',
-            'text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-secondary)] hover:text-[var(--ua-text-primary)]',
-            'transition-colors duration-[var(--ua-duration-fast)]',
-            'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ua-border-focus)] focus-visible:outline-offset-2',
-            isCollapsed && 'justify-center',
-          )}
-        >
-          <Settings className="h-4 w-4 flex-shrink-0 text-[var(--ua-text-tertiary)]" aria-hidden="true" />
-          {!isCollapsed && <span>Settings</span>}
         </Link>
 
         <button

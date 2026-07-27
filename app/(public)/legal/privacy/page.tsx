@@ -5,6 +5,7 @@
  */
 
 import Link from 'next/link';
+import { LegalHeader } from '@/components/public/LegalHeader';
 
 export const metadata = {
   title: 'Privacy Policy | Unauth',
@@ -12,7 +13,9 @@ export const metadata = {
 
 export default function PrivacyPage() {
   return (
-    <div className="mx-auto max-w-3xl px-6 py-16">
+    <>
+      <LegalHeader />
+      <div className="mx-auto max-w-3xl px-6 py-16">
       <h1 className="mb-2 text-3xl font-bold text-[var(--text)]">Privacy Policy</h1>
       <p className="mb-10 text-sm text-[var(--text-muted)]">Last updated: May 2026</p>
 
@@ -116,6 +119,7 @@ export default function PrivacyPage() {
         <Link href="/legal/dpa" className="hover:underline">DPA</Link>
         <Link href="/legal/data-handling" className="hover:underline">Data handling</Link>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

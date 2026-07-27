@@ -10,9 +10,7 @@ export function PopupHeader({ connected, onSettings, showSettings }: PopupHeader
   return (
     <header className="header">
       <div className="brand">
-        <div className="brand-mark" aria-hidden>
-          U
-        </div>
+        <img className="brand-mark" src="../icons/icon48.png" alt="" />
         <div>
           <div className="brand-name">Unauth</div>
           {connected && (

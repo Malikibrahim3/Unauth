@@ -7,6 +7,7 @@ import {
 } from "@/lib/notifications/project";
 import { formatCurrencyNullable } from "@/lib/utils/format";
 import { publicConnectionErrorMessage } from "@/lib/integrations/publicErrors";
+import { shortRef } from "@/lib/ui/displayRef";
 
 type ProjectionSummary = {
   requested: number;
@@ -165,7 +166,7 @@ export async function projectOperationalNotifications(
           recipient_user_id: recipient,
           kind: "approaching_deadline",
           title: `Overdue: ${task.title}`,
-          body: `${task.support_payout_case_id ? `Case ${task.support_payout_case_id.slice(0, 8)} · ` : ""}${task.priority === "urgent" ? "Urgent" : "Operational"} work is past its due time. Open the source record to continue or resolve it.`,
+          body: `${task.support_payout_case_id ? `${shortRef(null, task.support_payout_case_id)} · ` : ""}${task.priority === "urgent" ? "Urgent" : "Operational"} work is past its due time. Open the source record to continue or resolve it.`,
           target_href: target,
           deduplication_key: `task-overdue:${task.id}:${task.due_at}`,
         },
@@ -192,8 +193,8 @@ export async function projectOperationalNotifications(
               : "decision_request",
           title:
             claim.amount_at_risk != null && claim.amount_at_risk >= 500
-              ? `High-value payout case · ${claim.id.slice(0, 8)}${amount ? ` · ${amount}` : ""}`
-              : `Payout case ${claim.id.slice(0, 8)} needs a decision`,
+              ? `High-value case · ${shortRef(null, claim.id)}${amount ? ` · ${amount}` : ""}`
+              : `${shortRef(null, claim.id)} needs a decision`,
           body: "Evidence and merchant policy context are ready for an operator review.",
           target_href: `/claims/${claim.id}`,
           deduplication_key: `case-decision:${claim.id}:${claim.status}:${claim.updated_at}`,

@@ -89,6 +89,7 @@ type ClaimQueryRow = {
 };
 type ClaimStatus = (typeof ALLOWED_STATUSES)[number];
 type ClaimsSearchParams = {
+  search?: string;
   status?: string;
   workflow?: string;
   sort?: string;
@@ -100,6 +101,156 @@ type ClaimsSearchParams = {
   viewed?: string;
   focus?: string;
 };
+
+type SearchIdRow = { id: string };
+
+function ilikePattern(value: string): string {
+  return `%${value.replace(/[\\%_]/g, (character) => `\\${character}`)}%`;
+}
+
+/**
+ * Resolve the primary Cases search against merchant-owned source records, then
+ * constrain the registry query to the matching case ids. Keeping this work on
+ * the server means the browser never receives an unfiltered case collection.
+ */
+async function resolveCaseSearchIds(
+  serviceClient: ReturnType<typeof getRequestServiceClient>,
+  merchantId: string,
+  rawSearch: string,
+): Promise<Set<string>> {
+  const pattern = ilikePattern(rawSearch);
+  const normalizedCaseSearch = rawSearch.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const [
+    caseRefResult,
+    orderNumberResult,
+    orderExternalResult,
+    orderEmailResult,
+    orderCustomerNameResult,
+    ticketRefResult,
+    ticketSubjectResult,
+    customerFirstNameResult,
+    customerLastNameResult,
+    customerEmailResult,
+    identityNameResult,
+  ] = await Promise.all([
+    // Postgres cannot apply `ilike` to the UUID case id. Fetch the small,
+    // merchant-scoped id set and match both the storage id and the short case
+    // reference rendered in the UI (for example, `Case #A1B2C`).
+    serviceClient.from(TABLES.MERCHANT_CLAIMS).select('id').eq('merchant_id', merchantId).limit(1000),
+    serviceClient.from(TABLES.SOURCE_ORDERS).select('id').eq('merchant_id', merchantId).ilike('order_number', pattern).limit(100),
+    serviceClient.from(TABLES.SOURCE_ORDERS).select('id').eq('merchant_id', merchantId).ilike('external_id', pattern).limit(100),
+    serviceClient.from(TABLES.SOURCE_ORDERS).select('id').eq('merchant_id', merchantId).ilike('email', pattern).limit(100),
+    serviceClient.from(TABLES.SOURCE_ORDERS).select('id').eq('merchant_id', merchantId).ilike('customer_name', pattern).limit(100),
+    serviceClient.from(TABLES.SOURCE_TICKETS).select('id').eq('merchant_id', merchantId).ilike('external_id', pattern).limit(100),
+    serviceClient.from(TABLES.SOURCE_TICKETS).select('id').eq('merchant_id', merchantId).ilike('subject', pattern).limit(100),
+    serviceClient.from('source_customers').select('id').eq('merchant_id', merchantId).ilike('first_name', pattern).limit(100),
+    serviceClient.from('source_customers').select('id').eq('merchant_id', merchantId).ilike('last_name', pattern).limit(100),
+    serviceClient.from('source_customers').select('id').eq('merchant_id', merchantId).ilike('email', pattern).limit(100),
+    serviceClient.from(TABLES.MERCHANT_IDENTITY_STATE).select('identity_id').eq('merchant_id', merchantId).ilike('display_name', pattern).limit(100),
+  ]);
+
+  const failedSearch = [
+    caseRefResult,
+    orderNumberResult,
+    orderExternalResult,
+    orderEmailResult,
+    orderCustomerNameResult,
+    ticketRefResult,
+    ticketSubjectResult,
+    customerFirstNameResult,
+    customerLastNameResult,
+    customerEmailResult,
+    identityNameResult,
+  ].find((result) => result.error);
+  if (failedSearch?.error) {
+    throw new Error(`Failed to search cases: ${failedSearch.error.message}`);
+  }
+
+  const orderIds = Array.from(new Set([
+    ...((orderNumberResult.data ?? []) as SearchIdRow[]).map((row) => row.id),
+    ...((orderExternalResult.data ?? []) as SearchIdRow[]).map((row) => row.id),
+    ...((orderEmailResult.data ?? []) as SearchIdRow[]).map((row) => row.id),
+    ...((orderCustomerNameResult.data ?? []) as SearchIdRow[]).map((row) => row.id),
+  ]));
+  const ticketIds = Array.from(new Set([
+    ...((ticketRefResult.data ?? []) as SearchIdRow[]).map((row) => row.id),
+    ...((ticketSubjectResult.data ?? []) as SearchIdRow[]).map((row) => row.id),
+  ]));
+  const sourceCustomerIds = Array.from(new Set([
+    ...((customerFirstNameResult.data ?? []) as SearchIdRow[]).map((row) => row.id),
+    ...((customerLastNameResult.data ?? []) as SearchIdRow[]).map((row) => row.id),
+    ...((customerEmailResult.data ?? []) as SearchIdRow[]).map((row) => row.id),
+  ]));
+  const identityIds = ((identityNameResult.data ?? []) as Array<{ identity_id: string }>).map((row) => row.identity_id);
+
+  const [
+    orderCaseResult,
+    ticketCaseResult,
+    sourceCustomerOrderIdsResult,
+    sourceCustomerTicketIdsResult,
+    identityCaseResult,
+  ] = await Promise.all([
+    orderIds.length > 0
+      ? serviceClient.from(TABLES.MERCHANT_CLAIMS).select('id').eq('merchant_id', merchantId).in('source_order_id', orderIds)
+      : Promise.resolve({ data: [], error: null }),
+    ticketIds.length > 0
+      ? serviceClient.from(TABLES.MERCHANT_CLAIMS).select('id').eq('merchant_id', merchantId).in('source_ticket_id', ticketIds)
+      : Promise.resolve({ data: [], error: null }),
+    sourceCustomerIds.length > 0
+      ? serviceClient.from(TABLES.SOURCE_ORDERS).select('id').eq('merchant_id', merchantId).in('source_customer_id', sourceCustomerIds)
+      : Promise.resolve({ data: [], error: null }),
+    sourceCustomerIds.length > 0
+      ? serviceClient.from(TABLES.SOURCE_TICKETS).select('id').eq('merchant_id', merchantId).in('source_customer_id', sourceCustomerIds)
+      : Promise.resolve({ data: [], error: null }),
+    identityIds.length > 0
+      ? serviceClient.from(TABLES.MERCHANT_CLAIMS).select('id').eq('merchant_id', merchantId).in('identity_id', identityIds)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+  const failedLink = [
+    orderCaseResult,
+    ticketCaseResult,
+    sourceCustomerOrderIdsResult,
+    sourceCustomerTicketIdsResult,
+    identityCaseResult,
+  ].find((result) => result.error);
+  if (failedLink?.error) {
+    throw new Error(`Failed to resolve case search results: ${failedLink.error.message}`);
+  }
+
+  const sourceCustomerOrderIds = ((sourceCustomerOrderIdsResult.data ?? []) as SearchIdRow[]).map((row) => row.id);
+  const sourceCustomerTicketIds = ((sourceCustomerTicketIdsResult.data ?? []) as SearchIdRow[]).map((row) => row.id);
+  const [sourceCustomerOrderCases, sourceCustomerTicketCases] = await Promise.all([
+    sourceCustomerOrderIds.length > 0
+      ? serviceClient.from(TABLES.MERCHANT_CLAIMS).select('id').eq('merchant_id', merchantId).in('source_order_id', sourceCustomerOrderIds)
+      : Promise.resolve({ data: [], error: null }),
+    sourceCustomerTicketIds.length > 0
+      ? serviceClient.from(TABLES.MERCHANT_CLAIMS).select('id').eq('merchant_id', merchantId).in('source_ticket_id', sourceCustomerTicketIds)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+  const failedCustomerLink = [sourceCustomerOrderCases, sourceCustomerTicketCases].find((result) => result.error);
+  if (failedCustomerLink?.error) {
+    throw new Error(`Failed to resolve customer case search results: ${failedCustomerLink.error.message}`);
+  }
+
+  const matchingCaseRefs = ((caseRefResult.data ?? []) as SearchIdRow[])
+    .filter((row) => {
+      const normalizedId = row.id.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const shortReference = normalizedId.slice(-5);
+      return normalizedId.includes(rawSearch.toLowerCase())
+        || (normalizedCaseSearch.length > 0 && shortReference.includes(normalizedCaseSearch))
+        || (normalizedCaseSearch.length > 0 && `case${shortReference}`.includes(normalizedCaseSearch));
+    })
+    .map((row) => row.id);
+
+  return new Set([
+    ...matchingCaseRefs,
+    ...((orderCaseResult.data ?? []) as SearchIdRow[]).map((row) => row.id),
+    ...((ticketCaseResult.data ?? []) as SearchIdRow[]).map((row) => row.id),
+    ...((sourceCustomerOrderCases.data ?? []) as SearchIdRow[]).map((row) => row.id),
+    ...((sourceCustomerTicketCases.data ?? []) as SearchIdRow[]).map((row) => row.id),
+    ...((identityCaseResult.data ?? []) as SearchIdRow[]).map((row) => row.id),
+  ]);
+}
 
 export default async function ClaimsPage({
   searchParams,
@@ -121,6 +272,10 @@ export default async function ClaimsPage({
     redirect('/settings/billing?required=CLAIM_REVIEW_QUEUE');
   }
   const sp: Record<string, string | undefined> = { ...(resolvedParams ?? {}) };
+  const searchTerm = resolvedParams.search?.trim().slice(0, 80) ?? '';
+  const searchedCaseIds = searchTerm
+    ? await resolveCaseSearchIds(serviceClient, ctx.merchantId, searchTerm)
+    : null;
   const statusFilter = ALLOWED_STATUSES.includes(resolvedParams.status as ClaimStatus)
     ? (resolvedParams.status as ClaimStatus)
     : null;
@@ -188,6 +343,9 @@ export default async function ClaimsPage({
   if (ownerFilter === 'unassigned') listQuery = listQuery.is('assigned_to', null);
   if (viewedFilter === 'unread') listQuery = listQuery.is('first_viewed_at', null);
   if (viewedFilter === 'viewed') listQuery = listQuery.not('first_viewed_at', 'is', null);
+  if (searchedCaseIds) {
+    listQuery = listQuery.in('id', Array.from(searchedCaseIds));
+  }
   listQuery = listQuery.range(listOffset, listOffset + listCap - 1);
 
   // Generation 1: the list page, queue counts, and recovery metrics all depend
@@ -197,7 +355,9 @@ export default async function ClaimsPage({
     queueCounts,
     { data: recoveryMetricRows },
   ] = await Promise.all([
-    listQuery,
+    searchedCaseIds && searchedCaseIds.size === 0
+      ? Promise.resolve({ data: [], error: null, count: 0 })
+      : listQuery,
     fetchClaimQueueCounts(serviceClient, ctx.merchantId, user.id),
     serviceClient
       .from(TABLES.MERCHANT_CLAIMS)
@@ -453,10 +613,37 @@ export default async function ClaimsPage({
     });
   }
 
-  // evidence_packages has no v2 equivalent — no evidence badge/package surfaced.
+  /*
+   * RUN-08: this used to force every entry to null with a "no v2 equivalent"
+   * comment, so a case with a generated package still read as "no evidence
+   * package" in the registry while its detail page said otherwise. The table
+   * does exist in the canonical schema, so the registry now reads the real
+   * projection and links a package by the order it was generated for.
+   */
   const evidenceByClaimId = new Map<string, EvidencePackageRow | null>();
-  for (const claim of claims) {
-    evidenceByClaimId.set(claim.id, null);
+  const packageByOrderId = new Map<string, EvidencePackageRow>();
+  if (sourceOrderIds.length > 0) {
+    const { data: evidencePackageRows, error: evidencePackageError } = await serviceClient
+      .from(TABLES.EVIDENCE_PACKAGES)
+      .select('id,customer_profile_id,generated_for_order_id,reference_number,generated_at')
+      .eq('merchant_id', ctx.merchantId)
+      .in('generated_for_order_id', sourceOrderIds)
+      .order('generated_at', { ascending: false });
+    if (evidencePackageError) {
+      // Surfaced rather than swallowed: an unreadable projection must not look
+      // identical to "this case has no package".
+      throw new Error(`Failed to load evidence packages: ${evidencePackageError.message}`);
+    }
+    for (const row of (evidencePackageRows ?? []) as EvidencePackageRow[]) {
+      if (!row.generated_for_order_id) continue;
+      if (!packageByOrderId.has(row.generated_for_order_id)) {
+        packageByOrderId.set(row.generated_for_order_id, row);
+      }
+    }
+  }
+  for (const claim of claimRows) {
+    const orderId = claim.source_order_id;
+    evidenceByClaimId.set(claim.id, orderId ? (packageByOrderId.get(orderId) ?? null) : null);
   }
 
   // Sum only rows in the dominant currency; mixed-currency rows are excluded
@@ -478,8 +665,9 @@ export default async function ClaimsPage({
   const listViewTotal = claimsListTotalForView(listView, queueCounts);
   const resultText = formatClaimsResultText({
     showing: claims.length,
-    totalMatching: slaFilter ? totalForPager : listViewTotal,
+    totalMatching: searchTerm ? totalForPager : (slaFilter ? totalForPager : listViewTotal),
     view: slaFilter === 'overdue' ? { kind: 'sla', sla: 'overdue' } : slaFilter === 'approaching' ? { kind: 'sla', sla: 'approaching' } : listView,
+    search: searchTerm || undefined,
   });
 
 
@@ -555,6 +743,7 @@ export default async function ClaimsPage({
       customerById={customerById}
       currentUserId={user.id}
       initialFocusClaimId={resolvedParams.focus ?? null}
+      searchTerm={searchTerm}
       totalAtRisk={totalAtRisk}
       recoveryMetricRows={(recoveryMetricRows ?? []) as Array<{
         status: string;

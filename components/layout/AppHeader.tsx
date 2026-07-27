@@ -27,10 +27,10 @@ interface AppHeaderProps {
   sidebarCollapsed?: boolean;
   /** Merchant name shown in the env chip left of search */
   merchantName?: string | null;
-  /** Deployment environment, e.g. 'production' | 'preview' | 'development' */
-  environment?: string;
   /** Demo/sample tenant — surfaces a "Demo" pill instead of an env badge */
   isDemo?: boolean;
+  /** Fictional/operator display name when the auth profile provides one. */
+  userName?: string | null;
   /** Authenticated user email for the avatar menu */
   userEmail?: string | null;
   workspaces?: WorkspaceOption[];
@@ -40,8 +40,9 @@ interface AppHeaderProps {
 }
 
 /**
- * AppHeader - 56px sticky header per §3.3.
- * Renders breadcrumbs in the center-left region; ⌘K trigger and avatar slot on the right.
+ * AppHeader - 48px sticky utility header per §4.3.
+ * Renders parent context in the center-left region; the page header owns the
+ * current title so it is never announced twice in the initial viewport.
  */
 export default function AppHeader({
   breadcrumbs,
@@ -49,8 +50,8 @@ export default function AppHeader({
   onToggleSidebar,
   sidebarCollapsed,
   merchantName,
-  environment,
   isDemo,
+  userName,
   userEmail,
   workspaces = [],
   activeMerchantId,
@@ -86,12 +87,13 @@ export default function AppHeader({
     overrideLabel && derived.length > 0
       ? [...derived.slice(0, -1), { ...derived[derived.length - 1], label: overrideLabel }]
       : derived;
+  const parentSegments = segments.slice(0, -1);
 
   return (
     <header
       className={cn(
         'ua-app-header sticky top-0 z-40 flex h-12 items-center gap-3',
-        'border-b pl-14 pr-4 md:px-4',
+        'min-w-0 border-b pl-14 pr-4 md:px-4',
       )}
       style={{ borderBottomColor: 'var(--ua-border-default)' }}
     >
@@ -114,9 +116,8 @@ export default function AppHeader({
       )}
 
       {/* Breadcrumb */}
-      <nav aria-label="Breadcrumb" className="flex min-w-0 flex-1 items-center gap-0">
-        {segments.map((seg, i) => {
-          const isLast = i === segments.length - 1;
+      <nav aria-label="Breadcrumb" className="flex min-w-0 flex-1 items-center gap-0 overflow-hidden">
+        {parentSegments.map((seg, i) => {
           return (
             <span key={seg.href ?? seg.label} className="flex items-center gap-0">
               {i > 0 && (
@@ -125,15 +126,13 @@ export default function AppHeader({
                   aria-hidden="true"
                 />
               )}
-              {isLast || !seg.href ? (
+              {!seg.href ? (
                 <span
                   className={cn(
                     'truncate',
-                    isLast
-                      ? 'text-[length:var(--ua-text-small-size)] font-semibold text-[var(--ua-text-primary)]'
-                      : 'text-caption text-[var(--ua-text-secondary)]',
+                    'text-caption text-[var(--ua-text-secondary)]',
                   )}
-                  aria-current={isLast ? 'page' : undefined}
+                  aria-current={undefined}
                 >
                   {seg.label}
                 </span>
@@ -157,7 +156,7 @@ export default function AppHeader({
 
       {/* Right-side actions slot */}
       {actions && (
-        <div className="flex flex-shrink-0 items-center gap-2">
+        <div className="flex min-w-0 max-w-full flex-shrink-0 flex-wrap items-center gap-2">
           {actions}
         </div>
       )}
@@ -169,7 +168,7 @@ export default function AppHeader({
       {workspaces.length > 1 ? (
         <WorkspaceSwitcher workspaces={workspaces} activeMerchantId={activeMerchantId ?? null} />
       ) : (
-        <MerchantEnvChip merchantName={merchantName ?? null} environment={environment} isDemo={isDemo} />
+        <MerchantEnvChip merchantName={merchantName ?? null} isDemo={isDemo} />
       )}
 
       {/* ⌘K trigger */}
@@ -204,7 +203,7 @@ export default function AppHeader({
         {resolvedUnreadCount > 0 ? <span className="sr-only">{resolvedUnreadCount} unread</span> : null}
       </Link>
 
-      <AvatarMenu email={userEmail} />
+      <AvatarMenu name={userName} email={userEmail} />
 
       <CommandPalette isOpen={paletteOpen} onClose={closePalette} permissions={permissions} />
     </header>
@@ -262,11 +261,11 @@ const SINGULAR_ENTITY_LABELS: Record<string, string> = {
   recoveries: 'Recovery',
   rules: 'Rule',
   flows: 'Flow',
-  claims: 'Payout case',
-  chargebacks: 'Case',
+  claims: 'Case',
+  chargebacks: 'Chargeback',
   customers: 'Customer',
   orders: 'Order',
-  disputes: 'Dispute',
+  disputes: 'Chargeback',
   refunds: 'Refund',
   returns: 'Return',
   shipments: 'Shipment',

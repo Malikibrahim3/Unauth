@@ -87,7 +87,7 @@ export function LossLedger({ rows }: { rows: LossLedgerRow[] }) {
         <div className="rounded-xl border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)]">
           <EmptyState
             title="No loss records yet"
-            description="Loss records appear after a payout case has a confirmed or estimated loss. Connect your sources to keep the ledger current."
+            description="Loss records appear after a case has a confirmed or estimated loss. Connect your sources to keep the ledger current."
             action={<Link href="/integrations" className="inline-flex h-9 items-center rounded-[var(--ua-radius-control)] bg-[var(--ua-action-primary)] px-3 text-sm font-semibold text-[var(--ua-action-primary-fg)]">Review integrations</Link>}
           />
         </div>

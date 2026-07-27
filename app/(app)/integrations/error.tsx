@@ -2,6 +2,6 @@
 
 import { OperationalRouteError } from '@/components/states/OperationalRouteError';
 
-export default function IntegrationsError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
-  return <OperationalRouteError title="Integration health is unavailable" description="No connection state was changed. Retry this resource while preserving the current route." reset={reset} />;
+export default function IntegrationsError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  return <OperationalRouteError title="Integration health is unavailable" description="None of your connections were changed." reset={reset} digest={error.digest} />;
 }

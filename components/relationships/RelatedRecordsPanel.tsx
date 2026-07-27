@@ -59,7 +59,7 @@ export function RelatedRecordsPanel({ records }: { records: RelatedRecord[] }) {
                   {label}
                 </p>
                 <p className="mt-0.5 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">
-                  {r.sourceSystem ?? "unknown source"} ·{" "}
+                  {r.sourceSystem ?? "source not identified"} ·{" "}
                   {freshnessLabel(r.freshness)}
                   {r.matchMethod ? ` · ${r.matchMethod}` : ""}
                 </p>

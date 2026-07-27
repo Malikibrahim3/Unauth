@@ -15,8 +15,7 @@
  * @see components/ui/badgeStyles.ts
  */
 
-/** Filter chips have no canonical component yet. This is the intended
- * contract for whoever builds one next — see the migration register. */
+/** FilterChip is the canonical neutral interactive filter primitive. */
 export const filterChipContract = {
   base: 'inline-flex h-7 items-center gap-1.5 rounded-[var(--ua-radius-control)] border px-2.5 text-[length:var(--ua-text-micro-size)] font-medium transition-colors',
   unselected:
@@ -28,9 +27,7 @@ export const filterChipContract = {
   disabled: 'opacity-50 cursor-not-allowed pointer-events-none',
 } as const;
 
-/** Segmented controls have no canonical component yet. This is the
- * intended contract for whoever builds one next — see the migration
- * register. Use only for mutually exclusive views/sort choices. */
+/** SegmentedControl is for mutually exclusive view/sort choices, not route tabs. */
 export const segmentedControlContract = {
   root: 'inline-flex items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-secondary)] p-0.5',
   item: 'inline-flex items-center justify-center rounded-[var(--ua-radius-control)] px-2.5 text-[length:var(--ua-text-micro-size)] font-medium text-[var(--ua-text-secondary)] transition-colors',
@@ -51,8 +48,10 @@ export type SegmentedControlContract = typeof segmentedControlContract;
 export const authenticatedDesignEthos = {
   reference: 'quiet-precision',
   shell: '200px neutral rail, 48px utility header, near-white canvas, dense flat surfaces',
-  functionality: 'committed routes, actions, permissions, data semantics, and keyboard/mobile access remain unchanged',
+  functionality: 'committed routes, actions, permissions, data semantics, and keyboard access remain unchanged',
   visuals: 'one purpose-selected primary visual on most data-rich operational pages; shared grammar without repeated compositions',
+  supportedWidth: 'authenticated product is operable at 1024px and wider; one shared Desktop required boundary renders below 1024px',
+  surfaces: 'working surface, joined section, inset group, metric group, and floating surface; no standard surface inside another',
   chartData: 'prepared merchant-scoped loader data only; no fake history, null-to-zero conversion, mixed currencies, or duplicate queries',
   chartAccess: 'stable labels, non-colour distinctions, visible data tables, focus states, reduced motion, and touch-safe layouts',
   skeletons: 'loading geometry mirrors the exact chart family plus resolved header, KPI, toolbar, content, and rail positions',

@@ -150,7 +150,7 @@ type TicketListClient = {
           order: (col3: string, opts: { ascending: boolean }) => QueryResult;
           maybeSingle: () => SingleResult;
         };
-        contains: (col2: string, val2: unknown[]) => {
+        contains: (col2: string, val2: unknown[] | string) => {
           order: (col3: string, opts: { ascending: boolean }) => QueryResult;
         };
       };
@@ -273,7 +273,14 @@ export async function listSupportCasesForClaimContext(
       .from(TABLES.SUPPORT_CASE_INTAKE)
       .select(SAFE_TICKET_COLUMNS)
       .eq('merchant_id', merchantId)
-      .contains('linked_order_external_ids', [ref])
+      /*
+       * `linked_order_external_ids` is jsonb, so containment needs a JSON
+       * value. Passing a JS array made PostgREST emit array-literal syntax
+       * (`cs.{QA-1001}`), which Postgres rejected with 22P02 for any reference
+       * that is not itself valid JSON. Numeric Shopify order numbers happen to
+       * parse, which is why this only surfaced on alphanumeric references.
+       */
+      .contains('linked_order_external_ids', JSON.stringify([ref]))
       .order('updated_at_provider', { ascending: false });
 
     if (error) throw new Error(`list_claim_context_support_cases_failed: ${error.message}`);

@@ -23,9 +23,9 @@ export function AuthenticatedPanel({
   capabilityId,
 }: AuthenticatedPanelProps) {
   return (
-    <section className={cn(styles.panel, className)} data-capability-id={capabilityId}>
+    <section className={cn(styles.panel, 'ua-working-surface', className)} data-capability-id={capabilityId}>
       {title || description || actions ? (
-        <div className={styles.panelHeader}>
+        <div className={cn(styles.panelHeader, 'ua-working-surface__header')}>
           <div>
             {title ? <h2 className={styles.panelTitle}>{title}</h2> : null}
             {description ? <p className={styles.panelDescription}>{description}</p> : null}
@@ -33,7 +33,7 @@ export function AuthenticatedPanel({
           {actions ? <div className={styles.actions}>{actions}</div> : null}
         </div>
       ) : null}
-      <div className={cn(styles.panelBody, bodyClassName)}>{children}</div>
+      <div className={cn(styles.panelBody, 'ua-working-surface__body', bodyClassName)}>{children}</div>
     </section>
   );
 }

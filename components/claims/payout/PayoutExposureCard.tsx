@@ -70,7 +70,7 @@ export function PayoutExposureCard({
         </>
       ) : (
         <p className="text-sm" style={{ color: 'var(--ua-text-secondary)' }}>
-          Amount not available yet — add the refund or replacement value to estimate the customer concession.
+          Amount unavailable — add the refund or replacement value to estimate the customer concession.
         </p>
       )}
 

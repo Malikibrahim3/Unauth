@@ -34,24 +34,19 @@ export function EmptyState({
     return (
       <div className={cn('px-4 py-8', className)}>
         <h2
-          className="flex items-center gap-2 text-body-sm font-semibold"
-          style={{ color: 'var(--ua-text-primary)' }}
+          className="ua-empty-state__compact-title flex items-center gap-2 text-body-sm font-semibold"
         >
           {icon ? (
-            <span aria-hidden="true" className="shrink-0" style={{ color: 'var(--ua-action-primary)' }}>
+            <span aria-hidden="true" className="ua-empty-state__compact-icon shrink-0">
               {icon}
             </span>
           ) : (
-            <span
-              aria-hidden="true"
-              className="h-1.5 w-1.5 shrink-0 rounded-full"
-              style={{ background: 'var(--ua-action-primary)' }}
-            />
+            <span aria-hidden="true" className="ua-empty-state__compact-icon ua-empty-state__compact-icon--dot shrink-0 rounded-full" />
           )}
           {title}
         </h2>
         {description && (
-          <p className="text-caption mt-1" style={{ color: 'var(--ua-text-secondary)' }}>
+          <p className="ua-empty-state__description text-caption mt-1">
             {description}
           </p>
         )}
@@ -79,28 +74,17 @@ export function EmptyState({
     >
       {icon ? (
         <span
-          className="ua-empty-visual mb-[var(--ua-space-4)] flex h-12 w-12 items-center justify-center rounded-[var(--ua-radius-surface)]"
-          style={{ color: 'var(--ua-text-primary)' }}
+          className="ua-empty-visual mb-[var(--ua-space-4)] flex h-10 w-10 items-center justify-center rounded-[var(--ua-radius-control)]"
           aria-hidden="true"
         >
           {icon}
         </span>
-      ) : (
-        <span className="ua-empty-visual mb-[var(--ua-space-4)] grid h-12 w-12 grid-cols-2 place-content-center gap-1 rounded-[var(--ua-radius-surface)]" aria-hidden="true">
-          <span className="h-2 w-2 rounded-sm bg-[var(--ua-text-secondary)]" />
-          <span className="h-2 w-2 rounded-sm bg-[var(--ua-text-tertiary)]" />
-          <span className="h-2 w-2 rounded-sm bg-[var(--ua-border-strong)]" />
-          <span className="h-2 w-2 rounded-sm bg-[var(--ua-text-disabled)]" />
-        </span>
-      )}
-      <h3 className="text-h2" style={{ color: 'var(--ua-text-primary)' }}>
+      ) : null}
+      <h3 className="ua-empty-state__title text-h2">
         {title}
       </h3>
       {description && (
-        <p
-          className="mt-[var(--ua-space-2)] text-small"
-          style={{ maxWidth: 360, color: 'var(--ua-text-secondary)' }}
-        >
+        <p className="ua-empty-state__description mt-[var(--ua-space-2)] text-small">
           {description}
         </p>
       )}

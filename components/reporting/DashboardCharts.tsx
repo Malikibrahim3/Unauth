@@ -4,14 +4,16 @@ import Link from 'next/link';
 import type { IntelligenceReport, MoneyBridge } from '@/lib/reporting/intelligence';
 import { financialMetricValue, financialReportRecordsHref } from '@/lib/reporting/intelligence';
 import {
-  formatCurrencyCompact,
   formatDateAbsolute,
   formatMoney,
+  formatMinorCurrencyNullable,
 } from '@/lib/utils/format';
 import { DualLineChart, type DualLinePoint } from '@/components/charts/authenticated/cartesian/DualLineChart';
 import { RankedContributionChart } from '@/components/charts/authenticated/RankedContributionChart';
 import { ChartLegend } from '@/components/charts/authenticated/ChartPanel';
 import dvStyles from '@/components/charts/authenticated/AuthenticatedCharts.module.css';
+import { financialStageLabel } from '@/lib/ui/labels';
+import { TIME_RANGE_LABELS } from '@/lib/ui/merchantCopy';
 
 type CurrencyCharts = {
   bridge: MoneyBridge;
@@ -20,7 +22,7 @@ type CurrencyCharts = {
 };
 
 function compactMoney(valueMinor: number, currency: string) {
-  return formatCurrencyCompact(valueMinor / 100, currency);
+  return formatMinorCurrencyNullable(valueMinor, currency);
 }
 
 function conversion(numerator: number | null, denominator: number | null): string | null {
@@ -52,7 +54,7 @@ export function DashboardCharts({ report }: { report: IntelligenceReport }) {
     return (
       <section className="border-t border-[var(--ua-border-subtle)] pt-5" aria-labelledby="charts-empty-title">
         <h2 id="charts-empty-title" className="text-[length:var(--ua-text-section-title-size)] font-semibold leading-[var(--ua-text-section-title-leading)]">
-          Payout performance
+          Case financials
         </h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--ua-text-secondary)]">
           Charts appear once case ledger entries carry an amount and a currency. Nothing in this period does yet.
@@ -62,13 +64,13 @@ export function DashboardCharts({ report }: { report: IntelligenceReport }) {
   }
 
   return (
-    <section className="space-y-6" aria-label="Payout performance charts">
+    <section className="space-y-6" aria-label="Case financial charts">
       {groups.map(({ bridge, trend, causes }) => (
         <div key={bridge.currency} className="space-y-4">
           <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-[var(--ua-border-subtle)] pb-2">
-            <h2 className="text-base font-semibold">Payout performance</h2>
+            <h2 className="text-base font-semibold">Case financials</h2>
             <p className="text-xs font-medium text-[var(--ua-text-secondary)]">
-              {bridge.currency} · {report.range === 'all' ? 'All time' : `Last ${report.range}`}
+              {bridge.currency} · {TIME_RANGE_LABELS[report.range]}
             </p>
           </div>
 
@@ -195,11 +197,14 @@ function RecoveryLedger({ bridge }: { bridge: MoneyBridge }) {
   const recoverable = financialMetricValue(bridge, 'recoverable');
   const recovered = financialMetricValue(bridge, 'recovered');
   const rows = [
-    { label: 'Exposed', value: exposed, conversion: null },
-    { label: 'Pursued', value: recoverable, conversion: conversion(recoverable, exposed) },
-    { label: 'Recovered', value: recovered, conversion: conversion(recovered, recoverable) },
+    { label: financialStageLabel('maximum_exposure'), value: exposed, conversion: null },
+    { label: financialStageLabel('eligible_recovery'), value: recoverable, conversion: conversion(recoverable, exposed) },
+    { label: financialStageLabel('recovered_cash'), value: recovered, conversion: conversion(recovered, recoverable) },
   ];
   const hasKnownValue = rows.some((row) => row.value != null);
+  // Scale every stage against the first stage that has a known value, so a null
+  // exposure does not collapse the whole funnel to zero width.
+  const baseline = rows.find((row) => row.value != null)?.value ?? 0;
 
   return (
     <section className="ua-section-panel rounded-[var(--ua-radius-surface)] xl:col-span-12" aria-labelledby={`recovery-ledger-${bridge.currency}`}>
@@ -207,25 +212,50 @@ function RecoveryLedger({ bridge }: { bridge: MoneyBridge }) {
         <h3 id={`recovery-ledger-${bridge.currency}`} className="text-sm font-semibold">Recovery progression</h3>
         <p className="mt-0.5 text-xs text-[var(--ua-text-secondary)]">Reconciled value through the recovery workflow</p>
       </div>
-      {hasKnownValue ? <dl className="grid sm:grid-cols-3">
-        {rows.map((row, index) => (
-          <div key={row.label} className={`p-4 ${index > 0 ? 'border-t border-[var(--ua-border-subtle)] sm:border-l sm:border-t-0' : ''}`}>
-            <dt className="text-xs font-medium text-[var(--ua-text-secondary)]">{row.label}</dt>
-            <dd className={`mt-1 text-xl font-semibold ${dvStyles.mono}`}>
-              {row.value == null ? 'Unavailable' : formatMoney(row.value, bridge.currency)}
-            </dd>
-            <dd className="mt-1 min-h-4 text-xs text-[var(--ua-text-tertiary)]">
-              {row.value == null
-                ? 'No known ledger value'
-                : row.conversion
-                  ? `${row.conversion} of previous stage`
-                  : index === 0
-                    ? 'Known current exposure'
-                    : 'Conversion unavailable'}
-            </dd>
-          </div>
-        ))}
-      </dl> : (
+      {hasKnownValue ? <>
+        {/*
+          A proportional funnel, not three loose numbers. Each stage bar is drawn
+          against the first known stage, so the drop-off from exposed to pursued
+          to recovered is visible rather than something the reader has to compute.
+          Bars use one flat fill on a neutral track (§8.3); the value and the
+          stage-to-stage conversion stay in text beside them.
+        */}
+        <dl className="grid gap-3 p-4">
+          {rows.map((row, index) => {
+            const share = row.value != null && baseline ? Math.max(1.5, (row.value / baseline) * 100) : 0;
+            return (
+              <div key={row.label} className="grid grid-cols-[92px_minmax(0,1fr)_auto] items-center gap-3">
+                <dt className="text-xs font-medium text-[var(--ua-text-secondary)]">{row.label}</dt>
+                <dd className="min-w-0">
+                  <div className="h-2 overflow-hidden rounded-[var(--ua-radius-xs)] bg-[var(--ua-chart-track)]">
+                    <div
+                      className="h-full rounded-[var(--ua-radius-xs)]"
+                      style={{
+                        width: `${share}%`,
+                        background: index === rows.length - 1 ? 'var(--ua-chart-2)' : 'var(--ua-chart-1)',
+                      }}
+                    />
+                  </div>
+                </dd>
+                <dd className="flex items-baseline gap-2 whitespace-nowrap">
+                  <span className={`text-sm font-semibold tabular-nums ${dvStyles.mono}`}>
+                    {row.value == null ? 'Unavailable' : formatMoney(row.value, bridge.currency)}
+                  </span>
+                  <span className="text-xs text-[var(--ua-text-tertiary)]">
+                    {row.value == null
+                      ? 'no known value'
+                      : row.conversion
+                        ? `${row.conversion} of previous`
+                        : index === 0
+                          ? 'known exposure'
+                          : ''}
+                  </span>
+                </dd>
+              </div>
+            );
+          })}
+        </dl>
+      </> : (
         <p className="px-4 py-5 text-sm text-[var(--ua-text-secondary)]">Recovery values are unavailable for this period.</p>
       )}
     </section>

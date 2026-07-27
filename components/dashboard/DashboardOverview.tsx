@@ -25,18 +25,15 @@ import { BlockRailChart } from '@/components/charts/authenticated/operational/Bl
 import type {
   DashboardPeriodComparison,
   IntelligenceReport,
-  ReportRange,
 } from '@/lib/reporting/intelligence';
-import { financialReportRecordsHref, type FinancialReportMetric } from '@/lib/reporting/intelligence';
+import { financialReportRecordsHref, REPORT_RANGES, type FinancialReportMetric } from '@/lib/reporting/intelligence';
 import { ButtonLink } from '@/components/ui/ButtonLink';
 import { MetricGroup } from '@/components/ui/MetricGroup';
-import { DataTable } from '@/components/ui/DataTable';
-import { AuthenticatedPanel } from '@/components/authenticated/AuthenticatedPanel';
+import { RankedContributionChart } from '@/components/charts/authenticated/RankedContributionChart';
 import {
-  formatCurrencyCompact,
   formatDateAbsolute,
-  formatDateTime,
   formatMoney,
+  formatMinorCurrencyNullable,
   formatNumber,
 } from '@/lib/utils/format';
 import {
@@ -48,6 +45,7 @@ import {
   groupWorkflowOperations,
   type DashboardMetricKey,
 } from './dashboardModel';
+import { TIME_RANGE_LABELS } from '@/lib/ui/merchantCopy';
 import styles from './dashboardPilot.module.css';
 import dvStyles from '@/components/charts/authenticated/AuthenticatedCharts.module.css';
 
@@ -63,13 +61,6 @@ type DashboardOverviewProps = {
   comparison: DashboardPeriodComparison | null;
   selectedCurrency: string | null;
   compare: 'previous' | 'none';
-};
-
-const RANGE_LABELS: Record<ReportRange, string> = {
-  '7d': 'Last 7 days',
-  '30d': 'Last 30 days',
-  '90d': 'Last 90 days',
-  all: 'All time',
 };
 
 const DASHBOARD_REPORT_METRICS: Record<DashboardMetricKey, FinancialReportMetric> = {
@@ -191,7 +182,7 @@ export function DashboardOverview({
           {
             label: 'Cases in period',
             value: formatNumber(report.recordCount),
-            description: report.range === 'all' ? 'All time' : `Last ${report.range}`,
+            description: TIME_RANGE_LABELS[report.range],
           },
           {
             label: 'Need action',
@@ -211,6 +202,22 @@ export function DashboardOverview({
         ]}
       />
 
+      <section className="mb-4" aria-label="Priority work">
+        <RankedContributionChart
+          id="dashboard-priority-work"
+          title="Priority work"
+          description="Open cases by the next step they are waiting on."
+          items={report.operations.slice(0, 6).map((operation, index) => ({
+            label: operation.label,
+            value: operation.count,
+            displayValue: `${formatNumber(operation.count)} ${operation.count === 1 ? 'case' : 'cases'}`,
+            href: operation.href,
+            tone: index === 0 ? 'attention' : 'neutral',
+          }))}
+          annotation={{ value: formatNumber(report.recordCount), label: ' cases in period' }}
+        />
+      </section>
+
       <div className={styles.filterBar} aria-label="Dashboard filters">
         <div className={styles.filterGroup}>
           <FilterSelect
@@ -222,10 +229,9 @@ export function DashboardOverview({
               compare: value === 'all' ? 'none' : compare,
             })}
           >
-            <option value="7d">Last 7 days</option>
-            <option value="30d">Last 30 days</option>
-            <option value="90d">Last 90 days</option>
-            <option value="all">All time</option>
+          {REPORT_RANGES.map((range) => (
+            <option key={range} value={range}>{TIME_RANGE_LABELS[range]}</option>
+          ))}
           </FilterSelect>
 
           <span className={styles.compareCopy}>Compare to</span>
@@ -264,12 +270,11 @@ export function DashboardOverview({
         <div className={styles.cardHeader}>
           <div>
             <div className={styles.titleRow}>
-              <h2>Payout performance</h2>
+              <h2>Case financials</h2>
               <span className={styles.infoDot} title="Canonical financial entries for the selected period">i</span>
             </div>
-            <p>{RANGE_LABELS[report.range]}{selectedCurrency ? ` · ${selectedCurrency}` : ''}</p>
+            <p>{TIME_RANGE_LABELS[report.range]}{selectedCurrency ? ` · ${selectedCurrency}` : ''}</p>
           </div>
-          <span className={styles.generated}>Generated {formatDateTime(report.generatedAt)}</span>
         </div>
 
         {!report.reconciliation.ok ? (
@@ -305,7 +310,7 @@ export function DashboardOverview({
               ) : null}
             </div>
 
-            <div className={styles.chartRegion} role="region" aria-label="Payout performance charts">
+            <div className={styles.chartRegion} role="region" aria-label="Case financial charts">
               {selectedMetricValue != null && chartData.length > 0 && hasChartData ? (
                 <ComboBarLineChart
                   data={chartData.map((bucket) => ({
@@ -316,7 +321,7 @@ export function DashboardOverview({
                   }))}
                   colourVar={selectedMetric.colourVar}
                   comparison={compare === 'previous'}
-                  valueFormatter={(value) => formatCurrencyCompact(value / 100, selectedCurrency)}
+                  valueFormatter={(value) => formatMinorCurrencyNullable(value, selectedCurrency)}
                   tooltipFormatter={(value) => formatMoney(value, selectedCurrency)}
                   height={230}
                 />
@@ -352,7 +357,7 @@ export function DashboardOverview({
             <Database aria-hidden="true" size={20} />
             <div>
               <h3>Financial data is incomplete</h3>
-              <p>No canonical financial entries with a valid currency were found. Missing ledger data is not reported as zero.</p>
+              <p>No financial history with a valid currency was found. Unavailable is not zero.</p>
             </div>
             <Link href="/integrations">Review sources</Link>
           </div>
@@ -368,9 +373,8 @@ export function DashboardOverview({
                 <span className={styles.infoDot} title="Cases grouped by canonical workflow status">i</span>
               </div>
               <strong>{actionPercent == null ? 'Unavailable' : `${actionPercent}%`}</strong>
-              <p>{actionPercent == null ? 'No payout cases in this period' : 'of cases currently need action'}</p>
+              <p>{actionPercent == null ? 'No cases in this period' : 'of cases currently need action'}</p>
             </div>
-            <Link href="/work" className={styles.detailButton} data-capability-id="work.open">Open work</Link>
           </div>
 
           {report.recordCount > 0 ? (
@@ -426,48 +430,6 @@ export function DashboardOverview({
           </div>
         </section>
       </div>
-
-      {/*
-        §12.1 requires a priority work table on /dashboard. Without it the page
-        ended above the fold with empty canvas and gave the operator no way into
-        the actual queue from the summary.
-      */}
-      <AuthenticatedPanel
-        title="Priority work"
-        description="Open cases grouped by the next step, most pressing first."
-        actions={<ButtonLink href="/work" variant="secondary" size="sm">Open work</ButtonLink>}
-        className="mt-4"
-      >
-        {report.operations.length ? (
-          <DataTable
-            density="compact"
-            rows={report.operations.slice(0, 8)}
-            getRowKey={(row) => row.key}
-            columns={[
-              {
-                key: 'label',
-                header: 'Next step',
-                render: (row) => (
-                  <Link href={row.href} className="font-medium underline underline-offset-2">
-                    {row.label}
-                  </Link>
-                ),
-              },
-              {
-                key: 'count',
-                header: 'Cases',
-                align: 'right',
-                width: '120px',
-                render: (row) => (
-                  <span className="tabular-nums">{formatNumber(row.count)}</span>
-                ),
-              },
-            ]}
-          />
-        ) : (
-          <p className={styles.cardEmpty}>No open cases in this period.</p>
-        )}
-      </AuthenticatedPanel>
 
       <Modal
         open={healthOpen}

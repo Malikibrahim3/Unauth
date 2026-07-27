@@ -50,8 +50,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (['approved', 'partially_approved', 'paid'].includes(action) && amountMinor == null) {
     return NextResponse.json({
       error: action === 'paid'
-        ? 'A cumulative amount actually received is required in minor units.'
-        : 'The approved amount is required in minor units.',
+        ? 'A cumulative amount actually received is required.'
+        : 'The approved amount is required.',
     }, { status: 400 });
   }
   try {

@@ -1,6 +1,6 @@
-import { type ReactNode } from 'react';
-import styles from '@/components/authenticated/AuthenticatedPageChrome.module.css';
+import { type HTMLAttributes, type ReactNode } from 'react';
 import { SparkTrend } from '@/components/charts/authenticated/micro/SparkTrend';
+import { MetricGroup } from '@/components/ui/MetricGroup';
 
 export interface WorkbenchKpiItem {
   label: string;
@@ -14,32 +14,25 @@ export interface WorkbenchKpiItem {
 
 interface WorkbenchKpiStripProps {
   items: WorkbenchKpiItem[];
+  /** Retained for call-site compatibility; column geometry is now owned by MetricGroup. */
   colsClassName?: string;
 }
 
 export function WorkbenchKpiStrip({ items, colsClassName = 'grid-cols-2 md:grid-cols-5' }: WorkbenchKpiStripProps) {
-  return (
-    <dl className={`${styles.kpiStrip} ${colsClassName}`} aria-label="Key metrics">
-      {items.map((item, idx) => (
-        <div
-          key={item.label}
-          className={styles.kpiItem}
-          data-capability-id={`metric.${idx + 1}`}
-        >
-          <dt className={styles.kpiLabel}>{item.label}</dt>
-          <dd className={styles.kpiValue}>
-            {item.trend && item.trend.length >= 2 ? (
-              <span className="flex items-center justify-between gap-2">
-                <span className="min-w-0 overflow-hidden text-ellipsis">{item.value}</span>
-                <SparkTrend values={item.trend} colourVar={item.trendColourVar} />
-              </span>
-            ) : (
-              item.value
-            )}
-          </dd>
-          {item.hint ? <dd className={styles.kpiHint}>{item.hint}</dd> : null}
-        </div>
-      ))}
-    </dl>
-  );
+  void colsClassName;
+  return <MetricGroup
+    items={items.map((item) => ({
+      label: item.label,
+      value: item.trend && item.trend.length >= 2 ? (
+        <span className="flex items-center justify-between gap-2">
+          <span className="min-w-0 overflow-hidden text-ellipsis">{item.value}</span>
+          <SparkTrend values={item.trend} colourVar={item.trendColourVar} />
+        </span>
+      ) : item.value,
+      description: item.hint,
+    }))}
+    desktopColumns={items.length}
+    aria-label="Key metrics"
+    itemAttributes={(_, index) => ({ 'data-capability-id': `metric.${index + 1}` } as HTMLAttributes<HTMLDivElement>)}
+  />;
 }

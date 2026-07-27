@@ -2,7 +2,7 @@ export function PopupBootstrapLoading() {
   return (
     <div className="app">
       <div className="loading">
-        <div className="loading-logo">U</div>
+        <img className="loading-logo" src="../icons/icon48.png" alt="" />
         <p>Loading…</p>
       </div>
     </div>

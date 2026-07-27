@@ -65,7 +65,7 @@ export function ClaimReviewHeader({ wb }: { wb: ClaimReviewWorkbench }) {
           )}
           {history.length > 1 ? (
             <select
-              aria-label="Switch claim"
+              aria-label="Switch case"
               className="px-2 py-1.5 rounded-md text-xs"
               style={inputStyle()}
               value={claimId}

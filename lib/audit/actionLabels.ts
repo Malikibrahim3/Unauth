@@ -1,5 +1,6 @@
 import { claimEventLabel } from '@/lib/claims/events';
 import { PERMISSION_LABELS, type Permission } from '@/lib/permissions';
+import { hashId } from '@/lib/ui/displayRef';
 
 const ACTION_LABELS: Record<string, string> = {
   upload_csv: 'CSV uploaded',
@@ -13,7 +14,7 @@ const ACTION_LABELS: Record<string, string> = {
   add_to_watchlist: 'Added to watchlist',
   remove_from_watchlist: 'Removed from watchlist',
   generate_evidence: 'Evidence package generated',
-  submit_fraud_feedback: 'Claim feedback submitted',
+  submit_fraud_feedback: 'Case feedback submitted',
   dismiss_transaction: 'Transaction dismissed',
   hide_job: 'Audit run hidden',
   bulk_delete: 'Bulk data deletion',
@@ -58,7 +59,7 @@ const ACTION_LABELS: Record<string, string> = {
 };
 
 const RESOURCE_LABELS: Record<string, string> = {
-  claim: 'Claim',
+  claim: 'Case',
   customer: 'Customer',
   processing_job: 'Audit run',
   audit_log: 'Audit log',
@@ -101,6 +102,5 @@ export function auditResourceSummary(
 ): string {
   const label = auditResourceLabel(resourceType);
   if (!resourceId) return label;
-  const shortId = resourceId.length > 8 ? resourceId.slice(0, 8) : resourceId;
-  return `${label} · ${shortId}`;
+  return `${label} · ${hashId(resourceId)}`;
 }

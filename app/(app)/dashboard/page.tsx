@@ -11,6 +11,7 @@ import {
   loadIntelligenceReport,
   parseReportRange,
 } from "@/lib/reporting/intelligence";
+import { now } from "@/lib/time/clock";
 
 export const dynamic = "force-dynamic";
 export default async function DashboardPage({
@@ -35,7 +36,7 @@ export default async function DashboardPage({
   const range = parseReportRange(sp.range);
   const timezone = sp.timezone && sp.timezone.length < 80 ? sp.timezone : "UTC";
   const compare = range !== "all" && sp.compare === "previous" ? "previous" : "none";
-  const asOf = new Date();
+  const asOf = now();
   const [report, comparison] = await Promise.all([
     loadIntelligenceReport(svc, ctx.merchantId, range, timezone, { asOf }),
     compare === "previous"

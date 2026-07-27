@@ -7,6 +7,10 @@ import {
   DEFAULT_PLATFORM_SETTINGS,
   type PlatformSettings,
 } from "@/lib/settings/platform";
+import {
+  formatMajorUnitInput,
+  parseMajorUnitInput,
+} from "@/lib/ui/merchantCopy";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
@@ -40,6 +44,7 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
   const [loading, setLoading] = useState(true);
   const [state, setState] = useState<SaveState>("idle");
   const [message, setMessage] = useState<string | null>(null);
+  const [moneyInputs, setMoneyInputs] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const controller = new AbortController();
@@ -52,6 +57,7 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
         if (!response.ok || !body.settings)
           throw new Error(body.error ?? "Unable to load platform settings.");
         setSettings(body.settings);
+        setMoneyInputs({});
       })
       .catch((error: unknown) => {
         if ((error as Error).name !== "AbortError") {
@@ -89,6 +95,7 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
       if (!response.ok || !body.settings)
         throw new Error(body.error ?? "Unable to save platform settings.");
       setSettings(body.settings);
+      setMoneyInputs({});
       setState("saved");
       setMessage("Financial and workflow defaults saved.");
     } catch (error) {
@@ -116,6 +123,36 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
       />
     </Field>
   );
+
+  const moneyField = (
+    key: "approvalLimitMinor" | "escalationThresholdMinor" | "highValueThresholdMinor",
+    label: string,
+    help: string,
+  ) => {
+    const value =
+      moneyInputs[key] ??
+      formatMajorUnitInput(settings[key], settings.reportingCurrency);
+    return (
+      <Field label={label} help={help}>
+        <input
+          type="number"
+          min={0}
+          step="0.01"
+          inputMode="decimal"
+          disabled={!canManage || loading || state === "saving"}
+          value={value}
+          onChange={(event) => {
+            const next = event.target.value;
+            setMoneyInputs((current) => ({ ...current, [key]: next }));
+            const parsed = parseMajorUnitInput(next, settings.reportingCurrency);
+            if (parsed != null && parsed >= 0) patch(key, parsed);
+            if (next === "") patch(key, 0);
+          }}
+          className={INPUT_CLASS}
+        />
+      </Field>
+    );
+  };
 
   const optionalRetentionField = (
     <Field
@@ -264,28 +301,25 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
             1,
             8760,
           )}
-          {numberField(
+          {moneyField(
             "approvalLimitMinor",
-            "Approval limit (minor units)",
-            "Example: 100000 means £1,000.00 when the reporting currency is GBP.",
-            0,
+            "Approval limit",
+            `Amount in ${settings.reportingCurrency} major units.`,
           )}
-          {numberField(
+          {moneyField(
             "escalationThresholdMinor",
-            "Escalation threshold (minor units)",
-            "Payout exposure at or above this amount requires escalation.",
-            0,
+            "Escalation threshold",
+            `Case exposure at or above this amount requires escalation (${settings.reportingCurrency}).`,
           )}
-          {numberField(
+          {moneyField(
             "highValueThresholdMinor",
-            "High-value threshold (minor units)",
-            "Cases at or above this amount are projected as high-value notifications.",
-            0,
+            "High-value threshold",
+            `Cases at or above this amount are projected as high-value notifications (${settings.reportingCurrency}).`,
           )}
           {numberField(
             "repeatCaseWindowDays",
             "Repeat-case lookback",
-            "Days used to identify repeat payout activity for operator context.",
+            "Days used to identify repeat case activity for operator context.",
             1,
             730,
           )}

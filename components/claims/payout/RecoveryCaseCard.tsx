@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowRight, RefreshCw } from "lucide-react";
 import { useRef, useState } from "react";
 import { Badge, Button, Panel } from "@/components/ui";
+import { countLabel, financialStageLabel } from "@/lib/ui/labels";
 import { formatCurrencyNullable, formatDate } from "@/lib/utils/format";
 import { RECOVERY_TYPE_LABELS } from "@/lib/partners/types";
 import { humanizeEvidenceKey } from "@/components/claims/payout/payoutCopy";
@@ -91,13 +92,20 @@ export function RecoveryCaseCard({
             className="mt-1 text-xs"
             style={{ color: "var(--ua-text-secondary)" }}
           >
-            Linked operational tracking for recoverable payout losses.
+            Linked operational tracking for eligible recovery.
           </p>
         </div>
         <Button
           type="button"
           variant="secondary"
           size="sm"
+          aria-label={
+            loading || opening
+              ? "Loading recovery route"
+              : !recoveryCase && canOpenRecovery && canManage
+                ? "Open recovery handoff"
+                : "Check recovery route"
+          }
           onClick={
             !recoveryCase && canOpenRecovery && canManage
               ? () => void openRecoveryHandoff()
@@ -139,7 +147,7 @@ export function RecoveryCaseCard({
             </div>
             <div>
               <p className="text-xs" style={{ color: "var(--ua-text-tertiary)" }}>
-                Recoverable
+                {financialStageLabel('eligible_recovery')}
               </p>
               <p className="font-sans tabular-nums" style={{ color: "var(--ua-text-primary)" }}>
                 {formatCurrencyNullable(
@@ -170,7 +178,7 @@ export function RecoveryCaseCard({
             <Badge tone={recoveryCase.evidence_complete ? "success" : "warning"} size="sm" dot>
               {recoveryCase.evidence_complete
                 ? "Evidence complete"
-                : `${recoveryCase.evidence_missing.length} missing`}
+                : countLabel(recoveryCase.evidence_missing.length, 'item', 'items') + ' missing'}
             </Badge>
             {recoveryCase.partner?.name ? (
               <Badge size="sm">{recoveryCase.partner.name}</Badge>
@@ -182,7 +190,7 @@ export function RecoveryCaseCard({
                 className="mb-1 text-xs"
                 style={{ color: "var(--ua-text-tertiary)" }}
               >
-                Missing evidence
+                Missing items
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {recoveryCase.evidence_missing.map((item) => (
@@ -246,6 +254,10 @@ export function RecoveryCaseCard({
             </p>
           ) : null}
         </div>
+      ) : loading ? (
+        <p className="mt-4 text-sm" style={{ color: "var(--ua-text-secondary)" }}>
+          Loading recovery route…
+        </p>
       ) : preventionOnly ? (
         <p className="mt-4 text-sm" style={{ color: "var(--ua-text-secondary)" }}>
           Prevention opportunity: this loss appears unrecoverable but can inform

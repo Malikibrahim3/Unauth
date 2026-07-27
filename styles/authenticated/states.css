@@ -26,3 +26,56 @@
   background-image: none;
   animation: none;
 }
+
+.ua-operational-state {
+  display: grid;
+  gap: var(--ua-space-1);
+  padding: var(--ua-space-4);
+  border-top: 1px solid var(--ua-border-subtle);
+  background: var(--ua-surface-primary);
+}
+
+.ua-operational-state__title {
+  margin: 0;
+  color: var(--ua-text-primary);
+  font-size: var(--ua-text-small-size);
+  font-weight: 600;
+  line-height: var(--ua-text-small-leading);
+}
+
+.ua-operational-state__description {
+  max-width: 60ch;
+  margin: 0;
+  color: var(--ua-text-secondary);
+  font-size: var(--ua-text-small-size);
+  line-height: var(--ua-text-small-leading);
+}
+
+.ua-operational-state__action {
+  margin-top: var(--ua-space-2);
+}
+
+.ua-operational-state--error,
+.ua-operational-state--unavailable {
+  border-top-color: var(--ua-critical-border);
+}
+
+.ua-empty-state__compact-title,
+.ua-empty-state__title {
+  color: var(--ua-text-primary);
+}
+
+.ua-empty-state__compact-icon {
+  color: var(--ua-action-primary);
+}
+
+.ua-empty-state__compact-icon--dot {
+  width: var(--ua-space-1-5);
+  height: var(--ua-space-1-5);
+  background: var(--ua-action-primary);
+}
+
+.ua-empty-state__description {
+  max-width: 360px;
+  color: var(--ua-text-secondary);
+}

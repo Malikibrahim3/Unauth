@@ -12,7 +12,6 @@ import {
   Badge,
   ButtonLink,
   EvidenceRow,
-  Panel,
 } from "@/components/ui";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import {
@@ -31,6 +30,7 @@ import {
   humanizeEvidenceKey,
   humanizeEvidenceProse,
 } from "@/components/claims/payout/payoutCopy";
+import { shortRef } from "@/lib/ui/displayRef";
 import {
   CLAIM_TYPE_LABELS,
   DECISION_LABELS,
@@ -99,6 +99,13 @@ export function ClaimsQueueClient({
     resolveInitialSelection(claims, initialFocusClaimId),
   );
 
+  function selectClaim(id: string) {
+    setSelectedId(id);
+    const url = new URL(window.location.href);
+    url.searchParams.set('focus', id);
+    window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+  }
+
   const selected = selectedId
     ? (claims.find((c) => c.id === selectedId) ?? null)
     : null;
@@ -142,7 +149,8 @@ export function ClaimsQueueClient({
             <button
               key={c.id}
               type="button"
-              onClick={() => setSelectedId(c.id)}
+              data-case-id={c.id}
+              onClick={() => selectClaim(c.id)}
               aria-pressed={isSelected}
               aria-controls="payout-case-preview"
               className="w-full text-left border-b transition-colors"
@@ -180,7 +188,7 @@ export function ClaimsQueueClient({
                 className="text-caption font-mono mb-1.5"
                 style={{ color: "var(--ua-text-tertiary)" }}
               >
-                {c.shopify_order_id ?? c.id.slice(0, 8)}&nbsp;·&nbsp;
+                {c.shopify_order_id ?? shortRef(null, c.id)}&nbsp;·&nbsp;
                 {CLAIM_TYPE_LABELS[c.claim_type] ?? c.claim_type}
               </p>
               <p
@@ -198,6 +206,7 @@ export function ClaimsQueueClient({
                 style={{ color: "var(--ua-text-tertiary)" }}
               >
                 {sourceSystemLabel(c)}
+                {` · ${c.assigned_to ? "Assigned" : "Unassigned"}`}
                 {ops.daysWaiting != null
                   ? ` · ${ops.daysWaiting}d waiting`
                   : ""}
@@ -221,17 +230,7 @@ export function ClaimsQueueClient({
               ) : null}
               <div className="flex items-center gap-1.5 flex-wrap">
                 <StatusPill status={c.status} />
-                {(c.investigation_open_count ?? 0) > 0 ? (
-                  <Badge
-                    tone={(c.investigation_overdue_count ?? 0) > 0 ? "warning" : "info"}
-                    size="sm"
-                  >
-                    {c.investigation_open_count} investigation{c.investigation_open_count === 1 ? "" : "s"}
-                  </Badge>
-                ) : null}
-                {c.recoverability && (
-                  <StatusBadge family="recoverability" value={c.recoverability} size="sm" />
-                )}
+                <SlaPill claim={c} />
               </div>
             </button>
           );
@@ -259,13 +258,13 @@ export function ClaimsQueueClient({
                 className="text-body-sm font-medium mb-1"
                 style={{ color: "var(--ua-text-secondary)" }}
               >
-                Select a claim to review
+                Select a case to review
               </p>
               <p
                 className="text-caption"
                 style={{ color: "var(--ua-text-tertiary)" }}
               >
-                Choose any claim from the list on the left.
+                Choose any case from the list on the left.
               </p>
             </div>
           </div>
@@ -288,10 +287,10 @@ function ClaimDetailPanel({
   evidence: EvidencePackageRow | null;
   customer: CustomerProfileSummary | null;
 }) {
-  const orderRef = claim.shopify_order_id ?? claim.id.slice(0, 8);
+  const orderRef = claim.shopify_order_id ?? shortRef(null, claim.id);
 
   return (
-    <div className="p-5 space-y-4">
+    <div className="p-5 space-y-5">
       {/* Claim header */}
       <div>
         <div className="flex flex-wrap items-center gap-2 mb-2">
@@ -324,10 +323,8 @@ function ClaimDetailPanel({
       </div>
 
       {/* Workflow state — primary call-out */}
-      <Panel
-        as="section"
-        variant="inset"
-        className="px-4 py-3"
+      <section
+        className="rounded-lg border px-4 py-3"
         style={{
           background: "color-mix(in srgb, var(--ua-surface-selected) 58%, var(--ua-surface-primary))",
           borderColor: "var(--ua-border-default)",
@@ -373,7 +370,7 @@ function ClaimDetailPanel({
               className="text-caption"
               style={{ color: "var(--ua-text-tertiary)" }}
             >
-              Payout exposure
+              Value at issue
             </p>
             <p
               className="text-body-sm font-sans font-semibold tabular-nums"
@@ -419,13 +416,13 @@ function ClaimDetailPanel({
             <StatusBadge family="recoveryStatus" value={claim.recovery_state} tone="neutral" size="sm" />
           )}
         </div>
-        <ButtonLink href={`/claims/${claim.id}`} size="sm" className="mt-2.5 self-start">
-          Review evidence <ArrowRight className="h-3 w-3" aria-hidden="true" />
+        <ButtonLink href={`/claims/${claim.id}#case-customer-action`} size="sm" className="mt-2.5 self-start">
+          Review case <ArrowRight className="h-3 w-3" aria-hidden="true" />
         </ButtonLink>
-      </Panel>
+      </section>
 
       {(claim.investigation_open_count ?? 0) > 0 || claim.investigation_latest_response ? (
-        <Panel as="section" variant="panel" className="px-4 py-3">
+        <section className="border-b pb-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p
@@ -464,19 +461,19 @@ function ClaimDetailPanel({
             </p>
           ) : null}
           <Link
-            href={`/claims/${claim.id}#case-investigations`}
+            href={`/claims/${claim.id}#case-responsibility`}
             className="mt-2.5 inline-flex items-center gap-1.5 text-caption font-semibold text-[var(--ua-text-primary)] underline underline-offset-2"
           >
             Open investigation <ArrowRight className="h-3 w-3" />
           </Link>
-        </Panel>
+        </section>
       ) : null}
 
       {/* Recovery chase-up */}
       {(claim.recoverability ||
         claim.recovery_owner ||
         claim.loss_attribution) && (
-        <Panel as="section" variant="panel" className="overflow-hidden p-0">
+        <section className="border-b pb-4">
           <div
             className="flex items-center justify-between gap-3 px-4 py-2.5 border-b"
             style={{ borderColor: "var(--ua-border-subtle)" }}
@@ -551,11 +548,11 @@ function ClaimDetailPanel({
                 </p>
               )}
           </div>
-        </Panel>
+        </section>
       )}
 
       {/* Evidence package */}
-      <Panel as="section" variant="panel" className="overflow-hidden p-0">
+      <section className="border-b pb-4">
         <div
           className="flex items-center justify-between px-4 py-2.5 border-b"
           style={{ borderColor: "var(--ua-border-subtle)" }}
@@ -589,7 +586,7 @@ function ClaimDetailPanel({
                 />
               </div>
               <ButtonLink
-                href={`/claims/${claim.id}`}
+                href={`/claims/${claim.id}#case-evidence`}
                 size="sm"
                 variant="secondary"
                 className="shrink-0"
@@ -604,25 +601,23 @@ function ClaimDetailPanel({
                 className="text-caption"
                 style={{ color: "var(--ua-text-tertiary)" }}
               >
-                No evidence package for this claim yet.
+                No evidence package for this case yet.
               </p>
-              {claim.customer_id && (
-                <Link
-                  href={`/customers/${claim.customer_id}`}
-                  className="shrink-0 text-caption font-semibold hover:underline"
-                  style={{ color: "var(--ua-action-primary)" }}
-                >
-                  Build evidence
-                </Link>
-              )}
+              <Link
+                href={`/claims/${claim.id}#case-evidence`}
+                className="shrink-0 text-caption font-semibold hover:underline"
+                style={{ color: "var(--ua-action-primary)" }}
+              >
+                Open evidence review
+              </Link>
             </div>
           )}
         </div>
-      </Panel>
+      </section>
 
       {/* Customer identity */}
       {customer && (
-        <Panel as="section" variant="panel" className="overflow-hidden p-0">
+        <section className="border-b pb-4">
           <div
             className="flex items-center justify-between px-4 py-2.5 border-b"
             style={{ borderColor: "var(--ua-border-subtle)" }}
@@ -661,12 +656,12 @@ function ClaimDetailPanel({
               </Link>
             </div>
           </div>
-        </Panel>
+        </section>
       )}
 
       {/* Merchant-recorded outcome (if any) */}
       {outcome && (
-        <Panel as="section" variant="panel" className="overflow-hidden p-0">
+        <section>
           <div
             className="flex items-center gap-2 px-4 py-2.5 border-b"
             style={{ borderColor: "var(--ua-border-subtle)" }}
@@ -704,7 +699,7 @@ function ClaimDetailPanel({
               Updated {formatDateAbsolute(new Date(outcome.updated_at))}
             </p>
           </div>
-        </Panel>
+        </section>
       )}
     </div>
   );

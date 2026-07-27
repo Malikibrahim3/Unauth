@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import { cn } from '@/lib/utils';
 import { label, type LabelFamily } from '@/lib/ui/labels';
 
 /**
@@ -130,11 +131,6 @@ export function statusTone(value: string | null | undefined): StatusTone {
   return STATUS_TONES[value] ?? 'neutral';
 }
 
-const SIZE_STYLE: Record<'sm' | 'md', CSSProperties> = {
-  sm: { height: 'var(--ua-badge-height)', paddingInline: 8, fontSize: 12, gap: 6 },
-  md: { height: 'var(--ua-badge-height)', paddingInline: 8, fontSize: 12, gap: 6 },
-};
-
 interface StatusBadgeProps {
   family: LabelFamily;
   value: string | null | undefined;
@@ -152,30 +148,16 @@ export function StatusBadge({ family, value, tone, size = 'md', className }: Sta
   if (!value) return null;
   const resolved = tone ?? statusTone(value);
   const t = TONE_STYLE[resolved];
-  const s = SIZE_STYLE[size];
   return (
     <span
-      className={className}
+      className={cn('ua-status-badge', `ua-status-badge--${size}`, className)}
       style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: s.gap,
-        height: s.height,
-        paddingInline: s.paddingInline,
-        fontSize: s.fontSize,
-        fontWeight: 500,
-        lineHeight: 1,
-        whiteSpace: 'nowrap',
-        borderRadius: 'var(--ua-radius-round)',
-        background: t.bg,
-        color: t.fg,
-        border: `1px solid ${t.bd}`,
-      }}
+        '--ua-status-bg': t.bg,
+        '--ua-status-fg': t.fg,
+        '--ua-status-border': t.bd,
+      } as CSSProperties}
     >
-      <span
-        aria-hidden="true"
-        style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor', flexShrink: 0 }}
-      />
+      <span className="ua-status-badge__dot" aria-hidden="true" />
       {label(family, value)}
     </span>
   );
@@ -198,7 +180,7 @@ export function PriorityChip({
     return <StatusBadge family="workPriority" value={value} tone={value === 'urgent' ? 'danger' : 'warning'} size={size} />;
   }
   return (
-    <span style={{ fontSize: size === 'sm' ? 11 : 12, color: 'var(--ua-text-secondary)' }}>
+    <span className={size === 'sm' ? 'ua-priority-text ua-priority-text--sm' : 'ua-priority-text'}>
       {label('workPriority', value)}
     </span>
   );

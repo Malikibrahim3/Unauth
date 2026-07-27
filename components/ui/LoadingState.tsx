@@ -12,23 +12,31 @@ interface ErrorBoundaryUIProps {
 }
 
 /**
- * Reusable route error state that avoids leaking raw backend messages.
+ * Reusable route error state.
+ *
+ * RUN-11: the merchant sees what failed and what to do about it. The
+ * JavaScript error name used to be rendered as "Error type: TypeError", which
+ * tells a merchant nothing and tells an attacker something; the diagnostic
+ * identifier now goes to the log only, where support can correlate it.
  */
 export function ErrorBoundaryUI({
   error,
   reset,
   title = 'Something went wrong',
-  description = 'We could not load this page. You can try again or head back to the dashboard.',
+  description = 'We could not load this page. You can try again, or go back to Overview.',
 }: ErrorBoundaryUIProps) {
-  const safeErrorName = error?.name?.trim() || 'UnexpectedError';
+  // Diagnostics stay in telemetry, never on screen.
+  if (typeof window !== 'undefined' && error) {
+    console.error('[route-error]', { digest: error.digest ?? null, name: error.name, message: error.message });
+  }
 
   return (
     <div>
-      <AuthenticatedPageHeader eyebrow="Page error" title={title} subtitle={description} />
+      <AuthenticatedPageHeader title={title} subtitle={description} />
       <div className={pageStyles.pageBody}>
         <AuthenticatedPanel bodyClassName="grid gap-3 p-4" capabilityId="error.recovery">
           <div role="alert" className="rounded-[var(--ua-radius-control)] border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] px-3 py-2 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-secondary)]">
-            Error type: <span className="font-medium text-[var(--ua-text-primary)]">{safeErrorName}</span>
+            Nothing was changed. If this keeps happening, contact support.
           </div>
           <div className="flex flex-wrap gap-2">
             <Button type="button" onClick={reset}>
@@ -43,7 +51,7 @@ export function ErrorBoundaryUI({
                 background: 'var(--ua-surface-primary)',
               }}
             >
-              Go to dashboard
+              Go to Overview
             </Link>
           </div>
         </AuthenticatedPanel>

@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react';
+import { type CSSProperties, type HTMLAttributes, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 export interface MetricGroupItem {
@@ -7,16 +7,40 @@ export interface MetricGroupItem {
   description?: ReactNode;
 }
 
-export function MetricGroup({ items, className }: { items: MetricGroupItem[]; className?: string }) {
+export interface MetricGroupProps {
+  items: MetricGroupItem[];
+  className?: string;
+  'aria-label'?: string;
+  desktopColumns?: number;
+  mobileColumns?: number;
+  itemAttributes?: (item: MetricGroupItem, index: number) => HTMLAttributes<HTMLDivElement>;
+}
+
+export function MetricGroup({
+  items,
+  className,
+  'aria-label': ariaLabel = 'Key metrics',
+  desktopColumns = items.length,
+  mobileColumns = items.length > 1 ? 2 : 1,
+  itemAttributes,
+}: MetricGroupProps) {
+  const style = {
+    '--ua-metric-columns': Math.max(1, desktopColumns),
+    '--ua-metric-mobile-columns': Math.max(1, mobileColumns),
+  } as CSSProperties;
+
   return (
-    <div className={cn('grid overflow-hidden rounded-[var(--ua-radius-surface)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] grid-cols-2 md:grid-cols-4', className)}>
-      {items.map((item, index) => (
-        <div key={item.label} className={cn('min-w-0 px-4 py-3 md:px-5', index > 0 && 'border-l border-[var(--ua-border-default)]')}>
-          <p className="text-xs font-medium leading-4 text-[var(--ua-text-secondary)]">{item.label}</p>
-          <p className="mt-1 text-[length:var(--ua-text-kpi-size)] font-semibold leading-7 tabular-nums text-[var(--ua-text-primary)]">{item.value}</p>
-          {item.description ? <p className="mt-0.5 text-xs leading-4 text-[var(--ua-text-tertiary)]">{item.description}</p> : null}
+    <dl className={cn('ua-metric-group', className)} style={style} aria-label={ariaLabel}>
+      {items.map((item, index) => {
+        const attributes = itemAttributes?.(item, index);
+        return (
+        <div key={item.label} {...attributes} className={cn('ua-metric-group__item', attributes?.className)}>
+          <dt className="ua-metric-group__label">{item.label}</dt>
+          <dd className="ua-metric-group__value">{item.value}</dd>
+          {item.description ? <dd className="ua-metric-group__description">{item.description}</dd> : null}
         </div>
-      ))}
-    </div>
+        );
+      })}
+    </dl>
   );
 }

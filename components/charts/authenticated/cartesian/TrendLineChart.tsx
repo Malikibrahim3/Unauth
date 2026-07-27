@@ -37,14 +37,14 @@ export function TrendLineChart({ data, colourVar, valueFormatter, height = 220 }
             axisLine={false}
             tickLine={false}
             minTickGap={22}
-            tick={{ fontSize: 10, fill: theme['--ua-text-tertiary'], fontFamily: 'var(--ua-font-sans)' }}
+            tick={{ fontSize: 13, fill: theme['--ua-text-tertiary'], fontFamily: 'var(--ua-font-sans)' }}
           />
           <YAxis
             axisLine={false}
             tickLine={false}
             width={40}
             tickCount={5}
-            tick={{ fontSize: 10, fill: theme['--ua-text-tertiary'], fontFamily: 'var(--ua-font-sans)' }}
+            tick={{ fontSize: 13, fill: theme['--ua-text-tertiary'], fontFamily: 'var(--ua-font-sans)' }}
             tickFormatter={valueFormatter}
           />
           <Tooltip

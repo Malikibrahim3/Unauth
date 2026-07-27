@@ -9,7 +9,7 @@ const ARTICLES = [
     icon: Info,
     title: 'Case reconciliation workflow',
     description:
-      'Review support payout cases from the queue through evidence, merchant rules, recommendation, decision, and recovery.',
+      'Review cases from the queue through evidence, merchant rules, recommendation, decision, and recovery.',
     href: '/claims',
   },
   {

@@ -10,6 +10,7 @@ import { EmptyState, Input, Modal } from "@/components/ui";
 import { SourceMark } from "@/components/identity/ProviderLogo";
 import { RowActionsMenu, type RowAction } from "@/components/ui/RowActionsMenu";
 import { formatDateAbsolute, formatNumber } from "@/lib/utils/format";
+import { nowMs } from "@/lib/time/clock";
 import { label } from "@/lib/ui/labels";
 import { ExceptionResolutionDrawer } from "@/components/work/ExceptionResolutionDrawer";
 
@@ -20,6 +21,8 @@ export type WorkQueueItem = {
   description: string | null;
   ownerRole: string | null;
   ownerUserId: string | null;
+  ownerName?: string | null;
+  ownerInitials?: string | null;
   status: string;
   priority: string;
   dueAt: string | null;
@@ -40,7 +43,7 @@ const VIEWS = [
   ["unassigned", "Unassigned"],
   ["due-today", "Due today"],
   ["overdue", "Overdue"],
-  ["no-sla", "No SLA"],
+  ["no-sla", "No deadline"],
   ["blocked", "Blocked"],
   ["evidence-needed", "Evidence needed"],
   ["decision-needed", "Decision needed"],
@@ -81,11 +84,11 @@ const date = (value: string | null) =>
     ? formatDateAbsolute(value)
     : "—";
 
-function dueState(value: string | null) {
+function dueState(value: string | null, asOfMs = nowMs()) {
   if (!value)
     return { label: "No deadline", className: "text-[var(--ua-text-tertiary)]" };
   const due = Date.parse(value);
-  const remaining = due - Date.now();
+  const remaining = due - asOfMs;
   if (remaining < 0)
     return {
       label: `Overdue · ${date(value)}`,
@@ -137,57 +140,117 @@ export function WorkQueue({
   total,
   view,
   viewCounts,
+  page,
+  pageSize,
+  asOf,
 }: {
   items: WorkQueueItem[];
   total: number;
   view: string;
   viewCounts: WorkViewCounts;
+  page?: number;
+  pageSize?: number;
+  asOf?: string;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedException, setSelectedException] = useState<WorkQueueItem | null>(null);
   const [savedViews, setSavedViews] = useState<Array<{ id: string; name: string; definition: Record<string, unknown>; is_shared: boolean }>>([]);
+  /*
+   * Saved views have three distinct states. "loading" and "ready" are ordinary;
+   * "unavailable" means the request failed and must never be presented as
+   * "you have not saved any views yet" (RUN-06).
+   */
+  const [savedViewsState, setSavedViewsState] = useState<'loading' | 'ready' | 'unavailable'>('loading');
+  const [savedViewsAttempt, setSavedViewsAttempt] = useState(0);
   const [saveOpen, setSaveOpen] = useState(false);
   const [saveName, setSaveName] = useState('');
   const [shareView, setShareView] = useState(false);
   const [savingView, setSavingView] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [query, setQuery] = useState('');
+  const [moreViewsOpen, setMoreViewsOpen] = useState(false);
 
   /*
    * Filters the loaded page by next action, object and owner. Deliberately
    * client-side: it narrows what is already on screen and does not change the
    * server view, so the tab counts above stay truthful.
    */
-  const visibleItems = (() => {
-    const needle = query.trim().toLowerCase();
-    if (!needle) return items;
-    return items.filter((item) =>
-      [item.title, item.objectLabel, item.ownerRole ?? '', item.status]
+  function matchingItems(source: WorkQueueItem[], search: string) {
+    const needle = search.trim().toLowerCase();
+    if (!needle) return source;
+    return source.filter((item) =>
+      [item.title, item.objectLabel, item.ownerName ?? '', item.ownerRole ?? '', item.status]
         .join(' ')
         .toLowerCase()
         .includes(needle),
     );
-  })();
+  }
 
-  const selectableIds = visibleItems.reduce<string[]>((ids, item) => {
-    if (item.kind === "task") ids.push(item.id);
-    return ids;
-  }, []);
+  function taskIdsOf(source: WorkQueueItem[]) {
+    return source.reduce<string[]>((ids, item) => {
+      if (item.kind === "task") ids.push(item.id);
+      return ids;
+    }, []);
+  }
+
+  const visibleItems = matchingItems(items, query);
+  const selectableIds = taskIdsOf(visibleItems);
+  const searchTerm = query.trim();
+  const isFiltered = searchTerm.length > 0;
+  const parsedAsOf = asOf ? Date.parse(asOf) : Number.NaN;
+  const referenceTimeMs = Number.isNaN(parsedAsOf) ? nowMs() : parsedAsOf;
+  const resolvedPage = Math.max(1, page ?? 1);
+  const resolvedPageSize = Math.max(1, (pageSize ?? items.length) || 1);
+  const resultStart = (resolvedPage - 1) * resolvedPageSize + 1;
+  const resultEnd = Math.min(resultStart + items.length - 1, total);
+
+  const primaryViews = VIEWS.filter(([key]) =>
+    ['open', 'mine', 'unassigned', 'due-today', 'overdue'].includes(key),
+  );
+  const extraViews = VIEWS.filter(([key]) =>
+    !primaryViews.some(([primaryKey]) => primaryKey === key),
+  );
+
+  /*
+   * Changing the search narrows the result set, so any selection that falls
+   * outside the new results is dropped there and then. Keeping it would let a
+   * bulk action apply to rows the operator can no longer see (RUN-07).
+   */
+  function applyQuery(nextQuery: string) {
+    setQuery(nextQuery);
+    const allowed = new Set(taskIdsOf(matchingItems(items, nextQuery)));
+    setSelected((current) => {
+      if (!current.size) return current;
+      const next = new Set<string>();
+      current.forEach((id) => {
+        if (allowed.has(id)) next.add(id);
+      });
+      return next.size === current.size ? current : next;
+    });
+  }
 
   useEffect(() => {
     let cancelled = false;
+    setSavedViewsState('loading');
     void fetch('/api/work/views')
-      .then((response) => (response.ok ? response.json() : { views: [] }))
-      .then((body: { views?: Array<{ id: string; name: string; definition: Record<string, unknown>; is_shared: boolean }> }) => {
-        if (!cancelled) setSavedViews(body.views ?? []);
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`Saved views request failed with ${response.status}`);
+        return (await response.json()) as { views?: Array<{ id: string; name: string; definition: Record<string, unknown>; is_shared: boolean }> };
+      })
+      .then((body) => {
+        if (cancelled) return;
+        setSavedViews(body.views ?? []);
+        setSavedViewsState('ready');
       })
       .catch(() => {
-        if (!cancelled) setSavedViews([]);
+        if (cancelled) return;
+        setSavedViews([]);
+        setSavedViewsState('unavailable');
       });
     return () => { cancelled = true; };
-  }, []);
+  }, [savedViewsAttempt]);
 
   async function saveCurrentView() {
     const name = saveName.trim();
@@ -226,7 +289,7 @@ export function WorkQueue({
         ? {
             action,
             ...(action === "snooze"
-              ? { until: new Date(Date.now() + 86400000).toISOString() }
+              ? { until: new Date(nowMs() + 86400000).toISOString() }
               : {}),
           }
         : action === "release" ? { release: true } : { assignToMe: true };
@@ -263,7 +326,7 @@ export function WorkQueue({
           ids,
           action,
           ...(action === "snooze"
-            ? { until: new Date(Date.now() + 86400000).toISOString() }
+            ? { until: new Date(nowMs() + 86400000).toISOString() }
             : {}),
         }),
       });
@@ -313,27 +376,11 @@ export function WorkQueue({
       <h2 id="work-queue-title" className="sr-only">
         Work queue
       </h2>
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        <div className="w-full sm:w-[260px]">
-          <Input
-            type="search"
-            value={query}
-            aria-label="Search this view"
-            placeholder="Search next action, object, owner…"
-            onChange={(event) => setQuery(event.target.value)}
-          />
-        </div>
-        {query.trim() ? (
-          <p className="text-[length:var(--ua-text-caption-size)] text-[var(--ua-text-tertiary)]" role="status">
-            {visibleItems.length} of {items.length} in this view
-          </p>
-        ) : null}
-      </div>
       <nav
         aria-label="Work views"
-        className="ua-operational-scrollbar mb-3 flex gap-1 overflow-x-auto pb-1"
+        className="mb-3 flex flex-wrap items-center gap-1.5"
       >
-        {VIEWS.map(([key, label]) => (
+        {primaryViews.map(([key, label]) => (
           <Link
             key={key}
             href={`/work?view=${key}`}
@@ -349,6 +396,31 @@ export function WorkQueue({
             <span className="ml-1.5 tabular-nums text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">{formatNumber(viewCounts[key])}</span>
           </Link>
         ))}
+        {!primaryViews.some(([key]) => key === view) ? (() => {
+          const current = VIEWS.find(([key]) => key === view);
+          return current ? (
+            <Link
+              href={`/work?view=${current[0]}`}
+              aria-current="page"
+              className="inline-flex h-7 items-center whitespace-nowrap rounded-[var(--ua-radius-control)] border px-2.5 text-[length:var(--ua-text-micro-size)] font-medium"
+              style={{ background: 'var(--ua-surface-selected)', borderColor: 'var(--ua-border-default)' }}
+            >
+              {current[1]}
+              <span className="ml-1.5 tabular-nums text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">{formatNumber(viewCounts[current[0]])}</span>
+            </Link>
+          ) : null;
+        })() : null}
+        <button
+          type="button"
+          aria-expanded={moreViewsOpen}
+          aria-controls="work-more-views"
+          onClick={() => setMoreViewsOpen((open) => !open)}
+          className="inline-flex h-7 items-center whitespace-nowrap rounded-[var(--ua-radius-control)] border px-2.5 text-[length:var(--ua-text-micro-size)] font-semibold text-[var(--ua-text-primary)] hover:bg-[var(--ua-surface-hover)]"
+          style={{ borderColor: 'var(--ua-border-default)', background: moreViewsOpen ? 'var(--ua-surface-selected)' : 'var(--ua-surface-primary)' }}
+        >
+          More views
+          <span className="ml-1.5 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">{extraViews.length + savedViews.length}</span>
+        </button>
         <button
           type="button"
           onClick={() => setSaveOpen(true)}
@@ -357,15 +429,54 @@ export function WorkQueue({
           Save view
         </button>
       </nav>
-      {savedViews.length > 0 ? (
-        <div className="mb-3 flex flex-wrap items-center gap-1.5" aria-label="Saved Work views">
-          <span className="mr-1 text-[length:var(--ua-text-micro-size)] font-semibold text-[var(--ua-text-tertiary)]">Saved</span>
+      {moreViewsOpen ? (
+        <div id="work-more-views" className="mb-3 flex flex-wrap items-center gap-1.5 border-y border-[var(--ua-border-subtle)] py-2" role="group" aria-label="More Work views">
+          <span className="mr-1 text-[length:var(--ua-text-micro-size)] font-semibold text-[var(--ua-text-tertiary)]">More</span>
+          {extraViews.map(([key, label]) => (
+            <Link
+              key={key}
+              href={`/work?view=${key}`}
+              aria-current={view === key ? 'page' : undefined}
+              className="inline-flex h-7 items-center whitespace-nowrap rounded-[var(--ua-radius-control)] border px-2.5 text-[length:var(--ua-text-micro-size)] font-medium"
+              style={{ background: view === key ? 'var(--ua-surface-selected)' : 'var(--ua-surface-primary)', borderColor: 'var(--ua-border-default)' }}
+            >
+              {label}
+              <span className="ml-1.5 tabular-nums text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">{formatNumber(viewCounts[key])}</span>
+            </Link>
+          ))}
           {savedViews.map((saved) => {
             const savedView = typeof saved.definition?.view === 'string' ? saved.definition.view : 'open';
-            return <Link key={saved.id} href={`/work?view=${encodeURIComponent(savedView)}`} className="inline-flex h-7 items-center gap-1.5 rounded-[var(--ua-radius-control)] bg-[var(--ua-surface-selected)] px-2.5 text-[length:var(--ua-text-micro-size)] font-medium text-[var(--ua-text-primary)] hover:bg-[var(--ua-surface-hover)]">{saved.name}{saved.is_shared ? <span className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">Shared</span> : null}</Link>;
+            return <Link key={saved.id} href={`/work?view=${encodeURIComponent(savedView)}`} className="inline-flex h-7 items-center gap-1.5 rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-selected)] px-2.5 text-[length:var(--ua-text-micro-size)] font-medium text-[var(--ua-text-primary)] hover:bg-[var(--ua-surface-hover)]">{saved.name}{saved.is_shared ? <span className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">Shared</span> : null}</Link>;
           })}
+          {savedViewsState === 'ready' && savedViews.length === 0 ? <span className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">No saved views yet.</span> : null}
         </div>
       ) : null}
+      {savedViewsState === 'unavailable' ? (
+        <div
+          className="mb-3 flex flex-wrap items-center gap-2 text-[length:var(--ua-text-caption-size)] text-[var(--ua-text-secondary)]"
+          role="status"
+        >
+          <span>We couldn&rsquo;t load your saved views. The views above still work.</span>
+          <button
+            type="button"
+            onClick={() => setSavedViewsAttempt((attempt) => attempt + 1)}
+            className="inline-flex h-7 items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] px-2.5 font-semibold text-[var(--ua-text-primary)] hover:bg-[var(--ua-surface-hover)]"
+          >
+            Try again
+          </button>
+        </div>
+      ) : null}
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <div className="w-full sm:w-[260px]">
+          <Input
+            type="search"
+            value={query}
+            aria-label="Search this view"
+            placeholder="Search next action, object, owner…"
+            onChange={(event) => applyQuery(event.target.value)}
+          />
+        </div>
+      </div>
       {error ? (
         <div
           role="alert"
@@ -409,13 +520,30 @@ export function WorkQueue({
           </button>
         </div>
       ) : null}
-      {!items.length ? (
+      {isFiltered && !visibleItems.length ? (
         <div className="ua-section-panel overflow-hidden rounded-lg">
           <EmptyState
             icon={<Inbox />}
-            title={view === 'open' && total === 0 ? 'Your work queue is ready' : 'No work matches this view'}
+            title={`No results for “${searchTerm}”`}
+            description="Nothing in this view matches your search. Clear the search to see the whole view."
+            action={
+              <button
+                type="button"
+                onClick={() => applyQuery('')}
+                className="inline-flex h-9 items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] px-3 text-sm font-semibold text-[var(--ua-text-primary)] hover:bg-[var(--ua-surface-hover)]"
+              >
+                Clear search
+              </button>
+            }
+          />
+        </div>
+      ) : !visibleItems.length ? (
+        <div className="ua-section-panel overflow-hidden rounded-lg">
+          <EmptyState
+            icon={<Inbox />}
+            title={view === 'open' && total === 0 ? 'No open work' : 'No work matches this view'}
             description={view === 'open' && total === 0
-              ? 'Connect your commerce and support sources to bring payout cases, evidence gaps, and integration exceptions into one queue.'
+              ? 'Connect a source to create work.'
               : 'Choose another saved view or return when new work arrives. New cases and integration exceptions will appear here automatically.'}
             action={view === 'open' && total === 0 ? <Link href="/integrations" className="inline-flex h-9 items-center rounded-[var(--ua-radius-control)] bg-[var(--ua-action-primary)] px-3 text-sm font-semibold text-[var(--ua-action-primary-fg)]">Review integrations</Link> : undefined}
           />
@@ -426,7 +554,7 @@ export function WorkQueue({
             <table className="w-full min-w-[760px] border-collapse text-sm">
               {/*
                 Explicit widths (§6.6: status, date, source and action columns keep
-                consistent widths). Without them the Due/SLA column collapsed and
+                consistent widths). Without them the Deadline column collapsed and
                 wrapped "Overdue · 31 May 2026" onto three lines, which swung row
                 heights between 40px and 90px.
               */}
@@ -468,7 +596,7 @@ export function WorkQueue({
                     "Object",
                     "Status",
                     "Owner",
-                    "Due / SLA",
+                    "Deadline",
                     "Actions",
                   ].map((heading) => (
                     <th
@@ -483,7 +611,7 @@ export function WorkQueue({
               </thead>
               <tbody>
                 {visibleItems.map((item) => {
-                  const due = dueState(item.dueAt);
+                  const due = dueState(item.dueAt, referenceTimeMs);
                   const description = usefulDescription(item);
                   const href = itemHref(item);
                   const block = blockingLabel(item);
@@ -549,10 +677,11 @@ export function WorkQueue({
                       <td className="px-3 py-2.5">
                         <span className="flex min-w-0 items-center gap-2">
                           {item.ownerUserId || item.ownerRole ? <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[var(--ua-border-default)] bg-[var(--ua-surface-selected)] text-[length:var(--ua-text-micro-size)] font-bold text-[var(--ua-text-primary)]">
-                            {(item.ownerUserId ? "A" : title(item.ownerRole).slice(0, 2)).toUpperCase()}
+                            {(item.ownerInitials ?? (item.ownerName ? item.ownerName.slice(0, 2) : title(item.ownerRole).slice(0, 2))).toUpperCase()}
                           </span> : null}
-                          <span className="min-w-0 truncate" title={item.ownerUserId ? "Assigned" : item.ownerRole ? title(item.ownerRole) : "Unassigned"}>
-                            {item.ownerUserId ? "Assigned" : item.ownerRole ? title(item.ownerRole) : "Unassigned"}
+                          <span className="min-w-0 truncate" title={item.ownerUserId ? `${item.ownerName ?? 'Assigned'}${item.ownerRole ? ` · ${title(item.ownerRole)}` : ''}` : item.ownerRole ? title(item.ownerRole) : "Unassigned"}>
+                            {item.ownerUserId ? item.ownerName ?? "Assigned" : item.ownerRole ? title(item.ownerRole) : "Unassigned"}
+                            {item.ownerUserId && item.ownerRole ? <span className="ml-1 text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">· {title(item.ownerRole)}</span> : null}
                           </span>
                         </span>
                       </td>
@@ -575,7 +704,7 @@ export function WorkQueue({
           </div>
           <div className="space-y-3 md:hidden">
             {visibleItems.map((item) => {
-              const due = dueState(item.dueAt);
+              const due = dueState(item.dueAt, referenceTimeMs);
               const description = usefulDescription(item);
               const block = blockingLabel(item);
               const href = itemHref(item);
@@ -631,7 +760,8 @@ export function WorkQueue({
                       ) : item.objectLabel}
                     </span>
                     <span>
-                      {item.ownerUserId ? "Assigned" : item.ownerRole ? title(item.ownerRole) : "Unassigned"}
+                      {item.ownerUserId ? item.ownerName ?? "Assigned" : item.ownerRole ? title(item.ownerRole) : "Unassigned"}
+                      {item.ownerUserId && item.ownerRole ? ` · ${title(item.ownerRole)}` : ''}
                     </span>
                   </div>
                   {block ? (
@@ -649,7 +779,11 @@ export function WorkQueue({
         </>
       )}
       <p className="mt-3 text-xs text-[var(--ua-text-secondary)]">
-        Showing {items.length} of {total}
+        {isFiltered
+          ? `${visibleItems.length} of ${items.length} loaded results`
+          : total === items.length
+            ? `${total} results`
+            : `Showing ${resultStart}–${resultEnd} of ${total}`}
       </p>
       <ExceptionResolutionDrawer
         item={selectedException}
@@ -660,7 +794,7 @@ export function WorkQueue({
         open={saveOpen}
         onClose={() => setSaveOpen(false)}
         title="Save Work view"
-        description="Save the current filter so you can return to it from the Work cockpit."
+        description="Save the current filter so you can return to it from Work."
         actions={[
           { label: 'Save view', onClick: () => void saveCurrentView(), disabled: !saveName.trim() || savingView },
         ]}

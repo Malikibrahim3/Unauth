@@ -26,7 +26,7 @@ export function ClaimGateHero() {
             <p
               className={`${foundationStyles.heroSubtitle} ${foundationStyles.hero2Subtitle}`}
             >
-              Unauth applies your rules to every payout case and makes the
+              Unauth applies your rules to every case and makes the
               recommendation explainable. Your team keeps control of the outcome.
             </p>
           </Reveal>

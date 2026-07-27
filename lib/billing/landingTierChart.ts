@@ -31,7 +31,7 @@ export const LANDING_TIER_CHART: readonly LandingTierChartEntry[] = [
     features: [
       '100 context credits / month',
       'Widget and helpdesk presence',
-      'Store context, evidence checklist, and payout case history via credits',
+      'Store context, evidence checklist, and case history via credits',
       'Limited history depth',
       'Limited evidence exports',
       'No API / bulk workflows',

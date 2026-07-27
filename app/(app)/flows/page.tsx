@@ -84,11 +84,7 @@ export default async function FlowsPage() {
   return (
     <WorkbenchPage
       title="Flows"
-      subtitle={
-        publicationEnabled
-          ? "Route tasks, evidence, deadlines, and notifications. Test safely — nothing changes until you publish."
-          : "Preview workflow definitions and run dry tests. Publication and live execution are release-gated."
-      }
+      subtitle="Create, test, publish, and pause flows that route work, evidence, deadlines, and notifications."
       kpiItems={[
         { label: 'Flows', value: formatNumber(flows.length), hint: 'Configured workflow families' },
         { label: 'Active', value: formatNumber(activeFlows), hint: 'Running published versions' },
@@ -105,7 +101,7 @@ export default async function FlowsPage() {
               {draftFlows > 0 ? <> · <strong>{formatNumber(draftFlows)}</strong> with draft changes</> : null}.
             </>
           ) : (
-            <>Preview mode · live execution disabled by the release gate.</>
+            <>Drafts and tests are available. Publishing is currently unavailable.</>
           )}
         </KeyInsightCallout>
       }

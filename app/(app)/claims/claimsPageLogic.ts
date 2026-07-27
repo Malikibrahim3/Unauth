@@ -16,7 +16,9 @@ export type ClaimEvidenceStatus = {
 };
 
 function daysWaiting(claim: ClaimRow): number | null {
-  const value = claim.updated_at ?? claim.submitted_at ?? claim.created_at ?? null;
+  // Waiting time describes how long the customer request has been open. A
+  // fresh read or evidence sync must not reset it by changing updated_at.
+  const value = claim.submitted_at ?? claim.created_at ?? claim.updated_at ?? null;
   if (!value) return null;
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return null;
@@ -44,7 +46,7 @@ function fallbackNextActionLabel(status: string): string {
       return 'Ask supplier for clarification';
     case 'ready_for_decision':
     case 'open':
-      return 'Make payout decision';
+      return 'Make decision';
     case 'manual_review':
     case 'escalated':
       return 'Escalate internal review';
@@ -62,7 +64,7 @@ function fallbackNextActionLabel(status: string): string {
     case 'stale':
       return 'Close case';
     default:
-      return 'Triage payout case';
+      return 'Review case';
   }
 }
 
@@ -134,7 +136,7 @@ export function claimNextAction(
   switch (claim.status) {
     case 'new':
       return {
-        evidenceStatus: 'New payout case',
+        evidenceStatus: 'New case',
         reviewState: 'Evidence state: Initial triage',
         nextActionLabel,
         daysWaiting: waitingDays,
@@ -146,20 +148,20 @@ export function claimNextAction(
     case 'awaiting_supplier_response':
       return {
         evidenceStatus: `${stateLabel}: external information needed`,
-        reviewState: 'Evidence state: Clarification before payout',
+        reviewState: 'Evidence state: Clarification before customer action',
         nextActionLabel,
         daysWaiting: waitingDays,
       };
     case 'ready_for_decision':
       return {
-        evidenceStatus: 'Evidence is ready for payout decision',
+        evidenceStatus: 'Evidence is ready for a customer decision',
         reviewState: 'Evidence state: Ready for decision',
         nextActionLabel,
         daysWaiting: waitingDays,
       };
     case 'manual_review':
       return {
-        evidenceStatus: 'Manual review required before payout',
+        evidenceStatus: 'Manual review required before customer action',
         reviewState: 'Evidence state: Internal escalation',
         nextActionLabel,
         daysWaiting: waitingDays,
@@ -167,14 +169,14 @@ export function claimNextAction(
     case 'decision_recorded':
     case 'recovery_opened':
       return {
-        evidenceStatus: 'Customer payout decision recorded',
+        evidenceStatus: 'Customer decision recorded',
         reviewState: 'Evidence state: Recovery or close-out',
         nextActionLabel,
         daysWaiting: waitingDays,
       };
     case 'closed':
       return {
-        evidenceStatus: 'Payout case closed',
+        evidenceStatus: 'Case closed',
         reviewState: 'Evidence state: Closed',
         nextActionLabel,
         daysWaiting: waitingDays,
@@ -215,7 +217,7 @@ export function claimNextAction(
       };
     case 'voided':
       return {
-        evidenceStatus: 'Claim voided — no active evidence review',
+        evidenceStatus: 'Case voided — no active evidence review',
         reviewState: 'Evidence state: Archived',
         nextActionLabel,
         daysWaiting: waitingDays,

@@ -22,16 +22,17 @@ export interface SegmentedControlProps {
 
 /** One enclosing control for a small mutually exclusive choice set. */
 export function SegmentedControl({ items, value, onValueChange, 'aria-label': ariaLabel, className }: SegmentedControlProps) {
+  const isRouteNavigation = items.some((item) => Boolean(item.href));
   return (
-    <div role="tablist" aria-label={ariaLabel} className={cn(segmentedControlContract.root, className)}>
+    <div role={isRouteNavigation ? undefined : 'group'} aria-label={ariaLabel} className={cn(segmentedControlContract.root, className)}>
       {items.map((item) => {
         const active = item.value === value;
         const classes = cn(segmentedControlContract.item, active && segmentedControlContract.selectedItem, item.disabled && 'cursor-not-allowed opacity-50');
         const content = <>{item.label}</>;
         if (item.href) {
-          return <Link key={item.value} href={item.disabled ? '#' : item.href} role="tab" aria-selected={active} aria-disabled={item.disabled || undefined} tabIndex={item.disabled ? -1 : undefined} className={classes} onClick={item.disabled ? (event) => event.preventDefault() : undefined}>{content}</Link>;
+          return <Link key={item.value} href={item.disabled ? '#' : item.href} aria-current={active ? 'page' : undefined} aria-disabled={item.disabled || undefined} tabIndex={item.disabled ? -1 : undefined} className={classes} onClick={item.disabled ? (event) => event.preventDefault() : undefined}>{content}</Link>;
         }
-        return <button key={item.value} type="button" role="tab" aria-selected={active} disabled={item.disabled} onClick={() => onValueChange?.(item.value)} className={classes}>{content}</button>;
+        return <button key={item.value} type="button" aria-pressed={active} disabled={item.disabled} onClick={() => onValueChange?.(item.value)} className={classes}>{content}</button>;
       })}
     </div>
   );

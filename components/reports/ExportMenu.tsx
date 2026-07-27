@@ -50,7 +50,7 @@ export default function ExportMenu({ range, timezone = 'UTC', currency = null }:
             className="px-3 pb-1 pt-1.5 text-[length:var(--ua-text-micro-size)] font-bold"
             style={{ color: 'var(--ua-text-tertiary)' }}
           >
-            Payout reports
+            Case reports
           </p>
           <a
             role="menuitem"

@@ -11,8 +11,9 @@ import {
   requirePagePermission,
 } from "@/lib/auth/requestContext";
 import { loadConnectorCatalogue } from "@/lib/connectors/catalogue";
-import { resolveEffectiveConnectionStatus } from "@/lib/connections/effectiveStatus";
-import { resolveConnectionReadModel } from "@/lib/connections/readModel";
+// RUN-18: the validating entry point, so no consumer can skip the
+// impossible-state check.
+import { connectionReadModel } from "@/lib/connections/readModel";
 import {
   type CatalogueRowItem,
 } from "@/components/integrations/ConnectorRow";
@@ -45,24 +46,31 @@ export default async function IntegrationsPage({
 
   const catalogueRows = await loadConnectorCatalogue(service, ctx.merchantId);
   const catalogue: CatalogueRowItem[] = catalogueRows.map((item) => {
-    const effective = resolveEffectiveConnectionStatus(null, item.syncState, item.freshness);
+    /*
+     * RUN-18: the row's status, badge and note come from the canonical model,
+     * not from a parallel resolve. Two sources of truth on one row is exactly
+     * how the summary, the row and the sidebar came to disagree.
+     */
+    const readModel = connectionReadModel({
+      providerId: item.id,
+      syncState: item.syncState,
+      freshness: item.freshness,
+      lastVerifiedAt: item.lastVerifiedAt,
+      importedRecords: item.importedRecords,
+    });
     return {
       ...item,
-      status: effective.bucket,
-      badge: effective.badge,
-      lastError: effective.note,
-      noteTone: effective.noteTone,
-      readModel: resolveConnectionReadModel({
-        providerId: item.id,
-        syncState: item.syncState,
-        freshness: item.freshness,
-        lastVerifiedAt: item.lastVerifiedAt,
-        importedRecords: item.importedRecords,
-      }),
+      status: readModel.bucket,
+      badge: readModel.badge,
+      lastError: readModel.note,
+      noteTone: readModel.noteTone,
+      readModel,
     };
   });
 
   const connectedCount = catalogue.filter((item) => item.connectionCount > 0 || item.connectionId !== null || item.status !== "not_connected").length;
+  const plannedCount = catalogue.filter((item) => item.stage === "planned").length;
+  const browseCount = catalogue.filter((item) => item.category !== "documents" && item.stage !== "planned").length + plannedCount;
   const view = resolveView((await searchParams)?.view, connectedCount > 0);
 
   return (
@@ -79,7 +87,7 @@ export default async function IntegrationsPage({
             <ButtonLink href="/integrations?view=browse" size="sm" leadingIcon={<Plus size={14} />}>Add integration</ButtonLink>
           )
         }
-        tabs={<IntegrationsTabs active={view} connectedCount={connectedCount} catalogueCount={catalogue.filter((item) => item.category !== "documents").length} />}
+        tabs={<IntegrationsTabs active={view} connectedCount={connectedCount} catalogueCount={browseCount} />}
       />
       <div className={pageStyles.pageBody}>
         <IntegrationsWorkspace items={catalogue} initialView={view} />

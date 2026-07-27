@@ -124,7 +124,7 @@ function CompactTransactionList({
             ) : <span className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">—</span>}
           </td>
           <td className="px-3 py-2.5">
-            {tx.chargeback_filed ? <Badge tone="danger" size="sm">Chargeback</Badge> : tx.refund_claimed ? <Badge tone="warning" size="sm">Payout case</Badge> : <span className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">—</span>}
+            {tx.chargeback_filed ? <Badge tone="danger" size="sm">Chargeback</Badge> : tx.refund_claimed ? <Badge tone="warning" size="sm">Case</Badge> : <span className="text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">—</span>}
           </td>
           <td className="px-3 py-2.5 text-right font-semibold tabular-nums">{formatMoneyOrDash(Math.round((Number(tx.order_value) || 0) * 100), tx.currency)}</td>
         </tr>
@@ -189,7 +189,7 @@ export function CustomerProfilePageMainColumn({
   return (
     <div className="grid min-w-0 grid-cols-1 items-start gap-3 lg:grid-cols-[minmax(0,1fr)_320px]">
       <div className="min-w-0 space-y-3">
-        <SectionCard title="Orders" description="What this customer bought, when it happened, and whether the order led to a payout case." actions={<span className="text-xs text-[var(--ua-text-tertiary)]">Latest {Math.min(transactions.length, 25)} of {transactions.length}</span>}>
+        <SectionCard title="Orders" description="What this customer bought, when it happened, and whether the order led to a case." actions={<span className="text-xs text-[var(--ua-text-tertiary)]">Latest {Math.min(transactions.length, 25)} of {transactions.length}</span>}>
           <CompactTransactionList transactions={transactions} />
           <ChangesStrip events={roadmapEvents} />
         </SectionCard>
@@ -215,7 +215,7 @@ export function CustomerProfilePageMainColumn({
           <CustomerNotes customerProfileId={profile.id} />
         </SectionCard>
 
-        <SectionCard title="Customer activity" description="Actions taken by your team across this customer's linked payout cases.">
+        <SectionCard title="Customer activity" description="Actions taken by your team across this customer's linked cases.">
         {visibleActivity.length === 0 ? (
           <EmptyState
             variant="compact"

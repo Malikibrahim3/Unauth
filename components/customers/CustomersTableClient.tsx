@@ -16,9 +16,9 @@ interface CustomerRow {
   total_spent: number;
   total_spent_currency: string | null;
   has_mixed_currency: boolean;
-  /** All-time payout case count for this customer. */
+  /** All-time case count for this customer. */
   payout_cases_total: number;
-  /** Payout cases currently open (pending / open / escalated). */
+  /** Cases currently open (pending / open / escalated). */
   payout_cases_open: number;
   last_order_at: string | null;
 }
@@ -125,7 +125,7 @@ export default function CustomersTableClient({
     },
     {
       key: "cases",
-      header: "Payout cases",
+      header: "Cases",
       align: "right" as const,
       render: (p: CustomerRow) => (
         <div className="flex flex-col items-end gap-1">
@@ -169,21 +169,19 @@ export default function CustomersTableClient({
     <>
       {/* ── Desktop table (sm+) ─────────────────────────────── */}
       <div
-        className="hidden sm:block overflow-hidden border"
+        className="hidden sm:block"
         data-testid="customers-table"
-        style={{
-          background: "var(--ua-surface-primary)",
-          borderColor: "var(--ua-border-subtle)",
-          borderRadius: 4,
-        }}
       >
         <DataTable
           columns={columns}
           rows={rows}
           getRowKey={(row) => row.id}
           onRowClick={(row) => setPreview(row.id)}
+          primaryColumnKey="customer"
+          primaryActionLabel={(row) => `Open preview for ${row.names?.[0] ?? 'customer'}`}
           rowTestId="customer-row"
-          density="relaxed"
+          density="default"
+          aria-label="Customers"
         />
       </div>
 

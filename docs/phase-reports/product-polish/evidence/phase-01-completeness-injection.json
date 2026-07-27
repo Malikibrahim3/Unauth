@@ -1,0 +1,21 @@
+{
+  "artifact": "phase-01-completeness-injection",
+  "generatedFrom": "npm run evidence:phase1",
+  "requiredResource": "/api/work/views",
+  "requiredFailureBlocks": true,
+  "requiredFailureRetryOffered": true,
+  "systemViewsStillReachable": 11,
+  "optionalFailureIsLocal": true,
+  "healthyControl": {
+    "noticeShown": false,
+    "seededSavedViewVisible": true
+  },
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+  ],
+  "diagnostics": {
+    "landedUrl": "http://localhost:3000/work",
+    "mainHeading": "Work",
+    "bodySnippet": "Unauth\nP1\nPhase 1 QA Workspace\nConnect sources\nOverview\nOverview\nWork\nWork\nCases\n9\nLosses\nRecovery\nCustomers\nConfigure\nRules\nFlows\nReports and setup\nReports\nIntegrations\nSettings\nqa.operator@qa.invalid\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nWork\nPhase 1 QA Workspace\nDemo\nSearch\n⌘K\nQA\nYou're viewing demo data. Connect your store to see real data.\nWork\nMatching work\n0\nIn this view\nOpen exceptions\n0\nMerchant decisions required\nWork queue\nOpen\n0\nMy work\n0\nUnassigned\n0\nDue today\n0\nOverdue\n0\nNo SLA\n0\nBlocked\n0\nEvidence needed\n0\nDecision needed\n0\nIntegration exceptions\n0\nCompleted\n0\nSave vi"
+  }
+}

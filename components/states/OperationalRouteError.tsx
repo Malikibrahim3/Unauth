@@ -11,19 +11,23 @@ export function OperationalRouteError({
   description,
   reset,
   fallbackHref = "/dashboard",
+  digest,
 }: {
   title: string;
   description: string;
   reset: () => void;
   fallbackHref?: string;
+  /** Logged for support correlation; never rendered (RUN-11). */
+  digest?: string;
 }) {
+  if (typeof window !== 'undefined' && digest) {
+    console.error('[route-error]', { digest });
+  }
   return (
     <div>
-      <AuthenticatedPageHeader
-        eyebrow="Recoverable error"
-        title={title}
-        subtitle={description}
-      />
+      {/* RUN-11: the title already says what failed; an "error class" eyebrow
+          only adds implementation vocabulary. */}
+      <AuthenticatedPageHeader title={title} subtitle={description} />
       <div className={pageStyles.pageBody}>
         <AuthenticatedPanel bodyClassName="flex flex-wrap items-center justify-between gap-3 p-4" capabilityId="error.recovery" >
           <div className="flex items-center gap-3" role="alert">
@@ -36,7 +40,7 @@ export function OperationalRouteError({
             <button type="button" onClick={reset} className="inline-flex h-8 items-center gap-2 rounded-[var(--ua-radius-control)] bg-[var(--ua-action-primary)] px-3 text-[length:var(--ua-text-micro-size)] font-semibold text-[var(--ua-action-primary-fg)]">
               <RotateCcw className="h-3.5 w-3.5" />Try again
             </button>
-            <Link href={fallbackHref} className="inline-flex h-8 items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] px-3 text-[length:var(--ua-text-micro-size)] font-semibold text-[var(--ua-text-secondary)]">Leave this view</Link>
+            <Link href={fallbackHref} className="inline-flex h-8 items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] px-3 text-[length:var(--ua-text-micro-size)] font-semibold text-[var(--ua-text-secondary)]">Leave this page</Link>
           </div>
         </AuthenticatedPanel>
       </div>

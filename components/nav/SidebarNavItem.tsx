@@ -40,26 +40,38 @@ export function SidebarNavItem({
       onNavigate={onNavigate}
       className={cn(
         'group relative flex h-7 items-center gap-2 rounded-[var(--ua-radius-control)] px-2.5',
-        'text-[length:var(--ua-text-micro-size)] font-medium leading-none',
-        'transition-all duration-150',
+        'text-[length:var(--ua-text-micro-size)] leading-none',
+        'transition-all duration-[var(--ua-duration-base)] ease-[var(--ua-ease-standard)]',
         'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ua-border-focus)] focus-visible:outline-offset-2',
         active
-          ? 'text-[var(--ua-text-primary)]'
-          : 'text-[var(--ua-text-secondary)] hover:text-[var(--ua-text-primary)] hover:bg-[var(--ua-surface-muted)]',
+          ? 'font-semibold text-[var(--ua-text-primary)]'
+          // Hover shows the white fill; selection adds the hairline, the lift and
+          // the weight on top. `--ua-surface-hover` is tuned for rows on white and
+          // is invisible against the shell, so the nav ladder uses white directly.
+          : 'font-medium text-[var(--ua-text-secondary)] hover:bg-[var(--ua-surface-primary)] hover:text-[var(--ua-text-primary)]',
         collapsed && 'justify-center',
       )}
+      /*
+       * The selected row lifts off the shell: white fill, a hairline, a tight
+       * shadow and a 1px rise. Four channels carry the selection (fill, border,
+       * elevation, weight), so it never depends on colour alone (§9.1).
+       *
+       * This is the one inline surface allowed to have depth — see §4.2 of the
+       * implementation spec. Inactive rows keep a transparent border of the same
+       * width so gaining the border does not shift the label by a pixel.
+       */
       style={
         active
           ? {
-              background: 'var(--ua-surface-selected)',
-              color: 'var(--ua-text-primary)'
+              background: 'var(--ua-surface-primary)',
+              color: 'var(--ua-text-primary)',
+              border: '1px solid var(--ua-border-default)',
+              boxShadow: 'var(--ua-shadow-raised)',
+              transform: 'translateY(-1px)',
             }
-          : undefined
+          : { border: '1px solid transparent' }
       }
     >
-      {active ? (
-        <span className="absolute inset-y-1.5 left-0 w-0.5 rounded-r-full bg-[var(--ua-text-primary)]" aria-hidden="true" />
-      ) : null}
       <Icon
         className={cn(
           'h-4 w-4 flex-shrink-0',
@@ -105,9 +117,9 @@ export function SidebarGroupLabel({ label, collapsed }: { label: string; collaps
   if (collapsed) return <div className="my-2 mx-2 h-px bg-[var(--ua-border-default)]" />;
   return (
     <div className="mt-4 mb-1 px-3">
+      {/* Metadata role, sentence case, no letter spacing (§3.2, §4.2). */}
       <span
-        className="block leading-none"
-        style={{ fontSize: 10, fontWeight: 600, color: 'var(--ua-text-tertiary)', letterSpacing: '0.08em' }}
+        className="block text-[length:var(--ua-text-micro-size)] font-medium leading-[var(--ua-text-micro-leading)] text-[var(--ua-text-tertiary)]"
       >
         {label}
       </span>

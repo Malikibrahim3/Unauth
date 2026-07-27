@@ -20,20 +20,20 @@ type MetricTabsProps = {
 };
 
 /**
- * T9 metric tab strip — simultaneously a KPI row and the chart's series selector.
- * Selection carries two cues (icon-chip invert + sunken tile background), never colour alone.
+ * Metric selector — a mutually exclusive view choice, not a route or tab
+ * panel. Selection carries two cues (icon-chip invert + selected tile), never
+ * colour alone.
  */
 export function MetricTabs({ items, active, onSelect, 'aria-label': ariaLabel }: MetricTabsProps) {
   return (
-    <div className={tabStyles.strip} role="tablist" aria-label={ariaLabel}>
+    <div className={tabStyles.strip} role="group" aria-label={ariaLabel}>
       {items.map((item) => {
         const selected = item.key === active;
         return (
           <button
             key={item.key}
             type="button"
-            role="tab"
-            aria-selected={selected}
+            aria-pressed={selected}
             className={tabStyles.tile}
             data-selected={selected}
             onClick={() => onSelect(item.key)}

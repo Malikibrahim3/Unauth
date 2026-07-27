@@ -85,7 +85,7 @@ function uniqueNonEmptyStrings(
  */
 const IDENTITY_GROUP_SCAN_CAP = 4000;
 
-/** Upper bound on payout cases aggregated for directory counts. */
+/** Upper bound on cases aggregated for directory counts. */
 const CASE_AGG_LIMIT = 5000;
 
 export default async function CustomersOverviewPage({
@@ -387,8 +387,8 @@ export default async function CustomersOverviewPage({
   const groups = [...groupsByKey.values()];
 
   // -------------------------------------------------------------------------
-  // Merchant-wide payout case aggregate (single bounded query). Feeds the KPI
-  // strip, the "Most payout cases" sort, and the per-row case counts.
+  // Merchant-wide case aggregate (single bounded query). Feeds the KPI strip,
+  // the "Most cases" sort, and the per-row case counts.
   // -------------------------------------------------------------------------
   const caseAggByCustomer = new Map<string, { total: number; open: number }>();
   const caseAggByMerchantCustomer = new Map<string, { total: number; open: number }>();
@@ -652,7 +652,7 @@ export default async function CustomersOverviewPage({
       hasData={dataPresence.hasCustomerProfiles}
       pageActions={{
         primary: primaryAction,
-        subtitle: "Order, claim, and payout history for every customer.",
+        subtitle: "Order and case history for every customer.",
       }}
       sp={sp}
       rows={rows}

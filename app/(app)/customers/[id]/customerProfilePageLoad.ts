@@ -1051,6 +1051,7 @@ export async function loadCustomerProfilePage(
       orderId: tx.order_id,
       processedAt: tx.processed_at,
       orderValue: Number(tx.order_value) || null,
+      currency: tx.currency ?? null,
       riskLevel: tx.risk_level ?? null,
       refundRequested: !!tx.refund_claimed,
       refundReason: tx.refund_reason ?? null,

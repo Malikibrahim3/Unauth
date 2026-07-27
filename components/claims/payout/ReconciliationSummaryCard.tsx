@@ -4,6 +4,8 @@ import { CheckCircle2, CircleAlert, RefreshCw, ShieldQuestion } from 'lucide-rea
 import { useState } from 'react';
 import { Badge, Button, Panel, Select } from '@/components/ui';
 import { useFetchJson } from '@/lib/react/useFetchJson';
+import { countLabel, label } from '@/lib/ui/labels';
+import { parseMajorUnitInput } from '@/lib/utils/format';
 
 type Recommendation = {
   id?: string;
@@ -15,6 +17,8 @@ type Recommendation = {
   reason_codes?: string[];
   missing_evidence?: string[];
   generated_at?: string;
+  merchant_rule_version_id?: string | null;
+  policy_snapshot?: { rule_name?: string | null; version?: string | null } | null;
 };
 
 type MatrixRow = {
@@ -64,8 +68,7 @@ function tone(state?: string): 'success' | 'warning' | 'danger' | 'neutral' {
 }
 
 function stateLabel(state?: string) {
-  if (!state) return 'Not evaluated';
-  return state.replaceAll('_', ' ');
+  return label('assessmentState', state ?? 'not_evaluated');
 }
 
 function requestKey(scope: string) {
@@ -77,10 +80,12 @@ export function ReconciliationSummaryCard({
   caseId,
   currency = 'GBP',
   canManage = false,
+  onRefresh,
 }: {
   caseId: string;
   currency?: string | null;
   canManage?: boolean;
+  onRefresh?: () => void;
 }) {
   const { data, loading, error, reload } = useFetchJson<ReconciliationPayload>(
     `/api/claims/${encodeURIComponent(caseId)}/matches`,
@@ -113,8 +118,9 @@ export function ReconciliationSummaryCard({
       });
       const body = await response.json().catch(() => null) as { error?: string } | null;
       if (!response.ok) throw new Error(body?.error ?? 'Reconciliation failed.');
-      setMessage('Recommendations refreshed from the current evidence.');
+      setMessage('Recommendations updated from the current evidence.');
       reload();
+      onRefresh?.();
     } catch (caught) {
       setMessage(caught instanceof Error ? caught.message : 'Reconciliation failed.');
     } finally {
@@ -137,8 +143,9 @@ export function ReconciliationSummaryCard({
       });
       const body = await response.json().catch(() => null) as { error?: string } | null;
       if (!response.ok) throw new Error(body?.error ?? 'Item match could not be saved.');
-      setMessage('Claimed item matched. Recommendations refreshed.');
+      setMessage('Claimed item matched. Recommendations updated.');
       reload();
+      onRefresh?.();
     } catch (caught) {
       setMessage(caught instanceof Error ? caught.message : 'Item match could not be saved.');
     } finally {
@@ -150,7 +157,12 @@ export function ReconciliationSummaryCard({
     if (!canMutate || busy) return;
     setBusy(true);
     setMessage(null);
-    const amount = outcomeAmount.trim() ? Number(outcomeAmount) : null;
+    const amountMinor = parseMajorUnitInput(outcomeAmount, currency);
+    if (outcomeAmount.trim() && amountMinor == null) {
+      setMessage(`Enter a valid amount in ${currency?.toUpperCase() ?? 'the case currency'}.`);
+      setBusy(false);
+      return;
+    }
     try {
       const response = await fetch(`/api/claims/${encodeURIComponent(caseId)}/outcomes`, {
         method: 'POST',
@@ -162,7 +174,7 @@ export function ReconciliationSummaryCard({
           outcome_type: outcomeType,
           state: 'merchant_confirmed',
           source_system: 'merchant_manual',
-          amount_minor: Number.isInteger(amount) && amount != null && amount >= 0 ? amount : null,
+          amount_minor: Number.isInteger(amountMinor) && amountMinor != null && amountMinor >= 0 ? amountMinor : null,
           currency: currency?.toUpperCase() ?? null,
           followed_recommendation: null,
         }),
@@ -172,6 +184,7 @@ export function ReconciliationSummaryCard({
       setOutcomeAmount('');
       setMessage('Merchant-confirmed outcome recorded. Unauth will keep it separate from source-observed outcomes.');
       reload();
+      onRefresh?.();
     } catch (caught) {
       setMessage(caught instanceof Error ? caught.message : 'Outcome could not be recorded.');
     } finally {
@@ -185,23 +198,29 @@ export function ReconciliationSummaryCard({
         <div className="flex items-start gap-3">
           <ShieldQuestion className="mt-0.5 shrink-0 text-[var(--ua-action-primary)]" size={19} aria-hidden="true" />
           <div>
-            <p className="text-caption font-semibold text-[var(--ua-text-secondary)]">Evidence reconciliation</p>
+            <p className="text-caption font-semibold text-[var(--ua-text-secondary)]">Case assessment</p>
             <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">
-              Three independent answers from the matched order, item, parcels, and source evidence.
+              Review the matched order, affected item, parcel records, and source evidence before acting.
             </p>
           </div>
         </div>
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          leadingIcon={<RefreshCw />}
-          loading={busy || loading}
-          disabled={!canMutate}
-          onClick={() => void reconcile()}
-        >
-          Refresh reconciliation
-        </Button>
+        {canMutate ? (
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            leadingIcon={<RefreshCw />}
+            loading={busy || loading}
+            aria-label={loading ? 'Loading case recommendations' : 'Update recommendations'}
+            onClick={() => void reconcile()}
+          >
+            Update recommendations
+          </Button>
+        ) : (
+          <p className="max-w-44 text-right text-[length:var(--ua-text-micro-size)] text-[var(--ua-text-tertiary)]">
+            {loading ? 'Loading case evidence…' : 'Read-only access: recommendations cannot be updated.'}
+          </p>
+        )}
       </div>
 
       {error ? (
@@ -211,7 +230,9 @@ export function ReconciliationSummaryCard({
         </div>
       ) : null}
 
-      {rows.length > 0 ? (
+      {loading && rows.length === 0 ? (
+        <p className="mt-4 text-sm text-[var(--ua-text-secondary)]">Loading case evidence…</p>
+      ) : rows.length > 0 ? (
         <div className="mt-4 grid gap-2 md:grid-cols-3">
           {rows.map(([key, recommendation]) => (
             <div key={key} className="rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-secondary)] p-3">
@@ -225,7 +246,7 @@ export function ReconciliationSummaryCard({
               <p className="mt-1 text-xs leading-5 text-[var(--ua-text-secondary)]">{recommendation.explanation ?? 'Open the full case to review the evidence.'}</p>
               {recommendation.missing_evidence && recommendation.missing_evidence.length > 0 ? (
                 <p className="mt-2 text-xs text-[var(--ua-text-tertiary)]">
-                  Missing: {recommendation.missing_evidence.slice(0, 3).join(', ')}
+                  {countLabel(recommendation.missing_evidence.length, 'item')} missing: {recommendation.missing_evidence.slice(0, 3).join(', ')}
                 </p>
               ) : null}
             </div>
@@ -233,9 +254,27 @@ export function ReconciliationSummaryCard({
         </div>
       ) : (
         <p className="mt-4 text-sm text-[var(--ua-text-secondary)]">
-          Match the claimed item first, then refresh to produce the three recommendations.
+          Select the affected item to calculate recommendations from the order and source evidence.
         </p>
       )}
+
+      {rows.length > 0 ? (() => {
+        const appliedRule = rows
+          .map(([, recommendation]) => recommendation)
+          .find((recommendation) => recommendation.policy_snapshot?.rule_name || recommendation.merchant_rule_version_id);
+        if (!appliedRule) return null;
+        return (
+          <div className="mt-4 rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] px-3 py-2.5 text-xs">
+            <span className="font-semibold text-[var(--ua-text-secondary)]">Applied rule: </span>
+            <span className="font-medium text-[var(--ua-text-primary)]">
+              {appliedRule.policy_snapshot?.rule_name ?? 'Merchant policy'}
+            </span>
+            <span className="text-[var(--ua-text-secondary)]">
+              {' · '}Version {appliedRule.policy_snapshot?.version ?? appliedRule.merchant_rule_version_id?.slice(-6) ?? 'recorded'}
+            </span>
+          </div>
+        );
+      })() : null}
 
       {claimedItems.length === 0 && candidates.length > 0 ? (
         <div className="mt-4 rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-3">
@@ -264,7 +303,7 @@ export function ReconciliationSummaryCard({
             {matrix.slice(0, 12).map((row, index) => (
               <div key={`${row.claimedItemId ?? 'item'}-${row.parcelId ?? 'unassigned'}-${index}`} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-[var(--ua-border-subtle)] px-3 py-2 text-xs">
                 <span className="font-medium text-[var(--ua-text-primary)]">{row.claimedSku ?? 'Claimed item'}</span>
-                <span className="text-[var(--ua-text-secondary)]">{row.parcelId ? `Parcel ${row.parcelId.slice(-6)}` : 'No parcel record'} · {row.state?.replaceAll('_', ' ')}</span>
+                <span className="text-[var(--ua-text-secondary)]">{row.parcelId ? `Parcel ${row.parcelId.slice(-6)}` : 'No parcel record'} · {label('workflowStatus', row.state ?? 'unknown')}</span>
                 <Badge tone={row.physicalProof ? 'success' : 'warning'} size="sm" dot>{row.physicalProof ? 'Physical proof' : 'System record only'}</Badge>
               </div>
             ))}
@@ -278,7 +317,7 @@ export function ReconciliationSummaryCard({
             <p className="text-xs font-semibold text-[var(--ua-text-secondary)]">Customer outcome</p>
             <p className="mt-1 text-xs text-[var(--ua-text-tertiary)]">Record a merchant confirmation when the source system cannot yet report the result. This does not execute a refund or reship.</p>
           </div>
-          {outcomes.length > 0 ? <Badge size="sm">{outcomes.length} recorded</Badge> : null}
+          {outcomes.length > 0 ? <Badge size="sm">{countLabel(outcomes.length, 'outcome')} recorded</Badge> : null}
         </div>
         <div className="mt-3 flex flex-wrap items-end gap-2">
           <label className="min-w-44 text-xs font-medium text-[var(--ua-text-secondary)]">
@@ -293,17 +332,22 @@ export function ReconciliationSummaryCard({
             </Select>
           </label>
           <label className="w-32 text-xs font-medium text-[var(--ua-text-secondary)]">
-            Amount (minor)
+            Amount
             <input
               className="mt-1 h-9 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2 text-sm text-[var(--ua-text-primary)]"
               type="number"
               min="0"
-              step="1"
+              step="0.01"
+              inputMode="decimal"
               value={outcomeAmount}
               onChange={(event) => setOutcomeAmount(event.target.value)}
               disabled={!canMutate || busy}
               placeholder="Optional"
+              aria-describedby="case-outcome-amount-hint"
             />
+            <span id="case-outcome-amount-hint" className="mt-1 block text-[length:var(--ua-text-micro-size)] font-normal text-[var(--ua-text-tertiary)]">
+              Enter {currency?.toUpperCase() ?? 'the case currency'} in major units.
+            </span>
           </label>
           <Button type="button" size="sm" variant="secondary" disabled={!canMutate || busy} loading={busy} onClick={() => void recordOutcome()}>
             Record outcome

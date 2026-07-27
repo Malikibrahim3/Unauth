@@ -80,6 +80,44 @@
   --ua-watchlist-border: #cadaf2;
 }
 
+.ua-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ua-space-1-5);
+  height: var(--ua-badge-height);
+  padding-inline: var(--ua-space-2);
+  border: 1px solid var(--ua-status-border);
+  border-radius: var(--ua-radius-round);
+  background: var(--ua-status-bg);
+  color: var(--ua-status-fg);
+  font-size: var(--ua-text-caption-size);
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.ua-status-badge--sm {
+  height: var(--ua-badge-height-sm);
+  font-size: var(--ua-text-micro-size);
+}
+
+.ua-status-badge__dot {
+  width: var(--ua-space-1-5);
+  height: var(--ua-space-1-5);
+  flex-shrink: 0;
+  border-radius: var(--ua-radius-round);
+  background: currentColor;
+}
+
+.ua-priority-text {
+  color: var(--ua-text-secondary);
+  font-size: var(--ua-text-caption-size);
+}
+
+.ua-priority-text--sm {
+  font-size: var(--ua-text-micro-size);
+}
+
 /*
  * Dark mode keeps every meaning and raises foreground luminance enough for
  * WCAG AA on the paired fill. Fills stay subdued — never neon.
@@ -103,7 +141,7 @@
   --ua-critical-bg: #4d2e2e;
   --ua-critical-border: #7d4f4f;
 
-  --ua-neutral: #b8b8b3;
+  --ua-neutral: #b8b8b8;
   --ua-neutral-bg: #272727;
   --ua-neutral-border: #363636;
 
@@ -135,7 +173,7 @@
   --ua-severity-definite-bg: #254438;
   --ua-severity-probable: #d1ac57;
   --ua-severity-probable-bg: #4c4128;
-  --ua-severity-possible: #b8b8b3;
+  --ua-severity-possible: #b8b8b8;
   --ua-severity-possible-bg: #272727;
   --ua-severity-clear: #72ba9e;
   --ua-severity-clear-bg: #254438;

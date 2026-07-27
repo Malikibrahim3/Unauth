@@ -27,7 +27,7 @@ export default async function GorgiasIntegrationPage({
   return (
     <SettingsPageShell
       title="Gorgias"
-      subtitle="Show payout case context, evidence gaps, and recommendations on support tickets."
+      subtitle="Show case context, evidence gaps, and recommendations on support tickets."
     >
       <div className="space-y-3">
         {returnTo && (

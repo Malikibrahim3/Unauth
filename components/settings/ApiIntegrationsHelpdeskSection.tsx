@@ -12,7 +12,7 @@ const HELPDESK_OPTIONS: (HelpdeskOption & { recommended?: boolean })[] = [
   {
     id: 'gorgias',
     name: 'Gorgias',
-    description: 'Add claim context to every support ticket. Agents see order history, prior claims, and trust indicators without leaving Gorgias.',
+    description: 'Add case context to every support ticket. Agents see order history, prior cases, and trust indicators without leaving Gorgias.',
     statusKey: 'gorgias',
     href: '/settings/integrations/gorgias',
     logo: '/integrations/gorgias.png',
@@ -21,7 +21,7 @@ const HELPDESK_OPTIONS: (HelpdeskOption & { recommended?: boolean })[] = [
   {
     id: 'zendesk',
     name: 'Zendesk',
-    description: 'Claim context in the Zendesk sidebar. For teams on Zendesk instead of Gorgias.',
+    description: 'Case context in the Zendesk sidebar. For teams on Zendesk instead of Gorgias.',
     statusKey: 'zendesk',
     href: '/settings/integrations/zendesk',
     logo: '/integrations/zendesk.svg',
@@ -29,7 +29,7 @@ const HELPDESK_OPTIONS: (HelpdeskOption & { recommended?: boolean })[] = [
   {
     id: 'freshdesk',
     name: 'Freshdesk',
-    description: 'Sync support tickets for claim detection. For teams on Freshdesk.',
+    description: 'Sync support tickets for case detection. For teams on Freshdesk.',
     statusKey: 'freshdesk',
     href: '/settings/integrations/freshdesk',
     logo: '/integrations/freshdesk.svg',
@@ -92,10 +92,10 @@ export default function ApiIntegrationsHelpdeskSection() {
             </p>
             <p className="text-xs mt-0.5" style={{ color: guideToHelpdesk ? 'var(--ua-warning)' : 'var(--ua-text-secondary)' }}>
               {helpdeskConnected
-                ? 'Claims and dispute context are syncing. Tie each claim back to its Shopify order.'
+                ? 'Cases and chargeback context are syncing. Tie each case back to its Shopify order.'
                 : guideToHelpdesk
-                  ? 'Shopify is live, but claim and dispute context comes from your helpdesk. Until you connect one, claim metrics read as incomplete - not zero.'
-                  : 'Choose one provider below. Either one supplies claim history and dispute context.'}
+                  ? 'Shopify is live, but case and chargeback context comes from your helpdesk. Until you connect one, case metrics read as incomplete - not zero.'
+                  : 'Choose one provider below. Either one supplies case history and chargeback context.'}
             </p>
           </div>
         </div>

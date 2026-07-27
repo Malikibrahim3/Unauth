@@ -68,7 +68,7 @@ Do not reintroduce duplicate `--bg-*`, `--surface-*`, `--accent*`, or historical
 - Page headers are compact: title/subtitle left, at most one primary and one secondary action right.
 - Tabs attach to the page header or first working surface.
 - The live app fills the viewport; it is not placed in a rounded showcase browser frame.
-- Mobile uses a modal navigation drawer, stacked page actions, compact KPI layout, contained table scrolling, and no page-level horizontal overflow at 320px.
+- Supported authenticated layout begins at 1024 CSS pixels. Below 1024px, the root boundary renders one accessible “Desktop required” notice and removes the product shell and route UI from the accessibility tree. Do not add route-specific mobile layouts for this product-polish programme.
 
 ## Page composition
 
@@ -203,6 +203,8 @@ Every interactive component implements default, hover, focus-visible, active, se
 - Inline styles are limited to data-derived geometry/custom-property assignment.
 - Component variants describe semantics or structure, not arbitrary appearance.
 - No new grandfathered lint exceptions for ordinary product styling.
+- A true tablist owns its tabpanel relationship and arrow/Home/End keyboard behaviour; route links remain ordinary links and view selectors use pressed/radio semantics.
+- Tables use real links/buttons for row actions; a `<tr>` is never made a faux button with `tabIndex` or keyboard emulation.
 - A migrated page includes every descendant, overlay, state, skeleton, mobile layout, and dark-mode appearance.
 - Route, permission, query-parameter, mutation, export, deep-link, audit, and data-truth behaviour must remain intact.
 

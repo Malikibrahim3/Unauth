@@ -1,3 +1,5 @@
+import { UnauthLogo } from '@/components/ui/UnauthLogo';
+
 interface HelpdeskSidebarPreviewProps {
   providerLabel: 'Zendesk' | 'Gorgias';
 }
@@ -47,7 +49,9 @@ export default function HelpdeskSidebarPreview({ providerLabel }: HelpdeskSideba
               </span>
             </div>
           </div>
-          <p className="mt-2 text-right">Unauth</p>
+          <div className="mt-2 flex justify-end">
+            <UnauthLogo kind="wordmark" tone="white" height={13} alt="" decorative />
+          </div>
         </div>
         <p className="max-w-xs text-[length:var(--ua-text-micro-size)] leading-5" style={{ color: 'var(--ua-text-secondary)' }}>
           Approximate appearance inside {providerLabel} (~300px sidebar). The widget is a context

@@ -4,12 +4,14 @@ import Link from 'next/link';
 import { Card } from '@/components/ui';
 import {
   aggregateMoneyBridges,
+  enforceFinancialTruth,
   FINANCIAL_REPORT_METRICS,
   financialMetricIsKnown,
   financialMetricValue,
   type FinancialReportMetric,
 } from '@/lib/reporting/intelligence';
 import { formatDateTime, formatMinorCurrencyNullable } from '@/lib/utils/format';
+import { financialStageLabel } from '@/lib/ui/labels';
 
 export type CaseFinancialSummary = {
   [key: string]: unknown;
@@ -30,18 +32,18 @@ export type CaseFinancialSummary = {
 };
 
 const LABELS: Record<FinancialReportMetric, string> = {
-  requested: 'Requested',
-  exposed: 'Exposed',
-  approved: 'Approved',
-  paid: 'Paid',
-  estimated_loss: 'Estimated loss',
-  prevented: 'Prevented',
-  confirmed_loss: 'Confirmed loss',
-  recoverable: 'Recoverable',
-  recovered: 'Recovered',
-  outstanding: 'Outstanding recovery',
-  written_off: 'Written off',
-  final_net_loss: 'Final net loss',
+  requested: financialStageLabel('requested'),
+  exposed: financialStageLabel('maximum_exposure'),
+  approved: financialStageLabel('merchant_decision'),
+  paid: financialStageLabel('observed_payout'),
+  estimated_loss: financialStageLabel('estimated_loss'),
+  prevented: financialStageLabel('prevented'),
+  confirmed_loss: financialStageLabel('confirmed_loss'),
+  recoverable: financialStageLabel('eligible_recovery'),
+  recovered: financialStageLabel('recovered_cash'),
+  outstanding: financialStageLabel('outstanding_recovery'),
+  written_off: financialStageLabel('written_off'),
+  final_net_loss: financialStageLabel('final_net_loss'),
 };
 
 export function CaseFinancialHistoryCard({
@@ -49,7 +51,7 @@ export function CaseFinancialHistoryCard({
 }: {
   summaries: CaseFinancialSummary[];
 }) {
-  const bridges = aggregateMoneyBridges(summaries);
+  const bridges = aggregateMoneyBridges(enforceFinancialTruth(summaries).rows);
   const updatedAt = summaries
     .map((summary) => summary.updated_at)
     .filter(Boolean)
@@ -62,7 +64,7 @@ export function CaseFinancialHistoryCard({
         <div>
           <h2 id="case-financial-history-title" className="text-sm font-semibold">Financial history</h2>
           <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">
-            Canonical append-only totals. Customer concessions, economic loss, and provider recovery remain distinct; approval is not recovered cash.
+            Recorded merchant and provider stages stay separate; approval is not recovered cash.
           </p>
         </div>
         <Link href="/reports?range=all" className="text-xs font-semibold text-[var(--ua-action-primary)]">
@@ -99,7 +101,7 @@ export function CaseFinancialHistoryCard({
         </div>
       ) : (
         <p className="mt-3 text-xs text-[var(--ua-text-secondary)]">
-          No canonical financial entries are available for this case. Missing values are not reported as zero.
+          No financial stages have been recorded for this case yet. Missing values remain unavailable rather than showing as zero.
         </p>
       )}
     </Card>

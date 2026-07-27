@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import {
   claimWidgetToJson,
   isCreditGatedWidgetPreview,
@@ -7,6 +9,10 @@ import {
 import type { GorgiasClaimWidgetResult } from '@/lib/gorgias/widgetData';
 import { GORGIAS_SIDEBAR_CARD_TITLE, GORGIAS_SIDEBAR_ROW_LABELS } from '@/lib/support/gorgias/registerSidebarWidget';
 import { env } from '@/lib/utils/env';
+
+const BRAND_WORDMARK_DATA_URI = `data:image/svg+xml;base64,${readFileSync(
+  resolve(process.cwd(), 'public/brand/unauth-r1/unauth-r1-wordmark-white.svg'),
+).toString('base64')}`;
 
 /**
  * HTML preview of the Gorgias sidebar widget (opt-in via ?format=html). The
@@ -67,7 +73,8 @@ function baseStyles(): string {
     .cta { display: block; margin-top: 12px; text-align: center; padding: 8px 10px;
            border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none;
            background: #c8763a; color: #fff; }
-    .brand { font-size: 10px; color: #6b5c54; margin-top: 10px; text-align: right; }
+    .brand { margin-top: 10px; text-align: right; }
+    .brand img { display: inline-block; width: 64px; height: auto; }
     .watchlist { font-size: 12px; margin-top: 6px; }
     .warn { color: #f2994a; font-weight: 600; font-size: 12px; margin-top: 6px; }
     .context-summary { font-size: 12px; opacity: 0.85; margin-bottom: 10px; line-height: 1.4; }
@@ -97,7 +104,7 @@ function page(inner: string): string {
     <div class="title">${escapeHtml(GORGIAS_SIDEBAR_CARD_TITLE)}</div>
     ${inner}
   </div>
-  <p class="brand">Unauth</p>
+  <div class="brand"><img src="${BRAND_WORDMARK_DATA_URI}" alt="Unauth" /></div>
 </body>
 </html>`;
 }

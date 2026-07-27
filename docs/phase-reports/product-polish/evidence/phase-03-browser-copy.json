@@ -1,0 +1,27 @@
+{
+  "phase": 3,
+  "status": "PASS",
+  "route": "/landing",
+  "seed": "Phase 2 marketing fixture",
+  "renderedTextScan": {
+    "rawUuidCount": 0,
+    "enumLikeValues": [],
+    "currencyUnitLeakageCount": 0,
+    "staleRouteCount": 0,
+    "prohibitedNounCount": 0,
+    "providerCasing": {
+      "renderedGorgias": "Gorgias",
+      "lowercaseProviderMatches": 0
+    }
+  },
+  "fixtures": {
+    "pluralisation": "3 cases",
+    "unavailable": "Unavailable",
+    "error": "Could not load",
+    "moneyRoundTrip": {
+      "input": "55.00 GBP",
+      "minor": 5500,
+      "formatted": "55.00"
+    }
+  }
+}

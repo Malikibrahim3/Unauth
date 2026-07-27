@@ -4,23 +4,23 @@
   "description": "Order identity review for ecommerce merchants.",
   "start_url": "/dashboard",
   "display": "standalone",
-  "background_color": "#F4F0E8",
-  "theme_color": "#8A2828",
+  "background_color": "#FAFAFA",
+  "theme_color": "#202020",
   "icons": [
     {
-      "src": "/icon-192.png",
+      "src": "/brand/unauth-r1/generated/pwa-icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/brand/unauth-r1/generated/pwa-icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icon-512-maskable.png",
+      "src": "/brand/unauth-r1/generated/pwa-icon-maskable-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

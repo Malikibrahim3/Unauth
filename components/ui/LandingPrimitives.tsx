@@ -192,7 +192,7 @@ export type ThreadPanelMessage = {
 };
 
 export function ThreadPanel({
-  channel = 'Thread in #claims',
+  channel = 'Thread in #cases',
   messages,
   className,
 }: {

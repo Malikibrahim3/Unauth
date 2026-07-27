@@ -445,6 +445,218 @@ const CASES = [
     ruleName: 'Supplier listing mismatch',
     recovery: { type: 'supplier_defect', owner: 'supplier', status: 'draft', min: 20, max: 67.45 },
   },
+
+  /*
+   * ── Closed cases inside the reporting window ─────────────────────────────
+   *
+   * Reporting reads canonical decision/outcome rows, and only closed cases have
+   * them. Before these existed the only three outcome-bearing cases sat 45–54
+   * days back and totalled £58.25, so /dashboard and /reports correctly rendered
+   * "no canonical financial entries" at every range and no chart could be
+   * exercised.
+   *
+   * These are dated 3–28 days back so 7d, 30d and 90d all resolve, and they span
+   * all four outcome types (loss, recovered, prevented, written_off) so the
+   * value strip, the exposure/recovered trend and the loss-cause ranking each
+   * have something real to draw. Outcomes are only ever attached to a
+   * `resolved_*` status — an in-flight case must not carry a final outcome.
+   */
+  {
+    key: 'closed-carrier-loss-recent',
+    customer: 'maya',
+    claimType: 'item_not_received',
+    status: 'resolved_refunded',
+    requestedAction: 'refund',
+    amount: 154.8,
+    orderDaysAgo: 26,
+    ticketDaysAgo: 3,
+    fulfillmentState: 'delivered',
+    reason: 'Depot scan confirmed the parcel was lost in transit.',
+    subject: 'Lost in transit — refunded',
+    lossAttribution: 'carrier_loss',
+    confidence: 'high',
+    recoverability: 'recoverable',
+    recoveryOwner: 'carrier',
+    requiredEvidence: ['carrier_loss_confirmation'],
+    recoveryNextAction: 'Carrier claim submitted.',
+    nextAction: 'Closed after refund.',
+    nextActionReason: 'Carrier loss confirmed.',
+    recommendedAction: 'approve_refund',
+    ruleName: 'Confirmed carrier loss',
+    outcome: { decision: 'approved', outcome: 'loss', amountRefunded: 154.8, followed: true },
+    recovery: { type: 'carrier_claim', owner: 'carrier', status: 'submitted', min: 90, max: 154.8 },
+  },
+  {
+    key: 'closed-policy-denied',
+    customer: 'jonas',
+    claimType: 'return_abuse',
+    status: 'resolved_denied',
+    requestedAction: 'refund',
+    amount: 96.5,
+    orderDaysAgo: 40,
+    ticketDaysAgo: 5,
+    fulfillmentState: 'delivered',
+    reason: 'Request fell outside the returns window with delivery confirmed.',
+    subject: 'Outside returns window',
+    lossAttribution: 'merchant_policy',
+    confidence: 'high',
+    recoverability: 'not_recoverable',
+    recoveryOwner: 'merchant',
+    requiredEvidence: ['delivery_confirmation'],
+    recoveryNextAction: 'No recovery route.',
+    nextAction: 'Closed under policy.',
+    nextActionReason: 'Policy window had elapsed.',
+    recommendedAction: 'deny_under_policy',
+    ruleName: 'Returns window elapsed',
+    outcome: { decision: 'denied', outcome: 'legitimate', canonicalOutcome: 'prevented', amountRefunded: 96.5, followed: true },
+  },
+  {
+    key: 'closed-warehouse-recovered',
+    customer: 'omar',
+    claimType: 'wrong_item',
+    status: 'resolved_exchanged',
+    requestedAction: 'replacement',
+    amount: 128.4,
+    orderDaysAgo: 34,
+    ticketDaysAgo: 8,
+    fulfillmentState: 'delivered',
+    reason: 'Pick-pack record showed the wrong SKU was shipped.',
+    subject: 'Mispick recovered from warehouse',
+    lossAttribution: 'warehouse_mispick',
+    confidence: 'high',
+    recoverability: 'recoverable',
+    recoveryOwner: 'warehouse',
+    requiredEvidence: ['pick_pack_record'],
+    recoveryNextAction: 'Warehouse credit received.',
+    nextAction: 'Closed after replacement.',
+    nextActionReason: 'Warehouse accepted the mispick.',
+    recommendedAction: 'approve_replacement',
+    ruleName: 'Warehouse mispick replacement',
+    outcome: { decision: 'approved', outcome: 'recovered', amountRefunded: 128.4, followed: true },
+    recovery: { type: 'warehouse_error', owner: 'warehouse', status: 'paid', min: 128.4, max: 128.4, recovered: 128.4 },
+  },
+  {
+    key: 'closed-damage-refunded',
+    customer: 'zara',
+    claimType: 'damaged',
+    status: 'resolved_refunded',
+    requestedAction: 'refund',
+    amount: 78.25,
+    orderDaysAgo: 30,
+    ticketDaysAgo: 11,
+    fulfillmentState: 'delivered',
+    reason: 'Packaging photos showed crush damage in transit.',
+    subject: 'Damaged on arrival — refunded',
+    lossAttribution: 'carrier_damage',
+    confidence: 'medium',
+    recoverability: 'possibly_recoverable',
+    recoveryOwner: 'carrier',
+    requiredEvidence: ['damage_photos'],
+    recoveryNextAction: 'Carrier damage claim opened.',
+    nextAction: 'Closed after refund.',
+    nextActionReason: 'Damage evidence was accepted.',
+    recommendedAction: 'approve_refund',
+    ruleName: 'Carrier damage with photo evidence',
+    outcome: { decision: 'approved', outcome: 'loss', amountRefunded: 78.25, followed: true },
+    recovery: { type: 'carrier_claim', owner: 'carrier', status: 'waiting_response', min: 40, max: 78.25 },
+  },
+  {
+    key: 'closed-supplier-credit-paid',
+    customer: 'felix',
+    claimType: 'not_as_described',
+    status: 'resolved_refunded',
+    requestedAction: 'refund',
+    amount: 112.6,
+    orderDaysAgo: 44,
+    ticketDaysAgo: 14,
+    fulfillmentState: 'delivered',
+    reason: 'Supplier confirmed a batch defect and issued credit.',
+    subject: 'Batch defect — supplier credited',
+    lossAttribution: 'supplier_defect',
+    confidence: 'high',
+    recoverability: 'recoverable',
+    recoveryOwner: 'supplier',
+    requiredEvidence: ['supplier_batch_report'],
+    recoveryNextAction: 'Supplier credit reconciled.',
+    nextAction: 'Closed after refund.',
+    nextActionReason: 'Supplier accepted the defect.',
+    recommendedAction: 'approve_refund_recover_supplier',
+    ruleName: 'Supplier batch defect',
+    outcome: { decision: 'approved', outcome: 'recovered', amountRefunded: 112.6, followed: true },
+    recovery: { type: 'supplier_defect', owner: 'supplier', status: 'paid', min: 112.6, max: 112.6, recovered: 112.6 },
+  },
+  {
+    key: 'closed-fraud-prevented',
+    customer: 'imani',
+    claimType: 'return_abuse',
+    status: 'resolved_denied',
+    requestedAction: 'refund',
+    amount: 189.9,
+    orderDaysAgo: 52,
+    ticketDaysAgo: 18,
+    fulfillmentState: 'delivered',
+    reason: 'Fourth non-return refund request in ninety days.',
+    subject: 'Repeat returnless refund pattern',
+    lossAttribution: 'customer_claim',
+    confidence: 'high',
+    recoverability: 'not_recoverable',
+    recoveryOwner: 'merchant',
+    requiredEvidence: ['delivery_confirmation', 'prior_case_history'],
+    recoveryNextAction: 'No recovery route.',
+    nextAction: 'Closed after review.',
+    nextActionReason: 'Pattern review supported the denial.',
+    recommendedAction: 'manual_review',
+    ruleName: 'Repeat returnless refund pattern',
+    outcome: { decision: 'denied', outcome: 'suspected_fraud', canonicalOutcome: 'prevented', amountRefunded: 189.9, followed: true },
+  },
+  {
+    key: 'closed-3pl-written-off',
+    customer: 'nina',
+    claimType: 'other',
+    status: 'resolved_refunded',
+    requestedAction: 'store_credit',
+    amount: 41.75,
+    orderDaysAgo: 55,
+    ticketDaysAgo: 24,
+    fulfillmentState: 'delivered',
+    reason: '3PL missed the dispatch window; credit issued as goodwill.',
+    subject: 'Late dispatch — credit issued',
+    lossAttribution: 'three_pl_late_dispatch',
+    confidence: 'medium',
+    recoverability: 'not_recoverable',
+    recoveryOwner: 'three_pl',
+    requiredEvidence: ['dispatch_timestamp'],
+    recoveryNextAction: 'Below the 3PL claim threshold.',
+    nextAction: 'Closed with store credit.',
+    nextActionReason: 'Value sat under the recovery threshold.',
+    recommendedAction: 'offer_store_credit',
+    ruleName: '3PL dispatch SLA breach',
+    outcome: { decision: 'approved', outcome: 'loss', canonicalOutcome: 'written_off', amountRefunded: 41.75, followed: false },
+  },
+  {
+    key: 'closed-packaging-loss',
+    customer: 'leah',
+    claimType: 'damaged',
+    status: 'resolved_refunded',
+    requestedAction: 'replacement',
+    amount: 63.4,
+    orderDaysAgo: 61,
+    ticketDaysAgo: 28,
+    fulfillmentState: 'delivered',
+    reason: 'Inadequate packaging for a fragile SKU.',
+    subject: 'Packaging failure — replaced',
+    lossAttribution: 'packaging_failure',
+    confidence: 'high',
+    recoverability: 'not_recoverable',
+    recoveryOwner: 'merchant',
+    requiredEvidence: ['damage_photos'],
+    recoveryNextAction: 'Prevention change logged.',
+    nextAction: 'Closed after replacement.',
+    nextActionReason: 'Own-process failure, no external route.',
+    recommendedAction: 'approve_replacement',
+    ruleName: 'Packaging failure on fragile SKU',
+    outcome: { decision: 'approved', outcome: 'loss', amountRefunded: 63.4, followed: true },
+  },
 ];
 
 const PARTNERS = [
@@ -902,14 +1114,6 @@ function buildOutcomeRows() {
 function buildRecoveryRows(merchantId) {
   return CASES.filter((casePlan) => casePlan.recovery).map((casePlan) => {
     const recovery = casePlan.recovery;
-    const amountSoughtMinor = Math.round(Math.max(recovery.max, recovery.recovered ?? 0) * 100);
-    const amountRecoveredMinor = Math.round((recovery.recovered ?? 0) * 100);
-    const amountApprovedMinor = ['approved', 'partially_approved', 'paid'].includes(recovery.status)
-      ? amountSoughtMinor
-      : 0;
-    const amountWrittenOffMinor = recovery.status === 'closed_unrecoverable'
-      ? Math.max(amountSoughtMinor - amountRecoveredMinor, 0)
-      : 0;
     const missingEvidence = recovery.status === 'evidence_needed' ? casePlan.requiredEvidence.slice(0, 2) : [];
     return {
       id: uuid(`recovery:${casePlan.key}`),
@@ -925,10 +1129,10 @@ function buildRecoveryRows(merchantId) {
       estimated_recoverable_min: recovery.min,
       estimated_recoverable_max: recovery.max,
       amount_recovered: recovery.recovered ?? null,
-      amount_sought_minor: amountSoughtMinor,
-      amount_approved_minor: amountApprovedMinor,
-      amount_recovered_minor: amountRecoveredMinor,
-      amount_written_off_minor: amountWrittenOffMinor,
+      // recovery_cases carries decimal amounts only — there are no *_minor
+      // integer columns, and approved / written-off amounts are not modelled on
+      // this table. Writing them aborts the seeder before it reaches the
+      // canonical decision/outcome rows that reporting depends on.
       currency: 'GBP',
       deadline_at: daysFromAnchorIso(recovery.status === 'chase_due' ? 1 : 14, 17),
       next_chase_at: recovery.status === 'chase_due' ? daysAgoIso(1, 9) : daysFromAnchorIso(4, 9),
@@ -1000,7 +1204,7 @@ function buildCanonicalDecisionRows(merchantId) {
 
 function buildCanonicalOutcomeRows(merchantId) {
   return CASES.filter((c) => c.outcome).map((c) => ({ id: uuid(`canonical-outcome:${c.key}`), merchant_id: merchantId,
-    support_payout_case_id: uuid(`case:${c.key}`), outcome_type: c.outcome.outcome,
+    support_payout_case_id: uuid(`case:${c.key}`), outcome_type: c.outcome.canonicalOutcome ?? c.outcome.outcome,
     amount_minor: Math.round((c.outcome.amountRefunded ?? c.outcome.amountRecovered ?? 0) * 100), currency: 'GBP', actor_type: 'demo_seed',
     reason: `Sample operational outcome for ${c.subject}.`, metadata: { seed: SEED_TAG, sample_data: true },
     idempotency_key: `${SEED_PREFIX}:outcome:${c.key}`, effective_at: daysAgoIso(Math.max(1, c.ticketDaysAgo - 4), 16), recorded_at: daysAgoIso(Math.max(1, c.ticketDaysAgo - 4), 16) }));

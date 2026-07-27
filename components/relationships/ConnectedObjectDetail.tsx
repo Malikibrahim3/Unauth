@@ -143,7 +143,7 @@ export function ConnectedObjectDetail({
           </p>
           </AuthenticatedPanel>
         </div>
-      <AuthenticatedPanel title="Evidence used by payout cases" capabilityId="object.evidence">
+      <AuthenticatedPanel title="Evidence used by cases" capabilityId="object.evidence">
         {object.evidence.length ? (
           <div className="grid divide-y divide-[var(--ua-border-subtle)] sm:grid-cols-2 sm:divide-x sm:divide-y-0">
             {object.evidence.map((item) => (

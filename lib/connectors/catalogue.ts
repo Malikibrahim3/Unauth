@@ -243,7 +243,7 @@ export async function loadConnectorCatalogue(
     return {
       id: provider.id,
       name: provider.name,
-      description: provider.description ?? 'Provider-neutral source connection.',
+      description: provider.description ?? 'Connection to this source.',
       category: provider.category,
       authMode: provider.authMode,
       stage: deriveProviderDisplayStage(provider),

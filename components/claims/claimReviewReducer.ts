@@ -1,4 +1,4 @@
-import { loadClaimDraft } from '@/components/claims/claimReviewDraft';
+import type { ClaimReviewDraft } from '@/components/claims/claimReviewDraft';
 import { DEFAULT_META_ROWS } from '@/components/claims/claimReviewLabels';
 import { defaultRailOpen, normalizeMetaRows } from '@/components/claims/claimReviewLogic';
 
@@ -63,38 +63,37 @@ export type ClaimReviewAction =
   | { type: 'openRail'; section: string }
   | { type: 'setRailOpen'; railOpen: Record<string, boolean> };
 
-function readDraftField<T>(draft: ReturnType<typeof loadClaimDraft>, key: string, fallback: T): T {
+function readDraftField<T>(draft: Partial<ClaimReviewDraft> | null, key: keyof ClaimReviewDraft, fallback: T): T {
   if (!draft || typeof draft !== 'object') return fallback;
   const value = (draft as Record<string, unknown>)[key];
   return (value as T) ?? fallback;
 }
 
-export function createClaimReviewInitialState(profileId: string, initialClaimId?: string | null): ClaimReviewState {
-  const draft = loadClaimDraft(profileId);
-  const metaRows =
-    draft?.metaRows && Array.isArray(draft.metaRows) && draft.metaRows.length > 0
-      ? normalizeMetaRows(draft.metaRows)
-      : DEFAULT_META_ROWS;
-
+/**
+ * Keep the first render deterministic. Browser storage is restored in an
+ * effect by the workbench so a saved draft cannot change server-rendered form
+ * controls during hydration.
+ */
+export function createClaimReviewInitialState(_profileId: string, initialClaimId?: string | null): ClaimReviewState {
   return {
-    selectedOrderId: readDraftField(draft, 'selectedOrderId', ''),
-    claimType: (readDraftField(draft, 'claimType', 'missing_parcel') as ClaimType) ?? 'missing_parcel',
-    customerReason: readDraftField(draft, 'customerReason', ''),
-    notes: readDraftField(draft, 'notes', ''),
-    claimId: initialClaimId ?? readDraftField(draft, 'claimId', ''),
-    decision: (readDraftField(draft, 'decision', 'escalated') as Decision) ?? 'escalated',
-    outcome: (readDraftField(draft, 'outcome', 'pending') as Outcome) ?? 'pending',
-    decisionAmount: readDraftField(draft, 'decisionAmount', ''),
-    evidenceType: (readDraftField(draft, 'evidenceType', 'tracking') as EvidenceType) ?? 'tracking',
-    source: (readDraftField(draft, 'source', 'manual') as EvidenceSource) ?? 'manual',
-    evidenceUrl: readDraftField(draft, 'evidenceUrl', ''),
-    evidenceHash: readDraftField(draft, 'evidenceHash', ''),
-    metaRows,
+    selectedOrderId: '',
+    claimType: 'missing_parcel',
+    customerReason: '',
+    notes: '',
+    claimId: initialClaimId ?? '',
+    decision: '' as Decision,
+    outcome: 'pending',
+    decisionAmount: '',
+    evidenceType: 'tracking',
+    source: 'manual',
+    evidenceUrl: '',
+    evidenceHash: '',
+    metaRows: DEFAULT_META_ROWS,
     showMeta: false,
     busy: false,
     message: '',
     messageTone: 'neutral',
-    statusToSet: (readDraftField(draft, 'statusToSet', 'pending') as ClaimStatus) ?? 'pending',
+    statusToSet: 'pending',
     statusNote: '',
     reopenNote: '',
     reverseDecision: 'approved',
@@ -105,14 +104,46 @@ export function createClaimReviewInitialState(profileId: string, initialClaimId?
     auditTab: 'timeline',
     claimFormOpen: false,
     railOpen: defaultRailOpen(),
-    manualOrderRef: readDraftField(draft, 'manualOrderRef', ''),
-    manualOrderSource: readDraftField(draft, 'manualOrderSource', 'manual'),
-    manualModeExplicit: readDraftField(draft, 'manualModeExplicit', false),
-    orderValue: readDraftField(draft, 'orderValue', ''),
+    manualOrderRef: '',
+    manualOrderSource: 'manual',
+    manualModeExplicit: false,
+    orderValue: '',
     snoozeDays: '3',
     snoozeReason: 'Awaiting carrier or customer evidence',
     shopDomain: '',
   };
+}
+
+/** Restore only persisted fields after hydration; transient UI state stays local. */
+export function draftPatchFromSavedDraft(
+  draft: Partial<ClaimReviewDraft> | null,
+  initialClaimId?: string | null,
+): Partial<ClaimReviewState> {
+  const patch: Partial<ClaimReviewState> = {
+    selectedOrderId: readDraftField(draft, 'selectedOrderId', ''),
+    claimType: readDraftField(draft, 'claimType', 'missing_parcel') as ClaimType,
+    customerReason: readDraftField(draft, 'customerReason', ''),
+    notes: readDraftField(draft, 'notes', ''),
+    claimId: initialClaimId ?? readDraftField(draft, 'claimId', ''),
+    decision: readDraftField(draft, 'decision', '' as Decision) as Decision,
+    outcome: readDraftField(draft, 'outcome', 'pending') as Outcome,
+    decisionAmount: readDraftField(draft, 'decisionAmount', ''),
+    evidenceType: readDraftField(draft, 'evidenceType', 'tracking') as EvidenceType,
+    source: readDraftField(draft, 'source', 'manual') as EvidenceSource,
+    evidenceUrl: readDraftField(draft, 'evidenceUrl', ''),
+    evidenceHash: readDraftField(draft, 'evidenceHash', ''),
+    statusToSet: readDraftField(draft, 'statusToSet', 'pending') as ClaimStatus,
+    manualOrderRef: readDraftField(draft, 'manualOrderRef', ''),
+    manualOrderSource: readDraftField(draft, 'manualOrderSource', 'manual'),
+    manualModeExplicit: readDraftField(draft, 'manualModeExplicit', false),
+    orderValue: readDraftField(draft, 'orderValue', ''),
+  };
+
+  if (Array.isArray(draft?.metaRows) && draft.metaRows.length > 0) {
+    patch.metaRows = normalizeMetaRows(draft.metaRows);
+  }
+
+  return patch;
 }
 
 export function claimReviewReducer(state: ClaimReviewState, action: ClaimReviewAction): ClaimReviewState {

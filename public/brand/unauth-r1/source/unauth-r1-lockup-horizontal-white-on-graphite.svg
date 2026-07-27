@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 56" width="600" height="112">
+<rect width="300" height="56" fill="#202020"></rect>
+  <g transform="translate(0,-4)">
+    <g fill="none" stroke="#FAFAFA" stroke-width="8" stroke-linecap="butt">
+      <path d="M16 8V18"></path>
+      <path d="M16 26v10a16 16 0 0 0 32 0V8"></path>
+    </g>
+  </g>
+  <text x="72" y="42" font-family="Instrument Sans, sans-serif" font-weight="600" font-size="46" letter-spacing="-1" fill="#FAFAFA">Unauth</text>
+</svg>

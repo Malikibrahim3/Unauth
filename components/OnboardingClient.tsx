@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Check, ShoppingBag, Headphones, Store, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { ButtonLink } from '@/components/ui/ButtonLink';
+import { UnauthLogo } from '@/components/ui/UnauthLogo';
 import { ORDER_VOLUME_OPTIONS, LOSS_CONCERN_OPTIONS } from '@/lib/constants/merchantProfile';
 import {
   createInitialOnboardingState,
@@ -186,10 +187,7 @@ export default function OnboardingClient({
   return (
     <main className="min-h-screen" style={{ background: 'var(--ua-canvas)' }}>
       <header className="flex h-12 items-center justify-between border-b border-[var(--ua-border-subtle)] bg-[var(--ua-shell)] px-4 sm:px-5">
-        <div className="flex items-center gap-2 text-[length:var(--ua-text-caption-size)] font-semibold text-[var(--ua-text-primary)]">
-          <span className="grid h-7 w-7 place-items-center rounded-[var(--ua-radius-control)] bg-[var(--ua-surface-inverse)] text-[10px] font-bold text-[var(--ua-text-inverse)]">U</span>
-          Unauth
-        </div>
+        <UnauthLogo kind="lockup" tone="auto" height={20} alt="Unauth" />
         <span className="text-[length:var(--ua-text-micro-size)] font-semibold text-[var(--ua-text-tertiary)]">Workspace setup</span>
       </header>
       <div className="mx-auto max-w-[1500px] px-3 pb-7 pt-4 sm:px-5">

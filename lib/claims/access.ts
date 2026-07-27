@@ -12,6 +12,7 @@ export type ClaimForAction = {
   detection_method?: string | null;
   reason_raw?: string | null;
   reason_normalized?: string | null;
+  requested_action?: string | null;
   amount_at_risk?: number | null;
   currency?: string | null;
   requires_review?: boolean | null;
@@ -31,7 +32,7 @@ type ClaimLoadResult =
   | { claim: null; denied: 'not_found' | 'forbidden' };
 
 const CLAIM_SELECT =
-  'id,merchant_id,source_ticket_id,source_order_id,identity_id,claim_type,status,detection_method,reason_raw,reason_normalized,amount_at_risk,currency,requires_review,submitted_at,created_at,updated_at,first_viewed_at,assigned_to,assigned_at,snoozed_until,state_version';
+  'id,merchant_id,source_ticket_id,source_order_id,identity_id,claim_type,status,detection_method,reason_raw,reason_normalized,requested_action,amount_at_risk,currency,requires_review,submitted_at,created_at,updated_at,first_viewed_at,assigned_to,assigned_at,snoozed_until,state_version';
 
 async function fetchClaim(serviceClient: any, claimId: string): Promise<ClaimForAction | null> {
   const { data, error } = await serviceClient
@@ -101,15 +102,31 @@ export async function updateClaimSnooze(
   return data;
 }
 
+/**
+ * The two halves of `loadClaimForMerchant`, exposed separately so a caller that
+ * already has an independent permission query in flight can overlap the two
+ * round trips. Authorisation is unchanged: a claim is only ever returned when
+ * its `merchant_id` matches the caller's.
+ */
+export async function fetchClaimById(serviceClient: any, claimId: string) {
+  return fetchClaim(serviceClient, claimId);
+}
+
+export function authorizeClaimForMerchant(
+  claim: Awaited<ReturnType<typeof fetchClaim>>,
+  merchantId: string,
+): ClaimLoadResult {
+  if (!claim) return { claim: null, denied: 'not_found' };
+  if (claim.merchant_id === merchantId) return { claim, denied: null };
+  return { claim: null, denied: 'forbidden' };
+}
+
 export async function loadClaimForMerchant(
   serviceClient: any,
   claimId: string,
   merchantId: string,
 ): Promise<ClaimLoadResult> {
-  const claim = await fetchClaim(serviceClient, claimId);
-  if (!claim) return { claim: null, denied: 'not_found' };
-  if (claim.merchant_id === merchantId) return { claim, denied: null };
-  return { claim: null, denied: 'forbidden' };
+  return authorizeClaimForMerchant(await fetchClaimById(serviceClient, claimId), merchantId);
 }
 
 export async function updateClaimStatus(
