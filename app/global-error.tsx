@@ -66,29 +66,20 @@ export default function GlobalError({
             borderBottom: `1px solid ${BORDER_SUBTLE}`,
           }}
         >
-          <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600 }}>
-            <span
-              style={{
-                width: 22,
-                height: 22,
-                display: 'inline-grid',
-                placeItems: 'center',
-                borderRadius: RADIUS_CONTROL,
-                background: ACTION,
-                color: ACTION_FG,
-                fontSize: 11,
-                fontWeight: 600,
-              }}
-            >
-              U
-            </span>
-            Unauth
-          </span>
+          {/* Native image keeps the root failure screen independent of Next's image runtime. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/brand/unauth-r1/unauth-r1-lockup-graphite.svg"
+            alt="Unauth"
+            width={107}
+            height={20}
+            style={{ display: 'block', width: 107, height: 20 }}
+          />
           <span style={{ color: INK_TERTIARY, fontSize: 11, fontWeight: 500 }}>System status</span>
         </header>
         <main style={{ maxWidth: 1500, margin: '0 auto', padding: 20 }}>
           {/* Sentence case, no letter spacing (§3.2). */}
-          <p style={{ fontSize: 11, fontWeight: 500, color: INK_TERTIARY, margin: 0 }}>Recoverable error</p>
+          <p style={{ fontSize: 11, fontWeight: 500, color: INK_TERTIARY, margin: 0 }}>We could not load this page</p>
           <h1 style={{ fontSize: 18, lineHeight: '24px', fontWeight: 600, letterSpacing: 0, margin: '4px 0' }}>
             Something went wrong
           </h1>
@@ -144,7 +135,7 @@ export default function GlobalError({
                   border: `1px solid ${BORDER}`,
                 }}
               >
-                Go to dashboard
+                Go to Overview
               </a>
             </div>
             {error?.digest ? (

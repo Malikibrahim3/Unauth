@@ -104,8 +104,13 @@ export async function markClaimViewed(claimId: string) {
   return { message: result.ok ? 'Claim viewed' : result.message };
 }
 
-export async function fetchClaimDecision(claimId: string) {
-  const res = await fetch(`/api/claims/${claimId}/decision`, { method: 'POST' });
+/**
+ * RUN-04: `mode: 'read'` is the default because opening a case is a read.
+ * `mode: 'refresh'` is the explicit merchant command and is the only path that
+ * writes.
+ */
+export async function fetchClaimDecision(claimId: string, mode: 'read' | 'refresh' = 'read') {
+  const res = await fetch(`/api/claims/${claimId}/decision`, { method: mode === 'refresh' ? 'POST' : 'GET' });
   const data = record(await res.json().catch(() => ({})));
   if (!res.ok) {
     return { ok: false as const, message: typeof data.error === 'string' ? data.error : 'Failed to load recommendation', data: null };

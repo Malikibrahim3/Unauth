@@ -44,7 +44,7 @@ function activityLabel(item: CatalogueRowItem) {
   if (item.lastDataReceivedAt) return formatDateTime(item.lastDataReceivedAt);
   if (item.badge === "sync_pending") return "Initial import pending";
   if (item.freshness.confidence === "unavailable") return "On-demand check";
-  return "No data yet";
+  return "No activity yet";
 }
 
 export function ConnectorRow({ item }: { item: CatalogueRowItem }) {

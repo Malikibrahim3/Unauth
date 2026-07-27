@@ -29,38 +29,9 @@
   box-shadow: var(--ua-shadow-focus);
 }
 
-.ua-app .ua-mark,
-.ua-auth-surface .ua-mark {
-  --ua-logo-ink: var(--ua-text-primary);
-  --ua-logo-dot: var(--ua-action-primary);
-  font-family: var(--ua-font-sans);
-}
-
-.ua-app .ua-mark.primary,
-.ua-app .ua-mark.mono-dark,
-.ua-auth-surface .ua-mark.primary,
-.ua-auth-surface .ua-mark.mono-dark {
-  --ua-logo-ink: var(--ua-text-primary);
-  --ua-logo-dot: var(--ua-text-primary);
-}
-
-.ua-app .ua-mark.reversed,
-.ua-app .ua-mark.mono-light,
-.ua-auth-surface .ua-mark.reversed,
-.ua-auth-surface .ua-mark.mono-light {
-  --ua-logo-ink: var(--ua-text-inverse);
-  --ua-logo-dot: var(--ua-text-inverse);
-}
-
 .ua-app .ua-operational-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: var(--ua-border-strong) transparent;
-}
-
-:root[data-theme="dark"] .ua-app .ua-mark,
-:root[data-theme="dark"] .ua-auth-surface .ua-mark {
-  --ua-logo-ink: var(--ua-text-primary);
-  --ua-logo-dot: var(--ua-action-primary);
 }
 
 :root[data-theme="dark"] .ua-app ::selection,
@@ -80,5 +51,50 @@
     animation-duration: .01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: .01ms !important;
+  }
+}
+
+/*
+ * Forced-colour mode must preserve the product's state and focus cues when
+ * pastel fills and hairline borders are remapped by the operating system.
+ * Keep the override semantic: system colours carry the user's contrast
+ * choices, while content and layout remain unchanged.
+ */
+@media (forced-colors: active) {
+  .ua-app :where(button, [role="button"], input, select, textarea) {
+    border-color: ButtonText;
+  }
+
+  .ua-app :where(button, a, input, select, textarea, [tabindex]):focus-visible,
+  .ua-auth-surface :where(button, a, input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+    box-shadow: none;
+  }
+
+  .ua-app :where([aria-selected="true"], [aria-pressed="true"]) {
+    background: Highlight;
+    color: HighlightText;
+    border-color: Highlight;
+  }
+
+  .ua-app .ua-card,
+  .ua-app .ua-section-card,
+  .ua-app .ua-data-table,
+  .ua-app .ua-status-badge,
+  .ua-app table,
+  .ua-app th,
+  .ua-app td,
+  .ua-desktop-required {
+    border-color: CanvasText;
+  }
+
+  .ua-app .ua-status-badge {
+    background: Canvas;
+    color: CanvasText;
+  }
+
+  .ua-app .ua-status-badge__dot {
+    background: currentColor;
   }
 }

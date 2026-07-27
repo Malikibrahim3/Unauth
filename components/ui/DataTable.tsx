@@ -1,19 +1,12 @@
 "use client";
 
 import { ChevronDown, ChevronsUpDown, ChevronUp } from "lucide-react";
+import Link from "next/link";
 import { type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { RowActionsMenu, type RowAction } from "@/components/ui/RowActionsMenu";
-import {
-  DATA_TABLE_EMPTY_STYLE,
-  DATA_TABLE_HEAD_ROW_STYLE,
-  DATA_TABLE_HEADER_CELL_BASE,
-  DATA_TABLE_SKELETON_BAR_STYLE,
-  DATA_TABLE_SKELETON_CELL_STYLE,
-  DATA_TABLE_STYLE,
-} from "@/components/ui/dataTableStyles";
 
-interface Column<T> {
+export interface DataTableColumn<T> {
   key: string;
   header: string;
   align?: "left" | "right" | "center";
@@ -25,9 +18,10 @@ interface Column<T> {
 type TableDensity = "default" | "compact" | "relaxed";
 
 interface DataTableProps<T> {
-  columns: Column<T>[];
+  columns: DataTableColumn<T>[];
   rows: T[];
   getRowKey: (row: T) => string;
+  /** Handler for the explicit primary identity-cell button. Rows are never interactive. */
   onRowClick?: (row: T) => void;
   sortKey?: string;
   sortDir?: "asc" | "desc";
@@ -41,44 +35,33 @@ interface DataTableProps<T> {
   rowTestId?: string;
   /** Per-row action menu (WS4.2). Renders a hover/focus-revealed `⋯` menu in a trailing column. */
   rowActions?: (row: T) => RowAction[];
+  /** Optional real link in the primary identity cell. */
+  primaryColumnKey?: string;
+  getRowHref?: (row: T) => string;
+  /** Optional real button in the primary identity cell for contextual previews. */
+  primaryActionLabel?: (row: T) => string;
+  'aria-label'?: string;
 }
 
-const ROW_HEIGHT: Record<TableDensity, number> = {
-  compact: 40,
-  default: 52,
-  relaxed: 60,
-};
-
-const SKELETON_ROW_BORDER = {
-  borderBottom: "1px solid var(--ua-border-subtle)",
-} as const;
-const SORT_ICON_STYLE = { opacity: 1 } as const;
-const SORT_ICON_MUTED_STYLE = { opacity: 0.35 } as const;
-const ROW_TRANSITION = "background 120ms ease, box-shadow 120ms ease";
-
-function skeletonBarWidth(colIndex: number): string {
-  if (colIndex === 0) return "60%";
-  if (colIndex === 1) return "80%";
-  return "50%";
+function skeletonBarClass(colIndex: number): string {
+  if (colIndex === 0) return "ua-data-table__skeleton-bar--primary";
+  if (colIndex === 1) return "ua-data-table__skeleton-bar--secondary";
+  return "";
 }
 
 function SkeletonRows({ count = 6, cols }: { count?: number; cols: number }) {
   return (
     <>
       {Array.from({ length: count }).map((_, i) => (
-        <tr key={i} style={SKELETON_ROW_BORDER}>
+        <tr key={i} className="ua-data-table__skeleton-row">
           {Array.from({ length: cols }).map((_, j) => (
             <td
               key={j}
-              style={DATA_TABLE_SKELETON_CELL_STYLE}
-              aria-label="Loading row"
+              className="ua-data-table__skeleton-cell"
+              aria-hidden="true"
             >
               <div
-                className="skeleton"
-                style={{
-                  ...DATA_TABLE_SKELETON_BAR_STYLE,
-                  width: skeletonBarWidth(j),
-                }}
+                className={cn("skeleton ua-data-table__skeleton-bar", skeletonBarClass(j))}
                 aria-hidden="true"
               />
             </td>
@@ -97,28 +80,13 @@ function SortIcon({ active, dir }: { active: boolean; dir?: "asc" | "desc" }) {
       : ChevronDown;
   return (
     <Icon
-      className="ml-1 w-3 h-3 inline-block shrink-0 align-middle"
+      className={cn(
+        "ua-data-table__sort-icon shrink-0",
+        !active && "ua-data-table__sort-icon--muted",
+      )}
       aria-hidden="true"
-      style={active ? SORT_ICON_STYLE : SORT_ICON_MUTED_STYLE}
     />
   );
-}
-
-function headerCellStyle(
-  col: Column<unknown>,
-  sortable: boolean,
-): React.CSSProperties {
-  return {
-    ...DATA_TABLE_HEADER_CELL_BASE,
-    width: col.width,
-    textAlign:
-      col.align === "right"
-        ? "right"
-        : col.align === "center"
-          ? "center"
-          : "left",
-    userSelect: sortable ? "none" : undefined,
-  };
 }
 
 export function DataTable<T>({
@@ -136,29 +104,39 @@ export function DataTable<T>({
   emptyState,
   rowTestId,
   rowActions,
+  primaryColumnKey,
+  getRowHref,
+  primaryActionLabel,
+  'aria-label': ariaLabel = 'Data table',
 }: DataTableProps<T>) {
-  const rowH = ROW_HEIGHT[density];
   const totalCols = columns.length + (rowActions ? 1 : 0);
 
   return (
     <div
       className={cn(
-        "w-full overflow-x-auto rounded-[var(--ua-radius-surface)] border bg-[var(--ua-surface-primary)]",
+        "ua-data-table",
+        `ua-data-table--density-${density}`,
         className,
       )}
-      style={{ borderColor: "var(--ua-border-default)", boxShadow: "none" }}
+      role="region"
+      aria-label={ariaLabel}
+      aria-busy={loading || undefined}
     >
-      <table className="w-full border-separate" style={DATA_TABLE_STYLE}>
+      {loading ? <span className="sr-only" role="status">Loading table</span> : null}
+      <table className="ua-data-table__table">
         <thead>
-          <tr style={DATA_TABLE_HEAD_ROW_STYLE}>
+          <tr className="ua-data-table__head-row">
             {columns.map((col) => (
               <th
                 key={col.key}
                 scope="col"
-                style={headerCellStyle(
-                  col as Column<unknown>,
-                  Boolean(col.sortable && onSort),
+                className={cn(
+                  "ua-data-table__header-cell",
+                  col.align === "right" && "ua-data-table__header-cell--right",
+                  col.align === "center" && "ua-data-table__header-cell--center",
+                  col.sortable && onSort && "ua-data-table__header-cell--sortable",
                 )}
+                style={col.width ? { width: col.width } : undefined}
               >
                 {col.sortable && onSort ? (
                   <button
@@ -179,7 +157,7 @@ export function DataTable<T>({
               </th>
             ))}
             {rowActions ? (
-              <th scope="col" style={headerCellStyle({ key: "__actions", header: "", render: () => null, align: "right" } as Column<unknown>, false)}>
+              <th scope="col" className="ua-data-table__header-cell ua-data-table__header-cell--right">
                 <span className="sr-only">Actions</span>
               </th>
             ) : null}
@@ -193,10 +171,9 @@ export function DataTable<T>({
               <td colSpan={totalCols}>
                 {emptyState ?? (
                   <div
-                    className="flex items-center justify-center"
-                    style={DATA_TABLE_EMPTY_STYLE}
+                    className="ua-data-table__empty"
                   >
-                    No results
+                    No matching records
                   </div>
                 )}
               </td>
@@ -210,61 +187,47 @@ export function DataTable<T>({
                   key={key}
                   data-testid={onRowClick && rowTestId ? rowTestId : undefined}
                   data-row-key={onRowClick && rowTestId ? key : undefined}
-                  onClick={onRowClick ? () => onRowClick(row) : undefined}
-                  onKeyDown={
-                    onRowClick
-                      ? (event) => {
-                          if (event.key === "Enter" || event.key === " ") {
-                            event.preventDefault();
-                            onRowClick(row);
-                          }
-                        }
-                      : undefined
-                  }
-                  tabIndex={onRowClick ? 0 : undefined}
-                  aria-selected={onRowClick ? isSelected : undefined}
-                  style={{
-                    height: rowH,
-                    borderBottom: "1px solid var(--ua-border-subtle)",
-                    background: isSelected
-                      ? "var(--ua-surface-hover)"
-                      : "var(--ua-surface-primary)",
-                    cursor: onRowClick ? "pointer" : undefined,
-                    boxShadow: isSelected
-                      ? "inset 2px 0 0 var(--ua-action-primary)"
-                      : "none",
-                    transition: ROW_TRANSITION,
-                  }}
-                  className={
-                    onRowClick
-                      ? cn(
-                          "focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--ua-border-focus)]",
-                          !isSelected && "hover:bg-[var(--ua-surface-hover)]",
-                        )
-                      : undefined
-                  }
+                  aria-selected={selectedKey !== undefined ? isSelected : undefined}
+                  className={cn(
+                    "ua-data-table__row",
+                    isSelected && "ua-data-table__row--selected",
+                  )}
                 >
                   {columns.map((col) => (
                     <td
                       key={col.key}
-                      style={{
-                        padding: "0 var(--ua-space-4)",
-                        verticalAlign: "middle",
-                        textAlign:
-                          col.align === "right"
-                            ? "right"
-                            : col.align === "center"
-                              ? "center"
-                              : "left",
-                        color: "var(--ua-text-primary)",
-                      }}
+                      className={cn(
+                        "ua-data-table__cell",
+                        col.align === "right" && "ua-data-table__cell--right",
+                        col.align === "center" && "ua-data-table__cell--center",
+                      )}
                     >
-                      {col.render(row)}
+                      {getRowHref && col.key === (primaryColumnKey ?? columns[0]?.key) ? (
+                        <Link
+                          href={getRowHref(row)}
+                          className="inline-flex min-w-0 items-center text-left focus-visible:outline-none"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          {col.render(row)}
+                        </Link>
+                      ) : onRowClick && col.key === (primaryColumnKey ?? columns[0]?.key) && primaryActionLabel ? (
+                        <button
+                          type="button"
+                          className="block w-full min-w-0 text-left focus-visible:outline-none"
+                          aria-label={primaryActionLabel(row)}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onRowClick(row);
+                          }}
+                        >
+                          {col.render(row)}
+                        </button>
+                      ) : col.render(row)}
                     </td>
                   ))}
                   {rowActions ? (
                     <td
-                      style={{ padding: "0 var(--ua-space-3)", verticalAlign: "middle", textAlign: "right", width: 48 }}
+                      className="ua-data-table__actions-cell"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <RowActionsMenu actions={rowActions(row)} />

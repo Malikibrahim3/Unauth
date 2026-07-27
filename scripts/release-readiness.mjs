@@ -70,6 +70,7 @@ const checks = [
   ['Supabase contract', 'npm', ['run', 'audit:supabase-contract']],
   ['Canonical database fresh replay A', 'npm', ['run', 'verify:canonical-db']],
   ['Canonical database fresh replay B', 'npm', ['run', 'verify:canonical-db']],
+  ['Required-schema deploy preflight', 'npm', ['run', 'verify:schema-preflight']],
   ['Durable audit PostgreSQL runtime', 'npm', ['run', 'verify:durable-audit-runtime']],
   ['Two-merchant tenant boundary runtime', 'npm', ['run', 'verify:tenant-boundaries']],
   ['Webhook concurrency and replay runtime', 'npm', ['run', 'verify:webhook-event-safety']],
@@ -87,6 +88,13 @@ const checks = [
   ['Production build', 'npm', ['run', 'build']],
   ['Synthetic release browser fixture', 'npm', ['run', 'prepare:release-e2e']],
   ['Production browser, lifecycle, accessibility and performance suite', 'npm', ['run', 'test:release-browser']],
+  /*
+   * §3.5 of the product-polish specification: this gate must replay every phase
+   * the ledger claims is COMPLETE and fail when the ledger and the available
+   * phase manifests disagree. `--ledger` resolves the highest COMPLETE phase
+   * from the specification itself, so no phase number is hard-coded here.
+   */
+  ['Product-polish phase ledger replay', 'npm', ['run', 'verify:polish', '--', '--ledger']],
   ['Whitespace integrity', 'git', ['diff', '--check']],
 ];
 

@@ -57,8 +57,8 @@ export function resolvePrimaryAction(
   if (!claim) {
     return {
       key: 'none',
-      label: 'Select a claim',
-      reason: 'Choose a claim from the header switcher or review list.',
+      label: 'Select a case',
+      reason: 'Choose a case from the header switcher or review list.',
       cta: '—',
       railSection: null,
     };
@@ -67,7 +67,7 @@ export function resolvePrimaryAction(
     return {
       key: 'reopen',
       label: 'Closed from source',
-      reason: 'This claim is closed. New source-backed events or matched correspondence can update future context.',
+      reason: 'This case is closed. New source-backed events or matched correspondence can update future context.',
       cta: 'View audit',
       railSection: null,
     };
@@ -85,7 +85,7 @@ export function resolvePrimaryAction(
     return {
       key: 'decision',
       label: 'Await source-backed outcome',
-      reason: 'Claim outcomes and dispute statuses sync from connected providers or matched correspondence.',
+      reason: 'Case outcomes and chargeback statuses sync from connected providers or matched correspondence.',
       cta: 'View sources',
       railSection: 'evidence',
     };
@@ -111,7 +111,7 @@ export function resolvePrimaryAction(
   return {
     key: 'close',
     label: 'Evidence review complete',
-    reason: 'Identity evidence and merchant outcome are on record for this claim.',
+    reason: 'Identity evidence and merchant outcome are on record for this case.',
     cta: 'Next review',
     railSection: null,
   };

@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
-import { ChevronRight, Layers, Menu, X } from 'lucide-react';
+import { ChevronRight, Menu, X } from 'lucide-react';
+import { UnauthLogo } from '@/components/ui/UnauthLogo';
 import { FL_NAV, FL_ROUTES } from '../../_lib/foundationContent';
 import styles from './foundation.module.css';
 
@@ -29,8 +30,7 @@ export default function FoundationNav() {
       <header className={`${styles.heroNavbar} ${styles.heroNavbarLight}`}>
         <div className={styles.heroNavbarInner}>
           <Link href="/landing" prefetch={false} aria-label="Unauth home" className={styles.heroNavLogoGroup}>
-            <Layers className={styles.heroNavLogoIcon} strokeWidth={2} aria-hidden />
-            <span className={styles.heroLogo}>Unauth</span>
+            <UnauthLogo kind="lockup" tone="graphite" height={22} alt="" decorative />
           </Link>
 
           <div className={styles.heroNavActions}>

@@ -160,9 +160,9 @@ export function formatClaimDecisionRecommendation(
       };
     }
     return {
-      recommendationLabel: 'No rule matched',
+      recommendationLabel: 'No rule applies',
       ruleName: null,
-      summary: 'No merchant rule matched. Continue with standard review.',
+      summary: 'No rule applies. Continue with standard review.',
       matchedConditions: [],
       isNoMatch: true,
       isNoRules: false,

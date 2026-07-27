@@ -10,14 +10,16 @@ import {
   requirePagePermission,
 } from "@/lib/auth/requestContext";
 import { loadConnectorCatalogue } from "@/lib/connectors/catalogue";
+import { hasValidControlledRuntimeEvidence } from "@/lib/integrations/registry";
 import { getCachedConnectionState } from "@/lib/connections/getConnectionState";
 import { verifyMerchantLiveConnections } from "@/lib/connections/liveVerification";
 import {
   isLiveCredentialCheckSupported,
-  resolveEffectiveConnectionStatus,
   type EffectiveConnectionBadge,
 } from "@/lib/connections/effectiveStatus";
-import { resolveConnectionReadModel } from "@/lib/connections/readModel";
+// RUN-18: the validating entry point, so no consumer can skip the
+// impossible-state check.
+import { connectionReadModel } from "@/lib/connections/readModel";
 import { TABLES } from "@/lib/supabase/tables";
 import { ConnectionActions } from "@/components/integrations/ConnectionActions";
 import { Card, DataTableServer } from "@/components/ui";
@@ -95,20 +97,19 @@ export default async function ConnectionPage({
       : provider === "shipbob" || provider === "ups" || provider === "fedex"
         ? liveHealth?.[provider]
         : null;
-  let badge: EffectiveConnectionBadge;
-  if (isActiveProbedProvider && !liveResult && item.status === "connected") {
+  let badge: EffectiveConnectionBadge = "disconnected";
+  const probeExpectedButMissing = item.status === "connected";
+  if (isActiveProbedProvider && !liveResult && probeExpectedButMissing) {
     // A probe was expected but no checkable row was found — a data
     // inconsistency, not a normal freshness signal.
     item.status = "attention_required";
     badge = "not_syncing";
     item.lastError = "Live verification is unavailable. We will retry automatically.";
-  } else {
-    const effective = resolveEffectiveConnectionStatus(liveResult ?? null, item.syncState, item.freshness);
-    item.status = effective.bucket;
-    badge = effective.badge;
-    item.lastError = effective.note;
   }
-  const readModel = resolveConnectionReadModel({
+  // RUN-18: resolved once. The probe branch above is a genuinely different
+  // fact — an expected probe row was missing — and stays an explicit override
+  // rather than a second derivation of the same state.
+  const readModel = connectionReadModel({
     providerId: item.id,
     syncState: item.syncState,
     freshness: item.freshness,
@@ -116,6 +117,11 @@ export default async function ConnectionPage({
     lastVerifiedAt: item.lastVerifiedAt,
     importedRecords: item.importedRecords,
   });
+  if (!(isActiveProbedProvider && !liveResult && probeExpectedButMissing)) {
+    item.status = readModel.bucket;
+    badge = readModel.badge;
+    item.lastError = readModel.note;
+  }
   const [canManage, jobsResult, issuesResult] = await Promise.all([
     hasPermission(service, ctx, PERMISSIONS.MANAGE_SETTINGS),
     service
@@ -140,6 +146,13 @@ export default async function ConnectionPage({
   ]);
   const jobs = (jobsResult.data ?? []) as SyncJob[];
   const issues = (issuesResult.data ?? []) as IngestionIssue[];
+  const applicableLifecycle = item.lifecycle.filter((dim) => dim.applicability === "applicable");
+  const verifiedLifecycleCount = applicableLifecycle.filter(
+    (dim) => dim.evidence === "controlled_runtime_verified" && Boolean(dim.runtimeEvidence) && hasValidControlledRuntimeEvidence(dim),
+  ).length;
+  const pendingLifecycleLabels = item.lifecycle
+    .filter((dim) => item.pendingRuntimeCapabilities.includes(dim.id))
+    .map((dim) => humanizeLabel(dim.id));
   return (
     <div>
       <AuthenticatedPageHeader
@@ -167,6 +180,27 @@ export default async function ConnectionPage({
         />
       )}
       <ConnectionHealthGrid item={{ ...item, badge }} />
+      {item.stage !== "planned" ? (
+        <Card unstyled variant="panel" className="p-4">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <div>
+              <h2 className="text-sm font-semibold">Setup coverage</h2>
+              <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">
+                {verifiedLifecycleCount} of {applicableLifecycle.length} supported setup paths have verified coverage.
+              </p>
+            </div>
+            {item.runtimeVerificationPending ? (
+              <StatusBadge family="workflowStatus" value="verification_unavailable" size="sm" />
+            ) : null}
+          </div>
+          {item.runtimeVerificationPending ? (
+            <p className="mt-3 text-xs text-[var(--ua-text-secondary)]">
+              <strong className="text-[var(--ua-text-primary)]">Runtime verification pending</strong>
+              {pendingLifecycleLabels.length ? ` · ${pendingLifecycleLabels.join(", ")}` : ""}
+            </p>
+          ) : null}
+        </Card>
+      ) : null}
       <Card unstyled variant="panel" className="grid gap-3 p-4 sm:grid-cols-3">
         <div>
           <p className="text-xs text-[var(--ua-text-tertiary)]">Configuration</p>

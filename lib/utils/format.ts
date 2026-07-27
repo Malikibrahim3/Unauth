@@ -1,4 +1,14 @@
 import { fromMinorUnits, normaliseCurrencyOrNull } from '@/lib/canonical/money';
+import { reportDataQuality } from '@/lib/observability/dataQuality';
+import { nowMs as clockNowMs } from '@/lib/time/clock';
+
+// Merchant-facing forms accept major-unit values (for example, £55.00). Keep
+// the conversion helpers available from the established formatting module so
+// callers do not reach into the storage-level money implementation.
+export {
+  formatMajorUnitInput,
+  parseMajorUnitInput,
+} from '@/lib/ui/merchantCopy';
 
 // Unambiguous day-month ordering for UK/EU merchants. Currency symbols are
 // unaffected by the display locale — they follow the row's own currency code.
@@ -8,6 +18,9 @@ const MERCHANT_DISPLAY_LOCALE = 'en-GB';
 const DEFAULT_CURRENCY = 'USD';
 
 const isDev = process.env.NODE_ENV !== 'production';
+
+/** The single marker for "this value is not available", distinct from a known zero. */
+export const UNAVAILABLE = '—';
 
 const currencyFormatterCache = new Map<string, Intl.NumberFormat>();
 const currencySymbolCache = new Map<string, string>();
@@ -194,9 +207,27 @@ export function formatRiskScore(score: number | null | undefined): string {
   return Math.round(score).toString();
 }
 
-/** Merchant UI: US locale, honouring the record's currency code (default USD). */
-export function formatCurrency(amount: number, currency: string | null | undefined = DEFAULT_CURRENCY): string {
-  return getCurrencyFormatter(currency).format(amount);
+/**
+ * RUN-09: a record's money value is rendered in the record's own currency or
+ * not at all. Substituting a merchant or platform default is how GBP records
+ * came to display as USD, so a missing or unrecognised code now yields the
+ * unavailable marker and a monitored data-quality report instead of a
+ * confidently wrong number.
+ *
+ * `formatCurrency` keeps a non-null return for the many callers that already
+ * hold a real code; callers that may not should use `formatMoneyOrDash`.
+ */
+export function formatCurrency(amount: number, currency: string | null | undefined): string {
+  const code = normaliseCurrencyOrNull(currency);
+  if (!code) {
+    reportDataQuality({
+      kind: currency ? 'money.currency_unrecognised' : 'money.currency_missing',
+      subject: currency ? String(currency) : 'null',
+      detail: 'A money value was rendered without a usable currency code; showing the unavailable marker instead of a default currency.',
+    });
+    return UNAVAILABLE;
+  }
+  return getCurrencyFormatter(code).format(amount);
 }
 
 export function formatCurrencyCompact(amount: number, currency = 'USD'): string {
@@ -214,9 +245,9 @@ export function formatCurrencyCompact(amount: number, currency = 'USD'): string 
 /** Null-safe currency formatter — returns '—' for null/undefined values. */
 export function formatCurrencyNullable(
   amount: number | string | null | undefined,
-  currency: string | null | undefined = DEFAULT_CURRENCY,
+  currency: string | null | undefined,
 ): string {
-  if (amount == null) return '—';
+  if (amount == null) return UNAVAILABLE;
   const numericAmount = typeof amount === 'string' ? Number.parseFloat(amount) || 0 : amount;
   return formatCurrency(numericAmount, currency);
 }
@@ -273,7 +304,7 @@ function utcYear(d: Date): number {
  * ago"); otherwise "14 Jun" in the current year and "14 Jun 2025" for other
  * years. No seconds, no time-of-day.
  */
-export function formatDate(date: Date | string, now: Date | number = Date.now()): string {
+export function formatDate(date: Date | string, now: Date | number = clockNowMs()): string {
   const d = typeof date === 'string' ? new Date(date) : date;
   if (Number.isNaN(d.getTime())) return String(date);
   const nowMs = now instanceof Date ? now.getTime() : now;
@@ -314,7 +345,7 @@ export function formatDateTime(date: Date | string): string {
 export function formatDateMode(
   date: Date | string,
   mode: 'table' | 'prose' | 'recent' | 'timestamp' = 'timestamp',
-  now: Date | number = Date.now(),
+  now: Date | number = clockNowMs(),
 ): string {
   const d = typeof date === 'string' ? new Date(date) : date;
   if (Number.isNaN(d.getTime())) return String(date);
@@ -368,9 +399,9 @@ export function formatScore(score: number, tier?: string): string {
   return `${base} — ${tierLabel[tier] ?? tier}`;
 }
 
-export function formatRelativeTime(date: Date | string): string {
+export function formatRelativeTime(date: Date | string, now: Date | number = clockNowMs()): string {
   const d = typeof date === 'string' ? new Date(date) : date;
-  const diffMs = Date.now() - d.getTime();
+  const diffMs = (now instanceof Date ? now.getTime() : now) - d.getTime();
   const diffSec = Math.floor(diffMs / 1000);
   const diffMin = Math.floor(diffSec / 60);
   const diffHr = Math.floor(diffMin / 60);

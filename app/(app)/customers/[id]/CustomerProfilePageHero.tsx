@@ -92,7 +92,7 @@ export function CustomerProfilePageHero({
   const status = openClaimCount > 0
     ? <Badge tone="warning" size="sm" dot>{openClaimCount} open case{openClaimCount === 1 ? '' : 's'}</Badge>
     : hasCleanRecord
-      ? <Badge tone="success" size="sm" dot>No payout case history</Badge>
+      ? <Badge tone="success" size="sm" dot>No case history</Badge>
       : <Badge tone="neutral" size="sm">Past case history</Badge>;
 
   const primaryAction = profile.possible_match_count > 0

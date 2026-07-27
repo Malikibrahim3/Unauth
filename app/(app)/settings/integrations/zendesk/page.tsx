@@ -18,7 +18,7 @@ export default async function ZendeskIntegrationPage() {
   return (
     <SettingsPageShell
       title="Zendesk"
-      subtitle="Show payout case context, evidence gaps, and recommendations on support tickets."
+      subtitle="Show case context, evidence gaps, and recommendations on support tickets."
     >
       <div className="space-y-3">
         <ZendeskSetupClient canManage={canManage} />

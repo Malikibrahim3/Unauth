@@ -102,7 +102,7 @@ export const TIER_CONFIG: Record<Tier, TierEntitlements> = {
   pro: {
     tier: 'pro',
     label: 'Pro',
-    tagline: 'Single-store payout review with six months of claim history',
+    tagline: 'Single-store case review with six months of case history',
     priceMonthlyUsd: 249,
     features: {
       own_store_analytics: true,

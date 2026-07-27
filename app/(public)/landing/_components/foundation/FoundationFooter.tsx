@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Layers } from 'lucide-react';
+import { UnauthLogo } from '@/components/ui/UnauthLogo';
 import { FL_FOOTER, FL_ROUTES } from '../../_lib/foundationContent';
 
 export default function FoundationFooter() {
@@ -12,12 +12,9 @@ export default function FoundationFooter() {
 
           {/* Brand */}
           <div>
-            <div className="flex items-center gap-2.5">
-              <Layers size={16} strokeWidth={2} className="text-[#111111]" aria-hidden />
-              <span className="text-[15px] font-semibold tracking-[-0.03em] text-[#111111]">
-                Unauth
-              </span>
-            </div>
+            <Link href="/landing" prefetch={false} aria-label="Unauth home" className="inline-flex">
+              <UnauthLogo kind="lockup" tone="graphite" height={20} alt="" decorative />
+            </Link>
             <p className="mt-4 max-w-[240px] text-[13px] leading-[1.65] tracking-[-0.01em] text-black/44">
               {FL_FOOTER.tagline}
             </p>

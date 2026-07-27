@@ -985,16 +985,6 @@
     'Segoe UI', sans-serif;
 }
 
-.heroLogo {
-  composes: heroFont;
-  font-weight: 600;
-  font-size: 23px;
-  line-height: 28px;
-  letter-spacing: -0.035em;
-  color: rgba(255, 255, 255, 0.94);
-  transition: color 180ms ease, font-size 180ms ease, line-height 180ms ease, letter-spacing 180ms ease;
-}
-
 .heroEyebrow {
   composes: heroFont;
   display: inline-flex;
@@ -1204,15 +1194,6 @@
   flex-shrink: 0;
 }
 
-.heroNavLogoIcon {
-  width: 24px;
-  height: 24px;
-  flex-shrink: 0;
-  color: #e5b4aa;
-  opacity: 0.95;
-  transition: color 180ms ease;
-}
-
 .heroNavCentre {
   display: none;
   align-items: center;
@@ -1308,19 +1289,6 @@
   color: rgba(255, 255, 255, 0.92);
   cursor: pointer;
   transition: color 180ms ease;
-}
-
-.heroNavbarLight .heroNavLogoIcon {
-  color: #a85040;
-  width: 22px;
-  height: 22px;
-}
-
-.heroNavbarLight .heroLogo {
-  font-size: 24px;
-  line-height: 30px;
-  letter-spacing: -0.045em;
-  color: #111111;
 }
 
 .heroNavbarLight .heroNavLink {

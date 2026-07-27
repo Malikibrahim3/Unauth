@@ -93,7 +93,7 @@ export const APP_ROUTES = {
     key: 'claims',
     href: '/claims',
     label: 'Cases',
-    pageTitle: 'Case reconciliation',
+    pageTitle: 'Cases',
     permission: PERMISSIONS.VIEW_INBOX,
     aliases: ['/inbox'],
     tier: 'pro',

@@ -8,15 +8,25 @@ import {
   DataTable,
   Drawer,
   EmptyState,
+  FilterChip,
+  IconButton,
+  InsetGroup,
+  JoinedSection,
   Input,
   MetricCard,
+  MetricGroup,
   Modal,
+  OperationalState,
   Select,
   SectionCard,
+  SegmentedControl,
   StatusBadge,
+  Tabs,
+  Tooltip,
+  LoadingSkeleton,
 } from '@/components/ui';
+import { Info } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
-import { filterChipContract, segmentedControlContract } from '@/styles/authenticated/contracts';
 import { AuthenticatedPageHeader } from '@/components/authenticated/AuthenticatedPageHeader';
 import { AuthenticatedPanel } from '@/components/authenticated/AuthenticatedPanel';
 import pageStyles from '@/components/authenticated/AuthenticatedPageChrome.module.css';
@@ -120,13 +130,15 @@ const RADIUS_SCALE = [
 
 const SAMPLE_ROWS = [
   { id: 'ORD-1042', status: 'evidence_needed', amount: '$185.00' },
-  { id: 'ORD-1043', status: 'recovered', amount: '$92.40' },
+  { id: 'ORD-1043', status: 'resolved_won', amount: '$92.40' },
   { id: 'ORD-1044', status: 'escalated', amount: '$310.00' },
 ];
 
 export function DesignSystemGalleryClient() {
   const [modalOpen, setModalOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [segment, setSegment] = useState('active');
+  const [tab, setTab] = useState('overview');
   const toast = useToast();
 
   return (
@@ -213,31 +225,40 @@ export function DesignSystemGalleryClient() {
         </Select>
       </GallerySection>
 
-      <GallerySection title="Filter chips (draft contract — no component yet)">
-        <span className={`${filterChipContract.base} ${filterChipContract.unselected} ${filterChipContract.hover}`}>
-          Unselected
-        </span>
-        <span className={`${filterChipContract.base} ${filterChipContract.selected}`}>Selected</span>
-        <span className={`${filterChipContract.base} ${filterChipContract.unselected} ${filterChipContract.disabled}`}>
-          Disabled
-        </span>
+      <GallerySection title="Filters and view selection">
+        <FilterChip active onClick={() => undefined} count={12}>Active cases</FilterChip>
+        <FilterChip onClick={() => undefined}>Needs review</FilterChip>
+        <FilterChip onClick={() => undefined}>All historical evidence awaiting review</FilterChip>
+        <FilterChip disabled>Unavailable</FilterChip>
+        <SegmentedControl
+          aria-label="Gallery view"
+          value={segment}
+          onValueChange={setSegment}
+          items={[{ value: 'active', label: 'Active' }, { value: 'all', label: 'All records' }, { value: 'saved', label: 'Saved' }]}
+        />
       </GallerySection>
 
-      <GallerySection title="Segmented control (draft contract — no component yet)">
-        <div className={segmentedControlContract.root}>
-          <span className={`${segmentedControlContract.item} ${segmentedControlContract.itemHeight} ${segmentedControlContract.selectedItem}`}>
-            7d
-          </span>
-          <span className={`${segmentedControlContract.item} ${segmentedControlContract.itemHeight}`}>30d</span>
-          <span className={`${segmentedControlContract.item} ${segmentedControlContract.itemHeight}`}>90d</span>
+      <GallerySection title="In-page tabs">
+        <div className="w-full">
+          <Tabs
+            aria-label="Gallery sections"
+            id="gallery-tabs"
+            value={tab}
+            onValueChange={setTab}
+            panelId="gallery-tab-panel"
+            items={[{ value: 'overview', label: 'Overview' }, { value: 'evidence', label: 'Evidence' }, { value: 'history', label: 'History' }]}
+          />
+          <div id="gallery-tab-panel" role="tabpanel" aria-labelledby="gallery-tabs-tab-overview" className="mt-3 text-small text-[var(--ua-text-secondary)]">
+            {tab === 'overview' ? 'A true tab uses arrow keys and controls this panel.' : `${tab} selected`}
+          </div>
         </div>
       </GallerySection>
 
       <GallerySection title="Statuses">
         <StatusBadge family="caseStatus" value="new" />
-        <StatusBadge family="caseStatus" value="in_progress" />
-        <StatusBadge family="caseStatus" value="chase_due" />
-        <StatusBadge family="caseStatus" value="recovered" />
+        <StatusBadge family="caseStatus" value="manual_review" />
+        <StatusBadge family="caseStatus" value="ready_for_decision" />
+        <StatusBadge family="caseStatus" value="resolved_won" />
         <StatusBadge family="caseStatus" value="escalated" />
         <Badge tone="neutral">Neutral</Badge>
         <Badge tone="accent">Accent</Badge>
@@ -246,13 +267,10 @@ export function DesignSystemGalleryClient() {
 
       <GallerySection title="Cards">
         <Card variant="panel" style={{ width: 220 }}>
-          Raised card
+          Working surface
         </Card>
         <Card variant="overlay" style={{ width: 220 }}>
-          Overlay card
-        </Card>
-        <Card variant="panel" style={{ width: 220 }}>
-          Flat card
+          Floating surface
         </Card>
         <MetricCard label="Payout exposure" value={18400} />
         <div style={{ width: 260 }}>
@@ -260,6 +278,23 @@ export function DesignSystemGalleryClient() {
             Body content
           </SectionCard>
         </div>
+        <div style={{ width: 260 }}>
+          <Card unstyled variant="panel">
+            <JoinedSection>Joined content with a single parent perimeter.</JoinedSection>
+            <JoinedSection><InsetGroup>Inset group for secondary context.</InsetGroup></JoinedSection>
+          </Card>
+        </div>
+      </GallerySection>
+
+      <GallerySection title="Metric group — odd count">
+        <MetricGroup
+          items={[
+            { label: 'Open cases', value: '24', description: 'Current scope' },
+            { label: 'Needs review', value: '8', description: 'Actionable' },
+            { label: 'Recovered', value: '£4,820', description: 'This period' },
+          ]}
+          aria-label="Metric group example"
+        />
       </GallerySection>
 
       <GallerySection title="Table row">
@@ -280,6 +315,26 @@ export function DesignSystemGalleryClient() {
         <div style={{ width: '100%', border: '1px solid var(--ua-border-default)', borderRadius: 'var(--ua-radius-surface)' }}>
           <EmptyState title="No records yet" description="Records appear here once data arrives." />
         </div>
+      </GallerySection>
+
+      <GallerySection title="Operational states">
+        <div className="grid w-full gap-3 md:grid-cols-2">
+          <OperationalState kind="zero" />
+          <OperationalState kind="empty" />
+          <OperationalState kind="filtered-empty" />
+          <OperationalState kind="partial" />
+          <OperationalState kind="stale" />
+          <OperationalState kind="disconnected" />
+          <OperationalState kind="unavailable" />
+          <OperationalState kind="permission" />
+          <OperationalState kind="locked" />
+          <OperationalState kind="error" action={<Button variant="secondary" size="sm">Try again</Button>} />
+        </div>
+      </GallerySection>
+
+      <GallerySection title="Loading geometry">
+        <LoadingSkeleton variant="metric-group" title="Loading metrics" className="w-full" />
+        <LoadingSkeleton variant="table" rows={3} title="Loading cases" className="w-full" />
       </GallerySection>
 
       <GallerySection title="Data visualisation — cartesian frame + semantic fills">
@@ -401,6 +456,9 @@ export function DesignSystemGalleryClient() {
         <Button variant="secondary" onClick={() => toast({ title: 'Saved', description: 'Change recorded.', tone: 'success' })}>
           Fire toast
         </Button>
+        <Tooltip content="Supplemental help for this control">
+          <IconButton label="More information" icon={<Info size={15} />} />
+        </Tooltip>
       </GallerySection>
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Modal title" description="Modal description">

@@ -5,6 +5,7 @@
  */
 
 import Link from 'next/link';
+import { LegalHeader } from '@/components/public/LegalHeader';
 
 export const metadata = {
   title: 'Data Processing Agreement | Unauth',
@@ -12,7 +13,9 @@ export const metadata = {
 
 export default function DpaPage() {
   return (
-    <div className="mx-auto max-w-3xl px-6 py-16">
+    <>
+      <LegalHeader />
+      <div className="mx-auto max-w-3xl px-6 py-16">
       {/* Contact banner */}
       <div className="mb-8 rounded-lg border border-[var(--info-bd)] bg-[var(--info-bg)] px-5 py-4">
         <p className="text-sm font-semibold text-[var(--info)]">
@@ -160,6 +163,7 @@ export default function DpaPage() {
         <Link href="/legal/privacy" className="hover:underline">Privacy policy</Link>
         <Link href="/legal/data-handling" className="hover:underline">Data handling</Link>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

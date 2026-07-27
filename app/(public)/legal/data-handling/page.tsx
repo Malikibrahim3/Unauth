@@ -5,6 +5,7 @@
  */
 
 import Link from 'next/link';
+import { LegalHeader } from '@/components/public/LegalHeader';
 
 export const metadata = {
   title: 'How Unauth handles your data | Unauth',
@@ -12,7 +13,9 @@ export const metadata = {
 
 export default function DataHandlingPage() {
   return (
-    <div className="mx-auto max-w-3xl px-6 py-16">
+    <>
+      <LegalHeader />
+      <div className="mx-auto max-w-3xl px-6 py-16">
       <h1 className="mb-2 text-3xl font-bold text-[var(--text)]">How Unauth handles your data</h1>
       <p className="mb-10 text-sm text-[var(--text-muted)]">
         Plain-English explanation of what we do with your data, what stays private, and what
@@ -109,6 +112,7 @@ export default function DataHandlingPage() {
         <Link href="/legal/privacy" className="hover:underline">Privacy policy</Link>
         <Link href="/legal/dpa" className="hover:underline">DPA</Link>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

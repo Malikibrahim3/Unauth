@@ -14,6 +14,9 @@ import {
   parseReportRange,
   reportCutoff,
 } from "@/lib/reporting/intelligence";
+import { label } from "@/lib/ui/labels";
+import { TIME_RANGE_LABELS, entityLabel, financialStageLabel as copyFinancialStageLabel } from "@/lib/ui/merchantCopy";
+import { shortRef, hashId } from "@/lib/ui/displayRef";
 import { merchantHasEntitlement } from "@/lib/product/requireEntitlement";
 import {
   formatCurrencyNullable,
@@ -163,7 +166,27 @@ export default async function ReportRecords({
     }));
   }
 
-  const titleValue = dimension === "financial" ? metric : value || kind;
+  const financialLabelMap: Record<string, string> = {
+    requested: copyFinancialStageLabel("requested"),
+    exposed: copyFinancialStageLabel("maximum_exposure"),
+    approved: copyFinancialStageLabel("merchant_decision"),
+    paid: copyFinancialStageLabel("observed_payout"),
+    estimated_loss: copyFinancialStageLabel("estimated_loss"),
+    confirmed_loss: copyFinancialStageLabel("confirmed_loss"),
+    recoverable: copyFinancialStageLabel("eligible_recovery"),
+    recovered: copyFinancialStageLabel("recovered_cash"),
+    prevented: copyFinancialStageLabel("prevented"),
+    written_off: copyFinancialStageLabel("written_off"),
+    outstanding: copyFinancialStageLabel("outstanding_recovery"),
+    final_net_loss: copyFinancialStageLabel("final_net_loss"),
+  };
+  const titleValue = dimension === "financial"
+    ? financialLabelMap[metric] ?? copyFinancialStageLabel(metric)
+    : dimension === "category"
+      ? label("lossCategory", value)
+      : kind === "recovery"
+        ? entityLabel("recovery")
+        : label("caseStatus", value);
   const recordTitle = `${titleValue.replaceAll("_", " ")} records`;
   return (
     <div>
@@ -172,7 +195,7 @@ export default async function ReportRecords({
         subtitle={
           <>
           {formatNumber(total)} exact matching records ·{" "}
-          {range === "all" ? "all time" : range}{" "}
+          {TIME_RANGE_LABELS[range]}{" "}
           {sp.currency ? `· ${sp.currency.toUpperCase()}` : ""} · {timezone}
           </>
         }
@@ -215,13 +238,15 @@ export default async function ReportRecords({
                         : `/claims/${r.id}`
                     }
                   >
-                    {r.id}
+                    {kind === "recovery" ? `Recovery ${hashId(r.id)}` : shortRef(null, r.id)}
                   </Link>
                 </td>
                 <td className="px-3 py-3 text-[var(--ua-text-secondary)]">
-                  {(r.recordType ?? "—").replaceAll("_", " ")}
+                  {kind === "recovery"
+                    ? label("recoveryStatus", r.recordType)
+                    : label("claimType", r.recordType)}
                 </td>
-                <td className="px-3 py-3 capitalize">{(r.status ?? "—").replaceAll("_", " ")}</td>
+                <td className="px-3 py-3">{label("workflowStatus", r.status)}</td>
                 <td className="px-3 py-3 text-right tabular-nums">
                   {r.amountMinor != null
                     ? formatMinorCurrencyNullable(r.amountMinor, r.currency)

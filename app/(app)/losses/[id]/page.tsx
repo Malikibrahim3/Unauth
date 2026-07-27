@@ -15,6 +15,7 @@ import { LossActions } from "@/components/losses/LossActions";
 import { formatDateTime, formatMoneyOrDash } from "@/lib/utils/format";
 import { humanise, label as enumLabel } from "@/lib/ui/labels";
 import { hashId } from "@/lib/ui/displayRef";
+import { providerLabel } from "@/lib/ui/merchantCopy";
 
 export const dynamic = "force-dynamic";
 const money = (
@@ -158,7 +159,7 @@ export default async function LossDetailPage({
                   href={`/claims/${model.loss.support_payout_case_id}`}
                   className="rounded-md border border-[var(--ua-border-default)] px-3 py-2 text-sm"
                 >
-                  Payout case
+                  Open case
                 </Link>
               ) : null}
               {model.recoveries.map((recovery) => (
@@ -182,7 +183,7 @@ export default async function LossDetailPage({
                   <span className="font-medium">
                     {humaniseField(item.evidence_type)}
                   </span>{" "}
-                  · {humaniseField(item.source_provider)} ·{" "}
+                  · {providerLabel(item.source_provider)} ·{" "}
                   {item.source_verified
                     ? "Source verified"
                     : "Not source verified"}

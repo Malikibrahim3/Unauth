@@ -1,13 +1,7 @@
 'use client';
 
 import type { PublicSupportCaseContext } from '@/lib/support/intake/supportCaseReadModel';
-
-const PROVIDER_LABELS: Record<string, string> = {
-  gorgias: 'Gorgias',
-  zendesk: 'Zendesk',
-  intercom: 'Intercom',
-  freshdesk: 'Freshdesk',
-};
+import { providerLabel } from '@/lib/ui/merchantCopy';
 
 function formatTags(tags: unknown[]): string {
   const values = tags
@@ -46,7 +40,7 @@ function SupportCaseCards({ cases }: { cases: PublicSupportCaseContext[] }) {
           >
             <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
               <p className="font-semibold" style={{ color: 'var(--ua-text-primary)' }}>
-                {PROVIDER_LABELS[supportCase.provider] ?? supportCase.provider} ·{' '}
+                {providerLabel(supportCase.provider)} ·{' '}
                 {supportCase.external_case_id}
               </p>
               {helpdeskUrl ? (
@@ -57,7 +51,7 @@ function SupportCaseCards({ cases }: { cases: PublicSupportCaseContext[] }) {
                   className="text-xs underline"
                   style={{ color: 'var(--ua-action-primary)' }}
                 >
-                  Open in {PROVIDER_LABELS[supportCase.provider] ?? supportCase.provider}
+                  Open in {providerLabel(supportCase.provider)}
                 </a>
               ) : null}
             </div>
@@ -71,7 +65,7 @@ function SupportCaseCards({ cases }: { cases: PublicSupportCaseContext[] }) {
                 <span style={{ color: 'var(--ua-text-primary)' }}>{supportCase.link_status}</span>
               </div>
               <div>
-                <span style={{ color: 'var(--ua-text-secondary)' }}>Claim reason: </span>
+                <span style={{ color: 'var(--ua-text-secondary)' }}>Case reason: </span>
                 <span style={{ color: 'var(--ua-text-primary)' }}>{supportCase.claim_reason ?? '—'}</span>
               </div>
               <div>
@@ -93,7 +87,7 @@ function SupportCaseCards({ cases }: { cases: PublicSupportCaseContext[] }) {
             ) : null}
             <p className="mt-1 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
               Tags: {formatTags(supportCase.tags)}
-              {supportCase.claim_candidate ? ' · Claim candidate (review only)' : ''}
+              {supportCase.claim_candidate ? ' · Case candidate (review only)' : ''}
             </p>
           </div>
         );

@@ -71,7 +71,7 @@ export function CustomerProfilePageView(props: CustomerProfilePageViewProps) {
   } = props;
 
   return (
-    <PageConnectionGate requires="both" connection={connectionState} pageName="Customer payout history" pageDescription="This profile shows customer order history and linked support payout cases from merchant-owned sources. An incomplete profile can be misleading - you may see orders with no case history when helpdesk data is not syncing yet." hasData={true}>
+    <PageConnectionGate requires="both" connection={connectionState} pageName="Customer case history" pageDescription="This profile shows customer order history and linked cases from merchant-owned sources. An incomplete profile can be misleading — you may see orders with no case history when helpdesk data is not syncing yet." hasData={true}>
     <div>
       <CustomerProfilePageHero
         auditRunId={auditRunId}

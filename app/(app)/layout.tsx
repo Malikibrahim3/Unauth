@@ -32,6 +32,9 @@ import {
   getDevPreviewFromCookieValue,
 } from "@/lib/product/devPreview";
 import { resolvePermissions } from "@/lib/permissions";
+import { RouteReadySignal } from "@/components/system/RouteReadySignal";
+import { DesktopRequiredBoundary } from "@/components/system/DesktopRequiredBoundary";
+import { Suspense } from "react";
 
 export const dynamic = "force-dynamic";
 
@@ -76,14 +79,6 @@ export default async function AppLayout({
         .limit(1)
     : Promise.resolve({ data: [] });
 
-  const merchantFlagsPromise = ctx
-    ? serviceClient
-        .from(TABLES.MERCHANTS)
-        .select("is_demo")
-        .eq("id", ctx.merchantId)
-        .maybeSingle()
-    : Promise.resolve({ data: null });
-
   const connectionPromise = ctx
     ? getCachedConnectionState(ctx.merchantId)
     : Promise.resolve({
@@ -105,14 +100,12 @@ export default async function AppLayout({
   const [
     merchantProfile,
     { data: jobs },
-    { data: merchantFlags },
     connectionState,
     { data: memberships },
     permissions,
   ] = await Promise.all([
     merchantPromise,
     jobsPromise,
-    merchantFlagsPromise,
     connectionPromise,
     membershipsPromise,
     permissionsPromise,
@@ -147,31 +140,16 @@ export default async function AppLayout({
     redirect("/onboarding");
   }
 
-  const allDemo = !!(merchantFlags as { is_demo?: boolean } | null)?.is_demo;
-
-  const merchantName = merchantProfile?.name ?? null;
-  const connectedStoreKey =
-    connectionState.orderSourceStoreKey ?? connectionState.shopDomain;
-  const rawDisplayMerchantName = connectedStoreKey
-    ? (connectedStoreKey
-        .replace(/^www\./i, "")
-        .split(".")[0]
-        ?.replace(/[-_]/g, " ") ?? merchantName)
-    : merchantName;
-  // WS6.5: workspace label is Title-cased ("Elara and Co"), never raw lowercase.
-  const WORKSPACE_MINOR_WORDS = new Set([
-    "and", "or", "of", "the", "for", "to", "a", "an", "at", "by", "in", "on", "&",
-  ]);
-  const displayMerchantName = rawDisplayMerchantName
-    ? rawDisplayMerchantName
-        .split(/\s+/)
-        .map((word, index) => {
-          const lower = word.toLowerCase();
-          if (index > 0 && WORKSPACE_MINOR_WORDS.has(lower)) return lower;
-          return word.charAt(0).toUpperCase() + word.slice(1);
-        })
-        .join(" ")
-    : rawDisplayMerchantName;
+  // RUN-13: `is_demo` now arrives with the merchant profile the layout already
+  // reads, removing a duplicate `merchants` round trip from every navigation.
+  const allDemo = merchantProfile?.is_demo === true;
+  // Keep the shell bound to the merchant profile. A connected store key is an
+  // account identifier, not a merchant-facing workspace name.
+  const displayMerchantName = merchantProfile?.name ?? null;
+  const userName =
+    typeof user.user_metadata?.full_name === "string" && user.user_metadata.full_name.trim()
+      ? user.user_metadata.full_name.trim()
+      : null;
 
   // Dev preview — read the tier cookie so the context is consistent with getMerchantProductPlan.
   const isProduction = process.env.VERCEL_ENV === "production";
@@ -180,67 +158,73 @@ export default async function AppLayout({
     : getDevPreviewFromCookieValue(cookieStore.get(DEV_TIER_COOKIE)?.value);
 
   return (
-    <NavigationProvider>
-      <DevPreviewProvider value={devPreview}>
-        <div
-          className="ua-app flex h-screen overflow-hidden"
-          data-ui-version="authenticated-v2"
-          data-ui-cohorts={[...authUiRollout.enabled].join(',') || 'none'}
-          data-ui-rollout-source={authUiRollout.source}
-        >
-          <ToastProvider>
-            <AuthUiCohortTelemetry />
-            <Sidebar
-              merchantName={displayMerchantName ?? null}
-              userEmail={user.email ?? ""}
-              shopifyConnected={connectionState.orderSourceConnected}
-              helpdeskConnected={connectionState.helpdesk}
-              permissions={permissions}
-            />
+    <DesktopRequiredBoundary>
+      <NavigationProvider>
+        <DevPreviewProvider value={devPreview}>
+          <div
+            className="ua-app flex h-screen overflow-hidden"
+            data-ui-version="authenticated-v2"
+            data-ui-cohorts={[...authUiRollout.enabled].join(',') || 'none'}
+            data-ui-rollout-source={authUiRollout.source}
+          >
+            <ToastProvider>
+              {/* RUN-10: names the point at which a route has finished resolving. */}
+              <Suspense fallback={null}>
+                <RouteReadySignal />
+              </Suspense>
+              <AuthUiCohortTelemetry />
+              <Sidebar
+                merchantName={displayMerchantName ?? null}
+                userName={userName}
+                userEmail={user.email ?? ""}
+                connectionState={connectionState}
+                permissions={permissions}
+              />
 
-            <AmplitudeInit
-              merchantId={merchantProfile?.id ?? null}
-              storeName={merchantProfile?.name ?? null}
-              monthlyOrderVolume={merchantProfile?.monthly_order_volume ?? null}
-              primaryConcern={merchantProfile?.primary_fraud_concern ?? null}
-            />
+              <AmplitudeInit
+                merchantId={merchantProfile?.id ?? null}
+                storeName={merchantProfile?.name ?? null}
+                monthlyOrderVolume={merchantProfile?.monthly_order_volume ?? null}
+                primaryConcern={merchantProfile?.primary_fraud_concern ?? null}
+              />
 
-            <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-              <BreadcrumbOverrideProvider>
-                <AppHeader
-                  merchantName={displayMerchantName ?? null}
-                  environment={process.env.VERCEL_ENV ?? "development"}
-                  isDemo={allDemo}
-                  userEmail={user.email ?? null}
-                  workspaces={workspaces}
-                  activeMerchantId={ctx?.merchantId ?? null}
-                  unreadCount={0}
-                  permissions={permissions}
-                />
+              <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+                <BreadcrumbOverrideProvider>
+                  <AppHeader
+                    merchantName={displayMerchantName ?? null}
+                    isDemo={allDemo}
+                    userName={userName}
+                    userEmail={user.email ?? null}
+                    workspaces={workspaces}
+                    activeMerchantId={ctx?.merchantId ?? null}
+                    unreadCount={0}
+                    permissions={permissions}
+                  />
 
-                {allDemo && (
-                  <div className="flex-shrink-0">
-                    <DemoBanner />
-                  </div>
-                )}
+                  {allDemo && (
+                    <div className="flex-shrink-0">
+                      <DemoBanner />
+                    </div>
+                  )}
 
-                <BillingStatusBanner />
+                  <BillingStatusBanner />
 
-                <main
-                  id="app-scroll-container"
-                  className="ua-operational-scrollbar min-w-0 flex-1 overflow-y-auto overflow-x-hidden"
-                >
-                  <ConnectionStateProvider value={connectionState}>
-                    <DemoModeProvider value={allDemo}>
-                      {children}
-                    </DemoModeProvider>
-                  </ConnectionStateProvider>
-                </main>
-              </BreadcrumbOverrideProvider>
-            </div>
-          </ToastProvider>
-        </div>
-      </DevPreviewProvider>
-    </NavigationProvider>
+                  <main
+                    id="app-scroll-container"
+                    className="ua-operational-scrollbar min-w-0 flex-1 overflow-y-auto overflow-x-hidden"
+                  >
+                    <ConnectionStateProvider value={connectionState}>
+                      <DemoModeProvider value={allDemo}>
+                        {children}
+                      </DemoModeProvider>
+                    </ConnectionStateProvider>
+                  </main>
+                </BreadcrumbOverrideProvider>
+              </div>
+            </ToastProvider>
+          </div>
+        </DevPreviewProvider>
+      </NavigationProvider>
+    </DesktopRequiredBoundary>
   );
 }

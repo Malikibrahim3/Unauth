@@ -197,7 +197,7 @@ function FeatureCard({
 
 function ArrivalCard({ scale }: { scale?: number }) {
   return (
-    <FeatureCard number="01" title="A claim arrives" scale={scale}>
+    <FeatureCard number="01" title="A case arrives" scale={scale}>
       <h3 className="mb-4 text-[16px] font-semibold tracking-[-0.04em]">Helpdesk case</h3>
       <div className="space-y-2">
         <ContextRow icon={<PackageCheck size={14} />} label="Support ticket received" />
@@ -245,7 +245,7 @@ function AuditCard({ scale }: { scale?: number }) {
 function RulesRunCard({ scale }: { scale?: number }) {
   const rules = [
     'Order value: above threshold',
-    'Claim count: 3rd claim this quarter',
+    'Case count: 3rd case this quarter',
     'Delivery state: confirmed',
     'Prior merchant-owned case pattern',
   ] as const;

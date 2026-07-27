@@ -66,7 +66,7 @@ export function FlowsIndexClient({
         <p className="min-w-0 text-xs text-[var(--ua-text-secondary)]">
           {publicationEnabled
             ? "Each family has at most one published version and one editable draft."
-            : "Preview mode: definitions and dry-run tests are available; live publication is release-gated."}
+            : "Drafts and tests are available. Publishing is currently unavailable."}
         </p>
         <div className="flex items-center gap-2">
           <ButtonLink href="/flows/runs" variant="secondary" size="sm">
@@ -145,7 +145,7 @@ export function FlowsIndexClient({
           description={
             publicationEnabled
               ? "Create a workflow, test it safely without affecting live data, then publish it when you're ready. Flows route work — they never decide or issue payouts."
-              : "Create and dry-run a workflow preview without affecting live data. Publication and live execution remain disabled by the release gate."
+              : "Create and test a flow without affecting live data. Flows route work; they do not decide or issue payouts."
           }
           action={
             canManage ? (
@@ -163,7 +163,7 @@ export function FlowsIndexClient({
         description={
           publicationEnabled
             ? "Build trigger, conditions and bounded actions. Nothing runs until publication."
-            : "Build trigger, conditions and bounded actions as a preview. Live publication is currently disabled."
+            : "Build the trigger, conditions, and bounded actions. Nothing runs until you publish."
         }
       >
         <div className="max-h-[75vh] overflow-y-auto">

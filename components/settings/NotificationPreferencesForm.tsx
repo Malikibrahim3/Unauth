@@ -15,7 +15,7 @@ const KINDS: Array<{
   {
     kind: "assignment",
     label: "Assignments",
-    description: "Work or payout cases assigned to you.",
+    description: "Work or cases assigned to you.",
   },
   {
     kind: "mention",
@@ -35,7 +35,7 @@ const KINDS: Array<{
   {
     kind: "decision_request",
     label: "Decision requests",
-    description: "A payout case is ready for merchant review.",
+    description: "A case is ready for merchant review.",
   },
   {
     kind: "recovery_outcome",

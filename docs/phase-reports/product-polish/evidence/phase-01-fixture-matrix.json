@@ -1,0 +1,262 @@
+{
+  "artifact": "phase-01-fixture-matrix",
+  "generatedFrom": "npm run validate:phase1-qa",
+  "target": "supabase_db_Unauth",
+  "asOf": "2026-07-26T12:00:00.000Z",
+  "fixtureVersion": 3,
+  "fingerprint": "885069f0bae798bd59e49276f55f7cf1e44abfe3f8084b838b1bd4ffbe7d481d",
+  "merchantId": "f1000000-0000-4000-8000-000000000001",
+  "captureKeys": {
+    "completeCase": "f1000600-0000-4000-8000-000000000001",
+    "unambiguousMatchCase": "f1000600-0000-4000-8000-000000000002",
+    "knownZeroCase": "f1000600-0000-4000-8000-000000000003",
+    "missingCurrencyCase": "f1000600-0000-4000-8000-000000000004",
+    "mixedCurrencyCase": "f1000600-0000-4000-8000-000000000005",
+    "missingSourceCase": "f1000600-0000-4000-8000-000000000006",
+    "timezoneBoundaryCase": "f1000600-0000-4000-8000-000000000007",
+    "dueTodayCase": "f1000600-0000-4000-8000-000000000008",
+    "overdueCase": "f1000600-0000-4000-8000-000000000009",
+    "impossibleStateCase": "f1000600-0000-4000-8000-000000000010",
+    "otherMerchantCase": "f1000600-0000-4000-8000-000000000099",
+    "heroCustomer": "f1000300-0000-4000-8000-000000000001",
+    "heroOrder": "f1000400-0000-4000-8000-000000000001",
+    "savedView": "f1000a00-0000-4000-8000-000000000001",
+    "resolvedPartner": "f1000200-0000-4000-8000-000000000001"
+  },
+  "stateMatrix": [
+    {
+      "key": "completeCase",
+      "requiredBy": [
+        "RUN-03",
+        "RUN-04",
+        "RUN-05",
+        "RUN-08",
+        "RUN-16"
+      ]
+    },
+    {
+      "key": "unambiguousMatch",
+      "requiredBy": [
+        "RUN-03"
+      ]
+    },
+    {
+      "key": "resolvedMatch",
+      "requiredBy": [
+        "RUN-03"
+      ]
+    },
+    {
+      "key": "savedWorkView",
+      "requiredBy": [
+        "RUN-06"
+      ]
+    },
+    {
+      "key": "trueEmptyWorkView",
+      "requiredBy": [
+        "RUN-06"
+      ]
+    },
+    {
+      "key": "forcedUnavailableWorkView",
+      "requiredBy": [
+        "RUN-06"
+      ],
+      "runtimeInjected": true
+    },
+    {
+      "key": "investigationResolvedPartner",
+      "requiredBy": [
+        "RUN-02"
+      ]
+    },
+    {
+      "key": "investigationMissingPartner",
+      "requiredBy": [
+        "RUN-02",
+        "RUN-20"
+      ]
+    },
+    {
+      "key": "knownZero",
+      "requiredBy": [
+        "RUN-09",
+        "RUN-16",
+        "RUN-21"
+      ]
+    },
+    {
+      "key": "unavailable",
+      "requiredBy": [
+        "RUN-09",
+        "RUN-17"
+      ]
+    },
+    {
+      "key": "missingCurrency",
+      "requiredBy": [
+        "RUN-09"
+      ]
+    },
+    {
+      "key": "mixedCurrency",
+      "requiredBy": [
+        "RUN-09",
+        "RUN-16",
+        "RUN-21"
+      ]
+    },
+    {
+      "key": "missingSource",
+      "requiredBy": [
+        "RUN-20"
+      ]
+    },
+    {
+      "key": "timezoneBoundary",
+      "requiredBy": [
+        "RUN-15",
+        "RUN-19"
+      ]
+    },
+    {
+      "key": "dueToday",
+      "requiredBy": [
+        "RUN-19"
+      ]
+    },
+    {
+      "key": "overdue",
+      "requiredBy": [
+        "RUN-19"
+      ]
+    },
+    {
+      "key": "impossibleState",
+      "requiredBy": [
+        "RUN-18",
+        "RUN-20"
+      ]
+    }
+  ],
+  "checks": {
+    "completeCase": {
+      "expected": "1",
+      "actual": "1",
+      "pass": true
+    },
+    "resolvedMatch": {
+      "expected": "1",
+      "actual": "1",
+      "pass": true,
+      "note": "RUN-03 resolved match must point at a real source order line"
+    },
+    "unambiguousMatch": {
+      "expected": "1",
+      "actual": "1",
+      "pass": true,
+      "note": "RUN-03 unambiguous candidate awaiting one obvious action"
+    },
+    "unambiguousMatchHasExactlyOneCandidateLine": {
+      "expected": "1",
+      "actual": "1",
+      "pass": true,
+      "note": "ambiguity would make the match a judgement call rather than an unambiguous one"
+    },
+    "savedWorkView": {
+      "expected": "1",
+      "actual": "1",
+      "pass": true
+    },
+    "trueEmptyWorkView": {
+      "expected": "0",
+      "actual": "0",
+      "pass": true,
+      "note": "the isolation merchant is the genuine \"no saved views\" case"
+    },
+    "investigationResolvedPartner": {
+      "expected": "1",
+      "actual": "1",
+      "pass": true
+    },
+    "investigationMissingPartner": {
+      "expected": "1",
+      "actual": "1",
+      "pass": true,
+      "note": "RUN-02 history must survive a partner that no longer resolves"
+    },
+    "knownZero": {
+      "expected": "1",
+      "actual": "1",
+      "pass": true
+    },
+    "unavailable": {
+      "expected": "1",
+      "actual": "1",
+      "pass": true,
+      "note": "RUN-17 unavailable aggregate, distinct from a known zero"
+    },
+    "missingCurrency": {
+      "expected": "1",
+      "actual": "1",
+      "pass": true
+    },
+    "mixedCurrency": {
+      "expected": "2",
+      "actual": "2",
+      "pass": true,
+      "note": "RUN-09/16/21 need at least two currencies so single-currency sums must exclude"
+    },
+    "missingSource": {
+      "expected": "1",
+      "actual": "1",
+      "pass": true
+    },
+    "timezoneBoundary": {
+      "expected": "1",
+      "actual": "1",
+      "pass": true
+    },
+    "dueToday": {
+      "expected": "1",
+      "actual": "1",
+      "pass": true
+    },
+    "overdue": {
+      "expected": "1",
+      "actual": "1",
+      "pass": true
+    },
+    "impossibleState": {
+      "expected": "1",
+      "actual": "1",
+      "pass": true,
+      "note": "RUN-18/20 assertions must reject this combination rather than render it as healthy"
+    },
+    "evidencePackageForRegistry": {
+      "expected": "1",
+      "actual": "1",
+      "pass": true,
+      "note": "RUN-08 registry/detail agreement needs a case that genuinely has a package"
+    },
+    "merchantIsolationControl": {
+      "expected": "1",
+      "actual": "1",
+      "pass": true,
+      "note": "a second merchant exists so isolation assertions have something to fail against"
+    },
+    "noFixtureRowsOutsideNamespace": {
+      "expected": "0",
+      "actual": "0",
+      "pass": true
+    },
+    "forcedUnavailableWorkView": {
+      "expected": "evidenced by docs/phase-reports/product-polish/evidence/phase-01-completeness-injection.json",
+      "actual": "artifact present",
+      "pass": true
+    }
+  },
+  "pass": true,
+  "problems": []
+}

@@ -12,7 +12,9 @@ import {
   REPORT_DEFINITIONS,
 } from "@/lib/reporting/intelligence";
 import { normaliseCurrencyOrNull } from "@/lib/canonical/money";
-import { formatDateTime, formatMinorCurrencyNullable, formatNumber } from "@/lib/utils/format";
+import { formatMinorCurrencyNullable, formatNumber } from "@/lib/utils/format";
+import { financialStageDefinition, financialStageLabel } from "@/lib/ui/labels";
+import { TIME_RANGE_LABELS } from "@/lib/ui/merchantCopy";
 import { DashboardCharts } from "@/components/reporting/DashboardCharts";
 import { RankedContributionChart } from "@/components/charts/authenticated/RankedContributionChart";
 
@@ -24,18 +26,18 @@ function currencyLabel(currency: string) {
   return normaliseCurrencyOrNull(currency) ?? "Currency unavailable";
 }
 const STEPS = [
-  { key: "requestedMinor", state: "requested", label: "Requested", definition: "Reliable requested remedy value" },
-  { key: "exposedMinor", state: "exposed", label: "Payout exposure", definition: "Current maximum exposure from explicit components" },
-  { key: "approvedMinor", state: "approved", label: "Approved", definition: "Merchant-authorized value; not proof of payment" },
-  { key: "paidMinor", state: "paid", label: "Paid", definition: "Source-backed value actually provided" },
-  { key: "estimatedLossMinor", state: "estimated_loss", label: "Estimated loss", definition: "Provisional value with visible assumptions" },
-  { key: "realisedLossMinor", state: "confirmed_loss", label: "Confirmed loss", definition: "Ledger-confirmed merchant loss" },
-  { key: "recoverableMinor", state: "recoverable", label: "Recoverable", definition: "Confirmed loss eligible to pursue" },
-  { key: "recoveredMinor", state: "recovered", label: "Recovered", definition: "Received and reconciled" },
-  { key: "preventedMinor", state: "prevented", label: "Prevented", definition: "Unpaid through the observation window" },
-  { key: "writtenOffMinor", state: "written_off", label: "Written off", definition: "Closed without recovery; remains net loss" },
-  { key: "outstandingMinor", state: "outstanding", label: "Outstanding recovery", definition: "Per-case recoverable less recovered and write-off" },
-  { key: "finalNetLossMinor", state: "final_net_loss", label: "Final net loss", definition: "Per-case confirmed loss less recovered" },
+  { key: "requestedMinor", state: "requested", label: financialStageLabel("requested"), definition: financialStageDefinition("requested") },
+  { key: "exposedMinor", state: "exposed", label: financialStageLabel("maximum_exposure"), definition: financialStageDefinition("maximum_exposure") },
+  { key: "approvedMinor", state: "approved", label: financialStageLabel("merchant_decision"), definition: financialStageDefinition("merchant_decision") },
+  { key: "paidMinor", state: "paid", label: financialStageLabel("observed_payout"), definition: financialStageDefinition("observed_payout") },
+  { key: "estimatedLossMinor", state: "estimated_loss", label: financialStageLabel("estimated_loss"), definition: financialStageDefinition("estimated_loss") },
+  { key: "realisedLossMinor", state: "confirmed_loss", label: financialStageLabel("confirmed_loss"), definition: financialStageDefinition("confirmed_loss") },
+  { key: "recoverableMinor", state: "recoverable", label: financialStageLabel("eligible_recovery"), definition: financialStageDefinition("eligible_recovery") },
+  { key: "recoveredMinor", state: "recovered", label: financialStageLabel("recovered_cash"), definition: financialStageDefinition("recovered_cash") },
+  { key: "preventedMinor", state: "prevented", label: financialStageLabel("prevented"), definition: financialStageDefinition("prevented") },
+  { key: "writtenOffMinor", state: "written_off", label: financialStageLabel("written_off"), definition: financialStageDefinition("written_off") },
+  { key: "outstandingMinor", state: "outstanding", label: financialStageLabel("outstanding_recovery"), definition: financialStageDefinition("outstanding_recovery") },
+  { key: "finalNetLossMinor", state: "final_net_loss", label: financialStageLabel("final_net_loss"), definition: financialStageDefinition("final_net_loss") },
 ] satisfies Array<{ key: keyof MoneyBridge; state: FinancialReportMetric; label: string; definition: string }>;
 function RankedTable({
   title,
@@ -106,12 +108,9 @@ export function IntelligenceReportView({
               Value this period
             </h2>
             <p className="mt-1 text-sm text-[var(--ua-text-secondary)]">
-              {report.range === "all" ? "All time" : `Last ${report.range}`}
+              {TIME_RANGE_LABELS[report.range]}
             </p>
           </div>
-          <p className="text-xs text-[var(--ua-text-secondary)]">
-            Generated {formatDateTime(report.generatedAt)}
-          </p>
         </div>
         {!report.reconciliation.ok ? (
           <div role="alert" className="mt-3 border border-[var(--ua-critical)] p-3">
@@ -140,7 +139,7 @@ export function IntelligenceReportView({
                     })}
                     className="text-sm font-medium text-[var(--ua-action-primary)]"
                   >
-                    {financialMetricCaseIds(b, "exposed").length} underlying exposed {financialMetricCaseIds(b, "exposed").length === 1 ? "case" : "cases"}
+                    {financialMetricCaseIds(b, "exposed").length} cases with recorded exposure
                   </Link>
                 </div>
                 <dl className="mt-2 grid overflow-hidden border-y border-[var(--ua-border-default)] sm:grid-cols-2 lg:grid-cols-4">
@@ -182,7 +181,7 @@ export function IntelligenceReportView({
           </div>
         ) : (
           <p className="mt-4 text-sm text-[var(--ua-text-secondary)]">
-            No canonical financial entries were found for payout cases in this period. Missing ledger data is not reported as zero.
+            No financial history is available for cases in this period. Unavailable is not zero.
           </p>
         )}
       </section>

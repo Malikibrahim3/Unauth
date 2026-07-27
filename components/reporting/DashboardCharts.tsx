@@ -4,14 +4,16 @@ import Link from 'next/link';
 import type { IntelligenceReport, MoneyBridge } from '@/lib/reporting/intelligence';
 import { financialMetricValue, financialReportRecordsHref } from '@/lib/reporting/intelligence';
 import {
-  formatCurrencyCompact,
   formatDateAbsolute,
   formatMoney,
+  formatMinorCurrencyNullable,
 } from '@/lib/utils/format';
 import { DualLineChart, type DualLinePoint } from '@/components/charts/authenticated/cartesian/DualLineChart';
 import { RankedContributionChart } from '@/components/charts/authenticated/RankedContributionChart';
 import { ChartLegend } from '@/components/charts/authenticated/ChartPanel';
 import dvStyles from '@/components/charts/authenticated/AuthenticatedCharts.module.css';
+import { financialStageLabel } from '@/lib/ui/labels';
+import { TIME_RANGE_LABELS } from '@/lib/ui/merchantCopy';
 
 type CurrencyCharts = {
   bridge: MoneyBridge;
@@ -20,7 +22,7 @@ type CurrencyCharts = {
 };
 
 function compactMoney(valueMinor: number, currency: string) {
-  return formatCurrencyCompact(valueMinor / 100, currency);
+  return formatMinorCurrencyNullable(valueMinor, currency);
 }
 
 function conversion(numerator: number | null, denominator: number | null): string | null {
@@ -52,7 +54,7 @@ export function DashboardCharts({ report }: { report: IntelligenceReport }) {
     return (
       <section className="border-t border-[var(--ua-border-subtle)] pt-5" aria-labelledby="charts-empty-title">
         <h2 id="charts-empty-title" className="text-[length:var(--ua-text-section-title-size)] font-semibold leading-[var(--ua-text-section-title-leading)]">
-          Payout performance
+          Case financials
         </h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--ua-text-secondary)]">
           Charts appear once case ledger entries carry an amount and a currency. Nothing in this period does yet.
@@ -62,13 +64,13 @@ export function DashboardCharts({ report }: { report: IntelligenceReport }) {
   }
 
   return (
-    <section className="space-y-6" aria-label="Payout performance charts">
+    <section className="space-y-6" aria-label="Case financial charts">
       {groups.map(({ bridge, trend, causes }) => (
         <div key={bridge.currency} className="space-y-4">
           <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-[var(--ua-border-subtle)] pb-2">
-            <h2 className="text-base font-semibold">Payout performance</h2>
+            <h2 className="text-base font-semibold">Case financials</h2>
             <p className="text-xs font-medium text-[var(--ua-text-secondary)]">
-              {bridge.currency} · {report.range === 'all' ? 'All time' : `Last ${report.range}`}
+              {bridge.currency} · {TIME_RANGE_LABELS[report.range]}
             </p>
           </div>
 
@@ -195,9 +197,9 @@ function RecoveryLedger({ bridge }: { bridge: MoneyBridge }) {
   const recoverable = financialMetricValue(bridge, 'recoverable');
   const recovered = financialMetricValue(bridge, 'recovered');
   const rows = [
-    { label: 'Exposed', value: exposed, conversion: null },
-    { label: 'Pursued', value: recoverable, conversion: conversion(recoverable, exposed) },
-    { label: 'Recovered', value: recovered, conversion: conversion(recovered, recoverable) },
+    { label: financialStageLabel('maximum_exposure'), value: exposed, conversion: null },
+    { label: financialStageLabel('eligible_recovery'), value: recoverable, conversion: conversion(recoverable, exposed) },
+    { label: financialStageLabel('recovered_cash'), value: recovered, conversion: conversion(recovered, recoverable) },
   ];
   const hasKnownValue = rows.some((row) => row.value != null);
   // Scale every stage against the first stage that has a known value, so a null

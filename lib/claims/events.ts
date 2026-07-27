@@ -82,9 +82,9 @@ export async function appendClaimEvent(supabase: any, input: ClaimEventInput) {
 
 export function claimEventLabel(eventType: string): string {
   const labels: Record<string, string> = {
-    claim_created: 'Claim created',
-    claim_updated: 'Claim updated',
-    claim_viewed: 'Claim viewed',
+    claim_created: 'Case created',
+    claim_updated: 'Case updated',
+    claim_viewed: 'Case viewed',
     claim_assigned: 'Reviewer updated',
     claim_unassigned: 'Reviewer cleared',
     claim_snoozed: 'Review deferred',
@@ -94,7 +94,7 @@ export function claimEventLabel(eventType: string): string {
     outcome_added: 'Outcome recorded',
     status_changed: 'Status changed',
     claim_resolved: 'Outcome recorded',
-    claim_reopened: 'Claim reopened',
+    claim_reopened: 'Case reopened',
     decision_reversed: 'Decision reversed',
     customer_response_copied: 'Customer response copied',
     customer_response_saved: 'Customer response saved',
@@ -166,7 +166,7 @@ function humanOutcome(value: string | null | undefined): string {
   return OUTCOME_LABELS[value] ?? value.replace(/_/g, ' ');
 }
 
-/** Human-readable one-line summary for claim timeline rows. */
+/** Human-readable one-line summary for case timeline rows. */
 export function claimEventSummary(event: ClaimEventSummaryInput): string {
   const parts: string[] = [];
 
@@ -185,17 +185,17 @@ export function claimEventSummary(event: ClaimEventSummaryInput): string {
 
   switch (event.event_type) {
     case 'claim_created':
-      return 'A new claim was opened for this order.';
+      return 'A new case was opened for this order.';
     case 'claim_viewed':
-      return 'The claim was opened for review.';
+      return 'The case was opened for review.';
     case 'claim_assigned':
-      return 'A reviewer was linked to this claim record.';
+      return 'A reviewer was linked to this case record.';
     case 'claim_unassigned':
-      return 'Reviewer link was cleared from this claim record.';
+      return 'Reviewer link was cleared from this case record.';
     case 'claim_snoozed':
       return 'Evidence review was deferred until follow-up is due.';
     case 'claim_unsnoozed':
-      return 'Evidence review resumed for this claim.';
+      return 'Evidence review resumed for this case.';
     case 'evidence_added':
       return 'Supporting evidence was attached to the claim.';
     case 'outcome_added':
@@ -205,13 +205,13 @@ export function claimEventSummary(event: ClaimEventSummaryInput): string {
     case 'customer_response_saved':
       return 'The customer-safe response text was saved.';
     case 'claim_reopened':
-      return 'The claim was reopened for further review.';
+      return 'The case was reopened for further review.';
     case 'decision_reversed':
       return 'The previous decision was reversed with a documented reason.';
     case 'escalation_added':
-      return 'The claim was escalated for manager review.';
+      return 'The case was escalated for manager review.';
     default:
-      return 'Claim activity recorded.';
+      return 'Case activity recorded.';
   }
 }
 

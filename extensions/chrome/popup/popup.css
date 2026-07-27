@@ -56,13 +56,8 @@ a {
   width: 28px;
   height: 28px;
   border-radius: 6px;
-  background: linear-gradient(135deg, #c8763a, #8a2828);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 14px;
-  color: #fff;
+  display: block;
+  object-fit: contain;
 }
 
 .brand-name {
@@ -217,12 +212,8 @@ a {
   width: 48px;
   height: 48px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #c8763a, #8a2828);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 22px;
+  display: block;
+  object-fit: contain;
   animation: pulse 1.4s ease-in-out infinite;
 }
 

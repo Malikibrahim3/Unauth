@@ -13,6 +13,8 @@ export type MerchantSettingsProfile = {
 export type MerchantProfile = {
   id: string;
   name: string;
+  /** Read here so callers do not need a second `merchants` round trip. */
+  is_demo: boolean;
 } & MerchantSettingsProfile;
 
 export function parseMerchantSettings(settings: unknown): MerchantSettingsProfile {
@@ -63,7 +65,7 @@ export async function getMerchantProfileById(
 ): Promise<MerchantProfile | null> {
   const { data, error } = await serviceClient
     .from(TABLES.MERCHANTS)
-    .select('id, name, settings')
+    .select('id, name, settings, is_demo')
     .eq('id', merchantId)
     .maybeSingle();
 
@@ -73,10 +75,11 @@ export async function getMerchantProfileById(
 
   if (!data) return null;
 
-  const row = data as { id: string; name: string; settings: unknown };
+  const row = data as { id: string; name: string; settings: unknown; is_demo: boolean | null };
   return {
     id: row.id,
     name: row.name,
+    is_demo: row.is_demo === true,
     ...parseMerchantSettings(row.settings),
   };
 }

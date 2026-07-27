@@ -55,7 +55,7 @@ export function resolvePayoutRecommendation(
     workflow.nextActionReason ||
     evaluation.justification_lines[0] ||
     evaluation.justification ||
-    'Merchant rule matched this support payout case.';
+    'Merchant rule matched this case.';
 
   return {
     action: workflow.nextAction,

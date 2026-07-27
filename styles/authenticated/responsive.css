@@ -1,11 +1,64 @@
 /*
- * Shared responsive overrides. Relocated verbatim from
- * app/(app)/authenticated.css. Page-specific responsive exceptions do not
- * belong here — only global layout contracts.
+ * The authenticated product is a supported-desktop experience. Keep the
+ * boundary outside `.ua-app` so the product subtree can be hidden before
+ * hydration on a deep link or while a user resizes the window.
  */
-@media (max-width: 767px) {
-  .ua-app {
-    --ua-control-height-md: 38px;
-    --ua-control-height-input: 40px;
+.ua-desktop-boundary {
+  min-height: 100vh;
+  background: var(--ua-canvas);
+}
+
+.ua-desktop-product {
+  min-height: 100vh;
+}
+
+.ua-desktop-required {
+  display: none;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ua-space-6);
+  background: var(--ua-canvas);
+  color: var(--ua-text-primary);
+  font-family: var(--ua-font-sans);
+}
+
+.ua-desktop-required__content {
+  width: min(100%, 420px);
+  padding: var(--ua-space-6);
+  border: 1px solid var(--ua-border-default);
+  border-radius: var(--ua-radius-surface);
+  background: var(--ua-surface-primary);
+}
+
+.ua-desktop-required__eyebrow {
+  margin: 0 0 var(--ua-space-2);
+  color: var(--ua-text-tertiary);
+  font-size: var(--ua-text-micro-size);
+  font-weight: 500;
+  line-height: var(--ua-text-micro-leading);
+}
+
+.ua-desktop-required h1 {
+  margin: 0;
+  font-size: var(--ua-text-page-title-size);
+  font-weight: 600;
+  line-height: var(--ua-text-page-title-leading);
+}
+
+.ua-desktop-required p:last-child {
+  margin: var(--ua-space-2) 0 0;
+  color: var(--ua-text-secondary);
+  font-size: var(--ua-text-body-size);
+  line-height: var(--ua-text-body-leading);
+}
+
+@media (max-width: 1023px) {
+  .ua-desktop-product {
+    display: none !important;
+  }
+
+  .ua-desktop-required {
+    display: flex;
   }
 }

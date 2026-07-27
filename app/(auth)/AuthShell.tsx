@@ -11,7 +11,7 @@ export function AuthShell({ children }: AuthShellProps) {
     <main className="ua-auth-surface min-h-screen bg-[var(--ua-canvas)] text-[var(--ua-text-primary)]">
       <div className="mx-auto flex min-h-screen w-full max-w-[440px] flex-col px-5 py-6 sm:px-6">
         <Link href="/" className="mb-8 inline-flex w-fit">
-          <UnauthLogo variant="light" size="nav" />
+          <UnauthLogo kind="lockup" tone="graphite" height={22} />
         </Link>
         <div className="flex flex-1 flex-col justify-center pb-12">{children}</div>
       </div>

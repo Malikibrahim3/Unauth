@@ -63,53 +63,56 @@ export function formatClaimsResultText(input: {
   showing: number;
   totalMatching: number;
   view: ClaimsListView;
+  search?: string;
 }): string {
-  const { showing, totalMatching, view } = input;
+  const { showing, totalMatching, view, search } = input;
   const pagePart = `Showing ${formatNumber(showing)} of ${formatNumber(totalMatching)}`;
+
+  if (search) return `${pagePart} cases matching “${search}”`;
 
   switch (view.kind) {
     case 'active':
-      return `${pagePart} claim evidence reviews`;
+      return `${pagePart} case reviews`;
     case 'unread':
-      return `${pagePart} claims with new evidence`;
+      return `${pagePart} cases with new evidence`;
     case 'assigned_me':
-      return `${pagePart} claim evidence reviews`;
+      return `${pagePart} case reviews`;
     case 'unassigned':
-      return `${pagePart} claims needing review`;
+      return `${pagePart} cases needing review`;
     case 'snoozed':
-      return `${pagePart} deferred claim reviews`;
+      return `${pagePart} deferred cases`;
     case 'history':
-      return `${pagePart} claims with recorded outcomes`;
+      return `${pagePart} cases with recorded outcomes`;
     case 'workflow': {
       const labels: Record<string, string> = {
         needs_evidence: 'cases needing evidence',
         awaiting_carrier: 'cases awaiting carrier clarification',
         awaiting_3pl: 'cases awaiting 3PL clarification',
         awaiting_supplier: 'cases awaiting supplier clarification',
-        ready_for_decision: 'cases ready for payout decision',
+        ready_for_decision: 'cases ready for a decision',
         manual_review: 'cases in manual review',
-        closed: 'closed payout cases',
+        closed: 'closed cases',
       };
       return `${pagePart} ${labels[view.workflow] ?? view.workflow.replace(/_/g, ' ')}`;
     }
     case 'sla':
-      return `${pagePart} ${view.sla === 'approaching' ? 'claims approaching review threshold' : 'ageing unresolved claims'}`;
+      return `${pagePart} ${view.sla === 'approaching' ? 'cases approaching review threshold' : 'ageing unresolved cases'}`;
     case 'status': {
       const labels: Record<string, string> = {
-        open: 'claims with strong identity links',
-        pending: 'claims waiting on source data',
-        escalated: 'claims with high evidence density',
+        open: 'cases with strong identity links',
+        pending: 'cases waiting on source data',
+        escalated: 'cases with high evidence density',
         resolved_refunded: 'refunded outcomes',
         resolved_won: 'won outcomes',
         resolved_lost: 'lost outcomes',
         resolved_denied: 'denied outcomes',
         resolved_exchanged: 'exchanged outcomes',
-        voided: 'voided claims',
-        stale: 'stale claims',
+        voided: 'voided cases',
+        stale: 'stale cases',
       };
       return `${pagePart} ${labels[view.status] ?? view.status.replace(/_/g, ' ')}`;
     }
     default:
-      return `${pagePart} matching claim reviews`;
+      return `${pagePart} matching case reviews`;
   }
 }

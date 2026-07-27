@@ -1,0 +1,20 @@
+{
+  "artifact": "phase-01-claimed-item-render",
+  "generatedFrom": "npm run evidence:phase1",
+  "caseId": "f1000600-0000-4000-8000-000000000001",
+  "matchApiStatus": 200,
+  "claimedItemVisible": true,
+  "sourceLineVisible": true,
+  "errorPlaceholderPresent": false,
+  "routeState": "ready",
+  "supportContextProbe": {
+    "status": 200,
+    "body": "{\"support_cases\":[]}"
+  },
+  "claimsProbe": {
+    "status": 200,
+    "claimCount": 1,
+    "firstError": null
+  },
+  "bodySnippet": "Unauth\nP1\nPhase 1 QA Workspace\nConnect sources\nOverview\nOverview\nWork\nWork\nCases\n9\nLosses\nRecovery\nCustomers\nConfigure\nRules\nFlows\nReports and setup\nReports\nIntegrations\nSettings\nqa.operator@qa.invalid\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nCases\nRowan Fielding · QA-1001\nPhase 1 QA Workspace\nDemo\nSearch\n⌘K\nQA\nYou're viewing demo data. Connect your store to see real data.\nRF\nItem not received\nReady for decision\n\nRowan Fielding · QA-1001\n\n£55.00 value at issue\nRequested: Refund\nOpened 11 Jun 2026\nOpen customer profile\nOverview\nEvidence & recovery\nTimeline & history\n\nEvidence reconciliation\n\nThree independent answers from the matched order, item, parcels, and source evidence.\n\nRefresh reconciliation\n\nMatch the claimed item first, then refresh to produce the three recommendations.\n\nItem × parcel reconciliation\n\nQA-JKT-001\nNo parcel record · not recorded\nSystem record only\n\nCustomer outcome\n\nRecord a merchant confirmation when the source system cannot yet report the result. This does not execute a refund or reship.\n\nOutcome\nNo payout\nCash refund\nReplacement\nStore credit\nGoodwill discount\nOther concession\nAmount (minor)\nRecord outcome\n\nEvidence on file\n\nMissing\n○\nCarrier tracking on file · No tracking number on the source order\n○\nProof of delivery (delivered scan)\n○\nCarrier identified\n○\nCustomer statement on file\n○\nDelivery scan timeline\n–\nDelivery photo proof attempted · not tracked\n–\nSignature on delivery · not tracked\n–\nGPS coordinates · not tracked\n!\nDelivery evidence: not connected. Tracking data is unavailable for this case. Connect a tracking source\nRecommendation\n\nNo merchant rule matched this case yet. Review the evidence and record your decision.\n\nInvestigations\n\nResolve the material evidence gap\n\nTrack targeted requests without blocking or deciding the customer outcome automatically.\n\n1\n\nOpen\n\n0\n\nWaiting\n\n0\n\nOverdue\n\n1\n\nReview\n\nResponse received\nPrimary\n\nNorthgate Freight\n\nNo delivery scan recorded for QA-1001.\n\nLatest response\n\nNorthgate Freight confirmed no delivery scan was recorded.\n\nDraft created\n6 Jul, 12:00\nRequest marked sent\n6 Jul, 12:00\nResponse recorded\n20 Jul, 12:00\nClosed\n\nFormer 3PL (record removed)\n\nPick record for QA-1001 was never supplied.\n\nDraft created\n21 Jun, 12:00\nRequest marked sent\n21 Jun, 12:00\n\nInvestigation changes are disabled for this environment. Existing investigation history remains readable.\n\nResponsibility\n\nAdvisory assessment and merchant confirmation\nConfirmed\n\nCurrent responsibility\n\nCarrier loss\n\nHigh co"
+}

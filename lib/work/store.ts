@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/lib/supabase/tables';
+import { now } from '@/lib/time/clock';
 
 type WorkTaskCountResult = { count: number | null; error: { message: string } | null };
 
@@ -35,7 +36,7 @@ export async function countWorkViews(
     ? await client.rpc('work_view_counts', {
       p_merchant_id: merchantId,
       p_user_id: userId,
-      p_now: new Date().toISOString(),
+      p_now: now().toISOString(),
     })
     : null;
   if (rpcResult && !rpcResult.error && rpcResult.data && typeof rpcResult.data === 'object') {
@@ -62,8 +63,8 @@ export async function countWorkViews(
       },
     };
   }
-  const now = new Date();
-  const todayStart = new Date(now);
+  const asOf = now();
+  const todayStart = new Date(asOf);
   todayStart.setUTCHours(0, 0, 0, 0);
   const todayEnd = new Date(todayStart);
   todayEnd.setUTCDate(todayEnd.getUTCDate() + 1);
@@ -89,7 +90,7 @@ export async function countWorkViews(
     readCount(active(base(client, merchantId)).ilike('blocking_reason', '%evidence%'), 'evidence_needed'),
     readCount(active(base(client, merchantId)).or('title.ilike.%decision%,blocking_reason.ilike.%decision%'), 'decision_needed'),
     readCount(base(client, merchantId).eq('status', 'completed'), 'completed'),
-    readCount(active(base(client, merchantId)).lt('due_at', todayStart.toISOString()), 'overdue'),
+    readCount(active(base(client, merchantId)).lt('due_at', asOf.toISOString()), 'overdue'),
     readCount(active(base(client, merchantId)).gte('due_at', todayEnd.toISOString()), 'upcoming'),
     readCount(active(base(client, merchantId)).is('due_at', null), 'unscheduled'),
   ]);

@@ -13,7 +13,12 @@ export default function BillingStatusBanner() {
 
   useEffect(() => {
     void fetch('/api/billing')
-      .then((r) => (r.ok ? r.json() : null))
+      .then((r) => {
+        // An optional resource still reports its own failure rather than
+        // vanishing into an empty banner (RUN-14).
+        if (!r.ok) throw new Error(`Billing status unavailable (${r.status})`);
+        return r.json();
+      })
       .then((data) => {
         if (!data) return;
         if (data.status === 'grace_period' || data.status === 'past_due') {
@@ -23,7 +28,9 @@ export default function BillingStatusBanner() {
           });
         }
       })
-      .catch(() => {});
+      .catch((reason) => {
+        console.warn('[billing.banner] status unavailable', reason);
+      });
   }, []);
 
   if (!state) return null;

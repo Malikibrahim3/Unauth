@@ -62,7 +62,7 @@ export function CustomersOverviewPageView({
   kpis,
 }: CustomersOverviewPageViewProps) {
   return (
-    <PageConnectionGate requires="both" connection={connectionState} pageName="Customers" pageDescription="The customer directory adds merchant-owned context to loss-case decisions: order count, payout case history, and prior outcomes. Without both Shopify and your helpdesk connected, payout case counts may be zero because data is missing - not because the customer has no history." setupState={setupState} hasData={hasData}>
+    <PageConnectionGate requires="both" connection={connectionState} pageName="Customers" pageDescription="The customer directory adds merchant-owned context to loss decisions: order count, case history, and prior outcomes. Without both Shopify and your helpdesk connected, case counts may be zero because data is missing — not because the customer has no history." setupState={setupState} hasData={hasData}>
     <CustomersPageWorkbench
       title="Customers"
       subtitle={pageActions.subtitle}
@@ -73,9 +73,9 @@ export function CustomersOverviewPageView({
         </>
       }
       kpiItems={[
-        { label: 'Total customers', value: formatNumber(kpis.totalCustomers), hint: noFilters ? 'Customers with orders or payout cases' : 'With current filters applied' },
-        { label: 'Open payout cases', value: formatNumber(kpis.openCaseCustomers), hint: 'Customers with open cases' },
-        { label: 'Past payout cases', value: formatNumber(kpis.pastCaseCustomers), hint: 'Customers with any case history' },
+        { label: 'Total customers', value: formatNumber(kpis.totalCustomers), hint: noFilters ? 'Customers with orders or cases' : 'With current filters applied' },
+        { label: 'Customers with open cases', value: formatNumber(kpis.openCaseCustomers), hint: 'Customers with open cases' },
+        { label: 'Customers with past cases', value: formatNumber(kpis.pastCaseCustomers), hint: 'Customers with any case history' },
         { label: 'Total orders', value: formatNumber(kpis.totalOrders), hint: 'Across listed customers' },
       ]}
       primaryVisual={
@@ -84,7 +84,7 @@ export function CustomersOverviewPageView({
           icon={<Users size={16} />}
         >
           <strong>{formatNumber(kpis.openCaseCustomers)}</strong> of{' '}
-          <strong>{formatNumber(kpis.totalCustomers)}</strong> customers have an open payout case
+          <strong>{formatNumber(kpis.totalCustomers)}</strong> customers have an open case
           {kpis.pastCaseCustomers > 0 ? <> · <strong>{formatNumber(kpis.pastCaseCustomers)}</strong> with case history</> : null}.
         </KeyInsightCallout>
       }
@@ -94,7 +94,7 @@ export function CustomersOverviewPageView({
             {
               title: 'Case context',
               rows: [
-                { label: 'Open payout case', value: formatNumber(kpis.openCaseCustomers), tone: 'info', bar: kpis.totalCustomers ? kpis.openCaseCustomers / kpis.totalCustomers : 0 },
+                { label: 'Open case', value: formatNumber(kpis.openCaseCustomers), tone: 'info', bar: kpis.totalCustomers ? kpis.openCaseCustomers / kpis.totalCustomers : 0 },
                 { label: 'Any case history', value: formatNumber(kpis.pastCaseCustomers), tone: 'neutral', bar: kpis.totalCustomers ? kpis.pastCaseCustomers / kpis.totalCustomers : 0 },
                 { label: 'No recorded case', value: formatNumber(Math.max(0, kpis.totalCustomers - kpis.pastCaseCustomers)), tone: 'neutral', bar: kpis.totalCustomers ? Math.max(0, kpis.totalCustomers - kpis.pastCaseCustomers) / kpis.totalCustomers : 0 },
               ],
@@ -112,7 +112,7 @@ export function CustomersOverviewPageView({
         <Panel variant="panel" className="flex h-auto min-h-10 flex-wrap items-center gap-2 px-3 py-2">
           <span className="text-xs font-medium mr-1" style={{ color: 'var(--ua-text-tertiary)' }}>Filters</span>
           {[
-            { label: 'Open payout cases', href: '?openClaims=1', highlight: openClaimsOnly },
+            { label: 'Open cases', href: '?openClaims=1', highlight: openClaimsOnly },
             { label: 'Has refunds', href: '?hasRefunds=1', highlight: hasRefunds },
             { label: 'Has chargebacks', href: '?hasChargebacks=1', highlight: hasChargebacks },
           ].map(({ label, href, highlight }) => (
@@ -128,7 +128,7 @@ export function CustomersOverviewPageView({
           ))}
           {!connectionState.helpdesk && (
             <span className="ml-auto text-xs" style={{ color: 'var(--ua-text-tertiary)' }}>
-              Payout case counts include connected helpdesk data only.
+              Case counts include connected helpdesk data only.
             </span>
           )}
         </Panel>
@@ -140,7 +140,7 @@ export function CustomersOverviewPageView({
           <span className="text-xs" style={{ color: 'var(--ua-text-secondary)' }}>Active filters:</span>
           {hasRefunds && <FilterChip label="Has refunds" removeHref={buildRemoveHref(sp, 'hasRefunds')} />}
           {hasChargebacks && <FilterChip label="Has chargebacks" removeHref={buildRemoveHref(sp, 'hasChargebacks')} />}
-          {openClaimsOnly && <FilterChip label="Open payout cases" removeHref={buildRemoveHref(sp, 'openClaims')} />}
+          {openClaimsOnly && <FilterChip label="Open cases" removeHref={buildRemoveHref(sp, 'openClaims')} />}
           {q && <FilterChip label={`Search: "${q}"`} removeHref={buildRemoveHref(sp, 'q')} />}
           <Link href="/customers" className="text-xs hover:underline" style={{ color: 'var(--ua-text-secondary)' }}>Clear all</Link>
         </div>
@@ -151,8 +151,8 @@ export function CustomersOverviewPageView({
           title="No customers yet"
           description={
             connectionState.bothConnected
-              ? 'Shopify and your helpdesk are connected. Customers appear here as orders and payout cases sync.'
-              : 'The customer directory is built from your connected merchant sources. Finish setup to see order, claim, and payout history.'
+              ? 'Shopify and your helpdesk are connected. Customers appear here as orders and cases sync.'
+              : 'The customer directory is built from your connected merchant sources. Finish setup to see order and case history.'
           }
           action={
             <div className="flex items-center gap-4">

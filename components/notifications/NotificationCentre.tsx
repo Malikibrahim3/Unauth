@@ -23,7 +23,7 @@ const KIND_META: Record<string, { label: string; icon: typeof Bell }> = {
 };
 
 function destinationLabel(href: string) {
-  if (href.startsWith('/claims/')) return 'Open payout case';
+  if (href.startsWith('/claims/')) return 'Open case';
   if (href.startsWith('/recoveries/')) return 'Open recovery';
   if (href.startsWith('/integrations/')) return 'Open connection';
   if (href.startsWith('/work')) return 'Open work queue';

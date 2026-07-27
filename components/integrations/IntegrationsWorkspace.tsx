@@ -52,7 +52,7 @@ function FilterToolbar({
   showStatus: boolean;
 }) {
   return (
-    <div className={styles.toolbar} role="search">
+    <div className={`${styles.toolbar} ${showStatus ? styles.toolbarWithStatus : styles.toolbarCatalogue}`} role="search">
       <div className={styles.toolbarSearch}>
         <Input
           value={query}
@@ -64,7 +64,7 @@ function FilterToolbar({
         <Search
           size={15}
           aria-hidden="true"
-          className="pointer-events-none relative -top-[27px] left-3 -mb-4 text-[var(--ua-icon-secondary)]"
+          className={styles.searchIcon}
         />
       </div>
       <Select value={category} onChange={(event) => onCategoryChange(event.target.value)} aria-label="Filter by category">
@@ -78,9 +78,7 @@ function FilterToolbar({
           <option value="waiting">Waiting or checking</option>
           <option value="healthy">Healthy</option>
         </Select>
-      ) : (
-        <div aria-hidden="true" />
-      )}
+      ) : null}
     </div>
   );
 }
@@ -101,7 +99,7 @@ function ConnectionSummary({
         {attentionCount > 0 ? <span><strong>{formatNumber(attentionCount)}</strong> need attention</span> : <span>No active issues</span>}
         <span><strong>{formatNumber(importedRecords)}</strong> records indexed</span>
       </div>
-      <span className={styles.summaryMeta}>Health checks update when this page opens</span>
+      <span className={styles.summaryMeta}>Last successful sync is shown for each account</span>
     </div>
   );
 }
@@ -167,6 +165,8 @@ function ConnectedView({ items, importedRecords }: { items: CatalogueRowItem[]; 
 
 function CatalogueCard({ item }: { item: CatalogueRowItem }) {
   const planned = item.stage === "planned";
+  const stageLabel = planned ? "Coming soon" : item.stage === "live" ? "Available" : item.stage === "beta" ? "Beta" : "Partial";
+  const stageTone = planned ? "neutral" : item.stage === "live" ? "success" : item.stage === "beta" ? "info" : "warning";
   return (
     <article className={styles.catalogueCard}>
       <div className={styles.catalogueHeader}>
@@ -177,14 +177,14 @@ function CatalogueCard({ item }: { item: CatalogueRowItem }) {
             <p className={styles.catalogueCategory}>{categoryLabel(item.category)}</p>
           </div>
         </div>
-        <Badge tone={planned ? "neutral" : "info"} variant="subtle" size="sm" dot>
-          {planned ? "Coming soon" : "Available"}
+        <Badge tone={stageTone} variant="subtle" size="sm" dot>
+          {stageLabel}
         </Badge>
       </div>
       <p className={styles.catalogueDescription}>{item.description}</p>
       <div className="flex flex-wrap gap-1.5">
         <MetadataChip>{item.authMode === "oauth" ? "OAuth" : "API credentials"}</MetadataChip>
-        {item.runtimeVerificationPending && !planned ? <MetadataChip>Beta</MetadataChip> : null}
+        {item.runtimeVerificationPending && !planned ? <MetadataChip>Runtime verification pending</MetadataChip> : null}
       </div>
       <div className={styles.catalogueFooter}>
         <Link href={`/integrations/${item.id}`} className={styles.catalogueSecondary}>View details <ArrowUpRight size={12} className="ml-0.5 inline" aria-hidden="true" /></Link>
@@ -262,7 +262,10 @@ export function IntegrationsWorkspace({
   initialView: IntegrationView;
 }) {
   const connected = items.filter(isConfigured);
-  const browse = items.filter((item) => !isConfigured(item) && item.category !== "documents");
+  const browse = items.filter((item) => {
+    const isPlanned = item.stage === "planned";
+    return item.category !== "documents" && (isPlanned || (!isConfigured(item) && !isPlanned));
+  });
   const importedRecords = items.reduce((sum, item) => sum + item.importedRecords, 0);
   return initialView === "browse" ? <BrowseView items={browse} /> : <ConnectedView items={connected} importedRecords={importedRecords} />;
 }

@@ -1,11 +1,5 @@
 import { type ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import {
-  DATA_TABLE_EMPTY_STYLE,
-  DATA_TABLE_HEAD_ROW_STYLE,
-  DATA_TABLE_HEADER_CELL_BASE,
-  DATA_TABLE_STYLE,
-} from "@/components/ui/dataTableStyles";
 
 export interface ServerDataTableColumn<T> {
   key: string;
@@ -22,21 +16,8 @@ export interface DataTableServerProps<T> {
   className?: string;
   emptyState?: ReactNode;
   density?: "default" | "compact" | "relaxed";
-}
-
-const ROW_HEIGHT = { compact: 40, default: 52, relaxed: 60 } as const;
-
-function headerCellStyle<T>(column: ServerDataTableColumn<T>): React.CSSProperties {
-  return {
-    ...DATA_TABLE_HEADER_CELL_BASE,
-    width: column.width,
-    textAlign:
-      column.align === "right"
-        ? "right"
-        : column.align === "center"
-          ? "center"
-          : "left",
-  };
+  loading?: boolean;
+  'aria-label'?: string;
 }
 
 export function DataTableServer<T>({
@@ -46,35 +27,59 @@ export function DataTableServer<T>({
   className,
   emptyState,
   density = "default",
+  loading = false,
+  'aria-label': ariaLabel = 'Data table',
 }: DataTableServerProps<T>) {
   return (
     <div
       className={cn(
-        "w-full overflow-x-auto rounded-[var(--ua-radius-surface)] border bg-[var(--ua-surface-primary)]",
+        "ua-data-table",
+        `ua-data-table--density-${density}`,
         className,
       )}
-      style={{ borderColor: "var(--ua-border-default)", boxShadow: "none" }}
+      role="region"
+      aria-label={ariaLabel}
+      aria-busy={loading || undefined}
     >
-      <table className="w-full border-separate" style={DATA_TABLE_STYLE}>
+      {loading ? <span className="sr-only" role="status">Loading table</span> : null}
+      <table className="ua-data-table__table">
         <thead>
-          <tr style={DATA_TABLE_HEAD_ROW_STYLE}>
+          <tr className="ua-data-table__head-row">
             {columns.map((column) => (
-              <th key={column.key} scope="col" style={headerCellStyle(column)}>
+              <th
+                key={column.key}
+                scope="col"
+                className={cn(
+                  "ua-data-table__header-cell",
+                  column.align === "right" && "ua-data-table__header-cell--right",
+                  column.align === "center" && "ua-data-table__header-cell--center",
+                )}
+                style={column.width ? { width: column.width } : undefined}
+              >
                 {column.header}
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {rows.length === 0 ? (
+          {loading ? (
+            Array.from({ length: 6 }, (_, rowIndex) => (
+              <tr key={`loading-${rowIndex}`} aria-hidden="true">
+                {columns.map((column, columnIndex) => (
+                  <td key={column.key} className="ua-data-table__skeleton-cell">
+                    <div className={cn("skeleton ua-data-table__skeleton-bar", columnIndex === 0 && "ua-data-table__skeleton-bar--primary", columnIndex === 1 && "ua-data-table__skeleton-bar--secondary")} />
+                  </td>
+                ))}
+              </tr>
+            ))
+          ) : rows.length === 0 ? (
             <tr>
               <td colSpan={columns.length}>
                 {emptyState ?? (
                   <div
-                    className="flex items-center justify-center"
-                    style={DATA_TABLE_EMPTY_STYLE}
+                    className="ua-data-table__empty"
                   >
-                    No results
+                    No matching records
                   </div>
                 )}
               </td>
@@ -83,26 +88,16 @@ export function DataTableServer<T>({
             rows.map((row) => (
               <tr
                 key={getRowKey(row)}
-                style={{
-                  height: ROW_HEIGHT[density],
-                  borderBottom: "1px solid var(--ua-border-subtle)",
-                  background: "var(--ua-surface-primary)",
-                }}
+                className="ua-data-table__row"
               >
                 {columns.map((column) => (
                   <td
                     key={column.key}
-                    style={{
-                      padding: "0 var(--ua-space-4)",
-                      verticalAlign: "middle",
-                      textAlign:
-                        column.align === "right"
-                          ? "right"
-                          : column.align === "center"
-                            ? "center"
-                            : "left",
-                      color: "var(--ua-text-primary)",
-                    }}
+                    className={cn(
+                      "ua-data-table__cell",
+                      column.align === "right" && "ua-data-table__cell--right",
+                      column.align === "center" && "ua-data-table__cell--center",
+                    )}
                   >
                     {column.render(row)}
                   </td>

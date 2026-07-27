@@ -9,7 +9,7 @@ export function PopupLookupLoadingScreen({ connected }: PopupLookupLoadingScreen
     <div className="app">
       <PopupHeader connected={connected} showSettings={false} onSettings={() => {}} />
       <div className="loading">
-        <div className="loading-logo">U</div>
+        <img className="loading-logo" src="../icons/icon48.png" alt="" />
         <p>Checking customer context…</p>
       </div>
     </div>

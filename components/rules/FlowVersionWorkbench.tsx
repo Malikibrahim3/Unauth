@@ -348,9 +348,8 @@ export function FlowVersionWorkbench({
           role="status"
           className="rounded-md border border-[var(--ua-warning)] bg-[var(--ua-surface-muted)] px-3 py-2 text-sm text-[var(--ua-text-primary)]"
         >
-          <strong>Preview:</strong> drafts and dry-run tests are available, but
-          publication, activation, and live execution stay disabled until the
-          replay and idempotency release gate passes.
+          <strong>Publishing unavailable:</strong> drafts and tests remain
+          available, but activation and live execution are disabled.
         </p>
       ) : null}
       <Card unstyled variant="panel" className="p-4">
@@ -619,7 +618,7 @@ export function FlowVersionWorkbench({
         description={
           publicationEnabled
             ? "Atomic publication retires the previous version only if the new version activates successfully."
-            : "This is a read-only preview. Publication and live execution are disabled by the release gate."
+            : "Publishing is currently unavailable. This review does not change live data."
         }
         actions={
           publicationEnabled

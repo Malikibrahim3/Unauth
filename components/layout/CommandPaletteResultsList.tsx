@@ -14,7 +14,7 @@ import type {
 // keyboard index model stays aligned across all groups.
 const UNIFIED_GROUPS = [
   { type: 'order', label: 'Orders' },
-  { type: 'case', label: 'Payout cases' },
+  { type: 'case', label: 'Cases' },
   { type: 'ticket', label: 'Tickets' },
   { type: 'shipment', label: 'Shipments' },
   { type: 'refund', label: 'Refunds' },

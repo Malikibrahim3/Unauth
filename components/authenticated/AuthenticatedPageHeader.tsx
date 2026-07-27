@@ -26,11 +26,18 @@ export function AuthenticatedPageHeader({
   tabs,
   capabilityId,
 }: AuthenticatedPageHeaderProps) {
+  const visibleBreadcrumbs = breadcrumbs?.filter((item, index) => {
+    const isLast = index === breadcrumbs.length - 1;
+    // The H1 is the current location. Keep only true parent links in the
+    // breadcrumb row so a record name is not rendered twice above the fold.
+    return !(isLast && (!item.href || item.label === title));
+  });
+
   return (
     <header className={styles.pageHeader} data-capability-id={capabilityId}>
-      {breadcrumbs?.length ? (
+      {visibleBreadcrumbs?.length ? (
         <nav className={styles.breadcrumbs} aria-label="Breadcrumb">
-          {breadcrumbs.map((item, index) => (
+          {visibleBreadcrumbs.map((item, index) => (
             <span key={item.href ?? item.label}>
               {index > 0 ? <span className={styles.breadcrumbSeparator} aria-hidden="true"> / </span> : null}
               {item.href ? <Link href={item.href}>{item.label}</Link> : <span aria-current="page">{item.label}</span>}

@@ -25,7 +25,7 @@ interface MetricCardProps {
 const TONE_COLOR: Record<DeltaProps['tone'], string> = {
   positive: 'var(--ua-risk-low)',
   negative: 'var(--ua-risk-critical)',
-  neutral:  'var(--ua-text-secondary)',
+  neutral: 'var(--ua-text-secondary)',
 };
 
 const ARROW_ICON: Record<DeltaProps['direction'], typeof ArrowUp> = {
@@ -36,44 +36,24 @@ const ARROW_ICON: Record<DeltaProps['direction'], typeof ArrowUp> = {
 
 export function MetricCard({ label, value, delta, hint, icon, density = 'default', size, microchart, className }: MetricCardProps) {
   const isHero = size === 'hero';
-  const padding = isHero ? 'var(--ua-space-5)' : density === 'compact' ? 'var(--ua-space-3)' : 'var(--ua-space-4)';
   const displayValue = value;
 
   return (
     <div
-      className={cn('ua-metric-card group', className)}
-      style={{
-        background: 'var(--ua-surface-primary)',
-        border: '1px solid var(--ua-border-default)',
-        borderRadius: 'var(--ua-radius-surface)',
-        padding,
-        boxShadow: 'none',
-      }}
+      className={cn(
+        'ua-metric-card ua-card ua-card--panel',
+        isHero ? 'ua-metric-card--hero' : density === 'compact' ? 'ua-card--density-compact' : 'ua-card--density-default',
+        className,
+      )}
     >
       <div className="flex items-start justify-between gap-2">
-        <span
-        style={{
-          fontSize: 12,
-          fontWeight: 500,
-          color: 'var(--ua-text-tertiary)',
-          lineHeight: 1,
-        }}
-      >
+        <span className="ua-metric-card__label">
           {label}
         </span>
         {icon ? <span aria-hidden="true" className="sr-only">{icon}</span> : null}
       </div>
 
-      <div
-        className="mt-3 num leading-tight tabular-nums"
-        style={{
-          fontSize: isHero ? 24 : 23,
-          fontWeight: 600,
-          color: 'var(--ua-text-primary)',
-          letterSpacing: '-0.01em',
-          fontFamily: 'var(--ua-font-sans)',
-        }}
-      >
+      <div className="ua-metric-card__value mt-3 num leading-tight tabular-nums">
         {displayValue}
       </div>
 
@@ -82,7 +62,7 @@ export function MetricCard({ label, value, delta, hint, icon, density = 'default
         return (
           <div
             className="mt-1 flex items-center gap-1"
-            style={{ fontSize: 12, color: TONE_COLOR[delta.tone] }}
+            style={{ color: TONE_COLOR[delta.tone] }}
           >
             <DeltaIcon size={12} aria-hidden="true" />
             <span>{delta.value > 0 ? '+' : ''}{delta.value}</span>
@@ -97,7 +77,7 @@ export function MetricCard({ label, value, delta, hint, icon, density = 'default
       )}
 
       {hint && (
-        <p className="mt-1" style={{ fontSize: 12, color: 'var(--ua-text-tertiary)' }}>{hint}</p>
+        <p className="ua-metric-card__hint mt-1">{hint}</p>
       )}
     </div>
   );

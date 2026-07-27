@@ -7,6 +7,7 @@ import { Drawer } from "@/components/ui/Drawer";
 import { Badge } from "@/components/ui/Badge";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatCurrencyNullable, formatDate, formatDateAbsolute } from "@/lib/utils/format";
+import { providerLabel } from "@/lib/ui/merchantCopy";
 
 type Preview = {
   customer: {
@@ -225,7 +226,7 @@ export function CustomerPreviewDrawer({
 
             {customer.openCases.length ? (
               <section className="rounded-lg border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] p-4">
-                <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-[var(--ua-text-secondary)]" aria-hidden="true" /><h3 className="font-semibold">Payout cases requiring attention</h3></div><Badge tone="warning" size="sm">Action needed</Badge></div>
+                <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-[var(--ua-text-secondary)]" aria-hidden="true" /><h3 className="font-semibold">Cases requiring attention</h3></div><Badge tone="warning" size="sm">Action needed</Badge></div>
                 <ul className="mt-2 divide-y divide-[var(--ua-border-subtle)]">
                   {customer.openCases.map((item) => (
                     <li key={item.id}>
@@ -329,7 +330,7 @@ export function CustomerPreviewDrawer({
                   <ul className="mt-3 divide-y divide-[var(--ua-border-subtle)] border-t border-[var(--ua-border-subtle)] pt-1">
                     {customer.sources.map((source, index) => (
                       <li key={`${source.provider}-${source.externalId}-${index}`} className="flex items-center justify-between gap-3 py-2 text-sm">
-                        <span className="min-w-0 truncate"><span className="capitalize">{source.provider}</span>{source.email ? ` · ${source.email}` : ""}</span>
+                        <span className="min-w-0 truncate"><span>{providerLabel(source.provider)}</span>{source.email ? ` · ${source.email}` : ""}</span>
                         {source.verified != null ? <Badge tone={source.verified ? "success" : "neutral"} size="sm">{source.verified ? "Verified" : "Unverified"}</Badge> : null}
                       </li>
                     ))}

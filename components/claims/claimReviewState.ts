@@ -17,7 +17,7 @@ import { buildCustomerResponse } from '@/lib/claims/customerResponses';
 import { claimHasEvidence } from '@/lib/claims/events';
 import { pickPriorityClaim } from '@/lib/claims/priority';
 import { ACTIVE_CLAIM_STATUSES, isFinalClaimStatus } from '@/lib/claims/sla';
-import { saveClaimDraft } from '@/components/claims/claimReviewDraft';
+import { loadClaimDraft, saveClaimDraft } from '@/components/claims/claimReviewDraft';
 import { CLAIM_TYPE_LABELS } from '@/components/claims/claimReviewLabels';
 import {
   buildMetadata,
@@ -31,12 +31,14 @@ import {
 import {
   claimReviewReducer,
   createClaimReviewInitialState,
+  draftPatchFromSavedDraft,
   type ClaimReviewState,
 } from '@/components/claims/claimReviewReducer';
 import type { ClaimRecord } from '@/components/claims/claimReviewTypes';
 import { useAdjustStateWhenPropChanges } from '@/lib/react/adjustStateWhenPropChanges';
 import { useFetchJson } from '@/lib/react/useFetchJson';
 import type { PublicSupportCaseContext } from '@/lib/support/intake/supportCaseReadModel';
+import { parseMajorUnitInput } from '@/lib/ui/merchantCopy';
 
 type CustomerPayload = {
   profile?: Record<string, unknown>;
@@ -84,6 +86,7 @@ export function useClaimReviewWorkbench(
   profileId: string,
   sourceCustomerId: string | null,
   initialClaimId?: string | null,
+  initialClaim?: ClaimRecord | null,
 ) {
   const [state, dispatch] = useReducer(
     claimReviewReducer,
@@ -96,6 +99,7 @@ export function useClaimReviewWorkbench(
     (id) => id ?? '',
     createClaimReviewInitialState(profileId, initialClaimId).claimId,
   );
+  const [draftHydrated, setDraftHydrated] = useState(false);
 
   const patch = useCallback((patchValue: Partial<ClaimReviewState>) => {
     dispatch({ type: 'patch', patch: patchValue });
@@ -155,10 +159,22 @@ export function useClaimReviewWorkbench(
     [data, effectiveSelectedOrderId],
   );
   const selectedClaim = useMemo(
-    () => history.find((h) => h.id === effectiveClaimId) ?? null,
-    [effectiveClaimId, history],
+    () => history.find((h) => h.id === effectiveClaimId)
+      ?? (initialClaim?.id === effectiveClaimId ? initialClaim : null),
+    [effectiveClaimId, history, initialClaim],
   );
   const resolvedActiveClaimId = selectedClaim?.id ?? effectiveClaimId;
+
+  /*
+   * RUN-13: the case id is already known on the server and arrives as
+   * `initialClaimId`, so the case-scoped reads below must not queue behind the
+   * claims-list response. Waiting for `resolvedActiveClaimId` turned three
+   * independent requests into a serial chain and was the largest single
+   * contributor to case-detail route-ready time. `resolvedActiveClaimId` is
+   * still authoritative once the list lands, and only differs from
+   * `initialClaimId` when the operator switches case, which re-fires the fetch.
+   */
+  const caseScopedClaimId = initialClaimId || resolvedActiveClaimId;
 
   const [decisionLoading, setDecisionLoading] = useState(false);
   const [decisionError, setDecisionError] = useState<string | null>(null);
@@ -166,7 +182,7 @@ export function useClaimReviewWorkbench(
   const [decisionStale, setDecisionStale] = useState(false);
   const decisionDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const reloadDecision = useCallback(async (targetClaimId: string | null) => {
+  const reloadDecision = useCallback(async (targetClaimId: string | null, mode: 'read' | 'refresh' = 'read') => {
     if (!targetClaimId) {
       setDecisionData(null);
       setDecisionError(null);
@@ -176,7 +192,7 @@ export function useClaimReviewWorkbench(
     }
     setDecisionLoading(true);
     setDecisionError(null);
-    const result = await fetchClaimDecision(targetClaimId);
+    const result = await fetchClaimDecision(targetClaimId, mode);
     setDecisionLoading(false);
     if (!result.ok) {
       setDecisionError(result.message);
@@ -203,7 +219,8 @@ export function useClaimReviewWorkbench(
     if (!resolvedActiveClaimId) return;
     if (decisionDebounceRef.current) clearTimeout(decisionDebounceRef.current);
     setDecisionStale(true);
-    void reloadDecision(resolvedActiveClaimId);
+    // The only path that may mutate: an explicit merchant refresh.
+    void reloadDecision(resolvedActiveClaimId, 'refresh');
   }, [resolvedActiveClaimId, reloadDecision]);
 
   useEffect(() => {
@@ -216,8 +233,8 @@ export function useClaimReviewWorkbench(
     setDecisionData(null);
     setDecisionError(null);
     setDecisionStale(false);
-    void reloadDecision(resolvedActiveClaimId || null);
-  }, [reloadDecision, resolvedActiveClaimId]);
+    void reloadDecision(caseScopedClaimId || null);
+  }, [reloadDecision, caseScopedClaimId]);
 
   useEffect(() => {
     if (!selectedClaim || !decisionData?.evaluatedAt || decisionLoading) return;
@@ -228,11 +245,27 @@ export function useClaimReviewWorkbench(
     }
   }, [decisionData, decisionLoading, selectedClaim]);
 
-  const supportUrl = resolvedActiveClaimId
-    ? `/api/claims/${encodeURIComponent(resolvedActiveClaimId)}/support-context`
+  const supportUrl = caseScopedClaimId
+    ? `/api/claims/${encodeURIComponent(caseScopedClaimId)}/support-context`
     : null;
   const { data: supportPayload } = useFetchJson<SupportPayload>(supportUrl);
-  const supportCases = resolvedActiveClaimId ? (supportPayload?.support_cases ?? []) : [];
+
+  /*
+   * RUN-13: the reconciliation card only mounts once the claims list has
+   * resolved, which put `/matches` at the end of the chain. The shared resource
+   * store is keyed by URL, so starting the same request here means the card
+   * reads an already-populated entry instead of issuing a late one. Same
+   * endpoint, same production path — just no longer last in line.
+   */
+  useFetchJson<unknown>(
+    caseScopedClaimId ? `/api/claims/${encodeURIComponent(caseScopedClaimId)}/matches` : null,
+  );
+  // Same reasoning for the investigations card, which was the last request in
+  // the chain and therefore set the route-ready time on case detail.
+  useFetchJson<unknown>(
+    caseScopedClaimId ? `/api/claims/${encodeURIComponent(caseScopedClaimId)}/investigations` : null,
+  );
+  const supportCases = caseScopedClaimId ? (supportPayload?.support_cases ?? []) : [];
 
   const selectedClaimOutcomes = selectedClaim?.outcomes ?? [];
   const latestOutcome = selectedClaimOutcomes[0] ?? selectedClaim?.latest_outcome ?? null;
@@ -257,11 +290,18 @@ export function useClaimReviewWorkbench(
     patch(draftPatchFromClaim(selectedClaim, orderOptions));
   }, [orderOptions, patch, selectedClaim?.id, selectedClaim]);
 
+  useEffect(() => {
+    const draft = loadClaimDraft(profileId);
+    if (draft) patch(draftPatchFromSavedDraft(draft, initialClaimId));
+    setDraftHydrated(true);
+  }, [initialClaimId, patch, profileId]);
+
   const claimFormOpen = state.claimFormOpen || !effectiveClaimId;
 
   useEffect(() => {
+    if (!draftHydrated) return;
     saveClaimDraft(profileId, pickDraftFields(state, effectiveClaimId));
-  }, [effectiveClaimId, profileId, state]);
+  }, [draftHydrated, effectiveClaimId, profileId, state]);
 
   const metadata = useMemo(() => buildMetadata(state.metaRows), [state.metaRows]);
   const effectiveOrderRef = manualMode ? state.manualOrderRef.trim() : effectiveSelectedOrderId;
@@ -286,6 +326,7 @@ export function useClaimReviewWorkbench(
     (data?.profile?.names as string[] | undefined)?.[0] ??
     (data?.profile?.customerName as string | undefined) ??
     (data?.profile?.name as string | undefined) ??
+    initialClaim?.customer_name ??
     'Customer';
   const behaviorSignals: string[] = (order?.fraudFlags as string[] | undefined) ?? (data?.profile?.fraud_flags as string[] | undefined) ?? [];
   const nextClaimAction = statusNextAction(selectedClaim, !!latestOutcome, responseRecorded);
@@ -352,20 +393,20 @@ export function useClaimReviewWorkbench(
     const effectiveRef = manualMode ? state.manualOrderRef.trim() : effectiveSelectedOrderId;
     if (!effectiveRef) {
       showMsg(
-        manualMode ? 'Please enter an order reference to continue' : 'Select an order before saving the claim.',
+        manualMode ? 'Please enter an order reference to continue' : 'Select an order before saving the case.',
         'error',
       );
       return;
     }
     if (activeDuplicateClaim) {
       setClaimId(activeDuplicateClaim.id);
-      showMsg(`An active ${CLAIM_TYPE_LABELS[state.claimType].toLowerCase()} claim already exists for this order.`, 'error');
+      showMsg(`An active ${CLAIM_TYPE_LABELS[state.claimType].toLowerCase()} case already exists for this order.`, 'error');
       return;
     }
     if (resolvedDuplicateClaim) {
       setClaimId(resolvedDuplicateClaim.id);
       showMsg(
-        `A resolved ${CLAIM_TYPE_LABELS[state.claimType].toLowerCase()} claim already exists for this order. Reopen the existing claim if new evidence changes the decision.`,
+        `A resolved ${CLAIM_TYPE_LABELS[state.claimType].toLowerCase()} case already exists for this order. Reopen the existing case if new evidence changes the decision.`,
         'error',
       );
       return;
@@ -421,13 +462,17 @@ export function useClaimReviewWorkbench(
 
   async function onOutcome() {
     if (!resolvedActiveClaimId) {
-      showMsg('Save a claim first, then record the outcome.', 'error');
+      showMsg('Save a case first, then record the outcome.', 'error');
+      return;
+    }
+    if (!state.decision) {
+      showMsg('Choose a decision before recording the outcome.', 'error');
       return;
     }
     const monetaryDecision = ['approved', 'partial_refund', 'full_refund', 'denied', 'no_action'].includes(state.decision);
-    const amountMajor = Number(state.decisionAmount);
     const currency = selectedClaim?.currency ?? null;
-    if (monetaryDecision && (!Number.isFinite(amountMajor) || amountMajor < 0 || !currency)) {
+    const amountMinor = monetaryDecision ? parseMajorUnitInput(state.decisionAmount, currency) : null;
+    if (monetaryDecision && (amountMinor == null || amountMinor < 0 || !currency)) {
       showMsg('Enter the decision amount and confirm its currency before recording this decision.', 'error');
       return;
     }
@@ -438,7 +483,7 @@ export function useClaimReviewWorkbench(
     const r = await submitOutcome(resolvedActiveClaimId, {
       decision: state.decision,
       outcome: 'pending',
-      amount_minor: monetaryDecision ? Math.round(amountMajor * 100) : null,
+      amount_minor: amountMinor,
       currency: monetaryDecision ? currency : null,
       notes: state.notes,
     }, idempotencyKey);
@@ -447,7 +492,7 @@ export function useClaimReviewWorkbench(
       decisionRequestKeyRef.current = null;
       showMsg(
         state.decision === 'escalated'
-          ? 'Merchant outcome recorded. Claim flagged for high evidence density review.'
+          ? 'Merchant outcome recorded. Case flagged for high evidence density review.'
           : 'Merchant outcome recorded.',
         'success',
       );
@@ -472,7 +517,7 @@ export function useClaimReviewWorkbench(
 
   async function onEvidence() {
     if (!resolvedActiveClaimId) {
-      showMsg('Save a claim first, then attach evidence.', 'error');
+      showMsg('Save a case first, then attach evidence.', 'error');
       return;
     }
     patch({ busy: true });
@@ -494,7 +539,7 @@ export function useClaimReviewWorkbench(
 
   async function onStatusChange() {
     if (!resolvedActiveClaimId) {
-      showMsg('Save or select a claim before changing status.', 'error');
+      showMsg('Save or select a case before changing status.', 'error');
       return;
     }
     if (!state.statusNote.trim()) {
@@ -512,11 +557,11 @@ export function useClaimReviewWorkbench(
 
   async function onReopen() {
     if (!resolvedActiveClaimId) {
-      showMsg('Select a resolved claim before reopening.', 'error');
+      showMsg('Select a resolved case before reopening.', 'error');
       return;
     }
     if (!state.reopenNote.trim()) {
-      showMsg('Add a reason before reopening the claim.', 'error');
+      showMsg('Add a reason before reopening the case.', 'error');
       return;
     }
     patch({ busy: true });
@@ -530,7 +575,7 @@ export function useClaimReviewWorkbench(
 
   async function onReverse() {
     if (!resolvedActiveClaimId) {
-      showMsg('Select a resolved claim before reversing a decision.', 'error');
+      showMsg('Select a resolved case before reversing a decision.', 'error');
       return;
     }
     if (!state.reverseNote.trim()) {
@@ -538,9 +583,9 @@ export function useClaimReviewWorkbench(
       return;
     }
     const monetaryDecision = ['approved', 'partial_refund', 'full_refund', 'denied', 'no_action'].includes(state.reverseDecision);
-    const amountMajor = Number(state.decisionAmount);
     const currency = selectedClaim?.currency ?? null;
-    if (monetaryDecision && (!Number.isFinite(amountMajor) || amountMajor < 0 || !currency)) {
+    const amountMinor = monetaryDecision ? parseMajorUnitInput(state.decisionAmount, currency) : null;
+    if (monetaryDecision && (amountMinor == null || amountMinor < 0 || !currency)) {
       showMsg('Enter the replacement decision amount and confirm its currency before recording the reversal.', 'error');
       return;
     }
@@ -552,7 +597,7 @@ export function useClaimReviewWorkbench(
       decision: state.reverseDecision,
       outcome: 'pending',
       note: state.reverseNote,
-      amount_minor: monetaryDecision ? Math.round(amountMajor * 100) : null,
+      amount_minor: amountMinor,
       currency: monetaryDecision ? currency : null,
     }, idempotencyKey);
     patch({ busy: false });
@@ -574,7 +619,7 @@ export function useClaimReviewWorkbench(
         outcome: latestOutcome?.outcome ?? null,
         responseText: customerResponse,
       });
-      showMsg('Customer response copied and recorded on the claim timeline.', 'success');
+      showMsg('Customer response copied and recorded on the case timeline.', 'success');
       await refreshHistory();
     } catch {
       await recordCustomerResponseCopied(resolvedActiveClaimId, {
@@ -582,7 +627,7 @@ export function useClaimReviewWorkbench(
         outcome: latestOutcome?.outcome ?? null,
         responseText: customerResponse,
       });
-      showMsg('Clipboard copy unavailable. Response was still recorded on the claim timeline.', 'success');
+      showMsg('Clipboard copy unavailable. Response was still recorded on the case timeline.', 'success');
       await refreshHistory();
     }
   }

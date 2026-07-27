@@ -10,6 +10,8 @@ interface SectionCardProps {
   id?: string;
   className?: string;
   style?: CSSProperties;
+  /** Use when the parent working surface already owns the perimeter. */
+  joined?: boolean;
 }
 
 export function SectionCard({
@@ -21,37 +23,27 @@ export function SectionCard({
   id,
   className,
   style,
+  joined = false,
 }: SectionCardProps) {
-  const bodyPadding = density === "compact" ? "p-3" : "p-4";
+  const bodyPadding = density === "compact" ? "ua-section-card__body--compact" : "ua-section-card__body--default";
 
   return (
     <section
       id={id}
-      className={cn("overflow-hidden", className)}
-      style={{
-        background: "var(--ua-surface-primary)",
-        border: "1px solid var(--ua-border-default)",
-        borderRadius: "var(--ua-radius-surface)",
-        boxShadow: "none",
-        ...style,
-      }}
+      className={cn("ua-section-card", joined && "ua-section-card--joined", className)}
+      style={style}
     >
       {/* Header */}
       <div
-        className="ua-panel-header flex flex-wrap items-start justify-between gap-3 sm:items-center"
-        style={{
-          borderBottom: "1px solid var(--ua-border-subtle)",
-          padding: "var(--ua-space-3) var(--ua-space-4)",
-        }}
+        className="ua-section-card__header flex flex-wrap items-start justify-between gap-3 sm:items-center"
       >
         <div className="min-w-0 flex-1">
-          <div className="text-h3" style={{ color: "var(--ua-text-primary)" }}>
+          <div className="ua-section-card__title text-h3">
             {title}
           </div>
           {description && (
             <p
-              className="mt-1 text-small"
-              style={{ color: "var(--ua-text-secondary)" }}
+              className="ua-section-card__description mt-1 text-small"
             >
               {description}
             </p>
@@ -65,7 +57,7 @@ export function SectionCard({
       </div>
 
       {/* Body */}
-      <div className={cn(bodyPadding, "bg-[var(--ua-surface-primary)]")}>{children}</div>
+      <div className={cn("ua-section-card__body", bodyPadding)}>{children}</div>
     </section>
   );
 }

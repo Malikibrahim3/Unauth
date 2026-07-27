@@ -6,26 +6,44 @@ import {
   type FinancialReportMetric,
   type IntelligenceReport,
 } from '@/lib/reporting/intelligence';
+import { financialStageLabel } from '@/lib/ui/labels';
+import { hashId } from '@/lib/ui/displayRef';
+import { formatMinorCurrencyNullable } from '@/lib/utils/format';
 
-export const REPORT_EXPORT_VERSION = 'mvp-plus-financial-v1';
+export const REPORT_EXPORT_VERSION = 'mvp-plus-financial-v2';
 export type ReportExportView = 'metrics' | 'outcomes';
 
 const FINANCIAL_DEFINITIONS: Record<FinancialReportMetric, string> = {
-  requested: 'Reliable value of the customer-requested remedy; unknown values are excluded.',
-  exposed: 'Current maximum payout exposure from explicit components.',
-  approved: 'Value the merchant authorized; approval is not proof of payment.',
-  paid: 'Value confirmed as actually provided to the customer.',
-  estimated_loss: 'Provisional expected economic loss using visible assumptions.',
-  prevented: 'Exposure that remained unpaid through the applicable observation window.',
-  confirmed_loss: 'Realised merchant loss supported by an actual payout or loss event.',
-  recoverable: 'Confirmed-loss value eligible or credibly expected to be pursued.',
-  recovered: 'Value actually received or credited back to the merchant.',
-  outstanding: 'Maximum of recoverable minus recovered minus recovery write-off, within one currency.',
-  written_off: 'Pursued value explicitly closed without recovery; it remains net loss.',
-  final_net_loss: 'Per-case maximum of confirmed loss minus recovered value, within one currency.',
+  requested: 'Requested value recorded by the source or merchant.',
+  exposed: 'Maximum exposure for the case in the selected scope.',
+  approved: 'Merchant decision recorded for the case; it is not proof of payment.',
+  paid: 'Observed payout confirmed by a connected source.',
+  estimated_loss: 'Provisional loss value with visible assumptions.',
+  prevented: 'Exposure that remained unpaid through the observation window.',
+  confirmed_loss: 'Confirmed loss supported by an observed outcome.',
+  recoverable: 'Eligible recovery bounded by confirmed loss and a documented route.',
+  recovered: 'Recovered cash actually received or credited back to the merchant.',
+  outstanding: 'Eligible recovery less recovered cash and any written-off balance.',
+  written_off: 'Confirmed loss explicitly closed without recovery.',
+  final_net_loss: 'Confirmed loss less recovered cash for the same case scope.',
 };
 
-const FINANCIAL_TIME_BASIS = 'Payout case submitted in the selected period.';
+const FINANCIAL_LABELS: Record<FinancialReportMetric, string> = {
+  requested: financialStageLabel('requested'),
+  exposed: financialStageLabel('maximum_exposure'),
+  approved: financialStageLabel('merchant_decision'),
+  paid: financialStageLabel('observed_payout'),
+  estimated_loss: financialStageLabel('estimated_loss'),
+  prevented: financialStageLabel('prevented'),
+  confirmed_loss: financialStageLabel('confirmed_loss'),
+  recoverable: financialStageLabel('eligible_recovery'),
+  recovered: financialStageLabel('recovered_cash'),
+  outstanding: financialStageLabel('outstanding_recovery'),
+  written_off: financialStageLabel('written_off'),
+  final_net_loss: financialStageLabel('final_net_loss'),
+};
+
+const FINANCIAL_TIME_BASIS = 'Case submitted in the selected period.';
 
 export function buildReportExportRows(
   report: IntelligenceReport,
@@ -42,7 +60,6 @@ export function buildReportExportRows(
     'time_basis',
     'currency',
     'known',
-    'value_minor',
     'value',
     'record_count',
     'record_ids',
@@ -57,15 +74,14 @@ export function buildReportExportRows(
         report.range,
         report.timezone,
         view,
-        row.key,
+        row.label,
         'Confirmed loss grouped by canonical issue category.',
         FINANCIAL_TIME_BASIS,
         row.currency,
         true,
-        row.amountMinor,
-        (row.amountMinor / 100).toFixed(2),
+        formatMinorCurrencyNullable(row.amountMinor, row.currency),
         row.recordIds.length,
-        row.recordIds.join(';'),
+        row.recordIds.map((id) => hashId(id)).join(';'),
       ]),
     ];
   }
@@ -83,15 +99,14 @@ export function buildReportExportRows(
           report.range,
           report.timezone,
           view,
-          metric,
+          FINANCIAL_LABELS[metric],
           FINANCIAL_DEFINITIONS[metric],
           FINANCIAL_TIME_BASIS,
           bridge.currency,
           known,
-          valueMinor ?? '',
-          valueMinor == null ? 'unavailable' : (valueMinor / 100).toFixed(2),
+          valueMinor == null ? 'Unavailable' : formatMinorCurrencyNullable(valueMinor, bridge.currency),
           recordIds.length,
-          recordIds.join(';'),
+          recordIds.map((id) => hashId(id)).join(';'),
         ];
       }),
     ),

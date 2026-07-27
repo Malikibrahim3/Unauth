@@ -56,8 +56,8 @@ export type FlowEditable = {
 };
 
 const TRIGGERS = [
-  ["case.created", "Payout case created"],
-  ["case.updated", "Payout case updated"],
+  ["case.created", "Case created"],
+  ["case.updated", "Case updated"],
   ["case.decision_recorded", "Decision recorded"],
   ["shipment.exception_recorded", "Shipment exception recorded"],
   ["connection.sync_failed", "Integration sync failed"],
@@ -72,7 +72,7 @@ function nextEditorKey(prefix: string) {
 function blankOutput(): FlowOutputDraft {
   return {
     type: "create_task",
-    title: "Review payout case",
+    title: "Review case",
     priority: "medium",
     dueInHours: 24,
     _editorKey: nextEditorKey("action"),

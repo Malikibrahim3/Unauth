@@ -1,6 +1,7 @@
 import { TABLES } from '@/lib/supabase/tables';
 import { normaliseCurrencyOrNull } from '@/lib/canonical/money';
 import { label } from '@/lib/ui/labels';
+import { now, nowMs } from '@/lib/time/clock';
 
 export const REPORT_RANGES = ['7d', '30d', '90d', 'all'] as const;
 export type ReportRange = (typeof REPORT_RANGES)[number];
@@ -60,7 +61,7 @@ export type DashboardPeriodComparison = {
 type Client={from:(table:string)=>any};
 const RANGE_DAYS:Record<Exclude<ReportRange,'all'>,number>={ '7d':7,'30d':30,'90d':90 };
 export function parseReportRange(value:string|undefined):ReportRange{return REPORT_RANGES.includes(value as ReportRange)?value as ReportRange:'30d'}
-export function reportCutoff(range:ReportRange, now=new Date()):string|null { if(range==='all')return null; return new Date(now.getTime()-RANGE_DAYS[range]*86400000).toISOString(); }
+export function reportCutoff(range:ReportRange, asOf=now()):string|null { if(range==='all')return null; return new Date(asOf.getTime()-RANGE_DAYS[range]*86400000).toISOString(); }
 export function normalizeReportTimezone(value:string|null|undefined):string {
   const candidate=typeof value==='string'&&value.length>0&&value.length<80?value:'UTC';
   try {
@@ -101,6 +102,54 @@ export function dashboardPreviousPeriodWindow(
 }
 export function isFinancialReportMetric(value:string):value is FinancialReportMetric {
   return FINANCIAL_REPORT_METRICS.includes(value as FinancialReportMetric);
+}
+
+export type FinancialTruthResult = {
+  rows: Array<Record<string, unknown>>;
+  issues: string[];
+};
+
+/**
+ * Keep the report's eligible-recovery stage truthful at the presentation
+ * boundary. A recovery route is only eligible when the same case/currency has
+ * a confirmed loss that bounds it. Invalid rows remain in the report scope,
+ * but their inapplicable recovery stages are withheld rather than shown as a
+ * confident zero or an impossible amount.
+ */
+export function enforceFinancialTruth(
+  rows: Array<Record<string, unknown>>,
+): FinancialTruthResult {
+  let invalidEligible = 0;
+  let invalidRecovered = 0;
+  const safeRows = rows.map((row) => {
+    const states = new Set(
+      (Array.isArray(row.known_states) ? row.known_states : []).map(String),
+    );
+    const confirmed = Number(row.confirmed_loss_minor);
+    const eligible = Number(row.recoverable_minor);
+    const recovered = Number(row.recovered_minor);
+    const hasConfirmed = states.has('confirmed_loss') && Number.isInteger(confirmed) && confirmed >= 0;
+    const hasEligible = states.has('recoverable') && Number.isInteger(eligible) && eligible >= 0;
+    const nextStates = new Set(states);
+    if (states.has('recoverable') && (!hasConfirmed || !hasEligible || eligible > confirmed)) {
+      nextStates.delete('recoverable');
+      nextStates.delete('recovered');
+      invalidEligible += 1;
+    }
+    if (states.has('recovered') && (!hasEligible || !Number.isInteger(recovered) || recovered < 0 || recovered > eligible)) {
+      nextStates.delete('recovered');
+      invalidRecovered += 1;
+    }
+    return { ...row, known_states: [...nextStates] };
+  });
+  const issues: string[] = [];
+  if (invalidEligible) {
+    issues.push(`${invalidEligible} record${invalidEligible === 1 ? '' : 's'} have eligible recovery without a valid confirmed-loss bound; eligible recovery is unavailable for those records`);
+  }
+  if (invalidRecovered) {
+    issues.push(`${invalidRecovered} record${invalidRecovered === 1 ? '' : 's'} have recovered cash without a valid eligible-recovery bound; recovered cash is unavailable for those records`);
+  }
+  return { rows: safeRows, issues };
 }
 
 export function financialMetricIsKnown(bridge:MoneyBridge, metric:FinancialReportMetric):boolean {
@@ -320,7 +369,7 @@ export async function loadDashboardPeriodComparison(
   client: Client,
   merchantId: string,
   range: ReportRange,
-  asOf = new Date(),
+  asOf = now(),
   timezone = 'UTC',
 ): Promise<DashboardPeriodComparison | null> {
   const window = dashboardPreviousPeriodWindow(range, asOf);
@@ -348,7 +397,9 @@ export async function loadDashboardPeriodComparison(
         .eq('merchant_id', merchantId)
         .in('support_payout_case_id', caseIds)
     : { data: [] };
-  const financial = await attachKnownFinancialStates(client, merchantId, (financialData ?? []) as Array<Record<string, any>>) as Array<{
+  const attachedFinancial = await attachKnownFinancialStates(client, merchantId, (financialData ?? []) as Array<Record<string, any>>);
+  const financialTruth = enforceFinancialTruth(attachedFinancial);
+  const financial = financialTruth.rows as Array<{
     support_payout_case_id: string;
     currency?: string | null;
     requested_minor?: number | null;
@@ -392,14 +443,17 @@ function addRank(
 
 /** Canonical reporting projection. Money never crosses currency boundaries. */
 export async function loadIntelligenceReport(client:Client,merchantId:string,range:ReportRange,timezone='UTC',options:{asOf?:Date}={}):Promise<IntelligenceReport>{
-  const asOf=options.asOf??new Date();
+  const asOf=options.asOf??now();
   const normalizedTimezone=normalizeReportTimezone(timezone);
   const cutoff=reportCutoff(range,asOf);
   let casesQuery=client.from(TABLES.MERCHANT_CLAIMS).select('id,status,claim_type,reason_normalized,loss_attribution,currency,submitted_at,created_at,updated_at').eq('merchant_id',merchantId).order('updated_at',{ascending:false}).limit(10000);
   if(cutoff)casesQuery=casesQuery.gte('submitted_at',cutoff);
   const {data:caseData}=await casesQuery; const cases=(caseData??[]) as Array<Record<string,any>>; const caseIds=cases.map(c=>c.id);
   const {data:financialData}=caseIds.length?await client.from(TABLES.CASE_FINANCIAL_SUMMARIES).select('support_payout_case_id,currency,requested_minor,exposed_minor,approved_minor,paid_minor,estimated_loss_minor,prevented_minor,confirmed_loss_minor,recoverable_minor,recovered_minor,written_off_minor,updated_at').eq('merchant_id',merchantId).in('support_payout_case_id',caseIds):{data:[]};
-  const financial=await attachKnownFinancialStates(client,merchantId,(financialData??[]) as Array<Record<string,any>>); const bridges=aggregateMoneyBridges(financial);
+  const attachedFinancial=await attachKnownFinancialStates(client,merchantId,(financialData??[]) as Array<Record<string,any>>);
+  const financialTruth=enforceFinancialTruth(attachedFinancial);
+  const financial=financialTruth.rows;
+  const bridges=aggregateMoneyBridges(financial);
   const financialByCase=new Map(financial.map(r=>[r.support_payout_case_id,r])); const causesMap=new Map<string,RankedRow>();
   for(const c of cases){
     const f=financialByCase.get(c.id);
@@ -427,19 +481,19 @@ export async function loadIntelligenceReport(client:Client,merchantId:string,ran
    */
   const {data:recoveryData}=await client.from(TABLES.RECOVERY_CASES).select('id,status,recovery_type,currency,amount_recovered,updated_at').eq('merchant_id',merchantId).limit(10000);const recoveryMap=new Map<string,RankedRow>();
   for(const r of (recoveryData??[]) as Array<Record<string,any>>){if(cutoff&&r.updated_at<cutoff)continue;const currency=normaliseCurrencyOrNull(r.currency);if(!currency)continue;const status=String(r.status||'unknown');addRank(recoveryMap,status,label('recoveryStatus',status),Math.round(Number(r.amount_recovered||0)*100),currency,`/reports/records?kind=recovery&dimension=status&value=${encodeURIComponent(status)}&range=${range}&currency=${currency}&timezone=${encodeURIComponent(normalizedTimezone)}`,String(r.id))}
-  const coverageSpecs=[[TABLES.SOURCE_ORDERS,'Orders','/orders'],[TABLES.SOURCE_TICKETS,'Tickets','/tickets'],[TABLES.SOURCE_SHIPMENTS,'Shipments','/shipments'],[TABLES.SOURCE_REFUNDS,'Refunds','/refunds'],[TABLES.SOURCE_RETURNS,'Returns','/returns'],[TABLES.MERCHANT_CLAIMS,'Payout cases','/claims']] as const;const staleBefore=new Date(Date.now()-48*3600000).toISOString();
+  const coverageSpecs=[[TABLES.SOURCE_ORDERS,'Orders','/orders'],[TABLES.SOURCE_TICKETS,'Tickets','/tickets'],[TABLES.SOURCE_SHIPMENTS,'Shipments','/shipments'],[TABLES.SOURCE_REFUNDS,'Refunds','/refunds'],[TABLES.SOURCE_RETURNS,'Returns','/returns'],[TABLES.MERCHANT_CLAIMS,'Cases','/claims']] as const;const staleBefore=new Date(nowMs()-48*3600000).toISOString();
   const coverage:CoverageRow[]=await Promise.all(coverageSpecs.map(async([table,objectType,href])=>{const date=table===TABLES.SOURCE_REFUNDS?'ingested_at':'updated_at';const [all,fresh,latest]=await Promise.all([client.from(table).select('id',{count:'exact',head:true}).eq('merchant_id',merchantId),client.from(table).select('id',{count:'exact',head:true}).eq('merchant_id',merchantId).gte(date,staleBefore),client.from(table).select(`id,${date}`).eq('merchant_id',merchantId).order(date,{ascending:false}).limit(1)]);const records=all.count??0;const freshRecords=fresh.count??0;return{objectType,records,freshRecords,staleRecords:Math.max(0,records-freshRecords),latestAt:(latest.data as Array<Record<string,any>>|null)?.[0]?.[date]??null,href};}));
-  const issues:string[]=[];const invalidCurrencyRows=financial.filter(row=>!normaliseCurrencyOrNull(row.currency)).length;if(invalidCurrencyRows)issues.push(`${invalidCurrencyRows} financial record${invalidCurrencyRows===1?' has':'s have'} a missing or invalid currency and ${invalidCurrencyRows===1?'was':'were'} excluded`);for(const b of bridges){if(b.paidMinor>b.exposedMinor&&b.knownStates.includes('exposed')&&b.exposedMinor>0)issues.push(`${b.currency}: paid compensation exceeds recorded exposure`);if(b.recoveredMinor>b.recoverableMinor&&b.recoverableMinor>0)issues.push(`${b.currency}: recovered exceeds recoverable amount`);const trendExposure=trend.filter(point=>point.currency===b.currency).reduce((sum,point)=>sum+point.exposureMinor,0);const trendRecovered=trend.filter(point=>point.currency===b.currency).reduce((sum,point)=>sum+point.recoveredMinor,0);if(trendExposure!==b.exposedMinor||trendRecovered!==b.recoveredMinor)issues.push(`${b.currency}: chart totals do not reconcile with the financial value strip`)}
+  const issues:string[]=[...financialTruth.issues];const invalidCurrencyRows=attachedFinancial.filter(row=>!normaliseCurrencyOrNull(row.currency)).length;if(invalidCurrencyRows)issues.push(`${invalidCurrencyRows} financial record${invalidCurrencyRows===1?' has':'s have'} a missing or invalid currency and ${invalidCurrencyRows===1?'was':'were'} excluded`);for(const b of bridges){if(b.paidMinor>b.exposedMinor&&b.knownStates.includes('exposed')&&b.exposedMinor>0)issues.push(`${b.currency}: paid compensation exceeds recorded exposure`);if(b.recoveredMinor>b.recoverableMinor&&b.recoverableMinor>0)issues.push(`${b.currency}: recovered exceeds eligible recovery`);const trendExposure=trend.filter(point=>point.currency===b.currency).reduce((sum,point)=>sum+point.exposureMinor,0);const trendRecovered=trend.filter(point=>point.currency===b.currency).reduce((sum,point)=>sum+point.recoveredMinor,0);if(trendExposure!==b.exposedMinor||trendRecovered!==b.recoveredMinor)issues.push(`${b.currency}: chart totals do not reconcile with the financial value strip`)}
   return{range,timezone:normalizedTimezone,generatedAt:asOf.toISOString(),bridges,trend,causes:[...causesMap.values()].sort((a,b)=>b.amountMinor-a.amountMinor||b.count-a.count),operations:[...statuses].map(([key,count])=>({key,label:label('caseStatus',key),count,href:`/reports/records?kind=case&dimension=status&value=${encodeURIComponent(key)}&range=${range}&timezone=${encodeURIComponent(normalizedTimezone)}`})).sort((a,b)=>b.count-a.count),recoveries:[...recoveryMap.values()].sort((a,b)=>b.amountMinor-a.amountMinor||b.count-a.count),coverage,reconciliation:{ok:issues.length===0,issues},recordCount:cases.length};
 }
 
 export const REPORT_DEFINITIONS=[
-  {id:'financial',name:'Financial performance',definition:'Ledger amounts by payout-case period and ISO currency.',numerator:'Sum of each canonical financial entry category.',denominator:'Not applicable.',timeBasis:'Payout case submitted in selected period.'},
-  {id:'loss-causes',name:'Loss causes',definition:'Realised loss grouped by canonical issue category.',numerator:'Confirmed loss in each category.',denominator:'All confirmed loss in the same currency and period.',timeBasis:'Payout case submitted in selected period.'},
-  {id:'prevention',name:'Payout prevention',definition:'Recorded exposure that remained unpaid through the configured observation window.',numerator:'Confirmed prevented exposure after the observation window.',denominator:'Known exposed value in the same currency.',timeBasis:'Payout case submitted in selected period.'},
+  {id:'financial',name:'Financial performance',definition:'Ledger amounts by case submission period and ISO currency.',numerator:'Sum of each canonical financial entry category.',denominator:'Not applicable.',timeBasis:'Case submitted in selected period.'},
+  {id:'loss-causes',name:'Loss causes',definition:'Realised loss grouped by canonical issue category.',numerator:'Confirmed loss in each category.',denominator:'All confirmed loss in the same currency and period.',timeBasis:'Case submitted in selected period.'},
+  {id:'prevention',name:'Loss prevention',definition:'Recorded exposure that remained unpaid through the configured observation window.',numerator:'Confirmed prevented exposure after the observation window.',denominator:'Known exposed value in the same currency.',timeBasis:'Case submitted in selected period.'},
   {id:'recovery',name:'Recovery performance',definition:'Recovered and outstanding amounts by recovery status.',numerator:'Reconciled recovered amount.',denominator:'Recoverable amount in the same currency.',timeBasis:'Recovery updated in selected period.'},
-  {id:'policy',name:'Policy effectiveness',definition:'Recorded merchant decisions grouped by policy result.',numerator:'Cases with the selected recorded result.',denominator:'Cases with a recorded policy result.',timeBasis:'Payout case submitted in selected period.'},
-  {id:'operations',name:'Operations / SLA',definition:'Payout-case workload grouped by canonical state.',numerator:'Cases in each state.',denominator:'All cases in the selected period.',timeBasis:'Payout case submitted in selected period.'},
-  {id:'evidence',name:'Evidence gaps',definition:'Cases whose canonical workflow state identifies missing or awaited evidence.',numerator:'Cases in evidence-waiting states.',denominator:'Open cases in the selected period.',timeBasis:'Payout case submitted in selected period.'},
+  {id:'policy',name:'Policy effectiveness',definition:'Recorded merchant decisions grouped by policy result.',numerator:'Cases with the selected recorded result.',denominator:'Cases with a recorded policy result.',timeBasis:'Case submitted in selected period.'},
+  {id:'operations',name:'Operations / SLA',definition:'Case workload grouped by canonical state.',numerator:'Cases in each state.',denominator:'All cases in the selected period.',timeBasis:'Case submitted in selected period.'},
+  {id:'evidence',name:'Evidence gaps',definition:'Cases whose canonical workflow state identifies missing or awaited evidence.',numerator:'Cases in evidence-waiting states.',denominator:'Open cases in the selected period.',timeBasis:'Case submitted in selected period.'},
   {id:'coverage',name:'Source coverage',definition:'Imported object records and freshness by object family.',numerator:'Records refreshed in the last 48 hours.',denominator:'All imported records in the merchant projection.',timeBasis:'Current source projection.'},
 ] as const;

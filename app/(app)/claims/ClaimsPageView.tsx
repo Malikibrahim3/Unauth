@@ -2,13 +2,11 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { PageConnectionGate } from '@/components/connections/PageConnectionGate';
 import type { ConnectionState } from '@/lib/connections/getConnectionState';
-import { WorkbenchPage, EmptyState, ButtonLink, Card, DataTableServer, FilterChip, SegmentedControl, SummaryRail } from '@/components/ui';
+import { WorkbenchPage, EmptyState, ButtonLink, FilterChip, SegmentedControl } from '@/components/ui';
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { dominantCurrency, formatCurrencyNullable, formatNumber } from '@/lib/utils/format';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
 import {
-  CLAIM_TYPE_LABELS,
-  humanizeEnumValue,
   type ClaimRow,
   type CustomerProfileSummary,
   type EvidencePackageRow,
@@ -46,6 +44,7 @@ export type ClaimsPageViewProps = {
   filterTabs: ClaimsFilterTab[];
   queueFilter: string;
   sp: Record<string, string | undefined>;
+  searchTerm: string;
   sort: string;
   slaFilter: string | null;
   claims: ClaimRow[];
@@ -77,6 +76,7 @@ export function ClaimsPageView({
   filterTabs,
   queueFilter,
   sp,
+  searchTerm,
   sort,
   slaFilter,
   claims,
@@ -91,22 +91,11 @@ export function ClaimsPageView({
   page,
   totalPages,
 }: ClaimsPageViewProps) {
-  const claimTypeRows = Object.entries(
-    claims.reduce<Record<string, number>>((acc, claim) => {
-      acc[claim.claim_type] = (acc[claim.claim_type] ?? 0) + 1;
-      return acc;
-    }, {})
-  )
-    .slice(0, 5)
-    .map(([claimType, value]) => ({
-      label: CLAIM_TYPE_LABELS[claimType] ?? humanizeEnumValue(claimType),
-      value,
-    }));
-  const waitingCount = queueCounts.awaitingCarrier + queueCounts.awaiting3pl + queueCounts.awaitingSupplier;
-  const classifiedActive = queueCounts.awaitingEvidence + waitingCount + queueCounts.readyForDecision + queueCounts.manualReview;
   // Display currency for aggregate KPIs: the most common case currency on record.
   const displayCurrency = dominantCurrency(recoveryMetricRows.length > 0 ? recoveryMetricRows : claims);
-  const emptyDescription = listView.kind === 'unread'
+  const emptyDescription = searchTerm
+    ? `No cases match “${searchTerm}”.`
+    : listView.kind === 'unread'
     ? 'No cases with new evidence right now.'
     : listView.kind === 'workflow' && listView.workflow === 'needs_evidence'
       ? 'No cases needing evidence right now.'
@@ -141,9 +130,9 @@ export function ClaimsPageView({
                                   : 'No cases match this filter.';
 
   return (
-    <PageConnectionGate requires="helpdesk" connection={connectionState} pageName="Case reconciliation" pageDescription="Connect Gorgias or Zendesk so Unauth can match the customer, order, item, parcel, and evidence before you act." hasData={queueCounts.total > 0}>
+    <PageConnectionGate requires="helpdesk" connection={connectionState} pageName="Cases" pageDescription="Connect Gorgias or Zendesk so Unauth can match the customer, order, item, parcel, and evidence before you act." hasData={queueCounts.total > 0}>
     <WorkbenchPage
-      title="Case reconciliation"
+      title="Cases"
       navItems={WORKBENCH_NAV_ITEMS}
       activeNavKey="claims"
       kpiItems={[
@@ -152,23 +141,6 @@ export function ClaimsPageView({
         { label: 'Ready for decision', value: formatNumber(queueCounts.readyForDecision), hint: 'Evidence complete' },
         { label: 'Value at issue', value: formatCurrencyNullable(totalAtRisk || null, displayCurrency), hint: 'All cases' },
       ]}
-      rail={
-        <SummaryRail
-          sections={[
-            {
-              title: 'Decision states',
-              rows: [
-                { label: 'Needs evidence', value: formatNumber(queueCounts.awaitingEvidence), tone: 'danger', bar: queueCounts.active ? queueCounts.awaitingEvidence / queueCounts.active : 0 },
-                { label: 'Partner wait', value: formatNumber(waitingCount), tone: 'warning', bar: queueCounts.active ? waitingCount / queueCounts.active : 0 },
-                { label: 'Ready for decision', value: formatNumber(queueCounts.readyForDecision), tone: 'info', bar: queueCounts.active ? queueCounts.readyForDecision / queueCounts.active : 0 },
-                { label: 'Manual review', value: formatNumber(queueCounts.manualReview), tone: 'neutral', bar: queueCounts.active ? queueCounts.manualReview / queueCounts.active : 0 },
-                { label: 'Other active', value: formatNumber(Math.max(0, queueCounts.active - classifiedActive)), tone: 'neutral', bar: queueCounts.active ? Math.max(0, queueCounts.active - classifiedActive) / queueCounts.active : 0 },
-              ],
-              footnote: 'The active case queue grouped by the next evidence or decision step.',
-            },
-          ]}
-        />
-      }
       footer={
         <p className="text-xs" style={{ color: 'var(--ua-text-tertiary)' }}>
           Support conversations stay in your helpdesk. Unauth reconciles the records, keeps customer action separate from responsibility, and routes supported recovery work to the right partner.
@@ -184,7 +156,33 @@ export function ClaimsPageView({
         ) : (
           <div>
             {/* Toolbar */}
-            <div className="flex flex-wrap items-center justify-between gap-3 px-4 pt-4 pb-3 border-b" style={{ borderColor: 'var(--ua-border-subtle)' }}>
+            <div className="space-y-3 px-4 pt-4 pb-3 border-b" style={{ borderColor: 'var(--ua-border-subtle)' }}>
+              <form method="get" action="/claims" role="search" aria-label="Search cases" className="flex w-full items-center gap-2">
+                {Object.entries(sp)
+                  .filter(([key, value]) => key !== 'search' && key !== 'page' && key !== 'focus' && value)
+                  .map(([key, value]) => (
+                    <input key={key} type="hidden" name={key} value={value} />
+                  ))}
+                <label htmlFor="cases-search" className="sr-only">Search customer, order, ticket or case reference</label>
+                <input
+                  id="cases-search"
+                  data-testid="cases-search"
+                  name="search"
+                  type="search"
+                  defaultValue={searchTerm}
+                  placeholder="Search customer, order, ticket or case reference"
+                  className="min-w-0 flex-1 rounded-md border px-3 py-2 text-sm"
+                  style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-surface-primary)', color: 'var(--ua-text-primary)' }}
+                />
+                <button type="submit" className="shrink-0 rounded-md px-3 py-2 text-sm font-semibold" style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-action-primary-fg)' }}>
+                  Search
+                </button>
+                {searchTerm ? (
+                  <Link href={`/claims${buildClaimsQueryString(sp, { search: undefined, page: '1', focus: undefined })}`} className="shrink-0 text-xs font-semibold underline underline-offset-2" style={{ color: 'var(--ua-text-secondary)' }}>
+                    Clear
+                  </Link>
+                ) : null}
+              </form>
               <nav
                 className="flex flex-wrap items-center gap-x-1 gap-y-1"
                 aria-label="Case filters"
@@ -200,7 +198,7 @@ export function ClaimsPageView({
                   </FilterChip>
                 ))}
               </nav>
-              <div className="flex w-full flex-wrap items-center justify-between gap-3 sm:w-auto sm:justify-start">
+              <div className="flex w-full flex-wrap items-center justify-between gap-3 sm:justify-start">
                 <SegmentedControl
                   aria-label="Sort cases"
                   value={slaFilter === 'overdue' ? 'ageing' : sort === 'age' ? 'oldest' : sort === 'value' ? 'value' : 'updated'}
@@ -260,49 +258,6 @@ export function ClaimsPageView({
               </div>
             )}
 
-            <div className="grid gap-4 px-4 py-4 border-t lg:grid-cols-2" style={{ borderColor: 'var(--ua-border-subtle)' }}>
-              <Card unstyled as="section" variant="panel" className="p-4" aria-labelledby="queue-health-title">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p id="queue-health-title" className="text-xs font-semibold" style={{ color: 'var(--ua-text-primary)' }}>Queue health</p>
-                    <p className="mt-1 text-xs" style={{ color: 'var(--ua-text-tertiary)' }}>Open work, new evidence, ageing and decisions.</p>
-                  </div>
-                  <Link href="/work" className="text-xs font-semibold hover:underline" style={{ color: 'var(--ua-text-link)' }}>Open work queue</Link>
-                </div>
-                <dl className="mt-3 divide-y" style={{ borderColor: 'var(--ua-border-subtle)' }}>
-                  {[
-                    { label: 'Open cases', value: queueCounts.active, href: '/claims' },
-                    { label: 'New evidence', value: queueCounts.unread, href: '/claims?viewed=unread' },
-                    { label: 'Ageing', value: queueCounts.overdue, href: '/claims?sla=overdue&sort=age' },
-                    { label: 'Ready for decision', value: queueCounts.readyForDecision, href: '/claims?workflow=ready_for_decision' },
-                  ].map((item) => (
-                    <div key={item.label} className="flex items-center justify-between gap-4 py-2.5 first:pt-0 last:pb-0">
-                      <dt className="text-xs" style={{ color: 'var(--ua-text-secondary)' }}>{item.label}</dt>
-                      <dd className="flex items-center gap-3">
-                        <span className="text-sm font-semibold tabular-nums" style={{ color: 'var(--ua-text-primary)' }}>{item.value}</span>
-                        <Link href={item.href} className="text-xs font-semibold hover:underline" style={{ color: 'var(--ua-text-link)' }}>Review</Link>
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
-              </Card>
-              <Card unstyled as="section" variant="panel" className="p-4" aria-labelledby="request-mix-title">
-                <p id="request-mix-title" className="text-xs font-semibold" style={{ color: 'var(--ua-text-primary)' }}>Request types</p>
-                {claimTypeRows.length > 0 ? (
-                  <DataTableServer
-                    className="mt-3 border-0"
-                    rows={claimTypeRows}
-                    getRowKey={(item) => item.label}
-                    density="compact"
-                    columns={[
-                      { key: 'type', header: 'Request type', render: (item) => <span className="font-medium text-[var(--ua-text-secondary)]">{item.label}</span> },
-                      { key: 'cases', header: 'Cases', align: 'right' as const, render: (item) => <span className="font-semibold tabular-nums">{item.value}</span> },
-                      { key: 'share', header: 'Share', align: 'right' as const, render: (item) => <span className="tabular-nums text-[var(--ua-text-tertiary)]">{claims.length > 0 ? `${Math.round((item.value / claims.length) * 100)}%` : '—'}</span> },
-                    ]}
-                  />
-                ) : <p className="mt-3 text-xs" style={{ color: 'var(--ua-text-tertiary)' }}>No classified cases in this page.</p>}
-              </Card>
-            </div>
           </div>
         )
       }

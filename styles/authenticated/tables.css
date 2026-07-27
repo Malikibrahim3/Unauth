@@ -9,16 +9,152 @@
 }
 
 .ua-app :where(th) {
+  height: var(--ua-table-header-height);
+  padding-inline: var(--ua-space-4);
+  background: var(--ua-surface-secondary);
   color: var(--ua-text-tertiary);
-  font-size: 11px;
+  font-size: var(--ua-text-micro-size);
   font-weight: 600;
-  letter-spacing: .01em;
+  letter-spacing: 0;
+  text-align: left;
+  white-space: nowrap;
 }
 
 .ua-app :where(tbody tr) {
-  transition: background-color 120ms ease;
+  transition: background-color var(--ua-duration-fast) var(--ua-ease-standard);
 }
 
 .ua-app :where(tbody tr:hover) {
   background: var(--ua-surface-hover);
+}
+
+/* Canonical DataTable shell and state geometry. Data-derived values such as
+ * column widths stay in the component; static visual treatment lives here. */
+.ua-app .ua-data-table {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--ua-border-default);
+  border-radius: var(--ua-radius-surface);
+  background: var(--ua-surface-primary);
+  box-shadow: none;
+}
+
+.ua-app .ua-data-table__table {
+  width: 100%;
+  border-spacing: 0;
+  border-collapse: separate;
+  background: transparent;
+  font-size: var(--ua-text-small-size);
+}
+
+.ua-app .ua-data-table__head-row {
+  background: var(--ua-surface-secondary);
+  border-bottom: 1px solid var(--ua-border-default);
+}
+
+.ua-app .ua-data-table__header-cell {
+  height: var(--ua-table-header-height);
+  padding-inline: var(--ua-space-4);
+  color: var(--ua-text-tertiary);
+  font-size: var(--ua-text-micro-size);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.ua-app .ua-data-table__header-cell--sortable {
+  user-select: none;
+}
+
+.ua-app .ua-data-table__header-cell--right,
+.ua-app .ua-data-table__cell--right,
+.ua-app .ua-data-table__actions-cell {
+  text-align: right;
+}
+
+.ua-app .ua-data-table__header-cell--center,
+.ua-app .ua-data-table__cell--center {
+  text-align: center;
+}
+
+.ua-app .ua-data-table__sort-icon {
+  display: inline-block;
+  width: var(--ua-space-3);
+  height: var(--ua-space-3);
+  margin-left: var(--ua-space-1);
+  vertical-align: middle;
+}
+
+.ua-app .ua-data-table__sort-icon--muted {
+  opacity: 0.35;
+}
+
+.ua-app .ua-data-table__row {
+  height: var(--ua-data-row-height);
+  border-bottom: 1px solid var(--ua-border-subtle);
+  background: var(--ua-surface-primary);
+  transition: background-color var(--ua-duration-fast) var(--ua-ease-standard),
+    box-shadow var(--ua-duration-fast) var(--ua-ease-standard);
+}
+
+.ua-app .ua-data-table__row--selected {
+  background: var(--ua-surface-hover);
+  box-shadow: inset 2px 0 0 var(--ua-action-primary);
+}
+
+.ua-app .ua-data-table__cell {
+  padding: 0 var(--ua-space-4);
+  vertical-align: middle;
+  color: var(--ua-text-primary);
+  text-align: left;
+}
+
+.ua-app .ua-data-table__actions-cell {
+  width: var(--ua-control-height-icon);
+  padding-inline: var(--ua-space-3);
+  vertical-align: middle;
+}
+
+.ua-app .ua-data-table__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--ua-text-secondary);
+  font-size: var(--ua-text-small-size);
+}
+
+.ua-app .ua-data-table__skeleton-row {
+  border-bottom: 1px solid var(--ua-border-subtle);
+}
+
+.ua-app .ua-data-table__skeleton-cell {
+  padding: var(--ua-space-2) var(--ua-space-4);
+}
+
+.ua-app .ua-data-table__skeleton-bar {
+  width: 50%;
+  height: var(--ua-space-3);
+  border-radius: var(--ua-radius-control);
+}
+
+.ua-app .ua-data-table__skeleton-bar--primary {
+  width: 60%;
+}
+
+.ua-app .ua-data-table__skeleton-bar--secondary {
+  width: 80%;
+}
+
+.ua-app .ua-data-table--density-compact {
+  --ua-data-row-height: 40px;
+}
+
+.ua-app .ua-data-table--density-default {
+  --ua-data-row-height: 44px;
+}
+
+.ua-app .ua-data-table--density-relaxed {
+  --ua-data-row-height: 52px;
 }

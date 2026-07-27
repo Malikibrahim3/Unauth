@@ -16,6 +16,7 @@ build/
 tests/.test-credentials.json
 tests/current/.auth/
 tests/support/.auth/
+tests/phase1/.auth/
 tests/reports/
 tests/utils/csv-fixtures/
 synthetic-lab/outputs/

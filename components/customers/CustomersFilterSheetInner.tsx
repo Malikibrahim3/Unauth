@@ -23,7 +23,7 @@ function buildCustomersHref(
 const SORT_OPTIONS = [
   { value: 'recent', label: 'Sort: Most recent order' },
   { value: 'orders', label: 'Sort: Most orders' },
-  { value: 'cases', label: 'Sort: Most payout cases' },
+  { value: 'cases', label: 'Sort: Most cases' },
   { value: 'name', label: 'Sort: Name A–Z' },
 ] as const;
 

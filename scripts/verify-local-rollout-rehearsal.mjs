@@ -28,9 +28,14 @@ const EXPECTED_MIGRATIONS = [
   '20260723400000_release1_investigation_email_dispatch.sql',
   '20260723500000_release1_investigation_privacy.sql',
   '20260723600000_release1_reporting_truthfulness.sql',
+  '20260724100000_operational_work_read_model.sql',
+  '20260724110000_work_saved_views.sql',
+  '20260724120000_exception_resolution_integrity.sql',
+  '20260725100000_evidence_reconciliation_pivot.sql',
+  '20260727100000_work_views_claimed_items_grants.sql',
 ];
 const EXPECTED_SCHEMA_HASH =
-  '349e2ecaea756975ba84ce36928f3a80bbdeb039975dd472e28f5a32c7ecd9ee';
+  'f42c76ae8370f5332d18183ce85d18b3245679e73f556f7bf55120f11c4e62e5';
 const BASELINE_VERSIONS = EXPECTED_MIGRATIONS.slice(0, 2).map((file) => file.slice(0, 14));
 const FORWARD_MIGRATIONS = EXPECTED_MIGRATIONS.slice(2);
 
@@ -173,7 +178,7 @@ const monitor = sql(`
         and c.relkind='r')::text || '|' ||
     (select count(*) from pg_policies where schemaname='public')::text
 `);
-assertEqual(monitor, '0|29|152', 'post-rollout monitoring invariants');
+assertEqual(monitor, '0|29|161', 'post-rollout monitoring invariants');
 
 try {
   // Reconstruct the exact pre-rollout shape: the production-derived baseline
@@ -319,7 +324,7 @@ try {
             and c.relkind='r')::text || '|' ||
         (select count(*) from pg_policies where schemaname='public')::text
     `),
-    '0|29|152',
+    '0|29|161',
     'rehearsed post-rollout monitoring invariants',
   );
 } catch (error) {

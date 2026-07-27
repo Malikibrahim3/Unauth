@@ -8,6 +8,8 @@ import { formatDateTime } from "@/lib/utils/format";
 import { AuthenticatedPageHeader } from "@/components/authenticated/AuthenticatedPageHeader";
 import { AuthenticatedPanel } from "@/components/authenticated/AuthenticatedPanel";
 import pageStyles from "@/components/authenticated/AuthenticatedPageChrome.module.css";
+import { hashId } from "@/lib/ui/displayRef";
+import { label } from "@/lib/ui/labels";
 export default async function Runs({
   searchParams,
 }: {
@@ -47,8 +49,8 @@ export default async function Runs({
             href={`/flows/runs/${r.id}`}
             className="grid min-h-12 items-center gap-2 px-4 py-2.5 text-[length:var(--ua-text-micro-size)] hover:bg-[var(--ua-surface-hover)] sm:grid-cols-4"
           >
-            <span className="font-mono text-xs">{r.id}</span>
-            <span className="capitalize">{r.status}</span>
+            <span className="font-mono text-xs">Run {hashId(r.id)}</span>
+            <span>{label("workflowStatus", String(r.status ?? "unknown"))}</span>
             <span className="text-[var(--ua-text-secondary)]">{formatDateTime(r.started_at)}</span>
             <span className="text-right font-semibold text-[var(--ua-text-secondary)]">{r.error ? "Failed — inspect" : "Inspect"}</span>
           </Link>

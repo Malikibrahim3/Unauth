@@ -66,7 +66,7 @@ async function persistSupportPayoutCaseDecision(input: {
     .eq('merchant_id', input.merchantId);
 
   if (recommendationError) {
-    throw new Error(`Failed to persist payout case recommendation: ${recommendationError.message}`);
+    throw new Error(`Failed to persist case recommendation: ${recommendationError.message}`);
   }
 
   // Attribution and the derived recovery route remain advisory until a
@@ -87,7 +87,7 @@ async function persistSupportPayoutCaseDecision(input: {
     .eq('responsibility_confirmation_state', 'unconfirmed');
 
   if (attributionError) {
-    throw new Error(`Failed to persist payout case attribution: ${attributionError.message}`);
+    throw new Error(`Failed to persist case attribution: ${attributionError.message}`);
   }
 }
 
@@ -96,7 +96,7 @@ const DELIVERY_CLAIM_TYPES_FOR_TRACKING_SYNC = new Set([
   'missing_parcel',
 ]);
 
-async function computeClaimDecision(
+export async function computeClaimDecision(
   input: ComputeClaimDecisionInput,
 ): Promise<ComputedClaimDecision | null> {
   const context = await buildClaimDecisionContext(

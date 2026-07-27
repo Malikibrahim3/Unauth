@@ -584,7 +584,7 @@ export function RuleVersionWorkbench({
         <div className="flex items-center gap-2 border-b border-[var(--ua-border-subtle)] px-4 py-3">
           <History className="h-4 w-4" />
           <h2 id="version-history-title" className="text-sm font-semibold">
-            Immutable version history
+            Version history
           </h2>
         </div>
         <div className="divide-y divide-[var(--ua-border-subtle)]">
@@ -606,7 +606,7 @@ export function RuleVersionWorkbench({
                 {version.published_at
                   ? `Published ${formatDateTime(version.published_at)}`
                   : `Created ${formatDateTime(version.created_at)}`}
-                {version.supersedes_version_id ? " · rollback-derived" : ""}
+                {version.supersedes_version_id ? " · based on a previous version" : ""}
               </span>
               {canManage && version.status !== "draft" ? (
                 <Button

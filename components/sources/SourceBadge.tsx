@@ -7,7 +7,7 @@ import { ProviderLogo } from '@/components/identity/ProviderLogo';
  * has to assume a specific provider. Falls back to a title-cased id.
  */
 export function sourceLabel(source: string | null | undefined): string {
-  if (!source) return 'Unknown source';
+  if (!source) return 'Source not identified';
   const provider = getIntegrationProvider(source.toLowerCase());
   if (provider) return provider.name;
   const known: Record<string, string> = {

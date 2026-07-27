@@ -94,7 +94,7 @@ export function WorkbenchPageSkeleton({
 }) {
   const mainPanel = <section className={cn(styles.panel, styles.mainPanel)}>{children}</section>;
   return (
-    <div role="status" className="animate-pulse" aria-busy="true" aria-label="Loading page">
+    <div role="status" aria-busy="true" aria-label="Loading page" data-skeleton-variant="workbench">
       <header className={styles.pageHeader}>
         <div className={styles.headerTop}>
           <div className="min-w-0 space-y-2">

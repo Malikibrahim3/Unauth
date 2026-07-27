@@ -61,7 +61,7 @@ export function CaseContextDrawer({
     <Drawer
       open
       onClose={onClose}
-      title={`Payout case ${caseId.slice(0, 8)}`}
+      title={`Case ${caseId.slice(0, 8)}`}
       footer={
         <div className="p-4">
           <Link

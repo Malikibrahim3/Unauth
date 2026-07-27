@@ -269,7 +269,7 @@ export function derivePayoutWorkflow(input: {
       status: 'closed',
       payoutDecisionState: 'decision_recorded',
       nextAction,
-      nextActionReason: 'The payout case already has a recorded terminal status.',
+      nextActionReason: 'The case already has a recorded terminal status.',
       requestedEvidence: [],
       recoveryState:
         input.recovery.recoverability === 'not_recoverable'

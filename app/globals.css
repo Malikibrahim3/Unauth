@@ -330,9 +330,6 @@
     --data-id:        #557267;
     --data-date:      #68798A;
 
-    --logo-ink: #1C1612;
-    --logo-dot: #8A2828;
-
     /* ══════════════════════════════════════════════════════════════════════
      * LANDING PAGE TOKENS
      * Single source of truth for all landing-specific design values.
@@ -652,9 +649,6 @@
     --data-score:     #1A1814; --data-currency: #1A1814; --data-id: #6B6560; --data-date: #6B6560;
     --data-neutral:   #6B6560; --data-neutral-soft: #EFEDEB;
 
-    /* Logo — near-black ink + rust dot */
-    --logo-ink: #1A1814; --logo-dot: #A85040;
-
     /* Brand rust */
     --copper-bright: #A85040;
     --copper-mid:    #7B2D26;
@@ -888,8 +882,6 @@
     --destructive-foreground: var(--ink-primary);
     --input:               var(--surface-border);
     --ring:                var(--action-primary);
-    --logo-ink: #F4F0E8;
-    --logo-dot: #F4F0E8;
   }
 
   /* ══════════════════════════════════════════════════════════════════════
@@ -1403,110 +1395,28 @@
 .ua-nav-link:hover { color: #1A1814; }
 .ua-nav-link:hover::after { transform: scaleX(1); }
 
-/* Direct copy of wordmark system from Unauth Wordmark-print.html */
-  .ua-mark {
-    --ua-logo-ink: var(--logo-ink);
-    --ua-logo-dot: var(--logo-dot);
-    --ua-logo-dot-size: 2.5px;
-    --ua-logo-dot-gap: 0.03em;
-    display: inline-flex;
-    align-items: baseline;
-    font-family: var(--font-serif);
-    font-weight: 600;
-    color: var(--ua-logo-ink);
-    line-height: 1;
-    white-space: nowrap;
-    letter-spacing: -0.02em;
-    font-variation-settings: "opsz" 32;
-  }
-  .ua-mark .word {
-    display: inline-block;
-  }
-  .ua-mark.compact {
-    letter-spacing: 0;
-    align-items: center;
-  }
-  .ua-mark.compact .dot {
-    transform: none;
-    width: 5px;
-    height: 5px;
-    min-width: 5px;
-    min-height: 5px;
-    margin-left: 0;
-    display: block;
-  }
-  .ua-mark .dot {
-    display: inline-block;
-    width: var(--ua-logo-dot-size);
-    height: var(--ua-logo-dot-size);
-    margin-left: var(--ua-logo-dot-gap);
-    flex-shrink: 0;
-    border-radius: 9999px;
-    background: var(--ua-logo-dot);
-    transform: translateY(0);
-  }
-  .ua-mark.primary {
-    --ua-logo-ink: #1C1612;
-    --ua-logo-dot: #8A2828;
-  }
-  .ua-mark.reversed {
-    --ua-logo-ink: #F4F0E8;
-    --ua-logo-dot: #F4F0E8;
-  }
-  .ua-mark.mono-dark {
-    --ua-logo-ink: #1C1612;
-    --ua-logo-dot: #1C1612;
-  }
-  .ua-mark.mono-light {
-    --ua-logo-ink: #F4F0E8;
-    --ua-logo-dot: #F4F0E8;
-  }
-  .ua-mark.nav {
-    --ua-logo-dot-size: 3px;
-    --ua-logo-dot-gap: 0.03em;
-    font-size: 22px;
-  }
-  .ua-mark.s12 {
-    --ua-logo-dot-size: 1.5px;
-    --ua-logo-dot-gap: 0.20em;
-    font-size: 12px;
-    letter-spacing: -0.012em;
-  }
-  .ua-mark.s10 {
-    --ua-logo-dot-size: 1px;
-    --ua-logo-dot-gap: 0.18em;
-    font-size: 12px;
-    letter-spacing: -0.01em;
-  }
-  .ua-mark.s9 {
-    --ua-logo-dot-size: 0.85px;
-    --ua-logo-dot-gap: 0.18em;
-    font-size: 12px;
-    letter-spacing: -0.008em;
-  }
-  .ua-mark.s18 {
-    --ua-logo-dot-size: 2px;
-    --ua-logo-dot-gap: 0.18em;
-    font-size: 18px;
-  }
-  .ua-mark.s28 {
-    --ua-logo-dot-size: 2.5px;
-    --ua-logo-dot-gap: 0.17em;
-    font-size: 28px;
-  }
-  .ua-mark.s48 {
-    --ua-logo-dot-size: 3.5px;
-    --ua-logo-dot-gap: 0.16em;
-    font-size: 48px;
-    letter-spacing: -0.028em;
-    font-variation-settings: "opsz" 48;
-  }
-  .ua-mark.display {
-    --ua-logo-dot-size: 0.09em;
-    --ua-logo-dot-gap: 0.15em;
-    letter-spacing: -0.03em;
-    font-variation-settings: "opsz" 60;
-  }
+/* Canonical R1 artwork. Auto-tone logos follow the authenticated theme. */
+.ua-brand-logo {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  line-height: 0;
+  white-space: nowrap;
+}
+.ua-brand-logo__image {
+  display: block;
+  flex: none;
+  height: auto;
+}
+.ua-brand-logo__dark {
+  display: none;
+}
+:root[data-theme="dark"] .ua-brand-logo__light {
+  display: none;
+}
+:root[data-theme="dark"] .ua-brand-logo__dark {
+  display: block;
+}
 
 /* SVG line draw — when parent has .is-visible */
 .ua-draw {

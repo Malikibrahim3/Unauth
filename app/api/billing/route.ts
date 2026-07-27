@@ -22,7 +22,13 @@ export async function GET() {
 async function buildBillingResponse(service: ReturnType<typeof createServiceClient>, merchantId: string) {
   const state = await getMerchantBillingState(service, merchantId);
   if (!state) {
-    return NextResponse.json({ error: 'Billing state not found' }, { status: 404 });
+    /*
+     * RUN-14: a workspace with no billing record is a known state, not a
+     * failure. Returning 404 made every authenticated page load log a failed
+     * request that the banner then swallowed, so a genuine billing outage and
+     * "nothing to show" were indistinguishable.
+     */
+    return NextResponse.json({ status: 'not_configured' });
   }
 
   const plan = PLANS[state.subscription.planId];

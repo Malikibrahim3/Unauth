@@ -22,6 +22,8 @@ export interface BehaviorRoadmapEvent {
   title: string;
   subtitle?: string;
   amount?: number | null;
+  /** RUN-09: rendering money without this yields the unavailable marker, never a default currency. */
+  currency?: string | null;
   tier?: string;
   evidence?: string[];
   detail?: string;
@@ -58,7 +60,7 @@ export default function BehaviorRoadmap({ events }: BehaviorRoadmapProps) {
     <Panel variant="panel" className="overflow-hidden p-0">
       <div className="border-b px-4 py-3" style={{ borderColor: 'var(--ua-border-default)' }}>
         <div className="flex items-center justify-between gap-3">
-          <p className="text-[length:var(--ua-text-small-size)] font-semibold" style={{ color: 'var(--ua-text-primary)' }}>Order & claim history</p>
+          <p className="text-[length:var(--ua-text-small-size)] font-semibold" style={{ color: 'var(--ua-text-primary)' }}>Order & case history</p>
           <p className="t-mono" style={{ color: 'var(--ua-text-secondary)' }}>{events.length} events</p>
         </div>
         {patternTags.length > 0 && (
@@ -99,7 +101,7 @@ export default function BehaviorRoadmap({ events }: BehaviorRoadmapProps) {
                   <span className="truncate text-body-sm" style={{ color: 'var(--ua-text-primary)' }}>{event.title}</span>
                   {event.amount != null && (
                     <span className="t-mono shrink-0" style={{ color: 'var(--data-currency)' }}>
-                      {formatCurrencyNullable(event.amount)}
+                      {formatCurrencyNullable(event.amount, event.currency)}
                     </span>
                   )}
                 </div>

@@ -37,10 +37,63 @@
 }
 
 .ua-card {
+  border-radius: var(--ua-radius-surface);
+}
+
+.ua-card--panel {
+  border: 1px solid var(--ua-border-default);
+  background: var(--ua-surface-primary);
+  box-shadow: var(--ua-shadow-none);
+}
+
+.ua-card--muted {
+  border: 1px solid var(--ua-border-subtle);
+  background: var(--ua-surface-muted);
+  box-shadow: var(--ua-shadow-none);
+}
+
+.ua-card--overlay {
+  border: 1px solid var(--ua-border-default);
+  background: var(--ua-surface-primary);
+  box-shadow: var(--ua-shadow-overlay);
+}
+
+.ua-card--plain {
+  border: 0;
+  background: transparent;
+  box-shadow: var(--ua-shadow-none);
+}
+
+.ua-card--density-compact {
+  padding: var(--ua-space-3);
+}
+
+.ua-card--density-default {
+  padding: var(--ua-space-4);
+}
+
+.ua-card--density-relaxed {
+  padding: var(--ua-space-5);
+}
+
+.ua-card--unstyled {
+  padding: 0;
+}
+
+.ua-card--plain {
+  border-radius: 0;
+}
+
+.ua-working-surface {
   border: 1px solid var(--ua-border-default);
   border-radius: var(--ua-radius-surface);
   background: var(--ua-surface-primary);
   box-shadow: var(--ua-shadow-none);
+}
+
+.ua-working-surface__header {
+  border-bottom-color: var(--ua-border-subtle);
+  background: var(--ua-surface-primary);
 }
 
 .ua-section-heading {
@@ -63,6 +116,68 @@
   border-radius: var(--ua-radius-surface);
   background: var(--ua-surface-primary);
   box-shadow: var(--ua-shadow-none);
+}
+
+.ua-section-card {
+  overflow: hidden;
+  border: 1px solid var(--ua-border-default);
+  border-radius: var(--ua-radius-surface);
+  background: var(--ua-surface-primary);
+  box-shadow: var(--ua-shadow-none);
+}
+
+.ua-section-card--joined {
+  border-right: 0;
+  border-bottom: 0;
+  border-left: 0;
+  border-radius: 0;
+}
+
+.ua-section-card__header {
+  border-bottom: 1px solid var(--ua-border-subtle);
+  padding: var(--ua-space-3) var(--ua-space-4);
+  background: var(--ua-surface-primary);
+}
+
+.ua-section-card__description {
+  color: var(--ua-text-secondary);
+}
+
+.ua-section-card__title {
+  color: var(--ua-text-primary);
+}
+
+.ua-section-card__body {
+  background: var(--ua-surface-primary);
+}
+
+.ua-section-card__body--compact {
+  padding: var(--ua-space-3);
+}
+
+.ua-section-card__body--default {
+  padding: var(--ua-space-4);
+}
+
+/* Structural primitives: a working surface owns the perimeter; sections
+ * inside it use joins and dividers rather than another free-standing card. */
+.ua-joined-section {
+  min-width: 0;
+  padding: var(--ua-space-4);
+  border-top: 1px solid var(--ua-border-subtle);
+  background: var(--ua-surface-primary);
+}
+
+.ua-joined-section:first-child {
+  border-top: 0;
+}
+
+.ua-inset-group {
+  min-width: 0;
+  padding: var(--ua-space-3);
+  border: 1px solid var(--ua-border-subtle);
+  border-radius: var(--ua-radius-control);
+  background: var(--ua-surface-muted);
 }
 
 .ua-sticky-actions {
@@ -101,7 +216,37 @@
   background: var(--ua-surface-primary);
 }
 
-/* Operational data should arrive with a little momentum, not theatrical motion. */
+.ua-metric-card--hero {
+  padding: var(--ua-space-5);
+}
+
+.ua-metric-card__label {
+  color: var(--ua-text-tertiary);
+  font-size: var(--ua-text-caption-size);
+  font-weight: var(--ua-text-caption-weight);
+  line-height: var(--ua-text-caption-leading);
+}
+
+.ua-metric-card__value {
+  color: var(--ua-text-primary);
+  font-size: var(--ua-text-kpi-size);
+  font-weight: var(--ua-text-kpi-weight);
+  font-family: var(--ua-font-sans);
+}
+
+.ua-metric-card--hero .ua-metric-card__value {
+  font-size: var(--ua-text-total-size);
+  font-weight: var(--ua-text-total-weight);
+  line-height: var(--ua-text-total-leading);
+}
+
+.ua-metric-card__hint {
+  color: var(--ua-text-tertiary);
+  font-size: var(--ua-text-caption-size);
+  line-height: var(--ua-text-caption-leading);
+}
+
+/* Operational data may settle in briefly, never with a staggered entrance. */
 @media (prefers-reduced-motion: no-preference) {
   @keyframes ua-data-surface-in {
     from {
@@ -115,19 +260,100 @@
   }
 
   .ua-app .ua-metric-card {
-    animation: ua-data-surface-in 420ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+    animation: ua-data-surface-in var(--ua-duration-base) var(--ua-ease-standard) both;
   }
 
   .ua-app .ua-data-surface {
-    animation: ua-data-surface-in 460ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+    animation: ua-data-surface-in var(--ua-duration-slow) var(--ua-ease-standard) both;
+  }
+}
+
+/* Capture mode is opt-in so screenshot tooling can wait on the real product
+ * without inheriting incidental entrance/hover motion. */
+:root[data-capture-mode="true"] .ua-app *,
+:root[data-capture-mode="true"] .ua-app *::before,
+:root[data-capture-mode="true"] .ua-app *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* Canonical grouped metrics. A two-column narrow layout keeps dividers correct
+ * for odd counts; at supported desktop widths each item gets one vertical
+ * divider and no orphaned horizontal rule. */
+.ua-metric-group {
+  display: grid;
+  grid-template-columns: repeat(var(--ua-metric-mobile-columns, 2), minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--ua-border-default);
+  border-radius: var(--ua-radius-surface);
+  background: var(--ua-surface-primary);
+}
+
+.ua-metric-group__item {
+  min-width: 0;
+  padding: var(--ua-space-3) var(--ua-space-4);
+}
+
+.ua-metric-group__item + .ua-metric-group__item {
+  border-left: 1px solid var(--ua-border-subtle);
+}
+
+.ua-metric-group__item:nth-child(n + 3) {
+  border-top: 1px solid var(--ua-border-subtle);
+}
+
+.ua-metric-group__item:nth-child(2n + 1) {
+  border-left: 0;
+}
+
+.ua-metric-group__label {
+  margin: 0;
+  color: var(--ua-text-secondary);
+  font-size: var(--ua-text-small-size);
+  font-weight: 500;
+  line-height: var(--ua-text-small-leading);
+}
+
+.ua-metric-group__value {
+  margin: var(--ua-space-1) 0 0;
+  color: var(--ua-text-primary);
+  font-size: var(--ua-text-kpi-size);
+  font-weight: var(--ua-text-kpi-weight);
+  line-height: var(--ua-text-kpi-leading);
+  font-variant-numeric: tabular-nums;
+}
+
+.ua-metric-group__description {
+  margin: var(--ua-space-0-5) 0 0;
+  color: var(--ua-text-tertiary);
+  font-size: var(--ua-text-caption-size);
+  line-height: var(--ua-text-caption-leading);
+}
+
+@media (min-width: 768px) {
+  .ua-metric-group {
+    grid-template-columns: repeat(var(--ua-metric-columns, 4), minmax(0, 1fr));
   }
 
-  .ua-app .ua-data-surface:nth-child(2) {
-    animation-delay: 70ms;
+  .ua-metric-group__item + .ua-metric-group__item {
+    border-left: 1px solid var(--ua-border-subtle);
+  }
+
+  .ua-metric-group__item:nth-child(n + 3) {
+    border-top: 0;
+  }
+
+  .ua-metric-group__item:nth-child(2n + 1) {
+    border-left: 1px solid var(--ua-border-subtle);
+  }
+
+  .ua-metric-group__item:first-child {
+    border-left: 0;
   }
 }
 
 .ua-empty-visual {
   background: var(--ua-surface-muted);
   border: 1px solid var(--ua-border-default);
+  color: var(--ua-text-primary);
 }

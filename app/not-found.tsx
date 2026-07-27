@@ -1,10 +1,11 @@
 import Link from 'next/link';
 import { EmptyState } from '@/components/ui';
+import { UnauthLogo } from '@/components/ui/UnauthLogo';
 
 /*
  * The 404 renders product chrome, so it carries the product token scope. It
  * previously read `--accent` / `--text` / `--bg-canvas`, which resolve at `:root`
- * to the public palette — so the "Go to dashboard" button rendered in the old
+ * to the public palette — so the primary button rendered in the old
  * rust. `ua-app` scopes the `--ua-*` tokens here the same way the app shell does.
  */
 export default function NotFound() {
@@ -13,6 +14,9 @@ export default function NotFound() {
       className="ua-app flex min-h-screen flex-col items-center justify-center px-6"
       style={{ background: 'var(--ua-canvas)' }}
     >
+      <Link href="/" aria-label="Unauth home" className="mb-8 inline-flex">
+        <UnauthLogo kind="lockup" tone="auto" height={24} alt="" decorative />
+      </Link>
       <h1 className="sr-only">Page not found</h1>
       <EmptyState
         title="Page not found"
@@ -29,7 +33,7 @@ export default function NotFound() {
                 outlineColor: 'var(--ua-border-focus)',
               }}
             >
-              Go to dashboard
+              Go to Overview
             </Link>
             <Link
               href="/"

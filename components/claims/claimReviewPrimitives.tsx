@@ -122,7 +122,7 @@ export function ClaimLifecycleStatusBar({
   if (claimIsClosed) {
     return (
       <div className="space-y-2">
-        <p className="text-xs" style={{ color: 'var(--ua-text-secondary)' }}>Claim archived. Reopen to continue evidence review.</p>
+        <p className="text-xs" style={{ color: 'var(--ua-text-secondary)' }}>Case archived. Reopen to continue evidence review.</p>
         <textarea
           id="claim-reopen-note"
           className="w-full px-2 py-1.5 rounded-md text-xs resize-none"
@@ -140,7 +140,7 @@ export function ClaimLifecycleStatusBar({
           className="w-full px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-60"
           style={btnStyle(submitIsPrimary ? 'primary' : 'secondary')}
         >
-          Reopen claim
+          Reopen case
         </button>
       </div>
     );
@@ -156,7 +156,7 @@ export function ClaimLifecycleStatusBar({
           style={inputStyle()}
           value={statusToSet}
           onChange={(e) => setStatusToSet(e.target.value as ClaimStatus)}
-          aria-label="Claim lifecycle status"
+          aria-label="Case lifecycle status"
         >
           {operatorLifecycleOptions(currentStatus).map(({ value, label }) => (
             <option key={value} value={value}>{label}</option>

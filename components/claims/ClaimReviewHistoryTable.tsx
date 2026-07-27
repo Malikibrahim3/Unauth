@@ -8,6 +8,7 @@ import {
 import { getSlaVisual } from "@/components/claims/claimReviewLogic";
 import { formatClaimAge, formatFiledDate } from "@/lib/claims/sla";
 import { formatDateAbsolute } from "@/lib/utils/format";
+import { shortRef } from "@/lib/ui/displayRef";
 import {
   formatClaimMoney,
   slaToneStyle,
@@ -30,7 +31,7 @@ export function ClaimReviewHistoryTable({
   if (history.length === 0) {
     return (
       <p className="text-sm" style={{ color: "var(--ua-text-secondary)" }}>
-        No claims recorded for this customer yet.
+        No cases recorded for this customer yet.
       </p>
     );
   }
@@ -65,20 +66,18 @@ export function ClaimReviewHistoryTable({
             return (
               <tr
                 key={h.id}
-                className="cursor-pointer border-t hover:bg-[var(--ua-surface-secondary)] focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--ua-border-focus)]"
+                className="border-t hover:bg-[var(--ua-surface-secondary)]"
                 style={{ borderColor: "var(--ua-border-subtle)" }}
-                onClick={() => onSelectClaim(h.id)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    onSelectClaim(h.id);
-                  }
-                }}
-                tabIndex={0}
-                aria-label={`Open claim ${h.shopify_order_id ?? h.order_ref ?? h.id}`}
               >
                 <td className="py-2 pr-3 font-mono text-xs">
-                  {h.shopify_order_id ?? h.order_ref ?? "-"}
+                  <button
+                    type="button"
+                    onClick={() => onSelectClaim(h.id)}
+                    className="font-mono text-xs font-semibold underline underline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ua-border-focus)]"
+                    aria-label={`Open case ${h.shopify_order_id ?? h.order_ref ?? shortRef(null, h.id)}`}
+                  >
+                    {h.shopify_order_id ?? h.order_ref ?? shortRef(null, h.id)}
+                  </button>
                 </td>
                 <td className="py-2 pr-3">
                   <StatusPill status={h.status} />

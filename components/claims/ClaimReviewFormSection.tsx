@@ -31,7 +31,7 @@ export function ClaimReviewFormSection({ wb }: { wb: ClaimReviewWorkbench }) {
         onClick={() => patch({ claimFormOpen: !claimFormOpen })}
         className="w-full flex items-center justify-between px-4 py-2.5 text-left"
       >
-        <span className="text-xs font-semibold" style={{ color: 'var(--ua-text-secondary)' }}>{claimId ? 'Edit claim details' : 'Connected source intake'}</span>
+        <span className="text-xs font-semibold" style={{ color: 'var(--ua-text-secondary)' }}>{claimId ? 'Edit case details' : 'Connected source intake'}</span>
         <span className="text-xs" style={{ color: 'var(--ua-text-secondary)' }}>{claimFormOpen ? '▲' : '▼'}</span>
       </button>
       {claimFormOpen && (
@@ -66,8 +66,8 @@ export function ClaimReviewFormSection({ wb }: { wb: ClaimReviewWorkbench }) {
               )}
             </div>
             <div>
-              <FieldLabel htmlFor="claim-type">Claim type</FieldLabel>
-              <select id="claim-type" aria-label="Claim type" className="w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()} value={state.claimType} onChange={(e) => patch({ claimType: e.target.value as ClaimType })} disabled>
+              <FieldLabel htmlFor="claim-type">Case type</FieldLabel>
+              <select id="claim-type" aria-label="Case type" className="w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()} value={state.claimType} onChange={(e) => patch({ claimType: e.target.value as ClaimType })} disabled>
                 {(Object.entries(CLAIM_TYPE_LABELS) as [ClaimType, string][]).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
               </select>
             </div>

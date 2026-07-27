@@ -2,6 +2,7 @@
   display: grid;
   gap: 12px;
   min-width: 0;
+  container-type: inline-size;
 }
 
 .summary {
@@ -86,7 +87,6 @@
 
 .toolbar {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) minmax(150px, 190px) minmax(150px, 190px);
   gap: 8px;
   padding: 10px;
   border: 1px solid var(--ua-border-default);
@@ -94,12 +94,30 @@
   background: var(--ua-surface-primary);
 }
 
+.toolbarWithStatus {
+  grid-template-columns: minmax(220px, 1fr) minmax(150px, 190px) minmax(150px, 190px);
+}
+
+.toolbarCatalogue {
+  grid-template-columns: minmax(220px, 1fr) minmax(150px, 190px);
+}
+
 .toolbarSearch {
+  position: relative;
   min-width: 0;
 }
 
 .searchInput {
   padding-left: 34px;
+}
+
+.searchIcon {
+  position: absolute;
+  top: 50%;
+  left: 11px;
+  pointer-events: none;
+  color: var(--ua-icon-secondary);
+  transform: translateY(-50%);
 }
 
 .surface {

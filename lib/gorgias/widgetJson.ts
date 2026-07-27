@@ -227,7 +227,7 @@ type WidgetCorePayload = Omit<
  */
 const RECOMMENDATION_DEFAULTS = {
   recommendation: 'Rule: —',
-  recommendation_detail: 'No payout case detected for this ticket yet.',
+  recommendation_detail: 'No case detected for this ticket yet.',
 } as const;
 
 /**
@@ -236,7 +236,7 @@ const RECOMMENDATION_DEFAULTS = {
  * own-store claim context only (no network signals), so they are not k-anon gated.
  */
 const PAYOUT_DEFAULTS = {
-  payout_exposure: 'Case: No payout case detected for this ticket yet',
+  payout_exposure: 'Case: No case detected for this ticket yet',
   evidence_checklist: 'Evidence: —',
   loss_attribution: '—',
   recovery_path: 'Recovery: —',
@@ -372,8 +372,8 @@ function buildContextSummary(
     switch (result.kind) {
       case 'not_found':
         return orderRef
-          ? `Order ${orderRef} · no prior claim history at your store`
-          : 'No prior claim history at your store';
+          ? `Order ${orderRef} · no prior case history at your store`
+          : 'No prior case history at your store';
       case 'identity_unresolved':
         return 'Customer identity not resolved — no context available for this ticket';
       case 'helpdesk_disconnected':
@@ -402,18 +402,18 @@ function buildContextSummary(
   }
 
   if (thisStore.claimCount > 0) {
-    parts.push(`${thisStore.claimCount} prior ${pluralWord(thisStore.claimCount, 'claim', 'claims')}`);
+    parts.push(`${thisStore.claimCount} prior ${pluralWord(thisStore.claimCount, 'case', 'cases')}`);
     if (storeRecentClaimCount > 0) {
       parts.push(`${storeRecentClaimCount} in last 90 days`);
     }
   } else if (thisStore.orderCount > 0) {
-    parts.push('no prior claims');
+    parts.push('no prior cases');
   }
 
   const refundActivity = formatRefundActivity(refundRequestCount365d, completedRefundCount365d);
   if (refundActivity) parts.push(refundActivity);
 
-  if (ce3EvidenceAvailable) parts.push('claim evidence available');
+  if (ce3EvidenceAvailable) parts.push('case evidence available');
 
   if (showNetworkIntelligence && network && network.merchantCount > 0) {
     parts.push(`network signal: seen at ${network.merchantCount} ${pluralWord(network.merchantCount, 'merchant', 'merchants')}`);
@@ -486,7 +486,7 @@ export function formatPayoutExposure(exposure: PayoutExposure): string {
 }
 
 function claimTypeLabel(claimType: PayoutClaimType | null): string {
-  if (!claimType) return 'Support payout case';
+  if (!claimType) return 'Support case';
   if (claimType in CLAIM_TYPE_LABELS) {
     return CLAIM_TYPE_LABELS[claimType as ClaimTypeValue];
   }
@@ -570,7 +570,7 @@ export function formatPayoutWidgetDecision(
     return {
       payout_exposure: fields.payout_exposure,
       evidence_checklist: fields.evidence_checklist,
-      recommendation: ruleCount === 0 ? 'Rule: —' : 'Rule: no merchant rule matched',
+      recommendation: ruleCount === 0 ? 'Rule: —' : 'Rule: no rule applies',
       recovery_path: fields.recovery_path,
     };
   }
@@ -629,8 +629,8 @@ export function formatRecommendationFields(
       };
     }
     return {
-      recommendation: 'Rule: no merchant rule matched',
-      recommendation_detail: 'None of your configured rules matched this case',
+      recommendation: 'Rule: no rule applies',
+      recommendation_detail: 'No configured rule applies to this case. Review rules or continue with standard handling.',
     };
   }
 
@@ -660,9 +660,9 @@ export function formatClaimRecommendationUnavailable(
 ): Pick<GorgiasWidgetJsonPayload, 'recommendation' | 'recommendation_detail'> {
   if (reason === 'ambiguous') {
     return {
-      recommendation: 'Claim recommendation unavailable',
+      recommendation: 'Case recommendation unavailable',
       recommendation_detail:
-        'Multiple possible claims were found for this ticket. Open Unauth to select the correct claim.',
+        'Multiple possible cases were found for this ticket. Open Unauth to select the correct case.',
     };
   }
   if (reason === 'eval_failed') {
@@ -671,18 +671,18 @@ export function formatClaimRecommendationUnavailable(
       return {
         recommendation: 'Rule: —',
         recommendation_detail:
-          'Claim context was found, but rule evaluation failed. Set up merchant rules in Unauth to get recommendations.',
+          'Case context was found, but rule evaluation failed. Set up merchant rules in Unauth to get recommendations.',
       };
     }
     return {
       recommendation: 'Recommendation could not be generated',
-      recommendation_detail: 'Claim context was found, but rule evaluation failed.',
+      recommendation_detail: 'Case context was found, but rule evaluation failed.',
     };
   }
   return {
     recommendation: 'Rule: —',
     recommendation_detail:
-      'No payout case detected for this ticket yet. Open or create a payout case before applying a merchant rule.',
+      'No case detected for this ticket yet. Open or create a case before applying a merchant rule.',
   };
 }
 

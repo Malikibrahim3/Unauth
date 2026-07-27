@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import type { GateRecommendation } from '@/lib/claim-gate/buildRecommendation';
 import { formatCurrency } from '@/lib/utils/format';
 import { Card } from '@/components/ui';
@@ -17,8 +18,11 @@ export function GateRecommendationPanel({ recommendation }: { recommendation: Ga
       <Card unstyled as="section" variant="panel" className="p-4">
         <h3 className="text-body font-semibold" style={{ color: 'var(--ua-text-primary)' }}>Recommendation</h3>
         <p className="mt-1 text-sm" style={{ color: 'var(--ua-text-secondary)' }}>
-          No merchant rule matched this case yet. Review the evidence and record your decision.
+          No rule applies. Standard review remains the default recommendation source.
         </p>
+        <Link href="/rules" className="mt-2 inline-block text-xs font-semibold underline underline-offset-2" style={{ color: 'var(--ua-text-primary)' }}>
+          Review rules
+        </Link>
       </Card>
     );
   }

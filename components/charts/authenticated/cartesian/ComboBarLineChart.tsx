@@ -66,7 +66,7 @@ export function ComboBarLineChart({
             tickLine={false}
             minTickGap={16}
             tick={{
-              fontSize: 11,
+              fontSize: 13,
               fill: theme['--ua-text-tertiary'],
               fontFamily: 'var(--ua-font-sans)',
             }}
@@ -77,7 +77,7 @@ export function ComboBarLineChart({
             width={44}
             tickCount={5}
             tick={{
-              fontSize: 11,
+              fontSize: 13,
               fill: theme['--ua-text-tertiary'],
               fontFamily: 'var(--ua-font-sans)',
             }}

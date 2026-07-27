@@ -18,6 +18,7 @@ import { merchantHasEntitlement } from "@/lib/product/requireEntitlement";
 import { WorkbenchPage } from "@/components/workbench/WorkbenchPage";
 import { filterChipContract } from "@/styles/authenticated/contracts";
 import { cn } from "@/lib/utils";
+import { TIME_RANGE_LABELS } from "@/lib/ui/merchantCopy";
 
 export const dynamic = "force-dynamic";
 export default async function ReportsPage({
@@ -63,7 +64,7 @@ export default async function ReportsPage({
                 r === range ? filterChipContract.selected : filterChipContract.unselected,
               )}
             >
-              {r === "all" ? "All time" : r}
+              {TIME_RANGE_LABELS[r]}
             </Link>
           ))}
         </div>

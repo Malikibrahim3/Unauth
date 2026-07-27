@@ -11,6 +11,7 @@ import {
 import { SectionCard } from "@/components/ui";
 import { useFetchJson } from "@/lib/react/useFetchJson";
 import { formatDateTime } from "@/lib/utils/format";
+import { hashId } from "@/lib/ui/displayRef";
 
 type AuditRow = {
   id: string;
@@ -35,7 +36,7 @@ type AuditTrailClientProps = {
 
 const RESOURCE_FILTERS = [
   { value: "", label: "All resources" },
-  { value: "claim", label: "Claims" },
+  { value: "claim", label: "Cases" },
   { value: "processing_job", label: "Audit runs" },
   { value: "customer", label: "Customers" },
   { value: "report", label: "Reports" },
@@ -130,13 +131,13 @@ export default function AuditTrailClient({
     const actor = actorsByUserId[row.actor_user_id];
     if (actor) return `${actor.email} (${actor.role})`;
     const role = row.actor_role ?? "user";
-    return `${row.actor_user_id.slice(0, 8)} (${role})`;
+    return `${hashId(row.actor_user_id)} (${role})`;
   }
 
   return (
     <SectionCard
       title="Activity log"
-      description="Filterable record of claim lifecycle events and sensitive account actions."
+      description="Filterable record of case activity and sensitive account actions."
       actions={
         <div className="flex flex-wrap items-center gap-2">
           <a
@@ -289,7 +290,7 @@ export default function AuditTrailClient({
                             href={claimHref}
                             className="font-medium hover:underline"
                             style={{ color: "var(--ua-action-primary)" }}
-                            title={`Open claim ${row.resource_id?.slice(0, 8) ?? ""}`}
+                            title={`Open case ${hashId(row.resource_id)}`}
                           >
                             {auditResourceSummary(
                               row.resource_type,

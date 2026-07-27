@@ -17,7 +17,7 @@ export function IconButton({ label, icon, size = 'md', className, title, ...prop
     <button
       type="button"
       aria-label={label}
-      title={title ?? label}
+      title={title}
       className={cn(
         'inline-flex shrink-0 items-center justify-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] text-[var(--ua-text-secondary)] transition-colors hover:bg-[var(--ua-surface-hover)] hover:text-[var(--ua-text-primary)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50',
         size === 'sm' && 'h-[var(--ua-control-height-sm)] w-[var(--ua-control-height-sm)]',

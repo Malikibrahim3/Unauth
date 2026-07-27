@@ -56,7 +56,7 @@ export const FL_HERO = {
   },
   claimTimingCard: {
     title: '02 Context before escalation',
-    status: 'Order, delivery, ticket, and claim history assembled.',
+    status: 'Order, delivery, ticket, and case history assembled.',
     meta: 'Inside Gorgias, Zendesk, or Freshdesk',
   },
   crossMerchantCard: {
@@ -79,8 +79,8 @@ export const FL_HERO_FLOATING_CARDS = {
   },
   claimTiming: {
     label: '02 CONTEXT FIRST',
-    title: 'Claim context assembled',
-    details: ['Order, delivery, and ticket linked', 'Prior claims and outcomes attached'],
+    title: 'Case context assembled',
+    details: ['Order, delivery, and ticket linked', 'Prior cases and outcomes attached'],
   },
   crossMerchant: {
     label: '03 EVIDENCE, NOT AUTOMATION',
@@ -90,7 +90,7 @@ export const FL_HERO_FLOATING_CARDS = {
   priorClaims: {
     label: '04 AUDIT TRAIL',
     title: 'Every recommendation recorded',
-    details: ['Claim-bound audit row', 'Queryable before disputes escalate'],
+    details: ['Case-bound audit row', 'Queryable before chargebacks escalate'],
   },
 } as const;
 
@@ -112,8 +112,8 @@ export const FL_NETWORK_HERO = {
       source: 'Chased, not written off',
     },
     {
-      value: 'Disputes',
-      label: 'Money you lose in disputes',
+      value: 'Chargebacks',
+      label: 'Money you lose in chargebacks',
       source: 'Defended with a ready record',
     },
   ],
@@ -127,13 +127,13 @@ export const FL_CLAIM_DECISION_LOOP = {
   steps: [
     {
       number: '01',
-      title: 'A claim arrives',
+      title: 'A case arrives',
       body: 'In your helpdesk, exactly as it does today.',
     },
     {
       number: '02',
       title: 'The gate checks it',
-      body: "Delivery proof, order value, this customer's full claim history with you, recovery route, and which of your rules apply.",
+      body: "Delivery proof, order value, this customer's full case history with you, recovery route, and which of your rules apply.",
     },
     {
       number: '03',
@@ -154,7 +154,7 @@ export const FL_CLAIM_DECISION_LOOP = {
 } as const;
 
 export const FL_CATEGORY_COMPARISON = {
-  eyebrow: 'Why claim decision infrastructure',
+  eyebrow: 'Why case decision infrastructure',
   traditional: {
     title: 'Traditional tools',
     items: [
@@ -167,7 +167,7 @@ export const FL_CATEGORY_COMPARISON = {
   unauth: {
     title: 'Unauth',
     items: [
-      'Starts at the claim decision moment',
+      'Starts at the case decision moment',
       'Works inside helpdesk workflows',
       'Applies merchant-owned rules',
       'Shows the evidence and exact matched conditions',
@@ -179,11 +179,11 @@ export const FL_CATEGORY_COMPARISON = {
 export const FL_DEMO_PRODUCT_CARDS = {
   recommendation: {
     label: 'Held',
-    rule: 'Delivered with signature — 4th claim this quarter',
+    rule: 'Delivered with signature — 4th case this quarter',
     conditions: [
-      'Item not received claim',
+      'Item not received case',
       'Delivery proof attached',
-      'Customer has prior claims with you',
+      'Customer has prior cases with you',
       'Human review before any refund',
     ],
   },
@@ -191,7 +191,7 @@ export const FL_DEMO_PRODUCT_CARDS = {
     items: [
       'Delivery proof',
       'Order #UA-10482',
-      'Claim history with you',
+      'Case history with you',
       'Carrier or warehouse recovery route',
     ],
   },
@@ -206,7 +206,7 @@ export const FL_DEMO_PRODUCT_CARDS = {
 } as const;
 
 export const FL_PHONE = {
-  title: 'Payout case',
+  title: 'Case',
   subtitle: 'Gorgias #4821 · Shopify #UA-10482',
   valueLabel: 'Payout Exposure',
   value: '$162',
@@ -233,10 +233,10 @@ export const FL_STATEMENT = {
   post: 'shows payout exposure, evidence on file, the merchant rule that fired, and the recommended next action.',
   postContinuation: 'There is no risk score, no black box, and no judgment Unauth makes on your behalf.',
   postTail: 'Your team still decides.',
-  body: 'Unauth connects your store and helpdesk, structures support payout cases, tracks evidence, applies merchant rules, and opens recovery cases where carrier, 3PL, or supplier accountability may apply. No automated payouts.',
+  body: 'Unauth connects your store and helpdesk, structures cases, tracks evidence, applies merchant rules, and opens recovery cases where carrier, 3PL, or supplier accountability may apply. No automated payouts.',
   features: [
     { id: '01', title: 'Merchant rules recommend — your team decides' },
-    { id: '02', title: 'Every payout case has evidence and exposure' },
+    { id: '02', title: 'Every case has evidence and exposure' },
     { id: '03', title: 'Recoverable losses stay on the recovery board' },
     { id: '04', title: 'Outcomes recorded for prevention insights' },
   ],
@@ -247,7 +247,7 @@ export const FL_MANIFEST = {
   title: 'Evidence package',
   caseId: 'CB-2291',
   files: [
-    { name: 'claim_timeline.json', meta: '11 events · ticket + order' },
+    { name: 'case_timeline.json', meta: '11 events · ticket + order' },
     { name: 'evidence_checklist.json', meta: 'delivery proof · signature unavailable' },
     { name: 'delivery_confirmation.pdf', meta: 'commerce fulfilment proof' },
     { name: 'recovery_route.txt', meta: 'carrier claim · evidence needed' },
@@ -272,7 +272,7 @@ export const FL_BENTO = [
   {
     value: 'Blindly',
     label: 'Nothing resolved blindly',
-    source: 'No claim closes on a held case without review',
+    source: 'No case closes on a held case without review',
   },
   {
     value: 'Owner',
@@ -284,10 +284,10 @@ export const FL_BENTO = [
 /* ── Signals → evidence (espresso tabbed section) ──────────────────────── */
 
 export const FL_SIGNALS_EVIDENCE = {
-  displayLines: ['CLAIMS', 'BECOME', 'EVIDENCE'],
+  displayLines: ['CASES', 'BECOME', 'EVIDENCE'],
   subhead:
-    'Claim timing, delivery context, address patterns, and chargeback trails are assembled into one evidence pack beside the review.',
-  cta: { label: 'Review a claim example', href: FL_ROUTES.audit },
+    'Case timing, delivery context, address patterns, and chargeback trails are assembled into one evidence pack beside the review.',
+  cta: { label: 'Review a case example', href: FL_ROUTES.audit },
   image: {
     src: '/statement-facility-v3.png',
     alt: 'Architectural illustration of Unauth’s payout-control evidence workflow',
@@ -295,17 +295,17 @@ export const FL_SIGNALS_EVIDENCE = {
   tabs: [
     {
       key: 'timing',
-      tab: 'Claim timing',
+      tab: 'Case timing',
       caseLine: ['CB-2291', 'Never arrived', '$162.40'],
       gradeLetter: 'B',
       gradeTier: 'Evidence review',
       mainLine:
-        '"Never arrived" for the third time — each claim opened after a confirmed delivery window.',
+        '"Never arrived" for the third time — each case opened after a confirmed delivery window.',
       details: [
         { k: 'Signals matched', v: '4 of 6' },
         { k: 'Payout exposure', v: '$162.40' },
         { k: 'Recovery path', v: 'carrier claim' },
-        { k: 'Prior claims', v: '3 in 120 days' },
+        { k: 'Prior cases', v: '3 in 120 days' },
       ],
       assembledIn: '38ms',
     },
@@ -316,12 +316,12 @@ export const FL_SIGNALS_EVIDENCE = {
       gradeLetter: 'A',
       gradeTier: 'Strong evidence',
       mainLine:
-        'The connected order shows delivery evidence — the claim arrived four days after the scan.',
+        'The connected order shows delivery evidence — the case arrived four days after the scan.',
       details: [
         { k: 'Signals matched', v: '5 of 6' },
         { k: 'Payout exposure', v: '$89.00' },
         { k: 'Delivery proof', v: 'from connected order' },
-        { k: 'Claim opened', v: '+4 days post-scan' },
+        { k: 'Case opened', v: '+4 days post-scan' },
       ],
       assembledIn: '41ms',
     },
@@ -332,7 +332,7 @@ export const FL_SIGNALS_EVIDENCE = {
       gradeLetter: 'C',
       gradeTier: 'Evidence gap',
       mainLine:
-        'One fulfilment address, six prior claims, three different names.',
+        'One fulfilment address, six prior cases, three different names.',
       details: [
         { k: 'Signals matched', v: '2 of 6' },
         { k: 'Payout exposure', v: '$214.50' },
@@ -346,14 +346,14 @@ export const FL_SIGNALS_EVIDENCE = {
       tab: 'Chargeback trail',
       caseLine: ['CB-3310', 'Unauthorised charge', '$340.00'],
       gradeLetter: 'B',
-      gradeTier: 'Dispute evidence',
+      gradeTier: 'Chargeback evidence',
       mainLine:
         'Three chargebacks in ninety days, tied together by a single device hash.',
       details: [
         { k: 'Signals matched', v: '4 of 6' },
         { k: 'Payout exposure', v: '$340.00' },
         { k: 'Evidence', v: 'delivery + support timeline' },
-        { k: 'Prior disputes', v: '3 in 90 days' },
+        { k: 'Prior chargebacks', v: '3 in 90 days' },
       ],
       assembledIn: '44ms',
     },
@@ -365,7 +365,7 @@ export const FL_SIGNALS_EVIDENCE = {
 export const FL_HOW_IT_WORKS = {
   displayLines: ['BUILT INTO YOUR', 'EXISTING STACK.'],
   subhead:
-    'Connect your commerce platform, set your policy logic, and let every inbound claim arrive with the evidence your team needs to decide.',
+    'Connect your commerce platform, set your policy logic, and let every inbound case arrive with the evidence your team needs to decide.',
   privacyNote: 'Raw customer data stays merchant-scoped. The workflow is case-scoped, not a customer denial list.',
   steps: [
     {
@@ -378,13 +378,13 @@ export const FL_HOW_IT_WORKS = {
       id: '2.0',
       title: 'Configure',
       body: 'Set your rules',
-      note: 'Define when claims should pass, hold, or escalate using your own policy logic.',
+      note: 'Define when cases should pass, hold, or escalate using your own policy logic.',
     },
     {
       id: '3.0',
       title: 'Enrich',
       body: 'Case context is assembled',
-      note: 'Every inbound case can be checked against order history, delivery context, claim history, and recovery context.',
+      note: 'Every inbound case can be checked against order history, delivery context, case history, and recovery context.',
     },
     {
       id: '4.0',
@@ -395,7 +395,7 @@ export const FL_HOW_IT_WORKS = {
   ],
   image: {
     src: '/strdtfygh.png',
-    alt: 'Architectural illustration of a merchant store, Unauth intelligence hub, and helpdesk module connected for claim review setup',
+    alt: 'Architectural illustration of a merchant store, Unauth intelligence hub, and helpdesk module connected for case review setup',
   },
 } as const;
 
@@ -426,7 +426,7 @@ export const FL_FIGURES = {
 /* ── Programs (§ programs) ─────────────────────────────────────────────── */
 
 export const FL_PROGRAMS = {
-  displayLines: ['CLAIM', 'PROGRAMS'],
+  displayLines: ['CASE', 'PROGRAMS'],
   breadcrumb: ['Store Context', 'Evidence Checklist', 'Recovery Workflow'],
   tabs: [
     {
@@ -446,10 +446,10 @@ export const FL_PROGRAMS = {
       key: 'evidence',
       tab: 'Evidence Records',
       title: 'EVIDENCE PACKS',
-      kicker: 'Claim and dispute support',
+      kicker: 'Case and chargeback support',
       index: '02',
       details: [
-        { k: 'Trigger', v: 'Linked claim or chargeback' },
+        { k: 'Trigger', v: 'Linked case or chargeback' },
         { k: 'Window', v: '120-day prior-order history' },
         { k: 'Contents', v: 'Timeline · signals · delivery proof' },
         { k: 'Format', v: 'One click, support-ready' },
@@ -519,7 +519,7 @@ export const FL_PRICING_FAQ = {
     },
     {
       q: 'Do I need a card to start?',
-      a: 'No card is required for Free or the Pro trial. Connect your store and helpdesk to see context on real claims before committing to a paid plan.',
+      a: 'No card is required for Free or the Pro trial. Connect your store and helpdesk to see context on real cases before committing to a paid plan.',
     },
     {
       q: 'Can I change plans later?',
@@ -549,19 +549,19 @@ export const FL_FAQ = {
     },
     {
       q: 'How does the customer history work — do you track people across other stores?',
-      a: "No. Unauth only uses a customer's claim history with you — claims they have filed on your own store. There is no shared database, no cross-merchant profile, no external score. The pattern you see is built from your own data and it stays yours. The difference is that Unauth surfaces it at the one moment it matters, before your team or your AI acts on it.",
+      a: "No. Unauth only uses a customer's case history with you — cases they have opened on your own store. There is no shared database, no cross-merchant profile, no external score. The pattern you see is built from your own data and it stays yours. The difference is that Unauth surfaces it at the one moment it matters, before your team or your AI acts on it.",
     },
     {
       q: 'We already use Yuma or Gorgias AI. Why add this?',
       a: "They close tickets fast. Unauth adds evidence, recommendations, and recovery context before your team records the outcome. They work together while the merchant keeps the final decision.",
     },
     {
-      q: 'Will this slow down legitimate claims?',
-      a: 'Low-risk claims — first-time customer, no unusual signals, clean delivery — pass straight through at full speed. Only claims that match your configured rules are held. You control the thresholds. Genuine customers with genuine problems are not affected.',
+      q: 'Will this slow down legitimate cases?',
+      a: 'Low-risk cases — first-time customer, no unusual signals, clean delivery — pass straight through at full speed. Only cases that match your configured rules are held. You control the thresholds. Genuine customers with genuine problems are not affected.',
     },
     {
       q: 'How do you tell a real complaint from abuse?',
-      a: 'You do, through your rules. Unauth surfaces the facts — delivery state, order value, how many times this customer has claimed with you, whether the evidence is consistent — and applies the thresholds you configure. The decision reflects your policy, not our guess about a customer.',
+      a: 'You do, through your rules. Unauth surfaces the facts — delivery state, order value, how many cases this customer has opened with you, whether the evidence is consistent — and applies the thresholds you configure. The decision reflects your policy, not our guess about a customer.',
     },
   ],
 } as const;

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ArrowLeft, ArrowRight, Check, CircleAlert, Clock3, ExternalLink, ShieldCheck } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Button, StatusBadge } from '@/components/ui';
+import { UnauthLogo } from '@/components/ui/UnauthLogo';
 import { DEMO_CASE_STEPS, MERCHANT_CASE_V1, type DemoCaseStep } from '@/lib/demo/merchantCaseV1';
 
 const STEP_ORDER = DEMO_CASE_STEPS.map((step) => step.id);
@@ -32,9 +33,9 @@ export function OperationalCaseDemo() {
   return (
     <main className="ua-auth-surface min-h-screen bg-[var(--ua-canvas)] text-[var(--ua-text-primary)]">
       <div className="sticky top-0 z-20 border-b border-[var(--ua-border-subtle)] bg-[var(--ua-shell)] px-4 py-3 sm:px-6">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
-          <div className="flex min-w-0 items-center gap-3">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--ua-radius-control)] bg-[var(--ua-surface-inverse)] text-sm font-bold text-[var(--ua-text-inverse)]">U</span>
+          <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
+            <div className="flex min-w-0 items-center gap-3">
+            <UnauthLogo kind="symbol" tone="white" background="graphite" height={32} alt="" decorative />
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold">Unauth case walkthrough</p>
               <p className="hidden text-xs text-[var(--ua-text-tertiary)] sm:block">Read-only synthetic data · no external actions</p>

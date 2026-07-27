@@ -7,10 +7,12 @@
 //   - No other merchant is named
 //   - Neutral identity-match framing only (no card-network compliance claims)
 
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import React from 'react'
 import type { EvidencePackage } from './types'
 
-const { Document, Page, Text, View, StyleSheet } = await import('@react-pdf/renderer')
+const { Document, Image, Page, Text, View, StyleSheet } = await import('@react-pdf/renderer')
 import { CE3_SIGNAL_LABELS } from './ce3'
 import { formatCurrency } from '@/lib/utils/format'
 
@@ -40,6 +42,9 @@ const EXPORT_DISCLAIMER =
 
 const IDENTITY_EVIDENCE_COL_WIDTHS = [120, 130, 60, 40, 70] as const
 const ORDER_HISTORY_COL_WIDTHS = [60, 100, 60, 65, 65, 90] as const
+const BRAND_WORDMARK_DATA_URI = `data:image/png;base64,${readFileSync(
+  resolve(process.cwd(), 'public/brand/unauth-r1/generated/unauth-wordmark-graphite-2x.png'),
+).toString('base64')}`
 
 // =============================================================================
 // Styles
@@ -58,7 +63,7 @@ const s = StyleSheet.create({
   header:        { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
   headerLeft:    { flexDirection: 'column' },
   headerRight:   { flexDirection: 'column', alignItems: 'flex-end' },
-  brandName:     { fontSize: 16, fontFamily: 'Helvetica-Bold', color: C.accent },
+  brandLogo:     { width: 110, height: 28 },
   brandSub:      { fontSize: 12, color: C.muted, marginTop: 2 },
   headerMeta:    { fontSize: 12, color: C.muted, marginTop: 2 },
   rule:          { borderBottomWidth: 1, borderBottomColor: C.border, marginBottom: 12, marginTop: 4 },
@@ -126,7 +131,7 @@ function PDFHeader({ pkg }: { pkg: EvidencePackage }) {
   return (
     <View style={s.header}>
       <View style={s.headerLeft}>
-        <Text style={s.brandName}>UNAUTH</Text>
+        <Image src={BRAND_WORDMARK_DATA_URI} style={s.brandLogo} />
         <Text style={s.brandSub}>Identity Evidence Report</Text>
       </View>
       <View style={s.headerRight}>

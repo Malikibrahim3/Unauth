@@ -11,13 +11,14 @@ import type { Permission } from '@/lib/permissions';
 import { parseProductGateEnv } from '@/lib/product/envFlags';
 import { SidebarAside } from '@/components/nav/SidebarAside';
 import type { NavItemView } from '@/components/nav/SidebarNavItem';
+import type { ConnectionState } from '@/lib/connections/getConnectionState';
 
 export interface SidebarProps {
   merchantName: string | null;
+  userName?: string | null;
   userEmail: string;
   claimsCount?: number;
-  shopifyConnected?: boolean;
-  helpdeskConnected?: boolean;
+  connectionState?: Pick<ConnectionState, 'orderSourceConnected' | 'helpdesk' | 'helpdeskProvider'>;
   permissions?: Permission[];
 }
 
@@ -34,10 +35,14 @@ function readCollapsedPreference(): boolean {
 
 function SidebarInnerContent({
   merchantName,
+  userName,
   userEmail,
   claimsCount: initialClaimsCount = 0,
-  shopifyConnected = false,
-  helpdeskConnected = false,
+  connectionState = {
+    orderSourceConnected: false,
+    helpdesk: false,
+    helpdeskProvider: null,
+  },
   permissions = [],
 }: SidebarProps) {
   const pathname = usePathname();
@@ -87,7 +92,7 @@ function SidebarInnerContent({
       tierFuture: route.future,
       showDevAccess: !enforceGates && Boolean(route.tier),
       badge: route.key === 'claims' ? claimsCount || undefined : undefined,
-      badgeTitle: route.key === 'claims' ? 'Open cases for review' : undefined,
+      badgeTitle: route.key === 'claims' ? 'Cases requiring review · active statuses' : undefined,
     })),
   }));
 
@@ -101,9 +106,9 @@ function SidebarInnerContent({
   const asideProps = {
     isCollapsed,
     merchantName,
+    userName,
     userEmail,
-    shopifyConnected,
-    helpdeskConnected,
+    connectionState,
     groups,
     isActive,
     onCloseMobile: closeMobile,

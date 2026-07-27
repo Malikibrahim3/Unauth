@@ -6,7 +6,7 @@ function humanizeKey(value: string): string {
 }
 
 export const LABELS = {
-  disputeHistory: 'Claim history',
+  disputeHistory: 'Case history',
   cluster_id: 'Linked profile ID',
   signals_matched: 'Review reasons',
   elevated_refund_rate: 'Refund rate elevated',

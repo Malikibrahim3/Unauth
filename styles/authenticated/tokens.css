@@ -13,6 +13,27 @@
  *
  * Values are the target tables in docs/IMPL_quiet_precision_product_ui.md §3.
  */
+.ua-desktop-boundary {
+  /* The unsupported-width notice sits outside `.ua-app`, so it needs the
+   * small neutral subset below before the authenticated subtree mounts. */
+  --ua-canvas: #fafafa;
+  --ua-surface-primary: #ffffff;
+  --ua-border-default: #d5d5d5;
+  --ua-radius-surface: 10px;
+  --ua-space-2: 8px;
+  --ua-space-6: 24px;
+  --ua-text-primary: #202020;
+  --ua-text-secondary: #5e5e5e;
+  --ua-text-tertiary: #686868;
+  --ua-text-page-title-size: 18px;
+  --ua-text-page-title-leading: 24px;
+  --ua-text-micro-size: 11px;
+  --ua-text-micro-leading: 14px;
+  --ua-text-body-size: 14px;
+  --ua-text-body-leading: 20px;
+  --ua-font-sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
 .ua-app,
 .ua-auth-surface {
   color-scheme: light;
@@ -47,13 +68,13 @@
 
   /* ── Ink (§3.1) ───────────────────────────────────────────────────── */
   --ua-text-primary: #202020;
-  --ua-text-secondary: #626262;
-  --ua-text-tertiary: #767676;
+  --ua-text-secondary: #5e5e5e;
+  --ua-text-tertiary: #686868;
   --ua-text-disabled: #a5a5a5;
   --ua-text-inverse: #ffffff;
   --ua-text-link: #2d2d2d;
   --ua-icon-primary: #343434;
-  --ua-icon-secondary: #858585;
+  --ua-icon-secondary: #707070;
 
   /*
    * ── Lines (§3.1, §3.5) ───────────────────────────────────────────────
@@ -62,8 +83,8 @@
    * not be lightened further.
    */
   --ua-border-subtle: #ebebeb;
-  --ua-border-default: #dedede;
-  --ua-border-strong: #bdbdbd;
+  --ua-border-default: #d5d5d5;
+  --ua-border-strong: #949494;
   --ua-border-focus: #202020;
 
   /* ── Action. Product action is ink; hue is reserved for meaning. ──── */

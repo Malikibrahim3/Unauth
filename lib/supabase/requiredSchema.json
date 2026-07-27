@@ -1,0 +1,177 @@
+{
+  "$comment": "RUN-01/02/03 deploy preflight contract. Every relation, column and relationship the application requires before it may serve traffic. Checked by scripts/verify-schema-preflight.mjs against the target environment and by tests/polish/phase01/schemaPreflight.test.ts against the generated database types. Add an entry here in the same change as the migration that introduces the dependency; never add a client-side fallback that pretends a missing object is present.",
+  "relations": [
+    {
+      "table": "support_payout_cases",
+      "requiredBy": "RUN-01 \u2014 case decision endpoint",
+      "columns": [
+        "id",
+        "merchant_id",
+        "status",
+        "responsibility_confirmation_state",
+        "responsibility_confirmed_at",
+        "responsibility_confirmed_by"
+      ]
+    },
+    {
+      "table": "case_claimed_items",
+      "requiredBy": "RUN-03 \u2014 evidence reconciliation match endpoint",
+      "columns": [
+        "id",
+        "merchant_id",
+        "support_payout_case_id",
+        "source_order_line_id",
+        "claimed_quantity",
+        "match_status",
+        "match_method",
+        "match_confidence",
+        "confirmed_by",
+        "confirmed_at"
+      ]
+    },
+    {
+      "table": "case_clarification_requests",
+      "requiredBy": "RUN-02 \u2014 investigation request/response history",
+      "columns": [
+        "id",
+        "merchant_id",
+        "support_payout_case_id",
+        "partner_id",
+        "status",
+        "request_summary",
+        "response_summary",
+        "created_at"
+      ]
+    },
+    {
+      "table": "partners",
+      "requiredBy": "RUN-02 \u2014 investigation partner resolution",
+      "columns": [
+        "id",
+        "merchant_id",
+        "name",
+        "partner_type",
+        "status"
+      ]
+    },
+    {
+      "table": "work_saved_views",
+      "requiredBy": "RUN-06 \u2014 saved Work views",
+      "columns": [
+        "id",
+        "merchant_id",
+        "owner_user_id",
+        "name",
+        "definition",
+        "is_shared",
+        "deleted_at"
+      ]
+    }
+  ],
+  "foreignKeys": [
+    {
+      "table": "case_clarification_requests",
+      "columns": [
+        "partner_id",
+        "merchant_id"
+      ],
+      "references": "partners",
+      "requiredBy": "RUN-02 \u2014 composite partner FK; PostgREST cannot embed it, so the application must read partners explicitly"
+    },
+    {
+      "table": "case_claimed_items",
+      "columns": [
+        "support_payout_case_id"
+      ],
+      "references": "support_payout_cases",
+      "requiredBy": "RUN-03 \u2014 claimed-item ownership"
+    },
+    {
+      "table": "case_claimed_items",
+      "columns": [
+        "source_order_line_id"
+      ],
+      "references": "source_order_lines",
+      "requiredBy": "RUN-03 \u2014 the matched source order line behind a resolved match"
+    }
+  ],
+  "grants": [
+    {
+      "table": "work_saved_views",
+      "role": "service_role",
+      "privileges": [
+        "SELECT",
+        "INSERT",
+        "UPDATE",
+        "DELETE"
+      ],
+      "requiredBy": "RUN-06 \u2014 without these the saved-view endpoint fails with SQLSTATE 42501 and surfaces as a 500"
+    },
+    {
+      "table": "case_claimed_items",
+      "role": "service_role",
+      "privileges": [
+        "SELECT",
+        "INSERT",
+        "UPDATE",
+        "DELETE"
+      ],
+      "requiredBy": "RUN-03 \u2014 without these the claimed-item match endpoint fails with SQLSTATE 42501"
+    },
+    {
+      "table": "case_outcome_events",
+      "role": "service_role",
+      "privileges": [
+        "SELECT",
+        "INSERT",
+        "UPDATE",
+        "DELETE"
+      ],
+      "requiredBy": "RUN-03/RUN-16 \u2014 reconciliation outcomes and financial stages"
+    },
+    {
+      "table": "case_recommendation_snapshots",
+      "role": "service_role",
+      "privileges": [
+        "SELECT",
+        "INSERT",
+        "UPDATE",
+        "DELETE"
+      ],
+      "requiredBy": "RUN-03/RUN-04 \u2014 persisted recommendation snapshots"
+    },
+    {
+      "table": "source_shipment_lines",
+      "role": "service_role",
+      "privileges": [
+        "SELECT",
+        "INSERT",
+        "UPDATE",
+        "DELETE"
+      ],
+      "requiredBy": "RUN-03 \u2014 shipment lines behind a claimed-item match"
+    },
+    {
+      "table": "provider_credit_records",
+      "role": "service_role",
+      "privileges": [
+        "SELECT",
+        "INSERT",
+        "UPDATE",
+        "DELETE"
+      ],
+      "requiredBy": "RUN-16 \u2014 recovered provider credits"
+    },
+    {
+      "table": "case_prevention_observations",
+      "role": "service_role",
+      "privileges": [
+        "SELECT",
+        "INSERT",
+        "UPDATE",
+        "DELETE"
+      ],
+      "requiredBy": "RUN-21 \u2014 prevented-value reporting"
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import { aggregateMoneyBridges, buildReportTrend, dashboardPreviousPeriodWindow, normalizeReportTimezone, parseReportRange, reportCutoff, reportDateKey, REPORT_DEFINITIONS } from '@/lib/reporting/intelligence';
+import { aggregateMoneyBridges, buildReportTrend, dashboardPreviousPeriodWindow, enforceFinancialTruth, normalizeReportTimezone, parseReportRange, reportCutoff, reportDateKey, REPORT_DEFINITIONS } from '@/lib/reporting/intelligence';
 
 describe('intelligence reporting contracts',()=>{
  it('never combines currencies and calculates outstanding from canonical categories',()=>{
@@ -25,6 +25,17 @@ describe('intelligence reporting contracts',()=>{
   ]);
   expect(result.outstandingMinor).toBe(100);
   expect(result.finalNetLossMinor).toBe(100);
+ });
+ it('withholds eligible and recovered stages when the confirmed-loss bound is missing or exceeded',()=>{
+  const result=enforceFinancialTruth([
+   {support_payout_case_id:'estimate-only',currency:'GBP',confirmed_loss_minor:null,recoverable_minor:1100,recovered_minor:100,known_states:['recoverable','recovered']},
+   {support_payout_case_id:'over-bound',currency:'GBP',confirmed_loss_minor:500,recoverable_minor:600,recovered_minor:100,known_states:['confirmed_loss','recoverable','recovered']},
+   {support_payout_case_id:'valid',currency:'GBP',confirmed_loss_minor:1000,recoverable_minor:600,recovered_minor:100,known_states:['confirmed_loss','recoverable','recovered']},
+  ]);
+  expect(result.rows.map((row)=>row.known_states)).toEqual([[],['confirmed_loss'],['confirmed_loss','recoverable','recovered']]);
+  expect(result.issues).toHaveLength(1);
+  expect(result.issues[0]).toContain('eligible recovery is unavailable');
+  expect(aggregateMoneyBridges(result.rows)[0]).toMatchObject({recoverableMinor:600,recoveredMinor:100});
  });
  it('builds dated chart series for every currency without combining totals',()=>{
   const result=buildReportTrend(
