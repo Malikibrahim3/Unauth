@@ -80,7 +80,9 @@ export const TOOLTIP_PADDING_X = 10;
 // T1 — cartesian frame
 export const PLOT_PAD_TOP = 12;
 export const PLOT_PAD_BOTTOM = 8;
-export const Y_LABEL_GUTTER = 36;
+/** Currency-aware gutter keeps £/$ values readable instead of clipping the first digit. */
+export const Y_LABEL_GUTTER = 64;
+export const Y_LABEL_TICK_MARGIN = 8;
 export const GRID_LINE_MAX = 5;
 
 // Performance caps (§11)
