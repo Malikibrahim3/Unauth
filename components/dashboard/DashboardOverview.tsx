@@ -20,6 +20,7 @@ import ExportMenu from '@/components/reports/ExportMenu';
 import { Modal } from '@/components/ui';
 import { ComboBarLineChart } from '@/components/charts/authenticated/cartesian/ComboBarLineChart';
 import { MetricTabs, type MetricTabItem } from '@/components/charts/authenticated/micro/MetricTabs';
+import { MetricRail } from '@/components/charts/authenticated/micro/MetricRail';
 import { SegmentCompositionCard } from '@/components/charts/authenticated/operational/SegmentCompositionCard';
 import { BlockRailChart } from '@/components/charts/authenticated/operational/BlockRailChart';
 import type {
@@ -131,6 +132,18 @@ export function DashboardOverview({
       : [],
     [metric, previousTrend, report.generatedAt, report.range, report.trend, selectedCurrency],
   );
+  const recoveryChartData = useMemo(
+    () => selectedCurrency && metric === 'exposure'
+      ? buildDashboardChartBuckets({
+          current: report.trend,
+          range: report.range,
+          currency: selectedCurrency,
+          metric: 'recovered',
+          asOf: report.generatedAt,
+        })
+      : [],
+    [metric, report.generatedAt, report.range, report.trend, selectedCurrency],
+  );
   const hasChartData = chartData.some(
     (bucket) => bucket.currentMinor != null || bucket.previousMinor != null,
   );
@@ -175,53 +188,6 @@ export function DashboardOverview({
           </Link>
         </div>
       </header>
-
-      <MetricGroup
-        className="mb-4"
-        items={[
-          {
-            label: 'Cases in period',
-            value: formatNumber(report.recordCount),
-            description: TIME_RANGE_LABELS[report.range],
-          },
-          {
-            label: 'Need action',
-            value: formatNumber(needsAction),
-            description: actionPercent == null ? 'No cases in this period' : `${actionPercent}% of cases`,
-          },
-          {
-            label: 'Ready for decision',
-            value: formatNumber(readyForDecision),
-            description: 'Evidence complete',
-          },
-          {
-            label: 'Source freshness',
-            value: health.freshnessPercent == null ? 'Unavailable' : `${health.freshnessPercent}%`,
-            description: `${formatNumber(health.staleRecords)} stale records`,
-          },
-        ]}
-      />
-
-      <section className="mb-4" aria-label="Priority work">
-        <RankedContributionChart
-          id="dashboard-priority-work"
-          title="Priority work"
-          description="Open cases by the next step they are waiting on."
-          items={report.operations.slice(0, 6).map((operation, index) => ({
-            label: operation.label,
-            value: operation.count,
-            displayValue: `${formatNumber(operation.count)} ${operation.count === 1 ? 'case' : 'cases'}`,
-            href: operation.href,
-            /*
-             * §6.8 Overview priority: "no semantic hue unless the bar encodes a
-             * semantic state". Ranking first is not a warning — the leading bar
-             * takes the analytical accent and the rest stay neutral.
-             */
-            tone: index === 0 ? 'primary' : 'neutral',
-          }))}
-          annotation={{ value: formatNumber(report.recordCount), label: ' cases in period' }}
-        />
-      </section>
 
       <div className={styles.filterBar} aria-label="Dashboard filters">
         <div className={styles.filterGroup}>
@@ -271,11 +237,61 @@ export function DashboardOverview({
         </div>
       </div>
 
+      <MetricGroup
+        className="my-4"
+        items={[
+          {
+            label: 'Cases in period',
+            value: formatNumber(report.recordCount),
+            description: TIME_RANGE_LABELS[report.range],
+          },
+          {
+            label: 'Need action',
+            value: formatNumber(needsAction),
+            description: actionPercent == null ? 'No cases in this period' : `${actionPercent}% of cases`,
+            microchart: (
+              <MetricRail
+                value={needsAction}
+                total={report.recordCount}
+                tone="attention"
+                label={`${formatNumber(needsAction)} of ${formatNumber(report.recordCount)} cases need action`}
+              />
+            ),
+          },
+          {
+            label: 'Ready for decision',
+            value: formatNumber(readyForDecision),
+            description: 'Evidence complete',
+            microchart: (
+              <MetricRail
+                value={readyForDecision}
+                total={report.recordCount}
+                tone="positive"
+                label={`${formatNumber(readyForDecision)} of ${formatNumber(report.recordCount)} cases are ready for decision`}
+              />
+            ),
+          },
+          {
+            label: 'Source freshness',
+            value: health.freshnessPercent == null ? 'Unavailable' : `${health.freshnessPercent}%`,
+            description: `${formatNumber(health.staleRecords)} stale records`,
+            microchart: health.freshnessPercent == null ? undefined : (
+              <MetricRail
+                value={health.freshnessPercent}
+                total={100}
+                tone={health.freshnessPercent >= 90 ? 'positive' : 'attention'}
+                label={`${health.freshnessPercent}% source freshness`}
+              />
+            ),
+          },
+        ]}
+      />
+
       <section className={styles.performanceCard} aria-label="Value this period">
         <div className={styles.cardHeader}>
           <div>
             <div className={styles.titleRow}>
-              <h2>Case financials</h2>
+              <h2>Is payout exposure improving?</h2>
               <span className={styles.infoDot} title="Canonical financial entries for the selected period">i</span>
             </div>
             <p>{TIME_RANGE_LABELS[report.range]}{selectedCurrency ? ` · ${selectedCurrency}` : ''}</p>
@@ -307,10 +323,11 @@ export function DashboardOverview({
                   View underlying records
                 </Link>
               </div>
-              {compare === 'previous' ? (
+              {metric === 'exposure' || compare === 'previous' ? (
                 <div className={styles.legend} aria-label="Chart legend">
-                  <span><i className={dvStyles[selectedMetric.tone]} /> Current</span>
-                  <span><i className={styles.dashedLegend} /> Previous</span>
+                  <span><i className={dvStyles[selectedMetric.tone]} /> {selectedMetric.label}</span>
+                  {metric === 'exposure' ? <span><i className={dvStyles.positive} /> Recovered</span> : null}
+                  {compare === 'previous' ? <span><i className={styles.dashedLegend} /> Previous period</span> : null}
                 </div>
               ) : null}
             </div>
@@ -318,17 +335,23 @@ export function DashboardOverview({
             <div className={styles.chartRegion} role="region" aria-label="Case financial charts">
               {selectedMetricValue != null && chartData.length > 0 && hasChartData ? (
                 <ComboBarLineChart
-                  data={chartData.map((bucket) => ({
+                  data={chartData.map((bucket, index) => ({
                     key: bucket.key,
                     label: bucket.label,
                     current: bucket.currentMinor,
+                    secondary: metric === 'exposure'
+                      ? recoveryChartData[index]?.currentMinor ?? null
+                      : undefined,
                     previous: bucket.previousMinor,
                   }))}
+                  secondary={metric === 'exposure'
+                    ? { label: 'Recovered', colourVar: '--ua-success' }
+                    : undefined}
                   colourVar={selectedMetric.colourVar}
                   comparison={compare === 'previous'}
                   valueFormatter={(value) => formatMinorCurrencyNullable(value, selectedCurrency)}
                   tooltipFormatter={(value) => formatMoney(value, selectedCurrency)}
-                  height={230}
+                  height={320}
                 />
               ) : (
                 <div className={styles.chartEmpty}>
@@ -367,6 +390,22 @@ export function DashboardOverview({
             <Link href="/integrations">Review sources</Link>
           </div>
         )}
+      </section>
+
+      <section className={styles.prioritySection} aria-label="Priority work">
+        <RankedContributionChart
+          id="dashboard-priority-work"
+          title="Where is work accumulating?"
+          description="Open cases ranked by the next step they are waiting on."
+          items={report.operations.slice(0, 6).map((operation, index) => ({
+            label: operation.label,
+            value: operation.count,
+            displayValue: `${formatNumber(operation.count)} ${operation.count === 1 ? 'case' : 'cases'}`,
+            href: operation.href,
+            tone: index === 0 ? 'primary' : 'neutral',
+          }))}
+          annotation={{ value: formatNumber(report.recordCount), label: ' cases in period' }}
+        />
       </section>
 
       <div className={styles.lowerGrid}>

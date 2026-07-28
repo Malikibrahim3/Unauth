@@ -1,9 +1,9 @@
 import Link from "next/link";
 import type {
+  DashboardPeriodComparison,
   FinancialReportMetric,
   IntelligenceReport,
   MoneyBridge,
-  RankedRow,
 } from "@/lib/reporting/intelligence";
 import {
   financialMetricCaseIds,
@@ -11,20 +11,18 @@ import {
   financialReportRecordsHref,
   REPORT_DEFINITIONS,
 } from "@/lib/reporting/intelligence";
-import { normaliseCurrencyOrNull } from "@/lib/canonical/money";
 import { formatMinorCurrencyNullable, formatNumber } from "@/lib/utils/format";
 import { financialStageDefinition, financialStageLabel } from "@/lib/ui/labels";
 import { TIME_RANGE_LABELS } from "@/lib/ui/merchantCopy";
 import { DashboardCharts } from "@/components/reporting/DashboardCharts";
 import { RankedContributionChart } from "@/components/charts/authenticated/RankedContributionChart";
+import { MetricGroup } from "@/components/ui/MetricGroup";
+import { SparkTrend } from "@/components/charts/authenticated/micro/SparkTrend";
 
 function money(minor: number, currency: string) {
   return formatMinorCurrencyNullable(minor, currency);
 }
 
-function currencyLabel(currency: string) {
-  return normaliseCurrencyOrNull(currency) ?? "Currency unavailable";
-}
 const STEPS = [
   { key: "requestedMinor", state: "requested", label: financialStageLabel("requested"), definition: financialStageDefinition("requested") },
   { key: "exposedMinor", state: "exposed", label: financialStageLabel("maximum_exposure"), definition: financialStageDefinition("maximum_exposure") },
@@ -99,64 +97,27 @@ function StageCell({
     </div>
   );
 }
-function RankedTable({
-  title,
-  description,
-  rows,
-  empty,
-}: {
-  title: string;
-  description: string;
-  rows: RankedRow[];
-  empty: string;
-}) {
-  return (
-    <section className="border-t border-[var(--ua-border-subtle)] pt-5">
-      <h2 className="text-lg font-semibold">{title}</h2>
-      <p className="mt-1 text-sm text-[var(--ua-text-secondary)]">{description}</p>
-      {rows.length ? (
-        <div className="mt-3 overflow-x-auto">
-          <table className="w-full min-w-[520px] text-sm">
-            <thead>
-              <tr className="border-b border-[var(--ua-border-default)] text-left text-[var(--ua-text-secondary)]">
-                <th className="py-2 font-medium">Category</th>
-                <th className="py-2 text-right font-medium">Records</th>
-                <th className="py-2 text-right font-medium">Value</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr
-                  key={`${r.key}:${r.currency}`}
-                  className="border-b border-[var(--ua-border-subtle)]"
-                >
-                  <th scope="row" className="py-3 text-left font-medium">
-                    <Link className="text-[var(--ua-text-primary)] hover:text-[var(--ua-action-primary)]" href={r.href}>{r.label}</Link>
-                  </th>
-                  <td className="py-3 text-right tabular-nums">{r.count}</td>
-                  <td className="py-3 text-right tabular-nums">
-                    {money(r.amountMinor, r.currency)}{" "}
-                    <span className="text-xs text-[var(--ua-text-secondary)]">
-                      {currencyLabel(r.currency)}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <p className="mt-3 text-sm text-[var(--ua-text-secondary)]">{empty}</p>
-      )}
-    </section>
-  );
+function trendValues(report: IntelligenceReport, currency: string, state: FinancialReportMetric): number[] {
+  const field = state === "exposed"
+    ? "exposureMinor"
+    : state === "recovered"
+      ? "recoveredMinor"
+      : state === "confirmed_loss"
+        ? "realisedLossMinor"
+        : null;
+  if (!field) return [];
+  return report.trend
+    .filter((point) => point.currency === currency && point.knownStates.includes(state))
+    .map((point) => point[field]);
 }
 
 export function IntelligenceReportView({
   report,
+  comparison = null,
   compact = false,
 }: {
   report: IntelligenceReport;
+  comparison?: DashboardPeriodComparison | null;
   compact?: boolean;
 }) {
   return (
@@ -173,7 +134,7 @@ export function IntelligenceReportView({
           </div>
         </div>
         {!report.reconciliation.ok ? (
-          <div role="alert" className="mt-3 border border-[var(--ua-critical)] p-3">
+          <div role="alert" className="mt-3 rounded-[var(--ua-radius-control)] border border-[var(--ua-warning-border)] bg-[var(--ua-warning-bg)] p-3 text-[var(--ua-warning)]">
             <p className="font-semibold">
               Ledger reconciliation needs attention
             </p>
@@ -202,21 +163,39 @@ export function IntelligenceReportView({
                     {financialMetricCaseIds(b, "exposed").length} cases with recorded exposure
                   </Link>
                 </div>
-                <dl className="mt-2 grid overflow-hidden border-y border-[var(--ua-border-default)] sm:grid-cols-2 lg:grid-cols-4">
-                  {HEADLINE_STEPS.map((step, index) => (
-                    <StageCell key={step.key} step={step} bridge={b} report={report} index={index} />
-                  ))}
-                </dl>
-                <details className="mt-3 border-b border-[var(--ua-border-subtle)] pb-2">
-                  <summary className="cursor-pointer py-2 text-[length:var(--ua-text-dense-size)] font-medium text-[var(--ua-text-secondary)]">
-                    All {STEPS.length} financial stages for {b.currency}
-                  </summary>
-                  <dl className="mt-1 grid overflow-hidden sm:grid-cols-2 lg:grid-cols-4">
-                    {SUPPORTING_STEPS.map((step, index) => (
-                      <StageCell key={step.key} step={step} bridge={b} report={report} index={index} dense />
-                    ))}
-                  </dl>
-                </details>
+                <MetricGroup
+                  className="mt-2"
+                  aria-label={`${b.currency} headline financial metrics`}
+                  items={HEADLINE_STEPS.map((step) => {
+                    const known = financialMetricIsKnown(b, step.state);
+                    const values = trendValues(report, b.currency, step.state);
+                    return {
+                      label: step.label,
+                      value: (
+                        <Link
+                          className="hover:text-[var(--ua-action-primary)]"
+                          href={financialReportRecordsHref({
+                            range: report.range,
+                            currency: b.currency,
+                            metric: step.state,
+                            timezone: report.timezone,
+                          })}
+                        >
+                          {known ? money(b[step.key] as number, b.currency) : "Unavailable"}
+                        </Link>
+                      ),
+                      description: step.definition,
+                      microchart: values.length > 1 ? (
+                        <SparkTrend
+                          values={values}
+                          colourVar={step.state === "recovered" ? "--ua-success" : "--ua-chart-primary"}
+                          width={72}
+                          height={24}
+                        />
+                      ) : undefined,
+                    };
+                  })}
+                />
               </div>
             ))}
           </div>
@@ -226,7 +205,29 @@ export function IntelligenceReportView({
           </p>
         )}
       </section>
-      <DashboardCharts report={report} />
+      <DashboardCharts report={report} comparison={comparison} />
+      {report.bridges.length ? (
+        <section className="border-t border-[var(--ua-border-subtle)] pt-5" aria-labelledby="financial-stages-title">
+          <h2 id="financial-stages-title" className="text-base font-semibold">Financial stage detail</h2>
+          <p className="mt-1 text-sm text-[var(--ua-text-secondary)]">
+            The full ledger remains available without competing with the decision view above.
+          </p>
+          <div className="mt-2">
+            {report.bridges.map((bridge) => (
+              <details key={bridge.currency} className="border-b border-[var(--ua-border-subtle)] py-2">
+                <summary className="cursor-pointer py-2 text-[length:var(--ua-text-dense-size)] font-medium text-[var(--ua-text-secondary)]">
+                  All {STEPS.length} financial stages for {bridge.currency}
+                </summary>
+                <dl className="mt-1 grid overflow-hidden sm:grid-cols-2 lg:grid-cols-4">
+                  {SUPPORTING_STEPS.map((step, index) => (
+                    <StageCell key={step.key} step={step} bridge={bridge} report={report} index={index} dense />
+                  ))}
+                </dl>
+              </details>
+            ))}
+          </div>
+        </section>
+      ) : null}
       {/*
         Open work by next step. This was a flat list of label + count rows, which
         made the reader compare numbers in their head; ranked bars make the shape
@@ -255,18 +256,29 @@ export function IntelligenceReportView({
           }
         />
       </section>
-      {!compact ? <RankedTable
-        title="Loss causes"
-        description="Realised loss grouped by canonical issue category. Categories describe recorded causes, not causal inference."
-        rows={report.causes.slice(0, compact ? 5 : 20)}
-        empty="No realised-loss cause records were found in this period."
-      /> : null}
-      {!compact ? <RankedTable
-        title="Recovery performance"
-        description="Reconciled recovered value grouped by recovery state."
-        rows={report.recoveries.slice(0, compact ? 5 : 20)}
-        empty="No recovery records were updated in this period."
-      /> : null}
+      {!compact && report.recoveries.length ? (
+        <section className="border-t border-[var(--ua-border-subtle)] pt-5">
+          {report.bridges.map((bridge) => {
+            const recoveries = report.recoveries.filter((row) => row.currency === bridge.currency);
+            return recoveries.length ? (
+              <RankedContributionChart
+                key={bridge.currency}
+                id={`recovery-performance-${bridge.currency}`}
+                title="Where is recovered value coming from?"
+                description={`Reconciled recovered value by recovery state · ${bridge.currency}`}
+                items={recoveries.slice(0, 12).map((row) => ({
+                  label: row.label,
+                  value: row.amountMinor,
+                  displayValue: money(row.amountMinor, row.currency),
+                  detail: `${formatNumber(row.count)} ${row.count === 1 ? "record" : "records"}`,
+                  href: row.href,
+                  tone: "positive",
+                }))}
+              />
+            ) : null;
+          })}
+        </section>
+      ) : null}
       {!compact ? (
         <section className="border-t border-[var(--ua-border-subtle)] pt-5">
           <h2 className="text-lg font-semibold">Report definitions</h2>

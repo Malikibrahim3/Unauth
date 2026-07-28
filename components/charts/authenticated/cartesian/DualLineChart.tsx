@@ -4,16 +4,32 @@ import {
   CartesianGrid,
   Line,
   LineChart,
-  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from 'recharts';
 import { useChartTheme } from '../core/useChartTheme';
 import { ChartTooltip } from '../core/ChartTooltip';
-import { TREND_LINE_WIDTH, TREND_HOVER_DOT_R, Y_LABEL_GUTTER, Y_LABEL_TICK_MARGIN } from '../core/geometry';
+import { ChartCursor } from '../core/ChartCursor';
+import { useChartMotion } from '../core/useChartMotion';
+import { useChartWidth } from '../core/useChartWidth';
+import {
+  COMPARISON_DASH,
+  COMPARISON_LINE_WIDTH,
+  TREND_LINE_WIDTH,
+  TREND_HOVER_DOT_R,
+  Y_LABEL_GUTTER,
+  Y_LABEL_TICK_MARGIN,
+} from '../core/geometry';
 
-export type DualLineSeries = { key: string; label: string; colourVar: string };
+export type DualLineSeries = {
+  key: string;
+  label: string;
+  colourVar: string;
+  variant?: 'primary' | 'semantic' | 'comparison';
+  connectNulls?: boolean;
+  showDots?: boolean;
+};
 export type DualLinePoint = { key: string; label: string; [seriesKey: string]: string | number | null };
 
 type DualLineChartProps = {
@@ -24,14 +40,21 @@ type DualLineChartProps = {
 };
 
 /** T3 multi-series rules — max 3 lines with a visible caller-owned legend. */
-export function DualLineChart({ data, series, valueFormatter, height = 240 }: DualLineChartProps) {
+export function DualLineChart({ data, series, valueFormatter, height = 320 }: DualLineChartProps) {
   const theme = useChartTheme();
+  const motion = useChartMotion(data.length * series.length);
+  const { containerRef, width } = useChartWidth();
 
   return (
-    <div style={{ width: '100%', height }}>
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 12, right: 12, bottom: 2, left: 0 }} accessibilityLayer>
-          <CartesianGrid stroke={theme['--ua-chart-grid']} vertical={false} />
+    <div ref={containerRef} style={{ width: '100%', height, overflow: 'hidden' }}>
+        <LineChart
+          width={width}
+          height={height}
+          data={data}
+          margin={{ top: 12, right: 12, bottom: 2, left: 0 }}
+          accessibilityLayer
+        >
+          <CartesianGrid stroke={theme['--ua-chart-grid']} strokeOpacity={0.78} vertical={false} />
           <XAxis
             dataKey="label"
             axisLine={false}
@@ -45,13 +68,13 @@ export function DualLineChart({ data, series, valueFormatter, height = 240 }: Du
             tickLine={false}
             width={Y_LABEL_GUTTER}
             tickMargin={Y_LABEL_TICK_MARGIN}
-            tickCount={5}
+            tickCount={4}
             tick={{ fontSize: 13, fill: theme['--ua-text-tertiary'], fontFamily: 'var(--ua-font-sans)' }}
             tickFormatter={valueFormatter}
           />
           <Tooltip
-            cursor={{ stroke: theme['--ua-border-strong'], strokeDasharray: '4 4' }}
-            isAnimationActive={false}
+            cursor={<ChartCursor />}
+            isAnimationActive={motion.isAnimationActive}
             content={({ active, payload, label }) => {
               if (!active || !payload?.length) return null;
               return (
@@ -79,18 +102,20 @@ export function DualLineChart({ data, series, valueFormatter, height = 240 }: Du
                 dataKey={s.key}
                 name={s.label}
                 stroke={colour}
-                strokeWidth={TREND_LINE_WIDTH}
+                strokeWidth={s.variant === 'comparison' ? COMPARISON_LINE_WIDTH : TREND_LINE_WIDTH}
+                strokeDasharray={s.variant === 'comparison' ? COMPARISON_DASH.join(' ') : undefined}
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                connectNulls={false}
-                dot={{ r: 3, fill: colour, stroke: theme['--ua-surface-primary'], strokeWidth: 2 }}
+                connectNulls={s.connectNulls ?? false}
+                dot={s.showDots
+                  ? { r: 2.5, fill: colour, stroke: theme['--ua-surface-primary'], strokeWidth: 2 }
+                  : false}
                 activeDot={{ r: TREND_HOVER_DOT_R, fill: colour, stroke: theme['--ua-surface-primary'], strokeWidth: 2 }}
-                isAnimationActive={false}
+                {...motion}
               />
             );
           })}
         </LineChart>
-      </ResponsiveContainer>
     </div>
   );
 }

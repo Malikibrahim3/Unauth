@@ -17,10 +17,13 @@
   background: transparent;
   text-align: left;
   cursor: pointer;
+  transition:
+    background-color var(--ua-duration-fast) var(--ua-ease-standard),
+    color var(--ua-duration-fast) var(--ua-ease-standard);
 }
 .tile:last-child { border-right: 0; }
 .tile:hover { background: var(--ua-surface-hover); }
-.tile[data-selected="true"] { background: var(--ua-surface-selected); }
+.tile[data-selected="true"] { background: var(--ua-accent-50); }
 button.tile:focus-visible { outline: none; box-shadow: inset var(--ua-shadow-focus); }
 .iconChip {
   display: grid;
@@ -33,7 +36,11 @@ button.tile:focus-visible { outline: none; box-shadow: inset var(--ua-shadow-foc
   color: var(--ua-icon-primary);
   place-items: center;
 }
-.iconChip[data-selected="true"] { border-color: var(--ua-surface-inverse); background: var(--ua-surface-inverse); color: var(--ua-text-inverse); }
+.iconChip[data-selected="true"] {
+  border-color: var(--ua-accent-500);
+  background: var(--ua-accent-500);
+  color: var(--ua-accent-fg);
+}
 .label { display: block; margin: 0; color: var(--ua-text-secondary); font-size: var(--ua-text-dense-size); font-weight: 400; }
 .value { display: block; margin: 2px 0; color: var(--ua-text-primary); font-family: var(--ua-font-sans); font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
 .delta { display: block; font-size: var(--ua-text-dense-size); }

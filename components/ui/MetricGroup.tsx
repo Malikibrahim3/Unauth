@@ -5,6 +5,7 @@ export interface MetricGroupItem {
   label: string;
   value: ReactNode;
   description?: ReactNode;
+  microchart?: ReactNode;
 }
 
 export interface MetricGroupProps {
@@ -57,6 +58,7 @@ export function MetricGroup({
           <dt className="ua-metric-group__label">{item.label}</dt>
           <dd className="ua-metric-group__value">{item.value}</dd>
           {item.description ? <dd className="ua-metric-group__description">{item.description}</dd> : null}
+          {item.microchart ? <div className="ua-metric-group__microchart">{item.microchart}</div> : null}
         </div>
         );
       })}

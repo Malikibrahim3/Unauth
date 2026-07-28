@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import type { IntelligenceReport, MoneyBridge } from '@/lib/reporting/intelligence';
+import type { DashboardPeriodComparison, IntelligenceReport, MoneyBridge } from '@/lib/reporting/intelligence';
 import { financialMetricValue, financialReportRecordsHref } from '@/lib/reporting/intelligence';
 import { buildDashboardChartBuckets } from '@/components/dashboard/dashboardModel';
 import {
@@ -18,13 +18,14 @@ import { TIME_RANGE_LABELS } from '@/lib/ui/merchantCopy';
 
 type CurrencyCharts = {
   bridge: MoneyBridge;
-  causes: Array<{ name: string; valueMinor: number }>;
+  causes: Array<{ name: string; valueMinor: number; count: number; href: string }>;
   trend: Array<{
     key: string;
     date: string;
     label: string;
     exposureMinor: number | null;
     recoveredMinor: number | null;
+    previousExposureMinor: number | null;
   }>;
   observations: Array<{ date: string; exposureMinor: number | null; recoveredMinor: number | null }>;
 };
@@ -44,7 +45,10 @@ function chartCadenceLabel(range: IntelligenceReport['range']): string {
   return 'Daily ledger value';
 }
 
-function chartData(report: IntelligenceReport): CurrencyCharts[] {
+function chartData(
+  report: IntelligenceReport,
+  comparison: DashboardPeriodComparison | null,
+): CurrencyCharts[] {
   return report.bridges.map((bridge) => {
     const observations = report.trend
       .filter((point) => point.currency === bridge.currency)
@@ -55,6 +59,7 @@ function chartData(report: IntelligenceReport): CurrencyCharts[] {
       }));
     const exposureBuckets = buildDashboardChartBuckets({
       current: report.trend,
+      previous: comparison?.trend,
       range: report.range,
       currency: bridge.currency,
       metric: 'exposure',
@@ -76,18 +81,30 @@ function chartData(report: IntelligenceReport): CurrencyCharts[] {
         label: bucket.label,
         exposureMinor: bucket.currentMinor,
         recoveredMinor: recoveredBuckets[index]?.currentMinor ?? null,
+        previousExposureMinor: bucket.previousMinor,
       })),
       observations,
       causes: report.causes
         .filter((row) => row.currency === bridge.currency && row.amountMinor > 0)
         .slice(0, 5)
-        .map((row) => ({ name: row.label, valueMinor: row.amountMinor })),
+        .map((row) => ({
+          name: row.label,
+          valueMinor: row.amountMinor,
+          count: row.count,
+          href: row.href,
+        })),
     };
   });
 }
 
-export function DashboardCharts({ report }: { report: IntelligenceReport }) {
-  const groups = chartData(report);
+export function DashboardCharts({
+  report,
+  comparison = null,
+}: {
+  report: IntelligenceReport;
+  comparison?: DashboardPeriodComparison | null;
+}) {
+  const groups = chartData(report, comparison);
 
   if (!groups.length) {
     return (
@@ -122,12 +139,17 @@ export function DashboardCharts({ report }: { report: IntelligenceReport }) {
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
             <ReportChartPanel
               className="xl:col-span-8"
-              title="Exposure and recovered"
+              title="How is financial exposure changing?"
+              description="Exposure, recovery, and the comparable previous period"
               titleId={`exposure-recovered-${bridge.currency}`}
             >
               <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-3">
                 <p className="text-xs text-[var(--ua-text-secondary)]">{chartCadenceLabel(report.range)}</p>
-                <ChartLegend items={[{ label: 'Exposure', tone: 'primary' }, { label: 'Recovered', tone: 'positive' }]} />
+                <ChartLegend items={[
+                  { label: 'Exposure', tone: 'primary' },
+                  { label: 'Recovered', tone: 'positive' },
+                  ...(comparison ? [{ label: 'Previous exposure', tone: 'comparison' as const }] : []),
+                ]} />
               </div>
               {trend.some((point) => point.exposureMinor != null || point.recoveredMinor != null) ? (
                 <>
@@ -144,13 +166,21 @@ export function DashboardCharts({ report }: { report: IntelligenceReport }) {
                         label: point.label,
                         exposureMinor: point.exposureMinor,
                         recoveredMinor: point.recoveredMinor,
+                        previousExposureMinor: point.previousExposureMinor,
                       }))}
                       series={[
-                        { key: 'exposureMinor', label: 'Exposure', colourVar: '--ua-chart-primary' },
-                        { key: 'recoveredMinor', label: 'Recovered', colourVar: '--ua-success' },
+                        { key: 'exposureMinor', label: 'Exposure', colourVar: '--ua-chart-primary', variant: 'primary' },
+                        { key: 'recoveredMinor', label: 'Recovered', colourVar: '--ua-success', variant: 'semantic', showDots: true },
+                        ...(comparison ? [{
+                          key: 'previousExposureMinor',
+                          label: 'Previous exposure',
+                          colourVar: '--ua-chart-comparison',
+                          variant: 'comparison' as const,
+                          connectNulls: true,
+                        }] : []),
                       ]}
                       valueFormatter={(value) => compactMoney(value, bridge.currency)}
-                      height={260}
+                      height={340}
                     />
                   </div>
                   <ReportChartDataTable currency={bridge.currency} trend={observations} />
@@ -165,7 +195,7 @@ export function DashboardCharts({ report }: { report: IntelligenceReport }) {
               )}
             </ReportChartPanel>
 
-            <div className="xl:col-span-4">
+            <div className="self-start xl:col-span-4">
               <RankedContributionChart
                 id={`loss-causes-${bridge.currency}`}
                 title="Loss causes"
@@ -174,8 +204,11 @@ export function DashboardCharts({ report }: { report: IntelligenceReport }) {
                   label: cause.name,
                   value: cause.valueMinor,
                   displayValue: compactMoney(cause.valueMinor, bridge.currency),
+                  detail: `${cause.count} ${cause.count === 1 ? 'record' : 'records'}`,
+                  href: cause.href,
                   tone: 'negative',
                 }))}
+                compact={causes.length <= 2}
               />
               {causes.length ? (
                 <Link href={financialReportRecordsHref({ range: report.range, currency: bridge.currency, metric: 'confirmed_loss', timezone: report.timezone })} className="mt-2 inline-flex text-xs font-semibold text-[var(--ua-action-primary)]">
@@ -184,7 +217,7 @@ export function DashboardCharts({ report }: { report: IntelligenceReport }) {
               ) : null}
             </div>
 
-            <RecoveryLedger bridge={bridge} />
+            <RecoveryLedger bridge={bridge} report={report} />
           </div>
         </div>
       ))}
@@ -206,17 +239,20 @@ function ReportChartPanel({
   className = '',
   title,
   titleId,
+  description,
 }: {
   children: React.ReactNode;
   className?: string;
   title: string;
   titleId: string;
+  description?: string;
 }) {
   return (
     <section className={`${dvStyles.panel} ${className}`} aria-labelledby={titleId}>
       <header className={dvStyles.panelHeader}>
         <div className={dvStyles.panelHeading}>
           <h2 id={titleId}>{title}</h2>
+          {description ? <p>{description}</p> : null}
         </div>
       </header>
       {children}
@@ -232,14 +268,16 @@ function ChartEmpty({ message }: { message: string }) {
   );
 }
 
-function RecoveryLedger({ bridge }: { bridge: MoneyBridge }) {
+function RecoveryLedger({ bridge, report }: { bridge: MoneyBridge; report: IntelligenceReport }) {
   const exposed = financialMetricValue(bridge, 'exposed');
   const recoverable = financialMetricValue(bridge, 'recoverable');
   const recovered = financialMetricValue(bridge, 'recovered');
+  const outstanding = financialMetricValue(bridge, 'outstanding');
   const rows = [
-    { label: financialStageLabel('maximum_exposure'), value: exposed, conversion: null },
-    { label: financialStageLabel('eligible_recovery'), value: recoverable, conversion: conversion(recoverable, exposed) },
-    { label: financialStageLabel('recovered_cash'), value: recovered, conversion: conversion(recovered, recoverable) },
+    { label: financialStageLabel('maximum_exposure'), state: 'exposed' as const, value: exposed, conversion: null, tone: 'primary' },
+    { label: financialStageLabel('eligible_recovery'), state: 'recoverable' as const, value: recoverable, conversion: conversion(recoverable, exposed), tone: 'primary' },
+    { label: financialStageLabel('recovered_cash'), state: 'recovered' as const, value: recovered, conversion: conversion(recovered, recoverable), tone: 'positive' },
+    { label: financialStageLabel('outstanding_recovery'), state: 'outstanding' as const, value: outstanding, conversion: conversion(outstanding, recoverable), tone: 'neutral' },
   ];
   const hasKnownValue = rows.some((row) => row.value != null);
   // Scale every stage against the first stage that has a known value, so a null
@@ -249,7 +287,7 @@ function RecoveryLedger({ bridge }: { bridge: MoneyBridge }) {
   return (
     <section className="ua-section-panel rounded-[var(--ua-radius-surface)] xl:col-span-12" aria-labelledby={`recovery-ledger-${bridge.currency}`}>
       <div className="border-b border-[var(--ua-border-subtle)] px-4 py-3">
-        <h3 id={`recovery-ledger-${bridge.currency}`} className="text-sm font-semibold">Recovery progression</h3>
+        <h3 id={`recovery-ledger-${bridge.currency}`} className="text-sm font-semibold">How much exposed value is reaching recovery?</h3>
         <p className="mt-0.5 text-xs text-[var(--ua-text-secondary)]">Reconciled value through the recovery workflow</p>
       </div>
       {hasKnownValue ? <>
@@ -264,15 +302,31 @@ function RecoveryLedger({ bridge }: { bridge: MoneyBridge }) {
           {rows.map((row, index) => {
             const share = row.value != null && baseline ? Math.max(1.5, (row.value / baseline) * 100) : 0;
             return (
-              <div key={row.label} className="grid grid-cols-[92px_minmax(0,1fr)_auto] items-center gap-3">
-                <dt className="text-xs font-medium text-[var(--ua-text-secondary)]">{row.label}</dt>
+              <div key={row.label} className="grid grid-cols-[128px_minmax(0,1fr)_auto] items-center gap-3">
+                <dt className="text-xs font-medium text-[var(--ua-text-secondary)]">
+                  <Link
+                    className="hover:text-[var(--ua-action-primary)]"
+                    href={financialReportRecordsHref({
+                      range: report.range,
+                      currency: bridge.currency,
+                      metric: row.state,
+                      timezone: report.timezone,
+                    })}
+                  >
+                    {row.label}
+                  </Link>
+                </dt>
                 <dd className="min-w-0">
-                  <div className="h-2 overflow-hidden rounded-[var(--ua-radius-xs)] bg-[var(--ua-chart-track)]">
+                  <div className="h-3 overflow-hidden rounded-[var(--ua-radius-xs)] bg-[var(--ua-chart-track)]">
                     <div
                       className="h-full rounded-[var(--ua-radius-xs)]"
                       style={{
                         width: `${share}%`,
-                        background: index === rows.length - 1 ? 'var(--ua-success)' : 'var(--ua-chart-primary)',
+                        background: row.tone === 'positive'
+                          ? 'var(--ua-success)'
+                          : row.tone === 'neutral'
+                            ? 'var(--ua-chart-neutral-500)'
+                            : 'var(--ua-chart-primary)',
                       }}
                     />
                   </div>

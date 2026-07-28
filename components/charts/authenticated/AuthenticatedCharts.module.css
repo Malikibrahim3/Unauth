@@ -75,6 +75,14 @@
 .attention { background: var(--ua-warning); color: var(--ua-warning); }
 .negative { background: var(--ua-critical); color: var(--ua-critical); }
 .neutral { background: var(--ua-chart-neutral-700); color: var(--ua-chart-neutral-700); }
+.comparison {
+  width: 12px !important;
+  height: 0 !important;
+  border-top: 2px dashed var(--ua-chart-neutral-500);
+  border-radius: 0 !important;
+  background: transparent;
+  color: var(--ua-chart-neutral-500);
+}
 
 /* Text-only tone colours (no background) — for values/labels that carry a hue,
  * distinct from the .orange/.blue/… dot-swatch classes above which set both. */
@@ -169,7 +177,10 @@
 .rankedChart { display: grid; gap: 10px; }
 .rankedRow { display: grid; grid-template-columns: minmax(110px, 0.42fr) minmax(150px, 1fr) minmax(74px, auto); align-items: center; gap: 10px; }
 .rankedName { overflow: hidden; color: var(--ua-text-secondary); font-size: var(--ua-text-dense-size); text-overflow: ellipsis; white-space: nowrap; }
+.rankedName a:hover,
+.rankedName a:focus-visible { color: var(--ua-text-link); text-decoration: underline; text-underline-offset: 2px; }
 .rankedTrack { height: 12px; border-radius: var(--ua-radius-control) 0 0 var(--ua-radius-control); background: var(--ua-chart-track); overflow: hidden; }
+.rankedTrack:focus-visible { outline: none; box-shadow: var(--ua-shadow-focus); }
 .rankedFill { height: 100%; border-radius: 0 var(--ua-radius-control) var(--ua-radius-control) 0; }
 .rankedValue { color: var(--ua-text-primary); font-size: var(--ua-text-dense-size); font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
 
