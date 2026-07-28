@@ -1,0 +1,85 @@
+.plot {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 16px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 136px minmax(180px, 1fr) minmax(160px, auto);
+  align-items: center;
+  gap: 14px;
+}
+
+.label {
+  min-width: 0;
+  color: var(--ua-text-secondary);
+  font-size: var(--ua-text-dense-size);
+  font-weight: 500;
+}
+
+.label a:hover,
+.label a:focus-visible {
+  color: var(--ua-text-link);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.track {
+  position: relative;
+  height: 24px;
+}
+
+.track::before {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  left: 0;
+  height: 1px;
+  background: var(--ua-chart-grid);
+  content: "";
+}
+
+.dot {
+  position: absolute;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border: 2px solid var(--ua-surface-primary);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px currentColor;
+  transform: translate(-50%, -50%);
+}
+
+.value {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.value strong {
+  color: var(--ua-text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.value span {
+  color: var(--ua-text-tertiary);
+  font-size: var(--ua-text-caption-size);
+}
+
+@media (max-width: 760px) {
+  .row {
+    grid-template-columns: 112px minmax(100px, 1fr);
+  }
+
+  .value {
+    grid-column: 1 / -1;
+    justify-content: space-between;
+  }
+}

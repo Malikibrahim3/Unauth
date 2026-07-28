@@ -39,7 +39,15 @@ export function RankedContributionChart({
       }))}
       compact={compact}
     >
-      {max === 0 ? <ChartState title="No attributable value" description="No compatible financial rows are available for this ranked view." /> : (
+      {max === 0 ? <ChartState title="No attributable value" description="No compatible financial rows are available for this ranked view." /> : rows.length === 1 ? (
+        <div className={styles.singleRank} role="group" aria-label={`${rows[0].label}: ${rows[0].displayValue ?? rows[0].value}`}>
+          <span>
+            {rows[0].href ? <Link href={rows[0].href}>{rows[0].label}</Link> : rows[0].label}
+          </span>
+          <strong className={styles.mono}>{rows[0].displayValue ?? formatNumber(rows[0].value)}</strong>
+          {rows[0].detail ? <small>{rows[0].detail}</small> : null}
+        </div>
+      ) : (
         <div className={styles.rankedChart} role="img" aria-label={rows.map((row) => `${row.label}: ${row.displayValue ?? row.value}`).join(', ')}>
           {rows.map((row, index) => (
             <div className={styles.rankedRow} key={row.label}>

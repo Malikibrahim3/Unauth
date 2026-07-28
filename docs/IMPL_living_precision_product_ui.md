@@ -688,10 +688,13 @@ Rules:
 | Metric sparkline | `40–48px`; standalone compact trend may use `48–56px` |
 | Effective vertical bar bandwidth | `72–82%` target; `65%` minimum after the category region is constrained |
 | Recharts category gap | `16–20%`; default `18%` |
-| Low-cardinality vertical bar | `36–44px`; default `42px` |
+| Full cartesian column | Fixed `36px` |
+| Compact cartesian column | Fixed `24px` |
 | Absolute desktop bar floor | `12px`; target `14px+` |
-| Ranked/progress bar | `12–14px` |
+| Ranked/progress bar | Fixed `12px` |
+| Composition strip | Fixed `12px` |
 | Mini meter | `8px` |
+| Stage dot-plot mark | `8px` diameter with 2px surface ring |
 | Primary line | `2.25px` |
 | Comparison line | `1.5–2px`, neutral, dashed |
 | Active point | `5px` radius with 2px surface stroke |
@@ -818,9 +821,9 @@ This table removes ambiguity about what “add a chart” means. Exact domain na
 | Flow runs | Where do flow-run states occur? | Compact state columns | Canonical `matched`, `not_matched`, `completed`, and `failed` count by day | Segment filters run table; no invented cancelled state |
 | Rules registry | Which recommendations are rules producing? | Evaluation columns plus recommendation composition | Evaluation volume and canonical recommendation distribution by period | Point filters rules/evaluations |
 | Rule detail | How is this published version evaluating? | Compact trend | Evaluations and recommendation distribution by version/date | Opens evaluations for version/range; merchant outcome appears only with a separately specified join |
-| Reports hero | How is financial exposure changing? | Primary current-period line plus neutral dashed comparison line | Selected report metric by day/week | Prior equal period; point opens report records |
+| Reports hero | How is financial value accumulating? | Flat cumulative exposure area plus recovered line and optional neutral dashed comparison | Known exposure and recovered increments accumulated by day/week; event-free observed buckets carry the known total, unknown intervals remain broken | Prior equal period; point exposes raw increment, cumulative value, and report records |
 | Reports causes | What explains the result? | Ranked bars | Selected amount/count by canonical cause | Filters records |
-| Reports recovery | How is value progressing through recovery? | Thick stacked bars | Sought, approved, recovered, outstanding by period | Filters records by stage |
+| Reports recovery | How is value progressing through recovery? | Shared-scale stage dot plot | Sought, approved, recovered, outstanding by period | Stage label filters records |
 | Integrations overview | Which sources are current and complete? | Freshness/coverage matrix, not a rainbow chart | Provider × object coverage plus canonical freshness | Cell opens provider and affected object type |
 | Provider integration | Is scheduled ingestion healthy? | Optional compact trend | Records processed and failed by sync interval | Opens sync event log; only for scheduled providers with at least three completed intervals |
 | Import job | What proportion of the file is usable? | Thick validation/result bars | Valid, warning, invalid, imported row counts | Segment filters issue/result table |

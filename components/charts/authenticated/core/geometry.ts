@@ -22,14 +22,21 @@ export const BAR_END_RADIUS = 4;
  * at best and thin columns at worst.
  */
 export const BAR_CATEGORY_GAP = '18%';
-/** Low-cardinality vertical columns: 36–44px, default 42px. */
-export const BAR_MAX_SIZE = 42;
+/** Full analytical columns are fixed so width never changes with sparse buckets. */
+export const CARTESIAN_BAR_SIZE = 36;
+/** Compact histograms use the only smaller column class. */
+export const CARTESIAN_BAR_SIZE_COMPACT = 24;
+/** @deprecated Use CARTESIAN_BAR_SIZE for full analytical columns. */
+export const BAR_MAX_SIZE = CARTESIAN_BAR_SIZE;
 /** Absolute desktop floor for a mark-carrying bar. */
 export const BAR_MIN_SIZE = 12;
 /** Ranked and progress bars. */
-export const RANKED_BAR_HEIGHT = 12;
+export const HORIZONTAL_BAR_HEIGHT = 12;
+export const COMPOSITION_STRIP_HEIGHT = 12;
+export const RANKED_BAR_HEIGHT = HORIZONTAL_BAR_HEIGHT;
 /** Mini meters. */
 export const METER_HEIGHT = 8;
+export const DOT_PLOT_MARK_DIAMETER = 8;
 export const COMPARISON_DASH: [number, number] = [5, 4];
 export const COMPARISON_LINE_WIDTH = 1.5;
 export const COMPARISON_DOT_R = 2.5;
@@ -61,7 +68,7 @@ export const TICK_COUNT_MIN = 40;
 export const TICK_COUNT_MAX = 56;
 
 // T8 — segment composition
-export const SEGMENT_BAR_H = 10;
+export const SEGMENT_BAR_H = COMPOSITION_STRIP_HEIGHT;
 export const SEGMENT_GAP = 4;
 export const SEGMENT_RADIUS = 3;
 export const SEGMENT_MAX = 6;
@@ -81,7 +88,7 @@ export const TOOLTIP_PADDING_X = 10;
 export const PLOT_PAD_TOP = 12;
 export const PLOT_PAD_BOTTOM = 8;
 /** Currency-aware gutter keeps £/$ values readable instead of clipping the first digit. */
-export const Y_LABEL_GUTTER = 64;
+export const Y_LABEL_GUTTER = 72;
 export const Y_LABEL_TICK_MARGIN = 8;
 export const GRID_LINE_MAX = 5;
 

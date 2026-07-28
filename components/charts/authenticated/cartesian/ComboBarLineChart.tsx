@@ -17,7 +17,7 @@ import { useChartWidth } from '../core/useChartWidth';
 import {
   BAR_CATEGORY_GAP,
   BAR_END_RADIUS,
-  BAR_MAX_SIZE,
+  CARTESIAN_BAR_SIZE,
   COMPARISON_DASH,
   COMPARISON_DOT_R,
   COMPARISON_LINE_WIDTH,
@@ -132,7 +132,7 @@ export function ComboBarLineChart({
             fill={hue}
             /* Spec §8.3: 4px data-end radius. */
             radius={[BAR_END_RADIUS, BAR_END_RADIUS, 0, 0]}
-            maxBarSize={BAR_MAX_SIZE}
+            barSize={CARTESIAN_BAR_SIZE}
             {...motion}
           />
           {secondary && secondaryHue ? (

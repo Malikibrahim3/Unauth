@@ -431,6 +431,37 @@
   border-top: 1px solid var(--ua-border-subtle);
 }
 
+.workflowRows {
+  display: grid;
+  gap: 7px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--ua-border-subtle);
+}
+
+.workflowRows a {
+  display: flex;
+  min-height: 24px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--ua-text-secondary);
+  font-size: var(--ua-text-dense-size);
+}
+
+.workflowRows a:hover span,
+.workflowRows a:focus-visible span {
+  color: var(--ua-text-link);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.workflowRows strong {
+  color: var(--ua-text-primary);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
 .healthSummary > div {
   display: grid;
   gap: 3px;

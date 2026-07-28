@@ -19,10 +19,10 @@ import {
 import ExportMenu from '@/components/reports/ExportMenu';
 import { Modal } from '@/components/ui';
 import { ComboBarLineChart } from '@/components/charts/authenticated/cartesian/ComboBarLineChart';
+import { CompositionDonutChart } from '@/components/charts/authenticated/cartesian/CompositionDonutChart';
 import { MetricTabs, type MetricTabItem } from '@/components/charts/authenticated/micro/MetricTabs';
 import { MetricRail } from '@/components/charts/authenticated/micro/MetricRail';
-import { SegmentCompositionCard } from '@/components/charts/authenticated/operational/SegmentCompositionCard';
-import { BlockRailChart } from '@/components/charts/authenticated/operational/BlockRailChart';
+import { WaffleMatrixChart } from '@/components/charts/authenticated/operational/WaffleMatrixChart';
 import type {
   DashboardPeriodComparison,
   IntelligenceReport,
@@ -413,7 +413,7 @@ export function DashboardOverview({
           <div className={styles.detailHeader}>
             <div>
               <div className={styles.titleRow}>
-                <h2 id="workflow-breakdown-title">Workflow breakdown</h2>
+                <h2 id="workflow-breakdown-title">How is work distributed by state?</h2>
                 <span className={styles.infoDot} title="Cases grouped by canonical workflow status">i</span>
               </div>
               <strong>{actionPercent == null ? 'Unavailable' : `${actionPercent}%`}</strong>
@@ -422,17 +422,21 @@ export function DashboardOverview({
           </div>
 
           {report.recordCount > 0 ? (
-            <SegmentCompositionCard
+            <>
+            <CompositionDonutChart
               segments={workflowGroups
                 .filter((group) => group.count > 0)
                 .map((group) => ({ key: group.key, label: group.label, value: group.count, tone: group.tone }))}
-              rows={report.operations.slice(0, 4).map((operation) => ({
-                key: operation.key,
-                label: operation.label,
-                displayValue: String(operation.count),
-                href: operation.href,
-              }))}
             />
+            <div className={styles.workflowRows}>
+              {report.operations.slice(0, 4).map((operation) => (
+                <Link href={operation.href} key={operation.key}>
+                  <span>{operation.label}</span>
+                  <strong>{formatNumber(operation.count)}</strong>
+                </Link>
+              ))}
+            </div>
+            </>
           ) : (
             <p className={styles.cardEmpty}>No payout-case records were found in the selected period.</p>
           )}
@@ -442,7 +446,7 @@ export function DashboardOverview({
           <div className={styles.detailHeader}>
             <div>
               <div className={styles.titleRow}>
-                <h2 id="data-health-title">Data health</h2>
+                <h2 id="data-health-title">How much source data is current?</h2>
                 <span className={styles.infoDot} title="Source records refreshed within the last 48 hours">i</span>
               </div>
               <strong>{health.freshnessPercent == null ? 'Unavailable' : `${health.freshnessPercent}%`}</strong>
@@ -452,11 +456,10 @@ export function DashboardOverview({
           </div>
 
           {health.freshnessPercent != null ? (
-            <BlockRailChart
-              blocks={[{ key: 'fresh', label: 'Fresh records', value: health.freshRecords, tone: 'primary' }]}
-              remainder={health.staleRecords}
-              pins={[{ label: `${health.freshnessPercent}%`, emphasis: true }]}
-              compact
+            <WaffleMatrixChart
+              percent={health.freshnessPercent}
+              current={health.freshRecords}
+              stale={health.staleRecords}
             />
           ) : (
             <p className={styles.cardEmpty}>Source freshness unavailable.</p>

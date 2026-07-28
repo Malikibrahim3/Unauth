@@ -129,6 +129,9 @@
   --ua-chart-neutral-300: #c8cbd0;
   --ua-chart-grid: #e7e7ea;
   --ua-chart-track: #f1f1f3;
+  --ua-chart-bar-thickness: 12px;
+  --ua-chart-composition-thickness: 12px;
+  --ua-chart-meter-thickness: 8px;
 
   /* Sequential accent ramp — 4 mark-carrying steps. Step 1 is a heat-only
    * extension and may recede below 2:1; never use it for a discrete mark. */
@@ -284,6 +287,9 @@
   --ua-chart-neutral-300: #4e4e57;
   --ua-chart-grid: #303036;
   --ua-chart-track: #29292e;
+  --ua-chart-bar-thickness: 12px;
+  --ua-chart-composition-thickness: 12px;
+  --ua-chart-meter-thickness: 8px;
 
   --ua-chart-ramp-1: #29284d;
   --ua-chart-ramp-2: #474477;

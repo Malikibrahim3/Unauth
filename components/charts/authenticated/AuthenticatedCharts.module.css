@@ -179,10 +179,24 @@
 .rankedName { overflow: hidden; color: var(--ua-text-secondary); font-size: var(--ua-text-dense-size); text-overflow: ellipsis; white-space: nowrap; }
 .rankedName a:hover,
 .rankedName a:focus-visible { color: var(--ua-text-link); text-decoration: underline; text-underline-offset: 2px; }
-.rankedTrack { height: 12px; border-radius: var(--ua-radius-control) 0 0 var(--ua-radius-control); background: var(--ua-chart-track); overflow: hidden; }
+.rankedTrack { display: block; height: var(--ua-chart-bar-thickness); border-radius: var(--ua-radius-control) 0 0 var(--ua-radius-control); background: var(--ua-chart-track); overflow: hidden; }
 .rankedTrack:focus-visible { outline: none; box-shadow: var(--ua-shadow-focus); }
-.rankedFill { height: 100%; border-radius: 0 var(--ua-radius-control) var(--ua-radius-control) 0; }
+.rankedFill { display: block; height: 100%; border-radius: 0 var(--ua-radius-control) var(--ua-radius-control) 0; }
 .rankedValue { color: var(--ua-text-primary); font-size: var(--ua-text-dense-size); font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+.singleRank {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 4px 16px;
+  min-height: 76px;
+  padding: 12px 0;
+  border-block: 1px solid var(--ua-border-subtle);
+}
+.singleRank > span { color: var(--ua-text-secondary); font-size: var(--ua-text-dense-size); }
+.singleRank > span a:hover,
+.singleRank > span a:focus-visible { color: var(--ua-text-link); text-decoration: underline; text-underline-offset: 2px; }
+.singleRank strong { color: var(--ua-text-primary); font-size: 18px; font-weight: 600; }
+.singleRank small { grid-column: 1 / -1; color: var(--ua-text-tertiary); font-size: var(--ua-text-caption-size); }
 
 /* Lollipop/range plot */
 .rangePlot { display: grid; gap: 15px; padding-top: 5px; }
@@ -232,7 +246,7 @@
 /* T8 segment composition card */
 .segmentHeadline { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; }
 .segmentHeadline strong { color: var(--ua-text-primary); font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
-.segmentBar { display: flex; height: 10px; gap: 4px; }
+.segmentBar { display: flex; height: var(--ua-chart-composition-thickness); gap: 4px; }
 .segmentSeg { height: 100%; min-width: 4px; border-radius: var(--ua-radius-control); }
 .segmentSeg a { display: block; width: 100%; height: 100%; border-radius: var(--ua-radius-control); }
 .dotLegend { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 8px 0 0; padding: 0; color: var(--ua-text-secondary); font-size: var(--ua-text-dense-size); list-style: none; }

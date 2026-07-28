@@ -1,7 +1,7 @@
 .rail {
   position: relative;
   width: 84px;
-  height: 8px;
+  height: var(--ua-chart-meter-thickness);
   overflow: hidden;
   border-radius: var(--ua-radius-control);
   background: var(--ua-chart-track);
