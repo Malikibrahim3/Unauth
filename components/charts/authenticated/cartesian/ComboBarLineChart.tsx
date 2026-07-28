@@ -18,9 +18,7 @@ import {
   BAR_CATEGORY_GAP,
   BAR_END_RADIUS,
   CARTESIAN_BAR_SIZE,
-  COMPARISON_DASH,
   COMPARISON_DOT_R,
-  COMPARISON_LINE_WIDTH,
   TREND_LINE_WIDTH,
   Y_LABEL_GUTTER,
   Y_LABEL_TICK_MARGIN,
@@ -46,11 +44,13 @@ type ComboBarLineChartProps = {
   secondary?: {
     label: string;
     colourVar: string;
+    encoding?: 'bar' | 'line';
+    interpolation?: 'linear' | 'stepAfter';
   };
   height?: number;
 };
 
-/** Quiet Precision combo chart: flat bars, restrained axes, and optional comparison line. */
+/** Quiet Precision combo chart: flat bars, an optional secondary series, and comparison markers. */
 export function ComboBarLineChart({
   data,
   colourVar,
@@ -66,8 +66,12 @@ export function ComboBarLineChart({
   const secondaryHue = secondary
     ? (theme as Record<string, string>)[secondary.colourVar] || 'var(--ua-chart-primary-soft)'
     : null;
-  const motion = useChartMotion(data.length * (1 + Number(comparison) + Number(Boolean(secondary))));
   const { containerRef, width } = useChartWidth();
+  const secondaryIsBar = secondary?.encoding === 'bar';
+  const groupedBarSize = secondaryIsBar
+    ? Math.max(6, Math.min(24, Math.floor((width / Math.max(1, data.length) - 6) / 2)))
+    : CARTESIAN_BAR_SIZE;
+  const motion = useChartMotion(data.length * (1 + Number(comparison) + Number(Boolean(secondary))));
 
   return (
     <div ref={containerRef} style={{ width: '100%', height, overflow: 'hidden' }}>
@@ -132,12 +136,21 @@ export function ComboBarLineChart({
             fill={hue}
             /* Spec §8.3: 4px data-end radius. */
             radius={[BAR_END_RADIUS, BAR_END_RADIUS, 0, 0]}
-            barSize={CARTESIAN_BAR_SIZE}
+            barSize={groupedBarSize}
             {...motion}
           />
-          {secondary && secondaryHue ? (
+          {secondary && secondaryHue && secondaryIsBar ? (
+            <Bar
+              dataKey="secondary"
+              name={secondary.label}
+              fill={secondaryHue}
+              radius={[BAR_END_RADIUS, BAR_END_RADIUS, 0, 0]}
+              barSize={groupedBarSize}
+              {...motion}
+            />
+          ) : secondary && secondaryHue ? (
             <Line
-              type="linear"
+              type={secondary.interpolation ?? 'linear'}
               dataKey="secondary"
               name={secondary.label}
               stroke={secondaryHue}
@@ -154,12 +167,22 @@ export function ComboBarLineChart({
             <Line
               type="linear"
               dataKey="previous"
-              stroke="var(--ua-chart-neutral-500)"
-              strokeWidth={COMPARISON_LINE_WIDTH}
-              strokeDasharray={COMPARISON_DASH.join(' ')}
-              dot={false}
-              activeDot={{ r: COMPARISON_DOT_R + 1 }}
-              connectNulls
+              name="Previous period"
+              stroke="transparent"
+              strokeWidth={0}
+              dot={{
+                r: COMPARISON_DOT_R,
+                fill: theme['--ua-chart-neutral-500'],
+                stroke: theme['--ua-surface-primary'],
+                strokeWidth: 2,
+              }}
+              activeDot={{
+                r: COMPARISON_DOT_R + 1,
+                fill: theme['--ua-chart-neutral-500'],
+                stroke: theme['--ua-surface-primary'],
+                strokeWidth: 2,
+              }}
+              connectNulls={false}
               {...motion}
             />
           ) : null}

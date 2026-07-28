@@ -6,6 +6,35 @@
   margin-top: 16px;
 }
 
+.single {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 4px 16px;
+  min-height: 76px;
+  margin-top: 16px;
+  padding: 12px 0;
+  border-block: 1px solid var(--ua-border-subtle);
+}
+
+.single > span {
+  color: var(--ua-text-secondary);
+  font-size: var(--ua-text-dense-size);
+}
+
+.single strong {
+  color: var(--ua-text-primary);
+  font-size: 18px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.single small {
+  grid-column: 1 / -1;
+  color: var(--ua-text-tertiary);
+  font-size: var(--ua-text-caption-size);
+}
+
 .plot {
   position: relative;
   width: 100%;

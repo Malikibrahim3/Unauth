@@ -6,7 +6,10 @@ import { TABLES } from "@/lib/supabase/tables";
 import { WorkbenchPage } from "@/components/ui";
 import { WorkQueue, type WorkQueueItem, type WorkViewCounts } from "@/components/work/WorkQueue";
 import { WorkQueuePulse } from "@/components/work/WorkQueuePulse";
-import { countOpenExceptions, listExceptions } from "@/lib/exceptions/store";
+import {
+  countOpenExceptionDueBands,
+  listExceptions,
+} from "@/lib/exceptions/store";
 import { countWorkDueBands, countWorkViews } from "@/lib/work/store";
 import { formatNumber } from "@/lib/utils/format";
 import { shortRef, hashId } from "@/lib/ui/displayRef";
@@ -51,6 +54,14 @@ export default async function WorkPage({
   const page = Math.max(1, Number(params.page) || 1);
   const pageSize = 25;
   const asOf = now();
+  const todayStart = new Date(asOf);
+  todayStart.setUTCHours(0, 0, 0, 0);
+  const dayAfterToday = new Date(todayStart);
+  dayAfterToday.setUTCDate(dayAfterToday.getUTCDate() + 1);
+  const dayFour = new Date(todayStart);
+  dayFour.setUTCDate(dayFour.getUTCDate() + 4);
+  const dayEight = new Date(todayStart);
+  dayEight.setUTCDate(dayEight.getUTCDate() + 8);
   let query = serviceClient
     .from(TABLES.WORK_TASKS)
     .select(
@@ -69,13 +80,9 @@ export default async function WorkPage({
   if (view === "decision-needed")
     query = query.or("title.ilike.%decision%,blocking_reason.ilike.%decision%");
   if (view === "due-today") {
-    const start = new Date(asOf);
-    start.setUTCHours(0, 0, 0, 0);
-    const end = new Date(start);
-    end.setUTCDate(end.getUTCDate() + 1);
     query = query
-      .gte("due_at", start.toISOString())
-      .lt("due_at", end.toISOString());
+      .gte("due_at", asOf.toISOString())
+      .lt("due_at", dayAfterToday.toISOString());
   }
   if (view === "overdue") query = query.lt("due_at", asOf.toISOString());
   if (view === "no-sla") query = query.is("due_at", null);
@@ -85,14 +92,6 @@ export default async function WorkPage({
    * a band's count and its filtered row set always agree.
    */
   if (view === "due-1-3" || view === "due-4-7" || view === "due-later") {
-    const todayStart = new Date(asOf);
-    todayStart.setUTCHours(0, 0, 0, 0);
-    const dayAfterToday = new Date(todayStart);
-    dayAfterToday.setUTCDate(dayAfterToday.getUTCDate() + 1);
-    const dayFour = new Date(todayStart);
-    dayFour.setUTCDate(dayFour.getUTCDate() + 4);
-    const dayEight = new Date(todayStart);
-    dayEight.setUTCDate(dayEight.getUTCDate() + 8);
     if (view === "due-1-3") {
       query = query
         .gte("due_at", dayAfterToday.toISOString())
@@ -104,27 +103,75 @@ export default async function WorkPage({
     }
   }
   const includeExceptions =
-    view === "open" || view === "integration-exceptions" || view === "overdue" || view === "no-sla";
-  const exceptionDeadline = view === "overdue"
-    ? { dueBefore: asOf.toISOString() }
-    : view === "no-sla"
-      ? { dueIsNull: true }
-      : {};
-  const [taskResult, openExceptionCount, exceptionRows, filteredExceptionCount, ownerDirectory] =
+    view === "open"
+    || view === "integration-exceptions"
+    || view === "overdue"
+    || view === "due-today"
+    || view === "due-1-3"
+    || view === "due-4-7"
+    || view === "due-later"
+    || view === "no-sla";
+  let exceptionDeadline: {
+    dueBefore?: string;
+    dueAfter?: string;
+    dueIsNull?: boolean;
+  } = {};
+  if (view === "overdue") exceptionDeadline = { dueBefore: asOf.toISOString() };
+  else if (view === "due-today") {
+    exceptionDeadline = {
+      dueAfter: asOf.toISOString(),
+      dueBefore: dayAfterToday.toISOString(),
+    };
+  } else if (view === "due-1-3") {
+    exceptionDeadline = {
+      dueAfter: dayAfterToday.toISOString(),
+      dueBefore: dayFour.toISOString(),
+    };
+  } else if (view === "due-4-7") {
+    exceptionDeadline = {
+      dueAfter: dayFour.toISOString(),
+      dueBefore: dayEight.toISOString(),
+    };
+  } else if (view === "due-later") exceptionDeadline = { dueAfter: dayEight.toISOString() };
+  else if (view === "no-sla") exceptionDeadline = { dueIsNull: true };
+  const [
+    taskResult,
+    exceptionRows,
+    ownerDirectory,
+    taskDueBands,
+    exceptionDueBands,
+  ] =
     await Promise.all([
       view === "integration-exceptions"
         ? Promise.resolve({ data: [], count: 0 })
         : query.range((page - 1) * pageSize, page * pageSize - 1),
-      countOpenExceptions(serviceClient, ctx.merchantId),
       includeExceptions
         ? listExceptions(serviceClient, ctx.merchantId, { status: "open", limit: pageSize, ...exceptionDeadline })
         : Promise.resolve([]),
-      includeExceptions
-        ? countOpenExceptions(serviceClient, ctx.merchantId, exceptionDeadline)
-        : Promise.resolve(0),
       loadWorkOwnerDirectory(serviceClient, ctx.merchantId),
+      countWorkDueBands(serviceClient, ctx.merchantId, asOf),
+      countOpenExceptionDueBands(serviceClient, ctx.merchantId, asOf),
     ]);
-  const dueBands = await countWorkDueBands(serviceClient, ctx.merchantId, asOf);
+  const openExceptionCount = Object.values(exceptionDueBands).reduce((sum, count) => sum + count, 0);
+  const exceptionViewCounts: Record<string, number> = {
+    open: openExceptionCount,
+    "integration-exceptions": openExceptionCount,
+    overdue: exceptionDueBands.overdue,
+    "due-today": exceptionDueBands["due-today"],
+    "due-1-3": exceptionDueBands["due-1-3"],
+    "due-4-7": exceptionDueBands["due-4-7"],
+    "due-later": exceptionDueBands["due-later"],
+    "no-sla": exceptionDueBands["no-sla"],
+  };
+  const filteredExceptionCount = includeExceptions ? exceptionViewCounts[view] ?? 0 : 0;
+  const dueBands = {
+    overdue: taskDueBands.overdue + exceptionDueBands.overdue,
+    "due-today": taskDueBands["due-today"] + exceptionDueBands["due-today"],
+    "due-1-3": taskDueBands["due-1-3"] + exceptionDueBands["due-1-3"],
+    "due-4-7": taskDueBands["due-4-7"] + exceptionDueBands["due-4-7"],
+    "due-later": taskDueBands["due-later"] + exceptionDueBands["due-later"],
+    "no-sla": taskDueBands["no-sla"] + exceptionDueBands["no-sla"],
+  };
   const tasks: WorkQueueItem[] = ((taskResult.data ?? []) as TaskRow[]).map(
     (row) => ({
       id: row.id,
@@ -167,9 +214,9 @@ export default async function WorkPage({
     open: viewCountResult.open,
     mine: viewCountResult.mine,
     unassigned: viewCountResult.unassigned,
-    "due-today": viewCountResult["due-today"],
-    overdue: viewCountResult.overdue,
-    "no-sla": viewCountResult["no-sla"],
+    "due-today": dueBands["due-today"],
+    overdue: dueBands.overdue,
+    "no-sla": dueBands["no-sla"],
     blocked: viewCountResult.blocked,
     "evidence-needed": viewCountResult["evidence-needed"],
     "decision-needed": viewCountResult["decision-needed"],

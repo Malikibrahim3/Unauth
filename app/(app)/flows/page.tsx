@@ -114,7 +114,7 @@ export default async function FlowsPage() {
                 label: flow.name,
                 value: formatNumber(flow.actionCount),
                 tone: flow.active ? 'success' : flow.hasDraft ? 'warning' : 'neutral',
-                bar: flow.actionCount / maxActionCount,
+                bar: topFlows.length > 1 ? flow.actionCount / maxActionCount : undefined,
               })),
               footnote: 'Configured actions per flow — definition complexity, not execution volume.',
             },

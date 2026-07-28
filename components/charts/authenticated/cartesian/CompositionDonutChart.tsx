@@ -40,6 +40,19 @@ export function CompositionDonutChart({
   const { containerRef, width } = useChartWidth(240);
 
   if (total <= 0) return null;
+  if (data.length === 1) {
+    return (
+      <div
+        className={styles.single}
+        role="group"
+        aria-label={`${data[0].label}: ${formatNumber(data[0].value)}`}
+      >
+        <span>{data[0].label}</span>
+        <strong>{formatNumber(data[0].value)}</strong>
+        <small>All {totalLabel} are in this state.</small>
+      </div>
+    );
+  }
 
   return (
     <div

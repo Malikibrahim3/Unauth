@@ -297,7 +297,7 @@
 }
 
 .legend i,
-.dashedLegend {
+.comparisonLegend {
   display: inline-block;
   width: 8px;
   height: 8px;
@@ -308,10 +308,10 @@
   background: currentColor;
 }
 
-.dashedLegend {
-  height: 0;
-  border-top: 1px dashed var(--ua-icon-secondary);
-  border-radius: 0;
+.comparisonLegend {
+  border: 1px solid var(--ua-surface-primary);
+  background: var(--ua-chart-neutral-500);
+  box-shadow: 0 0 0 1px var(--ua-chart-neutral-500);
 }
 
 .chartRegion {

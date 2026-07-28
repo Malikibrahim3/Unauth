@@ -10,6 +10,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { TABLES } from '@/lib/supabase/tables';
+import type { WorkDueBandKey } from '@/lib/work/store';
 
 export const EXCEPTION_TYPES = [
   'unmatched_refund', 'ambiguous_replacement', 'conflicting_financials',
@@ -257,4 +258,75 @@ export async function countOpenExceptions(
   }
   if (error) throw new Error(`case_exceptions_count_failed: ${error.message}`);
   return count ?? 0;
+}
+
+/**
+ * Deadline composition for open integration exceptions. These bands deliberately
+ * use the same UTC boundaries as work tasks so the Work pulse and its drill-down
+ * views describe one combined queue.
+ */
+export async function countOpenExceptionDueBands(
+  client: SupabaseClient,
+  merchantId: string,
+  asOf: Date,
+): Promise<Record<WorkDueBandKey, number>> {
+  const todayStart = new Date(asOf);
+  todayStart.setUTCHours(0, 0, 0, 0);
+  const dayAfterToday = new Date(todayStart);
+  dayAfterToday.setUTCDate(dayAfterToday.getUTCDate() + 1);
+  const dayFour = new Date(todayStart);
+  dayFour.setUTCDate(dayFour.getUTCDate() + 4);
+  const dayEight = new Date(todayStart);
+  dayEight.setUTCDate(dayEight.getUTCDate() + 8);
+
+  const bands: Record<WorkDueBandKey, number> = {
+    overdue: 0,
+    'due-today': 0,
+    'due-1-3': 0,
+    'due-4-7': 0,
+    'due-later': 0,
+    'no-sla': 0,
+  };
+  const pageSize = 1000;
+  let offset = 0;
+  let expectedCount: number | null = null;
+
+  while (expectedCount == null || offset < expectedCount) {
+    const result = await client
+      .from(TABLES.CASE_EXCEPTIONS)
+      .select('due_at', { count: offset === 0 ? 'exact' : undefined })
+      .eq('merchant_id', merchantId)
+      .eq('status', 'open')
+      .order('id', { ascending: true })
+      .range(offset, offset + pageSize - 1);
+
+    if (result.error && /column .* does not exist|schema cache/i.test(result.error.message)) {
+      bands['no-sla'] = await countOpenExceptions(client, merchantId);
+      return bands;
+    }
+    if (result.error) {
+      throw new Error(`case_exception_due_bands_failed: ${result.error.message}`);
+    }
+
+    const rows = (result.data ?? []) as Array<{ due_at: string | null }>;
+    if (offset === 0) expectedCount = result.count ?? rows.length;
+    for (const row of rows) {
+      if (!row.due_at) {
+        bands['no-sla'] += 1;
+        continue;
+      }
+      const dueAt = new Date(row.due_at).getTime();
+      if (!Number.isFinite(dueAt)) bands['no-sla'] += 1;
+      else if (dueAt < asOf.getTime()) bands.overdue += 1;
+      else if (dueAt < dayAfterToday.getTime()) bands['due-today'] += 1;
+      else if (dueAt < dayFour.getTime()) bands['due-1-3'] += 1;
+      else if (dueAt < dayEight.getTime()) bands['due-4-7'] += 1;
+      else bands['due-later'] += 1;
+    }
+
+    if (rows.length < pageSize) break;
+    offset += rows.length;
+  }
+
+  return bands;
 }

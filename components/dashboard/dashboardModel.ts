@@ -6,6 +6,10 @@ import type {
   ReportTrendPoint,
 } from '@/lib/reporting/intelligence';
 import { financialMetricValue } from '@/lib/reporting/intelligence';
+import {
+  isCanonicalFinalClaimStatus,
+  normalizeLegacyClaimStatus,
+} from '@/lib/claims/statusMachine';
 import { formatDateAbsolute } from '@/lib/utils/format';
 
 export type DashboardMetricKey =
@@ -195,16 +199,16 @@ const WAITING_STATUSES = new Set([
   'pending',
 ]);
 const IN_PROGRESS_STATUSES = new Set(['decision_recorded', 'recovery_opened']);
-const COMPLETED_STATUSES = new Set([
-  'closed',
-  'resolved',
-  'resolved_refunded',
-  'resolved_won',
-  'resolved_lost',
-  'resolved_denied',
-  'resolved_exchanged',
-  'voided',
-]);
+export function workflowOperationIsCompleted(key: string): boolean {
+  const normalized = normalizeLegacyClaimStatus(key);
+  return normalized != null && isCanonicalFinalClaimStatus(normalized);
+}
+
+export function activeWorkflowOperations(
+  operations: IntelligenceReport['operations'],
+): IntelligenceReport['operations'] {
+  return operations.filter((operation) => !workflowOperationIsCompleted(operation.key));
+}
 
 export function groupWorkflowOperations(
   operations: IntelligenceReport['operations'],
@@ -216,7 +220,7 @@ export function groupWorkflowOperations(
     { key: 'completed', label: 'Completed', count: 0, tone: 'positive', rows: [] },
   ];
   for (const operation of operations) {
-    const index = COMPLETED_STATUSES.has(operation.key)
+    const index = workflowOperationIsCompleted(operation.key)
       ? 3
       : WAITING_STATUSES.has(operation.key)
         ? 1

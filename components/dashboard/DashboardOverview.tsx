@@ -39,6 +39,7 @@ import {
 } from '@/lib/utils/format';
 import {
   bridgeMetricValue,
+  activeWorkflowOperations,
   buildDashboardChartBuckets,
   calculateDataHealth,
   comparisonLabel,
@@ -149,7 +150,10 @@ export function DashboardOverview({
   );
   const selectedMetric = DASHBOARD_METRICS.find((item) => item.key === metric) ?? DASHBOARD_METRICS[0];
   const selectedMetricValue = bridgeMetricValue(bridge, metric);
+  const recoveredMetricValue = bridgeMetricValue(bridge, 'recovered');
   const workflowGroups = groupWorkflowOperations(report.operations);
+  const openOperations = activeWorkflowOperations(report.operations);
+  const openOperationCount = openOperations.reduce((sum, operation) => sum + operation.count, 0);
   const health = calculateDataHealth(report.coverage, report.reconciliation.ok);
   const needsAction = workflowGroups[0].count;
   const readyForDecision = report.operations
@@ -326,8 +330,10 @@ export function DashboardOverview({
               {metric === 'exposure' || compare === 'previous' ? (
                 <div className={styles.legend} aria-label="Chart legend">
                   <span><i className={dvStyles[selectedMetric.tone]} /> {selectedMetric.label}</span>
-                  {metric === 'exposure' ? <span><i className={dvStyles.positive} /> Recovered</span> : null}
-                  {compare === 'previous' ? <span><i className={styles.dashedLegend} /> Previous period</span> : null}
+                  {metric === 'exposure' && recoveredMetricValue != null
+                    ? <span><i className={dvStyles.positive} /> Recovered</span>
+                    : null}
+                  {compare === 'previous' ? <span><i className={styles.comparisonLegend} /> Previous period</span> : null}
                 </div>
               ) : null}
             </div>
@@ -339,13 +345,13 @@ export function DashboardOverview({
                     key: bucket.key,
                     label: bucket.label,
                     current: bucket.currentMinor,
-                    secondary: metric === 'exposure'
+                    secondary: metric === 'exposure' && recoveredMetricValue != null
                       ? recoveryChartData[index]?.currentMinor ?? null
                       : undefined,
                     previous: bucket.previousMinor,
                   }))}
-                  secondary={metric === 'exposure'
-                    ? { label: 'Recovered', colourVar: '--ua-success' }
+                  secondary={metric === 'exposure' && recoveredMetricValue != null
+                    ? { label: 'Recovered', colourVar: '--ua-success', encoding: 'bar' }
                     : undefined}
                   colourVar={selectedMetric.colourVar}
                   comparison={compare === 'previous'}
@@ -397,14 +403,14 @@ export function DashboardOverview({
           id="dashboard-priority-work"
           title="Where is work accumulating?"
           description="Open cases ranked by the next step they are waiting on."
-          items={report.operations.slice(0, 6).map((operation, index) => ({
+          items={openOperations.slice(0, 6).map((operation, index) => ({
             label: operation.label,
             value: operation.count,
             displayValue: `${formatNumber(operation.count)} ${operation.count === 1 ? 'case' : 'cases'}`,
             href: operation.href,
             tone: index === 0 ? 'primary' : 'neutral',
           }))}
-          annotation={{ value: formatNumber(report.recordCount), label: ' cases in period' }}
+          annotation={{ value: formatNumber(openOperationCount), label: ' open' }}
         />
       </section>
 

@@ -179,9 +179,9 @@ export default async function RecoveriesPage() {
                 label: row.label,
                 value: formatNumber(row.count),
                 tone: 'neutral' as const,
-                bar: stageTotal ? row.count / stageTotal : 0,
+                bar: stageRows.length > 1 && stageTotal ? row.count / stageTotal : undefined,
               })),
-              footnote: `${formatNumber(stageTotal)} open case${stageTotal === 1 ? '' : 's'} grouped by the board stage they sit in.`,
+              footnote: `${formatNumber(stageTotal)} recovery case${stageTotal === 1 ? '' : 's'} grouped by the board stage they sit in.`,
             },
           ]}
         />

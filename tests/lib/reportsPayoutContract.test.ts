@@ -17,13 +17,14 @@ describe("payout-control reports contract", () => {
     const page = read("app/(app)/reports/page.tsx");
     const view = read("components/reporting/IntelligenceReportView.tsx");
     const model = read("lib/reporting/intelligence.ts");
+    const copy = read("lib/ui/merchantCopy.ts");
 
-    const combined = `${page}\n${view}\n${model}`;
+    const combined = `${page}\n${view}\n${model}\n${copy}`;
     expect(combined).toContain("Reports");
     expect(combined).toContain("Value this period");
-    expect(combined).toContain("Payout exposure");
+    expect(combined).toContain("Maximum exposure");
     expect(combined).toContain("Prevented");
-    expect(combined).toContain("Realised loss");
+    expect(combined).toContain("Confirmed loss");
     expect(combined).toContain("Recovery performance");
     expect(combined).toContain("Source coverage");
     expect(combined).toContain("Report definitions");
@@ -35,16 +36,17 @@ describe("payout-control reports contract", () => {
   it("keeps exact drillable tables alongside the dashboard charts", () => {
     const view = read("components/reporting/IntelligenceReportView.tsx");
     const charts = read("components/reporting/DashboardCharts.tsx");
+    const combined = `${view}\n${charts}`;
 
-    expect(view).toContain("<table");
-    expect(view).toContain("underlying");
+    expect(combined).toContain("<table");
+    expect(view).toContain("cases with recorded exposure");
     expect(view).toContain('financialMetricCaseIds(b, "exposed").length');
     expect(view).toContain("financialReportRecordsHref");
-    expect(view).toContain("metric: state");
-    expect(charts).toContain("components/charts/authenticated/cartesian/DualLineChart");
-    expect(charts).toContain("Exposure and recovered");
+    expect(view).toContain("metric: step.state");
+    expect(charts).toContain("components/charts/authenticated/cartesian/CumulativeAreaLineChart");
+    expect(charts).toContain("How is financial value accumulating?");
     expect(charts).toContain("Loss causes");
-    expect(charts).toContain("Recovery progression");
+    expect(charts).toContain("How much exposed value is reaching recovery?");
     expect(charts).toContain("View chart data");
     expect(charts).not.toContain("monotone");
     expect(charts).not.toContain("Recovery funnel");

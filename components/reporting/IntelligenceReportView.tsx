@@ -18,6 +18,11 @@ import { DashboardCharts } from "@/components/reporting/DashboardCharts";
 import { RankedContributionChart } from "@/components/charts/authenticated/RankedContributionChart";
 import { MetricGroup } from "@/components/ui/MetricGroup";
 import { SparkTrend } from "@/components/charts/authenticated/micro/SparkTrend";
+import {
+  activeWorkflowOperations,
+  buildDashboardChartBuckets,
+  type DashboardMetricKey,
+} from "@/components/dashboard/dashboardModel";
 
 function money(minor: number, currency: string) {
   return formatMinorCurrencyNullable(minor, currency);
@@ -97,18 +102,32 @@ function StageCell({
     </div>
   );
 }
-function trendValues(report: IntelligenceReport, currency: string, state: FinancialReportMetric): number[] {
-  const field = state === "exposed"
-    ? "exposureMinor"
+function cumulativeTrendValues(
+  report: IntelligenceReport,
+  currency: string,
+  state: FinancialReportMetric,
+): number[] {
+  const metric: DashboardMetricKey | null = state === "exposed"
+    ? "exposure"
     : state === "recovered"
-      ? "recoveredMinor"
+      ? "recovered"
       : state === "confirmed_loss"
-        ? "realisedLossMinor"
+        ? "realisedLoss"
         : null;
-  if (!field) return [];
-  return report.trend
-    .filter((point) => point.currency === currency && point.knownStates.includes(state))
-    .map((point) => point[field]);
+  if (!metric) return [];
+  const buckets = buildDashboardChartBuckets({
+    current: report.trend,
+    range: report.range,
+    currency,
+    metric,
+    asOf: report.generatedAt,
+  });
+  if (!buckets.some((bucket) => bucket.currentMinor != null)) return [];
+  let cumulative = 0;
+  return buckets.map((bucket) => {
+    cumulative += bucket.currentMinor ?? 0;
+    return cumulative;
+  });
 }
 
 export function IntelligenceReportView({
@@ -120,6 +139,8 @@ export function IntelligenceReportView({
   comparison?: DashboardPeriodComparison | null;
   compact?: boolean;
 }) {
+  const openOperations = activeWorkflowOperations(report.operations);
+  const openOperationCount = openOperations.reduce((sum, row) => sum + row.count, 0);
   return (
     <div className="space-y-7">
       <section aria-labelledby="bridge-title">
@@ -168,7 +189,7 @@ export function IntelligenceReportView({
                   aria-label={`${b.currency} headline financial metrics`}
                   items={HEADLINE_STEPS.map((step) => {
                     const known = financialMetricIsKnown(b, step.state);
-                    const values = trendValues(report, b.currency, step.state);
+                    const values = cumulativeTrendValues(report, b.currency, step.state);
                     return {
                       label: step.label,
                       value: (
@@ -239,7 +260,7 @@ export function IntelligenceReportView({
           id="operations-attention"
           title="Needs attention"
           description="Open cases by the next step they are waiting on."
-          items={report.operations.slice(0, compact ? 4 : 8).map((row, index) => ({
+          items={openOperations.slice(0, compact ? 4 : 8).map((row, index) => ({
             label: row.label,
             value: row.count,
             displayValue: `${formatNumber(row.count)} ${row.count === 1 ? 'case' : 'cases'}`,
@@ -247,9 +268,9 @@ export function IntelligenceReportView({
             tone: index === 0 ? 'attention' : 'neutral',
           }))}
           annotation={
-            report.operations.length
+            openOperations.length
               ? {
-                  value: formatNumber(report.operations.reduce((sum, row) => sum + row.count, 0)),
+                  value: formatNumber(openOperationCount),
                   label: ' open',
                 }
               : undefined
@@ -259,7 +280,9 @@ export function IntelligenceReportView({
       {!compact && report.recoveries.length ? (
         <section className="border-t border-[var(--ua-border-subtle)] pt-5">
           {report.bridges.map((bridge) => {
-            const recoveries = report.recoveries.filter((row) => row.currency === bridge.currency);
+            const recoveries = report.recoveries.filter(
+              (row) => row.currency === bridge.currency && row.amountMinor > 0,
+            );
             return recoveries.length ? (
               <RankedContributionChart
                 key={bridge.currency}

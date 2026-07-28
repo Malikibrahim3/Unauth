@@ -199,7 +199,9 @@ export default async function LossesPage() {
                 rows: topContributions.map((item) => ({
                   label: item.label,
                   value: formatCurrencyNullable(item.valueMajor, exposure.currency) ?? '—',
-                  bar: exposure.total ? item.valueMajor / exposure.total : 0,
+                  bar: topContributions.length > 1 && exposure.total
+                    ? item.valueMajor / exposure.total
+                    : undefined,
                   href: `/losses?attribution=${encodeURIComponent(item.key)}`,
                 })),
                 footnote: `Ranked attribution of current loss in ${exposure.currency ?? 'the available currency'}. Written-off and incompatible-currency rows excluded.${mixedHint}`,

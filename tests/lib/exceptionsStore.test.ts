@@ -1,4 +1,8 @@
-import { raiseException, settleException } from '@/lib/exceptions/store';
+import {
+  countOpenExceptionDueBands,
+  raiseException,
+  settleException,
+} from '@/lib/exceptions/store';
 
 const MERCHANT = 'm-1';
 
@@ -31,6 +35,22 @@ function makeClient(existing: Record<string, unknown> | null, opts: { insertErro
     },
   };
   return client as never as import('@supabase/supabase-js').SupabaseClient & { inserts: typeof inserts; updates: typeof updates };
+}
+
+function makeDeadlineClient(rows: Array<{ due_at: string | null }>) {
+  return {
+    from() {
+      const builder: Record<string, unknown> = {};
+      const chain = () => builder;
+      for (const method of ['select', 'eq', 'order']) builder[method] = chain;
+      builder.range = async (from: number, to: number) => ({
+        data: rows.slice(from, to + 1),
+        count: rows.length,
+        error: null,
+      });
+      return builder;
+    },
+  } as never as import('@supabase/supabase-js').SupabaseClient;
 }
 
 const base = { exceptionType: 'unmatched_refund' as const, title: 'Unmatched refund', dedupKey: 'refund:r1' };
@@ -79,5 +99,33 @@ describe('exception queue store', () => {
   it('returns not_found for a missing/cross-merchant exception', async () => {
     const client = makeClient(null);
     expect(await settleException(client, MERCHANT, 'nope', { status: 'resolved', resolvedBy: 'u-1' })).toEqual({ ok: false, reason: 'not_found' });
+  });
+
+  it('places every open exception in one mutually exclusive deadline band', async () => {
+    const client = makeDeadlineClient([
+      { due_at: '2026-07-28T11:59:59.000Z' },
+      { due_at: '2026-07-28T18:00:00.000Z' },
+      { due_at: '2026-07-30T12:00:00.000Z' },
+      { due_at: '2026-08-02T12:00:00.000Z' },
+      { due_at: '2026-08-06T12:00:00.000Z' },
+      { due_at: null },
+      { due_at: 'not-a-date' },
+    ]);
+
+    const bands = await countOpenExceptionDueBands(
+      client,
+      MERCHANT,
+      new Date('2026-07-28T12:00:00.000Z'),
+    );
+
+    expect(bands).toEqual({
+      overdue: 1,
+      'due-today': 1,
+      'due-1-3': 1,
+      'due-4-7': 1,
+      'due-later': 1,
+      'no-sla': 2,
+    });
+    expect(Object.values(bands).reduce((sum, count) => sum + count, 0)).toBe(7);
   });
 });

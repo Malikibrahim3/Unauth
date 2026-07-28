@@ -1,4 +1,5 @@
 import {
+  activeWorkflowOperations,
   bridgeMetricValue,
   buildDashboardChartBuckets,
   calculateDataHealth,
@@ -117,13 +118,17 @@ describe('dashboard model', () => {
   });
 
   it('groups canonical workflow states and keeps totals intact', () => {
-    const groups = groupWorkflowOperations([
+    const operations = [
       { key: 'open', label: 'Open', count: 3, href: '/open' },
       { key: 'awaiting_customer_evidence', label: 'Waiting', count: 2, href: '/waiting' },
       { key: 'recovery_opened', label: 'Recovery opened', count: 4, href: '/recovery' },
       { key: 'resolved_won', label: 'Won', count: 5, href: '/won' },
-    ]);
-    expect(groups.map((group) => group.count)).toEqual([3, 2, 4, 5]);
+      { key: 'resolved', label: 'Resolved', count: 6, href: '/resolved' },
+    ];
+    const groups = groupWorkflowOperations(operations);
+    expect(groups.map((group) => group.count)).toEqual([3, 2, 4, 11]);
+    expect(activeWorkflowOperations(operations).map((operation) => operation.key))
+      .toEqual(['open', 'awaiting_customer_evidence', 'recovery_opened']);
   });
 
   it('calculates freshness and preserves an unavailable no-data state', () => {
