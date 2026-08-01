@@ -1,9 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { CalendarDays, CircleDollarSign, Info, ReceiptText, ShieldCheck, TriangleAlert } from 'lucide-react';
-import { Badge } from '@/components/ui';
-import { KeyInsightCallout } from '@/components/ui/KeyInsightCallout';
+import { CalendarDays, Info } from 'lucide-react';
+import { Badge, MetricGroup } from '@/components/ui';
 import { AuthenticatedPageHeader } from '@/components/authenticated/AuthenticatedPageHeader';
 import pageStyles from '@/components/authenticated/AuthenticatedPageChrome.module.css';
 import { formatDateAbsolute, formatMoney, formatNumber } from '@/lib/utils/format';
@@ -76,7 +75,6 @@ export function CustomerProfilePageHero({
 }: CustomerProfilePageHeroProps) {
   useBreadcrumbLabel(displayName);
   void auditRunId;
-  void isEligibleForEvidence;
   void profileGrade;
   void primaryIdentifier;
   void identitySignalRows;
@@ -102,6 +100,9 @@ export function CustomerProfilePageHero({
       : merchantClaimCount > 0
         ? { label: 'View case history', href: '#cases' }
         : null;
+  const evidenceAction = isEligibleForEvidence
+    ? { label: 'Build evidence package', href: `/customers/${profile.id}/evidence/new` }
+    : null;
 
   return (
     <>
@@ -109,7 +110,7 @@ export function CustomerProfilePageHero({
         title={displayName}
         subtitle={profile.primary_email ?? 'Email unavailable'}
         breadcrumbs={[{ label: 'Customers', href: '/customers' }, { label: displayName }]}
-        actions={<>{status}{!viewToken && primaryAction ? <Link href={primaryAction.href} className="inline-flex h-8 items-center rounded-[var(--ua-radius-control)] bg-[var(--ua-action-primary)] px-3 text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-action-primary-fg)]">{primaryAction.label}</Link> : null}</>}
+        actions={<>{status}{!viewToken && (evidenceAction ?? primaryAction) ? <Link href={(evidenceAction ?? primaryAction)!.href} className="inline-flex h-8 items-center rounded-[var(--ua-radius-control)] bg-[var(--ua-action-primary)] px-3 text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-action-primary-fg)]">{(evidenceAction ?? primaryAction)!.label}</Link> : null}</>}
         meta={
           <>
             <span className="inline-flex items-center gap-1.5 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]"><CalendarDays className="h-3 w-3" aria-hidden="true" />Customer since {formatDateAbsolute(profile.first_seen)} · Last active {formatDateAbsolute(profile.last_seen)}</span>
@@ -119,28 +120,12 @@ export function CustomerProfilePageHero({
       />
       <div className={pageStyles.pageBody}>
         <div className={pageStyles.workbenchStack}>
-          <div className={pageStyles.kpiStrip} style={{ gridTemplateColumns: 'repeat(6, minmax(0, 1fr))' }}>
-            {[
-              { label: 'Lifetime value', value: formatMoney(Math.round(totalOrderValue * 100), displayCurrency), icon: CircleDollarSign },
-              { label: 'Orders', value: formatNumber(merchantOrderCount), icon: ReceiptText },
-              { label: 'Average order', value: formatMoney(Math.round(averageOrderValue * 100), displayCurrency), icon: ReceiptText },
-              { label: 'Case rate', value: `${localClaimRatePct.toFixed(0)}%`, icon: ShieldCheck },
-              { label: 'Refund requests · 365d', value: formatNumber(profile.refund_requests_365d), icon: TriangleAlert },
-              { label: 'Value tied to cases', value: formatMoney(Math.round(totalRefundedValue * 100), displayCurrency), icon: TriangleAlert },
-            ].map(({ label, value, icon: Icon }) => (
-              <div key={label} className={pageStyles.kpiItem}>
-                <p className={`${pageStyles.kpiLabel} flex items-center gap-1.5`}><Icon className="h-3 w-3" aria-hidden="true" />{label}</p>
-                <p className={pageStyles.kpiValue}>{value}</p>
-              </div>
-            ))}
-          </div>
-          <KeyInsightCallout
-            icon={<Info className="h-4 w-4" aria-hidden="true" />}
-            tone={merchantClaimCount > 0 ? 'warning' : 'neutral'}
-            detail={merchantChargebackCount > 0 ? `${formatNumber(merchantChargebackCount)} chargeback${merchantChargebackCount === 1 ? '' : 's'}` : undefined}
-          >
-            {merchantNarrative}
-          </KeyInsightCallout>
+          <MetricGroup aria-label="Customer record summary" items={[
+            { label: 'Lifetime value', value: formatMoney(Math.round(totalOrderValue * 100), displayCurrency), description: 'Merchant-owned orders' },
+            { label: 'Orders', value: formatNumber(merchantOrderCount), description: `Average ${formatMoney(Math.round(averageOrderValue * 100), displayCurrency)}` },
+            { label: 'Case context', value: merchantClaimCount > 0 ? `${merchantClaimCount} case${merchantClaimCount === 1 ? '' : 's'}` : 'No recorded cases', description: merchantChargebackCount > 0 ? `${merchantChargebackCount} chargeback${merchantChargebackCount === 1 ? '' : 's'}` : merchantNarrative },
+            { label: 'Value tied to cases', value: formatMoney(Math.round(totalRefundedValue * 100), displayCurrency), description: `${localClaimRatePct.toFixed(0)}% case rate` },
+          ]} />
         </div>
       </div>
     </>

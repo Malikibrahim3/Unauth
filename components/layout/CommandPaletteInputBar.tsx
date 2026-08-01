@@ -2,6 +2,7 @@
 
 import type { Dispatch } from 'react';
 import { Search } from 'lucide-react';
+import { Spinner } from '@/components/ui/Spinner';
 import type { CommandPaletteAction } from '@/components/layout/commandPaletteReducer';
 
 type CommandPaletteInputBarProps = {
@@ -48,12 +49,7 @@ export function CommandPaletteInputBar({
         autoComplete="off"
         spellCheck={false}
       />
-      {searchingCustomers ? (
-        <div
-          className="w-3 h-3 rounded-full border border-t-transparent animate-spin"
-          style={{ borderColor: 'var(--ua-border-default)', borderTopColor: 'var(--ua-action-primary)' }}
-        />
-      ) : null}
+      {searchingCustomers ? <Spinner size="sm" delayMs={0} label="Searching" /> : null}
       {query ? (
         <button
           type="button"

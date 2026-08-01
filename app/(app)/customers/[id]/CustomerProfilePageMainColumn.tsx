@@ -2,7 +2,7 @@ import { Activity, AtSign, CreditCard, ExternalLink, Fingerprint, MapPin, Phone,
 import Link from "next/link";
 import CustomerNotes from "@/components/audit/CustomerNotes";
 import CustomerSupportCasesSection from "@/components/customers/CustomerSupportCasesSection";
-import { Badge, Panel } from "@/components/ui";
+import { Badge, DataTableServer, Panel } from "@/components/ui";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { MetricCard } from "@/components/ui/MetricCard";
@@ -11,6 +11,7 @@ import {
   formatDateTime,
   formatDateAbsolute,
   formatDateMode,
+  formatConfidencePercent,
 } from "@/lib/utils/format";
 import { formatFiledDate } from "@/lib/claims/sla";
 import {
@@ -62,77 +63,100 @@ function CompactTransactionList({
         variant="compact"
         title="No orders in dataset"
         description="No merchant-owned order history is available for this customer yet."
+        action={<Link href="/integrations" className="text-sm font-semibold text-[var(--ua-action-primary)] hover:underline">Review connected sources</Link>}
       />
     );
   }
 
+  const visibleTransactions = transactions.slice(0, 25);
   return (
-    <div className="overflow-x-auto rounded-md border border-[var(--ua-border-default)]">
-      <table className="w-full min-w-[640px] text-left text-sm">
-        <thead className="bg-[var(--ua-surface-muted)] text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]"><tr><th className="px-3 py-2">Order</th><th className="px-3 py-2">Date</th><th className="px-3 py-2">Delivery</th><th className="px-3 py-2">Outcome</th><th className="px-3 py-2 text-right">Amount</th></tr></thead>
-        <tbody className="divide-y divide-[var(--ua-border-subtle)]">
-      {transactions.slice(0, 25).map((tx) => {
-        const lineItems = (tx.line_items ?? []).filter((line) => line.title);
-        const shownItems = lineItems.slice(0, 2);
-        const extraItems = lineItems.length - shownItems.length;
-        return (
-        <tr key={tx.order_id} className="hover:bg-[var(--ua-surface-hover)]">
-          <td className="px-3 py-2.5">
-            <div className="flex items-center gap-1.5">
-              <Link href={`/orders/${tx.source_order_id}`} className="font-mono text-xs font-semibold underline-offset-2 hover:underline">{tx.order_id}</Link>
-              {tx.external_href ? (
+    <DataTableServer
+      aria-label="Customer order history"
+      className="min-w-[640px]"
+      rows={visibleTransactions}
+      emptyState={<p className="p-4 text-sm text-[var(--ua-text-secondary)]">No order history is available.</p>}
+      getRowKey={(transaction) => transaction.order_id}
+      columns={[
+        {
+          key: "order",
+          header: "Order",
+          render: (transaction) => {
+            const lineItems = (transaction.line_items ?? []).filter((line) => line.title);
+            const shownItems = lineItems.slice(0, 2);
+            const extraItems = lineItems.length - shownItems.length;
+            return (
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <Link href={`/orders/${transaction.source_order_id}`} className="font-mono text-xs font-semibold underline-offset-2 hover:underline">{transaction.order_id}</Link>
+                  {transaction.external_href ? (
+                    <a
+                      href={transaction.external_href}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={`Open order in ${transaction.external_source ?? "source"}`}
+                      title={`Open in ${transaction.external_source ?? "source"}`}
+                      className="text-[var(--ua-action-primary)] hover:text-[var(--ua-text-primary)]"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  ) : null}
+                </div>
+                {transaction.via_email ? <span className="mt-1 block max-w-[190px] truncate text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">via {transaction.via_email}</span> : null}
+                {shownItems.length > 0 ? (
+                  <p className="mt-1 max-w-[220px] truncate text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">
+                    {shownItems.map((line) => `${line.quantity ? `${line.quantity}× ` : ""}${line.title}`).join(", ")}
+                    {extraItems > 0 ? ` +${extraItems} more` : ""}
+                  </p>
+                ) : null}
+              </div>
+            );
+          },
+        },
+        {
+          key: "date",
+          header: "Date",
+          render: (transaction) => <span className="text-[var(--ua-text-secondary)]">{formatDateAbsolute(transaction.processed_at)}</span>,
+        },
+        {
+          key: "delivery",
+          header: "Delivery",
+          render: (transaction) => transaction.shipment ? (
+            <span className="flex items-center gap-1 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-secondary)]">
+              <Truck className="h-3 w-3 shrink-0 text-[var(--ua-text-tertiary)]" aria-hidden="true" />
+              {labelize(transaction.shipment.status ?? "unknown")}
+              {transaction.shipment.carrier ? ` · ${transaction.shipment.carrier}` : ""}
+              {transaction.shipment.external_href ? (
                 <a
-                  href={tx.external_href}
+                  href={transaction.shipment.external_href}
                   target="_blank"
                   rel="noreferrer"
-                  aria-label={`Open order in ${tx.external_source ?? "source"}`}
-                  title={`Open in ${tx.external_source ?? "source"}`}
-                  className="text-[var(--ua-action-primary)] hover:text-[var(--ua-text-primary)]"
+                  aria-label={`Open fulfilment in ${transaction.shipment.external_source ?? "source"}`}
+                  title={`Open in ${transaction.shipment.external_source ?? "source"}`}
+                  className="ml-0.5 text-[var(--ua-action-primary)] hover:text-[var(--ua-text-primary)]"
                 >
-                  <ExternalLink className="h-3.5 w-3.5" />
+                  <ExternalLink className="h-3 w-3" />
                 </a>
               ) : null}
-            </div>
-            {tx.via_email ? <span className="mt-1 block max-w-[190px] truncate text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">via {tx.via_email}</span> : null}
-            {shownItems.length > 0 ? (
-              <p className="mt-1 max-w-[220px] truncate text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">
-                {shownItems.map((line) => `${line.quantity ? `${line.quantity}× ` : ""}${line.title}`).join(", ")}
-                {extraItems > 0 ? ` +${extraItems} more` : ""}
-              </p>
-            ) : null}
-          </td>
-          <td className="px-3 py-2.5 text-[var(--ua-text-secondary)]">{formatDateAbsolute(tx.processed_at)}</td>
-          <td className="px-3 py-2.5">
-            {tx.shipment ? (
-              <span className="flex items-center gap-1 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-secondary)]">
-                <Truck className="h-3 w-3 shrink-0 text-[var(--ua-text-tertiary)]" aria-hidden="true" />
-                {labelize(tx.shipment.status ?? "unknown")}
-                {tx.shipment.carrier ? ` · ${tx.shipment.carrier}` : ""}
-                {tx.shipment.external_href ? (
-                  <a
-                    href={tx.shipment.external_href}
-                    target="_blank"
-                    rel="noreferrer"
-                    aria-label={`Open fulfilment in ${tx.shipment.external_source ?? "source"}`}
-                    title={`Open in ${tx.shipment.external_source ?? "source"}`}
-                    className="ml-0.5 text-[var(--ua-action-primary)] hover:text-[var(--ua-text-primary)]"
-                  >
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                ) : null}
-              </span>
-            ) : <span className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">—</span>}
-          </td>
-          <td className="px-3 py-2.5">
-            {tx.chargeback_filed ? <Badge tone="danger" size="sm">Chargeback</Badge> : tx.refund_claimed ? <Badge tone="warning" size="sm">Case</Badge> : <span className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">—</span>}
-          </td>
-          <td className="px-3 py-2.5 text-right font-semibold tabular-nums">{formatMoneyOrDash(Math.round((Number(tx.order_value) || 0) * 100), tx.currency)}</td>
-        </tr>
-        );
-      })}
-        </tbody>
-      </table>
-    </div>
+            </span>
+          ) : <span className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">—</span>,
+        },
+        {
+          key: "outcome",
+          header: "Outcome",
+          render: (transaction) => transaction.chargeback_filed
+            ? <Badge tone="danger" size="sm">Chargeback</Badge>
+            : transaction.refund_claimed
+              ? <Badge tone="warning" size="sm">Case</Badge>
+              : <span className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">—</span>,
+        },
+        {
+          key: "amount",
+          header: "Amount",
+          kind: "currency",
+          render: (transaction) => <span className="font-semibold tabular-nums">{formatMoneyOrDash(Math.round((Number(transaction.order_value) || 0) * 100), transaction.currency)}</span>,
+        },
+      ]}
+    />
   );
 }
 
@@ -221,6 +245,7 @@ export function CustomerProfilePageMainColumn({
             variant="compact"
             title="No activity yet"
             description="Case status changes, evidence generation, and notes will appear here."
+            action={<Link href={`/customers/${profile.id}/evidence/new`} className="text-sm font-semibold text-[var(--ua-action-primary)] hover:underline">Add evidence</Link>}
           />
         ) : (
           <ol className="space-y-3">
@@ -340,19 +365,34 @@ export function CustomerProfilePageMainColumn({
           {profile.sibling_count ? <div className="flex gap-2 rounded-md bg-[var(--ua-info-bg)] p-3 text-xs text-[var(--ua-text-secondary)]"><Fingerprint className="h-4 w-4 shrink-0 text-[var(--ua-info)]" aria-hidden="true" /><span>{profile.sibling_count + 1} source customer records were resolved into this profile.</span></div> : null}
           {variantCount > 0 ? <div className={profile.sibling_count ? "mt-2" : ""}><Badge tone="info" size="sm">{variantCount} identity change{variantCount === 1 ? '' : 's'}</Badge></div> : null}
           {identitySignalSummary.length ? (
-            <div className={`overflow-x-auto ${profile.sibling_count || variantCount > 0 ? "mt-3 border-t border-[var(--ua-border-subtle)] pt-3" : ""}`}>
-              <table className="w-full min-w-[280px] text-left text-xs">
-                <thead className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]"><tr><th className="py-1 pr-2">Type</th><th className="py-1 pr-2 text-right">Distinct</th><th className="py-1 text-right">Last seen</th></tr></thead>
-                <tbody className="divide-y divide-[var(--ua-border-subtle)]">
-                  {identitySignalSummary.map((row) => (
-                    <tr key={row.signalType}>
-                      <td className="py-1.5 pr-2 text-[var(--ua-text-primary)]">{labelize(row.signalType)}</td>
-                      <td className="py-1.5 pr-2 text-right tabular-nums text-[var(--ua-text-secondary)]">{row.distinctCount}</td>
-                      <td className="py-1.5 text-right tabular-nums text-[var(--ua-text-tertiary)]">{formatDateAbsolute(row.lastSeenAt)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className={profile.sibling_count || variantCount > 0 ? "mt-3 border-t border-[var(--ua-border-subtle)] pt-3" : ""}>
+              <DataTableServer
+                aria-label="Identity signal summary"
+                className="min-w-[280px]"
+                rows={identitySignalSummary}
+                emptyState={<p className="p-3 text-sm text-[var(--ua-text-secondary)]">No identity signals are available.</p>}
+                getRowKey={(row) => row.signalType}
+                density="compact"
+                columns={[
+                  {
+                    key: "type",
+                    header: "Type",
+                    render: (row) => labelize(row.signalType),
+                  },
+                  {
+                    key: "distinct",
+                    header: "Distinct",
+                    kind: "numeric",
+                    render: (row) => <span className="tabular-nums text-[var(--ua-text-secondary)]">{row.distinctCount}</span>,
+                  },
+                  {
+                    key: "lastSeen",
+                    header: "Last seen",
+                    kind: "date",
+                    render: (row) => <span className="tabular-nums text-[var(--ua-text-tertiary)]">{formatDateAbsolute(row.lastSeenAt)}</span>,
+                  },
+                ]}
+              />
             </div>
           ) : null}
           {linkedAccounts.length ? (
@@ -360,7 +400,7 @@ export function CustomerProfilePageMainColumn({
               {linkedAccounts.map((account) => (
                 <li key={`${account.entityType}-${account.entityValue}`} className="flex items-center justify-between gap-2 text-xs text-[var(--ua-text-secondary)]">
                   <span className="min-w-0 truncate">{account.entityValue}</span>
-                  <span className="shrink-0 tabular-nums text-[var(--ua-text-tertiary)]">{Math.round(account.confidence * 100)}%</span>
+                  <span className="shrink-0 tabular-nums text-[var(--ua-text-tertiary)]">{formatConfidencePercent(account.confidence)}</span>
                 </li>
               ))}
             </ul>
@@ -380,7 +420,7 @@ export function CustomerProfilePageMainColumn({
                     <Link href={`/customers/${match.candidateId}`} className="min-w-0 truncate text-xs font-semibold text-[var(--ua-text-primary)] hover:underline">
                       {match.displayName || match.email || 'Unnamed customer'}
                     </Link>
-                    {match.confidence != null ? <span className="shrink-0 text-[length:var(--ua-text-metadata-size)] tabular-nums text-[var(--ua-text-tertiary)]">{Math.round(match.confidence * 100)}%</span> : null}
+                    {match.confidence != null ? <span className="shrink-0 text-[length:var(--ua-text-metadata-size)] tabular-nums text-[var(--ua-text-tertiary)]">{formatConfidencePercent(match.confidence)}</span> : null}
                   </div>
                   {match.email && match.displayName ? <p className="mt-0.5 truncate text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">{match.email}</p> : null}
                   {match.matchedTypes.length ? <div className="mt-1.5 flex flex-wrap gap-1">{match.matchedTypes.map((type) => <Badge key={type} tone="neutral" size="sm">{labelize(type)}</Badge>)}</div> : null}

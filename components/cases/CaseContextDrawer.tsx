@@ -8,6 +8,7 @@ import type { TimelineItem } from "@/lib/cases/timeline";
 import type { RelatedRecord } from "@/lib/relationships/relatedRecords";
 import { formatCurrencyNullable } from "@/lib/utils/format";
 import { humanise } from "@/lib/ui/labels";
+import { shortRef } from "@/lib/ui/displayRef";
 
 type CaseContext = {
   case: {
@@ -61,7 +62,7 @@ export function CaseContextDrawer({
     <Drawer
       open
       onClose={onClose}
-      title={`Case ${caseId.slice(0, 8)}`}
+      title={shortRef(null, caseId)}
       footer={
         <div className="p-4">
           <Link

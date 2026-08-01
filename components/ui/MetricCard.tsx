@@ -3,6 +3,7 @@
 import { ArrowDown, ArrowUp, Minus } from 'lucide-react';
 import { type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import { useChangedValueHighlight } from '@/lib/design/useChangedValueHighlight';
 
 interface DeltaProps {
   value: number;
@@ -37,6 +38,7 @@ const ARROW_ICON: Record<DeltaProps['direction'], typeof ArrowUp> = {
 export function MetricCard({ label, value, delta, hint, icon, density = 'default', size, microchart, className }: MetricCardProps) {
   const isHero = size === 'hero';
   const displayValue = value;
+  const highlighting = useChangedValueHighlight(value);
 
   return (
     <div
@@ -53,7 +55,7 @@ export function MetricCard({ label, value, delta, hint, icon, density = 'default
         {icon ? <span aria-hidden="true" className="sr-only">{icon}</span> : null}
       </div>
 
-      <div className="ua-metric-card__value mt-3 num leading-tight tabular-nums">
+      <div className={cn('ua-metric-card__value mt-3 num leading-tight tabular-nums', highlighting && 'ua-value-wash')}>
         {displayValue}
       </div>
 

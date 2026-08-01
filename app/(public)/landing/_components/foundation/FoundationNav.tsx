@@ -30,7 +30,7 @@ export default function FoundationNav() {
       <header className={`${styles.heroNavbar} ${styles.heroNavbarLight}`}>
         <div className={styles.heroNavbarInner}>
           <Link href="/landing" prefetch={false} aria-label="Unauth home" className={styles.heroNavLogoGroup}>
-            <UnauthLogo kind="lockup" tone="graphite" height={22} alt="" decorative />
+            <UnauthLogo kind="lockup" tone="graphite" height={22} priority alt="" decorative />
           </Link>
 
           <div className={styles.heroNavActions}>

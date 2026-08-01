@@ -25,7 +25,7 @@ export default async function globalSetup(config: FullConfig) {
   const authAttemptTimeoutMs = 45_000;
   try {
     const authLandingPath = '/legal/privacy?e2e_session=ready';
-    const expectedLandingUrl = new URL(authLandingPath, baseURL).toString();
+    const expectedLandingUrl = new URL(authLandingPath, baseURL);
     const authUrl = new URL('/api/test/e2e-auth', baseURL);
     authUrl.searchParams.set('secret', secret);
     authUrl.searchParams.set('merchant_id', merchantId);
@@ -38,7 +38,11 @@ export default async function globalSetup(config: FullConfig) {
           waitUntil: 'domcontentloaded',
           timeout: authAttemptTimeoutMs,
         });
-        if (page.url() === expectedLandingUrl) {
+        const actualLandingUrl = new URL(page.url());
+        if (
+          actualLandingUrl.pathname === expectedLandingUrl.pathname
+          && actualLandingUrl.search === expectedLandingUrl.search
+        ) {
           lastFailure = '';
           break;
         }

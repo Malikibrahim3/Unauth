@@ -4,7 +4,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 interface WorkbenchEmptyStateProps {
   title: string;
   description: string;
-  action?: ReactNode;
+  action: Exclude<ReactNode, null | undefined | boolean>;
 }
 
 /** Thin alias kept for existing call sites — the canonical implementation is

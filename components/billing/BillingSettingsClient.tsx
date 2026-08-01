@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Panel } from "@/components/ui";
+import { Surface } from "@/components/ui";
+import { Bone } from "@/components/ui/LoadingSkeleton";
 import { SettingsPageShell } from "@/components/settings/SettingsPageShell";
 import {
   PLANS,
@@ -67,7 +68,8 @@ export default function BillingSettingsClient() {
 
   const runAction = useCallback(
     async (action: string, planId?: PlanId): Promise<void> => {
-      setActionLoading(action);
+      const actionKey = planId ? `${action}-${planId}` : action;
+      setActionLoading(actionKey);
       try {
         const res = await fetch("/api/billing/actions", {
           method: "POST",
@@ -118,8 +120,10 @@ export default function BillingSettingsClient() {
         title="Billing"
         subtitle="Manage your plan, network credits, and payment method."
       >
-        <div
-          className="rounded-[var(--ua-radius-control)] border p-4 text-[length:var(--ua-text-caption-size)]"
+        <Surface
+          structure="working"
+          pad="standard"
+          className="text-[length:var(--ua-text-caption-size)]"
           style={{
             borderColor: "var(--ua-border-default)",
             color: "var(--ua-text-secondary)",
@@ -132,7 +136,7 @@ export default function BillingSettingsClient() {
             Billing details could not be loaded. Refresh to try again or contact
             support if the issue persists.
           </p>
-        </div>
+        </Surface>
       </SettingsPageShell>
     );
   }
@@ -149,10 +153,10 @@ export default function BillingSettingsClient() {
       title="Billing"
       subtitle="Manage your plan, network credits, and payment method."
     >
-    <div className="space-y-3">
+    <Surface structure="working" className="overflow-hidden">
       {toast && (
-        <Panel
-          variant="panel"
+        <Surface
+          structure="joined"
           className="px-4 py-3 text-[length:var(--ua-text-caption-size)]"
           style={{
             borderColor:
@@ -162,12 +166,12 @@ export default function BillingSettingsClient() {
           role="status"
         >
           {toast.message}
-        </Panel>
+        </Surface>
       )}
 
       {state.status === "grace_period" && (
-        <Panel
-          variant="panel"
+        <Surface
+          structure="joined"
           className="px-4 py-3 text-[length:var(--ua-text-caption-size)]"
           style={{
             borderColor: "var(--ua-risk-high)",
@@ -191,12 +195,12 @@ export default function BillingSettingsClient() {
           >
             Update billing
           </button>
-        </Panel>
+        </Surface>
       )}
 
       {state.status === "past_due" && (
-        <Panel
-          variant="panel"
+        <Surface
+          structure="joined"
           className="px-4 py-3 text-[length:var(--ua-text-caption-size)]"
           style={{
             borderColor: "var(--ua-risk-high)",
@@ -213,10 +217,10 @@ export default function BillingSettingsClient() {
             Resubscribe
           </button>{" "}
           to restore Pro/Growth features.
-        </Panel>
+        </Surface>
       )}
 
-      <Panel as="section" variant="panel" className="p-4">
+      <Surface as="section" structure="joined" className="p-4">
         <h2 className="text-sm font-semibold text-[var(--ua-text-primary)]">
           Current plan
         </h2>
@@ -240,9 +244,9 @@ export default function BillingSettingsClient() {
             to Free after that.
           </p>
         )}
-      </Panel>
+      </Surface>
 
-      <Panel as="section" variant="panel" className="p-4">
+      <Surface as="section" structure="joined" className="p-4">
         <h2 className="text-sm font-semibold text-[var(--ua-text-primary)]">
           Network credits this cycle
         </h2>
@@ -282,9 +286,9 @@ export default function BillingSettingsClient() {
             Top up — ${TOP_UP_PRICE_GBP} for {TOP_UP_CREDITS} credits
           </button>
         )}
-      </Panel>
+      </Surface>
 
-      <Panel as="section" variant="panel" className="space-y-2.5 p-4">
+      <Surface as="section" structure="joined" className="space-y-2.5 p-4">
         <h2 className="text-sm font-semibold text-[var(--ua-text-primary)]">
           Change plan
         </h2>
@@ -340,9 +344,9 @@ export default function BillingSettingsClient() {
             onClick={() => void runAction("contact_scale")}
           />
         )}
-      </Panel>
+      </Surface>
 
-      <Panel as="section" variant="panel" className="space-y-2.5 p-4">
+      <Surface as="section" structure="joined" className="space-y-2.5 p-4">
         <h2 className="text-sm font-semibold text-[var(--ua-text-primary)]">
           Payment method
         </h2>
@@ -365,7 +369,7 @@ export default function BillingSettingsClient() {
                 Cancel plan
               </button>
             ) : (
-              <Panel variant="inset" className="p-3 text-[length:var(--ua-text-caption-size)]">
+              <Surface structure="inset" className="p-3 text-[length:var(--ua-text-caption-size)]">
                 <p>
                   You&apos;ll keep access until{" "}
                   {formatDateTime(state.currentPeriodEnd)}, then move to Free.
@@ -388,7 +392,7 @@ export default function BillingSettingsClient() {
                     Keep plan
                   </button>
                 </div>
-              </Panel>
+              </Surface>
             )}
           </>
         )}
@@ -402,8 +406,8 @@ export default function BillingSettingsClient() {
             Resume subscription
           </button>
         )}
-      </Panel>
-    </div>
+      </Surface>
+    </Surface>
     </SettingsPageShell>
   );
 }
@@ -446,21 +450,6 @@ function formatDateTime(iso: string | null): string {
   });
 }
 
-function SkeletonBlock({
-  className,
-  style,
-}: {
-  className?: string;
-  style?: React.CSSProperties;
-}) {
-  return (
-    <div
-      className={`animate-pulse rounded-md ${className ?? ""}`}
-      style={{ background: "var(--ua-border-default)", ...style }}
-      aria-hidden="true"
-    />
-  );
-}
 
 function BillingSettingsSkeleton() {
   return (
@@ -468,45 +457,45 @@ function BillingSettingsSkeleton() {
       title="Billing"
       subtitle="Manage your plan, network credits, and payment method."
     >
-    <div role="status" className="space-y-3" aria-busy="true" aria-label="Loading billing">
+    <Surface structure="working" role="status" aria-busy="true" aria-label="Loading billing">
 
       {/* Current plan */}
-      <Panel as="section" variant="panel" className="space-y-3 p-4">
-        <SkeletonBlock className="h-4 w-24" />
-        <SkeletonBlock className="h-8 w-32" />
-        <SkeletonBlock className="h-4 w-20" />
-        <SkeletonBlock className="h-3 w-48" />
-      </Panel>
+      <Surface as="section" structure="joined" className="space-y-3 p-4">
+        <Bone className="h-4 w-24" />
+        <Bone className="h-8 w-32" />
+        <Bone className="h-4 w-20" />
+        <Bone className="h-3 w-48" />
+      </Surface>
 
       {/* Credits */}
-      <Panel as="section" variant="panel" className="space-y-3 p-4">
-        <SkeletonBlock className="h-4 w-48" />
+      <Surface as="section" structure="joined" className="space-y-3 p-4">
+        <Bone className="h-4 w-48" />
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <SkeletonBlock className="h-3 w-28" />
-            <SkeletonBlock className="h-7 w-16" />
+            <Bone className="h-3 w-28" />
+            <Bone className="h-7 w-16" />
           </div>
           <div className="space-y-1.5">
-            <SkeletonBlock className="h-3 w-24" />
-            <SkeletonBlock className="h-7 w-16" />
+            <Bone className="h-3 w-24" />
+            <Bone className="h-7 w-16" />
           </div>
         </div>
-        <SkeletonBlock className="h-3 w-56" />
-      </Panel>
+        <Bone className="h-3 w-56" />
+      </Surface>
 
       {/* Change plan */}
-      <Panel as="section" variant="panel" className="space-y-3 p-4">
-        <SkeletonBlock className="h-4 w-28" />
-        <SkeletonBlock className="h-9 w-full" />
-        <SkeletonBlock className="h-9 w-full" />
-      </Panel>
+      <Surface as="section" structure="joined" className="space-y-3 p-4">
+        <Bone className="h-4 w-28" />
+        <Bone className="h-9 w-full" />
+        <Bone className="h-9 w-full" />
+      </Surface>
 
       {/* Payment */}
-      <Panel as="section" variant="panel" className="space-y-3 p-4">
-        <SkeletonBlock className="h-4 w-36" />
-        <SkeletonBlock className="h-4 w-48" />
-      </Panel>
-    </div>
+      <Surface as="section" structure="joined" className="space-y-3 p-4">
+        <Bone className="h-4 w-36" />
+        <Bone className="h-4 w-48" />
+      </Surface>
+    </Surface>
     </SettingsPageShell>
   );
 }

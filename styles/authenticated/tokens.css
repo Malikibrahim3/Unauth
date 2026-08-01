@@ -1,5 +1,5 @@
 /*
- * Living Precision authenticated design tokens.
+ * Instrument Grade authenticated product tokens.
  * ------------------------------------------------------------------
  * `--ua-*` is the ONLY authenticated visual token namespace, and every token
  * below carries a literal value. There is no alias layer: no `--accent`,
@@ -11,30 +11,47 @@
  * Semantic, risk, and severity tokens live in status.css; type-role tokens live
  * in typography.css. Both follow the same literal-value rule.
  *
- * Values are the target tables in docs/IMPL_living_precision_product_ui.md §3,
- * §6.2, and §7.1. That document supersedes the Quiet Precision clause that
- * forbade a product accent: violet is now the single product accent, and
- * near-black survives only as the high-stakes *commit* action.
+ * `.ua-app` and `.ua-auth-surface` share one visual geometry. The scoped
+ * overrides at the end refine the product shell without creating an
+ * auth-adjacent radius dialect.
  */
+:root {
+  --ua-document-canvas: #f6f7f9;
+}
+
+:root[data-theme="dark"] {
+  --ua-document-canvas: #101114;
+}
+
 .ua-desktop-boundary {
   /* The unsupported-width notice sits outside `.ua-app`, so it needs the
    * small neutral subset below before the authenticated subtree mounts. */
-  --ua-canvas: #f7f7f8;
+  --ua-canvas: #f6f7f9;
   --ua-surface-primary: #ffffff;
   --ua-border-default: #d8d8dc;
-  --ua-radius-surface: 10px;
+  --ua-radius-surface: 12px;
   --ua-space-2: 8px;
   --ua-space-6: 24px;
   --ua-text-primary: #18181b;
   --ua-text-secondary: #52525b;
-  --ua-text-tertiary: #71717a;
-  --ua-text-page-title-size: 20px;
-  --ua-text-page-title-leading: 28px;
-  --ua-text-metadata-size: 11px;
-  --ua-text-metadata-leading: 15px;
+  --ua-text-tertiary: #6b6b75;
+  --ua-text-page-title-size: 28px;
+  --ua-text-page-title-leading: 34px;
+  --ua-text-metadata-size: 12px;
+  --ua-text-metadata-leading: 16px;
   --ua-text-body-size: 14px;
   --ua-text-body-leading: 20px;
   --ua-font-sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+:root[data-theme="dark"] .ua-desktop-boundary {
+  color-scheme: dark;
+  --ua-canvas: #111113;
+  --ua-surface-primary: #1b1b1e;
+  --ua-border-default: #37373e;
+  --ua-text-primary: #f5f5f6;
+  --ua-text-secondary: #b8b8c0;
+  --ua-text-tertiary: #92929b;
 }
 
 .ua-app,
@@ -67,7 +84,7 @@
   /* ── Ink (§3.1) ───────────────────────────────────────────────────── */
   --ua-text-primary: #18181b;
   --ua-text-secondary: #52525b;
-  --ua-text-tertiary: #71717a;
+  --ua-text-tertiary: #6b6b75;
   --ua-text-disabled: #a1a1aa;
   --ua-text-inverse: #ffffff;
   --ua-text-link: #3c3c96;
@@ -78,6 +95,7 @@
   --ua-border-subtle: #e7e7ea;
   --ua-border-default: #d8d8dc;
   --ua-border-strong: #a5a5ae;
+  --ua-border-control: #8d8d98;
   --ua-border-focus: #5b5bd6;
 
   /*
@@ -143,9 +161,9 @@
   /* ── Geometry (§3.6) ──────────────────────────────────────────────── */
   --ua-radius-none: 0px;
   --ua-radius-xs: 4px;
-  --ua-radius-control: 6px;
-  --ua-radius-surface: 10px;
-  --ua-radius-overlay: 14px;
+  --ua-radius-control: 8px;
+  --ua-radius-surface: 12px;
+  --ua-radius-overlay: 16px;
   --ua-radius-round: 9999px;
 
   /* ── Depth (§3.8). Inline surfaces are flat; only floating layers lift. */
@@ -257,6 +275,7 @@
   --ua-border-subtle: #29292e;
   --ua-border-default: #37373e;
   --ua-border-strong: #585864;
+  --ua-border-control: #696a75;
   --ua-border-focus: #9b99ff;
 
   --ua-accent-50: #201f35;
@@ -301,4 +320,80 @@
   --ua-shadow-float: 0 4px 14px rgb(0 0 0 / 40%);
   --ua-shadow-menu: 0 8px 24px rgb(0 0 0 / 50%);
   --ua-shadow-overlay: 0 24px 64px rgb(0 0 0 / 60%);
+}
+
+/*
+ * Current authenticated product direction.
+ * ------------------------------------------------------------------
+ * This is a scoped evolution of the shared token vocabulary, not a second
+ * theme. The auth-adjacent `.ua-auth-surface` consumers above are deliberately
+ * untouched while the desktop product receives its own calm hierarchy.
+ */
+.ua-app {
+  --ua-canvas: #f6f7f9;
+  --ua-shell: #f1f2f5;
+  --ua-toolbar: #ffffff;
+  --ua-surface-primary: #ffffff;
+  --ua-surface-secondary: #f5f6f8;
+  --ua-surface-muted: #eeeff2;
+  --ua-surface-hover: #edeef2;
+  --ua-surface-selected: #ecebff;
+  --ua-surface-inverse: #17171b;
+
+  --ua-text-primary: #17171b;
+  --ua-text-secondary: #52515b;
+  --ua-text-tertiary: #6b6b75;
+  --ua-text-disabled: #aaa9b3;
+  --ua-text-link: #4949b8;
+  --ua-icon-primary: #424149;
+  --ua-icon-secondary: #74737d;
+
+  --ua-border-subtle: #e6e6ea;
+  --ua-border-default: #d7d7de;
+  --ua-border-strong: #aaa9b3;
+  --ua-border-control: #8d8d98;
+
+  --ua-chart-grid: #e6e6ea;
+  --ua-chart-track: #edeef2;
+
+  --ua-radius-control: 8px;
+  --ua-radius-surface: 12px;
+  --ua-radius-overlay: 16px;
+
+  --ua-shadow-raised: 0 1px 2px rgb(23 23 27 / 6%);
+  --ua-shadow-float: 0 8px 24px rgb(23 23 27 / 9%);
+  --ua-shadow-menu: 0 12px 32px rgb(23 23 27 / 12%);
+  --ua-shadow-overlay: 0 28px 72px rgb(23 23 27 / 18%);
+
+  --ua-utility-header-height: 52px;
+  --ua-sidebar-width: 200px;
+  --ua-sidebar-width-collapsed: 56px;
+}
+
+:root[data-theme="dark"] .ua-app {
+  --ua-canvas: #101114;
+  --ua-shell: #15161a;
+  --ua-toolbar: #17181c;
+  --ua-surface-primary: #1b1c20;
+  --ua-surface-secondary: #222328;
+  --ua-surface-muted: #2a2c32;
+  --ua-surface-hover: #25262c;
+  --ua-surface-selected: #302f4e;
+  --ua-surface-inverse: #f4f4f6;
+
+  --ua-text-primary: #f4f4f6;
+  --ua-text-secondary: #c2c1c8;
+  --ua-text-tertiary: #9897a0;
+  --ua-text-disabled: #60616b;
+  --ua-text-link: #b2b0ff;
+  --ua-icon-primary: #e6e5e9;
+  --ua-icon-secondary: #a7a6af;
+
+  --ua-border-subtle: #2c2d33;
+  --ua-border-default: #3a3b43;
+  --ua-border-strong: #60616b;
+  --ua-border-control: #696a75;
+
+  --ua-chart-grid: #2c2d33;
+  --ua-chart-track: #25262c;
 }

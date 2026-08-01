@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import type { ButtonSize, ButtonVariant } from './Button';
 
 const BUTTON_BASE =
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-colors duration-[var(--ua-duration-fast)] focus-visible:outline-none focus-visible:shadow-[var(--ua-shadow-focus)] disabled:cursor-not-allowed select-none';
+  'relative inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-colors duration-[var(--ua-duration-fast)] focus-visible:outline-none focus-visible:shadow-[var(--ua-shadow-focus)] disabled:cursor-not-allowed select-none';
 
 // Disabled controls stay visibly inert through neutral surface and tertiary
 // text rather than opacity-only treatment.
@@ -11,6 +11,11 @@ const DISABLED_STYLE: CSSProperties = {
   background: 'var(--ua-surface-muted)',
   color: 'var(--ua-text-tertiary)',
   border: '1px solid var(--ua-border-default)',
+};
+
+const PASSIVE_DISABLED_STYLE: CSSProperties = {
+  background: 'transparent',
+  color: 'var(--ua-text-disabled)',
 };
 
 const BUTTON_SIZES: Record<ButtonSize, { height: string; px: string; fontSize: number }> = {
@@ -49,7 +54,7 @@ function buttonVariantStyle(variant: ButtonVariant): CSSProperties {
         border: '1px solid var(--ua-action-commit)',
       };
     case 'secondary':
-      return { background: 'var(--ua-surface-primary)', color: 'var(--ua-text-primary)', border: '1px solid var(--ua-border-default)' };
+      return { background: 'var(--ua-surface-primary)', color: 'var(--ua-text-primary)', border: '1px solid var(--ua-border-control)' };
     case 'ghost':
       return { background: 'transparent', color: 'var(--ua-text-secondary)' };
     case 'danger':
@@ -75,7 +80,6 @@ export function getButtonPresentation(
     className: cn(
       BUTTON_BASE,
       disabled ? '' : BUTTON_VARIANT_CLASSES[variant],
-      !inert && disabled ? 'opacity-50' : '',
       className,
     ),
     style: {
@@ -87,6 +91,7 @@ export function getButtonPresentation(
       minWidth: isLink ? undefined : 'fit-content',
       ...buttonVariantStyle(variant),
       ...(inert ? DISABLED_STYLE : null),
+      ...(!inert && disabled ? PASSIVE_DISABLED_STYLE : null),
       ...style,
     } as CSSProperties,
     iconSizeClass: BUTTON_ICON_SIZES[size],

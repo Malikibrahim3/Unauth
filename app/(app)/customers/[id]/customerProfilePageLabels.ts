@@ -1,4 +1,5 @@
 import { labelFor } from "@/lib/copy/labels";
+import { shortRef } from "@/lib/ui/displayRef";
 import { label } from "@/lib/ui/labels";
 
 export function labelize(value: string) {
@@ -77,7 +78,7 @@ export function customerClaimSummaryDisplay(claim: {
     status: label('caseStatus', claim.status),
     claimType: label('claimType', claim.claim_type),
     orderReference:
-      claim.order_ref ?? claim.shopify_order_id ?? claim.id.slice(0, 8),
+      shortRef(claim.order_ref ?? claim.shopify_order_id, claim.id),
   };
 }
 

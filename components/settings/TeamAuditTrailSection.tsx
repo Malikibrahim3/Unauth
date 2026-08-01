@@ -7,11 +7,16 @@ import {
 
 type TeamAuditTrailSectionProps = {
   auditTrail: AuditRow[];
+  /** Render within the Team working surface instead of creating another card. */
+  joined?: boolean;
 };
 
-export function TeamAuditTrailSection({ auditTrail }: TeamAuditTrailSectionProps) {
+export function TeamAuditTrailSection({ auditTrail, joined = false }: TeamAuditTrailSectionProps) {
   return (
-    <section className="rounded-md border" style={{ background: 'var(--ua-surface-primary)', borderColor: 'var(--ua-border-subtle)' }}>
+    <section
+      className={joined ? 'border-t border-[var(--ua-border-subtle)]' : 'rounded-md border'}
+      style={{ background: 'var(--ua-surface-primary)', borderColor: 'var(--ua-border-subtle)' }}
+    >
       <div className="border-b px-4 py-3" style={{ borderColor: 'var(--ua-border-subtle)' }}>
         <h2 className="text-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>Role audit</h2>
         <p className="mt-1 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>Recent invites, role changes, and removals.</p>

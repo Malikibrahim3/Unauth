@@ -2,7 +2,7 @@
 
 import { CheckCircle2, Scale, ShieldAlert } from 'lucide-react';
 import { useRef, useState } from 'react';
-import { Button, Card, Modal, Select, StatusBadge } from '@/components/ui';
+import { Bone, Button, Card, Modal, Select, StatusBadge } from '@/components/ui';
 import {
   mutateInvestigation,
   newInvestigationIdempotencyKey,
@@ -293,7 +293,7 @@ export function ResponsibilityAssessmentCard({
       </div>
 
       {loading && !data ? (
-        <div className="mt-4 h-24 animate-pulse rounded-md bg-[var(--ua-surface-muted)]" />
+        <Bone className="mt-4 h-24" />
       ) : error || !projection ? (
         <div role="alert" className="mt-4 rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] p-3 text-sm text-[var(--ua-text-secondary)]">
           Responsibility assessment is unavailable. No confirmation has been recorded.

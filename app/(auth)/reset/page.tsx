@@ -14,6 +14,12 @@ function mapResetError(message: string): string {
   return 'We could not send a reset link. Please try again.';
 }
 
+function validateEmail(email: string): string {
+  if (!email.trim()) return 'Enter your email address.';
+  if (!/^\S+@\S+\.\S+$/.test(email.trim())) return 'Enter a valid email address.';
+  return '';
+}
+
 export default function ResetPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -23,6 +29,11 @@ export default function ResetPage() {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const validationError = validateEmail(email);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
     setLoading(true);
     setError('');
 
@@ -42,7 +53,7 @@ export default function ResetPage() {
 
   if (sent) {
     return (
-      <Panel as="section" variant="panel" className="p-6">
+      <Panel as="section" variant="panel" className="min-h-[324px] p-6">
         <h1 className="text-[length:var(--ua-text-page-title-size)] font-semibold leading-6 tracking-normal text-[var(--ua-text-primary)]">Check your email</h1>
         <p className="mt-3 text-sm leading-5 text-[var(--ua-text-secondary)]">
           We&apos;ve sent a reset link to <span className="font-medium text-[var(--ua-text-primary)]">{email.trim()}</span>.
@@ -56,11 +67,11 @@ export default function ResetPage() {
   }
 
   return (
-    <Panel as="section" variant="panel" className="p-6">
+    <Panel as="section" variant="panel" className="min-h-[324px] p-6">
       <h1 className="text-[length:var(--ua-text-page-title-size)] font-semibold leading-6 tracking-normal text-[var(--ua-text-primary)]">Reset your password</h1>
       <p className="mt-3 text-sm leading-5 text-[var(--ua-text-secondary)]">Enter your email and we&apos;ll send you a reset link.</p>
 
-      <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
+      <form className="mt-8 space-y-5" noValidate onSubmit={handleSubmit}>
         <div>
           <label htmlFor="reset-email" className="mb-2 block text-sm font-medium text-[var(--ua-text-secondary)]">
             Email
@@ -71,8 +82,12 @@ export default function ResetPage() {
             type="email"
             autoComplete="email"
             value={email}
-            onChange={(event) => setEmail(event.target.value)}
+            onChange={(event) => {
+              setEmail(event.target.value);
+              setError('');
+            }}
             required
+            aria-invalid={Boolean(error)}
             aria-describedby={error ? 'reset-email-error' : undefined}
             className={authInputClassName}
             placeholder="you@company.com"

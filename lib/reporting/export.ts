@@ -12,6 +12,10 @@ import { formatMinorCurrencyNullable } from '@/lib/utils/format';
 
 export const REPORT_EXPORT_VERSION = 'mvp-plus-financial-v2';
 export type ReportExportView = 'metrics' | 'outcomes';
+export type ReportExportScope = {
+  metric?: FinancialReportMetric | null;
+  category?: string | null;
+};
 
 const FINANCIAL_DEFINITIONS: Record<FinancialReportMetric, string> = {
   requested: 'Requested value recorded by the source or merchant.',
@@ -48,6 +52,7 @@ const FINANCIAL_TIME_BASIS = 'Case submitted in the selected period.';
 export function buildReportExportRows(
   report: IntelligenceReport,
   view: ReportExportView,
+  scope: ReportExportScope = {},
 ): unknown[][] {
   const header = [
     'report_version',
@@ -68,7 +73,7 @@ export function buildReportExportRows(
   if (view === 'outcomes') {
     return [
       header,
-      ...report.causes.map((row) => [
+      ...report.causes.filter((row) => !scope.category || row.key === scope.category).map((row) => [
         REPORT_EXPORT_VERSION,
         report.generatedAt,
         report.range,
@@ -89,7 +94,7 @@ export function buildReportExportRows(
   return [
     header,
     ...report.bridges.flatMap((bridge) =>
-      FINANCIAL_REPORT_METRICS.map((metric) => {
+      FINANCIAL_REPORT_METRICS.filter((metric) => !scope.metric || metric === scope.metric).map((metric) => {
         const known = financialMetricIsKnown(bridge, metric);
         const valueMinor = financialMetricValue(bridge, metric);
         const recordIds = known ? financialMetricCaseIds(bridge, metric) : [];

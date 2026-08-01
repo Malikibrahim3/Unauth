@@ -33,9 +33,12 @@ const BAND_ORDER: Array<{ key: WorkDueBandKey; label: string }> = [
 export function WorkQueuePulse({
   bands,
   view,
+  query = '',
 }: {
   bands: Record<WorkDueBandKey, number>;
   view: string;
+  /** Retains the operator's current client-side search when drilling into a due band. */
+  query?: string;
 }) {
   const rows = BAND_ORDER.map((band) => ({ ...band, count: bands[band.key] ?? 0 }));
   const total = rows.reduce((sum, row) => sum + row.count, 0);
@@ -54,6 +57,11 @@ export function WorkQueuePulse({
   }
 
   const atRisk = (bands.overdue ?? 0) + (bands['due-today'] ?? 0);
+  const workHref = (nextView: string) => {
+    const params = new URLSearchParams({ view: nextView });
+    if (query.trim()) params.set('q', query.trim());
+    return `/work?${params.toString()}`;
+  };
 
   return (
     <section className={styles.frame} aria-labelledby="queue-pulse-title">
@@ -87,7 +95,7 @@ export function WorkQueuePulse({
         {rows.map((row) => (
           <li key={row.key}>
             <Link
-              href={`/work?view=${row.key}`}
+              href={workHref(row.key)}
               className={styles.band}
               data-band={row.key}
               aria-current={view === row.key ? 'page' : undefined}

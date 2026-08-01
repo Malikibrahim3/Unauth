@@ -16,13 +16,8 @@ import { financialStageDefinition, financialStageLabel } from "@/lib/ui/labels";
 import { TIME_RANGE_LABELS } from "@/lib/ui/merchantCopy";
 import { DashboardCharts } from "@/components/reporting/DashboardCharts";
 import { RankedContributionChart } from "@/components/charts/authenticated/RankedContributionChart";
-import { MetricGroup } from "@/components/ui/MetricGroup";
-import { SparkTrend } from "@/components/charts/authenticated/micro/SparkTrend";
-import {
-  activeWorkflowOperations,
-  buildDashboardChartBuckets,
-  type DashboardMetricKey,
-} from "@/components/dashboard/dashboardModel";
+import { FinancialEquation } from "@/components/ui/FinancialEquation";
+import { activeWorkflowOperations } from "@/components/dashboard/dashboardModel";
 
 function money(minor: number, currency: string) {
   return formatMinorCurrencyNullable(minor, currency);
@@ -102,34 +97,6 @@ function StageCell({
     </div>
   );
 }
-function cumulativeTrendValues(
-  report: IntelligenceReport,
-  currency: string,
-  state: FinancialReportMetric,
-): number[] {
-  const metric: DashboardMetricKey | null = state === "exposed"
-    ? "exposure"
-    : state === "recovered"
-      ? "recovered"
-      : state === "confirmed_loss"
-        ? "realisedLoss"
-        : null;
-  if (!metric) return [];
-  const buckets = buildDashboardChartBuckets({
-    current: report.trend,
-    range: report.range,
-    currency,
-    metric,
-    asOf: report.generatedAt,
-  });
-  if (!buckets.some((bucket) => bucket.currentMinor != null)) return [];
-  let cumulative = 0;
-  return buckets.map((bucket) => {
-    cumulative += bucket.currentMinor ?? 0;
-    return cumulative;
-  });
-}
-
 export function IntelligenceReportView({
   report,
   comparison = null,
@@ -184,39 +151,29 @@ export function IntelligenceReportView({
                     {financialMetricCaseIds(b, "exposed").length} cases with recorded exposure
                   </Link>
                 </div>
-                <MetricGroup
-                  className="mt-2"
-                  aria-label={`${b.currency} headline financial metrics`}
-                  items={HEADLINE_STEPS.map((step) => {
-                    const known = financialMetricIsKnown(b, step.state);
-                    const values = cumulativeTrendValues(report, b.currency, step.state);
-                    return {
-                      label: step.label,
-                      value: (
-                        <Link
-                          className="hover:text-[var(--ua-action-primary)]"
-                          href={financialReportRecordsHref({
-                            range: report.range,
-                            currency: b.currency,
-                            metric: step.state,
-                            timezone: report.timezone,
-                          })}
-                        >
-                          {known ? money(b[step.key] as number, b.currency) : "Unavailable"}
-                        </Link>
-                      ),
-                      description: step.definition,
-                      microchart: values.length > 1 ? (
-                        <SparkTrend
-                          values={values}
-                          colourVar={step.state === "recovered" ? "--ua-success" : "--ua-chart-primary"}
-                          width={72}
-                          height={24}
-                        />
-                      ) : undefined,
-                    };
-                  })}
-                />
+                <div className="mt-3">
+                  <FinancialEquation
+                    className="ua-financial-equation--summary"
+                    label={`${b.currency} financial decision ledger`}
+                    items={HEADLINE_STEPS.map((step) => {
+                      const known = financialMetricIsKnown(b, step.state);
+                      return {
+                        key: step.key,
+                        label: step.label,
+                        value: known ? money(b[step.key] as number, b.currency) : 'Unavailable',
+                        detail: step.definition,
+                        state: known ? 'known' as const : 'unavailable' as const,
+                        href: financialReportRecordsHref({
+                          range: report.range,
+                          currency: b.currency,
+                          metric: step.state,
+                          timezone: report.timezone,
+                        }),
+                      };
+                    })}
+                    conclusion={`${financialMetricCaseIds(b, "exposed").length} cases carry recorded exposure in this scope.`}
+                  />
+                </div>
               </div>
             ))}
           </div>

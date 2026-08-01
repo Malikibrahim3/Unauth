@@ -12,10 +12,10 @@ export type GradeVisual = {
 
 export function gradeVisualForLookup(lookup: LookupResponse): GradeVisual {
   switch (lookup.confidence) {
-    case 'definite': return { label: 'DEFINITE', className: 'grade-definite' };
-    case 'probable': return { label: 'PROBABLE', className: 'grade-probable' };
-    case 'possible': return { label: 'POSSIBLE', className: 'grade-possible' };
-    default: return { label: 'WEAK', className: 'grade-weak' };
+    case 'definite': return { label: 'Definite match', className: 'grade-definite' };
+    case 'probable': return { label: 'Probable match', className: 'grade-probable' };
+    case 'possible': return { label: 'Possible match', className: 'grade-possible' };
+    default: return { label: 'Weak match', className: 'grade-weak' };
   }
 }
 

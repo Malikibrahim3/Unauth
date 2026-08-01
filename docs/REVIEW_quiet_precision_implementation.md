@@ -1,9 +1,13 @@
-# Review — Quiet Precision implementation
+# HISTORICAL REVIEW — Quiet Precision implementation
 
 - **Date:** 2026-07-25
 - **Reviewed against:** [`IMPL_quiet_precision_product_ui.md`](./IMPL_quiet_precision_product_ui.md), [`styles/authenticated/README.md`](../styles/authenticated/README.md)
 - **Method:** live browser review at 1440×900 (light + dark) and 390×844, logged in as the seeded demo merchant; plus static audit of tokens, primitives, charts, states, and the deletion ledger
 - **Verdict:** the *appearance* landed. The *cutover* did not. The doc claims "product-wide implementation complete"; the runtime is a new token layer sitting on top of the old one, and several page families never adopted the composition the spec prescribes.
+
+> [!WARNING]
+> Historical evidence only. This review and its source specification cannot
+> override the Living Precision contract or its numbered execution phases.
 
 ---
 
@@ -84,7 +88,7 @@ $ npm run lint:authenticated-design
 Authenticated design guard passed (404 files checked).
 ```
 
-It passes with 3,271 legacy token references in the tree. `scripts/check-authenticated-design.mjs` is not empty — it does check old palette literals, landing *tokens*, hardcoded colours, arbitrary `rounded-[…]`/`boxShadow`, direct chart-library imports, echarts, the deleted `--dashboard-*` remap, Recharts defaults, and `animate-pulse` in `loading.tsx`. The gap is narrower but decisive: **there is no rule for the legacy token namespace itself**. `oldPalette` only matches `--copper-*` and `--brand-rust*`, so all 3,271 `var(--accent)` / `var(--surface)` / `var(--text-primary)` references pass unnoticed — and that is the single violation the whole cutover turns on. Missing alongside it: landing *primitive* imports, arbitrary non-radius design literals (`text-[13px]`, `tracking-[…]`), hand-rolled tables, uppercase type, and loading files that hand-build geometry without importing a shared skeleton.
+It passes with 3,271 legacy token references in the tree. `scripts/check-authenticated-design.mjs` is not empty — it does check old palette literals, landing *tokens*, hardcoded colours, arbitrary rounded-value utilities/`boxShadow`, direct chart-library imports, echarts, the deleted `--dashboard-*` remap, Recharts defaults, and `animate-pulse` in `loading.tsx`. The gap is narrower but decisive: **there is no rule for the legacy token namespace itself**. `oldPalette` only matches `--copper-*` and `--brand-rust*`, so all 3,271 `var(--accent)` / `var(--surface)` / `var(--text-primary)` references pass unnoticed — and that is the single violation the whole cutover turns on. Missing alongside it: landing *primitive* imports, arbitrary non-radius design literals (`text-[13px]`, arbitrary tracking utilities), hand-rolled tables, uppercase type, and loading files that hand-build geometry without importing a shared skeleton.
 
 Meanwhile the gate that *does* work is red:
 
@@ -98,7 +102,7 @@ Missing destinations:
 
 Two navigation destinations were lost in the refactor. §17.1 lists this gate as mandatory and §17.3 requires "every route and redirect" preserved. This is currently failing on the working tree.
 
-**Arbitrary Tailwind values** (§14.4 prohibited, §16.2 listed for deletion) are still pervasive in authenticated code: **1,955** arbitrary-value classes, of which **428 contain a raw hex or px literal** (`text-[13px]`, `rounded-[10px]`, `bg-[#…]`) and only 229 route through `var(--ua-*)`. These are visible in the live DOM — e.g. the `/work` filter chips render as `rounded-[var(…)] h-7 …`.
+**Arbitrary Tailwind values** (§14.4 prohibited, §16.2 listed for deletion) are still pervasive in authenticated code: **1,955** arbitrary-value classes, of which **428 contain a raw hex or px literal** (`text-[13px]`, `rounded-[10px]`, raw-hex background utilities) and only 229 route through `var(--ua-*)`. These are visible in the live DOM — e.g. the `/work` filter chips render with a CSS-variable rounded utility and a compact fixed height.
 
 ---
 

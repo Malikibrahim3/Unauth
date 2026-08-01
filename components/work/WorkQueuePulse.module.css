@@ -1,15 +1,12 @@
 /*
  * Queue pulse geometry. §6.3 gives a compact operational visual 140–180px; the
- * frame below lands in that range at every supported width, and the stacked bar
- * itself is 14px — above the 12px absolute bar floor, not a 3px rail.
+ * In the Instrument Grade shell this is a compact queue inspector beside the
+ * dominant work registry.
  */
 .frame {
   display: grid;
   gap: var(--ua-space-3);
-  padding: var(--ua-space-5);
-  border: 1px solid var(--ua-border-default);
-  border-radius: var(--ua-radius-surface);
-  background: var(--ua-surface-primary);
+  padding: 16px 0 18px;
 }
 
 .header {
@@ -74,9 +71,20 @@
   list-style: none;
 }
 
-@media (min-width: 1280px) {
+@media (min-width: 768px) and (max-width: 1439px) {
+  .frame {
+    grid-template-columns: minmax(220px, 0.8fr) minmax(280px, 1.2fr);
+    align-items: center;
+    gap: 12px 20px;
+    padding: 14px 0 16px;
+  }
+
+  .header {
+    grid-row: span 2;
+  }
+
   .bands {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -86,8 +94,8 @@
   gap: var(--ua-space-1-5);
   min-height: var(--ua-control-height-sm);
   padding-inline: var(--ua-space-2);
-  border: 1px solid transparent;
-  border-radius: var(--ua-radius-control);
+  border: 0;
+  border-radius: 0;
   color: var(--ua-text-secondary);
   font-size: var(--ua-text-metadata-size);
   transition: background-color var(--ua-duration-base) var(--ua-ease-standard),
@@ -101,8 +109,7 @@
 }
 
 .band[aria-current="page"] {
-  border-color: var(--ua-accent-200);
-  background: var(--ua-accent-100);
+  background: transparent;
   color: var(--ua-accent-800);
   font-weight: 500;
 }

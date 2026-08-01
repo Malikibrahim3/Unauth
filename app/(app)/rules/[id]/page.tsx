@@ -13,7 +13,6 @@ import {
   RuleVersionWorkbench,
   type RuleVersionRecord,
 } from "@/components/rules/RuleVersionWorkbench";
-import { AuthenticatedPageHeader } from "@/components/authenticated/AuthenticatedPageHeader";
 import { SetBreadcrumbLabel } from "@/components/layout/SetBreadcrumbLabel";
 import pageStyles from "@/components/authenticated/AuthenticatedPageChrome.module.css";
 
@@ -62,12 +61,10 @@ export default async function RuleDetail({
   return (
     <div>
       <SetBreadcrumbLabel label={display.name} />
-      <AuthenticatedPageHeader
-        title={display.name}
-        subtitle={display.description || "No description. Add one in the next draft so operators understand intent and scope."}
-      />
       <div className={pageStyles.pageBody}>
-        <RuleVersionWorkbench ruleId={id} initialVersions={versions} canManage={canManage} />
+        <div className="pt-5">
+          <RuleVersionWorkbench ruleId={id} initialVersions={versions} canManage={canManage} />
+        </div>
       </div>
     </div>
   );

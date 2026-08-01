@@ -2,35 +2,27 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 import {
   AlertTriangle,
   ArrowRight,
   CalendarDays,
   Check,
   ChevronDown,
-  CircleGauge,
-  Database,
-  RotateCcw,
-  ShieldCheck,
-  TrendingDown,
-  TrendingUp,
 } from 'lucide-react';
 import ExportMenu from '@/components/reports/ExportMenu';
-import { Modal } from '@/components/ui';
-import { ComboBarLineChart } from '@/components/charts/authenticated/cartesian/ComboBarLineChart';
-import { CompositionDonutChart } from '@/components/charts/authenticated/cartesian/CompositionDonutChart';
-import { MetricTabs, type MetricTabItem } from '@/components/charts/authenticated/micro/MetricTabs';
-import { MetricRail } from '@/components/charts/authenticated/micro/MetricRail';
-import { WaffleMatrixChart } from '@/components/charts/authenticated/operational/WaffleMatrixChart';
+import { Modal, SourceBeacon } from '@/components/ui';
+import { ChartState, type ChartDataTableModel } from '@/components/charts/authenticated/ChartFrame';
 import type {
   DashboardPeriodComparison,
   IntelligenceReport,
 } from '@/lib/reporting/intelligence';
-import { financialReportRecordsHref, REPORT_RANGES, type FinancialReportMetric } from '@/lib/reporting/intelligence';
+import {
+  financialReportRecordsHref,
+  REPORT_RANGES,
+  type FinancialReportMetric,
+} from '@/lib/reporting/intelligence';
 import { ButtonLink } from '@/components/ui/ButtonLink';
-import { MetricGroup } from '@/components/ui/MetricGroup';
-import { RankedContributionChart } from '@/components/charts/authenticated/RankedContributionChart';
 import {
   formatDateAbsolute,
   formatMoney,
@@ -39,24 +31,23 @@ import {
 } from '@/lib/utils/format';
 import {
   bridgeMetricValue,
-  activeWorkflowOperations,
+  buildDashboardAttentionPriorities,
   buildDashboardChartBuckets,
-  calculateDataHealth,
+  buildDashboardOperatingStatement,
+  calculateDecisionSafety,
+  calculateSourceFreshness,
   comparisonLabel,
   DASHBOARD_METRICS,
-  groupWorkflowOperations,
+  dashboardBucketBasisLabel,
+  summarizeDashboardWork,
+  type DashboardAttentionPriority,
   type DashboardMetricKey,
 } from './dashboardModel';
 import { TIME_RANGE_LABELS } from '@/lib/ui/merchantCopy';
+import { DashboardPositionChart } from './DashboardPositionChart';
+import { DecisionHeader } from '@/components/authenticated/DecisionHeader';
+import { ScopeStrip } from '@/components/authenticated/ScopeStrip';
 import styles from './dashboardPilot.module.css';
-import dvStyles from '@/components/charts/authenticated/AuthenticatedCharts.module.css';
-
-const METRIC_ICONS: Record<DashboardMetricKey, typeof TrendingUp> = {
-  exposure: TrendingUp,
-  recovered: RotateCcw,
-  prevented: ShieldCheck,
-  realisedLoss: TrendingDown,
-};
 
 type DashboardOverviewProps = {
   report: IntelligenceReport;
@@ -105,6 +96,39 @@ function FilterSelect({
   );
 }
 
+function attentionReasons(
+  operation: DashboardAttentionPriority,
+  selectedCurrency: string | null,
+): string[] {
+  const reasons: string[] = [];
+  if (operation.overdueCount > 0) {
+    reasons.push(`${formatNumber(operation.overdueCount)} overdue`);
+  } else if (operation.approachingCount > 0) {
+    reasons.push(
+      `${formatNumber(operation.approachingCount)} approaching review SLA`,
+    );
+  }
+  if (
+    selectedCurrency
+    && operation.selectedExposureMinor != null
+    && reasons.length < 2
+  ) {
+    reasons.push(
+      `${operation.unvaluedCaseCount > 0 ? 'At least ' : ''}${formatMoney(
+        operation.selectedExposureMinor,
+        selectedCurrency,
+      )} exposure`,
+    );
+  }
+  if (selectedCurrency && operation.unvaluedCaseCount > 0 && reasons.length < 2) {
+    reasons.push(
+      `No ${selectedCurrency} value for ${formatNumber(operation.unvaluedCaseCount)}`,
+    );
+  }
+  if (reasons.length === 0) reasons.push(`${formatNumber(operation.activeCount)} active`);
+  return reasons.slice(0, 2);
+}
+
 export function DashboardOverview({
   report,
   comparison,
@@ -116,6 +140,7 @@ export function DashboardOverview({
   const searchParams = useSearchParams();
   const [metric, setMetric] = useState<DashboardMetricKey>('exposure');
   const [healthOpen, setHealthOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   const bridge = report.bridges.find((item) => item.currency === selectedCurrency) ?? null;
   const previousBridge = comparison?.bridges.find((item) => item.currency === selectedCurrency) ?? null;
@@ -149,19 +174,91 @@ export function DashboardOverview({
     (bucket) => bucket.currentMinor != null || bucket.previousMinor != null,
   );
   const selectedMetric = DASHBOARD_METRICS.find((item) => item.key === metric) ?? DASHBOARD_METRICS[0];
+  const selectedReportMetric = DASHBOARD_REPORT_METRICS[metric];
   const selectedMetricValue = bridgeMetricValue(bridge, metric);
   const recoveredMetricValue = bridgeMetricValue(bridge, 'recovered');
-  const workflowGroups = groupWorkflowOperations(report.operations);
-  const openOperations = activeWorkflowOperations(report.operations);
-  const openOperationCount = openOperations.reduce((sum, operation) => sum + operation.count, 0);
-  const health = calculateDataHealth(report.coverage, report.reconciliation.ok);
-  const needsAction = workflowGroups[0].count;
-  const readyForDecision = report.operations
-    .filter((operation) => /ready/i.test(operation.label))
-    .reduce((sum, operation) => sum + operation.count, 0);
-  const actionPercent = report.recordCount > 0
-    ? Math.round((needsAction / report.recordCount) * 100)
+  const work = summarizeDashboardWork(report.operations);
+  const sourceFreshness = calculateSourceFreshness(report.coverage);
+  const decisionSafety = calculateDecisionSafety({
+    hasFinancialValue: selectedMetricValue != null && selectedCurrency != null,
+    confidence: report.reconciliation.confidence,
+    sourceFreshness,
+  });
+  const attentionRows = buildDashboardAttentionPriorities(
+    report.operations,
+    selectedCurrency,
+  );
+  const attentionRankingMode = attentionRows[0]?.rankingMode ?? 'composite';
+  const operatingStatement = buildDashboardOperatingStatement({
+    work,
+    sourceFreshness,
+    confidence: report.reconciliation.confidence,
+    hasFinancialValue: selectedMetricValue != null && selectedCurrency != null,
+  });
+  const financialRecordsHref = selectedCurrency
+    ? financialReportRecordsHref({
+        range: report.range,
+        currency: selectedCurrency,
+        metric: selectedReportMetric,
+        timezone: report.timezone,
+      })
     : null;
+  const supportingOutcomes = DASHBOARD_METRICS
+    .filter((item) => item.key !== metric)
+    .map((item) => ({
+      ...item,
+      value: bridgeMetricValue(bridge, item.key),
+    }));
+  const coverageNeedingAttention = [...sourceFreshness.rows]
+    .filter((row) => row.staleRecords > 0)
+    .sort((a, b) => b.staleRecords - a.staleRecords);
+  const leadingStaleSource = coverageNeedingAttention[0] ?? null;
+  const financialScope = `${TIME_RANGE_LABELS[report.range]}${selectedCurrency ? ` · ${selectedCurrency}` : ''}`;
+  const comparisonSummary = compare === 'previous'
+    ? comparisonLabel(selectedMetricValue, bridgeMetricValue(previousBridge, metric))
+    : selectedMetric.description;
+  const chartCoverageSummary = compare === 'previous'
+    ? comparisonSummary
+    : chartData.length > 0
+      ? `${formatNumber(chartData.filter((bucket) => (bucket.currentMinor ?? 0) > 0).length)} of ${formatNumber(chartData.length)} intervals carry ${selectedMetric.label.toLowerCase()}`
+      : comparisonSummary;
+  const selectedMetricIsAffected = report.reconciliation.confidence.state === 'qualified'
+    && (
+      report.reconciliation.confidence.affectedCurrencies.length === 0
+      || !selectedCurrency
+      || report.reconciliation.confidence.affectedCurrencies.includes(selectedCurrency)
+    )
+    && report.reconciliation.confidence.affectedMetrics.includes(selectedReportMetric);
+  const chartTable: ChartDataTableModel | undefined = (() => {
+    if (!selectedCurrency || !hasChartData) return undefined;
+    const columns = [
+      { key: 'period', header: 'Period' },
+      { key: 'current', header: selectedMetric.label, numeric: true },
+    ];
+    if (metric === 'exposure' && recoveredMetricValue != null) {
+      columns.push({ key: 'recovered', header: 'Recovered', numeric: true });
+    }
+    if (compare === 'previous') {
+      columns.push({ key: 'previous', header: 'Previous period', numeric: true });
+    }
+    return {
+      caption: `${selectedMetric.label} by period — ${selectedCurrency}`,
+      columns,
+      rows: chartData.map((bucket, index) => ({
+        key: bucket.key,
+        header: bucket.label,
+        values: [
+          formatMinorCurrencyNullable(bucket.currentMinor, selectedCurrency),
+          ...(metric === 'exposure' && recoveredMetricValue != null
+            ? [formatMinorCurrencyNullable(recoveryChartData[index]?.currentMinor ?? null, selectedCurrency)]
+            : []),
+          ...(compare === 'previous'
+            ? [formatMinorCurrencyNullable(bucket.previousMinor, selectedCurrency)]
+            : []),
+        ],
+      })),
+    };
+  })();
 
   function updateQuery(changes: Record<string, string | null>) {
     const next = new URLSearchParams(searchParams.toString());
@@ -169,65 +266,52 @@ export function DashboardOverview({
       if (value == null) next.delete(key);
       else next.set(key, value);
     }
-    router.push(`${pathname}?${next.toString()}`);
+    startTransition(() => {
+      router.push(`${pathname}?${next.toString()}`);
+    });
   }
 
   return (
     <div className={styles.dashboardPilot}>
-      <header className={styles.pageHeading}>
-        <div>
-          <h1>Overview</h1>
-          <p>Payout exposure, recovery, workflow, and source health.</p>
-        </div>
-        <div className={styles.headingActions}>
-          <ButtonLink href="/work" size="sm" data-capability-id="work.open-header">
-            Open work
-          </ButtonLink>
-          <Link
-            href={`/reports?range=${report.range}&timezone=${encodeURIComponent(report.timezone)}`}
-            className={styles.textAction}
-            data-capability-id="reports.open-full"
-          >
-            Full reports <ArrowRight aria-hidden="true" size={13} />
-          </Link>
-        </div>
-      </header>
-
-      <div className={styles.filterBar} aria-label="Dashboard filters">
-        <div className={styles.filterGroup}>
+      <DecisionHeader
+        title="Overview"
+        sentence={operatingStatement}
+        scope={
+          <ScopeStrip
+            primary={<div className={styles.filterGroup} role="group" aria-label="Dashboard controls" aria-busy={isPending}>
           <FilterSelect
             label="Date range"
             capabilityId="reports.range"
             value={report.range}
+            disabled={isPending}
             onChange={(value) => updateQuery({
               range: value,
               compare: value === 'all' ? 'none' : compare,
             })}
           >
-          {REPORT_RANGES.map((range) => (
-            <option key={range} value={range}>{TIME_RANGE_LABELS[range]}</option>
-          ))}
+            {REPORT_RANGES.map((range) => (
+              <option key={range} value={range}>{TIME_RANGE_LABELS[range]}</option>
+            ))}
           </FilterSelect>
 
-          <span className={styles.compareCopy}>Compare to</span>
+          <span className={styles.compareCopy}>Compare</span>
           <FilterSelect
             label="Comparison period"
             capabilityId="reports.compare"
             value={report.range === 'all' ? 'none' : compare}
-            disabled={report.range === 'all'}
+            disabled={report.range === 'all' || isPending}
             onChange={(value) => updateQuery({ compare: value })}
           >
             <option value="previous">Previous period</option>
-            <option value="none">No comparison</option>
+            <option value="none">Off</option>
           </FilterSelect>
-        </div>
 
-        <div className={styles.filterGroup}>
           {report.bridges.length > 0 && selectedCurrency ? (
             <FilterSelect
               label="Currency"
               capabilityId="reports.currency"
               value={selectedCurrency}
+              disabled={isPending}
               onChange={(value) => updateQuery({ currency: value })}
             >
               {report.bridges.map((item) => (
@@ -235,295 +319,378 @@ export function DashboardOverview({
               ))}
             </FilterSelect>
           ) : null}
-          <div className={styles.exportWrap}>
-            <ExportMenu range={report.range} timezone={report.timezone} currency={selectedCurrency} />
-          </div>
-        </div>
-      </div>
 
-      <MetricGroup
-        className="my-4"
-        items={[
-          {
-            label: 'Cases in period',
-            value: formatNumber(report.recordCount),
-            description: TIME_RANGE_LABELS[report.range],
-          },
-          {
-            label: 'Need action',
-            value: formatNumber(needsAction),
-            description: actionPercent == null ? 'No cases in this period' : `${actionPercent}% of cases`,
-            microchart: (
-              <MetricRail
-                value={needsAction}
-                total={report.recordCount}
-                tone="attention"
-                label={`${formatNumber(needsAction)} of ${formatNumber(report.recordCount)} cases need action`}
-              />
-            ),
-          },
-          {
-            label: 'Ready for decision',
-            value: formatNumber(readyForDecision),
-            description: 'Evidence complete',
-            microchart: (
-              <MetricRail
-                value={readyForDecision}
-                total={report.recordCount}
-                tone="positive"
-                label={`${formatNumber(readyForDecision)} of ${formatNumber(report.recordCount)} cases are ready for decision`}
-              />
-            ),
-          },
-          {
-            label: 'Source freshness',
-            value: health.freshnessPercent == null ? 'Unavailable' : `${health.freshnessPercent}%`,
-            description: `${formatNumber(health.staleRecords)} stale records`,
-            microchart: health.freshnessPercent == null ? undefined : (
-              <MetricRail
-                value={health.freshnessPercent}
-                total={100}
-                tone={health.freshnessPercent >= 90 ? 'positive' : 'attention'}
-                label={`${health.freshnessPercent}% source freshness`}
-              />
-            ),
-          },
-        ]}
+            </div>}
+            utility={<>
+          <div className={styles.exportWrap}>
+            <ExportMenu
+              range={report.range}
+              timezone={report.timezone}
+              currency={selectedCurrency}
+              metric={selectedReportMetric}
+              triggerLabel="Reports"
+              reportsHref={`/reports?range=${report.range}&timezone=${encodeURIComponent(report.timezone)}`}
+            />
+          </div>
+
+          <span className={styles.pendingStatus} role="status" aria-live="polite">
+            {isPending ? 'Updating…' : ''}
+          </span>
+            </>}
+          />
+        }
       />
 
-      <section className={styles.performanceCard} aria-label="Value this period">
-        <div className={styles.cardHeader}>
-          <div>
-            <div className={styles.titleRow}>
-              <h2>Is payout exposure improving?</h2>
-              <span className={styles.infoDot} title="Canonical financial entries for the selected period">i</span>
+      <section className={styles.positionCanvas} aria-labelledby="payout-position-title">
+        <header className={styles.positionHeader}>
+          <h2 id="payout-position-title">Payout position</h2>
+          {bridge && selectedCurrency ? (
+            <div className={styles.metricSwitcher} role="group" aria-label="Payout metric">
+              {DASHBOARD_METRICS.map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  aria-pressed={item.key === metric}
+                  onClick={() => setMetric(item.key)}
+                >
+                  {item.label === 'Payout exposure' ? 'Exposure' : item.label}
+                </button>
+              ))}
             </div>
-            <p>{TIME_RANGE_LABELS[report.range]}{selectedCurrency ? ` · ${selectedCurrency}` : ''}</p>
+          ) : null}
+        </header>
+
+        <div className={styles.positionBody}>
+          <div className={styles.positionReading}>
+            <div className={styles.positionLead}>
+              <span className={styles.positionMetricLabel}>{selectedMetric.label}</span>
+              <strong
+                className={styles.positionValue}
+                data-qualified={selectedMetricIsAffected ? 'true' : undefined}
+              >
+                {selectedMetricValue == null || !selectedCurrency
+                  ? 'Unavailable'
+                  : formatMoney(selectedMetricValue, selectedCurrency)}
+              </strong>
+              <p className={styles.positionDefinition}>{selectedMetric.description}</p>
+              <p className={styles.positionComparison}>
+                {TIME_RANGE_LABELS[report.range]}
+                {selectedCurrency ? ` · ${selectedCurrency}` : ''}
+                {` · ${formatNumber(report.recordCount)} ${report.recordCount === 1 ? 'case' : 'cases'}`}
+              </p>
+            </div>
+
+            <p className={styles.workHierarchy} aria-label={`${work.activeCount} active cases, ${work.needsActionCount} need action, ${work.readyCount} of those are ready now`}>
+              <span><strong>{formatNumber(work.activeCount)}</strong> active cases</span>
+              <i aria-hidden="true">·</i>
+              <span><strong>{formatNumber(work.needsActionCount)}</strong> need action</span>
+              <i aria-hidden="true">·</i>
+              <span><strong>{formatNumber(work.readyCount)}</strong> ready now</span>
+            </p>
+
+            <dl className={styles.outcomeLine} aria-label="Supporting financial outcomes">
+              {supportingOutcomes.map((item) => (
+                <div key={item.key}>
+                  <dt>{item.label}</dt>
+                  <dd>
+                    {item.value == null || !selectedCurrency
+                      ? 'Unavailable'
+                      : formatMoney(item.value, selectedCurrency)}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+
+            <div className={styles.positionActions}>
+              <ButtonLink href="/work" size="sm" data-capability-id="work.open-header">
+                Open work
+              </ButtonLink>
+              {financialRecordsHref ? (
+                <Link
+                  className={styles.textAction}
+                  href={financialRecordsHref}
+                  aria-label="View underlying records"
+                >
+                  View records <ArrowRight aria-hidden="true" size={13} />
+                </Link>
+              ) : null}
+            </div>
+
+            <p className={styles.positionProvenance}>
+              {report.reconciliation.confidence.state === 'qualified'
+                ? 'Validated entries only'
+                : 'Validated ledger values'}
+              {' · '}
+              generated {formatDateAbsolute(report.generatedAt)}
+            </p>
+          </div>
+
+          <div className={styles.timelineRegion}>
+            {bridge && selectedCurrency ? (
+              selectedMetricValue != null && chartData.length > 0 && hasChartData ? (
+                <DashboardPositionChart
+                  key={`${metric}-${report.range}-${selectedCurrency}-${compare}`}
+                  data={chartData}
+                  secondary={
+                    metric === 'exposure' && recoveredMetricValue != null
+                      ? recoveryChartData.map((bucket) => bucket.currentMinor)
+                      : null
+                  }
+                  comparison={compare === 'previous'}
+                  metricLabel={selectedMetric.label}
+                  scope={financialScope}
+                  basisLabel={dashboardBucketBasisLabel(report.range)}
+                  idleDetail={chartCoverageSummary}
+                  formatValue={(value) => (
+                    value == null ? 'Unavailable' : formatMoney(value, selectedCurrency)
+                  )}
+                  table={chartTable}
+                />
+              ) : (
+                <ChartState
+                  kind="empty"
+                  title={`No dated ${selectedMetric.label.toLowerCase()} entries`}
+                  description="The period total remains visible. Choose another metric or review the underlying records."
+                  minHeight={226}
+                />
+              )
+            ) : (
+              <ChartState
+                kind="unavailable"
+                title="Financial position unavailable"
+                description="Case work remains available, but no verified financial history with a valid currency was found."
+                action={<Link href="/integrations">Review sources</Link>}
+                minHeight={226}
+              />
+            )}
           </div>
         </div>
 
-        {!report.reconciliation.ok ? (
-          <div className={styles.reconciliationNotice} role="status">
-            <AlertTriangle aria-hidden="true" size={14} />
-            Some ledger entries need review. Valid currency data remains visible.
+        <div
+          className={styles.financialQualifier}
+          data-state={decisionSafety.state}
+          role="status"
+        >
+          {decisionSafety.state === 'complete'
+            ? <Check aria-hidden="true" size={15} />
+            : <AlertTriangle aria-hidden="true" size={15} />}
+          <div>
+            <strong>{decisionSafety.label}</strong>
+            <span>{decisionSafety.detail}</span>
           </div>
-        ) : null}
+          {report.reconciliation.issues.length > 0 || leadingStaleSource ? (
+            <button type="button" onClick={() => setHealthOpen(true)}>Review details</button>
+          ) : null}
+        </div>
+      </section>
 
-        {bridge && selectedCurrency ? (
-          <>
-            <div className={styles.chartHeader}>
+      <div className={styles.operationalGrid}>
+        <section className={styles.attentionSurface} aria-labelledby="attention-title">
+          <header className={styles.sectionHeader}>
+            <div>
+              <h2 id="attention-title">What needs attention</h2>
+              <p>
+                {attentionRows.length > 0
+                  ? attentionRankingMode === 'composite'
+                    ? `Prioritised by review SLA, decision readiness${selectedCurrency ? ` and ${selectedCurrency} exposure` : ''}`
+                    : 'Priority signals unavailable; ordered by active case count'
+                  : 'No active work is waiting in this period'}
+              </p>
+            </div>
+            <Link href="/work" className={styles.textAction}>
+              Open work <ArrowRight aria-hidden="true" size={13} />
+            </Link>
+          </header>
+
+          {attentionRows.length > 0 ? (
+            <div className={styles.attentionList}>
+              {attentionRows.slice(0, 4).map((operation) => {
+                const reasons = attentionReasons(operation, selectedCurrency);
+                return (
+                  <Link href={operation.href} key={operation.key} className={styles.attentionRow}>
+                    <span className={styles.attentionIdentity}>
+                      <strong>{operation.label}</strong>
+                      <span>{operation.supportCopy}</span>
+                    </span>
+                    <span className={styles.attentionReasons}>
+                      {reasons.map((reason) => <span key={reason}>{reason}</span>)}
+                    </span>
+                    <span className={styles.attentionMeasure} aria-hidden="true">
+                      <i style={{ width: `${Math.max(5, operation.priority)}%` }} />
+                    </span>
+                    <strong className={styles.attentionCount}>{formatNumber(operation.activeCount)}</strong>
+                    <ArrowRight className={styles.attentionArrow} aria-hidden="true" size={14} />
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            <div className={styles.attentionEmpty}>
+              <Check aria-hidden="true" size={18} />
               <div>
-                <span>{selectedMetric.label}</span>
-                <strong>{selectedMetricValue == null ? 'Unavailable' : formatMoney(selectedMetricValue, selectedCurrency)}</strong>
-                <Link
-                  href={financialReportRecordsHref({
-                    range: report.range,
-                    currency: selectedCurrency,
-                    metric: DASHBOARD_REPORT_METRICS[metric],
-                    timezone: report.timezone,
-                  })}
-                  className={styles.textAction}
-                >
-                  View underlying records
-                </Link>
+                <strong>No active work is waiting</strong>
+                <span>New evidence and decisions will appear here.</span>
               </div>
-              {metric === 'exposure' || compare === 'previous' ? (
-                <div className={styles.legend} aria-label="Chart legend">
-                  <span><i className={dvStyles[selectedMetric.tone]} /> {selectedMetric.label}</span>
-                  {metric === 'exposure' && recoveredMetricValue != null
-                    ? <span><i className={dvStyles.positive} /> Recovered</span>
-                    : null}
-                  {compare === 'previous' ? <span><i className={styles.comparisonLegend} /> Previous period</span> : null}
+            </div>
+          )}
+        </section>
+
+        <section className={styles.trustSurface} aria-labelledby="data-trust-title">
+          <header className={styles.sectionHeader}>
+            <div>
+              <h2 id="data-trust-title">Data trust</h2>
+              <p>Source, ledger and usable scope</p>
+            </div>
+            {leadingStaleSource ? (
+              <Link href={leadingStaleSource.href} className={styles.textAction}>
+                Review {leadingStaleSource.objectType} <ArrowRight aria-hidden="true" size={13} />
+              </Link>
+            ) : (
+              <button
+                type="button"
+                className={styles.detailButton}
+                onClick={() => setHealthOpen(true)}
+                data-capability-id="reports.data-health.details"
+              >
+                View details
+              </button>
+            )}
+          </header>
+
+          <div className={styles.trustAxes}>
+            <div className={styles.trustAxis}>
+              <div>
+                <span>Source freshness</span>
+                <strong data-tone={sourceFreshness.state === 'current' ? 'positive' : sourceFreshness.state === 'stale' ? 'warning' : 'neutral'}>
+                  {sourceFreshness.state === 'unavailable'
+                    ? 'Unavailable'
+                    : sourceFreshness.state === 'stale'
+                      ? `${formatNumber(sourceFreshness.staleRecords)} stale`
+                      : 'All current'}
+                </strong>
+              </div>
+              <p>
+                {sourceFreshness.freshnessPercent == null
+                  ? 'No connected-source denominator is available.'
+                  : `${formatNumber(sourceFreshness.freshRecords)} of ${formatNumber(sourceFreshness.totalRecords)} current · ${sourceFreshness.freshnessPercent}%`}
+              </p>
+              {sourceFreshness.freshnessPercent != null ? (
+                <div
+                  className={styles.freshnessTrack}
+                  data-state={sourceFreshness.state}
+                  role="img"
+                  aria-label={`${sourceFreshness.freshnessPercent}% of connected-source records are current`}
+                >
+                  <span style={{ width: `${sourceFreshness.freshnessPercent}%` }} />
                 </div>
               ) : null}
             </div>
 
-            <div className={styles.chartRegion} role="region" aria-label="Case financial charts">
-              {selectedMetricValue != null && chartData.length > 0 && hasChartData ? (
-                <ComboBarLineChart
-                  data={chartData.map((bucket, index) => ({
-                    key: bucket.key,
-                    label: bucket.label,
-                    current: bucket.currentMinor,
-                    secondary: metric === 'exposure' && recoveredMetricValue != null
-                      ? recoveryChartData[index]?.currentMinor ?? null
-                      : undefined,
-                    previous: bucket.previousMinor,
-                  }))}
-                  secondary={metric === 'exposure' && recoveredMetricValue != null
-                    ? { label: 'Recovered', colourVar: '--ua-success', encoding: 'bar' }
-                    : undefined}
-                  colourVar={selectedMetric.colourVar}
-                  comparison={compare === 'previous'}
-                  valueFormatter={(value) => formatMinorCurrencyNullable(value, selectedCurrency)}
-                  tooltipFormatter={(value) => formatMoney(value, selectedCurrency)}
-                  height={320}
-                />
-              ) : (
-                <div className={styles.chartEmpty}>
-                  No dated {selectedMetric.label.toLowerCase()} entries were recorded in this period.
-                </div>
-              )}
-            </div>
-
-            <MetricTabs
-              aria-label="Payout metric"
-              active={metric}
-              onSelect={(key) => setMetric(key as DashboardMetricKey)}
-              items={DASHBOARD_METRICS.map<MetricTabItem>((item) => {
-                const current = bridgeMetricValue(bridge, item.key);
-                const previous = compare === 'previous'
-                  ? bridgeMetricValue(previousBridge, item.key)
-                  : null;
-                const Icon = METRIC_ICONS[item.key];
-                return {
-                  key: item.key,
-                  label: item.label,
-                  icon: <Icon aria-hidden="true" size={14} />,
-                  value: current == null ? 'Unavailable' : formatMoney(current, selectedCurrency),
-                  delta: compare === 'previous' ? comparisonLabel(current, previous) : item.description,
-                };
-              })}
-            />
-          </>
-        ) : (
-          <div className={styles.incompleteState}>
-            <Database aria-hidden="true" size={20} />
-            <div>
-              <h3>Financial data is incomplete</h3>
-              <p>No financial history with a valid currency was found. Unavailable is not zero.</p>
-            </div>
-            <Link href="/integrations">Review sources</Link>
-          </div>
-        )}
-      </section>
-
-      <section className={styles.prioritySection} aria-label="Priority work">
-        <RankedContributionChart
-          id="dashboard-priority-work"
-          title="Where is work accumulating?"
-          description="Open cases ranked by the next step they are waiting on."
-          items={openOperations.slice(0, 6).map((operation, index) => ({
-            label: operation.label,
-            value: operation.count,
-            displayValue: `${formatNumber(operation.count)} ${operation.count === 1 ? 'case' : 'cases'}`,
-            href: operation.href,
-            tone: index === 0 ? 'primary' : 'neutral',
-          }))}
-          annotation={{ value: formatNumber(openOperationCount), label: ' open' }}
-        />
-      </section>
-
-      <div className={styles.lowerGrid}>
-        <section className={styles.detailCard} aria-labelledby="workflow-breakdown-title">
-          <div className={styles.detailHeader}>
-            <div>
-              <div className={styles.titleRow}>
-                <h2 id="workflow-breakdown-title">How is work distributed by state?</h2>
-                <span className={styles.infoDot} title="Cases grouped by canonical workflow status">i</span>
+            <div className={styles.trustAxis}>
+              <div>
+                <span>Ledger validation</span>
+                <strong data-tone={report.reconciliation.ok ? 'positive' : 'warning'}>
+                  {report.reconciliation.ok ? 'Passed' : 'Needs review'}
+                </strong>
               </div>
-              <strong>{actionPercent == null ? 'Unavailable' : `${actionPercent}%`}</strong>
-              <p>{actionPercent == null ? 'No cases in this period' : 'of cases currently need action'}</p>
+              <p>
+                {report.reconciliation.ok
+                  ? 'Displayed financial totals reconcile.'
+                  : `${formatNumber(report.reconciliation.confidence.issueCount)} ${report.reconciliation.confidence.issueCount === 1 ? 'issue affects' : 'issues affect'} confidence.`}
+              </p>
             </div>
-          </div>
 
-          {report.recordCount > 0 ? (
-            <>
-            <CompositionDonutChart
-              segments={workflowGroups
-                .filter((group) => group.count > 0)
-                .map((group) => ({ key: group.key, label: group.label, value: group.count, tone: group.tone }))}
-            />
-            <div className={styles.workflowRows}>
-              {report.operations.slice(0, 4).map((operation) => (
-                <Link href={operation.href} key={operation.key}>
-                  <span>{operation.label}</span>
-                  <strong>{formatNumber(operation.count)}</strong>
-                </Link>
-              ))}
-            </div>
-            </>
-          ) : (
-            <p className={styles.cardEmpty}>No payout-case records were found in the selected period.</p>
-          )}
-        </section>
-
-        <section className={styles.detailCard} aria-labelledby="data-health-title">
-          <div className={styles.detailHeader}>
-            <div>
-              <div className={styles.titleRow}>
-                <h2 id="data-health-title">How much source data is current?</h2>
-                <span className={styles.infoDot} title="Source records refreshed within the last 48 hours">i</span>
+            <div className={styles.trustAxis}>
+              <div>
+                <span>Decision-safe scope</span>
+                <strong data-tone={
+                  decisionSafety.state === 'complete'
+                    ? 'positive'
+                    : decisionSafety.state === 'qualified'
+                      ? 'warning'
+                      : 'neutral'
+                }>
+                  {decisionSafety.label}
+                </strong>
               </div>
-              <strong>{health.freshnessPercent == null ? 'Unavailable' : `${health.freshnessPercent}%`}</strong>
-              <p>{health.label}</p>
+              <p>{decisionSafety.detail}</p>
             </div>
-            <button type="button" className={styles.detailButton} onClick={() => setHealthOpen(true)} data-capability-id="reports.data-health.details">Details</button>
           </div>
 
-          {health.freshnessPercent != null ? (
-            <WaffleMatrixChart
-              percent={health.freshnessPercent}
-              current={health.freshRecords}
-              stale={health.staleRecords}
-            />
-          ) : (
-            <p className={styles.cardEmpty}>Source freshness unavailable.</p>
-          )}
-          <div className={styles.healthSummary}>
-            <div><span>Current records</span><strong>{formatNumber(health.freshRecords)}</strong></div>
-            <div><span>Stale records</span><strong>{formatNumber(health.staleRecords)}</strong></div>
-            <div>
-              <span>Ledger checks</span>
-              <strong className={report.reconciliation.ok ? styles.healthOkay : styles.healthWarning}>
-                {report.reconciliation.ok ? <Check aria-hidden="true" size={13} /> : <AlertTriangle aria-hidden="true" size={13} />}
-                {report.reconciliation.ok ? 'Passed' : 'Review'}
-              </strong>
-            </div>
-          </div>
+          {leadingStaleSource ? (
+            <button
+              type="button"
+              className={styles.trustDetailsButton}
+              onClick={() => setHealthOpen(true)}
+              data-capability-id="reports.data-health.details"
+            >
+              View all trust details
+            </button>
+          ) : null}
         </section>
       </div>
 
       <Modal
         open={healthOpen}
         onClose={() => setHealthOpen(false)}
-        title="Data health"
-        description="Freshness and reconciliation across connected source projections."
+        title="Data trust details"
+        description="Connected-source freshness, financial validation, and the scope safe to use."
         size="md"
         footer={
           <button type="button" className={styles.modalClose} onClick={() => setHealthOpen(false)}>Close</button>
         }
       >
-        <div className={styles.modalScore}>
-          <CircleGauge aria-hidden="true" size={18} />
+        <div className={styles.modalTrustGrid}>
           <div>
-            <strong>{health.freshnessPercent == null ? 'Unavailable' : `${health.freshnessPercent}% current`}</strong>
-            <span>{health.label}</span>
+            <span>Source freshness</span>
+            <strong>
+              {sourceFreshness.state === 'unavailable'
+                ? 'Unavailable'
+                : sourceFreshness.state === 'stale'
+                  ? `${formatNumber(sourceFreshness.staleRecords)} stale · ${sourceFreshness.freshnessPercent}% current`
+                  : 'All current'}
+            </strong>
+          </div>
+          <div>
+            <span>Ledger validation</span>
+            <strong>{report.reconciliation.ok ? 'Passed' : 'Needs review'}</strong>
+          </div>
+          <div>
+            <span>Decision-safe scope</span>
+            <strong>{decisionSafety.label}</strong>
           </div>
         </div>
 
         {!report.reconciliation.ok ? (
           <div className={styles.modalIssues}>
-            <strong>Ledger reconciliation needs attention</strong>
+            <strong>Ledger validation needs attention</strong>
             <ul>{report.reconciliation.issues.map((issue) => <li key={issue}>{issue}</li>)}</ul>
           </div>
         ) : null}
 
-        <div className={styles.coverageList}>
-          {report.coverage.map((row) => (
-            <Link href={row.href} key={row.objectType}>
-              <div>
-                <strong>{row.objectType}</strong>
-                <span>{row.latestAt ? `Latest ${formatDateAbsolute(row.latestAt)}` : 'No refresh recorded'}</span>
-              </div>
-              <dl>
-                <div><dt>Records</dt><dd>{formatNumber(row.records)}</dd></div>
-                <div><dt>Current</dt><dd>{formatNumber(row.freshRecords)}</dd></div>
-                <div><dt>Stale</dt><dd>{formatNumber(row.staleRecords)}</dd></div>
-              </dl>
-            </Link>
-          ))}
-        </div>
+        {report.coverage.length > 0 ? (
+          <div className={styles.coverageList}>
+            {report.coverage.map((row) => (
+              <SourceBeacon
+                key={row.objectType}
+                source={row.objectType}
+                authority={row.scope === 'internal' ? 'Internal projection' : 'Connected source'}
+                observedAt={row.latestAt ? `Latest ${formatDateAbsolute(row.latestAt)}` : 'No refresh recorded'}
+                state={row.records === 0 ? 'unavailable' : row.staleRecords > 0 ? 'stale' : 'current'}
+                limitation={`${formatNumber(row.freshRecords)} current · ${formatNumber(row.staleRecords)} stale · ${formatNumber(row.records)} total`}
+                href={row.href}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className={styles.coverageEmpty}>
+            <div>
+              <strong>No connected-source coverage is available</strong>
+              <span>Case work and verified financial values remain available; activity counts and timing are not decision-safe.</span>
+            </div>
+            <Link href="/integrations">Review integrations</Link>
+          </div>
+        )}
       </Modal>
     </div>
   );

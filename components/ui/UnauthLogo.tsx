@@ -23,6 +23,8 @@ interface UnauthLogoProps {
   tone?: UnauthLogoTone;
   background?: UnauthLogoBackground;
   height?: number;
+  /** Preload logos that are part of above-the-fold navigation chrome. */
+  priority?: boolean;
   alt?: string;
   decorative?: boolean;
   /** Kept for existing product-shell callers during the R1 migration. */
@@ -69,6 +71,7 @@ export function UnauthLogo({
   tone: requestedTone,
   background = 'transparent',
   height,
+  priority = false,
   alt = 'Unauth',
   decorative = false,
   variant,
@@ -94,6 +97,7 @@ export function UnauthLogo({
         width={asset.width}
         height={asset.height}
         unoptimized
+        priority={priority}
         aria-hidden={ariaHidden}
         className={`ua-brand-logo__image${mode === 'fixed' ? '' : ` ua-brand-logo__${mode}`}`}
         style={{ width: imageWidth, height: px }}

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Download } from 'lucide-react';
+import { ConnectorSetupNotice } from '@/components/settings/ConnectorSetupShell';
 
 type Props = {
   hasApiKeys: boolean;
@@ -83,9 +84,9 @@ export default function ChromeSetupClient({ hasApiKeys, keyPrefixes }: Props) {
           {downloading ? 'Preparing zip…' : 'Download Chrome extension (.zip)'}
         </button>
         {downloadError && (
-          <p className="mt-2 text-sm" style={{ color: 'var(--ua-success)' }}>
-            {downloadError}
-          </p>
+          <div className="mt-3">
+            <ConnectorSetupNotice tone="error">{downloadError} Retry the download or check that you still have permission to access this workspace.</ConnectorSetupNotice>
+          </div>
         )}
         <p className="mt-2 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
           Unzip the download on your computer, then follow the steps below in Chrome.

@@ -116,7 +116,7 @@ export function SyncStatusConnectModal({
               placeholder="admin.shopify.com/store/your-store"
               className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-1"
               style={{
-                borderColor: inputError ? 'var(--ua-success)' : 'var(--ua-border-subtle)',
+                borderColor: inputError ? 'var(--ua-critical)' : 'var(--ua-border-subtle)',
                 background: 'var(--ua-surface-secondary)',
                 color: 'var(--ua-text-primary)',
               }}
@@ -125,7 +125,7 @@ export function SyncStatusConnectModal({
               data-testid="shopify-admin-url-input"
             />
             {inputError ? (
-              <p className="mt-1.5 text-xs" style={{ color: 'var(--ua-success)' }} role="alert">
+              <p className="mt-1.5 text-xs" style={{ color: 'var(--ua-critical)' }} role="alert">
                 {inputError}
               </p>
             ) : (

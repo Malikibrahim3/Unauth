@@ -11,7 +11,7 @@ import { GORGIAS_SIDEBAR_CARD_TITLE, GORGIAS_SIDEBAR_ROW_LABELS } from '@/lib/su
 import { env } from '@/lib/utils/env';
 
 const BRAND_WORDMARK_DATA_URI = `data:image/svg+xml;base64,${readFileSync(
-  resolve(process.cwd(), 'public/brand/unauth-r1/unauth-r1-wordmark-white.svg'),
+  resolve(process.cwd(), 'public/brand/unauth-r1/unauth-r1-wordmark-graphite.svg'),
 ).toString('base64')}`;
 
 /**
@@ -39,16 +39,16 @@ function baseStyles(): string {
   return `
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-      font-size: 13px; line-height: 1.45; color: #f5f0eb;
-      background: #14100e; padding: 12px; max-width: 320px;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 13px; line-height: 1.45; color: #18181b;
+      background: #f7f7f8; padding: 12px; max-width: 320px;
     }
-    .card { border-radius: 8px; border: 1px solid #3d2e28; padding: 12px; background: #1c1714; }
-    .title { font-size: 14px; font-weight: 700; margin-bottom: 10px; line-height: 1.3; }
+    .card { border-radius: 9px; border: 1px solid #e4e4e7; padding: 14px; background: #ffffff; }
+    .title { font-size: 15px; font-weight: 650; letter-spacing: -0.02em; margin-bottom: 12px; line-height: 1.3; }
     table.cmp { width: 100%; border-collapse: collapse; table-layout: fixed; }
     table.cmp th, table.cmp td {
       text-align: left;
-      padding: 6px 4px;
+      padding: 8px 4px;
       font-size: 12px;
       vertical-align: top;
       white-space: normal;
@@ -56,7 +56,7 @@ function baseStyles(): string {
       word-break: normal;
       hyphens: auto;
     }
-    table.cmp thead th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.7; }
+    table.cmp thead th { font-size: 10px; text-transform: none; letter-spacing: 0; color: #71717a; }
     table.cmp tbody th { font-weight: 600; opacity: 0.85; width: 34%; }
     table.cmp td { opacity: 0.95; }
     .grade, .claims, .ce3, .no-network, .watchlist {
@@ -65,18 +65,18 @@ function baseStyles(): string {
       word-break: normal;
       hyphens: auto;
     }
-    .grade { font-size: 15px; font-weight: 700; letter-spacing: 0.04em; margin-bottom: 4px; line-height: 1.3; }
+    .grade { font-size: 18px; font-weight: 650; letter-spacing: -0.025em; margin-bottom: 4px; line-height: 1.3; }
     .claims { font-size: 12px; opacity: 0.9; margin-bottom: 10px; line-height: 1.4; }
-    .ce3 { margin-top: 10px; font-size: 11px; color: #8fb7d6; }
-    .clean { color: #6fcf97; }
-    .no-network { color: #6fcf97; font-size: 12px; }
+    .ce3 { margin-top: 10px; padding-left: 8px; border-left: 2px solid #5b5bd6; font-size: 11px; color: #3c3c96; }
+    .clean { color: #237a4b; }
+    .no-network { color: #52525b; font-size: 12px; }
     .cta { display: block; margin-top: 12px; text-align: center; padding: 8px 10px;
-           border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none;
-           background: #c8763a; color: #fff; }
+           border-radius: 7px; font-size: 12px; font-weight: 600; text-decoration: none;
+           background: #5b5bd6; color: #fff; }
     .brand { margin-top: 10px; text-align: right; }
     .brand img { display: inline-block; width: 64px; height: auto; }
     .watchlist { font-size: 12px; margin-top: 6px; }
-    .warn { color: #f2994a; font-weight: 600; font-size: 12px; margin-top: 6px; }
+    .warn { color: #8a6116; font-weight: 600; font-size: 12px; margin-top: 6px; }
     .context-summary { font-size: 12px; opacity: 0.85; margin-bottom: 10px; line-height: 1.4; }
   `;
 }
@@ -155,6 +155,7 @@ export function renderGorgiasWidgetHtml(ctx: ClaimWidgetRenderContext): string {
 
   const { thisStore } = result.data;
   const cleanClaims = json.claims === 'No prior claims on record';
+  const watchlist = json.watchlisted?.replace(/^⚠\s*/, '') ?? '';
   const inner = `
     ${json.order_context && json.order_context !== '—' ? `<div class="context-summary">${escapeHtml(json.order_context)}</div>` : ''}
     <div class="context-summary">${escapeHtml(json.context_summary)}</div>
@@ -183,7 +184,7 @@ export function renderGorgiasWidgetHtml(ctx: ClaimWidgetRenderContext): string {
       </tbody>
     </table>
     ${json.ce3_evidence && json.ce3_evidence !== '—' ? `<div class="ce3">${escapeHtml(json.ce3_evidence)}</div>` : ''}
-    ${json.watchlisted && json.watchlisted !== '—' ? `<div class="watchlist${json.watchlisted.startsWith('⚠') ? ' warn' : ''}">${escapeHtml(json.watchlisted)}</div>` : ''}
+    ${watchlist && watchlist !== '—' ? `<div class="watchlist${json.watchlisted.startsWith('⚠') ? ' warn' : ''}">${escapeHtml(watchlist)}</div>` : ''}
     ${ctaUrl ? `<a class="cta" href="${escapeHtml(ctaUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(ctaLabel)}</a>` : ''}
   `;
 

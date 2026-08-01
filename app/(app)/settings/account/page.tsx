@@ -12,7 +12,7 @@ import {
 import AccountProfileSection from "@/components/settings/AccountProfileSection";
 import AccountPasswordSection from "@/components/settings/AccountPasswordSection";
 import AccountDangerSection from "@/components/settings/AccountDangerSection";
-import { SettingsPageShell } from "@/components/ui";
+import { SettingsPageShell, Surface } from "@/components/ui";
 
 type AccountSetupPayload = {
   user?: { email?: string };
@@ -25,7 +25,7 @@ export default function AccountSettingsPage() {
     accountSettingsReducer,
     initialAccountSettingsState,
   );
-  const { data: setupData } =
+  const { data: setupData, error: setupError, reload: reloadSetup } =
     useFetchJson<AccountSetupPayload>("/api/account/setup");
 
   useEffect(() => {
@@ -168,7 +168,23 @@ export default function AccountSettingsPage() {
       title="Account"
       subtitle="Update your store profile, account credentials, and workspace preferences."
     >
-      <div className="space-y-3">
+      <Surface structure="working">
+        {setupError && !setupData ? (
+          <div
+            className="border-b border-[var(--ua-critical-border)] bg-[var(--ua-critical-bg)] px-4 py-3 text-[length:var(--ua-text-caption-size)] text-[var(--ua-text-primary)]"
+            role="alert"
+          >
+            <p className="font-medium">Account details could not be loaded.</p>
+            <p className="mt-1">{setupError}</p>
+            <button
+              type="button"
+              className="mt-2 underline"
+              onClick={reloadSetup}
+            >
+              Try again
+            </button>
+          </div>
+        ) : null}
         <AccountProfileSection
           state={state}
           dispatch={dispatch}
@@ -185,7 +201,7 @@ export default function AccountSettingsPage() {
           dispatch={dispatch}
           onDelete={handleDeleteAccount}
         />
-      </div>
+      </Surface>
     </SettingsPageShell>
   );
 }

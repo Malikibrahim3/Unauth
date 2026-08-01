@@ -6,13 +6,91 @@ import { useMemo, useState } from "react";
 import { Badge, ButtonLink, Input, MetadataChip, Select } from "@/components/ui";
 import { ProviderLogo } from "@/components/identity/ProviderLogo";
 import { formatNumber } from "@/lib/utils/format";
-import { categoryLabel, ConnectorRow, type CatalogueRowItem } from "@/components/integrations/ConnectorRow";
+import { ConnectorRow, type CatalogueRowItem } from "@/components/integrations/ConnectorRow";
 import styles from "./IntegrationsWorkspace.module.css";
 
 type IntegrationView = "connected" | "browse";
 
 const ACTION_REQUIRED_BADGES = new Set(["error", "not_syncing", "stale"]);
 const WAITING_BADGES = new Set(["sync_pending", "no_data", "verification_unavailable"]);
+
+type IntegrationGroupId = "commerce" | "support" | "fulfilment" | "delivery" | "financial" | "supplemental";
+
+type IntegrationGroup = {
+  id: IntegrationGroupId;
+  step: number | null;
+  label: string;
+  title: string;
+  description: string;
+  evidenceLabel: string;
+};
+
+const INTEGRATION_GROUPS: IntegrationGroup[] = [
+  {
+    id: "commerce",
+    step: 1,
+    label: "Commerce",
+    title: "Orders and customer account",
+    description: "Orders, customers, line items, refunds and original transaction value.",
+    evidenceLabel: "Order and account evidence",
+  },
+  {
+    id: "support",
+    step: 2,
+    label: "Customer support",
+    title: "Request and conversation",
+    description: "Claim reason, messages, attachments and the outcome the customer requested.",
+    evidenceLabel: "Customer request evidence",
+  },
+  {
+    id: "fulfilment",
+    step: 3,
+    label: "Fulfilment",
+    title: "Pick, pack and warehouse",
+    description: "Fulfilment handoff, pack records, warehouse events and operational exceptions.",
+    evidenceLabel: "Fulfilment evidence",
+  },
+  {
+    id: "delivery",
+    step: 4,
+    label: "Delivery",
+    title: "Tracking and carrier proof",
+    description: "Tracking events, delivery status, signatures, photos and carrier outcomes.",
+    evidenceLabel: "Delivery evidence",
+  },
+  {
+    id: "financial",
+    step: 5,
+    label: "Financial",
+    title: "Payments and disputes",
+    description: "Payment status, disputes, chargebacks and settlement evidence.",
+    evidenceLabel: "Financial evidence",
+  },
+  {
+    id: "supplemental",
+    step: null,
+    label: "Files and custom sources",
+    title: "Supplemental records",
+    description: "CSV records and merchant-approved documents fill gaps that connected systems cannot.",
+    evidenceLabel: "Supplemental evidence",
+  },
+];
+
+const GROUP_BY_ID = new Map(INTEGRATION_GROUPS.map((group) => [group.id, group]));
+const SEQUENCED_GROUPS = INTEGRATION_GROUPS.filter((group) => group.step !== null);
+
+function integrationGroupForItem(item: CatalogueRowItem): IntegrationGroup {
+  if (item.id === "csv_import" || item.category === "documents") return GROUP_BY_ID.get("supplemental")!;
+  if (item.category === "commerce") return GROUP_BY_ID.get("commerce")!;
+  if (item.category === "helpdesk") return GROUP_BY_ID.get("support")!;
+  if (item.category === "warehouse_3pl" || item.category === "returns") return GROUP_BY_ID.get("fulfilment")!;
+  if (item.category === "carrier" || item.category === "tracking") return GROUP_BY_ID.get("delivery")!;
+  return GROUP_BY_ID.get("financial")!;
+}
+
+function integrationGroupLabel(value: string) {
+  return GROUP_BY_ID.get(value as IntegrationGroupId)?.label ?? value;
+}
 
 function isConfigured(item: CatalogueRowItem) {
   return item.connectionCount > 0 || item.connectionId !== null || item.status !== "not_connected";
@@ -28,7 +106,8 @@ function isWaiting(item: CatalogueRowItem) {
 
 function matchesQuery(item: CatalogueRowItem, query: string) {
   if (!query.trim()) return true;
-  const haystack = [item.name, item.description, item.category, item.account ?? ""].join(" ").toLowerCase();
+  const group = integrationGroupForItem(item);
+  const haystack = [item.name, item.description, item.category, item.account ?? "", group.label, group.title, group.description].join(" ").toLowerCase();
   return haystack.includes(query.trim().toLowerCase());
 }
 
@@ -69,7 +148,7 @@ function FilterToolbar({
       </div>
       <Select value={category} onChange={(event) => onCategoryChange(event.target.value)} aria-label="Filter by category">
         <option value="all">All categories</option>
-        {categories.map((value) => <option key={value} value={value}>{categoryLabel(value)}</option>)}
+        {categories.map((value) => <option key={value} value={value}>{integrationGroupLabel(value)}</option>)}
       </Select>
       {showStatus ? (
         <Select value={status} onChange={(event) => onStatusChange(event.target.value)} aria-label="Filter by connection status">
@@ -87,15 +166,18 @@ function ConnectionSummary({
   connectedCount,
   attentionCount,
   importedRecords,
+  coveredLayers,
 }: {
   connectedCount: number;
   attentionCount: number;
   importedRecords: number;
+  coveredLayers: number;
 }) {
   return (
     <div className={styles.summary}>
       <div className={styles.summaryCopy}>
         <span><strong>{formatNumber(connectedCount)}</strong> connected</span>
+        <span><strong>{coveredLayers} of {SEQUENCED_GROUPS.length}</strong> evidence layers covered</span>
         {attentionCount > 0 ? <span><strong>{formatNumber(attentionCount)}</strong> need attention</span> : <span>No active issues</span>}
         <span><strong>{formatNumber(importedRecords)}</strong> records indexed</span>
       </div>
@@ -104,24 +186,87 @@ function ConnectionSummary({
   );
 }
 
-function ConnectedView({ items, importedRecords }: { items: CatalogueRowItem[]; importedRecords: number }) {
+function EvidenceStackOverview({ items }: { items: CatalogueRowItem[] }) {
+  const coveredLayers = SEQUENCED_GROUPS.filter((group) =>
+    items.some((item) => integrationGroupForItem(item).id === group.id && isConfigured(item)),
+  ).length;
+
+  return (
+    <section className={styles.stackOverview} aria-labelledby="evidence-stack-title">
+      <div className={styles.stackHeader}>
+        <div>
+          <h2 className={styles.stackTitle} id="evidence-stack-title">Evidence coverage sequence</h2>
+          <p className={styles.stackDescription}>Unauth assembles the richest case record by joining each operational layer in order.</p>
+        </div>
+        <span className={styles.stackCoverage}>{coveredLayers} of {SEQUENCED_GROUPS.length} layers connected</span>
+      </div>
+      <ol className={styles.stackList}>
+        {SEQUENCED_GROUPS.map((group) => {
+          const groupItems = items.filter((item) => integrationGroupForItem(item).id === group.id);
+          const connectedCount = groupItems.filter(isConfigured).length;
+          const availableCount = groupItems.filter((item) => item.stage !== "planned").length;
+          const state = connectedCount > 0 ? "connected" : availableCount > 0 ? "available" : "planned";
+          const stateLabel = connectedCount > 0
+            ? `${connectedCount} connected`
+            : availableCount > 0
+              ? "Not connected"
+              : "Planned";
+          return (
+            <li key={group.id} className={styles.stackStep}>
+              <div className={styles.stackStepTopline}>
+                <span className={styles.stackNumber}>{group.step}</span>
+                <span className={`${styles.stackState} ${styles[`stackState_${state}`]}`}>{stateLabel}</span>
+              </div>
+              <h3 className={styles.stackStepTitle}>{group.label}</h3>
+              <p className={styles.stackStepText}>{group.description}</p>
+            </li>
+          );
+        })}
+      </ol>
+      <p className={styles.stackNote}>Connect every provider your operation actually uses. Coverage still depends on provider permissions, record freshness and the systems present in each case.</p>
+    </section>
+  );
+}
+
+function GroupHeading({ group, count, suffix }: { group: IntegrationGroup; count: number; suffix: string }) {
+  return (
+    <header className={styles.surfaceHeader}>
+      <div className={styles.groupHeading}>
+        {group.step === null ? <span className={styles.groupSupplemental}>Supplemental</span> : <span className={styles.groupNumber}>{group.step}</span>}
+        <div>
+          <h2 className={styles.surfaceTitle} id={`integration-group-${group.id}`}>{group.title}</h2>
+          <p className={styles.surfaceDescription}>{group.description}</p>
+        </div>
+      </div>
+      <span className={styles.surfaceMeta}>{count} {suffix}</span>
+    </header>
+  );
+}
+
+function ConnectedView({ items, allItems, importedRecords }: { items: CatalogueRowItem[]; allItems: CatalogueRowItem[]; importedRecords: number }) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
   const [status, setStatus] = useState("all");
   const attentionCount = items.filter(isActionRequired).length;
-  const categories = useMemo(() => [...new Set(items.map((item) => item.category))].sort(), [items]);
+  const categories = useMemo(() => INTEGRATION_GROUPS.filter((group) => items.some((item) => integrationGroupForItem(item).id === group.id)).map((group) => group.id), [items]);
+  const coveredLayers = SEQUENCED_GROUPS.filter((group) => items.some((item) => integrationGroupForItem(item).id === group.id)).length;
   const filtered = useMemo(() => items.filter((item) => {
     if (!matchesQuery(item, query)) return false;
-    if (category !== "all" && item.category !== category) return false;
+    if (category !== "all" && integrationGroupForItem(item).id !== category) return false;
     if (status === "attention" && !isActionRequired(item)) return false;
     if (status === "waiting" && !isWaiting(item)) return false;
     if (status === "healthy" && (isActionRequired(item) || isWaiting(item))) return false;
     return true;
   }), [category, items, query, status]);
+  const filteredGroups = INTEGRATION_GROUPS.map((group) => ({
+    group,
+    items: filtered.filter((item) => integrationGroupForItem(item).id === group.id),
+  })).filter((entry) => entry.items.length > 0);
 
   return (
     <div className={styles.root}>
-      <ConnectionSummary connectedCount={items.length} attentionCount={attentionCount} importedRecords={importedRecords} />
+      <EvidenceStackOverview items={allItems} />
+      <ConnectionSummary connectedCount={items.length} attentionCount={attentionCount} importedRecords={importedRecords} coveredLayers={coveredLayers} />
       {attentionCount > 0 ? (
         <div className={styles.attention} role="status">
           <span className={styles.attentionIcon}><AlertTriangle size={15} aria-hidden="true" /></span>
@@ -133,16 +278,10 @@ function ConnectedView({ items, importedRecords }: { items: CatalogueRowItem[]; 
         </div>
       ) : null}
       <FilterToolbar query={query} onQueryChange={setQuery} category={category} onCategoryChange={setCategory} status={status} onStatusChange={setStatus} categories={categories} showStatus />
-      <section className={styles.surface} id="connections" aria-labelledby="connected-title">
-        <header className={styles.surfaceHeader}>
-          <div>
-            <h2 className={styles.surfaceTitle} id="connected-title">Your connections</h2>
-            <p className={styles.surfaceDescription}>Manage accounts that already send evidence into Unauth.</p>
-          </div>
-          <span className={styles.surfaceMeta}>{filtered.length} of {items.length}</span>
-        </header>
-        {filtered.length ? (
-          <>
+      <div className={styles.groupList} id="connections">
+        {filteredGroups.length ? filteredGroups.map(({ group, items: groupItems }) => (
+          <section className={styles.surface} key={group.id} aria-labelledby={`integration-group-${group.id}`}>
+            <GroupHeading group={group} count={groupItems.length} suffix={groupItems.length === 1 ? "connection" : "connections"} />
             <div className={styles.tableHeader} aria-hidden="true">
               <span>Integration</span>
               <span>Status</span>
@@ -152,13 +291,11 @@ function ConnectedView({ items, importedRecords }: { items: CatalogueRowItem[]; 
               <span />
             </div>
             <ul className={styles.connectionList}>
-              {filtered.map((item) => <ConnectorRow key={item.id} item={item} />)}
+              {groupItems.map((item) => <ConnectorRow key={item.id} item={item} />)}
             </ul>
-          </>
-        ) : (
-          <p className={styles.empty}>No connections match these filters.</p>
-        )}
-      </section>
+          </section>
+        )) : <div className={styles.surface}><p className={styles.empty}>No connections match these filters.</p></div>}
+      </div>
     </div>
   );
 }
@@ -174,7 +311,7 @@ function CatalogueCard({ item }: { item: CatalogueRowItem }) {
           <ProviderLogo provider={item.id} name={item.name} />
           <div className="min-w-0">
             <h3 className={styles.catalogueName}>{item.name}</h3>
-            <p className={styles.catalogueCategory}>{categoryLabel(item.category)}</p>
+            <p className={styles.catalogueCategory}>{integrationGroupForItem(item).evidenceLabel}</p>
           </div>
         </div>
         <Badge tone={stageTone} variant="subtle" size="sm" dot>
@@ -200,56 +337,64 @@ function CatalogueCard({ item }: { item: CatalogueRowItem }) {
   );
 }
 
-function BrowseView({ items }: { items: CatalogueRowItem[] }) {
+function BrowseView({ items, allItems }: { items: CatalogueRowItem[]; allItems: CatalogueRowItem[] }) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
-  const categories = useMemo(() => [...new Set(items.map((item) => item.category))].sort(), [items]);
+  const categories = useMemo(() => INTEGRATION_GROUPS.filter((group) => items.some((item) => integrationGroupForItem(item).id === group.id)).map((group) => group.id), [items]);
   const filtered = useMemo(() => items.filter((item) => {
     if (!matchesQuery(item, query)) return false;
-    return category === "all" || item.category === category;
+    return category === "all" || integrationGroupForItem(item).id === category;
   }), [category, items, query]);
-  const available = filtered.filter((item) => item.stage !== "planned");
-  const planned = filtered.filter((item) => item.stage === "planned");
+  const grouped = INTEGRATION_GROUPS.map((group) => {
+    const groupItems = filtered.filter((item) => integrationGroupForItem(item).id === group.id);
+    return {
+      group,
+      available: groupItems.filter((item) => item.stage !== "planned"),
+      planned: groupItems.filter((item) => item.stage === "planned"),
+    };
+  }).filter((entry) => entry.available.length > 0 || entry.planned.length > 0);
+  const availableCount = filtered.filter((item) => item.stage !== "planned").length;
 
   return (
     <div className={styles.root}>
+      <EvidenceStackOverview items={allItems} />
       <div className={styles.summary}>
         <div className={styles.summaryCopy}>
-          <span><strong>{items.length}</strong> integrations in the catalogue</span>
-          <span>Connect a source to start building richer case evidence.</span>
+          <span><strong>{items.length}</strong> integrations across {categories.length} categories</span>
+          <span><strong>{availableCount}</strong> available to configure now</span>
         </div>
-        <span className={styles.summaryMeta}>Search by provider or use case</span>
+        <span className={styles.summaryMeta}>Choose the providers used by your operation</span>
       </div>
       <FilterToolbar query={query} onQueryChange={setQuery} category={category} onCategoryChange={setCategory} status="all" onStatusChange={() => undefined} categories={categories} showStatus={false} />
-      <section className={styles.surface} aria-labelledby="browse-title">
-        <header className={styles.surfaceHeader}>
-          <div>
-            <h2 className={styles.surfaceTitle} id="browse-title">Available integrations</h2>
-            <p className={styles.surfaceDescription}>Choose the systems that feed orders, support, fulfilment, and carrier evidence into Unauth.</p>
-          </div>
-          <span className={styles.surfaceMeta}>{available.length} available</span>
-        </header>
-        {available.length ? <div className={styles.cardGrid}>{available.map((item) => <CatalogueCard key={item.id} item={item} />)}</div> : <p className={styles.empty}>No available integrations match this search.</p>}
-        {planned.length ? (
-          <div className={styles.subsection}>
-            <div className={styles.subsectionHeader}>
-              <div>
-                <h3 className={styles.subsectionTitle}>Coming soon</h3>
-                <p className={styles.subsectionDescription}>Roadmap items are kept separate from connections you can configure today.</p>
+      <div className={styles.groupList}>
+        {grouped.length ? grouped.map(({ group, available, planned }) => (
+          <section className={styles.surface} key={group.id} aria-labelledby={`integration-group-${group.id}`}>
+            <GroupHeading group={group} count={available.length} suffix="available" />
+            {available.length ? <div className={styles.cardGrid}>{available.map((item) => <CatalogueCard key={item.id} item={item} />)}</div> : null}
+            {planned.length ? (
+              <div className={styles.subsection}>
+                <div className={styles.subsectionHeader}>
+                  <div>
+                    <h3 className={styles.subsectionTitle}>Planned for this layer</h3>
+                    <p className={styles.subsectionDescription}>Visible for planning, but not yet available to configure.</p>
+                  </div>
+                  <span className={styles.surfaceMeta}>{planned.length}</span>
+                </div>
+                <div className={`${styles.cardGrid} ${styles.subsectionGrid}`}>{planned.map((item) => <CatalogueCard key={item.id} item={item} />)}</div>
               </div>
-              <span className={styles.surfaceMeta}>{planned.length}</span>
+            ) : null}
+          </section>
+        )) : <div className={styles.surface}><p className={styles.empty}>No integrations match this search.</p></div>}
+        <section className={styles.surface} aria-labelledby="custom-sources-title">
+          <div className={styles.importCallout}>
+            <div className={styles.importCalloutCopy}>
+              <h2 className={styles.importCalloutTitle} id="custom-sources-title">Files, documents and custom sources</h2>
+              <p className={styles.importCalloutText}>Import CSV records, upload merchant-approved agreements, or configure API access when a connected system cannot provide the evidence.</p>
             </div>
-            <div className={`${styles.cardGrid} ${styles.subsectionGrid}`}>{planned.map((item) => <CatalogueCard key={item.id} item={item} />)}</div>
+            <ButtonLink href="/integrations/imports" variant="secondary" size="sm">Open imports &amp; API</ButtonLink>
           </div>
-        ) : null}
-        <div className={styles.importCallout}>
-          <div className={styles.importCalloutCopy}>
-            <h3 className={styles.importCalloutTitle}>Need to work from a file or custom source?</h3>
-            <p className={styles.importCalloutText}>Import CSV records, upload documents, or configure API access from the imports workspace.</p>
-          </div>
-          <ButtonLink href="/integrations/imports" variant="secondary" size="sm">Open imports &amp; API</ButtonLink>
-        </div>
-      </section>
+        </section>
+      </div>
     </div>
   );
 }
@@ -267,5 +412,7 @@ export function IntegrationsWorkspace({
     return item.category !== "documents" && (isPlanned || (!isConfigured(item) && !isPlanned));
   });
   const importedRecords = items.reduce((sum, item) => sum + item.importedRecords, 0);
-  return initialView === "browse" ? <BrowseView items={browse} /> : <ConnectedView items={connected} importedRecords={importedRecords} />;
+  return initialView === "browse"
+    ? <BrowseView items={browse} allItems={items} />
+    : <ConnectedView items={connected} allItems={items} importedRecords={importedRecords} />;
 }

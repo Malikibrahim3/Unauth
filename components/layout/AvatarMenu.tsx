@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useState, type RefObject } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
+import { DURATION } from '@/lib/design/motion';
+import { useOverlayPresence } from '@/lib/design/useOverlayPresence';
 
 interface AvatarMenuProps {
   name?: string | null;
@@ -15,33 +17,21 @@ interface AvatarMenuProps {
 /**
  * AvatarMenu — avatar button right-of-search with dropdown.
  * Items: account settings link + sign-out.
- * Per §5.3 of the Amplitude Core Design Amplification Plan.
+ * Per §5.3 of the Amplitude Core Design Amplification Plan; presence per §7.3.
  */
 export function AvatarMenu({ name, email, className }: AvatarMenuProps) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const supabase = createClient();
 
-  // Close on outside click / Escape
-  useEffect(() => {
-    if (!open) return;
-    function handler(e: MouseEvent | KeyboardEvent) {
-      if (e instanceof KeyboardEvent && e.key === 'Escape') {
-        setOpen(false);
-        return;
-      }
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handler);
-    document.addEventListener('keydown', handler);
-    return () => {
-      document.removeEventListener('mousedown', handler);
-      document.removeEventListener('keydown', handler);
-    };
-  }, [open]);
+  const { mounted, phase, containerRef, motionAllowed } = useOverlayPresence({
+    open,
+    onClose: () => setOpen(false),
+    exitDurationMs: DURATION.fast,
+    closeOnOutsideClick: true,
+    restoreFocus: true,
+    transient: true,
+  });
 
   async function handleSignOut() {
     setOpen(false);
@@ -55,8 +45,10 @@ export function AvatarMenu({ name, email, className }: AvatarMenuProps) {
       ? email.split('@')[0].slice(0, 2).toUpperCase()
       : '?';
 
+  const isOpen = phase === 'open';
+
   return (
-    <div ref={ref} className={cn('relative flex-shrink-0', className)}>
+    <div ref={containerRef as RefObject<HTMLDivElement>} className={cn('relative flex-shrink-0', className)}>
       <button
         type="button"
         aria-label="Account menu"
@@ -68,22 +60,29 @@ export function AvatarMenu({ name, email, className }: AvatarMenuProps) {
           'bg-[var(--ua-action-primary)] text-[var(--ua-text-inverse)]',
           'text-xs font-bold leading-none',
           'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ua-border-focus)] focus-visible:outline-offset-2',
-          'transition-opacity hover:opacity-90',
+          'transition-colors hover:bg-[var(--ua-action-primary-hover)] active:bg-[var(--ua-action-primary-pressed)]',
           'select-none',
         )}
       >
         {initials}
       </button>
 
-      {open && (
+      {mounted && (
         <div
           role="menu"
+          aria-hidden={phase === 'exiting' ? true : undefined}
           className={cn(
             'absolute right-0 top-full mt-1 z-50',
             'w-48 rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)]',
-            'bg-[var(--ua-surface-primary)] shadow-[var(--ua-shadow-overlay)]',
+            'bg-[var(--ua-surface-primary)] shadow-[var(--ua-shadow-menu)]',
             'py-1',
           )}
+          style={{
+            opacity: isOpen ? 1 : 0,
+            transform: `translateY(${isOpen ? 0 : 2}px)`,
+            transition: motionAllowed ? `opacity ${DURATION.fast}ms var(--ua-ease-standard), transform ${DURATION.fast}ms var(--ua-ease-standard)` : 'none',
+            pointerEvents: phase === 'exiting' ? 'none' : undefined,
+          }}
         >
           {(name || email) && (
             <div className="px-3 py-2 border-b border-[var(--ua-border-subtle)]">

@@ -3,21 +3,31 @@
  * Component variants consume the same tokens; no control introduces a second
  * radius, accent, or depth language.
  */
-.ua-app :where(input, select, textarea) {
-  border-color: var(--ua-border-default);
+.ua-app :where(input, select, textarea),
+.ua-auth-surface :where(input, select, textarea) {
+  border-color: var(--ua-border-control);
   background: var(--ua-surface-primary);
   border-radius: var(--ua-radius-control);
   box-shadow: none;
+  caret-color: var(--ua-action-primary);
   min-height: var(--ua-control-height-input);
 }
 
-.ua-app :where(button, a) {
+.ua-app :where(input, textarea)::placeholder,
+.ua-auth-surface :where(input, textarea)::placeholder {
+  color: var(--ua-text-tertiary);
+  opacity: 1;
+}
+
+.ua-app :where(button, a),
+.ua-auth-surface :where(button, a) {
   transition-property: color, background-color, border-color, box-shadow;
   transition-duration: var(--ua-duration-fast);
   transition-timing-function: var(--ua-ease-standard);
 }
 
-.ua-app :where(button):active:not(:disabled) {
+.ua-app :where(button):active:not(:disabled),
+.ua-auth-surface :where(button):active:not(:disabled) {
   /* §7.2 — a press is an 80ms fill/inset response. Nothing translates. */
   transform: none;
   transition-duration: var(--ua-duration-press);
@@ -39,7 +49,7 @@
   padding: var(--ua-space-2-5) var(--ua-space-3);
   text-align: left;
   background: var(--ua-surface-primary);
-  border: 1px solid var(--ua-border-default);
+  border: 1px solid var(--ua-border-control);
   border-radius: var(--ua-radius-control);
   color: var(--ua-text-secondary);
   font-size: var(--ua-text-dense-size);

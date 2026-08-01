@@ -3,7 +3,7 @@
 import { CheckCircle2, Circle, RefreshCw, Unplug } from 'lucide-react';
 import type { FormEvent } from 'react';
 import Image from 'next/image';
-import { Badge, Card } from '@/components/ui';
+import { Badge, Card, Spinner } from '@/components/ui';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { FreshdeskSupportSyncCreateForm } from '@/components/settings/FreshdeskSupportSyncCreateForm';
 import type { FreshdeskSupportSyncState } from '@/components/settings/freshdeskSupportSyncReducer';
@@ -143,7 +143,7 @@ export function FreshdeskSupportSyncConnectionDetails({
             className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium disabled:opacity-50"
             style={{ borderColor: 'var(--ua-border-default)', color: 'var(--ua-text-secondary)' }}
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${syncing ? 'animate-spin' : ''}`} />
+            {syncing ? <Spinner size="sm" delayMs={0} label="Syncing tickets" /> : <RefreshCw className="h-3.5 w-3.5" />}
             {syncing ? 'Syncing tickets' : 'Sync tickets now'}
           </button>
           <button

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Spinner } from '@/components/ui/Spinner';
 
 type EvidencePackageFormIntroProps = {
   showIntro: boolean;
@@ -46,10 +47,7 @@ export function EvidencePackageFormLoadingState({ loadingOrders }: EvidencePacka
       className="rounded-[var(--ua-radius-control)] p-5 text-center"
       style={{ background: 'var(--ua-surface-secondary)', border: '1px solid var(--ua-border-subtle)' }}
     >
-      <div
-        className="mb-3 inline-block h-6 w-6 animate-spin rounded-full border-2 border-t-transparent"
-        style={{ borderColor: 'var(--ua-border-default)', borderTopColor: 'var(--ua-action-primary)' }}
-      />
+      <Spinner size="lg" delayMs={0} label="Loading order history" className="mb-3" />
       <p className="text-body-sm" style={{ color: 'var(--ua-text-secondary)' }}>
         Loading order history…
       </p>

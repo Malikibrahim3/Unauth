@@ -19,7 +19,7 @@ export function IconButton({ label, icon, size = 'md', className, title, ...prop
       aria-label={label}
       title={title}
       className={cn(
-        'inline-flex shrink-0 items-center justify-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] text-[var(--ua-text-secondary)] transition-colors hover:bg-[var(--ua-surface-hover)] hover:text-[var(--ua-text-primary)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50',
+        'inline-flex shrink-0 items-center justify-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-control)] bg-[var(--ua-surface-primary)] text-[var(--ua-text-secondary)] transition-colors hover:bg-[var(--ua-surface-hover)] hover:text-[var(--ua-text-primary)] focus-visible:outline-none disabled:pointer-events-none disabled:border-[var(--ua-border-subtle)] disabled:bg-[var(--ua-surface-muted)] disabled:text-[var(--ua-text-disabled)]',
         size === 'sm' && 'h-[var(--ua-control-height-sm)] w-[var(--ua-control-height-sm)]',
         size === 'md' && 'h-[var(--ua-control-height-md)] w-[var(--ua-control-height-md)]',
         size === 'lg' && 'h-[var(--ua-control-height-lg)] w-[var(--ua-control-height-lg)]',

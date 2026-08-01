@@ -1,5 +1,5 @@
 /*
- * Living Precision semantic, risk, and severity tokens.
+ * Instrument Grade semantic, risk, and severity tokens.
  * ------------------------------------------------------------------
  * Every token carries a literal value in the `--ua-*` namespace. No legacy
  * `--success`/`--warning`/`--danger`/`--risk-*`/`--sev-*` name is defined here.
@@ -12,7 +12,7 @@
  *
  * The risk and severity ladders are ordered domain scales, kept separate from
  * the bare semantic triplets so a five-step risk reading is never confused with
- * a binary pass/fail state. Their mapping onto the Living Precision triplets is
+ * a binary pass/fail state. Their mapping onto the Instrument Grade triplets is
  * fixed by §3.8 ("Domain status compatibility").
  *
  * `--ua-violet*` is deleted (§3.8): product-owned selection uses the accent

@@ -16,7 +16,7 @@ export function WorkspaceSwitcher({ workspaces, activeMerchantId }: { workspaces
         value={activeMerchantId ?? ''}
         disabled={pending}
         aria-label="Active workspace"
-        className="h-8 max-w-[180px] rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2 text-sm text-[var(--ua-text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ua-border-focus)]"
+        className="h-9 w-full max-w-full rounded-[var(--ua-radius-control)] border border-transparent bg-[var(--ua-surface-hover)] px-2.5 text-[length:var(--ua-text-dense-size)] font-medium text-[var(--ua-text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ua-border-focus)]"
         onChange={async (event) => {
           setPending(true);
           const response = await fetch('/api/workspace', {

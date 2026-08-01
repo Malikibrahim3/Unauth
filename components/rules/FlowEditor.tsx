@@ -169,7 +169,7 @@ export function FlowEditor({
   return (
     <form onSubmit={submit} className="space-y-5">
       <Card unstyled variant="panel" className="p-4">
-        <h2 className="text-sm font-semibold">Flow identity and trigger</h2>
+        <h2 className="text-sm font-semibold">Trigger</h2>
         <div className="mt-3 grid gap-4 sm:grid-cols-2">
           <label className="text-xs font-semibold text-[var(--ua-text-secondary)]">
             Flow name
@@ -344,7 +344,7 @@ export function FlowEditor({
       <Card unstyled variant="panel" className="p-4">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h2 className="text-sm font-semibold">Bounded actions</h2>
+            <h2 className="text-sm font-semibold">Bounded action</h2>
             <p className="mt-1 text-xs text-[var(--ua-text-tertiary)]">
               Flows can route work, request evidence, set deadlines, or request
               a notification. They cannot make or execute payout decisions.

@@ -13,7 +13,7 @@ import {
   Send,
 } from 'lucide-react';
 import { useRef, useState } from 'react';
-import { Button, Card, Input, Modal, Select, StatusBadge } from '@/components/ui';
+import { Bone, Button, Card, Input, Modal, Select, StatusBadge } from '@/components/ui';
 import {
   InvestigationRequestDialog,
   type InvestigationPartnerOption,
@@ -394,8 +394,8 @@ export function CaseInvestigationsCard({
 
       {loading && !data ? (
         <div className="mt-4 space-y-2" aria-label="Loading investigations">
-          <div className="h-16 animate-pulse rounded-md bg-[var(--ua-surface-muted)]" />
-          <div className="h-16 animate-pulse rounded-md bg-[var(--ua-surface-muted)]" />
+          <Bone className="h-16" />
+          <Bone className="h-16" />
         </div>
       ) : error ? (
         <div role="alert" className="mt-4 rounded-md border border-[var(--ua-risk-critical-border)] bg-[var(--ua-risk-critical-bg)] p-3">

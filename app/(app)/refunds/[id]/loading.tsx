@@ -1,2 +1,2 @@
-import { OperationalRouteSkeleton } from '@/components/states/OperationalRouteSkeleton';
-export default function Loading() { return <OperationalRouteSkeleton title="Loading refund" rows={5} detail />; }
+import { CommerceObjectRouteSkeleton } from '@/components/relationships/CommerceObjectRouteSkeleton';
+export default function Loading() { return <CommerceObjectRouteSkeleton title="Loading refund" />; }

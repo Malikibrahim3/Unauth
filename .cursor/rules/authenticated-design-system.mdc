@@ -1,5 +1,5 @@
 ---
-description: Quiet Precision product UI — binding replacement rules for every product route, component, and state
+description: Decision Ledger product workspace — scoped authority for .ua-app and app/(app)
 globs:
   - "app/(app)/**"
   - "app/onboarding/**"
@@ -8,39 +8,37 @@ globs:
   - "styles/authenticated/**"
 alwaysApply: true
 ---
-# Quiet Precision product UI
+# Product UI authority router
 
-Read `styles/authenticated/README.md` and
-`docs/IMPL_quiet_precision_product_ui.md` before touching product UI. They are
-the binding replacement contract; current authenticated runtime appearance is
-governed by it.
+This rule is a loader, not an independent visual contract.
 
-- Quiet Precision is monochrome, compact, border-led, and ink-first. Semantic
-  colour is restrained and never decorative or the only carrier of meaning.
-- `--ua-*` is the sole product visual token namespace. Static hardcoded
-  colours, radii, shadows, arbitrary visual values, duplicate aliases,
-  page-level palettes, and landing-token dependencies are prohibited.
-- Pages compose the documented index, board, record-detail, settings,
-  reporting, entry, and embedded families. No page invents a visual system.
-- Use canonical actions, fields, selection controls, panels, KPI groups,
-  tables, badges, overlays, feedback, and route-state primitives.
-- `StatusBadge` is non-interactive; `FilterChip` is interactive.
-- `Button`/`ButtonLink`/`IconButton` share one action contract.
-- `DataTable`/`DataTableServer` are the table foundations.
-- Product imports from `components/ui/LandingPrimitives.tsx`, `--landing-*`,
-  and `--fl-*` are prohibited.
-- Charts use flat low-chroma marks, visible/direct labels, truthful states, and
-  accessible data. Gradients, hatch/texture, glow, decorative matrices, and
-  obsolete treatment conventions are prohibited.
-- A UI change includes descendants, skeletons, empty/error states, overlays,
-  responsive layouts, light/dark, focus, reduced motion, and forced colours.
-- Do not preserve visual compatibility aliases, parallel themes, rollout
-  flags, active old screenshots, or active rules for the superseded design.
-- Preserve permissions, routes, query state, mutations, exports, deep links,
-  provenance, financial truth, audit history, keyboard access, and mobile
-  access.
-- Add or update the component/state in `/dev/design-system`, then run
-  `npm run lint:authenticated-design` and the functional parity gate.
+Read `PRODUCT.md` and `CLAUDE.md`, then use the authority for the surface:
 
-Public marketing/editorial pages remain isolated and are not a source of
-product tokens or primitives.
+- every visible product, public, entry, onboarding, and embedded surface:
+  `docs/IMPL_decision_ledger_instrument_grade_final_iteration.md`.
+
+No surface has two active visual authorities. Shared components must satisfy
+their scoped consumers or split at a meaningful product-surface boundary.
+
+`IG-00` through `IG-16` are the current executable phases. The direction is an
+evidence-to-decision system:
+one dominant object, explicit scope, traceable sources, readable consequence,
+and a clear next action or recorded outcome.
+
+- Preserve product truth, permissions, routes, query state, mutations, exports,
+  provenance, financial truth, audit history, keyboard paths, and
+  accessibility reflow.
+- `--ua-*` is the sole product token namespace.
+- Inter and Lucide remain the product foundations; do not copy Apple assets.
+- Do not add iOS navigation, bottom sheets, fake system chrome, decorative
+  glass, gradients, glow, card soup, tiny metadata, visual cohorts, or
+  screenshot-only routes.
+- Use canonical frames, surfaces, controls, registries, tables, overlays,
+  charts, and geometry-aware states.
+- Keep inline content flat and reserve elevation for floating layers.
+- Update `/dev/design-system`, affected states, phase evidence, and the active
+  design verifier when a shared contract changes.
+
+`CONNECTION_HEALTH_V2_ENABLED`, `WORK_COCKPIT_V2_ENABLED`, and
+`CASE_WORKSPACE_V2_ENABLED` remain functional rollout controls, never visual
+themes.

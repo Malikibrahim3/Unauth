@@ -21,10 +21,9 @@ import {
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Input } from '@/components/ui/Input';
-import { MetricGroup } from '@/components/ui/MetricGroup';
 import { Modal } from '@/components/ui/Modal';
-import { Panel } from '@/components/ui/Panel';
 import { Select } from '@/components/ui/Select';
+import { Surface } from '@/components/ui/Surface';
 
 export default function TeamManagementClient() {
   const [state, dispatch] = useReducer(teamManagementReducer, initialTeamManagementState);
@@ -239,10 +238,11 @@ export default function TeamManagementClient() {
 
 
   return (
-    <div className="flex flex-col gap-4">
+    <>
+      <Surface structure="working" className="overflow-hidden">
       {message ? (
         <output
-          className="block rounded-[var(--ua-radius-control)] border px-3 py-2 text-[length:var(--ua-text-dense-size)]"
+          className="block border-b px-4 py-3 text-[length:var(--ua-text-dense-size)]"
           style={{
             background: message.type === 'success' ? 'var(--ua-success-bg)' : 'var(--ua-critical-bg)',
             borderColor: message.type === 'success' ? 'var(--ua-success-border)' : 'var(--ua-critical-border)',
@@ -253,38 +253,24 @@ export default function TeamManagementClient() {
         </output>
       ) : null}
 
-      {/*
-        Grouped KPIs first (§5.1, §6.5) — one bordered surface, equal cells. While
-        the request is in flight the values render as an em dash rather than 0, so
-        the page never asserts a count it does not have yet.
-      */}
-      <MetricGroup
-        items={[
-          {
-            label: 'Total members',
-            value: loading ? '—' : allMembers.length,
-            description: 'Active and pending',
-          },
-          {
-            label: 'Active',
-            value: loading ? '—' : activeMembers.length,
-            description: 'Accepted their invitation',
-          },
-          {
-            label: 'Pending invites',
-            value: loading ? '—' : pendingMembers.length,
-            description: 'Awaiting acceptance',
-          },
-          {
-            label: 'Access changes',
-            value: loading ? '—' : auditTrail.length,
-            description: 'Recorded in the audit trail',
-          },
-        ]}
-      />
+      <Surface structure="joined" className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-sm font-semibold text-[var(--ua-text-primary)]">Team summary</h2>
+          <p className="mt-1 text-[length:var(--ua-text-caption-size)] text-[var(--ua-text-secondary)]">
+            {loading
+              ? 'Loading workspace members…'
+              : `${activeMembers.length} active · ${pendingMembers.length} pending invite${pendingMembers.length === 1 ? '' : 's'} · ${auditTrail.length} recent access change${auditTrail.length === 1 ? '' : 's'}`}
+          </p>
+        </div>
+        {!loading && !canManageTeam ? (
+          <p className="text-[length:var(--ua-text-caption-size)] text-[var(--ua-text-tertiary)]">
+            View-only access
+          </p>
+        ) : null}
+      </Surface>
 
       {/* Toolbar, table, and result count belong to one working surface (§6.6). */}
-      <Panel className="overflow-hidden">
+      <Surface structure="joined" className="overflow-hidden">
         <div className="flex flex-wrap items-center gap-2 border-b border-[var(--ua-border-subtle)] px-3 py-2.5">
           <div className="w-full shrink-0 sm:w-[240px]">
             <Input
@@ -361,7 +347,11 @@ export default function TeamManagementClient() {
                   <Button type="button" variant="secondary" size="sm" onClick={clearFilters}>
                     Clear filters
                   </Button>
-                ) : undefined
+                ) : (
+                  <span className="text-sm text-[var(--ua-text-secondary)]">
+                    Use the invitation controls above to add a team member.
+                  </span>
+                )
               }
             />
           }
@@ -379,9 +369,11 @@ export default function TeamManagementClient() {
             </p>
           ) : null}
         </div>
-      </Panel>
+      </Surface>
 
-      <TeamAuditTrailSection auditTrail={auditTrail} />
+      <TeamAuditTrailSection auditTrail={auditTrail} joined />
+
+      </Surface>
 
       <TeamInviteDialog
         open={inviteOpen}
@@ -445,6 +437,6 @@ export default function TeamManagementClient() {
           </div>
         ) : null}
       </Modal>
-    </div>
+    </>
   );
 }

@@ -1,0 +1,139 @@
+.shell {
+  min-height: 100vh;
+  background: var(--ua-surface-primary);
+}
+
+.layout {
+  display: grid;
+  grid-template-areas: "form";
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.formRegion {
+  grid-area: form;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  padding: 28px 24px;
+}
+
+.logo {
+  display: inline-flex;
+  width: fit-content;
+}
+
+.formSlot {
+  display: flex;
+  width: 100%;
+  max-width: 420px;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  margin: 0 auto;
+  padding: 36px 0 48px;
+}
+
+.formSlot > section {
+  border-color: transparent;
+  background: transparent;
+}
+
+.contextPanel {
+  grid-area: context;
+  display: none;
+  min-width: 0;
+  background: var(--ua-surface-inverse);
+  color: var(--ua-text-inverse);
+}
+
+.contextInner {
+  display: flex;
+  width: 100%;
+  max-width: 660px;
+  flex-direction: column;
+  justify-content: space-between;
+  margin-left: auto;
+  padding: clamp(44px, 5vw, 72px);
+}
+
+.contextCopy {
+  max-width: 560px;
+}
+
+.contextTitle {
+  max-width: 13ch;
+  margin: 0;
+  font-size: clamp(38px, 3.8vw, 58px);
+  font-weight: 560;
+  letter-spacing: -0.04em;
+  line-height: 0.96;
+}
+
+.contextBody {
+  max-width: 50ch;
+  margin: 24px 0 0;
+  color: color-mix(in srgb, var(--ua-text-inverse) 68%, transparent);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.evidenceList {
+  display: grid;
+  margin: 42px 0 0;
+  padding: 0;
+  border-top: 1px solid color-mix(in srgb, var(--ua-text-inverse) 18%, transparent);
+  list-style: none;
+}
+
+.evidenceItem {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 20px;
+  padding: 18px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--ua-text-inverse) 18%, transparent);
+}
+
+.evidenceItem strong {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.evidenceItem span {
+  color: color-mix(in srgb, var(--ua-text-inverse) 58%, transparent);
+  font-size: 12px;
+  text-align: right;
+}
+
+.contextFooter {
+  margin: 48px 0 0;
+  color: color-mix(in srgb, var(--ua-text-inverse) 54%, transparent);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+@media (min-width: 960px) {
+  .layout {
+    grid-template-areas: "context form";
+    grid-template-columns: minmax(430px, 44fr) minmax(480px, 56fr);
+  }
+
+  .contextPanel {
+    display: flex;
+  }
+
+  .formRegion {
+    padding: 32px clamp(40px, 5vw, 72px);
+    background: var(--ua-surface-primary);
+  }
+}
+
+@media (max-width: 479px) {
+  .formRegion {
+    padding-inline: 12px;
+  }
+
+  .formSlot {
+    padding-top: 32px;
+  }
+}

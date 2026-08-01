@@ -1,5 +1,5 @@
 /**
- * The single JavaScript mirror of the Living Precision motion contract (§7.1).
+ * The single JavaScript mirror of the authenticated product motion contract.
  *
  * CSS is the primary home for these values — `--ua-duration-*` and `--ua-ease-*`
  * in styles/authenticated/tokens.css. This module exists only for the call sites
@@ -7,10 +7,10 @@
  * animation library configuration.
  *
  * Route call sites must not choose their own timing. If a value you need is not
- * here, add it here with its §7 justification rather than inlining a literal.
+ * here, add it here with an interaction-role justification.
  */
 
-/** §7.1 duration tokens, in milliseconds. */
+/** Duration tokens, in milliseconds. */
 export const DURATION = {
   /** Reduced motion, and state changes that must be immediate. */
   instant: 0,
@@ -34,7 +34,7 @@ export const DURATION = {
   live: 2_400,
 } as const;
 
-/** §7.1 easing tokens. */
+/** Easing tokens. */
 export const EASE = {
   standard: 'cubic-bezier(0.2, 0, 0, 1)',
   enter: 'cubic-bezier(0.16, 1, 0.3, 1)',
@@ -44,7 +44,7 @@ export const EASE = {
 } as const;
 
 /**
- * §7.1 timing thresholds. These are deliberately *delays before showing*
+ * Timing thresholds. These are deliberately *delays before showing*
  * feedback: a fast interaction should show no loading affordance at all.
  */
 export const DELAY = {
@@ -53,7 +53,7 @@ export const DELAY = {
   /** Below this, an async action shows no spinner. */
   pendingIndicator: 150,
   /** Below this, a resource shows no skeleton. */
-  skeleton: 180,
+  skeleton: 300,
   /** An optimistic toggle only admits to saving after this. */
   optimisticSaving: 400,
   /** After this, an explanatory slow-load/retry state appears. */
@@ -61,7 +61,7 @@ export const DELAY = {
 } as const;
 
 /**
- * §7.3 route-progress curve. Progress is never a fake completion: the bar
+ * Route-progress curve. Progress is never a fake completion: the bar
  * enters at 12%, eases toward 65% and then 82%, and only actual navigation
  * completion takes it to 100%.
  */
@@ -75,15 +75,9 @@ export const ROUTE_PROGRESS = {
   fadeMs: DURATION.fast,
 } as const;
 
-/** §7.3 toast lifetimes. Danger toasts persist until dismissed. */
+/** Toast lifetimes. Danger toasts persist until dismissed. */
 export const TOAST_TIMEOUT = {
   titleOnly: 5_000,
   withDescription: 8_000,
   danger: null,
 } as const;
-
-/** True when the user has asked for reduced motion. Safe on the server. */
-export function prefersReducedMotion(): boolean {
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-}

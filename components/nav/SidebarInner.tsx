@@ -12,6 +12,7 @@ import { parseProductGateEnv } from '@/lib/product/envFlags';
 import { SidebarAside } from '@/components/nav/SidebarAside';
 import type { NavItemView } from '@/components/nav/SidebarNavItem';
 import type { ConnectionState } from '@/lib/connections/getConnectionState';
+import type { WorkspaceOption } from '@/components/layout/WorkspaceSwitcher';
 
 export interface SidebarProps {
   merchantName: string | null;
@@ -19,6 +20,8 @@ export interface SidebarProps {
   userEmail: string;
   claimsCount?: number;
   connectionState?: Pick<ConnectionState, 'orderSourceConnected' | 'helpdesk' | 'helpdeskProvider'>;
+  workspaces?: WorkspaceOption[];
+  activeMerchantId?: string | null;
   permissions?: Permission[];
 }
 
@@ -43,6 +46,8 @@ function SidebarInnerContent({
     helpdesk: false,
     helpdeskProvider: null,
   },
+  workspaces = [],
+  activeMerchantId = null,
   permissions = [],
 }: SidebarProps) {
   const pathname = usePathname();
@@ -51,12 +56,28 @@ function SidebarInnerContent({
 
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [hoverExpanded, setHoverExpanded] = useState(false);
+  const [compactExpanded, setCompactExpanded] = useState(false);
+  const [compactDesktop, setCompactDesktop] = useState(false);
 
   useEffect(() => {
     const stored = readCollapsedPreference();
     if (stored) setCollapsed(true);
   }, []);
+
+  useEffect(() => {
+    const query = window.matchMedia('(min-width: 768px) and (max-width: 1199px)');
+    const sync = () => {
+      setCompactDesktop(query.matches);
+      if (!query.matches) setCompactExpanded(false);
+    };
+    sync();
+    query.addEventListener('change', sync);
+    return () => query.removeEventListener('change', sync);
+  }, []);
+
+  useEffect(() => {
+    setCompactExpanded(false);
+  }, [pathname]);
   const { data: navCounts } = useFetchJson<{ claimsCount?: number }>(
     `/api/nav-counts?context=${encodeURIComponent(pathname)}`,
     {
@@ -66,6 +87,11 @@ function SidebarInnerContent({
   const claimsCount = navCounts?.claimsCount ?? initialClaimsCount;
 
   function toggleCollapse() {
+    if (compactDesktop) {
+      setCompactExpanded((current) => !current);
+      return;
+    }
+
     const next = !collapsed;
     setCollapsed(next);
     try {
@@ -100,15 +126,21 @@ function SidebarInnerContent({
     return pathname === href || pathname.startsWith(`${href}/`);
   };
 
-  const isCollapsed = collapsed && !hoverExpanded;
+  const desktopCompact = collapsed || compactDesktop;
+  const isCollapsed = desktopCompact && !compactExpanded;
   const closeMobile = () => setMobileOpen(false);
 
   const asideProps = {
     isCollapsed,
-    merchantName,
+    merchantName:
+      merchantName ??
+      workspaces.find((workspace) => workspace.id === activeMerchantId)?.name ??
+      null,
     userName,
     userEmail,
     connectionState,
+    workspaces,
+    activeMerchantId,
     groups,
     isActive,
     onCloseMobile: closeMobile,
@@ -116,18 +148,27 @@ function SidebarInnerContent({
     onSignOut: () => {
       void handleSignOut();
     },
-    onMouseEnter: () => {
-      if (collapsed) setHoverExpanded(true);
-    },
-    onMouseLeave: () => {
-      if (collapsed) setHoverExpanded(false);
-    },
   };
 
   return (
     <>
-      <div className="hidden md:block h-full">
-        <SidebarAside {...asideProps} isMobile={false} />
+      <div
+        className={cn(
+          'relative hidden h-full shrink-0 md:block',
+          collapsed
+            ? 'w-[var(--ua-sidebar-width-collapsed)]'
+            : 'w-[var(--ua-sidebar-width-collapsed)] min-[1200px]:w-[var(--ua-sidebar-width)]',
+        )}
+      >
+        <div
+          className={cn(
+            'absolute inset-y-0 left-0 h-full',
+            desktopCompact && compactExpanded && 'z-[var(--ua-z-dropdown)]',
+          )}
+          style={desktopCompact && compactExpanded ? { boxShadow: 'var(--ua-shadow-menu)' } : undefined}
+        >
+          <SidebarAside {...asideProps} isMobile={false} />
+        </div>
       </div>
 
       <button
@@ -153,7 +194,7 @@ function SidebarInnerContent({
             onClick={() => setMobileOpen(false)}
           />
           <div className="md:hidden fixed inset-y-0 left-0 z-50 h-full">
-            <SidebarAside {...asideProps} isMobile />
+            <SidebarAside {...asideProps} isCollapsed={false} isMobile />
           </div>
         </>
       ) : null}

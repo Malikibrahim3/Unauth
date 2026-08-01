@@ -4,6 +4,7 @@ import { getRequestUser } from '@/lib/auth/requestContext';
 import { TABLES } from '@/lib/supabase/tables';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import ChromeSetupClient from '@/components/settings/ChromeSetupClient';
+import { ConnectorSetupShell } from '@/components/settings/ConnectorSetupShell';
 import { SettingsPageShell } from '@/components/ui';
 
 export default async function ChromeIntegrationPage() {
@@ -30,9 +31,13 @@ export default async function ChromeIntegrationPage() {
       title="Chrome Extension"
       subtitle="Look up any customer email from any tab — Gorgias, Zendesk, Shopify, Gmail."
     >
-      <div className="space-y-3">
+      <ConnectorSetupShell
+        provider="Chrome extension"
+        requirements="A current API key is required. The extension is installed manually while the Chrome Web Store listing is pending."
+        currentStage="prepare"
+      >
         <ChromeSetupClient hasApiKeys={keyPrefixes.length > 0} keyPrefixes={keyPrefixes} />
-      </div>
+      </ConnectorSetupShell>
     </SettingsPageShell>
   );
 }

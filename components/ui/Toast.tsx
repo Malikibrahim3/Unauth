@@ -5,16 +5,22 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
   type ReactNode,
 } from "react";
+import { DURATION, TOAST_TIMEOUT } from "@/lib/design/motion";
+import { useOverlayPresence } from "@/lib/design/useOverlayPresence";
+import { IconButton } from "@/components/ui/IconButton";
 
 /**
- * Global toast (WS4.4). Every mutation answers back. Success/info/danger tones,
- * auto-dismiss, accessible (aria-live polite), restrained motion (a 140ms
- * ease-out slide that collapses to a fade under prefers-reduced-motion).
+ * Global toast (WS4.4, §7.3). Every mutation answers back. Success/info/danger
+ * tones, tone-based auto-dismiss (danger persists until dismissed), paused
+ * while hovered/focused/backgrounded, and the shared overlay presence
+ * primitive for enter/exit — one 8px + opacity transition, 160ms in / 100ms
+ * out, that collapses to instant under reduced motion.
  */
 export type ToastTone = "success" | "info" | "danger";
 
@@ -23,6 +29,7 @@ interface ToastItem {
   title: string;
   description?: string;
   tone: ToastTone;
+  closing: boolean;
 }
 
 interface ToastContextValue {
@@ -31,29 +38,128 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
-const TONE: Record<ToastTone, { border: string; icon: ReactNode }> = {
-  success: { border: "var(--ua-success)", icon: <CheckCircle2 className="h-4 w-4" style={{ color: "var(--ua-success)" }} /> },
-  info: { border: "var(--ua-info)", icon: <Info className="h-4 w-4" style={{ color: "var(--ua-info)" }} /> },
-  danger: { border: "var(--ua-risk-critical)", icon: <TriangleAlert className="h-4 w-4" style={{ color: "var(--ua-risk-critical)" }} /> },
+const TONE: Record<ToastTone, { icon: ReactNode; surface: string }> = {
+  success: { icon: <CheckCircle2 className="h-4 w-4" style={{ color: "var(--ua-success)" }} />, surface: "var(--ua-success-bg)" },
+  info: { icon: <Info className="h-4 w-4" style={{ color: "var(--ua-info)" }} />, surface: "var(--ua-info-bg)" },
+  danger: { icon: <TriangleAlert className="h-4 w-4" style={{ color: "var(--ua-risk-critical)" }} />, surface: "var(--ua-risk-critical-bg)" },
 };
+
+/** §7.3 tone-based lifetime for one toast, in ms. `null` means "persistent until dismissed". */
+function toastLifetimeMs(tone: ToastTone, hasDescription: boolean): number | null {
+  if (tone === "danger") return TOAST_TIMEOUT.danger;
+  return hasDescription ? TOAST_TIMEOUT.withDescription : TOAST_TIMEOUT.titleOnly;
+}
+
+function ToastItemView({ item, onRequestClose, onExited }: {
+  item: ToastItem;
+  onRequestClose: () => void;
+  onExited: () => void;
+}) {
+  const { phase, motionAllowed } = useOverlayPresence({
+    open: !item.closing,
+    onClose: onRequestClose,
+    onExited,
+    exitDurationMs: DURATION.fast,
+    transient: true,
+  });
+
+  const lifetimeMs = toastLifetimeMs(item.tone, Boolean(item.description));
+  const remainingRef = useRef(lifetimeMs ?? 0);
+  const startedAtRef = useRef<number | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearTimer = useCallback(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = null;
+  }, []);
+
+  const start = useCallback(() => {
+    if (lifetimeMs === null || item.closing) return;
+    clearTimer();
+    startedAtRef.current = Date.now();
+    timerRef.current = setTimeout(onRequestClose, remainingRef.current);
+  }, [lifetimeMs, item.closing, clearTimer, onRequestClose]);
+
+  const pause = useCallback(() => {
+    if (lifetimeMs === null || startedAtRef.current === null) return;
+    clearTimer();
+    remainingRef.current = Math.max(0, remainingRef.current - (Date.now() - startedAtRef.current));
+    startedAtRef.current = null;
+  }, [lifetimeMs, clearTimer]);
+
+  useEffect(() => {
+    start();
+    const onVisibilityChange = () => {
+      if (document.hidden) pause();
+      else start();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      clearTimer();
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+    // Intentionally runs once per toast: `start`/`pause` close over refs, not state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (!phase) return null;
+  const isOpen = phase === "open";
+  const duration = phase === "exiting" ? DURATION.fast : DURATION.base;
+
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      aria-hidden={phase === "exiting" ? true : undefined}
+      className="pointer-events-auto flex items-start gap-3 rounded-[var(--ua-radius-surface)] border p-3 shadow-[var(--ua-shadow-menu)]"
+      style={{
+        borderColor: "var(--ua-border-default)",
+        background: TONE[item.tone].surface,
+        opacity: isOpen ? 1 : 0,
+        transform: isOpen ? "translateY(0)" : "translateY(8px)",
+        transition: motionAllowed ? `opacity ${duration}ms var(--ua-ease-standard), transform ${duration}ms var(--ua-ease-standard)` : "none",
+        pointerEvents: phase === "exiting" ? "none" : undefined,
+      }}
+      onMouseEnter={pause}
+      onMouseLeave={start}
+      onFocus={pause}
+      onBlur={start}
+    >
+      <span className="mt-0.5 shrink-0">{TONE[item.tone].icon}</span>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold text-[var(--ua-text-primary)]">{item.title}</p>
+        {item.description ? (
+          <p className="mt-0.5 text-xs text-[var(--ua-text-secondary)]">{item.description}</p>
+        ) : null}
+      </div>
+      <IconButton
+        label="Dismiss notification"
+        onClick={onRequestClose}
+        size="sm"
+        icon={<X />}
+        className="border-transparent bg-transparent"
+      />
+    </div>
+  );
+}
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<ToastItem[]>([]);
   const idRef = useRef(0);
 
-  const dismiss = useCallback((id: number) => {
+  const requestClose = useCallback((id: number) => {
+    setItems((current) => current.map((item) => (item.id === id ? { ...item, closing: true } : item)));
+  }, []);
+
+  const remove = useCallback((id: number) => {
     setItems((current) => current.filter((item) => item.id !== id));
   }, []);
 
-  const toast = useCallback<ToastContextValue["toast"]>(
-    ({ title, description, tone = "info" }) => {
-      idRef.current += 1;
-      const id = idRef.current;
-      setItems((current) => [...current, { id, title, description, tone }]);
-      setTimeout(() => dismiss(id), 4200);
-    },
-    [dismiss],
-  );
+  const toast = useCallback<ToastContextValue["toast"]>(({ title, description, tone = "info" }) => {
+    idRef.current += 1;
+    const id = idRef.current;
+    setItems((current) => [...current, { id, title, description, tone, closing: false }]);
+  }, []);
 
   const value = useMemo(() => ({ toast }), [toast]);
 
@@ -66,42 +172,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         aria-label="Notifications"
       >
         {items.map((item) => (
-          <div
+          <ToastItemView
             key={item.id}
-            role="status"
-            aria-live="polite"
-            className="ua-toast pointer-events-auto flex items-start gap-2.5 rounded-lg border bg-[var(--ua-surface-primary)] p-3 shadow-[var(--ua-shadow-menu)]"
-            style={{ borderColor: "var(--ua-border-default)", borderLeft: `3px solid ${TONE[item.tone].border}` }}
-          >
-            <span className="mt-0.5 shrink-0">{TONE[item.tone].icon}</span>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-[var(--ua-text-primary)]">{item.title}</p>
-              {item.description ? (
-                <p className="mt-0.5 text-xs text-[var(--ua-text-secondary)]">{item.description}</p>
-              ) : null}
-            </div>
-            <button
-              type="button"
-              aria-label="Dismiss notification"
-              onClick={() => dismiss(item.id)}
-              className="shrink-0 rounded p-0.5 text-[var(--ua-text-tertiary)] hover:text-[var(--ua-text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ua-border-focus)]"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          </div>
+            item={item}
+            onRequestClose={() => requestClose(item.id)}
+            onExited={() => remove(item.id)}
+          />
         ))}
       </div>
-      <style>{`
-        .ua-toast { animation: ua-toast-in 140ms ease-out; }
-        @keyframes ua-toast-in {
-          from { opacity: 0; transform: translateY(8px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .ua-toast { animation: ua-toast-fade 140ms ease-out; }
-          @keyframes ua-toast-fade { from { opacity: 0; } to { opacity: 1; } }
-        }
-      `}</style>
     </ToastContext.Provider>
   );
 }

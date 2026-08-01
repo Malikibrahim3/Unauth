@@ -51,27 +51,27 @@ export function RailSection({
   return (
     <Card unstyled
       variant="panel"
-      className={`overflow-hidden p-0 ${id === 'manage' ? 'ua-focal-panel' : ''}`}
+      className={`overflow-hidden p-0 ${id === 'manage' ? 'ua-focal-panel rounded-none border-x-0 shadow-none' : ''}`}
       style={{
-        borderColor: highlighted ? 'var(--ua-text-primary)' : id === 'manage' ? 'var(--ua-border-default)' : 'var(--ua-border-subtle)',
+        borderColor: highlighted ? 'var(--ua-text-primary)' : 'var(--ua-border-subtle)',
         boxShadow: undefined,
       }}
     >
       <button
         type="button"
         onClick={() => onToggle(id)}
-        className="w-full flex items-center justify-between px-3 py-2 text-left"
-        style={{ background: id === 'manage' ? 'var(--ua-surface-selected)' : 'var(--ua-surface-primary)' }}
+        className="flex w-full items-center justify-between px-4 py-3 text-left"
+        style={{ background: 'var(--ua-surface-primary)' }}
         aria-expanded={open}
       >
         <span className="flex items-center gap-1.5 min-w-0">
-          <span className="text-[length:var(--ua-text-metadata-size)] font-semibold truncate" style={{ color: 'var(--ua-text-secondary)' }}>{title}</span>
+          <span className="truncate text-[length:var(--ua-text-chart-title-size)] font-semibold" style={{ color: 'var(--ua-text-primary)' }}>{title}</span>
           {badge}
         </span>
         <span className="text-xs shrink-0 ml-2" style={{ color: 'var(--ua-text-secondary)' }}>{open ? '▲' : '▼'}</span>
       </button>
       {open && (
-        <div className="px-3 pb-3 pt-0 border-t" style={{ borderColor: 'var(--ua-border-subtle)' }}>
+        <div className="border-t px-4 pb-4 pt-4" style={{ borderColor: 'var(--ua-border-subtle)' }}>
           {children}
         </div>
       )}

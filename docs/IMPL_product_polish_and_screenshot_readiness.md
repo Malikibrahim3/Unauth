@@ -1,14 +1,23 @@
-# IMPL — Product polish and landing-page screenshot readiness
+# HISTORICAL — Product polish and landing-page screenshot readiness
 
-- **Status:** Execution-ready phased specification; Phase 1 is in progress and landing-page capture remains unavailable until Phase 13
+- **Status:** Historical audit backlog; non-authoritative and not executable
 - **Date:** 27 July 2026
 - **Scope:** Authenticated shell, all primary product routes, deterministic marketing seed, runtime integrity, supported-desktop behaviour, accessibility, and screenshot production
 - **Audit baseline:** Local full-merchant review using `npm run seed:simeon` at 1280px, with additional historical narrow-width evidence now superseded by the desktop-only boundary in §0.3
-- **Binding visual contract:** [`IMPL_quiet_precision_product_ui.md`](IMPL_quiet_precision_product_ui.md)
-- **Binding contributor rules:** [`../styles/authenticated/README.md`](../styles/authenticated/README.md)
+- **Current visual and phase authority:** [`IMPL_living_precision_product_ui.md`](IMPL_living_precision_product_ui.md)
+- **Contributor-rule loader:** [`../styles/authenticated/README.md`](../styles/authenticated/README.md)
 - **Related product contract:** [`IMPL_merchant_operations_experience.md`](IMPL_merchant_operations_experience.md)
 
-This document converts the 26 July visual audit into an implementation backlog. It records what was wrong, the required change, and a measurable success condition for every observed issue. It does not authorise a different product theme, conceal truthful unavailable states, invent production data, or weaken the supervised-decision product boundary.
+> [!WARNING]
+> This document preserves the 26 July audit evidence only. Its 13 phases are
+> not executable and cannot override or supplement the numbered phases in §12
+> of the Living Precision implementation document.
+
+This document records what was wrong, the proposed change, and a measurable
+success condition for every issue observed on 26 July. Use it as historical
+evidence only. It does not authorise a product theme, implementation phase,
+completion claim, concealment of truthful unavailable states, fabricated
+production data, or a weaker supervised-decision product boundary.
 
 ---
 
@@ -580,7 +589,7 @@ The generic quality is structural, not chromatic. Repeated white rounded rectang
 | SYS-18 | P1 · Product | Generic insight callouts repeated obvious counts and added another bordered rectangle. | Keep a callout only for a non-obvious conclusion, risk, or required action. Otherwise put the sentence in the page subtitle, table caption, or omit it. | Every remaining callout changes what the merchant should understand or do; no callout merely restates adjacent KPIs. |
 | SYS-19 | P2 · Product | Surfaces mixed outer rounded capsule tabs with inner underline/tab metaphors, especially case detail. | Use one navigation model per level: attached tabs for sibling sections or a segmented control for a mutually exclusive view. Avoid a second tab metaphor inside the same viewport. | Case detail and settings each expose one visually unambiguous local-navigation system. |
 | SYS-20 | P2 · Product | Provider/catalogue cards used the same logo-title-copy-pills-footer template repeatedly. | On management views, prefer compact rows. Reserve catalogue cards for browsing, reduce metadata chips, and vary layout only when information hierarchy requires it—not decoratively. | Connected sources render as operational rows; browse cards expose one clear purpose and no redundant metadata. |
-| SYS-21 | P0 · Product | The binding Quiet Precision document and current tokens/contracts have drifted: documented canvas/shell/surface values and primitive ownership do not fully match the current CSS and component inventory. | Make an explicit design decision on the approved token values, then update the long specification, concise README, tokens, gallery, and contract comments together. Use the existing design-contract check; add no new parity layer. | One authoritative token/primitive table agrees with the CSS and representative gallery. |
+| SYS-21 | P0 · Product | The then-binding Quiet Precision document and current tokens/contracts had drifted: documented canvas/shell/surface values and primitive ownership did not fully match the audited CSS and component inventory. | Make an explicit design decision on the approved token values, then update the long specification, concise README, tokens, gallery, and contract comments together. Use the existing design-contract check; add no new parity layer. | One authoritative token/primitive table agrees with the CSS and representative gallery. |
 | SYS-22 | P1 · Product | `Card`, `Panel`, `SectionCard`, `AuthenticatedPanel`, Metric groups, workbench strips, and page-local panels overlap in structural purpose. | Converge on working surface, joined section, inset group, metric group, and floating surface. Deprecate overlapping APIs and keep page modules responsible for composition only. | Every capture-route surface maps to one documented primitive; design lint reports zero new bespoke panel/card systems. |
 | SYS-23 | P2 · Product | Some shared primitives own static visual appearance through inline style objects even though the binding contract limits inline styling to data-derived geometry. | Move static colour, border, radius, padding, and type appearance into the authenticated component layer; retain inline custom properties only for data-derived values. | Authenticated-design lint has no static-style exceptions for canonical primitives; a static visual change is made in one component style source. |
 | SYS-24 | P0 · Product | Canonical tables make the `<tr>` itself focusable/clickable while also containing links and menus; a row is not a native interactive control, and individual skeleton cells can repeat “Loading row.” | Put a real link in the primary identity cell and explicit buttons in the action cell. Remove row keyboard emulation unless a fully conforming grid is warranted. Mark visual skeleton cells hidden and announce loading once on the containing region. | Accessibility tree contains valid links/buttons, nested actions operate independently, Enter follows the identity link, and screen readers hear one loading announcement. |
@@ -1230,7 +1239,7 @@ This programme is complete only when:
 5. Every authenticated route receives the one populated supported-width smoke in Phase 12. Loading, empty/unavailable, and error variants are covered once per shared component pattern plus any genuinely route-specific path—not once per route. Required requests return 2xx and uncaught console, hydration, schema, silent-data, and unintended-write failures are zero.
 6. Product-visible and accessible terminology follows §6 and contains no fixture, internal, personal, raw-identifier, machine-enum, or unsupported-capability language.
 7. Same-scope currency, financial, count, customer, connection, provenance, and state values reconcile across index, detail, dashboard, report, notification, and integration consumers.
-8. Shared components and route layouts satisfy the binding Quiet Precision contract without nested-card, KPI-wall, pill-soup, repeated-callout, duplicate-title, decorative-status, or mechanically repeated page-template regressions.
+8. Shared components and route layouts satisfied the then-binding Quiet Precision contract without nested-card, KPI-wall, pill-soup, repeated-callout, duplicate-title, decorative-status, or mechanically repeated page-template regressions.
 9. The single Phase 12 pass satisfies the 1440px/1024px and representative accessibility checks; do not repeat it for Definition of Done. Final capture candidates additionally pass their exact capture size, and the shared Desktop required boundary passes once at 1023px and 390px.
 10. Capture masters are produced from the recorded production build, seed, clock, browser, and manifest; two independent runs stay within the 0.1% tolerance; privacy and transient-state preflights pass; encoded assets remain legible at exact landing sizes.
 11. No product behaviour, direct regression, screenshot, or threshold was removed or weakened to conceal a defect. Redundant meta-verifiers, proof artifacts, duplicate release runs, and Cartesian test matrices are intentionally out of scope; no active owned TODO or unresolved report item remains.

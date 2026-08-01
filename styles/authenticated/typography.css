@@ -1,5 +1,5 @@
 /*
- * Living Precision type roles (§3.5).
+ * Authenticated product type roles.
  * ------------------------------------------------------------------
  * Inter carries all product UI, including every metric, date, amount,
  * percentage, table value, and chart value — those use Inter with
@@ -8,15 +8,14 @@
  * Monospace is reserved for source identifiers, hashes, API keys, code, and
  * machine-formatted payloads. There is no display face in product UI.
  *
- * `--font-dm-sans` / `--font-dm-mono` are the next/font CSS variables declared
- * in app/layout.tsx; despite their historical names they resolve to Inter and
- * DM Mono respectively. They are referenced only here, so product code never
+ * `--font-inter` / `--font-dm-mono` are the next/font CSS variables declared
+ * in app/layout.tsx. They are referenced only here, so product code never
  * touches a non-`--ua-*` name.
  */
 .ua-app,
 .ua-auth-surface {
-  --ua-font-sans: var(--font-dm-sans), Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --ua-font-mono: var(--font-dm-mono), "SF Mono", Menlo, Consolas, monospace;
+  --ua-font-sans: var(--font-inter), Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --ua-font-mono: var(--font-dm-mono), "Roboto Mono", Consolas, monospace;
 
   /* Page title — one per page (§3.5) */
   --ua-text-page-title-size: 20px;
@@ -71,9 +70,9 @@
   --ua-text-caption-tracking: 0;
 
   /* Metadata — tertiary information, never the sole carrier of meaning */
-  --ua-text-metadata-size: 11px;
+  --ua-text-metadata-size: 12px;
   --ua-text-metadata-weight: 500;
-  --ua-text-metadata-leading: 15px;
+  --ua-text-metadata-leading: 16px;
   --ua-text-metadata-tracking: 0;
 
   /* KPI value — tabular numerals, no display face */
@@ -100,4 +99,60 @@
 .ua-app :where(code, kbd, samp, pre),
 .ua-auth-surface :where(code, kbd, samp, pre) {
   font-family: var(--ua-font-mono);
+}
+
+/*
+ * The product uses a readable desktop hierarchy: page identity is unmistakable,
+ * record identity is slightly quieter, and supporting metadata never drops
+ * below 12px. Auth-adjacent surfaces retain the compact roles above.
+ */
+.ua-app {
+  --ua-text-page-title-size: 28px;
+  --ua-text-page-title-weight: 650;
+  --ua-text-page-title-leading: 34px;
+  --ua-text-page-title-tracking: -0.02em;
+
+  --ua-text-detail-identity-size: 23px;
+  --ua-text-detail-identity-weight: 650;
+  --ua-text-detail-identity-leading: 30px;
+  --ua-text-detail-identity-tracking: -0.015em;
+
+  --ua-text-dialog-title-size: 20px;
+  --ua-text-dialog-title-leading: 27px;
+
+  --ua-text-section-title-size: 18px;
+  --ua-text-section-title-leading: 25px;
+  --ua-text-section-title-tracking: -0.01em;
+
+  --ua-text-chart-title-size: 14px;
+  --ua-text-chart-title-leading: 20px;
+
+  --ua-text-metadata-size: 12px;
+  --ua-text-metadata-leading: 16px;
+
+  --ua-text-kpi-size: 28px;
+  --ua-text-kpi-leading: 34px;
+
+  --ua-text-hero-value-size: 38px;
+  --ua-text-hero-value-leading: 44px;
+  --ua-text-hero-value-weight: 650;
+}
+
+/* Public utility classes predate the authenticated type contract. Reassert
+ * product roles here so shell labels never inherit editorial tracking or an
+ * unintended weight from globals.css. */
+.ua-app .text-caption,
+.ua-auth-surface .text-caption {
+  font-size: var(--ua-text-caption-size);
+  font-weight: var(--ua-text-caption-weight);
+  letter-spacing: var(--ua-text-caption-tracking);
+  line-height: var(--ua-text-caption-leading);
+}
+
+.ua-app .text-meta,
+.ua-auth-surface .text-meta {
+  font-size: var(--ua-text-metadata-size);
+  font-weight: var(--ua-text-metadata-weight);
+  letter-spacing: var(--ua-text-metadata-tracking);
+  line-height: var(--ua-text-metadata-leading);
 }

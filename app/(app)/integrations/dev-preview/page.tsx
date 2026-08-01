@@ -121,9 +121,9 @@ export default async function IntegrationHealthDevPreviewPage() {
             description="On-demand provider with a conclusive credential check."
             bodyClassName="grid gap-3 p-3"
           >
-            <div className="overflow-x-auto rounded-[var(--ua-radius-control)] border border-[var(--ua-border-subtle)]">
+            <ul className="m-0 list-none overflow-x-auto rounded-[var(--ua-radius-control)] border border-[var(--ua-border-subtle)] p-0">
               <ConnectorRow item={connectionVerifiedItem} />
-            </div>
+            </ul>
             <ConnectionHealthHeader item={connectionVerifiedItem} />
             <ConnectionHealthGrid item={connectionVerifiedItem} />
           </AuthenticatedPanel>
@@ -133,9 +133,9 @@ export default async function IntegrationHealthDevPreviewPage() {
             description="On-demand provider with an inconclusive network-level check."
             bodyClassName="grid gap-3 p-3"
           >
-            <div className="overflow-x-auto rounded-[var(--ua-radius-control)] border border-[var(--ua-border-subtle)]">
+            <ul className="m-0 list-none overflow-x-auto rounded-[var(--ua-radius-control)] border border-[var(--ua-border-subtle)] p-0">
               <ConnectorRow item={verificationUnavailableItem} />
-            </div>
+            </ul>
             <ConnectionHealthHeader item={verificationUnavailableItem} />
             <ConnectionHealthGrid item={verificationUnavailableItem} />
           </AuthenticatedPanel>

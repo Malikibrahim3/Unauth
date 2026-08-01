@@ -5,6 +5,7 @@ export interface ServerDataTableColumn<T> {
   key: string;
   header: string;
   align?: "left" | "right" | "center";
+  kind?: "text" | "numeric" | "currency" | "date" | "status" | "action";
   render: (row: T) => ReactNode;
   width?: string;
 }
@@ -14,8 +15,10 @@ export interface DataTableServerProps<T> {
   rows: T[];
   getRowKey: (row: T) => string;
   className?: string;
-  emptyState?: ReactNode;
+  emptyState: ReactNode;
   density?: "default" | "compact" | "relaxed";
+  /** Render inside a RegistrySurface, which owns the outer frame. */
+  flush?: boolean;
   loading?: boolean;
   'aria-label'?: string;
 }
@@ -27,14 +30,23 @@ export function DataTableServer<T>({
   className,
   emptyState,
   density = "default",
+  flush = false,
   loading = false,
   'aria-label': ariaLabel = 'Data table',
 }: DataTableServerProps<T>) {
+  const columnAlign = (column: ServerDataTableColumn<T>): "left" | "right" | "center" => {
+    if (column.align) return column.align;
+    if (column.kind === "numeric" || column.kind === "currency" || column.kind === "date") return "right";
+    if (column.kind === "status" || column.kind === "action") return "center";
+    return "left";
+  };
+
   return (
     <div
       className={cn(
         "ua-data-table",
         `ua-data-table--density-${density}`,
+        flush && "ua-data-table--flush",
         className,
       )}
       role="region"
@@ -51,8 +63,9 @@ export function DataTableServer<T>({
                 scope="col"
                 className={cn(
                   "ua-data-table__header-cell",
-                  column.align === "right" && "ua-data-table__header-cell--right",
-                  column.align === "center" && "ua-data-table__header-cell--center",
+                  columnAlign(column) === "right" && "ua-data-table__header-cell--right",
+                  columnAlign(column) === "center" && "ua-data-table__header-cell--center",
+                  (column.kind === "numeric" || column.kind === "currency") && "ua-data-table__header-cell--numeric",
                 )}
                 style={column.width ? { width: column.width } : undefined}
               >
@@ -75,13 +88,7 @@ export function DataTableServer<T>({
           ) : rows.length === 0 ? (
             <tr>
               <td colSpan={columns.length}>
-                {emptyState ?? (
-                  <div
-                    className="ua-data-table__empty"
-                  >
-                    No matching records
-                  </div>
-                )}
+                {emptyState}
               </td>
             </tr>
           ) : (
@@ -95,8 +102,9 @@ export function DataTableServer<T>({
                     key={column.key}
                     className={cn(
                       "ua-data-table__cell",
-                      column.align === "right" && "ua-data-table__cell--right",
-                      column.align === "center" && "ua-data-table__cell--center",
+                      columnAlign(column) === "right" && "ua-data-table__cell--right",
+                      columnAlign(column) === "center" && "ua-data-table__cell--center",
+                      (column.kind === "numeric" || column.kind === "currency") && "ua-data-table__cell--numeric",
                     )}
                   >
                     {column.render(row)}

@@ -47,7 +47,7 @@ export function AuthenticatedPageHeader({
       ) : null}
       <div className={styles.headerTop}>
         <div className={styles.headingGroup}>
-          {eyebrow ? <p className={styles.eyebrow}>{eyebrow}</p> : null}
+          {eyebrow ? <p className={styles.contextLabel}>{eyebrow}</p> : null}
           <h1 className={styles.title}>{title}</h1>
           {subtitle ? <p className={styles.subtitle}>{subtitle}</p> : null}
         </div>

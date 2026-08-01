@@ -1,6 +1,6 @@
 # Contributor guide
 
-Read `docs/PRODUCT.md` and `ARCHITECTURE.md` before changing product behavior, schema, integrations, or merchant-facing language.
+Read `PRODUCT.md` and `ARCHITECTURE.md` before changing product behavior, schema, integrations, or merchant-facing language.
 
 ## Invariants
 
@@ -19,10 +19,13 @@ Read `docs/PRODUCT.md` and `ARCHITECTURE.md` before changing product behavior, s
 - Routes: `lib/appRoutes.ts`; legacy redirects: `next.config.js`
 - Database conventions: `lib/supabase`; migration history: `supabase/migrations`
 - Environment validation: `lib/utils/env.ts`
-- Product UI: `styles/authenticated/README.md` (binding rules) and
-  `docs/IMPL_living_precision_product_ui.md` (complete implementation contract;
-  supersedes `docs/IMPL_quiet_precision_product_ui.md`, which is retained only
-  as implementation history)
+- Product UI authority is
+  `docs/IMPL_decision_ledger_instrument_grade_final_iteration.md` for every
+  visible authenticated, public, entry, onboarding, and embedded surface.
+  Surface modes remain intentionally distinct densities of one system.
+  `styles/authenticated/README.md`,
+  `.codex/rules/authenticated-product.md`, and
+  `.cursor/rules/authenticated-design-system.mdc` route contributors by scope.
 - Engine weights and thresholds: `lib/engine/weights.ts`
 - Identity normalization and hashing: `lib/identity/normalise.ts` and `lib/identity/hash.ts`
 
@@ -34,15 +37,17 @@ Use the validated `env` object in server application code. Scripts and tests may
 
 Keep applied migrations immutable and add forward migrations. Authorization must be checked before using service-role access, and every database operation must be merchant-scoped.
 
-Read `styles/authenticated/README.md` and
-`docs/IMPL_living_precision_product_ui.md` before product UI changes. Living
-Precision is a hard replacement: use its canonical tokens, primitives, page
-families, states, responsive rules, and accessibility contract; do not treat
-the pre-migration runtime appearance as precedent or preserve visual
-compatibility aliases. Violet is the one product accent and near-black survives
-only as the high-stakes commit action; semantic colour carries meaning and never
-becomes a categorical chart colour. Keep public landing styles isolated,
-preserve keyboard and mobile access, and run
-`npm run lint:authenticated-design`.
-
-Before completion run the relevant focused tests, then the full validation gate in `docs/TESTING.md`.
+For visual changes, follow `IG-00` through `IG-16` in
+`docs/IMPL_decision_ledger_instrument_grade_final_iteration.md`. The approved direction
+uses an evidence-to-decision hierarchy with explicit scope, provenance,
+consequence, action, and recorded outcomes. It does not
+copy iOS navigation, macOS chrome, SF assets, or decorative glass. Preserve one
+violet product accent, semantic colour meaning, the `--ua-*` namespace,
+canonical components, surface-mode isolation, keyboard access, truthful data
+states, and accessibility reflow. The migration is a hard visual
+cutover inside `.ua-app`; do not add a visual cohort, compatibility theme, or
+route-local visual system.
+Functional rollout controls
+`CONNECTION_HEALTH_V2_ENABLED`, `WORK_COCKPIT_V2_ENABLED`, and
+`CASE_WORKSPACE_V2_ENABLED` remain independent product controls and must never
+select a visual theme.

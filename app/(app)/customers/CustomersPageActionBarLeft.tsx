@@ -2,10 +2,9 @@
 
 import { Suspense } from 'react';
 import CustomersFilterSheet from '@/components/customers/CustomersFilterSheet';
+import { Bone } from '@/components/ui/LoadingSkeleton';
 
-const FILTER_FALLBACK = (
-  <div className="h-10 w-full max-w-xl animate-pulse rounded-md" style={{ background: 'var(--ua-surface-secondary)' }} />
-);
+const FILTER_FALLBACK = <Bone className="h-10 w-full max-w-xl" />;
 
 export function CustomersPageActionBarLeft() {
   return (

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { formatNumber } from '@/lib/utils/format';
-import { ChartPanel, ChartState } from './ChartPanel';
+import { ChartFrame, ChartState, simpleChartTable } from './ChartFrame';
 import { finiteNonNegative, type AuthChartDatum } from './types';
 import styles from './AuthenticatedCharts.module.css';
 
@@ -10,6 +10,7 @@ export function RankedContributionChart({
   description,
   items,
   annotation,
+  records,
   compact = false,
 }: {
   id: string;
@@ -17,6 +18,8 @@ export function RankedContributionChart({
   description: string;
   items: AuthChartDatum[];
   annotation?: { value: string; label: string };
+  /** Optional "View records" drill-down (§6.4 item 8). Server prepares the href. */
+  records?: { href: string; label?: string };
   compact?: boolean;
 }) {
   const rows = items
@@ -25,21 +28,22 @@ export function RankedContributionChart({
     .slice(0, 6);
   const max = Math.max(0, ...rows.map((row) => row.value));
   return (
-    <ChartPanel
+    <ChartFrame
       id={id}
-      title={title}
-      description={description}
-      annotation={annotation ? <><strong>{annotation.value}</strong>{annotation.label}</> : undefined}
       kind="ranked-contribution"
-      table={rows.map((row) => ({
+      question={title}
+      summary={description}
+      control={annotation ? <div className={styles.annotation}><strong>{annotation.value}</strong>{annotation.label}</div> : undefined}
+      records={records}
+      table={simpleChartTable(rows.map((row) => ({
         label: row.label,
         value: row.displayValue ?? formatNumber(row.value),
         detail: row.detail,
         href: row.href,
-      }))}
+      })))}
       compact={compact}
     >
-      {max === 0 ? <ChartState title="No attributable value" description="No compatible financial rows are available for this ranked view." /> : rows.length === 1 ? (
+      {max === 0 ? <ChartState kind="empty" title="No attributable value" description="No compatible financial rows are available for this ranked view." /> : rows.length === 1 ? (
         <div className={styles.singleRank} role="group" aria-label={`${rows[0].label}: ${rows[0].displayValue ?? rows[0].value}`}>
           <span>
             {rows[0].href ? <Link href={rows[0].href}>{rows[0].label}</Link> : rows[0].label}
@@ -48,7 +52,7 @@ export function RankedContributionChart({
           {rows[0].detail ? <small>{rows[0].detail}</small> : null}
         </div>
       ) : (
-        <div className={styles.rankedChart} role="img" aria-label={rows.map((row) => `${row.label}: ${row.displayValue ?? row.value}`).join(', ')}>
+        <div className={styles.rankedChart} role="group" aria-label={rows.map((row) => `${row.label}: ${row.displayValue ?? row.value}`).join(', ')}>
           {rows.map((row, index) => (
             <div className={styles.rankedRow} key={row.label}>
               <span className={styles.rankedName}>
@@ -72,6 +76,6 @@ export function RankedContributionChart({
           ))}
         </div>
       )}
-    </ChartPanel>
+    </ChartFrame>
   );
 }

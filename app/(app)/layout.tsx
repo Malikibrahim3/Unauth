@@ -22,19 +22,13 @@ import {
 import { NavigationProvider } from "@/components/navigation/NavigationProvider";
 import { ToastProvider } from "@/components/ui/Toast";
 import { DevPreviewProvider } from "@/components/product/DevPreviewContext";
-import { AuthUiCohortTelemetry } from "@/components/product/AuthUiCohortTelemetry";
-import {
-  AUTH_UI_ROLLOUT_COOKIE,
-  resolveAuthUiRollout,
-} from "@/lib/product/authenticatedUiRollout";
+import { AuthenticatedSurfaceTelemetry } from "@/components/product/AuthenticatedSurfaceTelemetry";
 import {
   DEV_TIER_COOKIE,
   getDevPreviewFromCookieValue,
 } from "@/lib/product/devPreview";
 import { resolvePermissions } from "@/lib/permissions";
-import { RouteReadySignal } from "@/components/system/RouteReadySignal";
 import { DesktopRequiredBoundary } from "@/components/system/DesktopRequiredBoundary";
-import { Suspense } from "react";
 
 export const dynamic = "force-dynamic";
 
@@ -51,10 +45,6 @@ export default async function AppLayout({
   }
 
   const cookieStore = await cookies();
-  const authUiRollout = resolveAuthUiRollout({
-    environment: process.env.VERCEL_ENV ?? process.env.NODE_ENV,
-    cookieValue: cookieStore.get(AUTH_UI_ROLLOUT_COOKIE)?.value,
-  });
   const ctx = await getRequestCallerContext();
 
   const membershipsPromise = serviceClient
@@ -163,21 +153,22 @@ export default async function AppLayout({
         <DevPreviewProvider value={devPreview}>
           <div
             className="ua-app flex h-screen overflow-hidden"
-            data-ui-version="authenticated-v2"
-            data-ui-cohorts={[...authUiRollout.enabled].join(',') || 'none'}
-            data-ui-rollout-source={authUiRollout.source}
+            data-ui-version="decision-ledger-instrument-grade"
           >
+            <span
+              hidden
+              aria-hidden="true"
+              data-design-contract="Decision Ledger — Instrument Grade: one dominant operating object; visible source, fact, inference, decision, and outcome authority; exact financial scope; browser-native composition; no visual cohorts, iOS imitation, card soup, glass, or decorative elevation."
+            />
             <ToastProvider>
-              {/* RUN-10: names the point at which a route has finished resolving. */}
-              <Suspense fallback={null}>
-                <RouteReadySignal />
-              </Suspense>
-              <AuthUiCohortTelemetry />
+              <AuthenticatedSurfaceTelemetry />
               <Sidebar
                 merchantName={displayMerchantName ?? null}
                 userName={userName}
                 userEmail={user.email ?? ""}
                 connectionState={connectionState}
+                workspaces={workspaces}
+                activeMerchantId={ctx?.merchantId ?? null}
                 permissions={permissions}
               />
 
@@ -191,12 +182,8 @@ export default async function AppLayout({
               <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
                 <BreadcrumbOverrideProvider>
                   <AppHeader
-                    merchantName={displayMerchantName ?? null}
-                    isDemo={allDemo}
                     userName={userName}
                     userEmail={user.email ?? null}
-                    workspaces={workspaces}
-                    activeMerchantId={ctx?.merchantId ?? null}
                     unreadCount={0}
                     permissions={permissions}
                   />

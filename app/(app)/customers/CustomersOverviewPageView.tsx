@@ -4,14 +4,12 @@ import { PageConnectionGate } from '@/components/connections/PageConnectionGate'
 import type { ConnectionState } from '@/lib/connections/getConnectionState';
 import type { MerchantSetupState } from '@/lib/connections/getMerchantSetupState';
 import CustomersTableClient from '@/components/customers/CustomersTableClient';
-import { CustomersPageWorkbench } from '@/app/(app)/customers/CustomersPageWorkbench';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
-import { Badge, ButtonLink, Panel, WorkbenchEmptyState, KeyInsightCallout, SummaryRail } from '@/components/ui';
-import { Users } from 'lucide-react';
-import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
+import { ButtonLink, EmptyState, FilterChip as UiFilterChip, PageFrame, RegistrySurface } from '@/components/ui';
 import { FilterChip } from '@/app/(app)/customers/CustomersOverviewFilterChip';
 import { buildRemoveHref, customersListHref } from '@/app/(app)/customers/customersOverviewPageUtils';
 import { formatNumber } from '@/lib/utils/format';
+import { CustomersPageActionBarLeft } from '@/app/(app)/customers/CustomersPageActionBarLeft';
 
 export type CustomerOverviewRow = Parameters<typeof CustomersTableClient>[0]['rows'][number];
 
@@ -22,23 +20,16 @@ export type CustomersOverviewPageViewProps = {
   pageActions: { primary: { label: string; href: string }; subtitle: string };
   sp: Record<string, string | undefined>;
   rows: CustomerOverviewRow[];
+  baseCustomerCount: number;
   totalCount: number;
   page: number;
   PAGE_SIZE: number;
   totalPages: number;
-  from: number;
-  to: number;
   noFilters: boolean;
   q: string;
   hasRefunds: boolean;
   hasChargebacks: boolean;
   openClaimsOnly: boolean;
-  kpis: {
-    totalCustomers: number;
-    openCaseCustomers: number;
-    pastCaseCustomers: number;
-    totalOrders: number;
-  };
 };
 
 export function CustomersOverviewPageView({
@@ -48,106 +39,73 @@ export function CustomersOverviewPageView({
   pageActions,
   sp,
   rows,
+  baseCustomerCount,
   totalCount,
   page,
   PAGE_SIZE,
   totalPages,
-  from,
-  to,
   noFilters,
   q,
   hasRefunds,
   hasChargebacks,
   openClaimsOnly,
-  kpis,
 }: CustomersOverviewPageViewProps) {
   return (
     <PageConnectionGate requires="both" connection={connectionState} pageName="Customers" pageDescription="The customer directory adds merchant-owned context to loss decisions: order count, case history, and prior outcomes. Without both Shopify and your helpdesk connected, case counts may be zero because data is missing — not because the customer has no history." setupState={setupState} hasData={hasData}>
-    <CustomersPageWorkbench
+    <PageFrame
       title="Customers"
       subtitle={pageActions.subtitle}
-      navItems={WORKBENCH_NAV_ITEMS}
       actions={
-        <>
-          <ButtonLink href={pageActions.primary.href} size="sm">{pageActions.primary.label}</ButtonLink>
-        </>
+        <ButtonLink href={pageActions.primary.href} size="sm">{pageActions.primary.label}</ButtonLink>
       }
-      kpiItems={[
-        { label: 'Total customers', value: formatNumber(kpis.totalCustomers), hint: noFilters ? 'Customers with orders or cases' : 'With current filters applied' },
-        { label: 'Customers with open cases', value: formatNumber(kpis.openCaseCustomers), hint: 'Customers with open cases' },
-        { label: 'Customers with past cases', value: formatNumber(kpis.pastCaseCustomers), hint: 'Customers with any case history' },
-        { label: 'Total orders', value: formatNumber(kpis.totalOrders), hint: 'Across listed customers' },
-      ]}
-      primaryVisual={
-        <KeyInsightCallout
-          tone={kpis.openCaseCustomers > 0 ? 'info' : 'neutral'}
-          icon={<Users size={16} />}
-        >
-          <strong>{formatNumber(kpis.openCaseCustomers)}</strong> of{' '}
-          <strong>{formatNumber(kpis.totalCustomers)}</strong> customers have an open case
-          {kpis.pastCaseCustomers > 0 ? <> · <strong>{formatNumber(kpis.pastCaseCustomers)}</strong> with case history</> : null}.
-        </KeyInsightCallout>
-      }
-      rail={
-        <SummaryRail
-          sections={[
-            {
-              title: 'Case context',
-              rows: [
-                { label: 'Open case', value: formatNumber(kpis.openCaseCustomers), tone: 'info', bar: kpis.totalCustomers ? kpis.openCaseCustomers / kpis.totalCustomers : 0 },
-                { label: 'Any case history', value: formatNumber(kpis.pastCaseCustomers), tone: 'neutral', bar: kpis.totalCustomers ? kpis.pastCaseCustomers / kpis.totalCustomers : 0 },
-                { label: 'No recorded case', value: formatNumber(Math.max(0, kpis.totalCustomers - kpis.pastCaseCustomers)), tone: 'neutral', bar: kpis.totalCustomers ? Math.max(0, kpis.totalCustomers - kpis.pastCaseCustomers) / kpis.totalCustomers : 0 },
-              ],
-              footnote: 'Share of the filtered customer population with merchant-owned case context.',
-            },
-          ]}
-        />
-      }
-      main={
-        <div className="p-4 space-y-4">
-
-      {/* match band copy belongs on customer scoring surfaces, not risk labels. */}
-      {/* ── Compact filter bar ─────────────────────────────────────── */}
-      {totalCount > 0 && (
-        <Panel variant="panel" className="flex h-auto min-h-10 flex-wrap items-center gap-2 px-3 py-2">
-          <span className="text-xs font-medium mr-1" style={{ color: 'var(--ua-text-tertiary)' }}>Filters</span>
-          {[
-            { label: 'Open cases', href: '?openClaims=1', highlight: openClaimsOnly },
-            { label: 'Has refunds', href: '?hasRefunds=1', highlight: hasRefunds },
-            { label: 'Has chargebacks', href: '?hasChargebacks=1', highlight: hasChargebacks },
-          ].map(({ label, href, highlight }) => (
-            <Link
-              key={label}
-              href={href}
-              className="transition-opacity hover:opacity-80"
-            >
-              <Badge tone={highlight ? 'warning' : 'neutral'} size="sm" dot={highlight}>
-                {label}
-              </Badge>
-            </Link>
-          ))}
-          {!connectionState.helpdesk && (
-            <span className="ml-auto text-xs" style={{ color: 'var(--ua-text-tertiary)' }}>
-              Case counts include connected helpdesk data only.
-            </span>
-          )}
-        </Panel>
-      )}
-
-      {/* ── Active filter chips ───────────────────────────────────── */}
-      {!noFilters && (
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs" style={{ color: 'var(--ua-text-secondary)' }}>Active filters:</span>
-          {hasRefunds && <FilterChip label="Has refunds" removeHref={buildRemoveHref(sp, 'hasRefunds')} />}
-          {hasChargebacks && <FilterChip label="Has chargebacks" removeHref={buildRemoveHref(sp, 'hasChargebacks')} />}
-          {openClaimsOnly && <FilterChip label="Open cases" removeHref={buildRemoveHref(sp, 'openClaims')} />}
-          {q && <FilterChip label={`Search: "${q}"`} removeHref={buildRemoveHref(sp, 'q')} />}
-          <Link href="/customers" className="text-xs hover:underline" style={{ color: 'var(--ua-text-secondary)' }}>Clear all</Link>
-        </div>
-      )}
-
+    >
+      <RegistrySurface
+        aria-label="Customer directory"
+        toolbar={
+          <div className="flex min-w-0 flex-1 flex-col gap-2">
+            <CustomersPageActionBarLeft />
+            <nav className="flex flex-wrap items-center gap-1.5" aria-label="Customer filters">
+              {/* match band language belongs on resolved identity evidence, not this registry. */}
+              {[
+                { label: 'Open payout cases', key: 'openClaims', active: openClaimsOnly, href: openClaimsOnly ? buildRemoveHref(sp, 'openClaims') : '?openClaims=1' },
+                { label: 'Has refunds', key: 'hasRefunds', active: hasRefunds },
+                { label: 'Has chargebacks', key: 'hasChargebacks', active: hasChargebacks },
+              ].map(({ label, key, active, href }) => (
+                <UiFilterChip
+                  key={key}
+                  href={href ?? customersListHref(sp, { [key]: active ? undefined : '1', page: '1' })}
+                  active={active}
+                  aria-label={key === 'openClaims' ? 'Customers with open cases' : undefined}
+                >
+                  {label}
+                </UiFilterChip>
+              ))}
+              {!connectionState.helpdesk ? <span className="ml-1 text-xs text-[var(--ua-text-tertiary)]">Case counts reflect connected helpdesk data.</span> : null}
+            </nav>
+            {!noFilters ? (
+              <div className="flex flex-wrap items-center gap-1.5 text-xs text-[var(--ua-text-secondary)]">
+                <span>Active:</span>
+                {hasRefunds && <FilterChip label="Has refunds" removeHref={buildRemoveHref(sp, 'hasRefunds')} />}
+                {hasChargebacks && <FilterChip label="Has chargebacks" removeHref={buildRemoveHref(sp, 'hasChargebacks')} />}
+                {openClaimsOnly && <FilterChip label="Open cases" removeHref={buildRemoveHref(sp, 'openClaims')} />}
+                {q && <FilterChip label={`Search: “${q}”`} removeHref={buildRemoveHref(sp, 'q')} />}
+                <Link href="/customers" className="font-semibold hover:underline">Clear all</Link>
+              </div>
+            ) : null}
+          </div>
+        }
+        resultCount={noFilters
+          ? `${formatNumber(baseCustomerCount)} customer records`
+          : `${formatNumber(totalCount)} matching customers · ${formatNumber(baseCustomerCount)} customer records total`}
+        pagination={rows.length > 0 ? (
+          <div className="flex w-full flex-wrap items-center justify-between gap-3 text-xs text-[var(--ua-text-secondary)]">
+            <Suspense fallback={null}><PageSizeSelect pathname="/customers" pageSize={PAGE_SIZE} /></Suspense>
+            {totalPages > 1 ? <div className="flex items-center gap-2"><span>Page {page} of {totalPages}</span>{page > 1 ? <ButtonLink href={customersListHref(sp, { page: String(page - 1), pageSize: String(PAGE_SIZE) })} variant="secondary" size="sm">Previous</ButtonLink> : null}{page < totalPages ? <ButtonLink href={customersListHref(sp, { page: String(page + 1), pageSize: String(PAGE_SIZE) })} variant="secondary" size="sm">Next</ButtonLink> : null}</div> : null}
+          </div>
+        ) : undefined}
+      >
       {rows.length === 0 && noFilters ? (
-        <WorkbenchEmptyState
+        <EmptyState
           title="No customers yet"
           description={
             connectionState.bothConnected
@@ -163,9 +121,9 @@ export function CustomersOverviewPageView({
           }
         />
       ) : rows.length === 0 && !noFilters ? (
-        <WorkbenchEmptyState
+        <EmptyState
           title="No customers found"
-          description="No customers meet the filters you've applied. Adjust or clear them to see more."
+          description={`${formatNumber(baseCustomerCount)} customer records remain in your directory. Adjust or clear the filters to return to the full customer context.`}
           action={
             <Link href="/customers" className="text-xs font-semibold hover:underline" style={{ color: 'var(--ua-action-primary)' }}>
               Clear all filters
@@ -173,37 +131,10 @@ export function CustomersOverviewPageView({
           }
         />
       ) : (
-        <>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
-              {`Showing ${from}–${to} of ${formatNumber(totalCount)} customers`}
-            </p>
-            <div className="flex flex-wrap items-center gap-2 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
-              <Suspense fallback={null}>
-                <PageSizeSelect pathname="/customers" pageSize={PAGE_SIZE} />
-              </Suspense>
-              {totalPages > 1 && (
-                <>
-                  <span>Page {page} of {totalPages}</span>
-                  {page > 1 && (
-                    <ButtonLink href={customersListHref(sp, { page: String(page - 1), pageSize: String(PAGE_SIZE) })} variant="secondary" size="sm">Prev</ButtonLink>
-                  )}
-                  {page < totalPages && (
-                    <ButtonLink href={customersListHref(sp, { page: String(page + 1), pageSize: String(PAGE_SIZE) })} variant="secondary" size="sm">Next</ButtonLink>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-
-          {rows.length > 0 && (
-            <CustomersTableClient rows={rows} />
-          )}
-        </>
+        <CustomersTableClient rows={rows} />
       )}
-        </div>
-      }
-    />
+      </RegistrySurface>
+    </PageFrame>
     </PageConnectionGate>
   );
 }

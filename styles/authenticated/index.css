@@ -19,6 +19,8 @@
 @import "./controls.css";
 @import "./status.css";
 @import "./tables.css";
+@import "./composition.css";
+@import "./instrument.css";
 @import "./overlays.css";
 @import "./states.css";
 @import "./responsive.css";

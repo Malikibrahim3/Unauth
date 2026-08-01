@@ -94,7 +94,7 @@ export default function CustomersTableClient({
     {
       key: "orders",
       header: "Orders",
-      align: "right" as const,
+      kind: "numeric" as const,
       render: (p: CustomerRow) => (
         <div className="text-right">
           <div className="num font-semibold">{p.total_orders}</div>
@@ -105,7 +105,7 @@ export default function CustomersTableClient({
     {
       key: "spent",
       header: "Total spent",
-      align: "right" as const,
+      kind: "currency" as const,
       render: (p: CustomerRow) => (
         <div className="text-right">
           <div className="num font-semibold">
@@ -126,7 +126,7 @@ export default function CustomersTableClient({
     {
       key: "cases",
       header: "Cases",
-      align: "right" as const,
+      kind: "numeric" as const,
       render: (p: CustomerRow) => (
         <div className="flex flex-col items-end gap-1">
           <span className="inline-flex items-center gap-1.5">
@@ -144,7 +144,7 @@ export default function CustomersTableClient({
     {
       key: "lastOrder",
       header: "Last order",
-      align: "right" as const,
+      kind: "date" as const,
       render: (p: CustomerRow) => (
         <span className="inline-flex items-center gap-1.5 text-xs text-[var(--ua-text-secondary)]">
           <Clock3 className="h-3.5 w-3.5 text-[var(--ua-text-tertiary)]" aria-hidden="true" />
@@ -155,7 +155,7 @@ export default function CustomersTableClient({
     {
       key: "open",
       header: "",
-      align: "right" as const,
+      kind: "action" as const,
       render: () => (
         <ChevronRight
           className="ml-auto h-4 w-4 text-[var(--ua-text-tertiary)]"
@@ -175,12 +175,14 @@ export default function CustomersTableClient({
         <DataTable
           columns={columns}
           rows={rows}
+          emptyState={<p className="p-5 text-sm text-[var(--ua-text-secondary)]">No customers match the current view.</p>}
           getRowKey={(row) => row.id}
           onRowClick={(row) => setPreview(row.id)}
           primaryColumnKey="customer"
           primaryActionLabel={(row) => `Open preview for ${row.names?.[0] ?? 'customer'}`}
           rowTestId="customer-row"
           density="default"
+          flush
           aria-label="Customers"
         />
       </div>

@@ -205,9 +205,9 @@ test('operational routes use purpose-specific insights from one visual grammar',
     ['/work', 'Deadline risk'],
     ['/claims', 'Decision states'],
     ['/losses', 'Loss contribution'],
-    ['/recoveries', 'Stage volume'],
+    ['/recoveries', 'Is recoverable value converting into cash?'],
     ['/customers', 'Case context'],
-    ['/rules', 'Rule lifecycle'],
+    ['/rules', 'Rules'],
     ['/flows', 'Action load'],
     ['/integrations', 'Source health'],
     ['/notifications', 'Recent activity'],
@@ -217,6 +217,22 @@ test('operational routes use purpose-specific insights from one visual grammar',
     await test.step(`${route} → ${summaryTitle}`, async () => {
       await gotoAuthenticatedRoute(page, route);
       await expect(page).toHaveURL(new RegExp(`${route}(?:\\?|$)`), { timeout: 60_000 });
+      if (route === '/recoveries') {
+        await expect(page.getByRole('heading', { name: summaryTitle })).toBeVisible({ timeout: 60_000 });
+        await expect(page.locator('[aria-label="Recovery stages"]')).toBeVisible();
+        expect(await page.evaluate(() => document.body.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+        await settleBackgroundRequests(page);
+        return;
+      }
+      if (route === '/rules') {
+        await expect(page.getByRole('heading', { name: summaryTitle, exact: true })).toBeVisible({ timeout: 60_000 });
+        await expect(page.locator('section[aria-label="Rules"]')).toBeVisible();
+        await expect(page.locator('[data-auth-visual="key-insight"]')).toHaveCount(0);
+        await expect(page.locator('[data-auth-visual="summary-rail"]')).toHaveCount(0);
+        expect(await page.evaluate(() => document.body.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+        await settleBackgroundRequests(page);
+        return;
+      }
       await expect(page.locator('[data-auth-visual="key-insight"]')).toBeVisible({ timeout: 60_000 });
       const summaryRail = page.locator('[data-auth-visual="summary-rail"]');
       await expect(summaryRail).toBeVisible({ timeout: 60_000 });

@@ -1,6 +1,14 @@
 import type { HTMLAttributes, ReactNode } from 'react';
-import { cn } from '@/lib/utils';
+import { Surface } from './Surface';
 
-export function InsetGroup({ className, children, ...props }: HTMLAttributes<HTMLDivElement> & { children: ReactNode }) {
-  return <div className={cn('ua-inset-group', className)} {...props}>{children}</div>;
+/**
+ * A recessed group for controls or compact facts (§8.2). Delegates to the
+ * canonical {@link Surface} `inset` structure.
+ */
+export function InsetGroup({ children, ...props }: HTMLAttributes<HTMLDivElement> & { children: ReactNode }) {
+  return (
+    <Surface structure="inset" {...props}>
+      {children}
+    </Surface>
+  );
 }

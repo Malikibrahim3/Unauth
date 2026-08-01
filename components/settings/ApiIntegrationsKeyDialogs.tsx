@@ -1,16 +1,7 @@
 'use client';
 
 import { KeyRound, Trash2 } from 'lucide-react';
-
-function Bone({ className }: { className?: string }) {
-  return (
-    <div
-      className={`animate-pulse rounded-md ${className ?? ''}`}
-      style={{ background: 'var(--ua-surface-secondary, var(--ua-border-default))' }}
-      aria-hidden="true"
-    />
-  );
-}
+import { Bone } from '@/components/ui/LoadingSkeleton';
 
 function ApiKeysSkeleton() {
   return (

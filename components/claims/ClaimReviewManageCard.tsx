@@ -8,6 +8,8 @@ import { EVIDENCE_TYPE_LABELS, EVIDENCE_SOURCE_LABELS } from '@/components/claim
 import type { Decision, Outcome, EvidenceType, EvidenceSource, ClaimStatus } from '@/components/claims/claimReviewTypes';
 import type { ClaimReviewWorkbench } from '@/components/claims/claimReviewWorkbench';
 import { Modal } from '@/components/ui/Modal';
+import { ActionDock } from '@/components/authenticated/ActionDock';
+import { Button } from '@/components/ui/Button';
 import { decisionRequiresRationale, merchantDecisionSchema, type MerchantDecision } from '@/lib/claims/decision/merchantDecision';
 import { formatMinorCurrencyNullable } from '@/lib/utils/format';
 import { parseMajorUnitInput } from '@/lib/ui/merchantCopy';
@@ -28,7 +30,15 @@ const DECISION_VERB: Record<string, string> = {
   internal_watch: 'Internal watch', no_action: 'No action',
 };
 
-export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbench; canManage: boolean }) {
+export function ClaimReviewManageCard({
+  wb,
+  canManage,
+  contextStatus = 'ready',
+}: {
+  wb: ClaimReviewWorkbench;
+  canManage: boolean;
+  contextStatus?: 'loading' | 'unavailable' | 'ready';
+}) {
   const [confirming, setConfirming] = useState(false);
   const [confirmingReversal, setConfirmingReversal] = useState(false);
   // B5: a pristine form shows no red. Validation surfaces only once the operator
@@ -50,6 +60,18 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
     );
   }
 
+  if (contextStatus !== 'ready') {
+    return (
+      <RailSection id="manage" title="Decision" open={state.railOpen.manage ?? true} onToggle={(id) => dispatch({ type: 'toggleRail', id })}>
+        <p role="status" className="text-xs text-[var(--ua-text-secondary)]">
+          {contextStatus === 'loading'
+            ? 'Decision controls will be available after the required evidence context loads.'
+            : 'Decision controls are unavailable while the required evidence context cannot be loaded. Retry from Evidence & recommendations. This load failure did not change the recorded decision or recovery state.'}
+        </p>
+      </RailSection>
+    );
+  }
+
   const recoveryCase = (decisionData?.recoveryCase as { id?: string } | null | undefined) ?? null;
   const hasOutcome = Boolean(latestOutcome);
   const disabled = busy || !claimId;
@@ -60,6 +82,7 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
   const monetaryDecision = ['approved', 'partial_refund', 'full_refund', 'denied', 'no_action'].includes(state.decision);
   const amountMinor = monetaryDecision ? parseMajorUnitInput(state.decisionAmount, currency) : null;
   const amountValid = !monetaryDecision || (amountMinor != null && amountMinor >= 0 && Boolean(currency));
+  const decisionReady = !disabled && hasDecision && validation.success && amountValid;
 
   return (
     <RailSection id="manage" title="Decision" open={state.railOpen.manage ?? true} onToggle={(id) => dispatch({ type: 'toggleRail', id })}>
@@ -121,7 +144,7 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
           <textarea className="min-h-20 w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()}
             placeholder={decisionRequiresRationale(state.decision as MerchantDecision) ? 'Rationale (required)' : 'Decision rationale (optional)'} value={state.notes}
             onChange={(e) => patch({ notes: e.target.value })} onBlur={() => setDecisionTouched(true)} aria-label="Decision rationale" />
-          <p id="manage-decision-requirement" className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">
+          <span id="manage-decision-requirement" className="sr-only">
             {!claimId
               ? 'Select or save a case before recording a decision.'
               : !hasDecision
@@ -131,15 +154,26 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
                   : !validation.success
                     ? validationMessage ?? 'Add a rationale before recording it.'
                   : 'This records the merchant decision; it does not send an external refund or replacement.'}
-          </p>
+          </span>
           {decisionTouched && validationMessage && hasDecision ? <p role="alert" className="text-xs text-[var(--ua-critical)]">{validationMessage}</p> : null}
           {decisionTouched && !amountValid ? <p role="alert" className="text-xs text-[var(--ua-critical)]">Enter a non-negative amount and known ISO currency.</p> : null}
-          <button type="button" disabled={disabled || !hasDecision || !validation.success || !amountValid}
-            aria-describedby="manage-decision-requirement"
-            onClick={() => setConfirming(true)}
-            className="w-full px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-60" style={btnStyle('primary')}>
-            Record decision
-          </button>
+          <ActionDock
+            copy={decisionReady
+              ? 'Records an internal authorization only. No external payout is sent.'
+              : 'Complete the decision, value, and required rationale.'}
+            actions={(
+              <Button
+                type="button"
+                size="sm"
+                className="w-full"
+                disabled={!decisionReady}
+                aria-describedby="manage-decision-requirement"
+                onClick={() => setConfirming(true)}
+              >
+                {decisionReady ? 'Review decision' : 'Decision not ready'}
+              </Button>
+            )}
+          />
         </div>
 
         <details className="order-3 rounded-md border border-[var(--ua-border-subtle)] p-3">

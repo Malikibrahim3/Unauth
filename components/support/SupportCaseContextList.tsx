@@ -1,6 +1,7 @@
 'use client';
 
 import type { PublicSupportCaseContext } from '@/lib/support/intake/supportCaseReadModel';
+import { shortRef } from '@/lib/ui/displayRef';
 import { providerLabel } from '@/lib/ui/merchantCopy';
 
 function formatTags(tags: unknown[]): string {
@@ -70,7 +71,7 @@ function SupportCaseCards({ cases }: { cases: PublicSupportCaseContext[] }) {
               </div>
               <div>
                 <span style={{ color: 'var(--ua-text-secondary)' }}>Order ref: </span>
-                <span style={{ color: 'var(--ua-text-primary)' }}>{supportCase.order_ref ?? supportCase.shopify_order_id ?? '—'}</span>
+                <span style={{ color: 'var(--ua-text-primary)' }}>{shortRef(supportCase.order_ref ?? supportCase.shopify_order_id, supportCase.id)}</span>
               </div>
             </div>
             {supportCase.customer_message_summary ? (

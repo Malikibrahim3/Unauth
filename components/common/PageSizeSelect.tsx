@@ -40,7 +40,7 @@ function PageSizeSelectInner({
   return (
     <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
       <span className="shrink-0">{label}</span>
-      <div className="inline-flex shrink-0 overflow-hidden rounded-[var(--ua-radius-control)] border" style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-surface-primary)' }}>
+      <div className="inline-flex shrink-0 overflow-hidden rounded-[var(--ua-radius-control)] border" style={{ borderColor: 'var(--ua-border-control)', background: 'var(--ua-surface-primary)' }}>
         {PAGE_SIZES.map((size) => {
           const active = size === activePageSize;
           return (
@@ -48,11 +48,12 @@ function PageSizeSelectInner({
               key={size}
               href={buildHref(pathname, searchParams, size, pageSizeParam, pageParam)}
               scroll={false}
-              className="px-2.5 py-1.5 font-semibold transition-colors"
-              style={{
-                background: active ? 'var(--ua-surface-inverse)' : 'var(--ua-surface-primary)',
-                color: active ? 'var(--ua-text-inverse)' : 'var(--ua-text-secondary)',
-              }}
+              className={`inline-flex items-center px-2.5 font-semibold transition-colors ${
+                active
+                  ? 'bg-[var(--ua-accent-100)] text-[var(--ua-accent-800)]'
+                  : 'bg-[var(--ua-surface-primary)] text-[var(--ua-text-secondary)] hover:bg-[var(--ua-surface-hover)]'
+              }`}
+              style={{ height: 'calc(var(--ua-control-height-md) - 2px)' }}
               aria-current={active ? 'page' : undefined}
             >
               {size}

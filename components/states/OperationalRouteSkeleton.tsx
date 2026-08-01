@@ -6,6 +6,7 @@ export function OperationalRouteSkeleton({
   title = "Loading workspace",
   rows = 6,
   detail = false,
+  detailVariant,
   kpiCount = 4,
   visualVariant,
   showInsight = false,
@@ -14,6 +15,8 @@ export function OperationalRouteSkeleton({
   title?: string;
   rows?: number;
   detail?: boolean;
+  /** Route-family geometry for a detail page that has a named primary visual. */
+  detailVariant?: 'recovery';
   kpiCount?: number;
   visualVariant?: AuthChartSkeletonVariant;
   /** Reserve the KeyInsightCallout band (operational pages without a hero chart). */
@@ -22,6 +25,16 @@ export function OperationalRouteSkeleton({
   showRail?: boolean;
 }) {
   if (detail) {
+    if (detailVariant === 'recovery') {
+      return (
+        <div className="mx-auto w-full max-w-[1500px] space-y-4 px-4 pb-6 pt-4" aria-busy="true" aria-label={title}>
+          <div className="space-y-2"><Bone className="h-3 w-28" /><Bone className="h-6 w-72 max-w-full" /><Bone className="h-3 w-96 max-w-full" /></div>
+          <section className="ua-focal-panel grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-4">{Array.from({ length: 4 }, (_, index) => <div key={index} className="border-l-2 border-[var(--ua-border-default)] pl-3"><Bone className="h-3 w-20" /><Bone className="mt-2 h-5 w-24" /><Bone className="mt-2 h-3 w-28" /></div>)}</section>
+          <section className="ua-focal-panel p-4"><Bone className="h-5 w-36" /><Bone className="mt-2 h-3 w-96 max-w-full" /><div className="mt-4 space-y-2">{Array.from({ length: 4 }, (_, index) => <Bone key={index} className="h-10 w-full" />)}</div></section>
+          <section className="rounded-[var(--ua-radius-surface)] border border-[var(--ua-border-subtle)] p-4"><Bone className="h-5 w-60" /><div className="mt-4 grid gap-4 xl:grid-cols-3">{Array.from({ length: 3 }, (_, index) => <div key={index} className="space-y-3"><Bone className="h-4 w-24" /><Bone className="h-3 w-full" /><Bone className="h-3 w-4/5" /></div>)}</div></section>
+        </div>
+      );
+    }
     return (
       <div className="mx-auto w-full max-w-[1500px] space-y-3 px-3 pb-6 pt-4 sm:px-5" aria-busy="true" aria-label={title}>
         <div className="space-y-2"><Bone className="h-2.5 w-20" /><Bone className="h-5 w-44" /><Bone className="h-3 w-72 max-w-full" /></div>

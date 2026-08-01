@@ -24,7 +24,7 @@ export function ClaimReviewFormSection({ wb }: { wb: ClaimReviewWorkbench }) {
       id="source-case-details"
       as="section"
       variant="panel"
-      className="order-3 min-w-0 overflow-hidden p-0 min-[1100px]:col-start-1 min-[1100px]:row-start-2"
+      className="min-w-0 overflow-hidden p-0"
     >
       <button
         type="button"

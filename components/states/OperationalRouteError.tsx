@@ -32,13 +32,13 @@ export function OperationalRouteError({
         <AuthenticatedPanel bodyClassName="flex flex-wrap items-center justify-between gap-3 p-4" capabilityId="error.recovery" >
           <div className="flex items-center gap-3" role="alert">
             <span className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[color-mix(in_srgb,var(--ua-risk-critical)_8%,var(--ua-surface-primary))]">
-              <AlertTriangle className="h-3.5 w-3.5 text-[var(--ua-risk-critical)]" />
+              <AlertTriangle className="h-3.5 w-3.5 text-[var(--ua-risk-critical)]" aria-hidden="true" />
             </span>
             <p className="max-w-xl text-[length:var(--ua-text-metadata-size)] leading-5 text-[var(--ua-text-secondary)]">No data or workflow state was changed.</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <button type="button" onClick={reset} className="inline-flex h-8 items-center gap-2 rounded-[var(--ua-radius-control)] bg-[var(--ua-action-primary)] px-3 text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-action-primary-fg)]">
-              <RotateCcw className="h-3.5 w-3.5" />Try again
+              <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />Try again
             </button>
             <Link href={fallbackHref} className="inline-flex h-8 items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] px-3 text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-secondary)]">Leave this page</Link>
           </div>

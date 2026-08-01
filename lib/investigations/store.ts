@@ -45,15 +45,47 @@ export async function listCaseInvestigations(
   merchantId: string,
   caseId: string,
 ): Promise<CaseInvestigation[]> {
-  const { data, error } = await client
+  const primary = await client
     .from(TABLES.CASE_CLARIFICATION_REQUESTS)
-    .select('*, partner:partners(*)')
+    .select('*')
     .eq('merchant_id', merchantId)
     .eq('support_payout_case_id', caseId)
     .order('is_primary', { ascending: false })
     .order('created_at', { ascending: false });
-  if (error) throw new Error(`investigation_list_failed: ${error.message}`);
-  return (data ?? []) as CaseInvestigation[];
+  let investigations: CaseInvestigation[];
+  if (
+    primary.error?.code === '42703'
+    && primary.error.message.includes('is_primary')
+  ) {
+    const legacy = await client
+      .from(TABLES.CASE_CLARIFICATION_REQUESTS)
+      .select('*')
+      .eq('merchant_id', merchantId)
+      .eq('support_payout_case_id', caseId)
+      .order('created_at', { ascending: false });
+    if (legacy.error) {
+      throw new Error(`investigation_list_failed: ${legacy.error.message}`);
+    }
+    investigations = (legacy.data ?? []).map((row) => ({
+      ...(row as unknown as CaseInvestigation),
+      partner_id: null,
+      is_primary: false,
+      evidence_gap:
+        typeof (row as Record<string, unknown>).evidence_gap === 'string'
+          ? String((row as Record<string, unknown>).evidence_gap)
+          : '',
+    }));
+  } else {
+    if (primary.error) {
+      throw new Error(`investigation_list_failed: ${primary.error.message}`);
+    }
+    investigations = (primary.data ?? []) as CaseInvestigation[];
+  }
+  return resolveInvestigationPartners(
+    client,
+    merchantId,
+    investigations,
+  );
 }
 
 export async function getCaseInvestigation(
@@ -64,13 +96,54 @@ export async function getCaseInvestigation(
 ): Promise<CaseInvestigation | null> {
   const { data, error } = await client
     .from(TABLES.CASE_CLARIFICATION_REQUESTS)
-    .select('*, partner:partners(*)')
+    .select('*')
     .eq('merchant_id', merchantId)
     .eq('support_payout_case_id', caseId)
     .eq('id', investigationId)
     .maybeSingle();
   if (error) throw new Error(`investigation_read_failed: ${error.message}`);
-  return data as CaseInvestigation | null;
+  if (!data) return null;
+  const [resolved] = await resolveInvestigationPartners(
+    client,
+    merchantId,
+    [data as CaseInvestigation],
+  );
+  return resolved ?? null;
+}
+
+async function resolveInvestigationPartners(
+  client: SupabaseClient,
+  merchantId: string,
+  investigations: CaseInvestigation[],
+): Promise<CaseInvestigation[]> {
+  const partnerIds = [
+    ...new Set(
+      investigations
+        .map((investigation) => investigation.partner_id)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ];
+  if (partnerIds.length === 0) {
+    return investigations.map((investigation) => ({
+      ...investigation,
+      partner: null,
+    }));
+  }
+  const { data, error } = await client
+    .from(TABLES.PARTNERS)
+    .select('*')
+    .eq('merchant_id', merchantId)
+    .in('id', partnerIds);
+  if (error) throw new Error(`investigation_partner_list_failed: ${error.message}`);
+  const partnerById = new Map(
+    (data ?? []).map((partner) => [partner.id as string, partner]),
+  );
+  return investigations.map((investigation) => ({
+    ...investigation,
+    partner: investigation.partner_id
+      ? (partnerById.get(investigation.partner_id) as CaseInvestigation['partner'] | undefined) ?? null
+      : null,
+  }));
 }
 
 export function aggregateInvestigations(

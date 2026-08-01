@@ -1,2 +1,5 @@
-import { OperationalRouteSkeleton } from '@/components/states/OperationalRouteSkeleton';
-export default function Loading() { return <OperationalRouteSkeleton title="Loading support ticket" rows={5} detail />; }
+import { SupportObjectRouteSkeleton } from '@/components/relationships/SupportObjectRouteSkeleton';
+
+export default function Loading() {
+  return <SupportObjectRouteSkeleton title="Loading support ticket" conversation />;
+}

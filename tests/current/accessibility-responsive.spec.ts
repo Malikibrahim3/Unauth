@@ -116,6 +116,15 @@ test.describe("release accessibility and responsive gates", () => {
       await gotoReadySurface(page, route);
       for (const viewport of VIEWPORTS) {
         await page.setViewportSize(viewport);
+        if (viewport.width < 1024) {
+          await expect(page.locator(".ua-desktop-required")).toBeVisible();
+          await expect(page.locator(".ua-desktop-product")).toBeHidden();
+          await expect(page.locator("main")).toHaveCount(0);
+        } else {
+          await expect(page.locator(".ua-desktop-required")).toBeHidden();
+          await expect(page.locator(".ua-desktop-product")).toBeVisible();
+          await expect(page.locator("main")).toBeVisible();
+        }
         const layout = await page.evaluate(() => {
           const main = document.querySelector("main");
           const uncontainedOffenders = [...(main?.querySelectorAll("*") ?? [])]

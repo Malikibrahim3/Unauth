@@ -100,11 +100,21 @@ export default async function CustomersOverviewPage({
   const ctx = await requirePagePermission(PERMISSIONS.VIEW_CUSTOMERS);
   if (!ctx) return redirect(await resolveDefaultAppPath(svc, user.id));
   // Entitlement, source state, and URL state are independent after tenancy is resolved.
-  const [hasCustomerSearch, [connectionState, dataPresence], sp] = await Promise.all([
+  const [hasCustomerSearch, [connectionState, dataPresence], [baseSourceCustomerCount, baseCanonicalCustomerCount], sp] = await Promise.all([
     merchantHasEntitlement(svc, ctx.merchantId, "CUSTOMER_SEARCH"),
     Promise.all([
       getCachedConnectionState(ctx.merchantId),
       getMerchantDataPresence(svc, ctx.merchantId, user.id),
+    ]),
+    Promise.all([
+      svc
+        .from("source_customers")
+        .select("id", { count: "exact", head: true })
+        .eq("merchant_id", ctx.merchantId),
+      svc
+        .from(TABLES.MERCHANT_CUSTOMERS)
+        .select("id", { count: "exact", head: true })
+        .eq("merchant_id", ctx.merchantId),
     ]),
     Promise.resolve(searchParams).then((p) => p ?? {}),
   ]);
@@ -574,12 +584,6 @@ export default async function CustomersOverviewPage({
       metas.sort((a, b) => b.lastSeen.localeCompare(a.lastSeen));
   }
 
-  // KPI strip — computed over the full filtered (pre-pagination) set.
-  const kpiTotalCustomers = metas.length;
-  const kpiOpenCaseCustomers = metas.filter((m) => m.caseOpen > 0).length;
-  const kpiPastCaseCustomers = metas.filter((m) => m.caseTotal > 0).length;
-  const kpiTotalOrders = metas.reduce((s, m) => s + m.ordersCountSum, 0);
-
   const total = metas.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const pageMetas = metas.slice(offset, offset + PAGE_SIZE);
@@ -636,9 +640,16 @@ export default async function CustomersOverviewPage({
     };
   });
 
-  const from = total === 0 ? 0 : offset + 1;
-  const to = Math.min(offset + PAGE_SIZE, total);
   const noFilters = !q && !hasRefunds && !hasChargebacks && !openClaimsOnly;
+  // This deliberately remains independent of the filtered identity scan. The
+  // directory can contain source-only and canonical customer records; use the
+  // larger unfiltered population so a filtered result never erases its base
+  // context or reports fewer records than the matching result.
+  const baseCustomerCount = Math.max(
+    baseSourceCustomerCount.count ?? 0,
+    baseCanonicalCustomerCount.count ?? 0,
+    total,
+  );
 
   const { primary: primaryAction } = resolveCustomerActions(
     setupState,
@@ -656,23 +667,16 @@ export default async function CustomersOverviewPage({
       }}
       sp={sp}
       rows={rows}
+      baseCustomerCount={baseCustomerCount}
       totalCount={total}
       page={page}
       PAGE_SIZE={PAGE_SIZE}
       totalPages={totalPages}
-      from={from}
-      to={to}
       noFilters={noFilters}
       q={q}
       hasRefunds={hasRefunds}
       hasChargebacks={hasChargebacks}
       openClaimsOnly={openClaimsOnly}
-      kpis={{
-        totalCustomers: kpiTotalCustomers,
-        openCaseCustomers: kpiOpenCaseCustomers,
-        pastCaseCustomers: kpiPastCaseCustomers,
-        totalOrders: kpiTotalOrders,
-      }}
     />
   );
 }

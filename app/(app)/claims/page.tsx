@@ -384,6 +384,38 @@ export default async function ClaimsPage({
   const sourceOrderIds = Array.from(new Set(claimRows.flatMap((c) => (c.source_order_id ? [c.source_order_id] : []))));
   const sourceTicketIds = Array.from(new Set(claimRows.flatMap((c) => (c.source_ticket_id ? [c.source_ticket_id] : []))));
   const identityIds = Array.from(new Set(claimRows.flatMap((c) => (c.identity_id ? [c.identity_id] : []))));
+  const investigationRowsPromise = claimIds.length > 0
+    ? (async () => {
+        const primary = await serviceClient
+          .from(TABLES.CASE_CLARIFICATION_REQUESTS)
+          .select('support_payout_case_id,status,target_type,target_name,partner_id,is_primary,due_at,evidence_gap,response_summary,updated_at')
+          .eq('merchant_id', ctx.merchantId)
+          .in('support_payout_case_id', claimIds)
+          .order('is_primary', { ascending: false })
+          .order('updated_at', { ascending: false });
+        if (
+          primary.error?.code !== '42703'
+          || !primary.error.message.includes('partner_id')
+        ) {
+          return primary;
+        }
+        const legacy = await serviceClient
+          .from(TABLES.CASE_CLARIFICATION_REQUESTS)
+          .select('support_payout_case_id,status,target_type,target_name,due_at,response_summary,updated_at')
+          .eq('merchant_id', ctx.merchantId)
+          .in('support_payout_case_id', claimIds)
+          .order('updated_at', { ascending: false });
+        return {
+          data: (legacy.data ?? []).map((row: Record<string, unknown>) => ({
+            ...row,
+            partner_id: null,
+            is_primary: false,
+            evidence_gap: '',
+          })),
+          error: legacy.error,
+        };
+      })()
+    : Promise.resolve({ data: [], error: null });
 
   // Generation 2: the lookups below each depend only on the claim rows,
   // not on each other — run them concurrently.
@@ -422,15 +454,7 @@ export default async function ClaimsPage({
             .eq('merchant_id', ctx.merchantId)
             .in('identity_id', identityIds)
         : Promise.resolve({ data: [] }),
-      claimIds.length > 0
-        ? serviceClient
-            .from(TABLES.CASE_CLARIFICATION_REQUESTS)
-            .select('support_payout_case_id,status,target_type,target_name,is_primary,due_at,evidence_gap,response_summary,updated_at,partner:partners(name)')
-            .eq('merchant_id', ctx.merchantId)
-            .in('support_payout_case_id', claimIds)
-            .order('is_primary', { ascending: false })
-            .order('updated_at', { ascending: false })
-        : Promise.resolve({ data: [], error: null }),
+      investigationRowsPromise,
     ]);
   if (investigationRowsError) {
     console.error('Claims investigation summary query failed', investigationRowsError);
@@ -484,12 +508,12 @@ export default async function ClaimsPage({
     status: string;
     target_type: string;
     target_name: string | null;
+    partner_id: string | null;
     is_primary: boolean;
     due_at: string | null;
     evidence_gap: string;
     response_summary: string | null;
     updated_at: string;
-    partner: { name: string } | null;
   };
   type InvestigationQueueSummary = {
     open: number;
@@ -502,6 +526,21 @@ export default async function ClaimsPage({
     latestResponse: string | null;
   };
   const investigationByClaimId = new Map<string, InvestigationQueueSummary>();
+  const partnerIds = Array.from(new Set(
+    ((investigationRows ?? []) as unknown as InvestigationQueueRow[])
+      .flatMap((row) => row.partner_id ? [row.partner_id] : []),
+  ));
+  const { data: partnerRows } = partnerIds.length > 0
+    ? await serviceClient
+        .from(TABLES.PARTNERS)
+        .select('id,name')
+        .eq('merchant_id', ctx.merchantId)
+        .in('id', partnerIds)
+    : { data: [] as Array<{ id: string; name: string }> };
+  const resolvedPartnerRows = (partnerRows ?? []) as Array<{ id: string; name: string }>;
+  const partnerNameById = new Map<string, string>(
+    resolvedPartnerRows.map((partner) => [partner.id, partner.name]),
+  );
   const nowMs = Date.now();
   for (const row of (investigationRows ?? []) as unknown as InvestigationQueueRow[]) {
     const summary = investigationByClaimId.get(row.support_payout_case_id) ?? {
@@ -539,7 +578,7 @@ export default async function ClaimsPage({
       )
     ) {
       summary.waitingTarget = row.target_type;
-      summary.waitingParty = row.partner?.name ?? row.target_name;
+      summary.waitingParty = (row.partner_id ? partnerNameById.get(row.partner_id) : null) ?? row.target_name;
       summary.evidenceGap = row.evidence_gap;
     }
     if (!summary.latestResponse && row.response_summary) {

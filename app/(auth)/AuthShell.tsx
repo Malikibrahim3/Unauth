@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { UnauthLogo } from '@/components/ui/UnauthLogo';
+import styles from './AuthShell.module.css';
 
 type AuthShellProps = {
   children: ReactNode;
@@ -8,23 +9,58 @@ type AuthShellProps = {
 
 export function AuthShell({ children }: AuthShellProps) {
   return (
-    <main className="ua-auth-surface min-h-screen bg-[var(--ua-canvas)] text-[var(--ua-text-primary)]">
-      <div className="mx-auto flex min-h-screen w-full max-w-[440px] flex-col px-5 py-6 sm:px-6">
-        <Link href="/" className="mb-8 inline-flex w-fit">
-          <UnauthLogo kind="lockup" tone="graphite" height={22} />
-        </Link>
-        <div className="flex flex-1 flex-col justify-center pb-12">{children}</div>
+    <main className={`ua-auth-surface ${styles.shell} text-[var(--ua-text-primary)]`}>
+      <div className={styles.layout}>
+        <div className={styles.formRegion}>
+          <Link href="/" className={styles.logo} aria-label="Unauth home">
+            <UnauthLogo kind="lockup" tone="graphite" height={22} priority />
+          </Link>
+          <div className={styles.formSlot}>{children}</div>
+        </div>
+        <aside className={styles.contextPanel} aria-label="What Unauth brings together">
+          <div className={styles.contextInner}>
+            <div className={styles.contextCopy}>
+              <h2 className={styles.contextTitle}>The evidence is assembled. The decision stays yours.</h2>
+              <p className={styles.contextBody}>
+                Unauth reconciles the merchant-owned records around a payout case,
+                explains the matched rule, and keeps the final action with your team.
+              </p>
+              <ul className={styles.evidenceList}>
+                <li className={styles.evidenceItem}>
+                  <strong>Commerce context</strong>
+                  <span>Order and value linked</span>
+                </li>
+                <li className={styles.evidenceItem}>
+                  <strong>Fulfilment evidence</strong>
+                  <span>Source and freshness retained</span>
+                </li>
+                <li className={styles.evidenceItem}>
+                  <strong>Support history</strong>
+                  <span>Request and outcome connected</span>
+                </li>
+              </ul>
+            </div>
+            <p className={styles.contextFooter}>
+              Evidence reconciliation and recovery control for merchant teams.
+            </p>
+          </div>
+        </aside>
       </div>
     </main>
   );
 }
 
 export function AuthError({ id, children }: { id?: string; children?: ReactNode }) {
-  if (!children) return null;
-
   return (
-    <p id={id} className="mt-2 text-sm leading-5 text-[var(--ua-risk-critical)]">
-      {children}
+    <p
+      id={id}
+      role={children ? 'alert' : undefined}
+      aria-live="polite"
+      aria-atomic="true"
+      aria-hidden={children ? undefined : true}
+      className="mt-2 min-h-5 text-sm leading-5 text-[var(--ua-risk-critical)]"
+    >
+      {children ?? '\u00a0'}
     </p>
   );
 }

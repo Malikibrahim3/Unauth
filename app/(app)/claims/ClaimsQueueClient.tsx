@@ -23,8 +23,6 @@ import { formatClaimAge, formatFiledDate } from "@/lib/claims/sla";
 import {
   LIKELY_OWNER_LABELS,
   LOSS_ATTRIBUTION_DISPLAY,
-  PAYOUT_CASE_NEXT_ACTION_LABELS,
-  PAYOUT_CASE_STATUS_LABELS,
 } from "@/lib/payouts/types";
 import {
   humanizeEvidenceKey,
@@ -34,8 +32,6 @@ import { shortRef } from "@/lib/ui/displayRef";
 import {
   CLAIM_TYPE_LABELS,
   DECISION_LABELS,
-  STATUS_META,
-  humanizeEnumValue,
   outcomeLabel,
   type ClaimRow,
   type CustomerProfileSummary,
@@ -71,20 +67,39 @@ function resolveInitialSelection(
   return claims[0]?.id ?? null;
 }
 
-function workflowStatusLabel(status: string): string {
-  return (
-    PAYOUT_CASE_STATUS_LABELS[
-      status as keyof typeof PAYOUT_CASE_STATUS_LABELS
-    ] ??
-    STATUS_META[status]?.label ??
-    humanizeEnumValue(status)
-  );
-}
-
 function sourceSystemLabel(claim: ClaimRow): string {
   if (claim.source_ticket_ref) return `Helpdesk #${claim.source_ticket_ref}`;
   if (claim.shopify_order_id) return "Commerce order";
   return "Manual case";
+}
+
+function casePreviewPrimaryAction(claim: ClaimRow) {
+  if (claim.status === "recovery_opened") {
+    return { label: "Open recovery", hash: "case-recovery" };
+  }
+  if (claim.status === "decision_recorded") {
+    return { label: "Review outcome", hash: "case-customer-action" };
+  }
+  if ([
+    "evidence_needed",
+    "awaiting_customer_evidence",
+    "awaiting_carrier_response",
+    "awaiting_3pl_response",
+    "awaiting_supplier_response",
+  ].includes(claim.status)) {
+    return { label: "Review evidence", hash: "case-evidence" };
+  }
+  return { label: "Review case", hash: "case-customer-action" };
+}
+
+function missingEvidenceCopy(claim: ClaimRow): string {
+  if (claim.status === "recovery_opened") {
+    return "No generated evidence package is attached. The recorded decision and recovery activity remain in the case record.";
+  }
+  if (claim.status === "decision_recorded") {
+    return "No generated evidence package is attached. The recorded customer decision remains in the case record.";
+  }
+  return "No generated evidence package is attached to this case.";
 }
 
 export function ClaimsQueueClient({
@@ -124,16 +139,11 @@ export function ClaimsQueueClient({
 
   return (
     <div
-      className="flex flex-col lg:flex-row"
-      style={{ minHeight: 560, borderTop: "1px solid var(--ua-border-subtle)" }}
+      className="ua-case-queue flex flex-col lg:flex-row"
     >
       {/* Left review list */}
       <div
-        className="shrink-0 overflow-y-auto border-b lg:border-b-0 lg:border-r max-h-[420px] lg:max-h-none w-full lg:w-[360px]"
-        style={{
-          borderColor: "var(--ua-border-subtle)",
-          background: "var(--ua-surface-primary)",
-        }}
+        className="ua-case-queue__list shrink-0 overflow-y-auto border-b lg:max-h-none lg:border-b-0 lg:border-r"
       >
         {claims.map((c) => {
           const customer = c.customer_id
@@ -153,17 +163,8 @@ export function ClaimsQueueClient({
               onClick={() => selectClaim(c.id)}
               aria-pressed={isSelected}
               aria-controls="payout-case-preview"
-              className="w-full text-left border-b transition-colors"
-              style={{
-                padding: "11px 14px",
-                borderColor: "var(--ua-border-subtle)",
-                background: isSelected
-                  ? "color-mix(in srgb, var(--ua-action-primary) 13%, var(--ua-surface-primary))"
-                  : "transparent",
-                borderLeft: isSelected
-                  ? "2px solid var(--ua-text-primary)"
-                  : "2px solid transparent",
-              }}
+              className="ua-case-queue__item w-full border-b text-left transition-colors"
+              data-selected={isSelected || undefined}
             >
               <div className="flex items-start justify-between gap-2 mb-0.5">
                 <p
@@ -185,11 +186,12 @@ export function ClaimsQueueClient({
                 </span>
               </div>
               <p
-                className="text-caption font-mono mb-1.5"
+                className="text-caption mb-1.5"
                 style={{ color: "var(--ua-text-tertiary)" }}
               >
-                {c.shopify_order_id ?? shortRef(null, c.id)}&nbsp;·&nbsp;
-                {CLAIM_TYPE_LABELS[c.claim_type] ?? c.claim_type}
+                <span className="font-mono">{shortRef(c.order_ref ?? c.shopify_order_id, c.id)}</span>
+                <span aria-hidden="true">&nbsp;·&nbsp;</span>
+                <span>{CLAIM_TYPE_LABELS[c.claim_type] ?? c.claim_type}</span>
               </p>
               <p
                 className="text-caption font-medium mb-1"
@@ -240,8 +242,9 @@ export function ClaimsQueueClient({
       {/* Right detail panel */}
       <div
         id="payout-case-preview"
-        className="min-w-0 flex-1 overflow-y-auto"
-        style={{ background: "var(--ua-surface-muted)" }}
+        className="ua-case-queue__preview min-w-0 flex-1 overflow-y-auto"
+        role="region"
+        aria-label="Selected case preview"
       >
         {selected && selectedOps ? (
           <ClaimDetailPanel
@@ -287,30 +290,21 @@ function ClaimDetailPanel({
   evidence: EvidencePackageRow | null;
   customer: CustomerProfileSummary | null;
 }) {
-  const orderRef = claim.shopify_order_id ?? shortRef(null, claim.id);
+  const orderRef = shortRef(claim.order_ref ?? claim.shopify_order_id, claim.id);
+  const primaryAction = casePreviewPrimaryAction(claim);
 
   return (
-    <div className="p-5 space-y-5">
-      {/* Claim header */}
-      <div>
-        <div className="flex flex-wrap items-center gap-2 mb-2">
-          <StatusPill status={claim.status} />
-          <SlaPill claim={claim} />
-          {claim.amount_at_risk != null && (
-            <span
-              className="text-caption font-sans font-semibold tabular-nums"
-              style={{ color: "var(--ua-text-primary)" }}
-            >
-              {formatCurrencyNullable(
-                claim.amount_at_risk,
-                claim.currency ?? undefined,
-              )}
-            </span>
-          )}
-        </div>
-        <h2 className="t-heading" style={{ color: "var(--ua-text-primary)" }}>
-          {CLAIM_TYPE_LABELS[claim.claim_type] ?? claim.claim_type}
+    <div className="ua-case-preview">
+      <header className="ua-case-preview__identity">
+        <p className="text-caption font-medium" style={{ color: "var(--ua-text-tertiary)" }}>
+          Value at issue
+        </p>
+        <h2 className="mt-1 text-2xl font-semibold tabular-nums" style={{ color: "var(--ua-text-primary)" }}>
+          {formatCurrencyNullable(claim.amount_at_risk, claim.currency ?? undefined) ?? "—"}
         </h2>
+        <p className="mt-2 text-body-sm font-medium" style={{ color: "var(--ua-text-primary)" }}>
+          {CLAIM_TYPE_LABELS[claim.claim_type] ?? claim.claim_type}
+        </p>
         <p
           className="text-caption mt-0.5"
           style={{ color: "var(--ua-text-tertiary)" }}
@@ -320,35 +314,44 @@ function ClaimDetailPanel({
           {" · "}Filed {formatFiledDate(claim)}
           {" · "}Age {formatClaimAge(claim)}
         </p>
-      </div>
+      </header>
 
-      {/* Workflow state — primary call-out */}
       <section
-        className="rounded-lg border px-4 py-3"
-        style={{
-          background: "color-mix(in srgb, var(--ua-surface-selected) 58%, var(--ua-surface-primary))",
-          borderColor: "var(--ua-border-default)",
-        }}
+        className="ua-case-preview__priority"
       >
         <p
           className="text-caption font-semibold mb-0.5"
-          style={{ color: "var(--ua-text-primary)", letterSpacing: "0.06em" }}
+          style={{ color: "var(--ua-text-tertiary)", letterSpacing: "0.06em" }}
         >
-          Workflow
+          Review context
         </p>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-3">
           <div>
             <p
               className="text-caption"
               style={{ color: "var(--ua-text-tertiary)" }}
             >
-              Current state
+              Case state
             </p>
             <p
               className="text-body-sm font-medium"
               style={{ color: "var(--ua-text-primary)" }}
             >
-              {workflowStatusLabel(claim.status)}
+              {ops.evidenceStatus}
+            </p>
+          </div>
+          <div>
+            <p
+              className="text-caption"
+              style={{ color: "var(--ua-text-tertiary)" }}
+            >
+              Waiting time
+            </p>
+            <p
+              className="text-body-sm font-medium"
+              style={{ color: "var(--ua-text-primary)" }}
+            >
+              {ops.daysWaiting == null ? "—" : `${ops.daysWaiting}d`}
             </p>
           </div>
           <div>
@@ -365,37 +368,6 @@ function ClaimDetailPanel({
               {ops.nextActionLabel}
             </p>
           </div>
-          <div>
-            <p
-              className="text-caption"
-              style={{ color: "var(--ua-text-tertiary)" }}
-            >
-              Value at issue
-            </p>
-            <p
-              className="text-body-sm font-sans font-semibold tabular-nums"
-              style={{ color: "var(--ua-text-primary)" }}
-            >
-              {formatCurrencyNullable(
-                claim.amount_at_risk,
-                claim.currency ?? undefined,
-              ) ?? "—"}
-            </p>
-          </div>
-          <div>
-            <p
-              className="text-caption"
-              style={{ color: "var(--ua-text-tertiary)" }}
-            >
-              Days waiting
-            </p>
-            <p
-              className="text-body-sm font-medium"
-              style={{ color: "var(--ua-text-primary)" }}
-            >
-              {ops.daysWaiting == null ? "—" : `${ops.daysWaiting}d`}
-            </p>
-          </div>
         </div>
         <p
           className="text-caption mt-2"
@@ -404,25 +376,17 @@ function ClaimDetailPanel({
           {ops.reviewState}
         </p>
         <div className="mt-2 flex flex-wrap gap-1.5">
-          <Badge tone="neutral" size="sm">{ops.evidenceStatus}</Badge>
-          {claim.next_action && (
-            <Badge tone="neutral" size="sm">
-              {PAYOUT_CASE_NEXT_ACTION_LABELS[
-                claim.next_action as keyof typeof PAYOUT_CASE_NEXT_ACTION_LABELS
-              ] ?? claim.next_action}
-            </Badge>
-          )}
           {claim.recovery_state && (
             <StatusBadge family="recoveryStatus" value={claim.recovery_state} tone="neutral" size="sm" />
           )}
         </div>
-        <ButtonLink href={`/claims/${claim.id}#case-customer-action`} size="sm" className="mt-2.5 self-start">
-          Review case <ArrowRight className="h-3 w-3" aria-hidden="true" />
+        <ButtonLink href={`/claims/${claim.id}#${primaryAction.hash}`} size="sm" className="mt-2.5 self-start">
+          {primaryAction.label} <ArrowRight className="h-3 w-3" aria-hidden="true" />
         </ButtonLink>
       </section>
 
       {(claim.investigation_open_count ?? 0) > 0 || claim.investigation_latest_response ? (
-        <section className="border-b pb-4">
+        <section className="ua-case-preview__section">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p
@@ -473,10 +437,9 @@ function ClaimDetailPanel({
       {(claim.recoverability ||
         claim.recovery_owner ||
         claim.loss_attribution) && (
-        <section className="border-b pb-4">
+        <section className="ua-case-preview__section">
           <div
-            className="flex items-center justify-between gap-3 px-4 py-2.5 border-b"
-            style={{ borderColor: "var(--ua-border-subtle)" }}
+            className="flex items-center justify-between gap-3"
           >
             <p
               className="text-caption font-semibold"
@@ -488,7 +451,7 @@ function ClaimDetailPanel({
               <StatusBadge family="recoverability" value={claim.recoverability} size="sm" />
             )}
           </div>
-          <div className="space-y-2 px-4 py-3">
+          <div className="mt-3 space-y-2">
             <div className="grid gap-2 sm:grid-cols-2">
               <div>
                 <p
@@ -552,10 +515,9 @@ function ClaimDetailPanel({
       )}
 
       {/* Evidence package */}
-      <section className="border-b pb-4">
+      <section className="ua-case-preview__section">
         <div
-          className="flex items-center justify-between px-4 py-2.5 border-b"
-          style={{ borderColor: "var(--ua-border-subtle)" }}
+          className="flex items-center justify-between"
         >
           <div className="flex items-center gap-2">
             <ShieldCheck
@@ -570,7 +532,7 @@ function ClaimDetailPanel({
             </p>
           </div>
         </div>
-        <div className="px-4 py-3">
+        <div className="mt-3">
           {evidence ? (
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
@@ -601,14 +563,14 @@ function ClaimDetailPanel({
                 className="text-caption"
                 style={{ color: "var(--ua-text-tertiary)" }}
               >
-                No evidence package for this case yet.
+                {missingEvidenceCopy(claim)}
               </p>
               <Link
                 href={`/claims/${claim.id}#case-evidence`}
                 className="shrink-0 text-caption font-semibold hover:underline"
                 style={{ color: "var(--ua-action-primary)" }}
               >
-                Open evidence review
+                Review case evidence
               </Link>
             </div>
           )}
@@ -617,10 +579,9 @@ function ClaimDetailPanel({
 
       {/* Customer identity */}
       {customer && (
-        <section className="border-b pb-4">
+        <section className="ua-case-preview__section">
           <div
-            className="flex items-center justify-between px-4 py-2.5 border-b"
-            style={{ borderColor: "var(--ua-border-subtle)" }}
+            className="flex items-center justify-between"
           >
             <p
               className="text-caption font-semibold"
@@ -629,7 +590,7 @@ function ClaimDetailPanel({
               Customer
             </p>
           </div>
-          <div className="px-4 py-3">
+          <div className="mt-3">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p
@@ -661,10 +622,9 @@ function ClaimDetailPanel({
 
       {/* Merchant-recorded outcome (if any) */}
       {outcome && (
-        <section>
+        <section className="ua-case-preview__section">
           <div
-            className="flex items-center gap-2 px-4 py-2.5 border-b"
-            style={{ borderColor: "var(--ua-border-subtle)" }}
+            className="flex items-center gap-2"
           >
             <Clock
               className="h-3.5 w-3.5"
@@ -677,7 +637,7 @@ function ClaimDetailPanel({
               Merchant-recorded outcome
             </p>
           </div>
-          <div className="px-4 py-3">
+          <div className="mt-3">
             <p
               className="text-body-sm font-medium"
               style={{ color: "var(--ua-text-primary)" }}

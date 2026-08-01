@@ -6,7 +6,7 @@ export const PAGE_SHELL_INNER_CLASS =
 export const PAGE_SHELL_HEADER_CLASS =
   'mx-auto flex w-full max-w-[1500px] flex-wrap items-start justify-between gap-4 px-5 py-4 sm:px-6 sm:py-5 lg:px-8';
 
-// Quiet Precision page title: compact product chrome, never a marketing H1.
+// Instrument Grade page title: compact product chrome, never a marketing H1.
 export const PAGE_TITLE_STYLE: CSSProperties = {
   color: 'var(--ua-text-primary)',
   fontSize: 18,

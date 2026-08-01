@@ -1,21 +1,8 @@
-import type { CSSProperties, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import { Bone } from '@/components/ui/LoadingSkeleton';
 
-export function Bone({
-  className,
-  style,
-}: {
-  className?: string;
-  style?: CSSProperties;
-}) {
-  return (
-    <div
-      className={cn('skeleton rounded-md', className)}
-      style={{ background: 'var(--ua-surface-secondary)', ...style }}
-      aria-hidden="true"
-    />
-  );
-}
+export { Bone };
 
 const METRIC_CARD_KEYS = ['metric-1', 'metric-2', 'metric-3', 'metric-4', 'metric-5', 'metric-6', 'metric-7', 'metric-8', 'metric-9', 'metric-10'] as const;
 const TABLE_ROW_KEYS = ['row-1', 'row-2', 'row-3', 'row-4', 'row-5', 'row-6', 'row-7', 'row-8', 'row-9', 'row-10', 'row-11', 'row-12'] as const;

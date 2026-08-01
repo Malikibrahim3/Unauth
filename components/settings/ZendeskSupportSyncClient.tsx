@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useFetchJson } from "@/lib/react/useFetchJson";
+import { ConnectorSetupNotice } from "@/components/settings/ConnectorSetupShell";
 import {
   ZENDESK_CONNECT_CREDENTIALS_ERROR,
   ZENDESK_CONNECT_CREDENTIALS_ERROR_CODE,
@@ -140,18 +141,10 @@ export default function ZendeskSupportSyncClient({ canManage }: Props) {
       </div>
 
       {(message || loadError) && (
-        <p
-          className="rounded-md px-3 py-2 text-sm"
-          style={{
-            background:
-              (message?.type ?? "error") === "error"
-                ? "color-mix(in srgb, var(--ua-success) 8%, transparent)"
-                : "var(--ua-success-bg)",
-            color: "var(--ua-text-primary)",
-          }}
-        >
+        <ConnectorSetupNotice tone={message?.type ?? "error"}>
           {message?.text ?? loadError}
-        </p>
+          {(message?.type ?? "error") === "error" ? " Check the credentials or provider access, then retry." : null}
+        </ConnectorSetupNotice>
       )}
 
       {loading ? (
@@ -182,7 +175,7 @@ export default function ZendeskSupportSyncClient({ canManage }: Props) {
                 </p>
               )}
               {connection.last_error ? (
-                <p style={{ color: "var(--ua-success)" }}>
+                <p style={{ color: "var(--ua-critical)" }} role="alert">
                   {connection.last_error}
                 </p>
               ) : null}

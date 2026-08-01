@@ -146,18 +146,20 @@ export function ConnectionActions({
   }
   return (
     <div className="space-y-3">
+      <div>
+        <h2 className="text-sm font-semibold text-[var(--ua-text-primary)]">
+          {connected ? "Connection controls" : `Connect ${providerName}`}
+        </h2>
+        <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">
+          {connected
+            ? "Refresh access, review setup, or stop future ingestion. Existing records and audit history stay available."
+            : "Connect this provider to make its supported source records available to your case evidence."}
+        </p>
+      </div>
       {message ? (
         <p
-          role="status"
-          className="rounded-md border px-3 py-2 text-sm"
-          style={{
-            borderColor:
-              message.tone === "error" ? "var(--ua-critical)" : "var(--ua-success)",
-            color:
-              message.tone === "error"
-                ? "var(--ua-critical)"
-                : "var(--ua-text-primary)",
-          }}
+          role={message.tone === "error" ? "alert" : "status"}
+          className={`rounded-md border px-3 py-2 text-sm ${message.tone === "error" ? "border-[var(--ua-critical-border)] bg-[var(--ua-critical-bg)] text-[var(--ua-critical)]" : "border-[var(--ua-success-border)] bg-[var(--ua-success-bg)] text-[var(--ua-text-primary)]"}`}
         >
           {message.text}
         </p>

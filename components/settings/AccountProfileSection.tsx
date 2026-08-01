@@ -13,7 +13,7 @@ type Props = {
 
 export default function AccountProfileSection({ state, dispatch, onSave }: Props) {
   return (
-    <SectionCard title="Profile" description="Store details and review preferences">
+    <SectionCard joined title="Profile" description="Store details and review preferences">
       <form onSubmit={onSave} className="space-y-5">
         <div>
           <label htmlFor="account-email" className="block text-xs font-semibold mb-1" style={{ color: 'var(--ua-text-primary)' }}>

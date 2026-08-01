@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Spinner } from "@/components/ui/Spinner";
 import type {
   OrderOption,
   PackageIncludeItem,
@@ -41,13 +42,7 @@ function PriorMatchPreviewBanner({
           border: "1px solid var(--ua-border-subtle)",
         }}
       >
-        <div
-          className="h-3 w-3 animate-spin rounded-full border border-t-transparent"
-          style={{
-            borderColor: "var(--ua-border-default)",
-            borderTopColor: "var(--ua-action-primary)",
-          }}
-        />
+        <Spinner size="sm" delayMs={0} label="Checking for prior identity matches" />
         <p className="text-caption" style={{ color: "var(--ua-text-secondary)" }}>
           Checking for prior identity matches…
         </p>

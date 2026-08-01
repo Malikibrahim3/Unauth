@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { useEffect } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Inbox } from "lucide-react";
 import { StatusBadge, PriorityChip } from "@/components/ui/StatusBadge";
-import { EmptyState, Input, Modal } from "@/components/ui";
+import { DataTable, EmptyState, Input, Modal } from "@/components/ui";
 import { SourceMark } from "@/components/identity/ProviderLogo";
 import { RowActionsMenu, type RowAction } from "@/components/ui/RowActionsMenu";
 import { formatDateAbsolute, formatNumber } from "@/lib/utils/format";
@@ -151,6 +150,8 @@ export function WorkQueue({
   page,
   pageSize,
   asOf,
+  initialQuery,
+  forecast,
 }: {
   items: WorkQueueItem[];
   total: number;
@@ -159,6 +160,10 @@ export function WorkQueue({
   page?: number;
   pageSize?: number;
   asOf?: string;
+  /** URL-backed client-side search term. Never persisted into a saved view. */
+  initialQuery?: string;
+  /** Deadline risk is part of the registry instrument, not a detached dashboard card. */
+  forecast?: ReactNode;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
@@ -177,7 +182,7 @@ export function WorkQueue({
   const [shareView, setShareView] = useState(false);
   const [savingView, setSavingView] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(initialQuery ?? '');
   const [moreViewsOpen, setMoreViewsOpen] = useState(false);
 
   /*
@@ -221,6 +226,20 @@ export function WorkQueue({
     !primaryViews.some(([primaryKey]) => primaryKey === key),
   );
 
+  function workHref(nextView: string, nextQuery = query) {
+    const params = new URLSearchParams({ view: nextView });
+    const normalizedQuery = nextQuery.trim();
+    if (normalizedQuery) params.set('q', normalizedQuery);
+    return `/work?${params.toString()}`;
+  }
+
+  /* Browser navigation and a due-band drill-down update `initialQuery`; reset
+   * only the local selection, never the operator's shareable search state. */
+  useEffect(() => {
+    setQuery(initialQuery ?? '');
+    setSelected(new Set());
+  }, [initialQuery]);
+
   /*
    * Changing the search narrows the result set, so any selection that falls
    * outside the new results is dropped there and then. Keeping it would let a
@@ -237,6 +256,7 @@ export function WorkQueue({
       });
       return next.size === current.size ? current : next;
     });
+    router.replace(workHref(view, nextQuery));
   }
 
   useEffect(() => {
@@ -365,42 +385,24 @@ export function WorkQueue({
   function itemHref(item: WorkQueueItem) {
     if (!item.objectHref) return null;
     const [pathAndQuery, fragment] = item.objectHref.split("#", 2);
-    const withReturn = `${pathAndQuery}${pathAndQuery.includes("?") ? "&" : "?"}returnTo=${encodeURIComponent(`/work?view=${view}`)}`;
+    const withReturn = `${pathAndQuery}${pathAndQuery.includes("?") ? "&" : "?"}returnTo=${encodeURIComponent(workHref(view))}`;
     return fragment ? `${withReturn}#${fragment}` : withReturn;
   }
 
-  function openRow(item: WorkQueueItem, target: EventTarget | null) {
-    const href = itemHref(item);
-    if (target instanceof HTMLElement && target.closest("a, button, input, select, textarea, [role='menu']")) return;
-    if (href) {
-      router.push(href);
-    } else if (item.kind === "exception") {
-      setSelectedException(item);
-    }
-  }
-
   return (
-    <section aria-labelledby="work-queue-title">
+    <section aria-labelledby="work-queue-title" className="ua-work-ledger">
       <h2 id="work-queue-title" className="sr-only">
         Work queue
       </h2>
-      <nav
-        aria-label="Work views"
-        className="mb-3 flex flex-wrap items-center gap-1.5"
-      >
+      {forecast ? <div className="ua-work-ledger__forecast">{forecast}</div> : null}
+      <div className="ua-work-ledger__toolbar" role="toolbar" aria-label="Work controls">
+      <nav aria-label="Work views" className="ua-ledger-tabs">
         {primaryViews.map(([key, label]) => (
           <Link
             key={key}
-            href={`/work?view=${key}`}
+            href={workHref(key)}
             aria-current={view === key ? "page" : undefined}
-            className="inline-flex h-7 items-center whitespace-nowrap rounded-[var(--ua-radius-control)] border px-2.5 text-[length:var(--ua-text-metadata-size)] font-medium"
-            style={{
-              background:
-                view === key ? "var(--ua-accent-100)" : "var(--ua-surface-primary)",
-              borderColor:
-                view === key ? "var(--ua-accent-200)" : "var(--ua-border-default)",
-              color: view === key ? "var(--ua-accent-800)" : undefined,
-            }}
+            className="ua-ledger-tab"
           >
             {label}
             <span className="ml-1.5 tabular-nums text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">{formatNumber(viewCounts[key])}</span>
@@ -410,10 +412,9 @@ export function WorkQueue({
           const current = VIEWS.find(([key]) => key === view);
           return current ? (
             <Link
-              href={`/work?view=${current[0]}`}
+              href={workHref(current[0])}
               aria-current="page"
-              className="inline-flex h-7 items-center whitespace-nowrap rounded-[var(--ua-radius-control)] border px-2.5 text-[length:var(--ua-text-metadata-size)] font-medium"
-              style={{ background: 'var(--ua-surface-selected)', borderColor: 'var(--ua-border-default)' }}
+              className="ua-ledger-tab"
             >
               {current[1]}
               <span className="ml-1.5 tabular-nums text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">{formatNumber(viewCounts[current[0]])}</span>
@@ -425,8 +426,7 @@ export function WorkQueue({
           aria-expanded={moreViewsOpen}
           aria-controls="work-more-views"
           onClick={() => setMoreViewsOpen((open) => !open)}
-          className="inline-flex h-7 items-center whitespace-nowrap rounded-[var(--ua-radius-control)] border px-2.5 text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-primary)] hover:bg-[var(--ua-surface-hover)]"
-          style={{ borderColor: 'var(--ua-border-default)', background: moreViewsOpen ? 'var(--ua-surface-selected)' : 'var(--ua-surface-primary)' }}
+          className="ua-ledger-tab"
         >
           More views
           <span className="ml-1.5 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">{extraViews.length + savedViews.length}</span>
@@ -434,18 +434,28 @@ export function WorkQueue({
         <button
           type="button"
           onClick={() => setSaveOpen(true)}
-          className="inline-flex h-7 items-center whitespace-nowrap rounded-[var(--ua-radius-control)] border border-dashed px-2.5 text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-primary)] hover:bg-[var(--ua-surface-hover)]"
+          className="ua-ledger-tab"
         >
           Save view
         </button>
       </nav>
+      <div className="ua-work-ledger__search">
+        <Input
+          type="search"
+          value={query}
+          aria-label="Search this view"
+          placeholder="Search next action, object, owner…"
+          onChange={(event) => applyQuery(event.target.value)}
+        />
+      </div>
+      </div>
       {moreViewsOpen ? (
         <div id="work-more-views" className="mb-3 flex flex-wrap items-center gap-1.5 border-y border-[var(--ua-border-subtle)] py-2" role="group" aria-label="More Work views">
           <span className="mr-1 text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-tertiary)]">More</span>
           {extraViews.map(([key, label]) => (
             <Link
               key={key}
-              href={`/work?view=${key}`}
+              href={workHref(key)}
               aria-current={view === key ? 'page' : undefined}
               className="inline-flex h-7 items-center whitespace-nowrap rounded-[var(--ua-radius-control)] border px-2.5 text-[length:var(--ua-text-metadata-size)] font-medium"
               style={{ background: view === key ? 'var(--ua-accent-100)' : 'var(--ua-surface-primary)', borderColor: view === key ? 'var(--ua-accent-200)' : 'var(--ua-border-default)' }}
@@ -456,7 +466,7 @@ export function WorkQueue({
           ))}
           {savedViews.map((saved) => {
             const savedView = typeof saved.definition?.view === 'string' ? saved.definition.view : 'open';
-            return <Link key={saved.id} href={`/work?view=${encodeURIComponent(savedView)}`} className="inline-flex h-7 items-center gap-1.5 rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-selected)] px-2.5 text-[length:var(--ua-text-metadata-size)] font-medium text-[var(--ua-text-primary)] hover:bg-[var(--ua-surface-hover)]">{saved.name}{saved.is_shared ? <span className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">Shared</span> : null}</Link>;
+            return <Link key={saved.id} href={workHref(savedView)} className="inline-flex h-7 items-center gap-1.5 rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-selected)] px-2.5 text-[length:var(--ua-text-metadata-size)] font-medium text-[var(--ua-text-primary)] hover:bg-[var(--ua-surface-hover)]">{saved.name}{saved.is_shared ? <span className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">Shared</span> : null}</Link>;
           })}
           {savedViewsState === 'ready' && savedViews.length === 0 ? <span className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">No saved views yet.</span> : null}
         </div>
@@ -476,17 +486,6 @@ export function WorkQueue({
           </button>
         </div>
       ) : null}
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        <div className="w-full sm:w-[260px]">
-          <Input
-            type="search"
-            value={query}
-            aria-label="Search this view"
-            placeholder="Search next action, object, owner…"
-            onChange={(event) => applyQuery(event.target.value)}
-          />
-        </div>
-      </div>
       {error ? (
         <div
           role="alert"
@@ -555,35 +554,37 @@ export function WorkQueue({
             description={view === 'open' && total === 0
               ? 'Connect a source to create work.'
               : 'Choose another saved view or return when new work arrives. New cases and integration exceptions will appear here automatically.'}
-            action={view === 'open' && total === 0 ? <Link href="/integrations" className="inline-flex h-9 items-center rounded-[var(--ua-radius-control)] bg-[var(--ua-action-primary)] px-3 text-sm font-semibold text-[var(--ua-action-primary-fg)]">Review integrations</Link> : undefined}
+            action={view === 'open' && total === 0
+              ? <Link href="/integrations" className="inline-flex h-9 items-center rounded-[var(--ua-radius-control)] bg-[var(--ua-action-primary)] px-3 text-sm font-semibold text-[var(--ua-action-primary-fg)]">Review integrations</Link>
+              : <Link href="/work?view=open" className="text-sm font-semibold text-[var(--ua-action-primary)] hover:underline">Return to open work</Link>}
           />
         </div>
       ) : (
         <>
-          <div className="ua-operational-scrollbar hidden overflow-x-auto rounded-[var(--ua-radius-surface)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] md:block" tabIndex={0} role="region" aria-label="Work queue table, scrolls horizontally">
-            <table className="w-full min-w-[760px] border-collapse text-sm">
-              {/*
-                Explicit widths (§6.6: status, date, source and action columns keep
-                consistent widths). Without them the Deadline column collapsed and
-                wrapped "Overdue · 31 May 2026" onto three lines, which swung row
-                heights between 40px and 90px.
-              */}
-              <colgroup>
-                <col style={{ width: 36 }} />
-                <col style={{ width: 84 }} />
-                <col />
-                <col style={{ width: 118 }} />
-                <col style={{ width: 96 }} />
-                <col style={{ width: 116 }} />
-                <col style={{ width: 132 }} />
-                <col style={{ width: 44 }} />
-              </colgroup>
-              <thead className="sticky top-0 bg-[var(--ua-surface-secondary)] text-left text-[length:var(--ua-text-caption-size)] font-medium text-[var(--ua-text-secondary)]">
-                <tr>
-                  <th
-                    scope="col"
-                    className="border-b border-[var(--ua-border-default)] px-3 py-2.5"
-                  >
+          <div className="hidden md:block">
+            <DataTable
+              aria-label="Work queue table"
+              className="ua-work-queue-table"
+              rows={visibleItems}
+              emptyState={<p className="p-5 text-sm text-[var(--ua-text-secondary)]">No work matches this view.</p>}
+              getRowKey={(item) => `${item.kind}:${item.id}`}
+              density="default"
+              primaryColumnKey="action"
+              onRowClick={(item) => {
+                const href = itemHref(item);
+                if (href) router.push(href);
+                else if (item.kind === "exception") setSelectedException(item);
+              }}
+              primaryActionLabel={(item) =>
+                itemHref(item)
+                  ? `Open ${item.objectLabel}`
+                  : `Review ${item.title}`
+              }
+              columns={[
+                {
+                  key: "select",
+                  width: "36px",
+                  header: (
                     <input
                       type="checkbox"
                       aria-label="Select all tasks on this page"
@@ -599,61 +600,50 @@ export function WorkQueue({
                         )
                       }
                     />
-                  </th>
-                  {[
-                    "Priority",
-                    "Next action",
-                    "Object",
-                    "Status",
-                    "Owner",
-                    "Deadline",
-                    "Actions",
-                  ].map((heading) => (
-                    <th
-                      key={heading}
-                      scope="col"
-                      className="border-b border-[var(--ua-border-default)] px-3 py-2.5 font-medium"
-                    >
-                      {heading}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {visibleItems.map((item) => {
+                  ),
+                  render: (item) => item.kind === "task" ? (
+                    <input
+                      type="checkbox"
+                      aria-label={`Select ${item.title}`}
+                      checked={selected.has(item.id)}
+                      onChange={() => toggle(item.id)}
+                    />
+                  ) : null,
+                },
+                {
+                  key: "action",
+                  header: "Work",
+                  render: (item) => {
                   const due = dueState(item.dueAt, referenceTimeMs);
                   const description = usefulDescription(item);
-                  const href = itemHref(item);
                   const block = blockingLabel(item);
+                  const href = itemHref(item);
                   return (
-                    <tr
-                      key={`${item.kind}:${item.id}`}
-                      className={`ua-table-row border-b border-[var(--ua-border-default)] last:border-0 hover:bg-[var(--ua-surface-hover)] focus-within:bg-[var(--ua-surface-hover)] ${href || item.kind === "exception" ? "cursor-pointer" : ""}`}
-                      tabIndex={href || item.kind === "exception" ? 0 : undefined}
-                      aria-label={href ? `Open ${item.objectLabel}` : item.kind === "exception" ? `Review ${item.title}` : undefined}
-                      onClick={(event) => openRow(item, event.target)}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter") openRow(item, event.target);
-                      }}
-                    >
-                      <td className="px-3 py-2.5">
-                        {item.kind === "task" ? (
-                          <input
-                            type="checkbox"
-                            aria-label={`Select ${item.title}`}
-                            checked={selected.has(item.id)}
-                            onChange={() => toggle(item.id)}
-                          />
-                        ) : null}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-2.5">
-                        <PriorityChip value={item.priority} size="sm" />
-                      </td>
-                      <td className="max-w-[340px] px-3 py-2.5">
-                        <div className="flex items-start gap-2.5">
-                          <SourceMark source={item.source} compact />
-                          <div className="min-w-0">
-                        <div className="font-medium">{item.title}</div>
+                    <div className="flex min-w-[280px] items-start gap-3">
+                      <span className="mt-0.5 shrink-0"><SourceMark source={item.source} compact /></span>
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate font-semibold" title={item.title}>{item.title}</div>
+                        <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs">
+                          <span className="text-[var(--ua-text-tertiary)]">Object</span>
+                          {item.objectHref ? (
+                            <Link
+                              className="min-w-0 truncate font-medium text-[var(--ua-text-primary)] underline decoration-[var(--ua-border-strong)] underline-offset-2"
+                              href={href ?? item.objectHref}
+                            >
+                              {item.objectLabel}
+                            </Link>
+                          ) : item.kind === "exception" ? (
+                            <button
+                              type="button"
+                              className="truncate font-medium text-[var(--ua-text-primary)] underline underline-offset-2"
+                              onClick={() => setSelectedException(item)}
+                            >
+                              Review exception
+                            </button>
+                          ) : (
+                            <span className="truncate font-medium text-[var(--ua-text-primary)]">{item.objectLabel}</span>
+                          )}
+                        </div>
                         {description ? (
                           <div className="mt-0.5 line-clamp-1 text-xs text-[var(--ua-text-secondary)]">
                             {description}
@@ -664,53 +654,60 @@ export function WorkQueue({
                             Needs attention: {block}
                           </div>
                         ) : null}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-2.5">
-                        {item.objectHref ? (
-                          <Link
-                            className="font-medium underline underline-offset-2"
-                            href={href ?? item.objectHref}
-                          >
-                            {item.objectLabel}
-                          </Link>
-                        ) : item.kind === "exception" ? (
-                          <button type="button" className="font-medium text-[var(--ua-text-primary)] underline underline-offset-2" onClick={(event) => { event.stopPropagation(); setSelectedException(item); }}>
-                            Review exception
-                          </button>
-                        ) : item.objectLabel}
-                      </td>
-                      <td className="px-3 py-2.5">
-                        <StatusBadge family="caseStatus" value={item.status} size="sm" />
-                      </td>
-                      <td className="px-3 py-2.5">
-                        <span className="flex min-w-0 items-center gap-2">
-                          {item.ownerUserId || item.ownerRole ? <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[var(--ua-border-default)] bg-[var(--ua-surface-selected)] text-[length:var(--ua-text-metadata-size)] font-bold text-[var(--ua-text-primary)]">
-                            {(item.ownerInitials ?? (item.ownerName ? item.ownerName.slice(0, 2) : title(item.ownerRole).slice(0, 2))).toUpperCase()}
-                          </span> : null}
-                          <span className="min-w-0 truncate" title={item.ownerUserId ? `${item.ownerName ?? 'Assigned'}${item.ownerRole ? ` · ${title(item.ownerRole)}` : ''}` : item.ownerRole ? title(item.ownerRole) : "Unassigned"}>
-                            {item.ownerUserId ? item.ownerName ?? "Assigned" : item.ownerRole ? title(item.ownerRole) : "Unassigned"}
-                            {item.ownerUserId && item.ownerRole ? <span className="ml-1 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">· {title(item.ownerRole)}</span> : null}
-                          </span>
-                        </span>
-                      </td>
-                      <td className={`whitespace-nowrap px-3 py-2.5 text-xs tabular-nums ${due.className}`}>
-                        {due.label}
-                      </td>
-                      <td className="px-3 py-2.5">
+                      </div>
+                      <span className="sr-only">{due.label}</span>
+                    </div>
+                  );
+                  },
+                },
+                {
+                  key: "state",
+                  header: "State",
+                  width: "124px",
+                  render: (item) => (
+                    <span className="grid justify-items-start gap-1.5">
+                      <PriorityChip value={item.priority} size="sm" />
+                      <StatusBadge family="caseStatus" value={item.status} size="sm" />
+                    </span>
+                  ),
+                },
+                {
+                  key: "owner",
+                  header: "Owner",
+                  width: "172px",
+                  render: (item) => (
+                    <span className="flex min-w-0 items-center gap-2">
+                      {item.ownerUserId || item.ownerRole ? <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[var(--ua-border-default)] bg-[var(--ua-surface-selected)] text-[length:var(--ua-text-metadata-size)] font-bold text-[var(--ua-text-primary)]">
+                        {(item.ownerInitials ?? (item.ownerName ? item.ownerName.slice(0, 2) : title(item.ownerRole).slice(0, 2))).toUpperCase()}
+                      </span> : null}
+                      <span className="min-w-0 truncate" title={item.ownerUserId ? `${item.ownerName ?? 'Assigned'}${item.ownerRole ? ` · ${title(item.ownerRole)}` : ''}` : item.ownerRole ? title(item.ownerRole) : "Unassigned"}>
+                        {item.ownerUserId ? item.ownerName ?? "Assigned" : item.ownerRole ? title(item.ownerRole) : "Unassigned"}
+                        {item.ownerUserId && item.ownerRole ? <span className="ml-1 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">· {title(item.ownerRole)}</span> : null}
+                      </span>
+                    </span>
+                  ),
+                },
+                {
+                  key: "deadline",
+                  header: "Deadline",
+                  width: "156px",
+                  render: (item) => {
+                    const due = dueState(item.dueAt, referenceTimeMs);
+                    return (
+                      <span className="flex items-center justify-between gap-2">
+                        <span className={`whitespace-nowrap text-xs tabular-nums ${due.className}`}>{due.label}</span>
                         <WorkItemActions
                           item={item}
                           busy={busy}
                           onAction={act}
                           onOpenException={setSelectedException}
                         />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                      </span>
+                    );
+                  },
+                },
+              ]}
+            />
           </div>
           <div className="space-y-3 md:hidden">
             {visibleItems.map((item) => {

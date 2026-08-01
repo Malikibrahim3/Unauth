@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { StatusWithReason } from "@/components/ui/StatusWithReason";
 import { formatDateTime, formatNumber } from "@/lib/utils/format";
 import { ProviderLogo } from "@/components/identity/ProviderLogo";
 import type { CatalogueRowItem } from "@/components/integrations/ConnectorRow";
@@ -7,6 +8,14 @@ import type { CatalogueRowItem } from "@/components/integrations/ConnectorRow";
 function humanizeLabel(value: string | null | undefined): string {
   const text = String(value ?? "").replaceAll("_", " ").trim();
   return text ? text.charAt(0).toUpperCase() + text.slice(1) : "Unknown";
+}
+
+function statusReason(item: CatalogueRowItem): string | null {
+  if (item.lastError) return item.lastError;
+  if (item.badge === "stale") return "The latest source data is outside the expected freshness window.";
+  if (item.badge === "not_syncing") return "No active source sync is currently recorded.";
+  if (item.badge === "sync_pending") return "The first source sync has not completed yet.";
+  return null;
 }
 
 /**
@@ -17,6 +26,7 @@ function humanizeLabel(value: string | null | undefined): string {
  * presentation, not a re-implementation.
  */
 export function ConnectionHealthHeader({ item }: { item: CatalogueRowItem }) {
+  const reason = statusReason(item);
   return (
     <header className="flex flex-wrap items-start justify-between gap-3 rounded-[var(--ua-radius-surface)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] p-4">
       <div className="flex min-w-0 items-start gap-3">
@@ -31,7 +41,16 @@ export function ConnectionHealthHeader({ item }: { item: CatalogueRowItem }) {
           </p>
         </div>
       </div>
-      <StatusBadge family="workflowStatus" value={item.badge} />
+      {reason ? (
+        <StatusWithReason
+          family="workflowStatus"
+          value={item.badge}
+          reason={reason}
+          className="max-w-md"
+        />
+      ) : (
+        <StatusBadge family="workflowStatus" value={item.badge} />
+      )}
     </header>
   );
 }

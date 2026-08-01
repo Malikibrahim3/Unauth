@@ -12,7 +12,7 @@ type Props = {
 
 export default function AccountPasswordSection({ state, dispatch, onSubmit }: Props) {
   return (
-    <SectionCard title="Security" description="Password and access controls">
+    <SectionCard joined title="Security" description="Password and access controls">
       <form onSubmit={onSubmit} className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>Change password</h2>

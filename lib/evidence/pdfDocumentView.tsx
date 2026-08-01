@@ -131,6 +131,8 @@ function PDFHeader({ pkg }: { pkg: EvidencePackage }) {
   return (
     <View style={s.header}>
       <View style={s.headerLeft}>
+        {/* @react-pdf/renderer Image has no HTML alt prop; the adjacent Text supplies the document label. */}
+        {/* eslint-disable-next-line jsx-a11y/alt-text */}
         <Image src={BRAND_WORDMARK_DATA_URI} style={s.brandLogo} />
         <Text style={s.brandSub}>Identity Evidence Report</Text>
       </View>

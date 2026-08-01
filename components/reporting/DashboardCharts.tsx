@@ -10,13 +10,18 @@ import {
 } from '@/lib/utils/format';
 import { CumulativeAreaLineChart } from '@/components/charts/authenticated/cartesian/CumulativeAreaLineChart';
 import { RankedContributionChart } from '@/components/charts/authenticated/RankedContributionChart';
-import { ChartLegend } from '@/components/charts/authenticated/ChartPanel';
+import {
+  ChartFrame,
+  ChartLegend,
+  ChartState,
+  type ChartDataTableModel,
+} from '@/components/charts/authenticated/ChartFrame';
 import { StageDotPlot, type StageDotPlotRow } from '@/components/charts/authenticated/operational/StageDotPlot';
+import ExportMenu from '@/components/reports/ExportMenu';
 import {
   buildCumulativeFinancialSeries,
   type CumulativeFinancialPoint,
 } from '@/components/reporting/reportChartModel';
-import dvStyles from '@/components/charts/authenticated/AuthenticatedCharts.module.css';
 import { financialStageLabel } from '@/lib/ui/labels';
 import { TIME_RANGE_LABELS } from '@/lib/ui/merchantCopy';
 
@@ -114,49 +119,61 @@ export function DashboardCharts({
             </p>
           </div>
 
-          {!report.reconciliation.ok ? (
-            <div className="rounded-[var(--ua-radius-control)] border border-[var(--ua-warning-border)] bg-[var(--ua-warning-bg)] px-4 py-3 text-sm text-[var(--ua-warning)]" role="status">
-              Some ledger entries could not be reconciled. Valid currency data remains visible; review the reconciliation notice above before using these figures.
-            </div>
-          ) : null}
-
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
-            <ReportChartPanel
-              className="xl:col-span-8"
-              title="How is financial value accumulating?"
-              description={`Cumulative exposure and recovered value · ${TIME_RANGE_LABELS[report.range]} · ${bridge.currency}`}
-              titleId={`exposure-recovered-${bridge.currency}`}
-            >
-              <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-3">
-                <p className="text-xs text-[var(--ua-text-secondary)]">{chartCadenceLabel(report.range)}</p>
-                <ChartLegend items={[
+            <div className="xl:col-span-8">
+              <ChartFrame
+                id={`exposure-recovered-${bridge.currency}`}
+                kind="cumulative-financial"
+                question="How is financial value accumulating?"
+                summary={chartCadenceLabel(report.range)}
+                scope={`${bridge.currency} · ${TIME_RANGE_LABELS[report.range]}`}
+                control={
+                  <ExportMenu
+                    range={report.range}
+                    timezone={report.timezone}
+                    currency={bridge.currency}
+                    metric="exposed"
+                  />
+                }
+                legend={<ChartLegend items={[
                   { label: 'Exposure', tone: 'primary' },
                   { label: 'Recovered', tone: 'positive' },
                   ...(comparison ? [{ label: 'Previous exposure', tone: 'comparison' as const }] : []),
-                ]} />
-              </div>
-              {trend.some((point) => point.exposureIncrementMinor != null || point.recoveredIncrementMinor != null) ? (
-                <>
-                  <div className="px-2 pb-2 pt-1">
-                    <CumulativeAreaLineChart
-                      data={trend}
-                      valueFormatter={(value) => compactMoney(value, bridge.currency)}
-                      tooltipFormatter={(value) => formatMoney(value, bridge.currency)}
-                      comparison={Boolean(comparison)}
-                      height={340}
-                    />
-                  </div>
-                  <ReportChartDataTable currency={bridge.currency} trend={trend} />
-                </>
-              ) : trend.length ? (
-                <>
-                  <ChartEmpty message="Dated exposure and recovery values are unavailable for this period." />
-                  <ReportChartDataTable currency={bridge.currency} trend={trend} />
-                </>
-              ) : (
-                <ChartEmpty message="No dated exposure or recovery entries were recorded in this period." />
-              )}
-            </ReportChartPanel>
+                ]} />}
+                records={{
+                  href: financialReportRecordsHref({
+                    range: report.range,
+                    currency: bridge.currency,
+                    metric: 'exposed',
+                    timezone: report.timezone,
+                  }),
+                  label: 'View exposure records',
+                }}
+                table={trend.length ? trendTable(bridge.currency, trend) : undefined}
+              >
+                {trend.some((point) => point.exposureIncrementMinor != null || point.recoveredIncrementMinor != null) ? (
+                  <CumulativeAreaLineChart
+                    data={trend}
+                    valueFormatter={(value) => compactMoney(value, bridge.currency)}
+                    tooltipFormatter={(value) => formatMoney(value, bridge.currency)}
+                    comparison={Boolean(comparison)}
+                    height={340}
+                  />
+                ) : trend.length ? (
+                  <ChartState
+                    kind="unavailable"
+                    title="Dated values unavailable"
+                    description="Dated exposure and recovery values are unavailable for this period."
+                  />
+                ) : (
+                  <ChartState
+                    kind="empty"
+                    title="No dated entries"
+                    description="No dated exposure or recovery entries were recorded in this period."
+                  />
+                )}
+              </ChartFrame>
+            </div>
 
             <div className="self-start xl:col-span-4">
               <RankedContributionChart
@@ -189,46 +206,32 @@ export function DashboardCharts({
 }
 
 /**
- * Report chart shell. Named distinctly so it does not shadow the canonical
- * `ChartPanel`, and it consumes that panel's own CSS module classes so there is
- * one panel skin rather than a second hand-rolled one.
- *
- * It keeps a bespoke accessible table (see ReportChartDataTable) because this
- * chart carries two series per date, which the canonical single-value
- * `AuthChartTableRow` contract cannot express without dropping a series.
+ * The cumulative hero carries two series per date, which the single-value
+ * `AuthChartTableRow` shape cannot express, so it supplies its own multi-column
+ * {@link ChartDataTableModel} to the canonical `ChartFrame` table slot — one
+ * accessible table primitive, with no hand-built table markup.
  */
-function ReportChartPanel({
-  children,
-  className = '',
-  title,
-  titleId,
-  description,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  title: string;
-  titleId: string;
-  description?: string;
-}) {
-  return (
-    <section className={`${dvStyles.panel} ${className}`} aria-labelledby={titleId}>
-      <header className={dvStyles.panelHeader}>
-        <div className={dvStyles.panelHeading}>
-          <h2 id={titleId}>{title}</h2>
-          {description ? <p>{description}</p> : null}
-        </div>
-      </header>
-      {children}
-    </section>
-  );
-}
-
-function ChartEmpty({ message }: { message: string }) {
-  return (
-    <div className="flex min-h-[220px] items-center px-5 py-8">
-      <p className="max-w-sm text-sm leading-6 text-[var(--ua-text-secondary)]">{message}</p>
-    </div>
-  );
+function trendTable(currency: string, trend: CumulativeFinancialPoint[]): ChartDataTableModel {
+  return {
+    caption: `Cumulative exposure and recovered value by period (${currency})`,
+    columns: [
+      { key: 'period', header: 'Period' },
+      { key: 'exposureAdded', header: 'Exposure added', numeric: true },
+      { key: 'exposureToDate', header: 'Exposure to date', numeric: true },
+      { key: 'recoveredAdded', header: 'Recovered added', numeric: true },
+      { key: 'recoveredToDate', header: 'Recovered to date', numeric: true },
+    ],
+    rows: trend.map((point) => ({
+      key: point.key,
+      header: point.label,
+      values: [
+        point.exposureIncrementMinor == null ? '—' : formatMoney(point.exposureIncrementMinor, currency),
+        point.cumulativeExposureMinor == null ? 'Unavailable' : formatMoney(point.cumulativeExposureMinor, currency),
+        point.recoveredIncrementMinor == null ? '—' : formatMoney(point.recoveredIncrementMinor, currency),
+        point.cumulativeRecoveredMinor == null ? 'Unavailable' : formatMoney(point.cumulativeRecoveredMinor, currency),
+      ],
+    })),
+  };
 }
 
 function RecoveryLedger({ bridge, report }: { bridge: MoneyBridge; report: IntelligenceReport }) {
@@ -286,51 +289,5 @@ function RecoveryLedger({ bridge, report }: { bridge: MoneyBridge; report: Intel
         <p className="px-4 py-5 text-sm text-[var(--ua-text-secondary)]">Recovery values are unavailable for this period.</p>
       )}
     </section>
-  );
-}
-
-function ReportChartDataTable({
-  currency,
-  trend,
-}: {
-  currency: string;
-  trend: CumulativeFinancialPoint[];
-}) {
-  return (
-    <details className="border-t border-[var(--ua-border-subtle)] px-4 py-3">
-      <summary className="cursor-pointer text-xs font-semibold text-[var(--ua-text-secondary)]">View chart data</summary>
-      <div className="mt-3 max-h-56 overflow-auto">
-        <table className="w-full min-w-[420px] text-xs">
-          <thead>
-            <tr className="border-b border-[var(--ua-border-subtle)] text-left">
-              <th className="py-2">Period</th>
-              <th className="py-2 text-right">Exposure added</th>
-              <th className="py-2 text-right">Exposure to date</th>
-              <th className="py-2 text-right">Recovered added</th>
-              <th className="py-2 text-right">Recovered to date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {trend.map((point) => (
-              <tr key={point.key} className="border-b border-[var(--ua-border-subtle)]">
-                <th scope="row" className="py-2 text-left font-medium">{point.label}</th>
-                <td className="py-2 text-right tabular-nums">
-                  {point.exposureIncrementMinor == null ? '—' : formatMoney(point.exposureIncrementMinor, currency)}
-                </td>
-                <td className="py-2 text-right tabular-nums">
-                  {point.cumulativeExposureMinor == null ? 'Unavailable' : formatMoney(point.cumulativeExposureMinor, currency)}
-                </td>
-                <td className="py-2 text-right tabular-nums">
-                  {point.recoveredIncrementMinor == null ? '—' : formatMoney(point.recoveredIncrementMinor, currency)}
-                </td>
-                <td className="py-2 text-right tabular-nums">
-                  {point.cumulativeRecoveredMinor == null ? 'Unavailable' : formatMoney(point.cumulativeRecoveredMinor, currency)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </details>
   );
 }

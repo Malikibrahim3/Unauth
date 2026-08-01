@@ -20,10 +20,11 @@ export default function AccountDangerSection({
 }: Props) {
   return (
     <SectionCard
+      joined
       title="Account"
       description="Destructive actions"
       style={{
-        borderColor: "color-mix(in srgb, var(--ua-success) 30%, var(--ua-border-default))",
+        borderColor: "var(--ua-critical-border)",
       }}
     >
       <div className="space-y-4">

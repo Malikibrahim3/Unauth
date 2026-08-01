@@ -1,6 +1,4 @@
 import type { ReactNode } from 'react';
-import Link from 'next/link';
-import { HelpCircle, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Breadcrumb } from '@/components/authenticated/AuthenticatedPageHeader';
 import { AuthenticatedPageHeader } from '@/components/authenticated/AuthenticatedPageHeader';
@@ -19,6 +17,19 @@ interface SettingsPageShellProps {
   className?: string;
 }
 
+/**
+ * Instrument Grade configuration-document shell.
+ *
+ * The settings family is "Header → grouped local navigation → 680–820px form →
+ * contextual help only when specific". Grouped navigation is owned by the
+ * settings layout (`SettingsNav`); this shell renders the header and a single
+ * readable form column capped at 820px.
+ *
+ * The prior shell hung a fixed "Workspace controls" guidance card plus a
+ * "Settings help" link on every page — a generic rail repeated across ~12
+ * settings routes, which §5.5 explicitly removes. Contextual help now belongs
+ * inline within a page's own content, and only when it is specific to that page.
+ */
 export function SettingsPageShell({
   title,
   subtitle,
@@ -48,20 +59,7 @@ export function SettingsPageShell({
         capabilityId="settings.heading"
       />
       <div className={styles.pageBody}>
-        <div className={styles.settingsGrid}>
-          <div className={styles.settingsMain}>{children}</div>
-          <aside className={styles.guidanceStack} aria-label="Settings guidance">
-          <div className={styles.guidanceCard}>
-            <span className={styles.guidanceIcon}><ShieldCheck size={15} aria-hidden="true" /></span>
-            <h2>Workspace controls</h2>
-            <p>Changes are scoped to this workspace. Sensitive actions and configuration updates remain available in the audit trail.</p>
-          </div>
-          <Link href="/help" className={styles.guidanceLink}>
-            <HelpCircle size={15} aria-hidden="true" />
-            Settings help
-          </Link>
-        </aside>
-        </div>
+        <div className="ua-settings-form">{children}</div>
       </div>
     </div>
   );

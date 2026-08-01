@@ -2,8 +2,7 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { PageConnectionGate } from '@/components/connections/PageConnectionGate';
 import type { ConnectionState } from '@/lib/connections/getConnectionState';
-import { WorkbenchPage, EmptyState, ButtonLink, FilterChip, SegmentedControl } from '@/components/ui';
-import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
+import { PageFrame, RegistrySurface, EmptyState, ButtonLink, FilterChip, SegmentedControl } from '@/components/ui';
 import { dominantCurrency, formatCurrencyNullable, formatNumber } from '@/lib/utils/format';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
 import {
@@ -131,94 +130,110 @@ export function ClaimsPageView({
 
   return (
     <PageConnectionGate requires="helpdesk" connection={connectionState} pageName="Cases" pageDescription="Connect Gorgias or Zendesk so Unauth can match the customer, order, item, parcel, and evidence before you act." hasData={queueCounts.total > 0}>
-    <WorkbenchPage
+    <PageFrame
       title="Cases"
-      navItems={WORKBENCH_NAV_ITEMS}
-      activeNavKey="claims"
-      kpiItems={[
-        { label: 'Open cases', value: formatNumber(queueCounts.active), hint: 'Refunds, reships, replacements' },
-        { label: 'New evidence', value: formatNumber(queueCounts.unread), hint: 'Arrived since last visit' },
-        { label: 'Ready for decision', value: formatNumber(queueCounts.readyForDecision), hint: 'Evidence complete' },
-        { label: 'Value at issue', value: formatCurrencyNullable(totalAtRisk || null, displayCurrency), hint: 'All cases' },
-      ]}
+      subtitle={`${formatNumber(queueCounts.active)} active · ${formatNumber(queueCounts.unread)} with new evidence · ${formatNumber(queueCounts.readyForDecision)} ready for decision · ${formatCurrencyNullable(totalAtRisk || null, displayCurrency)} at issue`}
       footer={
         <p className="text-xs" style={{ color: 'var(--ua-text-tertiary)' }}>
           Support conversations stay in your helpdesk. Unauth reconciles the records, keeps customer action separate from responsibility, and routes supported recovery work to the right partner.
         </p>
       }
-      main={
-        isEmpty ? (
+    >
+      {isEmpty ? (
           <EmptyState
             title="No cases yet"
             description="Connect a support source to create cases from customer conversations."
             action={<ButtonLink href="/settings/integrations" size="md">Connect support source</ButtonLink>}
           />
-        ) : (
-          <div>
-            {/* Toolbar */}
-            <div className="space-y-3 px-4 pt-4 pb-3 border-b" style={{ borderColor: 'var(--ua-border-subtle)' }}>
-              <form method="get" action="/claims" role="search" aria-label="Search cases" className="flex w-full items-center gap-2">
-                {Object.entries(sp)
-                  .filter(([key, value]) => key !== 'search' && key !== 'page' && key !== 'focus' && value)
-                  .map(([key, value]) => (
-                    <input key={key} type="hidden" name={key} value={value} />
-                  ))}
-                <label htmlFor="cases-search" className="sr-only">Search customer, order, ticket or case reference</label>
-                <input
-                  id="cases-search"
-                  data-testid="cases-search"
-                  name="search"
-                  type="search"
-                  defaultValue={searchTerm}
-                  placeholder="Search customer, order, ticket or case reference"
-                  className="min-w-0 flex-1 rounded-md border px-3 py-2 text-sm"
-                  style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-surface-primary)', color: 'var(--ua-text-primary)' }}
-                />
-                <button type="submit" className="shrink-0 rounded-md px-3 py-2 text-sm font-semibold" style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-action-primary-fg)' }}>
-                  Search
-                </button>
-                {searchTerm ? (
-                  <Link href={`/claims${buildClaimsQueryString(sp, { search: undefined, page: '1', focus: undefined })}`} className="shrink-0 text-xs font-semibold underline underline-offset-2" style={{ color: 'var(--ua-text-secondary)' }}>
-                    Clear
-                  </Link>
-                ) : null}
-              </form>
-              <nav
-                className="flex flex-wrap items-center gap-x-1 gap-y-1"
-                aria-label="Case filters"
-              >
-                {filterTabs.map((tab) => (
-                  <FilterChip
-                    key={tab.label}
-                    href={tab.href}
-                    active={tab.active}
-                    count={tab.count}
-                  >
-                    {tab.label}
-                  </FilterChip>
-                ))}
-              </nav>
-              <div className="flex w-full flex-wrap items-center justify-between gap-3 sm:justify-start">
-                <SegmentedControl
-                  aria-label="Sort cases"
-                  value={slaFilter === 'overdue' ? 'ageing' : sort === 'age' ? 'oldest' : sort === 'value' ? 'value' : 'updated'}
-                  items={[
-                    { value: 'updated', label: 'Updated', href: `/claims${buildClaimsQueryString(sp, { sort: undefined, sla: undefined, page: '1' })}` },
-                    { value: 'oldest', label: 'Oldest', href: `/claims${buildClaimsQueryString(sp, { sort: 'age', sla: undefined, page: '1' })}` },
-                    { value: 'ageing', label: 'Ageing first', href: `/claims${buildClaimsQueryString(sp, { sla: 'overdue', sort: 'age', page: '1' })}` },
-                    { value: 'value', label: 'Highest value', href: `/claims${buildClaimsQueryString(sp, { sort: 'value', sla: undefined, page: '1' })}` },
-                  ]}
-                />
-                <Suspense fallback={<span className="text-xs" style={{ color: 'var(--ua-text-secondary)' }}>Rows…</span>}>
-                  <PageSizeSelect pathname="/claims" pageSize={pageSize} />
-                </Suspense>
+      ) : (
+          <RegistrySurface
+            aria-label="Cases registry and selected preview"
+            className="ua-case-registry"
+            toolbar={
+              <div className="ua-case-registry-tools">
+                <div className="ua-case-registry-tools__primary">
+                  <form method="get" action="/claims" role="search" aria-label="Search cases" className="ua-case-registry-tools__search">
+                    {Object.entries(sp)
+                      .filter(([key, value]) => key !== 'search' && key !== 'page' && key !== 'focus' && value)
+                      .map(([key, value]) => (
+                        <input key={key} type="hidden" name={key} value={value} />
+                      ))}
+                    <label htmlFor="cases-search" className="sr-only">Search customer, order, ticket or case reference</label>
+                    <input
+                      id="cases-search"
+                      data-testid="cases-search"
+                      name="search"
+                      type="search"
+                      defaultValue={searchTerm}
+                      placeholder="Search customer, order, ticket or case reference"
+                      className="h-9 min-w-0 flex-1 rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-3 text-sm text-[var(--ua-text-primary)]"
+                    />
+                    <button type="submit" className="h-9 shrink-0 rounded-[var(--ua-radius-control)] bg-[var(--ua-action-primary)] px-3 text-sm font-semibold text-[var(--ua-action-primary-fg)]">
+                      Search
+                    </button>
+                    {searchTerm ? (
+                      <Link href={`/claims${buildClaimsQueryString(sp, { search: undefined, page: '1', focus: undefined })}`} className="shrink-0 text-xs font-semibold text-[var(--ua-text-secondary)] underline underline-offset-2">
+                        Clear
+                      </Link>
+                    ) : null}
+                  </form>
+                  <div className="ua-case-registry-tools__sort">
+                    <SegmentedControl
+                      aria-label="Sort cases"
+                      value={slaFilter === 'overdue' ? 'ageing' : sort === 'age' ? 'oldest' : sort === 'value' ? 'value' : 'updated'}
+                      items={[
+                        { value: 'updated', label: 'Updated', href: `/claims${buildClaimsQueryString(sp, { sort: undefined, sla: undefined, page: '1' })}` },
+                        { value: 'oldest', label: 'Oldest', href: `/claims${buildClaimsQueryString(sp, { sort: 'age', sla: undefined, page: '1' })}` },
+                        { value: 'ageing', label: 'Ageing first', href: `/claims${buildClaimsQueryString(sp, { sla: 'overdue', sort: 'age', page: '1' })}` },
+                        { value: 'value', label: 'Highest value', href: `/claims${buildClaimsQueryString(sp, { sort: 'value', sla: undefined, page: '1' })}` },
+                      ]}
+                    />
+                    <Suspense fallback={<span className="text-xs text-[var(--ua-text-secondary)]">Rows…</span>}>
+                      <PageSizeSelect pathname="/claims" pageSize={pageSize} />
+                    </Suspense>
+                  </div>
+                </div>
+                <div className="ua-case-registry-tools__filters">
+                  <span className="ua-case-registry-tools__label">Workflow</span>
+                  <nav className="flex min-w-0 flex-wrap items-center gap-1" aria-label="Case filters">
+                    {filterTabs.map((tab) => (
+                      <FilterChip
+                        key={tab.label}
+                        href={tab.href}
+                        active={tab.active}
+                        count={tab.count}
+                      >
+                        {tab.label}
+                      </FilterChip>
+                    ))}
+                  </nav>
+                  <p className="ml-auto text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]" role="status" aria-live="polite">
+                    {resultText}
+                  </p>
+                </div>
               </div>
-            </div>
-
+            }
+            pagination={totalPages > 1 ? (
+              <>
+                <span>Page {page} of {totalPages}</span>
+                <div className="flex items-center gap-2">
+                  {page > 1 && (
+                    <ButtonLink href={`/claims${buildClaimsQueryString(sp, { page: String(page - 1) })}`} variant="secondary" size="sm">Previous</ButtonLink>
+                  )}
+                  {page < totalPages && (
+                    <ButtonLink href={`/claims${buildClaimsQueryString(sp, { page: String(page + 1) })}`} variant="secondary" size="sm">Next</ButtonLink>
+                  )}
+                </div>
+              </>
+            ) : undefined}
+          >
             {claims.length === 0 ? (
               <EmptyState
                 variant="compact"
                 title={emptyDescription}
+                description={queueFilter === 'active'
+                  ? 'Recorded outcomes may still contain the case you need.'
+                  : 'Return to active work to review cases that still need attention.'}
                 action={queueFilter === 'active' ? (
                   <Link
                     href="/claims?queue=history"
@@ -227,7 +242,15 @@ export function ClaimsPageView({
                   >
                     View recorded outcomes
                   </Link>
-                ) : undefined}
+                ) : (
+                  <Link
+                    href="/claims?queue=active"
+                    className="mt-2 inline-block text-xs font-semibold hover:underline"
+                    style={{ color: 'var(--ua-action-primary)' }}
+                  >
+                    View active cases
+                  </Link>
+                )}
               />
             ) : (
               <ClaimsQueueClient
@@ -239,29 +262,9 @@ export function ClaimsPageView({
                 initialFocusClaimId={initialFocusClaimId}
               />
             )}
-
-            {totalPages > 1 && (
-              <div
-                className="flex flex-wrap items-center justify-between gap-2 border-t px-4 py-3 text-xs"
-                style={{ borderColor: 'var(--ua-border-subtle)', color: 'var(--ua-text-secondary)' }}
-              >
-                <span>{resultText}</span>
-                <div className="flex items-center gap-2">
-                  <span>Page {page} of {totalPages}</span>
-                  {page > 1 && (
-                    <ButtonLink href={`/claims${buildClaimsQueryString(sp, { page: String(page - 1) })}`} variant="secondary" size="sm">Previous</ButtonLink>
-                  )}
-                  {page < totalPages && (
-                    <ButtonLink href={`/claims${buildClaimsQueryString(sp, { page: String(page + 1) })}`} variant="secondary" size="sm">Next</ButtonLink>
-                  )}
-                </div>
-              </div>
-            )}
-
-          </div>
-        )
-      }
-    />
+          </RegistrySurface>
+      )}
+    </PageFrame>
     </PageConnectionGate>
   );
 }

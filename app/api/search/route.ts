@@ -21,6 +21,7 @@ import { createScopedClient } from '@/lib/supabase/scoped';
 import { TABLES } from '@/lib/supabase/tables';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { formatCurrency } from '@/lib/utils/format';
+import { hashId, sourceRefLabel } from '@/lib/ui/displayRef';
 
 export const dynamic = 'force-dynamic';
 
@@ -81,6 +82,15 @@ function isUuid(value: string): boolean {
   return z.string().uuid().safeParse(value).success;
 }
 
+function resultLabel(kind: string, ref: string | null | undefined, id: string): string {
+  const kindLabel = kind.charAt(0).toUpperCase() + kind.slice(1);
+  const refLabel = sourceRefLabel(ref);
+  if (!refLabel) return `${kindLabel} ${hashId(id)}`;
+  return refLabel.toLowerCase().startsWith(`${kind.toLowerCase()} `)
+    ? refLabel
+    : `${kindLabel} ${refLabel}`;
+}
+
 export async function GET(req: NextRequest) {
   const userClient = createClient();
   const { data: { user } } = await userClient.auth.getUser();
@@ -138,7 +148,7 @@ export async function GET(req: NextRequest) {
         results.push({
           type: 'customer',
           id: c.merchant_customer_id ?? c.id,
-          label: name || c.email || c.id,
+          label: name || c.email || `Customer ${hashId(c.merchant_customer_id ?? c.id)}`,
           sublabel: name ? c.email ?? undefined : undefined,
           href: `/customers/${c.merchant_customer_id ?? c.id}`,
         });
@@ -158,7 +168,7 @@ export async function GET(req: NextRequest) {
         results.push({
           type: 'customer',
           id: c.id,
-          label: c.display_name || c.email || c.id,
+          label: c.display_name || c.email || `Customer ${hashId(c.id)}`,
           sublabel: c.display_name ? c.email ?? undefined : undefined,
           href: `/customers/${c.id}`,
         });
@@ -203,7 +213,7 @@ export async function GET(req: NextRequest) {
           results.push({
             type: 'order',
             id: o.id,
-            label: o.order_number ? `Order ${o.order_number}` : `Order ${o.id.slice(0, 8)}`,
+            label: resultLabel('order', o.order_number, o.id),
             sublabel: o.total_price != null ? formatCurrency(o.total_price, o.currency ?? undefined) : o.email ?? undefined,
             href: `/orders/${o.id}`,
           });
@@ -262,7 +272,7 @@ export async function GET(req: NextRequest) {
         results.push({
           type: 'ticket',
           id: t.id,
-          label: `Ticket ${t.external_id ?? t.id.slice(0, 8)}`,
+          label: resultLabel('ticket', t.external_id, t.id),
           sublabel: t.subject ?? t.status ?? undefined,
           href: `/tickets/${t.id}`,
         });
@@ -286,7 +296,7 @@ export async function GET(req: NextRequest) {
         results.push({
           type: 'shipment',
           id: s.id,
-          label: `Shipment ${s.tracking_number ?? s.id.slice(0, 8)}`,
+          label: resultLabel('shipment', s.tracking_number, s.id),
           sublabel: [s.carrier, s.status].filter(Boolean).join(' · ') || undefined,
           href: `/shipments/${s.id}`,
           _orderId: s.source_order_id ?? undefined,
@@ -311,7 +321,7 @@ export async function GET(req: NextRequest) {
         results.push({
           type: 'transaction',
           id: t.id,
-          label: `Transaction ${t.external_id ?? t.provider_reference ?? t.id.slice(0, 8)}`,
+          label: resultLabel('transaction', t.external_id ?? t.provider_reference, t.id),
           sublabel: [t.transaction_type, t.amount_minor != null ? formatCurrency(t.amount_minor / 100, t.currency ?? undefined) : null].filter(Boolean).join(' · ') || undefined,
           href: '/claims',
           _orderId: t.source_order_id ?? undefined,
@@ -330,14 +340,14 @@ export async function GET(req: NextRequest) {
     try {
       const { data } = await serviceClient.from(object.table).select(object.select).eq('merchant_id', merchantId)
         .or(isUuid(q) ? `id.eq.${q}` : `external_id.ilike.${pattern}`).limit(limit).range(offset, offset + limit - 1);
-      for (const row of (data as Array<Record<string, any>> ?? [])) results.push({ type: object.type, id: row.id, label: `${object.type[0].toUpperCase()}${object.type.slice(1)} ${row.external_id}`, sublabel: object.amount && row.amount != null && row.currency ? formatCurrency(row.amount, row.currency) : row.status ?? undefined, href: `/${object.href}/${row.id}` });
+      for (const row of (data as Array<Record<string, any>> ?? [])) results.push({ type: object.type, id: row.id, label: resultLabel(object.type, row.external_id, row.id), sublabel: object.amount && row.amount != null && row.currency ? formatCurrency(row.amount, row.currency) : row.status ?? undefined, href: `/${object.href}/${row.id}` });
     } catch (error) { console.error(`Search ${object.requested} failed`, error); }
   }
 
   if (requested.includes('losses') && isUuid(q)) {
     try {
       const { data } = await serviceClient.from(TABLES.LOSS_CASES).select('id,status').eq('merchant_id', merchantId).eq('id', q).limit(limit);
-      for (const row of (data as Array<Record<string, any>> ?? [])) results.push({ type: 'loss', id: row.id, label: `Loss ${row.id.slice(0, 8)}`, sublabel: row.status, href: `/losses/${row.id}` });
+      for (const row of (data as Array<Record<string, any>> ?? [])) results.push({ type: 'loss', id: row.id, label: resultLabel('loss', null, row.id), sublabel: row.status, href: `/losses/${row.id}` });
     } catch (error) { console.error('Search losses failed', error); }
   }
 

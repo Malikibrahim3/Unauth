@@ -6,25 +6,40 @@
   <title>Unauth</title>
   <script src="https://static.zdassets.com/zendesk_app_framework_sdk/2.0/zaf_sdk.min.js"></script>
   <style>
+    @font-face {
+      font-family: 'Unauth Inter';
+      src: url('fonts/inter-latin-variable.woff2') format('woff2');
+      font-style: normal;
+      font-weight: 300 700;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Unauth DM Mono';
+      src: url('fonts/dm-mono-latin-400.woff2') format('woff2');
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      font-family: 'Unauth Inter', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       font-size: 13px;
       line-height: 1.45;
-      color: #f5f0eb;
-      background: #14100e;
+      color: #18181b;
+      background: #f7f7f8;
       padding: 12px;
       max-width: 300px;
     }
     .card {
-      border-radius: 8px;
-      border: 1px solid;
-      padding: 12px;
+      border-radius: 9px;
+      border: 1px solid #e4e4e7;
+      padding: 14px;
+      background: #ffffff;
     }
     .headline {
       font-size: 14px;
-      font-weight: 700;
-      letter-spacing: 0.03em;
+      font-weight: 650;
+      letter-spacing: -0.02em;
       margin-bottom: 4px;
     }
     .meta {
@@ -34,10 +49,10 @@
     }
     .section { margin-top: 10px; }
     .section-title {
-      font-size: 10px;
+      font-size: 12px;
       font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
+      text-transform: none;
+      letter-spacing: 0;
       opacity: 0.7;
       margin-bottom: 6px;
     }
@@ -58,7 +73,7 @@
       font-size: 12px;
       padding: 8px;
       border-radius: 6px;
-      background: rgba(0,0,0,0.2);
+      background: rgba(91,91,214,0.08);
     }
     .actions {
       display: flex;
@@ -70,7 +85,7 @@
       display: block;
       text-align: center;
       padding: 8px 10px;
-      border-radius: 6px;
+      border-radius: 7px;
       font-size: 12px;
       font-weight: 600;
       text-decoration: none;
@@ -79,21 +94,22 @@
       width: 100%;
       font-family: inherit;
     }
-    .btn-primary { background: #c8763a; color: #fff; }
-    .btn-primary:hover { background: #9e5a26; }
+    .btn-primary { background: #5b5bd6; color: #fff; }
+    .btn-primary:hover { background: #4949b8; }
     .btn-ghost {
       background: transparent;
-      color: #c8763a;
-      border: 1px solid #3d2e28;
+      color: #52525b;
+      border: 1px solid #d4d4d8;
     }
     .btn-ghost:disabled { opacity: 0.5; cursor: not-allowed; }
     .evidence-result {
-      font-size: 11px;
+      font-size: 12px;
       margin-top: 6px;
-      word-break: break-all;
+      overflow-wrap: anywhere;
+      word-break: normal;
     }
-    .evidence-result a { color: #c8763a; }
-    .muted { color: #a89890; font-size: 12px; }
+    .evidence-result a { color: #5b5bd6; }
+    .muted { color: #71717a; font-size: 12px; }
     .brand {
       margin-top: 10px;
       text-align: right;
@@ -104,9 +120,38 @@
       height: auto;
     }
     .loading-card {
-      background: #1f1814;
-      border-color: #3d2e28;
+      background: #f1f1f3;
+      border-color: #e4e4e7;
       animation: pulse 1.4s ease-in-out infinite;
+    }
+    .state-heading {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .state-dot {
+      width: 7px;
+      height: 7px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      background: #71717a;
+    }
+    .state-definite { background: #237a4b; }
+    .state-probable { background: #2563a6; }
+    .state-possible { background: #8a6116; }
+    .state-weak { background: #71717a; }
+    .notice {
+      margin-top: 8px;
+      padding: 8px 10px;
+      border: 1px solid #e4e4e7;
+      border-radius: 7px;
+      background: #f7f7f8;
+      color: #52525b;
+    }
+    .notice-warning {
+      border-color: #ead49b;
+      background: #fff8e7;
+      color: #704d12;
     }
     @keyframes pulse {
       0%, 100% { opacity: 1; }
@@ -136,15 +181,15 @@
       // calm green confirmation, not a warning. No risk score, no risk band.
       function gradeTheme(grade) {
         if (grade === 'definite') {
-          return { bg: '#0f2a18', border: '#6fcf97', accent: '#e6f7ed', icon: '🟢', label: 'DEFINITE' };
+          return { className: 'state-definite', label: 'Definite match' };
         }
         if (grade === 'probable') {
-          return { bg: '#102433', border: '#5a9bd4', accent: '#e6f1fb', icon: '🔵', label: 'PROBABLE' };
+          return { className: 'state-probable', label: 'Probable match' };
         }
         if (grade === 'possible') {
-          return { bg: '#1f1814', border: '#8a7a52', accent: '#f5efe2', icon: '⚪', label: 'POSSIBLE' };
+          return { className: 'state-possible', label: 'Possible match' };
         }
-        return { bg: '#1f1814', border: '#3d2e28', accent: '#d8ccc4', icon: '⚪', label: 'WEAK' };
+        return { className: 'state-weak', label: 'Weak match' };
       }
 
       function formatClaimDate(iso) {
@@ -199,16 +244,17 @@
 
       function renderLoading() {
         root.innerHTML =
-          '<div class="card loading-card" style="border:1px solid #3d2e28;">' +
+          '<div class="card loading-card" style="border:1px solid #e4e4e7;">' +
           '<p class="muted">Checking identity network…</p></div>';
       }
 
       function renderError(message) {
         root.innerHTML =
-          '<div class="card" style="background:#2a211c;border-color:#6b5c54;">' +
-          '<div class="headline">⚠️ Connection error</div>' +
-          '<p class="muted" style="margin-top:8px;">' + esc(message || 'Could not reach Unauth') + '</p>' +
+          '<div class="card">' +
+          '<div class="headline">Connection error</div>' +
+          '<div class="notice notice-warning"><p>' + esc(message || 'Could not reach Unauth') + '</p>' +
           '<p class="muted" style="margin-top:8px;">Check your API key</p>' +
+          '</div>' +
           '<div class="actions">' +
           '<button type="button" class="btn btn-primary" id="unauth-settings-btn">Open Unauth Settings</button>' +
           '</div></div>';
@@ -219,9 +265,9 @@
 
       function renderNotFound() {
         root.innerHTML =
-          '<div class="card" style="background:#1f1814;border-color:#3d2e28;">' +
-          '<div class="headline">⚪ NO PROFILE</div>' +
-          '<p class="muted" style="margin-top:8px;">Not in Unauth network yet</p>' +
+          '<div class="card">' +
+          '<div class="headline">No profile</div>' +
+          '<div class="notice"><p>Not in Unauth network yet</p></div>' +
           '<div class="actions">' +
           '<button type="button" class="btn btn-primary" id="unauth-home-btn">Go to Unauth</button>' +
           '</div></div>';
@@ -284,9 +330,8 @@
             ? 'Identity confirmed · No prior claims on record'
             : 'Case context at your store';
         root.innerHTML =
-          '<div class="card" style="background:' +
-          theme.bg + ';border-color:' + theme.border + ';color:' + theme.accent + ';">' +
-          '<div class="headline">' + theme.icon + ' ' + theme.label + '</div>' +
+          '<div class="card">' +
+          '<div class="headline state-heading"><span class="state-dot ' + theme.className + '" aria-hidden="true"></span>' + theme.label + '</div>' +
           '<p class="meta">' + esc(subtitle) + '</p>' +
           matchedHtml +
           storeHtml +
@@ -381,7 +426,7 @@
                   btn.hidden = true;
                   resultEl.hidden = false;
                   resultEl.innerHTML =
-                    '📄 <a href="' +
+                    '<a href="' +
                     esc(url) +
                     '" target="_blank" rel="noopener noreferrer">' +
                     esc(ref) +
@@ -405,9 +450,8 @@
         var bh = (customer && customer.behavioral_history) || {};
         var orders = bh.total_orders != null ? bh.total_orders : '—';
         root.innerHTML =
-          '<div class="card" style="background:' +
-          theme.bg + ';border-color:' + theme.border + ';color:' + theme.accent + ';">' +
-          '<div class="headline">' + theme.icon + ' ' + theme.label + '</div>' +
+          '<div class="card">' +
+          '<div class="headline state-heading"><span class="state-dot ' + theme.className + '" aria-hidden="true"></span>' + theme.label + '</div>' +
           '<p class="meta">Identity confirmed · No prior claims on record</p>' +
           '<div class="section"><p class="muted">Orders at your store: ' + esc(String(orders)) + '</p></div>' +
           '<div class="actions">' +
@@ -440,9 +484,8 @@
             '<div class="evidence-result" id="unauth-pdf-result" hidden></div>'
           : '';
         root.innerHTML =
-          '<div class="card" style="background:' +
-          theme.bg + ';border-color:' + theme.border + ';color:' + theme.accent + ';">' +
-          '<div class="headline">' + theme.icon + ' ' + theme.label + '</div>' +
+          '<div class="card">' +
+          '<div class="headline state-heading"><span class="state-dot ' + theme.className + '" aria-hidden="true"></span>' + theme.label + '</div>' +
           matchedHtml +
           '<div class="section"><p class="section-title">Claims on record</p><p>' + esc(claimsLine(claims)) + '</p></div>' +
           crossHtml +

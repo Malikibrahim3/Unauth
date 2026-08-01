@@ -1,3 +1,9 @@
+export type OnboardingProfileField =
+  | 'storeName'
+  | 'platform'
+  | 'annualVolume'
+  | 'primaryConcern';
+
 export type OnboardingState = {
   activeStep: number;
   profileSaved: boolean;
@@ -9,6 +15,7 @@ export type OnboardingState = {
   usesReturnsPlatform: string;
   loading: boolean;
   error: string;
+  fieldErrors: Partial<Record<OnboardingProfileField, string>>;
   shopDomain: string;
 };
 
@@ -44,6 +51,7 @@ export function createInitialOnboardingState(input: {
     usesReturnsPlatform: input.initialUsesReturnsPlatform,
     loading: false,
     error: '',
+    fieldErrors: {},
     shopDomain: input.shopifyShopDomain,
   };
 }

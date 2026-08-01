@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui';
 
 export default function ShopifyDisconnectClient() {
   const router = useRouter();
@@ -27,7 +28,7 @@ export default function ShopifyDisconnectClient() {
   return (
     <section
       className="rounded-md border p-5 space-y-3"
-      style={{ borderColor: 'color-mix(in srgb, var(--ua-success) 30%, var(--ua-border-default))', background: 'var(--ua-surface-primary)' }}
+      style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-surface-primary)' }}
     >
       <div>
         <p className="text-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>Disconnect Shopify</p>
@@ -37,39 +38,36 @@ export default function ShopifyDisconnectClient() {
       </div>
 
       {error && (
-        <p className="text-xs" style={{ color: 'var(--ua-success)' }}>{error}</p>
+        <p className="rounded-[var(--ua-radius-control)] border px-3 py-2 text-xs" style={{ borderColor: 'var(--ua-critical-border)', background: 'var(--ua-critical-bg)', color: 'var(--ua-critical)' }} role="alert">{error} Retry the disconnect or reconnect Shopify if the link state is uncertain.</p>
       )}
 
       {confirming ? (
         <div className="flex items-center gap-2">
-          <button
-            type="button"
+          <Button
+            size="sm"
+            variant="danger"
             disabled={busy}
             onClick={() => void handleDisconnect()}
-            className="inline-flex items-center rounded-md px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
-            style={{ background: 'var(--ua-success)', color: 'var(--ua-text-inverse)' }}
           >
             {busy ? 'Disconnecting…' : 'Yes, disconnect'}
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
             disabled={busy}
             onClick={() => setConfirming(false)}
-            className="text-xs"
-            style={{ color: 'var(--ua-text-secondary)' }}
           >
             Cancel
-          </button>
+          </Button>
         </div>
       ) : (
-        <button
-          type="button"
+        <Button
+          size="sm"
+          variant="secondary"
           onClick={() => setConfirming(true)}
-          className="inline-flex items-center rounded-md border px-3 py-1.5 text-xs font-medium"
-          style={{ borderColor: 'color-mix(in srgb, var(--ua-success) 40%, var(--ua-border-default))', color: 'var(--ua-success)' }}
         >
           Disconnect Shopify
-        </button>
+        </Button>
       )}
     </section>
   );

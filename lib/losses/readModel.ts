@@ -7,7 +7,7 @@ export async function getLossReadModel(client: SupabaseClient, merchantId: strin
   if (!loss) return null;
   const [summary, entries, candidates, evidence, events, recoveries, correspondence, tasks] = await Promise.all([
     loss.support_payout_case_id ? client.from(TABLES.CASE_FINANCIAL_SUMMARIES).select('*').eq('merchant_id', merchantId).eq('support_payout_case_id', loss.support_payout_case_id) : Promise.resolve({ data: [], error: null }),
-    client.from(TABLES.CASE_FINANCIAL_ENTRIES).select('id,state,amount_minor,currency,effective_at,created_at,source_record_id,reverses_entry_id,metadata').eq('merchant_id', merchantId).eq('loss_case_id', lossId).order('effective_at', { ascending: false }),
+    client.from(TABLES.CASE_FINANCIAL_ENTRIES).select('id,support_payout_case_id,state,amount_minor,currency,effective_at,created_at,source_record_id,reverses_entry_id,metadata').eq('merchant_id', merchantId).eq('loss_case_id', lossId).order('effective_at', { ascending: false }),
     client.from(TABLES.LOSS_ATTRIBUTION_CANDIDATES).select('*').eq('merchant_id', merchantId).eq('loss_case_id', lossId).order('is_primary', { ascending: false }),
     client.from(TABLES.LOSS_CASE_EVIDENCE).select('*').eq('merchant_id', merchantId).eq('loss_case_id', lossId).order('created_at', { ascending: false }),
     client.from(TABLES.LOSS_CASE_EVENTS).select('*').eq('merchant_id', merchantId).eq('loss_case_id', lossId).order('created_at', { ascending: false }),
@@ -18,11 +18,23 @@ export async function getLossReadModel(client: SupabaseClient, merchantId: strin
   for (const result of [summary, entries, candidates, evidence, events, recoveries, correspondence, tasks]) {
     if (result.error) throw new Error(`loss_read_related_failed: ${result.error.message}`);
   }
-  const summaries = summary.data ?? [];
+  const financialEntries = entries.data ?? [];
+  const states = new Set<string>();
+  for (const entry of financialEntries) states.add(entry.state);
+  const summaries = (summary.data ?? []).map((row) => ({
+    ...row,
+    known_states: Array.isArray(row.known_states) ? row.known_states : [...states].sort(),
+  }));
+
+  function knownStage(row: Record<string, unknown>, state: string, field: string): number | null {
+    const states = Array.isArray(row.known_states) ? row.known_states.map(String) : [];
+    return states.includes(state) && typeof row[field] === 'number' ? row[field] as number : null;
+  }
+
   return {
     loss,
     financialSummaries: summaries,
-    financialEntries: entries.data ?? [],
+    financialEntries,
     attributionCandidates: candidates.data ?? [],
     evidence: evidence.data ?? [],
     events: events.data ?? [],
@@ -31,12 +43,19 @@ export async function getLossReadModel(client: SupabaseClient, merchantId: strin
     tasks: tasks.data ?? [],
     amounts: summaries.map((row) => ({
       currency: row.currency,
-      realisedLossMinor: row.confirmed_loss_minor,
-      estimatedLossMinor: row.estimated_loss_minor,
-      recoverableMinor: row.recoverable_minor,
-      recoveredMinor: row.recovered_minor,
-      writtenOffMinor: row.written_off_minor,
-      outstandingRecoveryMinor: Math.max(0, row.recoverable_minor - row.recovered_minor - row.written_off_minor),
+      realisedLossMinor: knownStage(row, 'confirmed_loss', 'confirmed_loss_minor'),
+      estimatedLossMinor: knownStage(row, 'estimated_loss', 'estimated_loss_minor'),
+      recoverableMinor: knownStage(row, 'recoverable', 'recoverable_minor'),
+      recoveredMinor: knownStage(row, 'recovered', 'recovered_minor'),
+      writtenOffMinor: knownStage(row, 'written_off', 'written_off_minor'),
+      outstandingRecoveryMinor: (() => {
+        const recoverableMinor = knownStage(row, 'recoverable', 'recoverable_minor');
+        const recoveredMinor = knownStage(row, 'recovered', 'recovered_minor');
+        const writtenOffMinor = knownStage(row, 'written_off', 'written_off_minor');
+        return recoverableMinor != null && recoveredMinor != null
+          ? Math.max(0, recoverableMinor - recoveredMinor - (writtenOffMinor ?? 0))
+          : null;
+      })(),
     })),
   };
 }

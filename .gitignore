@@ -2,6 +2,7 @@ node_modules/
 # Local Codex runtime dependency link; never commit the external target.
 outputs/shopify-shipbob-reconciliation-20260719/node_modules
 .next/
+.next-*/
 next-env.d.ts
 .env.local
 *.tsbuildinfo
@@ -18,6 +19,7 @@ tests/current/.auth/
 tests/support/.auth/
 tests/phase1/.auth/
 tests/reports/
+artifacts/living-precision/
 tests/utils/csv-fixtures/
 synthetic-lab/outputs/
 

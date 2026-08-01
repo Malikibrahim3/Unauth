@@ -124,18 +124,18 @@ export function renderWidgetUnlockHtml(input: {
   <title>${escapeHtml(title)}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: system-ui, sans-serif; font-size: 14px; line-height: 1.5; color: #f5f0eb; background: #14100e; padding: 20px; max-width: 640px; margin: 0 auto; }
-    h1 { font-size: 18px; margin-bottom: 8px; }
+    body { font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.55; color: #18181b; background: #f7f7f8; padding: 24px; max-width: 640px; margin: 0 auto; }
+    h1 { font-size: 22px; font-weight: 650; letter-spacing: -0.03em; margin-bottom: 8px; }
     h2 { font-size: 14px; margin: 12px 0 6px; }
-    .card { background: #1c1714; border: 1px solid #3d2e28; border-radius: 8px; padding: 16px; }
-    .muted { color: #9a8f88; font-size: 13px; margin-top: 8px; }
-    .warn { color: #f2994a; font-weight: 600; }
-    .meta { margin-top: 12px; font-size: 12px; color: #c8763a; }
+    .card { background: #ffffff; border: 1px solid #e4e4e7; border-radius: 10px; padding: 22px; }
+    .muted { color: #71717a; font-size: 13px; margin-top: 8px; }
+    .warn { color: #8a6116; font-weight: 600; }
+    .meta { margin-top: 12px; font-size: 12px; color: #5b5bd6; }
     ul { margin: 8px 0 0 18px; }
-    .disclaimer { margin-top: 16px; font-size: 12px; color: #6b5c54; }
-    .scope { font-size: 12px; color: #9a8f88; margin-bottom: 12px; }
+    .disclaimer { margin-top: 16px; font-size: 12px; color: #71717a; }
+    .scope { font-size: 12px; color: #71717a; margin-bottom: 14px; }
     .return { margin-top: 14px; }
-    .return a { color: #c8763a; font-weight: 600; text-decoration: none; }
+    .return a { color: #5b5bd6; font-weight: 600; text-decoration: none; }
     .return a:hover { text-decoration: underline; }
   </style>
 </head>

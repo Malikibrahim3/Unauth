@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowUpRight, CalendarDays, ReceiptText, ShieldCheck, TriangleAlert } from "lucide-react";
 import { Drawer } from "@/components/ui/Drawer";
+import { Bone } from "@/components/ui/LoadingSkeleton";
 import { Badge } from "@/components/ui/Badge";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatCurrencyNullable, formatDate, formatDateAbsolute } from "@/lib/utils/format";
@@ -83,6 +84,31 @@ function amount(value: number | null, currency: string | null) {
     : formatCurrencyNullable(value, currency);
 }
 
+/** Mirrors the preview's identity, facts, and connected-record regions. */
+function CustomerPreviewPending() {
+  return (
+    <div role="status" className="space-y-5" aria-label="Loading customer preview">
+      <div className="rounded-lg border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-4">
+        <div className="flex items-center gap-3"><Bone className="h-12 w-12 rounded-full" /><div className="flex-1 space-y-2"><Bone className="h-4 w-32" /><Bone className="h-3 w-52" /></div></div>
+        <Bone className="mt-3 h-6 w-24" />
+      </div>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{Array.from({ length: 4 }, (_, index) => <div key={index} className="rounded-md border border-[var(--ua-border-subtle)] p-3"><Bone className="h-3 w-16" /><Bone className="mt-2 h-5 w-20" /></div>)}</div>
+      <div className="rounded-lg border border-[var(--ua-border-default)] p-4"><Bone className="h-4 w-40" /><div className="mt-3 space-y-3"><Bone className="h-10 w-full" /><Bone className="h-10 w-full" /></div></div>
+    </div>
+  );
+}
+
+function CustomerPreviewUnavailable({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div role="alert" className="rounded-lg border border-[var(--ua-critical-border,var(--ua-border-default))] bg-[var(--ua-critical-bg,var(--ua-surface-muted))] p-4">
+      <p className="font-semibold text-[var(--ua-text-primary)]">Customer preview unavailable</p>
+      <p className="mt-1 text-sm text-[var(--ua-text-secondary)]">{message}</p>
+      <p className="mt-1 text-sm text-[var(--ua-text-secondary)]">The customer may have been merged, deleted, or may no longer be available to your workspace.</p>
+      <button type="button" className="mt-3 font-semibold text-[var(--ua-action-primary)]" onClick={onRetry}>Retry preview</button>
+    </div>
+  );
+}
+
 export function CustomerPreviewDrawer({
   id,
   onClose,
@@ -155,34 +181,9 @@ export function CustomerPreviewDrawer({
       }
     >
       <div className="space-y-5 p-5" aria-live="polite">
-        {state.loading ? (
-          <div
-            role="status"
-            className="space-y-3"
-            aria-label="Loading customer preview"
-          >
-            <div className="h-5 w-2/3 animate-pulse bg-[var(--ua-surface-secondary)]" />
-            <div className="h-20 animate-pulse bg-[var(--ua-surface-secondary)]" />
-            <div className="h-32 animate-pulse bg-[var(--ua-surface-secondary)]" />
-          </div>
-        ) : null}
+        {state.loading ? <CustomerPreviewPending /> : null}
 
-        {state.error ? (
-          <div role="alert">
-            <p className="font-semibold">{state.error}</p>
-            <p className="mt-1 text-sm text-[var(--ua-text-secondary)]">
-              The customer may have been merged, deleted, or you may no longer
-              have access.
-            </p>
-            <button
-              type="button"
-              className="mt-3 font-semibold text-[var(--ua-action-primary)]"
-              onClick={() => setRetryKey((value) => value + 1)}
-            >
-              Retry preview
-            </button>
-          </div>
-        ) : null}
+        {state.error ? <CustomerPreviewUnavailable message={state.error} onRetry={() => setRetryKey((value) => value + 1)} /> : null}
 
         {customer ? (
           <>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button, Card, SectionCard } from "@/components/ui";
+import { Bone, Button, SectionCard, Surface } from "@/components/ui";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import {
   DEFAULT_PLATFORM_SETTINGS,
@@ -176,13 +176,15 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
     </Field>
   );
 
+  if (loading) {
+    return <PlatformSettingsSkeleton />;
+  }
+
   return (
-    <form onSubmit={save} className="space-y-3">
+    <form onSubmit={save}>
+      <Surface structure="working" className="overflow-hidden">
       {!canManage ? (
-        <Card unstyled
-          variant="muted"
-          className="flex items-center justify-between gap-3 p-4"
-        >
+        <Surface structure="joined" className="flex items-center justify-between gap-3">
           <div>
             <p className="text-sm font-semibold">Read-only access</p>
             <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">
@@ -191,19 +193,11 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
             </p>
           </div>
           <StatusBadge family="workflowStatus" value="view_only" size="sm" />
-        </Card>
-      ) : null}
-      {loading ? (
-        <Card unstyled
-          variant="muted"
-          className="p-4 text-sm text-[var(--ua-text-secondary)]"
-          role="status"
-        >
-          Loading workspace defaults…
-        </Card>
+        </Surface>
       ) : null}
 
       <SectionCard
+        joined
         title="Reporting and retention"
         description="Display and lifecycle defaults used across reports, exports, and stored source records."
       >
@@ -246,6 +240,7 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
       </SectionCard>
 
       <SectionCard
+        joined
         title="Decision and financial policy"
         description="Defaults guide operators; they never replace case evidence or silently execute a payout."
       >
@@ -334,6 +329,7 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
       </SectionCard>
 
       <SectionCard
+        joined
         title="Connector controls"
         description="Write access and health notifications remain explicit workspace choices."
       >
@@ -381,7 +377,7 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
         </div>
       </SectionCard>
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3 border-t border-[var(--ua-border-subtle)] px-4 py-3">
         {canManage ? (
           <Button
             type="submit"
@@ -400,6 +396,40 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
           </p>
         ) : null}
       </div>
+      </Surface>
     </form>
+  );
+}
+
+function PlatformSettingsSkeleton() {
+  return (
+    <Surface
+      structure="working"
+      className="overflow-hidden"
+      role="status"
+      aria-busy="true"
+      aria-label="Loading workspace defaults"
+    >
+      {[3, 4, 2].map((fieldCount, sectionIndex) => (
+        <div
+          key={sectionIndex}
+          className="border-t border-[var(--ua-border-subtle)] px-4 py-4 first:border-t-0"
+        >
+          <Bone className="h-4 w-44" />
+          <Bone className="mt-2 h-3 w-80 max-w-full" />
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            {Array.from({ length: fieldCount }, (_, fieldIndex) => (
+              <div key={fieldIndex} className="space-y-2">
+                <Bone className="h-3 w-28" />
+                <Bone className="h-8 w-full" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+      <div className="border-t border-[var(--ua-border-subtle)] px-4 py-3">
+        <Bone className="h-8 w-28" />
+      </div>
+    </Surface>
   );
 }

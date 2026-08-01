@@ -46,7 +46,7 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
   }, [pathname]);
 
   /*
-   * Living Precision §7.3: pending state is cleared by an actual route change
+   * Instrument Grade: pending state is cleared by an actual route change
    * (the effects above), never by a timeout. A navigation that stalls keeps its
    * progress line and, at 8s, gains RoutePendingNotice — the previous 3.5s
    * timer made the product look finished while it was still waiting.

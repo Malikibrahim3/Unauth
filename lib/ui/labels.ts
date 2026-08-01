@@ -123,6 +123,7 @@ const recoverability: Record<string, string> = {
 };
 
 const recoveryStatus: Record<string, string> = {
+  open: 'Open',
   no_recovery_needed: 'No recovery needed',
   recovery_possible: 'Recovery possible',
   recovery_opened: 'Recovery opened',
@@ -203,6 +204,10 @@ const lossCategory: Record<string, string> = {
 
 // attribution and recoveryRoute share one vocabulary.
 const attribution: Record<string, string> = {
+  customer: 'Customer',
+  carrier: 'Carrier',
+  warehouse: 'Warehouse',
+  payment_processor: 'Payment processor',
   customer_claim: 'Customer claim',
   carrier_loss: 'Carrier loss',
   carrier_damage: 'Carrier damage',
@@ -341,6 +346,10 @@ const workflowStatus: Record<string, string> = {
   verification_unavailable: 'Verification unavailable',
   attention_required: 'Attention required',
   sync_failed: 'Sync failed',
+  source_verified: 'Source verified',
+  evidence_due: 'Evidence due',
+  inspected: 'Inspected',
+  ready_for_decision: 'Ready for decision',
   // Provider lifecycle-capability evidence levels (lib/integrations/types.ts),
   // rendered on the integration detail page.
   implemented: 'Implementation located',
@@ -388,6 +397,12 @@ const confidence: Record<string, string> = {
   unmatched: 'Unmatched',
 };
 
+const sourceConfidence: Record<string, string> = {
+  source_verified: 'Source verified',
+  partial_source_verified: 'Partially source verified',
+  insufficient_source_data: 'Insufficient source data',
+};
+
 const assessmentState: Record<string, string> = {
   known: 'Known',
   likely: 'Likely',
@@ -420,6 +435,7 @@ const MAPS = {
   workflowStatus,
   evidenceStrength,
   confidence,
+  sourceConfidence,
   assessmentState,
   claimType: CLAIM_TYPE_LABELS as Record<string, string>,
 } as const;

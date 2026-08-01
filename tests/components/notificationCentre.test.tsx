@@ -11,6 +11,8 @@ jest.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
 
 describe('NotificationCentre', () => {
   it('marks an unread notification before opening its internal target', async () => {
+    const unreadChanges: number[] = [];
+    window.addEventListener('unauth:notification-unread-change', ((event: CustomEvent<{ unreadCount: number }>) => unreadChanges.push(event.detail.unreadCount)) as EventListener);
     global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({}) }) as never;
     render(<NotificationCentre initialNotifications={[{
       id: 'n1', kind: 'mention', title: 'Mentioned', body: 'Please review',
@@ -19,6 +21,7 @@ describe('NotificationCentre', () => {
     fireEvent.click(screen.getByRole('button', { name: /mentioned/i }));
     await waitFor(() => expect(global.fetch).toHaveBeenCalledWith('/api/notifications/n1/read', { method: 'POST' }));
     expect(push).toHaveBeenCalledWith('/claims/case-1');
+    await waitFor(() => expect(unreadChanges).toContain(0));
   });
 
   it('shows an empty state', () => {

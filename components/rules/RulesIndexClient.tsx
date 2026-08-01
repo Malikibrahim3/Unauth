@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Plus, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Button, EmptyState } from "@/components/ui";
+import { Button, EmptyState, RegistrySurface } from "@/components/ui";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import {
   RuleBuilderDrawer,
@@ -63,32 +63,38 @@ export function RulesIndexClient({
 
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--ua-border-subtle)] px-4 py-3">
-        <p className="flex min-w-0 items-center gap-2 text-xs text-[var(--ua-text-secondary)]">
-          <ShieldCheck aria-hidden="true" className="h-4 w-4 shrink-0 text-[var(--ua-success)]" />
-          Published versions stay fixed; changes begin as drafts.
-        </p>
-        {canManage ? (
-          <Button
-            variant="primary"
-            size="sm"
-            leadingIcon={<Plus className="h-3.5 w-3.5" />}
-            onClick={() => setCreating(true)}
+      <RegistrySurface
+        aria-label="Rules"
+        toolbar={
+          <div className="flex min-w-0 flex-wrap items-center gap-3">
+            <p className="flex min-w-0 items-center gap-2 text-xs text-[var(--ua-text-secondary)]">
+              <ShieldCheck aria-hidden="true" className="h-4 w-4 shrink-0 text-[var(--ua-success)]" />
+              Published versions stay fixed; changes begin as drafts.
+            </p>
+            {canManage ? (
+              <Button
+                variant="primary"
+                size="sm"
+                leadingIcon={<Plus className="h-3.5 w-3.5" />}
+                onClick={() => setCreating(true)}
+              >
+                New rule
+              </Button>
+            ) : null}
+          </div>
+        }
+        resultCount={`${rules.length} ${rules.length === 1 ? "rule" : "rules"}`}
+      >
+        {error ? (
+          <p
+            role="alert"
+            className="border-b border-[var(--ua-border-subtle)] bg-[var(--ua-surface-primary)] px-4 py-2 text-sm text-[var(--ua-critical)]"
           >
-            New rule
-          </Button>
+            {error}
+          </p>
         ) : null}
-      </div>
-      {error ? (
-        <p
-          role="alert"
-          className="border-b border-[var(--ua-border-subtle)] bg-[var(--ua-surface-primary)] px-4 py-2 text-sm text-[var(--ua-critical)]"
-        >
-          {error}
-        </p>
-      ) : null}
-      {rules.length > 0 ? (
-        <ul className="divide-y divide-[var(--ua-border-subtle)]">
+        {rules.length > 0 ? (
+          <ul className="divide-y divide-[var(--ua-border-subtle)]">
           {rules.map((rule) => (
             <li key={rule.id}>
               <Link
@@ -133,19 +139,24 @@ export function RulesIndexClient({
             </li>
           ))}
         </ul>
-      ) : (
-        <EmptyState
-          title="No payout rules yet"
-          description="Write a rule, try it on a sample case, then publish when it looks right. Rules recommend; they never execute payouts."
-          action={
-            canManage ? (
-              <Button variant="primary" onClick={() => setCreating(true)}>
-                Create first rule
-              </Button>
-            ) : undefined
-          }
-        />
-      )}
+        ) : (
+          <EmptyState
+            title="No payout rules yet"
+            description="Write a rule, try it on a sample case, then publish when it looks right. Rules recommend; they never execute payouts."
+            action={
+              canManage ? (
+                <Button variant="primary" onClick={() => setCreating(true)}>
+                  Create first rule
+                </Button>
+              ) : (
+                <Link href="/help" className="text-sm font-semibold text-[var(--ua-action-primary)] hover:underline">
+                  Review rule permissions
+                </Link>
+              )
+            }
+          />
+        )}
+      </RegistrySurface>
       <RuleBuilderDrawer
         key={creating ? "open" : "closed"}
         open={creating}

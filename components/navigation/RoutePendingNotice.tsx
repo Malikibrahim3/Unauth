@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { DELAY } from '@/lib/design/motion';
 
 /**
- * Living Precision §7.3. After 8s of a genuinely pending navigation the product
+ * Instrument Grade. After 8s of a genuinely pending navigation the product
  * explains itself rather than leaving an indefinite loader.
  *
  * It deliberately claims nothing it cannot know: not cancellation, not failure,

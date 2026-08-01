@@ -5,16 +5,24 @@
  */
 export type FreshnessState = 'current' | 'stale' | 'unknown';
 
-const STALE_AFTER_MS = 24 * 60 * 60 * 1000; // 24h
+/**
+ * Default only — §7.4 forbids a universal freshness assumption. This is the
+ * record-staleness threshold the Losses ledger has chosen for its own rows,
+ * not a UI-wide rule; a connector/provider caller should pass its own
+ * domain-owned threshold (e.g. from `lib/connections/freshness.ts`) instead
+ * of relying on this default.
+ */
+const DEFAULT_STALE_AFTER_MS = 24 * 60 * 60 * 1000; // 24h
 
 export function freshnessFromTimestamp(
   lastSyncedAt: string | null | undefined,
   nowMs: number,
+  staleAfterMs: number = DEFAULT_STALE_AFTER_MS,
 ): FreshnessState {
   if (!lastSyncedAt) return 'unknown';
   const synced = Date.parse(lastSyncedAt);
   if (Number.isNaN(synced)) return 'unknown';
-  return nowMs - synced > STALE_AFTER_MS ? 'stale' : 'current';
+  return nowMs - synced > staleAfterMs ? 'stale' : 'current';
 }
 
 const STYLES: Record<FreshnessState, { color: string; label: string }> = {

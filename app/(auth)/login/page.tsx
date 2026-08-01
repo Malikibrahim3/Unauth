@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { Panel } from "@/components/ui";
+import { LoadingSkeleton, Panel } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 import { AuthError, authButtonStyle, authInputClassName } from "../AuthShell";
 import { safeRedirectPath } from "@/lib/auth/safeRedirect";
@@ -18,6 +18,14 @@ type LoginState = {
 };
 
 type LoginAction = { type: "patch"; patch: Partial<LoginState> };
+
+function validateLogin(email: string, password: string) {
+  const fieldErrors: LoginState['fieldErrors'] = {};
+  if (!email.trim()) fieldErrors.email = 'Enter your email address.';
+  else if (!/^\S+@\S+\.\S+$/.test(email.trim())) fieldErrors.email = 'Enter a valid email address.';
+  if (!password) fieldErrors.password = 'Enter your password.';
+  return fieldErrors;
+}
 
 function mapAuthError(
   message: string,
@@ -36,7 +44,18 @@ function reducer(state: LoginState, action: LoginAction): LoginState {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense
+      fallback={(
+        <Panel as="section" variant="panel" className="p-6">
+          <LoadingSkeleton
+            variant="form"
+            rows={2}
+            title="Loading sign-in form"
+            delayMs={0}
+          />
+        </Panel>
+      )}
+    >
       <LoginPageInner />
     </Suspense>
   );
@@ -58,6 +77,11 @@ function LoginPageInner() {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const fieldErrors = validateLogin(state.email, state.password);
+    if (Object.keys(fieldErrors).length > 0) {
+      dispatch({ type: "patch", patch: { fieldErrors } });
+      return;
+    }
     dispatch({ type: "patch", patch: { loading: true, fieldErrors: {} } });
 
     const { error } = await supabase.auth.signInWithPassword({
@@ -83,7 +107,7 @@ function LoginPageInner() {
         Sign in
       </h1>
 
-      <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
+      <form className="mt-8 space-y-5" noValidate onSubmit={handleSubmit}>
         <div>
           <label
             htmlFor="login-email"
@@ -98,9 +122,13 @@ function LoginPageInner() {
             autoComplete="email"
             value={state.email}
             onChange={(event) =>
-              dispatch({ type: "patch", patch: { email: event.target.value } })
+              dispatch({
+                type: "patch",
+                patch: { email: event.target.value, fieldErrors: { ...state.fieldErrors, email: undefined } },
+              })
             }
             required
+            aria-invalid={Boolean(state.fieldErrors.email)}
             aria-describedby={
               state.fieldErrors.email ? "login-email-error" : undefined
             }
@@ -128,11 +156,12 @@ function LoginPageInner() {
             onChange={(event) =>
               dispatch({
                 type: "patch",
-                patch: { password: event.target.value },
+                patch: { password: event.target.value, fieldErrors: { ...state.fieldErrors, password: undefined } },
               })
             }
             required
             minLength={8}
+            aria-invalid={Boolean(state.fieldErrors.password)}
             aria-describedby={
               state.fieldErrors.password ? "login-password-error" : undefined
             }
@@ -155,6 +184,10 @@ function LoginPageInner() {
           {state.loading ? "Signing in" : "Sign in"}
         </Button>
       </form>
+
+      <p className="mt-4 text-xs leading-4 text-[var(--ua-text-tertiary)]">
+        Secure account access for your workspace.
+      </p>
 
       <p className="mt-5 text-sm text-[var(--ua-text-secondary)]">
         Forgot password?{" "}

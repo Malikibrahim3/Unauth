@@ -15,7 +15,7 @@ export const TREND_MAX_SERIES = 3;
 /** Spec §8.3: bars carry a 4px radius at the data end only. */
 export const BAR_END_RADIUS = 4;
 /*
- * Living Precision §6.3 bar weight. A bar that reads as a hairline reads as
+ * Instrument Grade bar weight. A bar that reads as a hairline reads as
  * decoration: bandwidth (72–82% target, 65% floor) takes precedence over
  * stretching a few columns across a wide plot, and no desktop bar goes below
  * 12px. The previous 30px cap with a 28% category gap produced ~65% bandwidth

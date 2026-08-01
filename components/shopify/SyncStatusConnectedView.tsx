@@ -1,4 +1,4 @@
-import { Loader2 } from 'lucide-react';
+import { Spinner } from '@/components/ui/Spinner';
 import { formatNumber, formatRelativeTime } from '@/lib/utils/format';
 import { SyncStatusConnectModal } from '@/components/shopify/SyncStatusConnectModal';
 import { SyncStatusScopesList } from '@/components/shopify/SyncStatusScopesList';
@@ -53,7 +53,7 @@ function SyncStatusConnectedContent({
         >
           {syncing ? (
             <>
-              <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
+              <Spinner size="sm" delayMs={0} label="Syncing" />
               Syncing…
             </>
           ) : (
@@ -63,9 +63,9 @@ function SyncStatusConnectedContent({
       </div>
 
       {syncError ? (
-        <p className="text-xs" style={{ color: 'var(--ua-success)' }} role="alert">
-          {syncError}
-        </p>
+        <div className="rounded-[var(--ua-radius-control)] border px-3 py-2 text-xs" style={{ borderColor: 'var(--ua-critical-border)', background: 'var(--ua-critical-bg)', color: 'var(--ua-critical)' }} role="alert">
+          {syncError} Reconnect Shopify and retry the sync.
+        </div>
       ) : null}
 
       <div className="grid grid-cols-2 gap-3 text-xs">
@@ -88,7 +88,7 @@ function SyncStatusConnectedContent({
           <p style={{ color: 'var(--ua-text-secondary)' }}>Webhook health</p>
           <p
             className="font-medium mt-0.5"
-            style={{ color: webhookHealthy ? 'var(--ua-success)' : webhookObserved ? 'var(--ua-risk-high)' : 'var(--ua-text-secondary)' }}
+            style={{ color: webhookHealthy ? 'var(--ua-success)' : webhookObserved ? 'var(--ua-critical)' : 'var(--ua-text-secondary)' }}
           >
             {webhookHealthy ? 'Healthy' : webhookObserved ? `${status.webhookFailures} failed` : 'Not verified'}
           </p>
@@ -117,7 +117,7 @@ function SyncStatusConnectedContent({
                 <span className="font-mono truncate" style={{ color: 'var(--ua-text-primary)' }}>
                   {event.topic ?? 'webhook'}
                 </span>
-                <span style={{ color: event.status === 'failed' ? 'var(--ua-risk-high)' : 'var(--ua-text-secondary)' }}>
+                <span style={{ color: event.status === 'failed' ? 'var(--ua-critical)' : 'var(--ua-text-secondary)' }}>
                   {event.status} · {formatRelativeTime(event.at)}
                 </span>
               </li>
@@ -129,7 +129,7 @@ function SyncStatusConnectedContent({
       {hasError ? (
         <div
           className="px-3 py-2 rounded-md text-xs"
-          style={{ background: 'var(--ua-severity-definite-bg)', color: 'var(--ua-success)' }}
+          style={{ background: 'var(--ua-critical-bg)', color: 'var(--ua-critical)' }}
         >
           <p className="font-semibold mb-0.5">Sync error</p>
           <p>{status.lastError}</p>
@@ -182,7 +182,7 @@ export function SyncStatusConnectedView({
         <div
           className="rounded-md p-5 border space-y-4"
           style={{
-            borderColor: hasError ? 'color-mix(in srgb, var(--ua-success) 35%, var(--ua-border-default))' : 'var(--ua-border-subtle)',
+            borderColor: hasError ? 'var(--ua-critical-border)' : 'var(--ua-border-subtle)',
             background: 'var(--ua-surface-primary)',
           }}
         >

@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronRight, Download, Filter } from "lucide-react";
 import { claimEventSummary } from "@/lib/claims/events";
@@ -8,7 +8,7 @@ import {
   auditActionLabel,
   auditResourceSummary,
 } from "@/lib/audit/actionLabels";
-import { SectionCard } from "@/components/ui";
+import { DataTable, RegistrySurface } from "@/components/ui";
 import { useFetchJson } from "@/lib/react/useFetchJson";
 import { formatDateTime } from "@/lib/utils/format";
 import { hashId } from "@/lib/ui/displayRef";
@@ -95,6 +95,20 @@ function metadataEntries(metadata: Record<string, unknown> | null) {
   );
 }
 
+function detailLabel(key: string) {
+  return key.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function detailValue(value: unknown): string {
+  if (Array.isArray(value)) return value.map(detailValue).join(", ");
+  if (value && typeof value === "object") {
+    return Object.entries(value as Record<string, unknown>)
+      .map(([key, item]) => `${detailLabel(key)}: ${detailValue(item)}`)
+      .join(" · ");
+  }
+  return String(value);
+}
+
 export default function AuditTrailClient({
   actorsByUserId,
 }: AuditTrailClientProps) {
@@ -135,11 +149,12 @@ export default function AuditTrailClient({
   }
 
   return (
-    <SectionCard
-      title="Activity log"
-      description="Filterable record of case activity and sensitive account actions."
-      actions={
-        <div className="flex flex-wrap items-center gap-2">
+    <RegistrySurface
+      aria-label="Activity log"
+      toolbar={<><div><h2 className="text-sm font-semibold" style={{ color: "var(--ua-text-primary)" }}>Activity log</h2><p className="mt-1 text-xs" style={{ color: "var(--ua-text-secondary)" }}>Filterable record of case activity and sensitive account actions.</p></div><div className="flex flex-wrap items-center gap-2"><Filter className="h-4 w-4" style={{ color: "var(--ua-text-tertiary)" }} aria-hidden="true" /><label className="sr-only" htmlFor="audit-resource-filter">Filter by resource</label><select id="audit-resource-filter" value={resourceType} onChange={(event) => setResourceType(event.target.value)} className="rounded-md px-3 py-1.5 text-xs focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1" style={{ background: "var(--ua-surface-muted)", border: "1px solid var(--ua-border-default)", color: "var(--ua-text-primary)", outlineColor: "var(--ua-action-primary)" }}>{RESOURCE_FILTERS.map((option) => <option key={option.value || "all"} value={option.value}>{option.label}</option>)}</select></div></>}
+      resultCount={loading ? 'Loading activity…' : error ? 'Activity unavailable' : `${rows.length} recent events`}
+      pagination={
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <a
             href={exportHref}
             className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs font-semibold hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
@@ -155,208 +170,110 @@ export default function AuditTrailClient({
         </div>
       }
     >
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <Filter
-          className="h-4 w-4"
-          style={{ color: "var(--ua-text-tertiary)" }}
-          aria-hidden="true"
-        />
-        <label className="sr-only" htmlFor="audit-resource-filter">
-          Filter by resource
-        </label>
-        <select
-          id="audit-resource-filter"
-          value={resourceType}
-          onChange={(event) => setResourceType(event.target.value)}
-          className="rounded-md px-3 py-1.5 text-xs focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
-          style={{
-            background: "var(--ua-surface-muted)",
-            border: "1px solid var(--ua-border-default)",
-            color: "var(--ua-text-primary)",
-            outlineColor: "var(--ua-action-primary)",
-          }}
-        >
-          {RESOURCE_FILTERS.map((option) => (
-            <option key={option.value || "all"} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
       {loading ? (
-        <p className="text-sm" style={{ color: "var(--ua-text-tertiary)" }}>
+        <p className="p-5 text-sm" style={{ color: "var(--ua-text-tertiary)" }}>
           Loading audit events…
         </p>
       ) : error ? (
-        <p className="text-sm" style={{ color: "var(--ua-risk-critical)" }}>
+        <p role="alert" className="p-5 text-sm" style={{ color: "var(--ua-risk-critical)" }}>
           {error}
         </p>
       ) : rows.length === 0 ? (
-        <p className="text-sm" style={{ color: "var(--ua-text-tertiary)" }}>
+        <p className="p-5 text-sm" style={{ color: "var(--ua-text-tertiary)" }}>
           No audit events recorded yet.
         </p>
       ) : (
-        <div
-          className="overflow-x-auto rounded-[var(--ua-radius-surface)] border bg-[var(--ua-surface-primary)]"
-          style={{ borderColor: "var(--ua-border-default)" }}
-        >
-          <table className="w-full text-sm">
-            <thead>
-              <tr
-                style={{
-                  background: "var(--ua-surface-primary)",
-                  color: "var(--ua-text-tertiary)",
-                  borderBottom: "1px solid var(--ua-border-default)",
-                }}
-              >
-                <th
-                  className="w-8 px-4 py-3 text-left text-xs font-medium"
-                  aria-label="Expand details"
-                />
-                <th className="px-4 py-3 text-left text-xs font-medium">
-                  Time
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium">
-                  Action
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium">
-                  Object
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium">
-                  Actor
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium">
-                  Summary
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => {
+        <DataTable
+          aria-label="Audit trail events"
+          rows={rows}
+          emptyState={<p className="p-5 text-sm text-[var(--ua-text-tertiary)]">No audit events recorded yet.</p>}
+          getRowKey={(row) => `${row.resource_type ?? "system"}-${row.id}`}
+          density="compact"
+          flush
+          columns={[
+            {
+              key: "expand",
+              header: "Details",
+              width: "44px",
+              render: (row) => {
                 const rowKey = `${row.resource_type ?? "system"}-${row.id}`;
                 const isExpanded = expandedId === rowKey;
                 const details = metadataEntries(row.metadata);
-                const claimHref =
-                  row.resource_type === "claim" && row.resource_id
-                    ? (row.resource_href ?? "/claims")
-                    : null;
-
                 return (
-                  <Fragment key={rowKey}>
-                    <tr
-                      className="border-t"
-                      style={{ borderColor: "var(--ua-border-subtle)" }}
+                  details.length > 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => setExpandedId(isExpanded ? null : rowKey)}
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-md hover:bg-[var(--ua-surface-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
+                      style={{ outlineColor: "var(--ua-action-primary)" }}
+                      aria-expanded={isExpanded}
+                      aria-label={isExpanded ? "Hide metadata" : "Show metadata"}
                     >
-                      <td className="px-2 py-3">
-                        {details.length > 0 ? (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setExpandedId(isExpanded ? null : rowKey)
-                            }
-                            className="inline-flex h-7 w-7 items-center justify-center rounded-md hover:bg-[var(--ua-surface-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
-                            style={{ outlineColor: "var(--ua-action-primary)" }}
-                            aria-expanded={isExpanded}
-                            aria-label={
-                              isExpanded ? "Hide metadata" : "Show metadata"
-                            }
-                          >
-                            {isExpanded ? (
-                              <ChevronDown className="h-4 w-4" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4" />
-                            )}
-                          </button>
-                        ) : null}
-                      </td>
-                      <td
-                        className="px-4 py-3 text-xs whitespace-nowrap"
-                        style={{ color: "var(--ua-text-tertiary)" }}
-                      >
-                        {formatTimestamp(row.created_at)}
-                      </td>
-                      <td
-                        className="px-4 py-3 font-semibold"
-                        style={{ color: "var(--ua-text-primary)" }}
-                      >
-                        {auditActionLabel(row.action, row.resource_type)}
-                      </td>
-                      <td
-                        className="px-4 py-3 text-xs"
-                        style={{ color: "var(--ua-text-secondary)" }}
-                      >
-                        {claimHref ? (
-                          <Link
-                            href={claimHref}
-                            className="font-medium hover:underline"
-                            style={{ color: "var(--ua-action-primary)" }}
-                            title={`Open case ${hashId(row.resource_id)}`}
-                          >
-                            {auditResourceSummary(
-                              row.resource_type,
-                              row.resource_id,
-                            )}
-                          </Link>
-                        ) : (
-                          auditResourceSummary(
-                            row.resource_type,
-                            row.resource_id,
-                          )
-                        )}
-                      </td>
-                      <td
-                        className="px-4 py-3 text-xs"
-                        style={{ color: "var(--ua-text-secondary)" }}
-                      >
-                        {actorLabel(row)}
-                      </td>
-                      <td
-                        className="px-4 py-3 text-xs max-w-xs truncate"
-                        style={{ color: "var(--ua-text-secondary)" }}
-                        title={rowSummary(row)}
-                      >
-                        {rowSummary(row)}
-                      </td>
-                    </tr>
-                    {isExpanded && details.length > 0 ? (
-                      <tr
-                        className="border-t"
-                        style={{
-                          borderColor: "var(--ua-border-subtle)",
-                          background: "var(--ua-surface-primary)",
-                        }}
-                      >
-                        <td colSpan={6} className="px-4 py-3">
-                          <dl className="grid gap-2 sm:grid-cols-2">
-                            {details.map(([key, value]) => (
-                              <div key={key}>
-                                <dt
-                                  className="text-[length:var(--ua-text-metadata-size)] font-semibold"
-                                  style={{ color: "var(--ua-text-tertiary)" }}
-                                >
-                                  {key.replace(/_/g, " ")}
-                                </dt>
-                                <dd
-                                  className="mt-0.5 font-mono text-xs break-all"
-                                  style={{ color: "var(--ua-text-secondary)" }}
-                                >
-                                  {typeof value === "object"
-                                    ? JSON.stringify(value)
-                                    : String(value)}
-                                </dd>
-                              </div>
-                            ))}
-                          </dl>
-                        </td>
-                      </tr>
-                    ) : null}
-                  </Fragment>
+                      {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                    </button>
+                  ) : null
                 );
-              })}
-            </tbody>
-          </table>
-        </div>
+              },
+            },
+            {
+              key: "time",
+              header: "Time",
+              render: (row) => <span className="whitespace-nowrap text-xs text-[var(--ua-text-tertiary)]">{formatTimestamp(row.created_at)}</span>,
+            },
+            {
+              key: "action",
+              header: "Action",
+              render: (row) => <span className="font-semibold text-[var(--ua-text-primary)]">{auditActionLabel(row.action, row.resource_type)}</span>,
+            },
+            {
+              key: "object",
+              header: "Object",
+              render: (row) => {
+                const claimHref = row.resource_type === "claim" && row.resource_id
+                  ? (row.resource_href ?? "/claims")
+                  : null;
+                return claimHref ? (
+                  <Link
+                    href={claimHref}
+                    className="text-xs font-medium text-[var(--ua-action-primary)] hover:underline"
+                    title={`Open case ${hashId(row.resource_id)}`}
+                  >
+                    {auditResourceSummary(row.resource_type, row.resource_id)}
+                  </Link>
+                ) : <span className="text-xs text-[var(--ua-text-secondary)]">{auditResourceSummary(row.resource_type, row.resource_id)}</span>;
+              },
+            },
+            {
+              key: "actor",
+              header: "Actor",
+              render: (row) => <span className="text-xs text-[var(--ua-text-secondary)]">{actorLabel(row)}</span>,
+            },
+            {
+              key: "summary",
+              header: "Summary",
+              render: (row) => {
+                const rowKey = `${row.resource_type ?? "system"}-${row.id}`;
+                const details = metadataEntries(row.metadata);
+                return (
+                  <div className="max-w-xs text-xs text-[var(--ua-text-secondary)]">
+                    <span className="block truncate" title={rowSummary(row)}>{rowSummary(row)}</span>
+                    {expandedId === rowKey && details.length > 0 ? (
+                      <dl className="mt-2 grid gap-2 border-t border-[var(--ua-border-subtle)] pt-2 sm:grid-cols-2">
+                        {details.map(([key, value]) => (
+                          <div key={key}>
+                            <dt className="text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-tertiary)]">{detailLabel(key)}</dt>
+                            <dd className="mt-0.5 break-words text-xs text-[var(--ua-text-secondary)]">{detailValue(value)}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    ) : null}
+                  </div>
+                );
+              },
+            },
+          ]}
+        />
       )}
-    </SectionCard>
+    </RegistrySurface>
   );
 }

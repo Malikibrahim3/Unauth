@@ -6,7 +6,7 @@ import { AlertTriangle, ExternalLink, UserRound, X } from 'lucide-react';
 import { Drawer, Button, Input, Select, StatusBadge } from '@/components/ui';
 import type { WorkQueueItem } from '@/components/work/WorkQueue';
 import { humanise, label } from '@/lib/ui/labels';
-import { formatDateTime } from '@/lib/utils/format';
+import { formatConfidencePercent, formatDateTime } from '@/lib/utils/format';
 import { hashId } from '@/lib/ui/displayRef';
 
 type Candidate = {
@@ -180,7 +180,7 @@ export function ExceptionResolutionDrawer({
                 <option value="">Select a candidate…</option>
                 {candidates.map((candidate) => (
                   <option key={candidate.id} value={candidate.id}>
-                    {humanise(candidate.entity_type ?? 'record')} {candidate.entity_id ? hashId(candidate.entity_id) : hashId(candidate.id)}{candidate.confidence != null ? ` · ${Math.round(candidate.confidence * 100)}% confidence` : ''}
+                    {humanise(candidate.entity_type ?? 'record')} {candidate.entity_id ? hashId(candidate.entity_id) : hashId(candidate.id)}{candidate.confidence != null ? ` · ${formatConfidencePercent(candidate.confidence)} confidence` : ''}
                   </option>
                 ))}
               </Select>

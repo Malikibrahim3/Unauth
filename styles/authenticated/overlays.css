@@ -13,3 +13,19 @@
  * notification container inherits the same contract as every other product
  * overlay.
  */
+
+.ua-overlay-host {
+  position: fixed;
+  inset: 0;
+  z-index: var(--ua-z-dropdown);
+  width: 0;
+  height: 0;
+  min-height: 0;
+  overflow: visible;
+  background: transparent;
+  pointer-events: none;
+}
+
+.ua-overlay-host > * {
+  pointer-events: auto;
+}

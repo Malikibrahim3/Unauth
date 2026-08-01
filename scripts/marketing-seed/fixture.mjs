@@ -30,7 +30,8 @@ export function stableId(group, index) {
     recommendation: 'aa63', financial: 'aa64', decision: 'aa65', outcome: 'aa66',
     connection: 'aa70', membership: 'aa71', shipment: 'aa72', identity: 'aa73', note: 'aa74',
     savedView: 'aa80',
-    identitySignal: 'aa75', clarification: 'aa76',
+    identitySignal: 'aa75', clarification: 'aa76', dispute: 'aa77',
+    refund: 'aa78', return: 'aa79', pendingSelection: 'aa7a',
   }[group];
   if (!prefix) throw new Error(`Unknown marketing fixture group: ${group}`);
   return `${prefix}0000-0000-4000-8000-${String(index).padStart(12, '0')}`;
@@ -280,8 +281,21 @@ export function buildMarketingFixture(asOf = DEFAULT_AS_OF) {
     name: flow.name,
     description: flow.description,
     trigger_event_type: flow.trigger,
-    conditions: [{ field: 'currency', operator: 'equals', value: currency }],
-    outputs: [{ type: 'create_work_task', owner_role: index === 1 ? 'manager' : 'analyst' }],
+    conditions: [{
+      field: index === 2 ? 'amount_at_risk' : 'claim_type',
+      operator: 'eq',
+      value: index === 0 ? 'item_not_received' : index === 1 ? 'damaged' : 150,
+    }],
+    outputs: [{
+      type: 'create_task',
+      title: index === 0
+        ? 'Request missing delivery evidence'
+        : index === 1
+          ? 'Prepare carrier recovery'
+          : 'Review high-value case',
+      priority: index === 2 ? 'high' : 'medium',
+      dueInHours: index === 0 ? 8 : index === 1 ? 24 : 4,
+    }],
     active: flow.active,
     version: flow.version,
     status: flow.status,
@@ -787,7 +801,16 @@ export function buildMarketingFixture(asOf = DEFAULT_AS_OF) {
     id: stableId('membership', index + 1), merchant_id: merchantId, user_id: member.id,
     invited_email: member.email, role: member.role, invite_status: 'active',
     created_at: t.at(360 - index * 30), accepted_at: t.at(359 - index * 30),
-  }));
+  })).concat({
+    id: stableId('membership', 99),
+    merchant_id: MARKETING_STORY.onboarding.merchant.id,
+    user_id: MARKETING_STORY.onboarding.operator.id,
+    invited_email: MARKETING_STORY.onboarding.operator.email,
+    role: MARKETING_STORY.onboarding.operator.role,
+    invite_status: 'active',
+    created_at: t.at(3),
+    accepted_at: t.at(3),
+  });
   const identityNotes = [{
     id: stableId('note', 1),
     merchant_id: merchantId,
@@ -817,6 +840,69 @@ export function buildMarketingFixture(asOf = DEFAULT_AS_OF) {
     created_at: t.at(14),
     updated_at: t.at(3),
   }];
+  const sourceDisputes = [{
+    id: MARKETING_STORY.capture.dispute,
+    merchant_id: merchantId,
+    source_order_id: orders[0].id,
+    external_id: 'dp_alder_ash_001',
+    dispute_type: 'chargeback',
+    reason: 'Item not received',
+    amount: '128.00',
+    currency,
+    status: 'evidence_due',
+    initiated_at: t.at(6),
+    finalized_at: null,
+    ingested_at: t.at(0, 11),
+  }];
+  const sourceRefunds = [{
+    id: MARKETING_STORY.capture.refund,
+    merchant_id: merchantId,
+    source_order_id: orders[0].id,
+    external_id: 'gid://shopify/Refund/880001',
+    amount: '42.00',
+    currency,
+    reason: 'Goodwill adjustment',
+    is_full_refund: false,
+    refunded_at: t.at(4, 15),
+    raw_payload_hash: hash('refund:880001'),
+    ingested_at: t.at(4, 15),
+  }];
+  const sourceReturns = [{
+    id: MARKETING_STORY.capture.return,
+    merchant_id: merchantId,
+    source_account_id: null,
+    source_order_id: orders[0].id,
+    support_payout_case_id: null,
+    source_record_id: null,
+    external_id: 'ret_alder_ash_001',
+    status: 'inspected',
+    source_status: 'closed',
+    disposition: 'restock',
+    requested_at: t.at(10, 9),
+    received_at: t.at(6, 13),
+    inspected_at: t.at(5, 10),
+    refund_reference: 'gid://shopify/Refund/880001',
+    replacement_reference: null,
+    raw_metadata: { ...metadata, item: 'Ribbed Travel Scarf · Oatmeal' },
+    created_at: t.at(10, 9),
+    updated_at: t.at(5, 10),
+  }];
+  const pendingProviderAccountSelections = [{
+    id: MARKETING_STORY.capture.shipbobSelection,
+    merchant_id: merchantId,
+    user_id: operatorId,
+    provider_id: 'shipbob',
+    environment: 'production',
+    accounts: [
+      { id: 'channel-london', name: 'London fulfilment' },
+      { id: 'channel-birmingham', name: 'Birmingham overflow' },
+    ],
+    // GET selection proof never decrypts or consumes this local-only row.
+    encrypted_payload: 'local-marketing-capture-not-consumable',
+    expires_at: t.after(365),
+    consumed_at: null,
+    created_at: t.at(0, 8),
+  }];
 
   const fixture = {
     version: MARKETING_STORY.version,
@@ -824,14 +910,34 @@ export function buildMarketingFixture(asOf = DEFAULT_AS_OF) {
     manifest: MARKETING_STORY,
     captureUrls: CAPTURE_URLS,
     tables: {
-      merchants: [{
-        id: merchantId, name: MARKETING_STORY.merchant.name, is_demo: false, is_internal: true,
-        settings: { platform: 'shopify', currency, timezone: MARKETING_STORY.merchant.timezone, store_domain: MARKETING_STORY.merchant.storeDomain, onboarding_profile_complete: true, setup_complete: true, dataset_version: MARKETING_STORY.version },
-        created_at: t.at(400), updated_at: t.at(0),
-      }],
+      merchants: [
+        {
+          id: merchantId, name: MARKETING_STORY.merchant.name, is_demo: false, is_internal: true,
+          settings: { platform: 'shopify', currency, timezone: MARKETING_STORY.merchant.timezone, store_domain: MARKETING_STORY.merchant.storeDomain, onboarding_profile_complete: true, setup_complete: true, dataset_version: MARKETING_STORY.version },
+          created_at: t.at(400), updated_at: t.at(0),
+        },
+        {
+          id: MARKETING_STORY.onboarding.merchant.id,
+          name: MARKETING_STORY.onboarding.merchant.name,
+          is_demo: false,
+          is_internal: true,
+          settings: {
+            platform: 'shopify',
+            currency: MARKETING_STORY.onboarding.merchant.currency,
+            timezone: MARKETING_STORY.onboarding.merchant.timezone,
+            store_domain: MARKETING_STORY.onboarding.merchant.storeDomain,
+            onboarding_profile_complete: false,
+            setup_complete: false,
+            dataset_version: MARKETING_STORY.version,
+          },
+          created_at: t.at(3),
+          updated_at: t.at(0),
+        },
+      ],
       identities,
       identity_members: identityMembers,
       merchant_users: merchantUsers,
+      pending_provider_account_selections: pendingProviderAccountSelections,
       store_connections: storeConnections,
       helpdesk_connections: helpdeskConnections,
       merchant_integrations: connections,
@@ -843,6 +949,9 @@ export function buildMarketingFixture(asOf = DEFAULT_AS_OF) {
       identity_notes: identityNotes,
       source_orders: orders.map(({ raw_arithmetic, ...order }) => ({ ...order, raw_payload_hash: hash(JSON.stringify(raw_arithmetic)) })),
       source_order_lines: orderLines,
+      source_disputes: sourceDisputes,
+      source_refunds: sourceRefunds,
+      source_returns: sourceReturns,
       merchant_rules: rules.map(({ version, version_status, ...rule }) => rule),
       merchant_rule_versions: ruleVersions,
       workflow_definitions: flows,

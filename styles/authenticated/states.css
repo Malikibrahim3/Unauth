@@ -19,12 +19,24 @@
  */
 
 /* Authenticated loading is quiet and geometry-first. The public site may keep
- * its own motion language, but product skeletons never shimmer or gradient. */
+ * its own motion language, but product skeletons never shimmer or gradient —
+ * only the low-amplitude breath in §7.6, never a traveling gradient. */
 .ua-app .skeleton,
 .ua-auth-surface .skeleton {
   background: var(--ua-surface-muted);
   background-image: none;
-  animation: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes ua-skeleton-breathe {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.78; }
+  }
+
+  .ua-app .skeleton,
+  .ua-auth-surface .skeleton {
+    animation: ua-skeleton-breathe var(--ua-duration-skeleton) var(--ua-ease-standard) infinite;
+  }
 }
 
 .ua-operational-state {
@@ -79,4 +91,34 @@
 .ua-empty-state__description {
   max-width: 360px;
   color: var(--ua-text-secondary);
+}
+
+/* §7.4: the one perpetual-loop exception — a verified live subscription's
+ * breathing dot. Nothing else in the product pulses indefinitely. */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes ua-live-breathe {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+  }
+
+  .ua-app .ua-live-dot,
+  .ua-auth-surface .ua-live-dot {
+    animation: ua-live-breathe var(--ua-duration-live) var(--ua-ease-standard) infinite;
+  }
+}
+
+/* §7.2 LP-MOT-10: the one-shot changed-value wash. Pair with
+ * `useChangedValueHighlight` — never a count-up, never on first mount, and
+ * (per reduced motion below) never perceptible when motion is off; the
+ * value's own text change is the acknowledgement in that case. */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes ua-value-wash {
+    from { background-color: var(--ua-accent-100); }
+    to { background-color: transparent; }
+  }
+
+  .ua-app .ua-value-wash,
+  .ua-auth-surface .ua-value-wash {
+    animation: ua-value-wash var(--ua-duration-highlight) var(--ua-ease-standard);
+  }
 }

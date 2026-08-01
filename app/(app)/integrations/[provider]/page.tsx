@@ -232,6 +232,7 @@ export default async function ConnectionPage({
             rows={item.capabilities}
             getRowKey={(capability) => capability.id}
             density="compact"
+            emptyState={<p className="p-4 text-sm text-[var(--ua-text-secondary)]">No capabilities are published for this connection.</p>}
             columns={[
               {
                 key: "capability",

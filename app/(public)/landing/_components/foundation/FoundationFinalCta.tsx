@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { ArrowUpRight, Plus, Minus } from 'lucide-react';
 import Reveal from '../Reveal';
-import { FL_FINAL, FL_FIGURES, FL_FAQ, FL_ROUTES } from '../../_lib/foundationContent';
+import { FL_FINAL, FL_FAQ, FL_PRODUCT_TRUTHS, FL_ROUTES } from '../../_lib/foundationContent';
 import styles from './foundation.module.css';
 
 /**
@@ -85,27 +85,18 @@ export default function FoundationFinalCta({ hideFaq = false }: { hideFaq?: bool
             </Reveal>
 
             <Reveal delay={100}>
-              <div className="mt-12 grid grid-cols-2 gap-x-8 gap-y-7 border-t border-[var(--fl-line-strong)] pt-8">
-                {FL_FIGURES.figures.map((figure) => (
-                  <div key={figure.label}>
-                    <p className="text-[2.25rem] font-bold leading-none tracking-tight text-[var(--fl-ink)] sm:text-[2.75rem]">
-                      {figure.value}
-                      <sup className="ml-0.5 align-super text-[0.4em] font-bold tracking-normal">
-                        {figure.unit}
-                      </sup>
+              <ul className="mt-12 divide-y divide-[var(--fl-line)] border-y border-[var(--fl-line)]">
+                {FL_PRODUCT_TRUTHS.map((truth) => (
+                  <li key={truth.title} className="grid gap-1 py-5 sm:grid-cols-[9rem_1fr] sm:gap-5">
+                    <p className="text-[0.9375rem] font-semibold text-[var(--fl-ink)]">
+                      {truth.title}
                     </p>
-                    <p className="mt-2 text-[0.9375rem] font-semibold text-[var(--fl-ink)]">
-                      {figure.label}
+                    <p className="text-[0.9375rem] leading-6 text-[var(--fl-ink-secondary)]">
+                      {truth.body}
                     </p>
-                    <p className="mt-1 font-mono text-[0.6875rem] leading-snug text-[var(--fl-ink-tertiary)]">
-                      {figure.note}
-                    </p>
-                  </div>
+                  </li>
                 ))}
-              </div>
-              <p className="mt-3 font-mono text-[0.6875rem] leading-relaxed text-[var(--fl-ink-tertiary)]">
-                {FL_FIGURES.disclaimer}
-              </p>
+              </ul>
             </Reveal>
 
             <Reveal delay={160}>
@@ -113,9 +104,9 @@ export default function FoundationFinalCta({ hideFaq = false }: { hideFaq?: bool
                 {FL_FINAL.body}
               </p>
               <Link
-                href={FL_ROUTES.audit}
+                href={FL_ROUTES.signup}
                 prefetch={false}
-                className="mt-8 inline-flex items-center gap-2 rounded-full bg-[var(--fl-ink)] px-7 py-4 text-[1.0625rem] font-semibold text-white shadow-[0_16px_36px_rgba(0,0,0,0.16)] transition-transform hover:scale-[1.02]"
+                className="mt-8 inline-flex items-center gap-2 rounded-lg bg-[var(--fl-brand)] px-7 py-4 text-[1.0625rem] font-semibold text-white transition-colors hover:bg-[var(--fl-brand-deep)]"
               >
                 {FL_FINAL.cta}
                 <ArrowUpRight size={18} aria-hidden />

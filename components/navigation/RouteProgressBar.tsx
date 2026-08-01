@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
-import { DELAY, ROUTE_PROGRESS, prefersReducedMotion } from '@/lib/design/motion';
+import { DELAY, ROUTE_PROGRESS } from '@/lib/design/motion';
+import { useMotionAllowed } from '@/lib/design/useMotionAllowed';
 
 /**
- * Living Precision §7.3. The line:
+ * Instrument Grade route-feedback contract. The line:
  *
  *   1. stays hidden for navigations below 120ms;
  *   2. enters at 12%;
@@ -48,7 +49,7 @@ export default function RouteProgressBar({ active }: { active: boolean }) {
     return () => timers.forEach((timer) => window.clearTimeout(timer));
   }, [active]);
 
-  const reduced = prefersReducedMotion();
+  const motionAllowed = useMotionAllowed();
 
   return (
     <div
@@ -64,10 +65,10 @@ export default function RouteProgressBar({ active }: { active: boolean }) {
         style={{
           background: 'var(--ua-accent-500)',
           width: `${percent}%`,
-          // Reduced motion keeps the state change but drops the travel.
-          transition: reduced
-            ? 'none'
-            : `width ${ROUTE_PROGRESS.firstAtMs}ms var(--ua-ease-standard)`,
+          // Reduced motion (and capture mode) keep the state change but drop the travel.
+          transition: motionAllowed
+            ? `width ${ROUTE_PROGRESS.firstAtMs}ms var(--ua-ease-standard)`
+            : 'none',
         }}
       />
     </div>

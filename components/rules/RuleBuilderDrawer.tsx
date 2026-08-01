@@ -154,12 +154,15 @@ export function RuleBuilderDrawer({
           />
         </Field>
 
-        {/* Conditions */}
+        {/* Causal rule anatomy: a case reaches the rule, conditions decide a match, then Unauth recommends. */}
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <span className="text-body-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>
-              When these conditions match
-            </span>
+            <div>
+              <span className="text-body-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>If</span>
+              <p className="mt-0.5 text-caption" style={{ color: 'var(--ua-text-tertiary)' }}>
+                When a case reaches this rule, check these conditions.
+              </p>
+            </div>
             {conditions.length > 1 && (
               <div
                 className="inline-flex overflow-hidden rounded-[var(--ua-radius-control)]"
@@ -207,7 +210,7 @@ export function RuleBuilderDrawer({
         </div>
 
         {/* Recommended action */}
-        <Field label="Recommended action" hint="What Unauth recommends to the agent when this rule matches.">
+        <Field label="Recommend" hint="What Unauth recommends when this rule matches. An authorised merchant user still decides the case.">
           <div className="grid grid-cols-3 gap-2">
             {ACTIONS.map((a) => {
               const active = action === a;
@@ -230,13 +233,13 @@ export function RuleBuilderDrawer({
         {/* Live preview */}
         <Card unstyled variant="muted" className="p-4">
           <span className="text-caption font-semibold" style={{ color: 'var(--ua-text-tertiary)' }}>
-            Preview
+            When → If → Recommend
           </span>
           <p className="mt-2 text-body-sm" style={{ color: 'var(--ua-text-primary)' }}>
             If {preview}
           </p>
           <p className="mt-3 text-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>
-            Recommended: {ACTION_LABELS[action]}
+            Recommend: {ACTION_LABELS[action]}
           </p>
         </Card>
       </div>

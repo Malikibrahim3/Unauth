@@ -4,12 +4,18 @@ import { ClaimReviewManageCard } from '@/components/claims/ClaimReviewManageCard
 import type { ClaimReviewWorkbench } from '@/components/claims/claimReviewWorkbench';
 
 export function ClaimReviewActionRail({ wb, canManage = false }: { wb: ClaimReviewWorkbench; canManage?: boolean }) {
+  const contextStatus = wb.decisionLoading && !wb.decisionData
+    ? 'loading'
+    : wb.decisionError || !wb.decisionData
+      ? 'unavailable'
+      : 'ready';
+
   return (
     <aside
-      className="space-y-2 min-w-0 w-full order-1 min-[1100px]:col-start-2 min-[1100px]:row-start-1 min-[1100px]:row-span-2 min-[1100px]:sticky min-[1100px]:top-[4.25rem] min-[1100px]:max-h-[calc(100vh-4.5rem)] min-[1100px]:overflow-y-auto min-[1100px]:self-start pb-6"
-      aria-label="Record decision"
+      className="min-w-0 xl:sticky xl:top-[calc(var(--ua-utility-header-height)+1rem)] xl:max-h-[calc(100vh-var(--ua-utility-header-height)-2rem)] xl:overflow-y-auto xl:self-start xl:border-l xl:border-[var(--ua-border-default)] xl:pl-5"
+      aria-label="Merchant decision"
     >
-      <ClaimReviewManageCard wb={wb} canManage={canManage} />
+      <ClaimReviewManageCard wb={wb} canManage={canManage} contextStatus={contextStatus} />
     </aside>
   );
 }

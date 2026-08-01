@@ -3,6 +3,7 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { PERMISSIONS, requirePermission } from "@/lib/permissions";
 import { logAction } from "@/lib/permissions/audit";
 import {
+  isFinancialReportMetric,
   loadIntelligenceReport,
   parseReportRange,
 } from "@/lib/reporting/intelligence";
@@ -54,6 +55,12 @@ export async function GET(request: NextRequest) {
     request.nextUrl.searchParams.get("view") === "outcomes"
       ? "outcomes"
       : "metrics";
+  const metricParam = request.nextUrl.searchParams.get("metric");
+  if (metricParam && !isFinancialReportMetric(metricParam)) {
+    return NextResponse.json({ error: "Use a supported financial metric." }, { status: 400 });
+  }
+  const metric = metricParam && isFinancialReportMetric(metricParam) ? metricParam : null;
+  const category = (request.nextUrl.searchParams.get("category") ?? "").slice(0, 100) || null;
   const report = await loadIntelligenceReport(
     svc,
     permission.ctx.merchantId,
@@ -67,12 +74,15 @@ export async function GET(request: NextRequest) {
         causes: report.causes.filter((row) => row.currency === currency),
       }
     : report;
-  const rows = buildReportExportRows(scopedReport, view);
+  const rows = buildReportExportRows(scopedReport, view, {
+    metric,
+    category,
+  });
   await logAction({
     ctx: permission.ctx,
     action: "export_audit",
     resourceType: "report",
-    metadata: { view, range, timezone, currency, rowCount: rows.length - 1 },
+    metadata: { view, range, timezone, currency, metric, category, rowCount: rows.length - 1 },
   });
   return new NextResponse(csv(rows), {
     headers: {

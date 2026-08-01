@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import {
   hasPermission,
@@ -14,7 +13,7 @@ import {
   FlowVersionWorkbench,
   type WorkflowVersionRecord,
 } from "@/components/rules/FlowVersionWorkbench";
-import { AuthenticatedPageHeader } from "@/components/authenticated/AuthenticatedPageHeader";
+import { SetBreadcrumbLabel } from "@/components/layout/SetBreadcrumbLabel";
 import pageStyles from "@/components/authenticated/AuthenticatedPageChrome.module.css";
 import { env } from "@/lib/utils/env";
 
@@ -53,26 +52,16 @@ export default async function FlowDetail({
     []) as unknown as WorkflowVersionRecord[];
   return (
     <div>
-      <AuthenticatedPageHeader
-        title={current.name}
-        subtitle={current.description || "No operator-facing description yet. Add intent and expected work in the next draft."}
-        breadcrumbs={[{ label: "Flows", href: "/flows" }, { label: current.name }]}
-        actions={
-        <Link
-          href={`/flows/runs?workflow=${id}`}
-          className="inline-flex h-7 items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2.5 text-[length:var(--ua-text-metadata-size)] font-semibold hover:bg-[var(--ua-surface-hover)]"
-        >
-          Run history
-        </Link>
-        }
-      />
+      <SetBreadcrumbLabel label={current.name} />
       <div className={pageStyles.pageBody}>
-        <FlowVersionWorkbench
-          versions={versions}
-          currentId={id}
-          canManage={canManage}
-          publicationEnabled={env.WORKFLOW_PUBLICATION_ENABLED === "true"}
-        />
+        <div className="pt-5">
+          <FlowVersionWorkbench
+            versions={versions}
+            currentId={id}
+            canManage={canManage}
+            publicationEnabled={env.WORKFLOW_PUBLICATION_ENABLED === "true"}
+          />
+        </div>
       </div>
     </div>
   );

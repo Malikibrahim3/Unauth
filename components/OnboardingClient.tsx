@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useReducer, cloneElement, type ReactElement } from 'react';
+import { useEffect, useReducer, cloneElement, type CSSProperties, type ReactElement } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Check, ShoppingBag, Headphones, Store, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { ButtonLink } from '@/components/ui/ButtonLink';
@@ -11,6 +11,8 @@ import { ORDER_VOLUME_OPTIONS, LOSS_CONCERN_OPTIONS } from '@/lib/constants/merc
 import {
   createInitialOnboardingState,
   onboardingReducer,
+  type OnboardingProfileField,
+  type OnboardingState,
 } from '@/components/Onboarding/onboardingReducer';
 
 interface OnboardingClientProps {
@@ -71,6 +73,7 @@ export default function OnboardingClient({
 }: OnboardingClientProps) {
   void userId;
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [state, dispatch] = useReducer(
     onboardingReducer,
     {
@@ -97,8 +100,14 @@ export default function OnboardingClient({
     usesReturnsPlatform,
     loading,
     error,
+    fieldErrors,
     shopDomain,
   } = state;
+
+  const oauthError = searchParams.get('shopify_error');
+  const connectionError = oauthError
+    ? 'Shopify could not be connected. Check the store domain and try again.'
+    : '';
 
   useEffect(() => {
     dispatch({ type: 'patch', patch: { shopDomain: shopifyShopDomain } });
@@ -129,12 +138,39 @@ export default function OnboardingClient({
           ? 1
           : 2;
 
+  const completedStepCount =
+    activeStep === 3
+      ? STEPS.length
+      : Number(state.profileSaved) + Number(shopifyConnected) + Number(helpdeskConnected);
+
+  function setProfileField(field: OnboardingProfileField, value: string) {
+    dispatch({
+      type: 'patch',
+      patch: {
+        [field]: value,
+        error: '',
+        fieldErrors: { ...fieldErrors, [field]: undefined },
+      },
+    });
+  }
+
   async function saveProfileAndContinue() {
-    if (!storeName.trim() || !platform || !annualVolume || !primaryConcern) {
-      dispatch({ type: 'patch', patch: { error: 'Complete the store name, platform, order volume, and primary concern before continuing.' } });
+    const nextFieldErrors: OnboardingState['fieldErrors'] = {};
+    if (!storeName.trim()) nextFieldErrors.storeName = 'Enter your store name.';
+    if (!platform) nextFieldErrors.platform = 'Choose your platform.';
+    if (!annualVolume) nextFieldErrors.annualVolume = 'Choose a monthly order volume.';
+    if (!primaryConcern) nextFieldErrors.primaryConcern = 'Choose a primary concern.';
+    if (Object.keys(nextFieldErrors).length > 0) {
+      dispatch({
+        type: 'patch',
+        patch: {
+          fieldErrors: nextFieldErrors,
+          error: 'Review the highlighted fields before continuing.',
+        },
+      });
       return;
     }
-    dispatch({ type: 'patch', patch: { loading: true, error: '' } });
+    dispatch({ type: 'patch', patch: { loading: true, error: '', fieldErrors: {} } });
     const response = await fetch('/api/account/setup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -190,34 +226,28 @@ export default function OnboardingClient({
         <UnauthLogo kind="lockup" tone="auto" height={20} alt="Unauth" />
         <span className="text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-tertiary)]">Workspace setup</span>
       </header>
-      <div className="mx-auto max-w-[1500px] px-3 pb-7 pt-4 sm:px-5">
-      <div className="mb-4">
-        <p className="text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-tertiary)]">Welcome to Unauth</p>
-        <h1 className="mt-1 text-[length:var(--ua-text-page-title-size)] font-semibold leading-6 tracking-normal text-[var(--ua-text-primary)]">
+      <div className="mx-auto max-w-[980px] px-4 pb-10 pt-7 sm:px-8">
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold leading-8 tracking-tight text-[var(--ua-text-primary)]">
           Get set up
         </h1>
-        <p className="mt-1 max-w-[62ch] text-sm leading-5 text-[var(--ua-text-secondary)]">
+        <p className="mt-2 max-w-[62ch] text-sm leading-5 text-[var(--ua-text-secondary)]">
           Save your store profile, connect your evidence source, and verify a supported helpdesk.
         </p>
-        <div
-          className="mt-3 h-1 overflow-hidden rounded-full bg-[var(--ua-surface-muted)]"
+        <span
+          className="sr-only"
           role="progressbar"
           aria-label="Setup progress"
-          aria-valuemin={1}
+          aria-valuemin={0}
           aria-valuemax={STEPS.length}
-          aria-valuenow={activeStep + 1}
-          aria-valuetext={`Step ${activeStep + 1} of ${STEPS.length}`}
-        >
-          <div className="h-full rounded-full bg-[var(--ua-action-primary)] transition-[width] duration-150" style={{ width: `${((activeStep + 1) / STEPS.length) * 100}%` }} />
-        </div>
+          aria-valuenow={completedStepCount}
+          aria-valuetext={`${completedStepCount} of ${STEPS.length} steps complete`}
+        />
       </div>
-      <div className="grid gap-3 lg:grid-cols-[208px_minmax(0,1fr)]">
+      <div className="grid gap-6 lg:grid-cols-[216px_minmax(0,1fr)]">
         {/* Sidebar checklist */}
-        <aside
-          className="rounded-[var(--ua-radius-surface)] border p-3"
-          style={{ background: 'var(--ua-surface-muted)', borderColor: 'var(--ua-border-default)' }}
-        >
-          <div className="mb-3 flex items-start justify-between gap-3 px-1">
+        <aside className="lg:pt-1">
+          <div className="mb-3 flex items-start justify-between gap-3">
             <div>
               <p className="text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-tertiary)]">Checklist</p>
               <p className="mt-1 text-xs leading-4" style={{ color: 'var(--ua-text-tertiary)' }}>
@@ -226,7 +256,7 @@ export default function OnboardingClient({
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1">
             {STEPS.map((step, index) => {
               const Icon = step.icon;
               const active = index === activeStep;
@@ -238,13 +268,13 @@ export default function OnboardingClient({
                   type="button"
                   disabled={!reachable}
                   onClick={() => reachable && dispatch({ type: 'patch', patch: { activeStep: index } })}
-                  className="grid w-full grid-cols-[22px_minmax(0,1fr)_auto] items-center gap-2 rounded-[var(--ua-radius-control)] border px-2 py-2 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                  className="grid w-full grid-cols-[22px_minmax(0,1fr)_auto] items-center gap-2 rounded-[var(--ua-radius-control)] border px-3 py-2.5 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                   style={{
-                    background: active ? 'var(--ua-surface-selected)' : 'var(--ua-surface-muted)',
-                    borderColor: active ? 'var(--ua-border-default)' : 'var(--ua-border-default)',
+                    background: active ? 'var(--ua-accent-50)' : 'transparent',
+                    borderColor: active ? 'var(--ua-accent-200)' : 'transparent',
                   }}
                 >
-                  <span className="flex h-[22px] w-[22px] items-center justify-center rounded-[var(--ua-radius-control)]" style={{ background: done ? 'var(--ua-severity-clear-bg)' : 'var(--ua-surface-muted)', color: done ? 'var(--ua-neutral)' : 'var(--ua-text-tertiary)' }}>
+                  <span className="flex h-[22px] w-[22px] items-center justify-center rounded-[var(--ua-radius-control)]" style={{ background: done ? 'var(--ua-severity-clear-bg)' : active ? 'var(--ua-accent-100)' : 'var(--ua-surface-muted)', color: done ? 'var(--ua-neutral)' : active ? 'var(--ua-accent-700)' : 'var(--ua-text-tertiary)' }}>
                     {done ? <Check className="h-3.5 w-3.5" /> : <Icon className="h-3.5 w-3.5" />}
                   </span>
                   <span className="min-w-0">
@@ -259,30 +289,30 @@ export default function OnboardingClient({
         </aside>
 
         {/* Step content */}
-        <section className="rounded-[var(--ua-radius-surface)] border p-4" style={{ background: 'var(--ua-surface-primary)', borderColor: 'var(--ua-border-default)' }}>
-          <div className="mb-4 flex items-start gap-3 border-b border-[var(--ua-border-subtle)] pb-3">
+        <section className="min-h-[480px] rounded-[var(--ua-radius-surface)] border p-5 sm:p-7" style={{ background: 'var(--ua-surface-primary)', borderColor: 'var(--ua-border-default)' }}>
+          <div className="mb-6 flex items-start gap-3 border-b border-[var(--ua-border-subtle)] pb-5">
             <span className="flex h-8 w-8 items-center justify-center rounded-[var(--ua-radius-control)]" style={{ background: 'var(--ua-surface-selected)', color: 'var(--ua-action-primary)' }}>
               <CurrentIcon className="h-4 w-4" />
             </span>
             <div>
-              <p className="text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-tertiary)]">Step {activeStep + 1} of {STEPS.length}</p>
-              <h2 className="mt-1 text-[length:var(--ua-text-dense-size)] font-semibold text-[var(--ua-text-primary)]">{current.label}</h2>
+              <h2 className="text-[length:var(--ua-text-dense-size)] font-semibold text-[var(--ua-text-primary)]">{current.label}</h2>
               <p className="mt-1 max-w-2xl text-[length:var(--ua-text-dense-size)] leading-[var(--ua-text-dense-leading)]" style={{ color: 'var(--ua-text-secondary)' }}>{current.body}</p>
             </div>
           </div>
 
           {activeStep === 0 && (
             <div className="grid gap-3 md:grid-cols-2">
-              <Field label="Store name">
+              <Field label="Store name" error={fieldErrors.storeName}>
                 <input
+                  id="onboarding-store-name"
                   aria-label="Store name"
                   value={storeName}
-                  onChange={(e) => dispatch({ type: 'patch', patch: { storeName: e.target.value } })}
+                  onChange={(e) => setProfileField('storeName', e.target.value)}
                   placeholder="Acme Commerce Ltd"
                 />
               </Field>
-              <Field label="Platform">
-                <select aria-label="Platform" value={platform} onChange={(e) => dispatch({ type: 'patch', patch: { platform: e.target.value } })}>
+              <Field label="Platform" error={fieldErrors.platform}>
+                <select aria-label="Platform" value={platform} onChange={(e) => setProfileField('platform', e.target.value)}>
                   <option value="">Select platform…</option>
                   <option value="shopify">Shopify</option>
                   <option value="woocommerce" disabled>WooCommerce (coming soon)</option>
@@ -292,16 +322,16 @@ export default function OnboardingClient({
                   <option value="other">Other</option>
                 </select>
               </Field>
-              <Field label="Monthly order volume">
-                <select aria-label="Monthly order volume" value={annualVolume} onChange={(e) => dispatch({ type: 'patch', patch: { annualVolume: e.target.value } })}>
+              <Field label="Monthly order volume" error={fieldErrors.annualVolume}>
+                <select aria-label="Monthly order volume" value={annualVolume} onChange={(e) => setProfileField('annualVolume', e.target.value)}>
                   <option value="">Select range…</option>
                   {ORDER_VOLUME_OPTIONS.map((o) => (
                     <option key={o.value} value={o.value}>{o.label}</option>
                   ))}
                 </select>
               </Field>
-              <Field label="Primary post-purchase loss concern">
-                <select aria-label="Primary concern" value={primaryConcern} onChange={(e) => dispatch({ type: 'patch', patch: { primaryConcern: e.target.value } })}>
+              <Field label="Primary post-purchase loss concern" error={fieldErrors.primaryConcern}>
+                <select aria-label="Primary concern" value={primaryConcern} onChange={(e) => setProfileField('primaryConcern', e.target.value)}>
                   <option value="">Select concern…</option>
                   {LOSS_CONCERN_OPTIONS.map((o) => (
                     <option key={o.value} value={o.value}>{o.label}</option>
@@ -322,7 +352,7 @@ export default function OnboardingClient({
                   <option value="no">No, we handle returns ourselves</option>
                 </select>
               </Field>
-              {error && <p className="md:col-span-2 text-xs leading-4" style={{ color: 'var(--ua-risk-critical)' }}>{error}</p>}
+              <OnboardingError>{error}</OnboardingError>
               <div className="md:col-span-2 flex justify-end">
                 <Button
                   type="button"
@@ -337,6 +367,7 @@ export default function OnboardingClient({
 
           {activeStep === 1 && (
             <div className="space-y-4">
+              <OnboardingError>{connectionError}</OnboardingError>
               {shopifyConnected ? (
                 <div className="rounded-[var(--ua-radius-surface)] border px-4 py-3" style={{ background: 'var(--ua-severity-clear-bg)', borderColor: 'var(--ua-neutral)' }}>
                   <div className="flex items-center gap-2">
@@ -439,7 +470,7 @@ export default function OnboardingClient({
                   </Button>
                 </div>
               )}
-              {error && <p className="text-xs leading-4" style={{ color: 'var(--ua-risk-critical)' }}>{error}</p>}
+              <OnboardingError>{error}</OnboardingError>
             </div>
           )}
 
@@ -469,12 +500,23 @@ export default function OnboardingClient({
   );
 }
 
-function Field({ label, children }: { label: string; children: ReactElement<any> }) {
+type FieldControlProps = {
+  className?: string;
+  style?: CSSProperties;
+  'aria-label'?: string;
+  'aria-invalid'?: boolean;
+  'aria-describedby'?: string;
+};
+
+function Field({ label, error, children }: { label: string; error?: string; children: ReactElement<FieldControlProps> }) {
+  const errorId = `onboarding-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-error`;
   return (
     <label className="block">
       <span className="mb-1.5 block text-[length:var(--ua-text-dense-size)] font-medium leading-[var(--ua-text-dense-leading)]" style={{ color: 'var(--ua-text-tertiary)' }}>{label}</span>
       {cloneElement(children, {
         'aria-label': label,
+        'aria-invalid': Boolean(error),
+        'aria-describedby': error ? errorId : undefined,
         className: 'h-9 w-full rounded-[var(--ua-radius-control)] border px-3 text-sm outline-none',
         style: {
           background: 'var(--ua-surface-primary)',
@@ -482,6 +524,17 @@ function Field({ label, children }: { label: string; children: ReactElement<any>
           color: 'var(--ua-text-primary)',
         },
       })}
+      <span id={errorId} aria-hidden={error ? undefined : true} className="mt-1 block min-h-4 text-xs leading-4" style={{ color: 'var(--ua-risk-critical)' }}>
+        {error ?? '\u00a0'}
+      </span>
     </label>
+  );
+}
+
+function OnboardingError({ children }: { children: string }) {
+  return (
+    <p className="min-h-4 text-xs leading-4 text-[var(--ua-risk-critical)] md:col-span-2" role={children ? 'alert' : undefined} aria-live="polite" aria-atomic="true" aria-hidden={children ? undefined : true}>
+      {children || '\u00a0'}
+    </p>
   );
 }

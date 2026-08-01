@@ -387,6 +387,18 @@ export function formatPercent(value: number, decimals = 1): string {
   return `${(value * 100).toFixed(decimals)}%`;
 }
 
+/**
+ * Confidence arrives from older projections in both 0–1 and 0–100 scales.
+ * Normalise at the display boundary so a valid 85 score can never render as
+ * 8,500%, while a canonical 0.85 ratio continues to render as 85%.
+ */
+export function formatConfidencePercent(value: number, decimals = 0): string {
+  if (!Number.isFinite(value)) return '—';
+  const percentage = Math.abs(value) <= 1 ? value * 100 : value;
+  const bounded = Math.min(100, Math.max(0, percentage));
+  return `${bounded.toFixed(decimals)}%`;
+}
+
 export function formatScore(score: number, tier?: string): string {
   const base = `${Math.round(score)} / 100`;
   if (!tier) return base;
