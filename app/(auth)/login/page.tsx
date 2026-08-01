@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useMemo, useReducer } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
@@ -13,6 +14,7 @@ import { safeRedirectPath } from "@/lib/auth/safeRedirect";
 type LoginState = {
   email: string;
   password: string;
+  showPassword: boolean;
   fieldErrors: Partial<Record<"email" | "password", string>>;
   loading: boolean;
 };
@@ -69,6 +71,7 @@ function LoginPageInner() {
   const [state, dispatch] = useReducer(reducer, {
     email: "",
     password: "",
+    showPassword: false,
     fieldErrors: {},
     loading: false,
   });
@@ -147,27 +150,46 @@ function LoginPageInner() {
           >
             Password
           </label>
-          <Input
-            id="login-password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            value={state.password}
-            onChange={(event) =>
-              dispatch({
-                type: "patch",
-                patch: { password: event.target.value, fieldErrors: { ...state.fieldErrors, password: undefined } },
-              })
-            }
-            required
-            minLength={8}
-            aria-invalid={Boolean(state.fieldErrors.password)}
-            aria-describedby={
-              state.fieldErrors.password ? "login-password-error" : undefined
-            }
-            className={authInputClassName}
-            placeholder="Password"
-          />
+          <div className="relative">
+            <Input
+              id="login-password"
+              name="password"
+              type={state.showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              value={state.password}
+              onChange={(event) =>
+                dispatch({
+                  type: "patch",
+                  patch: { password: event.target.value, fieldErrors: { ...state.fieldErrors, password: undefined } },
+                })
+              }
+              required
+              minLength={8}
+              aria-invalid={Boolean(state.fieldErrors.password)}
+              aria-describedby={
+                state.fieldErrors.password ? "login-password-error" : undefined
+              }
+              className={`${authInputClassName} pr-10`}
+              placeholder="Password"
+            />
+            <button
+              type="button"
+              onClick={() =>
+                dispatch({ type: "patch", patch: { showPassword: !state.showPassword } })
+              }
+              className="absolute right-1 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-[var(--ua-radius-control)] text-[var(--ua-text-tertiary)] transition-colors hover:bg-[var(--ua-surface-secondary)] hover:text-[var(--ua-text-secondary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ua-shadow-focus)]"
+              aria-label={state.showPassword ? "Hide password" : "Show password"}
+              aria-pressed={state.showPassword}
+              aria-controls="login-password"
+              title={state.showPassword ? "Hide password" : "Show password"}
+            >
+              {state.showPassword ? (
+                <EyeOff className="h-4 w-4" aria-hidden="true" />
+              ) : (
+                <Eye className="h-4 w-4" aria-hidden="true" />
+              )}
+            </button>
+          </div>
           <AuthError id="login-password-error">
             {state.fieldErrors.password}
           </AuthError>
