@@ -55,6 +55,7 @@
     "test:merchant-readiness": "npm run test:csv-blind",
     "seed:demo": "node scripts/seed-demo-v2.mjs",
     "seed:simeon": "node scripts/seed-simeon-big-merchant.mjs",
+    "seed:enterprise-demo": "node scripts/seed-enterprise-demo.mjs",
     "seed:marketing": "node scripts/seed-marketing.mjs",
     "validate:marketing-seed": "node scripts/validate-marketing-seed.mjs",
     "prepare:release-e2e": "RELEASE_E2E_LOCAL=1 node scripts/prepare-release-e2e.mjs",
