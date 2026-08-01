@@ -143,7 +143,11 @@ const LAST_NAMES = [
   'Fenwick', 'Adeyemi', 'Carrick', 'Nakamura', 'Blake', 'Sutherland', 'Ibrahim', 'Vance', 'Delacroix', 'Mensah',
 ];
 
-const CUSTOMER_COUNT = 56;
+const configuredCustomerCount = Number(process.env.SEED_CUSTOMER_COUNT ?? '56');
+if (!Number.isInteger(configuredCustomerCount) || configuredCustomerCount < 1 || configuredCustomerCount > 10_000) {
+  throw new Error('SEED_CUSTOMER_COUNT must be an integer between 1 and 10000.');
+}
+const CUSTOMER_COUNT = configuredCustomerCount;
 const CUSTOMERS = Array.from({ length: CUSTOMER_COUNT }, (_, i) => {
   const first = FIRST_NAMES[i % FIRST_NAMES.length];
   // Offset by a coprime-ish stride so last names don't cycle in lockstep with first names.

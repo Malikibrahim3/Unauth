@@ -464,6 +464,7 @@ async function main() {
   process.env.SEED_TAG = SEED_TAG;
   process.env.SEED_PREFIX = SEED_PREFIX;
   process.env.SEED_CUSTOMER_EMAIL_DOMAIN = CUSTOMER_EMAIL_DOMAIN;
+  process.env.SEED_CUSTOMER_COUNT = '320';
   process.env.SEED_ORDER_NUMBER_PREFIX = ORDER_NUMBER_PREFIX;
   process.env.SEED_SOURCE_SYSTEM = 'shopify';
   process.env.SEED_SOURCE_NAME = 'northstar_demo_import';
