@@ -22,6 +22,7 @@ export default function AccountProfileSection({ state, dispatch, onSave }: Props
           <Input
             id="account-email"
             type="email"
+            className="max-w-sm"
             value={state.userEmail}
             disabled
           />
@@ -38,6 +39,7 @@ export default function AccountProfileSection({ state, dispatch, onSave }: Props
           <Input
             id="account-store-name"
             type="text"
+            className="max-w-sm"
             value={state.storeName}
             onChange={(e) => dispatch({ type: 'patch', patch: { storeName: e.target.value } })}
             required
@@ -51,6 +53,7 @@ export default function AccountProfileSection({ state, dispatch, onSave }: Props
           </label>
           <Select
             id="account-monthly-volume"
+            className="max-w-sm"
             value={state.monthlyVolume}
             onChange={(e) => dispatch({ type: 'patch', patch: { monthlyVolume: e.target.value } })}
           >
@@ -67,6 +70,7 @@ export default function AccountProfileSection({ state, dispatch, onSave }: Props
           </label>
           <Select
             id="account-loss-concern"
+            className="max-w-sm"
             value={state.fraudConcern}
             onChange={(e) => dispatch({ type: 'patch', patch: { fraudConcern: e.target.value } })}
           >
