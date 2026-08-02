@@ -118,7 +118,7 @@ export default async function RecoveryDetailPage({ params }: Props) {
         { label: 'Evidence', value: recovery.evidence_complete ? 'Complete' : `${recovery.evidence_missing.length} item${recovery.evidence_missing.length === 1 ? '' : 's'} missing` },
         { label: 'Updated', value: formatDateTime(recovery.updated_at) },
       ]}
-      actions={<Link href="/recoveries" className="rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] px-3 py-2 text-sm font-medium text-[var(--ua-text-secondary)] no-underline hover:bg-[var(--ua-surface-hover)]">Open board actions</Link>}
+      actions={<Link href="/recoveries" className="ua-text-label rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] px-3 py-2 font-medium no-underline hover:bg-[var(--ua-surface-hover)]">Open board actions</Link>}
       metricStrip={
         <RecoveryProgress
           currency={recovery.currency}
@@ -135,47 +135,47 @@ export default async function RecoveryDetailPage({ params }: Props) {
         <section className="ua-focal-panel p-4" aria-labelledby="recovery-evidence-title">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h2 id="recovery-evidence-title" className="text-base font-semibold text-[var(--ua-text-primary)]">Evidence readiness</h2>
-              <p className="mt-1 text-sm text-[var(--ua-text-secondary)]">The recovery pack is the working surface. Missing source facts stay explicit until a connected source supplies them.</p>
+              <h2 id="recovery-evidence-title" className="ua-text-section-title text-[var(--ua-text-primary)]">Evidence readiness</h2>
+              <p className="ua-text-body mt-1 text-[var(--ua-text-secondary)]">The recovery pack is the working surface. Missing source facts stay explicit until a connected source supplies them.</p>
             </div>
             <StatusBadge family="recoveryStatus" value={recovery.evidence_complete ? 'ready_to_submit' : 'evidence_needed'} />
           </div>
           {evidenceItems.length > 0 ? (
             <div className="mt-4"><EvidenceChecklist items={evidenceItems} /></div>
           ) : (
-            <p className="mt-4 text-sm text-[var(--ua-text-tertiary)]">No evidence requirements are recorded for this recovery route.</p>
+            <p className="ua-text-body mt-4 text-[var(--ua-text-tertiary)]">No evidence requirements are recorded for this recovery route.</p>
           )}
           {!recovery.evidence_complete && recovery.evidence_missing.length > 0 ? (
-            <p className="mt-3 text-xs text-[var(--ua-text-secondary)]">Missing: {recovery.evidence_missing.map(humanizeEvidenceKey).join(', ')}.</p>
+            <p className="ua-text-caption-role mt-3">Missing: {recovery.evidence_missing.map(humanizeEvidenceKey).join(', ')}.</p>
           ) : null}
           <InsetGroup className="mt-4 p-3">
-            <p className="text-xs font-medium text-[var(--ua-text-secondary)]">Next action</p>
-            <p className="mt-1 text-sm text-[var(--ua-text-primary)]">{nextActionFor(recovery)}</p>
+            <p className="ua-text-label font-medium">Next action</p>
+            <p className="ua-text-body mt-1 text-[var(--ua-text-primary)]">{nextActionFor(recovery)}</p>
             <div className="mt-3 flex flex-wrap gap-2">
-              <Link href="/recoveries" className="text-sm font-medium text-[var(--ua-accent-600)]">Record an action on the board</Link>
-              <Link href={`/claims/${recovery.support_payout_case_id}`} className="text-sm font-medium text-[var(--ua-accent-600)]">Open linked case</Link>
-              {recovery.loss_case_id ? <Link href={`/losses/${recovery.loss_case_id}`} className="text-sm font-medium text-[var(--ua-accent-600)]">Open linked loss</Link> : null}
+              <Link href="/recoveries" className="ua-text-dense font-medium text-[var(--ua-accent-600)]">Record an action on the board</Link>
+              <Link href={`/claims/${recovery.support_payout_case_id}`} className="ua-text-dense font-medium text-[var(--ua-accent-600)]">Open linked case</Link>
+              {recovery.loss_case_id ? <Link href={`/losses/${recovery.loss_case_id}`} className="ua-text-dense font-medium text-[var(--ua-accent-600)]">Open linked loss</Link> : null}
             </div>
           </InsetGroup>
         </section>
 
         <JoinedSection className="overflow-hidden" aria-labelledby="recovery-context-title">
           <div className="border-b border-[var(--ua-border-subtle)] px-4 py-3">
-            <h2 id="recovery-context-title" className="text-base font-semibold text-[var(--ua-text-primary)]">Correspondence, tasks, and activity</h2>
-            <p className="mt-1 text-sm text-[var(--ua-text-secondary)]">External messages, owned work, and immutable recovery events in one record context.</p>
+            <h2 id="recovery-context-title" className="ua-text-section-title text-[var(--ua-text-primary)]">Correspondence, tasks, and activity</h2>
+            <p className="ua-text-body mt-1 text-[var(--ua-text-secondary)]">External messages, owned work, and immutable recovery events in one record context.</p>
           </div>
           <div className="grid divide-y divide-[var(--ua-border-subtle)] xl:grid-cols-3 xl:divide-x xl:divide-y-0">
             <section className="p-4" aria-labelledby="recovery-correspondence-title">
-              <h3 id="recovery-correspondence-title" className="text-sm font-semibold text-[var(--ua-text-primary)]">Correspondence</h3>
-              {correspondence.length ? <ul className="mt-3 space-y-3">{correspondence.map((item) => <li key={item.id} className="text-sm text-[var(--ua-text-secondary)]"><p><span className="font-medium capitalize text-[var(--ua-text-primary)]">{item.direction}</span> · {providerLabel(item.source_provider)}</p><p className="mt-1">{item.subject ?? item.source_record_id}</p>{item.source_url ? <a className="mt-1 inline-block text-xs font-medium text-[var(--ua-accent-600)]" href={item.source_url}>Open source</a> : null}</li>)}</ul> : <p className="mt-3 text-sm text-[var(--ua-text-tertiary)]">No external correspondence is linked.</p>}
+              <h3 id="recovery-correspondence-title" className="ua-text-working-title text-[var(--ua-text-primary)]">Correspondence</h3>
+              {correspondence.length ? <ul className="mt-3 space-y-3">{correspondence.map((item) => <li key={item.id} className="ua-text-dense text-[var(--ua-text-secondary)]"><p><span className="font-medium capitalize text-[var(--ua-text-primary)]">{item.direction}</span> · {providerLabel(item.source_provider)}</p><p className="mt-1">{item.subject ?? item.source_record_id}</p>{item.source_url ? <a className="ua-text-label mt-1 inline-block font-medium text-[var(--ua-accent-600)]" href={item.source_url}>Open source</a> : null}</li>)}</ul> : <p className="ua-text-body mt-3 text-[var(--ua-text-tertiary)]">No external correspondence is linked.</p>}
             </section>
             <section className="p-4" aria-labelledby="recovery-tasks-title">
-              <h3 id="recovery-tasks-title" className="text-sm font-semibold text-[var(--ua-text-primary)]">Tasks</h3>
-              {tasks.length ? <ul className="mt-3 space-y-3">{tasks.map((task) => <li key={task.id} className="text-sm text-[var(--ua-text-secondary)]"><p className="font-medium text-[var(--ua-text-primary)]">{task.title}</p><p className="mt-1">{label('workflowStatus', task.status)}{task.due_at ? ` · due ${formatDateAbsolute(task.due_at)}` : ''}</p>{task.blocking_reason ? <p className="mt-1 text-xs">Blocked: {task.blocking_reason}</p> : null}</li>)}</ul> : <p className="mt-3 text-sm text-[var(--ua-text-tertiary)]">No recovery tasks are linked.</p>}
+              <h3 id="recovery-tasks-title" className="ua-text-working-title text-[var(--ua-text-primary)]">Tasks</h3>
+              {tasks.length ? <ul className="mt-3 space-y-3">{tasks.map((task) => <li key={task.id} className="ua-text-dense text-[var(--ua-text-secondary)]"><p className="font-medium text-[var(--ua-text-primary)]">{task.title}</p><p className="mt-1">{label('workflowStatus', task.status)}{task.due_at ? ` · due ${formatDateAbsolute(task.due_at)}` : ''}</p>{task.blocking_reason ? <p className="ua-text-caption-role mt-1">Blocked: {task.blocking_reason}</p> : null}</li>)}</ul> : <p className="ua-text-body mt-3 text-[var(--ua-text-tertiary)]">No recovery tasks are linked.</p>}
             </section>
             <section className="p-4" aria-labelledby="recovery-activity-title">
-              <h3 id="recovery-activity-title" className="text-sm font-semibold text-[var(--ua-text-primary)]">Activity</h3>
-              {events.length ? <ul className="mt-3 space-y-3">{events.map((event) => <li key={event.id} className="text-sm text-[var(--ua-text-secondary)]"><p className="font-medium text-[var(--ua-text-primary)]">{eventLabel(event)}</p>{event.from_status && event.to_status ? <p className="mt-1">{RECOVERY_STATUS_LABELS[event.from_status]} → {RECOVERY_STATUS_LABELS[event.to_status]}</p> : null}{event.note ? <p className="mt-1">{event.note}</p> : null}<time className="mt-1 block text-xs text-[var(--ua-text-tertiary)]" dateTime={event.created_at}>{formatDateTime(event.created_at)}</time></li>)}</ul> : <p className="mt-3 text-sm text-[var(--ua-text-tertiary)]">No recovery activity yet.</p>}
+              <h3 id="recovery-activity-title" className="ua-text-working-title text-[var(--ua-text-primary)]">Activity</h3>
+              {events.length ? <ul className="mt-3 space-y-3">{events.map((event) => <li key={event.id} className="ua-text-dense text-[var(--ua-text-secondary)]"><p className="font-medium text-[var(--ua-text-primary)]">{eventLabel(event)}</p>{event.from_status && event.to_status ? <p className="mt-1">{RECOVERY_STATUS_LABELS[event.from_status]} → {RECOVERY_STATUS_LABELS[event.to_status]}</p> : null}{event.note ? <p className="mt-1">{event.note}</p> : null}<time className="ua-text-metadata mt-1 block" dateTime={event.created_at}>{formatDateTime(event.created_at)}</time></li>)}</ul> : <p className="ua-text-body mt-3 text-[var(--ua-text-tertiary)]">No recovery activity yet.</p>}
             </section>
           </div>
         </JoinedSection>

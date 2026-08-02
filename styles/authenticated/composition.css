@@ -1,3 +1,4 @@
+@layer components {
 /*
  * Authenticated desktop composition shells.
  *
@@ -594,4 +595,5 @@
   color: var(--ua-text-secondary);
   font-size: var(--ua-text-metadata-size);
   line-height: var(--ua-text-metadata-leading);
+}
 }

@@ -18,8 +18,8 @@ export function TeamAuditTrailSection({ auditTrail, joined = false }: TeamAuditT
       style={{ background: 'var(--ua-surface-primary)', borderColor: 'var(--ua-border-subtle)' }}
     >
       <div className="border-b px-4 py-3" style={{ borderColor: 'var(--ua-border-subtle)' }}>
-        <h2 className="text-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>Role audit</h2>
-        <p className="mt-1 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>Recent invites, role changes, and removals.</p>
+        <h2 className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>Role audit</h2>
+        <p className="ua-text-caption-role mt-1" style={{ color: 'var(--ua-text-secondary)' }}>Recent invites, role changes, and removals.</p>
       </div>
       <div className="divide-y" style={{ borderColor: 'var(--ua-border-subtle)' }}>
         {auditTrail.length === 0 ? (
@@ -28,7 +28,7 @@ export function TeamAuditTrailSection({ auditTrail, joined = false }: TeamAuditT
           auditTrail.map((row) => (
             <div key={row.id} className="px-4 py-2.5">
               <p className="text-[length:var(--ua-text-caption-size)]" style={{ color: 'var(--ua-text-primary)' }}>{auditText(row)}</p>
-              <p className="mt-1 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
+              <p className="ua-text-caption-role mt-1">
                 {formatTeamDate(row.created_at)} by {ROLE_LABELS[row.actor_role] ?? row.actor_role}
               </p>
             </div>

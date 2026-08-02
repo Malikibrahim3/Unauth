@@ -49,18 +49,18 @@ export function CaseComments({ caseId, canComment }: { caseId: string; canCommen
   }
 
   return <section className="order-4 min-w-0 rounded-lg border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] p-4 min-[1100px]:col-start-1" aria-label="Case comments">
-    <h2 className="text-sm font-semibold">Comments and mentions</h2>
+    <h2 className="ua-text-section-title">Comments and mentions</h2>
     <div className="mt-3 space-y-2">
-      {comments.length ? comments.map((comment) => <article key={comment.id} className="rounded-md p-3 text-sm" style={{ background: 'var(--ua-surface-muted)' }}>
+      {comments.length ? comments.map((comment) => <article key={comment.id} className="ua-text-dense rounded-md p-3" style={{ background: 'var(--ua-surface-muted)' }}>
         <p style={{ color: comment.deleted_at ? 'var(--ua-text-tertiary)' : 'var(--ua-text-primary)' }}>{comment.deleted_at ? 'Comment deleted' : comment.body}</p>
-        <p className="mt-1 text-xs" style={{ color: 'var(--ua-text-tertiary)' }}>{formatDateTime(comment.created_at)}</p>
-      </article>) : <p className="text-sm" style={{ color: 'var(--ua-text-tertiary)' }}>No comments yet.</p>}
+        <p className="ua-text-metadata mt-1">{formatDateTime(comment.created_at)}</p>
+      </article>) : <p className="ua-text-body" style={{ color: 'var(--ua-text-tertiary)' }}>No comments yet.</p>}
     </div>
     {canComment ? <form onSubmit={submit} className="mt-4 space-y-3">
-      <textarea aria-label="Add a comment" rows={3} maxLength={10000} value={body} onChange={(event) => setBody(event.target.value)} className="w-full resize-y rounded-md border p-2 text-sm" placeholder="Add context for your team…" />
+      <textarea aria-label="Add a comment" rows={3} maxLength={10000} value={body} onChange={(event) => setBody(event.target.value)} className="ua-text-body w-full resize-y rounded-md border p-2" placeholder="Add context for your team…" />
       <MentionPicker members={members} selected={mentions} onChange={setMentions} />
-      <button type="submit" disabled={saving || !body.trim()} className="rounded-md px-3 py-1.5 text-sm font-medium" style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-action-primary-fg)' }}>{saving ? 'Posting…' : 'Post comment'}</button>
+      <button type="submit" disabled={saving || !body.trim()} className="ua-text-working-title rounded-md px-3 py-1.5" style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-action-primary-fg)' }}>{saving ? 'Posting…' : 'Post comment'}</button>
     </form> : null}
-    {error ? <p role="alert" className="mt-2 text-xs" style={{ color: 'var(--ua-critical)' }}>{error}</p> : null}
+    {error ? <p role="alert" className="ua-text-caption-role mt-2" style={{ color: 'var(--ua-critical)' }}>{error}</p> : null}
   </section>;
 }

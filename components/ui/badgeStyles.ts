@@ -45,20 +45,20 @@ const CHIP_STYLES: Record<BadgeTone, { background: string; color: string; border
   neutral: { background: 'var(--ua-surface-muted)', color: 'var(--ua-text-secondary)', border: 'var(--ua-border-default)' },
   info: { background: 'var(--ua-privacy-bg)', color: 'var(--ua-privacy)', border: 'var(--ua-privacy-border)' },
   accent: { background: 'var(--ua-surface-selected)', color: 'var(--ua-text-primary)', border: 'var(--ua-border-default)' },
-  success: { background: 'var(--ua-severity-clear-bg)', color: 'var(--ua-neutral)', border: 'var(--ua-risk-low-border)' },
-  warning: { background: 'var(--ua-severity-probable-bg)', color: 'var(--ua-warning)', border: 'var(--ua-risk-high-border)' },
-  danger: { background: 'var(--ua-severity-definite-bg)', color: 'var(--ua-risk-critical)', border: 'var(--ua-risk-critical-border)' },
-  critical: { background: 'var(--ua-risk-critical)', color: 'var(--ua-text-inverse)', border: 'var(--ua-risk-critical)' },
+  success: { background: 'var(--ua-success-bg)', color: 'var(--ua-success)', border: 'var(--ua-success-border)' },
+  warning: { background: 'var(--ua-warning-bg)', color: 'var(--ua-warning)', border: 'var(--ua-warning-border)' },
+  danger: { background: 'var(--ua-critical-bg)', color: 'var(--ua-critical)', border: 'var(--ua-critical-border)' },
+  critical: { background: 'var(--ua-critical)', color: 'var(--ua-text-inverse)', border: 'var(--ua-critical)' },
 };
 
 const SOLID_STYLES: Record<BadgeTone, { background: string; color: string }> = {
   neutral: { background: 'var(--ua-surface-muted)', color: 'var(--ua-text-primary)' },
   info: { background: 'var(--ua-privacy)', color: 'var(--ua-text-inverse)' },
   accent: { background: 'var(--ua-action-primary)', color: 'var(--ua-action-primary-fg)' },
-  success: { background: 'var(--ua-neutral)', color: 'var(--ua-text-inverse)' },
+  success: { background: 'var(--ua-success)', color: 'var(--ua-text-inverse)' },
   warning: { background: 'var(--ua-warning)', color: 'var(--ua-text-inverse)' },
-  danger: { background: 'var(--ua-risk-critical)', color: 'var(--ua-text-inverse)' },
-  critical: { background: 'var(--ua-risk-critical)', color: 'var(--ua-text-inverse)' },
+  danger: { background: 'var(--ua-critical)', color: 'var(--ua-text-inverse)' },
+  critical: { background: 'var(--ua-critical)', color: 'var(--ua-text-inverse)' },
 };
 
 export function badgeToneStyle(

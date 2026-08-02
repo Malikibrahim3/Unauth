@@ -357,7 +357,7 @@ export function ReportsLoadingSkeleton() {
       title="Reports"
       subtitle="Customer concessions, economic loss, and recovery reconciliation."
       toolbar={
-        <div className="flex items-center gap-2" aria-hidden="true">
+        <div className="flex min-w-0 flex-wrap items-center gap-2" aria-hidden="true">
           <Bone className="h-7 w-20" />
           <Bone className="h-7 w-20" />
           <Bone className="h-7 w-20" />
@@ -386,7 +386,7 @@ export function ReportsLoadingSkeleton() {
         <RegistrySurface aria-label="Loading matching report records">
           <DataTableServer
             loading
-            density="compact"
+            density="metadata"
             flush
             aria-label="Loading matching report records"
             rows={[]}

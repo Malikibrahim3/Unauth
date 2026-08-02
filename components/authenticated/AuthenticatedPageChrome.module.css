@@ -101,6 +101,11 @@
 .workbenchStack {
   display: grid;
   gap: 20px;
+  min-width: 0;
+}
+
+.workbenchStack > * {
+  min-width: 0;
 }
 
 .kpiStrip {
@@ -183,23 +188,15 @@
   overflow-x: auto;
 }
 
+/* §7.1 — the canonical panel anatomy lives in `.ua-working-surface` /
+ * `__header` (styles/authenticated/surfaces.css); this composes it rather
+ * than redeclaring the border/shadow/inset numbers a second time. */
 .panel {
-  overflow: hidden;
-  border: 1px solid var(--ua-border-subtle);
-  border-radius: 12px;
-  background: var(--ua-surface-primary);
-  box-shadow: none;
+  composes: ua-working-surface from global;
 }
 
 .panelHeader {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--ua-space-3);
-  padding: 18px 20px 16px;
-  border-bottom: 1px solid var(--ua-border-subtle);
-  background: var(--ua-surface-primary);
+  composes: ua-working-surface__header from global;
 }
 
 .panelTitle {
@@ -218,7 +215,7 @@
 }
 
 .panelBody {
-  min-width: 0;
+  composes: ua-working-surface__body from global;
 }
 
 .mainPanel {

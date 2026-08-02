@@ -22,19 +22,19 @@ export function LossActions({
   const [busy, setBusy] = useState(false);
 
   if (!canManage) {
-    return <p className="text-sm text-[var(--ua-text-secondary)]">You have read-only access to this loss.</p>;
+    return <p className="ua-text-body text-[var(--ua-text-secondary)]">You have read-only access to this loss.</p>;
   }
   if (writeOffState === 'already_written_off') {
-    return <p className="text-sm text-[var(--ua-text-secondary)]">Write-off already recorded for this loss.</p>;
+    return <p className="ua-text-body text-[var(--ua-text-secondary)]">Write-off already recorded for this loss.</p>;
   }
   if (writeOffState === 'no_outstanding') {
-    return <p className="text-sm text-[var(--ua-text-secondary)]">No outstanding recovery remains to write off.</p>;
+    return <p className="ua-text-body text-[var(--ua-text-secondary)]">No outstanding recovery remains to write off.</p>;
   }
   if (writeOffState === 'unavailable') {
-    return <p className="text-sm text-[var(--ua-text-secondary)]">Write-off is unavailable until an outstanding recovery amount is reconciled.</p>;
+    return <p className="ua-text-body text-[var(--ua-text-secondary)]">Write-off is unavailable until an outstanding recovery amount is reconciled.</p>;
   }
   if (writeOffState === 'mixed_currency') {
-    return <p className="text-sm text-[var(--ua-text-secondary)]">Write-off is unavailable for a mixed-currency loss.</p>;
+    return <p className="ua-text-body text-[var(--ua-text-secondary)]">Write-off is unavailable for a mixed-currency loss.</p>;
   }
 
   async function submit() {
@@ -75,7 +75,7 @@ export function LossActions({
       >
         Write off loss
       </Button>
-      {error ? <p role="alert" className="mt-2 text-sm text-[var(--ua-critical)]">{error}</p> : null}
+      {error ? <p role="alert" className="ua-text-body mt-2 text-[var(--ua-critical)]">{error}</p> : null}
       <Modal
         open={open}
         onClose={() => setOpen(false)}
@@ -90,10 +90,10 @@ export function LossActions({
           },
         ]}
       >
-        <p className="text-sm">
+        <p className="ua-text-body">
           Amount to write off: <strong className="tabular-nums">{writeOffAmount}</strong>
         </p>
-        <label className="mt-4 block text-sm font-medium">
+        <label className="ua-text-body mt-4 block font-medium">
           Reason <span aria-hidden="true">*</span>
           <textarea
             value={rationale}
@@ -102,7 +102,7 @@ export function LossActions({
             required
           />
         </label>
-        {!rationale.trim() ? <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">A reason is required and is retained in activity history.</p> : null}
+        {!rationale.trim() ? <p className="ua-text-caption-role mt-1">A reason is required and is retained in activity history.</p> : null}
       </Modal>
     </>
   );

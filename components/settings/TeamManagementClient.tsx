@@ -255,7 +255,7 @@ export default function TeamManagementClient() {
 
       <Surface structure="joined" className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-sm font-semibold text-[var(--ua-text-primary)]">Team summary</h2>
+          <h2 className="ua-text-working-title text-[var(--ua-text-primary)]">Team summary</h2>
           <p className="mt-1 text-[length:var(--ua-text-caption-size)] text-[var(--ua-text-secondary)]">
             {loading
               ? 'Loading workspace members…'
@@ -348,7 +348,7 @@ export default function TeamManagementClient() {
                     Clear filters
                   </Button>
                 ) : (
-                  <span className="text-sm text-[var(--ua-text-secondary)]">
+                  <span className="ua-text-body text-[var(--ua-text-secondary)]">
                     Use the invitation controls above to add a team member.
                   </span>
                 )
@@ -400,10 +400,10 @@ export default function TeamManagementClient() {
       >
         {transferRequest ? (
           <div className="space-y-4">
-            <p className="text-sm leading-6" style={{ color: 'var(--ua-text-secondary)' }}>
+            <p className="ua-text-body leading-6" style={{ color: 'var(--ua-text-secondary)' }}>
               <strong style={{ color: 'var(--ua-text-primary)' }}>{transferRequest.member.invited_email}</strong> will become the only workspace owner. Your account will remain an administrator.
             </p>
-            <label className="block text-sm font-medium" style={{ color: 'var(--ua-text-primary)' }}>
+            <label className="ua-text-body block font-medium" style={{ color: 'var(--ua-text-primary)' }}>
               Type <strong>TRANSFER</strong> to confirm
               <input
                 value={transferConfirmation}

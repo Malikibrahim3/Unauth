@@ -308,10 +308,10 @@ export function ReconciliationSummaryCard({
             <p className="text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-secondary)]">
               Decision evidence
             </p>
-            <h3 id="case-evidence-readiness-title" className="mt-1 text-base font-semibold text-[var(--ua-text-primary)]">
+            <h3 id="case-evidence-readiness-title" className="ua-text-section-title mt-1 text-[var(--ua-text-primary)]">
               Evidence and readiness
             </h3>
-            <p className="mt-1 max-w-2xl text-xs leading-relaxed text-[var(--ua-text-secondary)]">
+            <p className="ua-text-caption-role mt-1 max-w-2xl leading-relaxed">
               Follow the source record through verified facts and recommendations before recording a merchant decision.
             </p>
           </div>
@@ -348,11 +348,11 @@ export function ReconciliationSummaryCard({
       <dl className="grid border-t border-[var(--ua-border-subtle)] bg-[var(--ua-surface-secondary)] sm:grid-cols-2 lg:grid-cols-4" aria-label="Evidence readiness summary">
         <div className="p-3.5 lg:border-r lg:border-[var(--ua-border-subtle)]">
           <dt className="text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-tertiary)]">Evidence readiness</dt>
-          <dd className="mt-1 text-sm font-semibold text-[var(--ua-text-primary)]">{readiness}</dd>
+          <dd className="ua-text-working-title mt-1 text-[var(--ua-text-primary)]">{readiness}</dd>
         </div>
         <div className="border-t border-[var(--ua-border-subtle)] p-3.5 sm:border-l sm:border-t-0 lg:border-l-0 lg:border-r">
           <dt className="text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-tertiary)]">Provenance</dt>
-          <dd className="mt-1 text-sm font-semibold text-[var(--ua-text-primary)]">
+          <dd className="ua-text-working-title mt-1 text-[var(--ua-text-primary)]">
             {loading && !data
               ? 'Loading…'
               : error && !data
@@ -362,7 +362,7 @@ export function ReconciliationSummaryCard({
         </div>
         <div className="border-t border-[var(--ua-border-subtle)] p-3.5 lg:border-r">
           <dt className="text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-tertiary)]">Named gaps</dt>
-          <dd className="mt-1 text-sm font-semibold text-[var(--ua-text-primary)]">
+          <dd className="ua-text-working-title mt-1 text-[var(--ua-text-primary)]">
             {loading && !data
               ? 'Not yet evaluated'
               : error && !data
@@ -374,10 +374,10 @@ export function ReconciliationSummaryCard({
         </div>
         <div className="border-t border-[var(--ua-border-subtle)] p-3.5 sm:border-l lg:border-l-0">
           <dt className="text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-tertiary)]">Next action</dt>
-          <dd className="mt-1 text-sm font-semibold text-[var(--ua-text-primary)]">
+          <dd className="ua-text-working-title mt-1 text-[var(--ua-text-primary)]">
             {nextAction ?? rows[0]?.[1].headline ?? 'Review source evidence'}
           </dd>
-          {nextActionReason ? <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">{nextActionReason}</p> : null}
+          {nextActionReason ? <p className="ua-text-caption-role mt-1">{nextActionReason}</p> : null}
         </div>
       </dl>
 
@@ -392,8 +392,8 @@ export function ReconciliationSummaryCard({
             <div className="flex min-w-0 items-start gap-2">
               <CircleAlert size={16} className="mt-0.5 shrink-0 text-[var(--ua-risk-critical)]" aria-hidden="true" />
               <div>
-                <p className="text-sm font-semibold text-[var(--ua-risk-critical)]">Case evidence could not be loaded</p>
-                <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">
+                <p className="ua-text-working-title text-[var(--ua-risk-critical)]">Case evidence could not be loaded</p>
+                <p className="ua-text-caption-role mt-1">
                   {error} No recommendation or merchant decision was changed.
                 </p>
               </div>
@@ -407,7 +407,7 @@ export function ReconciliationSummaryCard({
         <>
           {error ? (
             <div className="mx-4 mb-4 flex flex-wrap items-center justify-between gap-3 rounded-[var(--ua-radius-control)] border border-[var(--ua-warning-border)] bg-[var(--ua-warning-bg)] p-3" role="status">
-              <p className="text-xs text-[var(--ua-text-secondary)]">
+              <p className="ua-text-caption-role">
                 The last loaded evidence remains visible. Refresh failed: {error}
               </p>
               <Button type="button" variant="secondary" size="sm" onClick={reload}>Retry</Button>
@@ -417,27 +417,27 @@ export function ReconciliationSummaryCard({
           <div className="border-t border-[var(--ua-border-subtle)] p-4">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <div>
-                <h4 className="text-sm font-semibold text-[var(--ua-text-primary)]">Independent recommendations</h4>
-                <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">
+                <h4 className="ua-text-working-title text-[var(--ua-text-primary)]">Independent recommendations</h4>
+                <p className="ua-text-caption-role mt-1">
                   Customer action, responsibility, and recovery stay separate. The merchant makes the final decision.
                 </p>
               </div>
-              {isRefreshing ? <span role="status" className="text-xs text-[var(--ua-text-secondary)]">Updating…</span> : null}
+              {isRefreshing ? <span role="status" className="ua-text-caption-role">Updating…</span> : null}
             </div>
             {rows.length > 0 ? (
               <div className="mt-3 grid divide-y divide-[var(--ua-border-subtle)] border-y border-[var(--ua-border-subtle)] md:grid-cols-3 md:divide-x md:divide-y-0">
                 {rows.map(([key, recommendation]) => (
                   <div key={key} className="min-w-0 px-3 py-3 first:pl-0 last:pr-0">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-xs font-semibold text-[var(--ua-text-secondary)]">{labels[key] ?? key}</p>
+                      <p className="ua-text-label">{labels[key] ?? key}</p>
                       <Badge tone={tone(recommendation.assessment_state)} size="sm" dot>
                         {stateLabel(recommendation.assessment_state)}
                       </Badge>
                     </div>
-                    <p className="mt-2 text-sm font-semibold text-[var(--ua-text-primary)]">{recommendation.headline ?? 'No recommendation yet'}</p>
-                    <p className="mt-1 text-xs leading-5 text-[var(--ua-text-secondary)]">{recommendation.explanation ?? 'Review the evidence before acting.'}</p>
+                    <p className="ua-text-working-title mt-2 text-[var(--ua-text-primary)]">{recommendation.headline ?? 'No recommendation yet'}</p>
+                    <p className="ua-text-caption-role mt-1 leading-5">{recommendation.explanation ?? 'Review the evidence before acting.'}</p>
                     {recommendation.missing_evidence && recommendation.missing_evidence.length > 0 ? (
-                      <p className="mt-2 text-xs text-[var(--ua-text-tertiary)]">
+                      <p className="ua-text-metadata mt-2">
                         Missing: {recommendation.missing_evidence.slice(0, 3).map((item) => humanize(item, item)).join(', ')}
                       </p>
                     ) : null}
@@ -445,7 +445,7 @@ export function ReconciliationSummaryCard({
                 ))}
               </div>
             ) : (
-              <p className="mt-3 text-sm text-[var(--ua-text-secondary)]">
+              <p className="ua-text-body mt-3 text-[var(--ua-text-secondary)]">
                 Select the affected item to calculate recommendations from the order and source evidence.
               </p>
             )}
@@ -453,8 +453,8 @@ export function ReconciliationSummaryCard({
 
           <div className="border-t border-[var(--ua-border-subtle)] p-4">
             <div>
-              <h4 className="text-sm font-semibold text-[var(--ua-text-primary)]">Evidence spine</h4>
-              <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">
+              <h4 className="ua-text-working-title text-[var(--ua-text-primary)]">Evidence spine</h4>
+              <p className="ua-text-caption-role mt-1">
                 Labels and provenance distinguish what a provider reported, what a person found, and what the system inferred.
               </p>
             </div>
@@ -467,7 +467,7 @@ export function ReconciliationSummaryCard({
                   return (
                     <section key={kind} className="grid gap-3 py-3 md:grid-cols-[180px_minmax(0,1fr)]" data-evidence-kind={kind}>
                       <div>
-                        <h5 className="text-xs font-semibold text-[var(--ua-text-primary)]">{copy.label}</h5>
+                        <h5 className="ua-text-metadata text-[var(--ua-text-primary)]">{copy.label}</h5>
                         <p className="mt-1 text-[length:var(--ua-text-metadata-size)] leading-4 text-[var(--ua-text-tertiary)]">{copy.description}</p>
                       </div>
                       <div>
@@ -493,7 +493,7 @@ export function ReconciliationSummaryCard({
                 })}
               </div>
             ) : (
-              <p className="mt-3 text-sm text-[var(--ua-text-secondary)]">
+              <p className="ua-text-body mt-3 text-[var(--ua-text-secondary)]">
                 No canonical evidence facts are on file yet. Missing evidence remains explicit rather than being inferred from silence.
               </p>
             )}
@@ -509,7 +509,7 @@ export function ReconciliationSummaryCard({
           .find((recommendation) => recommendation.policy_snapshot?.rule_name || recommendation.merchant_rule_version_id);
         if (!appliedRule) return null;
         return (
-          <div className="border-t border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] px-4 py-3 text-xs">
+          <div className="ua-text-dense border-t border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] px-4 py-3">
             <span className="font-semibold text-[var(--ua-text-secondary)]">Applied rule: </span>
             <span className="font-medium text-[var(--ua-text-primary)]">
               {appliedRule.policy_snapshot?.rule_name ?? 'Merchant policy'}
@@ -523,14 +523,14 @@ export function ReconciliationSummaryCard({
 
       {claimedItems.length === 0 && candidates.length > 0 ? (
         <div className="border-t border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-4">
-          <p className="text-xs font-semibold text-[var(--ua-text-secondary)]">Order-line candidates</p>
-          <p className="mt-1 text-xs text-[var(--ua-text-tertiary)]">Select the item the customer says is affected. Unauth will not infer this from an order-level refund.</p>
+          <p className="ua-text-label">Order-line candidates</p>
+          <p className="ua-text-metadata mt-1">Select the item the customer says is affected. Unauth will not infer this from an order-level refund.</p>
           <div className="mt-2 space-y-2">
             {candidates.slice(0, 8).map((line) => (
               <div key={line.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-primary)] px-3 py-2">
                 <div className="min-w-0">
-                  <p className="truncate text-xs font-semibold text-[var(--ua-text-primary)]">{line.title ?? line.sku ?? 'Unnamed item'}</p>
-                  <p className="text-xs text-[var(--ua-text-tertiary)]">{line.sku ?? 'No SKU'} · Qty {line.quantity ?? 1}</p>
+                  <p className="ua-text-working-title truncate text-[var(--ua-text-primary)]">{line.title ?? line.sku ?? 'Unnamed item'}</p>
+                  <p className="ua-text-metadata">{line.sku ?? 'No SKU'} · Qty {line.quantity ?? 1}</p>
                 </div>
                 <Button type="button" size="sm" variant="secondary" disabled={!canMutate || busy} onClick={() => void selectLine(line.id)}>
                   Match item
@@ -543,10 +543,10 @@ export function ReconciliationSummaryCard({
 
       {matrix.length > 0 ? (
         <div className="border-t border-[var(--ua-border-subtle)] p-4">
-          <p className="text-xs font-semibold text-[var(--ua-text-secondary)]">Item × parcel reconciliation</p>
+          <p className="ua-text-label">Item × parcel reconciliation</p>
           <div className="mt-2 space-y-1.5">
             {matrix.slice(0, 12).map((row, index) => (
-              <div key={`${row.claimedItemId ?? 'item'}-${row.parcelId ?? 'unassigned'}-${index}`} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-[var(--ua-border-subtle)] px-3 py-2 text-xs">
+              <div key={`${row.claimedItemId ?? 'item'}-${row.parcelId ?? 'unassigned'}-${index}`} className="ua-text-dense flex flex-wrap items-center justify-between gap-2 rounded-md border border-[var(--ua-border-subtle)] px-3 py-2">
                 <span className="font-medium text-[var(--ua-text-primary)]">{row.claimedSku ?? 'Claimed item'}</span>
                 <span className="text-[var(--ua-text-secondary)]">{row.parcelId ? `Parcel ${row.parcelId.slice(-6)}` : 'No parcel record'} · {label('workflowStatus', row.state ?? 'unknown')}</span>
                 <Badge tone={row.physicalProof ? 'success' : 'warning'} size="sm" dot>{row.physicalProof ? 'Physical proof' : 'System record only'}</Badge>
@@ -559,13 +559,13 @@ export function ReconciliationSummaryCard({
       <div className="border-t border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-4">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
-            <p className="text-xs font-semibold text-[var(--ua-text-secondary)]">Customer outcome</p>
-            <p className="mt-1 text-xs text-[var(--ua-text-tertiary)]">Record a merchant confirmation when the source system cannot yet report the result. This does not execute a refund or reship.</p>
+            <p className="ua-text-label">Customer outcome</p>
+            <p className="ua-text-metadata mt-1">Record a merchant confirmation when the source system cannot yet report the result. This does not execute a refund or reship.</p>
           </div>
           {outcomes.length > 0 ? <Badge size="sm">{countLabel(outcomes.length, 'outcome')} recorded</Badge> : null}
         </div>
         <div className="mt-3 flex flex-wrap items-end gap-2">
-          <label className="min-w-44 text-xs font-medium text-[var(--ua-text-secondary)]">
+          <label className="ua-text-label min-w-44 font-medium">
             Outcome
             <Select className="mt-1" value={outcomeType} onChange={(event) => setOutcomeType(event.target.value)} disabled={!canMutate || busy}>
               <option value="no_payout">No payout</option>
@@ -576,10 +576,10 @@ export function ReconciliationSummaryCard({
               <option value="other_manual_concession">Other concession</option>
             </Select>
           </label>
-          <label className="w-32 text-xs font-medium text-[var(--ua-text-secondary)]">
+          <label className="ua-text-label w-32 font-medium">
             Amount
             <input
-              className="mt-1 h-9 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2 text-sm text-[var(--ua-text-primary)]"
+              className="ua-text-body mt-1 h-9 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2 text-[var(--ua-text-primary)]"
               type="number"
               min="0"
               step="0.01"
@@ -601,7 +601,7 @@ export function ReconciliationSummaryCard({
       </div>
 
       {message ? (
-        <p role="status" className="flex items-center gap-1.5 border-t border-[var(--ua-border-subtle)] px-4 py-3 text-xs text-[var(--ua-text-secondary)]">
+        <p role="status" className="ua-text-caption-role flex items-center gap-1.5 border-t border-[var(--ua-border-subtle)] px-4 py-3">
           <CheckCircle2 size={14} aria-hidden="true" /> {message}
         </p>
       ) : null}

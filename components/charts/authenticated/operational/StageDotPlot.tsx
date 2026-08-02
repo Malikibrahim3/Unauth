@@ -22,9 +22,11 @@ export function StageDotPlot({ rows }: { rows: StageDotPlotRow[] }) {
       aria-label={rows.map((row) => `${row.label}: ${row.displayValue}`).join(', ')}
     >
       {rows.map((row) => {
-        const percent = row.value == null || maximum <= 0
+        const percent = row.value == null
           ? null
-          : Math.max(row.value > 0 ? 0.75 : 0, Math.min(100, (row.value / maximum) * 100));
+          : maximum <= 0
+            ? 0
+            : Math.max(row.value > 0 ? 0.75 : 0, Math.min(100, (row.value / maximum) * 100));
         return (
           <div key={row.key} className={styles.row}>
             <dt className={styles.label}>

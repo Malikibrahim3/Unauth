@@ -35,7 +35,7 @@ const BUTTON_VARIANT_CLASSES: Record<ButtonVariant, string> = {
   commit: 'hover:bg-[var(--ua-action-commit-hover)] active:bg-[var(--ua-action-commit-pressed)]',
   secondary: 'hover:bg-[var(--ua-surface-hover)] active:bg-[var(--ua-surface-muted)]',
   ghost: 'hover:bg-[var(--ua-surface-hover)] active:bg-[var(--ua-surface-muted)]',
-  danger: 'hover:opacity-90 active:opacity-80',
+  danger: 'hover:bg-[var(--ua-action-danger-hover)] active:bg-[var(--ua-action-danger-pressed)]',
   link: 'underline-offset-4 hover:underline p-0',
 };
 

@@ -25,7 +25,7 @@ export function SlaBadge({ claim }: { claim: ClaimRecord }) {
 
 export function FieldLabel({ children, htmlFor }: { children: ReactNode; htmlFor?: string }) {
   return (
-    <label htmlFor={htmlFor} className="block text-xs font-semibold mb-1" style={{ color: 'var(--ua-text-secondary)' }}>
+    <label htmlFor={htmlFor} className="ua-text-label block mb-1" style={{ color: 'var(--ua-text-secondary)' }}>
       {children}
     </label>
   );
@@ -65,10 +65,10 @@ export function RailSection({
         aria-expanded={open}
       >
         <span className="flex items-center gap-1.5 min-w-0">
-          <span className="truncate text-[length:var(--ua-text-chart-title-size)] font-semibold" style={{ color: 'var(--ua-text-primary)' }}>{title}</span>
+          <span className="ua-text-working-title truncate" style={{ color: 'var(--ua-text-primary)' }}>{title}</span>
           {badge}
         </span>
-        <span className="text-xs shrink-0 ml-2" style={{ color: 'var(--ua-text-secondary)' }}>{open ? '▲' : '▼'}</span>
+        <span className="ua-text-caption-role shrink-0 ml-2">{open ? '▲' : '▼'}</span>
       </button>
       {open && (
         <div className="border-t px-4 pb-4 pt-4" style={{ borderColor: 'var(--ua-border-subtle)' }}>
@@ -82,8 +82,8 @@ export function RailSection({
 export function CaseIntelTile({ label, children }: { label: string; children: ReactNode }) {
   return (
     <Card unstyled variant="muted" className="min-w-0 px-3 py-2.5">
-      <p className="text-[length:var(--ua-text-metadata-size)] font-semibold mb-1" style={{ color: 'var(--ua-text-secondary)' }}>{label}</p>
-      <div className="text-sm leading-snug" style={{ color: 'var(--ua-text-primary)' }}>{children}</div>
+      <p className="ua-text-label mb-1" style={{ color: 'var(--ua-text-secondary)' }}>{label}</p>
+      <div className="ua-text-dense leading-snug" style={{ color: 'var(--ua-text-primary)' }}>{children}</div>
     </Card>
   );
 }
@@ -122,10 +122,10 @@ export function ClaimLifecycleStatusBar({
   if (claimIsClosed) {
     return (
       <div className="space-y-2">
-        <p className="text-xs" style={{ color: 'var(--ua-text-secondary)' }}>Case archived. Reopen to continue evidence review.</p>
+        <p className="ua-text-caption-role">Case archived. Reopen to continue evidence review.</p>
         <textarea
           id="claim-reopen-note"
-          className="w-full px-2 py-1.5 rounded-md text-xs resize-none"
+          className="ua-text-body w-full px-2 py-1.5 rounded-md resize-none"
           style={inputStyle()}
           rows={2}
           placeholder="Reason for reopening"
@@ -137,7 +137,7 @@ export function ClaimLifecycleStatusBar({
           type="button"
           onClick={onReopen}
           disabled={busy || !claimId || !canReopen}
-          className="w-full px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-60"
+          className="ua-text-working-title w-full px-3 py-1.5 rounded-md disabled:opacity-60"
           style={btnStyle(submitIsPrimary ? 'primary' : 'secondary')}
         >
           Reopen case
@@ -152,7 +152,7 @@ export function ClaimLifecycleStatusBar({
         <FieldLabel htmlFor="claim-lifecycle-status">Review status</FieldLabel>
         <select
           id="claim-lifecycle-status"
-          className="w-full px-2 py-1.5 rounded-md text-xs"
+          className="ua-text-body w-full px-2 py-1.5 rounded-md"
           style={inputStyle()}
           value={statusToSet}
           onChange={(e) => setStatusToSet(e.target.value as ClaimStatus)}
@@ -168,7 +168,7 @@ export function ClaimLifecycleStatusBar({
         <input
           id="claim-status-note"
           type="text"
-          className="w-full px-2 py-1.5 rounded-md text-xs"
+          className="ua-text-body w-full px-2 py-1.5 rounded-md"
           style={inputStyle()}
           placeholder="e.g. Awaiting delivery proof or customer evidence"
           value={statusNote}
@@ -179,7 +179,7 @@ export function ClaimLifecycleStatusBar({
         type="button"
         onClick={onStatusChange}
         disabled={busy || !claimId}
-        className="w-full px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-60"
+        className="ua-text-working-title w-full px-3 py-1.5 rounded-md disabled:opacity-60"
         style={btnStyle(submitIsPrimary && claimId ? 'primary' : claimId ? 'secondary' : 'disabled')}
       >
         Update review status
@@ -192,7 +192,7 @@ export function ClaimLifecycleStatusBar({
             type="button"
             disabled={busy || !claimId}
             onClick={() => setStatusToSet(item.value)}
-            className="rounded-md border px-2 py-0.5 text-xs font-semibold disabled:opacity-50"
+            className="ua-text-label rounded-md border px-2 py-0.5 disabled:opacity-50"
             style={{
               borderColor: statusToSet === item.value ? 'var(--ua-action-primary)' : 'var(--ua-border-subtle)',
               background: 'var(--ua-surface-primary)',

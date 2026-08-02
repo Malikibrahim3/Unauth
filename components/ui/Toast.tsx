@@ -127,7 +127,7 @@ function ToastItemView({ item, onRequestClose, onExited }: {
     >
       <span className="mt-0.5 shrink-0">{TONE[item.tone].icon}</span>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-[var(--ua-text-primary)]">{item.title}</p>
+        <p className="ua-text-working-title text-[var(--ua-text-primary)]">{item.title}</p>
         {item.description ? (
           <p className="mt-0.5 text-xs text-[var(--ua-text-secondary)]">{item.description}</p>
         ) : null}

@@ -1,3 +1,4 @@
+@layer components {
 /*
  * Loading / skeleton / empty / stale / partial / unavailable / error /
  * disabled states.
@@ -39,6 +40,13 @@
   }
 }
 
+/* §7.6: the canonical spinner's rotation duration is tokenised rather than
+ * left at Tailwind's default `animate-spin` timing. */
+.ua-app .ua-spinner,
+.ua-auth-surface .ua-spinner {
+  animation-duration: var(--ua-duration-spinner);
+}
+
 .ua-operational-state {
   display: grid;
   gap: var(--ua-space-1);
@@ -70,6 +78,21 @@
 .ua-operational-state--error,
 .ua-operational-state--unavailable {
   border-top-color: var(--ua-critical-border);
+}
+
+/* §7.7: every OperationalState kind gets a real, distinct treatment instead
+ * of the same neutral rule — grouped by what the state actually means, using
+ * the same semantic families as everywhere else (never a bespoke hue). */
+.ua-operational-state--partial,
+.ua-operational-state--stale,
+.ua-operational-state--disconnected {
+  border-top-color: var(--ua-warning-border);
+}
+
+.ua-operational-state--filtered-empty,
+.ua-operational-state--permission,
+.ua-operational-state--locked {
+  border-top-color: var(--ua-info-border);
 }
 
 .ua-empty-state__compact-title,
@@ -121,4 +144,5 @@
   .ua-auth-surface .ua-value-wash {
     animation: ua-value-wash var(--ua-duration-highlight) var(--ua-ease-standard);
   }
+}
 }

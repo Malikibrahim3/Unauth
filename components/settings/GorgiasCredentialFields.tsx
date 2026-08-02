@@ -26,14 +26,14 @@ export function GorgiasCredentialFields({
   return (
     <>
       <div>
-        <label htmlFor="gorgias-api-email" className="block text-xs font-medium mb-1" style={{ color: 'var(--ua-text-secondary)' }}>
+        <label htmlFor="gorgias-api-email" className="block ua-text-label mb-1">
           Gorgias API email
         </label>
         <input
           id="gorgias-api-email"
           required={required}
           type="email"
-          className="w-full rounded-md px-3 py-2 text-sm"
+          className="w-full rounded-md px-3 py-2 ua-text-body"
           style={{
             background: 'var(--ua-surface-secondary)',
             border: '1px solid var(--ua-border-default)',
@@ -45,22 +45,22 @@ export function GorgiasCredentialFields({
           disabled={!canManage || busy}
           autoComplete="off"
         />
-        <p className="mt-2 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
+        <p className="mt-2 ua-text-caption-role">
           The email you use to log into Gorgias.
         </p>
       </div>
       <div>
-        <p className="mb-2 text-xs leading-relaxed" style={{ color: 'var(--ua-text-secondary)' }}>
+        <p className="mb-2 ua-text-caption-role leading-relaxed">
           Your API key is stored encrypted and used only to connect Gorgias to Unauth. It is never shown to other merchants.
         </p>
-        <label htmlFor="gorgias-api-key" className="block text-xs font-medium mb-1" style={{ color: 'var(--ua-text-secondary)' }}>
+        <label htmlFor="gorgias-api-key" className="block ua-text-label mb-1">
           Gorgias API key
         </label>
         <input
           id="gorgias-api-key"
           required={required}
           type="password"
-          className="w-full rounded-md px-3 py-2 text-sm font-mono"
+          className="w-full rounded-md px-3 py-2 ua-text-body font-mono"
           style={{
             background: 'var(--ua-surface-secondary)',
             border: '1px solid var(--ua-border-default)',
@@ -72,7 +72,7 @@ export function GorgiasCredentialFields({
           disabled={!canManage || busy}
           autoComplete="off"
         />
-        <p className="mt-2 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
+        <p className="mt-2 ua-text-caption-role">
           Found in Gorgias under Settings, then REST API, then API key (password).
         </p>
       </div>
@@ -86,7 +86,7 @@ export function GorgiasCredentialFields({
           Where do I find this?
         </button>
         {showCredHelp && (
-          <p className="mt-2 text-xs leading-relaxed" style={{ color: 'var(--ua-text-secondary)' }}>
+          <p className="mt-2 ua-text-caption-role leading-relaxed">
             In Gorgias, open <strong>Settings, then REST API</strong>. The API email is the address you
             log in with; the API key is the value labelled <strong>API key (password)</strong>.
             Unauth uses them once to register the sidebar widget, then stores them encrypted so it

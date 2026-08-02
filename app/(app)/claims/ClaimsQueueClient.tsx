@@ -187,7 +187,11 @@ export function ClaimsQueueClient({
               </div>
               <p
                 className="text-caption mb-1.5"
-                style={{ color: "var(--ua-text-tertiary)" }}
+                style={{
+                  color: isSelected
+                    ? "var(--ua-text-secondary)"
+                    : "var(--ua-text-tertiary)",
+                }}
               >
                 <span className="font-mono">{shortRef(c.order_ref ?? c.shopify_order_id, c.id)}</span>
                 <span aria-hidden="true">&nbsp;·&nbsp;</span>
@@ -205,7 +209,11 @@ export function ClaimsQueueClient({
               </p>
               <p
                 className="text-[length:var(--ua-text-metadata-size)] mb-1.5"
-                style={{ color: "var(--ua-text-tertiary)" }}
+                style={{
+                  color: isSelected
+                    ? "var(--ua-text-secondary)"
+                    : "var(--ua-text-tertiary)",
+                }}
               >
                 {sourceSystemLabel(c)}
                 {` · ${c.assigned_to ? "Assigned" : "Unassigned"}`}
@@ -299,7 +307,7 @@ function ClaimDetailPanel({
         <p className="text-caption font-medium" style={{ color: "var(--ua-text-tertiary)" }}>
           Value at issue
         </p>
-        <h2 className="mt-1 text-2xl font-semibold tabular-nums" style={{ color: "var(--ua-text-primary)" }}>
+        <h2 className="ua-text-hero-value mt-1" style={{ color: "var(--ua-text-primary)" }}>
           {formatCurrencyNullable(claim.amount_at_risk, claim.currency ?? undefined) ?? "—"}
         </h2>
         <p className="mt-2 text-body-sm font-medium" style={{ color: "var(--ua-text-primary)" }}>
@@ -320,7 +328,7 @@ function ClaimDetailPanel({
         className="ua-case-preview__priority"
       >
         <p
-          className="text-caption font-semibold mb-0.5"
+          className="ua-text-metadata mb-0.5"
           style={{ color: "var(--ua-text-tertiary)", letterSpacing: "0.06em" }}
         >
           Review context
@@ -390,7 +398,7 @@ function ClaimDetailPanel({
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p
-                className="text-caption font-semibold"
+                className="ua-text-metadata"
                 style={{ color: "var(--ua-text-tertiary)", letterSpacing: "0.06em" }}
               >
                 Investigations
@@ -426,7 +434,7 @@ function ClaimDetailPanel({
           ) : null}
           <Link
             href={`/claims/${claim.id}#case-responsibility`}
-            className="mt-2.5 inline-flex items-center gap-1.5 text-caption font-semibold text-[var(--ua-text-primary)] underline underline-offset-2"
+            className="ua-text-working-title mt-2.5 inline-flex items-center gap-1.5 text-[var(--ua-text-primary)] underline underline-offset-2"
           >
             Open investigation <ArrowRight className="h-3 w-3" />
           </Link>
@@ -442,7 +450,7 @@ function ClaimDetailPanel({
             className="flex items-center justify-between gap-3"
           >
             <p
-              className="text-caption font-semibold"
+              className="ua-text-metadata"
               style={{ color: "var(--ua-text-tertiary)", letterSpacing: "0.06em" }}
             >
               Recovery chase-up
@@ -525,7 +533,7 @@ function ClaimDetailPanel({
               style={{ color: "var(--ua-text-primary)" }}
             />
             <p
-              className="text-caption font-semibold"
+              className="ua-text-metadata"
               style={{ color: "var(--ua-text-primary)", letterSpacing: "0.06em" }}
             >
               Evidence package
@@ -567,7 +575,7 @@ function ClaimDetailPanel({
               </p>
               <Link
                 href={`/claims/${claim.id}#case-evidence`}
-                className="shrink-0 text-caption font-semibold hover:underline"
+                className="ua-text-working-title shrink-0 hover:underline"
                 style={{ color: "var(--ua-action-primary)" }}
               >
                 Review case evidence
@@ -584,7 +592,7 @@ function ClaimDetailPanel({
             className="flex items-center justify-between"
           >
             <p
-              className="text-caption font-semibold"
+              className="ua-text-metadata"
               style={{ color: "var(--ua-text-tertiary)", letterSpacing: "0.06em" }}
             >
               Customer
@@ -594,7 +602,7 @@ function ClaimDetailPanel({
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p
-                  className="text-body-sm font-semibold truncate"
+                  className="ua-text-working-title truncate"
                   style={{ color: "var(--ua-text-primary)" }}
                 >
                   {customerDisplayName(customer)}
@@ -610,7 +618,7 @@ function ClaimDetailPanel({
               </div>
               <Link
                 href={`/customers/${customer.id}`}
-                className="shrink-0 inline-flex items-center gap-1 text-caption font-semibold hover:underline"
+                className="ua-text-working-title shrink-0 inline-flex items-center gap-1 hover:underline"
                 style={{ color: "var(--ua-action-primary)" }}
               >
                 Profile <ArrowRight className="h-3 w-3" />
@@ -631,7 +639,7 @@ function ClaimDetailPanel({
               style={{ color: "var(--ua-text-tertiary)" }}
             />
             <p
-              className="text-caption font-semibold"
+              className="ua-text-metadata"
               style={{ color: "var(--ua-text-tertiary)", letterSpacing: "0.06em" }}
             >
               Merchant-recorded outcome

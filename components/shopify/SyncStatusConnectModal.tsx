@@ -89,12 +89,12 @@ export function SyncStatusConnectModal({
 
         <h2
           id="connect-shopify-title"
-          className="text-base font-semibold mb-1"
+          className="ua-text-section-title mb-1"
           style={{ color: 'var(--ua-text-primary)' }}
         >
           Connect Shopify
         </h2>
-        <p className="text-xs mb-5" style={{ color: 'var(--ua-text-secondary)' }}>
+        <p className="ua-text-caption-role mb-5" style={{ color: 'var(--ua-text-secondary)' }}>
           We use this only to send you to the correct Shopify approval screen.
         </p>
 
@@ -102,7 +102,7 @@ export function SyncStatusConnectModal({
           <div>
             <label
               htmlFor="shopify-admin-url"
-              className="block text-xs font-semibold mb-1.5"
+              className="ua-text-label block mb-1.5"
               style={{ color: 'var(--ua-text-primary)' }}
             >
               Shopify Admin URL
@@ -114,7 +114,7 @@ export function SyncStatusConnectModal({
               value={value}
               onChange={(e) => { setValue(e.target.value); setInputError(''); }}
               placeholder="admin.shopify.com/store/your-store"
-              className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-1"
+              className="ua-text-body w-full rounded-md border px-3 py-2 outline-none focus:ring-1"
               style={{
                 borderColor: inputError ? 'var(--ua-critical)' : 'var(--ua-border-subtle)',
                 background: 'var(--ua-surface-secondary)',
@@ -125,11 +125,11 @@ export function SyncStatusConnectModal({
               data-testid="shopify-admin-url-input"
             />
             {inputError ? (
-              <p className="mt-1.5 text-xs" style={{ color: 'var(--ua-critical)' }} role="alert">
+              <p className="ua-text-caption-role mt-1.5" style={{ color: 'var(--ua-critical)' }} role="alert">
                 {inputError}
               </p>
             ) : (
-              <p className="mt-1.5 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
+              <p className="ua-text-caption-role mt-1.5" style={{ color: 'var(--ua-text-secondary)' }}>
                 Paste the Shopify Admin URL for the store you want to connect. You can find it in Shopify Admin, usually as{' '}
                 <code className="font-mono">admin.shopify.com/store/your-store</code>.
               </p>
@@ -140,14 +140,14 @@ export function SyncStatusConnectModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-md px-4 py-2 text-xs font-medium"
+              className="ua-text-label rounded-md px-4 py-2"
               style={{ color: 'var(--ua-text-secondary)', background: 'var(--ua-surface-secondary)' }}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="rounded-md px-4 py-2 text-xs font-semibold"
+              className="ua-text-working-title rounded-md px-4 py-2"
               style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)' }}
               data-testid="shopify-connect-submit"
             >

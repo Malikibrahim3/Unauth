@@ -79,7 +79,7 @@ function GatePanel({ missing, pageName, pageDescription }: {
 
         <div className="space-y-2">
           <h2
-            className="text-base font-semibold leading-snug"
+            className="ua-text-section-title leading-snug"
             style={{ color: 'var(--ua-text-primary)', fontFamily: 'var(--ua-font-sans)' }}
           >
             {headline}

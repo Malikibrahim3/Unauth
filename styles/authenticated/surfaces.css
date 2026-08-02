@@ -1,3 +1,4 @@
+@layer components {
 /*
  * Cards, panels, metric surfaces, side rails, and detail blocks. These are
  * deliberately flat; depth is reserved for overlays and drawers.
@@ -42,15 +43,20 @@
   border-radius: var(--ua-radius-surface);
 }
 
+/* §6.1 amendment 1: the dominant working surface carries --ua-elev-1 in place
+ * of a perimeter border — the ring is the shadow's first layer, never both. */
 .ua-card--panel {
-  border: 1px solid var(--ua-border-subtle);
+  overflow: hidden;
   background: var(--ua-surface-primary);
-  box-shadow: var(--ua-shadow-none);
+  box-shadow: var(--ua-elev-1);
 }
 
+/* Tonal plane, not an elevated object: no border, no shadow — §6.2 fix for
+ * a muted Card nested inside another card (was a second bordered r12 box). */
 .ua-card--muted {
-  border: 1px solid var(--ua-border-subtle);
-  background: var(--ua-surface-muted);
+  border: 0;
+  border-radius: 8px;
+  background: var(--ua-surface-secondary);
   box-shadow: var(--ua-shadow-none);
 }
 
@@ -87,14 +93,45 @@
 }
 
 .ua-working-surface {
-  border: 1px solid var(--ua-border-default);
+  --ua-panel-inset: 20px;
+  overflow: hidden;
   border-radius: var(--ua-radius-surface);
   background: var(--ua-surface-primary);
-  box-shadow: var(--ua-shadow-none);
+  box-shadow: var(--ua-elev-1);
 }
 
+/* §7.1 canonical panel anatomy — one header/body/footer contract shared by
+ * every `ua-working-surface` consumer (AuthenticatedPanel, ChartFrame, …).
+ * Consumers with their own historical padding compose this from global
+ * rather than redeclaring it, so there is exactly one anatomy to read. */
 .ua-working-surface__header {
-  border-bottom-color: var(--ua-border-subtle);
+  display: flex;
+  min-height: 52px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ua-space-3);
+  padding: 14px var(--ua-panel-inset, 20px);
+  border-bottom: 1px solid var(--ua-border-hairline);
+  background: var(--ua-surface-primary);
+}
+
+.ua-working-surface__body {
+  min-width: 0;
+}
+
+.ua-working-surface__body--padded {
+  padding: var(--ua-panel-inset, 20px);
+}
+
+.ua-working-surface__footer {
+  display: flex;
+  min-height: 52px;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ua-space-3);
+  padding: 10px var(--ua-panel-inset, 20px);
+  border-top: 1px solid var(--ua-border-hairline);
   background: var(--ua-surface-primary);
 }
 
@@ -236,9 +273,14 @@
   color: var(--ua-text-primary);
 }
 
+/* Same anatomy as `.ua-working-surface` (§7.1) — kept as a distinct,
+ * gate-protected class name for existing consumers (ChartFrame) rather than
+ * renamed, but declared identically so there is one panel treatment. */
 .ua-focal-panel {
-  border: 1px solid var(--ua-border-subtle);
+  overflow: hidden;
+  border-radius: var(--ua-radius-surface);
   background: var(--ua-surface-primary);
+  box-shadow: var(--ua-elev-1);
 }
 
 .ua-section-panel {
@@ -325,13 +367,15 @@
 /* Canonical grouped metrics. A two-column narrow layout keeps dividers correct
  * for odd counts; at supported desktop widths each item gets one vertical
  * divider and no orphaned horizontal rule. */
+/* §7.2 — the KPI strip is one panel, not N cards: `.ua-metric-group` itself
+ * carries the elevated treatment and its cells divide it with hairlines. */
 .ua-metric-group {
   display: grid;
   grid-template-columns: repeat(var(--ua-metric-mobile-columns, 2), minmax(0, 1fr));
-  overflow: visible;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
+  overflow: hidden;
+  border-radius: var(--ua-radius-surface);
+  background: var(--ua-surface-primary);
+  box-shadow: var(--ua-elev-1);
 }
 
 .ua-metric-group__item {
@@ -339,15 +383,15 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   column-gap: var(--ua-space-3);
-  padding: 8px 20px;
+  padding: var(--ua-space-4) var(--ua-panel-inset, 20px);
 }
 
 .ua-metric-group__item + .ua-metric-group__item {
-  border-left: 1px solid var(--ua-border-subtle);
+  border-left: 1px solid var(--ua-border-hairline);
 }
 
 .ua-metric-group__item:nth-child(n + 3) {
-  border-top: 1px solid var(--ua-border-subtle);
+  border-top: 1px solid var(--ua-border-hairline);
 }
 
 .ua-metric-group__item:nth-child(2n + 1) {
@@ -397,7 +441,7 @@
   }
 
   .ua-metric-group__item + .ua-metric-group__item {
-    border-left: 1px solid var(--ua-border-subtle);
+    border-left: 1px solid var(--ua-border-hairline);
   }
 
   .ua-metric-group__item:nth-child(n + 3) {
@@ -405,7 +449,7 @@
   }
 
   .ua-metric-group__item:nth-child(2n + 1) {
-    border-left: 1px solid var(--ua-border-subtle);
+    border-left: 1px solid var(--ua-border-hairline);
   }
 
   .ua-metric-group__item:first-child {
@@ -440,7 +484,7 @@
   }
 
   .ua-metric-group[data-count="4"] .ua-metric-group__item:nth-child(n + 3) {
-    border-top: 1px solid var(--ua-border-subtle);
+    border-top: 1px solid var(--ua-border-hairline);
   }
 
   .ua-metric-group[data-count="5"] {
@@ -453,7 +497,7 @@
 
   .ua-metric-group[data-count="5"] .ua-metric-group__item:nth-child(n + 4) {
     grid-column: span 3;
-    border-top: 1px solid var(--ua-border-subtle);
+    border-top: 1px solid var(--ua-border-hairline);
   }
 
   .ua-metric-group[data-count="5"] .ua-metric-group__item:nth-child(4) {
@@ -469,7 +513,7 @@
   }
 
   .ua-metric-group[data-count="6"] .ua-metric-group__item:nth-child(n + 4) {
-    border-top: 1px solid var(--ua-border-subtle);
+    border-top: 1px solid var(--ua-border-hairline);
   }
 }
 
@@ -519,10 +563,13 @@
   line-height: var(--ua-text-hero-value-leading);
 }
 
-.ua-lead-summary span {
+.ua-lead-summary dd.ua-lead-summary__description {
   margin-top: 4px;
+  margin-bottom: 0;
   color: var(--ua-text-tertiary);
   font-size: var(--ua-text-metadata-size);
+  font-weight: 400;
+  letter-spacing: normal;
   line-height: var(--ua-text-metadata-leading);
 }
 
@@ -625,4 +672,5 @@
   .ua-ledger-tabs { flex-wrap: nowrap; overflow-x: auto; }
   .ua-work-ledger__toolbar { padding-inline: 12px; }
   .ua-work-ledger__search { width: 100%; max-width: none; margin-left: 0; }
+}
 }

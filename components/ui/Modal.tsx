@@ -88,7 +88,7 @@ export function Modal({
         aria-label={ariaLabel ?? title ?? 'Modal'}
         className={cn('ua-card rounded-[var(--ua-radius-overlay)] overflow-hidden flex flex-col max-h-[90vh]', className)}
         style={{
-          background: 'var(--ua-surface-primary)',
+          background: 'var(--ua-surface-overlay)',
           border: '1px solid var(--ua-border-default)',
           boxShadow: 'var(--ua-shadow-overlay)',
           width: MODAL_WIDTHS[size],

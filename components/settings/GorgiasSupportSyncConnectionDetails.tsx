@@ -38,7 +38,7 @@ function ChecklistRow({ item }: { item: ChecklistItem }) {
           <Circle className="h-4 w-4" style={{ color: 'var(--ua-border-default)' }} />
         )}
       </div>
-      <span className="flex-1 text-sm" style={{ color: 'var(--ua-text-primary)' }}>
+      <span className="ua-text-dense flex-1" style={{ color: 'var(--ua-text-primary)' }}>
         {item.label}
       </span>
       <Badge tone={item.ok ? 'success' : 'warning'} size="sm" dot>{item.status}</Badge>
@@ -95,12 +95,12 @@ export function GorgiasSupportSyncConnectionDetails({
         />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <p className="text-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>
+            <p className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>
               {gorgiasAccountLabel(connection)}
             </p>
             <StatusBadge family="workflowStatus" value={isActive ? 'connected' : connection.status} />
           </div>
-          <p className="mt-0.5 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
+          <p className="ua-text-caption-role mt-0.5" style={{ color: 'var(--ua-text-secondary)' }}>
             Last synced {formatGorgiasWhen(connection.last_sync_at)}
           </p>
         </div>
@@ -109,7 +109,7 @@ export function GorgiasSupportSyncConnectionDetails({
       {/* Error notice */}
       {connection.last_error && isActive ? (
         <div
-          className="flex gap-2 rounded-lg border px-3 py-2.5 text-sm"
+          className="ua-text-body flex gap-2 rounded-lg border px-3 py-2.5"
           style={{
             borderColor: 'color-mix(in srgb, var(--ua-warning) 30%, var(--ua-border-default))',
             background: 'color-mix(in srgb, var(--ua-warning) 6%, var(--ua-surface-primary))',
@@ -123,7 +123,7 @@ export function GorgiasSupportSyncConnectionDetails({
       {/* Setup checklist */}
       <Card unstyled variant="panel" className="divide-y overflow-hidden p-0">
         <div className="px-4 py-2.5">
-          <p className="text-[length:var(--ua-text-metadata-size)] font-semibold" style={{ color: 'var(--ua-text-secondary)' }}>
+          <p className="ua-text-label" style={{ color: 'var(--ua-text-secondary)' }}>
             Setup checklist
           </p>
         </div>
@@ -137,16 +137,16 @@ export function GorgiasSupportSyncConnectionDetails({
       {/* Webhook URL panel when setup instructions shown */}
       {state.showSetupInstructions && connection.webhook_url ? (
         <Card unstyled variant="panel" className="space-y-3 p-4">
-          <p className="text-[length:var(--ua-text-metadata-size)] font-semibold" style={{ color: 'var(--ua-text-secondary)' }}>
+          <p className="ua-text-label" style={{ color: 'var(--ua-text-secondary)' }}>
             Webhook setup
           </p>
-          <ol className="list-decimal space-y-1 pl-4 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
+          <ol className="ua-text-caption-role list-decimal space-y-1 pl-4" style={{ color: 'var(--ua-text-secondary)' }}>
             <li>Open Gorgias, then Settings, then Apps &amp; Plugins, then HTTP Integration, then Add HTTP Integration</li>
             <li>Set method to POST and paste the URL below</li>
             <li>Add header <code className="font-mono">{GORGIAS_SUPPORT_WEBHOOK_HEADER_NAME}</code> with your webhook secret</li>
           </ol>
           <div
-            className="flex items-center justify-between gap-2 rounded-lg px-3 py-2 font-mono text-xs"
+            className="ua-text-dense flex items-center justify-between gap-2 rounded-lg px-3 py-2 font-mono"
             style={{ background: 'color-mix(in srgb, var(--ua-text-primary) 5%, transparent)', color: 'var(--ua-text-primary)' }}
           >
             <span className="truncate">{connection.webhook_url}</span>
@@ -176,7 +176,7 @@ export function GorgiasSupportSyncConnectionDetails({
         <button
           type="button"
           onClick={() => onCopy('webhookUrlConnected', connection.webhook_url)}
-          className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium"
+          className="ua-text-working-title inline-flex items-center gap-1.5 rounded-lg border px-3 py-2"
           style={{ borderColor: 'var(--ua-border-default)', color: 'var(--ua-text-primary)' }}
         >
           {state.copiedField === 'webhookUrlConnected' ? (
@@ -189,7 +189,7 @@ export function GorgiasSupportSyncConnectionDetails({
         <button
           type="button"
           onClick={() => onPatch({ showSetupInstructions: !state.showSetupInstructions })}
-          className="inline-flex rounded-lg border px-3 py-2 text-sm font-medium"
+          className="ua-text-working-title inline-flex rounded-lg border px-3 py-2"
           style={{ borderColor: 'var(--ua-border-default)', color: 'var(--ua-text-primary)' }}
         >
           {state.showSetupInstructions ? 'Hide instructions' : 'Setup instructions'}
@@ -207,7 +207,7 @@ export function GorgiasSupportSyncConnectionDetails({
               type="button"
               disabled={state.busy}
               onClick={onRotateSecret}
-              className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium disabled:opacity-50"
+              className="ua-text-label inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 disabled:opacity-50"
               style={{ borderColor: 'var(--ua-border-default)', color: 'var(--ua-text-secondary)' }}
             >
               <RefreshCw className="h-3.5 w-3.5" />
@@ -218,7 +218,7 @@ export function GorgiasSupportSyncConnectionDetails({
             type="button"
             disabled={state.busy || connection.status === 'disabled'}
             onClick={onDisableConnection}
-            className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium disabled:opacity-50"
+            className="ua-text-label inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 disabled:opacity-50"
             style={{
               borderColor: 'color-mix(in srgb, var(--ua-risk-critical) 30%, var(--ua-border-default))',
               color: 'var(--ua-risk-critical)',
@@ -234,10 +234,10 @@ export function GorgiasSupportSyncConnectionDetails({
       {canManage && isDisabledOrError ? (
         <Card unstyled variant="panel" className="space-y-4 p-4">
           <div>
-            <p className="text-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>
+            <p className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>
               Reconnect Gorgias
             </p>
-            <p className="mt-0.5 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
+            <p className="ua-text-caption-role mt-0.5" style={{ color: 'var(--ua-text-secondary)' }}>
               Update your credentials to re-enable the connection.
             </p>
           </div>

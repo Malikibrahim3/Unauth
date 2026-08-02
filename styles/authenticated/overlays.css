@@ -1,3 +1,4 @@
+@layer components {
 /*
  * Modal / drawer / popover / dropdown / command menu / tooltip / toast.
  *
@@ -28,4 +29,5 @@
 
 .ua-overlay-host > * {
   pointer-events: auto;
+}
 }

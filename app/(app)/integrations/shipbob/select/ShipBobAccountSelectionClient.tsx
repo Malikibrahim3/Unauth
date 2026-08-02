@@ -96,7 +96,7 @@ export default function ShipBobAccountSelectionClient({ selectionId }: { selecti
           bodyClassName="grid max-w-2xl gap-3 p-4"
         >
           {accounts.length > 0 ? (
-            <label className="grid gap-1.5 text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-primary)]">
+            <label className="ua-text-label grid gap-1.5 text-[var(--ua-text-primary)]">
               Channel
               <select
                 value={effectiveSelected}
@@ -112,7 +112,7 @@ export default function ShipBobAccountSelectionClient({ selectionId }: { selecti
           {status === 'error' ? (
             <Link
               href="/integrations/shipbob"
-              className="inline-flex h-8 w-fit items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] px-3 text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-primary)]"
+              className="ua-text-label inline-flex h-8 w-fit items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] px-3 text-[var(--ua-text-primary)]"
             >
               Start ShipBob connection again
             </Link>
@@ -120,7 +120,7 @@ export default function ShipBobAccountSelectionClient({ selectionId }: { selecti
           {status === 'ready' && accounts.length === 0 ? (
             <Link
               href="/integrations/shipbob"
-              className="inline-flex h-8 w-fit items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] px-3 text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-primary)]"
+              className="ua-text-label inline-flex h-8 w-fit items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] px-3 text-[var(--ua-text-primary)]"
             >
               Return to ShipBob
             </Link>

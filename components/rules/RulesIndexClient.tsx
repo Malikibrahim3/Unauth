@@ -67,7 +67,7 @@ export function RulesIndexClient({
         aria-label="Rules"
         toolbar={
           <div className="flex min-w-0 flex-wrap items-center gap-3">
-            <p className="flex min-w-0 items-center gap-2 text-xs text-[var(--ua-text-secondary)]">
+            <p className="ua-text-caption-role flex min-w-0 items-center gap-2">
               <ShieldCheck aria-hidden="true" className="h-4 w-4 shrink-0 text-[var(--ua-success)]" />
               Published versions stay fixed; changes begin as drafts.
             </p>
@@ -88,7 +88,7 @@ export function RulesIndexClient({
         {error ? (
           <p
             role="alert"
-            className="border-b border-[var(--ua-border-subtle)] bg-[var(--ua-surface-primary)] px-4 py-2 text-sm text-[var(--ua-critical)]"
+            className="ua-text-body border-b border-[var(--ua-border-subtle)] bg-[var(--ua-surface-primary)] px-4 py-2 text-[var(--ua-critical)]"
           >
             {error}
           </p>
@@ -102,10 +102,10 @@ export function RulesIndexClient({
                 className="grid gap-3 px-4 py-3 transition-colors hover:bg-[var(--ua-surface-hover)] focus-visible:outline-none focus-visible:shadow-[inset_var(--ua-shadow-focus)] sm:grid-cols-[minmax(0,1fr)_7rem_7rem_auto] sm:items-center"
               >
                 <div className="min-w-0">
-                  <h2 className="truncate text-sm font-semibold text-[var(--ua-text-primary)]">
+                  <h2 className="ua-text-working-title truncate text-[var(--ua-text-primary)]">
                     {rule.name}
                   </h2>
-                  <p className="mt-1 line-clamp-2 text-xs text-[var(--ua-text-secondary)]">
+                  <p className="ua-text-caption-role mt-1 line-clamp-2">
                     {rule.description ||
                       "No description — add intent and scope in the next draft."}
                   </p>
@@ -114,13 +114,13 @@ export function RulesIndexClient({
                   <p className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">
                     Priority
                   </p>
-                  <p className="mt-1 font-sans tabular-nums text-sm">{rule.priority + 1}</p>
+                  <p className="ua-text-dense mt-1 font-sans tabular-nums">{rule.priority + 1}</p>
                 </div>
                 <div>
                   <p className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">
                     Version
                   </p>
-                  <p className="mt-1 font-mono text-sm">
+                  <p className="ua-text-dense mt-1 font-mono">
                     {rule.currentVersion ? `v${rule.currentVersion}` : "—"}
                   </p>
                 </div>
@@ -149,7 +149,7 @@ export function RulesIndexClient({
                   Create first rule
                 </Button>
               ) : (
-                <Link href="/help" className="text-sm font-semibold text-[var(--ua-action-primary)] hover:underline">
+                <Link href="/help" className="ua-text-working-title text-[var(--ua-action-primary)] hover:underline">
                   Review rule permissions
                 </Link>
               )

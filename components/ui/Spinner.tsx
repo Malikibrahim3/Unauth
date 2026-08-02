@@ -50,7 +50,7 @@ export function Spinner({ size = 'md', label = 'Loading', delayMs = DELAY.pendin
 
   return (
     <span role="status" aria-live="polite" className={cn('inline-flex items-center justify-center', className)}>
-      <Loader2 className={cn('animate-spin', SIZE_CLASS[size])} aria-hidden="true" />
+      <Loader2 className={cn('ua-spinner animate-spin', SIZE_CLASS[size])} aria-hidden="true" />
       <span className="sr-only">{label}</span>
     </span>
   );

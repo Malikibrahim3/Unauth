@@ -132,9 +132,9 @@ export function ClaimsPageView({
     <PageConnectionGate requires="helpdesk" connection={connectionState} pageName="Cases" pageDescription="Connect Gorgias or Zendesk so Unauth can match the customer, order, item, parcel, and evidence before you act." hasData={queueCounts.total > 0}>
     <PageFrame
       title="Cases"
-      subtitle={`${formatNumber(queueCounts.active)} active · ${formatNumber(queueCounts.unread)} with new evidence · ${formatNumber(queueCounts.readyForDecision)} ready for decision · ${formatCurrencyNullable(totalAtRisk || null, displayCurrency)} at issue`}
+      subtitle={`${formatNumber(queueCounts.active)} active · ${formatNumber(queueCounts.unread)} with new evidence · ${formatNumber(queueCounts.readyForDecision)} ready for decision · ${formatCurrencyNullable(totalAtRisk, displayCurrency)} at issue`}
       footer={
-        <p className="text-xs" style={{ color: 'var(--ua-text-tertiary)' }}>
+        <p className="ua-text-caption-role" style={{ color: 'var(--ua-text-tertiary)' }}>
           Support conversations stay in your helpdesk. Unauth reconciles the records, keeps customer action separate from responsibility, and routes supported recovery work to the right partner.
         </p>
       }
@@ -166,13 +166,13 @@ export function ClaimsPageView({
                       type="search"
                       defaultValue={searchTerm}
                       placeholder="Search customer, order, ticket or case reference"
-                      className="h-9 min-w-0 flex-1 rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-3 text-sm text-[var(--ua-text-primary)]"
+                      className="ua-text-body h-9 min-w-0 flex-1 rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-3 text-[var(--ua-text-primary)]"
                     />
-                    <button type="submit" className="h-9 shrink-0 rounded-[var(--ua-radius-control)] bg-[var(--ua-action-primary)] px-3 text-sm font-semibold text-[var(--ua-action-primary-fg)]">
+                    <button type="submit" className="ua-text-working-title h-9 shrink-0 rounded-[var(--ua-radius-control)] bg-[var(--ua-action-primary)] px-3 text-[var(--ua-action-primary-fg)]">
                       Search
                     </button>
                     {searchTerm ? (
-                      <Link href={`/claims${buildClaimsQueryString(sp, { search: undefined, page: '1', focus: undefined })}`} className="shrink-0 text-xs font-semibold text-[var(--ua-text-secondary)] underline underline-offset-2">
+                      <Link href={`/claims${buildClaimsQueryString(sp, { search: undefined, page: '1', focus: undefined })}`} className="ua-text-label shrink-0 text-[var(--ua-text-secondary)] underline underline-offset-2">
                         Clear
                       </Link>
                     ) : null}
@@ -188,7 +188,7 @@ export function ClaimsPageView({
                         { value: 'value', label: 'Highest value', href: `/claims${buildClaimsQueryString(sp, { sort: 'value', sla: undefined, page: '1' })}` },
                       ]}
                     />
-                    <Suspense fallback={<span className="text-xs text-[var(--ua-text-secondary)]">Rows…</span>}>
+                    <Suspense fallback={<span className="ua-text-caption-role">Rows…</span>}>
                       <PageSizeSelect pathname="/claims" pageSize={pageSize} />
                     </Suspense>
                   </div>
@@ -237,7 +237,7 @@ export function ClaimsPageView({
                 action={queueFilter === 'active' ? (
                   <Link
                     href="/claims?queue=history"
-                    className="mt-2 inline-block text-xs font-semibold hover:underline"
+                    className="ua-text-label mt-2 inline-block hover:underline"
                     style={{ color: 'var(--ua-action-primary)' }}
                   >
                     View recorded outcomes
@@ -245,7 +245,7 @@ export function ClaimsPageView({
                 ) : (
                   <Link
                     href="/claims?queue=active"
-                    className="mt-2 inline-block text-xs font-semibold hover:underline"
+                    className="ua-text-label mt-2 inline-block hover:underline"
                     style={{ color: 'var(--ua-action-primary)' }}
                   >
                     View active cases

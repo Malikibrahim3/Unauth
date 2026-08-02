@@ -110,7 +110,7 @@ export function CustomerProfilePageHero({
         title={displayName}
         subtitle={profile.primary_email ?? 'Email unavailable'}
         breadcrumbs={[{ label: 'Customers', href: '/customers' }, { label: displayName }]}
-        actions={<>{status}{!viewToken && (evidenceAction ?? primaryAction) ? <Link href={(evidenceAction ?? primaryAction)!.href} className="inline-flex h-8 items-center rounded-[var(--ua-radius-control)] bg-[var(--ua-action-primary)] px-3 text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-action-primary-fg)]">{(evidenceAction ?? primaryAction)!.label}</Link> : null}</>}
+        actions={<>{status}{!viewToken && (evidenceAction ?? primaryAction) ? <Link href={(evidenceAction ?? primaryAction)!.href} className="ua-text-label inline-flex h-8 items-center rounded-[var(--ua-radius-control)] bg-[var(--ua-action-primary)] px-3 text-[var(--ua-action-primary-fg)]">{(evidenceAction ?? primaryAction)!.label}</Link> : null}</>}
         meta={
           <>
             <span className="inline-flex items-center gap-1.5 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]"><CalendarDays className="h-3 w-3" aria-hidden="true" />Customer since {formatDateAbsolute(profile.first_seen)} · Last active {formatDateAbsolute(profile.last_seen)}</span>

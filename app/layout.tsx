@@ -10,11 +10,13 @@ import '../styles/authenticated/index.css';
 // Decision Ledger font profiles: Inter for interface and financial text,
 // Inter Tight for deliberate public display roles, and DM Mono for machine
 // identifiers, keys, code, and payloads only.
+// Variable font: no `weight` array, so every weight (including the 550/650
+// steps used by the authenticated type ramp) renders as its real value
+// instead of snapping to the nearest static instance.
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
   display: 'swap',
-  weight: ['300', '400', '500', '600', '700'],
 });
 
 const interTight = Inter_Tight({

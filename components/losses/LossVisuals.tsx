@@ -156,7 +156,7 @@ export function LossTrendChart({
       {state ?? (
         <div
           className="grid min-h-[300px] items-end gap-2 px-2 pb-2 pt-4"
-          style={{ gridTemplateColumns: `repeat(${compacted.points.length}, minmax(28px, 1fr))` }}
+          style={{ gridTemplateColumns: `repeat(${compacted.points.length}, minmax(0, 1fr))` }}
           aria-label="Confirmed loss trend"
         >
           {compacted.points.map((point) => (
@@ -261,14 +261,14 @@ export function LossWaterfall({
             const value = step.valueMinor ?? 0;
             return (
               <div key={step.key} className="grid grid-cols-[minmax(120px,0.9fr)_minmax(100px,1fr)_auto] items-center gap-3">
-                <span className="min-w-0 text-sm text-[var(--ua-text-secondary)]">{step.label}</span>
+                <span className="ua-text-dense min-w-0 text-[var(--ua-text-secondary)]">{step.label}</span>
                 <div className="h-3 overflow-hidden rounded-[var(--ua-radius-xs)] bg-[var(--ua-chart-track)]" aria-hidden="true">
                   <span
                     className={`block h-full rounded-[var(--ua-radius-xs)] ${step.direction === 'subtract' ? 'bg-[var(--ua-chart-neutral-700)]' : 'bg-[var(--ua-chart-primary)]'}`}
                     style={{ width: `${Math.max(value > 0 ? 3 : 0, (value / scaleMaximum) * 100)}%` }}
                   />
                 </div>
-                <strong className="whitespace-nowrap text-right text-sm tabular-nums">
+                <strong className="ua-text-dense whitespace-nowrap text-right tabular-nums">
                   {step.direction === 'subtract' ? '−' : ''}{formatMinorCurrencyNullable(value, currency)}
                 </strong>
               </div>

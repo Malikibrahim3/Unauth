@@ -176,7 +176,7 @@ export function LossLedger({
               kind="zero"
               title="No loss records yet"
               description="Loss records appear after a case has a confirmed or estimated loss. Connect a source to keep the ledger current."
-              action={<Link href="/integrations" className="font-semibold text-[var(--ua-action-primary)] underline underline-offset-2">Review integrations</Link>}
+              action={<Link href="/integrations" className="ua-text-working-title text-[var(--ua-action-primary)] underline underline-offset-2">Review integrations</Link>}
             />
           ) : (
             <OperationalState

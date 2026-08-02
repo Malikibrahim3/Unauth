@@ -169,9 +169,9 @@ export function FlowEditor({
   return (
     <form onSubmit={submit} className="space-y-5">
       <Card unstyled variant="panel" className="p-4">
-        <h2 className="text-sm font-semibold">Trigger</h2>
+        <h2 className="ua-text-working-title">Trigger</h2>
         <div className="mt-3 grid gap-4 sm:grid-cols-2">
-          <label className="text-xs font-semibold text-[var(--ua-text-secondary)]">
+          <label className="ua-text-label">
             Flow name
             <Input
               className="mt-1"
@@ -181,10 +181,10 @@ export function FlowEditor({
               placeholder="e.g. Chase carrier evidence"
             />
           </label>
-          <label className="text-xs font-semibold text-[var(--ua-text-secondary)]">
+          <label className="ua-text-label">
             Trigger
             <select
-              className="mt-1 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-3 py-2 text-sm text-[var(--ua-text-primary)]"
+              className="ua-text-body mt-1 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-3 py-2 text-[var(--ua-text-primary)]"
               value={trigger}
               onChange={(event) => setTrigger(event.target.value)}
             >
@@ -196,10 +196,10 @@ export function FlowEditor({
             </select>
           </label>
         </div>
-        <label className="mt-4 block text-xs font-semibold text-[var(--ua-text-secondary)]">
+        <label className="ua-text-label mt-4 block">
           Description (shown to your team)
           <textarea
-            className="mt-1 min-h-20 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-3 py-2 text-sm text-[var(--ua-text-primary)]"
+            className="ua-text-body mt-1 min-h-20 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-3 py-2 text-[var(--ua-text-primary)]"
             value={description}
             onChange={(event) => setDescription(event.target.value)}
             placeholder="What work does this route, and why?"
@@ -210,8 +210,8 @@ export function FlowEditor({
       <Card unstyled variant="panel" className="p-4">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h2 className="text-sm font-semibold">Conditions</h2>
-            <p className="mt-1 text-xs text-[var(--ua-text-tertiary)]">
+            <h2 className="ua-text-working-title">Conditions</h2>
+            <p className="ua-text-metadata mt-1">
               All conditions must match. Use source event fields such as
               case.status or shipment.carrier.
             </p>
@@ -259,7 +259,7 @@ export function FlowEditor({
                 />
                 <select
                   aria-label={`Condition ${index + 1} operator`}
-                  className="rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-3 py-2 text-sm"
+                  className="ua-text-body rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-3 py-2"
                   value={condition.operator}
                   onChange={(event) =>
                     setConditions((current) =>
@@ -313,7 +313,7 @@ export function FlowEditor({
                     }
                   />
                 ) : (
-                  <span className="self-center text-xs text-[var(--ua-text-tertiary)]">
+                  <span className="ua-text-metadata self-center">
                     No comparison value
                   </span>
                 )}
@@ -334,7 +334,7 @@ export function FlowEditor({
             ))}
           </div>
         ) : (
-          <p className="mt-3 rounded-md border border-[var(--ua-warning)] bg-[var(--ua-warning-bg)] p-3 text-xs text-[var(--ua-warning)]">
+          <p className="ua-text-caption-role mt-3 rounded-md border border-[var(--ua-warning)] bg-[var(--ua-warning-bg)] p-3 text-[var(--ua-warning)]">
             No conditions: every event with this trigger will run the actions
             below.
           </p>
@@ -344,8 +344,8 @@ export function FlowEditor({
       <Card unstyled variant="panel" className="p-4">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h2 className="text-sm font-semibold">Bounded action</h2>
-            <p className="mt-1 text-xs text-[var(--ua-text-tertiary)]">
+            <h2 className="ua-text-working-title">Bounded action</h2>
+            <p className="ua-text-metadata mt-1">
               Flows can route work, request evidence, set deadlines, or request
               a notification. They cannot make or execute payout decisions.
             </p>
@@ -376,23 +376,23 @@ export function FlowEditor({
       </Card>
 
       <Card unstyled variant="muted" className="p-4">
-        <p className="text-xs font-semibold text-[var(--ua-text-secondary)]">
+        <p className="ua-text-label">
           Readable summary
         </p>
-        <ol className="mt-2 grid gap-2 text-sm sm:grid-cols-3">
+        <ol className="ua-text-body mt-2 grid gap-2 sm:grid-cols-3">
           {summary.map((item, index) => (
             <li
               key={item}
               className="rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-primary)] px-3 py-2"
             >
-              <span className="mr-2 font-mono text-xs text-[var(--ua-text-tertiary)]">
+              <span className="ua-text-metadata mr-2 font-mono">
                 {index + 1}
               </span>
               {item}
             </li>
           ))}
         </ol>
-        <ul className="mt-2 space-y-1 text-xs text-[var(--ua-text-secondary)]">
+        <ul className="ua-text-caption-role mt-2 space-y-1">
           {outputs.map((output, index) => (
             <li key={output._editorKey}>
               Action {index + 1}: {outputLabel(output)}
@@ -401,7 +401,7 @@ export function FlowEditor({
         </ul>
       </Card>
       {error ? (
-        <p role="alert" className="text-sm text-[var(--ua-critical)]">
+        <p role="alert" className="ua-text-body text-[var(--ua-critical)]">
           {error}
         </p>
       ) : null}
@@ -458,10 +458,10 @@ function ActionEditor({
   return (
     <div className="rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-3">
       <div className="flex items-center justify-between gap-3">
-        <label className="text-xs font-semibold text-[var(--ua-text-secondary)]">
+        <label className="ua-text-label">
           Action {index + 1}
           <select
-            className="ml-2 rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2 py-1.5 text-sm text-[var(--ua-text-primary)]"
+            className="ua-text-body ml-2 rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2 py-1.5 text-[var(--ua-text-primary)]"
             value={output.type}
             onChange={(event) =>
               changeType(event.target.value as FlowOutputDraft["type"])
@@ -495,7 +495,7 @@ function ActionEditor({
           />
           <select
             aria-label={`Action ${index + 1} priority`}
-            className="rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2 text-sm"
+            className="ua-text-body rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2"
             value={output.priority}
             onChange={(event) =>
               update({
@@ -509,7 +509,7 @@ function ActionEditor({
             <option value="high">High</option>
             <option value="urgent">Urgent</option>
           </select>
-          <label className="text-xs font-medium text-[var(--ua-text-secondary)]">
+          <label className="ua-text-label">
             Due in (hours)
             <Input
               className="mt-1"
@@ -549,7 +549,7 @@ function ActionEditor({
           />
         </div>
       ) : output.type === "set_deadline" ? (
-        <label className="mt-3 block max-w-xs text-xs font-medium text-[var(--ua-text-secondary)]">
+        <label className="ua-text-label mt-3 block max-w-xs">
           Deadline (hours)
           <Input
             className="mt-1"
@@ -575,7 +575,7 @@ function ActionEditor({
           />
           <select
             aria-label={`Action ${index + 1} notification kind`}
-            className="rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2 text-sm"
+            className="ua-text-body rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2"
             value={output.kind}
             onChange={(event) =>
               update({

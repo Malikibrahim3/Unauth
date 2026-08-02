@@ -43,7 +43,7 @@ export function ConnectorSetupNotice({ tone, children }: { tone: ConnectorNotice
 
   return (
     <output
-      className="flex items-start gap-2 border px-4 py-3 text-sm"
+      className="ua-text-body flex items-start gap-2 border px-4 py-3"
       role={tone === 'error' ? 'alert' : 'status'}
       style={NOTICE_TOKENS[tone]}
     >
@@ -75,19 +75,19 @@ export function ConnectorSetupShell({
             className="h-10 w-10 shrink-0 rounded-[var(--ua-radius-control)] border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-primary)] object-contain p-1"
           />
         ) : (
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-secondary)] text-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>
+          <div className="ua-text-working-title flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-secondary)]" style={{ color: 'var(--ua-text-primary)' }}>
             {provider.slice(0, 1)}
           </div>
         )}
         <div className="min-w-0">
-          <p className="text-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>{provider} connection</p>
-          <p className="mt-0.5 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>Complete the provider-specific steps below. Unauth only stores the information required to operate this connection.</p>
+          <p className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>{provider} connection</p>
+          <p className="ua-text-caption-role mt-0.5">Complete the provider-specific steps below. Unauth only stores the information required to operate this connection.</p>
         </div>
       </div>
 
       <InsetGroup className="px-4 py-3">
-        <p className="text-xs font-semibold" style={{ color: 'var(--ua-text-primary)' }}>Before you connect</p>
-        <div className="mt-1 text-xs leading-5" style={{ color: 'var(--ua-text-secondary)' }}>{requirements}</div>
+        <p className="ua-text-label" style={{ color: 'var(--ua-text-primary)' }}>Before you connect</p>
+        <div className="ua-text-caption-role mt-1 leading-5">{requirements}</div>
       </InsetGroup>
 
       <ol className="grid gap-2 sm:grid-cols-3" aria-label={`${provider} setup progress`}>
@@ -107,11 +107,11 @@ export function ConnectorSetupShell({
               {isComplete ? (
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--ua-success)' }} aria-hidden="true" />
               ) : (
-                <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-xs font-semibold" style={{ background: isCurrent ? 'var(--ua-accent-500)' : 'var(--ua-surface-muted)', color: isCurrent ? 'var(--ua-accent-fg)' : 'var(--ua-text-secondary)' }}>{index + 1}</span>
+                <span className="ua-text-label mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full" style={{ background: isCurrent ? 'var(--ua-accent-500)' : 'var(--ua-surface-muted)', color: isCurrent ? 'var(--ua-accent-fg)' : 'var(--ua-text-secondary)' }}>{index + 1}</span>
               )}
               <span>
-                <span className="block text-xs font-medium" style={{ color: 'var(--ua-text-primary)' }}>{stage.label}</span>
-                <span className="block text-xs leading-4" style={{ color: 'var(--ua-text-secondary)' }}>{stage.detail}</span>
+                <span className="ua-text-label block" style={{ color: 'var(--ua-text-primary)' }}>{stage.label}</span>
+                <span className="ua-text-caption-role block leading-4" style={{ color: 'var(--ua-text-secondary)' }}>{stage.detail}</span>
               </span>
             </li>
           );

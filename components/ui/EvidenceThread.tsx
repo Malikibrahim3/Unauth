@@ -68,6 +68,7 @@ export function EvidenceThread({
             key={item.key}
             className="ua-evidence-thread__item"
             data-state={item.state ?? 'known'}
+            data-authority={item.authority}
           >
             {item.href ? (
               <Link className="ua-evidence-thread__link" href={item.href}>

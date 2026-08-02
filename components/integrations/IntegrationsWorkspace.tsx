@@ -274,7 +274,7 @@ function ConnectedView({ items, allItems, importedRecords }: { items: CatalogueR
             <p className={styles.attentionTitle}>{attentionCount} connection{attentionCount === 1 ? "" : "s"} need attention</p>
             <p className={styles.attentionText}>Review stale data, failed imports, or credentials before relying on new case evidence.</p>
           </div>
-          <Link href="#connections" className="shrink-0 text-xs font-semibold text-[var(--ua-text-primary)] underline decoration-[var(--ua-border-strong)] underline-offset-2">Review list</Link>
+          <Link href="#connections" className="ua-text-label shrink-0 text-[var(--ua-text-primary)] underline decoration-[var(--ua-border-strong)] underline-offset-2">Review list</Link>
         </div>
       ) : null}
       <FilterToolbar query={query} onQueryChange={setQuery} category={category} onCategoryChange={setCategory} status={status} onStatusChange={setStatus} categories={categories} showStatus />
@@ -326,11 +326,11 @@ function CatalogueCard({ item }: { item: CatalogueRowItem }) {
       <div className={styles.catalogueFooter}>
         <Link href={`/integrations/${item.id}`} className={styles.catalogueSecondary}>View details <ArrowUpRight size={12} className="ml-0.5 inline" aria-hidden="true" /></Link>
         {planned ? (
-          <span className="text-xs text-[var(--ua-text-tertiary)]">Not available yet</span>
+          <span className="ua-text-metadata">Not available yet</span>
         ) : item.connectEnabled ? (
           <ButtonLink href={`/integrations/${item.id}`} size="sm">Connect</ButtonLink>
         ) : (
-          <span className="text-xs text-[var(--ua-text-tertiary)]">Setup coming soon</span>
+          <span className="ua-text-metadata">Setup coming soon</span>
         )}
       </div>
     </article>

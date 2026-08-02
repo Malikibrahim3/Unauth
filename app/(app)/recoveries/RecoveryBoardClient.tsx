@@ -219,18 +219,18 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
             icon={<PackageSearch aria-hidden="true" />}
             title="No recovery cases yet"
             description="Recovery cases appear when a source-backed loss has a possible recovery route. Connect your sources or review a case to start the handoff."
-            action={<Link href="/integrations" className="inline-flex h-9 items-center rounded-[var(--ua-radius-control)] bg-[var(--ua-action-primary)] px-3 text-sm font-semibold text-[var(--ua-action-primary-fg)]">Review integrations</Link>}
+            action={<Link href="/integrations" className="ua-text-working-title inline-flex h-9 items-center rounded-[var(--ua-radius-control)] bg-[var(--ua-action-primary)] px-3 text-[var(--ua-action-primary-fg)]">Review integrations</Link>}
           />
         </div>
       ) : null}
-      <p className="mb-3 text-xs" style={{ color: "var(--ua-text-tertiary)" }}>
+      <p className="ua-text-metadata mb-3" style={{ color: "var(--ua-text-tertiary)" }}>
         Cards update automatically as your connected tools sync new evidence and
         status.
       </p>
       {message ? (
         <p
           role="alert"
-          className="mb-3 text-xs"
+          className="ua-text-caption-role mb-3"
           style={{ color: "var(--ua-critical)" }}
         >
           {message}
@@ -249,7 +249,7 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
             >
                 {rows.length === 0 ? (
                   <p
-                    className="px-2 py-6 text-center text-xs"
+                    className="ua-text-metadata px-2 py-6 text-center"
                     style={{ color: "var(--ua-text-tertiary)" }}
                   >
                     No cases
@@ -271,7 +271,7 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
                           <div className="min-w-0">
                             <Link
                               href={`/recoveries/${item.id}`}
-                              className="block truncate text-xs font-semibold no-underline hover:underline"
+                              className="ua-text-working-title block truncate no-underline hover:underline"
                               style={{ color: "var(--ua-text-primary)" }}
                             >
                               {orderLabel}
@@ -288,9 +288,9 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
                         </div>
                         <div className="mt-3 border-l-2 border-[var(--ua-accent-500)] pl-2">
                           <p className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">Next action</p>
-                          <p className="mt-0.5 text-xs font-medium text-[var(--ua-text-primary)]">{nextActionFor(item)}</p>
+                          <p className="ua-text-dense mt-0.5 font-medium text-[var(--ua-text-primary)]">{nextActionFor(item)}</p>
                         </div>
-                        <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                        <div className="ua-text-metadata mt-3 grid grid-cols-2 gap-2">
                           <div>
                             <p style={{ color: "var(--ua-text-tertiary)" }}>
                               Recoverable
@@ -444,7 +444,7 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
             : []
         }
       >
-        <dl className="space-y-2 text-sm">
+        <dl className="ua-text-dense space-y-2">
           <div className="flex justify-between gap-4">
             <dt>Amount pursued</dt>
             <dd className="font-sans tabular-nums">
@@ -463,7 +463,7 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
           </div>
         </dl>
         {pending?.option.amountKind ? (
-          <label className="mt-4 block text-xs font-medium text-[var(--ua-text-secondary)]">
+          <label className="ua-text-label mt-4 block">
             {pending.option.amountKind === "approved" ? "Approved amount" : "Cumulative amount received"}
             <div className="mt-1 grid grid-cols-[1fr_auto] gap-2">
               <input
@@ -473,9 +473,9 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
                 inputMode="decimal"
                 value={pending.amount}
                 onChange={(event) => setPending({ ...pending, amount: event.target.value })}
-                className="rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2 py-1.5 text-sm text-[var(--ua-text-primary)] focus-visible:shadow-[var(--ua-shadow-focus)]"
+                className="ua-text-body rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2 py-1.5 text-[var(--ua-text-primary)] focus-visible:shadow-[var(--ua-shadow-focus)]"
               />
-              <span className="flex items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] px-3 font-semibold">
+              <span className="ua-text-label flex items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] px-3">
                 {pending.item.currency}
               </span>
             </div>
@@ -485,17 +485,17 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
           </label>
         ) : null}
         {pending?.option.requiresNote ? (
-          <label className="mt-4 block text-xs font-medium text-[var(--ua-text-secondary)]">
+          <label className="ua-text-label mt-4 block">
             Reason
             <textarea
               value={pending.note}
               onChange={(event) => setPending({ ...pending, note: event.target.value })}
-              className="mt-1 min-h-20 w-full rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2 py-1.5 text-sm text-[var(--ua-text-primary)] focus-visible:shadow-[var(--ua-shadow-focus)]"
+              className="ua-text-body mt-1 min-h-20 w-full rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2 py-1.5 text-[var(--ua-text-primary)] focus-visible:shadow-[var(--ua-shadow-focus)]"
               placeholder="Record the source reference or reason"
             />
           </label>
         ) : null}
-        <p className="mt-4 text-xs text-[var(--ua-text-secondary)]">
+        <p className="ua-text-caption-role mt-4">
           Closing unrecoverable does not delete prior evidence, correspondence,
           or financial activity.
         </p>

@@ -33,10 +33,10 @@ export default function AppearanceSettings() {
     <SectionCard joined title="Appearance" description="How the workspace looks on your screen">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>
+          <p className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>
             Color theme
           </p>
-          <p className="mt-0.5 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
+          <p className="ua-text-caption-role mt-0.5" style={{ color: 'var(--ua-text-secondary)' }}>
             Switch between light and dark mode. Your choice is saved on this device.
           </p>
         </div>
@@ -54,7 +54,7 @@ export default function AppearanceSettings() {
                 aria-pressed={active}
                 onClick={() => selectTheme(value)}
                 className={cn(
-                  'inline-flex items-center gap-1.5 rounded-sm px-3 py-1.5 text-xs font-semibold transition-colors',
+                  'ua-text-label inline-flex items-center gap-1.5 rounded-sm px-3 py-1.5 transition-colors',
                   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ua-border-focus)] focus-visible:outline-offset-2',
                   active
                     ? 'text-[var(--ua-text-primary)]'

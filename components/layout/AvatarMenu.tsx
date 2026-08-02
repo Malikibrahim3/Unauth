@@ -86,7 +86,7 @@ export function AvatarMenu({ name, email, className }: AvatarMenuProps) {
         >
           {(name || email) && (
             <div className="px-3 py-2 border-b border-[var(--ua-border-subtle)]">
-              {name ? <p className="text-body-sm font-semibold text-[var(--ua-text-primary)] truncate">{name}</p> : null}
+              {name ? <p className="ua-text-working-title text-[var(--ua-text-primary)] truncate">{name}</p> : null}
               {email ? <p className="text-caption text-[var(--ua-text-secondary)] truncate">{email}</p> : null}
             </div>
           )}

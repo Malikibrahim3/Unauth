@@ -5,6 +5,7 @@ import {
   CartesianGrid,
   ComposedChart,
   Line,
+  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
@@ -21,7 +22,6 @@ import {
 } from '../core/geometry';
 import { useChartMotion } from '../core/useChartMotion';
 import { useChartTheme } from '../core/useChartTheme';
-import { useChartWidth } from '../core/useChartWidth';
 
 type CumulativeAreaLineChartProps = {
   data: CumulativeFinancialPoint[];
@@ -41,17 +41,15 @@ export function CumulativeAreaLineChart({
 }: CumulativeAreaLineChartProps) {
   const theme = useChartTheme();
   const motion = useChartMotion(data.length * (comparison ? 3 : 2));
-  const { containerRef, width } = useChartWidth();
 
   return (
-    <div ref={containerRef} style={{ width: '100%', height, overflow: 'hidden' }}>
-      <ComposedChart
-        width={width}
-        height={height}
-        data={data}
-        margin={{ top: 12, right: 12, bottom: 2, left: 6 }}
-        accessibilityLayer
-      >
+    <div style={{ width: '100%', height, minWidth: 0, overflow: 'hidden' }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <ComposedChart
+          data={data}
+          margin={{ top: 12, right: 12, bottom: 2, left: 6 }}
+          accessibilityLayer
+        >
         <CartesianGrid stroke={theme['--ua-chart-grid']} strokeOpacity={0.78} vertical={false} />
         <XAxis
           dataKey="label"
@@ -181,7 +179,8 @@ export function CumulativeAreaLineChart({
             {...motion}
           />
         ) : null}
-      </ComposedChart>
+        </ComposedChart>
+      </ResponsiveContainer>
     </div>
   );
 }

@@ -88,10 +88,7 @@ export function RecoveryCaseCard({
           >
             Recovery / Chase-Up
           </p>
-          <p
-            className="mt-1 text-xs"
-            style={{ color: "var(--ua-text-secondary)" }}
-          >
+          <p className="ua-text-caption-role mt-1">
             Linked operational tracking for eligible recovery.
           </p>
         </div>
@@ -122,31 +119,31 @@ export function RecoveryCaseCard({
 
       {recoveryCase ? (
         <>
-          <div className="mt-4 grid grid-cols-2 gap-3 text-sm md:grid-cols-5">
+          <div className="ua-text-dense mt-4 grid grid-cols-2 gap-3 md:grid-cols-5">
             <div>
-              <p className="text-xs" style={{ color: "var(--ua-text-tertiary)" }}>
+              <p className="ua-text-metadata">
                 Status
               </p>
               <p
-                className="font-semibold"
+                className="ua-text-working-title"
                 style={{ color: "var(--ua-text-primary)" }}
               >
                 {RECOVERY_STATUS_LABELS[recoveryCase.status]}
               </p>
             </div>
             <div>
-              <p className="text-xs" style={{ color: "var(--ua-text-tertiary)" }}>
+              <p className="ua-text-metadata">
                 Owner
               </p>
               <p
-                className="font-semibold"
+                className="ua-text-working-title"
                 style={{ color: "var(--ua-text-primary)" }}
               >
                 {RECOVERY_OWNER_LABELS[recoveryCase.owner_type]}
               </p>
             </div>
             <div>
-              <p className="text-xs" style={{ color: "var(--ua-text-tertiary)" }}>
+              <p className="ua-text-metadata">
                 {financialStageLabel('eligible_recovery')}
               </p>
               <p className="font-sans tabular-nums" style={{ color: "var(--ua-text-primary)" }}>
@@ -157,7 +154,7 @@ export function RecoveryCaseCard({
               </p>
             </div>
             <div>
-              <p className="text-xs" style={{ color: "var(--ua-text-tertiary)" }}>
+              <p className="ua-text-metadata">
                 Deadline
               </p>
               <p style={{ color: "var(--ua-text-primary)" }}>
@@ -165,10 +162,10 @@ export function RecoveryCaseCard({
               </p>
             </div>
             <div>
-              <p className="text-xs" style={{ color: "var(--ua-text-tertiary)" }}>
+              <p className="ua-text-metadata">
                 Provider claim
               </p>
-              <p className="font-semibold" style={{ color: "var(--ua-text-primary)" }}>
+              <p className="ua-text-working-title" style={{ color: "var(--ua-text-primary)" }}>
                 {(recoveryCase.provider_claim_stage ?? 'prepared').replaceAll('_', ' ')}
               </p>
             </div>
@@ -186,10 +183,7 @@ export function RecoveryCaseCard({
           </div>
           {recoveryCase.evidence_missing.length > 0 ? (
             <div className="mt-3">
-              <p
-                className="mb-1 text-xs"
-                style={{ color: "var(--ua-text-tertiary)" }}
-              >
+              <p className="ua-text-metadata mb-1">
                 Missing items
               </p>
               <div className="flex flex-wrap gap-1.5">
@@ -201,7 +195,7 @@ export function RecoveryCaseCard({
           ) : null}
           <Link
             href="/recoveries"
-            className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold hover:underline"
+            className="ua-text-working-title mt-4 inline-flex items-center gap-1.5 hover:underline"
             style={{ color: "var(--ua-action-primary)" }}
           >
             Open recovery board{" "}
@@ -209,18 +203,15 @@ export function RecoveryCaseCard({
           </Link>
         </>
       ) : canOpenRecovery && recovery ? (
-        <div className="mt-4 space-y-3 text-sm">
+        <div className="ua-text-body mt-4 space-y-3">
           <div>
             <p
-              className="font-semibold"
+              className="ua-text-working-title"
               style={{ color: "var(--ua-text-primary)" }}
             >
               Recovery case can be opened
             </p>
-            <p
-              className="mt-1 text-xs"
-              style={{ color: "var(--ua-text-secondary)" }}
-            >
+            <p className="ua-text-caption-role mt-1">
               {RECOVERY_OWNER_LABELS[
                 recovery.likelyOwner as keyof typeof RECOVERY_OWNER_LABELS
               ] ?? recovery.likelyOwner}
@@ -230,10 +221,7 @@ export function RecoveryCaseCard({
           </div>
           {recovery.requiredEvidence.length > 0 ? (
             <div>
-              <p
-                className="mb-1 text-xs"
-                style={{ color: "var(--ua-text-tertiary)" }}
-              >
+              <p className="ua-text-metadata mb-1">
                 Required for recovery
               </p>
               <div className="flex flex-wrap gap-1.5">
@@ -249,22 +237,22 @@ export function RecoveryCaseCard({
             claim automatically.
           </p>
           {handoffMessage ? (
-            <p role="status" className="text-xs" style={{ color: "var(--ua-text-secondary)" }}>
+            <p role="status" className="ua-text-caption-role">
               {handoffMessage}
             </p>
           ) : null}
         </div>
       ) : loading ? (
-        <p className="mt-4 text-sm" style={{ color: "var(--ua-text-secondary)" }}>
+        <p className="ua-text-body mt-4" style={{ color: "var(--ua-text-secondary)" }}>
           Loading recovery route…
         </p>
       ) : preventionOnly ? (
-        <p className="mt-4 text-sm" style={{ color: "var(--ua-text-secondary)" }}>
+        <p className="ua-text-body mt-4" style={{ color: "var(--ua-text-secondary)" }}>
           Prevention opportunity: this loss appears unrecoverable but can inform
           future policy or partner review.
         </p>
       ) : (
-        <p className="mt-4 text-sm" style={{ color: "var(--ua-text-secondary)" }}>
+        <p className="ua-text-body mt-4" style={{ color: "var(--ua-text-secondary)" }}>
           No external recovery route currently identified.
         </p>
       )}

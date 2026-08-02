@@ -187,14 +187,14 @@ export default async function RecoveriesPage() {
           aria-label="Recovery summary"
           lead={{
             label: 'Estimated recovery',
-            value: formatCurrencyNullable(estimatedRecoverable || null, currency) ?? '—',
+            value: formatCurrencyNullable(estimatedRecoverable, currency),
             description: `Upper estimate${mixedHint}`,
           }}
           supporting={[
             { label: 'Open cases', value: formatNumber(openRecoveries.length), description: 'Active recovery work' },
             { label: 'Missing data', value: formatNumber(missingSourceData), description: 'Waiting on a source' },
             { label: 'Needs correspondence', value: formatNumber(needsCorrespondence), description: 'Draft chase requests' },
-            { label: 'Recovered', value: formatCurrencyNullable(recovered || null, currency) ?? '—', description: `Received or credited${mixedHint}` },
+            { label: 'Recovered', value: formatCurrencyNullable(recovered, currency), description: `Received or credited${mixedHint}` },
           ]}
         />
       }

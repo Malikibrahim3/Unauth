@@ -144,7 +144,7 @@ export function RuleBuilderDrawer({
             placeholder="e.g. Item-not-received over £75 with no proof of delivery should go to manual review before a reship."
             onChange={(e) => setDescription(e.target.value)}
             rows={2}
-            className="w-full resize-none px-3 py-2 text-sm focus:outline-none"
+            className="ua-text-body w-full resize-none px-3 py-2 focus:outline-none"
             style={{
               background: 'var(--ua-surface-muted)',
               border: '1px solid var(--ua-border-default)',
@@ -158,7 +158,7 @@ export function RuleBuilderDrawer({
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <div>
-              <span className="text-body-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>If</span>
+              <span className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>If</span>
               <p className="mt-0.5 text-caption" style={{ color: 'var(--ua-text-tertiary)' }}>
                 When a case reaches this rule, check these conditions.
               </p>
@@ -232,13 +232,13 @@ export function RuleBuilderDrawer({
 
         {/* Live preview */}
         <Card unstyled variant="muted" className="p-4">
-          <span className="text-caption font-semibold" style={{ color: 'var(--ua-text-tertiary)' }}>
+          <span className="ua-text-metadata" style={{ color: 'var(--ua-text-tertiary)' }}>
             When → If → Recommend
           </span>
           <p className="mt-2 text-body-sm" style={{ color: 'var(--ua-text-primary)' }}>
             If {preview}
           </p>
-          <p className="mt-3 text-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>
+          <p className="ua-text-working-title mt-3" style={{ color: 'var(--ua-text-primary)' }}>
             Recommend: {ACTION_LABELS[action]}
           </p>
         </Card>
@@ -261,7 +261,7 @@ function Field({
 }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-body-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>
+      <span className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>
         {label}
         {required && <span style={{ color: 'var(--ua-risk-high)' }}> *</span>}
       </span>

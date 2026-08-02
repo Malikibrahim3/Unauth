@@ -210,18 +210,18 @@ function InvestigationActionDialog({
     >
       <div className="space-y-4">
         {error ? (
-          <div role="alert" className="rounded-md border border-[var(--ua-risk-critical-border)] bg-[var(--ua-risk-critical-bg)] p-3 text-sm text-[var(--ua-risk-critical)]">
+          <div role="alert" className="ua-text-body rounded-md border border-[var(--ua-risk-critical-border)] bg-[var(--ua-risk-critical-bg)] p-3 text-[var(--ua-risk-critical)]">
             {error}
           </div>
         ) : null}
         {kind === 'send-email' ? (
           <>
-            <div className="rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] p-3 text-xs text-[var(--ua-text-secondary)]">
+            <div className="ua-text-caption-role rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] p-3">
               <p><span className="font-semibold text-[var(--ua-text-primary)]">To:</span> {investigation.recipient}</p>
               <p className="mt-1"><span className="font-semibold text-[var(--ua-text-primary)]">Subject:</span> {investigation.subject}</p>
               <p className="mt-2">The request becomes waiting only after the email provider returns an acceptance ID.</p>
             </div>
-            <label className="block text-sm font-medium">
+            <label className="ua-text-body block font-medium">
               Response due
               <Input
                 className="mt-1"
@@ -235,7 +235,7 @@ function InvestigationActionDialog({
         ) : null}
         {kind === 'mark-sent' ? (
           <>
-            <label className="block text-sm font-medium">
+            <label className="ua-text-body block font-medium">
               Send channel
               <Select
                 className="mt-1"
@@ -247,7 +247,7 @@ function InvestigationActionDialog({
                 <option value="api">External API reference</option>
               </Select>
             </label>
-            <label className="block text-sm font-medium">
+            <label className="ua-text-body block font-medium">
               Response due
               <Input
                 className="mt-1"
@@ -258,7 +258,7 @@ function InvestigationActionDialog({
               />
             </label>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <label className="text-sm font-medium">
+              <label className="ua-text-body font-medium">
                 External reference
                 <Input
                   className="mt-1"
@@ -266,7 +266,7 @@ function InvestigationActionDialog({
                   onChange={(event) => setExternalReference(event.target.value)}
                 />
               </label>
-              <label className="text-sm font-medium">
+              <label className="ua-text-body font-medium">
                 Portal URL
                 <Input
                   className="mt-1"
@@ -279,7 +279,7 @@ function InvestigationActionDialog({
           </>
         ) : null}
         {kind === 'chase' ? (
-          <label className="block text-sm font-medium">
+          <label className="ua-text-body block font-medium">
             New response due
             <Input
               className="mt-1"
@@ -290,7 +290,7 @@ function InvestigationActionDialog({
           </label>
         ) : null}
         {kind !== 'send-email' && (kind !== 'mark-sent' || channel === 'portal') ? (
-          <label className="block text-sm font-medium">
+          <label className="ua-text-body block font-medium">
             {kind === 'chase'
               ? 'Chase note'
               : kind === 'cancel'
@@ -299,7 +299,7 @@ function InvestigationActionDialog({
                   ? 'Closure rationale'
                   : 'Send note (optional)'}
             <textarea
-              className="mt-1 min-h-24 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] p-2 text-sm"
+              className="ua-text-body mt-1 min-h-24 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] p-2"
               value={note}
               onChange={(event) => setNote(event.target.value)}
               required={noteRequired}
@@ -307,7 +307,7 @@ function InvestigationActionDialog({
           </label>
         ) : null}
         {kind === 'close' && investigation.status === 'waiting_response' ? (
-          <p className="rounded-md border border-[var(--ua-warning-border)] bg-[var(--ua-warning-bg)] p-3 text-xs text-[var(--ua-warning)]">
+          <p className="ua-text-caption-role rounded-md border border-[var(--ua-warning-border)] bg-[var(--ua-warning-bg)] p-3 text-[var(--ua-warning)]">
             Provider silence is recorded as “no response” and remains neutral. It does not assign responsibility.
           </p>
         ) : null}
@@ -368,10 +368,10 @@ export function CaseInvestigationsCard({
           <p className="text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-secondary)]">
             Investigations
           </p>
-          <h2 className="mt-1 text-base font-semibold text-[var(--ua-text-primary)]">
+          <h2 className="ua-text-section-title mt-1 text-[var(--ua-text-primary)]">
             Resolve the material evidence gap
           </h2>
-          <p className="mt-1 max-w-2xl text-xs leading-relaxed text-[var(--ua-text-secondary)]">
+          <p className="ua-text-caption-role mt-1 max-w-2xl leading-relaxed">
             Track targeted requests without blocking or deciding the customer outcome automatically.
           </p>
         </div>
@@ -387,7 +387,7 @@ export function CaseInvestigationsCard({
       </div>
 
       {message ? (
-        <div role="status" className="mt-3 rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] p-3 text-xs text-[var(--ua-text-secondary)]">
+        <div role="status" className="ua-text-caption-role mt-3 rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] p-3">
           {message}
         </div>
       ) : null}
@@ -399,7 +399,7 @@ export function CaseInvestigationsCard({
         </div>
       ) : error ? (
         <div role="alert" className="mt-4 rounded-md border border-[var(--ua-risk-critical-border)] bg-[var(--ua-risk-critical-bg)] p-3">
-          <p className="text-sm text-[var(--ua-risk-critical)]">
+          <p className="ua-text-body text-[var(--ua-risk-critical)]">
             Investigation details are unavailable. No action has been taken.
           </p>
           <Button className="mt-3" size="sm" variant="secondary" leadingIcon={<RefreshCw />} onClick={reload}>
@@ -417,8 +417,8 @@ export function CaseInvestigationsCard({
                 ['Review', data.aggregate.awaitingReview],
               ].map(([label, value]) => (
                 <Card key={String(label)} unstyled variant="muted" className="p-2.5">
-                  <p className="text-lg font-semibold text-[var(--ua-text-primary)]">{value}</p>
-                  <p className="text-xs text-[var(--ua-text-secondary)]">{label}</p>
+                  <p className="ua-text-section-title text-[var(--ua-text-primary)]">{value}</p>
+                  <p className="ua-text-metadata">{label}</p>
                 </Card>
               ))}
             </div>
@@ -430,13 +430,13 @@ export function CaseInvestigationsCard({
                 <div className="flex items-start gap-3">
                   <FileSearch className="mt-0.5 shrink-0 text-[var(--ua-action-primary)]" size={18} aria-hidden="true" />
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-[var(--ua-text-primary)]">
+                    <p className="ua-text-working-title text-[var(--ua-text-primary)]">
                       Recommended: ask {data.recommendation.targetName ?? targetLabel(data.recommendation.targetType)}
                     </p>
-                    <p className="mt-1 text-sm text-[var(--ua-text-secondary)]">
+                    <p className="ua-text-body mt-1 text-[var(--ua-text-secondary)]">
                       {data.recommendation.evidenceGap}
                     </p>
-                    <p className="mt-2 text-xs text-[var(--ua-text-secondary)]">
+                    <p className="ua-text-caption-role mt-2">
                       {data.recommendation.reason}
                     </p>
                     {canMutate ? (
@@ -447,7 +447,7 @@ export function CaseInvestigationsCard({
                   </div>
                 </div>
               ) : (
-                <p className="text-sm text-[var(--ua-text-secondary)]">
+                <p className="ua-text-body text-[var(--ua-text-secondary)]">
                   No investigation has been recorded for this case. Start one when a material factual question remains.
                 </p>
               )}
@@ -477,15 +477,15 @@ export function CaseInvestigationsCard({
                             </span>
                           ) : null}
                         </div>
-                        <p className="mt-2 text-sm font-semibold text-[var(--ua-text-primary)]">
+                        <p className="ua-text-working-title mt-2 text-[var(--ua-text-primary)]">
                           {investigation.target_name ?? targetLabel(investigation.target_type)}
                         </p>
-                        <p className="mt-1 text-sm text-[var(--ua-text-secondary)]">
+                        <p className="ua-text-body mt-1 text-[var(--ua-text-secondary)]">
                           {investigation.evidence_gap}
                         </p>
                       </div>
                       {investigation.due_at && investigation.status === 'waiting_response' ? (
-                        <div className={`flex items-center gap-1.5 text-xs ${overdue ? 'text-[var(--ua-risk-critical)]' : 'text-[var(--ua-text-secondary)]'}`}>
+                        <div className={`ua-text-dense flex items-center gap-1.5 ${overdue ? 'text-[var(--ua-risk-critical)]' : 'text-[var(--ua-text-secondary)]'}`}>
                           {overdue ? <AlertTriangle size={14} aria-hidden="true" /> : <Clock3 size={14} aria-hidden="true" />}
                           <time dateTime={investigation.due_at}>
                             {overdue ? 'Overdue ' : 'Due '}{formatDateTime(investigation.due_at)}
@@ -496,11 +496,11 @@ export function CaseInvestigationsCard({
 
                     {investigation.response_summary ? (
                       <div className="mt-3 rounded-md border border-[var(--ua-info-border)] bg-[var(--ua-info-bg)] p-3">
-                        <p className="flex items-center gap-2 text-xs font-semibold text-[var(--ua-info)]">
+                        <p className="ua-text-working-title flex items-center gap-2 text-[var(--ua-info)]">
                           <CheckCircle2 size={14} aria-hidden="true" />
                           Latest response
                         </p>
-                        <p className="mt-1 text-sm text-[var(--ua-text-primary)]">
+                        <p className="ua-text-body mt-1 text-[var(--ua-text-primary)]">
                           {investigation.response_summary}
                         </p>
                       </div>
@@ -508,10 +508,10 @@ export function CaseInvestigationsCard({
 
                     {investigation.status === 'draft' ? (
                       <div className="mt-3 rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] p-3">
-                        <p className="text-xs font-semibold text-[var(--ua-text-primary)]">
+                        <p className="ua-text-working-title text-[var(--ua-text-primary)]">
                           {investigation.subject}
                         </p>
-                        <p className="mt-2 whitespace-pre-wrap text-xs leading-relaxed text-[var(--ua-text-secondary)]">
+                        <p className="ua-text-caption-role mt-2 whitespace-pre-wrap leading-relaxed">
                           {investigation.request_body}
                         </p>
                       </div>
@@ -573,7 +573,7 @@ export function CaseInvestigationsCard({
             </div>
           )}
           {!canMutate ? (
-            <p className="mt-3 text-xs text-[var(--ua-text-secondary)]">
+            <p className="ua-text-caption-role mt-3">
               {data?.permissions.disabled_reason
                 ?? 'You have read-only access. A case decision role is required to change investigations.'}
             </p>

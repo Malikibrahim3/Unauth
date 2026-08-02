@@ -1,7 +1,13 @@
+@layer components {
 /*
  * Instrument Grade canvas, text rendering, selection, focus treatment, and
  * reduced-motion defaults for every authenticated route.
  */
+.ua-app,
+.ua-auth-surface {
+  font-optical-sizing: auto;
+}
+
 .ua-app {
   height: 100%;
   min-height: 100%;
@@ -21,13 +27,14 @@
   color: var(--ua-text-primary);
 }
 
-/* box-shadow (not outline) so the ring always follows an element's
-   border-radius — Safari does not clip `outline` to a rounded corner, which
-   stamps a rectangular ring onto pill/rounded controls. */
+/* Safari has clipped `outline` to `border-radius` since 16.4, so a real
+   outline now follows rounded corners correctly and no longer needs the
+   opaque box-shadow halo workaround. */
 .ua-app :where(button, a, input, select, textarea, [tabindex]):focus-visible,
 .ua-auth-surface :where(button, a, input, select, textarea, [tabindex]):focus-visible {
-  outline: none;
-  box-shadow: var(--ua-shadow-focus);
+  outline: 2px solid var(--ua-border-focus);
+  outline-offset: 2px;
+  box-shadow: none;
 }
 
 .ua-app .ua-operational-scrollbar {
@@ -116,4 +123,5 @@
   .ua-app .ua-status-badge__dot {
     background: currentColor;
   }
+}
 }

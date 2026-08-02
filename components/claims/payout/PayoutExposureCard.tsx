@@ -26,7 +26,7 @@ export function PayoutExposureCard({
       className="rounded-md p-4 border"
       style={{ borderColor: 'var(--ua-border-subtle)', background: 'var(--ua-surface-primary)' }}
     >
-      <p className="text-caption font-semibold mb-3" style={{ color: 'var(--ua-text-secondary)' }}>
+      <p className="ua-text-label mb-3" style={{ color: 'var(--ua-text-secondary)' }}>
         Customer concession context
       </p>
 
@@ -34,7 +34,7 @@ export function PayoutExposureCard({
         <>
           <div className="flex flex-wrap items-end gap-x-6 gap-y-2">
             <div>
-              <p className="text-xs mb-0.5" style={{ color: 'var(--ua-text-secondary)' }}>
+              <p className="ua-text-label mb-0.5" style={{ color: 'var(--ua-text-secondary)' }}>
                 Estimated value at issue
               </p>
               <p className="font-sans tabular-nums font-semibold" style={{ fontSize: 28, letterSpacing: '-0.02em', color: 'var(--ua-text-primary)' }}>
@@ -43,7 +43,7 @@ export function PayoutExposureCard({
             </div>
             {exposure.reviewThreshold != null && (
               <span
-                className="inline-block text-xs font-semibold rounded-full px-2.5 py-1"
+                className="ua-text-label inline-block rounded-full px-2.5 py-1"
                 style={{ background: thresholdTone.bg, color: thresholdTone.color }}
               >
                 {exposure.aboveReviewThreshold ? 'Requires review' : 'Within standard handling'}
@@ -56,7 +56,7 @@ export function PayoutExposureCard({
               {exposure.components.map((c) => (
                 <span
                   key={c.kind}
-                  className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs"
+                  className="ua-text-metadata inline-flex items-center gap-1 rounded-full px-2 py-0.5"
                   style={{ background: 'var(--ua-surface-secondary)', color: 'var(--ua-text-secondary)' }}
                 >
                   <span style={{ color: 'var(--ua-text-primary)' }}>{COMPONENT_LABELS[c.kind] ?? c.kind}</span>
@@ -69,12 +69,12 @@ export function PayoutExposureCard({
           )}
         </>
       ) : (
-        <p className="text-sm" style={{ color: 'var(--ua-text-secondary)' }}>
+        <p className="ua-text-body" style={{ color: 'var(--ua-text-secondary)' }}>
           Amount unavailable — add the refund or replacement value to estimate the customer concession.
         </p>
       )}
 
-      <p className="mt-3 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
+      <p className="ua-text-caption-role mt-3">
         Customer requested: <span style={{ color: 'var(--ua-text-primary)' }}>{requestedActionLabel}</span>
       </p>
     </section>

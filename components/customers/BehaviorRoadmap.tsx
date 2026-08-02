@@ -35,12 +35,12 @@ interface BehaviorRoadmapProps {
 }
 
 const GLYPHS: Record<BehaviorRoadmapEventType, { symbol: string; color: string; tag?: string }> = {
-  order_placed: { symbol: '■', color: 'var(--ua-severity-possible)' },
+  order_placed: { symbol: '■', color: 'var(--ua-confidence-low)' },
   order_refunded: { symbol: '●', color: 'var(--ua-warning)' },
   chargeback_filed: { symbol: '✕', color: 'var(--ua-warning)' },
   identity_change: { symbol: '◆', color: 'var(--ua-warning)' },
   watchlist_add: { symbol: '✓', color: 'var(--ua-neutral)' },
-  cross_merchant_signal: { symbol: '◆', color: 'color-mix(in srgb, var(--ua-severity-possible) 60%, transparent)' },
+  cross_merchant_signal: { symbol: '◆', color: 'color-mix(in srgb, var(--ua-confidence-low) 60%, transparent)' },
   note_added: { symbol: '■', color: 'var(--ua-text-tertiary)' },
 };
 
@@ -60,7 +60,7 @@ export default function BehaviorRoadmap({ events }: BehaviorRoadmapProps) {
     <Panel variant="panel" className="overflow-hidden p-0">
       <div className="border-b px-4 py-3" style={{ borderColor: 'var(--ua-border-default)' }}>
         <div className="flex items-center justify-between gap-3">
-          <p className="text-[length:var(--ua-text-dense-size)] font-semibold" style={{ color: 'var(--ua-text-primary)' }}>Order & case history</p>
+          <p className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>Order & case history</p>
           <p className="t-mono" style={{ color: 'var(--ua-text-secondary)' }}>{events.length} events</p>
         </div>
         {patternTags.length > 0 && (

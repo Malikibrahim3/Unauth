@@ -98,10 +98,10 @@ export function DashboardCharts({
   if (!groups.length) {
     return (
       <section className="border-t border-[var(--ua-border-subtle)] pt-5" aria-labelledby="charts-empty-title">
-        <h2 id="charts-empty-title" className="text-[length:var(--ua-text-section-title-size)] font-semibold leading-[var(--ua-text-section-title-leading)]">
+        <h2 id="charts-empty-title" className="ua-text-section-title">
           Case financials
         </h2>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--ua-text-secondary)]">
+        <p className="ua-text-caption-role mt-2 max-w-2xl leading-6 text-[var(--ua-text-secondary)]">
           Charts appear once case ledger entries carry an amount and a currency. Nothing in this period does yet.
         </p>
       </section>
@@ -113,8 +113,8 @@ export function DashboardCharts({
       {groups.map(({ bridge, trend, causes }) => (
         <div key={bridge.currency} className="space-y-4">
           <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-[var(--ua-border-subtle)] pb-2">
-            <h2 className="text-base font-semibold">Case financials</h2>
-            <p className="text-xs font-medium text-[var(--ua-text-secondary)]">
+            <h2 className="ua-text-section-title">Case financials</h2>
+            <p className="ua-text-label text-[var(--ua-text-secondary)]">
               {bridge.currency} · {TIME_RANGE_LABELS[report.range]}
             </p>
           </div>
@@ -191,7 +191,7 @@ export function DashboardCharts({
                 compact={causes.length <= 2}
               />
               {causes.length ? (
-                <Link href={financialReportRecordsHref({ range: report.range, currency: bridge.currency, metric: 'confirmed_loss', timezone: report.timezone })} className="mt-2 inline-flex text-xs font-semibold text-[var(--ua-action-primary)]">
+                <Link href={financialReportRecordsHref({ range: report.range, currency: bridge.currency, metric: 'confirmed_loss', timezone: report.timezone })} className="ua-text-label mt-2 inline-flex text-[var(--ua-action-primary)]">
                   View all causes
                 </Link>
               ) : null}
@@ -282,11 +282,11 @@ function RecoveryLedger({ bridge, report }: { bridge: MoneyBridge; report: Intel
   return (
     <section className="ua-section-panel rounded-[var(--ua-radius-surface)] xl:col-span-12" aria-labelledby={`recovery-ledger-${bridge.currency}`}>
       <div className="border-b border-[var(--ua-border-subtle)] px-4 py-3">
-        <h3 id={`recovery-ledger-${bridge.currency}`} className="text-sm font-semibold">How much exposed value is reaching recovery?</h3>
-        <p className="mt-0.5 text-xs text-[var(--ua-text-secondary)]">Reconciled value through the recovery workflow</p>
+        <h3 id={`recovery-ledger-${bridge.currency}`} className="ua-text-working-title">How much exposed value is reaching recovery?</h3>
+        <p className="ua-text-caption-role mt-0.5">Reconciled value through the recovery workflow</p>
       </div>
       {hasKnownValue ? <StageDotPlot rows={rows} /> : (
-        <p className="px-4 py-5 text-sm text-[var(--ua-text-secondary)]">Recovery values are unavailable for this period.</p>
+        <p className="ua-text-body px-4 py-5 text-[var(--ua-text-secondary)]">Recovery values are unavailable for this period.</p>
       )}
     </section>
   );

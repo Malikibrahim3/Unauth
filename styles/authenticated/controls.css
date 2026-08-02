@@ -1,3 +1,4 @@
+@layer components {
 /*
  * Base visual contract for interactive controls (inputs, buttons, links).
  * Component variants consume the same tokens; no control introduces a second
@@ -21,7 +22,7 @@
 
 .ua-app :where(button, a),
 .ua-auth-surface :where(button, a) {
-  transition-property: color, background-color, border-color, box-shadow;
+  transition-property: color, background-color, border-color, box-shadow, opacity;
   transition-duration: var(--ua-duration-fast);
   transition-timing-function: var(--ua-ease-standard);
 }
@@ -83,4 +84,5 @@
   line-height: var(--ua-text-caption-leading);
   font-weight: 400;
   color: var(--ua-text-tertiary);
+}
 }

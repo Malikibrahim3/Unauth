@@ -151,13 +151,13 @@ export default function AuditTrailClient({
   return (
     <RegistrySurface
       aria-label="Activity log"
-      toolbar={<><div><h2 className="text-sm font-semibold" style={{ color: "var(--ua-text-primary)" }}>Activity log</h2><p className="mt-1 text-xs" style={{ color: "var(--ua-text-secondary)" }}>Filterable record of case activity and sensitive account actions.</p></div><div className="flex flex-wrap items-center gap-2"><Filter className="h-4 w-4" style={{ color: "var(--ua-text-tertiary)" }} aria-hidden="true" /><label className="sr-only" htmlFor="audit-resource-filter">Filter by resource</label><select id="audit-resource-filter" value={resourceType} onChange={(event) => setResourceType(event.target.value)} className="rounded-md px-3 py-1.5 text-xs focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1" style={{ background: "var(--ua-surface-muted)", border: "1px solid var(--ua-border-default)", color: "var(--ua-text-primary)", outlineColor: "var(--ua-action-primary)" }}>{RESOURCE_FILTERS.map((option) => <option key={option.value || "all"} value={option.value}>{option.label}</option>)}</select></div></>}
+      toolbar={<><div><h2 className="ua-text-working-title" style={{ color: "var(--ua-text-primary)" }}>Activity log</h2><p className="ua-text-caption-role mt-1" style={{ color: "var(--ua-text-secondary)" }}>Filterable record of case activity and sensitive account actions.</p></div><div className="flex flex-wrap items-center gap-2"><Filter className="h-4 w-4" style={{ color: "var(--ua-text-tertiary)" }} aria-hidden="true" /><label className="sr-only" htmlFor="audit-resource-filter">Filter by resource</label><select id="audit-resource-filter" value={resourceType} onChange={(event) => setResourceType(event.target.value)} className="ua-text-label rounded-md px-3 py-1.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1" style={{ background: "var(--ua-surface-muted)", border: "1px solid var(--ua-border-default)", color: "var(--ua-text-primary)", outlineColor: "var(--ua-action-primary)" }}>{RESOURCE_FILTERS.map((option) => <option key={option.value || "all"} value={option.value}>{option.label}</option>)}</select></div></>}
       resultCount={loading ? 'Loading activity…' : error ? 'Activity unavailable' : `${rows.length} recent events`}
       pagination={
         <div className="flex flex-wrap items-center justify-between gap-3">
           <a
             href={exportHref}
-            className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs font-semibold hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
+            className="ua-text-label inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
             style={{
               borderColor: "var(--ua-border-default)",
               color: "var(--ua-text-secondary)",
@@ -171,24 +171,24 @@ export default function AuditTrailClient({
       }
     >
       {loading ? (
-        <p className="p-5 text-sm" style={{ color: "var(--ua-text-tertiary)" }}>
+        <p className="ua-text-body p-5" style={{ color: "var(--ua-text-tertiary)" }}>
           Loading audit events…
         </p>
       ) : error ? (
-        <p role="alert" className="p-5 text-sm" style={{ color: "var(--ua-risk-critical)" }}>
+        <p role="alert" className="ua-text-body p-5" style={{ color: "var(--ua-risk-critical)" }}>
           {error}
         </p>
       ) : rows.length === 0 ? (
-        <p className="p-5 text-sm" style={{ color: "var(--ua-text-tertiary)" }}>
+        <p className="ua-text-body p-5" style={{ color: "var(--ua-text-tertiary)" }}>
           No audit events recorded yet.
         </p>
       ) : (
         <DataTable
           aria-label="Audit trail events"
           rows={rows}
-          emptyState={<p className="p-5 text-sm text-[var(--ua-text-tertiary)]">No audit events recorded yet.</p>}
+          emptyState={<p className="ua-text-body p-5 text-[var(--ua-text-tertiary)]">No audit events recorded yet.</p>}
           getRowKey={(row) => `${row.resource_type ?? "system"}-${row.id}`}
-          density="compact"
+          density="metadata"
           flush
           columns={[
             {
@@ -218,12 +218,12 @@ export default function AuditTrailClient({
             {
               key: "time",
               header: "Time",
-              render: (row) => <span className="whitespace-nowrap text-xs text-[var(--ua-text-tertiary)]">{formatTimestamp(row.created_at)}</span>,
+              render: (row) => <span className="ua-text-metadata whitespace-nowrap">{formatTimestamp(row.created_at)}</span>,
             },
             {
               key: "action",
               header: "Action",
-              render: (row) => <span className="font-semibold text-[var(--ua-text-primary)]">{auditActionLabel(row.action, row.resource_type)}</span>,
+              render: (row) => <span className="ua-text-working-title text-[var(--ua-text-primary)]">{auditActionLabel(row.action, row.resource_type)}</span>,
             },
             {
               key: "object",
@@ -235,18 +235,18 @@ export default function AuditTrailClient({
                 return claimHref ? (
                   <Link
                     href={claimHref}
-                    className="text-xs font-medium text-[var(--ua-action-primary)] hover:underline"
+                    className="ua-text-label text-[var(--ua-action-primary)] hover:underline"
                     title={`Open case ${hashId(row.resource_id)}`}
                   >
                     {auditResourceSummary(row.resource_type, row.resource_id)}
                   </Link>
-                ) : <span className="text-xs text-[var(--ua-text-secondary)]">{auditResourceSummary(row.resource_type, row.resource_id)}</span>;
+                ) : <span className="ua-text-dense text-[var(--ua-text-secondary)]">{auditResourceSummary(row.resource_type, row.resource_id)}</span>;
               },
             },
             {
               key: "actor",
               header: "Actor",
-              render: (row) => <span className="text-xs text-[var(--ua-text-secondary)]">{actorLabel(row)}</span>,
+              render: (row) => <span className="ua-text-dense text-[var(--ua-text-secondary)]">{actorLabel(row)}</span>,
             },
             {
               key: "summary",
@@ -255,14 +255,14 @@ export default function AuditTrailClient({
                 const rowKey = `${row.resource_type ?? "system"}-${row.id}`;
                 const details = metadataEntries(row.metadata);
                 return (
-                  <div className="max-w-xs text-xs text-[var(--ua-text-secondary)]">
+                  <div className="ua-text-dense max-w-xs text-[var(--ua-text-secondary)]">
                     <span className="block truncate" title={rowSummary(row)}>{rowSummary(row)}</span>
                     {expandedId === rowKey && details.length > 0 ? (
                       <dl className="mt-2 grid gap-2 border-t border-[var(--ua-border-subtle)] pt-2 sm:grid-cols-2">
                         {details.map(([key, value]) => (
                           <div key={key}>
-                            <dt className="text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-tertiary)]">{detailLabel(key)}</dt>
-                            <dd className="mt-0.5 break-words text-xs text-[var(--ua-text-secondary)]">{detailValue(value)}</dd>
+                            <dt className="ua-text-metadata">{detailLabel(key)}</dt>
+                            <dd className="ua-text-dense mt-0.5 break-words text-[var(--ua-text-secondary)]">{detailValue(value)}</dd>
                           </div>
                         ))}
                       </dl>

@@ -47,8 +47,8 @@ export function NotificationPreferencesForm({ initial }: { initial: Pref[] }) {
   return <div className="space-y-3">
     <p aria-live="polite" className="min-h-4 px-1 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-secondary)]">{status}</p>
     <Surface structure="working" aria-label="Notification preferences">
-      <JoinedSection className="flex items-start gap-3 p-4 sm:p-5"><Bell className="mt-0.5 h-4 w-4 shrink-0 text-[var(--ua-accent-600)]" aria-hidden /><div><h2 className="text-sm font-semibold">In-app delivery</h2><p className="mt-1 text-sm text-[var(--ua-text-secondary)]">Choose which operational events appear in your inbox. These controls apply only to your account.</p></div></JoinedSection>
-      {GROUPS.map((group) => <JoinedSection key={group.title} className="p-0"><h2 className="px-4 pb-2 pt-4 text-xs font-semibold text-[var(--ua-text-tertiary)] sm:px-5">{group.title}</h2><div className="divide-y divide-[var(--ua-border-subtle)]">
+      <JoinedSection className="flex items-start gap-3 p-4 sm:p-5"><Bell className="mt-0.5 h-4 w-4 shrink-0 text-[var(--ua-accent-600)]" aria-hidden /><div><h2 className="ua-text-section-title">In-app delivery</h2><p className="ua-text-caption-role mt-1">Choose which operational events appear in your inbox. These controls apply only to your account.</p></div></JoinedSection>
+      {GROUPS.map((group) => <JoinedSection key={group.title} className="p-0"><h2 className="ua-text-label px-4 pb-2 pt-4 text-[var(--ua-text-tertiary)] sm:px-5">{group.title}</h2><div className="divide-y divide-[var(--ua-border-subtle)]">
         {group.kinds.map((kind) => {
           const item = KINDS.find((candidate) => candidate.kind === kind)!;
           const pref = prefs.get(item.kind) ?? { kind: item.kind, in_app_enabled: true, email_enabled: false };
@@ -69,7 +69,7 @@ export function NotificationPreferencesForm({ initial }: { initial: Pref[] }) {
           );
         })}
       </div></JoinedSection>)}
-      <JoinedSection className="p-4 sm:p-5"><InsetGroup className="flex items-start gap-3 p-3"><MailX className="mt-0.5 h-4 w-4 shrink-0 text-[var(--ua-icon-secondary)]" aria-hidden /><div><h2 className="text-sm font-medium">Email delivery is not enabled</h2><p className="mt-1 text-sm text-[var(--ua-text-secondary)]">Your inbox preferences remain active. Email delivery will be offered as a separate channel when available.</p></div></InsetGroup></JoinedSection>
+      <JoinedSection className="p-4 sm:p-5"><InsetGroup className="flex items-start gap-3 p-3"><MailX className="mt-0.5 h-4 w-4 shrink-0 text-[var(--ua-icon-secondary)]" aria-hidden /><div><h2 className="ua-text-working-title">Email delivery is not enabled</h2><p className="ua-text-body mt-1 text-[var(--ua-text-secondary)]">Your inbox preferences remain active. Email delivery will be offered as a separate channel when available.</p></div></InsetGroup></JoinedSection>
     </Surface>
   </div>;
 }

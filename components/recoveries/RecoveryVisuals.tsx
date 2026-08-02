@@ -11,6 +11,7 @@ import {
 } from 'recharts';
 import {
   ChartFrame,
+  ChartLegend,
   ChartState,
   type ChartDataTableModel,
 } from '@/components/charts/authenticated/ChartFrame';
@@ -64,7 +65,7 @@ function RecoveryTrendPlot({ points, currency }: { points: RecoveryTrendPoint[];
                 value={money(point.recoveredMinor)}
                 caption={String(label)}
                 series={[
-                  { label: 'Outstanding', value: money(point.outstandingMinor), colour: theme['--ua-chart-neutral-700'] },
+                  { label: 'Outstanding', value: money(point.outstandingMinor), colour: theme['--ua-chart-neutral-500'] },
                   ...(point.recoveryRate == null ? [] : [{ label: 'Conversion rate', value: percent(point.recoveryRate), colour: theme['--ua-chart-primary-soft'] }]),
                 ]}
               />
@@ -72,7 +73,10 @@ function RecoveryTrendPlot({ points, currency }: { points: RecoveryTrendPoint[];
           }}
         />
         <Bar yAxisId="amount" dataKey="recoveredMinor" name="Recovered" fill={theme['--ua-chart-primary']} radius={[BAR_END_RADIUS, BAR_END_RADIUS, 0, 0]} barSize={28} {...motion} />
-        <Bar yAxisId="amount" dataKey="outstandingMinor" name="Outstanding" fill={theme['--ua-chart-neutral-700']} radius={[BAR_END_RADIUS, BAR_END_RADIUS, 0, 0]} barSize={28} {...motion} />
+        {/* Neutral-500, not the darker neutral-700 — a heavier grey than the
+            violet primary reads as the dominant series, inverting which value
+            the eye lands on first (§7.5). */}
+        <Bar yAxisId="amount" dataKey="outstandingMinor" name="Outstanding" fill={theme['--ua-chart-neutral-500']} radius={[BAR_END_RADIUS, BAR_END_RADIUS, 0, 0]} barSize={28} {...motion} />
         <Line yAxisId="rate" type="linear" dataKey="recoveryRate" name="Conversion rate" stroke={theme['--ua-chart-primary-soft']} strokeWidth={TREND_LINE_WIDTH} strokeLinecap="round" dot={{ r: 2.5, fill: theme['--ua-chart-primary-soft'], stroke: theme['--ua-surface-primary'], strokeWidth: 2 }} activeDot={{ r: 4.5, fill: theme['--ua-chart-primary-soft'], stroke: theme['--ua-surface-primary'], strokeWidth: 2 }} connectNulls={false} {...motion} />
       </ComposedChart>
     </div>
@@ -122,7 +126,15 @@ export function RecoveryTrend({ currency, points, mixedCurrencyCount }: Recovery
       question="Is recoverable value converting into cash?"
       summary="Recovered value is the weekly cash/credit entry; outstanding is the remaining recoverable balance at week end."
       scope={`${currency} · weekly financial-entry effective dates`}
-      legend={<span className="text-xs text-[var(--ua-text-secondary)]">Violet: recovered · Neutral: outstanding · Line: recovered ÷ (recovered + outstanding)</span>}
+      legend={
+        <ChartLegend
+          items={[
+            { label: 'Recovered', tone: 'primary' },
+            { label: 'Outstanding', tone: 'neutralSoft' },
+            { label: 'Conversion rate (recovered ÷ recovered + outstanding)', tone: 'secondary' },
+          ]}
+        />
+      }
       freshness="Source: append-only recoverable and recovered financial entries"
       table={table}
     >
@@ -143,15 +155,15 @@ export function RecoveryProgress({ currency, steps }: { currency: string; steps:
   return (
     <section className="ua-focal-panel p-4" aria-labelledby="recovery-progress-title">
       <div className="mb-4">
-        <h2 id="recovery-progress-title" className="text-base font-semibold text-[var(--ua-text-primary)]">How far has this recovery progressed?</h2>
-        <p className="mt-1 text-sm text-[var(--ua-text-secondary)]">Amounts are cumulative. Approved value is not presented as received cash.</p>
+        <h2 id="recovery-progress-title" className="ua-text-section-title text-[var(--ua-text-primary)]">How far has this recovery progressed?</h2>
+        <p className="ua-text-caption-role mt-1">Amounts are cumulative. Approved value is not presented as received cash.</p>
       </div>
       <ol className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Recovery amount progression">
         {steps.map((step, index) => (
           <li key={step.key} className="min-w-0 border-l-2 border-[var(--ua-border-default)] pl-3">
-            <p className="text-xs font-medium text-[var(--ua-text-secondary)]"><span className="mr-1 text-[var(--ua-text-tertiary)]">{index + 1}.</span>{step.label}</p>
-            <p className="mt-1 font-sans text-lg font-semibold tabular-nums text-[var(--ua-text-primary)]">{formatMinorCurrencyNullable(step.valueMinor, currency)}</p>
-            <p className="mt-1 text-xs text-[var(--ua-text-tertiary)]">{step.detail}</p>
+            <p className="ua-text-label text-[var(--ua-text-secondary)]"><span className="mr-1 text-[var(--ua-text-tertiary)]">{index + 1}.</span>{step.label}</p>
+            <p className="ua-text-kpi mt-1 font-sans tabular-nums text-[var(--ua-text-primary)]">{formatMinorCurrencyNullable(step.valueMinor, currency)}</p>
+            <p className="ua-text-metadata mt-1">{step.detail}</p>
           </li>
         ))}
       </ol>

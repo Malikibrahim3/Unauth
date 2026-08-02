@@ -87,28 +87,28 @@ export function HelpCentre() {
           <section className="px-5 py-4" aria-labelledby="help-guides">
             <div className="flex items-center gap-2">
               <BookOpen className="h-4 w-4 text-[var(--ua-icon-secondary)]" aria-hidden="true" />
-              <h2 id="help-guides" className="text-sm font-semibold text-[var(--ua-text-primary)]">Guides</h2>
+              <h2 id="help-guides" className="ua-text-working-title text-[var(--ua-text-primary)]">Guides</h2>
             </div>
-            <p className="mt-1 text-sm text-[var(--ua-text-secondary)]">Choose a guide to jump to its anchored instructions.</p>
+            <p className="ua-text-body mt-1 text-[var(--ua-text-secondary)]">Choose a guide to jump to its anchored instructions.</p>
             {articles.length ? <ul className="mt-3 divide-y divide-[var(--ua-border-subtle)] border-y border-[var(--ua-border-subtle)]">
-              {articles.map((article) => <li key={article.id}><a href={`#${article.id}`} className="flex items-center justify-between gap-3 px-1 py-3 text-left hover:text-[var(--ua-text-link)] focus-visible:outline-none focus-visible:shadow-[var(--ua-shadow-focus)]"><span><span className="block text-sm font-semibold text-[var(--ua-text-primary)]">{article.title}</span><span className="mt-0.5 block text-sm text-[var(--ua-text-secondary)]">{article.summary}</span></span><span className="shrink-0 text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-link)]">Read</span></a></li>)}
-            </ul> : <p role="status" className="mt-3 text-sm text-[var(--ua-text-secondary)]">No guide matches “{query}”. Try cases, rules, recovery, or integrations.</p>}
+              {articles.map((article) => <li key={article.id}><a href={`#${article.id}`} className="flex items-center justify-between gap-3 px-1 py-3 text-left hover:text-[var(--ua-text-link)] focus-visible:outline-none focus-visible:shadow-[var(--ua-shadow-focus)]"><span><span className="ua-text-working-title block text-[var(--ua-text-primary)]">{article.title}</span><span className="ua-text-dense mt-0.5 block text-[var(--ua-text-secondary)]">{article.summary}</span></span><span className="ua-text-label shrink-0 text-[var(--ua-text-link)]">Read</span></a></li>)}
+            </ul> : <p role="status" className="ua-text-body mt-3 text-[var(--ua-text-secondary)]">No guide matches “{query}”. Try cases, rules, recovery, or integrations.</p>}
           </section>
           <div>
             {articles.map((article) => <article id={article.id} key={article.id} className="scroll-mt-6 px-5 py-5" aria-labelledby={`${article.id}-title`}>
-              <h2 id={`${article.id}-title`} className="text-base font-semibold text-[var(--ua-text-primary)]">{article.title}</h2>
-              <p className="mt-1 text-sm text-[var(--ua-text-secondary)]">{article.summary}</p>
-              <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-5 text-[var(--ua-text-secondary)]">{article.steps.map((step) => <li key={step}>{step}</li>)}</ol>
-              <Link href={article.action.href} className="mt-4 inline-flex text-sm font-semibold text-[var(--ua-text-link)] hover:underline focus-visible:outline-none focus-visible:shadow-[var(--ua-shadow-focus)]">{article.action.label}</Link>
+              <h2 id={`${article.id}-title`} className="ua-text-section-title text-[var(--ua-text-primary)]">{article.title}</h2>
+              <p className="ua-text-body mt-1 text-[var(--ua-text-secondary)]">{article.summary}</p>
+              <ol className="ua-text-body mt-3 list-decimal space-y-2 pl-5 leading-5 text-[var(--ua-text-secondary)]">{article.steps.map((step) => <li key={step}>{step}</li>)}</ol>
+              <Link href={article.action.href} className="ua-text-working-title mt-4 inline-flex text-[var(--ua-text-link)] hover:underline focus-visible:outline-none focus-visible:shadow-[var(--ua-shadow-focus)]">{article.action.label}</Link>
             </article>)}
           </div>
         </div>
         <aside className="border-t border-[var(--ua-border-subtle)] p-5 lg:border-l lg:border-t-0" aria-labelledby="help-support">
           <InsetGroup className="p-4">
             <LifeBuoy className="h-5 w-5 text-[var(--ua-icon-secondary)]" aria-hidden="true" />
-            <h2 id="help-support" className="mt-3 text-sm font-semibold text-[var(--ua-text-primary)]">Need support?</h2>
-            <p className="mt-1 text-sm leading-5 text-[var(--ua-text-secondary)]">For account-specific help, email the Unauth support team. Include the case or recovery link when it is safe to share.</p>
-            <a href="mailto:support@unauth.app" className="mt-4 inline-flex text-sm font-semibold text-[var(--ua-text-link)] hover:underline focus-visible:outline-none focus-visible:shadow-[var(--ua-shadow-focus)]">Email support</a>
+            <h2 id="help-support" className="ua-text-working-title mt-3 text-[var(--ua-text-primary)]">Need support?</h2>
+            <p className="ua-text-body mt-1 leading-5 text-[var(--ua-text-secondary)]">For account-specific help, email the Unauth support team. Include the case or recovery link when it is safe to share.</p>
+            <a href="mailto:support@unauth.app" className="ua-text-working-title mt-4 inline-flex text-[var(--ua-text-link)] hover:underline focus-visible:outline-none focus-visible:shadow-[var(--ua-shadow-focus)]">Email support</a>
           </InsetGroup>
         </aside>
       </div>

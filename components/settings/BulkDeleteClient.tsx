@@ -42,7 +42,7 @@ export default function BulkDeleteClient() {
 
   return (
     <div className="space-y-3">
-      <p className="text-sm" style={{ color: "var(--ua-text-secondary)" }}>
+      <p className="ua-text-body" style={{ color: "var(--ua-text-secondary)" }}>
         Hide customer notes, saved customer context, or import and sync job
         cards from active workspace views. This is not customer-data erasure;
         audit and financial records remain available for accountability.
@@ -51,7 +51,7 @@ export default function BulkDeleteClient() {
       <div>
         <label
           htmlFor="privacy-removal-scope"
-          className="mb-1 block text-xs font-medium"
+          className="ua-text-label mb-1 block"
         >
           Removal scope
         </label>
@@ -76,7 +76,7 @@ export default function BulkDeleteClient() {
           checked={confirmChecked}
           onChange={(e) => setConfirmChecked(e.target.checked)}
         />
-        <span className="text-sm" style={{ color: "var(--ua-text-secondary)" }}>
+        <span className="ua-text-body" style={{ color: "var(--ua-text-secondary)" }}>
           I understand this removes the selected data from active workspace
           views.
         </span>
@@ -87,7 +87,7 @@ export default function BulkDeleteClient() {
           type="button"
           onClick={handleDelete}
           disabled={loading}
-          className="rounded px-3 py-2 font-semibold"
+          className="ua-text-working-title rounded px-3 py-2"
           style={{ background: "var(--ua-risk-critical)", color: "var(--ua-text-inverse)" }}
         >
           {loading ? "Removing…" : "Remove selected data"}
@@ -97,7 +97,7 @@ export default function BulkDeleteClient() {
       {message && (
         <p
           role="status"
-          className="mt-1 text-sm"
+          className="ua-text-body mt-1"
           style={{ color: "var(--ua-text-secondary)" }}
         >
           {message}

@@ -73,7 +73,7 @@ function NotificationActivity({ notifications }: { notifications: NotificationIt
     <InsetGroup className="p-3" aria-label="Notification activity over the last 14 days">
       <div className="flex items-baseline justify-between gap-3">
         <div>
-          <h2 className="text-sm font-semibold text-[var(--ua-text-primary)]">Recent activity</h2>
+          <h2 className="ua-text-working-title text-[var(--ua-text-primary)]">Recent activity</h2>
           <p className="mt-0.5 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-secondary)]">Messages received over 14 days</p>
         </div>
         <span className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">Unread uses the violet marker</span>
@@ -166,11 +166,11 @@ export function NotificationCentre({ initialNotifications }: { initialNotificati
     <Surface structure="working" className="overflow-hidden">
       <div className="flex flex-wrap items-start justify-between gap-3 px-5 py-4">
         <div>
-          <h2 className="text-sm font-semibold text-[var(--ua-text-primary)]">{unread ? `${unread} unread` : 'Inbox clear'}</h2>
-          <p className="mt-0.5 text-sm text-[var(--ua-text-secondary)]">Newest notifications first. Opening one marks it as read.</p>
+          <h2 className="ua-text-working-title text-[var(--ua-text-primary)]">{unread ? `${unread} unread` : 'Inbox clear'}</h2>
+          <p className="ua-text-caption-role mt-0.5">Newest notifications first. Opening one marks it as read.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Link href="/settings/notifications" className="text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-link)] hover:underline focus-visible:outline-none focus-visible:shadow-[var(--ua-shadow-focus)]">Preferences</Link>
+          <Link href="/settings/notifications" className="ua-text-label text-[var(--ua-text-link)] hover:underline focus-visible:outline-none focus-visible:shadow-[var(--ua-shadow-focus)]">Preferences</Link>
           {unread > 0 ? <Button variant="secondary" size="sm" leadingIcon={<CheckCheck />} loading={busy === 'all'} onClick={markAllRead}>Mark all read</Button> : null}
         </div>
       </div>
@@ -185,11 +185,11 @@ export function NotificationCentre({ initialNotifications }: { initialNotificati
           items={[{ value: 'all', label: 'All' }, { value: 'unread', label: 'Unread' }]}
         />
       </div>
-      {message ? <p role="status" className="px-5 py-3 text-sm text-[var(--ua-text-secondary)]">{message}</p> : null}
+      {message ? <p role="status" className="ua-text-body px-5 py-3 text-[var(--ua-text-secondary)]">{message}</p> : null}
       {visible.length ? <div id="notification-list" role="tabpanel" aria-labelledby={`notification-filter-tab-${filter}`} className="divide-y divide-[var(--ua-border-subtle)]">
         {groups.map(([label, items]) => (
           <section key={label} aria-labelledby={`notification-group-${label.replaceAll(' ', '-').toLowerCase()}`}>
-            <h3 id={`notification-group-${label.replaceAll(' ', '-').toLowerCase()}`} className="bg-[var(--ua-surface-secondary)] px-5 py-2 text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-secondary)]">{label}</h3>
+            <h3 id={`notification-group-${label.replaceAll(' ', '-').toLowerCase()}`} className="ua-text-label bg-[var(--ua-surface-secondary)] px-5 py-2 text-[var(--ua-text-secondary)]">{label}</h3>
             <ul className="divide-y divide-[var(--ua-border-subtle)]">
               {items.map((item) => {
                 const meta = KIND_META[item.kind] ?? { label: item.kind.replaceAll('_', ' '), icon: Bell };
@@ -197,8 +197,8 @@ export function NotificationCentre({ initialNotifications }: { initialNotificati
                 return <li key={item.id}>
                   <button type="button" onClick={() => open(item)} disabled={busy === item.id} className="group grid w-full gap-3 px-5 py-4 text-left transition-colors hover:bg-[var(--ua-surface-hover)] focus-visible:outline-none focus-visible:shadow-[inset_var(--ua-shadow-focus)] disabled:opacity-60 sm:grid-cols-[2rem_minmax(0,1fr)_auto]">
                     <span className="relative flex h-8 w-8 items-center justify-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-primary)]"><Icon className="h-4 w-4 text-[var(--ua-icon-secondary)]" aria-hidden="true" />{!item.read_at ? <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border-2 border-[var(--ua-surface-primary)] bg-[var(--ua-action-primary)]"><span className="sr-only">Unread</span></span> : null}</span>
-                    <span className="min-w-0"><span className="flex flex-wrap items-center gap-2"><strong className={item.read_at ? 'text-sm font-medium text-[var(--ua-text-primary)]' : 'text-sm font-semibold text-[var(--ua-text-primary)]'}>{item.title}</strong><span className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">{meta.label}</span></span>{item.body ? <span className="mt-1 block max-w-3xl text-sm text-[var(--ua-text-secondary)]">{item.body}</span> : null}<span className="mt-1 block text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">{formatDateTime(item.created_at)}</span></span>
-                    <span className="self-center text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-link)]">{busy === item.id ? 'Opening…' : destinationLabel(item.target_href)}</span>
+                    <span className="min-w-0"><span className="flex flex-wrap items-center gap-2"><strong className={item.read_at ? 'ua-text-body font-medium text-[var(--ua-text-primary)]' : 'ua-text-body font-semibold text-[var(--ua-text-primary)]'}>{item.title}</strong><span className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">{meta.label}</span></span>{item.body ? <span className="ua-text-body mt-1 block max-w-3xl text-[var(--ua-text-secondary)]">{item.body}</span> : null}<span className="mt-1 block text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">{formatDateTime(item.created_at)}</span></span>
+                    <span className="ua-text-label self-center text-[var(--ua-text-link)]">{busy === item.id ? 'Opening…' : destinationLabel(item.target_href)}</span>
                   </button>
                 </li>;
               })}
@@ -207,9 +207,9 @@ export function NotificationCentre({ initialNotifications }: { initialNotificati
         ))}
       </div> : <div id="notification-list" role="tabpanel" aria-labelledby={`notification-filter-tab-${filter}`} className="p-6 text-center">
         <Bell className="mx-auto h-6 w-6 text-[var(--ua-icon-secondary)]" aria-hidden="true" />
-        <h2 className="mt-3 text-sm font-semibold text-[var(--ua-text-primary)]">{filter === 'unread' ? 'You are caught up' : 'No notifications yet'}</h2>
-        <p className="mx-auto mt-1 max-w-lg text-sm text-[var(--ua-text-secondary)]">{filter === 'unread' ? 'New assignments, evidence, decisions, deadlines, recovery outcomes, and connection issues will appear here.' : 'Nothing needs your attention yet. We will notify you when a case does.'}</p>
-        {filter === 'unread' ? <Button className="mt-4" variant="secondary" size="sm" onClick={() => setFilter('all')}>View all</Button> : <Link className="mt-4 inline-flex items-center gap-1 text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-link)] hover:underline" href="/settings/notifications"><RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />Review preferences</Link>}
+        <h2 className="ua-text-working-title mt-3 text-[var(--ua-text-primary)]">{filter === 'unread' ? 'You are caught up' : 'No notifications yet'}</h2>
+        <p className="ua-text-body mx-auto mt-1 max-w-lg text-[var(--ua-text-secondary)]">{filter === 'unread' ? 'New assignments, evidence, decisions, deadlines, recovery outcomes, and connection issues will appear here.' : 'Nothing needs your attention yet. We will notify you when a case does.'}</p>
+        {filter === 'unread' ? <Button className="mt-4" variant="secondary" size="sm" onClick={() => setFilter('all')}>View all</Button> : <Link className="ua-text-label mt-4 inline-flex items-center gap-1 text-[var(--ua-text-link)] hover:underline" href="/settings/notifications"><RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />Review preferences</Link>}
       </div>}
     </Surface>
   );

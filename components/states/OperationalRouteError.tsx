@@ -37,10 +37,10 @@ export function OperationalRouteError({
             <p className="max-w-xl text-[length:var(--ua-text-metadata-size)] leading-5 text-[var(--ua-text-secondary)]">No data or workflow state was changed.</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={reset} className="inline-flex h-8 items-center gap-2 rounded-[var(--ua-radius-control)] bg-[var(--ua-action-primary)] px-3 text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-action-primary-fg)]">
+            <button type="button" onClick={reset} className="ua-text-label inline-flex h-8 items-center gap-2 rounded-[var(--ua-radius-control)] bg-[var(--ua-action-primary)] px-3 text-[var(--ua-action-primary-fg)]">
               <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />Try again
             </button>
-            <Link href={fallbackHref} className="inline-flex h-8 items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] px-3 text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-secondary)]">Leave this page</Link>
+            <Link href={fallbackHref} className="ua-text-label inline-flex h-8 items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] px-3 text-[var(--ua-text-secondary)]">Leave this page</Link>
           </div>
         </AuthenticatedPanel>
       </div>

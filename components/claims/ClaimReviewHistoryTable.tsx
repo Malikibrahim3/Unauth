@@ -33,7 +33,7 @@ export function ClaimReviewHistoryTable({
 }) {
   if (history.length === 0) {
     return (
-      <p className="text-sm" style={{ color: "var(--ua-text-secondary)" }}>
+      <p className="ua-text-body" style={{ color: "var(--ua-text-secondary)" }}>
         No cases recorded for this customer yet.
       </p>
     );
@@ -44,7 +44,7 @@ export function ClaimReviewHistoryTable({
       key: "order",
       header: "Order ref",
       render: (claim) => (
-        <span className="font-mono text-xs font-semibold underline underline-offset-2">
+        <span className="ua-text-working-title font-mono underline underline-offset-2">
           {shortRef(claim.order_ref ?? claim.shopify_order_id, claim.id)}
         </span>
       ),
@@ -72,7 +72,7 @@ export function ClaimReviewHistoryTable({
       key: "filed",
       header: "Filed",
       render: (claim) => (
-        <span className="text-xs text-[var(--ua-text-secondary)]">
+        <span className="ua-text-dense text-[var(--ua-text-secondary)]">
           <span>{formatFiledDate(claim)}</span>
           <span className="block">{formatClaimAge(claim)}</span>
         </span>
@@ -86,7 +86,7 @@ export function ClaimReviewHistoryTable({
         const tone = slaToneStyle(sla.tone);
         return (
           <span
-            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
+            className="ua-text-label inline-flex items-center gap-1 rounded-full px-2 py-0.5"
             style={{ background: tone.bg, color: tone.text }}
           >
             {sla.icon === "clock" ? <Clock3 className="h-3.5 w-3.5" aria-hidden="true" /> : null}
@@ -110,7 +110,7 @@ export function ClaimReviewHistoryTable({
       header: "Updated",
       kind: "date",
       render: (claim) => (
-        <span className="font-sans text-xs tabular-nums text-[var(--ua-text-secondary)]">
+        <span className="ua-text-dense font-sans tabular-nums text-[var(--ua-text-secondary)]">
           {claim.updated_at
             ? formatDateAbsolute(new Date(claim.updated_at))
             : "—"}
@@ -124,9 +124,9 @@ export function ClaimReviewHistoryTable({
       aria-label="Customer case history"
       columns={columns}
       rows={history}
-      emptyState={<p className="p-4 text-sm text-[var(--ua-text-secondary)]">No other cases are recorded for this customer.</p>}
+      emptyState={<p className="ua-text-body p-4 text-[var(--ua-text-secondary)]">No other cases are recorded for this customer.</p>}
       getRowKey={(claim) => claim.id}
-      density="compact"
+      density="metadata"
       onRowClick={(claim) => onSelectClaim(claim.id)}
       primaryActionLabel={(claim) =>
         `Open case ${shortRef(claim.order_ref ?? claim.shopify_order_id, claim.id)}`

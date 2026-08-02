@@ -148,12 +148,12 @@ function ResponsibilityDialog({
     >
       <div className="space-y-4">
         {error ? (
-          <div role="alert" className="rounded-md border border-[var(--ua-risk-critical-border)] bg-[var(--ua-risk-critical-bg)] p-3 text-sm text-[var(--ua-risk-critical)]">
+          <div role="alert" className="ua-text-body rounded-md border border-[var(--ua-risk-critical-border)] bg-[var(--ua-risk-critical-bg)] p-3 text-[var(--ua-risk-critical)]">
             {error}
           </div>
         ) : null}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <label className="text-sm font-medium">
+          <label className="ua-text-body font-medium">
             Responsible party
             <Select
               className="mt-1"
@@ -165,7 +165,7 @@ function ResponsibilityDialog({
               ))}
             </Select>
           </label>
-          <label className="text-sm font-medium">
+          <label className="ua-text-body font-medium">
             Confidence
             <Select
               className="mt-1"
@@ -177,7 +177,7 @@ function ResponsibilityDialog({
               ))}
             </Select>
           </label>
-          <label className="text-sm font-medium">
+          <label className="ua-text-body font-medium">
             Recovery owner
             <Select
               className="mt-1"
@@ -189,7 +189,7 @@ function ResponsibilityDialog({
               ))}
             </Select>
           </label>
-          <label className="text-sm font-medium">
+          <label className="ua-text-body font-medium">
             Recoverability
             <Select
               className="mt-1"
@@ -204,9 +204,9 @@ function ResponsibilityDialog({
         </div>
 
         <div>
-          <p className="text-sm font-medium">Evidence relationship</p>
+          <p className="ua-text-body font-medium">Evidence relationship</p>
           {evidence.length === 0 ? (
-            <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">
+            <p className="ua-text-caption-role mt-1">
               No canonical evidence is available to link. You can still keep responsibility unknown.
             </p>
           ) : (
@@ -214,10 +214,10 @@ function ResponsibilityDialog({
               {evidence.map((item) => (
                 <Card key={item.id} unstyled variant="muted" className="grid grid-cols-1 items-center gap-2 p-2.5 sm:grid-cols-[1fr_160px]">
                   <div className="min-w-0">
-                    <p className="truncate text-xs font-semibold text-[var(--ua-text-primary)]">
+                    <p className="ua-text-working-title truncate text-[var(--ua-text-primary)]">
                       {item.title ?? item.evidence_type.replaceAll('_', ' ')}
                     </p>
-                    <p className="mt-0.5 line-clamp-2 text-xs text-[var(--ua-text-secondary)]">
+                    <p className="ua-text-caption-role mt-0.5 line-clamp-2">
                       {item.summary ?? `Source: ${item.source_system}`}
                     </p>
                   </div>
@@ -239,10 +239,10 @@ function ResponsibilityDialog({
           )}
         </div>
 
-        <label className="block text-sm font-medium">
+        <label className="ua-text-body block font-medium">
           {correction ? 'Correction rationale' : 'Confirmation note (optional)'}
           <textarea
-            className={`mt-1 min-h-24 w-full rounded-md border bg-[var(--ua-surface-muted)] p-2 text-sm ${
+            className={`ua-text-body mt-1 min-h-24 w-full rounded-md border bg-[var(--ua-surface-muted)] p-2 ${
               correction ? 'border-[var(--ua-warning-border)]' : 'border-[var(--ua-border-default)]'
             }`}
             value={rationale}
@@ -279,7 +279,7 @@ export function ResponsibilityAssessmentCard({
             <p className="text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-secondary)]">
               Responsibility
             </p>
-            <h2 className="mt-1 text-base font-semibold text-[var(--ua-text-primary)]">
+            <h2 className="ua-text-section-title mt-1 text-[var(--ua-text-primary)]">
               Advisory assessment and merchant confirmation
             </h2>
           </div>
@@ -295,29 +295,29 @@ export function ResponsibilityAssessmentCard({
       {loading && !data ? (
         <Bone className="mt-4 h-24" />
       ) : error || !projection ? (
-        <div role="alert" className="mt-4 rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] p-3 text-sm text-[var(--ua-text-secondary)]">
+        <div role="alert" className="ua-text-body mt-4 rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] p-3 text-[var(--ua-text-secondary)]">
           Responsibility assessment is unavailable. No confirmation has been recorded.
         </div>
       ) : (
         <>
           <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Card unstyled variant="muted" className="p-3">
-              <p className="text-xs text-[var(--ua-text-secondary)]">Current responsibility</p>
-              <p className="mt-1 text-sm font-semibold text-[var(--ua-text-primary)]">
+              <p className="ua-text-caption-role">Current responsibility</p>
+              <p className="ua-text-working-title mt-1 text-[var(--ua-text-primary)]">
                 {LOSS_ATTRIBUTION_DISPLAY[projection.loss_attribution ?? 'unknown']}
               </p>
-              <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">
+              <p className="ua-text-caption-role mt-1">
                 {ATTRIBUTION_CONFIDENCE_LABELS[
                   projection.attribution_confidence ?? 'needs_more_evidence'
                 ]}
               </p>
             </Card>
             <Card unstyled variant="muted" className="p-3">
-              <p className="text-xs text-[var(--ua-text-secondary)]">Recovery route</p>
-              <p className="mt-1 text-sm font-semibold text-[var(--ua-text-primary)]">
+              <p className="ua-text-caption-role">Recovery route</p>
+              <p className="ua-text-working-title mt-1 text-[var(--ua-text-primary)]">
                 {LIKELY_OWNER_LABELS[projection.recovery_owner ?? 'unknown']}
               </p>
-              <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">
+              <p className="ua-text-caption-role mt-1">
                 {RECOVERABILITY_LABELS[projection.recoverability ?? 'unknown']}
               </p>
             </Card>
@@ -326,14 +326,14 @@ export function ResponsibilityAssessmentCard({
             {projection.responsibility_confirmation_state === 'unconfirmed'
               ? <ShieldAlert className="mt-0.5 shrink-0 text-[var(--ua-warning)]" size={15} aria-hidden="true" />
               : <CheckCircle2 className="mt-0.5 shrink-0 text-[var(--ua-success)]" size={15} aria-hidden="true" />}
-            <p className="text-xs leading-relaxed text-[var(--ua-text-secondary)]">
+            <p className="ua-text-caption-role leading-relaxed">
               {projection.responsibility_confirmation_state === 'unconfirmed'
                 ? 'This remains an advisory projection. Provider silence and “no issue found” do not assign responsibility.'
                 : `Merchant assessment ${projection.responsibility_confirmation_state}${projection.responsibility_confirmed_at ? ` on ${formatDateTime(projection.responsibility_confirmed_at)}` : ''}. Later automated evaluation cannot overwrite it.`}
             </p>
           </div>
           {message ? (
-            <p role="status" className="mt-3 text-xs text-[var(--ua-success)]">{message}</p>
+            <p role="status" className="ua-text-caption-role mt-3 text-[var(--ua-success)]">{message}</p>
           ) : null}
           {canMutate ? (
             <Button className="mt-3" size="sm" variant="secondary" onClick={() => setOpen(true)}>

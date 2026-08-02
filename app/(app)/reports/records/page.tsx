@@ -232,7 +232,7 @@ export default async function ReportRecords({
       ]}
       toolbar={
         <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-[length:var(--ua-text-metadata-size)]">
-          <Link className="font-semibold text-[var(--ua-action-primary)]" href={reportHref}>
+          <Link className="ua-text-metadata text-[var(--ua-action-primary)]" href={reportHref}>
             Back to report
           </Link>
           <span className="text-[var(--ua-text-secondary)]">
@@ -249,7 +249,7 @@ export default async function ReportRecords({
             <nav aria-label="Matching records pages" className="flex min-h-10 items-center justify-between gap-3">
               {page > 1 ? (
                 <Link
-                  className="rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2.5 py-1.5 font-semibold hover:bg-[var(--ua-surface-hover)]"
+                  className="ua-text-label rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2.5 py-1.5 hover:bg-[var(--ua-surface-hover)]"
                   href={recordsHref(page - 1)}
                 >
                   Previous
@@ -257,7 +257,7 @@ export default async function ReportRecords({
               ) : <span />}
               {from + rows.length < total ? (
                 <Link
-                  className="rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2.5 py-1.5 font-semibold hover:bg-[var(--ua-surface-hover)]"
+                  className="ua-text-label rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2.5 py-1.5 hover:bg-[var(--ua-surface-hover)]"
                   href={recordsHref(page + 1)}
                 >
                   Next
@@ -273,7 +273,7 @@ export default async function ReportRecords({
             title="These report records could not be loaded"
             description="The summary value has not been changed. Retry this same report scope."
             action={
-              <Link className="font-semibold text-[var(--ua-action-primary)]" href={recordsHref(page)}>
+              <Link className="ua-text-label text-[var(--ua-action-primary)]" href={recordsHref(page)}>
                 Retry records
               </Link>
             }
@@ -281,7 +281,7 @@ export default async function ReportRecords({
         ) : (
           <DataTableServer<ReportRecordRow>
             flush
-            density="compact"
+            density="metadata"
             aria-label="Matching report records"
             rows={rows}
             getRowKey={(row) => row.id}
@@ -290,7 +290,7 @@ export default async function ReportRecords({
                 kind="filtered-empty"
                 title="No records match this report slice"
                 description="Choose another report range or return to the report to inspect a different metric."
-                action={<Link className="font-semibold text-[var(--ua-action-primary)]" href={reportHref}>Back to report</Link>}
+                action={<Link className="ua-text-label text-[var(--ua-action-primary)]" href={reportHref}>Back to report</Link>}
               />
             }
             columns={[
@@ -299,7 +299,7 @@ export default async function ReportRecords({
                 header: "Record",
                 render: (row) => (
                   <Link
-                    className="font-mono font-semibold text-[var(--ua-text-primary)] hover:text-[var(--ua-action-primary)]"
+                    className="ua-text-working-title font-mono text-[var(--ua-text-primary)] hover:text-[var(--ua-action-primary)]"
                     href={recordHref(row)}
                   >
                     {kind === "recovery" ? `Recovery ${hashId(row.id)}` : shortRef(null, row.id)}

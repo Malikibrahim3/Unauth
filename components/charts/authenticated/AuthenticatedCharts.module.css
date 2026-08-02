@@ -1,20 +1,12 @@
+/* §7.1 — composes the one canonical panel anatomy (styles/authenticated/
+ * surfaces.css) instead of a second hand-tuned inset/border-weight pair. */
 .panel {
-  overflow: hidden;
-  border: 1px solid var(--ua-border-default);
-  border-radius: var(--ua-radius-surface);
-  background: var(--ua-surface-primary);
-  box-shadow: var(--ua-shadow-none);
+  composes: ua-working-surface from global;
 }
 
 .panelHeader {
-  display: flex;
-  min-height: 54px;
-  flex-wrap: wrap;
+  composes: ua-working-surface__header from global;
   align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 15px 10px;
-  border-bottom: 1px solid var(--ua-border-subtle);
 }
 
 .panelHeading { min-width: 0; }
@@ -75,6 +67,7 @@
 .attention { background: var(--ua-warning); color: var(--ua-warning); }
 .negative { background: var(--ua-critical); color: var(--ua-critical); }
 .neutral { background: var(--ua-chart-neutral-700); color: var(--ua-chart-neutral-700); }
+.neutralSoft { background: var(--ua-chart-neutral-500); color: var(--ua-chart-neutral-500); }
 .comparison {
   width: 12px !important;
   height: 0 !important;
@@ -193,11 +186,31 @@
   font-size: var(--ua-text-caption-size);
 }
 .dataDetails summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   width: max-content;
   margin: 0;
   padding: 8px 15px;
   cursor: pointer;
   font-weight: 600;
+  list-style: none;
+}
+/* Suppress the raw browser triangle in every engine and draw one tokenised
+ * chevron instead, rotated open/closed. */
+.dataDetails summary::-webkit-details-marker { display: none; }
+.dataDetails summary::before {
+  content: '';
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-right: 1.5px solid var(--ua-text-tertiary);
+  border-bottom: 1.5px solid var(--ua-text-tertiary);
+  transform: rotate(-45deg);
+  transition: transform var(--ua-duration-fast) var(--ua-ease-standard);
+}
+.dataDetails[open] summary::before {
+  transform: rotate(45deg);
 }
 .dataDetails summary:focus-visible { outline: none; box-shadow: inset var(--ua-shadow-focus); }
 .dataTableWrap { overflow-x: auto; border-top: 1px solid var(--ua-border-subtle); }

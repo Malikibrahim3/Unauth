@@ -90,7 +90,7 @@ export function FlowsIndexClient({
         resultCount={`${flows.length} ${flows.length === 1 ? "flow" : "flows"}`}
       >
         {error ? (
-          <p role="alert" className="border-b border-[var(--ua-border-subtle)] px-4 py-2 text-sm text-[var(--ua-critical)]">
+          <p role="alert" className="ua-text-body border-b border-[var(--ua-border-subtle)] px-4 py-2 text-[var(--ua-critical)]">
             {error}
           </p>
         ) : null}
@@ -103,18 +103,18 @@ export function FlowsIndexClient({
                   className="grid gap-3 px-4 py-3 transition-colors hover:bg-[var(--ua-surface-hover)] focus-visible:outline-none focus-visible:shadow-[inset_var(--ua-shadow-focus)] sm:grid-cols-[minmax(0,1fr)_10rem_6rem_auto] sm:items-center"
                 >
                   <div className="min-w-0">
-                    <h2 className="truncate text-sm font-semibold">{flow.name}</h2>
-                    <p className="mt-1 line-clamp-2 text-xs text-[var(--ua-text-secondary)]">
+                    <h2 className="ua-text-working-title truncate">{flow.name}</h2>
+                    <p className="ua-text-caption-role mt-1 line-clamp-2">
                       {flow.description || "No operator-facing description yet."}
                     </p>
                   </div>
                   <div className="min-w-0">
                     <p className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">Trigger</p>
-                    <p className="mt-1 truncate font-mono text-xs">{flow.trigger}</p>
+                    <p className="ua-text-dense mt-1 truncate font-mono">{flow.trigger}</p>
                   </div>
                   <div>
                     <p className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">Actions</p>
-                    <p className="mt-1 font-sans tabular-nums text-sm">{flow.actionCount}</p>
+                    <p className="ua-text-dense mt-1 font-sans tabular-nums">{flow.actionCount}</p>
                   </div>
                   <div className="flex items-center justify-between gap-3 sm:justify-end">
                     <StatusBadge
@@ -122,7 +122,7 @@ export function FlowsIndexClient({
                       value={flow.status === "published" && !flow.active ? "paused" : flow.active ? "active" : flow.status}
                       size="sm"
                     />
-                    <span className="font-mono text-xs text-[var(--ua-text-tertiary)]">v{flow.version}</span>
+                    <span className="ua-text-metadata font-mono">v{flow.version}</span>
                     <span aria-hidden="true" className="text-[var(--ua-action-primary)]">→</span>
                   </div>
                 </Link>
@@ -139,7 +139,7 @@ export function FlowsIndexClient({
             }
             action={canManage
               ? <Button variant="primary" onClick={() => setCreating(true)}>Create first flow</Button>
-              : <Link href="/help" className="text-sm font-semibold text-[var(--ua-action-primary)] hover:underline">Review flow permissions</Link>}
+              : <Link href="/help" className="ua-text-working-title text-[var(--ua-action-primary)] hover:underline">Review flow permissions</Link>}
           />
         )}
       </RegistrySurface>

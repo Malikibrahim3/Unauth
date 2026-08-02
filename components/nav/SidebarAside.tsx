@@ -117,10 +117,10 @@ export function SidebarAside({
           />
         ) : !isCollapsed && merchantName ? (
           <div className="flex min-h-9 w-full items-center gap-2 rounded-[var(--ua-radius-control)] bg-[var(--ua-surface-hover)] px-2.5 py-1.5" title={merchantName}>
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-primary)] text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-primary)]">
+            <span className="ua-text-working-title flex h-6 w-6 shrink-0 items-center justify-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-primary)] text-[var(--ua-text-primary)]">
               {merchantName.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase()}
             </span>
-            <span className="min-w-0 truncate text-[length:var(--ua-text-metadata-size)] font-semibold leading-tight text-[var(--ua-text-secondary)]">{merchantName}</span>
+            <span className="ua-text-label min-w-0 truncate leading-tight text-[var(--ua-text-secondary)]">{merchantName}</span>
           </div>
         ) : null}
 

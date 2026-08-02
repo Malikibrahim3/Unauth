@@ -72,7 +72,7 @@ export function ConnectorRow({ item }: { item: CatalogueRowItem }) {
         <span className={styles.coverageText}>{item.description}</span>
         {live.note ? <span role="status" className={styles.note} style={{ color: noteColor }}>{live.note}</span> : null}
       </div>
-      <div className="text-left font-semibold tabular-nums text-[var(--ua-text-primary)] md:text-right">
+      <div className="ua-text-working-title text-left tabular-nums text-[var(--ua-text-primary)] md:text-right">
         <span className={styles.mobileLabel}>Records</span>
         {formatNumber(item.importedRecords)}
       </div>

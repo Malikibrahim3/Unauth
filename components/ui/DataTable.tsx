@@ -18,7 +18,7 @@ export interface DataTableColumn<T> {
   width?: string;
 }
 
-type TableDensity = "default" | "compact" | "relaxed";
+type TableDensity = "metadata" | "default" | "rich" | "two-line";
 
 interface DataTableProps<T> {
   columns: DataTableColumn<T>[];
@@ -52,10 +52,13 @@ interface DataTableProps<T> {
   'aria-label'?: string;
 }
 
-function skeletonBarClass(colIndex: number): string {
-  if (colIndex === 0) return "ua-data-table__skeleton-bar--primary";
-  if (colIndex === 1) return "ua-data-table__skeleton-bar--secondary";
-  return "";
+/* Widest at the primary column, narrowing toward trailing metadata (§7.3) —
+ * the previous two-tone scheme had the first column narrower than the
+ * second, the reverse of how a real row reads. */
+const SKELETON_BAR_WIDTHS = [68, 44, 32, 32, 24];
+
+function skeletonBarWidth(colIndex: number): number {
+  return SKELETON_BAR_WIDTHS[colIndex] ?? SKELETON_BAR_WIDTHS[SKELETON_BAR_WIDTHS.length - 1];
 }
 
 function columnAlign<T>(column: DataTableColumn<T>): "left" | "right" | "center" {
@@ -77,7 +80,8 @@ function SkeletonRows({ count = 6, cols }: { count?: number; cols: number }) {
               aria-hidden="true"
             >
               <div
-                className={cn("skeleton ua-data-table__skeleton-bar", skeletonBarClass(j))}
+                className="skeleton ua-data-table__skeleton-bar"
+                style={{ width: `${skeletonBarWidth(j)}%` }}
                 aria-hidden="true"
               />
             </td>

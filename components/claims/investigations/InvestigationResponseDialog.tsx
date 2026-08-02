@@ -174,11 +174,11 @@ export function InvestigationResponseDialog({
     >
       <div className="space-y-4">
         {error ? (
-          <div role="alert" className="rounded-md border border-[var(--ua-risk-critical-border)] bg-[var(--ua-risk-critical-bg)] p-3 text-sm text-[var(--ua-risk-critical)]">
+          <div role="alert" className="ua-text-body rounded-md border border-[var(--ua-risk-critical-border)] bg-[var(--ua-risk-critical-bg)] p-3 text-[var(--ua-risk-critical)]">
             {error}
           </div>
         ) : null}
-        <label className="block text-sm font-medium">
+        <label className="ua-text-body block font-medium">
           Outcome
           <Select
             className="mt-1"
@@ -193,29 +193,29 @@ export function InvestigationResponseDialog({
           </Select>
         </label>
         {outcome === 'no_issue_found' ? (
-          <p className="rounded-md border border-[var(--ua-warning-border)] bg-[var(--ua-warning-bg)] p-3 text-xs text-[var(--ua-warning)]">
+          <p className="ua-text-body rounded-md border border-[var(--ua-warning-border)] bg-[var(--ua-warning-bg)] p-3 text-[var(--ua-warning)]">
             “No issue found” is neutral. It does not prove another party or the customer caused the issue.
           </p>
         ) : null}
-        <label className="block text-sm font-medium">
+        <label className="ua-text-body block font-medium">
           Response summary
           <textarea
-            className="mt-1 min-h-24 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] p-2 text-sm"
+            className="ua-text-body mt-1 min-h-24 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] p-2"
             value={summary}
             onChange={(event) => setSummary(event.target.value)}
             required
           />
         </label>
-        <label className="block text-sm font-medium">
+        <label className="ua-text-body block font-medium">
           Full response (optional)
           <textarea
-            className="mt-1 min-h-40 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] p-2 text-sm"
+            className="ua-text-body mt-1 min-h-40 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] p-2"
             value={body}
             onChange={(event) => setBody(event.target.value)}
           />
         </label>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <label className="text-sm font-medium">
+          <label className="ua-text-body font-medium">
             Responder name
             <Input
               className="mt-1"
@@ -223,7 +223,7 @@ export function InvestigationResponseDialog({
               onChange={(event) => setResponderName(event.target.value)}
             />
           </label>
-          <label className="text-sm font-medium">
+          <label className="ua-text-body font-medium">
             External reference
             <Input
               className="mt-1"
@@ -232,7 +232,7 @@ export function InvestigationResponseDialog({
             />
           </label>
         </div>
-        <label className="block text-sm font-medium">
+        <label className="ua-text-body block font-medium">
           Public HTTPS evidence link (optional)
           <Input
             className="mt-1"
@@ -242,7 +242,7 @@ export function InvestigationResponseDialog({
             placeholder="https://partner.example/evidence/reference"
           />
         </label>
-        <label className="block text-sm font-medium">
+        <label className="ua-text-body block font-medium">
           Evidence file (optional, 10 MB maximum)
           <Input
             className="mt-1 h-auto py-2"
@@ -250,7 +250,7 @@ export function InvestigationResponseDialog({
             accept=".pdf,.docx,.txt,.jpg,.jpeg,.png,.webp"
             onChange={(event) => setFile(event.target.files?.[0] ?? null)}
           />
-          <span className="mt-1 block text-xs text-[var(--ua-text-secondary)]">
+          <span className="ua-text-caption-role mt-1 block">
             Files are stored privately in quarantine and cannot influence a decision until a safety scan marks them clean.
           </span>
         </label>

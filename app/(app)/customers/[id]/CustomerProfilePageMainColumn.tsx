@@ -63,7 +63,7 @@ function CompactTransactionList({
         variant="compact"
         title="No orders in dataset"
         description="No merchant-owned order history is available for this customer yet."
-        action={<Link href="/integrations" className="text-sm font-semibold text-[var(--ua-action-primary)] hover:underline">Review connected sources</Link>}
+        action={<Link href="/integrations" className="ua-text-working-title text-[var(--ua-action-primary)] hover:underline">Review connected sources</Link>}
       />
     );
   }
@@ -74,7 +74,7 @@ function CompactTransactionList({
       aria-label="Customer order history"
       className="min-w-[640px]"
       rows={visibleTransactions}
-      emptyState={<p className="p-4 text-sm text-[var(--ua-text-secondary)]">No order history is available.</p>}
+      emptyState={<p className="ua-text-body p-4 text-[var(--ua-text-secondary)]">No order history is available.</p>}
       getRowKey={(transaction) => transaction.order_id}
       columns={[
         {
@@ -87,7 +87,7 @@ function CompactTransactionList({
             return (
               <div>
                 <div className="flex items-center gap-1.5">
-                  <Link href={`/orders/${transaction.source_order_id}`} className="font-mono text-xs font-semibold underline-offset-2 hover:underline">{transaction.order_id}</Link>
+                  <Link href={`/orders/${transaction.source_order_id}`} className="ua-text-working-title font-mono underline-offset-2 hover:underline">{transaction.order_id}</Link>
                   {transaction.external_href ? (
                     <a
                       href={transaction.external_href}
@@ -153,7 +153,7 @@ function CompactTransactionList({
           key: "amount",
           header: "Amount",
           kind: "currency",
-          render: (transaction) => <span className="font-semibold tabular-nums">{formatMoneyOrDash(Math.round((Number(transaction.order_value) || 0) * 100), transaction.currency)}</span>,
+          render: (transaction) => <span className="ua-text-working-title tabular-nums">{formatMoneyOrDash(Math.round((Number(transaction.order_value) || 0) * 100), transaction.currency)}</span>,
         },
       ]}
     />
@@ -166,7 +166,7 @@ function ChangesStrip({ events }: { events: BehaviorRoadmapEvent[] }) {
   return (
     <ul className="mt-3 divide-y divide-[var(--ua-border-subtle)] rounded-md border border-[var(--ua-border-default)]">
       {changes.map((event) => (
-        <li key={event.id} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
+        <li key={event.id} className="ua-text-dense flex items-center justify-between gap-3 px-3 py-2">
           <span className="min-w-0 truncate text-[var(--ua-text-primary)]">{event.title}{event.subtitle ? <span className="ml-1.5 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">{event.subtitle}</span> : null}</span>
           <span className="shrink-0 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">{formatDateAbsolute(event.date)}</span>
         </li>
@@ -213,7 +213,7 @@ export function CustomerProfilePageMainColumn({
   return (
     <div className="grid min-w-0 grid-cols-1 items-start gap-3 lg:grid-cols-[minmax(0,1fr)_320px]">
       <div className="min-w-0 space-y-3">
-        <SectionCard title="Orders" description="What this customer bought, when it happened, and whether the order led to a case." actions={<span className="text-xs text-[var(--ua-text-tertiary)]">Latest {Math.min(transactions.length, 25)} of {transactions.length}</span>}>
+        <SectionCard title="Orders" description="What this customer bought, when it happened, and whether the order led to a case." actions={<span className="ua-text-metadata">Latest {Math.min(transactions.length, 25)} of {transactions.length}</span>}>
           <CompactTransactionList transactions={transactions} />
           <ChangesStrip events={roadmapEvents} />
         </SectionCard>
@@ -228,7 +228,7 @@ export function CustomerProfilePageMainColumn({
             </div>
             <div className="mt-3 rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-3">
               <p className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">Latest dispute signal</p>
-              <p className="text-sm font-semibold text-[var(--ua-text-primary)]">{latestClaimDisplay!.claimType}</p>
+              <p className="ua-text-working-title text-[var(--ua-text-primary)]">{latestClaimDisplay!.claimType}</p>
               <p className="font-mono text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">{latestClaimDisplay!.orderReference}</p>
               <p className="mt-2 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">Filed {formatFiledDate(latestClaim)}</p>
             </div>
@@ -245,7 +245,7 @@ export function CustomerProfilePageMainColumn({
             variant="compact"
             title="No activity yet"
             description="Case status changes, evidence generation, and notes will appear here."
-            action={<Link href={`/customers/${profile.id}/evidence/new`} className="text-sm font-semibold text-[var(--ua-action-primary)] hover:underline">Add evidence</Link>}
+            action={<Link href={`/customers/${profile.id}/evidence/new`} className="ua-text-working-title text-[var(--ua-action-primary)] hover:underline">Add evidence</Link>}
           />
         ) : (
           <ol className="space-y-3">
@@ -340,14 +340,14 @@ export function CustomerProfilePageMainColumn({
                     <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
                     <span>{label}</span>
                   </dt>
-                  <dd className="mt-1 break-words pl-7 text-sm text-[var(--ua-text-primary)]">
+                  <dd className="ua-text-body mt-1 break-words pl-7 text-[var(--ua-text-primary)]">
                     {value}
                   </dd>
                 </div>
               ))}
             </dl>
           ) : (
-            <p className="text-sm text-[var(--ua-text-secondary)]">
+            <p className="ua-text-body text-[var(--ua-text-secondary)]">
               Contact details are unavailable.
             </p>
           )}
@@ -357,12 +357,12 @@ export function CustomerProfilePageMainColumn({
               profile.phones.length > 1 ? `${profile.phones.length} phones` : null,
               profile.addresses.length > 1 ? `${profile.addresses.length} addresses` : null,
             ].filter((v): v is string => Boolean(v));
-            return extras.length ? <p className="mt-3 border-t border-[var(--ua-border-subtle)] pt-3 text-xs text-[var(--ua-text-secondary)]">Also observed: {extras.join(', ')} across this store history.</p> : null;
+            return extras.length ? <p className="ua-text-caption-role mt-3 border-t border-[var(--ua-border-subtle)] pt-3">Also observed: {extras.join(', ')} across this store history.</p> : null;
           })()}
         </SectionCard>
 
         <SectionCard id="identity" title="Identity" description="Identifiers linked from merchant-owned activity." density="compact">
-          {profile.sibling_count ? <div className="flex gap-2 rounded-md bg-[var(--ua-info-bg)] p-3 text-xs text-[var(--ua-text-secondary)]"><Fingerprint className="h-4 w-4 shrink-0 text-[var(--ua-info)]" aria-hidden="true" /><span>{profile.sibling_count + 1} source customer records were resolved into this profile.</span></div> : null}
+          {profile.sibling_count ? <div className="ua-text-caption-role flex gap-2 rounded-md bg-[var(--ua-info-bg)] p-3"><Fingerprint className="h-4 w-4 shrink-0 text-[var(--ua-info)]" aria-hidden="true" /><span>{profile.sibling_count + 1} source customer records were resolved into this profile.</span></div> : null}
           {variantCount > 0 ? <div className={profile.sibling_count ? "mt-2" : ""}><Badge tone="info" size="sm">{variantCount} identity change{variantCount === 1 ? '' : 's'}</Badge></div> : null}
           {identitySignalSummary.length ? (
             <div className={profile.sibling_count || variantCount > 0 ? "mt-3 border-t border-[var(--ua-border-subtle)] pt-3" : ""}>
@@ -370,9 +370,9 @@ export function CustomerProfilePageMainColumn({
                 aria-label="Identity signal summary"
                 className="min-w-[280px]"
                 rows={identitySignalSummary}
-                emptyState={<p className="p-3 text-sm text-[var(--ua-text-secondary)]">No identity signals are available.</p>}
+                emptyState={<p className="ua-text-body p-3 text-[var(--ua-text-secondary)]">No identity signals are available.</p>}
                 getRowKey={(row) => row.signalType}
-                density="compact"
+                density="metadata"
                 columns={[
                   {
                     key: "type",
@@ -398,7 +398,7 @@ export function CustomerProfilePageMainColumn({
           {linkedAccounts.length ? (
             <ul className="mt-3 space-y-1.5 border-t border-[var(--ua-border-subtle)] pt-3">
               {linkedAccounts.map((account) => (
-                <li key={`${account.entityType}-${account.entityValue}`} className="flex items-center justify-between gap-2 text-xs text-[var(--ua-text-secondary)]">
+                <li key={`${account.entityType}-${account.entityValue}`} className="ua-text-caption-role flex items-center justify-between gap-2">
                   <span className="min-w-0 truncate">{account.entityValue}</span>
                   <span className="shrink-0 tabular-nums text-[var(--ua-text-tertiary)]">{formatConfidencePercent(account.confidence)}</span>
                 </li>
@@ -408,7 +408,7 @@ export function CustomerProfilePageMainColumn({
         </SectionCard>
 
         <SectionCard title="Observed changes" description="New identifiers first seen across the order history." density="compact">
-          {identityTimeline.length ? <ol className="space-y-3">{identityTimeline.slice(-6).reverse().map((entry) => <li key={`${entry.date}-${entry.field}-${entry.value}`} className="flex gap-3"><span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${entry.isVariant ? 'bg-[var(--ua-warning)]' : 'bg-[var(--ua-text-tertiary)]'}`} /><div className="min-w-0"><p className="truncate text-xs font-medium text-[var(--ua-text-primary)]">{entry.value}</p><p className="mt-0.5 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">{entry.isVariant ? 'New ' : 'First '} {labelize(entry.field)} · {formatDateAbsolute(entry.date)}</p></div></li>)}</ol> : <div className="flex items-center gap-2 text-sm text-[var(--ua-text-secondary)]"><ShoppingBag className="h-4 w-4" aria-hidden="true" />No identifier history yet.</div>}
+          {identityTimeline.length ? <ol className="space-y-3">{identityTimeline.slice(-6).reverse().map((entry) => <li key={`${entry.date}-${entry.field}-${entry.value}`} className="flex gap-3"><span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${entry.isVariant ? 'bg-[var(--ua-warning)]' : 'bg-[var(--ua-text-tertiary)]'}`} /><div className="min-w-0"><p className="ua-text-label truncate font-medium text-[var(--ua-text-primary)]">{entry.value}</p><p className="mt-0.5 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">{entry.isVariant ? 'New ' : 'First '} {labelize(entry.field)} · {formatDateAbsolute(entry.date)}</p></div></li>)}</ol> : <div className="ua-text-body flex items-center gap-2 text-[var(--ua-text-secondary)]"><ShoppingBag className="h-4 w-4" aria-hidden="true" />No identifier history yet.</div>}
         </SectionCard>
 
         {possibleMatches.length ? (
@@ -417,7 +417,7 @@ export function CustomerProfilePageMainColumn({
               {possibleMatches.slice(0, 5).map((match) => (
                 <li key={match.candidateId} className="rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-2.5">
                   <div className="flex items-center justify-between gap-2">
-                    <Link href={`/customers/${match.candidateId}`} className="min-w-0 truncate text-xs font-semibold text-[var(--ua-text-primary)] hover:underline">
+                    <Link href={`/customers/${match.candidateId}`} className="ua-text-working-title min-w-0 truncate text-[var(--ua-text-primary)] hover:underline">
                       {match.displayName || match.email || 'Unnamed customer'}
                     </Link>
                     {match.confidence != null ? <span className="shrink-0 text-[length:var(--ua-text-metadata-size)] tabular-nums text-[var(--ua-text-tertiary)]">{formatConfidencePercent(match.confidence)}</span> : null}
@@ -427,7 +427,7 @@ export function CustomerProfilePageMainColumn({
                 </li>
               ))}
             </ul>
-            {possibleMatches.length > 5 ? <p className="mt-2 text-xs text-[var(--ua-text-tertiary)]">+{possibleMatches.length - 5} more not shown</p> : null}
+            {possibleMatches.length > 5 ? <p className="ua-text-metadata mt-2">+{possibleMatches.length - 5} more not shown</p> : null}
           </SectionCard>
         ) : null}
 

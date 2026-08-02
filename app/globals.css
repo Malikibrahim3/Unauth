@@ -781,80 +781,12 @@
     --input:               var(--surface-border);
     --ring:                var(--action-primary);
   }
-  .dark {
-    --surface-base:    #18150F;
-    --surface-raised:  #211D16;
-    --surface-overlay: #2A261E;
-    --surface-muted:   #1E1B14;
-    --surface-input:   #1C1912;
-    --surface-border:  #36322A;
 
-    --ink-primary:   #EDE8DF;
-    --ink-secondary: #A09588;
-    --ink-tertiary:  #6B6158;
-    --ink-inverse:   #18150F;
-
-    --copper-bright: #C45C4C;
-    --copper-mid:    #A84035;
-    --copper-dim:    #3D1F1C;
-    --copper-glow:   rgba(196, 92, 76, 0.18);
-
-    --action-primary:       #EDE8DF;
-    --action-primary-hover: #FFFFFF;
-    --action-primary-soft:  #2A261E;
-
-    --brand-rust:       #C45C4C;
-    --brand-rust-hover: #D96B5A;
-    --brand-rust-soft:  #3D1F1C;
-
-    --border-subtle:  #2E2A22;
-    --border-default: #36322A;
-    --border-strong:  #5A5448;
-
-    --text-subtle:   #6B6158;
-    --text-disabled: #4A453E;
-
-    --icon:       #C8C0B4;
-    --icon-muted: #6B6158;
-
-    --shadow-color: 20 16% 4%;
-    --shadow-xs: 0 1px 2px hsl(var(--shadow-color) / 0.30), 0 0 1px hsl(var(--shadow-color) / 0.20);
-    --shadow-sm: 0 1px 3px hsl(var(--shadow-color) / 0.40), 0 2px 4px hsl(var(--shadow-color) / 0.30);
-    --shadow-md: 0 4px 8px hsl(var(--shadow-color) / 0.50), 0 8px 16px hsl(var(--shadow-color) / 0.35);
-    --shadow-lg: 0 12px 24px hsl(var(--shadow-color) / 0.55), 0 20px 40px hsl(var(--shadow-color) / 0.40);
-    --shadow-xl: 0 24px 48px hsl(var(--shadow-color) / 0.60), 0 32px 64px hsl(var(--shadow-color) / 0.45);
-    --shadow-drawer: -8px 0 24px hsl(var(--shadow-color) / 0.50), -16px 0 48px hsl(var(--shadow-color) / 0.40);
-    --shadow-modal:  0 8px 24px hsl(var(--shadow-color) / 0.55), 0 16px 48px hsl(var(--shadow-color) / 0.50);
-    --shadow-focus:  0 0 0 3px rgba(196, 92, 76, 0.35);
-
-    --focus-ring: var(--copper-bright);
-
-    --sev-definite-fill: #3D1A18;
-    --sev-probable-fill: #3A2010;
-    --sev-neutral-fill:  #1E2830;
-    --sev-possible-fill: #1E2830;
-    --sev-clear-fill:    #162818;
-
-    --background:         var(--surface-base);
-    --foreground:         var(--ink-primary);
-    --card:               var(--surface-raised);
-    --card-foreground:    var(--ink-primary);
-    --popover:            var(--surface-overlay);
-    --popover-foreground: var(--ink-primary);
-    --primary:            var(--action-primary);
-    --primary-foreground: var(--ink-inverse);
-    --secondary:          var(--surface-overlay);
-    --secondary-foreground: var(--ink-primary);
-    --muted:              var(--surface-muted);
-    --muted-foreground:   var(--ink-secondary);
-    --accent:             var(--action-primary);
-    --accent-hover:       var(--action-primary-hover);
-    --accent-soft:        var(--action-primary-soft);
-    --border:             var(--border-default);
-    --input:              var(--border-default);
-    --ring:               var(--focus-ring);
-  }
-
+  /* A `.dark` class-selector palette lived here (legacy shadcn scaffolding).
+   * Theme switching in this app uses the `data-theme="dark"` attribute
+   * (see ThemeBootstrap and `:root[data-theme="dark"]` below), never a
+   * `.dark` class — confirmed zero call sites applying that class anywhere
+   * in app/components/lib. Removed as dead code (M3, execution ledger). */
 
   * {
     border-color: var(--border-subtle);
@@ -1027,11 +959,6 @@
   100% { background-position: -200% 0; }
 }
 
-@keyframes nav-progress {
-  0%   { transform: translateX(-100%); }
-  100% { transform: translateX(400%); }
-}
-
 .skeleton {
   background: linear-gradient(
     90deg,
@@ -1049,46 +976,6 @@
     animation: none;
   }
 }
-@keyframes ua-reveal {
-  0%   { opacity: 0; transform: translate3d(0, 14px, 0); }
-  100% { opacity: 1; transform: translate3d(0, 0, 0); }
-}
-
-@keyframes ua-bar-fill {
-  0%   { width: 0; }
-  100% { width: var(--ua-bar-width, 100%); }
-}
-
-@keyframes ua-pulse-dot {
-  0%, 100% { transform: scale(1); }
-  50%      { transform: scale(1.3); }
-}
-
-@keyframes ua-pulse-dot-rust {
-  0%, 100% { transform: scale(1); }
-  50%      { transform: scale(1.3); }
-}
-
-@keyframes ua-draw-line {
-  0%   { stroke-dashoffset: var(--ua-line-len, 1200); }
-  100% { stroke-dashoffset: 0; }
-}
-
-@keyframes ua-caret-blink {
-  0%, 49%  { opacity: 1; }
-  50%, 100% { opacity: 0; }
-}
-
-@keyframes ua-shimmer-bg {
-  0%   { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-
-@keyframes ua-type-clip {
-  0%   { clip-path: inset(0 100% 0 0); }
-  100% { clip-path: inset(0 -1px 0 0); }
-}
-
 /* Default: always visible — no-JS / prerender / social-card safe */
 
 /* Only collapse to hidden once JS motion layer is ready */
@@ -1139,38 +1026,6 @@
 /* Stagger helpers */
 
 /* Recharts: draw line in when chart is visible */
-
-@keyframes ua-meteor {
-  0%   { transform: rotate(215deg) translateX(0); opacity: 1; }
-  70%  { opacity: 1; }
-  100% { transform: rotate(215deg) translateX(-600px); opacity: 0; }
-}
-
-@keyframes ua-border-beam {
-  100% { offset-distance: 100%; }
-}
-
-@keyframes ua-border-beam-rotate {
-  to { --angle: 360; }
-}
-
-@property --angle {
-  syntax: "<number>";
-  initial-value: 0;
-  inherits: false;
-}
-
-@keyframes ua-orbit-drift {
-  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); opacity: 0.72; }
-  50%      { transform: translate3d(1.5%, -2%, 0) rotate(1deg); opacity: 0.94; }
-}
-
-@keyframes ua-scan-sweep {
-  0%   { transform: translateX(-120%) skewX(-12deg); opacity: 0; }
-  18%  { opacity: 0.55; }
-  54%  { opacity: 0.2; }
-  100% { transform: translateX(120%) skewX(-12deg); opacity: 0; }
-}
 
 .react-flow {
   color: var(--ink-primary);

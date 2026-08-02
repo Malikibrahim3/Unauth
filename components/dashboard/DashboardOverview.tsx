@@ -24,11 +24,13 @@ import {
 } from '@/lib/reporting/intelligence';
 import { ButtonLink } from '@/components/ui/ButtonLink';
 import {
+  formatCurrencyCompact,
   formatDateAbsolute,
   formatMoney,
   formatMinorCurrencyNullable,
   formatNumber,
 } from '@/lib/utils/format';
+import { fromMinorUnits } from '@/lib/canonical/money';
 import {
   bridgeMetricValue,
   buildDashboardAttentionPriorities,
@@ -443,6 +445,11 @@ export function DashboardOverview({
                   idleDetail={chartCoverageSummary}
                   formatValue={(value) => (
                     value == null ? 'Unavailable' : formatMoney(value, selectedCurrency)
+                  )}
+                  formatAxisValue={(value) => (
+                    value == null
+                      ? '—'
+                      : formatCurrencyCompact(fromMinorUnits(value, selectedCurrency), selectedCurrency)
                   )}
                   table={chartTable}
                 />

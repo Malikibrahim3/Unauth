@@ -102,9 +102,12 @@ export const STATUS_TONES: Record<string, StatusTone> = {
   supported: 'success',
   resolved: 'success',
   normal: 'success',
-  // danger — negative / overdue / blocked
+  // §6.3 attention scale: "overdue" fires on most rows in this domain
+  // (carrier/3PL waits routinely run a week), so it stays a warning, not a
+  // hard-breach danger chip.
+  overdue: 'warning',
+  // danger — negative / blocked
   escalated: 'danger',
-  overdue: 'danger',
   not_recoverable: 'danger',
   resolved_denied: 'danger',
   blocked: 'danger',

@@ -80,16 +80,16 @@ export function CustomersOverviewPageView({
                   {label}
                 </UiFilterChip>
               ))}
-              {!connectionState.helpdesk ? <span className="ml-1 text-xs text-[var(--ua-text-tertiary)]">Case counts reflect connected helpdesk data.</span> : null}
+              {!connectionState.helpdesk ? <span className="ua-text-metadata ml-1">Case counts reflect connected helpdesk data.</span> : null}
             </nav>
             {!noFilters ? (
-              <div className="flex flex-wrap items-center gap-1.5 text-xs text-[var(--ua-text-secondary)]">
+              <div className="ua-text-caption-role flex flex-wrap items-center gap-1.5">
                 <span>Active:</span>
                 {hasRefunds && <FilterChip label="Has refunds" removeHref={buildRemoveHref(sp, 'hasRefunds')} />}
                 {hasChargebacks && <FilterChip label="Has chargebacks" removeHref={buildRemoveHref(sp, 'hasChargebacks')} />}
                 {openClaimsOnly && <FilterChip label="Open cases" removeHref={buildRemoveHref(sp, 'openClaims')} />}
                 {q && <FilterChip label={`Search: “${q}”`} removeHref={buildRemoveHref(sp, 'q')} />}
-                <Link href="/customers" className="font-semibold hover:underline">Clear all</Link>
+                <Link href="/customers" className="ua-text-label hover:underline">Clear all</Link>
               </div>
             ) : null}
           </div>
@@ -98,7 +98,7 @@ export function CustomersOverviewPageView({
           ? `${formatNumber(baseCustomerCount)} customer records`
           : `${formatNumber(totalCount)} matching customers · ${formatNumber(baseCustomerCount)} customer records total`}
         pagination={rows.length > 0 ? (
-          <div className="flex w-full flex-wrap items-center justify-between gap-3 text-xs text-[var(--ua-text-secondary)]">
+          <div className="ua-text-caption-role flex w-full flex-wrap items-center justify-between gap-3">
             <Suspense fallback={null}><PageSizeSelect pathname="/customers" pageSize={PAGE_SIZE} /></Suspense>
             {totalPages > 1 ? <div className="flex items-center gap-2"><span>Page {page} of {totalPages}</span>{page > 1 ? <ButtonLink href={customersListHref(sp, { page: String(page - 1), pageSize: String(PAGE_SIZE) })} variant="secondary" size="sm">Previous</ButtonLink> : null}{page < totalPages ? <ButtonLink href={customersListHref(sp, { page: String(page + 1), pageSize: String(PAGE_SIZE) })} variant="secondary" size="sm">Next</ButtonLink> : null}</div> : null}
           </div>
@@ -114,7 +114,7 @@ export function CustomersOverviewPageView({
           }
           action={
             <div className="flex items-center gap-4">
-              <Link href={pageActions.primary.href} className="text-xs font-semibold hover:underline" style={{ color: 'var(--ua-action-primary)' }}>
+              <Link href={pageActions.primary.href} className="ua-text-label hover:underline" style={{ color: 'var(--ua-action-primary)' }}>
                 {pageActions.primary.label}
               </Link>
             </div>
@@ -125,7 +125,7 @@ export function CustomersOverviewPageView({
           title="No customers found"
           description={`${formatNumber(baseCustomerCount)} customer records remain in your directory. Adjust or clear the filters to return to the full customer context.`}
           action={
-            <Link href="/customers" className="text-xs font-semibold hover:underline" style={{ color: 'var(--ua-action-primary)' }}>
+            <Link href="/customers" className="ua-text-label hover:underline" style={{ color: 'var(--ua-action-primary)' }}>
               Clear all filters
             </Link>
           }

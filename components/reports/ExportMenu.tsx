@@ -78,7 +78,7 @@ export default function ExportMenu({
               <Link
                 role="menuitem"
                 href={reportsHref}
-                className="block px-3 py-2 text-xs hover:bg-[var(--ua-surface-secondary)]"
+                className="ua-text-dense block px-3 py-2 hover:bg-[var(--ua-surface-secondary)]"
                 style={{ color: 'var(--ua-text-primary)' }}
                 onClick={() => setOpen(false)}
               >
@@ -98,7 +98,7 @@ export default function ExportMenu({
             <a
               role="menuitem"
               href={`/api/reports/claims?${exportParams.toString()}`}
-              className="block px-3 py-2 text-xs hover:bg-[var(--ua-surface-primary)]"
+              className="ua-text-dense block px-3 py-2 hover:bg-[var(--ua-surface-primary)]"
               style={{ color: 'var(--ua-text-primary)' }}
               onClick={() => setOpen(false)}
             >
@@ -110,7 +110,7 @@ export default function ExportMenu({
             <a
               role="menuitem"
               href={`/api/reports/claims?${outcomesParams.toString()}`}
-              className="block px-3 py-2 text-xs hover:bg-[var(--ua-surface-primary)]"
+              className="ua-text-dense block px-3 py-2 hover:bg-[var(--ua-surface-primary)]"
               style={{ color: 'var(--ua-text-primary)' }}
               onClick={() => setOpen(false)}
             >
@@ -130,7 +130,7 @@ export default function ExportMenu({
             role="menuitem"
             href="/api/audit-trail?format=csv&limit=200"
             prefetch={false}
-            className="block px-3 py-2 text-xs hover:bg-[var(--ua-surface-primary)]"
+            className="ua-text-dense block px-3 py-2 hover:bg-[var(--ua-surface-primary)]"
             style={{ color: 'var(--ua-text-primary)' }}
             onClick={() => setOpen(false)}
           >

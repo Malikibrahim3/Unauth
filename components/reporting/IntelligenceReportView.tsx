@@ -72,7 +72,7 @@ function StageCell({
     <div
       className={`${dense ? 'py-3' : 'min-h-24 py-4'} sm:px-4 ${index > 0 ? "border-t border-[var(--ua-border-subtle)] sm:border-l sm:border-t-0" : ""}`}
     >
-      <dt className="text-xs font-medium text-[var(--ua-text-secondary)]">
+      <dt className="ua-text-label text-[var(--ua-text-secondary)]">
         <Link
           className="hover:text-[var(--ua-action-primary)]"
           href={financialReportRecordsHref({
@@ -92,7 +92,7 @@ function StageCell({
         {known ? money(bridge[step.key] as number, bridge.currency) : "Unavailable"}
       </dd>
       {dense ? null : (
-        <dd className="mt-1 text-xs text-[var(--ua-text-secondary)]">{step.definition}</dd>
+        <dd className="ua-text-caption-role mt-1">{step.definition}</dd>
       )}
     </div>
   );
@@ -113,20 +113,20 @@ export function IntelligenceReportView({
       <section aria-labelledby="bridge-title">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2 id="bridge-title" className="text-lg font-semibold">
+            <h2 id="bridge-title" className="ua-text-section-title">
               Value this period
             </h2>
-            <p className="mt-1 text-sm text-[var(--ua-text-secondary)]">
+            <p className="ua-text-caption-role mt-1">
               {TIME_RANGE_LABELS[report.range]}
             </p>
           </div>
         </div>
         {!report.reconciliation.ok ? (
           <div role="alert" className="mt-3 rounded-[var(--ua-radius-control)] border border-[var(--ua-warning-border)] bg-[var(--ua-warning-bg)] p-3 text-[var(--ua-warning)]">
-            <p className="font-semibold">
+            <p className="ua-text-working-title">
               Ledger reconciliation needs attention
             </p>
-            <ul className="mt-1 list-disc pl-5 text-sm">
+            <ul className="ua-text-body mt-1 list-disc pl-5">
               {report.reconciliation.issues.map((x) => (
                 <li key={x}>{x}</li>
               ))}
@@ -138,7 +138,7 @@ export function IntelligenceReportView({
             {report.bridges.map((b) => (
               <div key={b.currency}>
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h3 className="font-semibold">{b.currency}</h3>
+                  <h3 className="ua-text-working-title">{b.currency}</h3>
                   <Link
                     href={financialReportRecordsHref({
                       range: report.range,
@@ -146,7 +146,7 @@ export function IntelligenceReportView({
                       metric: "exposed",
                       timezone: report.timezone,
                     })}
-                    className="text-sm font-medium text-[var(--ua-action-primary)]"
+                    className="ua-text-working-title text-[var(--ua-action-primary)]"
                   >
                     {financialMetricCaseIds(b, "exposed").length} cases with recorded exposure
                   </Link>
@@ -178,7 +178,7 @@ export function IntelligenceReportView({
             ))}
           </div>
         ) : (
-          <p className="mt-4 text-sm text-[var(--ua-text-secondary)]">
+          <p className="ua-text-body mt-4 text-[var(--ua-text-secondary)]">
             No financial history is available for cases in this period. Unavailable is not zero.
           </p>
         )}
@@ -186,8 +186,8 @@ export function IntelligenceReportView({
       <DashboardCharts report={report} comparison={comparison} />
       {report.bridges.length ? (
         <section className="border-t border-[var(--ua-border-subtle)] pt-5" aria-labelledby="financial-stages-title">
-          <h2 id="financial-stages-title" className="text-base font-semibold">Financial stage detail</h2>
-          <p className="mt-1 text-sm text-[var(--ua-text-secondary)]">
+          <h2 id="financial-stages-title" className="ua-text-section-title">Financial stage detail</h2>
+          <p className="ua-text-caption-role mt-1">
             The full ledger remains available without competing with the decision view above.
           </p>
           <div className="mt-2">
@@ -261,14 +261,14 @@ export function IntelligenceReportView({
       ) : null}
       {!compact ? (
         <section className="border-t border-[var(--ua-border-subtle)] pt-5">
-          <h2 className="text-lg font-semibold">Report definitions</h2>
+          <h2 className="ua-text-section-title">Report definitions</h2>
           <div className="mt-3 divide-y divide-[var(--ua-border-subtle)] border-y border-[var(--ua-border-subtle)]">
             {REPORT_DEFINITIONS.map((d) => (
               <details key={d.id} className="py-3">
                 <summary className="cursor-pointer font-medium">
                   {d.name}
                 </summary>
-                <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
+                <dl className="ua-text-dense mt-3 grid gap-2 sm:grid-cols-2">
                   <div>
                     <dt className="text-[var(--ua-text-secondary)]">Definition</dt>
                     <dd>{d.definition}</dd>

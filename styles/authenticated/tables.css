@@ -1,3 +1,4 @@
+@layer components {
 /*
  * Table shell/header/row base rules. Relocated verbatim from
  * app/(app)/authenticated.css. The shared table component is
@@ -33,6 +34,14 @@
 .ua-app .ua-data-table {
   width: 100%;
   overflow-x: auto;
+  /* Bound the body so a long registry gets a sticky header and an internal
+   * scrollbar instead of growing the document indefinitely (§7.3). */
+  overflow-y: auto;
+  max-height: min(72vh, 860px);
+  /* Keep the table's intentional horizontal scroll from expanding the
+   * authenticated document viewport. Row menus are portalled above this
+   * region, so paint containment cannot hide an overlay. */
+  contain: paint;
   border: 1px solid var(--ua-border-default);
   border-radius: var(--ua-radius-surface);
   background: var(--ua-surface-primary);
@@ -57,10 +66,6 @@
   table-layout: fixed;
 }
 
-.ua-app .ua-work-queue-table .ua-data-table__row {
-  height: 64px;
-}
-
 .ua-app .ua-work-queue-table .ua-data-table__cell:first-child,
 .ua-app .ua-work-queue-table .ua-data-table__header-cell:first-child {
   padding-right: var(--ua-space-2);
@@ -71,9 +76,15 @@
 }
 
 .ua-app .ua-data-table__header-cell {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   height: var(--ua-table-header-height);
   padding-inline: var(--ua-space-4);
-  border-bottom: 1px solid var(--ua-border-default);
+  /* A sticky th's border-bottom does not paint reliably during scroll in
+   * every engine; an inset shadow on the cell itself always does. */
+  box-shadow: inset 0 -1px 0 var(--ua-border-hairline);
+  background: var(--ua-surface-secondary);
   color: var(--ua-text-tertiary);
   font-size: var(--ua-text-metadata-size);
   font-weight: 600;
@@ -150,43 +161,47 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 200px;
+  min-height: 320px;
   color: var(--ua-text-secondary);
   font-size: var(--ua-text-dense-size);
 }
 
 .ua-app .ua-data-table__skeleton-row {
+  /* Match the real row height so the skeleton doesn't jump ~100px taller
+   * once data lands (§7.3). */
+  height: var(--ua-data-row-height);
   border-bottom: 1px solid var(--ua-border-subtle);
 }
 
 .ua-app .ua-data-table__skeleton-cell {
-  padding: var(--ua-space-2) var(--ua-space-4);
+  padding-inline: var(--ua-space-4);
+  vertical-align: middle;
 }
 
 .ua-app .ua-data-table__skeleton-bar {
-  width: 50%;
+  /* Fallback for columns past the specified widths below. */
+  width: 24%;
   height: var(--ua-space-3);
   border-radius: var(--ua-radius-control);
 }
 
-.ua-app .ua-data-table__skeleton-bar--primary {
-  width: 60%;
-}
-
-.ua-app .ua-data-table__skeleton-bar--secondary {
-  width: 80%;
-}
-
-.ua-app .ua-data-table--density-compact {
-  --ua-data-row-height: 40px;
+/* One row-density contract (§7.3), replacing the three that shipped
+ * simultaneously (this file's old 40/44/52, tokens.css's dead 44/56 pair, and
+ * Work's own hardcoded 64px override). */
+.ua-app .ua-data-table--density-metadata {
+  --ua-data-row-height: var(--ua-table-row-height-metadata);
 }
 
 .ua-app .ua-data-table--density-default {
-  --ua-data-row-height: 44px;
+  --ua-data-row-height: var(--ua-table-row-height-default);
 }
 
-.ua-app .ua-data-table--density-relaxed {
-  --ua-data-row-height: 52px;
+.ua-app .ua-data-table--density-rich {
+  --ua-data-row-height: var(--ua-table-row-height-rich);
+}
+
+.ua-app .ua-data-table--density-two-line {
+  --ua-data-row-height: var(--ua-table-row-height-two-line);
 }
 
 /* Flush variant (§8.3): the table is the body of a RegistrySurface, so the
@@ -364,8 +379,27 @@
 }
 
 @media (min-width: 1024px) {
-  .ua-app .ua-case-queue__list {
-    width: 360px;
-    max-height: none;
+  /* Neither pane owned its own overflow below this breakpoint: the list grew
+   * to its full content height and the preview pane stretched to match,
+   * leaving a large void of empty canvas beneath a short preview. Bound the
+   * queue to the viewport and let each pane scroll independently instead. */
+  .ua-app .ua-case-queue {
+    display: grid;
+    grid-template-columns: 360px minmax(0, 1fr);
+    height: calc(100dvh - var(--ua-utility-header-height) - 96px);
+    min-height: 560px;
   }
+
+  .ua-app .ua-case-queue__list,
+  .ua-app .ua-case-queue__preview {
+    height: 100%;
+    max-height: none;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .ua-app .ua-case-queue__list {
+    width: auto;
+  }
+}
 }

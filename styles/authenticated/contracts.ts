@@ -42,7 +42,7 @@ export const segmentedControlContract = {
 
 export const tabContract = {
   root: 'flex min-w-0 items-center gap-5 border-b border-[var(--ua-border-default)]',
-  item: 'inline-flex h-[var(--ua-control-height-md)] items-center border-b-2 border-transparent px-0.5 text-[length:var(--ua-text-dense-size)] font-medium text-[var(--ua-text-secondary)] transition-colors hover:text-[var(--ua-text-primary)] focus-visible:outline-none',
+  item: 'inline-flex h-[var(--ua-control-height-md)] items-center border-b-2 border-transparent px-0.5 text-[length:var(--ua-text-dense-size)] font-medium text-[var(--ua-text-secondary)] transition-colors hover:text-[var(--ua-text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ua-border-focus)]',
   // Primary ink plus a 2px accent underline.
   active: 'border-[var(--ua-accent-500)] text-[var(--ua-text-primary)]',
 } as const;

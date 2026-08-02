@@ -21,7 +21,7 @@ export function CustomerProfileBlockedView({ reason }: { reason: CustomerProfile
   return (
     <div>
       <AuthenticatedPageHeader eyebrow="Customer record" title="Link expired" subtitle="This link has expired. Ask your team for a new one from Unauth." />
-      <div className={pageStyles.pageBody}><AuthenticatedPanel bodyClassName="p-4"><a href="https://unauth.co" className="text-[length:var(--ua-text-metadata-size)] font-semibold underline" style={{ color: 'var(--ua-text-primary)' }}>Go to unauth.co</a></AuthenticatedPanel></div>
+      <div className={pageStyles.pageBody}><AuthenticatedPanel bodyClassName="p-4"><a href="https://unauth.co" className="ua-text-label underline" style={{ color: 'var(--ua-text-primary)' }}>Go to unauth.co</a></AuthenticatedPanel></div>
     </div>
   );
 }

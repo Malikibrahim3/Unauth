@@ -16,7 +16,7 @@ function ProfileDrawerLink({ profileId, disputedOrder }: { profileId: string; di
   return (
     <p className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-secondary)]">
       Prefer the profile view?{' '}
-      <Link href={href} className="font-semibold hover:underline" style={{ color: 'var(--ua-action-primary)' }}>
+      <Link href={href} className="ua-text-working-title hover:underline" style={{ color: 'var(--ua-action-primary)' }}>
         Open as a side panel on the customer profile
       </Link>
     </p>

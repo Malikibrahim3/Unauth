@@ -1,3 +1,4 @@
+@layer components {
 /* The workspace reflows at narrow CSS widths and remains operable at 200% zoom. */
 .ua-desktop-boundary,
 .ua-desktop-product {
@@ -32,4 +33,5 @@ body:has(.ua-desktop-boundary) {
   .ua-app :where(.ua-page-frame, .ua-page-shell, .ua-workbench-page) {
     min-width: 0;
   }
+}
 }

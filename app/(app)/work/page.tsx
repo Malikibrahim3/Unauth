@@ -147,7 +147,12 @@ export default async function WorkPage({
         ? Promise.resolve({ data: [], count: 0 })
         : query.range((page - 1) * pageSize, page * pageSize - 1),
       includeExceptions
-        ? listExceptions(serviceClient, ctx.merchantId, { status: "open", limit: pageSize, ...exceptionDeadline })
+        ? listExceptions(serviceClient, ctx.merchantId, {
+            status: "open",
+            limit: pageSize,
+            offset: (page - 1) * pageSize,
+            ...exceptionDeadline,
+          })
         : Promise.resolve([]),
       loadWorkOwnerDirectory(serviceClient, ctx.merchantId),
       countWorkDueBands(serviceClient, ctx.merchantId, asOf),

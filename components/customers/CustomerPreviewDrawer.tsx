@@ -101,10 +101,10 @@ function CustomerPreviewPending() {
 function CustomerPreviewUnavailable({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
     <div role="alert" className="rounded-lg border border-[var(--ua-critical-border,var(--ua-border-default))] bg-[var(--ua-critical-bg,var(--ua-surface-muted))] p-4">
-      <p className="font-semibold text-[var(--ua-text-primary)]">Customer preview unavailable</p>
-      <p className="mt-1 text-sm text-[var(--ua-text-secondary)]">{message}</p>
-      <p className="mt-1 text-sm text-[var(--ua-text-secondary)]">The customer may have been merged, deleted, or may no longer be available to your workspace.</p>
-      <button type="button" className="mt-3 font-semibold text-[var(--ua-action-primary)]" onClick={onRetry}>Retry preview</button>
+      <p className="ua-text-working-title text-[var(--ua-text-primary)]">Customer preview unavailable</p>
+      <p className="ua-text-body mt-1 text-[var(--ua-text-secondary)]">{message}</p>
+      <p className="ua-text-body mt-1 text-[var(--ua-text-secondary)]">The customer may have been merged, deleted, or may no longer be available to your workspace.</p>
+      <button type="button" className="ua-text-working-title mt-3 text-[var(--ua-action-primary)]" onClick={onRetry}>Retry preview</button>
     </div>
   );
 }
@@ -170,12 +170,12 @@ export function CustomerPreviewDrawer({
         customer ? (
           <div className="flex w-full gap-2 p-4">
             <Link
-              className="flex-1 rounded-md bg-[var(--ua-action-primary)] px-3 py-2 text-center text-sm font-semibold text-[var(--ua-action-primary-fg)]"
+              className="ua-text-working-title flex-1 rounded-md bg-[var(--ua-action-primary)] px-3 py-2 text-center text-[var(--ua-action-primary-fg)]"
               href={`/customers/${customer.id}?return=${encodeURIComponent(returnUrl)}`}
             >
               Open full profile
             </Link>
-            {customer.openCases.length === 1 ? <Link className="rounded-md border border-[var(--ua-border-default)] px-3 py-2 text-sm font-semibold" href={customer.openCases[0].href}>Open case</Link> : null}
+            {customer.openCases.length === 1 ? <Link className="ua-text-working-title rounded-md border border-[var(--ua-border-default)] px-3 py-2" href={customer.openCases[0].href}>Open case</Link> : null}
           </div>
         ) : undefined
       }
@@ -189,12 +189,12 @@ export function CustomerPreviewDrawer({
           <>
             <div className="rounded-lg border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-4">
               <div className="flex items-center gap-3">
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--ua-surface-primary)] text-sm font-semibold text-[var(--ua-text-primary)] ring-1 ring-[var(--ua-border-default)]">
+                <span className="ua-text-working-title flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--ua-surface-primary)] text-[var(--ua-text-primary)] ring-1 ring-[var(--ua-border-default)]">
                   {customer.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'C'}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{customer.email ?? "Contact unavailable"}</p>
-                  <p className="mt-1 flex items-center gap-1.5 text-xs text-[var(--ua-text-secondary)]">
+                  <p className="ua-text-dense truncate font-medium">{customer.email ?? "Contact unavailable"}</p>
+                  <p className="ua-text-caption-role mt-1 flex items-center gap-1.5">
                     <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
                     Since {customer.firstSeen ? formatDateAbsolute(customer.firstSeen) : 'unavailable'}
                     {customer.lastOrderAt ? ` · Last order ${formatDate(customer.lastOrderAt)}` : ''}
@@ -215,11 +215,11 @@ export function CustomerPreviewDrawer({
                 ['Lifetime value', primaryTotal ? amount(primaryTotal.value, primaryTotal.currency) : '—'],
                 ['Avg order', primaryTotal ? amount(primaryTotal.value / Math.max(primaryTotal.orders, 1), primaryTotal.currency) : '—'],
                 ['Case rate', `${customer.stats.caseRate}%`],
-              ].map(([name, value]) => <div key={name} className="min-w-0 rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-primary)] p-3"><dt className="truncate text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">{name}</dt><dd className="mt-1 truncate text-lg font-semibold tabular-nums">{value}</dd></div>)}
+              ].map(([name, value]) => <div key={name} className="min-w-0 rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-primary)] p-3"><dt className="truncate text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">{name}</dt><dd className="ua-text-kpi mt-1 truncate">{value}</dd></div>)}
             </dl>
 
             {customer.openExposureByCurrency.length ? (
-              <div className="flex items-center justify-between gap-3 rounded-md border border-[var(--ua-warning-border,var(--ua-border-default))] bg-[var(--ua-warning-bg,var(--ua-surface-muted))] px-3 py-2 text-sm">
+              <div className="ua-text-dense flex items-center justify-between gap-3 rounded-md border border-[var(--ua-warning-border,var(--ua-border-default))] bg-[var(--ua-warning-bg,var(--ua-surface-muted))] px-3 py-2">
                 <span className="inline-flex items-center gap-1.5 text-[var(--ua-warning)]"><TriangleAlert className="h-3.5 w-3.5" aria-hidden="true" /> Open case exposure</span>
                 <strong className="tabular-nums">{customer.openExposureByCurrency.map((item) => amount(item.value, item.currency)).join(' · ')}</strong>
               </div>
@@ -227,7 +227,7 @@ export function CustomerPreviewDrawer({
 
             {customer.openCases.length ? (
               <section className="rounded-lg border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] p-4">
-                <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-[var(--ua-text-secondary)]" aria-hidden="true" /><h3 className="font-semibold">Cases requiring attention</h3></div><Badge tone="warning" size="sm">Action needed</Badge></div>
+                <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-[var(--ua-text-secondary)]" aria-hidden="true" /><h3 className="ua-text-section-title">Cases requiring attention</h3></div><Badge tone="warning" size="sm">Action needed</Badge></div>
                 <ul className="mt-2 divide-y divide-[var(--ua-border-subtle)]">
                   {customer.openCases.map((item) => (
                     <li key={item.id}>
@@ -248,7 +248,7 @@ export function CustomerPreviewDrawer({
             ) : null}
 
             <section className="rounded-lg border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] p-4">
-              <div className="flex items-center gap-2"><ReceiptText className="h-4 w-4 text-[var(--ua-text-secondary)]" aria-hidden="true" /><h3 className="font-semibold">Recent store activity</h3></div>
+              <div className="flex items-center gap-2"><ReceiptText className="h-4 w-4 text-[var(--ua-text-secondary)]" aria-hidden="true" /><h3 className="ua-text-section-title">Recent store activity</h3></div>
               {customer.recent.length ? (
                 <ul className="mt-2 divide-y divide-[var(--ua-border-subtle)]">
                   {customer.recent.map((item) => {
@@ -311,7 +311,7 @@ export function CustomerPreviewDrawer({
                   );})}
                 </ul>
               ) : (
-                <p className="mt-2 text-sm text-[var(--ua-text-secondary)]">
+                <p className="ua-text-body mt-2 text-[var(--ua-text-secondary)]">
                   No recent activity was found.
                 </p>
               )}
@@ -319,7 +319,7 @@ export function CustomerPreviewDrawer({
 
             {customer.identitySignalCounts?.length || customer.sources.length ? (
               <section className="rounded-lg border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] p-4">
-                <div className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-[var(--ua-text-secondary)]" aria-hidden="true" /><h3 className="font-semibold">Identity</h3></div>
+                <div className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-[var(--ua-text-secondary)]" aria-hidden="true" /><h3 className="ua-text-section-title">Identity</h3></div>
                 {customer.identitySignalCounts?.length ? (
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {customer.identitySignalCounts.map((row) => (
@@ -330,7 +330,7 @@ export function CustomerPreviewDrawer({
                 {customer.sources.length ? (
                   <ul className="mt-3 divide-y divide-[var(--ua-border-subtle)] border-t border-[var(--ua-border-subtle)] pt-1">
                     {customer.sources.map((source, index) => (
-                      <li key={`${source.provider}-${source.externalId}-${index}`} className="flex items-center justify-between gap-3 py-2 text-sm">
+                      <li key={`${source.provider}-${source.externalId}-${index}`} className="ua-text-dense flex items-center justify-between gap-3 py-2">
                         <span className="min-w-0 truncate"><span>{providerLabel(source.provider)}</span>{source.email ? ` · ${source.email}` : ""}</span>
                         {source.verified != null ? <Badge tone={source.verified ? "success" : "neutral"} size="sm">{source.verified ? "Verified" : "Unverified"}</Badge> : null}
                       </li>
@@ -340,7 +340,7 @@ export function CustomerPreviewDrawer({
                 {customer.stats.possibleMatchCount ? (
                   <Link
                     href={`/customers/${customer.id}?return=${encodeURIComponent(returnUrl)}#identity`}
-                    className="mt-3 flex items-center justify-between gap-2 border-t border-[var(--ua-border-subtle)] pt-3 text-sm font-medium text-[var(--ua-action-primary)] hover:underline"
+                    className="ua-text-working-title mt-3 flex items-center justify-between gap-2 border-t border-[var(--ua-border-subtle)] pt-3 text-[var(--ua-action-primary)] hover:underline"
                   >
                     {customer.stats.possibleMatchCount} possible match{customer.stats.possibleMatchCount === 1 ? '' : 'es'} held separately
                     <ArrowUpRight className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />

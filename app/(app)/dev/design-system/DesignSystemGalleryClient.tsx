@@ -137,8 +137,6 @@ const ACCENT_SWATCHES = [
   ['Accent 50', '--ua-accent-50'],
   ['Accent 100 · selected bg', '--ua-accent-100'],
   ['Accent 200 · selected border', '--ua-accent-200'],
-  ['Accent 300', '--ua-accent-300'],
-  ['Accent 400', '--ua-accent-400'],
   ['Accent 500 · primary', '--ua-accent-500'],
   ['Accent 600 · hover', '--ua-accent-600'],
   ['Accent 700 · pressed / link', '--ua-accent-700'],
@@ -636,7 +634,7 @@ export function DesignSystemGalleryClient() {
             ]}
             rows={SAMPLE_ROWS}
             getRowKey={(r) => r.id}
-            emptyState={<p className="p-4 text-sm text-[var(--ua-text-secondary)]">No sample rows.</p>}
+            emptyState={<p className="ua-text-body p-4 text-[var(--ua-text-secondary)]">No sample rows.</p>}
           />
         </div>
       </GallerySection>
@@ -692,7 +690,7 @@ export function DesignSystemGalleryClient() {
                 ]}
                 rows={[...REGISTRY_ROWS]}
                 getRowKey={(r) => r.id}
-                emptyState={<p className="p-4 text-sm text-[var(--ua-text-secondary)]">No registry rows.</p>}
+                emptyState={<p className="ua-text-body p-4 text-[var(--ua-text-secondary)]">No registry rows.</p>}
                 selectedKey={registrySelected ?? undefined}
                 onRowClick={(r) => setRegistrySelected(r.id)}
                 primaryColumnKey="name"

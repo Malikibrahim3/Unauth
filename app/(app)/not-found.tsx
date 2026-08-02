@@ -16,14 +16,14 @@ export default function AppNotFound() {
           <div className="flex flex-wrap items-center gap-2">
               <Link
                 href="/dashboard"
-                className="inline-flex h-8 items-center rounded-[var(--ua-radius-control)] px-3 text-[length:var(--ua-text-metadata-size)] font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
+                className="ua-text-label inline-flex h-8 items-center rounded-[var(--ua-radius-control)] px-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
                 style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)', outlineColor: 'var(--ua-action-primary)' }}
               >
                 Go to Overview
               </Link>
               <Link
                 href="/claims"
-                className="inline-flex h-8 items-center rounded-[var(--ua-radius-control)] border px-3 text-[length:var(--ua-text-metadata-size)] font-semibold hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
+                className="ua-text-label inline-flex h-8 items-center rounded-[var(--ua-radius-control)] border px-3 hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
                 style={{ borderColor: 'var(--ua-border-subtle)', color: 'var(--ua-text-primary)', outlineColor: 'var(--ua-action-primary)' }}
               >
                 Go to Cases

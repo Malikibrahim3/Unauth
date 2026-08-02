@@ -7,7 +7,7 @@ import { RelatedRecordsPanel } from "@/components/relationships/RelatedRecordsPa
 import type { TimelineItem } from "@/lib/cases/timeline";
 import type { RelatedRecord } from "@/lib/relationships/relatedRecords";
 import { formatCurrencyNullable } from "@/lib/utils/format";
-import { humanise } from "@/lib/ui/labels";
+import { label } from "@/lib/ui/labels";
 import { shortRef } from "@/lib/ui/displayRef";
 
 type CaseContext = {
@@ -24,8 +24,8 @@ type CaseContext = {
   financialSummaries: Array<Record<string, unknown>>;
 };
 
-function title(value: string | null | undefined) {
-  return value ? humanise(value) : "Not set";
+function title(family: "caseStatus" | "nextAction", value: string | null | undefined) {
+  return value ? label(family, value) : "Not set";
 }
 
 export function CaseContextDrawer({
@@ -67,7 +67,7 @@ export function CaseContextDrawer({
         <div className="p-4">
           <Link
             href={`/claims/${caseId}`}
-            className="inline-flex min-h-10 items-center rounded-md bg-[var(--ua-action-primary)] px-4 py-2 text-sm font-semibold text-[var(--ua-action-primary-fg)]"
+            className="ua-text-working-title inline-flex min-h-10 items-center rounded-md bg-[var(--ua-action-primary)] px-4 py-2 text-[var(--ua-action-primary-fg)]"
           >
             Open full case
           </Link>
@@ -76,12 +76,12 @@ export function CaseContextDrawer({
     >
       <div className="space-y-6 p-4 sm:p-5">
         {error ? (
-          <p role="alert" className="text-sm text-[var(--ua-critical)]">
+          <p role="alert" className="ua-text-body text-[var(--ua-critical)]">
             {error}
           </p>
         ) : null}
         {!data && !error ? (
-          <p role="status" className="text-sm text-[var(--ua-text-tertiary)]">
+          <p role="status" className="ua-text-body text-[var(--ua-text-tertiary)]">
             Loading case context…
           </p>
         ) : null}
@@ -89,14 +89,14 @@ export function CaseContextDrawer({
           <>
             <section className="grid grid-cols-2 gap-4 rounded-lg border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-4">
               <div>
-                <p className="text-xs text-[var(--ua-text-tertiary)]">Status</p>
-                <p className="text-sm font-medium capitalize">
-                  {title(data.case.status)}
+                <p className="ua-text-metadata">Status</p>
+                <p className="ua-text-dense font-medium capitalize">
+                  {title("caseStatus", data.case.status)}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-[var(--ua-text-tertiary)]">Exposure</p>
-                <p className="text-sm font-medium">
+                <p className="ua-text-metadata">Exposure</p>
+                <p className="ua-text-dense font-medium">
                   {formatCurrencyNullable(
                     data.case.amount_at_risk,
                     data.case.currency,
@@ -104,11 +104,11 @@ export function CaseContextDrawer({
                 </p>
               </div>
               <div className="col-span-2">
-                <p className="text-xs text-[var(--ua-text-tertiary)]">
+                <p className="ua-text-metadata">
                   Next action
                 </p>
-                <p className="text-sm">
-                  {title(data.case.next_action)}
+                <p className="ua-text-dense">
+                  {title("nextAction", data.case.next_action)}
                   {data.case.next_action_reason
                     ? ` · ${data.case.next_action_reason}`
                     : ""}
@@ -116,11 +116,11 @@ export function CaseContextDrawer({
               </div>
             </section>
             <section>
-              <h3 className="mb-2 text-sm font-semibold">Related records</h3>
+              <h3 className="mb-2 ua-text-working-title">Related records</h3>
               <RelatedRecordsPanel records={data.relatedRecords} />
             </section>
             <section>
-              <h3 className="mb-2 text-sm font-semibold">Activity</h3>
+              <h3 className="mb-2 ua-text-working-title">Activity</h3>
               {data.timeline.length ? (
                 <ul className="space-y-2">
                   {data.timeline
@@ -129,14 +129,14 @@ export function CaseContextDrawer({
                     .map((item) => (
                       <li
                         key={item.id}
-                        className="rounded-md border border-[var(--ua-border-default)] p-3 text-sm"
+                        className="rounded-md border border-[var(--ua-border-default)] p-3 ua-text-dense"
                       >
                         <p className="font-medium">{item.title}</p>
-                        <p className="text-xs text-[var(--ua-text-tertiary)]">
+                        <p className="ua-text-metadata">
                           {item.occurredAt.slice(0, 10)} · {item.sourceSystem}
                         </p>
                         {item.summary ? (
-                          <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">
+                          <p className="mt-1 ua-text-caption-role">
                             {item.summary}
                           </p>
                         ) : null}
@@ -144,7 +144,7 @@ export function CaseContextDrawer({
                     ))}
                 </ul>
               ) : (
-                <p className="text-sm text-[var(--ua-text-tertiary)]">
+                <p className="ua-text-body text-[var(--ua-text-tertiary)]">
                   No activity yet.
                 </p>
               )}

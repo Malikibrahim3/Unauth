@@ -130,7 +130,7 @@ export function ConnectionActions({
     return (
       <Card unstyled
         variant="muted"
-        className="p-3 text-sm text-[var(--ua-text-secondary)]"
+        className="p-3 ua-text-body text-[var(--ua-text-secondary)]"
       >
         You have read-only access. Managing credentials, retries and
         disconnection requires the settings-management permission.
@@ -139,7 +139,7 @@ export function ConnectionActions({
   const setup = getIntegrationProvider(providerId)?.setupHref;
   if (!connected && !setup && !isCarrier) {
     return (
-      <Card unstyled variant="muted" className="p-3 text-sm text-[var(--ua-text-secondary)]">
+      <Card unstyled variant="muted" className="p-3 ua-text-body text-[var(--ua-text-secondary)]">
         Connection setup is not available in the shared catalogue yet. The capability contract below documents the currently implemented coverage.
       </Card>
     );
@@ -147,10 +147,10 @@ export function ConnectionActions({
   return (
     <div className="space-y-3">
       <div>
-        <h2 className="text-sm font-semibold text-[var(--ua-text-primary)]">
+        <h2 className="ua-text-working-title text-[var(--ua-text-primary)]">
           {connected ? "Connection controls" : `Connect ${providerName}`}
         </h2>
-        <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">
+        <p className="mt-1 ua-text-caption-role">
           {connected
             ? "Refresh access, review setup, or stop future ingestion. Existing records and audit history stay available."
             : "Connect this provider to make its supported source records available to your case evidence."}
@@ -159,7 +159,7 @@ export function ConnectionActions({
       {message ? (
         <p
           role={message.tone === "error" ? "alert" : "status"}
-          className={`rounded-md border px-3 py-2 text-sm ${message.tone === "error" ? "border-[var(--ua-critical-border)] bg-[var(--ua-critical-bg)] text-[var(--ua-critical)]" : "border-[var(--ua-success-border)] bg-[var(--ua-success-bg)] text-[var(--ua-text-primary)]"}`}
+          className={`rounded-md border px-3 py-2 ua-text-body ${message.tone === "error" ? "border-[var(--ua-critical-border)] bg-[var(--ua-critical-bg)] text-[var(--ua-critical)]" : "border-[var(--ua-success-border)] bg-[var(--ua-success-bg)] text-[var(--ua-text-primary)]"}`}
         >
           {message.text}
         </p>
@@ -168,7 +168,7 @@ export function ConnectionActions({
         {!connected && setup && providerId !== "shipbob" ? (
           <Link
             href={setup}
-            className="inline-flex items-center gap-2 rounded-md bg-[var(--ua-action-primary)] px-4 py-2 text-sm font-semibold text-[var(--ua-action-primary-fg)]"
+            className="inline-flex items-center gap-2 rounded-md bg-[var(--ua-action-primary)] px-4 py-2 ua-text-working-title text-[var(--ua-action-primary-fg)]"
           >
             <KeyRound className="h-4 w-4" /> Connect {providerName}
           </Link>
@@ -206,7 +206,7 @@ export function ConnectionActions({
         {connected && setup ? (
           <Link
             href={setup}
-            className="inline-flex items-center rounded-md border border-[var(--ua-border-default)] px-4 py-2 text-sm font-semibold text-[var(--ua-text-primary)]"
+            className="inline-flex items-center rounded-md border border-[var(--ua-border-default)] px-4 py-2 ua-text-working-title text-[var(--ua-text-primary)]"
           >
             Manage connection
           </Link>
@@ -222,7 +222,7 @@ export function ConnectionActions({
         ) : null}
       </div>
       {connected && isCarrier ? (
-        <p className="text-xs text-[var(--ua-text-tertiary)]">
+        <p className="ua-text-metadata">
           Carrier evidence is fetched for matching case and order tracking numbers. Availability of photos and signatures depends on the shipment and account permissions.
         </p>
       ) : null}
@@ -239,7 +239,7 @@ export function ConnectionActions({
           },
         ]}
       >
-        <p className="text-sm text-[var(--ua-text-secondary)]">
+        <p className="ua-text-body text-[var(--ua-text-secondary)]">
           Reconnect later to resume future ingestion. Existing case decisions
           and source provenance are never deleted by this action.
         </p>
@@ -251,12 +251,12 @@ export function ConnectionActions({
         description="Choose the ShipBob account environment before authorizing access."
       >
         <div className="space-y-3">
-          <label className="block text-xs font-semibold text-[var(--ua-text-secondary)]">
+          <label className="block ua-text-label">
             Environment
             <Select
               value={environment}
               onChange={(event) => setEnvironment(event.target.value as "sandbox" | "production")}
-              className="mt-1 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-3 py-2 ua-text-body"
             >
               <option value="production">Production</option>
               <option value="sandbox">Sandbox</option>
@@ -282,7 +282,7 @@ export function ConnectionActions({
         description="Credentials are verified before encrypted storage."
       >
         <div className="space-y-3">
-          <label className="block text-xs font-semibold text-[var(--ua-text-secondary)]">
+          <label className="block ua-text-label">
             Client ID
             <Input
               type="password"
@@ -292,7 +292,7 @@ export function ConnectionActions({
               className="mt-1"
             />
           </label>
-          <label className="block text-xs font-semibold text-[var(--ua-text-secondary)]">
+          <label className="block ua-text-label">
             Client secret
             <Input
               type="password"
@@ -302,7 +302,7 @@ export function ConnectionActions({
               className="mt-1"
             />
           </label>
-          <label className="block text-xs font-semibold text-[var(--ua-text-secondary)]">
+          <label className="block ua-text-label">
             Shipper account number (optional for basic tracking)
             <Input
               type="password"
@@ -312,7 +312,7 @@ export function ConnectionActions({
               className="mt-1"
             />
           </label>
-          <label className="block text-xs font-semibold text-[var(--ua-text-secondary)]">
+          <label className="block ua-text-label">
             Environment
             <Select
               value={environment}

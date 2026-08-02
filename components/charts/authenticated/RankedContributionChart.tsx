@@ -43,7 +43,7 @@ export function RankedContributionChart({
       })))}
       compact={compact}
     >
-      {max === 0 ? <ChartState kind="empty" title="No attributable value" description="No compatible financial rows are available for this ranked view." /> : rows.length === 1 ? (
+      {rows.length === 0 ? <ChartState kind="empty" title="No attributable value" description="No compatible financial rows are available for this ranked view." /> : rows.length === 1 ? (
         <div className={styles.singleRank} role="group" aria-label={`${rows[0].label}: ${rows[0].displayValue ?? rows[0].value}`}>
           <span>
             {rows[0].href ? <Link href={rows[0].href}>{rows[0].label}</Link> : rows[0].label}

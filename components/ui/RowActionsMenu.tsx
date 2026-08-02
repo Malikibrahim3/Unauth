@@ -111,7 +111,7 @@ export function RowActionsMenu({
           role="menu"
           aria-label={label}
           aria-hidden={phase === "exiting" ? true : undefined}
-          className="fixed z-[var(--ua-z-dropdown)] min-w-[168px] overflow-hidden rounded-[var(--ua-radius-control)] border bg-[var(--ua-surface-primary)] py-1 shadow-[var(--ua-shadow-menu)]"
+          className="fixed z-[var(--ua-z-dropdown)] min-w-[168px] overflow-hidden rounded-[var(--ua-radius-control)] border bg-[var(--ua-surface-overlay)] py-1 shadow-[var(--ua-shadow-menu)]"
           style={{
             left: position.left,
             top: position.top,

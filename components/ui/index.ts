@@ -38,6 +38,8 @@ export { PageFrame } from './PageFrame';
 export type { PageFrameProps } from './PageFrame';
 export { RegistrySurface } from './RegistrySurface';
 export type { RegistrySurfaceProps } from './RegistrySurface';
+export { Pagination } from './Pagination';
+export type { PaginationProps } from './Pagination';
 export { BoardSurface, BoardColumn } from './BoardSurface';
 export { EvidenceThread } from './EvidenceThread';
 export type {
@@ -67,7 +69,6 @@ export { Card } from './Card';
 export type { CardVariant, CardDensity } from './Card';
 export { Modal } from './Modal';
 export type { ModalProps } from './Modal';
-export { GradeBadge } from './GradeBadge';
 export { MetricCard } from './MetricCard';
 export { MetricGroup } from './MetricGroup';
 export type { MetricGroupItem, MetricGroupProps } from './MetricGroup';

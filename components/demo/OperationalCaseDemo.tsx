@@ -75,8 +75,8 @@ export function OperationalCaseDemo({
               decorative
             />
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold">Unauth product demo</p>
-              <p className="hidden text-xs text-[var(--ua-text-tertiary)] sm:block">
+              <p className="ua-text-working-title truncate">Unauth product demo</p>
+              <p className="ua-text-metadata hidden sm:block">
                 {MERCHANT_CASE_V1.merchant} · deterministic fictional workspace
               </p>
             </div>
@@ -84,13 +84,13 @@ export function OperationalCaseDemo({
           <nav aria-label="Demo actions" className="flex shrink-0 items-center gap-3">
             <Link
               href="/landing"
-              className="hidden text-sm font-medium text-[var(--ua-text-secondary)] underline-offset-4 hover:underline sm:inline"
+              className="hidden ua-text-dense font-medium text-[var(--ua-text-secondary)] underline-offset-4 hover:underline sm:inline"
             >
               Product
             </Link>
             <Link
               href="/signup"
-              className="inline-flex h-9 items-center gap-1.5 rounded-[var(--ua-radius-control)] bg-[var(--ua-action-primary)] px-3 text-sm font-semibold text-[var(--ua-action-primary-fg)] hover:bg-[var(--ua-action-primary-hover)]"
+              className="ua-text-working-title inline-flex h-9 items-center gap-1.5 rounded-[var(--ua-radius-control)] bg-[var(--ua-action-primary)] px-3 text-[var(--ua-action-primary-fg)] hover:bg-[var(--ua-action-primary-hover)]"
             >
               Create workspace
               <ExternalLink size={14} aria-hidden="true" />
@@ -102,7 +102,7 @@ export function OperationalCaseDemo({
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:py-8">
         <Link
           href="/landing"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--ua-text-link)] hover:underline"
+          className="ua-text-working-title inline-flex items-center gap-1.5 text-[var(--ua-text-link)] hover:underline"
         >
           <ArrowLeft size={14} aria-hidden="true" />
           Back to product overview
@@ -110,16 +110,16 @@ export function OperationalCaseDemo({
 
         <div className="mt-4 flex flex-col justify-between gap-4 border-b border-[var(--ua-border-subtle)] pb-5 lg:flex-row lg:items-start">
           <div className="min-w-0">
-            <p className="text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-tertiary)]">
+            <p className="ua-text-metadata text-[length:var(--ua-text-metadata-size)]">
               Case review · {MERCHANT_CASE_V1.caseReference}
             </p>
-            <h1 className="mt-2 text-[length:var(--ua-text-page-title-size)] font-semibold leading-[var(--ua-text-page-title-leading)] tracking-[var(--ua-text-page-title-tracking)]">
+            <h1 className="ua-text-page-title mt-2 text-[length:var(--ua-text-page-title-size)] leading-[var(--ua-text-page-title-leading)] tracking-[var(--ua-text-page-title-tracking)]">
               {MERCHANT_CASE_V1.title}
             </h1>
-            <p className="mt-2 max-w-3xl text-sm leading-5 text-[var(--ua-text-secondary)]">
+            <p className="ua-text-body mt-2 max-w-3xl leading-5 text-[var(--ua-text-secondary)]">
               {MERCHANT_CASE_V1.summary}
             </p>
-            <dl className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs text-[var(--ua-text-tertiary)]">
+            <dl className="ua-text-metadata mt-3 flex flex-wrap gap-x-5 gap-y-2">
               <Meta label="Value at issue" value={MERCHANT_CASE_V1.order.value} />
               <Meta label="Owner" value="Unassigned" />
               <Meta label="Updated" value="09:20 UTC" />
@@ -127,7 +127,7 @@ export function OperationalCaseDemo({
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <StatusBadge family="caseStatus" value="evidence_needed" size="sm" />
-            <span className="inline-flex h-8 items-center gap-1.5 rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] px-2.5 text-xs font-semibold text-[var(--ua-text-secondary)]">
+            <span className="ua-text-label inline-flex h-8 items-center gap-1.5 rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] px-2.5">
               <LockKeyhole size={13} aria-hidden="true" />
               Read only
             </span>
@@ -144,12 +144,12 @@ export function OperationalCaseDemo({
                   </p>
                   <h2
                     id="demo-case-title"
-                    className="mt-1 text-[length:var(--ua-text-section-title-size)] font-semibold leading-5"
+                    className="ua-text-section-title mt-1 text-[length:var(--ua-text-section-title-size)] leading-5"
                   >
                     {current.title}
                   </h2>
                 </div>
-                <p className="text-xs text-[var(--ua-text-tertiary)]">
+                <p className="ua-text-metadata">
                   Step {index + 1} of {STEP_ORDER.length}
                 </p>
               </div>
@@ -180,7 +180,7 @@ export function OperationalCaseDemo({
                         <span
                           className={`mt-2 hidden text-[length:var(--ua-text-metadata-size)] leading-4 sm:block ${
                             active
-                              ? 'font-semibold text-[var(--ua-text-primary)]'
+                              ? 'ua-text-working-title text-[var(--ua-text-primary)]'
                               : 'text-[var(--ua-text-tertiary)]'
                           }`}
                         >
@@ -255,8 +255,8 @@ export function OperationalCaseDemo({
                     aria-hidden="true"
                   />
                   <div>
-                    <h2 className="text-sm font-semibold">Merchant control</h2>
-                    <p className="mt-1 text-sm leading-5 text-[var(--ua-text-secondary)]">
+                    <h2 className="ua-text-working-title">Merchant control</h2>
+                    <p className="ua-text-body mt-1 leading-5 text-[var(--ua-text-secondary)]">
                       Unauth recommends and records. Your team makes every final
                       customer, payout, responsibility, and recovery decision.
                     </p>
@@ -264,8 +264,8 @@ export function OperationalCaseDemo({
                 </div>
               </JoinedSection>
               <JoinedSection>
-                <h2 className="text-sm font-semibold">Scenario boundaries</h2>
-                <ul className="mt-3 space-y-2 text-xs leading-5 text-[var(--ua-text-secondary)]">
+                <h2 className="ua-text-working-title">Scenario boundaries</h2>
+                <ul className="ua-text-caption-role mt-3 space-y-2 leading-5">
                   <li>No provider request is sent.</li>
                   <li>No refund, denial, or recovery is executed.</li>
                   <li>Selections remain in this browser session only.</li>
@@ -273,7 +273,7 @@ export function OperationalCaseDemo({
               </JoinedSection>
             </Surface>
             <InsetGroup>
-              <p className="text-xs leading-5 text-[var(--ua-text-secondary)]">
+              <p className="ua-text-caption-role leading-5">
                 {MERCHANT_CASE_V1.privacy}
               </p>
             </InsetGroup>
@@ -287,7 +287,7 @@ export function OperationalCaseDemo({
 function IncomingStep() {
   return (
     <div className="space-y-5">
-      <p className="max-w-2xl text-sm leading-6 text-[var(--ua-text-secondary)]">
+      <p className="ua-text-body max-w-2xl leading-6 text-[var(--ua-text-secondary)]">
         A case enters from a connected support workflow. The first view leads
         with what happened, what is at stake, and what still needs a decision.
       </p>
@@ -301,7 +301,7 @@ function IncomingStep() {
         <Fact label="Current state" value="Evidence review required" tone="warning" />
       </dl>
       <InsetGroup>
-        <p className="text-sm leading-5 text-[var(--ua-text-secondary)]">
+        <p className="ua-text-body leading-5 text-[var(--ua-text-secondary)]">
           <strong className="text-[var(--ua-text-primary)]">Request:</strong>{' '}
           {MERCHANT_CASE_V1.order.item}
         </p>
@@ -313,7 +313,7 @@ function IncomingStep() {
 function EvidenceStep() {
   return (
     <div className="space-y-5">
-      <p className="text-sm leading-6 text-[var(--ua-text-secondary)]">
+      <p className="ua-text-body leading-6 text-[var(--ua-text-secondary)]">
         Every fact keeps a source and timestamp. A missing fact is visible as a
         gap, not filled with a guess.
       </p>
@@ -323,11 +323,11 @@ function EvidenceStep() {
             key={source.label}
             className="grid gap-2 py-3 sm:grid-cols-[110px_minmax(0,1fr)_80px] sm:items-center"
           >
-            <span className="text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-tertiary)]">
+            <span className="ua-text-metadata text-[length:var(--ua-text-metadata-size)]">
               {source.label}
             </span>
-            <span className="text-sm text-[var(--ua-text-secondary)]">{source.fact}</span>
-            <span className="text-xs text-[var(--ua-text-tertiary)] sm:text-right">
+            <span className="ua-text-dense text-[var(--ua-text-secondary)]">{source.fact}</span>
+            <span className="ua-text-metadata sm:text-right">
               {source.time}
             </span>
           </div>
@@ -335,7 +335,7 @@ function EvidenceStep() {
       </div>
       <div
         role="status"
-        className="flex items-start gap-2 rounded-[var(--ua-radius-control)] border border-[var(--ua-warning-border)] bg-[var(--ua-warning-bg)] p-3 text-sm text-[var(--ua-warning)]"
+        className="ua-text-body flex items-start gap-2 rounded-[var(--ua-radius-control)] border border-[var(--ua-warning-border)] bg-[var(--ua-warning-bg)] p-3 text-[var(--ua-warning)]"
       >
         <CircleAlert className="mt-0.5 shrink-0" size={16} aria-hidden="true" />
         Parcel contents are not confirmed by the available sources.
@@ -347,21 +347,21 @@ function EvidenceStep() {
 function RecommendationStep() {
   return (
     <div className="space-y-5">
-      <p className="max-w-2xl text-sm leading-6 text-[var(--ua-text-secondary)]">
+      <p className="ua-text-body max-w-2xl leading-6 text-[var(--ua-text-secondary)]">
         The recommendation is an explainable starting point for the merchant,
         not an outcome that executes on its own.
       </p>
       <div className="border-l-2 border-[var(--ua-accent-500)] bg-[var(--ua-accent-50)] px-4 py-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <span className="text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-accent-700)]">
+          <span className="ua-text-working-title text-[length:var(--ua-text-metadata-size)] text-[var(--ua-accent-700)]">
             Recommended action
           </span>
           <StatusBadge family="caseStatus" value="evidence_needed" size="sm" />
         </div>
-        <p className="mt-2 text-[length:var(--ua-text-section-title-size)] font-semibold leading-5 text-[var(--ua-text-primary)]">
+        <p className="ua-text-section-title mt-2 text-[length:var(--ua-text-section-title-size)] leading-5 text-[var(--ua-text-primary)]">
           {MERCHANT_CASE_V1.recommendation.action}
         </p>
-        <p className="mt-1 max-w-2xl text-sm leading-5 text-[var(--ua-text-secondary)]">
+        <p className="ua-text-body mt-1 max-w-2xl leading-5 text-[var(--ua-text-secondary)]">
           {MERCHANT_CASE_V1.recommendation.rationale}
         </p>
       </div>
@@ -387,7 +387,7 @@ function DecisionStep({
 }) {
   return (
     <div className="space-y-5">
-      <p className="text-sm leading-6 text-[var(--ua-text-secondary)]">
+      <p className="ua-text-body leading-6 text-[var(--ua-text-secondary)]">
         Choose a simulated merchant action. This walkthrough changes local
         browser state only; it does not refund, deny, submit, or contact anyone.
       </p>
@@ -404,8 +404,8 @@ function DecisionStep({
             }`}
           >
             <span>
-              <span className="font-semibold text-[var(--ua-text-primary)]">{item.label}</span>
-              <span className="mt-1 block text-sm leading-5 text-[var(--ua-text-secondary)]">
+              <span className="ua-text-working-title text-[var(--ua-text-primary)]">{item.label}</span>
+              <span className="ua-text-dense mt-1 block leading-5 text-[var(--ua-text-secondary)]">
                 {item.detail}
               </span>
             </span>
@@ -442,10 +442,10 @@ function RecoveryStep({ decision }: { decision: string | null }) {
           aria-hidden="true"
         />
         <div>
-          <p className="font-semibold text-[var(--ua-text-primary)]">
+          <p className="ua-text-working-title text-[var(--ua-text-primary)]">
             Simulated merchant decision recorded
           </p>
-          <p className="mt-1 text-sm text-[var(--ua-text-secondary)]">
+          <p className="ua-text-body mt-1 text-[var(--ua-text-secondary)]">
             {decisionLabel}. No payout or external claim was executed.
           </p>
         </div>
@@ -459,7 +459,7 @@ function RecoveryStep({ decision }: { decision: string | null }) {
         <Fact label="Next handoff" value={MERCHANT_CASE_V1.recovery.handoff} />
         <Fact label="Deadline" value={MERCHANT_CASE_V1.recovery.deadline} />
       </dl>
-      <div className="flex items-center gap-2 text-sm text-[var(--ua-text-tertiary)]">
+      <div className="ua-text-dense flex items-center gap-2 text-[var(--ua-text-tertiary)]">
         <Clock3 size={15} aria-hidden="true" />
         This is a read-only preview of the case timeline.
       </div>
@@ -482,7 +482,7 @@ function Fact({
         {label}
       </dt>
       <dd
-        className={`mt-1 text-sm font-medium leading-5 ${
+        className={`mt-1 ua-text-dense font-medium leading-5 ${
           tone === 'warning'
             ? 'text-[var(--ua-warning)]'
             : 'text-[var(--ua-text-primary)]'
@@ -498,7 +498,7 @@ function Meta({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline gap-1.5">
       <dt>{label}</dt>
-      <dd className="font-semibold text-[var(--ua-text-secondary)]">{value}</dd>
+      <dd className="ua-text-label">{value}</dd>
     </div>
   );
 }

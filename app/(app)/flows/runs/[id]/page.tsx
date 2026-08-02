@@ -85,7 +85,7 @@ export default async function Run({
       actions={
         <Link
           href="/flows/runs"
-          className="inline-flex h-7 items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2.5 text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-primary)] hover:bg-[var(--ua-surface-hover)] focus-visible:outline-none focus-visible:shadow-[inset_var(--ua-shadow-focus)]"
+          className="ua-text-label inline-flex h-7 items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2.5 text-[var(--ua-text-primary)] hover:bg-[var(--ua-surface-hover)] focus-visible:outline-none focus-visible:shadow-[inset_var(--ua-shadow-focus)]"
         >
           Run history
         </Link>
@@ -94,7 +94,7 @@ export default async function Run({
       <div className="space-y-4">
         <Surface structure="working" as="section" aria-labelledby="run-summary-title">
           <div className="border-b border-[var(--ua-border-subtle)] px-4 py-3">
-            <h2 id="run-summary-title" className="text-sm font-semibold">Run summary</h2>
+            <h2 id="run-summary-title" className="ua-text-working-title">Run summary</h2>
           </div>
           <dl className="grid sm:grid-cols-4">
             <div className="min-w-0 p-4">
@@ -103,29 +103,29 @@ export default async function Run({
             </div>
             <div className="min-w-0 border-t border-[var(--ua-border-subtle)] p-4 sm:border-l sm:border-t-0">
               <dt className="text-[length:var(--ua-text-metadata-size)] font-medium text-[var(--ua-text-tertiary)]">Trigger event</dt>
-              <dd className="mt-1 font-mono text-xs">Event {hashId(run.domain_event_id)}</dd>
+              <dd className="mt-1 font-mono ua-text-metadata">Event {hashId(run.domain_event_id)}</dd>
             </div>
             <div className="min-w-0 border-t border-[var(--ua-border-subtle)] p-4 sm:border-l sm:border-t-0">
               <dt className="text-[length:var(--ua-text-metadata-size)] font-medium text-[var(--ua-text-tertiary)]">Started</dt>
-              <dd className="mt-1 text-xs">{formatDateTime(run.started_at)}</dd>
+              <dd className="mt-1 ua-text-metadata">{formatDateTime(run.started_at)}</dd>
             </div>
             <div className="min-w-0 border-t border-[var(--ua-border-subtle)] p-4 sm:border-l sm:border-t-0">
               <dt className="text-[length:var(--ua-text-metadata-size)] font-medium text-[var(--ua-text-tertiary)]">Completed</dt>
-              <dd className="mt-1 text-xs">{run.completed_at ? formatDateTime(run.completed_at) : "In progress"}</dd>
+              <dd className="mt-1 ua-text-metadata">{run.completed_at ? formatDateTime(run.completed_at) : "In progress"}</dd>
             </div>
           </dl>
         </Surface>
 
         {run.error ? (
-          <div role="alert" className="border border-[var(--ua-risk-critical-border)] bg-[var(--ua-risk-critical-bg)] px-4 py-3 text-sm text-[var(--ua-risk-critical)]">
+          <div role="alert" className="border border-[var(--ua-risk-critical-border)] bg-[var(--ua-risk-critical-bg)] px-4 py-3 ua-text-body text-[var(--ua-risk-critical)]">
             <strong>Run failed:</strong> {run.error}
           </div>
         ) : null}
 
         <Surface structure="working" as="section" aria-labelledby="execution-steps-title">
           <div className="border-b border-[var(--ua-border-subtle)] px-4 py-3">
-            <h2 id="execution-steps-title" className="text-sm font-semibold">Execution steps</h2>
-            <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">{steps.length} recorded {steps.length === 1 ? "step" : "steps"} in execution order.</p>
+            <h2 id="execution-steps-title" className="ua-text-working-title">Execution steps</h2>
+            <p className="mt-1 ua-text-caption-role">{steps.length} recorded {steps.length === 1 ? "step" : "steps"} in execution order.</p>
           </div>
           {steps.length ? (
             <ol className="divide-y divide-[var(--ua-border-subtle)]">
@@ -133,23 +133,23 @@ export default async function Run({
                 <li key={step.id} className="px-4 py-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <p className="text-sm font-semibold">{step.step_index + 1}. {readableAction(step.output_type)}</p>
-                      <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">
+                      <p className="ua-text-working-title">{step.step_index + 1}. {readableAction(step.output_type)}</p>
+                      <p className="mt-1 ua-text-caption-role">
                         {step.completed_at ? `Recorded ${formatDateTime(step.completed_at)}` : "Awaiting completion"}
                       </p>
                     </div>
                     <StatusBadge family="workflowStatus" value={step.error ? "failed" : step.status} size="sm" />
                   </div>
-                  {step.error ? <p role="alert" className="mt-3 text-sm text-[var(--ua-risk-critical)]">{step.error}</p> : null}
+                  {step.error ? <p role="alert" className="mt-3 ua-text-body text-[var(--ua-risk-critical)]">{step.error}</p> : null}
                   <details className="mt-3">
-                    <summary className="cursor-pointer text-xs font-semibold text-[var(--ua-text-secondary)] focus-visible:outline-none focus-visible:shadow-[inset_var(--ua-shadow-focus)]">Raw step result</summary>
+                    <summary className="cursor-pointer ua-text-label focus-visible:outline-none focus-visible:shadow-[inset_var(--ua-shadow-focus)]">Raw step result</summary>
                     <pre className="mt-2 max-h-64 overflow-auto rounded-[var(--ua-radius-control)] border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-3 text-xs leading-5 text-[var(--ua-text-secondary)]">{payloadText(step.result)}</pre>
                   </details>
                 </li>
               ))}
             </ol>
           ) : (
-            <p className="px-4 py-10 text-center text-sm text-[var(--ua-text-secondary)]">This run did not record any action steps.</p>
+            <p className="px-4 py-10 text-center ua-text-body text-[var(--ua-text-secondary)]">This run did not record any action steps.</p>
           )}
         </Surface>
       </div>

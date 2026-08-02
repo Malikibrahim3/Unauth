@@ -128,7 +128,7 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
         />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <p className="text-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>
+            <p className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>
               Zendesk
             </p>
             {!statusLoading ? (
@@ -136,11 +136,11 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
             ) : null}
           </div>
           {allDone ? (
-            <p className="mt-0.5 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
+            <p className="ua-text-caption-role mt-0.5" style={{ color: 'var(--ua-text-secondary)' }}>
               Sidebar app verified · Ticket sync active
             </p>
           ) : sidebarVerified ? (
-            <p className="mt-0.5 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
+            <p className="ua-text-caption-role mt-0.5" style={{ color: 'var(--ua-text-secondary)' }}>
               Sidebar verified · Add API token below to sync ticket history
             </p>
           ) : null}
@@ -150,7 +150,7 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
       {/* Setup steps */}
       <Card unstyled variant="panel" className="divide-y overflow-hidden p-0">
         <div className="px-4 py-2.5">
-          <p className="text-[length:var(--ua-text-metadata-size)] font-semibold" style={{ color: 'var(--ua-text-secondary)' }}>
+          <p className="ua-text-label" style={{ color: 'var(--ua-text-secondary)' }}>
             Setup steps
           </p>
         </div>
@@ -167,7 +167,7 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
               style={{ borderColor: 'var(--ua-border-default)' }}
             >
               <div
-                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold mt-0.5"
+                className="ua-text-label flex h-6 w-6 shrink-0 items-center justify-center rounded-full font-bold mt-0.5"
                 style={{
                   background: isDone
                     ? 'color-mix(in srgb, var(--ua-success) 15%, transparent)'
@@ -178,11 +178,11 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
                 {isDone ? <CheckCircle2 className="h-3.5 w-3.5" /> : <span>{step.number}</span>}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium" style={{ color: 'var(--ua-text-primary)' }}>
+                <p className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>
                   {step.title}
                 </p>
                 {step.number === 4 ? (
-                  <p className="mt-0.5 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
+                  <p className="ua-text-caption-role mt-0.5" style={{ color: 'var(--ua-text-secondary)' }}>
                     When prompted, paste a key from{' '}
                     <Link
                       href="/integrations"
@@ -193,7 +193,7 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
                     </Link>
                   </p>
                 ) : step.detail ? (
-                  <p className="mt-0.5 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
+                  <p className="ua-text-caption-role mt-0.5" style={{ color: 'var(--ua-text-secondary)' }}>
                     {step.detail}
                   </p>
                 ) : null}
@@ -208,7 +208,7 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
         <a
           href={ZENDESK_ZIP_PATH}
           download="unauth-zendesk-app.zip"
-          className="inline-flex h-8 items-center gap-2 rounded-[var(--ua-radius-control)] px-3 text-[length:var(--ua-text-metadata-size)] font-semibold"
+          className="ua-text-working-title inline-flex h-8 items-center gap-2 rounded-[var(--ua-radius-control)] px-3"
           style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)' }}
         >
           <Download className="h-4 w-4" />
@@ -218,7 +218,7 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
           type="button"
           onClick={() => void verifyInstall()}
           disabled={verifying || sidebarVerified}
-          className="inline-flex h-8 items-center gap-2 rounded-[var(--ua-radius-control)] border px-3 text-[length:var(--ua-text-metadata-size)] font-semibold disabled:opacity-60"
+          className="ua-text-working-title inline-flex h-8 items-center gap-2 rounded-[var(--ua-radius-control)] border px-3 disabled:opacity-60"
           style={{ borderColor: 'var(--ua-border-default)', color: 'var(--ua-text-primary)' }}
         >
           {sidebarVerified ? (
@@ -247,7 +247,7 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
       {verifyError ? (
         <Card unstyled
           variant="panel"
-          className="px-4 py-3 text-sm"
+          className="ua-text-body px-4 py-3"
           style={{
             borderColor: 'color-mix(in srgb, var(--ua-risk-critical) 30%, var(--ua-border-default))',
             background: 'color-mix(in srgb, var(--ua-risk-critical) 6%, var(--ua-surface-primary))',
@@ -261,10 +261,10 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
       {/* Ticket sync section */}
       <div className="space-y-2.5 border-t border-[var(--ua-border-subtle)] pt-3">
         <div>
-          <p className="text-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>
+          <p className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>
             Ticket sync
           </p>
-          <p className="mt-0.5 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
+          <p className="ua-text-caption-role mt-0.5" style={{ color: 'var(--ua-text-secondary)' }}>
             Connect your Zendesk account to import ticket history and link support conversations to customer profiles.
           </p>
         </div>

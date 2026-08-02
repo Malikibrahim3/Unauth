@@ -274,7 +274,7 @@ export default function OnboardingClient({
                     borderColor: active ? 'var(--ua-accent-200)' : 'transparent',
                   }}
                 >
-                  <span className="flex h-[22px] w-[22px] items-center justify-center rounded-[var(--ua-radius-control)]" style={{ background: done ? 'var(--ua-severity-clear-bg)' : active ? 'var(--ua-accent-100)' : 'var(--ua-surface-muted)', color: done ? 'var(--ua-neutral)' : active ? 'var(--ua-accent-700)' : 'var(--ua-text-tertiary)' }}>
+                  <span className="flex h-[22px] w-[22px] items-center justify-center rounded-[var(--ua-radius-control)]" style={{ background: done ? 'var(--ua-confidence-high-bg)' : active ? 'var(--ua-accent-100)' : 'var(--ua-surface-muted)', color: done ? 'var(--ua-neutral)' : active ? 'var(--ua-accent-700)' : 'var(--ua-text-tertiary)' }}>
                     {done ? <Check className="h-3.5 w-3.5" /> : <Icon className="h-3.5 w-3.5" />}
                   </span>
                   <span className="min-w-0">
@@ -369,7 +369,7 @@ export default function OnboardingClient({
             <div className="space-y-4">
               <OnboardingError>{connectionError}</OnboardingError>
               {shopifyConnected ? (
-                <div className="rounded-[var(--ua-radius-surface)] border px-4 py-3" style={{ background: 'var(--ua-severity-clear-bg)', borderColor: 'var(--ua-neutral)' }}>
+                <div className="rounded-[var(--ua-radius-surface)] border px-4 py-3" style={{ background: 'var(--ua-confidence-high-bg)', borderColor: 'var(--ua-neutral)' }}>
                   <div className="flex items-center gap-2">
                     <Check className="h-4 w-4" style={{ color: 'var(--ua-neutral)' }} />
                     <p className="text-body-sm font-semibold" style={{ color: 'var(--ua-neutral)' }}>
@@ -422,7 +422,7 @@ export default function OnboardingClient({
           {activeStep === 2 && (
             <div className="space-y-4">
               {helpdeskConnected ? (
-                <div className="rounded-[var(--ua-radius-surface)] border px-4 py-3" style={{ background: 'var(--ua-severity-clear-bg)', borderColor: 'var(--ua-neutral)' }}>
+                <div className="rounded-[var(--ua-radius-surface)] border px-4 py-3" style={{ background: 'var(--ua-confidence-high-bg)', borderColor: 'var(--ua-neutral)' }}>
                   <div className="flex items-center gap-2">
                     <Check className="h-4 w-4" style={{ color: 'var(--ua-neutral)' }} />
                     <p className="text-body-sm font-semibold" style={{ color: 'var(--ua-neutral)' }}>
@@ -476,7 +476,7 @@ export default function OnboardingClient({
 
           {activeStep === 3 && (
             <div className="space-y-4">
-              <div className="rounded-[var(--ua-radius-surface)] border px-4 py-3" style={{ background: 'var(--ua-severity-clear-bg)', borderColor: 'var(--ua-neutral)' }}>
+              <div className="rounded-[var(--ua-radius-surface)] border px-4 py-3" style={{ background: 'var(--ua-confidence-high-bg)', borderColor: 'var(--ua-neutral)' }}>
                 <p className="text-[length:var(--ua-text-section-title-size)] font-semibold leading-5" style={{ color: 'var(--ua-neutral)' }}>Setup complete</p>
                 <p className="text-body-sm mt-1" style={{ color: 'var(--ua-text-secondary)' }}>
                   Shopify and your selected helpdesk are connected. Review connection health and configure any provider-specific widget placement from Settings.

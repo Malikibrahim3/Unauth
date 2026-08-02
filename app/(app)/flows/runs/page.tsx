@@ -54,7 +54,7 @@ export default async function Runs({
         toolbar={
           <Link
             href="/flows"
-            className="inline-flex h-7 items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2.5 text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-primary)] hover:bg-[var(--ua-surface-hover)] focus-visible:outline-none focus-visible:shadow-[inset_var(--ua-shadow-focus)]"
+            className="ua-text-label inline-flex h-7 items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2.5 text-[var(--ua-text-primary)] hover:bg-[var(--ua-surface-hover)] focus-visible:outline-none focus-visible:shadow-[inset_var(--ua-shadow-focus)]"
           >
             All flows
           </Link>
@@ -65,17 +65,17 @@ export default async function Runs({
           aria-label="Flow run history"
           rows={runs}
           getRowKey={(run) => run.id}
-          density="compact"
+          density="metadata"
           flush
           emptyState={<div className="px-4 py-12 text-center">
-            <h2 className="text-sm font-semibold">No flow runs in this scope</h2>
-            <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">Runs appear here when a published flow receives a matching trigger event.</p>
+            <h2 className="ua-text-working-title">No flow runs in this scope</h2>
+            <p className="ua-text-caption-role mt-1">Runs appear here when a published flow receives a matching trigger event.</p>
           </div>}
           columns={[
             {
               key: "run",
               header: "Run",
-              render: (run) => <span className="font-mono text-xs">Run {hashId(run.id)}</span>,
+              render: (run) => <span className="ua-text-dense font-mono">Run {hashId(run.id)}</span>,
             },
             {
               key: "outcome",
@@ -85,19 +85,19 @@ export default async function Runs({
             {
               key: "started",
               header: "Started",
-              render: (run) => <span className="text-xs text-[var(--ua-text-secondary)]">{formatDateTime(run.started_at)}</span>,
+              render: (run) => <span className="ua-text-dense text-[var(--ua-text-secondary)]">{formatDateTime(run.started_at)}</span>,
             },
             {
               key: "completed",
               header: "Completed",
-              render: (run) => <span className="text-xs text-[var(--ua-text-secondary)]">{run.completed_at ? formatDateTime(run.completed_at) : "In progress"}</span>,
+              render: (run) => <span className="ua-text-dense text-[var(--ua-text-secondary)]">{run.completed_at ? formatDateTime(run.completed_at) : "In progress"}</span>,
             },
             {
               key: "open",
               header: "Open run",
               kind: "action",
               render: (run) => (
-                <Link href={`/flows/runs/${run.id}`} className="text-xs font-semibold text-[var(--ua-action-primary)] focus-visible:outline-none focus-visible:shadow-[inset_var(--ua-shadow-focus)]">
+                <Link href={`/flows/runs/${run.id}`} className="ua-text-label text-[var(--ua-action-primary)] focus-visible:outline-none focus-visible:shadow-[inset_var(--ua-shadow-focus)]">
                   Inspect<span className="sr-only"> run {hashId(run.id)}</span>
                 </Link>
               ),

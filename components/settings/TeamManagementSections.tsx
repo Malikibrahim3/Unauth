@@ -81,7 +81,7 @@ export function TeamMembersSection({
       >
         <div>
           <h2
-            className="text-sm font-semibold"
+            className="ua-text-working-title"
             style={{ color: "var(--ua-text-primary)" }}
           >
             {title}

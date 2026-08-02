@@ -221,10 +221,10 @@ export default function BillingSettingsClient() {
       )}
 
       <Surface as="section" structure="joined" className="p-4">
-        <h2 className="text-sm font-semibold text-[var(--ua-text-primary)]">
+        <h2 className="ua-text-section-title text-[var(--ua-text-primary)]">
           Current plan
         </h2>
-        <p className="mt-2 text-xl font-semibold">{state.planName}</p>
+        <p className="ua-text-page-title mt-2">{state.planName}</p>
         <p className="text-[length:var(--ua-text-caption-size)] text-[var(--ua-text-secondary)]">{priceLabel}</p>
         {state.currentPeriodEnd && (
           <p className="mt-2 text-[length:var(--ua-text-caption-size)] text-[var(--ua-text-tertiary)]">
@@ -247,19 +247,19 @@ export default function BillingSettingsClient() {
       </Surface>
 
       <Surface as="section" structure="joined" className="p-4">
-        <h2 className="text-sm font-semibold text-[var(--ua-text-primary)]">
+        <h2 className="ua-text-section-title text-[var(--ua-text-primary)]">
           Network credits this cycle
         </h2>
         <div className="mt-3 grid grid-cols-2 gap-3 text-[length:var(--ua-text-caption-size)]">
           <div>
             <p className="text-[var(--ua-text-tertiary)]">Monthly remaining</p>
-            <p className="text-lg font-semibold">
+            <p className="ua-text-kpi">
               {state.monthlyCreditsRemaining}
             </p>
           </div>
           <div>
             <p className="text-[var(--ua-text-tertiary)]">Top-up balance</p>
-            <p className="text-lg font-semibold">
+            <p className="ua-text-kpi">
               {state.topupCreditsRemaining}
             </p>
           </div>
@@ -275,7 +275,7 @@ export default function BillingSettingsClient() {
         {state.canTopUp && (
           <button
             type="button"
-            className="mt-3 h-8 rounded-[var(--ua-radius-control)] px-3 text-[length:var(--ua-text-metadata-size)] font-semibold"
+            className="ua-text-working-title mt-3 h-8 rounded-[var(--ua-radius-control)] px-3"
             style={{
               background: "var(--ua-action-primary)",
               color: "var(--ua-canvas)",
@@ -289,7 +289,7 @@ export default function BillingSettingsClient() {
       </Surface>
 
       <Surface as="section" structure="joined" className="space-y-2.5 p-4">
-        <h2 className="text-sm font-semibold text-[var(--ua-text-primary)]">
+        <h2 className="ua-text-section-title text-[var(--ua-text-primary)]">
           Change plan
         </h2>
         {state.planId === "free" && (
@@ -347,7 +347,7 @@ export default function BillingSettingsClient() {
       </Surface>
 
       <Surface as="section" structure="joined" className="space-y-2.5 p-4">
-        <h2 className="text-sm font-semibold text-[var(--ua-text-primary)]">
+        <h2 className="ua-text-section-title text-[var(--ua-text-primary)]">
           Payment method
         </h2>
         <button
@@ -426,7 +426,7 @@ function PlanButton({
   return (
     <button
       type="button"
-      className="block min-h-8 w-full rounded-[var(--ua-radius-control)] px-3 py-1.5 text-left text-[length:var(--ua-text-metadata-size)] font-semibold"
+      className="ua-text-working-title block min-h-8 w-full rounded-[var(--ua-radius-control)] px-3 py-1.5 text-left"
       style={{
         background: variant === "primary" ? "var(--ua-action-primary)" : "var(--ua-surface-primary)",
         color:

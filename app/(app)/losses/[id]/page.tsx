@@ -200,7 +200,7 @@ export default async function LossDetailPage({
         { label: 'Owner', value: owner },
         ...(sourceLabel ? [{ label: 'Source', value: sourceLabel }] : []),
         { label: 'Updated', value: formatDateTime(model.loss.updated_at) },
-        { label: 'Reference', value: <span className="font-mono text-xs">{hashId(id)}</span> },
+        { label: 'Reference', value: <span className="ua-text-metadata font-mono">{hashId(id)}</span> },
       ]}
       actions={
         <LossActions
@@ -211,7 +211,7 @@ export default async function LossDetailPage({
         />
       }
       tabs={
-        <nav className="flex flex-wrap gap-3 text-xs font-medium" aria-label="Loss detail sections">
+        <nav className="ua-text-label flex flex-wrap gap-3" aria-label="Loss detail sections">
           <a href="#loss-waterfall" className="text-[var(--ua-action-primary)]">Financial formula</a>
           <a href="#loss-attribution" className="text-[var(--ua-action-primary)]">Attribution</a>
           <a href="#loss-evidence" className="text-[var(--ua-action-primary)]">Evidence</a>
@@ -230,37 +230,37 @@ export default async function LossDetailPage({
           <JoinedSection id="loss-attribution" aria-labelledby="loss-attribution-title">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <h2 id="loss-attribution-title" className="text-base font-semibold">Attribution</h2>
-                <p className="mt-1 text-sm text-[var(--ua-text-secondary)]">The primary recovery owner is shown separately from candidate explanations.</p>
+                <h2 id="loss-attribution-title" className="ua-text-section-title">Attribution</h2>
+                <p className="ua-text-body mt-1 text-[var(--ua-text-secondary)]">The primary recovery owner is shown separately from candidate explanations.</p>
               </div>
-              <span className="text-sm font-medium text-[var(--ua-text-secondary)]">{amount?.currency ?? 'Currency unavailable'}</span>
+              <span className="ua-text-dense font-medium text-[var(--ua-text-secondary)]">{amount?.currency ?? 'Currency unavailable'}</span>
             </div>
             <dl className="mt-4 grid gap-x-5 gap-y-3 sm:grid-cols-3">
               <div>
-                <dt className="text-xs text-[var(--ua-text-tertiary)]">Primary attribution</dt>
-                <dd className="mt-1 text-sm font-medium">
+                <dt className="ua-text-metadata">Primary attribution</dt>
+                <dd className="ua-text-dense mt-1 font-medium">
                   {primary ? enumLabel('attribution', primary.attribution) : enumLabel('attribution', model.loss.attribution)}
                 </dd>
               </div>
               <div>
-                <dt className="text-xs text-[var(--ua-text-tertiary)]">Accountable party</dt>
-                <dd className="mt-1 text-sm font-medium">{primary?.accountable_party_name ?? enumLabel('counterparty', primary?.accountable_party_type ?? model.loss.counterparty_type)}</dd>
+                <dt className="ua-text-metadata">Accountable party</dt>
+                <dd className="ua-text-dense mt-1 font-medium">{primary?.accountable_party_name ?? enumLabel('counterparty', primary?.accountable_party_type ?? model.loss.counterparty_type)}</dd>
               </div>
               <div>
-                <dt className="text-xs text-[var(--ua-text-tertiary)]">Confidence</dt>
-                <dd className="mt-1 text-sm font-medium">
+                <dt className="ua-text-metadata">Confidence</dt>
+                <dd className="ua-text-dense mt-1 font-medium">
                   {primary?.confidence == null ? enumLabel('sourceConfidence', model.loss.source_confidence) : formatConfidencePercent(primary.confidence)}
                 </dd>
               </div>
             </dl>
             {alternatives.length ? (
               <div className="mt-4 border-t border-[var(--ua-border-subtle)] pt-3">
-                <h3 className="text-xs font-semibold text-[var(--ua-text-secondary)]">Candidate explanations</h3>
+                <h3 className="ua-text-working-title text-[var(--ua-text-secondary)]">Candidate explanations</h3>
                 <ul className="mt-2 grid gap-2 sm:grid-cols-2">
                   {alternatives.map((candidate) => (
-                    <li key={candidate.id} className="text-sm text-[var(--ua-text-secondary)]">
+                    <li key={candidate.id} className="ua-text-dense text-[var(--ua-text-secondary)]">
                       {enumLabel('attribution', candidate.attribution)} · {candidate.accountable_party_name ?? enumLabel('counterparty', candidate.accountable_party_type)}
-                      <span className="ml-1 text-xs text-[var(--ua-text-tertiary)]">(candidate only)</span>
+                      <span className="ua-text-metadata ml-1">(candidate only)</span>
                     </li>
                   ))}
                 </ul>
@@ -270,8 +270,8 @@ export default async function LossDetailPage({
 
           <JoinedSection aria-labelledby="loss-recovery-title">
             <div>
-              <h2 id="loss-recovery-title" className="text-base font-semibold">Recovery progress</h2>
-              <p className="mt-1 text-sm text-[var(--ua-text-secondary)]">Only reconciled recovery stages are plotted; missing stages stay unavailable.</p>
+              <h2 id="loss-recovery-title" className="ua-text-section-title">Recovery progress</h2>
+              <p className="ua-text-body mt-1 text-[var(--ua-text-secondary)]">Only reconciled recovery stages are plotted; missing stages stay unavailable.</p>
             </div>
             <div className="mt-4">
               <StageDotPlot rows={recoveryRows} />
@@ -279,15 +279,15 @@ export default async function LossDetailPage({
           </JoinedSection>
 
           <JoinedSection aria-labelledby="loss-linked-title">
-            <h2 id="loss-linked-title" className="text-base font-semibold">Linked records</h2>
+            <h2 id="loss-linked-title" className="ua-text-section-title">Linked records</h2>
             <div className="mt-3 flex flex-wrap gap-2">
               {model.loss.support_payout_case_id ? (
-                <Link href={`/claims/${model.loss.support_payout_case_id}`} className="rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] px-3 py-2 text-sm font-medium text-[var(--ua-text-secondary)] hover:bg-[var(--ua-surface-hover)]">
+                <Link href={`/claims/${model.loss.support_payout_case_id}`} className="ua-text-dense rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] px-3 py-2 font-medium text-[var(--ua-text-secondary)] hover:bg-[var(--ua-surface-hover)]">
                   Open case
                 </Link>
               ) : null}
               {model.recoveries.map((recovery) => (
-                <Link key={recovery.id} href={`/recoveries/${recovery.id}`} className="rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] px-3 py-2 text-sm font-medium text-[var(--ua-text-secondary)] hover:bg-[var(--ua-surface-hover)]">
+                <Link key={recovery.id} href={`/recoveries/${recovery.id}`} className="ua-text-dense rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] px-3 py-2 font-medium text-[var(--ua-text-secondary)] hover:bg-[var(--ua-surface-hover)]">
                   Recovery {hashId(recovery.id)}
                 </Link>
               ))}
@@ -298,22 +298,22 @@ export default async function LossDetailPage({
           <JoinedSection id="loss-evidence" aria-labelledby="loss-evidence-title">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
-                <h2 id="loss-evidence-title" className="text-base font-semibold">Supporting evidence</h2>
-                <p className="mt-1 text-sm text-[var(--ua-text-secondary)]">Source facts remain labelled with their provider and verification state.</p>
+                <h2 id="loss-evidence-title" className="ua-text-section-title">Supporting evidence</h2>
+                <p className="ua-text-body mt-1 text-[var(--ua-text-secondary)]">Source facts remain labelled with their provider and verification state.</p>
               </div>
-              <span className="text-xs text-[var(--ua-text-tertiary)]">{model.evidence.length} linked {model.evidence.length === 1 ? 'item' : 'items'}</span>
+              <span className="ua-text-metadata">{model.evidence.length} linked {model.evidence.length === 1 ? 'item' : 'items'}</span>
             </div>
             {model.evidence.length ? (
               <ul className="mt-4 divide-y divide-[var(--ua-border-subtle)]">
                 {model.evidence.map((item) => (
-                  <li key={item.id} className="flex flex-wrap items-start justify-between gap-3 py-3 text-sm">
+                  <li key={item.id} className="ua-text-dense flex flex-wrap items-start justify-between gap-3 py-3">
                     <div className="min-w-0">
                       <p className="font-medium">{humaniseField(item.evidence_type)}</p>
-                      <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">
+                      <p className="ua-text-caption-role mt-1">
                         {providerLabel(item.source_provider)} · {item.source_verified ? 'Source verified' : 'Not source verified'}
                       </p>
                     </div>
-                    {item.source_url ? <a href={item.source_url} className="shrink-0 font-semibold text-[var(--ua-action-primary)] underline underline-offset-2">Open source</a> : null}
+                    {item.source_url ? <a href={item.source_url} className="ua-text-working-title shrink-0 text-[var(--ua-action-primary)] underline underline-offset-2">Open source</a> : null}
                   </li>
                 ))}
               </ul>
@@ -323,16 +323,16 @@ export default async function LossDetailPage({
           </JoinedSection>
 
           <JoinedSection id="loss-activity" aria-labelledby="loss-activity-title">
-            <h2 id="loss-activity-title" className="text-base font-semibold">Activity</h2>
+            <h2 id="loss-activity-title" className="ua-text-section-title">Activity</h2>
             {activity.length ? (
               <ol className="mt-4 divide-y divide-[var(--ua-border-subtle)]">
                 {activity.map((item) => (
-                  <li key={item.id} className="flex flex-wrap items-baseline justify-between gap-2 py-3 text-sm">
+                  <li key={item.id} className="ua-text-dense flex flex-wrap items-baseline justify-between gap-2 py-3">
                     <div>
                       <span className="font-medium">{item.label}</span>
                       <span className="ml-2 text-[var(--ua-text-secondary)]">{item.detail}</span>
                     </div>
-                    <time className="shrink-0 text-xs text-[var(--ua-text-tertiary)]">{formatDateTime(item.at)}</time>
+                    <time className="ua-text-metadata shrink-0">{formatDateTime(item.at)}</time>
                   </li>
                 ))}
               </ol>

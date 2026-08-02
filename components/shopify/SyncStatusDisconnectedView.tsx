@@ -49,7 +49,7 @@ export function SyncStatusDisconnectedView({
           <button
             type="button"
             onClick={onOpenModal}
-            className="inline-flex items-center rounded-md px-3 py-1.5 text-xs font-semibold"
+            className="ua-text-working-title inline-flex items-center rounded-md px-3 py-1.5"
             style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)' }}
             data-testid="open-connect-shopify-modal"
           >
@@ -75,21 +75,21 @@ export function SyncStatusDisconnectedView({
             style={{
               background:
                 linkState === 'installed_unlinked'
-                  ? 'var(--ua-severity-possible)'
+                  ? 'var(--ua-confidence-low)'
                   : 'var(--ua-text-secondary)',
             }}
           />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>
+            <p className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>
               {title}
             </p>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--ua-text-secondary)' }}>
+            <p className="ua-text-caption-role mt-0.5" style={{ color: 'var(--ua-text-secondary)' }}>
               {description}
             </p>
             <button
               type="button"
               onClick={onOpenModal}
-              className="inline-flex items-center mt-3 rounded-md px-3 py-1.5 text-xs font-semibold"
+              className="ua-text-working-title inline-flex items-center mt-3 rounded-md px-3 py-1.5"
             style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)' }}
               data-testid="open-connect-shopify-modal"
             >

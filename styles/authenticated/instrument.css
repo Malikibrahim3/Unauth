@@ -1,3 +1,4 @@
+@layer components {
 /*
  * Decision Ledger — Instrument Grade primitives.
  * Product-specific structure lives here; route modules provide facts only.
@@ -47,7 +48,8 @@
   display: none;
 }
 
-.ua-evidence-thread__item[data-state="missing"] .ua-evidence-thread__rail::after {
+.ua-evidence-thread__item[data-state="missing"] .ua-evidence-thread__rail::after,
+.ua-evidence-thread__item[data-authority="inference"] .ua-evidence-thread__rail::after {
   background: transparent;
   border-left: 1px dashed var(--ua-border-strong);
 }
@@ -64,19 +66,69 @@
   box-shadow: 0 0 0 1px var(--ua-border-strong);
 }
 
-.ua-evidence-thread__node[data-authority="recommendation"] {
-  background: var(--ua-action-primary);
+/*
+ * All six authorities (§8.2) — the fact's origin, not just its urgency.
+ * `source`/`fact` are filled (observed/recorded); `inference` is hollow on a
+ * dashed rail (deduced, not observed); `recommendation`/`decision`/`outcome`
+ * carry the product's own three moments.
+ */
+.ua-evidence-thread__node[data-authority="source"] {
+  background: var(--ua-text-secondary);
 }
 
-.ua-evidence-thread__node[data-authority="decision"],
-.ua-evidence-thread__node[data-authority="outcome"] {
+.ua-evidence-thread__node[data-authority="fact"] {
+  background: var(--ua-text-primary);
+}
+
+.ua-evidence-thread__node[data-authority="inference"] {
+  background: var(--ua-surface-primary);
+  box-shadow: 0 0 0 1px var(--ua-border-strong);
+}
+
+.ua-evidence-thread__node[data-authority="recommendation"] {
+  background: var(--ua-accent-500);
+}
+
+.ua-evidence-thread__node[data-authority="decision"] {
   background: var(--ua-action-commit);
 }
 
+.ua-evidence-thread__node[data-authority="outcome"] {
+  border-width: 3px;
+  background: var(--ua-action-commit);
+}
+
+/*
+ * All five states (§8.2). `missing` and `partial` share the hollow-node
+ * treatment inherited from `inference` above but are distinguished by ink:
+ * a missing fact's value and a partial fact's meta both carry warning ink so
+ * the gap reads as attention-worthy rather than merely undecorated.
+ */
 .ua-evidence-thread__node[data-state="missing"],
 .ua-evidence-thread__node[data-state="partial"],
 .ua-evidence-thread__node[data-state="stale"] {
   background: var(--ua-surface-primary);
+}
+
+.ua-evidence-thread__item[data-state="missing"] .ua-evidence-thread__value {
+  color: var(--ua-warning);
+}
+
+.ua-evidence-thread__item[data-state="partial"] .ua-evidence-thread__meta {
+  color: var(--ua-warning);
+}
+
+.ua-evidence-thread__item[data-state="stale"] .ua-evidence-thread__value {
+  color: var(--ua-text-secondary);
+}
+
+.ua-evidence-thread__item[data-state="stale"] .ua-evidence-thread__meta {
+  color: var(--ua-warning);
+}
+
+.ua-evidence-thread__item[data-state="recorded"] .ua-evidence-thread__value {
+  color: var(--ua-text-primary);
+  font-weight: 600;
 }
 
 .ua-evidence-thread__content {
@@ -582,7 +634,8 @@
 
   .ua-evidence-thread__node[data-state="missing"],
   .ua-evidence-thread__node[data-state="partial"],
-  .ua-evidence-thread__node[data-state="stale"] {
+  .ua-evidence-thread__node[data-state="stale"],
+  .ua-evidence-thread__node[data-authority="inference"] {
     background: Canvas;
   }
 }
@@ -596,4 +649,5 @@
     width: 20px;
     height: 20px;
   }
+}
 }

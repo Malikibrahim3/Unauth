@@ -22,9 +22,9 @@ export interface AnalyticsDonutChartProps {
 
 const DEFAULT_PALETTE = [
   'var(--ua-action-primary)',
-  'var(--ua-severity-clear)',
-  'var(--ua-severity-probable)',
-  'var(--ua-severity-possible)',
+  'var(--ua-confidence-high)',
+  'var(--ua-confidence-medium)',
+  'var(--ua-confidence-low)',
   'var(--ua-neutral)',
 ];
 

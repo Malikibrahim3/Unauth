@@ -16,7 +16,7 @@ export interface DataTableServerProps<T> {
   getRowKey: (row: T) => string;
   className?: string;
   emptyState: ReactNode;
-  density?: "default" | "compact" | "relaxed";
+  density?: "metadata" | "default" | "rich" | "two-line";
   /** Render inside a RegistrySurface, which owns the outer frame. */
   flush?: boolean;
   loading?: boolean;

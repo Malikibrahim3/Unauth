@@ -23,6 +23,10 @@ type DashboardPositionChartProps = {
   basisLabel: string;
   idleDetail: string;
   formatValue: (value: number | null) => string;
+  /** Axis ticks use compact notation (£500, £1.5k) — full precision belongs
+   * to the hover readout, not the gutter. Defaults to `formatValue` for
+   * backward compatibility. */
+  formatAxisValue?: (value: number | null) => string;
   table?: ChartDataTableModel;
 };
 
@@ -69,6 +73,7 @@ export function DashboardPositionChart({
   basisLabel,
   idleDetail,
   formatValue,
+  formatAxisValue = formatValue,
   table,
 }: DashboardPositionChartProps) {
   const [activeKey, setActiveKey] = useState<string | null>(null);
@@ -86,13 +91,13 @@ export function DashboardPositionChart({
     secondary?.[index] ?? null,
   ]).filter((value): value is number => value != null);
   const ceiling = niceCeiling(Math.max(0, ...values));
-  const peakIndex = data.reduce(
-    (best, bucket, index) => (
-      (bucket.currentMinor ?? -1) >= (data[best]?.currentMinor ?? -1) ? index : best
-    ),
-    0,
-  );
-  const peak = data[peakIndex] ?? null;
+  const peakIndex = data.reduce((best, bucket, index) => {
+    const value = bucket.currentMinor;
+    if (value == null || value <= 0) return best;
+    const bestValue = best === -1 ? -1 : data[best]?.currentMinor ?? -1;
+    return value > bestValue ? index : best;
+  }, -1);
+  const peak = peakIndex >= 0 ? data[peakIndex] : null;
   const segments = useMemo(() => lineSegments(data, ceiling), [ceiling, data]);
   const selectedKey = pinnedKey ?? activeKey;
   const readout: Readout | null = selectedKey == null
@@ -175,7 +180,7 @@ export function DashboardPositionChart({
           <span>
             {readout
               ? `${metricLabel} ${formatValue(readout.current)}`
-              : peak?.currentMinor != null
+              : peak?.currentMinor != null && peak.currentMinor > 0
                 ? `Peak ${formatValue(peak.currentMinor)} · ${peak.label}`
                 : 'No known interval peak in this period'}
           </span>
@@ -218,9 +223,9 @@ export function DashboardPositionChart({
         onMouseLeave={() => setActiveKey(null)}
       >
         <div className={styles.timelineAxis} aria-hidden="true">
-          <span>{formatValue(ceiling)}</span>
-          <span>{formatValue(ceiling / 2)}</span>
-          <span>0</span>
+          <span>{formatAxisValue(ceiling)}</span>
+          <span>{formatAxisValue(ceiling / 2)}</span>
+          <span>{formatAxisValue(0)}</span>
         </div>
         <div className={styles.timelineGrid} aria-hidden="true">
           <i />
@@ -279,7 +284,7 @@ export function DashboardPositionChart({
                 onKeyDown={(event) => moveFocus(event, index)}
                 onClick={() => togglePin(index)}
               >
-                {index === peakIndex && bucket.currentMinor != null ? (
+                {index === peakIndex && bucket.currentMinor != null && bucket.currentMinor > 0 ? (
                   <span
                     className={styles.peakLabel}
                     data-edge={index === 0 ? 'start' : index === data.length - 1 ? 'end' : undefined}

@@ -23,12 +23,13 @@ export function AuthenticatedPanel({
   bodyClassName,
   capabilityId,
 }: AuthenticatedPanelProps) {
-  // Renders the canonical working surface (§8.2) via the shared Surface
-  // primitive; `styles.panel` keeps the panel's overflow clipping.
+  // Renders the canonical working surface (§7.1) via the shared Surface
+  // primitive; `styles.panel`/`.panelHeader`/`.panelBody` compose the shared
+  // `ua-working-surface` anatomy from global rather than redeclaring it.
   return (
     <Surface as="section" structure="working" className={cn(styles.panel, className)} data-capability-id={capabilityId}>
       {title || description || actions ? (
-        <div className={cn(styles.panelHeader, 'ua-working-surface__header')}>
+        <div className={styles.panelHeader}>
           <div>
             {title ? <h2 className={styles.panelTitle}>{title}</h2> : null}
             {description ? <p className={styles.panelDescription}>{description}</p> : null}
@@ -36,7 +37,7 @@ export function AuthenticatedPanel({
           {actions ? <div className={styles.actions}>{actions}</div> : null}
         </div>
       ) : null}
-      <div className={cn(styles.panelBody, 'ua-working-surface__body', bodyClassName)}>{children}</div>
+      <div className={cn(styles.panelBody, bodyClassName)}>{children}</div>
     </Surface>
   );
 }

@@ -30,7 +30,7 @@ function Field({
     <label className="block text-[length:var(--ua-text-caption-size)] font-medium text-[var(--ua-text-primary)]">
       {label}
       {children}
-      <span className="mt-1 block text-xs font-normal leading-relaxed text-[var(--ua-text-tertiary)]">
+      <span className="mt-1 block ua-text-metadata font-normal leading-relaxed">
         {help}
       </span>
     </label>
@@ -186,8 +186,8 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
       {!canManage ? (
         <Surface structure="joined" className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-semibold">Read-only access</p>
-            <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">
+            <p className="ua-text-working-title">Read-only access</p>
+            <p className="mt-1 ua-text-caption-role">
               An owner or admin with Manage settings permission can change these
               defaults.
             </p>
@@ -345,10 +345,10 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
               }
             />
             <span>
-              <span className="block text-sm font-medium">
+              <span className="block ua-text-body font-medium">
                 Allow controlled connector write-back
               </span>
-              <span className="mt-0.5 block text-xs text-[var(--ua-text-tertiary)]">
+              <span className="mt-0.5 block ua-text-metadata">
                 Only provider capabilities explicitly marked write-supported can
                 use this permission.
               </span>
@@ -365,10 +365,10 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
               }
             />
             <span>
-              <span className="block text-sm font-medium">
+              <span className="block ua-text-body font-medium">
                 Alert on webhook health failures
               </span>
-              <span className="mt-0.5 block text-xs text-[var(--ua-text-tertiary)]">
+              <span className="mt-0.5 block ua-text-metadata">
                 Create in-app notifications for failed, stale, or repeatedly
                 retried ingestion.
               </span>
@@ -390,7 +390,7 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
         {message ? (
           <p
             role={state === "error" ? "alert" : "status"}
-            className={`text-sm ${state === "error" ? "text-[var(--ua-risk-critical)]" : "text-[var(--ua-success)]"}`}
+            className={`ua-text-body ${state === "error" ? "text-[var(--ua-risk-critical)]" : "text-[var(--ua-success)]"}`}
           >
             {message}
           </p>

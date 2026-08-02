@@ -45,7 +45,7 @@ export function EmptyState({
     return (
       <div className={cn('px-4 py-8', className)}>
         <h2
-          className="ua-empty-state__compact-title flex items-center gap-2 text-body-sm font-semibold"
+          className="ua-empty-state__compact-title ua-text-working-title flex items-center gap-2"
         >
           {icon ? (
             <span aria-hidden="true" className="ua-empty-state__compact-icon shrink-0">

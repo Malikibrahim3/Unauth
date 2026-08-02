@@ -28,14 +28,14 @@ export function LeadSummary({
       <dl className="ua-lead-summary__lead">
         <dt>{lead.label}</dt>
         <dd>{lead.value}</dd>
-        {lead.description ? <span>{lead.description}</span> : null}
+        {lead.description ? <dd className="ua-lead-summary__description">{lead.description}</dd> : null}
       </dl>
       <div className="ua-lead-summary__support">
         {supporting.map((item) => (
           <dl key={item.label}>
             <dt>{item.label}</dt>
             <dd>{item.value}</dd>
-            {item.description ? <span>{item.description}</span> : null}
+            {item.description ? <dd className="ua-lead-summary__description">{item.description}</dd> : null}
           </dl>
         ))}
       </div>

@@ -36,11 +36,11 @@ function SupportCaseCards({ cases }: { cases: PublicSupportCaseContext[] }) {
         return (
           <div
             key={supportCase.id}
-            className="rounded-md border p-3 text-sm"
+            className="ua-text-dense rounded-md border p-3"
             style={{ borderColor: 'var(--ua-border-subtle)', background: 'var(--ua-surface-secondary)' }}
           >
             <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-              <p className="font-semibold" style={{ color: 'var(--ua-text-primary)' }}>
+              <p className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>
                 {providerLabel(supportCase.provider)} ·{' '}
                 {supportCase.external_case_id}
               </p>
@@ -49,14 +49,14 @@ function SupportCaseCards({ cases }: { cases: PublicSupportCaseContext[] }) {
                   href={helpdeskUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-xs underline"
+                  className="ua-text-label underline"
                   style={{ color: 'var(--ua-action-primary)' }}
                 >
                   Open in {providerLabel(supportCase.provider)}
                 </a>
               ) : null}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+            <div className="ua-text-metadata grid grid-cols-1 md:grid-cols-2 gap-2">
               <div>
                 <span style={{ color: 'var(--ua-text-secondary)' }}>Status: </span>
                 <span style={{ color: 'var(--ua-text-primary)' }}>{supportCase.case_status ?? '—'}</span>
@@ -75,18 +75,18 @@ function SupportCaseCards({ cases }: { cases: PublicSupportCaseContext[] }) {
               </div>
             </div>
             {supportCase.customer_message_summary ? (
-              <p className="mt-2 text-xs" style={{ color: 'var(--ua-text-primary)' }}>
+              <p className="ua-text-caption-role mt-2" style={{ color: 'var(--ua-text-primary)' }}>
                 <span style={{ color: 'var(--ua-text-secondary)' }}>Customer message: </span>
                 {supportCase.customer_message_summary}
               </p>
             ) : null}
             {supportCase.agent_notes_summary ? (
-              <p className="mt-1 text-xs" style={{ color: 'var(--ua-text-primary)' }}>
+              <p className="ua-text-caption-role mt-1" style={{ color: 'var(--ua-text-primary)' }}>
                 <span style={{ color: 'var(--ua-text-secondary)' }}>Outcome notes: </span>
                 {supportCase.agent_notes_summary}
               </p>
             ) : null}
-            <p className="mt-1 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
+            <p className="ua-text-caption-role mt-1">
               Tags: {formatTags(supportCase.tags)}
               {supportCase.claim_candidate ? ' · Case candidate (review only)' : ''}
             </p>
@@ -110,7 +110,7 @@ export default function SupportCaseContextList({
 }) {
   if (cases.length === 0) {
     if (bare && emptyMessage) {
-      return <p className="text-sm" style={{ color: 'var(--ua-text-secondary)' }}>{emptyMessage}</p>;
+      return <p className="ua-text-body" style={{ color: 'var(--ua-text-secondary)' }}>{emptyMessage}</p>;
     }
     return null;
   }
@@ -125,7 +125,7 @@ export default function SupportCaseContextList({
       style={{ borderColor: 'var(--ua-border-subtle)', background: 'var(--ua-surface-primary)' }}
     >
       {title ? (
-        <p className="text-caption font-semibold mb-3" style={{ color: 'var(--ua-text-secondary)' }}>
+        <p className="ua-text-label mb-3" style={{ color: 'var(--ua-text-secondary)' }}>
           {title}
         </p>
       ) : null}

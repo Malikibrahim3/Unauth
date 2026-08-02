@@ -70,7 +70,7 @@ export function ClaimReviewHeader({
       actions={(
         <Link
           href={customerProfileHref}
-          className="inline-flex h-8 items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] px-3 text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-primary)]"
+          className="ua-text-label inline-flex h-8 items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] px-3 text-[var(--ua-text-primary)]"
         >
           Customer profile
         </Link>
@@ -78,11 +78,11 @@ export function ClaimReviewHeader({
       recordNav={recordNav}
     >
       {history.length > 1 ? (
-        <label className="block max-w-sm text-xs font-semibold text-[var(--ua-text-secondary)]">
+        <label className="ua-text-label block max-w-sm text-[var(--ua-text-secondary)]">
           Switch case
           <select
             aria-label="Switch case"
-            className="mt-1 h-9 w-full rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2 text-xs text-[var(--ua-text-primary)]"
+            className="ua-text-body mt-1 h-9 w-full rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2 text-[var(--ua-text-primary)]"
             value={claimId}
             onChange={(event) => wb.setClaimId(event.target.value)}
           >
