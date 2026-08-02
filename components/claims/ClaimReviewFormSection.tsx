@@ -1,5 +1,6 @@
 'use client';
 
+import { ChevronDown } from 'lucide-react';
 import { Card, Select, Textarea } from '@/components/ui';
 import { CLAIM_TYPE_LABELS } from '@/components/claims/claimReviewLabels';
 import { formatOrderOption } from '@/components/claims/claimReviewLogic';
@@ -32,7 +33,12 @@ export function ClaimReviewFormSection({ wb }: { wb: ClaimReviewWorkbench }) {
         className="w-full flex items-center justify-between px-4 py-2.5 text-left"
       >
         <span className="ua-text-label">{claimId ? 'Edit case details' : 'Connected source intake'}</span>
-        <span className="ua-text-caption-role">{claimFormOpen ? '▲' : '▼'}</span>
+        <ChevronDown
+          size={14}
+          aria-hidden="true"
+          className="shrink-0 transition-transform duration-[var(--ua-duration-fast)]"
+          style={{ transform: claimFormOpen ? 'rotate(180deg)' : undefined, color: 'var(--ua-icon-secondary)' }}
+        />
       </button>
       {claimFormOpen && (
         <div className="px-4 pb-4 pt-0 border-t space-y-3" style={{ borderColor: 'var(--ua-border-subtle)' }}>

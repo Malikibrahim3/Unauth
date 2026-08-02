@@ -140,9 +140,7 @@ export function ClaimsQueueClient({
   const uniformSlaState = slaStates.length > 1 && slaStates.every((state) => state === slaStates[0]);
 
   return (
-    <div
-      className="ua-case-queue flex flex-col lg:flex-row"
-    >
+    <div className="ua-case-queue">
       {/* Left review list */}
       <div
         className="ua-case-queue__list shrink-0 overflow-y-auto border-b lg:max-h-none lg:border-b-0 lg:border-r"

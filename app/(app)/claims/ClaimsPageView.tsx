@@ -168,7 +168,9 @@ export function ClaimsPageView({
                       placeholder="Search customer, order, ticket or case reference"
                       className="ua-text-body h-9 min-w-0 flex-1 rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-3 text-[var(--ua-text-primary)]"
                     />
-                    <button type="submit" className="ua-text-working-title h-9 shrink-0 rounded-[var(--ua-radius-control)] bg-[var(--ua-action-primary)] px-3 text-[var(--ua-action-primary-fg)]">
+                    {/* Secondary, not primary violet (C2) — the registry's primary
+                     * action is reviewing a case, not running a search. */}
+                    <button type="submit" className="ua-text-label h-9 shrink-0 rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] px-3 text-[var(--ua-text-primary)] hover:bg-[var(--ua-surface-hover)]">
                       Search
                     </button>
                     {searchTerm ? (
@@ -188,24 +190,26 @@ export function ClaimsPageView({
                         { value: 'value', label: 'Highest value', href: `/claims${buildClaimsQueryString(sp, { sort: 'value', sla: undefined, page: '1' })}` },
                       ]}
                     />
-                    <Suspense fallback={<span className="ua-text-caption-role">Rows…</span>}>
-                      <PageSizeSelect pathname="/claims" pageSize={pageSize} />
-                    </Suspense>
                   </div>
                 </div>
                 <div className="ua-case-registry-tools__filters">
                   <span className="ua-case-registry-tools__label">Workflow</span>
                   <nav className="flex min-w-0 flex-wrap items-center gap-1" aria-label="Case filters">
-                    {filterTabs.map((tab) => (
-                      <FilterChip
-                        key={tab.label}
-                        href={tab.href}
-                        active={tab.active}
-                        count={tab.count}
-                      >
-                        {tab.label}
-                      </FilterChip>
-                    ))}
+                    {/* A workflow with nothing in it right now isn't a real choice (C3) —
+                     * omit it rather than rendering a chip that reads "0" at full weight,
+                     * unless it's the view the operator is already looking at. */}
+                    {filterTabs
+                      .filter((tab) => tab.count > 0 || tab.active)
+                      .map((tab) => (
+                        <FilterChip
+                          key={tab.label}
+                          href={tab.href}
+                          active={tab.active}
+                          count={tab.count}
+                        >
+                          {tab.label}
+                        </FilterChip>
+                      ))}
                   </nav>
                   <p className="ml-auto text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]" role="status" aria-live="polite">
                     {resultText}
@@ -213,19 +217,27 @@ export function ClaimsPageView({
                 </div>
               </div>
             }
-            pagination={totalPages > 1 ? (
+            pagination={
               <>
-                <span>Page {page} of {totalPages}</span>
-                <div className="flex items-center gap-2">
-                  {page > 1 && (
-                    <ButtonLink href={`/claims${buildClaimsQueryString(sp, { page: String(page - 1) })}`} variant="secondary" size="sm">Previous</ButtonLink>
-                  )}
-                  {page < totalPages && (
-                    <ButtonLink href={`/claims${buildClaimsQueryString(sp, { page: String(page + 1) })}`} variant="secondary" size="sm">Next</ButtonLink>
-                  )}
-                </div>
+                {/* Page size lives with the rest of pagination (C2), not beside sort. */}
+                <Suspense fallback={<span className="ua-text-caption-role">Rows…</span>}>
+                  <PageSizeSelect pathname="/claims" pageSize={pageSize} />
+                </Suspense>
+                {totalPages > 1 ? (
+                  <div className="flex items-center gap-3">
+                    <span>Page {page} of {totalPages}</span>
+                    <div className="flex items-center gap-2">
+                      {page > 1 && (
+                        <ButtonLink href={`/claims${buildClaimsQueryString(sp, { page: String(page - 1) })}`} variant="secondary" size="sm">Previous</ButtonLink>
+                      )}
+                      {page < totalPages && (
+                        <ButtonLink href={`/claims${buildClaimsQueryString(sp, { page: String(page + 1) })}`} variant="secondary" size="sm">Next</ButtonLink>
+                      )}
+                    </div>
+                  </div>
+                ) : null}
               </>
-            ) : undefined}
+            }
           >
             {claims.length === 0 ? (
               <EmptyState

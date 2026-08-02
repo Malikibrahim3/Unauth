@@ -324,8 +324,15 @@
 }
 
 /* Master-detail case queue. The registry owns the outer perimeter; the list
- * and preview use selection, spacing, and dividers instead of nested cards. */
+ * and preview use selection, spacing, and dividers instead of nested cards.
+ * display/flex-direction are declared here, not as Tailwind utilities on the
+ * element (`flex flex-col lg:flex-row`) — a utility class sits in
+ * `@layer utilities`, which cascades after this file's `@layer components`,
+ * so it silently won over this rule's own `display: grid` below at every
+ * width, and the split never rendered. One layer owns this property. */
 .ua-app .ua-case-queue {
+  display: flex;
+  flex-direction: column;
   min-height: 640px;
   background: var(--ua-surface-primary);
 }
@@ -368,9 +375,13 @@
   background: var(--ua-surface-primary);
 }
 
+/* Plain, not accent-tinted (C4): the list already carries the one violet
+ * selection treatment (border-left + surface-selected on the active item);
+ * a second violet wash on the detail pane's top section read as a second,
+ * competing selection state right beside it. */
 .ua-app .ua-case-preview__priority {
-  border-bottom: 1px solid var(--ua-accent-200);
-  background: var(--ua-accent-50);
+  border-bottom: 1px solid var(--ua-border-subtle);
+  background: var(--ua-surface-primary);
 }
 
 .ua-app .ua-case-preview__section {

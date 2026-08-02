@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { getClaimSlaState } from '@/lib/claims/sla';
 import { Card, Select, Textarea } from '@/components/ui';
 import { StatusBadge } from '@/components/ui/StatusBadge';
@@ -68,7 +69,14 @@ export function RailSection({
           <span className="ua-text-working-title truncate" style={{ color: 'var(--ua-text-primary)' }}>{title}</span>
           {badge}
         </span>
-        <span className="ua-text-caption-role shrink-0 ml-2">{open ? '▲' : '▼'}</span>
+        {/* Styled disclosure, not a raw triangle glyph (C11) — matches
+         * components/ui/Disclosure's chevron-rotation convention. */}
+        <ChevronDown
+          size={14}
+          aria-hidden="true"
+          className="shrink-0 ml-2 transition-transform duration-[var(--ua-duration-fast)]"
+          style={{ transform: open ? 'rotate(180deg)' : undefined, color: 'var(--ua-icon-secondary)' }}
+        />
       </button>
       {open && (
         <div className="border-t px-4 pb-4 pt-4" style={{ borderColor: 'var(--ua-border-subtle)' }}>

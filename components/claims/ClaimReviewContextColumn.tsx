@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { EvidenceThread, RecordedOutcome } from "@/components/ui";
 import { claimEventLabel, claimEventSummary } from "@/lib/claims/events";
 import SupportCaseContextList from "@/components/support/SupportCaseContextList";
@@ -88,24 +89,67 @@ export function ClaimReviewContextColumn({
   });
   const previousCases = history.filter((item) => item.id !== selectedClaim?.id);
 
+  /*
+   * The section nav had no active state at all (C12) — every link rendered
+   * identically regardless of scroll position. Track whichever section sits
+   * in the band just below the sticky nav; the observer band, not raw
+   * visibility, is what keeps one section "current" instead of several at
+   * once while the page is between sections.
+   */
+  const [activeSection, setActiveSection] = useState<(typeof SECTION_LINKS)[number]["id"]>(
+    SECTION_LINKS[0].id,
+  );
+  useEffect(() => {
+    const elements = SECTION_LINKS
+      .map((section) => document.getElementById(`case-${section.id}`))
+      .filter((el): el is HTMLElement => el != null);
+    if (!elements.length) return;
+    // The trigger line, not per-element intersection ratio, decides "current":
+    // the active section is the last one whose top has crossed above the line
+    // sitting just below the sticky nav — the standard scroll-spy rule. Using
+    // an IO entry's own intersection state instead picks whichever section is
+    // about to exit (still barely overlapping) rather than the one filling
+    // the reading area.
+    const TRIGGER_LINE = 112;
+    function recompute() {
+      let current = elements[0];
+      for (const el of elements) {
+        if (el.getBoundingClientRect().top <= TRIGGER_LINE) current = el;
+      }
+      const id = current.getAttribute("data-section-id");
+      if (id) setActiveSection(id as (typeof SECTION_LINKS)[number]["id"]);
+    }
+    const observer = new IntersectionObserver(recompute, { rootMargin: `-${TRIGGER_LINE}px 0px -70% 0px`, threshold: 0 });
+    elements.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div className="min-w-0 space-y-6">
       <nav
         aria-label="Case sections"
         className="sticky top-[var(--ua-utility-header-height)] z-10 flex max-w-full gap-7 overflow-x-auto border-b border-[var(--ua-border-subtle)] bg-[var(--ua-canvas)]"
       >
-        {SECTION_LINKS.map((section) => (
-          <a
-            key={section.id}
-            href={`#case-${section.id}`}
-            className="ua-text-label shrink-0 border-b border-transparent px-0.5 py-2.5 hover:border-[var(--ua-border-strong)] hover:text-[var(--ua-text-primary)] focus-visible:shadow-[var(--ua-shadow-focus)]"
-          >
-            {section.label}
-          </a>
-        ))}
+        {SECTION_LINKS.map((section) => {
+          const active = section.id === activeSection;
+          return (
+            <a
+              key={section.id}
+              href={`#case-${section.id}`}
+              aria-current={active ? "page" : undefined}
+              className={`ua-text-label shrink-0 border-b-2 px-0.5 py-2.5 focus-visible:shadow-[var(--ua-shadow-focus)] ${
+                active
+                  ? "border-[var(--ua-accent-500)] text-[var(--ua-text-primary)]"
+                  : "border-transparent text-[var(--ua-text-secondary)] hover:border-[var(--ua-border-strong)] hover:text-[var(--ua-text-primary)]"
+              }`}
+            >
+              {section.label}
+            </a>
+          );
+        })}
       </nav>
 
-      <section id="case-evidence" className="scroll-mt-20 space-y-4" aria-labelledby="case-evidence-title">
+      <section id="case-evidence" data-section-id="evidence" className="scroll-mt-20 space-y-4" aria-labelledby="case-evidence-title">
         <span id="case-customer-action" className="block scroll-mt-20" aria-hidden="true" />
         <div>
           <h2 id="case-evidence-title" className="ua-text-section-title text-[var(--ua-text-primary)]">Evidence & recommendations</h2>
@@ -137,7 +181,7 @@ export function ClaimReviewContextColumn({
         ) : null}
       </section>
 
-      <section id="case-responsibility" className="scroll-mt-20 space-y-4" aria-labelledby="case-responsibility-title">
+      <section id="case-responsibility" data-section-id="responsibility" className="scroll-mt-20 space-y-4" aria-labelledby="case-responsibility-title">
         <div>
           <h2 id="case-responsibility-title" className="ua-text-section-title text-[var(--ua-text-primary)]">Responsibility</h2>
           <p className="ua-text-caption-role mt-1">Why the recommendation is supported, what remains uncertain, and who owns the next investigation.</p>
@@ -155,7 +199,7 @@ export function ClaimReviewContextColumn({
         ) : null}
       </section>
 
-      <section id="case-recovery" className="scroll-mt-20 space-y-4" aria-labelledby="case-recovery-title">
+      <section id="case-recovery" data-section-id="recovery" className="scroll-mt-20 space-y-4" aria-labelledby="case-recovery-title">
         <div>
           <h2 id="case-recovery-title" className="ua-text-section-title text-[var(--ua-text-primary)]">Recovery</h2>
           <p className="ua-text-caption-role mt-1">Financial stages and supported recovery work remain separate from the customer decision.</p>
@@ -174,7 +218,7 @@ export function ClaimReviewContextColumn({
         ) : null}
       </section>
 
-      <section id="case-activity" className="scroll-mt-20 space-y-4" aria-labelledby="case-activity-title">
+      <section id="case-activity" data-section-id="activity" className="scroll-mt-20 space-y-4" aria-labelledby="case-activity-title">
         <span id="case-timeline" className="block scroll-mt-20" aria-hidden="true" />
         <div>
           <h2 id="case-activity-title" className="ua-text-section-title text-[var(--ua-text-primary)]">Activity</h2>
