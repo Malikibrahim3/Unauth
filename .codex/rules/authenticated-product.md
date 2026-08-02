@@ -7,8 +7,12 @@ This file is a loader, not a second specification.
 Before changing product UI, read `PRODUCT.md`, `CLAUDE.md`, and the
 authority for the surface being changed:
 
-- every visible product, public, entry, onboarding, and embedded surface:
-  `docs/IMPL_decision_ledger_instrument_grade_final_iteration.md`.
+- `.ua-app` authenticated surfaces:
+  `docs/IMPL_authenticated_execution_ledger.md` (type ramp is 20px/600, not
+  28px/650; elevation is permitted on exactly one focal object per view per
+  its §7 amendment A1).
+- public, entry/onboarding, and embedded surfaces (out of the ledger's
+  scope): `docs/IMPL_decision_ledger_instrument_grade_final_iteration.md`.
 
 No surface may have two active visual authorities. Shared components must
 satisfy each scoped consumer or split at a meaningful surface boundary; never
@@ -17,11 +21,14 @@ choose a visual system through a merchant-facing runtime theme or cohort.
 Product, security, permissions, provenance, audit, financial, route, query,
 mutation, export, and merchant-control invariants always win.
 
-## Instrument Grade programme execution
+## Programme execution
 
-`IG-00` through `IG-16` in the final implementation document are the current
-executable visual phases. Earlier visual documents are historical records, not
-competing authorities.
+For `.ua-app`, the current executable items are §4–§8 of the authenticated
+execution ledger, verified with `node scripts/verify-visual-adoption.mjs`.
+For public, entry/onboarding, and embedded surfaces, `IG-00` through `IG-16`
+in the instrument-grade document remain the current executable visual
+phases. Earlier visual documents are historical records, not competing
+authorities.
 
 Functional rollout controls remain independent:
 

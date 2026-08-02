@@ -193,6 +193,16 @@ export function ReconciliationSummaryCard({
   const namedGaps = new Set(
     rows.flatMap(([, recommendation]) => recommendation.missing_evidence ?? []),
   );
+  /*
+   * Independent recommendations are meant to read as independent — body copy
+   * that is byte-identical across cards signals unfilled placeholder, not an
+   * agreement worth stating three times (§3.1 T2). Suppress it structurally.
+   */
+  const explanationCounts = new Map<string, number>();
+  rows.forEach(([, recommendation]) => {
+    const text = (recommendation.explanation ?? 'Review the evidence before acting.').trim();
+    explanationCounts.set(text, (explanationCounts.get(text) ?? 0) + 1);
+  });
   const readiness = loading && !data
     ? 'Loading evidence'
     : error && !data
@@ -426,23 +436,29 @@ export function ReconciliationSummaryCard({
             </div>
             {rows.length > 0 ? (
               <div className="mt-3 grid divide-y divide-[var(--ua-border-subtle)] border-y border-[var(--ua-border-subtle)] md:grid-cols-3 md:divide-x md:divide-y-0">
-                {rows.map(([key, recommendation]) => (
-                  <div key={key} className="min-w-0 px-3 py-3 first:pl-0 last:pr-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="ua-text-label">{labels[key] ?? key}</p>
-                      <Badge tone={tone(recommendation.assessment_state)} size="sm" dot>
-                        {stateLabel(recommendation.assessment_state)}
-                      </Badge>
+                {rows.map(([key, recommendation]) => {
+                  const explanationText = (recommendation.explanation ?? 'Review the evidence before acting.').trim();
+                  const showExplanation = (explanationCounts.get(explanationText) ?? 0) <= 1;
+                  return (
+                    <div key={key} className="min-w-0 px-3 py-3 first:pl-0 last:pr-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="ua-text-label">{labels[key] ?? key}</p>
+                        <Badge tone={tone(recommendation.assessment_state)} size="sm" dot>
+                          {stateLabel(recommendation.assessment_state)}
+                        </Badge>
+                      </div>
+                      <p className="ua-text-working-title mt-2 text-[var(--ua-text-primary)]">{recommendation.headline ?? 'No recommendation yet'}</p>
+                      {showExplanation ? (
+                        <p className="ua-text-caption-role mt-1 leading-5">{explanationText}</p>
+                      ) : null}
+                      {recommendation.missing_evidence && recommendation.missing_evidence.length > 0 ? (
+                        <p className="ua-text-metadata mt-2">
+                          Missing: {recommendation.missing_evidence.slice(0, 3).map((item) => humanize(item, item)).join(', ')}
+                        </p>
+                      ) : null}
                     </div>
-                    <p className="ua-text-working-title mt-2 text-[var(--ua-text-primary)]">{recommendation.headline ?? 'No recommendation yet'}</p>
-                    <p className="ua-text-caption-role mt-1 leading-5">{recommendation.explanation ?? 'Review the evidence before acting.'}</p>
-                    {recommendation.missing_evidence && recommendation.missing_evidence.length > 0 ? (
-                      <p className="ua-text-metadata mt-2">
-                        Missing: {recommendation.missing_evidence.slice(0, 3).map((item) => humanize(item, item)).join(', ')}
-                      </p>
-                    ) : null}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <p className="ua-text-body mt-3 text-[var(--ua-text-secondary)]">

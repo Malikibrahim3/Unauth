@@ -53,16 +53,12 @@ export function SidebarNavItem({
           : 'font-medium text-[var(--ua-text-secondary)] hover:bg-[var(--ua-surface-hover)] hover:text-[var(--ua-text-primary)]',
         collapsed && 'justify-center',
       )}
-      style={
-        active
-          ? {
-              background: 'var(--ua-surface-selected)',
-              color: 'var(--ua-text-primary)',
-              border: '1px solid transparent',
-            }
-          : { border: '1px solid transparent' }
-      }
     >
+      {/*
+        M8: one selected-state vocabulary — primary ink plus a 2px accent
+        edge, never a background fill (matches Tabs' underline exactly, just
+        rotated onto the vertical axis for a side rail).
+      */}
       {active ? (
         <span
           aria-hidden="true"
@@ -73,7 +69,7 @@ export function SidebarNavItem({
         className={cn(
           'h-4 w-4 flex-shrink-0',
           active
-            ? 'text-[var(--ua-accent-600)]'
+            ? 'text-[var(--ua-text-primary)]'
             : 'text-[var(--ua-icon-secondary)] group-hover:text-[var(--ua-icon-primary)]',
         )}
         aria-hidden="true"

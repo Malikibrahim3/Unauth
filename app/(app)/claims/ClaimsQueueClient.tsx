@@ -19,7 +19,7 @@ import {
   formatDateAbsolute,
   formatDateTime,
 } from "@/lib/utils/format";
-import { formatClaimAge, formatFiledDate } from "@/lib/claims/sla";
+import { formatClaimAge, formatFiledDate, getClaimSlaState } from "@/lib/claims/sla";
 import {
   LIKELY_OWNER_LABELS,
   LOSS_ATTRIBUTION_DISPLAY,
@@ -136,6 +136,8 @@ export function ClaimsQueueClient({
   const selectedOps = selected
     ? claimNextAction(selected, selectedOutcome, currentUserId)
     : null;
+  const slaStates = claims.map((c) => getClaimSlaState(c).state);
+  const uniformSlaState = slaStates.length > 1 && slaStates.every((state) => state === slaStates[0]);
 
   return (
     <div
@@ -240,7 +242,7 @@ export function ClaimsQueueClient({
               ) : null}
               <div className="flex items-center gap-1.5 flex-wrap">
                 <StatusPill status={c.status} />
-                <SlaPill claim={c} />
+                <SlaPill claim={c} uniform={uniformSlaState} />
               </div>
             </button>
           );

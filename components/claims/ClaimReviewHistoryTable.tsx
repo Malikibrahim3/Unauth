@@ -39,6 +39,9 @@ export function ClaimReviewHistoryTable({
     );
   }
 
+  const slaLabels = history.map((claim) => getSlaVisual(claim).label);
+  const uniformSlaLabel = slaLabels.length > 1 && slaLabels.every((l) => l === slaLabels[0]);
+
   const columns: DataTableColumn<ClaimRecord>[] = [
     {
       key: "order",
@@ -83,6 +86,15 @@ export function ClaimReviewHistoryTable({
       header: "Age",
       render: (claim) => {
         const sla = getSlaVisual(claim);
+        /*
+         * A pill is reserved for an exceptional value. "Within threshold" is
+         * the ordinary case, and any tone that is true of every row in this
+         * customer's history (§3.1 T4) carries no signal — both render as
+         * plain dense text instead.
+         */
+        if (sla.tone === "gray" || uniformSlaLabel) {
+          return <span className="ua-text-dense text-[var(--ua-text-secondary)]">{sla.label}</span>;
+        }
         const tone = slaToneStyle(sla.tone);
         return (
           <span

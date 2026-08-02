@@ -17,7 +17,8 @@ import { TIME_RANGE_LABELS } from "@/lib/ui/merchantCopy";
 import { DashboardCharts } from "@/components/reporting/DashboardCharts";
 import { RankedContributionChart } from "@/components/charts/authenticated/RankedContributionChart";
 import { FinancialEquation } from "@/components/ui/FinancialEquation";
-import { Disclosure } from "@/components/ui";
+import { Disclosure, IconButton, Tooltip } from "@/components/ui";
+import { Info } from "lucide-react";
 import { activeWorkflowOperations } from "@/components/dashboard/dashboardModel";
 
 function money(minor: number, currency: string) {
@@ -73,7 +74,7 @@ function StageCell({
     <div
       className={`${dense ? 'py-3' : 'min-h-24 py-4'} sm:px-4 ${index > 0 ? "border-t border-[var(--ua-border-subtle)] sm:border-l sm:border-t-0" : ""}`}
     >
-      <dt className="ua-text-label text-[var(--ua-text-secondary)]">
+      <dt className="ua-text-label flex items-center gap-1 text-[var(--ua-text-secondary)]">
         <Link
           className="hover:text-[var(--ua-action-primary)]"
           href={financialReportRecordsHref({
@@ -85,6 +86,9 @@ function StageCell({
         >
           {step.label}
         </Link>
+        <Tooltip content={step.definition}>
+          <IconButton label={`What is ${step.label}?`} icon={<Info size={13} />} size="sm" />
+        </Tooltip>
       </dt>
       <dd
         className={`mt-2 font-semibold tabular-nums ${dense ? 'text-base' : 'text-xl'}`}
@@ -92,9 +96,6 @@ function StageCell({
       >
         {known ? money(bridge[step.key] as number, bridge.currency) : "Unavailable"}
       </dd>
-      {dense ? null : (
-        <dd className="ua-text-caption-role mt-1">{step.definition}</dd>
-      )}
     </div>
   );
 }
@@ -162,7 +163,11 @@ export function IntelligenceReportView({
                         key: step.key,
                         label: step.label,
                         value: known ? money(b[step.key] as number, b.currency) : 'Unavailable',
-                        detail: step.definition,
+                        detail: (
+                          <Tooltip content={step.definition}>
+                            <IconButton label={`What is ${step.label}?`} icon={<Info size={13} />} size="sm" />
+                          </Tooltip>
+                        ),
                         state: known ? 'known' as const : 'unavailable' as const,
                         href: financialReportRecordsHref({
                           range: report.range,

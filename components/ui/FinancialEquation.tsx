@@ -34,13 +34,10 @@ export function FinancialEquation({
       <div className="ua-financial-equation__viewport">
         <ol className="ua-financial-equation__items">
           {items.map((item) => {
-            const body = (
+            const linked = (
               <>
                 <span className="ua-financial-equation__label">{item.label}</span>
                 <strong className="ua-financial-equation__value">{item.value}</strong>
-                {item.detail ? (
-                  <span className="ua-financial-equation__detail">{item.detail}</span>
-                ) : null}
               </>
             );
             return (
@@ -54,13 +51,18 @@ export function FinancialEquation({
                     {OPERATOR[item.operator]}
                   </span>
                 ) : null}
-                {item.href ? (
-                  <Link className="ua-financial-equation__link" href={item.href}>
-                    {body}
-                  </Link>
-                ) : (
-                  <span className="ua-financial-equation__body">{body}</span>
-                )}
+                <span className="ua-financial-equation__body">
+                  {item.href ? (
+                    <Link className="ua-financial-equation__link" href={item.href}>
+                      {linked}
+                    </Link>
+                  ) : (
+                    linked
+                  )}
+                  {item.detail ? (
+                    <span className="ua-financial-equation__detail">{item.detail}</span>
+                  ) : null}
+                </span>
               </li>
             );
           })}

@@ -102,7 +102,7 @@ for (const file of authorityFiles) {
   const content = readFileSync(path.join(root, file), 'utf8');
   expect(
     content.includes(authorityNeedle),
-    file + ' points to the Instrument Grade authority',
+    file + ' points to the Instrument Grade authority for its remaining (non-.ua-app) surfaces',
   );
   expect(
     content.includes('IG-00') && content.includes('IG-16'),
@@ -118,6 +118,35 @@ expect(
   implementation.includes('## 16. Definition of done') &&
     implementation.includes('Decision Ledger — Instrument Grade'),
   'implementation authority contains the direction and definition of done',
+);
+expect(
+  implementation.includes('IMPL_authenticated_execution_ledger.md'),
+  'Instrument Grade authority records its own .ua-app supersession',
+);
+
+// M9: .ua-app authority converged onto the authenticated execution ledger —
+// docs/IMPL_authenticated_execution_ledger.md §1.5/§4/M9.
+const uaAppAuthorityNeedle = 'IMPL_authenticated_execution_ledger.md';
+for (const file of authorityFiles) {
+  const content = readFileSync(path.join(root, file), 'utf8');
+  expect(
+    content.includes(uaAppAuthorityNeedle),
+    file + ' points .ua-app surfaces at the authenticated execution ledger',
+  );
+  expect(
+    content.includes('20px/600'),
+    file + ' records the .ua-app type-ramp resolution (20px/600, not 28px/650)',
+  );
+}
+
+const authenticatedLedger = readFileSync(
+  path.join(root, 'docs', uaAppAuthorityNeedle),
+  'utf8',
+);
+expect(
+  authenticatedLedger.includes('## §8 Verification') &&
+    authenticatedLedger.includes('verify-visual-adoption.mjs'),
+  'authenticated execution ledger names its own verifier',
 );
 
 const packageJson = JSON.parse(

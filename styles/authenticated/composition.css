@@ -270,10 +270,12 @@
   color: var(--ua-text-primary);
 }
 
+/* M8: one selected-state vocabulary — accent-500 border edge, primary ink,
+   never a background fill (same recipe as tabContract.active / FilterChip). */
 .ua-app .ua-settings-nav__link[aria-current="page"] {
-  border-color: transparent;
-  background: var(--ua-accent-50);
-  color: var(--ua-accent-700);
+  border-color: var(--ua-accent-500);
+  background: transparent;
+  color: var(--ua-text-primary);
   font-weight: 600;
 }
 
@@ -385,9 +387,9 @@
   }
 
   .ua-app .ua-settings-nav--vertical .ua-settings-nav__link[aria-current="page"] {
-    border-color: var(--ua-accent-200);
-    background: var(--ua-accent-50);
-    color: var(--ua-accent-700);
+    border-color: var(--ua-accent-500);
+    background: transparent;
+    color: var(--ua-text-primary);
   }
 }
 

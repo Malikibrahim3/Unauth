@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { Inbox } from "lucide-react";
 import { StatusBadge, PriorityChip } from "@/components/ui/StatusBadge";
-import { Checkbox, DataTable, EmptyState, Input, Modal, Pagination } from "@/components/ui";
+import { Checkbox, DataTable, EmptyState, FilterChip, Input, Modal, Pagination } from "@/components/ui";
 import { SourceMark } from "@/components/identity/ProviderLogo";
 import { RowActionsMenu, type RowAction } from "@/components/ui/RowActionsMenu";
 import { formatDateAbsolute, formatNumber } from "@/lib/utils/format";
@@ -53,15 +53,30 @@ const VIEWS = [
 export type WorkViewKey = (typeof VIEWS)[number][0];
 export type WorkViewCounts = Record<WorkViewKey, number>;
 
-const REDUNDANT_DESCRIPTIONS = new Set([
-  "Verify the case evidence and record the next merchant action.",
-  "Critical evidence is missing, so the agent should collect more information before payout.",
-  "This case has been open with no update for over 14 days. It may need chasing, closing, or a decision.",
-]);
+/*
+ * A description that repeats verbatim across rows carries no per-row
+ * information (§3.1 T1) — suppress it structurally rather than matching
+ * known boilerplate strings, since paraphrased boilerplate defeats a denylist.
+ */
+function duplicateDescriptions(source: WorkQueueItem[]) {
+  const counts = new Map<string, number>();
+  for (const item of source) {
+    const key = item.description?.trim().toLowerCase();
+    if (!key) continue;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  const duplicates = new Set<string>();
+  counts.forEach((count, key) => {
+    if (count > 1) duplicates.add(key);
+  });
+  return duplicates;
+}
 
-function usefulDescription(item: WorkQueueItem) {
-  if (!item.description || REDUNDANT_DESCRIPTIONS.has(item.description)) return null;
-  if (item.description.trim().toLowerCase() === item.title.trim().toLowerCase()) return null;
+function usefulDescription(item: WorkQueueItem, duplicates: Set<string>) {
+  const key = item.description?.trim().toLowerCase();
+  if (!key) return null;
+  if (key === item.title.trim().toLowerCase()) return null;
+  if (duplicates.has(key)) return null;
   return item.description;
 }
 
@@ -225,6 +240,7 @@ export function WorkQueue({
   }
 
   const visibleItems = matchingItems(items, query);
+  const duplicateDescriptionSet = duplicateDescriptions(visibleItems);
   const selectableIds = taskIdsOf(visibleItems);
   const searchTerm = query.trim();
   const isFiltered = searchTerm.length > 0;
@@ -475,16 +491,9 @@ export function WorkQueue({
         <div id="work-more-views" className="mb-3 flex flex-wrap items-center gap-1.5 border-y border-[var(--ua-border-subtle)] py-2" role="group" aria-label="More Work views">
           <span className="mr-1 ua-text-metadata">More</span>
           {extraViews.map(([key, label]) => (
-            <Link
-              key={key}
-              href={workHref(key)}
-              aria-current={view === key ? 'page' : undefined}
-              className="inline-flex h-7 items-center whitespace-nowrap rounded-[var(--ua-radius-control)] border px-2.5 text-[length:var(--ua-text-metadata-size)] font-medium"
-              style={{ background: view === key ? 'var(--ua-accent-100)' : 'var(--ua-surface-primary)', borderColor: view === key ? 'var(--ua-accent-200)' : 'var(--ua-border-default)' }}
-            >
+            <FilterChip key={key} href={workHref(key)} active={view === key} count={formatNumber(viewCounts[key])}>
               {label}
-              <span className="ml-1.5 tabular-nums text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">{formatNumber(viewCounts[key])}</span>
-            </Link>
+            </FilterChip>
           ))}
           {savedViews.map((saved) => {
             const savedView = typeof saved.definition?.view === 'string' ? saved.definition.view : 'open';
@@ -641,7 +650,7 @@ export function WorkQueue({
                   header: "Work",
                   render: (item) => {
                   const due = dueState(item.dueAt, referenceTimeMs);
-                  const description = usefulDescription(item);
+                  const description = usefulDescription(item, duplicateDescriptionSet);
                   const block = blockingLabel(item);
                   return (
                     <div className="flex min-w-[280px] items-start gap-3">
@@ -729,7 +738,7 @@ export function WorkQueue({
           <div className="space-y-3 md:hidden">
             {visibleItems.map((item) => {
               const due = dueState(item.dueAt, referenceTimeMs);
-              const description = usefulDescription(item);
+              const description = usefulDescription(item, duplicateDescriptionSet);
               const block = blockingLabel(item);
               const href = itemHref(item);
               return (

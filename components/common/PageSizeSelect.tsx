@@ -50,7 +50,7 @@ function PageSizeSelectInner({
               scroll={false}
               className={`ua-text-label inline-flex items-center px-2.5 transition-colors ${
                 active
-                  ? 'bg-[var(--ua-accent-100)] text-[var(--ua-accent-800)]'
+                  ? 'bg-[var(--ua-surface-primary)] text-[var(--ua-text-primary)] shadow-[inset_0_-2px_0_0_var(--ua-accent-500)]'
                   : 'bg-[var(--ua-surface-primary)] text-[var(--ua-text-secondary)] hover:bg-[var(--ua-surface-hover)]'
               }`}
               style={{ height: 'calc(var(--ua-control-height-md) - 2px)' }}

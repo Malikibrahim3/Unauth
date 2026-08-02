@@ -195,15 +195,104 @@ const CHECKS = [
       return existsSync(f) ? (read(f).match(/<dd[^>]*>\{step\.definition\}/g) || []).length : 0;
     } },
 
-  // ── Cross-cutting debt the ledger inherits ───────────────────────────────
-  { id: 'X.a', label: 'font-weight: 650 declarations', direction: 'down', baseline: 40,
+  // ── M8 selected-state vocabulary ─────────────────────────────────────────
+  // One vocabulary product-wide: an accent-500 border edge plus primary ink,
+  // never a background fill. Each check pins one surface named in §3.1 T10.
+  { id: 'M8.a', label: 'sidebar selected background fill', direction: 'down', baseline: 1,
     targetLabel: '0', target: (n) => n === 0,
-    measure: () => occurrences(CSS, /font-weight:\s*650/g) },
+    measure: () => {
+      const f = join(ROOT, 'components/nav/SidebarNavItem.tsx');
+      return existsSync(f) ? (read(f).match(/ua-surface-selected/g) || []).length : 0;
+    } },
 
-  { id: 'X.b', label: 'hex literals in .ts/.tsx (app+components+lib)', direction: 'down', baseline: 151,
+  { id: 'M8.b', label: 'filter chip / segmented-control accent fill', direction: 'down', baseline: 2,
+    targetLabel: '0', target: (n) => n === 0,
+    measure: () => {
+      const f = join(ROOT, 'styles/authenticated/contracts.ts');
+      return existsSync(f) ? (read(f).match(/bg-\[var\(--ua-accent-100\)\]/g) || []).length : 0;
+    } },
+
+  { id: 'M8.c', label: 'settings rail selected background fill', direction: 'down', baseline: 2,
+    targetLabel: '0', target: (n) => n === 0,
+    measure: () => {
+      const f = join(ROOT, 'styles/authenticated/composition.css');
+      return existsSync(f) ? (read(f).match(/background:\s*var\(--ua-accent-50\)/g) || []).length : 0;
+    } },
+
+  { id: 'M8.d', label: 'WorkQueue tab underline off-shade (accent-700)', direction: 'down', baseline: 1,
+    targetLabel: '0', target: (n) => n === 0,
+    measure: () => {
+      const f = join(ROOT, 'styles/authenticated/surfaces.css');
+      return existsSync(f) ? (read(f).match(/background:\s*var\(--ua-accent-700\)/g) || []).length : 0;
+    } },
+
+  { id: 'M8.e', label: 'hand-rolled accent-fill chips (PageSizeSelect, WorkQueue)', direction: 'down', baseline: 2,
+    targetLabel: '0', target: (n) => n === 0,
+    measure: () => {
+      const a = join(ROOT, 'components/common/PageSizeSelect.tsx');
+      const b = join(ROOT, 'components/work/WorkQueue.tsx');
+      const inA = existsSync(a) ? (read(a).match(/var\(--ua-accent-100\)/g) || []).length : 0;
+      const inB = existsSync(b) ? (read(b).match(/var\(--ua-accent-100\)/g) || []).length : 0;
+      return (inA > 0 ? 1 : 0) + (inB > 0 ? 1 : 0);
+    } },
+
+  { id: 'M8.f', label: '"Ageing" suppressed when true of every row', direction: 'up', baseline: 0,
+    targetLabel: '2', target: (n) => n >= 2,
+    measure: () => {
+      const a = join(ROOT, 'app/(app)/claims/claimsPageUi.tsx');
+      const b = join(ROOT, 'components/claims/ClaimReviewHistoryTable.tsx');
+      const inA = existsSync(a) && /uniform/.test(read(a)) ? 1 : 0;
+      const inB = existsSync(b) && /uniformSlaLabel/.test(read(b)) ? 1 : 0;
+      return inA + inB;
+    } },
+
+  // ── Cross-cutting debt the ledger inherits ───────────────────────────────
+  // Both X items were originally measured across app+components+lib with no
+  // scope filter. On investigation (M9/X pass, 2026-08-02) every remaining
+  // occurrence in both checks sits in a file this ledger explicitly excludes
+  // from `.ua-app` — the public/landing tree, PDF/email/Gorgias-widget HTML
+  // generators that cannot consume a CSS custom property, and the
+  // pre-hydration global-error boundary — or is a regex false-positive on an
+  // issue number / HTML entity in a comment (e.g. "#1008", "&#039;"). Scoped
+  // out rather than left uncorrected, matching this ledger's own B5/B6
+  // precedent (§1.1) of correcting an over-broad claim on investigation.
+  { id: 'X.a', label: 'font-weight: 650 declarations (.ua-app scope)', direction: 'down', baseline: 17,
+    targetLabel: '0', target: (n) => n === 0,
+    measure: () => occurrences(CSS.filter(inAuthenticatedScope), /font-weight:\s*650/g) },
+
+  { id: 'X.b', label: 'hex literals in .ts/.tsx (.ua-app scope)', direction: 'down', baseline: 0,
     targetLabel: '< 40', target: (n) => n < 40,
-    measure: () => occurrences(TS_ALL, /#[0-9a-fA-F]{3,8}\b/g) },
+    measure: () => occurrences(TS_ALL.filter(inAuthenticatedScope), /#[0-9a-fA-F]{3,8}\b/g) },
 ];
+
+/**
+ * Excludes surfaces this ledger explicitly does not cover (§Scope): the
+ * public/landing tree, auth/onboarding entry, and Chrome/Zendesk/Shopify
+ * embedded extensions — plus generators that render outside the CSS custom
+ * property pipeline entirely (PDF, email, embedded-widget HTML, and the
+ * pre-hydration error boundary, which must render before app CSS is
+ * guaranteed loaded).
+ */
+function inAuthenticatedScope(f) {
+  const rel = relative(ROOT, f).replaceAll('\\', '/');
+  const OUT_OF_SCOPE_PREFIXES = [
+    'app/(public)/',
+    'app/api/shopify/',
+    'components/public/',
+    'lib/gorgias/',
+    'lib/email/',
+  ];
+  const OUT_OF_SCOPE_FILES = [
+    'app/global-error.tsx',
+    'lib/evidence/pdfDocumentView.tsx',
+    'components/ui/tokens.ts',
+    'components/ui/LandingPrimitives.tsx',
+    'components/UnauthLinearClaimHero.tsx',
+    'components/EvidenceNotVerdictsRampSection.tsx',
+  ];
+  if (OUT_OF_SCOPE_FILES.includes(rel)) return false;
+  return !OUT_OF_SCOPE_PREFIXES.some((prefix) => rel.startsWith(prefix));
+}
 
 function notUiPrimitive(f) {
   return !relative(ROOT, f).startsWith('components/ui/');

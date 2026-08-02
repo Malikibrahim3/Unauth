@@ -1,8 +1,9 @@
 # IMPL — Living Precision product UI
 
-> **Authority update — 30 July 2026:** This document is superseded for
+> **Authority update — 2026-08-02:** This document is superseded for
 > `.ua-app` and `app/(app)/**` by
-> [`IMPL_apple_quality_authenticated_dashboard.md`](IMPL_apple_quality_authenticated_dashboard.md).
+> [`IMPL_authenticated_execution_ledger.md`](IMPL_authenticated_execution_ledger.md)
+> (type ramp 20px/600, not 28px/650; elevation permitted per its §7 A1).
 > Its `.ua-app` phases, visual clauses, completion claims, and screenshots are
 > historical evidence only. It remains the scoped as-built visual authority
 > for authentication, onboarding, demo, helpdesk widget, extension, and other

@@ -3,16 +3,23 @@
 **Status:** binding contributor loader for authenticated product styles.
 
 **Implementation authority:**
-[`../../docs/IMPL_decision_ledger_instrument_grade_final_iteration.md`](../../docs/IMPL_decision_ledger_instrument_grade_final_iteration.md)
+- Operational, `.ua-app`:
+  [`../../docs/IMPL_authenticated_execution_ledger.md`](../../docs/IMPL_authenticated_execution_ledger.md)
+  (type ramp is 20px/600, not 28px/650; elevation is permitted on exactly one
+  focal object per view per its §7 amendment A1).
+- Editorial (public), Entry (auth/onboarding), and Pocket Brief (browser and
+  helpdesk hosts):
+  [`../../docs/IMPL_decision_ledger_instrument_grade_final_iteration.md`](../../docs/IMPL_decision_ledger_instrument_grade_final_iteration.md)
 
-This file is a compact source-facing contract. The implementation document
-wins visual, phase, ownership, state, and completion conflicts. Product truth,
-security, permissions, provenance, audit, financial, route, query, mutation,
-export, and merchant-control contracts remain binding.
+This file is a compact source-facing contract. The relevant implementation
+document wins visual, phase, ownership, state, and completion conflicts for
+its surface. Product truth, security, permissions, provenance, audit,
+financial, route, query, mutation, export, and merchant-control contracts
+remain binding everywhere.
 
 ## Surface modes
 
-One visual authority supports four deliberate densities:
+Four deliberate densities, routed to the authority above by surface:
 
 - Operational for `.ua-app`;
 - Editorial for public storytelling and legal reading;
@@ -128,8 +135,11 @@ visually and semantically distinct.
 
 ## Execution and verification
 
-Execute `IG-00` through `IG-16` in the implementation authority. The migration
-is a hard cutover:
+For `.ua-app`, execute the ledger items in §4–§8 of
+`docs/IMPL_authenticated_execution_ledger.md` and run
+`node scripts/verify-visual-adoption.mjs` — no item is done until it reports
+at target. For Editorial, Entry, and Pocket Brief surfaces, execute `IG-00`
+through `IG-16` in the instrument-grade document. Both are a hard cutover:
 
 1. update shared responsibility before route-local composition;
 2. migrate every state and viewport with the route;

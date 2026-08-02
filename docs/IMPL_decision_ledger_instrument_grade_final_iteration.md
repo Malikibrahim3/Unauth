@@ -8,6 +8,21 @@
 - Direction: Decision Ledger, completed and elevated rather than replaced
 - Quality target: a credible 9–10/10 product interface and screenshot system
 
+> **Authority update — 2026-08-02:** For authenticated (`.ua-app`) surfaces,
+> this document is superseded by
+> [`IMPL_authenticated_execution_ledger.md`](IMPL_authenticated_execution_ledger.md).
+> In particular: the type ramp for `.ua-app` is **20px/600**, not the 28px/650
+> in this document's §12.6 ramp table, and `--ua-elev-1` **is** permitted on
+> exactly one focal object per view (that ledger's §7 amendment A1
+> supersedes this document's §4.5 blanket "chart panels, metric blocks: not
+> allowed"). This document remains the visual authority for the surfaces the
+> new ledger explicitly excludes — public/landing, auth and onboarding entry,
+> and the Chrome/Zendesk/Shopify embedded extensions (its §2.1 "Included"
+> scope, §3.3 surface modes, §6.15, §6.18, §6.23, and §6.25) — until a
+> dedicated programme replaces those sections. Product, security, permission,
+> provenance, financial, route, and workflow invariants remain binding
+> everywhere.
+
 This document is the final visual pass for the whole Unauth product. It is not a
 request for another style experiment and it is not a light polish backlog. It
 is the implementation authority for converging every visible surface on one

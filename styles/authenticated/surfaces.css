@@ -412,7 +412,7 @@
   margin: var(--ua-space-1-5) 0 0;
   color: var(--ua-text-primary);
   font-size: var(--ua-text-kpi-size);
-  font-weight: 650;
+  font-weight: 600;
   letter-spacing: -0.025em;
   line-height: var(--ua-text-kpi-leading);
   font-variant-numeric: tabular-nums;
@@ -636,7 +636,8 @@
   bottom: -1px;
   left: 0;
   height: 2px;
-  background: var(--ua-accent-700);
+  /* M8: same accent shade as the shared tabContract underline (contracts.ts). */
+  background: var(--ua-accent-500);
   content: "";
 }
 

@@ -195,12 +195,15 @@
   min-width: 0;
 }
 
-.ua-financial-equation__body,
-.ua-financial-equation__link {
+.ua-financial-equation__body {
   display: grid;
   gap: var(--ua-space-1);
   min-height: 100%;
   padding: var(--ua-space-4);
+}
+
+.ua-financial-equation__link {
+  display: contents;
   color: inherit;
   text-decoration: none;
 }
