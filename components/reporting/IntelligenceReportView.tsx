@@ -177,7 +177,6 @@ export function IntelligenceReportView({
                         }),
                       };
                     })}
-                    conclusion={`${financialMetricCaseIds(b, "exposed").length} cases carry recorded exposure in this scope.`}
                   />
                 </div>
               </div>

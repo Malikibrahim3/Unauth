@@ -133,6 +133,11 @@ export function DashboardCharts({
                     timezone={report.timezone}
                     currency={bridge.currency}
                     metric="exposed"
+                    /* Distinguishes this chart-scoped export from the page-level
+                     * "Export" trigger — identical labels on two buttons with
+                     * different scopes (this chart vs. the whole report) read
+                     * as one control until opened. */
+                    triggerLabel={`Export ${bridge.currency}`}
                   />
                 }
                 legend={<ChartLegend items={[

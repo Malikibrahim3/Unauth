@@ -52,7 +52,11 @@
 .legendList li { display: inline-flex; align-items: center; gap: 5px; }
 .legendList i { width: 6px; height: 6px; border-radius: 50%; }
 .plot { min-height: 170px; padding: 15px; }
-.compactPlot { min-height: 132px; padding: 13px 15px; }
+/* No height floor (§6 Reports): a 132px minimum left a single ranked row —
+ * or the one-line singleRank layout — sitting above ~100px of empty card
+ * before the "View chart data" footer. Compact content collapses to its own
+ * height instead of padding out to a size only a multi-row chart needs. */
+.compactPlot { padding: 13px 15px; }
 
 /*
  * Series slots are named by role (Instrument Grade), never by hue, so a recolour can
