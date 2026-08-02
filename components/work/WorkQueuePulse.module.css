@@ -38,37 +38,20 @@
   line-height: var(--ua-text-dense-leading);
 }
 
-.stack {
-  display: flex;
-  gap: var(--ua-space-0-5);
-  height: 14px;
-}
-
-.segment {
-  min-width: 4px;
-  border-radius: var(--ua-radius-xs);
-  background: var(--ua-chart-neutral-500);
-  transition: background-color var(--ua-duration-base) var(--ua-ease-standard);
-}
-
-/* Past its deadline is genuinely critical; a future deadline is not (§3.3). */
-.segment[data-band="overdue"] { background: var(--ua-critical); }
-.segment[data-band="due-today"] { background: var(--ua-chart-neutral-900); }
-.segment[data-band="due-1-3"] { background: var(--ua-chart-neutral-700); }
-.segment[data-band="due-4-7"] { background: var(--ua-chart-neutral-500); }
-.segment[data-band="due-later"] { background: var(--ua-chart-neutral-300); }
-.segment[data-band="no-sla"] { background: var(--ua-chart-track); }
-
-/* Selection is accent, never semantic (§3.3). */
-.segment[data-selected="true"] { background: var(--ua-chart-primary); }
-
+/* W2: a single dense row of label/value pairs, not a 3x2 grid — the grid's
+ * columns were what made the six counts read as misaligned. */
 .bands {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--ua-space-1-5) var(--ua-space-2);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--ua-space-1);
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.bands li {
+  flex: 0 0 auto;
 }
 
 @media (min-width: 768px) and (max-width: 1439px) {
@@ -81,10 +64,6 @@
 
   .header {
     grid-row: span 2;
-  }
-
-  .bands {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -114,20 +93,18 @@
   font-weight: 500;
 }
 
+/* Overdue is the only band that is genuinely a critical state; every other
+ * band shared one neutral shade so rank was never actually encoded by hue
+ * (W2) — five shades of grey read as a scale with no key. */
 .bandKey {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   flex-shrink: 0;
   border-radius: var(--ua-radius-round);
-  background: var(--ua-chart-neutral-500);
+  background: var(--ua-border-default);
 }
 
 .bandKey[data-band="overdue"] { background: var(--ua-critical); }
-.bandKey[data-band="due-today"] { background: var(--ua-chart-neutral-900); }
-.bandKey[data-band="due-1-3"] { background: var(--ua-chart-neutral-700); }
-.bandKey[data-band="due-4-7"] { background: var(--ua-chart-neutral-500); }
-.bandKey[data-band="due-later"] { background: var(--ua-chart-neutral-300); }
-.bandKey[data-band="no-sla"] { background: var(--ua-border-default); }
 
 .bandLabel {
   min-width: 0;
@@ -142,3 +119,5 @@
   font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
+
+.band[data-band="overdue"] .bandCount { color: var(--ua-critical); }

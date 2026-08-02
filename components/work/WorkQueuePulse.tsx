@@ -4,16 +4,18 @@ import { formatNumber } from '@/lib/utils/format';
 import styles from './WorkQueuePulse.module.css';
 
 /**
- * Queue pulse (§6.8, §5.4). One question: **when will the queue become risky?**
+ * Queue pulse (§6.8, §5.4, ledger W2). One question: **when will the queue
+ * become risky?** Encoding is a single dense row of label/value pairs —
+ * the stacked bar this used to sit under duplicated the same six counts as a
+ * segmented visual and was deleted (T5: a decorative bar beside its own
+ * number improves neither). Selecting a band filters the queue below by
+ * navigating to that view — a presentation filter on this route, not a new
+ * mutation.
  *
- * Encoding is a stacked due-band bar over item count, with the same bands
- * repeated as a labelled row list so the reading never depends on colour or on
- * segment width alone. Selecting a band filters the queue below by navigating to
- * that view — a presentation filter on this route, not a new mutation.
- *
- * Only `overdue` carries a semantic hue, because "past its deadline" is itself a
- * critical state. Every other band is neutral or accent-when-selected: a future
- * deadline is not a warning (§3.3).
+ * Only `overdue` carries a semantic hue, because "past its deadline" is itself
+ * a critical state. Every other band is plain tertiary text: a future
+ * deadline is not a warning (§3.3), and encoding rank through five shades of
+ * grey was itself a second, uninterpretable encoding.
  */
 export type WorkQueuePulseBand = {
   key: WorkDueBandKey;
@@ -76,20 +78,6 @@ export function WorkQueuePulse({
           </p>
         </div>
       </header>
-
-      <div className={styles.stack} aria-hidden="true">
-        {rows
-          .filter((row) => row.count > 0)
-          .map((row) => (
-            <span
-              key={row.key}
-              className={styles.segment}
-              data-band={row.key}
-              data-selected={view === row.key ? 'true' : undefined}
-              style={{ flexGrow: row.count }}
-            />
-          ))}
-      </div>
 
       <ul className={styles.bands}>
         {rows.map((row) => (

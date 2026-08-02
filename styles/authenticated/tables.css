@@ -126,7 +126,10 @@
 }
 
 .ua-app .ua-data-table__row {
-  height: var(--ua-data-row-height);
+  /* min-height, not height: a density sets the row floor, but a row carrying
+   * genuinely row-distinct second-line content (§5.1 W1) is allowed to grow
+   * past it rather than every row paying the tallest tier's cost. */
+  min-height: var(--ua-data-row-height);
   background: var(--ua-surface-primary);
   transition: background-color var(--ua-duration-fast) var(--ua-ease-standard),
     box-shadow var(--ua-duration-fast) var(--ua-ease-standard);
@@ -137,7 +140,7 @@
 }
 
 .ua-app .ua-data-table__cell {
-  padding: 0 var(--ua-space-4);
+  padding: var(--ua-space-1-5) var(--ua-space-4);
   vertical-align: middle;
   color: var(--ua-text-primary);
   text-align: left;

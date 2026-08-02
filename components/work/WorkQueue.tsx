@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { Inbox } from "lucide-react";
-import { StatusBadge, PriorityChip } from "@/components/ui/StatusBadge";
+import { StatusBadge, PriorityChip, statusTone } from "@/components/ui/StatusBadge";
 import { Checkbox, DataTable, EmptyState, FilterChip, Input, Modal, Pagination } from "@/components/ui";
 import { SourceMark } from "@/components/identity/ProviderLogo";
 import { RowActionsMenu, type RowAction } from "@/components/ui/RowActionsMenu";
@@ -54,14 +54,17 @@ export type WorkViewKey = (typeof VIEWS)[number][0];
 export type WorkViewCounts = Record<WorkViewKey, number>;
 
 /*
- * A description that repeats verbatim across rows carries no per-row
- * information (§3.1 T1) — suppress it structurally rather than matching
- * known boilerplate strings, since paraphrased boilerplate defeats a denylist.
+ * A string that repeats verbatim across rows carries no per-row information
+ * (§3.1 T1) — suppress it structurally rather than matching known boilerplate
+ * strings, since paraphrased boilerplate defeats a denylist. Applied to both
+ * the description and the "Needs attention" blocking label: a queue filtered
+ * to one exception type repeats the same blocking reason on every row just as
+ * readily as it repeats a description.
  */
-function duplicateDescriptions(source: WorkQueueItem[]) {
+function duplicateValues(source: WorkQueueItem[], selector: (item: WorkQueueItem) => string | null) {
   const counts = new Map<string, number>();
   for (const item of source) {
-    const key = item.description?.trim().toLowerCase();
+    const key = selector(item)?.trim().toLowerCase();
     if (!key) continue;
     counts.set(key, (counts.get(key) ?? 0) + 1);
   }
@@ -80,11 +83,18 @@ function usefulDescription(item: WorkQueueItem, duplicates: Set<string>) {
   return item.description;
 }
 
-function blockingLabel(item: WorkQueueItem) {
+function resolvedBlockingText(item: WorkQueueItem) {
   if (!item.blockingReason) return null;
   return item.kind === 'exception'
     ? label('exceptionType', item.exceptionType ?? item.blockingReason)
     : item.blockingReason;
+}
+
+function usefulBlockingLabel(item: WorkQueueItem, duplicates: Set<string>) {
+  const text = resolvedBlockingText(item);
+  if (!text) return null;
+  if (duplicates.has(text.trim().toLowerCase())) return null;
+  return text;
 }
 
 const title = (value: string | null) =>
@@ -240,7 +250,8 @@ export function WorkQueue({
   }
 
   const visibleItems = matchingItems(items, query);
-  const duplicateDescriptionSet = duplicateDescriptions(visibleItems);
+  const duplicateDescriptionSet = duplicateValues(visibleItems, (item) => item.description);
+  const duplicateBlockingSet = duplicateValues(visibleItems, resolvedBlockingText);
   const selectableIds = taskIdsOf(visibleItems);
   const searchTerm = query.trim();
   const isFiltered = searchTerm.length > 0;
@@ -469,13 +480,6 @@ export function WorkQueue({
           More views
           <span className="ml-1.5 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">{extraViews.length + savedViews.length}</span>
         </button>
-        <button
-          type="button"
-          onClick={() => setSaveOpen(true)}
-          className="ua-ledger-tab"
-        >
-          Save view
-        </button>
       </nav>
       <div className="ua-work-ledger__search">
         <Input
@@ -486,6 +490,16 @@ export function WorkQueue({
           onChange={(event) => applyQuery(event.target.value)}
         />
       </div>
+      {/* Secondary action, not a durable view (W9) — "Save view" persists the
+       * current filter rather than navigating to one, so it does not belong
+       * inside the tab list it sits beside. */}
+      <button
+        type="button"
+        onClick={() => setSaveOpen(true)}
+        className="ua-text-label inline-flex h-8 shrink-0 items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] px-3 text-[var(--ua-text-primary)] hover:bg-[var(--ua-surface-hover)]"
+      >
+        Save view
+      </button>
       </div>
       {moreViewsOpen ? (
         <div id="work-more-views" className="mb-3 flex flex-wrap items-center gap-1.5 border-y border-[var(--ua-border-subtle)] py-2" role="group" aria-label="More Work views">
@@ -599,7 +613,7 @@ export function WorkQueue({
               rows={visibleItems}
               emptyState={<p className="ua-text-body p-5 text-[var(--ua-text-secondary)]">No work matches this view.</p>}
               getRowKey={(item) => `${item.kind}:${item.id}`}
-              density="two-line"
+              density="default"
               primaryColumnKey="action"
               onRowClick={(item) => {
                 const href = itemHref(item);
@@ -651,7 +665,7 @@ export function WorkQueue({
                   render: (item) => {
                   const due = dueState(item.dueAt, referenceTimeMs);
                   const description = usefulDescription(item, duplicateDescriptionSet);
-                  const block = blockingLabel(item);
+                  const block = usefulBlockingLabel(item, duplicateBlockingSet);
                   return (
                     <div className="flex min-w-[280px] items-start gap-3">
                       <span className="mt-0.5 shrink-0"><SourceMark source={item.source} compact /></span>
@@ -692,15 +706,35 @@ export function WorkQueue({
                   },
                 },
                 {
+                  key: "priority",
+                  header: "Priority",
+                  width: "84px",
+                  render: (item) => <PriorityChip value={item.priority} size="sm" />,
+                },
+                {
                   key: "state",
                   header: "State",
-                  width: "124px",
-                  render: (item) => (
-                    <span className="grid justify-items-start gap-1.5">
-                      <PriorityChip value={item.priority} size="sm" />
-                      <StatusBadge family="caseStatus" value={item.status} size="sm" />
-                    </span>
-                  ),
+                  width: "108px",
+                  /*
+                   * Plain dense text, not a second pill (W4/§3.2): a pill next
+                   * to the priority pill forced every row to two-line height.
+                   * Exceptional tones keep their ink; ordinary states read as
+                   * quiet text, matching PriorityChip's own convention.
+                   */
+                  render: (item) => {
+                    const tone = statusTone(item.status);
+                    const toneClass =
+                      tone === "danger"
+                        ? "text-[var(--ua-critical)]"
+                        : tone === "warning"
+                          ? "text-[var(--ua-warning)]"
+                          : "text-[var(--ua-text-secondary)]";
+                    return (
+                      <span className={`ua-text-dense whitespace-nowrap ${toneClass}`}>
+                        {label("caseStatus", item.status)}
+                      </span>
+                    );
+                  },
                 },
                 {
                   key: "owner",
@@ -711,9 +745,13 @@ export function WorkQueue({
                       {item.ownerUserId || item.ownerRole ? <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[var(--ua-border-default)] bg-[var(--ua-surface-selected)] text-[length:var(--ua-text-metadata-size)] font-bold text-[var(--ua-text-primary)]">
                         {(item.ownerInitials ?? (item.ownerName ? item.ownerName.slice(0, 2) : title(item.ownerRole).slice(0, 2))).toUpperCase()}
                       </span> : null}
-                      <span className="min-w-0 truncate" title={item.ownerUserId ? `${item.ownerName ?? 'Assigned'}${item.ownerRole ? ` · ${title(item.ownerRole)}` : ''}` : item.ownerRole ? title(item.ownerRole) : "Unassigned"}>
+                      {/* Role suffix moves to the title tooltip only (W5) — appending it
+                       * inline inside a 172px column truncated names to "Avery Shah · A…". */}
+                      <span
+                        className="min-w-0 truncate"
+                        title={item.ownerUserId ? `${item.ownerName ?? 'Assigned'}${item.ownerRole ? ` · ${title(item.ownerRole)}` : ''}` : item.ownerRole ? title(item.ownerRole) : "Unassigned"}
+                      >
                         {item.ownerUserId ? item.ownerName ?? "Assigned" : item.ownerRole ? title(item.ownerRole) : "Unassigned"}
-                        {item.ownerUserId && item.ownerRole ? <span className="ml-1 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">· {title(item.ownerRole)}</span> : null}
                       </span>
                     </span>
                   ),
@@ -739,7 +777,7 @@ export function WorkQueue({
             {visibleItems.map((item) => {
               const due = dueState(item.dueAt, referenceTimeMs);
               const description = usefulDescription(item, duplicateDescriptionSet);
-              const block = blockingLabel(item);
+              const block = usefulBlockingLabel(item, duplicateBlockingSet);
               const href = itemHref(item);
               return (
                 <article
