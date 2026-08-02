@@ -316,14 +316,6 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
                           </div>
                           <div>
                             <p style={{ color: "var(--ua-text-tertiary)" }}>
-                              Evidence
-                            </p>
-                            <p style={{ color: "var(--ua-text-primary)" }}>
-                              {item.evidence_complete ? 'Complete' : `${item.evidence_missing.length} missing`}
-                            </p>
-                          </div>
-                          <div>
-                            <p style={{ color: "var(--ua-text-tertiary)" }}>
                               Source update
                             </p>
                             <p style={{ color: "var(--ua-text-primary)" }}>

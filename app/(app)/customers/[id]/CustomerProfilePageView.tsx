@@ -103,15 +103,6 @@ export function CustomerProfilePageView(props: CustomerProfilePageViewProps) {
         evidenceDisplay={evidenceDisplay}
       />
 
-      {/*
-        LAYOUT RULES (enforced here):
-        1. No column may be empty below the fold — both columns carry content to scroll depth.
-        2. Sidebar = sticky contextual metadata only (Record stats, Dispute context). Max ~500px before sticking.
-        3. Long-scrolling content (lists, tables, history) goes in the main column.
-        4. Sidebar is position:sticky below nav height; overflows independently via overflow-y:auto.
-        5. Grid is [1fr 380px] — main content gets majority width.
-        6. Section order: summary → context → detail → action.
-      */}
       <div className={pageStyles.pageBody}>
         <div className="grid grid-cols-1 gap-3">
           <CustomerProfilePageMainColumn
