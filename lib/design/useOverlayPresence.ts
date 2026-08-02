@@ -125,11 +125,28 @@ export function useOverlayPresence({
 
   useEffect(() => {
     if (!trapFocus || !mounted) return;
-    const container = containerRef.current;
-    const getFocusable = () => Array.from(container?.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR) ?? []);
-    (getFocusable()[0] ?? container)?.focus();
+    const getFocusable = () => Array.from(containerRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR) ?? []);
+    const focusIntoOverlay = () => {
+      const container = containerRef.current;
+      if (!container) return;
+      const activeElement = document.activeElement;
+      if (activeElement instanceof HTMLElement && container.contains(activeElement)) return;
+      (getFocusable()[0] ?? container).focus();
+    };
+
+    // OverlayPortal mounts its host in an effect, so the focus container can
+    // be absent during the first pass of this effect. Retry against the ref
+    // instead of capturing null and leaving keyboard users on the page.
+    let animationFrame = requestAnimationFrame(function focusWhenReady() {
+      if (!containerRef.current) {
+        animationFrame = requestAnimationFrame(focusWhenReady);
+        return;
+      }
+      focusIntoOverlay();
+    });
 
     const handleTab = (event: KeyboardEvent) => {
+      const container = containerRef.current;
       if (event.key !== 'Tab' || !container) return;
       const focusable = getFocusable();
       if (focusable.length === 0) {
@@ -149,7 +166,10 @@ export function useOverlayPresence({
     };
 
     document.addEventListener('keydown', handleTab);
-    return () => document.removeEventListener('keydown', handleTab);
+    return () => {
+      cancelAnimationFrame(animationFrame);
+      document.removeEventListener('keydown', handleTab);
+    };
   }, [trapFocus, mounted]);
 
   useEffect(() => {

@@ -26,7 +26,7 @@ import { Card, DataTableServer } from "@/components/ui";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatDateTime } from "@/lib/utils/format";
 import { ConnectionHealthGrid } from "@/components/integrations/ConnectionHealthPanel";
-import { AuthenticatedPageHeader } from "@/components/authenticated/AuthenticatedPageHeader";
+import { PageFrame } from "@/components/ui/PageFrame";
 import pageStyles from "@/components/authenticated/AuthenticatedPageChrome.module.css";
 
 export const dynamic = "force-dynamic";
@@ -154,14 +154,12 @@ export default async function ConnectionPage({
     .filter((dim) => item.pendingRuntimeCapabilities.includes(dim.id))
     .map((dim) => humanizeLabel(dim.id));
   return (
-    <div>
-      <AuthenticatedPageHeader
-        title={item.name}
-        subtitle={item.description}
-        breadcrumbs={[{ label: "Integrations", href: "/integrations" }, { label: item.name }]}
-        actions={<StatusBadge family="workflowStatus" value={badge} />}
-      />
-      <div className={pageStyles.pageBody}>
+    <PageFrame
+      title={item.name}
+      subtitle={item.description}
+      breadcrumbs={[{ label: "Integrations", href: "/integrations" }, { label: item.name }]}
+      actions={<StatusBadge family="workflowStatus" value={badge} />}
+    >
         <div className={pageStyles.detailStack}>
       {item.stage === "planned" ? (
         <div className={`${pageStyles.detailSection} ua-text-body text-[var(--ua-text-secondary)]`}>
@@ -346,7 +344,6 @@ export default async function ConnectionPage({
         </section>
       </div>
         </div>
-      </div>
-    </div>
+    </PageFrame>
   );
 }

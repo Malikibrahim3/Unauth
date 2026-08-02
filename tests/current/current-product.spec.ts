@@ -4,7 +4,7 @@ const CURRENT_ROUTES = [
   { path: "/dashboard", heading: "Overview" },
   { path: "/work", heading: "Work" },
   { path: "/exceptions", heading: "Work" },
-  { path: "/claims", heading: "Payout decisions" },
+  { path: "/claims", heading: "Cases" },
   { path: "/losses", heading: "Losses" },
   { path: "/recoveries", heading: "Recovery board" },
   { path: "/customers", heading: "Customers" },
@@ -13,7 +13,7 @@ const CURRENT_ROUTES = [
   { path: "/reports", heading: "Reports" },
   { path: "/integrations", heading: "Integrations" },
   { path: "/notifications", heading: "Notifications" },
-  { path: "/settings/team", heading: "Team management" },
+  { path: "/settings/team", heading: "Team" },
 ] as const;
 
 async function expectNoDocumentOverflow(page: Page) {
@@ -54,11 +54,10 @@ test.describe("current merchant experience", () => {
     await expect(
       page.getByRole("link", { name: "Integration exceptions" }),
     ).toHaveAttribute("aria-current", "page");
-    const caseLinks = page.locator('main a[href^="/claims/"]');
-    await expect(caseLinks.first()).toBeVisible({ timeout: 20_000 });
-    const href = await caseLinks.first().getAttribute("href");
-    expect(href).toBeTruthy();
-    await page.goto(href!);
+    const caseActions = page.getByRole("button", { name: /^Open Case / });
+    await expect(caseActions).not.toHaveCount(0, { timeout: 20_000 });
+    await caseActions.nth(0).click();
+    await expect(page).toHaveURL(/\/claims\//, { timeout: 30_000 });
     await expect(
       page.getByText("Evidence on file", { exact: true }),
     ).toBeVisible({ timeout: 30_000 });
@@ -69,7 +68,7 @@ test.describe("current merchant experience", () => {
       page.getByRole("region", { name: "Case comments" }),
     ).toBeVisible();
     await expect(
-      page.getByText("Event timeline", { exact: true }),
+      page.getByRole("heading", { level: 2, name: "Activity" }),
     ).toBeVisible();
   });
 
@@ -122,20 +121,20 @@ test.describe("current merchant experience", () => {
     test.setTimeout(90_000);
     await page.goto("/integrations");
     await expect(
-      page.getByText("Connected providers", { exact: true }),
+      page.getByText(/\d+ connected/).first(),
     ).toBeVisible({ timeout: 20_000 });
     await expect(
-      page.getByText("Imported records", { exact: true }),
+      page.getByText(/\d+ records indexed/).first(),
     ).toBeVisible();
     await expect(
-      page.getByText("Covered categories", { exact: true }),
+      page.getByText(/\d+ of \d+ evidence layers covered/).first(),
     ).toBeVisible();
     await expect(
-      page.getByRole("link", { name: "Import records" }),
+      page.getByRole("link", { name: "Imports & API" }),
     ).toBeVisible();
     const connectorLink = page
       .locator('a[href^="/integrations/"]')
-      .filter({ hasText: "View connection" })
+      .filter({ hasText: "Manage" })
       .first();
     await expect(connectorLink).toBeVisible();
     await connectorLink.click();
@@ -146,10 +145,10 @@ test.describe("current merchant experience", () => {
       page.getByRole("heading", { level: 2, name: "Connection health" }),
     ).toBeVisible({ timeout: 60_000 });
     await expect(
-      page.getByRole("heading", { level: 2, name: "Capability contract" }),
+      page.getByRole("heading", { level: 2, name: "Data available to Unauth" }),
     ).toBeVisible({ timeout: 60_000 });
     await expect(
-      page.getByText(/Unsupported autonomous payout actions remain blocked/),
+      page.getByRole("cell", { name: "Issue refund (forbidden in MVP+)", exact: true }),
     ).toBeVisible();
     await expect(
       page.getByRole("heading", { level: 2, name: "Import history" }),
@@ -168,17 +167,17 @@ test.describe("current merchant experience", () => {
       page.getByRole("heading", { level: 2, name: "Value this period" }),
     ).toBeVisible();
     await expect(
-      page.getByText("Payout exposure", { exact: true }).first(),
+      page.getByText("Maximum exposure", { exact: true }).first(),
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { level: 2, name: "Recovery performance" }),
+      page.getByText("Recovery performance", { exact: true }),
     ).toBeVisible();
     await expect(
       page.getByText("Source coverage", { exact: true }).first(),
     ).toBeVisible();
     await expect(page.locator("main canvas")).toHaveCount(0);
     await expect(page.locator("main .recharts-wrapper")).not.toHaveCount(0);
-    await expect(page.getByRole("region", { name: "Payout performance charts" })).toBeVisible();
+    await expect(page.getByRole("region", { name: "Case financial charts" })).toBeVisible();
     await expect(page.getByText("View chart data").first()).toBeVisible();
   });
 });

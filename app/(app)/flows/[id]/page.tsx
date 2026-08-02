@@ -14,7 +14,7 @@ import {
   type WorkflowVersionRecord,
 } from "@/components/rules/FlowVersionWorkbench";
 import { SetBreadcrumbLabel } from "@/components/layout/SetBreadcrumbLabel";
-import pageStyles from "@/components/authenticated/AuthenticatedPageChrome.module.css";
+import { PageFrame } from "@/components/ui/PageFrame";
 import { env } from "@/lib/utils/env";
 
 export const dynamic = "force-dynamic";
@@ -51,18 +51,16 @@ export default async function FlowDetail({
   const versions = (versionsResult.data ??
     []) as unknown as WorkflowVersionRecord[];
   return (
-    <div>
+    <PageFrame>
       <SetBreadcrumbLabel label={current.name} />
-      <div className={pageStyles.pageBody}>
-        <div className="pt-5">
-          <FlowVersionWorkbench
-            versions={versions}
-            currentId={id}
-            canManage={canManage}
-            publicationEnabled={env.WORKFLOW_PUBLICATION_ENABLED === "true"}
-          />
-        </div>
+      <div className="pt-5">
+        <FlowVersionWorkbench
+          versions={versions}
+          currentId={id}
+          canManage={canManage}
+          publicationEnabled={env.WORKFLOW_PUBLICATION_ENABLED === "true"}
+        />
       </div>
-    </div>
+    </PageFrame>
   );
 }

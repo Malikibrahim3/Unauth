@@ -1054,7 +1054,7 @@ npm run typecheck
 npm run lint
 npm run lint:authenticated-design
 npm run audit:supabase-contract
-npm run verify:canonical-db
+npm run verify:canonical-db -- --allow-destructive-local-reset # approved disposable database only
 npm run verify:tenant-boundaries
 npm run verify:webhook-event-safety
 npm run verify:privacy-erasure
@@ -1063,7 +1063,7 @@ npm run verify:p0-ledger
 npm test -- --runInBand
 npm run test:release-browser
 npm run build
-npm run release:readiness
+npm run release:readiness -- --allow-destructive-local-reset # approved disposable database only
 ```
 
 Add a deterministic `verify:investigations-runtime` PostgreSQL gate and make it non-skippable in `release:readiness`.

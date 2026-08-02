@@ -40,7 +40,7 @@ describe("payout-control reports contract", () => {
     // disclosure into the canonical ChartFrame/ChartDataTable primitive. The
     // drillable accessible table still exists — it just lives in the primitive
     // now, and DashboardCharts feeds it the same multi-series column model.
-    const frame = read("components/charts/authenticated/ChartFrame.tsx");
+    const frame = read("components/charts/authenticated/ChartDataTableDisclosure.tsx");
 
     expect(frame).toContain("<table");
     expect(frame).toContain("View chart data");

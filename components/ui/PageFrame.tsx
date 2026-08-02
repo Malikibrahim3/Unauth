@@ -28,8 +28,10 @@ import styles from '@/components/authenticated/AuthenticatedPageChrome.module.cs
  *    once (§5.5, LP-CMP-12). Pick one home for each number.
  */
 export type PageFrameProps = {
-  // §5.1 compact page header.
-  title: string;
+  // §5.1 compact page header. Omit `title` entirely for the rare headerless
+  // variant (a builder/workbench canvas whose own toolbar is the header, e.g.
+  // rules/[id], flows/[id]) — every other header prop is meaningless without it.
+  title?: string;
   eyebrow?: string;
   subtitle?: ReactNode;
   breadcrumbs?: Breadcrumb[];
@@ -72,16 +74,18 @@ export function PageFrame({
 }: PageFrameProps) {
   return (
     <div className={className}>
-      <AuthenticatedPageHeader
-        eyebrow={eyebrow}
-        title={title}
-        subtitle={subtitle}
-        breadcrumbs={breadcrumbs}
-        meta={meta}
-        tabs={tabs}
-        actions={actions}
-        capabilityId={headerCapabilityId}
-      />
+      {title ? (
+        <AuthenticatedPageHeader
+          eyebrow={eyebrow}
+          title={title}
+          subtitle={subtitle}
+          breadcrumbs={breadcrumbs}
+          meta={meta}
+          tabs={tabs}
+          actions={actions}
+          capabilityId={headerCapabilityId}
+        />
+      ) : null}
       <div className={styles.pageBody}>
         <div className={styles.workbenchStack}>
           {metrics}

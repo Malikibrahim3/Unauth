@@ -11,33 +11,20 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import {
+  ACTIVE_MIGRATIONS,
+  EXPECTED_SCHEMA_HASH,
+  assertActiveMigrationLayout,
+} from './release-migration-manifest.mjs';
 
-const EXPECTED_MIGRATIONS = [
-  '20260720000000_canonical_production_baseline.sql',
-  '20260720100000_canonical_environment_supplement.sql',
-  '20260721120000_durable_sensitive_audit.sql',
-  '20260722100000_tenant_authorization_hardening.sql',
-  '20260722200000_webhook_event_safety.sql',
-  '20260722300000_privacy_erasure_retention.sql',
-  '20260722400000_source_to_recovery_integrity.sql',
-  '20260722500000_ownership_transfer_integrity.sql',
-  '20260723100000_release1_relationship_credential_integrity.sql',
-  '20260723150000_release1_case_issue_correction.sql',
-  '20260723200000_release1_investigations.sql',
-  '20260723300000_release1_responsibility_recovery.sql',
-  '20260723400000_release1_investigation_email_dispatch.sql',
-  '20260723500000_release1_investigation_privacy.sql',
-  '20260723600000_release1_reporting_truthfulness.sql',
-  '20260724100000_operational_work_read_model.sql',
-  '20260724110000_work_saved_views.sql',
-  '20260724120000_exception_resolution_integrity.sql',
-  '20260725100000_evidence_reconciliation_pivot.sql',
-  '20260727100000_work_views_claimed_items_grants.sql',
-];
-const EXPECTED_SCHEMA_HASH =
-  'f42c76ae8370f5332d18183ce85d18b3245679e73f556f7bf55120f11c4e62e5';
-const BASELINE_VERSIONS = EXPECTED_MIGRATIONS.slice(0, 2).map((file) => file.slice(0, 14));
-const FORWARD_MIGRATIONS = EXPECTED_MIGRATIONS.slice(2);
+if (!process.argv.includes('--allow-destructive-local-reset')) {
+  throw new Error(
+    'Refusing to reset the existing local database. Run this rehearsal in an approved disposable environment or pass --allow-destructive-local-reset explicitly.',
+  );
+}
+
+const BASELINE_VERSIONS = ACTIVE_MIGRATIONS.slice(0, 2).map((file) => file.slice(0, 14));
+const FORWARD_MIGRATIONS = ACTIVE_MIGRATIONS.slice(2);
 
 function run(command, args) {
   const result = spawnSync(command, args, {
@@ -81,11 +68,7 @@ const dbContainer = `supabase_db_${projectId}`;
 const migrations = readdirSync('supabase/migrations')
   .filter((file) => /^\d{14}_.+\.sql$/.test(file))
   .sort();
-assertEqual(
-  JSON.stringify(migrations),
-  JSON.stringify(EXPECTED_MIGRATIONS),
-  'rollout migration layout',
-);
+assertActiveMigrationLayout(migrations);
 
 const provenanceRows = JSON.parse(
   readFileSync(
@@ -161,7 +144,7 @@ function schemaHash() {
   return createHash('sha256').update(normalized).digest('hex');
 }
 
-const expectedVersions = EXPECTED_MIGRATIONS.map((file) => file.slice(0, 14));
+const expectedVersions = ACTIVE_MIGRATIONS.map((file) => file.slice(0, 14));
 const historyBefore = sql(
   'select string_agg(version, E\'\\n\' order by version) from supabase_migrations.schema_migrations',
 );

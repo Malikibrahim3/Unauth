@@ -48,6 +48,15 @@ Only the canonical reconstruction history belongs in this directory:
     and shipment-line reconciliation, independent recommendation snapshots,
     observed outcomes, provider credits, fact provenance, and settlement-stage
     truth.
+20. `20260727100000_work_views_claimed_items_grants.sql` — service-role grants
+    and claimed-item/source-shipment access required by the reconciliation
+    endpoints.
+21. `20260727130000_recovery_source_freshness.sql` — source-event freshness
+    tracking for recovery cases.
+22. `20260801120000_repair_release1_investigation_schema_drift.sql` — guarded,
+    idempotent repair for investigation settings, partner fields, and
+    same-merchant partner references in environments with incomplete Release 1
+    history.
 
 The superseded 223-file set is preserved under
 `supabase/migrations_archive/pre_canonical_20260722` and must never be included

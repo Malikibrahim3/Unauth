@@ -31,6 +31,7 @@ import {
  * re-exported here so callers have a single import for display copy.
  */
 import { CLAIM_TYPE_LABELS } from '@/lib/claims/claimTypes';
+import { PAYOUT_CASE_NEXT_ACTION_LABELS } from '@/lib/payouts/types';
 
 export { CLAIM_TYPE_LABELS };
 export {
@@ -112,6 +113,12 @@ const requestedAction: Record<string, string> = {
   escalation: 'Escalation',
   return_label: 'Return label',
   unknown: 'Not yet known',
+};
+
+const nextAction: Record<string, string> = {
+  ...PAYOUT_CASE_NEXT_ACTION_LABELS,
+  // Legacy case rows can still contain this pre-v2 action value.
+  request_evidence: 'Request evidence',
 };
 
 const recoverability: Record<string, string> = {
@@ -418,10 +425,24 @@ const inviteStatus: Record<string, string> = {
   revoked: 'Revoked',
 };
 
+/**
+ * `record_match_candidates.subject_entity_type` — an internal identity-
+ * resolution type name (`MerchantEntityType` in
+ * lib/identity/merchantCustomerResolver.ts), never a merchant-facing word.
+ * Raised match-review copy must go through this map, not the raw column
+ * value ("Ambiguous source_order match").
+ */
+const matchSubjectEntity: Record<string, string> = {
+  source_customer: 'customer',
+  source_order: 'order',
+  source_ticket: 'support ticket',
+};
+
 const MAPS = {
   caseStatus,
   inviteStatus,
   requestedAction,
+  nextAction,
   recoverability,
   recoveryStatus,
   ownerType,
@@ -437,6 +458,7 @@ const MAPS = {
   confidence,
   sourceConfidence,
   assessmentState,
+  matchSubjectEntity,
   claimType: CLAIM_TYPE_LABELS as Record<string, string>,
 } as const;
 

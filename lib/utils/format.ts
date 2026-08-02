@@ -1,4 +1,4 @@
-import { fromMinorUnits, normaliseCurrencyOrNull } from '@/lib/canonical/money';
+import { fromMinorUnits, minorUnitExponent, normaliseCurrencyOrNull } from '@/lib/canonical/money';
 import { reportDataQuality } from '@/lib/observability/dataQuality';
 import { nowMs as clockNowMs } from '@/lib/time/clock';
 
@@ -170,8 +170,13 @@ function getMoneyFormatter(code: string): Intl.NumberFormat {
 export function formatMoney(minor: number, currency: string): string {
   const code = normaliseCurrencyOrNull(currency);
   if (!code) {
-    // Never invent a symbol for an unknown code.
-    return Number.isFinite(minor) ? (minor / 100).toFixed(2) : '—';
+    // Never invent a symbol for an unknown code, and never assume a 2-decimal
+    // exponent — a zero-exponent currency (e.g. JPY) would render 100x too
+    // large. minorUnitExponent looks up the ISO exponent independent of
+    // whether Intl recognises the code for symbol display.
+    if (!Number.isFinite(minor)) return '—';
+    const exponent = minorUnitExponent(currency);
+    return fromMinorUnits(minor, currency).toFixed(exponent);
   }
   return getMoneyFormatter(code).format(fromMinorUnits(minor, code));
 }
@@ -248,7 +253,8 @@ export function formatCurrencyNullable(
   currency: string | null | undefined,
 ): string {
   if (amount == null) return UNAVAILABLE;
-  const numericAmount = typeof amount === 'string' ? Number.parseFloat(amount) || 0 : amount;
+  const numericAmount = typeof amount === 'string' ? Number.parseFloat(amount) : amount;
+  if (!Number.isFinite(numericAmount)) return UNAVAILABLE;
   return formatCurrency(numericAmount, currency);
 }
 

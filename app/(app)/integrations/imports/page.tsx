@@ -9,8 +9,7 @@ import {
   type ImportHistoryItem,
 } from "@/components/imports/CanonicalCsvImportClient";
 import { IntegrationsTabs } from "@/components/integrations/IntegrationsTabs";
-import { AuthenticatedPageHeader } from "@/components/authenticated/AuthenticatedPageHeader";
-import pageStyles from "@/components/authenticated/AuthenticatedPageChrome.module.css";
+import { PageFrame } from "@/components/ui/PageFrame";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Import records" };
@@ -39,22 +38,19 @@ export default async function ImportsPage() {
   ]);
   if (error) throw new Error(`import_history_failed: ${error.message}`);
   return (
-    <div>
-      <AuthenticatedPageHeader
-        title="Import records"
-        subtitle="Validate and map orders, refunds or customers before any write. Valid rows import independently; invalid rows remain visible and every persisted record carries CSV provenance."
-        breadcrumbs={[{ label: "Integrations", href: "/integrations" }, { label: "Import records" }]}
-        tabs={
-          <IntegrationsTabs
-            active="imports"
-            connectedCount={catalogue.filter((item) => item.connectionCount > 0 || item.connectionId !== null || item.status !== "not_connected").length}
-            catalogueCount={catalogue.filter((item) => item.category !== "documents").length}
-          />
-        }
-      />
-      <div className={pageStyles.pageBody}>
-        <CanonicalCsvImportClient history={(data ?? []) as ImportHistoryItem[]} />
-      </div>
-    </div>
+    <PageFrame
+      title="Import records"
+      subtitle="Validate and map orders, refunds or customers before any write. Valid rows import independently; invalid rows remain visible and every persisted record carries CSV provenance."
+      breadcrumbs={[{ label: "Integrations", href: "/integrations" }, { label: "Import records" }]}
+      tabs={
+        <IntegrationsTabs
+          active="imports"
+          connectedCount={catalogue.filter((item) => item.connectionCount > 0 || item.connectionId !== null || item.status !== "not_connected").length}
+          catalogueCount={catalogue.filter((item) => item.category !== "documents").length}
+        />
+      }
+    >
+      <CanonicalCsvImportClient history={(data ?? []) as ImportHistoryItem[]} />
+    </PageFrame>
   );
 }

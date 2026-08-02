@@ -99,7 +99,7 @@ export async function raiseException(client: SupabaseClient, merchantId: string,
 export async function listExceptions(
   client: SupabaseClient,
   merchantId: string,
-  options: { status?: string; caseId?: string; limit?: number; dueBefore?: string; dueAfter?: string; dueIsNull?: boolean } = {},
+  options: { status?: string; caseId?: string; limit?: number; offset?: number; dueBefore?: string; dueAfter?: string; dueIsNull?: boolean } = {},
 ): Promise<ExceptionListRow[]> {
   async function run(selection: string, applyDeadlineFilters = true) {
     let query = client
@@ -113,7 +113,9 @@ export async function listExceptions(
       if (options.dueAfter) query = query.gte('due_at', options.dueAfter);
       if (options.dueIsNull) query = query.is('due_at', null);
     }
-    return query.order('created_at', { ascending: false }).limit(options.limit ?? 100);
+    const offset = options.offset ?? 0;
+    const limit = options.limit ?? 100;
+    return query.order('created_at', { ascending: false }).range(offset, offset + limit - 1);
   }
   const extended = await run('id,support_payout_case_id,exception_type,confidence,status,title,detail,context,source_system,assigned_to,assigned_at,priority,due_at,deadline_kind,state_version,created_at,resolved_at');
   // The queue remains readable during a rolling deploy where the forward

@@ -10,9 +10,9 @@ npm test -- --runInBand
 npm run build
 ```
 
-`npm run release:readiness` runs that sequence plus the authenticated design guard, Supabase contract audit, provider-suite typecheck, migration-history sanity check, and whitespace check.
+`npm run release:readiness -- --allow-destructive-local-reset` runs that sequence plus the authenticated design guard, Supabase contract audit, provider-suite typecheck, migration-history sanity check, and whitespace check. Run it only against an approved disposable local database: the gate performs a clean replay and migration-history rehearsal. Without the explicit flag, it exits before starting database-backed checks.
 
-Focused Jest suites are preferred while developing; the full serial run is the release signal. Connector changes also require their adapter and integration registry contract tests. Schema changes require the Supabase contract audit and generated-type check.
+Focused Jest suites are preferred while developing; the full serial run is the release signal. Connector changes also require their adapter and integration registry contract tests. Schema changes require the Supabase contract audit, generated-type check, and `npm run verify:migration-layout`.
 
 Playwright uses `tests/playwright.config.ts`. It requires a non-production deployment, `E2E_AUTH_SECRET`, and an isolated test merchant. The deployed app and test process must use matching Supabase and signing configuration. Never run mutating E2E or provider fixture scripts against production.
 

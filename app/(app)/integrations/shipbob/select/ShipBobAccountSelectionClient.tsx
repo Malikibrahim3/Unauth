@@ -2,11 +2,10 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { AuthenticatedPageHeader } from '@/components/authenticated/AuthenticatedPageHeader';
+import { PageFrame } from '@/components/ui/PageFrame';
 import { AuthenticatedPanel } from '@/components/authenticated/AuthenticatedPanel';
 import { Button, Select } from '@/components/ui';
 import { useFetchJson } from '@/lib/react/useFetchJson';
-import pageStyles from '@/components/authenticated/AuthenticatedPageChrome.module.css';
 
 type Account = { id: string; name: string | null };
 type SelectionResponse = {
@@ -82,14 +81,12 @@ export default function ShipBobAccountSelectionClient({ selectionId }: { selecti
   };
 
   return (
-    <div>
-      <AuthenticatedPageHeader
-        title="Choose a ShipBob channel"
-        subtitle="The selected channel owns this connection, its imports, webhooks, records, health, and audit history."
-        breadcrumbs={[{ label: 'Integrations', href: '/integrations' }, { label: 'ShipBob' }, { label: 'Select channel' }]}
-        meta={<span className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">Environment · {environment}</span>}
-      />
-      <div className={pageStyles.pageBody}>
+    <PageFrame
+      title="Choose a ShipBob channel"
+      subtitle="The selected channel owns this connection, its imports, webhooks, records, health, and audit history."
+      breadcrumbs={[{ label: 'Integrations', href: '/integrations' }, { label: 'ShipBob' }, { label: 'Select channel' }]}
+      meta={<span className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">Environment · {environment}</span>}
+    >
         <AuthenticatedPanel
           title="Channel ownership"
           description="Select exactly one account for this workspace connection."
@@ -135,7 +132,6 @@ export default function ShipBobAccountSelectionClient({ selectionId }: { selecti
             {status === 'saving' ? 'Connecting…' : 'Connect selected channel'}
           </Button>
         </AuthenticatedPanel>
-      </div>
-    </div>
+    </PageFrame>
   );
 }

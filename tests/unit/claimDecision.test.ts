@@ -235,6 +235,6 @@ describe('formatClaimDecisionRecommendation', () => {
       2,
     );
     expect(formatted.isNoMatch).toBe(true);
-    expect(formatted.summary).toContain('No merchant rule matched');
+    expect(formatted.summary).toContain('No rule applies');
   });
 });

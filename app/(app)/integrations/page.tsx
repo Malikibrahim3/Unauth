@@ -22,8 +22,7 @@ import { IntegrationsWorkspace } from "@/components/integrations/IntegrationsWor
 import { DeferredLiveConnectionVerification } from "@/components/integrations/DeferredLiveConnectionVerification";
 import { ShipBobIntegrationBanner } from "@/components/integrations/ShipBobIntegrationBanner";
 import { ButtonLink } from "@/components/ui";
-import { AuthenticatedPageHeader } from "@/components/authenticated/AuthenticatedPageHeader";
-import pageStyles from "@/components/authenticated/AuthenticatedPageChrome.module.css";
+import { PageFrame } from "@/components/ui/PageFrame";
 
 export const dynamic = "force-dynamic";
 
@@ -77,7 +76,7 @@ export default async function IntegrationsPage({
     <>
       <ShipBobIntegrationBanner />
       <DeferredLiveConnectionVerification />
-      <AuthenticatedPageHeader
+      <PageFrame
         title="Integrations"
         subtitle="Manage the tools that feed evidence into Unauth, or add a new source to your stack."
         actions={
@@ -88,11 +87,10 @@ export default async function IntegrationsPage({
           )
         }
         tabs={<IntegrationsTabs active={view} connectedCount={connectedCount} catalogueCount={browseCount} />}
-      />
-      <div className={pageStyles.pageBody}>
+      >
         <IntegrationsWorkspace items={catalogue} initialView={view} />
         <Link href="/integrations/imports" className="sr-only">Open imports and API workspace</Link>
-      </div>
+      </PageFrame>
     </>
   );
 }

@@ -78,19 +78,17 @@ describe('RUN-11 merchant-safe route errors', () => {
   });
 
   it('logs the diagnostic identifier so support can correlate a report', () => {
-    for (const file of ['components/ui/LoadingState.tsx', 'components/states/OperationalRouteError.tsx']) {
-      const source = readFileSync(file, 'utf8');
-      expect(source).toMatch(/console\.error\('\[route-error\]'/);
-      expect(source).toContain('digest');
-    }
+    const source = readFileSync('components/states/OperationalRouteError.tsx', 'utf8');
+    expect(source).toMatch(/console\.error\('\[route-error\]'/);
+    expect(source).toContain('digest');
+    expect(readFileSync('components/ui/LoadingState.tsx', 'utf8')).toContain('OperationalRouteError');
   });
 
   it('keeps a retry and an exit action on every shared error surface', () => {
-    for (const file of ['components/ui/LoadingState.tsx', 'components/states/OperationalRouteError.tsx']) {
-      const source = readFileSync(file, 'utf8');
-      expect(source).toContain('Try again');
-      expect(source).toMatch(/onClick=\{reset\}/);
-      expect(source).toMatch(/<Link/);
-    }
+    const source = readFileSync('components/states/OperationalRouteError.tsx', 'utf8');
+    expect(source).toContain('Try again');
+    expect(source).toMatch(/onClick=\{reset\}/);
+    expect(source).toMatch(/<Link/);
+    expect(readFileSync('components/ui/LoadingState.tsx', 'utf8')).toContain('OperationalRouteError');
   });
 });

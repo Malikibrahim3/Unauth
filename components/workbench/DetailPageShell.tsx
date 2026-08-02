@@ -2,7 +2,7 @@ import { type ReactNode } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { AuthenticatedPageHeader } from '@/components/authenticated/AuthenticatedPageHeader';
+import { PageFrame } from '@/components/ui/PageFrame';
 import { SetBreadcrumbLabel } from '@/components/layout/SetBreadcrumbLabel';
 import styles from '@/components/authenticated/AuthenticatedPageChrome.module.css';
 
@@ -133,6 +133,15 @@ export function DetailPageShell({
       </>
     ) : undefined;
 
+  const content = rail ? (
+    <div className={styles.workbenchGrid}>
+      <div className="min-w-0">{children}</div>
+      <aside className={styles.rail}>{rail}</aside>
+    </div>
+  ) : (
+    <div className="min-w-0">{children}</div>
+  );
+
   return (
     <div className={cn(className)}>
       <SetBreadcrumbLabel label={title} />
@@ -144,28 +153,18 @@ export function DetailPageShell({
           </Link>
         </div>
       ) : null}
-      <AuthenticatedPageHeader
+      <PageFrame
         eyebrow={eyebrow}
         title={title}
         subtitle={subtitle}
         meta={metaItems.length > 0 ? <DetailMetaRow items={metaItems} /> : undefined}
         actions={headerActions}
         tabs={tabs}
-        capabilityId="detail.heading"
-      />
-      <div className={styles.pageBody}>
-        <div className={styles.workbenchStack}>
-          {metricStrip}
-          {rail ? (
-            <div className={styles.workbenchGrid}>
-              <div className="min-w-0">{children}</div>
-              <aside className={styles.rail}>{rail}</aside>
-            </div>
-          ) : (
-            <div className="min-w-0">{children}</div>
-          )}
-        </div>
-      </div>
+        headerCapabilityId="detail.heading"
+        metrics={metricStrip}
+      >
+        {content}
+      </PageFrame>
     </div>
   );
 }

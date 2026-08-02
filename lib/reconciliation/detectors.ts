@@ -14,6 +14,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/lib/supabase/tables';
 import { raiseException, type RaiseExceptionInput } from '@/lib/exceptions/store';
+import { label } from '@/lib/ui/labels';
 import { ACTIVE_CLAIM_STATUSES } from '@/lib/claims/sla';
 
 export type DetectorResult = { detector: string; found: number; raised: number };
@@ -306,12 +307,13 @@ export async function detectProbableMatches(client: SupabaseClient, merchantId: 
   }
   const inputs: RaiseExceptionInput[] = [...bySubject.entries()].map(([key, rows]) => {
     const ambiguous = rows.length > 1;
+    const subjectLabel = label('matchSubjectEntity', rows[0].subject_entity_type as string);
     return {
       exceptionType: 'match_uncertainty', confidence: 'probable',
-      title: ambiguous ? `Ambiguous ${rows[0].subject_entity_type} match` : `Probable ${rows[0].subject_entity_type} match to confirm`,
+      title: ambiguous ? `Ambiguous ${subjectLabel} match` : `Probable ${subjectLabel} match to confirm`,
       detail: ambiguous
-        ? `${rows.length} plausible matches for this ${rows[0].subject_entity_type}. Confirm the correct one or reject all.`
-        : `One plausible match for this ${rows[0].subject_entity_type}. Confirm or reject it.`,
+        ? `${rows.length} plausible matches for this ${subjectLabel}. Confirm the correct one or reject all.`
+        : `One plausible match for this ${subjectLabel}. Confirm or reject it.`,
       context: {
         subject_entity_type: rows[0].subject_entity_type,
         subject_entity_id: rows[0].subject_entity_id,

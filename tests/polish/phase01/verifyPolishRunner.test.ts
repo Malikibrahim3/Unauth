@@ -69,40 +69,26 @@ function loadManifest() {
 describe('verify:polish phase 1 manifest', () => {
   const manifest = loadManifest();
 
-  it('owns exactly the 21 RUN IDs the ledger assigns to phase 1', () => {
-    expect(manifest.ownedIds).toHaveLength(21);
+  it('owns exactly the seven active RUN IDs the ledger assigns to phase 1', () => {
+    expect(manifest.ownedIds).toHaveLength(7);
     expect(manifest.ownedIds[0]).toBe('RUN-01');
-    expect(manifest.ownedIds[20]).toBe('RUN-21');
-    expect(new Set(manifest.ownedIds).size).toBe(21);
+    expect(manifest.ownedIds[6]).toBe('RUN-08');
+    expect(new Set(manifest.ownedIds).size).toBe(7);
   });
 
   it('matches the owned-ID count recorded in the specification ledger', () => {
     const spec = readFileSync(SPEC, 'utf8');
-    const row = spec.split('\n').find((line) => /^\|\s*1\s*\|\s*RUN-01–RUN-21/.test(line));
+    const row = spec.split('\n').find((line) => /^\|\s*1\s*\|\s*RUN-01–RUN-06, RUN-08/.test(line));
     expect(row).toBeDefined();
-    expect(row).toContain('| 21 |');
+    expect(row).toContain('| 7 |');
     expect(row).toContain(manifest.report);
   });
 
-  it('covers every command listed in the §4.2 focused completion gate', () => {
+  it('covers the commands listed in the active §4.3 focused completion gate', () => {
     const commands = manifest.checks
       .filter((check: { command?: string; args?: string[] }) => check.command === 'npm')
       .map((check: { args: string[] }) => check.args[check.args.indexOf('run') + 1]);
-    for (const required of [
-      'audit:supabase-contract',
-      'verify:canonical-db',
-      'verify:durable-audit-runtime',
-      'verify:tenant-boundaries',
-      'verify:investigations-runtime',
-      'verify:source-to-recovery',
-      'verify:p0-ledger',
-      'verify:rollout-rehearsal',
-      'smoke:reconciliation',
-    ]) {
-      expect(commands).toContain(required);
-    }
-    // §4.2 requires the canonical replay twice, from clean databases.
-    expect(commands.filter((name: string) => name === 'verify:canonical-db')).toHaveLength(2);
+    expect(commands).toEqual(['typecheck', 'lint', 'verify:canonical-db']);
   });
 
   it('never invokes release:readiness, which would recurse', () => {
@@ -117,19 +103,9 @@ describe('verify:polish phase 1 manifest', () => {
     }
   });
 
-  it('declares every §4.2 non-command proof as a required artifact', () => {
-    const artifacts = manifest.checks
-      .filter((check: { kind?: string }) => check.kind === 'artifact')
-      .map((check: { path: string }) => check.path);
-    expect(artifacts).toEqual(
-      expect.arrayContaining([
-        expect.stringContaining('read-purity'),
-        expect.stringContaining('route-performance'),
-        expect.stringContaining('completeness-injection'),
-        expect.stringContaining('browser-runtime'),
-        expect.stringContaining('fixture-matrix'),
-      ]),
-    );
+  it('does not reintroduce retired artifact and fixture machinery', () => {
+    expect(JSON.stringify(manifest)).not.toContain('phase-01-read-purity');
+    expect(JSON.stringify(manifest)).not.toContain('seed:phase1-qa');
   });
 });
 
@@ -179,8 +155,8 @@ describe('verify:polish fails closed on a defective phase', () => {
 };
 `;
 
-  // The ledger row for phase 1 owns 21 IDs, so a well-formed fixture must too.
-  const ALL_RUN_IDS = Array.from({ length: 21 }, (_, index) => `RUN-${String(index + 1).padStart(2, '0')}`);
+  // The ledger row for phase 1 owns seven IDs, so a well-formed fixture must too.
+  const ALL_RUN_IDS = ['RUN-01', 'RUN-02', 'RUN-03', 'RUN-04', 'RUN-05', 'RUN-06', 'RUN-08'];
 
   it('passes a well-formed phase', () => {
     writeManifest(trivialManifest(ALL_RUN_IDS));
@@ -195,7 +171,7 @@ describe('verify:polish fails closed on a defective phase', () => {
     writeReport(passingReport(['RUN-01']));
     const result = runRunner(['--phase=01'], workdir);
     expect(result.status).toBe(1);
-    expect(`${result.stdout}${result.stderr}`).toMatch(/ledger owns 21 IDs, manifest declares 1/);
+    expect(`${result.stdout}${result.stderr}`).toMatch(/ledger owns 7 IDs, manifest declares 1/);
   });
 
   it('fails when an owned ID has no requirement row', () => {

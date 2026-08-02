@@ -63,3 +63,31 @@ describe('Release 1 investigation migration contract', () => {
     );
   });
 });
+
+describe('Release 1 investigation schema repair contract', () => {
+  const repairMigration = fs.readFileSync(
+    path.join(
+      process.cwd(),
+      'supabase/migrations/20260801120000_repair_release1_investigation_schema_drift.sql',
+    ),
+    'utf8',
+  );
+
+  it('is idempotent and repairs all runtime settings used by investigation routes', () => {
+    expect(repairMigration).toContain('add column if not exists partner_id uuid');
+    expect(repairMigration).toContain('add column if not exists default_contact_channel text');
+    expect(repairMigration).toContain('add column if not exists response_sla_hours integer');
+    expect(repairMigration).toContain('add column if not exists contact_instructions text');
+    expect(repairMigration).toContain(
+      'add column if not exists investigation_response_sla_hours integer not null default 48',
+    );
+    expect(repairMigration).toContain("where conname = 'case_investigations_partner_merchant_fkey'");
+    expect(repairMigration).toContain("where conname = 'merchants_investigation_sla_check'");
+  });
+
+  it('fails closed on cross-merchant partners and validates reply-to syntax', () => {
+    expect(repairMigration).toContain('case_investigation_partner_tenant_mismatch_repair_failed');
+    expect(repairMigration).toContain('partners (id, merchant_id)');
+    expect(repairMigration).toContain("investigation_reply_to ~* '^[^[:space:]@]+@[^[:space:]@]+\\.[^[:space:]@]+$'");
+  });
+});

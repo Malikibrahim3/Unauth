@@ -14,7 +14,7 @@ import {
   type RuleVersionRecord,
 } from "@/components/rules/RuleVersionWorkbench";
 import { SetBreadcrumbLabel } from "@/components/layout/SetBreadcrumbLabel";
-import pageStyles from "@/components/authenticated/AuthenticatedPageChrome.module.css";
+import { PageFrame } from "@/components/ui/PageFrame";
 
 export const dynamic = "force-dynamic";
 
@@ -59,13 +59,11 @@ export default async function RuleDetail({
     versions[0]!;
 
   return (
-    <div>
+    <PageFrame>
       <SetBreadcrumbLabel label={display.name} />
-      <div className={pageStyles.pageBody}>
-        <div className="pt-5">
-          <RuleVersionWorkbench ruleId={id} initialVersions={versions} canManage={canManage} />
-        </div>
+      <div className="pt-5">
+        <RuleVersionWorkbench ruleId={id} initialVersions={versions} canManage={canManage} />
       </div>
-    </div>
+    </PageFrame>
   );
 }

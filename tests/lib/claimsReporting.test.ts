@@ -4,7 +4,7 @@ describe('claims reporting metrics', () => {
   it('calculates claim operations counts and value at risk', () => {
     const now = new Date('2026-05-27T12:00:00.000Z');
     const metrics = buildClaimOpsMetrics([
-      { id: 'c1', status: 'open', amount_at_risk: 100, submitted_at: '2026-05-23T10:00:00.000Z' },
+      { id: 'c1', status: 'open', amount_at_risk: 100, submitted_at: '2026-05-18T10:00:00.000Z' },
       { id: 'c2', status: 'under_review', amount_at_risk: 200, submitted_at: '2026-05-26T10:00:00.000Z' },
       { id: 'c4', status: 'evidence_requested', amount_at_risk: 75, submitted_at: '2026-05-26T12:00:00.000Z' },
       { id: 'c3', status: 'resolved', amount_at_risk: 50, submitted_at: '2026-05-20T10:00:00.000Z' },
