@@ -522,9 +522,6 @@ export function DashboardOverview({
                     <span className={styles.attentionReasons}>
                       {reasons.map((reason) => <span key={reason}>{reason}</span>)}
                     </span>
-                    <span className={styles.attentionMeasure} aria-hidden="true">
-                      <i style={{ width: `${Math.max(5, operation.priority)}%` }} />
-                    </span>
                     <strong className={styles.attentionCount}>{formatNumber(operation.activeCount)}</strong>
                     <ArrowRight className={styles.attentionArrow} aria-hidden="true" size={14} />
                   </Link>
@@ -581,16 +578,6 @@ export function DashboardOverview({
                   ? 'No connected-source denominator is available.'
                   : `${formatNumber(sourceFreshness.freshRecords)} of ${formatNumber(sourceFreshness.totalRecords)} current · ${sourceFreshness.freshnessPercent}%`}
               </p>
-              {sourceFreshness.freshnessPercent != null ? (
-                <div
-                  className={styles.freshnessTrack}
-                  data-state={sourceFreshness.state}
-                  role="img"
-                  aria-label={`${sourceFreshness.freshnessPercent}% of connected-source records are current`}
-                >
-                  <span style={{ width: `${sourceFreshness.freshnessPercent}%` }} />
-                </div>
-              ) : null}
             </div>
 
             <div className={styles.trustAxis}>
