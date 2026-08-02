@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Pencil, Plus } from 'lucide-react';
-import { Button, Input, Modal, Select } from '@/components/ui';
+import { Button, Checkbox, Input, Modal, Select, Textarea } from '@/components/ui';
 import {
   PARTNER_RULE_CLAIM_TYPES,
   PARTNER_TYPE_LABELS,
@@ -168,19 +168,19 @@ export function RecoveryRulebookClient({
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
       <section className="rounded-[var(--ua-radius-surface)] border" style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-surface-primary)' }}>
         <div className="flex items-center justify-between border-b px-4 py-3" style={{ borderColor: 'var(--ua-border-subtle)' }}>
-          <p className="text-xs font-semibold" style={{ color: 'var(--ua-text-secondary)' }}>Recovery rules</p>
+          <p className="ua-text-label" style={{ color: 'var(--ua-text-secondary)' }}>Recovery rules</p>
           {canManage ? (
             <Button type="button" variant="secondary" size="sm" leadingIcon={<Plus />} onClick={() => setRuleModalOpen(true)}>Add rule</Button>
           ) : null}
         </div>
         <div className="divide-y" style={{ borderColor: 'var(--ua-border-subtle)' }}>
           {rules.length === 0 ? (
-            <p className="p-4 text-sm" style={{ color: 'var(--ua-text-tertiary)' }}>No partner recovery rules configured yet.</p>
+            <p className="ua-text-body p-4" style={{ color: 'var(--ua-text-tertiary)' }}>No partner recovery rules configured yet.</p>
           ) : rules.map((rule) => (
             <article key={rule.id} className="grid gap-3 p-4 md:grid-cols-[1fr_auto]">
               <div className="min-w-0">
-                <p className="font-semibold" style={{ color: 'var(--ua-text-primary)' }}>{rule.rule_name}</p>
-                <p className="mt-1 text-xs" style={{ color: 'var(--ua-text-tertiary)' }}>
+                <p className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>{rule.rule_name}</p>
+                <p className="ua-text-metadata mt-1" style={{ color: 'var(--ua-text-tertiary)' }}>
                   {RECOVERY_TYPE_LABELS[rule.recovery_type]} · {rule.applies_to_claim_type.replaceAll('_', ' ')} · {rule.partner?.name ?? 'Default rule'}
                 </p>
                 <div className="mt-2 flex flex-wrap gap-1.5">
@@ -191,7 +191,7 @@ export function RecoveryRulebookClient({
                   ))}
                 </div>
               </div>
-              <div className="text-xs md:text-right" style={{ color: 'var(--ua-text-tertiary)' }}>
+              <div className="ua-text-metadata md:text-right" style={{ color: 'var(--ua-text-tertiary)' }}>
                 <p>{rule.active ? 'Active' : 'Inactive'}</p>
                 <p>{rule.deadline_days ?? '-'} day deadline</p>
                 <p>{rule.confidence} confidence</p>
@@ -204,26 +204,26 @@ export function RecoveryRulebookClient({
       <aside className="space-y-4">
         <section className="rounded-[var(--ua-radius-surface)] border p-4" style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-surface-primary)' }}>
           <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold" style={{ color: 'var(--ua-text-secondary)' }}>Partners</p>
+            <p className="ua-text-label" style={{ color: 'var(--ua-text-secondary)' }}>Partners</p>
             {canManage ? (
               <Button type="button" variant="secondary" size="sm" leadingIcon={<Plus />} onClick={() => openPartnerModal()}>Add partner</Button>
             ) : null}
           </div>
           <div className="mt-3 space-y-2">
             {partners.length === 0 ? (
-              <p className="text-sm" style={{ color: 'var(--ua-text-tertiary)' }}>No partners configured.</p>
+              <p className="ua-text-body" style={{ color: 'var(--ua-text-tertiary)' }}>No partners configured.</p>
             ) : partners.map((partner) => (
               <div key={partner.id} className="rounded-[var(--ua-radius-surface)] border px-3 py-2.5" style={{ borderColor: 'var(--ua-border-subtle)', background: 'var(--ua-surface-muted)' }}>
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>{partner.name}</p>
-                    <p className="text-xs" style={{ color: 'var(--ua-text-tertiary)' }}>
+                    <p className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>{partner.name}</p>
+                    <p className="ua-text-metadata" style={{ color: 'var(--ua-text-tertiary)' }}>
                       {PARTNER_TYPE_LABELS[partner.partner_type]}
                       {partner.default_contact_channel ? ` · ${partner.default_contact_channel}` : ''}
                       {partner.response_sla_hours ? ` · ${partner.response_sla_hours}h SLA` : ''}
                     </p>
                     {partner.contact_email || partner.contact_url ? (
-                      <p className="mt-1 truncate text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
+                      <p className="ua-text-caption-role mt-1 truncate" style={{ color: 'var(--ua-text-secondary)' }}>
                         {partner.contact_email ?? partner.contact_url}
                       </p>
                     ) : null}
@@ -247,16 +247,16 @@ export function RecoveryRulebookClient({
         </section>
 
         <section className="rounded-[var(--ua-radius-surface)] border p-4" style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-surface-primary)' }}>
-          <p className="text-xs font-semibold" style={{ color: 'var(--ua-text-secondary)' }}>
+          <p className="ua-text-label" style={{ color: 'var(--ua-text-secondary)' }}>
             Investigation delivery
           </p>
-          <p className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--ua-text-tertiary)' }}>
+          <p className="ua-text-caption-role mt-1 leading-relaxed" style={{ color: 'var(--ua-text-tertiary)' }}>
             {emailDispatchAvailable
               ? 'Email remains disabled until a reply-to address is configured. Manual and portal sends stay available.'
               : 'Outbound email is disabled for this environment. Existing settings are retained; manual and portal sends remain separate.'}
           </p>
           <div className="mt-3 grid gap-3">
-            <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
+            <label className="ua-text-body grid gap-1 font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
               Default response SLA (hours)
               <Input
                 type="number"
@@ -270,7 +270,7 @@ export function RecoveryRulebookClient({
                 }))}
               />
             </label>
-            <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
+            <label className="ua-text-body grid gap-1 font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
               Reply-to address
               <Input
                 type="email"
@@ -283,10 +283,9 @@ export function RecoveryRulebookClient({
                 }))}
               />
             </label>
-            <label className="flex items-start gap-2 text-sm" style={{ color: 'var(--ua-text-secondary)' }}>
-              <input
-                className="mt-0.5 h-4 w-4 accent-[var(--ua-action-primary)]"
-                type="checkbox"
+            <label className="ua-text-body flex items-start gap-2" style={{ color: 'var(--ua-text-secondary)' }}>
+              <Checkbox
+                className="mt-0.5"
                 disabled={
                   !canManage
                   || busy
@@ -301,7 +300,7 @@ export function RecoveryRulebookClient({
               />
               <span>
                 <span className="block font-medium">Enable configured outbound email</span>
-                <span className="block text-xs" style={{ color: 'var(--ua-text-tertiary)' }}>
+                <span className="ua-text-caption-role block" style={{ color: 'var(--ua-text-tertiary)' }}>
                   {emailDispatchAvailable
                     ? 'Requests only become sent after provider acceptance.'
                     : 'Requires the controlled environment transport gate.'}
@@ -316,7 +315,7 @@ export function RecoveryRulebookClient({
             {settingsMessage ? (
               <p
                 role={settingsMessage.includes('saved') ? 'status' : 'alert'}
-                className="text-xs"
+                className="ua-text-caption-role"
                 style={{ color: settingsMessage.includes('saved') ? 'var(--ua-success)' : 'var(--ua-risk-critical)' }}
               >
                 {settingsMessage}
@@ -346,30 +345,30 @@ export function RecoveryRulebookClient({
         >
           <div className="grid gap-3">
             {partnerError ? (
-              <p role="alert" className="rounded-md border border-[var(--ua-risk-critical-border)] bg-[var(--ua-risk-critical-bg)] p-3 text-sm text-[var(--ua-risk-critical)]">
+              <p role="alert" className="ua-text-body rounded-md border border-[var(--ua-risk-critical-border)] bg-[var(--ua-risk-critical-bg)] p-3 text-[var(--ua-risk-critical)]">
                 {partnerError}
               </p>
             ) : null}
-            <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
+            <label className="ua-text-body grid gap-1 font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
               Partner name
               <Input aria-label="Partner name" placeholder="e.g. Royal Mail" value={partnerName} onChange={(event) => setPartnerName(event.target.value)} />
             </label>
-            <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
+            <label className="ua-text-body grid gap-1 font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
               Partner type
               <Select aria-label="Partner type" value={partnerType} onChange={(event) => setPartnerType(event.target.value as PartnerType)}>
                 {PARTNER_TYPES.map((type) => <option key={type} value={type}>{PARTNER_TYPE_LABELS[type]}</option>)}
               </Select>
             </label>
             <div className="grid gap-3 sm:grid-cols-2">
-              <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
+              <label className="ua-text-body grid gap-1 font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
                 Contact email
                 <Input type="email" placeholder="claims@partner.com" value={partnerEmail} onChange={(event) => setPartnerEmail(event.target.value)} />
               </label>
-              <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
+              <label className="ua-text-body grid gap-1 font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
                 Portal URL
                 <Input type="url" placeholder="https://partner.example/claims" value={partnerUrl} onChange={(event) => setPartnerUrl(event.target.value)} />
               </label>
-              <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
+              <label className="ua-text-body grid gap-1 font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
                 Default channel
                 <Select value={partnerChannel} onChange={(event) => setPartnerChannel(event.target.value as typeof partnerChannel)}>
                   <option value="manual">Manual / copy</option>
@@ -378,15 +377,14 @@ export function RecoveryRulebookClient({
                   <option value="api">External API reference</option>
                 </Select>
               </label>
-              <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
+              <label className="ua-text-body grid gap-1 font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
                 Response SLA (hours)
                 <Input type="number" min="1" max="2160" value={partnerSlaHours} onChange={(event) => setPartnerSlaHours(event.target.value)} />
               </label>
             </div>
-            <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
+            <label className="ua-text-body grid gap-1 font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
               Contact instructions
-              <textarea
-                className="min-h-24 rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] p-2 text-sm text-[var(--ua-text-primary)]"
+              <Textarea
                 maxLength={4000}
                 placeholder="Reference format, portal steps, or escalation contact."
                 value={partnerInstructions}
@@ -409,40 +407,40 @@ export function RecoveryRulebookClient({
           ]}
         >
           <div className="grid gap-3">
-            <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
+            <label className="ua-text-body grid gap-1 font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
               Rule name
               <Input aria-label="Rule name" placeholder="e.g. Royal Mail non-delivery" value={ruleName} onChange={(event) => setRuleName(event.target.value)} />
             </label>
             <div className="grid gap-3 sm:grid-cols-2">
-              <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
+              <label className="ua-text-body grid gap-1 font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
                 Partner
                 <Select aria-label="Rule partner" value={rulePartnerId} onChange={(event) => setRulePartnerId(event.target.value)}>
                   <option value="">Default rule</option>
                   {partners.map((partner) => <option key={partner.id} value={partner.id}>{partner.name}</option>)}
                 </Select>
               </label>
-              <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
+              <label className="ua-text-body grid gap-1 font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
                 Recovery type
                 <Select aria-label="Recovery type" value={recoveryType} onChange={(event) => setRecoveryType(event.target.value as PartnerRecoveryType)}>
                   {RECOVERY_TYPES.map((type) => <option key={type} value={type}>{RECOVERY_TYPE_LABELS[type]}</option>)}
                 </Select>
               </label>
-              <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
+              <label className="ua-text-body grid gap-1 font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
                 Applies to claim type
                 <Select aria-label="Claim type" value={claimType} onChange={(event) => setClaimType(event.target.value as PartnerRuleClaimType)}>
                   {PARTNER_RULE_CLAIM_TYPES.map((type) => <option key={type} value={type}>{type.replaceAll('_', ' ')}</option>)}
                 </Select>
               </label>
-              <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
+              <label className="ua-text-body grid gap-1 font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
                 Deadline (days)
                 <Input aria-label="Deadline days" type="number" min="0" placeholder="14" value={deadlineDays} onChange={(event) => setDeadlineDays(event.target.value)} />
               </label>
             </div>
-            <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
+            <label className="ua-text-body grid gap-1 font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
               Required evidence
               <Input aria-label="Required evidence" placeholder="Required evidence, comma separated" value={requiredEvidence} onChange={(event) => setRequiredEvidence(event.target.value)} />
             </label>
-            <label className="grid gap-1 text-sm font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
+            <label className="ua-text-body grid gap-1 font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
               Claimable costs
               <Input aria-label="Claimable costs" placeholder="Claimable costs, comma separated" value={claimableCosts} onChange={(event) => setClaimableCosts(event.target.value)} />
             </label>

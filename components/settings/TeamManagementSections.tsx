@@ -2,6 +2,7 @@
 
 import { Shield } from "lucide-react";
 import { TeamMemberRow } from "@/components/settings/TeamMemberRow";
+import { Bone } from "@/components/ui/LoadingSkeleton";
 import type {
   TeamMember,
   TeamRole,
@@ -23,16 +24,6 @@ type TeamMembersSectionProps = {
   onRemove: (member: TeamMember) => void;
   showIcon?: boolean;
 };
-
-function Bone({ className }: { className?: string }) {
-  return (
-    <div
-      className={`animate-pulse rounded-md ${className ?? ""}`}
-      style={{ background: "var(--ua-surface-secondary, var(--ua-border-default))" }}
-      aria-hidden="true"
-    />
-  );
-}
 
 function TeamMembersSkeleton() {
   return (
@@ -90,7 +81,7 @@ export function TeamMembersSection({
       >
         <div>
           <h2
-            className="text-sm font-semibold"
+            className="ua-text-working-title"
             style={{ color: "var(--ua-text-primary)" }}
           >
             {title}

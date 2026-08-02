@@ -7,14 +7,12 @@ import {
   requirePagePermission,
 } from '@/lib/auth/requestContext';
 import { TABLES } from '@/lib/supabase/tables';
-import { WorkbenchPage, SummaryRail, ButtonLink } from '@/components/ui';
-import { TickMeterRow } from '@/components/charts/authenticated';
-import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
+import { WorkbenchPage, ButtonLink, LeadSummary } from '@/components/ui';
 import { formatCurrencyNullable, formatNumber, sumSameCurrency } from '@/lib/utils/format';
 import { listRecoveryCases } from '@/lib/recoveries/store';
-import { RECOVERY_BOARD_COLUMNS } from '@/lib/recoveries/status';
 import { RecoveryBoardClient } from '@/app/(app)/recoveries/RecoveryBoardClient';
 import type { RecoveryCase } from '@/lib/recoveries/types';
+import { RecoveryTrend, type RecoveryTrendPoint } from '@/components/recoveries/RecoveryVisuals';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,6 +29,59 @@ type PayoutRow = {
 
 type OrderRow = { id: string; order_number: string | null };
 type TicketRow = { id: string; external_id: string | null };
+type RecoveryFinancialEntry = {
+  recovery_case_id: string | null;
+  state: 'recoverable' | 'recovered' | 'written_off';
+  amount_minor: number;
+  currency: string;
+  effective_at: string;
+};
+
+function isoWeek(value: string) {
+  const date = new Date(value);
+  const day = (date.getUTCDay() + 6) % 7;
+  date.setUTCDate(date.getUTCDate() - day + 3);
+  const firstThursday = new Date(Date.UTC(date.getUTCFullYear(), 0, 4));
+  const firstDay = (firstThursday.getUTCDay() + 6) % 7;
+  firstThursday.setUTCDate(firstThursday.getUTCDate() - firstDay + 3);
+  const week = 1 + Math.round((date.getTime() - firstThursday.getTime()) / 604800000);
+  return `${date.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
+}
+
+function weekLabel(value: string) {
+  const [year, rawWeek] = value.split('-W');
+  return `Week ${Number(rawWeek)}, ${year}`;
+}
+
+/** Builds a weekly balance only from dated, append-only financial entries. */
+function buildRecoveryTrend(entries: RecoveryFinancialEntry[], currency: string | null): RecoveryTrendPoint[] {
+  if (!currency) return [];
+  const rows = entries
+    .filter((entry) => entry.currency.toUpperCase() === currency.toUpperCase())
+    .slice()
+    .sort((a, b) => a.effective_at.localeCompare(b.effective_at));
+  const buckets = new Map<string, { recoveredMinor: number; outstandingMinor: number; recoveryRate: number | null }>();
+  let outstandingMinor = 0;
+  let recoveredToDate = 0;
+  for (const entry of rows) {
+    const amount = Math.max(0, Number(entry.amount_minor));
+    if (entry.state === 'recoverable') outstandingMinor += amount;
+    if (entry.state === 'recovered') {
+      recoveredToDate += amount;
+      outstandingMinor -= amount;
+    }
+    if (entry.state === 'written_off') outstandingMinor -= amount;
+    const key = isoWeek(entry.effective_at);
+    const existing = buckets.get(key) ?? { recoveredMinor: 0, outstandingMinor: 0, recoveryRate: null };
+    existing.recoveredMinor += entry.state === 'recovered' ? amount : 0;
+    existing.outstandingMinor = Math.max(0, outstandingMinor);
+    existing.recoveryRate = recoveredToDate + outstandingMinor > 0
+      ? recoveredToDate / (recoveredToDate + outstandingMinor)
+      : null;
+    buckets.set(key, existing);
+  }
+  return Array.from(buckets, ([key, value]) => ({ key, label: weekLabel(key), ...value }));
+}
 
 async function enrichRecoveryCases(
   serviceClient: ReturnType<typeof createServiceClient>,
@@ -98,6 +149,17 @@ export default async function RecoveriesPage() {
     listRecoveryCases(serviceClient, ctx.merchantId),
   ]);
   const recoveries = await enrichRecoveryCases(serviceClient, ctx.merchantId, rawRecoveries);
+  const recoveryIds = recoveries.map((recovery) => recovery.id);
+  const { data: entryRows, error: entryError } = recoveryIds.length
+    ? await serviceClient
+      .from(TABLES.CASE_FINANCIAL_ENTRIES)
+      .select('recovery_case_id,state,amount_minor,currency,effective_at')
+      .eq('merchant_id', ctx.merchantId)
+      .in('recovery_case_id', recoveryIds)
+      .in('state', ['recoverable', 'recovered', 'written_off'])
+      .order('effective_at', { ascending: true })
+    : { data: [], error: null };
+  if (entryError) throw new Error(`Failed to load recovery financial entries: ${entryError.message}`);
   const openRecoveries = recoveries.filter((item) => !['paid', 'closed_unrecoverable'].includes(item.status));
   const missingSourceData = recoveries.filter((item) => item.status === 'evidence_needed' || item.evidence_missing.length > 0).length;
   const needsCorrespondence = recoveries.filter((item) => item.status === 'chase_due').length;
@@ -109,83 +171,34 @@ export default async function RecoveriesPage() {
   const recovered = recoveredSum.total;
   const currency = recoverableSum.currency;
   const mixedHint = recoverableSum.mixedCount > 0 ? ` · ${recoverableSum.mixedCount} case${recoverableSum.mixedCount === 1 ? '' : 's'} in other currencies excluded` : '';
-  /*
-   * The rail must reconcile with the board it sits beside. Both now derive from
-   * RECOVERY_BOARD_COLUMNS, so every case lands in exactly one stage and the two
-   * totals agree by construction. The previous reducer used its own four buckets
-   * plus an `evidence_missing` override, which reclassified cases the board had
-   * already placed elsewhere — the board summed to 8 while the rail summed to 10.
-   */
-  const stageRows = RECOVERY_BOARD_COLUMNS.map((column) => ({
-    key: column.key,
-    label: column.label,
-    count: recoveries.filter((item) => column.statuses.includes(item.status)).length,
-  })).filter((row) => row.count > 0);
-  const stageTotal = stageRows.reduce((sum, row) => sum + row.count, 0);
+  const trend = buildRecoveryTrend((entryRows ?? []) as RecoveryFinancialEntry[], currency);
 
   return (
     <WorkbenchPage
       title="Recovery board"
       subtitle="The losses you can still do something about: what needs evidence, what's ready to submit, what needs chasing, and what came back."
-      navItems={WORKBENCH_NAV_ITEMS}
-      activeNavKey="recoveries"
       actions={
-        <ButtonLink href="/partners" variant="secondary" size="sm">
+        <ButtonLink href="/rules/recovery" variant="secondary" size="sm">
           Partner rulebook
         </ButtonLink>
       }
-      kpiItems={[
-        { label: 'Open recovery cases', value: formatNumber(openRecoveries.length), hint: 'Active cases' },
-        { label: 'Missing source data', value: formatNumber(missingSourceData), hint: 'Waiting on a connected source' },
-        { label: 'Needs correspondence', value: formatNumber(needsCorrespondence), hint: 'Draft chase requests' },
-        { label: 'Estimated recovery', value: formatCurrencyNullable(estimatedRecoverable || null, currency) ?? '—', hint: `Upper estimate${mixedHint}` },
-        { label: 'Recovered value', value: formatCurrencyNullable(recovered || null, currency) ?? '—', hint: `Received or credited${mixedHint}` },
-      ]}
-      rail={
-        <SummaryRail
-          sections={[
-            ...(estimatedRecoverable > 0
-              ? [{
-                  title: 'Recovery progress',
-                  children: (
-                    <TickMeterRow
-                      label="Recovered"
-                      percent={(recovered / estimatedRecoverable) * 100}
-                      displayValue={`${Math.round((recovered / estimatedRecoverable) * 100)}%`}
-                      tone="positive"
-                      caption={
-                        recovered / estimatedRecoverable >= 0.5
-                          ? 'Most recoverable value has come back'
-                          : 'Most recoverable value is still in flight'
-                      }
-                    />
-                  ),
-                  footnote: `${formatCurrencyNullable(recovered || null, currency) ?? '—'} of ${formatCurrencyNullable(estimatedRecoverable, currency) ?? '—'} recoverable${mixedHint}`,
-                }]
-              : []),
-            {
-              title: 'Stage volume',
-              /*
-               * A distribution, not a severity scale — the bars stay neutral so
-               * the rail does not read as five competing alarms (§3.1: colour
-               * explains status, it does not decorate).
-               */
-              /*
-               * No href: `?stage=` was never read by any code, so the previous
-               * rows linked to a parameter that navigated nowhere. This is a
-               * distribution readout; the board beside it is the navigation.
-               */
-              rows: stageRows.map((row) => ({
-                label: row.label,
-                value: formatNumber(row.count),
-                tone: 'neutral' as const,
-                bar: stageRows.length > 1 && stageTotal ? row.count / stageTotal : undefined,
-              })),
-              footnote: `${formatNumber(stageTotal)} recovery case${stageTotal === 1 ? '' : 's'} grouped by the board stage they sit in.`,
-            },
+      kpiStrip={
+        <LeadSummary
+          aria-label="Recovery summary"
+          lead={{
+            label: 'Estimated recovery',
+            value: formatCurrencyNullable(estimatedRecoverable, currency),
+            description: `Upper estimate${mixedHint}`,
+          }}
+          supporting={[
+            { label: 'Open cases', value: formatNumber(openRecoveries.length), description: 'Active recovery work' },
+            { label: 'Missing data', value: formatNumber(missingSourceData), description: 'Waiting on a source' },
+            { label: 'Needs correspondence', value: formatNumber(needsCorrespondence), description: 'Draft chase requests' },
+            { label: 'Recovered', value: formatCurrencyNullable(recovered, currency), description: `Received or credited${mixedHint}` },
           ]}
         />
       }
+      primaryVisual={<RecoveryTrend currency={currency} points={trend} mixedCurrencyCount={recoverableSum.mixedCount} />}
       main={<RecoveryBoardClient recoveries={recoveries} canManage={canManage} />}
       footer={
         <p className="text-xs" style={{ color: 'var(--ua-text-tertiary)' }}>

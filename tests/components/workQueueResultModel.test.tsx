@@ -16,9 +16,10 @@ import React from 'react';
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { WorkQueue, type WorkQueueItem, type WorkViewCounts } from '@/components/work/WorkQueue';
+import { WorkQueuePulse } from '@/components/work/WorkQueuePulse';
 
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({ push: jest.fn(), refresh: jest.fn() }),
+  useRouter: () => ({ push: jest.fn(), refresh: jest.fn(), replace: jest.fn() }),
 }));
 
 const VIEW_COUNTS = {
@@ -134,5 +135,16 @@ describe('WorkQueue visible result model (RUN-07)', () => {
     fireEvent.change(screen.getByRole('searchbox', { name: /search this view/i }), { target: { value: '' } });
     expect(screen.queryByText(/selected$/i)).not.toBeInTheDocument();
     expect(screen.getAllByRole('checkbox', { name: /select confirm refund amount/i })[0]).not.toBeChecked();
+  });
+
+  it('retains a search query in system-view links', async () => {
+    render(<WorkQueue items={ITEMS} total={7} view="open" viewCounts={VIEW_COUNTS} initialQuery="carrier" />);
+    await screen.findByRole('table');
+    expect(screen.getByRole('link', { name: /overdue/i })).toHaveAttribute('href', '/work?view=overdue&q=carrier');
+  });
+
+  it('retains a search query when a deadline band drills into the queue', () => {
+    render(<WorkQueuePulse query="carrier" view="open" bands={{ overdue: 1, 'due-today': 0, 'due-1-3': 0, 'due-4-7': 0, 'due-later': 0, 'no-sla': 0 }} />);
+    expect(screen.getByRole('link', { name: /overdue/i })).toHaveAttribute('href', '/work?view=overdue&q=carrier');
   });
 });

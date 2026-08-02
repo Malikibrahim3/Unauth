@@ -1,10 +1,17 @@
 import { spawnSync } from 'node:child_process';
-import { readdirSync } from 'node:fs';
 
 const remoteMigrations = process.argv.includes('--remote-migrations');
+const allowDestructiveLocalReset = process.argv.includes('--allow-destructive-local-reset');
 if (remoteMigrations) {
   console.error(
     'Remote migration checks require the later consolidated production approval and are disabled in this local gate.',
+  );
+  process.exit(2);
+}
+
+if (!allowDestructiveLocalReset) {
+  console.error(
+    'BLOCKED destructive database replay: run this gate only against an approved disposable database and pass --allow-destructive-local-reset.',
   );
   process.exit(2);
 }
@@ -14,6 +21,7 @@ function localRuntimeEnvironment() {
     cwd: process.cwd(),
     encoding: 'utf8',
     shell: false,
+    env: { ...process.env, SUPABASE_TELEMETRY_DISABLED: '1' },
   });
   if (result.status !== 0) {
     throw new Error('Local Supabase status is unavailable; start the isolated local stack');
@@ -40,6 +48,7 @@ function localRuntimeEnvironment() {
   delete inheritedEnvironment.NO_COLOR;
   return {
     ...inheritedEnvironment,
+    SUPABASE_TELEMETRY_DISABLED: '1',
     NEXT_PUBLIC_SUPABASE_URL: apiUrl,
     SUPABASE_URL: apiUrl,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: anonKey,
@@ -68,8 +77,17 @@ const checks = [
   ['Lint (zero warnings)', 'npm', ['run', 'lint', '--', '--max-warnings=0']],
   ['Authenticated design guard', 'npm', ['run', 'lint:authenticated-design']],
   ['Supabase contract', 'npm', ['run', 'audit:supabase-contract']],
-  ['Canonical database fresh replay A', 'npm', ['run', 'verify:canonical-db']],
-  ['Canonical database fresh replay B', 'npm', ['run', 'verify:canonical-db']],
+  ['Reviewed migration layout', 'npm', ['run', 'verify:migration-layout']],
+  [
+    'Canonical database fresh replay A',
+    'npm',
+    ['run', 'verify:canonical-db', ...(allowDestructiveLocalReset ? ['--', '--allow-destructive-local-reset'] : [])],
+  ],
+  [
+    'Canonical database fresh replay B',
+    'npm',
+    ['run', 'verify:canonical-db', ...(allowDestructiveLocalReset ? ['--', '--allow-destructive-local-reset'] : [])],
+  ],
   ['Required-schema deploy preflight', 'npm', ['run', 'verify:schema-preflight']],
   ['Durable audit PostgreSQL runtime', 'npm', ['run', 'verify:durable-audit-runtime']],
   ['Two-merchant tenant boundary runtime', 'npm', ['run', 'verify:tenant-boundaries']],
@@ -78,7 +96,11 @@ const checks = [
   ['Release 1 investigation lifecycle runtime', 'npm', ['run', 'verify:investigations-runtime']],
   ['Source-to-recovery PostgreSQL runtime', 'npm', ['run', 'verify:source-to-recovery']],
   ['Atomic P0 evidence ledger', 'npm', ['run', 'verify:p0-ledger']],
-  ['Local migration rollout/monitoring/rollback rehearsal', 'npm', ['run', 'verify:rollout-rehearsal']],
+  [
+    'Local migration rollout/monitoring/rollback rehearsal',
+    'npm',
+    ['run', 'verify:rollout-rehearsal', ...(allowDestructiveLocalReset ? ['--', '--allow-destructive-local-reset'] : [])],
+  ],
   [
     'Provider-suite TypeScript',
     'npx',
@@ -114,25 +136,6 @@ for (const [name, command, args] of checks) {
   }
 }
 
-const migrationFiles = readdirSync('supabase/migrations').filter((file) =>
-  /^\d{14}_.+\.sql$/.test(file),
-);
-const timestamps = migrationFiles.map((file) => file.slice(0, 14));
-const duplicateTimestamps = timestamps.filter(
-  (timestamp, index) => timestamps.indexOf(timestamp) !== index,
-);
-
-if (migrationFiles.length === 0 || duplicateTimestamps.length > 0) {
-  failed += 1;
-  console.error(
-    duplicateTimestamps.length > 0
-      ? `FAIL duplicate migration timestamps: ${[...new Set(duplicateTimestamps)].join(', ')}`
-      : 'FAIL no timestamped migrations found',
-  );
-} else {
-  console.log(`PASS migration history (${migrationFiles.length} timestamped files)`);
-}
-
 console.log(
   'EXTERNAL remote migration reconciliation intentionally excluded pending the single production approval packet',
 );
@@ -142,6 +145,7 @@ console.log(
     status: failed ? 'blocked' : 'ready',
     failedChecks: failed,
     remoteMigrations,
+    allowDestructiveLocalReset,
     checkedAt: new Date().toISOString(),
   }),
 );

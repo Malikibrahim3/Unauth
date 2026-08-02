@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   Button,
   Badge,
@@ -17,21 +17,45 @@ import {
   MetricGroup,
   Modal,
   OperationalState,
+  PageFrame,
+  RegistrySurface,
+  Recency,
   Select,
   SectionCard,
   SegmentedControl,
   StatusBadge,
+  StatusWithReason,
+  Surface,
   Tabs,
   Tooltip,
   LoadingSkeleton,
+  Bone,
+  Spinner,
+  LivenessIndicator,
+  SettingsNav,
+  BuilderShell,
+  BuilderValidationSummary,
+  BuilderSequence,
+  BuilderStep,
+  EvidenceThread,
+  FinancialEquation,
+  FormField,
+  SourceBeacon,
+  Switch,
 } from '@/components/ui';
-import { Info } from 'lucide-react';
+import { useAsyncResource } from '@/lib/react/useFetchJson';
+import { ArrowLeft, ChevronLeft, ChevronRight, Info } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
-import { AuthenticatedPageHeader } from '@/components/authenticated/AuthenticatedPageHeader';
 import { AuthenticatedPanel } from '@/components/authenticated/AuthenticatedPanel';
-import pageStyles from '@/components/authenticated/AuthenticatedPageChrome.module.css';
 import { ChartTooltip } from '@/components/charts/authenticated/core/ChartTooltip';
+import {
+  ChartFrame,
+  ChartState,
+  ChartLegend,
+  type ChartStateKind,
+} from '@/components/charts/authenticated/ChartFrame';
 import chartStyles from '@/components/charts/authenticated/AuthenticatedCharts.module.css';
+import { formatNumber } from '@/lib/utils/format';
 import {
   MATRIX_CELL,
   MATRIX_GAP,
@@ -50,7 +74,7 @@ import {
 } from '@/components/charts/authenticated/core/geometry';
 
 /*
- * Living Precision §6.2: the analytical palette is the accent plus a neutral
+ * Instrument Grade: the analytical palette is the accent plus a neutral
  * ramp. Current/primary data is accent; every comparison series is neutral.
  * The three semantic hues below are listed last because they enter a chart only
  * when the encoded value is itself success, warning, or critical — they are
@@ -113,8 +137,6 @@ const ACCENT_SWATCHES = [
   ['Accent 50', '--ua-accent-50'],
   ['Accent 100 · selected bg', '--ua-accent-100'],
   ['Accent 200 · selected border', '--ua-accent-200'],
-  ['Accent 300', '--ua-accent-300'],
-  ['Accent 400', '--ua-accent-400'],
   ['Accent 500 · primary', '--ua-accent-500'],
   ['Accent 600 · hover', '--ua-accent-600'],
   ['Accent 700 · pressed / link', '--ua-accent-700'],
@@ -166,21 +188,163 @@ const SAMPLE_ROWS = [
   { id: 'ORD-1044', status: 'escalated', amount: '$310.00' },
 ];
 
+/* Registry-surface fixture rows (§8.3 / LP-CMP-11): identity left-aligned,
+ * numeric/amount columns right-aligned tabular. */
+const REGISTRY_ROWS = [
+  { id: 'acme', name: 'Acme Supplies', status: 'ready_for_decision', cases: 4, exposure: '$1,240.00', last: '2026-07-28T18:40:00.000Z' },
+  { id: 'brightline', name: 'Brightline Co.', status: 'awaiting_carrier_response', cases: 1, exposure: '$96.10', last: '2026-07-28T14:05:00.000Z' },
+  { id: 'crest', name: 'Crest & Vale', status: 'resolved_refunded', cases: 12, exposure: '$4,802.55', last: '2026-07-27T09:22:00.000Z' },
+] as const;
+
+/*
+ * §7.5 / LP-MOT-07 in a real hook, not a mock of the contract: `useAsyncResource`
+ * drives the ResourceSnapshot lifecycle. `reload()` refreshes in place — the
+ * table stays populated, the status flips to `refreshing`, and `dataAsOf` (from
+ * the domain payload, never fetch-completion time) only advances when the new
+ * result lands. The loader runs on mount and on each Refresh; it is never called
+ * during SSR, so reading the clock inside it carries no hydration risk.
+ */
+function StaleWhileRefreshDemo() {
+  const generationRef = useRef(0);
+  const load = useCallback(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    generationRef.current += 1;
+    return { generation: generationRef.current, dataAsOf: new Date().toISOString() };
+  }, []);
+  const resource = useAsyncResource('gallery:stale-while-refresh', load, {
+    getDataAsOf: (data) => data.dataAsOf,
+  });
+
+  const activity = resource.isRefreshing ? 'updating' : resource.status === 'error' ? 'failed' : 'idle';
+  const freshness = resource.status === 'error' ? 'stale' : resource.dataAsOf ? 'current' : 'unknown';
+
+  return (
+    <div className="grid w-full gap-3">
+      <div className="flex flex-wrap items-center gap-3">
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => resource.reload()}
+          disabled={resource.isInitialLoading}
+        >
+          Refresh
+        </Button>
+        <LivenessIndicator
+          transport="connected"
+          activity={activity}
+          freshness={freshness}
+          lastDataAt={resource.dataAsOf}
+          snapshot
+        />
+      </div>
+      <InsetGroup>
+        <dl className="grid gap-1 text-[length:var(--ua-text-dense-size)]">
+          <div className="flex justify-between gap-4">
+            <dt className="text-[var(--ua-text-tertiary)]">status</dt>
+            <dd className="font-mono text-[var(--ua-text-primary)]">{resource.status}</dd>
+          </div>
+          <div className="flex justify-between gap-4">
+            <dt className="text-[var(--ua-text-tertiary)]">data (preserved across refresh)</dt>
+            <dd className="font-mono text-[var(--ua-text-primary)]">
+              {resource.data ? `generation ${resource.data.generation}` : '—'}
+            </dd>
+          </div>
+          <div className="flex justify-between gap-4">
+            <dt className="text-[var(--ua-text-tertiary)]">dataAsOf</dt>
+            <dd className="text-[var(--ua-text-secondary)]">
+              <Recency timestampIso={resource.dataAsOf} snapshot />
+            </dd>
+          </div>
+        </dl>
+      </InsetGroup>
+    </div>
+  );
+}
+
+/* §5.4/§8.1 (LP-CMP-07): grouped settings navigation — always-visible labelled
+ * sections instead of a ten-item horizontal-scroll strip. */
+const SETTINGS_NAV_GROUPS = [
+  {
+    label: 'Workspace',
+    items: [
+      { href: '/settings/account', label: 'Workspace & account' },
+      { href: '/settings/team', label: 'Team' },
+      { href: '/settings/billing', label: 'Billing' },
+      { href: '/settings/platform', label: 'Defaults' },
+      { href: '/settings/notifications', label: 'Notifications' },
+    ],
+  },
+  {
+    label: 'Connections',
+    items: [
+      { href: '/integrations', label: 'Connections' },
+      { href: '/settings/api-integrations', label: 'API access' },
+    ],
+  },
+  {
+    label: 'Governance',
+    items: [
+      { href: '/settings/agreements', label: 'Agreements' },
+      { href: '/settings/data-privacy', label: 'Data & privacy' },
+      { href: '/settings/audit-trail', label: 'Audit trail' },
+    ],
+  },
+];
+
+/* §5.2/§8.4 (LP-CMP-06): the recovery board's eight stages. The board scrolls
+ * inside its working surface at a fixed readable column width. */
+const BOARD_COLUMNS = [
+  { title: 'Collecting evidence', count: 6 },
+  { title: 'Pack ready', count: 3 },
+  { title: 'Submitted / waiting', count: 5 },
+  { title: 'Needs correspondence', count: 2 },
+  { title: 'Source approved', count: 4 },
+  { title: 'Source denied', count: 1 },
+  { title: 'Recovered', count: 9 },
+  { title: 'Closed unrecoverable', count: 2 },
+];
+
+/*
+ * §7.2 / LP-MOT-10: the one-shot changed-value wash on a real consumer.
+ * `MetricCard` reads `useChangedValueHighlight(value)`; the first mount never
+ * washes, and each later value change washes exactly once for 700ms. "Recover"
+ * changes the value (wash); "Re-render (same value)" forces a re-render with an
+ * unchanged value (no wash — the guard compares the previous value, not mount).
+ */
+function ChangedValueWashDemo() {
+  const [recovered, setRecovered] = useState(4820);
+  const [, forceRerender] = useState(0);
+  return (
+    <div className="grid w-full gap-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <Button size="sm" variant="secondary" onClick={() => setRecovered((v) => v + 180)}>
+          Recover £180 (value changes → wash)
+        </Button>
+        <Button size="sm" variant="secondary" onClick={() => forceRerender((n) => n + 1)}>
+          Re-render (same value → no wash)
+        </Button>
+      </div>
+      <div style={{ maxWidth: 240 }}>
+        <MetricCard label="Recovered" value={`£${formatNumber(recovered)}`} />
+      </div>
+    </div>
+  );
+}
+
 export function DesignSystemGalleryClient() {
   const [modalOpen, setModalOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [segment, setSegment] = useState('active');
   const [tab, setTab] = useState('overview');
+  const [registrySelected, setRegistrySelected] = useState<string | null>('acme');
+  const [registryFiltered, setRegistryFiltered] = useState(false);
   const toast = useToast();
 
   return (
-    <div>
-      <AuthenticatedPageHeader
-        title="Authenticated design system"
-        subtitle="Visual regression inspection for the shared signed-in interface. This route is unavailable outside development."
-      />
-      <div className={pageStyles.pageBody}>
-        <div className={pageStyles.workbenchStack}>
+    <PageFrame
+      title="Authenticated design system"
+      subtitle="Visual regression inspection for the shared signed-in interface. This route is unavailable outside development."
+    >
 
       <GallerySection title="Colour — surfaces">
         {SURFACE_SWATCHES.map(([name, v]) => (
@@ -253,9 +417,11 @@ export function DesignSystemGalleryClient() {
         <Button variant="ghost">Ghost</Button>
         <Button variant="danger">Danger</Button>
         <Button variant="link">Link</Button>
-        <Button variant="primary" loading>
-          Loading
-        </Button>
+        <span data-capture-static-state="true">
+          <Button variant="primary" loading>
+            Loading
+          </Button>
+        </span>
         <Button variant="primary" disabled>
           Disabled
         </Button>
@@ -309,12 +475,72 @@ export function DesignSystemGalleryClient() {
         <Badge tone="danger">Danger</Badge>
       </GallerySection>
 
-      <GallerySection title="Cards">
-        <Card variant="panel" style={{ width: 220 }}>
+      <GallerySection title="Instrument Grade — evidence, value, sources, and decisions">
+        <div className="grid w-full gap-5 xl:grid-cols-2">
+          <Surface structure="working" pad="standard">
+            <EvidenceThread
+              label="Evidence authority chain"
+              items={[
+                { key: 'source', authority: 'source', label: 'Source', value: 'Shopify order and fulfilment record', meta: 'Observed 09:18' },
+                { key: 'fact', authority: 'fact', label: 'Verified fact', value: 'Carrier scan has not advanced for 10 days', meta: 'Current' },
+                { key: 'inference', authority: 'inference', label: 'Inference', value: 'The parcel may be lost in transit', meta: 'Qualified', state: 'partial' },
+                { key: 'recommendation', authority: 'recommendation', label: 'Recommendation', value: 'Review for merchant payout decision', meta: 'Advisory' },
+              ]}
+            />
+          </Surface>
+          <Surface structure="working" pad="standard">
+            <FinancialEquation
+              label="Financial position"
+              items={[
+                { key: 'exposure', label: 'Exposure', value: '£1,840', detail: 'Verified value' },
+                { key: 'recovered', label: 'Recovered', value: '£420', detail: 'Observed cash' },
+                { key: 'net', label: 'Net loss', value: '£1,420', detail: 'Reconciled position' },
+              ]}
+              conclusion="Only source-backed values enter the financial ledger."
+            />
+          </Surface>
+          <Surface structure="working" pad="standard">
+            <SourceBeacon source="Shopify orders" authority="Connected source" observedAt="Latest 09:18" state="current" limitation="1,284 current · 0 stale" />
+            <SourceBeacon source="Carrier tracking" authority="Connected source" observedAt="Latest yesterday" state="stale" limitation="12 records need refresh" />
+          </Surface>
+          <Surface structure="working" pad="standard" className="grid gap-4">
+            <FormField label="Decision rationale" hint="Required for denials and reversals.">
+              <Input placeholder="Add source-backed rationale" />
+            </FormField>
+            <Switch label="Notify the case owner" description="Creates an in-app notification after the decision is recorded." defaultChecked />
+          </Surface>
+        </div>
+      </GallerySection>
+
+      <GallerySection title="Surface anatomy (§8.2)">
+        <Surface structure="working" pad="standard" style={{ width: 200 }}>
           Working surface
-        </Card>
-        <Card variant="overlay" style={{ width: 220 }}>
+        </Surface>
+        <Surface structure="inset" style={{ width: 200 }}>
+          Inset group
+        </Surface>
+        <Surface structure="floating" pad="standard" style={{ width: 200 }}>
           Floating surface
+        </Surface>
+        <Surface structure="unframed" style={{ width: 200 }}>
+          Unframed grouping (spacing only)
+        </Surface>
+        {/* One working surface owns the perimeter; joined sections and an inset
+            group compose inside it — no standard bordered card nested in
+            another (§8.2). */}
+        <div style={{ width: 280 }}>
+          <Surface structure="working">
+            <JoinedSection>Joined section with a single parent perimeter.</JoinedSection>
+            <JoinedSection>
+              <InsetGroup>Inset group for secondary context.</InsetGroup>
+            </JoinedSection>
+          </Surface>
+        </div>
+      </GallerySection>
+
+      <GallerySection title="Cards and sections">
+        <Card variant="panel" style={{ width: 220 }}>
+          Padded card (delegates to a working surface)
         </Card>
         <MetricCard label="Payout exposure" value={18400} />
         <div style={{ width: 260 }}>
@@ -322,22 +548,79 @@ export function DesignSystemGalleryClient() {
             Body content
           </SectionCard>
         </div>
-        <div style={{ width: 260 }}>
-          <Card unstyled variant="panel">
-            <JoinedSection>Joined content with a single parent perimeter.</JoinedSection>
-            <JoinedSection><InsetGroup>Inset group for secondary context.</InsetGroup></JoinedSection>
-          </Card>
-        </div>
       </GallerySection>
 
-      <GallerySection title="Metric group — odd count">
+      {/*
+       * Adaptive KPI group (§5.3, LP-CMP-02): the grid sizes to its content at
+       * 1, 2, 4, 5, and 6 metrics with no empty cell or orphan divider. Each is
+       * a distinct data-count so the reflow rules in surfaces.css are exercised.
+       * A route drops the KPI group entirely rather than pad it (see the
+       * one-metric lead below and the no-KPI rule in §5.3 / PageFrame).
+       */}
+      <GallerySection title="Metric group — 1 (lead metric, intentional whitespace)">
+        <MetricGroup
+          items={[{ label: 'Recovered this period', value: '£4,820', description: 'Across 24 resolved cases' }]}
+          aria-label="Lead metric example"
+        />
+      </GallerySection>
+
+      <GallerySection title="Metric group — 2">
+        <MetricGroup
+          items={[
+            { label: 'Open cases', value: '24', description: 'Current scope' },
+            { label: 'Needs review', value: '8', description: 'Actionable' },
+          ]}
+          aria-label="Two-metric group"
+        />
+      </GallerySection>
+
+      <GallerySection title="Metric group — 3 (odd count)">
         <MetricGroup
           items={[
             { label: 'Open cases', value: '24', description: 'Current scope' },
             { label: 'Needs review', value: '8', description: 'Actionable' },
             { label: 'Recovered', value: '£4,820', description: 'This period' },
           ]}
-          aria-label="Metric group example"
+          aria-label="Three-metric group"
+        />
+      </GallerySection>
+
+      <GallerySection title="Metric group — 4">
+        <MetricGroup
+          items={[
+            { label: 'Open cases', value: '24' },
+            { label: 'Needs review', value: '8' },
+            { label: 'Recovered', value: '£4,820' },
+            { label: 'Win rate', value: '61%' },
+          ]}
+          aria-label="Four-metric group"
+        />
+      </GallerySection>
+
+      <GallerySection title="Metric group — 5">
+        <MetricGroup
+          items={[
+            { label: 'Open cases', value: '24' },
+            { label: 'Needs review', value: '8' },
+            { label: 'Recovered', value: '£4,820' },
+            { label: 'Win rate', value: '61%' },
+            { label: 'Avg. resolution', value: '3.2d' },
+          ]}
+          aria-label="Five-metric group"
+        />
+      </GallerySection>
+
+      <GallerySection title="Metric group — 6">
+        <MetricGroup
+          items={[
+            { label: 'Open cases', value: '24' },
+            { label: 'Needs review', value: '8' },
+            { label: 'Recovered', value: '£4,820' },
+            { label: 'Win rate', value: '61%' },
+            { label: 'Avg. resolution', value: '3.2d' },
+            { label: 'Escalated', value: '2' },
+          ]}
+          aria-label="Six-metric group"
         />
       </GallerySection>
 
@@ -351,14 +634,120 @@ export function DesignSystemGalleryClient() {
             ]}
             rows={SAMPLE_ROWS}
             getRowKey={(r) => r.id}
+            emptyState={<p className="ua-text-body p-4 text-[var(--ua-text-secondary)]">No sample rows.</p>}
           />
+        </div>
+      </GallerySection>
+
+      <GallerySection title="Registry surface (§8.3 — toolbar, count, table, pagination in one working surface)">
+        <div style={{ width: '100%' }}>
+          <RegistrySurface
+            aria-label="Cases registry"
+            toolbar={
+              <>
+                <FilterChip active={!registryFiltered} onClick={() => setRegistryFiltered(false)}>
+                  All
+                </FilterChip>
+                <FilterChip active={registryFiltered} onClick={() => setRegistryFiltered(true)} count={0}>
+                  No exposure
+                </FilterChip>
+              </>
+            }
+            resultCount={
+              registryFiltered
+                ? 'No matching records'
+                : `Showing 1–${REGISTRY_ROWS.length} of ${REGISTRY_ROWS.length}`
+            }
+            pagination={
+              <>
+                <span>Page 1 of 1</span>
+                <div className="flex items-center gap-2">
+                  <Button size="sm" variant="secondary" disabled>Prev</Button>
+                  <Button size="sm" variant="secondary" disabled>Next</Button>
+                </div>
+              </>
+            }
+          >
+            {registryFiltered ? (
+              <OperationalState
+                kind="filtered-empty"
+                action={
+                  <Button size="sm" variant="secondary" onClick={() => setRegistryFiltered(false)}>
+                    Clear filters
+                  </Button>
+                }
+              />
+            ) : (
+              <DataTable
+                flush
+                aria-label="Cases registry"
+                columns={[
+                  { key: 'name', header: 'Customer', render: (r) => r.name },
+                  { key: 'status', header: 'Status', render: (r) => <StatusBadge family="caseStatus" value={r.status} size="sm" /> },
+                  { key: 'cases', header: 'Cases', align: 'right', render: (r) => r.cases },
+                  { key: 'exposure', header: 'Exposure', align: 'right', render: (r) => r.exposure },
+                  { key: 'last', header: 'Last activity', align: 'right', render: (r) => <Recency timestampIso={r.last} /> },
+                ]}
+                rows={[...REGISTRY_ROWS]}
+                getRowKey={(r) => r.id}
+                emptyState={<p className="ua-text-body p-4 text-[var(--ua-text-secondary)]">No registry rows.</p>}
+                selectedKey={registrySelected ?? undefined}
+                onRowClick={(r) => setRegistrySelected(r.id)}
+                primaryColumnKey="name"
+                primaryActionLabel={(r) => `Open ${r.name}`}
+                rowActions={(r) => [{ label: 'Open record', onSelect: () => setRegistrySelected(r.id) }]}
+              />
+            )}
+          </RegistrySurface>
+        </div>
+      </GallerySection>
+
+      <GallerySection title="Stale-while-refresh (§7.5 / LP-MOT-07 — refresh preserves data, advances dataAsOf)">
+        <StaleWhileRefreshDemo />
+      </GallerySection>
+
+      <GallerySection title="Selection vs. status (LP-CMP-10 — selection is accent, never a semantic tone)">
+        <div className="grid w-full gap-3 md:grid-cols-2">
+          <InsetGroup>
+            <p className="mb-2 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">Selection — accent</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <FilterChip active onClick={() => undefined}>Selected filter</FilterChip>
+              <FilterChip onClick={() => undefined}>Unselected</FilterChip>
+              <SegmentedControl
+                aria-label="View"
+                value={segment}
+                onValueChange={setSegment}
+                items={[{ value: 'active', label: 'Active' }, { value: 'all', label: 'All' }]}
+              />
+            </div>
+          </InsetGroup>
+          <InsetGroup>
+            <p className="mb-2 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">Status — semantic meaning</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <StatusBadge family="caseStatus" value="ready_for_decision" size="sm" />
+              <StatusBadge family="caseStatus" value="awaiting_carrier_response" size="sm" />
+              <StatusBadge family="caseStatus" value="escalated" size="sm" />
+            </div>
+          </InsetGroup>
         </div>
       </GallerySection>
 
       <GallerySection title="Empty state">
         <div style={{ width: '100%', border: '1px solid var(--ua-border-default)', borderRadius: 'var(--ua-radius-surface)' }}>
-          <EmptyState title="No records yet" description="Records appear here once data arrives." />
+          <EmptyState
+            title="No records yet"
+            description="Records appear here once data arrives."
+            action={<Button variant="secondary" size="sm">Clear filters</Button>}
+          />
         </div>
+      </GallerySection>
+
+      <GallerySection title="Qualified status">
+        <StatusWithReason
+          family="workflowStatus"
+          value="degraded"
+          reason="The latest source check did not complete. Existing evidence remains available while the connection is reviewed."
+        />
       </GallerySection>
 
       <GallerySection title="Operational states">
@@ -376,10 +765,40 @@ export function DesignSystemGalleryClient() {
         </div>
       </GallerySection>
 
-      <GallerySection title="Loading geometry">
-        <LoadingSkeleton variant="metric-group" title="Loading metrics" className="w-full" />
-        <LoadingSkeleton variant="table" rows={3} title="Loading cases" className="w-full" />
-      </GallerySection>
+      <div className="contents" data-capture-static-state="true">
+        <GallerySection title="Loading geometry">
+          <LoadingSkeleton variant="metric-group" title="Loading metrics" className="w-full" />
+          <LoadingSkeleton variant="table" rows={3} title="Loading cases" className="w-full" />
+        </GallerySection>
+
+        <GallerySection title="Spinner (§7.6, 150ms display threshold)">
+          <Spinner delayMs={0} label="Loading" />
+          <Spinner delayMs={0} size="lg" label="Loading" />
+        </GallerySection>
+
+        <GallerySection title="Liveness — transport / activity / freshness / live (§7.4)">
+          {/*
+            Fixed demo timestamps, not `Date.now()`-derived — a value computed
+            from the client's clock inside a client component would differ
+            between SSR and hydration and reintroduce the mismatch this
+            consolidation fixed. Real callers pass genuine domain timestamps
+            from an API response, which carry no such risk.
+          */}
+          <div className="grid w-full gap-2">
+            <LivenessIndicator transport="connected" freshness="current" lastDataAt="2026-07-28T19:59:30.000Z" />
+            <LivenessIndicator transport="connected" freshness="stale" lastDataAt="2026-07-28T16:42:00.000Z" />
+            <LivenessIndicator transport="offline" freshness="unknown" lastDataAt={null} />
+            <LivenessIndicator transport="connected" activity="syncing" freshness="current" lastDataAt="2026-07-28T19:59:55.000Z" />
+            <LivenessIndicator
+              transport="connected"
+              freshness="current"
+              live={{ heartbeatExpiresAt: '2030-01-01T00:00:00.000Z' }}
+              lastDataAt="2026-07-28T19:59:58.000Z"
+            />
+            <LivenessIndicator transport="connected" freshness="current" lastDataAt="2026-07-28T18:59:00.000Z" snapshot />
+          </div>
+        </GallerySection>
+      </div>
 
       <GallerySection title="Data visualisation — cartesian frame + semantic fills">
         <div style={{ display: 'flex', gap: 'var(--ua-space-4)', alignItems: 'flex-end', width: '100%' }}>
@@ -490,6 +909,181 @@ export function DesignSystemGalleryClient() {
         </div>
       </GallerySection>
 
+      <GallerySection title="Shared chart frame — §6.4 anatomy (Phase 06 · LP-VIZ-02)">
+        <div style={{ width: 'min(560px, 100%)' }}>
+          <ChartFrame
+            id="gallery-hero"
+            kind="cumulative-financial"
+            question="How is preventable value exposure improving?"
+            summary="Cumulative exposure and recovered value"
+            scope="GBP · Last 30 days"
+            control={<div className={chartStyles.annotation}><strong>£18,400</strong> exposed</div>}
+            legend={<ChartLegend items={[
+              { label: 'Exposure', tone: 'primary' },
+              { label: 'Recovered', tone: 'positive' },
+              { label: 'Previous period', tone: 'comparison' },
+            ]} />}
+            freshness="Source: case ledger · updated 2 minutes ago"
+            records={{ href: '#chart-records' }}
+            table={{
+              caption: 'Exposure and recovered value by day (GBP)',
+              columns: [
+                { key: 'day', header: 'Day' },
+                { key: 'exposure', header: 'Exposure', numeric: true },
+                { key: 'recovered', header: 'Recovered', numeric: true },
+              ],
+              rows: [
+                { key: 'd1', header: '12 Jul', values: ['£4,820', '£1,200'] },
+                { key: 'd2', header: '13 Jul', values: ['£9,140', '£3,600'] },
+                { key: 'd3', header: '14 Jul', values: ['£18,400', '£7,900'] },
+              ],
+            }}
+          >
+            <svg width="100%" height="180" viewBox="0 0 480 180" preserveAspectRatio="none" role="img" aria-label="Exposure rising to £18,400 while recovered value trails.">
+              <polyline points="0,150 120,110 240,120 360,60 480,40" fill="none" stroke="var(--ua-chart-neutral-500)" strokeWidth="1.5" strokeDasharray="5 4" />
+              <polygon points="0,150 120,90 240,100 360,44 480,26 480,180 0,180" fill="var(--ua-chart-primary)" fillOpacity="0.08" />
+              <polyline points="0,150 120,90 240,100 360,44 480,26" fill="none" stroke="var(--ua-chart-primary)" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" />
+              <circle cx="480" cy="26" r="5" fill="var(--ua-chart-primary)" stroke="var(--ua-surface-primary)" strokeWidth="2" />
+            </svg>
+          </ChartFrame>
+        </div>
+      </GallerySection>
+
+      <GallerySection title="Chart data states — §6.6 matrix (Phase 06 · LP-VIZ-07)">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 'var(--ua-space-3)', width: '100%' }}>
+          {([
+            { kind: 'empty', title: 'No records yet', description: 'Cases with a recorded amount and currency will appear here.' },
+            { kind: 'filtered-empty', title: 'No matches', description: 'No records match the current filters.', action: <Button variant="secondary" size="sm">Clear filters</Button> },
+            { kind: 'insufficient-history', title: 'Not enough history', description: 'A period comparison needs at least seven days of data.' },
+            { kind: 'partial', title: 'Partial interval', description: 'The latest day is still accumulating; it is marked incomplete.' },
+            { kind: 'stale', title: 'Showing last known values', description: 'The source has not refreshed since 08:00.' },
+            { kind: 'disconnected', title: 'Source disconnected', description: 'Reconnect Shopify to resume this chart.', action: <Button variant="secondary" size="sm">Open integration</Button> },
+            { kind: 'error', title: 'Could not load chart', description: 'The last successful data is preserved.', action: <Button variant="secondary" size="sm">Retry</Button> },
+            { kind: 'mixed-currency', title: 'Mixed currency', description: 'Values span GBP and USD; split by currency to aggregate.' },
+            { kind: 'unavailable', title: 'Dated values unavailable', description: 'Unavailable is distinct from zero.' },
+            { kind: 'refreshing', title: 'Updating…', description: 'Refreshing in the background; existing values stay visible.' },
+          ] satisfies Array<{ kind: ChartStateKind; title: string; description: string; action?: React.ReactNode }>).map((state) => (
+            <div key={state.kind} style={{ border: '1px solid var(--ua-border-subtle)', borderRadius: 'var(--ua-radius-surface)', overflow: 'hidden' }}>
+              <p className="text-caption" style={{ margin: 0, padding: '6px 10px', borderBottom: '1px solid var(--ua-border-subtle)', color: 'var(--ua-text-tertiary)' }}>{state.kind}</p>
+              <ChartState kind={state.kind} title={state.title} description={state.description} action={state.action} minHeight={130} />
+            </div>
+          ))}
+        </div>
+      </GallerySection>
+
+      <GallerySection title="Detail header anatomy (§8.4 — LP-CMP-05)">
+        <div style={{ width: '100%', border: '1px solid var(--ua-border-subtle)', borderRadius: 'var(--ua-radius-surface)', padding: 'var(--ua-space-4)' }}>
+          <a className="ua-detail-back" href="#detail-specimen" onClick={(e) => e.preventDefault()}>
+            <ArrowLeft size={15} aria-hidden="true" />
+            Recoveries
+          </a>
+          <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div style={{ color: 'var(--ua-text-primary)', fontSize: 'var(--ua-text-detail-identity-size)', fontWeight: 'var(--ua-text-detail-identity-weight)', lineHeight: 'var(--ua-text-detail-identity-leading)' }}>
+                Late delivery · R-4821
+              </div>
+              <ul className="ua-detail-meta mt-1">
+                <li className="ua-detail-meta__item">
+                  <span className="ua-detail-meta__label">Source</span>
+                  <span className="ua-detail-meta__value">Shopify</span>
+                </li>
+                <li className="ua-detail-meta__item">
+                  <span className="ua-detail-meta__label">Owner</span>
+                  <span className="ua-detail-meta__value">A. Okafor</span>
+                </li>
+                <li className="ua-detail-meta__item">
+                  <span className="ua-detail-meta__label">Updated</span>
+                  <span className="ua-detail-meta__value"><Recency timestampIso="2026-07-29T09:10:00.000Z" /></span>
+                </li>
+              </ul>
+            </div>
+            <div className="flex items-center gap-2">
+              <StatusBadge family="caseStatus" value="ready_for_decision" size="sm" />
+              <nav className="ua-detail-recordnav" aria-label="Record navigation">
+                <span className="ua-detail-recordnav__link" aria-disabled="true" aria-label="Previous record">
+                  <ChevronLeft size={16} aria-hidden="true" />
+                </span>
+                <a className="ua-detail-recordnav__link" href="#detail-next" aria-label="Next record" onClick={(e) => e.preventDefault()}>
+                  <ChevronRight size={16} aria-hidden="true" />
+                </a>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </GallerySection>
+
+      <GallerySection title="Board geometry — 8 stages scroll inside the surface (§5.2/§8.4 — LP-CMP-06)">
+        <Surface structure="working" className="w-full" style={{ overflow: 'hidden' }}>
+          <div className="ua-board" aria-label="Recovery board (specimen)">
+            {BOARD_COLUMNS.map((column) => (
+              <div key={column.title} className="ua-board__column">
+                <div className="ua-board__column-header">
+                  <span className="ua-board__column-title">{column.title}</span>
+                  <span className="ua-board__count">{column.count}</span>
+                </div>
+                <div className="ua-board__column-body">
+                  <Bone className="h-12 w-full" />
+                  <Bone className="h-12 w-full" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </Surface>
+      </GallerySection>
+
+      <GallerySection title="Grouped settings navigation (§5.4/§8.1 — LP-CMP-07)">
+        <div className="grid w-full gap-4">
+          <div>
+            <p className="mb-2 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">Horizontal — header rail (replaces the ten-tab scroll strip)</p>
+            <SettingsNav groups={SETTINGS_NAV_GROUPS} currentPath="/settings/team" />
+          </div>
+          <div style={{ maxWidth: 240 }}>
+            <p className="mb-2 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">Vertical — left-rail form variant</p>
+            <SettingsNav groups={SETTINGS_NAV_GROUPS} currentPath="/settings/team" orientation="vertical" />
+          </div>
+        </div>
+      </GallerySection>
+
+      <GallerySection title="Builder / configuration shell (§8.5 — LP-CMP-08)">
+        <div style={{ width: '100%' }}>
+          <BuilderShell
+            statusBadge={<StatusBadge family="caseStatus" value="ready_for_decision" size="sm" />}
+            title="High-value late delivery"
+            meta="Version 4 · Refund when tracking shows no movement for 10 days"
+            actions={
+              <>
+                <Button size="sm" variant="secondary">Simulate</Button>
+                <Button size="sm" variant="secondary">Edit draft</Button>
+                <Button size="sm">Review publish</Button>
+              </>
+            }
+            validation={
+              <BuilderValidationSummary
+                tone="blocking"
+                title="1 requirement before publishing"
+                items={['Connect a carrier tracking source to evaluate “no movement for 10 days”.']}
+              />
+            }
+            preview={
+              <InsetGroup>
+                <p className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">Draft impact</p>
+                <p className="mt-1 text-[length:var(--ua-text-dense-size)] text-[var(--ua-text-primary)]">Would have matched 14 of the last 200 cases.</p>
+              </InsetGroup>
+            }
+          >
+            <BuilderSequence aria-label="Rule sequence">
+              <BuilderStep label="Trigger" detail="A recovery enters “Submitted / waiting”." />
+              <BuilderStep label="Match conditions" detail="Order value ≥ £150 and no tracking movement for 10 days." />
+              <BuilderStep label="Recommend" detail="Propose a refund and notify the owner." />
+            </BuilderSequence>
+          </BuilderShell>
+        </div>
+      </GallerySection>
+
+      <GallerySection title="Changed-value wash (§7.2 — LP-MOT-10; no first-mount wash)">
+        <ChangedValueWashDemo />
+      </GallerySection>
+
       <GallerySection title="Overlays">
         <Button variant="secondary" onClick={() => setModalOpen(true)}>
           Open modal
@@ -512,8 +1106,6 @@ export function DesignSystemGalleryClient() {
       <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)} title="Drawer title">
         <div style={{ padding: 'var(--ua-space-4)' }}>Drawer body content.</div>
       </Drawer>
-        </div>
-      </div>
-    </div>
+    </PageFrame>
   );
 }

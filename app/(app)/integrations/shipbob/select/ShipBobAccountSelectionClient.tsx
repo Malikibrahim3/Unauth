@@ -1,107 +1,137 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { AuthenticatedPageHeader } from '@/components/authenticated/AuthenticatedPageHeader';
+import { PageFrame } from '@/components/ui/PageFrame';
 import { AuthenticatedPanel } from '@/components/authenticated/AuthenticatedPanel';
-import pageStyles from '@/components/authenticated/AuthenticatedPageChrome.module.css';
+import { Button, Select } from '@/components/ui';
+import { useFetchJson } from '@/lib/react/useFetchJson';
 
 type Account = { id: string; name: string | null };
+type SelectionResponse = {
+  accounts: Account[];
+  environment: string;
+  expiresAt: string;
+};
 
 export default function ShipBobAccountSelectionClient({ selectionId }: { selectionId: string }) {
-  const [accounts, setAccounts] = useState<Account[]>([]);
   const [selected, setSelected] = useState('');
-  const [environment, setEnvironment] = useState('production');
-  const [status, setStatus] = useState<'loading' | 'ready' | 'saving' | 'error'>('loading');
-  const [message, setMessage] = useState('Discovering ShipBob channels…');
-
-  useEffect(() => {
-    if (!selectionId) {
-      setStatus('error');
-      setMessage('This account-selection link is invalid. Start the ShipBob connection again.');
-      return;
-    }
-    void fetch(`/api/integrations/shipbob/selection?selection=${encodeURIComponent(selectionId)}`)
-      .then(async (response) => ({ response, body: await response.json() }))
-      .then(({ response, body }) => {
-        if (!response.ok) throw new Error(body.error ?? 'Unable to load ShipBob channels.');
-        setAccounts(body.accounts);
-        setSelected(body.accounts[0]?.id ?? '');
-        setEnvironment(body.environment);
-        setStatus('ready');
-        setMessage('');
-      })
-      .catch((error) => {
-        setStatus('error');
-        setMessage(error instanceof Error ? error.message : 'Unable to load ShipBob channels.');
-      });
-  }, [selectionId]);
+  const [submission, setSubmission] = useState<
+    { status: 'idle' | 'saving' | 'error'; message: string }
+  >({ status: 'idle', message: '' });
+  const resource = useFetchJson<SelectionResponse>(
+    selectionId
+      ? `/api/integrations/shipbob/selection?selection=${encodeURIComponent(selectionId)}`
+      : null,
+    {
+      parse: async (response) => {
+        const body = await response.json();
+        if (!response.ok) {
+          throw new Error(body.error ?? 'Unable to load ShipBob channels.');
+        }
+        return body as SelectionResponse;
+      },
+    },
+  );
+  const accounts = resource.data?.accounts ?? [];
+  const environment = resource.data?.environment ?? 'production';
+  const effectiveSelected = selected || accounts[0]?.id || '';
+  const invalidSelection = !selectionId;
+  const status =
+    submission.status === 'saving'
+      ? 'saving'
+      : submission.status === 'error' || invalidSelection || resource.status === 'error'
+        ? 'error'
+        : resource.status === 'success' || resource.status === 'refreshing'
+          ? 'ready'
+          : 'loading';
+  const message =
+    submission.message
+    || (invalidSelection
+      ? 'This account-selection link is invalid. Start the ShipBob connection again.'
+      : resource.status === 'error'
+        ? resource.error
+        : resource.isInitialLoading
+          ? 'Discovering ShipBob channels…'
+          : accounts.length === 0
+            ? 'No ShipBob channels are available for this account. Choose another ShipBob account or try again later.'
+            : '');
 
   const submit = async () => {
-    if (!selected || status !== 'ready') return;
-    setStatus('saving');
-    setMessage('Connecting the selected channel and starting the initial import…');
+    if (!effectiveSelected || status !== 'ready') return;
+    setSubmission({
+      status: 'saving',
+      message: 'Connecting the selected channel and starting the initial import…',
+    });
     try {
       const response = await fetch('/api/integrations/shipbob/selection', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ selectionId, accountId: selected }),
+        body: JSON.stringify({ selectionId, accountId: effectiveSelected }),
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? 'ShipBob connection failed.');
       window.location.assign(body.redirect);
     } catch (error) {
-      setStatus('error');
-      setMessage(error instanceof Error ? error.message : 'ShipBob connection failed.');
+      setSubmission({
+        status: 'error',
+        message: error instanceof Error ? error.message : 'ShipBob connection failed.',
+      });
     }
   };
 
   return (
-    <div>
-      <AuthenticatedPageHeader
-        title="Choose a ShipBob channel"
-        subtitle="The selected channel owns this connection, its imports, webhooks, records, health, and audit history."
-        breadcrumbs={[{ label: 'Integrations', href: '/integrations' }, { label: 'ShipBob' }, { label: 'Select channel' }]}
-        meta={<span className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">Environment · {environment}</span>}
-      />
-      <div className={pageStyles.pageBody}>
+    <PageFrame
+      title="Choose a ShipBob channel"
+      subtitle="The selected channel owns this connection, its imports, webhooks, records, health, and audit history."
+      breadcrumbs={[{ label: 'Integrations', href: '/integrations' }, { label: 'ShipBob' }, { label: 'Select channel' }]}
+      meta={<span className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">Environment · {environment}</span>}
+    >
         <AuthenticatedPanel
           title="Channel ownership"
           description="Select exactly one account for this workspace connection."
           bodyClassName="grid max-w-2xl gap-3 p-4"
         >
           {accounts.length > 0 ? (
-            <label className="grid gap-1.5 text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-primary)]">
+            <label className="ua-text-label grid gap-1.5 text-[var(--ua-text-primary)]">
               Channel
-              <select
-                value={selected}
+              <Select
+                value={effectiveSelected}
                 onChange={(event) => setSelected(event.target.value)}
                 disabled={status !== 'ready'}
-                className="h-8 rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2.5 text-[length:var(--ua-text-caption-size)] font-normal outline-none focus-visible:ring-2 focus-visible:ring-[var(--ua-border-focus)]"
               >
                 {accounts.map((account) => <option key={account.id} value={account.id}>{account.name ?? account.id}</option>)}
-              </select>
+              </Select>
             </label>
           ) : null}
           {message ? <p role={status === 'error' ? 'alert' : 'status'} className="rounded-[var(--ua-radius-control)] border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] px-3 py-2.5 text-[length:var(--ua-text-metadata-size)] leading-5 text-[var(--ua-text-secondary)]">{message}</p> : null}
           {status === 'error' ? (
             <Link
               href="/integrations/shipbob"
-              className="inline-flex h-8 w-fit items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] px-3 text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-primary)]"
+              className="ua-text-label inline-flex h-8 w-fit items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] px-3 text-[var(--ua-text-primary)]"
             >
               Start ShipBob connection again
             </Link>
           ) : null}
-          <button
+          {status === 'ready' && accounts.length === 0 ? (
+            <Link
+              href="/integrations/shipbob"
+              className="ua-text-label inline-flex h-8 w-fit items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] px-3 text-[var(--ua-text-primary)]"
+            >
+              Return to ShipBob
+            </Link>
+          ) : null}
+          <Button
             type="button"
+            variant="primary"
+            size="sm"
             onClick={() => void submit()}
-            disabled={status !== 'ready' || !selected}
-            className="inline-flex h-8 w-fit items-center rounded-[var(--ua-radius-control)] bg-[var(--ua-action-primary)] px-3 text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-action-primary-fg)] disabled:opacity-50"
+            disabled={status !== 'ready' || !effectiveSelected}
+            loading={status === 'saving'}
           >
             {status === 'saving' ? 'Connecting…' : 'Connect selected channel'}
-          </button>
+          </Button>
         </AuthenticatedPanel>
-      </div>
-    </div>
+    </PageFrame>
   );
 }

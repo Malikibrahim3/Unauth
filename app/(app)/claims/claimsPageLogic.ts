@@ -125,6 +125,22 @@ export function claimNextAction(
       daysWaiting: waitingDays,
     };
   }
+  if (claim.status === 'recovery_opened') {
+    return {
+      evidenceStatus: 'Recovery in progress',
+      reviewState: 'Customer decision recorded. Monitor the recovery route for the next partner update.',
+      nextActionLabel,
+      daysWaiting: waitingDays,
+    };
+  }
+  if (claim.status === 'decision_recorded') {
+    return {
+      evidenceStatus: 'Customer decision recorded',
+      reviewState: 'Customer action is complete. Open a recovery route or close the case.',
+      nextActionLabel,
+      daysWaiting: waitingDays,
+    };
+  }
   if (claim.next_action_reason) {
     return {
       evidenceStatus: nextActionLabel,
@@ -163,14 +179,6 @@ export function claimNextAction(
       return {
         evidenceStatus: 'Manual review required before customer action',
         reviewState: 'Evidence state: Internal escalation',
-        nextActionLabel,
-        daysWaiting: waitingDays,
-      };
-    case 'decision_recorded':
-    case 'recovery_opened':
-      return {
-        evidenceStatus: 'Customer decision recorded',
-        reviewState: 'Evidence state: Recovery or close-out',
         nextActionLabel,
         daysWaiting: waitingDays,
       };

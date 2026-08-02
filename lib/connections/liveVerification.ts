@@ -312,6 +312,25 @@ export async function verifyMerchantLiveConnections(
   client: SupabaseClient,
   merchantId: string,
 ): Promise<MerchantLiveHealth> {
+  const { data: merchant } = await client
+    .from('merchants')
+    .select('is_demo')
+    .eq('id', merchantId)
+    .maybeSingle();
+  if (merchant?.is_demo === true) {
+    const syntheticResult: LiveVerificationResult = {
+      status: 'inconclusive',
+      reason: 'demo_synthetic_connection',
+    };
+    return {
+      shopify: syntheticResult,
+      gorgias: syntheticResult,
+      shipbob: syntheticResult,
+      ups: syntheticResult,
+      fedex: syntheticResult,
+    };
+  }
+
   const [stores, helpdesks, integrations] = await Promise.all([
     client.from('store_connections')
       .select('id,store_key,credentials_encrypted,status,uninstalled_at')

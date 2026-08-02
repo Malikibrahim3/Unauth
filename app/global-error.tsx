@@ -8,10 +8,10 @@
  *
  * Every value below is `var(--ua-token, #literal)`: when the authenticated
  * stylesheet did load, the real tokens win; when it did not, the literal is the
- * Quiet Precision value rather than a stale one. The body carries `ua-app` so
+ * Instrument Grade value rather than a stale one. The body carries `ua-app` so
  * the token scope resolves whenever the stylesheet is present.
  *
- * This file previously hardcoded the pre-Quiet-Precision palette outright — a
+ * This file previously hardcoded the pre-neutral-product palette outright — a
  * cream canvas, warm espresso ink, the retired green logo chip and a saturated
  * orange button — so the one screen a user sees when the app breaks was the one
  * screen still wearing the old design. Keep the literals below in step with
@@ -67,7 +67,6 @@ export default function GlobalError({
           }}
         >
           {/* Native image keeps the root failure screen independent of Next's image runtime. */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/brand/unauth-r1/unauth-r1-lockup-graphite.svg"
             alt="Unauth"
@@ -144,7 +143,7 @@ export default function GlobalError({
                   fontSize: 12,
                   color: INK_TERTIARY,
                   margin: 0,
-                  fontFamily: 'var(--ua-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace)',
+                  fontFamily: 'var(--ua-font-mono, ui-monospace, "Roboto Mono", Consolas, monospace)',
                 }}
               >
                 Reference: {error.digest}

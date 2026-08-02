@@ -13,32 +13,33 @@ type Props = {
 
 export default function AccountProfileSection({ state, dispatch, onSave }: Props) {
   return (
-    <SectionCard title="Profile" description="Store details and review preferences">
+    <SectionCard joined title="Profile" description="Store details and review preferences">
       <form onSubmit={onSave} className="space-y-5">
         <div>
-          <label htmlFor="account-email" className="block text-xs font-semibold mb-1" style={{ color: 'var(--ua-text-primary)' }}>
+          <label htmlFor="account-email" className="ua-text-label block mb-1" style={{ color: 'var(--ua-text-primary)' }}>
             Email address
           </label>
           <Input
             id="account-email"
             type="email"
+            className="max-w-sm"
             value={state.userEmail}
             disabled
-            className="opacity-50 cursor-not-allowed"
           />
-          <p className="mt-1 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
+          <p className="ua-text-caption-role mt-1" style={{ color: 'var(--ua-text-secondary)' }}>
             To change your email, contact{' '}
             <a href="mailto:support@unauth.app" className="underline" style={{ color: 'var(--ua-action-primary)' }}>support@unauth.app</a>.
           </p>
         </div>
 
         <div>
-          <label htmlFor="account-store-name" className="block text-xs font-semibold mb-1" style={{ color: 'var(--ua-text-primary)' }}>
+          <label htmlFor="account-store-name" className="ua-text-label block mb-1" style={{ color: 'var(--ua-text-primary)' }}>
             Store / business name <span style={{ color: 'var(--ua-risk-critical)' }}>*</span>
           </label>
           <Input
             id="account-store-name"
             type="text"
+            className="max-w-sm"
             value={state.storeName}
             onChange={(e) => dispatch({ type: 'patch', patch: { storeName: e.target.value } })}
             required
@@ -47,11 +48,12 @@ export default function AccountProfileSection({ state, dispatch, onSave }: Props
         </div>
 
         <div>
-          <label htmlFor="account-monthly-volume" className="block text-xs font-semibold mb-1" style={{ color: 'var(--ua-text-primary)' }}>
+          <label htmlFor="account-monthly-volume" className="ua-text-label block mb-1" style={{ color: 'var(--ua-text-primary)' }}>
             Monthly order volume
           </label>
           <Select
             id="account-monthly-volume"
+            className="max-w-sm"
             value={state.monthlyVolume}
             onChange={(e) => dispatch({ type: 'patch', patch: { monthlyVolume: e.target.value } })}
           >
@@ -63,11 +65,12 @@ export default function AccountProfileSection({ state, dispatch, onSave }: Props
         </div>
 
         <div>
-          <label htmlFor="account-loss-concern" className="block text-xs font-semibold mb-1" style={{ color: 'var(--ua-text-primary)' }}>
+          <label htmlFor="account-loss-concern" className="ua-text-label block mb-1" style={{ color: 'var(--ua-text-primary)' }}>
             Primary review focus
           </label>
           <Select
             id="account-loss-concern"
+            className="max-w-sm"
             value={state.fraudConcern}
             onChange={(e) => dispatch({ type: 'patch', patch: { fraudConcern: e.target.value } })}
           >
@@ -79,7 +82,7 @@ export default function AccountProfileSection({ state, dispatch, onSave }: Props
         </div>
 
         {state.saveError ? (
-          <p className="text-xs" style={{ color: 'var(--ua-risk-critical)' }}>{state.saveError}</p>
+          <p className="ua-text-caption-role" style={{ color: 'var(--ua-risk-critical)' }}>{state.saveError}</p>
         ) : null}
 
         <div className="flex items-center gap-3">
@@ -87,7 +90,7 @@ export default function AccountProfileSection({ state, dispatch, onSave }: Props
             {state.saving ? 'Saving…' : 'Save changes'}
           </Button>
           {state.saveSuccess ? (
-            <span className="text-xs flex items-center gap-1" style={{ color: 'var(--ua-success)' }}>
+            <span className="ua-text-caption-role flex items-center gap-1" style={{ color: 'var(--ua-success)' }}>
               <Check className="h-3.5 w-3.5" /> Saved
             </span>
           ) : null}

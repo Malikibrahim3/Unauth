@@ -1,5 +1,6 @@
 import { type CSSProperties, type HTMLAttributes, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import { MetricValueCell } from './MetricValueCell';
 
 export interface MetricGroupItem {
   label: string;
@@ -56,9 +57,9 @@ export function MetricGroup({
         return (
         <div key={item.label} {...attributes} className={cn('ua-metric-group__item', attributes?.className)}>
           <dt className="ua-metric-group__label">{item.label}</dt>
-          <dd className="ua-metric-group__value">{item.value}</dd>
+          <MetricValueCell value={item.value} />
           {item.description ? <dd className="ua-metric-group__description">{item.description}</dd> : null}
-          {item.microchart ? <div className="ua-metric-group__microchart">{item.microchart}</div> : null}
+          {item.microchart ? <dd className="ua-metric-group__microchart">{item.microchart}</dd> : null}
         </div>
         );
       })}

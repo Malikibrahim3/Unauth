@@ -55,7 +55,7 @@ export function ShipBobIntegrationBanner() {
   const styles = {
     success: { background: 'var(--ua-success-bg)', color: 'var(--ua-success)', border: 'var(--ua-success-border)' },
     warning: { background: 'var(--ua-warning-bg)', color: 'var(--ua-warning)', border: 'var(--ua-warning-border)' },
-    error: { background: 'var(--ua-severity-definite-bg)', color: 'var(--ua-text-primary)', border: 'var(--ua-border-default)' },
+    error: { background: 'var(--ua-critical-bg)', color: 'var(--ua-critical)', border: 'var(--ua-critical-border)' },
   } as const;
 
   return (

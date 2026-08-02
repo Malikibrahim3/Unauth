@@ -1,15 +1,12 @@
 /*
  * Queue pulse geometry. §6.3 gives a compact operational visual 140–180px; the
- * frame below lands in that range at every supported width, and the stacked bar
- * itself is 14px — above the 12px absolute bar floor, not a 3px rail.
+ * In the Instrument Grade shell this is a compact queue inspector beside the
+ * dominant work registry.
  */
 .frame {
   display: grid;
   gap: var(--ua-space-3);
-  padding: var(--ua-space-5);
-  border: 1px solid var(--ua-border-default);
-  border-radius: var(--ua-radius-surface);
-  background: var(--ua-surface-primary);
+  padding: 16px 0 18px;
 }
 
 .header {
@@ -41,42 +38,32 @@
   line-height: var(--ua-text-dense-leading);
 }
 
-.stack {
-  display: flex;
-  gap: var(--ua-space-0-5);
-  height: 14px;
-}
-
-.segment {
-  min-width: 4px;
-  border-radius: var(--ua-radius-xs);
-  background: var(--ua-chart-neutral-500);
-  transition: background-color var(--ua-duration-base) var(--ua-ease-standard);
-}
-
-/* Past its deadline is genuinely critical; a future deadline is not (§3.3). */
-.segment[data-band="overdue"] { background: var(--ua-critical); }
-.segment[data-band="due-today"] { background: var(--ua-chart-neutral-900); }
-.segment[data-band="due-1-3"] { background: var(--ua-chart-neutral-700); }
-.segment[data-band="due-4-7"] { background: var(--ua-chart-neutral-500); }
-.segment[data-band="due-later"] { background: var(--ua-chart-neutral-300); }
-.segment[data-band="no-sla"] { background: var(--ua-chart-track); }
-
-/* Selection is accent, never semantic (§3.3). */
-.segment[data-selected="true"] { background: var(--ua-chart-primary); }
-
+/* W2: a single dense row of label/value pairs, not a 3x2 grid — the grid's
+ * columns were what made the six counts read as misaligned. */
 .bands {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--ua-space-1-5) var(--ua-space-2);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--ua-space-1);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-@media (min-width: 1280px) {
-  .bands {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+.bands li {
+  flex: 0 0 auto;
+}
+
+@media (min-width: 768px) and (max-width: 1439px) {
+  .frame {
+    grid-template-columns: minmax(220px, 0.8fr) minmax(280px, 1.2fr);
+    align-items: center;
+    gap: 12px 20px;
+    padding: 14px 0 16px;
+  }
+
+  .header {
+    grid-row: span 2;
   }
 }
 
@@ -86,8 +73,8 @@
   gap: var(--ua-space-1-5);
   min-height: var(--ua-control-height-sm);
   padding-inline: var(--ua-space-2);
-  border: 1px solid transparent;
-  border-radius: var(--ua-radius-control);
+  border: 0;
+  border-radius: 0;
   color: var(--ua-text-secondary);
   font-size: var(--ua-text-metadata-size);
   transition: background-color var(--ua-duration-base) var(--ua-ease-standard),
@@ -101,26 +88,23 @@
 }
 
 .band[aria-current="page"] {
-  border-color: var(--ua-accent-200);
-  background: var(--ua-accent-100);
+  background: transparent;
   color: var(--ua-accent-800);
   font-weight: 500;
 }
 
+/* Overdue is the only band that is genuinely a critical state; every other
+ * band shared one neutral shade so rank was never actually encoded by hue
+ * (W2) — five shades of grey read as a scale with no key. */
 .bandKey {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   flex-shrink: 0;
   border-radius: var(--ua-radius-round);
-  background: var(--ua-chart-neutral-500);
+  background: var(--ua-border-default);
 }
 
 .bandKey[data-band="overdue"] { background: var(--ua-critical); }
-.bandKey[data-band="due-today"] { background: var(--ua-chart-neutral-900); }
-.bandKey[data-band="due-1-3"] { background: var(--ua-chart-neutral-700); }
-.bandKey[data-band="due-4-7"] { background: var(--ua-chart-neutral-500); }
-.bandKey[data-band="due-later"] { background: var(--ua-chart-neutral-300); }
-.bandKey[data-band="no-sla"] { background: var(--ua-border-default); }
 
 .bandLabel {
   min-width: 0;
@@ -135,3 +119,5 @@
   font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
+
+.band[data-band="overdue"] .bandCount { color: var(--ua-critical); }

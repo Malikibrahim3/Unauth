@@ -1,6 +1,9 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
+import { DURATION } from "@/lib/design/motion";
+import { useOverlayPresence } from "@/lib/design/useOverlayPresence";
+import { OverlayPortal } from "@/components/ui/OverlayPortal";
 import {
   APP_ROUTES,
   COMMAND_PALETTE_FILTERS,
@@ -61,43 +64,59 @@ export default function CommandPalette({
   onClose,
   permissions = [],
 }: CommandPaletteProps) {
-  const dialogRef = useRef<HTMLDialogElement>(null);
   const inputRef = useRef<HTMLInputElement>(null!);
 
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    if (isOpen) {
-      if (!dialog.open) dialog.showModal();
-      const focusTimer = window.setTimeout(() => inputRef.current?.focus(), 30);
-      return () => window.clearTimeout(focusTimer);
-    }
-    if (dialog.open) dialog.close();
-    return undefined;
-  }, [isOpen]);
+  const { mounted, phase, containerRef, motionAllowed } = useOverlayPresence({
+    open: isOpen,
+    onClose,
+    exitDurationMs: DURATION.fast,
+    trapFocus: true,
+    lockBodyScroll: true,
+    transient: true,
+  });
+
+  if (!mounted) return null;
+
+  const isVisible = phase === "open";
 
   return (
-    <dialog
-      ref={dialogRef}
-      aria-label="Command palette"
-      className="fixed left-1/2 top-[20%] z-50 w-full max-w-lg -translate-x-1/2 rounded-md border-0 p-0 shadow-[var(--ua-shadow-overlay)] overflow-hidden backdrop:bg-[var(--ua-backdrop)]"
-      style={{
-        background: "var(--ua-surface-primary)",
-        border: "1px solid var(--ua-border-default)",
-      }}
-      onClose={onClose}
-      onCancel={(e) => {
-        e.preventDefault();
-        onClose();
-      }}
-    >
-      {isOpen ? (
-        <CommandPaletteSurface
-          navItems={buildCommandPaletteNavItems(permissions)}
-          onClose={onClose}
-          inputRef={inputRef}
-        />
-      ) : null}
-    </dialog>
+    <OverlayPortal>
+      <div
+        role="presentation"
+        aria-hidden={phase === "exiting" ? true : undefined}
+        className="fixed inset-0 z-50 flex items-start justify-center"
+        style={{
+          background: "var(--ua-backdrop)",
+          opacity: isVisible ? 1 : 0,
+          paddingTop: "20vh",
+          pointerEvents: phase === "exiting" ? "none" : undefined,
+          transition: motionAllowed ? `opacity ${DURATION.fast}ms var(--ua-ease-standard)` : "none",
+        }}
+        onClick={onClose}
+      >
+        <div
+          ref={containerRef as React.RefObject<HTMLDivElement>}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Command palette"
+          tabIndex={-1}
+          className="w-full max-w-lg overflow-hidden rounded-[var(--ua-radius-overlay)] border p-0 shadow-[var(--ua-shadow-overlay)]"
+          style={{
+            background: "var(--ua-surface-overlay)",
+            borderColor: "var(--ua-border-default)",
+            opacity: isVisible ? 1 : 0,
+            transform: `translateY(${isVisible ? 0 : 2}px)`,
+            transition: motionAllowed ? `opacity ${DURATION.fast}ms var(--ua-ease-standard), transform ${DURATION.fast}ms var(--ua-ease-standard)` : "none",
+          }}
+          onClick={(event) => event.stopPropagation()}
+        >
+          <CommandPaletteSurface
+            navItems={buildCommandPaletteNavItems(permissions)}
+            onClose={onClose}
+            inputRef={inputRef}
+          />
+        </div>
+      </div>
+    </OverlayPortal>
   );
 }

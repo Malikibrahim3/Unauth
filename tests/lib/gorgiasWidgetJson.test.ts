@@ -120,14 +120,12 @@ describe('claimWidgetToJson', () => {
 
   it('uses a neutral no-case payout card instead of identity fallback recommendations', () => {
     expect(formatNoPayoutCaseFields()).toEqual({
-      payout_exposure: 'Case: No payout case detected for this ticket yet',
+      payout_exposure: 'Case: No case detected for this ticket yet',
       evidence_checklist: 'Evidence: —',
       recommendation: 'Rule: —',
       recovery_path: 'Recovery: —',
     });
-    expect(formatClaimRecommendationUnavailable('not_found').recommendation_detail).toContain(
-      'No payout case detected',
-    );
+    expect(formatClaimRecommendationUnavailable('not_found').recommendation_detail).toContain('No case detected');
     expect(formatClaimRecommendationUnavailable('not_found').recommendation_detail).not.toContain(
       'identity context',
     );

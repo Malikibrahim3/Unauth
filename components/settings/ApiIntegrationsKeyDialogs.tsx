@@ -1,16 +1,7 @@
 'use client';
 
 import { KeyRound, Trash2 } from 'lucide-react';
-
-function Bone({ className }: { className?: string }) {
-  return (
-    <div
-      className={`animate-pulse rounded-md ${className ?? ''}`}
-      style={{ background: 'var(--ua-surface-secondary, var(--ua-border-default))' }}
-      aria-hidden="true"
-    />
-  );
-}
+import { Bone } from '@/components/ui/LoadingSkeleton';
 
 function ApiKeysSkeleton() {
   return (
@@ -55,16 +46,16 @@ export function ApiKeysListSection({
     >
       <div className="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4" style={{ borderColor: 'var(--ua-border-default)' }}>
         <div>
-          <h2 className="text-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>API keys</h2>
-          <p className="mt-1 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
+          <h2 className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>API keys</h2>
+          <p className="ua-text-caption-role mt-1">
             Authenticate public API requests with{' '}
-            <code className="text-xs">Authorization: Bearer unauth_sk_…</code>
+            <code className="ua-text-dense">Authorization: Bearer unauth_sk_…</code>
           </p>
         </div>
         <button
           type="button"
           onClick={onOpenCreateModal}
-          className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium"
+          className="ua-text-working-title inline-flex items-center gap-2 rounded-md px-3 py-2"
           style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)' }}
         >
           <KeyRound className="h-4 w-4" />
@@ -75,9 +66,9 @@ export function ApiKeysListSection({
       {loading ? (
         <ApiKeysSkeleton />
       ) : keysError ? (
-        <p className="px-5 py-8 text-sm" style={{ color: 'var(--ua-risk-critical)' }}>{keysError}</p>
+        <p className="ua-text-body px-5 py-8" style={{ color: 'var(--ua-risk-critical)' }}>{keysError}</p>
       ) : keys.length === 0 ? (
-        <p className="px-5 py-8 text-sm" style={{ color: 'var(--ua-text-secondary)' }}>
+        <p className="ua-text-body px-5 py-8" style={{ color: 'var(--ua-text-secondary)' }}>
           No API keys yet. Create one for custom API integrations.
         </p>
       ) : (
@@ -85,9 +76,9 @@ export function ApiKeysListSection({
           {keys.map((key) => (
             <li key={key.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
               <div className="min-w-0">
-                <p className="text-sm font-medium" style={{ color: 'var(--ua-text-primary)' }}>{key.name}</p>
-                <p className="mt-1 font-mono text-xs" style={{ color: 'var(--ua-text-secondary)' }}>{key.key_prefix}</p>
-                <p className="mt-1 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
+                <p className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>{key.name}</p>
+                <p className="ua-text-dense mt-1 font-mono" style={{ color: 'var(--ua-text-secondary)' }}>{key.key_prefix}</p>
+                <p className="ua-text-caption-role mt-1">
                   Created {formatIntegrationDate(key.created_at)} · Last used {formatIntegrationDate(key.last_used_at)} ·{' '}
                   {key.rate_limit_per_minute}/min
                 </p>
@@ -96,7 +87,7 @@ export function ApiKeysListSection({
                 type="button"
                 disabled={busyId === key.id}
                 onClick={() => onOpenRevokeModal(key)}
-                className="inline-flex items-center gap-1 rounded-md border px-3 py-2 text-xs disabled:opacity-50"
+                className="ua-text-label inline-flex items-center gap-1 rounded-md border px-3 py-2 disabled:opacity-50"
                 style={{ borderColor: 'var(--ua-border-default)', color: 'var(--ua-text-primary)' }}
               >
                 <Trash2 className="h-3.5 w-3.5" />

@@ -1,5 +1,6 @@
+@layer components {
 /*
- * Living Precision semantic, risk, and severity tokens.
+ * Instrument Grade semantic, risk, and severity tokens.
  * ------------------------------------------------------------------
  * Every token carries a literal value in the `--ua-*` namespace. No legacy
  * `--success`/`--warning`/`--danger`/`--risk-*`/`--sev-*` name is defined here.
@@ -12,7 +13,7 @@
  *
  * The risk and severity ladders are ordered domain scales, kept separate from
  * the bare semantic triplets so a five-step risk reading is never confused with
- * a binary pass/fail state. Their mapping onto the Living Precision triplets is
+ * a binary pass/fail state. Their mapping onto the Instrument Grade triplets is
  * fixed by §3.8 ("Domain status compatibility").
  *
  * `--ua-violet*` is deleted (§3.8): product-owned selection uses the accent
@@ -69,15 +70,16 @@
   --ua-risk-low-border: #bfe3d2;
   --ua-risk-low-line: #4e9e7e;
 
-  /* ── Severity / confidence ladder (§3.8) ──────────────────────────── */
-  --ua-severity-definite: #217a5b;
-  --ua-severity-definite-bg: #ebf7f1;
-  --ua-severity-probable: #8a6116;
-  --ua-severity-probable-bg: #fff7df;
-  --ua-severity-possible: #62626b;
-  --ua-severity-possible-bg: #f1f1f3;
-  --ua-severity-clear: #217a5b;
-  --ua-severity-clear-bg: #ebf7f1;
+  /* ── Confidence ladder (§3.8, §6.3 amendment) ─────────────────────────
+   * Named by what the token means (confidence in a finding), not by a
+   * severity-shaped name that reads as "definitely a problem" in a claims
+   * product. `high`/`clear` shared one value, so they collapse to one token. */
+  --ua-confidence-high: #217a5b;
+  --ua-confidence-high-bg: #ebf7f1;
+  --ua-confidence-medium: #8a6116;
+  --ua-confidence-medium-bg: #fff7df;
+  --ua-confidence-low: #62626b;
+  --ua-confidence-low-bg: #f1f1f3;
 
   /* ── Privacy and watchlist read as informational, not as alarms ───── */
   --ua-privacy: #326b9b;
@@ -177,14 +179,12 @@
   --ua-risk-low-border: #2d5a46;
   --ua-risk-low-line: #79cfa8;
 
-  --ua-severity-definite: #79cfa8;
-  --ua-severity-definite-bg: #18372b;
-  --ua-severity-probable: #e6c36a;
-  --ua-severity-probable-bg: #3b3019;
-  --ua-severity-possible: #b4b4be;
-  --ua-severity-possible-bg: #29292e;
-  --ua-severity-clear: #79cfa8;
-  --ua-severity-clear-bg: #18372b;
+  --ua-confidence-high: #79cfa8;
+  --ua-confidence-high-bg: #18372b;
+  --ua-confidence-medium: #e6c36a;
+  --ua-confidence-medium-bg: #3b3019;
+  --ua-confidence-low: #b4b4be;
+  --ua-confidence-low-bg: #29292e;
 
   --ua-privacy: #8fc3ea;
   --ua-privacy-bg: #1d3040;
@@ -192,4 +192,5 @@
   --ua-watchlist: #8fc3ea;
   --ua-watchlist-bg: #1d3040;
   --ua-watchlist-border: #31536b;
+}
 }

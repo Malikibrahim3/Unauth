@@ -16,6 +16,12 @@ const AS_OF_ENV = 'UNAUTH_CLOCK_AS_OF';
 
 let override: number | null = null;
 
+declare global {
+  // Installed before hydration by CaptureModeBootstrap. The leading
+  // underscore keeps this test/capture-only boundary out of product APIs.
+  var __UNAUTH_CAPTURE_NOW__: number | undefined;
+}
+
 function envAsOf(): number | null {
   const raw = typeof process !== 'undefined' ? process.env?.[AS_OF_ENV] : undefined;
   if (!raw) return null;
@@ -23,9 +29,17 @@ function envAsOf(): number | null {
   return Number.isNaN(parsed) ? null : parsed;
 }
 
+function browserCaptureAsOf(): number | null {
+  if (typeof globalThis === 'undefined') return null;
+  const value = globalThis.__UNAUTH_CAPTURE_NOW__;
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
 /** Epoch milliseconds for "now", honouring a pinned clock when one is set. */
 export function nowMs(): number {
   if (override !== null) return override;
+  const fromBrowserCapture = browserCaptureAsOf();
+  if (fromBrowserCapture !== null) return fromBrowserCapture;
   const fromEnv = envAsOf();
   if (fromEnv !== null) return fromEnv;
   return Date.now();
@@ -38,7 +52,7 @@ export function now(): Date {
 
 /** True when the clock is pinned rather than following real time. */
 export function isClockPinned(): boolean {
-  return override !== null || envAsOf() !== null;
+  return override !== null || browserCaptureAsOf() !== null || envAsOf() !== null;
 }
 
 /**

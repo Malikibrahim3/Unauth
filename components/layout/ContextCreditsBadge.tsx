@@ -57,13 +57,13 @@ export function ContextCreditsBadge() {
         Context usage
       </span>
       <span
-        className="text-xs font-semibold"
+        className="ua-text-label"
         style={{ color: low || warn ? 'var(--ua-warning)' : 'var(--ua-text-secondary)' }}
       >
         {remaining} of {limit} remaining
       </span>
       {warn || low ? (
-        <span className="text-[length:var(--ua-text-metadata-size)] font-semibold hover:underline" style={{ color: 'var(--ua-action-primary)' }}>
+        <span className="ua-text-label hover:underline" style={{ color: 'var(--ua-action-primary)' }}>
           {low ? 'Upgrade or top up' : 'Review usage'}
         </span>
       ) : null}

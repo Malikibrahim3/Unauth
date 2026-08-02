@@ -1,5 +1,5 @@
 import type { ChartTheme } from '@/components/charts/authenticated/core/useChartTheme';
-import { ChartState } from '@/components/charts/authenticated/ChartPanel';
+import { ChartState } from '@/components/charts/authenticated/ChartFrame';
 
 export function resolveChartColour(colour: string, theme: ChartTheme): string {
   const token = /^var\((--[^,)]+)\)$/.exec(colour)?.[1];
@@ -9,8 +9,8 @@ export function resolveChartColour(colour: string, theme: ChartTheme): string {
 
 export function AnalyticsChartEmpty({ height, label }: { height: number; label: string }) {
   return (
-    <div style={{ height, display: 'grid', placeItems: 'center' }} role="status">
-      <ChartState title={label} description="No reconciled data is available for this view." />
+    <div style={{ height, display: 'grid', placeItems: 'center' }}>
+      <ChartState kind="empty" title={label} description="No reconciled data is available for this view." />
     </div>
   );
 }

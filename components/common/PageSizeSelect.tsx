@@ -38,9 +38,9 @@ function PageSizeSelectInner({
     Number.parseInt(searchParams.get(pageSizeParam) ?? String(pageSize), 10) || pageSize;
 
   return (
-    <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
+    <div className="ua-text-caption-role flex min-w-0 flex-wrap items-center gap-2">
       <span className="shrink-0">{label}</span>
-      <div className="inline-flex shrink-0 overflow-hidden rounded-[var(--ua-radius-control)] border" style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-surface-primary)' }}>
+      <div className="inline-flex shrink-0 overflow-hidden rounded-[var(--ua-radius-control)] border" style={{ borderColor: 'var(--ua-border-control)', background: 'var(--ua-surface-primary)' }}>
         {PAGE_SIZES.map((size) => {
           const active = size === activePageSize;
           return (
@@ -48,11 +48,12 @@ function PageSizeSelectInner({
               key={size}
               href={buildHref(pathname, searchParams, size, pageSizeParam, pageParam)}
               scroll={false}
-              className="px-2.5 py-1.5 font-semibold transition-colors"
-              style={{
-                background: active ? 'var(--ua-surface-inverse)' : 'var(--ua-surface-primary)',
-                color: active ? 'var(--ua-text-inverse)' : 'var(--ua-text-secondary)',
-              }}
+              className={`ua-text-label inline-flex items-center px-2.5 transition-colors ${
+                active
+                  ? 'bg-[var(--ua-surface-primary)] text-[var(--ua-text-primary)] shadow-[inset_0_-2px_0_0_var(--ua-accent-500)]'
+                  : 'bg-[var(--ua-surface-primary)] text-[var(--ua-text-secondary)] hover:bg-[var(--ua-surface-hover)]'
+              }`}
+              style={{ height: 'calc(var(--ua-control-height-md) - 2px)' }}
               aria-current={active ? 'page' : undefined}
             >
               {size}
@@ -72,7 +73,7 @@ export default function PageSizeSelect(props: {
   pageParam?: string;
 }) {
   return (
-    <Suspense fallback={<span className="text-xs" style={{ color: 'var(--ua-text-secondary)' }}>Rows per page…</span>}>
+    <Suspense fallback={<span className="ua-text-caption-role">Rows per page…</span>}>
       <PageSizeSelectInner {...props} />
     </Suspense>
   );

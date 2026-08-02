@@ -77,14 +77,14 @@ export default function CustomersTableClient({
       header: "Customer",
       render: (p: CustomerRow) => (
         <div className="flex items-center gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--ua-surface-muted)] text-xs font-semibold text-[var(--ua-text-primary)] ring-1 ring-[var(--ua-border-subtle)]">
+          <span className="ua-text-working-title flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--ua-surface-muted)] text-[var(--ua-text-primary)] ring-1 ring-[var(--ua-border-subtle)]">
             {customerInitials(p)}
           </span>
           <div className="min-w-0">
-            <div className="truncate text-sm font-semibold text-[var(--ua-text-primary)]">
+            <div className="ua-text-working-title truncate text-[var(--ua-text-primary)]">
               {p.names?.[0] ?? "Unnamed customer"}
             </div>
-            <div className="truncate text-xs text-[var(--ua-text-secondary)]">
+            <div className="ua-text-caption-role truncate">
               {p.primary_email ?? "Contact unavailable"}
             </div>
           </div>
@@ -94,10 +94,10 @@ export default function CustomersTableClient({
     {
       key: "orders",
       header: "Orders",
-      align: "right" as const,
+      kind: "numeric" as const,
       render: (p: CustomerRow) => (
         <div className="text-right">
-          <div className="num font-semibold">{p.total_orders}</div>
+          <div className="ua-text-working-title num">{p.total_orders}</div>
           <div className="mt-0.5 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">completed in store</div>
         </div>
       ),
@@ -105,10 +105,10 @@ export default function CustomersTableClient({
     {
       key: "spent",
       header: "Total spent",
-      align: "right" as const,
+      kind: "currency" as const,
       render: (p: CustomerRow) => (
         <div className="text-right">
-          <div className="num font-semibold">
+          <div className="ua-text-working-title num">
             {p.has_mixed_currency
               ? "Mixed currencies"
               : p.total_spent_currency && p.total_spent > 0
@@ -126,12 +126,12 @@ export default function CustomersTableClient({
     {
       key: "cases",
       header: "Cases",
-      align: "right" as const,
+      kind: "numeric" as const,
       render: (p: CustomerRow) => (
         <div className="flex flex-col items-end gap-1">
           <span className="inline-flex items-center gap-1.5">
             <OpenCasesBadge count={p.payout_cases_open} />
-            <span className="num font-semibold">{p.payout_cases_total}</span>
+            <span className="ua-text-working-title num">{p.payout_cases_total}</span>
           </span>
           <span className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">
             {p.total_orders > 0
@@ -144,9 +144,9 @@ export default function CustomersTableClient({
     {
       key: "lastOrder",
       header: "Last order",
-      align: "right" as const,
+      kind: "date" as const,
       render: (p: CustomerRow) => (
-        <span className="inline-flex items-center gap-1.5 text-xs text-[var(--ua-text-secondary)]">
+        <span className="ua-text-caption-role inline-flex items-center gap-1.5">
           <Clock3 className="h-3.5 w-3.5 text-[var(--ua-text-tertiary)]" aria-hidden="true" />
           {p.last_order_at ? formatDate(p.last_order_at) : "No order date"}
         </span>
@@ -155,7 +155,7 @@ export default function CustomersTableClient({
     {
       key: "open",
       header: "",
-      align: "right" as const,
+      kind: "action" as const,
       render: () => (
         <ChevronRight
           className="ml-auto h-4 w-4 text-[var(--ua-text-tertiary)]"
@@ -175,12 +175,14 @@ export default function CustomersTableClient({
         <DataTable
           columns={columns}
           rows={rows}
+          emptyState={<p className="ua-text-body p-5 text-[var(--ua-text-secondary)]">No customers match the current view.</p>}
           getRowKey={(row) => row.id}
           onRowClick={(row) => setPreview(row.id)}
           primaryColumnKey="customer"
           primaryActionLabel={(row) => `Open preview for ${row.names?.[0] ?? 'customer'}`}
           rowTestId="customer-row"
           density="default"
+          flush
           aria-label="Customers"
         />
       </div>
@@ -198,16 +200,16 @@ export default function CustomersTableClient({
           >
             <div className="flex items-start justify-between gap-3 mb-3">
               <div className="flex min-w-0 items-center gap-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--ua-surface-muted)] text-xs font-semibold ring-1 ring-[var(--ua-border-subtle)]">{customerInitials(p)}</span>
+                <span className="ua-text-working-title flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--ua-surface-muted)] ring-1 ring-[var(--ua-border-subtle)]">{customerInitials(p)}</span>
                 <div className="min-w-0">
                 <span
-                  className="text-sm font-semibold"
+                  className="ua-text-working-title"
                   style={{ color: "var(--ua-text-primary)" }}
                 >
                   {p.names?.[0] ?? "-"}
                 </span>
                 <p
-                  className="text-xs truncate mt-0.5"
+                  className="ua-text-caption-role truncate mt-0.5"
                   style={{ color: "var(--ua-text-secondary)" }}
                 >
                   {p.primary_email ?? "-"}
@@ -216,13 +218,13 @@ export default function CustomersTableClient({
               </div>
               <OpenCasesBadge count={p.payout_cases_open} />
             </div>
-            <div className="grid grid-cols-3 gap-px overflow-hidden rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-border-subtle)] text-xs">
+            <div className="ua-text-metadata grid grid-cols-3 gap-px overflow-hidden rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-border-subtle)]">
               <div className="bg-[var(--ua-surface-primary)] p-2"><span className="block font-semibold text-[var(--ua-text-primary)]">{p.total_orders}</span><span className="text-[var(--ua-text-tertiary)]">Orders</span></div>
               <div className="bg-[var(--ua-surface-primary)] p-2"><span className="block font-semibold text-[var(--ua-text-primary)]">{p.payout_cases_total}</span><span className="text-[var(--ua-text-tertiary)]">Cases</span></div>
               <div className="bg-[var(--ua-surface-primary)] p-2"><span className="block truncate font-semibold text-[var(--ua-text-primary)]">{p.last_order_at ? formatDate(p.last_order_at) : "—"}</span><span className="text-[var(--ua-text-tertiary)]">Last order</span></div>
             </div>
             <div
-              className="mt-3 flex justify-end text-xs font-semibold"
+              className="ua-text-working-title mt-3 flex justify-end"
               style={{ color: "var(--ua-text-primary)" }}
             >
               <span className="inline-flex items-center gap-1">

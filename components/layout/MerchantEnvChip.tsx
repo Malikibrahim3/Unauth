@@ -41,7 +41,7 @@ export function MerchantEnvChip({ merchantName, isDemo, className }: MerchantEnv
         <span
           className={cn(
             'inline-flex items-center rounded px-1 py-px',
-            'text-[length:var(--ua-text-metadata-size)] font-semibold leading-none',
+            'ua-text-label leading-none',
             'bg-[var(--ua-info-bg)] border border-[var(--ua-info-border)] text-[var(--ua-info)]',
           )}
         >

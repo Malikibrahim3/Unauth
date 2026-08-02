@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Download } from 'lucide-react';
+import { ConnectorSetupNotice } from '@/components/settings/ConnectorSetupShell';
 
 type Props = {
   hasApiKeys: boolean;
@@ -43,15 +44,15 @@ export default function ChromeSetupClient({ hasApiKeys, keyPrefixes }: Props) {
         className="rounded-md border p-5"
         style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-surface-primary)' }}
       >
-        <p className="text-sm font-medium" style={{ color: 'var(--ua-text-primary)' }}>
+        <p className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>
           You need an API key first
         </p>
-        <p className="mt-2 text-sm" style={{ color: 'var(--ua-text-secondary)' }}>
+        <p className="ua-text-body mt-2" style={{ color: 'var(--ua-text-secondary)' }}>
           Create a key in API &amp; Integrations, then return here to install the extension.
         </p>
         <Link
           href="/settings/integrations"
-          className="mt-3 inline-flex h-8 items-center rounded-[var(--ua-radius-control)] px-3 text-[length:var(--ua-text-metadata-size)] font-semibold"
+          className="ua-text-working-title mt-3 inline-flex h-8 items-center rounded-[var(--ua-radius-control)] px-3"
           style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)' }}
         >
           Settings → API &amp; Integrations
@@ -76,18 +77,18 @@ export default function ChromeSetupClient({ hasApiKeys, keyPrefixes }: Props) {
           type="button"
           onClick={() => void downloadZip()}
           disabled={downloading}
-          className="inline-flex h-8 items-center gap-2 rounded-[var(--ua-radius-control)] px-3 text-[length:var(--ua-text-metadata-size)] font-semibold disabled:opacity-60"
+          className="ua-text-working-title inline-flex h-8 items-center gap-2 rounded-[var(--ua-radius-control)] px-3 disabled:opacity-60"
           style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)' }}
         >
           <Download className="h-4 w-4" />
           {downloading ? 'Preparing zip…' : 'Download Chrome extension (.zip)'}
         </button>
         {downloadError && (
-          <p className="mt-2 text-sm" style={{ color: 'var(--ua-success)' }}>
-            {downloadError}
-          </p>
+          <div className="mt-3">
+            <ConnectorSetupNotice tone="error">{downloadError} Retry the download or check that you still have permission to access this workspace.</ConnectorSetupNotice>
+          </div>
         )}
-        <p className="mt-2 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
+        <p className="ua-text-caption-role mt-2">
           Unzip the download on your computer, then follow the steps below in Chrome.
         </p>
       </div>
@@ -107,21 +108,21 @@ export default function ChromeSetupClient({ hasApiKeys, keyPrefixes }: Props) {
       </ol>
 
       <div
-        className="rounded-md border p-4 text-sm"
+        className="ua-text-dense rounded-md border p-4"
         style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-surface-primary)' }}
       >
         <p style={{ color: 'var(--ua-text-primary)' }}>
           Use key:{' '}
-          <span className="font-mono text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
+          <span className="ua-text-dense font-mono" style={{ color: 'var(--ua-text-secondary)' }}>
             {displayPrefix}
           </span>
         </p>
         {keyPrefixes.length > 1 && (
-          <p className="mt-2 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
+          <p className="ua-text-caption-role mt-2">
             Additional keys: {keyPrefixes.slice(1).join(', ')}
           </p>
         )}
-        <p className="mt-2 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
+        <p className="ua-text-caption-role mt-2">
           Paste the full secret you saved when the key was created - only the prefix is shown here.
         </p>
       </div>

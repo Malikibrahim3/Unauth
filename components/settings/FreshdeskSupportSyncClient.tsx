@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useReducer, useRef, useState, type FormEvent } from 'react';
 import { Card } from '@/components/ui';
+import { Bone } from '@/components/ui/LoadingSkeleton';
 import { useFetchJson } from '@/lib/react/useFetchJson';
 import { FreshdeskSupportSyncConnectionDetails } from '@/components/settings/FreshdeskSupportSyncConnectionDetails';
 import { FreshdeskSupportSyncCreateForm } from '@/components/settings/FreshdeskSupportSyncCreateForm';
@@ -244,13 +245,13 @@ export default function FreshdeskSupportSyncClient({ canManage }: Props) {
       {loading ? (
         <div className="space-y-3">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 animate-pulse rounded-[var(--ua-radius-control)]" style={{ background: 'var(--ua-border-default)' }} />
+            <Bone className="h-9 w-9" />
             <div className="space-y-1.5 flex-1">
-              <div className="h-4 w-40 rounded animate-pulse" style={{ background: 'var(--ua-border-default)' }} />
-              <div className="h-3 w-24 rounded animate-pulse" style={{ background: 'var(--ua-border-default)' }} />
+              <Bone className="h-4 w-40" />
+              <Bone className="h-3 w-24" />
             </div>
           </div>
-          <div className="h-32 animate-pulse rounded-[var(--ua-radius-surface)]" style={{ background: 'var(--ua-border-default)' }} />
+          <Bone className="h-32 rounded-[var(--ua-radius-surface)]" />
         </div>
       ) : state.ephemeralSecret ? (
         <FreshdeskWebhookSetupPanel

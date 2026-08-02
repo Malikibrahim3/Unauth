@@ -1,4 +1,4 @@
-import { fromMinorUnits, normaliseCurrencyOrNull } from '@/lib/canonical/money';
+import { fromMinorUnits, minorUnitExponent, normaliseCurrencyOrNull } from '@/lib/canonical/money';
 import { reportDataQuality } from '@/lib/observability/dataQuality';
 import { nowMs as clockNowMs } from '@/lib/time/clock';
 
@@ -170,8 +170,13 @@ function getMoneyFormatter(code: string): Intl.NumberFormat {
 export function formatMoney(minor: number, currency: string): string {
   const code = normaliseCurrencyOrNull(currency);
   if (!code) {
-    // Never invent a symbol for an unknown code.
-    return Number.isFinite(minor) ? (minor / 100).toFixed(2) : '—';
+    // Never invent a symbol for an unknown code, and never assume a 2-decimal
+    // exponent — a zero-exponent currency (e.g. JPY) would render 100x too
+    // large. minorUnitExponent looks up the ISO exponent independent of
+    // whether Intl recognises the code for symbol display.
+    if (!Number.isFinite(minor)) return '—';
+    const exponent = minorUnitExponent(currency);
+    return fromMinorUnits(minor, currency).toFixed(exponent);
   }
   return getMoneyFormatter(code).format(fromMinorUnits(minor, code));
 }
@@ -248,7 +253,8 @@ export function formatCurrencyNullable(
   currency: string | null | undefined,
 ): string {
   if (amount == null) return UNAVAILABLE;
-  const numericAmount = typeof amount === 'string' ? Number.parseFloat(amount) || 0 : amount;
+  const numericAmount = typeof amount === 'string' ? Number.parseFloat(amount) : amount;
+  if (!Number.isFinite(numericAmount)) return UNAVAILABLE;
   return formatCurrency(numericAmount, currency);
 }
 
@@ -385,6 +391,18 @@ export function formatDateShort(date: Date | string): string {
 
 export function formatPercent(value: number, decimals = 1): string {
   return `${(value * 100).toFixed(decimals)}%`;
+}
+
+/**
+ * Confidence arrives from older projections in both 0–1 and 0–100 scales.
+ * Normalise at the display boundary so a valid 85 score can never render as
+ * 8,500%, while a canonical 0.85 ratio continues to render as 85%.
+ */
+export function formatConfidencePercent(value: number, decimals = 0): string {
+  if (!Number.isFinite(value)) return '—';
+  const percentage = Math.abs(value) <= 1 ? value * 100 : value;
+  const bounded = Math.min(100, Math.max(0, percentage));
+  return `${bounded.toFixed(decimals)}%`;
 }
 
 export function formatScore(score: number, tier?: string): string {

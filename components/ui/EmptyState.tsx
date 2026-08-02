@@ -1,24 +1,35 @@
 import { type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
-interface EmptyStateProps {
+interface EmptyStateBaseProps {
   /**
    * Layout variant:
    * - `default`  centered vertical stack
    * - `compact`  left-aligned inline pattern for empty tables / lists
    * - `hero`     full-width onboarding content area
    */
-  variant?: 'default' | 'compact' | 'hero';
   icon?: ReactNode;
   title: string;
-  description?: string;
-  action?: ReactNode;
   /** Optional extra content rendered below the action. */
   footer?: ReactNode;
   className?: string;
-  /** hero variant: arbitrary content rendered in the body area */
-  children?: ReactNode;
 }
+
+type EmptyStateProps = EmptyStateBaseProps & (
+  | {
+      variant?: 'default' | 'compact';
+      description: string;
+      action: Exclude<ReactNode, null | undefined | boolean>;
+      children?: never;
+    }
+  | {
+      variant: 'hero';
+      description?: string;
+      action?: ReactNode;
+      /** Hero variant: arbitrary content rendered in the body area. */
+      children: ReactNode;
+    }
+);
 
 export function EmptyState({
   variant = 'default',
@@ -34,7 +45,7 @@ export function EmptyState({
     return (
       <div className={cn('px-4 py-8', className)}>
         <h2
-          className="ua-empty-state__compact-title flex items-center gap-2 text-body-sm font-semibold"
+          className="ua-empty-state__compact-title ua-text-working-title flex items-center gap-2"
         >
           {icon ? (
             <span aria-hidden="true" className="ua-empty-state__compact-icon shrink-0">

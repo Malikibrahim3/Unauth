@@ -26,7 +26,7 @@ import { Card, DataTableServer } from "@/components/ui";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatDateTime } from "@/lib/utils/format";
 import { ConnectionHealthGrid } from "@/components/integrations/ConnectionHealthPanel";
-import { AuthenticatedPageHeader } from "@/components/authenticated/AuthenticatedPageHeader";
+import { PageFrame } from "@/components/ui/PageFrame";
 import pageStyles from "@/components/authenticated/AuthenticatedPageChrome.module.css";
 
 export const dynamic = "force-dynamic";
@@ -154,23 +154,18 @@ export default async function ConnectionPage({
     .filter((dim) => item.pendingRuntimeCapabilities.includes(dim.id))
     .map((dim) => humanizeLabel(dim.id));
   return (
-    <div>
-      <AuthenticatedPageHeader
-        title={item.name}
-        subtitle={item.description}
-        breadcrumbs={[{ label: "Integrations", href: "/integrations" }, { label: item.name }]}
-        actions={<StatusBadge family="workflowStatus" value={badge} />}
-      />
-      <div className={pageStyles.pageBody}>
+    <PageFrame
+      title={item.name}
+      subtitle={item.description}
+      breadcrumbs={[{ label: "Integrations", href: "/integrations" }, { label: item.name }]}
+      actions={<StatusBadge family="workflowStatus" value={badge} />}
+    >
         <div className={pageStyles.detailStack}>
       {item.stage === "planned" ? (
-        <Card unstyled
-          variant="muted"
-          className="p-4 text-sm text-[var(--ua-text-secondary)]"
-        >
+        <div className={`${pageStyles.detailSection} ua-text-body text-[var(--ua-text-secondary)]`}>
           This connector is coming soon. It is visible so you can understand
           the intended coverage; setup and syncing are not available yet.
-        </Card>
+        </div>
       ) : (
         <ConnectionActions
           providerId={item.id}
@@ -181,11 +176,11 @@ export default async function ConnectionPage({
       )}
       <ConnectionHealthGrid item={{ ...item, badge }} />
       {item.stage !== "planned" ? (
-        <Card unstyled variant="panel" className="p-4">
+        <div className={pageStyles.detailSection}>
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <div>
-              <h2 className="text-sm font-semibold">Setup coverage</h2>
-              <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">
+              <h2 className="ua-text-working-title">Setup coverage</h2>
+              <p className="ua-text-caption-role mt-1">
                 {verifiedLifecycleCount} of {applicableLifecycle.length} supported setup paths have verified coverage.
               </p>
             </div>
@@ -194,34 +189,34 @@ export default async function ConnectionPage({
             ) : null}
           </div>
           {item.runtimeVerificationPending ? (
-            <p className="mt-3 text-xs text-[var(--ua-text-secondary)]">
+            <p className="ua-text-caption-role mt-3">
               <strong className="text-[var(--ua-text-primary)]">Runtime verification pending</strong>
               {pendingLifecycleLabels.length ? ` · ${pendingLifecycleLabels.join(", ")}` : ""}
             </p>
           ) : null}
-        </Card>
+        </div>
       ) : null}
-      <Card unstyled variant="panel" className="grid gap-3 p-4 sm:grid-cols-3">
+      <div className={`${pageStyles.detailSection} grid gap-3 sm:grid-cols-3`}>
         <div>
-          <p className="text-xs text-[var(--ua-text-tertiary)]">Configuration</p>
+          <p className="ua-text-metadata">Configuration</p>
           <div className="mt-1"><StatusBadge family="workflowStatus" value={readModel.configuration === "configured" ? "connected" : "not_connected"} size="sm" /></div>
         </div>
         <div>
-          <p className="text-xs text-[var(--ua-text-tertiary)]">Operational health</p>
+          <p className="ua-text-metadata">Operational health</p>
           <div className="mt-1"><StatusBadge family="workflowStatus" value={readModel.operational === "healthy" ? "healthy" : readModel.operational === "attention" ? "attention_required" : "verification_unavailable"} size="sm" /></div>
         </div>
         <div>
-          <p className="text-xs text-[var(--ua-text-tertiary)]">Data delivery</p>
-          <p className="mt-1 text-sm font-medium text-[var(--ua-text-primary)]">{deliveryModelLabel(readModel.deliveryModel)}</p>
-          <p className="mt-0.5 text-xs text-[var(--ua-text-secondary)]">{item.lastDataReceivedAt ? `Last data ${formatDateTime(item.lastDataReceivedAt)}` : "No data receipt recorded"}</p>
+          <p className="ua-text-metadata">Data delivery</p>
+          <p className="ua-text-dense mt-1 font-medium text-[var(--ua-text-primary)]">{deliveryModelLabel(readModel.deliveryModel)}</p>
+          <p className="ua-text-caption-role mt-0.5">{item.lastDataReceivedAt ? `Last data ${formatDateTime(item.lastDataReceivedAt)}` : "No data receipt recorded"}</p>
         </div>
-      </Card>
+      </div>
       <section aria-labelledby="capability-matrix-title">
         <div>
-          <h2 id="capability-matrix-title" className="text-base font-semibold">
+          <h2 id="capability-matrix-title" className="ua-text-section-title">
             Data available to Unauth
           </h2>
-          <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">
+          <p className="ua-text-caption-role mt-1">
             These are the records this connection can contribute to case
             evidence. Unauth does not make customer or payout decisions
             automatically.
@@ -231,7 +226,8 @@ export default async function ConnectionPage({
           <DataTableServer
             rows={item.capabilities}
             getRowKey={(capability) => capability.id}
-            density="compact"
+            density="metadata"
+            emptyState={<p className="ua-text-body p-4 text-[var(--ua-text-secondary)]">No capabilities are published for this connection.</p>}
             columns={[
               {
                 key: "capability",
@@ -250,10 +246,10 @@ export default async function ConnectionPage({
           {item.capabilities.map((capability) => (
             <Card unstyled key={capability.id} variant="panel" className="p-3">
               <div className="flex items-start justify-between gap-2">
-                <strong className="text-sm">{capability.description}</strong>
+                <strong className="ua-text-working-title">{capability.description}</strong>
                 <StatusBadge family="workflowStatus" value={capability.support} size="sm" />
               </div>
-              <p className="mt-2 text-xs text-[var(--ua-text-secondary)]">Available to the connected case workflow.</p>
+              <p className="ua-text-caption-role mt-2">Available to the connected case workflow.</p>
             </Card>
           ))}
         </div>
@@ -261,12 +257,12 @@ export default async function ConnectionPage({
       <div className={pageStyles.detailSplit}>
         <section aria-labelledby="sync-history-title">
           <div className="flex items-center justify-between">
-            <h2 id="sync-history-title" className="text-base font-semibold">
+            <h2 id="sync-history-title" className="ua-text-section-title">
               Import history
             </h2>
             <Link
               href="/integrations/imports"
-              className="text-xs font-semibold text-[var(--ua-action-primary)]"
+              className="ua-text-working-title text-[var(--ua-action-primary)]"
             >
               Import records
             </Link>
@@ -279,10 +275,10 @@ export default async function ConnectionPage({
                   className="grid gap-2 px-3 py-3 sm:grid-cols-[1fr_auto]"
                 >
                   <div>
-                    <p className="text-sm font-medium">
+                    <p className="ua-text-dense font-medium">
                       {humanizeLabel(job.job_kind)}
                     </p>
-                    <p className="mt-1 text-xs text-[var(--ua-text-tertiary)]">
+                    <p className="ua-text-metadata mt-1">
                       Started {formatDateTime(job.created_at)}
                       {job.completed_at
                         ? ` · completed ${formatDateTime(job.completed_at)}`
@@ -291,13 +287,13 @@ export default async function ConnectionPage({
                   </div>
                   <div className="text-right">
                     <StatusBadge family="workflowStatus" value={job.status} size="sm" />
-                    <p className="mt-1 font-mono text-xs">
+                    <p className="ua-text-metadata mt-1 font-mono">
                       {job.processed_rows ?? 0} processed ·{" "}
                       {job.failed_rows ?? 0} failed
                     </p>
                   </div>
                   {job.last_error_code ? (
-                    <p className="text-xs text-[var(--ua-critical)] sm:col-span-2">
+                    <p className="ua-text-dense text-[var(--ua-critical)] sm:col-span-2">
                       {job.last_error_code}
                     </p>
                   ) : null}
@@ -307,14 +303,14 @@ export default async function ConnectionPage({
           ) : (
             <Card unstyled
               variant="muted"
-              className="mt-3 p-4 text-sm text-[var(--ua-text-secondary)]"
+              className="ua-text-body mt-3 p-4 text-[var(--ua-text-secondary)]"
             >
               No account-level import runs recorded for this provider.
             </Card>
           )}
         </section>
         <section aria-labelledby="ingestion-issues-title">
-          <h2 id="ingestion-issues-title" className="text-base font-semibold">
+          <h2 id="ingestion-issues-title" className="ua-text-section-title">
             Active ingestion issues
           </h2>
           {issues.length ? (
@@ -322,12 +318,12 @@ export default async function ConnectionPage({
               {issues.map((issue) => (
                 <Card unstyled key={issue.id} as="li" variant="panel" className="p-3">
                   <div className="flex items-start justify-between gap-2">
-                    <strong className="text-sm">
+                    <strong className="ua-text-working-title">
                       {humanizeLabel(issue.event_type ?? "Ingestion event")}
                     </strong>
                     <StatusBadge family="workflowStatus" value={issue.status} tone="danger" size="sm" />
                   </div>
-                  <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">
+                  <p className="ua-text-caption-role mt-1">
                     {issue.last_error ??
                       "Source event needs retry or operator review."}
                   </p>
@@ -340,7 +336,7 @@ export default async function ConnectionPage({
           ) : (
             <Card unstyled
               variant="muted"
-              className="mt-3 p-4 text-sm text-[var(--ua-text-secondary)]"
+              className="ua-text-body mt-3 p-4 text-[var(--ua-text-secondary)]"
             >
               No failed or dead-letter ingestion events for this connection.
             </Card>
@@ -348,7 +344,6 @@ export default async function ConnectionPage({
         </section>
       </div>
         </div>
-      </div>
-    </div>
+    </PageFrame>
   );
 }

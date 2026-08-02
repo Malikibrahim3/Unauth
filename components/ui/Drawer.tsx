@@ -1,7 +1,10 @@
 'use client';
 
-import { type ReactNode, useEffect, useId, useRef } from 'react';
+import { type ReactNode, useId } from 'react';
 import { X } from 'lucide-react';
+import { DURATION } from '@/lib/design/motion';
+import { useOverlayPresence } from '@/lib/design/useOverlayPresence';
+import { OverlayPortal } from '@/components/ui/OverlayPortal';
 
 interface DrawerProps {
   open: boolean;
@@ -24,85 +27,62 @@ export function Drawer({
   closeOnBackdrop = true,
   'aria-label': ariaLabel,
 }: DrawerProps) {
-  const drawerRef = useRef<HTMLDivElement>(null);
-  const returnFocusRef = useRef<HTMLElement | null>(null);
   const generatedId = useId();
   const titleId = `object-preview-title-${generatedId.replaceAll(':', '')}`;
 
-  useEffect(() => {
-    if (!open) return;
-    returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const el = drawerRef.current;
-    if (!el) return;
-    const getFocusable = () => el.querySelectorAll<HTMLElement>('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])');
-    const trap = (e: KeyboardEvent) => {
-      if (e.key !== 'Tab') return;
-      const focusable = getFocusable();
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (!first || !last) { e.preventDefault(); el.focus(); return; }
-      if (e.shiftKey) {
-        if (document.activeElement === first || document.activeElement === el) { e.preventDefault(); last.focus(); }
-      } else {
-        if (document.activeElement === last) { e.preventDefault(); first.focus(); }
-      }
-    };
-    document.addEventListener('keydown', trap);
-    const initialTarget = getFocusable()[0] ?? el;
-    initialTarget.focus();
-    return () => {
-      document.removeEventListener('keydown', trap);
-      returnFocusRef.current?.focus({ preventScroll: true });
-    };
-  }, [open]);
+  const { mounted, phase, containerRef, motionAllowed } = useOverlayPresence({
+    open,
+    onClose,
+    exitDurationMs: DURATION.base,
+    trapFocus: true,
+    lockBodyScroll: true,
+  });
 
-  useEffect(() => {
-    if (open) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => { document.body.style.overflow = ''; };
-  }, [open]);
+  if (!mounted) return null;
 
-  useEffect(() => {
-    if (!open) return;
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onClose, open]);
-
-  if (!open) return null;
+  const isOpen = phase === 'open';
+  const enterDuration = DURATION.slow;
+  const exitDuration = DURATION.base;
+  const duration = phase === 'exiting' ? exitDuration : enterDuration;
 
   return (
+    <OverlayPortal>
     <div
       role="dialog"
       aria-modal="true"
+      aria-hidden={phase === 'exiting' ? true : undefined}
       aria-label={title ? undefined : (ariaLabel ?? 'Panel')}
       aria-labelledby={title ? titleId : undefined}
       className="fixed inset-0 flex justify-end"
-      style={{ zIndex: 'var(--ua-z-drawer)' as unknown as number }}
+      style={{
+        zIndex: 'var(--ua-z-drawer)' as unknown as number,
+        pointerEvents: phase === 'exiting' ? 'none' : undefined,
+      }}
     >
       {closeOnBackdrop ? (
         <button
           type="button"
           aria-label="Close panel"
-          className="absolute inset-0 cursor-default border-0 p-0 backdrop-blur-[3px]"
-          style={{ background: 'var(--ua-backdrop)' }}
+          className="absolute inset-0 cursor-default border-0 p-0"
+          style={{
+            background: 'var(--ua-backdrop)',
+            opacity: isOpen ? 1 : 0,
+            transition: motionAllowed ? `opacity ${duration}ms var(--ua-ease-standard)` : 'none',
+          }}
           onClick={onClose}
         />
       ) : null}
       <div
-        ref={drawerRef}
+        ref={containerRef as React.RefObject<HTMLDivElement>}
         tabIndex={-1}
         className="relative z-10 flex h-full max-h-full flex-col"
         style={{
           width: typeof width === 'number' ? `min(${width}px, 100vw)` : width,
-          background: 'var(--ua-surface-primary)',
+          background: 'var(--ua-surface-overlay)',
           borderLeft: '1px solid var(--ua-border-subtle)',
           boxShadow: 'var(--ua-shadow-overlay)',
+          transform: isOpen ? 'translateX(0)' : 'translateX(24px)',
+          transition: motionAllowed ? `transform ${duration}ms var(--ua-ease-standard)` : 'none',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -112,7 +92,7 @@ export function Drawer({
             style={{
               height: 56,
               padding: '0 var(--ua-space-5)',
-              background: 'var(--ua-surface-primary)',
+              background: 'var(--ua-surface-overlay)',
               // The body below is the only scroll container, so the header
               // stays fixed in the flex layout without Safari's sticky
               // positioning bug moving it into the middle of the drawer.
@@ -136,7 +116,7 @@ export function Drawer({
 
         {footer && (
           <div
-            className="shrink-0 bg-[var(--ua-surface-primary)] border-t border-[var(--ua-border-subtle)]"
+            className="shrink-0 bg-[var(--ua-surface-overlay)] border-t border-[var(--ua-border-subtle)]"
             // The footer is outside the scrollable body and is already held
             // at the bottom by the drawer's flex column layout.
             style={{ position: 'relative', zIndex: 'var(--ua-z-header)' as unknown as number }}
@@ -147,5 +127,6 @@ export function Drawer({
       </div>
 
     </div>
+    </OverlayPortal>
   );
 }

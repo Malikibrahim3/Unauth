@@ -1,12 +1,14 @@
 'use client';
 
-import { Loader2 } from 'lucide-react';
 import { type ButtonHTMLAttributes, forwardRef, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-import { BUTTON_ICON_SIZES, getButtonPresentation } from './buttonStyles';
+import { getButtonPresentation } from './buttonStyles';
+import { Spinner, type SpinnerSize } from './Spinner';
+
+const SPINNER_SIZE: Record<ButtonSize, SpinnerSize> = { sm: 'sm', md: 'md', lg: 'lg' };
 
 /*
- * Living Precision §3.2: `primary` is the ordinary accent forward action;
+ * Instrument Grade: `primary` is the ordinary accent forward action;
  * `commit` is the neutral near-black high-stakes action for financial
  * decisions, irreversible workflow steps, and confirmation. A region must not
  * show both at equal emphasis.
@@ -20,10 +22,6 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   loading?: boolean;
   leadingIcon?: ReactNode;
 }
-
-const Spinner = ({ size }: { size: ButtonSize }) => (
-  <Loader2 className={cn('animate-spin', BUTTON_ICON_SIZES[size])} aria-hidden="true" />
-);
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (
@@ -43,15 +41,20 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         type="button"
         ref={ref}
         disabled={disabled || loading}
+        aria-busy={loading || undefined}
         className={buttonClassName}
         style={buttonStyle}
         {...props}
       >
-        <span className={cn('inline-flex items-center gap-2', loading && 'invisible')} aria-hidden={loading || undefined}>
+        <span className={cn('inline-flex items-center gap-2', loading && 'invisible')}>
           {leadingIcon ? <span className={cn('shrink-0', iconSizeClass)} aria-hidden="true">{leadingIcon}</span> : null}
           {children}
         </span>
-        {loading ? <span className="absolute inset-0 inline-flex items-center justify-center"><Spinner size={size} /></span> : null}
+        {loading ? (
+          <span className="absolute inset-0 inline-flex items-center justify-center" aria-hidden="true">
+            <Spinner size={SPINNER_SIZE[size]} label="" />
+          </span>
+        ) : null}
       </button>
     );
   },

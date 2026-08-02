@@ -1,25 +1,8 @@
-/*
- * Foundation rebuild — display type system + the few behaviours arbitrary
- * Tailwind values can't express. All colors come from --fl-* tokens in
- * app/globals.css — no hex here.
- */
-
-/* Landing section headers — same family as hero headline (Inter / --font-dm-sans) */
 .landingHeadings :is(h1, h2, h3) {
   font-family: var(--ua-font-display), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     'Segoe UI', sans-serif;
-  letter-spacing: -0.05em;
-}
-
-/* Unified section typography — all blocks after the hero */
-.landingSectionEyebrow {
-  font-family: var(--ua-font-display), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-    'Segoe UI', sans-serif;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: rgba(17, 17, 17, 0.42);
+  letter-spacing: -0.045em;
+  text-transform: none;
 }
 
 .landingSectionTitle {
@@ -88,9 +71,6 @@
   color: var(--fl-ink-secondary);
 }
 
-/* ── Pricing page (landing continuation) ─────────────────────────────────── */
-
-.pricingHero,
 .pricingField,
 .pricingCreditsField {
   position: relative;
@@ -98,25 +78,97 @@
   background: var(--fl-bg);
 }
 
-.pricingHero {
-  border-bottom: 1px solid var(--fl-line);
-}
-
 .pricingTierCard {
   display: flex;
   min-height: 34rem;
   flex-direction: column;
-  border-radius: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  background: rgba(255, 255, 255, 0.92);
+  border-radius: 10px;
+  border: 1px solid var(--fl-line);
+  background: var(--fl-paper);
   padding: 1.5rem 1.75rem;
-  box-shadow: 0 18px 44px -24px rgba(0, 0, 0, 0.12);
+  box-shadow: none;
 }
 
 .pricingTierCardFeatured {
-  border-color: var(--fl-ink);
+  border-color: var(--fl-line);
   background: var(--fl-paper);
-  box-shadow: var(--fl-shadow-card);
+  box-shadow: none;
+}
+
+.pricingLedger {
+  overflow-x: auto;
+  border-top: 1px solid var(--fl-line);
+  border-bottom: 1px solid var(--fl-line);
+  background: var(--fl-paper);
+  scrollbar-gutter: stable;
+}
+
+.pricingLedger table {
+  width: 100%;
+  min-width: 62rem;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.pricingLedger th,
+.pricingLedger td {
+  padding: 1.35rem 1.5rem;
+  border-right: 1px solid var(--fl-line);
+  border-bottom: 1px solid var(--fl-line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.pricingLedger tr > :last-child {
+  border-right: 0;
+}
+
+.pricingLedger tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+.pricingLedger thead th {
+  position: relative;
+  color: var(--fl-ink);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.pricingLedger tbody th,
+.pricingLedgerAxis {
+  width: 8.5rem;
+  background: var(--fl-bg);
+  color: var(--fl-ink-tertiary);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.pricingLedger [data-featured] {
+  background: color-mix(in srgb, var(--fl-brand) 4%, var(--fl-paper));
+}
+
+.pricingLedgerPlan {
+  display: block;
+  margin-bottom: 0.65rem;
+}
+
+.pricingLedgerNote,
+.pricingLedgerTagline,
+.pricingLedgerFootnote {
+  color: var(--fl-ink-secondary);
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+.pricingLedgerNote {
+  margin-top: 0.65rem;
+  color: var(--fl-ink);
+  font-weight: 500;
+}
+
+.pricingLedgerFootnote {
+  max-width: 58rem;
+  margin: 1rem 0 0;
 }
 
 .pricingTierBadge {
@@ -142,13 +194,11 @@
 }
 
 .pricingTierFeatures {
-  margin: 2rem 0 0;
-  flex: 1;
+  margin: 0;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  border-top: 1px solid var(--fl-line);
-  padding-top: 1.5rem;
+  padding: 0;
   list-style: none;
 }
 
@@ -170,14 +220,13 @@
   color: var(--fl-ink-tertiary);
 }
 
-.pricingTierCtaPrimary,
-.pricingTierCtaSecondary {
+.pricingTierCta {
   display: inline-flex;
   width: 100%;
-  align-items: center;
+  align-items: start;
   justify-content: center;
   gap: 0.375rem;
-  border-radius: 999px;
+  border-radius: 8px;
   padding: 0.75rem 1.25rem;
   font-family: var(--ua-font-display), ui-sans-serif, system-ui, sans-serif;
   font-size: 0.9375rem;
@@ -191,12 +240,14 @@
 }
 
 .pricingTierCtaPrimary {
-  background: var(--fl-ink);
-  color: var(--fl-paper);
+  border: 1px solid var(--fl-brand);
+  background: var(--fl-brand);
+  color: var(--fl-on-color);
 }
 
 .pricingTierCtaPrimary:hover {
-  background: #2c1e12;
+  border-color: var(--fl-brand-deep);
+  background: var(--fl-brand-deep);
 }
 
 .pricingTierCtaSecondary {
@@ -209,776 +260,25 @@
   border-color: var(--fl-ink);
 }
 
-.pricingCreditsPanel {
-  max-width: 56rem;
-  border-radius: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  background: rgba(255, 255, 255, 0.72);
-  padding: 1.75rem 1.5rem;
-  box-shadow: 0 18px 44px -28px rgba(0, 0, 0, 0.1);
-}
-
-@media (min-width: 640px) {
-  .pricingCreditsPanel {
-    padding: 2rem 2.25rem;
-  }
-}
-
-/* ── Display type ──────────────────────────────────────────────────────── */
-
-.display {
-  font-family: var(--ua-font-display);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.025em;
-  line-height: 0.9;
-}
-
-.displayHero {
-  composes: display;
-  font-weight: 700;
-  font-size: 3rem;
-  line-height: 0.9;
-}
-
-.displayProgram {
-  font-family: var(--ua-font-display);
-  font-weight: 650;
-  text-transform: uppercase;
-  letter-spacing: 0;
-  line-height: 0.9;
-  font-size: 2.75rem;
-}
-
-.displayEspresso {
-  font-family: var(--ua-font-display);
-  font-weight: 650;
-  text-transform: uppercase;
-  letter-spacing: 0;
-  color: var(--fl-ink);
-  line-height: 0.9;
-  font-size: 2.75rem;
-}
-
-.displayHowItWorks {
-  composes: display;
-  font-size: 2rem;
-  line-height: 0.94;
-  color: var(--fl-ink);
-}
-
-.stackHeroHeadline {
-  font-family: var(--ua-font-display), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-    'Segoe UI', sans-serif;
-  font-weight: 420;
-  font-size: clamp(2.5rem, 5vw, 4rem);
-  line-height: 0.98;
-  letter-spacing: -0.05em;
-  color: rgba(17, 17, 17, 0.92);
-  max-width: 760px;
-}
-
-/* Deep espresso editorial panel — follows stats bento */
-.espresso {
-  background:
-    radial-gradient(88% 55% at 8% 0%, rgba(0, 0, 0, 0.055) 0%, transparent 58%),
-    radial-gradient(70% 45% at 92% 100%, rgba(91, 96, 120, 0.08) 0%, transparent 55%),
-    linear-gradient(180deg, var(--fl-bg) 0%, var(--fl-paper) 48%, var(--fl-bg) 100%);
-}
-
-.espressoCard {
-  box-shadow: var(--fl-shadow-card);
-}
-
-.displayFinal {
-  composes: display;
-  font-size: 2.35rem;
-  line-height: 0.98;
-}
-
-.displayCard {
-  composes: display;
-  font-size: 1.75rem;
-  line-height: 0.98;
-}
-
-.gradeLetter {
-  composes: display;
-  font-size: 4.5rem;
-  line-height: 0.88;
-}
-
-
-/* Card-width numeral sizing — keeps every stat block visually consistent */
-.bentoCard {
-  container-type: inline-size;
-}
-
-.bentoNumeral {
-  font-family: var(--ua-font-display);
-  font-weight: 700;
-  letter-spacing: 0;
-  line-height: 0.92;
-  font-size: 3rem;
-  max-width: 100%;
-}
-
-.figureNumeral {
-  font-family: var(--ua-font-display);
-  font-weight: 700;
-  letter-spacing: 0;
-  line-height: 0.88;
-  font-size: 5rem;
-}
-
-.statement {
-  font-family: var(--ua-font-display);
-  font-weight: 500;
-  letter-spacing: 0;
-  line-height: 1.24;
-  font-size: 1.125rem;
-}
-
-.statementFeatureList {
-  max-width: 34rem;
-}
-
-.statementFeatureItem {
-  position: relative;
-  display: grid;
-  grid-template-columns: 3.25rem minmax(0, 1fr);
-  align-items: center;
-  gap: 1.25rem;
-  min-height: 4.25rem;
-  padding: 1.125rem 0;
-  border-top: 1px solid var(--fl-line);
-}
-
-.statementFeatureNumber {
-  font-family: var(--font-mono);
-  font-size: 0.8125rem;
-  font-weight: 600;
-  letter-spacing: 0;
-  line-height: 1;
-  color: var(--fl-ink-tertiary);
-}
-
-.statementFeatureTitle {
-  display: block;
-  max-width: 25rem;
-  font-size: 1rem;
-  font-weight: 700;
-  line-height: 1.25;
-  color: var(--fl-ink);
-}
-
-/* ── Section scenery + transition fields ───────────────────────────────── */
-
-.statementField,
-.metricBridge,
-.espressoEvidence,
-.howField,
-.figuresField,
-.faqField,
 .finalField {
   position: relative;
   isolation: isolate;
   overflow: hidden;
+  background: var(--fl-bg);
 }
 
-.statementField::before,
-.statementField::after,
-.metricBridge::before,
-.metricBridge::after,
-.espressoEvidence::before,
-.espressoEvidence::after,
-.howField::before,
-.howField::after,
-.figuresField::before,
-.figuresField::after,
-.faqField::before,
 .finalField::before,
 .finalField::after {
   content: '';
+  display: none;
   position: absolute;
   pointer-events: none;
   z-index: 0;
 }
 
-.statementField {
-  background:
-    radial-gradient(44rem 26rem at 91% 18%, color-mix(in srgb, var(--fl-slate-card) 7%, transparent), transparent 72%),
-    var(--fl-bg);
-}
-
-.statementField::before {
-  width: min(74rem, 82vw);
-  height: 18rem;
-  right: 8%;
-  bottom: -12rem;
-  background: color-mix(in srgb, var(--fl-line) 54%, transparent);
-  clip-path: polygon(0 66%, 62% 0, 100% 70%, 100% 100%, 0 100%);
-  opacity: 0.52;
-}
-
-.statementField::after {
-  width: 24rem;
-  height: 16rem;
-  left: -8rem;
-  bottom: 3rem;
-  background: color-mix(in srgb, var(--fl-status-bg) 32%, transparent);
-  clip-path: polygon(0 18%, 76% 0, 100% 74%, 18% 100%);
-  opacity: 0.46;
-}
-
-.metricBridge {
-  margin-top: -1px;
-  background:
-    linear-gradient(
-      180deg,
-      var(--fl-bg) 0%,
-      var(--fl-bg) 28%,
-      color-mix(in srgb, var(--fl-bg) 58%, var(--fl-dark-card)) 45%,
-      var(--fl-dark-card) 62%,
-      var(--fl-dark-card) 100%
-    );
-}
-
-.metricBridge::before {
-  width: min(70rem, 86vw);
-  height: 34rem;
-  top: 1.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  background: color-mix(in srgb, var(--fl-line) 70%, transparent);
-  clip-path: polygon(50% 0, 100% 34%, 86% 100%, 14% 100%, 0 34%);
-  opacity: 0.58;
-}
-
-.metricBridge::after {
-  width: 42rem;
-  height: 30rem;
-  right: -16rem;
-  bottom: 2rem;
-  background: color-mix(in srgb, var(--fl-slate-card) 28%, transparent);
-  clip-path: polygon(0 0, 100% 22%, 74% 100%, 12% 82%);
-  opacity: 0.5;
-}
-
-.metricCardGrid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 0.875rem;
-  align-items: end;
-}
-
-.metricCard {
-  min-height: 18rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  border-radius: var(--radius-3);
-  padding: 4.75rem 1.5rem 1.5rem;
-  box-shadow: var(--fl-shadow-card);
-}
-
-.metricCardPurple {
-  color: var(--fl-on-color);
-  background: var(--fl-purple-card);
-}
-
-.metricCardDark {
-  color: var(--fl-on-color);
-  background: var(--fl-dark-card);
-}
-
-.metricCardLight {
-  color: var(--fl-ink);
-  background: var(--fl-status-bg);
-}
-
-.metricCardValue {
-  max-width: 100%;
-  font-family: var(--ua-font-display);
-  font-size: 4.25rem;
-  font-weight: 700;
-  letter-spacing: 0;
-  line-height: 0.86;
-  white-space: nowrap;
-}
-
-.metricCardValueLong {
-  font-size: 3.75rem;
-}
-
-.metricCardFooter {
-  margin-top: 2.5rem;
-  border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent);
-  padding-top: 1rem;
-}
-
-.metricCardLabel {
-  max-width: 18rem;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  line-height: 1.25;
-}
-
-.metricSources {
-  max-width: 48rem;
-  color: color-mix(in srgb, var(--fl-dusk-ink) 58%, transparent);
-}
-
-/* ── White-ground 6-stat bridge ─────────────────────────────────────────── */
-
-.metricBridgeWhite {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  background: var(--fl-paper);
-}
-
-.metricCardGridSix {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 0.875rem;
-}
-
-/* All-black card */
-.metricCardBlack {
-  composes: metricCard;
-  color: var(--fl-on-color);
-  background: var(--fl-ink);
-}
-
-/* Source attribution — light variant (on dark cards) */
-.metricCardSource {
-  margin-top: 0.375rem;
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  line-height: 1.4;
-  color: rgba(253, 252, 251, 0.36);
-}
-
-/* ── Network hero field ──────────────────────────────────────────────────── */
-
-.networkHeroField {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  background:
-    radial-gradient(62% 50% at 94% 18%, color-mix(in srgb, var(--fl-slate-card) 7%, transparent), transparent 72%),
-    radial-gradient(40% 32% at 6% 86%, color-mix(in srgb, var(--fl-status-bg) 12%, transparent), transparent 68%),
-    #ffffff;
-}
-
-
-.networkHeroHeading {
-  font-family: var(--ua-font-display), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-    'Segoe UI', sans-serif;
-  font-size: clamp(2.5rem, 4.2vw, 3.75rem);
-  font-weight: 500;
-  line-height: 1.01;
-  letter-spacing: -0.055em;
-  color: rgba(17, 17, 17, 0.92);
-}
-
-/* ── Network hero — compact borderline stat rows ────────────────────────── */
-
-.networkStatRow {
-  border-top: 1px solid var(--fl-line);
-  padding: 1.375rem 0 1.375rem;
-}
-
-.networkStatValue {
-  font-family: var(--ua-font-display), ui-sans-serif, system-ui, -apple-system, sans-serif;
-  font-size: clamp(2rem, 2.8vw, 2.75rem);
-  font-weight: 700;
-  letter-spacing: -0.04em;
-  line-height: 0.9;
-  color: var(--fl-ink);
-}
-
-.networkStatLabel {
-  margin-top: 0.75rem;
-  font-family: var(--ua-font-display), ui-sans-serif, system-ui, -apple-system, sans-serif;
-  font-size: 0.9375rem;
-  font-weight: 500;
-  line-height: 1.35;
-  letter-spacing: -0.02em;
-  color: var(--fl-ink-secondary);
-}
-
-.networkStatSource {
-  margin-top: 0.375rem;
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  line-height: 1.4;
-  color: var(--fl-ink-tertiary);
-}
-
-.espressoEvidence::before {
-  inset: auto 0 0;
-  height: 13rem;
-  background: linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--fl-sky-1) 8%, transparent) 100%);
-}
-
-.espressoEvidence::after {
-  width: 46rem;
-  height: 36rem;
-  top: -16rem;
-  right: -20rem;
-  background: color-mix(in srgb, var(--fl-slate-card) 14%, transparent);
-  clip-path: polygon(20% 0, 100% 18%, 78% 100%, 0 76%);
-  opacity: 0.56;
-}
-
-.howField {
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--fl-dark-card) 10%, var(--fl-sky-1)) 0%,
-      color-mix(in srgb, var(--fl-sky-1) 42%, var(--fl-bg)) 12rem,
-      color-mix(in srgb, var(--fl-sky-1) 42%, var(--fl-bg)) 100%
-    );
-}
-
-.howField::before {
-  width: 52rem;
-  height: 42rem;
-  top: -12rem;
-  right: -18rem;
-  background: color-mix(in srgb, var(--fl-slate-card) 18%, transparent);
-  clip-path: polygon(50% 0, 100% 29%, 100% 72%, 50% 100%, 0 72%, 0 29%);
-}
-
-.howField::after {
-  width: 38rem;
-  height: 22rem;
-  left: -16rem;
-  bottom: -7rem;
-  background: color-mix(in srgb, var(--fl-status-bg) 46%, transparent);
-  clip-path: polygon(8% 0, 100% 28%, 72% 100%, 0 78%);
-  opacity: 0.58;
-}
-
-.figuresField {
-  background:
-    radial-gradient(44rem 26rem at 86% 20%, color-mix(in srgb, var(--fl-status-bg) 18%, transparent), transparent 70%),
-    linear-gradient(180deg, var(--fl-bg) 0%, color-mix(in srgb, var(--fl-slate-card) 7%, var(--fl-bg)) 100%);
-}
-
-.figuresField::before {
-  width: 44rem;
-  height: 54rem;
-  right: -22rem;
-  top: 8rem;
-  background: color-mix(in srgb, var(--fl-line) 74%, transparent);
-  clip-path: polygon(0 0, 100% 18%, 76% 100%, 0 78%);
-  opacity: 0.72;
-}
-
-.figuresField::after {
-  width: 36rem;
-  height: 20rem;
-  left: 10%;
-  bottom: -9rem;
-  background: color-mix(in srgb, var(--fl-purple-card) 10%, transparent);
-  clip-path: polygon(24% 0, 100% 20%, 78% 100%, 0 72%);
-}
-
-.faqField {
-  background:
-    linear-gradient(180deg, var(--fl-bg) 0%, color-mix(in srgb, var(--fl-purple) 6%, var(--fl-bg)) 100%);
-}
-
-.faqField::before {
-  width: 46rem;
-  height: 36rem;
-  right: -18rem;
-  bottom: -14rem;
-  background: color-mix(in srgb, var(--fl-line) 64%, transparent);
-  clip-path: polygon(50% 0, 100% 30%, 100% 72%, 50% 100%, 0 72%, 0 30%);
-}
-
-.finalField {
-  background: #ffffff;
-}
-
-.finalField::before,
-.finalField::after {
-  display: none;
-}
-
-@media (min-width: 640px) {
-  .metricCardGridSix {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1rem;
-  }
-
-  .displayHero {
-    font-size: 4.75rem;
-  }
-
-  .displayProgram,
-  .displayEspresso {
-    font-size: 3.75rem;
-  }
-
-  .displayHowItWorks {
-    font-size: 2.75rem;
-  }
-
-  .displayFinal {
-    font-size: 3.25rem;
-  }
-
-  .displayCard {
-    font-size: 2.25rem;
-  }
-
-  .gradeLetter {
-    font-size: 5rem;
-  }
-
-
-  .bentoNumeral {
-    font-size: 3.5rem;
-  }
-
-  .figureNumeral {
-    font-size: 6.5rem;
-  }
-
-  .statement {
-    font-size: 1.375rem;
-  }
-
-  .statementFeatureList {
-    max-width: 38rem;
-  }
-
-  .statementFeatureItem {
-    grid-template-columns: 3.75rem minmax(0, 1fr);
-    min-height: 4.75rem;
-  }
-
-  .statementFeatureTitle {
-    font-size: 1.0625rem;
-  }
-
-  .metricCard {
-    min-height: 20rem;
-    padding: 1.75rem;
-  }
-
-  .metricCardValue {
-    font-size: 5.5rem;
-  }
-
-  .metricCardValueLong {
-    font-size: 4.75rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .metricCardGridSix {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 1rem;
-  }
-
-  /* column-stagger: depth cascade left → right */
-  .metricCardGridSix > :nth-child(3n-1) { margin-top: 3rem; }
-  .metricCardGridSix > :nth-child(3n)   { margin-top: 6rem; }
-
-  .displayHero {
-    font-size: 5.25rem;
-  }
-
-  .displayProgram,
-  .displayEspresso {
-    font-size: 4.5rem;
-  }
-
-  .displayHowItWorks {
-    font-size: 3.5rem;
-  }
-
-  .displayFinal {
-    font-size: 4.25rem;
-  }
-
-  .displayCard {
-    font-size: 2.5rem;
-  }
-
-  .gradeLetter {
-    font-size: 5.75rem;
-  }
-
-
-  .bentoNumeral {
-    font-size: 4.25rem;
-  }
-
-  .figureNumeral {
-    font-size: 7.75rem;
-  }
-
-  .statement {
-    font-size: 1.75rem;
-  }
-
-  .statementFeatureList {
-    max-width: 36rem;
-  }
-
-  .metricBridge {
-    background:
-      linear-gradient(
-        180deg,
-        var(--fl-bg) 0%,
-        var(--fl-bg) 25%,
-        color-mix(in srgb, var(--fl-bg) 52%, var(--fl-dark-card)) 43%,
-        var(--fl-dark-card) 62%,
-        var(--fl-dark-card) 100%
-      );
-  }
-
-  .metricCardGrid {
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    gap: 1rem;
-  }
-
-  .metricCard {
-    min-height: 22rem;
-    padding: 1.75rem;
-  }
-
-  .metricCard:nth-child(1) {
-    grid-column: 1 / span 4;
-  }
-
-  .metricCard:nth-child(2) {
-    grid-column: 5 / span 4;
-    transform: translateY(3.75rem);
-  }
-
-  .metricCard:nth-child(3) {
-    grid-column: 9 / span 4;
-    transform: translateY(7.5rem);
-  }
-
-  .metricCardValue {
-    font-size: 6.1rem;
-  }
-
-  .metricCardValueLong {
-    font-size: 5.2rem;
-  }
-}
-
-@media (min-width: 1280px) {
-  .displayHero {
-    font-size: 5.5rem;
-  }
-
-  .displayProgram,
-  .displayEspresso {
-    font-size: 4.75rem;
-  }
-
-  .displayHowItWorks {
-    font-size: 4rem;
-  }
-
-  .displayFinal {
-    font-size: 5rem;
-  }
-
-  .displayCard {
-    font-size: 2.75rem;
-  }
-
-  .gradeLetter {
-    font-size: 6.25rem;
-  }
-
-
-  .figureNumeral {
-    font-size: 9rem;
-  }
-
-  .statement {
-    font-size: 1.95rem;
-  }
-
-  .metricCard {
-    min-height: 25rem;
-    padding: 2rem;
-  }
-
-  .metricCardValue {
-    font-size: 7.5rem;
-  }
-
-  .metricCardValueLong {
-    font-size: 6.3rem;
-  }
-}
-
-@media (min-width: 1600px) {
-  .displayHero {
-    font-size: 6.75rem;
-  }
-
-  .displayProgram,
-  .displayEspresso {
-    font-size: 5.75rem;
-  }
-
-  .displayHowItWorks {
-    font-size: 4.5rem;
-  }
-
-  .displayFinal {
-    font-size: 5.5rem;
-  }
-
-
-  .bentoNumeral {
-    font-size: 5rem;
-  }
-
-  .figureNumeral {
-    font-size: 10rem;
-  }
-
-  .metricCard {
-    min-height: 28rem;
-    padding: 2.25rem;
-  }
-
-  .metricCardValue {
-    font-size: 8.5rem;
-  }
-
-  .metricCardValueLong {
-    font-size: 7.25rem;
-  }
-}
-
-/* ── Hero entrance ─────────────────────────────────────────────────────── */
-
 .riseIn {
   opacity: 1;
 }
-
-.phoneIn {
-  opacity: 1;
-}
-
-/* ── Hero typography — Inter system ──────────────────────────────────── */
 
 .heroFont {
   font-family: var(--ua-font-display), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
@@ -990,20 +290,19 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  border-radius: 9999px;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  background: rgba(255, 255, 255, 0.74);
-  padding: 0.4375rem 0.875rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
   font-weight: 500;
   font-size: 13px;
   line-height: 18px;
   letter-spacing: -0.01em;
-  color: rgba(17, 17, 17, 0.72);
-  backdrop-filter: blur(8px);
+  color: var(--fl-ink-secondary);
+  backdrop-filter: none;
 }
 
-.heroEyebrow svg,
-.heroEyebrowIcon {
+.heroEyebrow svg {
   flex-shrink: 0;
   color: var(--landing-accent, #5b5bd6);
   stroke: currentColor;
@@ -1011,42 +310,37 @@
 
 .heroHeadline {
   composes: heroFont;
-  font-weight: 420;
-  font-size: clamp(35px, 9.4vw, 51px);
+  max-width: 12.5ch;
+  font-weight: 560;
+  font-size: clamp(44px, 5.5vw, 72px);
   line-height: 0.98;
-  letter-spacing: -0.05em;
-  color: rgba(17, 17, 17, 0.92);
-  max-width: 760px;
-  transform: translateY(-25%);
-}
-
-.heroHeadlineLine {
-  display: block;
-}
-
-.heroHeadlineLinePrimary {
-  white-space: nowrap;
+  letter-spacing: -0.04em;
+  color: var(--fl-ink);
+  text-wrap: balance;
 }
 
 .heroSubtitle {
   composes: heroFont;
-  font-weight: 500;
-  font-size: clamp(18px, 3.8vw, 20px);
-  line-height: 1.42;
+  max-width: 48ch;
+  font-weight: 450;
+  font-size: clamp(16px, 3.8vw, 18px);
+  line-height: 1.55;
   letter-spacing: -0.018em;
-  color: rgba(17, 17, 17, 0.66);
-  max-width: 640px;
-  margin-top: -0.4em;
+  color: var(--fl-ink-secondary);
+  margin-top: 0;
 }
 
 .heroLayout {
   position: relative;
   z-index: 20;
+  display: grid;
+  align-items: center;
+  gap: clamp(44px, 5vw, 80px);
   width: 100%;
   max-width: 1440px;
-  min-height: 100svh;
+  min-height: auto;
   margin: 0 auto;
-  padding: 126px 20px 64px;
+  padding: 52px 20px 76px;
 }
 
 .heroCopy {
@@ -1054,7 +348,6 @@
   z-index: 2;
   width: 100%;
   max-width: 650px;
-  transform: translateY(-20%);
 }
 
 .heroCtaRow {
@@ -1063,7 +356,14 @@
   align-items: flex-start;
   gap: 16px;
   margin-top: 30px;
-  transform: translateY(-4%);
+}
+
+.heroAssurance {
+  max-width: 54ch;
+  margin: 22px 0 0;
+  color: rgba(17, 17, 17, 0.54);
+  font-size: 12px;
+  line-height: 1.55;
 }
 
 @media (min-width: 640px) {
@@ -1079,37 +379,23 @@
   }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1180px) {
   .heroLayout {
-    min-height: clamp(1120px, 118svh, 1280px);
-    padding: 0 clamp(80px, 6.25vw, 100px);
+    grid-template-columns: minmax(420px, 0.76fr) minmax(0, 1.24fr);
+    gap: clamp(44px, 5vw, 80px);
+    padding: 52px clamp(48px, 5vw, 76px) 76px;
   }
 
   .heroCopy {
-    width: min(760px, 56vw);
-    padding-top: clamp(250px, 34svh, 330px);
-    transform: translate(-15px, -20%);
+    width: 100%;
   }
 }
-
-.heroSubhead {
-  composes: heroFont;
-  font-weight: 400;
-  font-size: 17px;
-  line-height: 1.55;
-  letter-spacing: -0.018em;
-  color: rgba(17, 17, 17, 0.66);
-  max-width: 430px;
-}
-
-/* Product CTA — the product violet, so the public entry point and the app it
-   leads into are one identity (LP-FND-09). Editorial rust stays elsewhere. */
 .heroCtaPrimary {
   composes: heroFont;
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
-  border-radius: 9999px;
+  border-radius: 8px;
   background: var(--landing-accent, #5b5bd6);
   padding: 0.625rem 1.25rem;
   font-weight: 600;
@@ -1133,15 +419,13 @@
   font-size: 14px;
   line-height: 20px;
   letter-spacing: -0.015em;
-  color: rgba(17, 17, 17, 0.78);
+  color: var(--fl-ink-secondary);
   transition: color 0.15s ease;
 }
 
 .heroCtaSecondary:hover {
   color: #111111;
 }
-
-/* ── Hero navbar — sticky top bar, theme follows section behind ──────── */
 
 .heroNavbar {
   position: sticky;
@@ -1151,8 +435,9 @@
   width: 100%;
   height: 64px;
   box-sizing: border-box;
-  background: var(--fl-bg);
-  border-bottom: 1px solid rgba(17, 17, 17, 0.18);
+  background: color-mix(in srgb, var(--fl-paper) 94%, transparent);
+  border-bottom: 1px solid var(--fl-line);
+  backdrop-filter: none;
   transition:
     background-color 220ms ease,
     border-color 220ms ease,
@@ -1160,8 +445,9 @@
 }
 
 .heroNavbarLight {
-  border-color: rgba(17, 17, 17, 0.18);
-  background: var(--fl-bg);
+  border-color: var(--fl-line);
+  background: color-mix(in srgb, var(--fl-paper) 94%, transparent);
+  backdrop-filter: none;
   box-shadow: none;
 }
 
@@ -1276,8 +562,8 @@
   height: 30px;
   flex-shrink: 0;
   border-radius: 999px;
-  background: var(--accent-100, #f0efff);
-  color: var(--accent-700, #3c3c96);
+  background: transparent;
+  color: currentColor;
 }
 
 .heroNavMenuBtn {
@@ -1303,17 +589,18 @@
 }
 
 .heroNavbarLight .heroNavCta {
-  height: 42px;
+  height: 38px;
   gap: 14px;
   padding: 0 12px 0 22px;
+  border-radius: 8px;
   border-color: transparent;
-  background: #080807;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(91, 91, 214, 0.18);
+  background: var(--fl-brand);
+  box-shadow: none;
 }
 
 .heroNavbarLight .heroNavCta:hover {
   border-color: transparent;
-  background: #080807;
+  background: var(--fl-brand-deep);
 }
 
 .heroNavbarLight .heroNavCtaText {
@@ -1437,587 +724,257 @@
 
 @media (min-width: 1024px) {
   .heroHeadline {
-    font-size: 58px;
-    line-height: 0.98;
-    letter-spacing: -0.065em;
+    font-size: clamp(50px, 4vw, 60px);
+    line-height: 1;
+    letter-spacing: -0.04em;
   }
 }
-
-/* ── Hero product artifact ────────────────────────────────────────────── */
 
 .heroProductOuter {
-  --hero-artifact-scale: 0.576;
   position: relative;
-  flex-shrink: 0;
-  width: 683px;
-  max-width: 100%;
-  height: 373px;
-  margin-top: 56px;
-  margin-inline: auto;
+  min-width: 0;
   overflow: hidden;
-  border-radius: 10px;
+  border: 1px solid var(--fl-line);
+  border-radius: 12px;
+  background: var(--fl-paper);
+  box-shadow: none;
 }
 
-.heroProductFrame {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 1186px;
-  height: 648px;
+.heroProductImage,
+.productProofImage {
   display: block;
-  border: none;
-  transform: scale(var(--hero-artifact-scale));
-  transform-origin: top left;
-  pointer-events: none;
-  background: transparent;
+  width: 100%;
+  height: auto;
+  background: var(--fl-paper);
 }
 
-@media (max-width: 379px) {
-  .heroProductOuter {
-    --hero-artifact-scale: 0.416;
-    width: 493px;
-    height: 269px;
-  }
+.productProofTopline {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 20px;
+  border-bottom: 1px solid var(--fl-line);
+  padding: 10px 14px;
+  font-family: var(--ua-font-mono, "DM Mono"), ui-monospace, Menlo, Monaco, Consolas, monospace;
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--fl-ink-tertiary);
 }
-
-@media (min-width: 640px) {
-  .heroProductOuter {
-    --hero-artifact-scale: 0.8832;
-    width: 1048px;
-    height: 573px;
-  }
-}
-
-@media (min-width: 1024px) {
-  .heroProductOuter {
-    --hero-artifact-scale: 1.0368;
-    position: absolute;
-    width: 1229px;
-    height: 672px;
-    left: 50%;
-    top: clamp(300px, 40svh, 405px);
-    max-width: none;
-    margin-top: 0;
-    transform: translate(-50%, 7%);
-  }
-}
-
-@media (min-width: 1280px) {
-  .heroProductOuter {
-    --hero-artifact-scale: 1.1136;
-    width: 1322px;
-    height: 722px;
-    left: 50%;
-    top: clamp(330px, 42svh, 430px);
-    transform: translate(-50%, 7%);
-  }
-}
-
-@media (min-width: 1500px) {
-  .heroProductOuter {
-    --hero-artifact-scale: 1.071;
-    width: 1270px;
-    height: 694px;
-    left: 50%;
-    transform: translate(-50%, 7%);
-  }
-}
-
-/* ── Hero evidence cards — Linear-style modules over the parcel ───────── */
-
-.evidenceCardsLayer {
-  position: absolute;
-  inset: 0;
-  z-index: 25;
-  display: block;
-  pointer-events: none;
-}
-
-.evidenceCardOrderHistory {
-  bottom: 80px;
-  left: clamp(40px, 4vw, 68px);
-  z-index: 8;
-  width: 290px;
-  pointer-events: auto;
-}
-
-.evidenceCardClaimTiming {
-  bottom: clamp(248px, 28vh, 318px);
-  left: clamp(calc(470px + 5vw), 28vw, calc(700px + 5vw));
-  z-index: 7;
-  width: 300px;
-  pointer-events: auto;
-}
-
-.evidenceCardCrossMerchant {
-  bottom: 72px;
-  left: clamp(calc(580px + 2vw), 52vw, calc(940px + 2vw));
-  z-index: 7;
-  width: 295px;
-  pointer-events: auto;
-}
-
-.evidenceCardPriorClaims {
-  right: calc(-18px + 11vw);
-  bottom: 148px;
-  z-index: 9;
-  width: 285px;
-  pointer-events: auto;
-}
-
-.evidenceConnector {
-  position: absolute;
-  right: 228px;
-  bottom: 228px;
-  z-index: 6;
-  width: min(24vw, 340px);
-  height: 0;
-  border-top: 1px dashed rgba(255, 255, 255, 0.12);
-  opacity: 0.85;
-}
-
-@media (min-width: 1024px) and (max-width: 1919px) {
-  .evidenceCardClaimTiming {
-    bottom: 232px;
-  }
-}
-
-@media (min-width: 1024px) and (max-width: 1279px) {
-  .evidenceCardOrderHistory {
-    left: 28px;
-    width: 268px;
-  }
-
-  .evidenceCardClaimTiming {
-    bottom: 252px;
-    left: 28vw;
-    width: 278px;
-  }
-
-  .evidenceCardCrossMerchant {
-    bottom: 60px;
-    left: 50vw;
-    width: 278px;
-  }
-
-  .evidenceCardPriorClaims {
-    right: calc(-70px + 11vw);
-    bottom: 142px;
-    width: 268px;
-  }
-}
-
-@media (max-width: 1023px) {
-  .evidenceCardsLayer {
-    z-index: 15;
-  }
-
-  .evidenceCardOrderHistory {
-    right: 18px;
-    bottom: 24px;
-    left: 18px;
-    width: auto;
-    max-width: none;
-  }
-
-  .evidenceCardClaimTiming,
-  .evidenceCardCrossMerchant,
-  .evidenceConnector {
-    display: none;
-  }
-
-  .evidenceCardPriorClaims {
-    display: none;
-  }
-}
-
-/* ── Second hero section ─────────────────────────────────────────────── */
 
 .hero2Field {
   position: relative;
-  background: #ffffff;
-  /* clip horizontal bleed only; keep vertical visible so display type is never sliced */
   overflow-x: clip;
-  padding: 0 0 140px;
+  border-top: 1px solid var(--fl-line);
+  background: var(--fl-paper);
+  padding: 0;
 }
 
-.hero2Layout {
-  position: relative;
-  z-index: 20;
+.productProofLayout {
+  display: grid;
+  gap: 48px;
   width: 100%;
   max-width: 1440px;
   margin: 0 auto;
-  padding: 37px 20px 0;
+  padding: 88px 20px;
 }
 
-.hero2Copy {
-  position: relative;
-  z-index: 2;
-  width: 100%;
-  max-width: 650px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+.productProofCopy {
+  max-width: 580px;
 }
 
 .hero2Headline {
-  composes: heroFont;
+  max-width: 700px;
+  margin-top: 16px;
+  padding-top: 0;
+  font-family: var(--ua-font-display), ui-sans-serif, system-ui, sans-serif;
+  font-size: clamp(36px, 5vw, 54px);
   font-weight: 420;
-  font-size: 52px;
   line-height: 1.02;
-  letter-spacing: -0.05em;
-  color: rgba(17, 17, 17, 0.92);
-  max-width: 760px;
-  padding-top: 0.08em;
+  letter-spacing: -0.055em;
+  color: var(--fl-ink);
+  text-wrap: balance;
 }
 
 .hero2Subtitle {
-  max-width: 100%;
-  margin-top: 0;
+  width: auto;
+  max-width: 620px;
+  margin-top: 24px;
+  font-size: clamp(17px, 2vw, 20px);
+  line-height: 1.5;
 }
 
-/* artifact iframe — native canvas: 1186×648 (same footprint as hero 1) */
-.hero2ArtifactStage {
-  width: 100%;
-  overflow: visible;
-  display: flex;
-  justify-content: center;
-  padding-top: 40px;
-}
-
-.hero2ArtifactCard {
-  position: relative;
-  display: flex;
-  flex-direction: column;
+.productProofLink {
+  display: inline-flex;
   align-items: center;
-  flex: 0 0 auto;
-  width: 100%;
-  max-width: 1321px;
-  height: 650px;
-  border-radius: 8px;
-  border: 1px solid rgba(17, 17, 17, 0.08);
-  background:
-    linear-gradient(180deg, rgba(246, 245, 243, 0.98) 0%, rgba(255, 255, 255, 0.98) 100%);
-  box-shadow:
-    0 22px 68px -48px rgba(23, 28, 36, 0.28),
-    inset 0 1px 0 rgba(255, 255, 255, 0.75);
-  overflow: hidden;
-}
-
-.hero2ArtifactOuter {
-  --h2-scale: 0.372;
-  position: relative;
-  flex-shrink: 0;
-  width: 389px;
-  height: 194px;
-  overflow: hidden;
-  margin-inline: 0;
-  transform: translateY(18px);
-}
-
-.hero2ArtifactFrame {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 1186px;
-  height: 648px;
-  border: none;
-  display: block;
-  transform: scale(var(--h2-scale));
-  transform-origin: top left;
-  pointer-events: none;
-}
-
-.hero2Summary {
-  position: relative;
-  z-index: 20;
-  width: 100%;
-  max-width: 1320px;
-  margin: 36px auto 0;
-  padding: 0 20px;
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 28px;
-}
-
-.hero2SummaryItem {
-  min-width: 0;
-}
-
-.hero2SummaryTitle {
-  margin: 0;
-  font-family: var(--ua-font-display), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-    'Segoe UI', sans-serif;
-  font-size: 17px;
-  font-weight: 500;
-  line-height: 1.15;
-  letter-spacing: -0.04em;
-  color: #111111;
-}
-
-.hero2SummaryBody {
-  margin: 0.75rem 0 0;
-  max-width: 260px;
-  font-family: var(--ua-font-display), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-    'Segoe UI', sans-serif;
+  gap: 6px;
+  margin-top: 28px;
+  color: var(--fl-brand-deep);
   font-size: 14px;
-  font-weight: 400;
-  line-height: 1.45;
-  letter-spacing: -0.015em;
-  color: #111111;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 4px;
 }
 
-@media (min-width: 480px) {
-  .hero2ArtifactOuter {
-    --h2-scale: 0.410;
-    width: 475px;
-    height: 238px;
-  }
+.productProofFigure {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--fl-line);
+  border-radius: 12px;
+  background: var(--fl-bg);
+  box-shadow: var(--landing-shadow-panel);
+}
+
+.productProofCaption {
+  border-top: 1px solid var(--fl-line);
+  padding: 14px 16px 16px;
+  color: var(--fl-ink-secondary);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.productProofBand {
+  border-top: 1px solid var(--fl-line);
+  background: var(--fl-bg);
+}
+
+.productProofBandInner {
+  display: grid;
+  gap: 44px;
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 80px 20px;
+}
+
+.productProofBandTitle,
+.integrationProofTitle {
+  max-width: 620px;
+  margin-top: 14px;
+  font-family: var(--ua-font-display), ui-sans-serif, system-ui, sans-serif;
+  font-size: clamp(30px, 4vw, 44px);
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: -0.05em;
+  color: var(--fl-ink);
+  text-wrap: balance;
+}
+
+.productProofSteps {
+  display: grid;
+  gap: 0;
+  border-top: 1px solid var(--fl-line);
+  list-style: none;
+}
+
+.productProofSteps li {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 4px 12px;
+  padding: 22px 0;
+  border-bottom: 1px solid var(--fl-line);
+}
+
+.productProofSteps svg {
+  grid-row: 1 / span 2;
+  color: var(--fl-brand);
+}
+
+.productProofSteps p {
+  color: var(--fl-ink);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.productProofSteps span {
+  color: var(--fl-ink-secondary);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.integrationProof {
+  display: grid;
+  gap: 40px;
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 80px 20px 96px;
+}
+
+.integrationProofBody {
+  max-width: 620px;
+  margin-top: 20px;
+  color: var(--fl-ink-secondary);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.integrationProofList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  gap: 0 24px;
+  border-top: 1px solid var(--fl-line);
+  list-style: none;
+}
+
+.integrationProofList li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--fl-line);
+  color: var(--fl-ink);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.integrationProofList svg {
+  color: var(--fl-brand);
 }
 
 @media (min-width: 640px) {
-  .hero2ArtifactOuter {
-    --h2-scale: 0.558;
-    width: 648px;
-    height: 324px;
+  .productProofLayout,
+  .productProofBandInner,
+  .integrationProof {
+    padding-right: 40px;
+    padding-left: 40px;
   }
 }
 
-@media (min-width: 900px) {
-  .hero2ArtifactOuter {
-    --h2-scale: 0.689;
-    width: 799px;
-    height: 400px;
+@media (min-width: 1180px) {
+  .productProofLayout {
+    grid-template-columns: minmax(300px, 0.72fr) minmax(0, 1.28fr);
+    align-items: center;
+    gap: clamp(56px, 6vw, 92px);
+    padding: 112px clamp(64px, 6.25vw, 100px);
+  }
+
+  .productProofBandInner,
+  .integrationProof {
+    grid-template-columns: minmax(300px, 0.8fr) minmax(0, 1.2fr);
+    gap: clamp(72px, 9vw, 140px);
+    padding: 96px clamp(64px, 6.25vw, 100px);
   }
 }
-
-@media (min-width: 1100px) {
-  .hero2ArtifactOuter {
-    --h2-scale: 0.838;
-    width: 972px;
-    height: 486px;
-  }
-}
-
-@media (min-width: 1280px) {
-  .hero2ArtifactOuter {
-    --h2-scale: 1.003;
-    width: 1190px;
-    height: 650px;
-  }
-}
-
-@media (min-width: 1024px) {
-  .hero2Field {
-    padding-bottom: 121px;
-  }
-
-  .hero2Layout {
-    padding: 0 clamp(80px, 6.25vw, 100px) 0;
-  }
-
-  .hero2Copy {
-    width: 100%;
-    max-width: none;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(360px, 500px);
-    column-gap: clamp(88px, 12vw, 180px);
-    align-items: start;
-    transform: translateX(-15px);
-  }
-
-  .hero2Headline {
-    font-size: 44px;
-    letter-spacing: -0.06em;
-    max-width: 500px;
-    grid-column: 1;
-  }
-
-  .hero2Subtitle {
-    width: 570px;
-    max-width: none;
-    justify-self: end;
-    grid-column: 2;
-    grid-row: 1;
-    font-size: 24px;
-    line-height: 1.35;
-  }
-
-  .hero2Summary {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 0;
-    margin-top: 44px;
-    padding: 0;
-  }
-
-  .hero2SummaryItem {
-    padding: 0 24px;
-  }
-
-  .hero2SummaryItem + .hero2SummaryItem {
-    border-left: 1px solid rgba(17, 17, 17, 0.08);
-  }
-
-  .hero2ArtifactStage {
-    display: flex;
-    justify-content: center;
-    /* Desktop copy→artifact gap = 121px, matching the 121px above the copy (centered). */
-    padding-top: 121px;
-  }
-
-  .hero2ArtifactCard {
-    width: 1321px;
-    max-width: none;
-    height: 650px;
-  }
-
-  .hero2ArtifactOuter {
-    --h2-scale: 0.933;
-    width: 1106px;
-    height: 605px;
-    transform: translateY(31px);
-  }
-}
-
-@media (min-width: 1280px) {
-  .hero2ArtifactCard {
-    width: 1321px;
-    max-width: none;
-    height: 690px;
-  }
-
-  .hero2ArtifactOuter {
-    --h2-scale: 1.003;
-    width: 1190px;
-    height: 650px;
-    transform: translateY(36px);
-  }
-}
-
-@media (min-width: 1500px) {
-  .hero2ArtifactCard {
-    width: 1270px;
-    height: 690px;
-  }
-}
-
-/* ── Hero — full-bleed photography + left readability scrim ────────────── */
 
 .dusk {
-  background: linear-gradient(180deg, var(--fl-bg) 0%, #ffffff 100%);
+  background: var(--fl-bg);
   position: relative;
 }
 
-.heroImage {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: 58% top;
-  filter: brightness(1.03);
-}
-
-/* Removed pseudo-element overlays to expose the gradient background */
-
-@media (max-width: 1023px) {
-  .heroImage {
-    object-position: 58% top;
-  }
-}
-
-.grain {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.5;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-
-/* ── Sky program section ───────────────────────────────────────────────── */
-
-.sky {
-  background:
-    radial-gradient(110% 70% at 22% 0%, var(--fl-sky-1) 0%, transparent 60%),
-    linear-gradient(180deg, var(--fl-sky-1) 0%, var(--fl-sky-2) 100%);
-}
-
-/* ── Phone fit — scale down on short viewports so the pinned hero holds it ─ */
-
-@media (min-width: 1024px) and (max-height: 900px) {
-  .phoneScale {
-    transform: scale(0.86);
-    transform-origin: bottom center;
-  }
-}
-
-@media (min-width: 1024px) and (max-height: 780px) {
-  .phoneScale {
-    transform: scale(0.74);
-  }
-}
-
-/* ── Mobile tab-bar overflow affordance ────────────────────────────────── */
-
-@media (max-width: 640px) {
-  .tabFade {
-    -webkit-mask-image: linear-gradient(to right, black 86%, transparent);
-    mask-image: linear-gradient(to right, black 86%, transparent);
-  }
-}
-
-/* ── Pinned CTA bar shine ──────────────────────────────────────────────── */
-
-.ctaBar {
-  overflow: hidden;
-}
-
-.ctaBar::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.14) 50%, transparent 70%);
-  transform: translateX(-120%);
-  transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.ctaBar:hover::after {
-  transform: translateX(120%);
-}
-
-/* ── Reduced motion ────────────────────────────────────────────────────── */
-
 @media (prefers-reduced-motion: reduce) {
-  .riseIn,
-  .phoneIn {
+  .riseIn {
     animation: none;
     opacity: 1;
     filter: none;
     transform: none;
   }
-
-  .ctaBar::after {
-    display: none;
-  }
 }
-
-/* ───────────────────────────────────────────────────────────────
-   Stripe-style mobile collapse (≤768px only)
-   A section opts in by wrapping its content in <MobileCollapse>,
-   which renders [data-collapse][data-expanded]. The collapsible
-   body lives in .collapseDetails; title + artifact stay visible.
-   On desktop (≥769px) everything is always shown and the toggle
-   is hidden — the section keeps its original layout untouched.
-   ─────────────────────────────────────────────────────────────── */
-
-/* Desktop / tablet-landscape default: no collapse behaviour at all. */
 .collapseToggle {
   display: none;
 }
 
 @media (max-width: 768px) {
-  /* The collapsible card is the positioning context for the corner toggle. */
   .collapseRoot {
     position: relative;
   }
@@ -2031,19 +988,11 @@
     margin-top: 0;
   }
 
-  .collapseDetailsInner {
-    overflow: hidden;
-    min-height: 0;
-  }
-
   [data-collapse][data-expanded='true'] .collapseDetails {
     grid-template-rows: 1fr;
     opacity: 1;
     margin-top: 1.5rem;
   }
-
-  /* Stripe-style square "expand" affordance, pinned top-right.
-     Brand-tinted by default; fills solid (active) when expanded. */
   .collapseToggle {
     position: absolute;
     top: 0;
@@ -2078,54 +1027,9 @@
   .collapseIcon {
     transition: transform 0.2s ease;
   }
-
-  /* Mobile typographic scale — keep section titles from dominating the card. */
   .landingSectionTitle {
     font-size: 1.75rem;
     line-height: 1.04;
     letter-spacing: -0.045em;
-  }
-
-  .networkHeroHeading {
-    font-size: 1.9375rem;
-    line-height: 1.05;
-    letter-spacing: -0.045em;
-  }
-}
-
-/* Wide mockup artifacts (boards, stack diagram) are shown at full, legible
-   1:1 size inside a horizontally-scrollable rail that bleeds to the screen
-   edges — matching how Stripe presents large artifacts on mobile (legible,
-   cropped at the edge, never shrunk). Applies ≤768px only. */
-@media (max-width: 768px) {
-  .artifactRail {
-    position: relative;
-    margin-left: -1rem;
-    margin-right: -1rem;
-  }
-
-  .artifactRailScroll {
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    padding: 0.5rem 1rem 0.75rem;
-  }
-
-  .artifactRailScroll::-webkit-scrollbar {
-    display: none;
-  }
-
-  /* Right-edge fade hinting there is more to scroll. */
-  .artifactRail::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 2rem;
-    height: 100%;
-    background: linear-gradient(to left, #ffffff, transparent);
-    pointer-events: none;
-    z-index: 2;
   }
 }

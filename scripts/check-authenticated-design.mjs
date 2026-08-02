@@ -47,7 +47,7 @@ const ignored = new Set([
  * the root error boundary renders when the root layout — and therefore possibly
  * the stylesheet — has failed, so it cannot rely on custom properties resolving.
  * It uses `var(--ua-token, #literal)` throughout; the literals are the current
- * Quiet Precision values and must be kept in step with tokens.css. This is the
+ * Living Precision values and must be kept in step with tokens.css. This is the
  * only file permitted a palette literal fallback.
  */
 const stylesheetIndependentBoundaries = new Set([
@@ -188,8 +188,8 @@ const TABLE_PRIMITIVE_FILES = new Set([
   'components/ui/DataTable.tsx',
   'components/ui/DataTableServer.tsx',
   // §8.1 requires every chart to expose an accessible data table; this is that
-  // table, not a hand-rolled data grid.
-  'components/charts/authenticated/ChartPanel.tsx',
+  // table (the canonical ChartDataTable), not a hand-rolled data grid.
+  'components/charts/authenticated/ChartDataTableDisclosure.tsx',
   // Canonical low-level skeleton geometry.
   'components/navigation/skeletons/primitives.tsx',
 ]);
@@ -220,7 +220,7 @@ const RATCHET = {
   // Tracked in docs/REVIEW_quiet_precision_implementation.md; migrating a
   // financial or audit table is a behaviour change, not a restyle, so each is
   // done deliberately. This number may only go down.
-  handRolledTable: 10,
+  handRolledTable: 0,
 };
 
 const allowedExtensions = new Set(['.ts', '.tsx', '.css']);
@@ -371,7 +371,7 @@ for (const file of files) {
   // §17.1 — obsolete chart textures and gradients.
   for (const { line, text } of findMatches(source, chartTexture)) {
     failures.push(
-      `${normalized}:${line} chart texture/gradient: ${text} — Quiet Precision charts use flat fills and solid/dashed strokes only`,
+      `${normalized}:${line} chart texture/gradient: ${text} — Living Precision charts use flat fills and solid/dashed strokes only`,
     );
   }
 

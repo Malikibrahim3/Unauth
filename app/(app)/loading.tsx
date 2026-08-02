@@ -1,5 +1,5 @@
-import { OperationalRouteSkeleton } from '@/components/states/OperationalRouteSkeleton';
+import { AuthenticatedRouteLoadingSkeleton } from '@/components/navigation/skeletons/pageSkeletons';
 
 export default function AuthenticatedRouteLoading() {
-  return <OperationalRouteSkeleton title="Loading workspace" rows={6} />;
+  return <AuthenticatedRouteLoadingSkeleton />;
 }

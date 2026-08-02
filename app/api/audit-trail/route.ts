@@ -24,6 +24,7 @@ import {
 } from "@/lib/audit/actionLabels";
 import { claimEventSummary } from "@/lib/claims/events";
 import { createRequestLogger, withRequestLogging } from "@/lib/log";
+import { hashId } from "@/lib/ui/displayRef";
 
 function csvCell(value: unknown) {
   const text = String(value ?? "");
@@ -213,7 +214,7 @@ async function GETHandler(request: NextRequest) {
       if (!actorUserId) return "system";
       const known = actorMap[actorUserId];
       if (known) return `${known.email} (${known.role})`;
-      return `${actorUserId.slice(0, 8)} (${actorRole ?? "user"})`;
+      return `${hashId(actorUserId)} (${actorRole ?? "user"})`;
     }
 
     const csvRows = rows.map(

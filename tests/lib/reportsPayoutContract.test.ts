@@ -36,9 +36,14 @@ describe("payout-control reports contract", () => {
   it("keeps exact drillable tables alongside the dashboard charts", () => {
     const view = read("components/reporting/IntelligenceReportView.tsx");
     const charts = read("components/reporting/DashboardCharts.tsx");
-    const combined = `${view}\n${charts}`;
+    // Phase 06 consolidated the hand-rolled report `<table>` + "View chart data"
+    // disclosure into the canonical ChartFrame/ChartDataTable primitive. The
+    // drillable accessible table still exists — it just lives in the primitive
+    // now, and DashboardCharts feeds it the same multi-series column model.
+    const frame = read("components/charts/authenticated/ChartDataTableDisclosure.tsx");
 
-    expect(combined).toContain("<table");
+    expect(frame).toContain("<table");
+    expect(frame).toContain("View chart data");
     expect(view).toContain("cases with recorded exposure");
     expect(view).toContain('financialMetricCaseIds(b, "exposed").length');
     expect(view).toContain("financialReportRecordsHref");
@@ -47,9 +52,27 @@ describe("payout-control reports contract", () => {
     expect(charts).toContain("How is financial value accumulating?");
     expect(charts).toContain("Loss causes");
     expect(charts).toContain("How much exposed value is reaching recovery?");
-    expect(charts).toContain("View chart data");
+    // The exact multi-series drillable table is preserved via the frame's model.
+    expect(charts).toContain("trendTable");
+    expect(charts).toContain("Exposure to date");
+    expect(charts).toContain("Recovered to date");
+    expect(charts).toContain("View exposure records");
+    expect(charts).toContain("metric=\"exposed\"");
+    expect(charts).toContain("ExportMenu");
     expect(charts).not.toContain("monotone");
     expect(charts).not.toContain("Recovery funnel");
+  });
+
+  it("uses one reconciliation notice and keeps the records table and export visibly scoped", () => {
+    const view = read("components/reporting/IntelligenceReportView.tsx");
+    const charts = read("components/reporting/DashboardCharts.tsx");
+    const records = read("app/(app)/reports/records/page.tsx");
+
+    expect(`${view}\n${charts}`.match(/Ledger reconciliation needs attention/g)).toHaveLength(1);
+    expect(records).toContain("RegistrySurface");
+    expect(records).toContain("DataTableServer");
+    expect(records).toContain("ExportMenu");
+    expect(records).toContain("Financial metric");
   });
 
   it("rolls payout exposure and requested actions into report breakdowns", () => {

@@ -9,5 +9,13 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  return <ErrorBoundaryUI error={error} reset={reset} title="Dashboard unavailable" />;
+  return (
+    <ErrorBoundaryUI
+      error={error}
+      reset={reset}
+      title="Overview unavailable"
+      description="We could not load the financial overview. Try again, or continue to the work queue."
+      fallbackHref="/work"
+    />
+  );
 }

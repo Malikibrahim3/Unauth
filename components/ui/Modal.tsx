@@ -1,9 +1,12 @@
 'use client';
 
-import { type ReactNode, useEffect, useRef } from 'react';
+import { type ReactNode } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
+import { DURATION, EASE } from '@/lib/design/motion';
+import { useOverlayPresence } from '@/lib/design/useOverlayPresence';
+import { OverlayPortal } from '@/components/ui/OverlayPortal';
 
 interface ModalAction {
   label: string;
@@ -47,76 +50,52 @@ export function Modal({
   'aria-label': ariaLabel,
   className,
 }: ModalProps) {
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const returnFocusRef = useRef<HTMLElement | null>(null);
+  const { mounted, phase, containerRef, motionAllowed } = useOverlayPresence({
+    open,
+    onClose,
+    exitDurationMs: DURATION.fast,
+    trapFocus: true,
+    lockBodyScroll: true,
+  });
 
-  useEffect(() => {
-    if (!open) return;
-    returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    const dialog = dialogRef.current;
-    const focusable = dialog?.querySelector<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
-    (focusable ?? dialog)?.focus();
+  if (!mounted) return null;
 
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        onClose();
-        return;
-      }
-      if (event.key !== 'Tab' || !dialog) return;
-      const controls = Array.from(dialog.querySelectorAll<HTMLElement>('button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])'));
-      if (controls.length === 0) {
-        event.preventDefault();
-        dialog.focus();
-        return;
-      }
-      const first = controls[0];
-      const last = controls[controls.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    }
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = previousOverflow;
-      returnFocusRef.current?.focus();
-    };
-  }, [open, onClose]);
-
-  if (!open) return null;
+  const isOpen = phase === 'open';
+  const duration = phase === 'exiting' ? DURATION.fast : DURATION.base;
+  const ease = phase === 'exiting' ? EASE.exit : EASE.enter;
+  const transition = motionAllowed ? `opacity ${duration}ms ${ease}, transform ${duration}ms ${ease}` : 'none';
 
   return (
+    <OverlayPortal>
     <div
       role="presentation"
       className="fixed inset-0 flex items-center justify-center"
+      aria-hidden={phase === 'exiting' ? true : undefined}
       style={{
         background: 'var(--ua-backdrop)',
-        backdropFilter: 'blur(4px)',
         zIndex: 'var(--ua-z-modal)' as unknown as number,
+        opacity: isOpen ? 1 : 0,
+        transition: motionAllowed ? `opacity ${duration}ms ${ease}` : 'none',
+        pointerEvents: phase === 'exiting' ? 'none' : undefined,
       }}
       onClick={closeOnBackdrop ? onClose : undefined}
     >
       <div
-        ref={dialogRef}
+        ref={containerRef as React.RefObject<HTMLDivElement>}
         role="dialog"
         aria-modal="true"
         tabIndex={-1}
         aria-label={ariaLabel ?? title ?? 'Modal'}
         className={cn('ua-card rounded-[var(--ua-radius-overlay)] overflow-hidden flex flex-col max-h-[90vh]', className)}
         style={{
-          background: 'var(--ua-surface-primary)',
+          background: 'var(--ua-surface-overlay)',
           border: '1px solid var(--ua-border-default)',
           boxShadow: 'var(--ua-shadow-overlay)',
           width: MODAL_WIDTHS[size],
           maxWidth: 'calc(100vw - 32px)',
+          opacity: isOpen ? 1 : 0,
+          transform: isOpen ? 'translateY(0) scale(1)' : 'translateY(6px) scale(0.99)',
+          transition,
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -178,6 +157,7 @@ export function Modal({
         )}
       </div>
     </div>
+    </OverlayPortal>
   );
 }
 

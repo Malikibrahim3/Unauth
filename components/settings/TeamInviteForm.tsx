@@ -1,6 +1,7 @@
 'use client';
 
 import { MailPlus } from 'lucide-react';
+import { Select } from '@/components/ui';
 import type { FormEvent } from 'react';
 import { INVITE_ROLES, type TeamRole } from '@/components/settings/teamManagementTypes';
 
@@ -33,7 +34,7 @@ export function TeamInviteForm({
     >
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>Invite teammate</h2>
+          <h2 className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>Invite teammate</h2>
           <p className="mt-1 text-[length:var(--ua-text-metadata-size)]" style={{ color: 'var(--ua-text-secondary)' }}>
             Invite up to 50 teammates per hour with a magic-link email.
           </p>
@@ -43,7 +44,7 @@ export function TeamInviteForm({
 
       <div className="grid gap-3 md:grid-cols-[1fr_180px_auto]">
         <label className="space-y-1">
-          <span className="block text-xs font-semibold" style={{ color: 'var(--ua-text-primary)' }}>Email</span>
+          <span className="ua-text-label block" style={{ color: 'var(--ua-text-primary)' }}>Email</span>
           <input
             type="email"
             value={email}
@@ -57,24 +58,22 @@ export function TeamInviteForm({
         </label>
 
         <label className="space-y-1">
-          <span className="block text-xs font-semibold" style={{ color: 'var(--ua-text-primary)' }}>Role</span>
-          <select
+          <span className="ua-text-label block" style={{ color: 'var(--ua-text-primary)' }}>Role</span>
+          <Select
             value={role}
             onChange={(event) => onRoleChange(event.target.value as Exclude<TeamRole, 'owner'>)}
             disabled={!canManageTeam || submitting}
-            className="h-8 w-full rounded-[var(--ua-radius-control)] px-3 text-[length:var(--ua-text-caption-size)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 disabled:opacity-50"
-            style={{ background: 'var(--ua-surface-secondary)', border: '1px solid var(--ua-border-default)', color: 'var(--ua-text-primary)', outlineColor: 'var(--ua-action-primary)' }}
           >
             {INVITE_ROLES.map((option) => (
               <option key={option.value} value={option.value}>{option.label}</option>
             ))}
-          </select>
+          </Select>
         </label>
 
         <button
           type="submit"
           disabled={!canManageTeam || submitting}
-          className="inline-flex h-8 items-center justify-center gap-2 self-end rounded-[var(--ua-radius-control)] px-3 text-[length:var(--ua-text-metadata-size)] font-semibold transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="ua-text-working-title inline-flex h-8 items-center justify-center gap-2 self-end rounded-[var(--ua-radius-control)] px-3 transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)' }}
         >
           <MailPlus className="h-4 w-4" />
@@ -83,7 +82,7 @@ export function TeamInviteForm({
       </div>
 
       {!canManageTeam ? (
-        <p className="text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
+        <p className="ua-text-caption-role" style={{ color: 'var(--ua-text-secondary)' }}>
           Your {currentUserRole ?? 'current'} role can view the team but cannot invite users or change roles.
         </p>
       ) : null}

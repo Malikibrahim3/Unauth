@@ -1,14 +1,14 @@
 .pageHeader {
   width: 100%;
-  max-width: 1500px;
+  max-width: 1600px;
   margin-inline: auto;
-  padding: var(--ua-space-4) var(--ua-space-5) var(--ua-space-3);
+  padding: 26px var(--ua-space-8) 18px;
 }
 
 .headerTop {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: flex-start;
   justify-content: space-between;
   gap: var(--ua-space-3);
 }
@@ -18,11 +18,11 @@
 }
 
 /* Sentence case, no letter spacing — spec §3.2. */
-.eyebrow {
-  margin: 0 0 4px;
-  color: var(--ua-text-tertiary);
+.contextLabel {
+  margin: 0 0 6px;
+  color: var(--ua-text-secondary);
   font-size: var(--ua-text-metadata-size);
-  font-weight: var(--ua-text-metadata-weight);
+  font-weight: 500;
   letter-spacing: var(--ua-text-metadata-tracking);
   line-height: var(--ua-text-metadata-leading);
 }
@@ -31,18 +31,18 @@
   margin: 0;
   color: var(--ua-text-primary);
   font-family: var(--ua-font-sans);
-  font-size: 18px;
-  font-weight: 600;
-  letter-spacing: 0;
-  line-height: 24px;
+  font-size: var(--ua-text-page-title-size);
+  font-weight: var(--ua-text-page-title-weight);
+  letter-spacing: var(--ua-text-page-title-tracking);
+  line-height: var(--ua-text-page-title-leading);
 }
 
 .subtitle {
-  max-width: 760px;
-  margin: 4px 0 0;
+  max-width: 68ch;
+  margin: 8px 0 0;
   color: var(--ua-text-secondary);
-  font-size: 12px;
-  line-height: 16px;
+  font-size: var(--ua-text-dense-size);
+  line-height: var(--ua-text-body-leading);
 }
 
 .actions {
@@ -61,8 +61,8 @@
   gap: 5px;
   margin: 0 0 var(--ua-space-1-5);
   color: var(--ua-text-tertiary);
-  font-size: 11px;
-  line-height: 14px;
+  font-size: var(--ua-text-metadata-size);
+  line-height: var(--ua-text-metadata-leading);
 }
 
 .breadcrumbs a:hover {
@@ -93,30 +93,35 @@
 
 .pageBody {
   width: 100%;
-  max-width: 1500px;
+  max-width: 1600px;
   margin-inline: auto;
-  padding: 0 20px 28px;
+  padding: 0 var(--ua-space-8) 52px;
 }
 
 .workbenchStack {
   display: grid;
-  gap: var(--ua-space-3);
+  gap: 20px;
+  min-width: 0;
+}
+
+.workbenchStack > * {
+  min-width: 0;
 }
 
 .kpiStrip {
   display: grid;
-  overflow: hidden;
-  border: 1px solid var(--ua-border-default);
-  border-radius: var(--ua-radius-surface);
-  background: var(--ua-surface-primary);
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   box-shadow: none;
 }
 
 .kpiItem {
   position: relative;
   min-width: 0;
-  min-height: 82px;
-  padding: 13px 15px 12px;
+  min-height: 88px;
+  padding: 8px 20px 10px;
   border-right: 1px solid var(--ua-border-subtle);
   background: var(--ua-surface-primary);
 }
@@ -128,8 +133,8 @@
 .kpiLabel {
   overflow: hidden;
   margin: 0;
-  color: var(--ua-text-tertiary);
-  font-size: 11px;
+  color: var(--ua-text-secondary);
+  font-size: var(--ua-text-metadata-size);
   font-weight: 500;
   line-height: 14px;
   text-overflow: ellipsis;
@@ -138,12 +143,12 @@
 
 .kpiValue {
   overflow: hidden;
-  margin: 8px 0 0;
+  margin: 9px 0 0;
   color: var(--ua-text-primary);
-  font-size: 22px;
-  font-weight: 500;
-  letter-spacing: 0;
-  line-height: 26px;
+  font-size: var(--ua-text-kpi-size);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: var(--ua-text-kpi-leading);
   text-overflow: ellipsis;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
@@ -153,8 +158,8 @@
   overflow: hidden;
   margin: 5px 0 0;
   color: var(--ua-text-tertiary);
-  font-size: 11px;
-  line-height: 14px;
+  font-size: var(--ua-text-metadata-size);
+  line-height: var(--ua-text-metadata-leading);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -164,11 +169,11 @@
   grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 9px;
-  min-height: 48px;
-  padding: 8px 10px;
-  border: 1px solid var(--ua-border-default);
-  border-radius: var(--ua-radius-surface);
-  background: var(--ua-surface-primary);
+  min-height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   box-shadow: none;
 }
 
@@ -183,45 +188,41 @@
   overflow-x: auto;
 }
 
+/* §7.1 — the canonical panel anatomy lives in `.ua-working-surface` /
+ * `__header` (styles/authenticated/surfaces.css); this composes it rather
+ * than redeclaring the border/shadow/inset numbers a second time. */
 .panel {
-  overflow: hidden;
-  border: 1px solid var(--ua-border-default);
-  border-radius: var(--ua-radius-surface);
-  background: var(--ua-surface-primary);
-  box-shadow: none;
+  composes: ua-working-surface from global;
 }
 
 .panelHeader {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--ua-space-3);
-  padding: var(--ua-space-3) var(--ua-space-4);
-  border-bottom: 1px solid var(--ua-border-subtle);
-  background: var(--ua-surface-primary);
+  composes: ua-working-surface__header from global;
 }
 
 .panelTitle {
   margin: 0;
   color: var(--ua-text-primary);
-  font-size: 13px;
+  font-size: var(--ua-text-section-title-size);
   font-weight: 600;
   letter-spacing: 0;
 }
 
 .panelDescription {
-  margin: 3px 0 0;
-  color: var(--ua-text-tertiary);
-  font-size: 12px;
-  line-height: 16px;
+  margin: 5px 0 0;
+  color: var(--ua-text-secondary);
+  font-size: var(--ua-text-caption-size);
+  line-height: var(--ua-text-body-leading);
 }
 
 .panelBody {
-  min-width: 0;
+  composes: ua-working-surface__body from global;
 }
 
 .mainPanel {
+  min-width: 0;
+}
+
+.openMain {
   min-width: 0;
 }
 
@@ -230,21 +231,20 @@
 }
 
 /*
- * The supporting rail is secondary (§5.1). Below the wide-workspace breakpoint
- * (§11.1, 1600px+) it stacks under the primary surface instead of taking 310px
- * from it — at 1440 that left a dense table only ~846px and forced a horizontal
- * scroll through its own action column.
+ * The supporting rail is secondary (§5.1). Below the 1280px wide-workspace
+ * breakpoint it stacks under the primary surface instead of taking width from
+ * the main work area.
  */
 .workbenchGrid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 14px;
+  gap: 24px;
   align-items: start;
 }
 
-@media (min-width: 1600px) {
+@media (min-width: 1440px) {
   .workbenchGrid {
-    grid-template-columns: minmax(0, 1fr) 310px;
+    grid-template-columns: minmax(0, 1fr) 288px;
   }
 }
 
@@ -252,128 +252,94 @@
   min-width: 0;
 }
 
+@media (max-width: 1439px) {
+  .rail {
+    order: -1;
+  }
+}
+
 .footer {
   margin-top: 12px;
   padding: 0 2px;
 }
 
-.settingsGrid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 230px;
-  gap: 14px;
-  align-items: start;
-}
-
-.settingsMain {
-  min-width: 0;
-}
-
 .detailStack {
   display: grid;
-  gap: 12px;
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--ua-border-subtle);
+  border-radius: 12px;
+  background: var(--ua-surface-primary);
 }
 
 .detailSection,
 .detailStack > section {
   overflow: hidden;
-  padding: 14px;
-  border: 1px solid var(--ua-border-default);
-  border-radius: var(--ua-radius-surface);
-  background: var(--ua-surface-primary);
+  padding: 24px;
+  border: 0;
+  border-top: 1px solid var(--ua-border-subtle);
+  border-radius: 0;
+  background: transparent;
   box-shadow: none;
+}
+
+.detailStack > section:first-child {
+  border-top: 0;
 }
 
 .detailSplit {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid var(--ua-border-subtle);
+  border-radius: 12px;
+  background: var(--ua-border-subtle);
 }
 
 .detailSplit > section {
   overflow: hidden;
-  padding: 14px;
-  border: 1px solid var(--ua-border-default);
-  border-radius: var(--ua-radius-surface);
+  padding: var(--ua-space-5);
+  border: 0;
+  border-radius: 0;
   background: var(--ua-surface-primary);
-  box-shadow: none;
-}
-
-.guidanceStack {
-  display: grid;
-  gap: 10px;
-}
-
-.guidanceCard {
-  padding: 14px;
-  border: 1px solid var(--ua-border-default);
-  border-radius: var(--ua-radius-surface);
-  background: var(--ua-surface-primary);
-  box-shadow: none;
-}
-
-.guidanceIcon {
-  display: inline-flex;
-  width: 30px;
-  height: 30px;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--ua-border-default);
-  border-radius: var(--ua-radius-surface);
-  background: var(--ua-surface-muted);
-  color: var(--ua-text-secondary);
-}
-
-.guidanceCard h2 {
-  margin-top: 10px;
-  color: var(--ua-text-primary);
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.guidanceCard p {
-  margin-top: 4px;
-  color: var(--ua-text-secondary);
-  font-size: 13px;
-  line-height: 18px;
-}
-
-.guidanceLink {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  min-height: 32px;
-  padding: 0 9px;
-  border: 1px solid var(--ua-border-default);
-  border-radius: var(--ua-radius-surface);
-  background: var(--ua-surface-primary);
-  color: var(--ua-text-secondary);
-  font-size: 12px;
-  line-height: 16px;
-  font-weight: 600;
   box-shadow: none;
 }
 
 @media (max-width: 1023px) {
-  .settingsGrid {
-    grid-template-columns: 1fr;
+  .pageHeader {
+    padding: var(--ua-space-5) var(--ua-space-5) var(--ua-space-4);
+  }
+
+  .pageBody {
+    padding: 0 var(--ua-space-5) var(--ua-space-8);
+  }
+
+  .workbenchStack {
+    gap: var(--ua-space-4);
   }
 
   .detailSplit {
     grid-template-columns: 1fr;
   }
-
-  .guidanceStack {
-    display: none;
-  }
 }
 
 @media (max-width: 767px) {
   .pageHeader {
-    padding: 16px 14px 12px;
+    padding: var(--ua-space-4) var(--ua-space-4) var(--ua-space-3);
   }
 
   .pageBody {
-    padding: 0 12px 22px;
+    padding: 0 var(--ua-space-4) var(--ua-space-6);
+  }
+
+  .headerTop {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .toolbar {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .actions {
@@ -381,25 +347,21 @@
     justify-content: flex-start;
   }
 
-  .kpiStrip {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  .detailSection,
+  .detailStack > section {
+    padding: var(--ua-space-4);
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .pageHeader {
+    padding-right: var(--ua-space-5);
+    padding-left: var(--ua-space-5);
   }
 
-  .kpiItem {
-    min-height: 78px;
-    border-right: 1px solid var(--ua-border-subtle);
-    border-bottom: 1px solid var(--ua-border-subtle);
-  }
-
-  .kpiItem:nth-child(2n) {
-    border-right: 0;
-  }
-
-  .kpiItem:nth-last-child(-n + 2) {
-    border-bottom: 0;
-  }
-
-  .toolbar {
-    grid-template-columns: 1fr;
+  .pageBody {
+    padding-right: var(--ua-space-5);
+    padding-bottom: var(--ua-space-8);
+    padding-left: var(--ua-space-5);
   }
 }

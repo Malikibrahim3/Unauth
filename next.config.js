@@ -29,6 +29,10 @@ const remotePatterns = supabaseHostname
   : [];
 
 const nextConfig = {
+  // Phase 28 runs production and development-harness proof servers together.
+  // A distinct dev dist dir prevents the development compiler from mutating
+  // the production build while both are under capture.
+  distDir: process.env.NEXT_DIST_DIR ?? '.next',
   serverExternalPackages: ['papaparse'],
   devIndicators: false,
   allowedDevOrigins: ['127.0.0.1'],

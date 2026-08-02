@@ -39,6 +39,7 @@ import { useAdjustStateWhenPropChanges } from '@/lib/react/adjustStateWhenPropCh
 import { useFetchJson } from '@/lib/react/useFetchJson';
 import type { PublicSupportCaseContext } from '@/lib/support/intake/supportCaseReadModel';
 import { parseMajorUnitInput } from '@/lib/ui/merchantCopy';
+import { formatConfidencePercent } from '@/lib/utils/format';
 
 type CustomerPayload = {
   profile?: Record<string, unknown>;
@@ -53,6 +54,8 @@ type ClaimsPayload = {
 };
 
 type SupportPayload = { support_cases?: PublicSupportCaseContext[] };
+
+const REQUIRED_EVIDENCE_TIMEOUT_MS = 8_000;
 
 function requestKey(scope: string): string {
   const random = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -180,10 +183,12 @@ export function useClaimReviewWorkbench(
   const [decisionError, setDecisionError] = useState<string | null>(null);
   const [decisionData, setDecisionData] = useState<Record<string, unknown> | null>(null);
   const [decisionStale, setDecisionStale] = useState(false);
+  const decisionDataRef = useRef<Record<string, unknown> | null>(null);
   const decisionDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const reloadDecision = useCallback(async (targetClaimId: string | null, mode: 'read' | 'refresh' = 'read') => {
     if (!targetClaimId) {
+      decisionDataRef.current = null;
       setDecisionData(null);
       setDecisionError(null);
       setDecisionLoading(false);
@@ -192,15 +197,30 @@ export function useClaimReviewWorkbench(
     }
     setDecisionLoading(true);
     setDecisionError(null);
-    const result = await fetchClaimDecision(targetClaimId, mode);
+    let timeout: ReturnType<typeof setTimeout> | null = null;
+    const result = await Promise.race([
+      fetchClaimDecision(targetClaimId, mode),
+      new Promise<Awaited<ReturnType<typeof fetchClaimDecision>>>((resolve) => {
+        timeout = setTimeout(() => {
+          resolve({
+            ok: false,
+            message: 'Required evidence took too long to load. Retry when the source is available.',
+            data: null,
+          });
+        }, REQUIRED_EVIDENCE_TIMEOUT_MS);
+      }),
+    ]);
+    if (timeout) clearTimeout(timeout);
     setDecisionLoading(false);
     if (!result.ok) {
       setDecisionError(result.message);
-      setDecisionData(null);
-      setDecisionStale(false);
+      // Preserve a last-known-good result during refresh failure. The explicit
+      // degraded state names it as stale; an initial failure still has no data.
+      setDecisionStale(Boolean(decisionDataRef.current));
       return;
     }
-    setDecisionData(result.data as Record<string, unknown>);
+    decisionDataRef.current = result.data as Record<string, unknown>;
+    setDecisionData(decisionDataRef.current);
     setDecisionStale(false);
   }, []);
 
@@ -230,6 +250,7 @@ export function useClaimReviewWorkbench(
   }, []);
 
   useEffect(() => {
+    decisionDataRef.current = null;
     setDecisionData(null);
     setDecisionError(null);
     setDecisionStale(false);
@@ -250,18 +271,9 @@ export function useClaimReviewWorkbench(
     : null;
   const { data: supportPayload } = useFetchJson<SupportPayload>(supportUrl);
 
-  /*
-   * RUN-13: the reconciliation card only mounts once the claims list has
-   * resolved, which put `/matches` at the end of the chain. The shared resource
-   * store is keyed by URL, so starting the same request here means the card
-   * reads an already-populated entry instead of issuing a late one. Same
-   * endpoint, same production path — just no longer last in line.
-   */
-  useFetchJson<unknown>(
-    caseScopedClaimId ? `/api/claims/${encodeURIComponent(caseScopedClaimId)}/matches` : null,
-  );
-  // Same reasoning for the investigations card, which was the last request in
-  // the chain and therefore set the route-ready time on case detail.
+  // The investigations card remains eagerly started because it is a separate
+  // required source. The dominant reconciliation surface owns `/matches`
+  // directly so it can enforce the explicit timeout/retry contract.
   useFetchJson<unknown>(
     caseScopedClaimId ? `/api/claims/${encodeURIComponent(caseScopedClaimId)}/investigations` : null,
   );
@@ -343,7 +355,7 @@ export function useClaimReviewWorkbench(
       detail: (row.entityValue as string | undefined) ?? 'Identity variant observed',
       reason: Array.isArray(row.matchReasons) ? row.matchReasons.join(', ').replace(/_/g, ' ') : 'Matching data point',
       date: (row.updated_at as string | undefined) ?? (row.created_at as string | undefined) ?? null,
-      grade: row.confidence != null ? `${Math.round(Number(row.confidence) * 100)}%` : 'Context',
+      grade: row.confidence != null ? formatConfidencePercent(Number(row.confidence)) : 'Context',
       key: `${row.entityType ?? 'signal'}-${i}`,
     }));
   }, [data?.linkedAccounts]);

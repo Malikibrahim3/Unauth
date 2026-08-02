@@ -4,7 +4,7 @@
 - **Date:** 27 July 2026
 - **Scope:** Supplied R1 logo pack, first-party web surfaces, public metadata, PWA assets, marketing artifacts, browser/helpdesk extensions, generated reports, and legacy brand cleanup
 - **Canonical source directory:** [`../public/brand/unauth-r1/`](../public/brand/unauth-r1/)
-- **Related product visual contract:** [`IMPL_quiet_precision_product_ui.md`](IMPL_quiet_precision_product_ui.md)
+- **Related product visual contract:** [`IMPL_living_precision_product_ui.md`](IMPL_living_precision_product_ui.md)
 - **Related contributor rules:** [`../styles/authenticated/README.md`](../styles/authenticated/README.md)
 
 This document records the complete inspection of the supplied R1 logo pack, the implementation decisions, and the resulting placement map across the repository. It distinguishes brand identity from ordinary product copy: the word “Unauth” remains text in sentences, labels, titles, legal copy, and action text. Logo artwork belongs only in brand, signature, application-icon, and document-identity positions.

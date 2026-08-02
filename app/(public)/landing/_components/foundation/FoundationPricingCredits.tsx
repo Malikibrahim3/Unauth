@@ -12,7 +12,7 @@ export default function FoundationPricingCredits() {
       <div className="relative z-10 mx-auto w-full max-w-[100rem] px-5 pb-24 sm:px-10 lg:pb-32">
         <Reveal delay={60}>
           <div className="border-t border-[var(--fl-line)] pt-12">
-            <p className={`${styles.landingSectionEyebrow} mb-8`}>{credits.heading}</p>
+            <h2 className={`${styles.landingSubsectionTitle} mb-8`}>{credits.heading}</h2>
 
             <ol className="grid grid-cols-1 gap-x-10 gap-y-8 sm:grid-cols-3">
               {credits.rows.map(([type, amount]) => (

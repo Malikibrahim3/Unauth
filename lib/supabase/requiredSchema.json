@@ -44,6 +44,16 @@
       ]
     },
     {
+      "table": "merchants",
+      "requiredBy": "RUN-02 \u2014 investigation response settings and deadline calculation",
+      "columns": [
+        "id",
+        "investigation_response_sla_hours",
+        "investigation_reply_to",
+        "investigation_email_enabled"
+      ]
+    },
+    {
       "table": "partners",
       "requiredBy": "RUN-02 \u2014 investigation partner resolution",
       "columns": [
@@ -51,7 +61,19 @@
         "merchant_id",
         "name",
         "partner_type",
+        "default_contact_channel",
+        "response_sla_hours",
+        "contact_instructions",
         "status"
+      ]
+    },
+    {
+      "table": "recovery_cases",
+      "requiredBy": "RUN-08 \u2014 recovery source freshness",
+      "columns": [
+        "id",
+        "merchant_id",
+        "last_source_event_at"
       ]
     },
     {

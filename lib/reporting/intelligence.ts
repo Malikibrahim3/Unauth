@@ -2,6 +2,11 @@ import { TABLES } from '@/lib/supabase/tables';
 import { normaliseCurrencyOrNull } from '@/lib/canonical/money';
 import { label } from '@/lib/ui/labels';
 import { now, nowMs } from '@/lib/time/clock';
+import {
+  ACTIVE_CANONICAL_CLAIM_STATUSES,
+  normalizeLegacyClaimStatus,
+} from '@/lib/claims/statusMachine';
+import { getClaimSlaState } from '@/lib/claims/sla';
 
 export const REPORT_RANGES = ['7d', '30d', '90d', 'all'] as const;
 export type ReportRange = (typeof REPORT_RANGES)[number];
@@ -39,7 +44,15 @@ export type MoneyBridge = {
   caseIdsByState?:Partial<Record<FinancialReportMetric,string[]>>;
 };
 export type RankedRow = { key:string; label:string; count:number; amountMinor:number; currency:string; href:string; recordIds:string[] };
-export type CoverageRow = { objectType:string; records:number; freshRecords:number; staleRecords:number; latestAt:string|null; href:string };
+export type CoverageRow = {
+  objectType:string;
+  scope:'connected-source'|'internal';
+  records:number;
+  freshRecords:number;
+  staleRecords:number;
+  latestAt:string|null;
+  href:string;
+};
 export type ReportTrendPoint = {
   date:string;
   exposureMinor:number;
@@ -49,7 +62,45 @@ export type ReportTrendPoint = {
   currency:string;
   knownStates:string[];
 };
-export type IntelligenceReport = { range:ReportRange; timezone:string; generatedAt:string; bridges:MoneyBridge[]; trend:ReportTrendPoint[]; causes:RankedRow[]; operations:Array<{key:string;label:string;count:number;href:string}>; recoveries:RankedRow[]; coverage:CoverageRow[]; reconciliation:{ok:boolean;issues:string[]}; recordCount:number };
+export type DashboardOperationExposure = {
+  currency:string;
+  knownMinor:number;
+  knownCaseCount:number;
+  unvaluedCaseCount:number;
+};
+export type DashboardOperationRow = {
+  key:string;
+  label:string;
+  count:number;
+  activeCount:number;
+  snoozedCount:number;
+  href:string;
+  overdueCount:number;
+  approachingCount:number;
+  readyCount:number;
+  oldestOpenedAt:string|null;
+  exposureByCurrency:DashboardOperationExposure[];
+};
+export type FinancialConfidence = {
+  state:'complete'|'qualified'|'unavailable';
+  issueCount:number;
+  affectedCurrencies:string[];
+  affectedMetrics:FinancialReportMetric[];
+  excludedRecordCount:number;
+};
+export type IntelligenceReport = {
+  range:ReportRange;
+  timezone:string;
+  generatedAt:string;
+  bridges:MoneyBridge[];
+  trend:ReportTrendPoint[];
+  causes:RankedRow[];
+  operations:DashboardOperationRow[];
+  recoveries:RankedRow[];
+  coverage:CoverageRow[];
+  reconciliation:{ok:boolean;issues:string[];confidence:FinancialConfidence};
+  recordCount:number;
+};
 export type DashboardPeriodComparison = {
   range: Exclude<ReportRange, 'all'>;
   startAt: string;
@@ -107,6 +158,8 @@ export function isFinancialReportMetric(value:string):value is FinancialReportMe
 export type FinancialTruthResult = {
   rows: Array<Record<string, unknown>>;
   issues: string[];
+  affectedMetrics: FinancialReportMetric[];
+  excludedRecordCount: number;
 };
 
 /**
@@ -149,7 +202,19 @@ export function enforceFinancialTruth(
   if (invalidRecovered) {
     issues.push(`${invalidRecovered} record${invalidRecovered === 1 ? '' : 's'} have recovered cash without a valid eligible-recovery bound; recovered cash is unavailable for those records`);
   }
-  return { rows: safeRows, issues };
+  const affectedMetrics = new Set<FinancialReportMetric>();
+  if (invalidEligible) {
+    affectedMetrics.add('recoverable');
+    affectedMetrics.add('outstanding');
+    affectedMetrics.add('recovered');
+  }
+  if (invalidRecovered) affectedMetrics.add('recovered');
+  return {
+    rows: safeRows,
+    issues,
+    affectedMetrics: [...affectedMetrics],
+    excludedRecordCount: invalidEligible + invalidRecovered,
+  };
 }
 
 export function financialMetricIsKnown(bridge:MoneyBridge, metric:FinancialReportMetric):boolean {
@@ -442,19 +507,44 @@ function addRank(
 }
 
 /** Canonical reporting projection. Money never crosses currency boundaries. */
-export async function loadIntelligenceReport(client:Client,merchantId:string,range:ReportRange,timezone='UTC',options:{asOf?:Date}={}):Promise<IntelligenceReport>{
+export async function loadIntelligenceReport(
+  client:Client,
+  merchantId:string,
+  range:ReportRange,
+  timezone='UTC',
+  options:{asOf?:Date}={},
+):Promise<IntelligenceReport>{
   const asOf=options.asOf??now();
   const normalizedTimezone=normalizeReportTimezone(timezone);
   const cutoff=reportCutoff(range,asOf);
-  let casesQuery=client.from(TABLES.MERCHANT_CLAIMS).select('id,status,claim_type,reason_normalized,loss_attribution,currency,submitted_at,created_at,updated_at').eq('merchant_id',merchantId).order('updated_at',{ascending:false}).limit(10000);
+  let casesQuery=client
+    .from(TABLES.MERCHANT_CLAIMS)
+    .select('id,status,claim_type,reason_normalized,loss_attribution,currency,submitted_at,created_at,updated_at,snoozed_until')
+    .eq('merchant_id',merchantId)
+    .order('updated_at',{ascending:false})
+    .limit(10000);
   if(cutoff)casesQuery=casesQuery.gte('submitted_at',cutoff);
-  const {data:caseData}=await casesQuery; const cases=(caseData??[]) as Array<Record<string,any>>; const caseIds=cases.map(c=>c.id);
-  const {data:financialData}=caseIds.length?await client.from(TABLES.CASE_FINANCIAL_SUMMARIES).select('support_payout_case_id,currency,requested_minor,exposed_minor,approved_minor,paid_minor,estimated_loss_minor,prevented_minor,confirmed_loss_minor,recoverable_minor,recovered_minor,written_off_minor,updated_at').eq('merchant_id',merchantId).in('support_payout_case_id',caseIds):{data:[]};
-  const attachedFinancial=await attachKnownFinancialStates(client,merchantId,(financialData??[]) as Array<Record<string,any>>);
+  const {data:caseData}=await casesQuery;
+  const cases=(caseData??[]) as Array<Record<string,any>>;
+  const caseIds=cases.map(c=>c.id);
+  const {data:financialData}=caseIds.length
+    ?await client
+      .from(TABLES.CASE_FINANCIAL_SUMMARIES)
+      .select('support_payout_case_id,currency,requested_minor,exposed_minor,approved_minor,paid_minor,estimated_loss_minor,prevented_minor,confirmed_loss_minor,recoverable_minor,recovered_minor,written_off_minor,updated_at')
+      .eq('merchant_id',merchantId)
+      .in('support_payout_case_id',caseIds)
+    :{data:[]};
+  const attachedFinancial=await attachKnownFinancialStates(
+    client,
+    merchantId,
+    (financialData??[]) as Array<Record<string,any>>,
+  );
   const financialTruth=enforceFinancialTruth(attachedFinancial);
   const financial=financialTruth.rows;
   const bridges=aggregateMoneyBridges(financial);
-  const financialByCase=new Map(financial.map(r=>[r.support_payout_case_id,r])); const causesMap=new Map<string,RankedRow>();
+  const financialByCase=new Map(financial.map(r=>[r.support_payout_case_id,r]));
+  const causesMap=new Map<string,RankedRow>();
+
   for(const c of cases){
     const f=financialByCase.get(c.id);
     const knownStates=Array.isArray(f?.known_states)?f.known_states.map(String):[];
@@ -462,29 +552,233 @@ export async function loadIntelligenceReport(client:Client,merchantId:string,ran
     if(!f||!currency||!knownStates.includes('confirmed_loss'))continue;
     const key=lossCategoryFor(c.reason_normalized??c.claim_type);
     addRank(
-      causesMap,key,label('lossCategory',key),Number(f.confirmed_loss_minor||0),currency,
-      financialReportRecordsHref({range,currency,metric:'confirmed_loss',category:key,timezone:normalizedTimezone}),String(c.id),
+      causesMap,
+      key,
+      label('lossCategory',key),
+      Number(f.confirmed_loss_minor||0),
+      currency,
+      financialReportRecordsHref({
+        range,
+        currency,
+        metric:'confirmed_loss',
+        category:key,
+        timezone:normalizedTimezone,
+      }),
+      String(c.id),
     );
   }
+
   const trend=buildReportTrend(
     cases as Array<{id:string;submitted_at?:string|null;created_at?:string|null;updated_at?:string|null}>,
     financial as Array<{support_payout_case_id:string;currency?:string|null;exposed_minor?:number|null;recovered_minor?:number|null;prevented_minor?:number|null;confirmed_loss_minor?:number|null;known_states?:string[]|null}>,
     normalizedTimezone,
   );
-  const statuses=new Map<string,number>();for(const c of cases)statuses.set(c.status,(statuses.get(c.status)??0)+1);
-    /*
+
+  type MutableOperation = Omit<DashboardOperationRow,'exposureByCurrency'> & {
+    exposureByCurrency:Map<string,{knownMinor:number;knownCaseCount:number}>;
+  };
+  const activeStatuses=new Set<string>(ACTIVE_CANONICAL_CLAIM_STATUSES);
+  const operationsMap=new Map<string,MutableOperation>();
+  for(const payoutCase of cases){
+    const rawStatus=String(payoutCase.status||'unknown');
+    const normalizedStatus=normalizeLegacyClaimStatus(rawStatus);
+    const key=normalizedStatus??rawStatus;
+    const operation=operationsMap.get(key)??{
+      key,
+      label:label('caseStatus',key),
+      count:0,
+      activeCount:0,
+      snoozedCount:0,
+      href:`/reports/records?kind=case&dimension=status&value=${encodeURIComponent(key)}&range=${range}&timezone=${encodeURIComponent(normalizedTimezone)}`,
+      overdueCount:0,
+      approachingCount:0,
+      readyCount:0,
+      oldestOpenedAt:null,
+      exposureByCurrency:new Map(),
+    };
+    operation.count+=1;
+    const snoozedUntil=typeof payoutCase.snoozed_until==='string'
+      ?Date.parse(payoutCase.snoozed_until)
+      :Number.NaN;
+    const isSnoozed=Number.isFinite(snoozedUntil)&&snoozedUntil>asOf.getTime();
+    const isActive=normalizedStatus!=null&&activeStatuses.has(normalizedStatus);
+    if(isActive&&isSnoozed)operation.snoozedCount+=1;
+    if(isActive&&!isSnoozed){
+      operation.activeCount+=1;
+      const sla=getClaimSlaState(payoutCase,asOf);
+      if(sla.state==='overdue')operation.overdueCount+=1;
+      if(sla.state==='approaching')operation.approachingCount+=1;
+      if(normalizedStatus==='ready_for_decision'||normalizedStatus==='open'){
+        operation.readyCount+=1;
+      }
+      const openedAt=String(
+        payoutCase.submitted_at||payoutCase.created_at||payoutCase.updated_at||'',
+      );
+      if(
+        openedAt
+        &&!Number.isNaN(Date.parse(openedAt))
+        &&(!operation.oldestOpenedAt||Date.parse(openedAt)<Date.parse(operation.oldestOpenedAt))
+      ){
+        operation.oldestOpenedAt=openedAt;
+      }
+      const financialRow=financialByCase.get(payoutCase.id);
+      const financialCurrency=normaliseCurrencyOrNull(financialRow?.currency);
+      const financialStates=new Set(
+        Array.isArray(financialRow?.known_states)
+          ?financialRow.known_states.map(String)
+          :[],
+      );
+      if(financialCurrency&&financialStates.has('exposed')){
+        const exposure=operation.exposureByCurrency.get(financialCurrency)??{
+          knownMinor:0,
+          knownCaseCount:0,
+        };
+        exposure.knownMinor+=Number(financialRow?.exposed_minor||0);
+        exposure.knownCaseCount+=1;
+        operation.exposureByCurrency.set(financialCurrency,exposure);
+      }
+    }
+    operationsMap.set(key,operation);
+  }
+  const operations:DashboardOperationRow[]=[...operationsMap.values()]
+    .map(operation=>({
+      ...operation,
+      exposureByCurrency:[...operation.exposureByCurrency.entries()]
+        .map(([currency,value])=>({
+          currency,
+          ...value,
+          unvaluedCaseCount:Math.max(0,operation.activeCount-value.knownCaseCount),
+        }))
+        .sort((a,b)=>a.currency.localeCompare(b.currency)),
+    }))
+    .sort((a,b)=>b.activeCount-a.activeCount||b.count-a.count||a.key.localeCompare(b.key));
+
+  /*
    * recovery_cases stores a DECIMAL `amount_recovered`; there is no
-   * `amount_recovered_minor` column. Selecting it made PostgREST reject the whole
-   * query with 42703, so this ranked view silently returned nothing on every
-   * report rather than failing loudly. Convert to minor units here, where every
-   * other value in this module is already minor.
+   * `amount_recovered_minor` column. Convert to minor units at the reporting
+   * boundary, where every other financial value is already minor.
    */
-  const {data:recoveryData}=await client.from(TABLES.RECOVERY_CASES).select('id,status,recovery_type,currency,amount_recovered,updated_at').eq('merchant_id',merchantId).limit(10000);const recoveryMap=new Map<string,RankedRow>();
-  for(const r of (recoveryData??[]) as Array<Record<string,any>>){if(cutoff&&r.updated_at<cutoff)continue;const currency=normaliseCurrencyOrNull(r.currency);if(!currency)continue;const status=String(r.status||'unknown');addRank(recoveryMap,status,label('recoveryStatus',status),Math.round(Number(r.amount_recovered||0)*100),currency,`/reports/records?kind=recovery&dimension=status&value=${encodeURIComponent(status)}&range=${range}&currency=${currency}&timezone=${encodeURIComponent(normalizedTimezone)}`,String(r.id))}
-  const coverageSpecs=[[TABLES.SOURCE_ORDERS,'Orders','/orders'],[TABLES.SOURCE_TICKETS,'Tickets','/tickets'],[TABLES.SOURCE_SHIPMENTS,'Shipments','/shipments'],[TABLES.SOURCE_REFUNDS,'Refunds','/refunds'],[TABLES.SOURCE_RETURNS,'Returns','/returns'],[TABLES.MERCHANT_CLAIMS,'Cases','/claims']] as const;const staleBefore=new Date(nowMs()-48*3600000).toISOString();
-  const coverage:CoverageRow[]=await Promise.all(coverageSpecs.map(async([table,objectType,href])=>{const date=table===TABLES.SOURCE_REFUNDS?'ingested_at':'updated_at';const [all,fresh,latest]=await Promise.all([client.from(table).select('id',{count:'exact',head:true}).eq('merchant_id',merchantId),client.from(table).select('id',{count:'exact',head:true}).eq('merchant_id',merchantId).gte(date,staleBefore),client.from(table).select(`id,${date}`).eq('merchant_id',merchantId).order(date,{ascending:false}).limit(1)]);const records=all.count??0;const freshRecords=fresh.count??0;return{objectType,records,freshRecords,staleRecords:Math.max(0,records-freshRecords),latestAt:(latest.data as Array<Record<string,any>>|null)?.[0]?.[date]??null,href};}));
-  const issues:string[]=[...financialTruth.issues];const invalidCurrencyRows=attachedFinancial.filter(row=>!normaliseCurrencyOrNull(row.currency)).length;if(invalidCurrencyRows)issues.push(`${invalidCurrencyRows} financial record${invalidCurrencyRows===1?' has':'s have'} a missing or invalid currency and ${invalidCurrencyRows===1?'was':'were'} excluded`);for(const b of bridges){if(b.paidMinor>b.exposedMinor&&b.knownStates.includes('exposed')&&b.exposedMinor>0)issues.push(`${b.currency}: paid compensation exceeds recorded exposure`);if(b.recoveredMinor>b.recoverableMinor&&b.recoverableMinor>0)issues.push(`${b.currency}: recovered exceeds eligible recovery`);const trendExposure=trend.filter(point=>point.currency===b.currency).reduce((sum,point)=>sum+point.exposureMinor,0);const trendRecovered=trend.filter(point=>point.currency===b.currency).reduce((sum,point)=>sum+point.recoveredMinor,0);if(trendExposure!==b.exposedMinor||trendRecovered!==b.recoveredMinor)issues.push(`${b.currency}: chart totals do not reconcile with the financial value strip`)}
-  return{range,timezone:normalizedTimezone,generatedAt:asOf.toISOString(),bridges,trend,causes:[...causesMap.values()].sort((a,b)=>b.amountMinor-a.amountMinor||b.count-a.count),operations:[...statuses].map(([key,count])=>({key,label:label('caseStatus',key),count,href:`/reports/records?kind=case&dimension=status&value=${encodeURIComponent(key)}&range=${range}&timezone=${encodeURIComponent(normalizedTimezone)}`})).sort((a,b)=>b.count-a.count),recoveries:[...recoveryMap.values()].sort((a,b)=>b.amountMinor-a.amountMinor||b.count-a.count),coverage,reconciliation:{ok:issues.length===0,issues},recordCount:cases.length};
+  const {data:recoveryData}=await client
+    .from(TABLES.RECOVERY_CASES)
+    .select('id,status,recovery_type,currency,amount_recovered,updated_at')
+    .eq('merchant_id',merchantId)
+    .limit(10000);
+  const recoveryMap=new Map<string,RankedRow>();
+  for(const r of (recoveryData??[]) as Array<Record<string,any>>){
+    if(cutoff&&r.updated_at<cutoff)continue;
+    const currency=normaliseCurrencyOrNull(r.currency);
+    if(!currency)continue;
+    const status=String(r.status||'unknown');
+    addRank(
+      recoveryMap,
+      status,
+      label('recoveryStatus',status),
+      Math.round(Number(r.amount_recovered||0)*100),
+      currency,
+      `/reports/records?kind=recovery&dimension=status&value=${encodeURIComponent(status)}&range=${range}&currency=${currency}&timezone=${encodeURIComponent(normalizedTimezone)}`,
+      String(r.id),
+    );
+  }
+
+  const coverageSpecs=[
+    [TABLES.SOURCE_ORDERS,'Orders','/orders','connected-source'],
+    [TABLES.SOURCE_TICKETS,'Tickets','/tickets','connected-source'],
+    [TABLES.SOURCE_SHIPMENTS,'Shipments','/integrations','connected-source'],
+    [TABLES.SOURCE_REFUNDS,'Refunds','/refunds','connected-source'],
+    [TABLES.SOURCE_RETURNS,'Returns','/returns','connected-source'],
+    [TABLES.MERCHANT_CLAIMS,'Cases','/claims','internal'],
+  ] as const;
+  const staleBefore=new Date(nowMs()-48*3600000).toISOString();
+  const coverage:CoverageRow[]=await Promise.all(
+    coverageSpecs.map(async([table,objectType,href,scope])=>{
+      const date=table===TABLES.SOURCE_REFUNDS?'ingested_at':'updated_at';
+      const [all,fresh,latest]=await Promise.all([
+        client.from(table).select('id',{count:'exact',head:true}).eq('merchant_id',merchantId),
+        client.from(table).select('id',{count:'exact',head:true}).eq('merchant_id',merchantId).gte(date,staleBefore),
+        client.from(table).select(`id,${date}`).eq('merchant_id',merchantId).order(date,{ascending:false}).limit(1),
+      ]);
+      const records=all.count??0;
+      const freshRecords=fresh.count??0;
+      return{
+        objectType,
+        scope,
+        records,
+        freshRecords,
+        staleRecords:Math.max(0,records-freshRecords),
+        latestAt:(latest.data as Array<Record<string,any>>|null)?.[0]?.[date]??null,
+        href,
+      };
+    }),
+  );
+
+  const issues:string[]=[...financialTruth.issues];
+  const affectedCurrencies=new Set<string>();
+  const affectedMetrics=new Set<FinancialReportMetric>(financialTruth.affectedMetrics);
+  const invalidCurrencyRows=attachedFinancial.filter(
+    row=>!normaliseCurrencyOrNull(row.currency),
+  ).length;
+  if(invalidCurrencyRows){
+    issues.push(
+      `${invalidCurrencyRows} financial record${invalidCurrencyRows===1?' has':'s have'} a missing or invalid currency and ${invalidCurrencyRows===1?'was':'were'} excluded`,
+    );
+    for(const metric of FINANCIAL_REPORT_METRICS)affectedMetrics.add(metric);
+  }
+  for(const bridge of bridges){
+    if(
+      bridge.paidMinor>bridge.exposedMinor
+      &&bridge.knownStates.includes('exposed')
+      &&bridge.exposedMinor>0
+    ){
+      issues.push(`${bridge.currency}: paid compensation exceeds recorded exposure`);
+      affectedCurrencies.add(bridge.currency);
+      affectedMetrics.add('paid');
+      affectedMetrics.add('exposed');
+    }
+    if(bridge.recoveredMinor>bridge.recoverableMinor&&bridge.recoverableMinor>0){
+      issues.push(`${bridge.currency}: recovered exceeds eligible recovery`);
+      affectedCurrencies.add(bridge.currency);
+      affectedMetrics.add('recovered');
+      affectedMetrics.add('recoverable');
+    }
+    const trendExposure=trend
+      .filter(point=>point.currency===bridge.currency)
+      .reduce((sum,point)=>sum+point.exposureMinor,0);
+    const trendRecovered=trend
+      .filter(point=>point.currency===bridge.currency)
+      .reduce((sum,point)=>sum+point.recoveredMinor,0);
+    if(trendExposure!==bridge.exposedMinor||trendRecovered!==bridge.recoveredMinor){
+      issues.push(
+        `${bridge.currency}: chart totals do not reconcile with the financial value strip`,
+      );
+      affectedCurrencies.add(bridge.currency);
+      if(trendExposure!==bridge.exposedMinor)affectedMetrics.add('exposed');
+      if(trendRecovered!==bridge.recoveredMinor)affectedMetrics.add('recovered');
+    }
+  }
+  const confidence:FinancialConfidence={
+    state:bridges.length===0?'unavailable':issues.length>0?'qualified':'complete',
+    issueCount:issues.length,
+    affectedCurrencies:[...affectedCurrencies].sort(),
+    affectedMetrics:[...affectedMetrics].sort(),
+    excludedRecordCount:financialTruth.excludedRecordCount+invalidCurrencyRows,
+  };
+  return{
+    range,
+    timezone:normalizedTimezone,
+    generatedAt:asOf.toISOString(),
+    bridges,
+    trend,
+    causes:[...causesMap.values()].sort(
+      (a,b)=>b.amountMinor-a.amountMinor||b.count-a.count,
+    ),
+    operations,
+    recoveries:[...recoveryMap.values()].sort(
+      (a,b)=>b.amountMinor-a.amountMinor||b.count-a.count,
+    ),
+    coverage,
+    reconciliation:{ok:issues.length===0,issues,confidence},
+    recordCount:cases.length,
+  };
 }
 
 export const REPORT_DEFINITIONS=[

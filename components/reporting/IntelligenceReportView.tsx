@@ -16,13 +16,10 @@ import { financialStageDefinition, financialStageLabel } from "@/lib/ui/labels";
 import { TIME_RANGE_LABELS } from "@/lib/ui/merchantCopy";
 import { DashboardCharts } from "@/components/reporting/DashboardCharts";
 import { RankedContributionChart } from "@/components/charts/authenticated/RankedContributionChart";
-import { MetricGroup } from "@/components/ui/MetricGroup";
-import { SparkTrend } from "@/components/charts/authenticated/micro/SparkTrend";
-import {
-  activeWorkflowOperations,
-  buildDashboardChartBuckets,
-  type DashboardMetricKey,
-} from "@/components/dashboard/dashboardModel";
+import { FinancialEquation } from "@/components/ui/FinancialEquation";
+import { Disclosure, IconButton, Tooltip } from "@/components/ui";
+import { Info } from "lucide-react";
+import { activeWorkflowOperations } from "@/components/dashboard/dashboardModel";
 
 function money(minor: number, currency: string) {
   return formatMinorCurrencyNullable(minor, currency);
@@ -77,7 +74,7 @@ function StageCell({
     <div
       className={`${dense ? 'py-3' : 'min-h-24 py-4'} sm:px-4 ${index > 0 ? "border-t border-[var(--ua-border-subtle)] sm:border-l sm:border-t-0" : ""}`}
     >
-      <dt className="text-xs font-medium text-[var(--ua-text-secondary)]">
+      <dt className="ua-text-label flex items-center gap-1 text-[var(--ua-text-secondary)]">
         <Link
           className="hover:text-[var(--ua-action-primary)]"
           href={financialReportRecordsHref({
@@ -89,6 +86,9 @@ function StageCell({
         >
           {step.label}
         </Link>
+        <Tooltip content={step.definition}>
+          <IconButton label={`What is ${step.label}?`} icon={<Info size={13} />} size="sm" />
+        </Tooltip>
       </dt>
       <dd
         className={`mt-2 font-semibold tabular-nums ${dense ? 'text-base' : 'text-xl'}`}
@@ -96,40 +96,9 @@ function StageCell({
       >
         {known ? money(bridge[step.key] as number, bridge.currency) : "Unavailable"}
       </dd>
-      {dense ? null : (
-        <dd className="mt-1 text-xs text-[var(--ua-text-secondary)]">{step.definition}</dd>
-      )}
     </div>
   );
 }
-function cumulativeTrendValues(
-  report: IntelligenceReport,
-  currency: string,
-  state: FinancialReportMetric,
-): number[] {
-  const metric: DashboardMetricKey | null = state === "exposed"
-    ? "exposure"
-    : state === "recovered"
-      ? "recovered"
-      : state === "confirmed_loss"
-        ? "realisedLoss"
-        : null;
-  if (!metric) return [];
-  const buckets = buildDashboardChartBuckets({
-    current: report.trend,
-    range: report.range,
-    currency,
-    metric,
-    asOf: report.generatedAt,
-  });
-  if (!buckets.some((bucket) => bucket.currentMinor != null)) return [];
-  let cumulative = 0;
-  return buckets.map((bucket) => {
-    cumulative += bucket.currentMinor ?? 0;
-    return cumulative;
-  });
-}
-
 export function IntelligenceReportView({
   report,
   comparison = null,
@@ -146,20 +115,20 @@ export function IntelligenceReportView({
       <section aria-labelledby="bridge-title">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2 id="bridge-title" className="text-lg font-semibold">
+            <h2 id="bridge-title" className="ua-text-section-title">
               Value this period
             </h2>
-            <p className="mt-1 text-sm text-[var(--ua-text-secondary)]">
+            <p className="ua-text-caption-role mt-1">
               {TIME_RANGE_LABELS[report.range]}
             </p>
           </div>
         </div>
         {!report.reconciliation.ok ? (
           <div role="alert" className="mt-3 rounded-[var(--ua-radius-control)] border border-[var(--ua-warning-border)] bg-[var(--ua-warning-bg)] p-3 text-[var(--ua-warning)]">
-            <p className="font-semibold">
+            <p className="ua-text-working-title">
               Ledger reconciliation needs attention
             </p>
-            <ul className="mt-1 list-disc pl-5 text-sm">
+            <ul className="ua-text-body mt-1 list-disc pl-5">
               {report.reconciliation.issues.map((x) => (
                 <li key={x}>{x}</li>
               ))}
@@ -171,7 +140,7 @@ export function IntelligenceReportView({
             {report.bridges.map((b) => (
               <div key={b.currency}>
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h3 className="font-semibold">{b.currency}</h3>
+                  <h3 className="ua-text-working-title">{b.currency}</h3>
                   <Link
                     href={financialReportRecordsHref({
                       range: report.range,
@@ -179,49 +148,42 @@ export function IntelligenceReportView({
                       metric: "exposed",
                       timezone: report.timezone,
                     })}
-                    className="text-sm font-medium text-[var(--ua-action-primary)]"
+                    className="ua-text-working-title text-[var(--ua-action-primary)]"
                   >
                     {financialMetricCaseIds(b, "exposed").length} cases with recorded exposure
                   </Link>
                 </div>
-                <MetricGroup
-                  className="mt-2"
-                  aria-label={`${b.currency} headline financial metrics`}
-                  items={HEADLINE_STEPS.map((step) => {
-                    const known = financialMetricIsKnown(b, step.state);
-                    const values = cumulativeTrendValues(report, b.currency, step.state);
-                    return {
-                      label: step.label,
-                      value: (
-                        <Link
-                          className="hover:text-[var(--ua-action-primary)]"
-                          href={financialReportRecordsHref({
-                            range: report.range,
-                            currency: b.currency,
-                            metric: step.state,
-                            timezone: report.timezone,
-                          })}
-                        >
-                          {known ? money(b[step.key] as number, b.currency) : "Unavailable"}
-                        </Link>
-                      ),
-                      description: step.definition,
-                      microchart: values.length > 1 ? (
-                        <SparkTrend
-                          values={values}
-                          colourVar={step.state === "recovered" ? "--ua-success" : "--ua-chart-primary"}
-                          width={72}
-                          height={24}
-                        />
-                      ) : undefined,
-                    };
-                  })}
-                />
+                <div className="mt-3">
+                  <FinancialEquation
+                    className="ua-financial-equation--summary"
+                    label={`${b.currency} financial decision ledger`}
+                    items={HEADLINE_STEPS.map((step) => {
+                      const known = financialMetricIsKnown(b, step.state);
+                      return {
+                        key: step.key,
+                        label: step.label,
+                        value: known ? money(b[step.key] as number, b.currency) : 'Unavailable',
+                        detail: (
+                          <Tooltip content={step.definition}>
+                            <IconButton label={`What is ${step.label}?`} icon={<Info size={13} />} size="sm" />
+                          </Tooltip>
+                        ),
+                        state: known ? 'known' as const : 'unavailable' as const,
+                        href: financialReportRecordsHref({
+                          range: report.range,
+                          currency: b.currency,
+                          metric: step.state,
+                          timezone: report.timezone,
+                        }),
+                      };
+                    })}
+                  />
+                </div>
               </div>
             ))}
           </div>
         ) : (
-          <p className="mt-4 text-sm text-[var(--ua-text-secondary)]">
+          <p className="ua-text-body mt-4 text-[var(--ua-text-secondary)]">
             No financial history is available for cases in this period. Unavailable is not zero.
           </p>
         )}
@@ -229,22 +191,24 @@ export function IntelligenceReportView({
       <DashboardCharts report={report} comparison={comparison} />
       {report.bridges.length ? (
         <section className="border-t border-[var(--ua-border-subtle)] pt-5" aria-labelledby="financial-stages-title">
-          <h2 id="financial-stages-title" className="text-base font-semibold">Financial stage detail</h2>
-          <p className="mt-1 text-sm text-[var(--ua-text-secondary)]">
+          <h2 id="financial-stages-title" className="ua-text-section-title">Financial stage detail</h2>
+          <p className="ua-text-caption-role mt-1">
             The full ledger remains available without competing with the decision view above.
           </p>
           <div className="mt-2">
             {report.bridges.map((bridge) => (
-              <details key={bridge.currency} className="border-b border-[var(--ua-border-subtle)] py-2">
-                <summary className="cursor-pointer py-2 text-[length:var(--ua-text-dense-size)] font-medium text-[var(--ua-text-secondary)]">
-                  All {STEPS.length} financial stages for {bridge.currency}
-                </summary>
+              <Disclosure
+                key={bridge.currency}
+                className="border-b border-[var(--ua-border-subtle)] py-2"
+                summaryClassName="py-2 text-[length:var(--ua-text-dense-size)] font-medium text-[var(--ua-text-secondary)]"
+                summary={`All ${STEPS.length} financial stages for ${bridge.currency}`}
+              >
                 <dl className="mt-1 grid overflow-hidden sm:grid-cols-2 lg:grid-cols-4">
                   {SUPPORTING_STEPS.map((step, index) => (
                     <StageCell key={step.key} step={step} bridge={bridge} report={report} index={index} dense />
                   ))}
                 </dl>
-              </details>
+              </Disclosure>
             ))}
           </div>
         </section>
@@ -304,14 +268,16 @@ export function IntelligenceReportView({
       ) : null}
       {!compact ? (
         <section className="border-t border-[var(--ua-border-subtle)] pt-5">
-          <h2 className="text-lg font-semibold">Report definitions</h2>
+          <h2 className="ua-text-section-title">Report definitions</h2>
           <div className="mt-3 divide-y divide-[var(--ua-border-subtle)] border-y border-[var(--ua-border-subtle)]">
             {REPORT_DEFINITIONS.map((d) => (
-              <details key={d.id} className="py-3">
-                <summary className="cursor-pointer font-medium">
-                  {d.name}
-                </summary>
-                <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
+              <Disclosure
+                key={d.id}
+                className="py-3"
+                summaryClassName="font-medium"
+                summary={d.name}
+              >
+                <dl className="ua-text-dense mt-3 grid gap-2 sm:grid-cols-2">
                   <div>
                     <dt className="text-[var(--ua-text-secondary)]">Definition</dt>
                     <dd>{d.definition}</dd>
@@ -331,7 +297,7 @@ export function IntelligenceReportView({
                     <dd>{d.timeBasis}</dd>
                   </div>
                 </dl>
-              </details>
+              </Disclosure>
             ))}
           </div>
         </section>

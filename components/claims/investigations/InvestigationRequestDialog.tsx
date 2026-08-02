@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useRef, useState } from 'react';
-import { Button, Input, Modal, Select } from '@/components/ui';
+import { Button, Input, Modal, Select, Textarea } from '@/components/ui';
 import {
   mutateInvestigation,
   newInvestigationIdempotencyKey,
@@ -206,7 +206,7 @@ export function InvestigationRequestDialog({
       closeOnBackdrop={!busy}
       footer={(
         <div className="flex w-full flex-wrap items-center justify-between gap-2">
-          <p className="text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
+          <p className="ua-text-caption-role">
             The customer decision remains independent from this deadline.
           </p>
           <div className="flex gap-2">
@@ -222,12 +222,12 @@ export function InvestigationRequestDialog({
     >
       <div className="space-y-4">
         {error ? (
-          <div role="alert" className="rounded-md border border-[var(--ua-risk-critical-border)] bg-[var(--ua-risk-critical-bg)] p-3 text-sm text-[var(--ua-risk-critical)]">
+          <div role="alert" className="ua-text-body rounded-md border border-[var(--ua-risk-critical-border)] bg-[var(--ua-risk-critical-bg)] p-3 text-[var(--ua-risk-critical)]">
             {error}
           </div>
         ) : null}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <label className="text-sm font-medium">
+          <label className="ua-text-body font-medium">
             Target
             <Select
               className="mt-1"
@@ -239,7 +239,7 @@ export function InvestigationRequestDialog({
               ))}
             </Select>
           </label>
-          <label className="text-sm font-medium">
+          <label className="ua-text-body font-medium">
             Partner
             <Select
               className="mt-1"
@@ -252,7 +252,7 @@ export function InvestigationRequestDialog({
               ))}
             </Select>
           </label>
-          <label className="text-sm font-medium">
+          <label className="ua-text-body font-medium">
             Channel
             <Select
               className="mt-1"
@@ -265,7 +265,7 @@ export function InvestigationRequestDialog({
               <option value="api">External API reference</option>
             </Select>
           </label>
-          <label className="text-sm font-medium">
+          <label className="ua-text-body font-medium">
             Response due
             <Input
               className="mt-1"
@@ -275,16 +275,16 @@ export function InvestigationRequestDialog({
             />
           </label>
         </div>
-        <label className="block text-sm font-medium">
+        <label className="ua-text-body block font-medium">
           Material evidence gap
-          <textarea
-            className="mt-1 min-h-20 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] p-2 text-sm"
+          <Textarea
+            className="mt-1 min-h-20"
             value={evidenceGap}
             onChange={(event) => setEvidenceGap(event.target.value)}
             required
           />
         </label>
-        <label className="block text-sm font-medium">
+        <label className="ua-text-body block font-medium">
           Requested evidence
           <Input
             className="mt-1"
@@ -292,11 +292,11 @@ export function InvestigationRequestDialog({
             onChange={(event) => setRequestedEvidence(event.target.value)}
             placeholder="delivery photo, scan history, final parcel weight"
           />
-          <span className="mt-1 block text-xs text-[var(--ua-text-secondary)]">
+          <span className="ua-text-caption-role mt-1 block">
             Separate items with commas.
           </span>
         </label>
-        <label className="block text-sm font-medium">
+        <label className="ua-text-body block font-medium">
           Request summary
           <Input
             className="mt-1"
@@ -306,7 +306,7 @@ export function InvestigationRequestDialog({
           />
         </label>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <label className="text-sm font-medium">
+          <label className="ua-text-body font-medium">
             Recipient
             <Input
               className="mt-1"
@@ -315,7 +315,7 @@ export function InvestigationRequestDialog({
               placeholder="ops@partner.example"
             />
           </label>
-          <label className="text-sm font-medium">
+          <label className="ua-text-body font-medium">
             Subject
             <Input
               className="mt-1"
@@ -325,20 +325,20 @@ export function InvestigationRequestDialog({
             />
           </label>
         </div>
-        <label className="block text-sm font-medium">
+        <label className="ua-text-body block font-medium">
           Request body
-          <textarea
-            className="mt-1 min-h-56 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] p-2 font-mono text-xs leading-relaxed"
+          <Textarea
+            className="mt-1 min-h-56 font-mono text-xs leading-relaxed"
             value={body}
             onChange={(event) => setBody(event.target.value)}
             required
           />
         </label>
         {overridesRecommendation ? (
-          <label className="block text-sm font-medium">
+          <label className="ua-text-body block font-medium">
             Override rationale
-            <textarea
-              className="mt-1 min-h-20 w-full rounded-md border border-[var(--ua-warning-border)] bg-[var(--ua-warning-bg)] p-2 text-sm"
+            <Textarea
+              className="mt-1 min-h-20 border-[var(--ua-warning-border)] bg-[var(--ua-warning-bg)]"
               value={overrideRationale}
               onChange={(event) => setOverrideRationale(event.target.value)}
               placeholder="Explain why this target or question is more appropriate."
@@ -347,7 +347,7 @@ export function InvestigationRequestDialog({
           </label>
         ) : null}
         {selectedPartner?.contact_instructions ? (
-          <div className="rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] p-3 text-xs text-[var(--ua-text-secondary)]">
+          <div className="ua-text-caption-role rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] p-3">
             <span className="font-semibold text-[var(--ua-text-primary)]">Partner instructions: </span>
             {selectedPartner.contact_instructions}
           </div>

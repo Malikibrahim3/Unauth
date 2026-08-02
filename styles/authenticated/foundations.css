@@ -1,9 +1,16 @@
+@layer components {
 /*
- * Quiet Precision canvas, text rendering, selection, focus treatment, and
+ * Instrument Grade canvas, text rendering, selection, focus treatment, and
  * reduced-motion defaults for every authenticated route.
  */
+.ua-app,
+.ua-auth-surface {
+  font-optical-sizing: auto;
+}
+
 .ua-app {
-  min-height: 100vh;
+  height: 100%;
+  min-height: 100%;
   background: var(--ua-canvas);
   color: var(--ua-text-primary);
   font-family: var(--ua-font-sans);
@@ -20,13 +27,14 @@
   color: var(--ua-text-primary);
 }
 
-/* box-shadow (not outline) so the ring always follows an element's
-   border-radius — Safari does not clip `outline` to a rounded corner, which
-   stamps a rectangular ring onto pill/rounded controls. */
+/* Safari has clipped `outline` to `border-radius` since 16.4, so a real
+   outline now follows rounded corners correctly and no longer needs the
+   opaque box-shadow halo workaround. */
 .ua-app :where(button, a, input, select, textarea, [tabindex]):focus-visible,
 .ua-auth-surface :where(button, a, input, select, textarea, [tabindex]):focus-visible {
-  outline: none;
-  box-shadow: var(--ua-shadow-focus);
+  outline: 2px solid var(--ua-border-focus);
+  outline-offset: 2px;
+  box-shadow: none;
 }
 
 .ua-app .ua-operational-scrollbar {
@@ -48,9 +56,8 @@
   .ua-auth-surface *::before,
   .ua-auth-surface *::after {
     scroll-behavior: auto !important;
-    animation-duration: .01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: .01ms !important;
+    animation: none !important;
+    transition: none !important;
   }
 }
 
@@ -72,10 +79,29 @@
     box-shadow: none;
   }
 
-  .ua-app :where([aria-selected="true"], [aria-pressed="true"]) {
+  .ua-app :where([aria-current="page"], [aria-current="step"], [aria-selected="true"], [aria-pressed="true"]) {
     background: Highlight;
     color: HighlightText;
     border-color: Highlight;
+  }
+
+  .ua-app [data-auth-chart] :where(.recharts-cartesian-grid line, .recharts-cartesian-axis line) {
+    stroke: GrayText !important;
+  }
+
+  .ua-app [data-auth-chart] :where(.recharts-text, text) {
+    fill: CanvasText !important;
+  }
+
+  .ua-app [data-auth-chart] :where(.recharts-line-curve, .recharts-area-curve) {
+    stroke: Highlight !important;
+    stroke-width: 3px;
+  }
+
+  .ua-app [data-auth-chart] .recharts-bar-rectangle path {
+    fill: Highlight !important;
+    stroke: CanvasText !important;
+    stroke-width: 1px;
   }
 
   .ua-app .ua-card,
@@ -97,4 +123,5 @@
   .ua-app .ua-status-badge__dot {
     background: currentColor;
   }
+}
 }

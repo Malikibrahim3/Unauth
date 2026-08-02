@@ -334,6 +334,14 @@ async function main() {
     await runPhase(phase, ledger);
   }
 
+  // §8.1 of docs/IMPL_authenticated_execution_ledger.md (M10): every mode of
+  // this runner also gates on the visual-adoption ledger, not only the
+  // product-polish phases above — a regression here fails verify:polish the
+  // same way a phase report regression does.
+  if (runCommand('visual adoption ledger', 'node', ['scripts/verify-visual-adoption.mjs'])) {
+    pass('visual adoption ledger (docs/IMPL_authenticated_execution_ledger.md)');
+  }
+
   console.log(
     `\n${failures.length ? 'BLOCKED' : 'READY'} — ${passes.length} passed, ${failures.length} failed`,
   );

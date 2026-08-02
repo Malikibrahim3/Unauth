@@ -14,9 +14,7 @@ import {
   FlowsIndexClient,
   type FlowIndexRecord,
 } from "@/components/rules/FlowsIndexClient";
-import { WorkbenchPage, KeyInsightCallout, SummaryRail } from "@/components/ui";
-import { Workflow } from "lucide-react";
-import { formatNumber } from '@/lib/utils/format';
+import { PageFrame } from "@/components/ui";
 import { env } from '@/lib/utils/env';
 
 export const dynamic = "force-dynamic";
@@ -76,58 +74,17 @@ export default async function FlowsPage() {
       };
     },
   );
-  const activeFlows = flows.filter((flow) => flow.active).length;
-  const draftFlows = flows.filter((flow) => flow.hasDraft).length;
-  const maxActionCount = Math.max(1, ...flows.map((flow) => flow.actionCount));
-  const topFlows = [...flows].sort((a, b) => b.actionCount - a.actionCount).slice(0, 6);
   const publicationEnabled = env.WORKFLOW_PUBLICATION_ENABLED === 'true';
   return (
-    <WorkbenchPage
+    <PageFrame
       title="Flows"
-      subtitle="Create, test, publish, and pause flows that route work, evidence, deadlines, and notifications."
-      kpiItems={[
-        { label: 'Flows', value: formatNumber(flows.length), hint: 'Configured workflow families' },
-        { label: 'Active', value: formatNumber(activeFlows), hint: 'Running published versions' },
-        { label: 'Draft changes', value: formatNumber(flows.filter((flow) => flow.hasDraft).length), hint: 'Safe unpublished edits' },
-      ]}
-      primaryVisual={
-        <KeyInsightCallout
-          tone={!publicationEnabled || draftFlows > 0 ? 'warning' : 'neutral'}
-          icon={<Workflow size={16} />}
-        >
-          {publicationEnabled ? (
-            <>
-              <strong>{formatNumber(activeFlows)}</strong> of <strong>{formatNumber(flows.length)}</strong> flows active
-              {draftFlows > 0 ? <> · <strong>{formatNumber(draftFlows)}</strong> with draft changes</> : null}.
-            </>
-          ) : (
-            <>Drafts and tests are available. Publishing is currently unavailable.</>
-          )}
-        </KeyInsightCallout>
-      }
-      rail={
-        <SummaryRail
-          sections={[
-            {
-              title: 'Action load',
-              rows: topFlows.map((flow) => ({
-                label: flow.name,
-                value: formatNumber(flow.actionCount),
-                tone: flow.active ? 'success' : flow.hasDraft ? 'warning' : 'neutral',
-                bar: topFlows.length > 1 ? flow.actionCount / maxActionCount : undefined,
-              })),
-              footnote: 'Configured actions per flow — definition complexity, not execution volume.',
-            },
-          ]}
-        />
-      }
-      main={
+      subtitle="Create, test, publish, and pause bounded workflow actions."
+    >
         <FlowsIndexClient
           flows={flows}
           canManage={canManage}
           publicationEnabled={publicationEnabled}
         />
-      }
-    />
+    </PageFrame>
   );
 }

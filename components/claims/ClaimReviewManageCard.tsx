@@ -8,6 +8,9 @@ import { EVIDENCE_TYPE_LABELS, EVIDENCE_SOURCE_LABELS } from '@/components/claim
 import type { Decision, Outcome, EvidenceType, EvidenceSource, ClaimStatus } from '@/components/claims/claimReviewTypes';
 import type { ClaimReviewWorkbench } from '@/components/claims/claimReviewWorkbench';
 import { Modal } from '@/components/ui/Modal';
+import { ActionDock } from '@/components/authenticated/ActionDock';
+import { Button } from '@/components/ui/Button';
+import { Disclosure, Select, Textarea } from '@/components/ui';
 import { decisionRequiresRationale, merchantDecisionSchema, type MerchantDecision } from '@/lib/claims/decision/merchantDecision';
 import { formatMinorCurrencyNullable } from '@/lib/utils/format';
 import { parseMajorUnitInput } from '@/lib/ui/merchantCopy';
@@ -28,7 +31,15 @@ const DECISION_VERB: Record<string, string> = {
   internal_watch: 'Internal watch', no_action: 'No action',
 };
 
-export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbench; canManage: boolean }) {
+export function ClaimReviewManageCard({
+  wb,
+  canManage,
+  contextStatus = 'ready',
+}: {
+  wb: ClaimReviewWorkbench;
+  canManage: boolean;
+  contextStatus?: 'loading' | 'unavailable' | 'ready';
+}) {
   const [confirming, setConfirming] = useState(false);
   const [confirmingReversal, setConfirmingReversal] = useState(false);
   // B5: a pristine form shows no red. Validation surfaces only once the operator
@@ -43,8 +54,20 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
   if (!canManage) {
     return (
       <RailSection id="manage" title="Decision" open={state.railOpen.manage ?? false} onToggle={(id) => dispatch({ type: 'toggleRail', id })}>
-        <p className="text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
+        <p className="ua-text-caption-role">
           You have read-only access. Recording decisions, evidence, and transitions requires the decision permission.
+        </p>
+      </RailSection>
+    );
+  }
+
+  if (contextStatus !== 'ready') {
+    return (
+      <RailSection id="manage" title="Decision" open={state.railOpen.manage ?? true} onToggle={(id) => dispatch({ type: 'toggleRail', id })}>
+        <p role="status" className="ua-text-caption-role">
+          {contextStatus === 'loading'
+            ? 'Decision controls will be available after the required evidence context loads.'
+            : 'Decision controls are unavailable while the required evidence context cannot be loaded. Retry from Evidence & recommendations. This load failure did not change the recorded decision or recovery state.'}
         </p>
       </RailSection>
     );
@@ -60,6 +83,7 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
   const monetaryDecision = ['approved', 'partial_refund', 'full_refund', 'denied', 'no_action'].includes(state.decision);
   const amountMinor = monetaryDecision ? parseMajorUnitInput(state.decisionAmount, currency) : null;
   const amountValid = !monetaryDecision || (amountMinor != null && amountMinor >= 0 && Boolean(currency));
+  const decisionReady = !disabled && hasDecision && validation.success && amountValid;
 
   return (
     <RailSection id="manage" title="Decision" open={state.railOpen.manage ?? true} onToggle={(id) => dispatch({ type: 'toggleRail', id })}>
@@ -69,12 +93,12 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
           <FieldLabel>Ownership</FieldLabel>
           <div className="flex gap-1.5">
             <button type="button" disabled={disabled} onClick={() => void onAssignment('assign_to_me')}
-              className="flex-1 px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-60" style={btnStyle('secondary')}>
+              className="ua-text-label flex-1 px-3 py-1.5 rounded-md" style={btnStyle(disabled ? 'disabled' : 'secondary')}>
               Assign to me
             </button>
             {wb.selectedClaim?.assigned_to ? (
               <button type="button" disabled={disabled} onClick={() => void onAssignment('unassign')}
-                className="flex-1 px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-60" style={btnStyle('secondary')}>
+                className="ua-text-label flex-1 px-3 py-1.5 rounded-md" style={btnStyle(disabled ? 'disabled' : 'secondary')}>
                 Unassign
               </button>
             ) : null}
@@ -84,7 +108,7 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
         {/* Record decision + outcome */}
         <div className="order-1 space-y-1.5">
           <FieldLabel htmlFor="manage-decision">Merchant decision</FieldLabel>
-            <select id="manage-decision" className="w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()}
+            <Select id="manage-decision" style={inputStyle()}
             value={state.decision} onChange={(e) => {
               setDecisionTouched(true);
               const decision = e.target.value as Decision;
@@ -92,7 +116,7 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
             }} aria-label="Decision" aria-describedby="manage-decision-requirement">
             <option value="">Choose a decision…</option>
             {DECISION_OPTIONS.map((d) => <option key={d} value={d}>{DECISION_VERB[d] ?? d}</option>)}
-          </select>
+          </Select>
           {monetaryDecision ? (
             <>
               <div className="grid grid-cols-[1fr_auto] gap-1.5">
@@ -101,7 +125,7 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
                   min={0}
                   step="0.01"
                   inputMode="decimal"
-                  className="w-full rounded-md px-2 py-1.5 text-xs"
+                  className="ua-text-dense w-full rounded-md px-2 py-1.5"
                   style={inputStyle()}
                   value={state.decisionAmount}
                   onChange={(event) => patch({ decisionAmount: event.target.value })}
@@ -109,7 +133,7 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
                   aria-label="Decision amount"
                   placeholder="Amount"
                 />
-                <span className="flex min-w-12 items-center justify-center rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] px-2 text-xs font-semibold">
+                <span className="ua-text-label flex min-w-12 items-center justify-center rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] px-2">
                   {currency ?? '—'}
                 </span>
               </div>
@@ -118,10 +142,10 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
               </p>
             </>
           ) : null}
-          <textarea className="min-h-20 w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()}
+          <Textarea style={inputStyle()}
             placeholder={decisionRequiresRationale(state.decision as MerchantDecision) ? 'Rationale (required)' : 'Decision rationale (optional)'} value={state.notes}
             onChange={(e) => patch({ notes: e.target.value })} onBlur={() => setDecisionTouched(true)} aria-label="Decision rationale" />
-          <p id="manage-decision-requirement" className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">
+          <span id="manage-decision-requirement" className="sr-only">
             {!claimId
               ? 'Select or save a case before recording a decision.'
               : !hasDecision
@@ -131,35 +155,49 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
                   : !validation.success
                     ? validationMessage ?? 'Add a rationale before recording it.'
                   : 'This records the merchant decision; it does not send an external refund or replacement.'}
-          </p>
-          {decisionTouched && validationMessage && hasDecision ? <p role="alert" className="text-xs text-[var(--ua-critical)]">{validationMessage}</p> : null}
-          {decisionTouched && !amountValid ? <p role="alert" className="text-xs text-[var(--ua-critical)]">Enter a non-negative amount and known ISO currency.</p> : null}
-          <button type="button" disabled={disabled || !hasDecision || !validation.success || !amountValid}
-            aria-describedby="manage-decision-requirement"
-            onClick={() => setConfirming(true)}
-            className="w-full px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-60" style={btnStyle('primary')}>
-            Record decision
-          </button>
+          </span>
+          {decisionTouched && validationMessage && hasDecision ? <p role="alert" className="ua-text-dense text-[var(--ua-critical)]">{validationMessage}</p> : null}
+          {decisionTouched && !amountValid ? <p role="alert" className="ua-text-dense text-[var(--ua-critical)]">Enter a non-negative amount and known ISO currency.</p> : null}
+          <ActionDock
+            copy={decisionReady
+              ? 'Records an internal authorization only. No external payout is sent.'
+              : 'Complete the decision, value, and required rationale.'}
+            actions={(
+              <Button
+                type="button"
+                size="sm"
+                className="w-full"
+                disabled={!decisionReady}
+                aria-describedby="manage-decision-requirement"
+                onClick={() => setConfirming(true)}
+              >
+                {decisionReady ? 'Review decision' : 'Decision not ready'}
+              </Button>
+            )}
+          />
         </div>
 
-        <details className="order-3 rounded-md border border-[var(--ua-border-subtle)] p-3">
-          <summary className="cursor-pointer text-xs font-semibold text-[var(--ua-text-secondary)]">Manage evidence and lifecycle</summary>
+        <Disclosure
+          className="order-3 rounded-md border border-[var(--ua-border-subtle)] p-3"
+          summaryClassName="ua-text-label"
+          summary="Manage evidence and lifecycle"
+        >
           <div className="mt-3 space-y-4">
         {/* Add evidence */}
         <div className="space-y-1.5">
           <FieldLabel htmlFor="manage-evidence-type">Add evidence</FieldLabel>
-          <select id="manage-evidence-type" className="w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()}
+          <Select id="manage-evidence-type" style={inputStyle()}
             value={state.evidenceType} onChange={(e) => patch({ evidenceType: e.target.value as EvidenceType })} aria-label="Evidence type">
             {EVIDENCE_TYPE_OPTIONS.map((t) => <option key={t} value={t}>{EVIDENCE_TYPE_LABELS[t]}</option>)}
-          </select>
-          <select className="w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()}
+          </Select>
+          <Select style={inputStyle()}
             value={state.source} onChange={(e) => patch({ source: e.target.value as EvidenceSource })} aria-label="Evidence source">
             {EVIDENCE_SOURCE_OPTIONS.map((s) => <option key={s} value={s}>{EVIDENCE_SOURCE_LABELS[s]}</option>)}
-          </select>
-          <input type="text" className="w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()}
+          </Select>
+          <input type="text" className="ua-text-dense w-full px-2 py-1.5 rounded-md" style={inputStyle()}
             placeholder="Evidence URL (optional)" value={state.evidenceUrl} onChange={(e) => patch({ evidenceUrl: e.target.value })} aria-label="Evidence URL" />
           <button type="button" disabled={disabled} onClick={() => void onEvidence()}
-            className="w-full px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-60" style={btnStyle('secondary')}>
+            className="ua-text-label w-full px-3 py-1.5 rounded-md" style={btnStyle(disabled ? 'disabled' : 'secondary')}>
             Add evidence
           </button>
         </div>
@@ -188,16 +226,16 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
         <div className="space-y-1.5">
           <FieldLabel htmlFor="manage-snooze-days">Snooze follow-up</FieldLabel>
           <div className="flex gap-1.5">
-            <input id="manage-snooze-days" type="number" min={1} max={30} className="w-16 px-2 py-1.5 rounded-md text-xs" style={inputStyle()}
+            <input id="manage-snooze-days" type="number" min={1} max={30} className="ua-text-dense w-16 px-2 py-1.5 rounded-md" style={inputStyle()}
               value={state.snoozeDays} onChange={(e) => patch({ snoozeDays: e.target.value })} aria-label="Snooze days" />
-            <input type="text" className="flex-1 px-2 py-1.5 rounded-md text-xs" style={inputStyle()}
+            <input type="text" className="ua-text-dense flex-1 px-2 py-1.5 rounded-md" style={inputStyle()}
               placeholder="Reason (optional)" value={state.snoozeReason} onChange={(e) => patch({ snoozeReason: e.target.value })} aria-label="Snooze reason" />
           </div>
           <div className="flex gap-1.5">
             <button type="button" disabled={disabled} onClick={() => void onSnooze()}
-              className="flex-1 px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-60" style={btnStyle('secondary')}>Snooze</button>
+              className="ua-text-label flex-1 px-3 py-1.5 rounded-md" style={btnStyle(disabled ? 'disabled' : 'secondary')}>Snooze</button>
             <button type="button" disabled={disabled} onClick={() => void onClearSnooze()}
-              className="flex-1 px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-60" style={btnStyle('secondary')}>Clear</button>
+              className="ua-text-label flex-1 px-3 py-1.5 rounded-md" style={btnStyle(disabled ? 'disabled' : 'secondary')}>Clear</button>
           </div>
         </div>
 
@@ -205,15 +243,15 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
         {hasOutcome ? (
           <div className="space-y-1.5">
             <FieldLabel htmlFor="manage-reverse-note">Reverse decision</FieldLabel>
-            <select id="manage-reverse-note" className="w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()}
+            <Select id="manage-reverse-note" style={inputStyle()}
               value={state.reverseDecision} onChange={(e) => patch({ reverseDecision: e.target.value as Decision })} aria-label="Reversal decision">
               {DECISION_OPTIONS.map((d) => <option key={d} value={d}>{DECISION_VERB[d] ?? d}</option>)}
-            </select>
-            <input type="text" className="w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()}
+            </Select>
+            <input type="text" className="ua-text-dense w-full px-2 py-1.5 rounded-md" style={inputStyle()}
               placeholder="Reason for reversal (required)" value={state.reverseNote} onChange={(e) => patch({ reverseNote: e.target.value })} aria-label="Reversal reason" />
             <button type="button" disabled={disabled || !state.reverseNote.trim()}
               onClick={() => setConfirmingReversal(true)}
-              className="w-full px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-60" style={btnStyle('secondary')}>
+              className="ua-text-label w-full px-3 py-1.5 rounded-md" style={btnStyle((disabled || !state.reverseNote.trim()) ? 'disabled' : 'secondary')}>
               Reverse decision
             </button>
           </div>
@@ -221,13 +259,13 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
 
         {/* Recovery */}
         {recoveryCase?.id ? (
-          <Link href={`/recoveries/${recoveryCase.id}`} className="block w-full text-center px-3 py-1.5 rounded-md text-xs font-semibold no-underline" style={btnStyle('secondary')}>
+          <Link href={`/recoveries/${recoveryCase.id}`} className="ua-text-label block w-full text-center px-3 py-1.5 rounded-md no-underline" style={btnStyle('secondary')}>
             Open recovery case
           </Link>
         ) : null}
           </div>
-        </details>
-        <a href="#source-case-details" className="order-4 text-xs font-semibold text-[var(--ua-action-primary)]">View source data</a>
+        </Disclosure>
+        <a href="#source-case-details" className="ua-text-working-title order-4 text-[var(--ua-action-primary)]">View source data</a>
       </div>
       <Modal
         open={confirming}
@@ -245,12 +283,12 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
           },
         }]}
       >
-        <dl className="space-y-3 text-sm">
+        <dl className="ua-text-body space-y-3">
           <div className="flex justify-between gap-4"><dt>Decision</dt><dd className="font-medium">{DECISION_VERB[state.decision] ?? state.decision}</dd></div>
           <div className="flex justify-between gap-4"><dt>Authorized value</dt><dd className="font-sans tabular-nums font-medium">{monetaryDecision && amountValid ? formatMinorCurrencyNullable(amountMinor, currency) : 'Not applicable'}</dd></div>
           <div className="flex justify-between gap-4"><dt>External action</dt><dd className="font-medium">None</dd></div>
         </dl>
-        <div className="mt-4 rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] p-3 text-xs text-[var(--ua-text-secondary)]">
+        <div className="ua-text-caption-role mt-4 rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] p-3">
           The approval stage is recorded in the append-only ledger. Paid value, realised loss, prevented value, and recovery are recorded only after their separate source or observation evidence arrives.
         </div>
       </Modal>
@@ -268,10 +306,10 @@ export function ClaimReviewManageCard({ wb, canManage }: { wb: ClaimReviewWorkbe
           },
         }]}
       >
-        <p className="text-sm text-[var(--ua-text-secondary)]">
+        <p className="ua-text-body text-[var(--ua-text-secondary)]">
           New decision: <strong className="text-[var(--ua-text-primary)]">{DECISION_VERB[state.reverseDecision] ?? state.reverseDecision}</strong>
         </p>
-        <p className="mt-2 text-sm text-[var(--ua-text-secondary)]">
+        <p className="ua-text-body mt-2 text-[var(--ua-text-secondary)]">
           Rationale: {state.reverseNote.trim() || 'A rationale is required before recording a reversal.'}
         </p>
       </Modal>

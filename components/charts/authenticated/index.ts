@@ -1,4 +1,15 @@
-export { ChartPanel, ChartLegend, ChartState } from './ChartPanel';
+export {
+  ChartFrame,
+  ChartState,
+  ChartLegend,
+  ChartDataTable,
+  simpleChartTable,
+  ChartPanel,
+  type ChartFrameProps,
+  type ChartStateKind,
+  type ChartDataColumn,
+  type ChartDataTableModel,
+} from './ChartFrame';
 export { RankedContributionChart } from './RankedContributionChart';
 export type { AuthChartDatum, AuthChartTableRow, AuthChartTone } from './types';
 export { BlockRailChart, type BlockRailBlock, type BlockRailPin } from './operational/BlockRailChart';

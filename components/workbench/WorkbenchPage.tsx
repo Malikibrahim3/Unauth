@@ -2,7 +2,7 @@ import { type ReactNode } from 'react';
 import { type WorkbenchNavItem } from './WorkbenchNav';
 import { WorkbenchKpiStrip, type WorkbenchKpiItem } from './WorkbenchKpiStrip';
 import { WorkbenchActionBar } from './WorkbenchActionBar';
-import { AuthenticatedPageHeader } from '@/components/authenticated/AuthenticatedPageHeader';
+import { PageFrame } from '@/components/ui/PageFrame';
 import { AuthenticatedPanel } from '@/components/authenticated/AuthenticatedPanel';
 import styles from '@/components/authenticated/AuthenticatedPageChrome.module.css';
 
@@ -24,6 +24,7 @@ interface WorkbenchPageProps {
   actionBarRight?: ReactNode;
   actionBar?: ReactNode;
   main: ReactNode;
+  mainSurface?: 'panel' | 'open';
   rail?: ReactNode;
   footer?: ReactNode;
 }
@@ -41,6 +42,7 @@ export function WorkbenchPage({
   actionBarRight,
   actionBar,
   main,
+  mainSurface = 'panel',
   rail,
   footer,
 }: WorkbenchPageProps) {
@@ -54,31 +56,37 @@ export function WorkbenchPage({
       actionBar
     );
 
-  return (
-    <div>
-      <AuthenticatedPageHeader
-        eyebrow={eyebrow}
-        title={title}
-        subtitle={subtitle}
-        actions={actions}
-        capabilityId="page.heading"
-      />
-      <div className={styles.pageBody}>
-        <div className={styles.workbenchStack}>
-          {resolvedKpiStrip}
-          {primaryVisual}
-          {resolvedActionBar}
-          {rail ? (
-            <div className={styles.workbenchGrid}>
-              <AuthenticatedPanel className={styles.mainPanel} capabilityId="page.primary-content">{main}</AuthenticatedPanel>
-              <aside className={styles.rail}>{rail}</aside>
-            </div>
-          ) : (
-            <AuthenticatedPanel className={styles.mainPanel} capabilityId="page.primary-content">{main}</AuthenticatedPanel>
-          )}
-          {footer ? <footer className={styles.footer}>{footer}</footer> : null}
-        </div>
-      </div>
+  // The Workbench shell is now a thin adapter over the canonical §5.1 frame
+  // (LP-CMP-01): it maps its prop names onto PageFrame slots and keeps the
+  // rail grid + main-panel wrapping it owns. Output is unchanged for existing
+  // consumers — the header, body regions, and CSS classes are identical.
+  const wrappedMain = mainSurface === 'open' ? (
+    <div className={styles.openMain} data-capability-id="page.primary-content">{main}</div>
+  ) : (
+    <AuthenticatedPanel className={styles.mainPanel} capabilityId="page.primary-content">{main}</AuthenticatedPanel>
+  );
+  const mainRegion = rail ? (
+    <div className={styles.workbenchGrid}>
+      {wrappedMain}
+      <aside className={styles.rail}>{rail}</aside>
     </div>
+  ) : (
+    wrappedMain
+  );
+
+  return (
+    <PageFrame
+      eyebrow={eyebrow}
+      title={title}
+      subtitle={subtitle}
+      actions={actions}
+      headerCapabilityId="page.heading"
+      metrics={resolvedKpiStrip}
+      primaryVisual={primaryVisual}
+      toolbar={resolvedActionBar}
+      footer={footer}
+    >
+      {mainRegion}
+    </PageFrame>
   );
 }

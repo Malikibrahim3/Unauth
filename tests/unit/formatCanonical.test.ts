@@ -4,6 +4,7 @@ import {
   formatDate,
   formatDateAbsolute,
   formatDateTime,
+  formatConfidencePercent,
 } from '@/lib/utils/format';
 
 describe('formatMoney (canonical, currency required)', () => {
@@ -74,5 +75,19 @@ describe('formatDateAbsolute', () => {
 describe('formatDateTime (timelines/audit only)', () => {
   it('renders "14 Jun, 09:42" with no seconds and no year', () => {
     expect(formatDateTime('2026-06-14T09:42:00Z')).toBe('14 Jun, 09:42');
+  });
+});
+
+describe('formatConfidencePercent', () => {
+  it('supports canonical ratios and legacy 0–100 values without inflating them', () => {
+    expect(formatConfidencePercent(0.85)).toBe('85%');
+    expect(formatConfidencePercent(85)).toBe('85%');
+    expect(formatConfidencePercent(1)).toBe('100%');
+  });
+
+  it('keeps malformed confidence outside the display scale', () => {
+    expect(formatConfidencePercent(Number.NaN)).toBe('—');
+    expect(formatConfidencePercent(140)).toBe('100%');
+    expect(formatConfidencePercent(-2)).toBe('0%');
   });
 });

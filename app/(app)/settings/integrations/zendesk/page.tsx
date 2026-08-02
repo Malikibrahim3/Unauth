@@ -3,6 +3,7 @@ import { createServiceClient } from '@/lib/supabase/server';
 import { getRequestUser } from '@/lib/auth/requestContext';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import ZendeskSetupClient from '@/components/settings/ZendeskSetupClient';
+import { ConnectorSetupShell } from '@/components/settings/ConnectorSetupShell';
 import { SettingsPageShell } from '@/components/ui';
 
 export default async function ZendeskIntegrationPage() {
@@ -20,9 +21,13 @@ export default async function ZendeskIntegrationPage() {
       title="Zendesk"
       subtitle="Show case context, evidence gaps, and recommendations on support tickets."
     >
-      <div className="space-y-3">
+      <ConnectorSetupShell
+        provider="Zendesk"
+        providerMark="/integrations/zendesk.svg"
+        requirements="You need Zendesk admin access to install the private app, add the ticket webhook, and create a token for ticket history."
+      >
         <ZendeskSetupClient canManage={canManage} />
-      </div>
+      </ConnectorSetupShell>
     </SettingsPageShell>
   );
 }

@@ -32,10 +32,11 @@ describe('canonical demo seed contract', () => {
     );
     expect(seed).toContain("loss_case_id: uuid(`loss:${casePlan.key}`)");
     for (const field of [
-      'amount_sought_minor',
-      'amount_approved_minor',
-      'amount_recovered_minor',
-      'amount_written_off_minor',
+      'order_value_minor',
+      'refund_value_minor',
+      'estimated_recovery_minor',
+      'approved_recovery_minor',
+      'financial_entry_ids',
     ]) {
       expect(seed).toContain(field);
     }

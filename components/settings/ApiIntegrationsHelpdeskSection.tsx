@@ -60,8 +60,8 @@ export default function ApiIntegrationsHelpdeskSection() {
         <Headphones className="h-4 w-4" style={{ color: 'var(--ua-icon-secondary)' }} />
         <div className="flex flex-wrap items-center gap-2">
           <div>
-            <p className="text-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>Helpdesk</p>
-            <p className="text-xs" style={{ color: 'var(--ua-text-secondary)' }}>Gorgias recommended · Zendesk and Freshdesk also supported</p>
+            <p className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>Helpdesk</p>
+            <p className="ua-text-caption-role" style={{ color: 'var(--ua-text-secondary)' }}>Gorgias recommended · Zendesk and Freshdesk also supported</p>
           </div>
           <FeatureTierBadge entitlement="HELPDESK_WIDGET" />
         </div>
@@ -83,14 +83,14 @@ export default function ApiIntegrationsHelpdeskSection() {
             }}
           />
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>
+            <p className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>
               {helpdeskConnected
                 ? 'Helpdesk connected'
                 : guideToHelpdesk
                   ? 'Connect your helpdesk to finish setup'
                   : 'No helpdesk connected'}
             </p>
-            <p className="text-xs mt-0.5" style={{ color: guideToHelpdesk ? 'var(--ua-warning)' : 'var(--ua-text-secondary)' }}>
+            <p className="ua-text-caption-role mt-0.5" style={{ color: guideToHelpdesk ? 'var(--ua-warning)' : 'var(--ua-text-secondary)' }}>
               {helpdeskConnected
                 ? 'Cases and chargeback context are syncing. Tie each case back to its Shopify order.'
                 : guideToHelpdesk
@@ -123,7 +123,7 @@ export default function ApiIntegrationsHelpdeskSection() {
                 {idx === 1 && (
                   <div className="flex items-center gap-2 pb-2 pt-1">
                     <div className="h-px flex-1" style={{ background: 'var(--ua-border-default)' }} />
-                    <p className="text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
+                    <p className="ua-text-caption-role" style={{ color: 'var(--ua-text-secondary)' }}>
                       Using Zendesk or Freshdesk instead?
                     </p>
                     <div className="h-px flex-1" style={{ background: 'var(--ua-border-default)' }} />
@@ -158,10 +158,10 @@ export default function ApiIntegrationsHelpdeskSection() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium" style={{ color: 'var(--ua-text-primary)' }}>{item.name}</p>
+                        <p className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>{item.name}</p>
                         {item.recommended && (
                           <span
-                            className="inline-flex items-center rounded-full px-1.5 py-0.5 text-xs font-semibold"
+                            className="ua-text-label inline-flex items-center rounded-full px-1.5 py-0.5"
                             style={{ background: 'color-mix(in srgb, var(--ua-action-primary) 12%, transparent)', color: 'var(--ua-action-primary)' }}
                           >
                             Recommended
@@ -171,7 +171,7 @@ export default function ApiIntegrationsHelpdeskSection() {
                       {connected || zendeskSidebarOnly ? (
                         <Link
                           href={item.href}
-                          className="inline-flex shrink-0 items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium"
+                          className="ua-text-label inline-flex shrink-0 items-center gap-1 rounded-md border px-2.5 py-1"
                           style={{ borderColor: 'var(--ua-border-default)', color: 'var(--ua-text-secondary)' }}
                         >
                           Manage
@@ -179,7 +179,7 @@ export default function ApiIntegrationsHelpdeskSection() {
                       ) : (
                         <Link
                           href={item.href}
-                          className="inline-flex shrink-0 items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold"
+                          className="ua-text-working-title inline-flex shrink-0 items-center gap-1 rounded-md px-2.5 py-1"
                           style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)' }}
                         >
                           Connect
@@ -188,7 +188,7 @@ export default function ApiIntegrationsHelpdeskSection() {
                       )}
                     </div>
                     {statusKnown ? (
-                      <p className="mt-1 flex items-center gap-1.5 text-xs font-medium">
+                      <p className="ua-text-dense mt-1 flex items-center gap-1.5 font-medium">
                         <span
                           aria-hidden
                           className="inline-block h-1.5 w-1.5 shrink-0 rounded-full"
@@ -226,7 +226,7 @@ export default function ApiIntegrationsHelpdeskSection() {
                         ) : null}
                       </p>
                     ) : null}
-                    <p className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--ua-text-secondary)' }}>
+                    <p className="ua-text-caption-role mt-1 leading-relaxed" style={{ color: 'var(--ua-text-secondary)' }}>
                       {item.description}
                     </p>
                   </div>
@@ -237,7 +237,7 @@ export default function ApiIntegrationsHelpdeskSection() {
         </div>
 
         {helpdeskConnected ? (
-          <p className="flex items-center gap-1.5 text-xs font-medium" style={{ color: 'var(--ua-success)' }}>
+          <p className="ua-text-dense flex items-center gap-1.5 font-medium" style={{ color: 'var(--ua-success)' }}>
             <CheckCircle2 className="h-3.5 w-3.5" />
             Required helpdesk source satisfied
           </p>

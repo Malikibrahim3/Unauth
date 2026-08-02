@@ -1,30 +1,14 @@
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { readFileSync, readdirSync } from 'node:fs';
+import {
+  ACTIVE_MIGRATIONS,
+  EXPECTED_CANONICAL_COUNTS,
+  EXPECTED_SCHEMA_HASH,
+  assertActiveMigrationLayout,
+} from './release-migration-manifest.mjs';
 
-const ACTIVE_MIGRATIONS = [
-  '20260720000000_canonical_production_baseline.sql',
-  '20260720100000_canonical_environment_supplement.sql',
-  '20260721120000_durable_sensitive_audit.sql',
-  '20260722100000_tenant_authorization_hardening.sql',
-  '20260722200000_webhook_event_safety.sql',
-  '20260722300000_privacy_erasure_retention.sql',
-  '20260722400000_source_to_recovery_integrity.sql',
-  '20260722500000_ownership_transfer_integrity.sql',
-  '20260723100000_release1_relationship_credential_integrity.sql',
-  '20260723150000_release1_case_issue_correction.sql',
-  '20260723200000_release1_investigations.sql',
-  '20260723300000_release1_responsibility_recovery.sql',
-  '20260723400000_release1_investigation_email_dispatch.sql',
-  '20260723500000_release1_investigation_privacy.sql',
-  '20260723600000_release1_reporting_truthfulness.sql',
-  '20260724100000_operational_work_read_model.sql',
-  '20260724110000_work_saved_views.sql',
-  '20260724120000_exception_resolution_integrity.sql',
-  '20260725100000_evidence_reconciliation_pivot.sql',
-  '20260727100000_work_views_claimed_items_grants.sql',
-];
-const EXPECTED_SCHEMA_HASH = 'f42c76ae8370f5332d18183ce85d18b3245679e73f556f7bf55120f11c4e62e5';
+const allowDestructiveReset = process.argv.includes('--allow-destructive-local-reset');
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
@@ -56,7 +40,13 @@ const dbContainer = `supabase_db_${projectId}`;
 const migrations = readdirSync('supabase/migrations')
   .filter((file) => /^\d{14}_.+\.sql$/.test(file))
   .sort();
-assertEqual(JSON.stringify(migrations), JSON.stringify(ACTIVE_MIGRATIONS), 'active migration layout');
+assertActiveMigrationLayout(migrations);
+
+if (!allowDestructiveReset) {
+  throw new Error(
+    'Refusing to reset the existing local database. Run this verifier in an approved disposable environment or pass --allow-destructive-local-reset explicitly.',
+  );
+}
 
 run('shasum', ['-a', '256', '-c', 'docs/audits/unauth-mvp-plus/legacy-migration-sha256.txt']);
 console.log('Legacy migration archive integrity passed (223 files).');
@@ -97,19 +87,7 @@ const counts = Object.fromEntries(sql(`
     join pg_namespace n on n.oid=c.relnamespace where n.nspname='public'
 `).split('\n').map((line) => line.split('|')));
 
-const expectedCounts = {
-  tables: '143',
-  views: '2',
-  sequences: '2',
-  enums: '45',
-  columns: '2089',
-  not_null_columns: '1177',
-  constraints: '789',
-  indexes: '536',
-  functions: '90',
-  triggers: '102',
-  policies: '161',
-};
+const expectedCounts = EXPECTED_CANONICAL_COUNTS;
 assertEqual(JSON.stringify(counts), JSON.stringify(expectedCounts), 'canonical object manifest');
 
 assertEqual(

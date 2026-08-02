@@ -7,6 +7,7 @@ import { UnauthLogo } from '@/components/ui/UnauthLogo';
 import { SidebarGroupLabel, SidebarNavItem, type NavItemView } from '@/components/nav/SidebarNavItem';
 import type { ConnectionState } from '@/lib/connections/getConnectionState';
 import { providerLabel } from '@/lib/ui/merchantCopy';
+import { WorkspaceSwitcher, type WorkspaceOption } from '@/components/layout/WorkspaceSwitcher';
 
 type SidebarAsideProps = {
   isMobile: boolean;
@@ -15,13 +16,13 @@ type SidebarAsideProps = {
   userName?: string | null;
   userEmail: string;
   connectionState: Pick<ConnectionState, 'orderSourceConnected' | 'helpdesk' | 'helpdeskProvider'>;
+  workspaces: WorkspaceOption[];
+  activeMerchantId: string | null;
   groups: Array<{ label: string; items: NavItemView[] }>;
   isActive: (href: string) => boolean;
   onCloseMobile: () => void;
   onToggleCollapse: () => void;
   onSignOut: () => void;
-  onMouseEnter: () => void;
-  onMouseLeave: () => void;
 };
 
 export function SidebarAside({
@@ -31,34 +32,47 @@ export function SidebarAside({
   userName,
   userEmail,
   connectionState,
+  workspaces,
+  activeMerchantId,
   groups,
   isActive,
   onCloseMobile,
   onToggleCollapse,
   onSignOut,
-  onMouseEnter,
-  onMouseLeave,
 }: SidebarAsideProps) {
+  const allSourcesConnected =
+    connectionState.orderSourceConnected && connectionState.helpdesk;
+  const oneSourceConnected =
+    connectionState.orderSourceConnected || connectionState.helpdesk;
+  const sourceHealthText = allSourcesConnected
+    ? 'Sources connected'
+    : oneSourceConnected
+      ? '1 source needs attention'
+      : 'Connect sources';
+  const sourceHealthAriaLabel = allSourcesConnected
+    ? 'Sources connected. Review integrations.'
+    : oneSourceConnected
+      ? 'One source needs attention. Review integrations.'
+      : 'Sources not connected. Review integrations.';
+
   return (
     <aside
       className={cn(
         'ua-app-sidebar relative flex h-full flex-shrink-0 flex-col',
-        'border-r border-[var(--ua-border-default)]',
+        'border-r border-[var(--ua-border-subtle)]',
         isMobile
           ? 'w-72'
           : cn(
               'transition-[width] duration-[var(--ua-duration-slow)] ease-[var(--ua-ease-standard)]',
               'overflow-hidden',
-              isCollapsed ? 'w-14' : 'w-60',
             ),
       )}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
+      data-collapsed={!isMobile && isCollapsed ? 'true' : 'false'}
     >
       <div
         className={cn(
-          'flex flex-shrink-0 border-b border-[var(--ua-border-default)] px-3',
-          isCollapsed ? 'h-14 flex-col items-center justify-center gap-1 py-1.5' : 'flex-col gap-1.5 py-2',
+          'flex flex-shrink-0 px-3',
+          isCollapsed ? 'h-[68px] flex-col items-center justify-center gap-1 py-2' : 'flex-col gap-2.5 pb-3 pt-4',
         )}
       >
         <div className="flex w-full min-w-0 items-center justify-between gap-2">
@@ -73,6 +87,7 @@ export function SidebarAside({
               kind={isCollapsed ? 'symbol' : 'lockup'}
               tone="auto"
               height={isCollapsed ? 20 : 18}
+              priority
               alt=""
               decorative
             />
@@ -83,8 +98,9 @@ export function SidebarAside({
               aria-label="Collapse sidebar"
               onClick={onToggleCollapse}
               className={cn(
-                'flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-sm',
+                'flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-[var(--ua-radius-control)]',
                 'text-[var(--ua-text-tertiary)] hover:text-[var(--ua-text-secondary)]',
+                'hover:bg-[var(--ua-surface-hover)]',
                 'transition-colors duration-[var(--ua-duration-fast)]',
                 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ua-border-focus)] focus-visible:outline-offset-2',
               )}
@@ -94,12 +110,17 @@ export function SidebarAside({
           )}
         </div>
 
-        {!isCollapsed && merchantName ? (
-          <div className="flex min-h-8 w-full items-center gap-2 rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-primary)] px-2 py-1" title={merchantName}>
-            <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-md bg-[var(--ua-surface-selected)] text-[length:var(--ua-text-metadata-size)] font-bold text-[var(--ua-text-primary)]">
+        {!isCollapsed && workspaces.length > 1 ? (
+          <WorkspaceSwitcher
+            workspaces={workspaces}
+            activeMerchantId={activeMerchantId}
+          />
+        ) : !isCollapsed && merchantName ? (
+          <div className="flex min-h-9 w-full items-center gap-2 rounded-[var(--ua-radius-control)] bg-[var(--ua-surface-hover)] px-2.5 py-1.5" title={merchantName}>
+            <span className="ua-text-working-title flex h-6 w-6 shrink-0 items-center justify-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-primary)] text-[var(--ua-text-primary)]">
               {merchantName.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase()}
             </span>
-            <span className="min-w-0 truncate text-[length:var(--ua-text-metadata-size)] font-semibold leading-tight text-[var(--ua-text-secondary)]">{merchantName}</span>
+            <span className="ua-text-label min-w-0 truncate leading-tight text-[var(--ua-text-secondary)]">{merchantName}</span>
           </div>
         ) : null}
 
@@ -108,48 +129,35 @@ export function SidebarAside({
             href="/integrations"
             prefetch={false}
             onClick={onCloseMobile}
-            className="flex min-h-6 w-full items-center gap-1.5 rounded-[var(--ua-radius-control)] px-2 py-1 text-[length:var(--ua-text-metadata-size)] font-medium leading-tight transition-colors duration-[var(--ua-duration-fast)] hover:bg-[var(--ua-surface-hover)]"
-            /*
-             * A neutral chip, not a tinted one. The warning dot carries the
-             * state; washing the whole pill in 10% olive put a cream block in
-             * the sidebar of every unconnected workspace, which is decoration
-             * doing a glyph's job (§3.1).
-             */
-            style={{
-              background: 'var(--ua-surface-primary)',
-              color: 'var(--ua-text-secondary)',
-              border: '1px solid var(--ua-border-default)',
-            }}
-            title={connectionState.helpdesk
-              ? `${connectionState.helpdeskProvider ? providerLabel(connectionState.helpdeskProvider) : 'Helpdesk'} is connected. Review integrations.`
-              : connectionState.orderSourceConnected
-                ? 'Helpdesk is not connected. Review integrations to connect a support source.'
-                : 'Store and helpdesk are not connected. Review integrations to connect both sources.'}
-            aria-label={connectionState.helpdesk
-              ? `${connectionState.helpdeskProvider ? providerLabel(connectionState.helpdeskProvider) : 'Helpdesk'} connected. Review integrations.`
-              : connectionState.orderSourceConnected
-                ? 'Helpdesk not connected. Review integrations.'
-                : 'Store and helpdesk not connected. Review integrations.'}
+            className="flex min-h-7 w-full items-center gap-2 rounded-[var(--ua-radius-control)] px-2.5 py-1 text-[length:var(--ua-text-metadata-size)] font-medium leading-tight text-[var(--ua-text-secondary)] transition-colors duration-[var(--ua-duration-fast)] hover:bg-[var(--ua-surface-hover)] hover:text-[var(--ua-text-primary)]"
+            title={
+              allSourcesConnected
+                ? `${connectionState.helpdeskProvider ? providerLabel(connectionState.helpdeskProvider) : 'Helpdesk'} and commerce sources are connected. Review integrations.`
+                : oneSourceConnected
+                  ? 'One required source still needs attention. Review integrations.'
+                  : 'Store and helpdesk are not connected. Review integrations to connect both sources.'
+            }
+            aria-label={sourceHealthAriaLabel}
           >
             <span
               className="h-1.5 w-1.5 rounded-full shrink-0"
-              style={{ background: connectionState.helpdesk ? 'var(--ua-success)' : 'var(--ua-warning)' }}
+              style={{
+                background: allSourcesConnected ? 'var(--ua-success)' : 'var(--ua-warning)',
+              }}
               aria-hidden="true"
             />
-            <span className="truncate">
-              {connectionState.helpdesk
-                ? `${connectionState.helpdeskProvider ? providerLabel(connectionState.helpdeskProvider) : 'Helpdesk'} connected`
-                : connectionState.orderSourceConnected
-                  ? 'Helpdesk not connected'
-                  : 'Connect sources'}
-            </span>
+            <span className="truncate">{sourceHealthText}</span>
           </Link>
         ) : null}
 
         {isCollapsed && merchantName ? (
-          <div
-            className="flex h-[22px] w-[22px] items-center justify-center rounded-md bg-[var(--ua-surface-selected)] text-[length:var(--ua-text-metadata-size)] font-bold leading-none text-[var(--ua-text-primary)]"
-            title={merchantName}
+          <Link
+            href="/integrations"
+            prefetch={false}
+            onClick={onCloseMobile}
+            className="relative flex h-[22px] w-[22px] items-center justify-center rounded-md bg-[var(--ua-surface-selected)] text-[length:var(--ua-text-metadata-size)] font-bold leading-none text-[var(--ua-text-primary)]"
+            title={`${merchantName}. ${sourceHealthText}.`}
+            aria-label={`${merchantName}. ${sourceHealthAriaLabel}`}
           >
             {merchantName
               .split(/\s+/)
@@ -157,12 +165,17 @@ export function SidebarAside({
               .join('')
               .slice(0, 2)
               .toUpperCase()}
-          </div>
+            <span
+              className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full border border-[var(--ua-shell)]"
+              style={{ background: allSourcesConnected ? 'var(--ua-success)' : 'var(--ua-warning)' }}
+              aria-hidden="true"
+            />
+          </Link>
         ) : null}
       </div>
 
       <nav
-        className={cn('min-h-0 flex-1 overflow-y-auto overflow-x-hidden', isCollapsed ? 'px-2 py-3' : 'p-2')}
+        className={cn('min-h-0 flex-1 overflow-y-auto overflow-x-hidden', isCollapsed ? 'px-2 py-2' : 'px-2.5 py-1')}
         aria-label="Main navigation"
       >
         {groups.map((group) => (
@@ -185,8 +198,8 @@ export function SidebarAside({
 
       <div
         className={cn(
-          'flex flex-shrink-0 flex-col border-t border-[var(--ua-border-default)]',
-          isCollapsed ? 'items-center gap-1 p-2' : 'gap-0.5 p-2',
+          'flex flex-shrink-0 flex-col border-t border-[var(--ua-border-subtle)]',
+          isCollapsed ? 'items-center gap-1 p-2.5' : 'gap-0.5 p-2.5',
         )}
       >
         {!isCollapsed ? (
@@ -203,8 +216,8 @@ export function SidebarAside({
           title={isCollapsed ? 'Help' : undefined}
           onClick={onCloseMobile}
           className={cn(
-            'flex h-8 items-center gap-3 rounded-sm px-2',
-            'text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-secondary)] hover:text-[var(--ua-text-primary)]',
+            'flex h-8 items-center gap-3 rounded-[var(--ua-radius-control)] px-2',
+            'text-[length:var(--ua-text-dense-size)] text-[var(--ua-text-secondary)] hover:bg-[var(--ua-surface-hover)] hover:text-[var(--ua-text-primary)]',
             'transition-colors duration-[var(--ua-duration-fast)]',
             'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ua-border-focus)] focus-visible:outline-offset-2',
             isCollapsed && 'justify-center',
@@ -219,8 +232,8 @@ export function SidebarAside({
           onClick={onSignOut}
           title={isCollapsed ? 'Sign out' : undefined}
           className={cn(
-            'flex h-8 w-full items-center gap-3 rounded-sm px-2',
-            'text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-secondary)] hover:text-[var(--ua-text-primary)]',
+            'flex h-8 w-full items-center gap-3 rounded-[var(--ua-radius-control)] px-2',
+            'text-[length:var(--ua-text-dense-size)] text-[var(--ua-text-secondary)] hover:bg-[var(--ua-surface-hover)] hover:text-[var(--ua-text-primary)]',
             'transition-colors duration-[var(--ua-duration-fast)]',
             'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ua-border-focus)] focus-visible:outline-offset-2',
             isCollapsed && 'justify-center',

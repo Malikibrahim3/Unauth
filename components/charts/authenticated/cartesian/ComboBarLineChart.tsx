@@ -50,7 +50,7 @@ type ComboBarLineChartProps = {
   height?: number;
 };
 
-/** Quiet Precision combo chart: flat bars, an optional secondary series, and comparison markers. */
+/** Instrument Grade combo chart: substantial bars, an optional secondary series, and comparison markers. */
 export function ComboBarLineChart({
   data,
   colourVar,
@@ -168,8 +168,9 @@ export function ComboBarLineChart({
               type="linear"
               dataKey="previous"
               name="Previous period"
-              stroke="transparent"
-              strokeWidth={0}
+              stroke={theme['--ua-chart-neutral-500']}
+              strokeWidth={1.75}
+              strokeDasharray="5 4"
               dot={{
                 r: COMPARISON_DOT_R,
                 fill: theme['--ua-chart-neutral-500'],

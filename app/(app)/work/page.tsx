@@ -38,7 +38,7 @@ type TaskRow = {
 export default async function WorkPage({
   searchParams,
 }: {
-  searchParams: Promise<{ view?: string; page?: string }>;
+  searchParams: Promise<{ view?: string; page?: string; q?: string }>;
 }) {
   const user = await getRequestUser();
   if (!user) redirect("/login");
@@ -51,6 +51,7 @@ export default async function WorkPage({
   if (denied) redirect("/dashboard");
   const params = await searchParams;
   const view = params.view ?? "open";
+  const searchQuery = params.q?.slice(0, 160) ?? "";
   const page = Math.max(1, Number(params.page) || 1);
   const pageSize = 25;
   const asOf = now();
@@ -146,7 +147,12 @@ export default async function WorkPage({
         ? Promise.resolve({ data: [], count: 0 })
         : query.range((page - 1) * pageSize, page * pageSize - 1),
       includeExceptions
-        ? listExceptions(serviceClient, ctx.merchantId, { status: "open", limit: pageSize, ...exceptionDeadline })
+        ? listExceptions(serviceClient, ctx.merchantId, {
+            status: "open",
+            limit: pageSize,
+            offset: (page - 1) * pageSize,
+            ...exceptionDeadline,
+          })
         : Promise.resolve([]),
       loadWorkOwnerDirectory(serviceClient, ctx.merchantId),
       countWorkDueBands(serviceClient, ctx.merchantId, asOf),
@@ -251,39 +257,41 @@ export default async function WorkPage({
   }));
   const items =
     view === "integration-exceptions" ? exceptions : [...tasks, ...exceptions];
+  const matchingWork =
+    (taskResult.count ?? 0) +
+    (includeExceptions ? filteredExceptionCount : 0);
+  const viewLabel = {
+    open: "Open work",
+    mine: "My work",
+    unassigned: "Unassigned work",
+    "due-today": "Due today",
+    overdue: "Overdue work",
+    "no-sla": "No-deadline work",
+    blocked: "Blocked work",
+    "evidence-needed": "Evidence needed",
+    "decision-needed": "Decision needed",
+    "integration-exceptions": "Integration exceptions",
+    completed: "Completed work",
+  }[view] ?? "Matching work";
+  const deadlineRisk = dueBands.overdue + dueBands["due-today"];
   return (
     <WorkbenchPage
       title="Work"
-      kpiItems={[
-        {
-          label: "Matching work",
-          value: formatNumber(
-            (taskResult.count ?? 0) +
-              (includeExceptions ? filteredExceptionCount : 0),
-          ),
-          hint: "In this view",
-        },
-        {
-          label: "Open exceptions",
-          value: formatNumber(openExceptionCount),
-          hint: "Merchant decisions required",
-        },
-      ]}
-      primaryVisual={<WorkQueuePulse bands={dueBands} view={view} />}
+      subtitle={`${formatNumber(matchingWork)} ${viewLabel.toLowerCase()} · ${formatNumber(deadlineRisk)} overdue or due today`}
       main={
         <WorkQueue
           items={items}
-          total={
-            (taskResult.count ?? 0) +
-            (includeExceptions ? filteredExceptionCount : 0)
-          }
+          total={matchingWork}
           view={view}
           viewCounts={viewCounts}
           page={page}
           pageSize={pageSize}
           asOf={asOf.toISOString()}
+          initialQuery={searchQuery}
+          forecast={<WorkQueuePulse bands={dueBands} view={view} query={searchQuery} />}
         />
       }
+      mainSurface="open"
     />
   );
 }

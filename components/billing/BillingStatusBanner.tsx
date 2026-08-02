@@ -38,7 +38,7 @@ export default function BillingStatusBanner() {
   if (state.status === 'grace_period') {
     return (
       <div
-        className="flex-shrink-0 border-b px-4 py-2 text-sm"
+        className="ua-text-body flex-shrink-0 border-b px-4 py-2"
         style={{ borderColor: 'var(--ua-risk-high)', background: 'color-mix(in srgb, var(--ua-risk-high) 8%, var(--ua-canvas))' }}
         role="alert"
       >
@@ -55,7 +55,7 @@ export default function BillingStatusBanner() {
 
   return (
     <div
-      className="flex-shrink-0 border-b px-4 py-2 text-sm"
+      className="ua-text-body flex-shrink-0 border-b px-4 py-2"
       style={{ borderColor: 'var(--ua-risk-high)', background: 'color-mix(in srgb, var(--ua-risk-high) 8%, var(--ua-canvas))' }}
       role="alert"
     >

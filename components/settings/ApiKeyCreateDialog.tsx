@@ -41,13 +41,13 @@ export function ApiKeyCreateDialog({
       {state.createdSecret ? (
         <>
           <p
-            className="text-xs font-medium"
+            className="ua-text-label"
             style={{ color: "var(--ua-text-secondary)" }}
           >
             API Key (for Chrome, Zendesk, direct API)
           </p>
           <pre
-            className="mt-2 overflow-x-auto rounded-md p-3 text-xs"
+            className="ua-text-dense mt-2 overflow-x-auto rounded-md p-3"
             style={{ background: "var(--ua-surface-secondary)", color: "var(--ua-text-primary)" }}
           >
             {state.createdSecret}
@@ -55,13 +55,13 @@ export function ApiKeyCreateDialog({
           {state.createdWidgetToken ? (
             <>
               <p
-                className="mt-4 text-xs font-medium"
+                className="ua-text-label mt-4"
                 style={{ color: "var(--ua-text-secondary)" }}
               >
                 Widget Token (for Gorgias widget URL only)
               </p>
               <pre
-                className="mt-2 overflow-x-auto rounded-md p-3 text-xs"
+                className="ua-text-dense mt-2 overflow-x-auto rounded-md p-3"
                 style={{ background: "var(--ua-surface-secondary)", color: "var(--ua-text-primary)" }}
               >
                 {state.createdWidgetToken}
@@ -101,13 +101,13 @@ export function ApiKeyCreateDialog({
       ) : (
         <form onSubmit={onCreate}>
           <h3
-            className="text-sm font-semibold"
+            className="ua-text-working-title"
             style={{ color: "var(--ua-text-primary)" }}
           >
             Create API key
           </h3>
           <label
-            className="mt-4 block text-xs font-medium"
+            className="ua-text-label mt-4 block"
             style={{ color: "var(--ua-text-secondary)" }}
           >
             Label
@@ -118,7 +118,7 @@ export function ApiKeyCreateDialog({
               value={state.keyName}
               onChange={(e) => onKeyNameChange(e.target.value)}
               placeholder="e.g. Gorgias integration"
-              className="mt-1 w-full rounded-md px-3 py-2 text-sm"
+              className="ua-text-body mt-1 w-full rounded-md px-3 py-2"
               style={{
                 background: "var(--ua-surface-secondary)",
                 border: "1px solid var(--ua-border-default)",
@@ -130,7 +130,7 @@ export function ApiKeyCreateDialog({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-md border px-3 py-2 text-sm"
+              className="ua-text-label rounded-md border px-3 py-2"
               style={{ borderColor: "var(--ua-border-default)", color: "var(--ua-text-primary)" }}
             >
               Cancel
@@ -138,7 +138,7 @@ export function ApiKeyCreateDialog({
             <button
               type="submit"
               disabled={state.creating || !state.keyName.trim()}
-              className="rounded-md px-3 py-2 text-sm font-medium disabled:opacity-50"
+              className="ua-text-working-title rounded-md px-3 py-2 disabled:opacity-50"
               style={{ background: "var(--ua-action-primary)", color: "var(--ua-text-inverse)" }}
             >
               {state.creating ? "Creating…" : "Create key"}

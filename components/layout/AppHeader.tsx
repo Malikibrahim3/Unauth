@@ -7,10 +7,8 @@ import { Bell, ChevronRight, Menu, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import CommandPalette from './CommandPalette';
 import { useBreadcrumbOverride } from './BreadcrumbOverrideContext';
-import { MerchantEnvChip } from './MerchantEnvChip';
 import { AvatarMenu } from './AvatarMenu';
 import { ContextCreditsBadge } from './ContextCreditsBadge';
-import { WorkspaceSwitcher, type WorkspaceOption } from './WorkspaceSwitcher';
 import type { Permission } from '@/lib/permissions';
 import { useFetchJson } from '@/lib/react/useFetchJson';
 
@@ -25,22 +23,16 @@ interface AppHeaderProps {
   actions?: React.ReactNode;
   onToggleSidebar?: () => void;
   sidebarCollapsed?: boolean;
-  /** Merchant name shown in the env chip left of search */
-  merchantName?: string | null;
-  /** Demo/sample tenant — surfaces a "Demo" pill instead of an env badge */
-  isDemo?: boolean;
   /** Fictional/operator display name when the auth profile provides one. */
   userName?: string | null;
   /** Authenticated user email for the avatar menu */
   userEmail?: string | null;
-  workspaces?: WorkspaceOption[];
-  activeMerchantId?: string | null;
   unreadCount?: number;
   permissions?: Permission[];
 }
 
 /**
- * AppHeader - 48px sticky utility header per §4.3.
+ * AppHeader - 52px sticky desktop utility toolbar.
  * Renders parent context in the center-left region; the page header owns the
  * current title so it is never announced twice in the initial viewport.
  */
@@ -49,21 +41,29 @@ export default function AppHeader({
   actions,
   onToggleSidebar,
   sidebarCollapsed,
-  merchantName,
-  isDemo,
   userName,
   userEmail,
-  workspaces = [],
-  activeMerchantId,
   unreadCount = 0,
   permissions = [],
 }: AppHeaderProps) {
   const pathname = usePathname();
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [liveUnreadCount, setLiveUnreadCount] = useState<number | null>(null);
   const { data: notificationSummary } = useFetchJson<{ unreadCount?: number }>(
     '/api/notifications/unread-count',
   );
-  const resolvedUnreadCount = notificationSummary?.unreadCount ?? unreadCount;
+  const resolvedUnreadCount = liveUnreadCount ?? notificationSummary?.unreadCount ?? unreadCount;
+
+  useEffect(() => {
+    const handleUnreadChange = (event: Event) => {
+      const count = (event as CustomEvent<{ unreadCount?: unknown }>).detail?.unreadCount;
+      if (typeof count === 'number' && Number.isFinite(count) && count >= 0) {
+        setLiveUnreadCount(count);
+      }
+    };
+    window.addEventListener('unauth:notification-unread-change', handleUnreadChange);
+    return () => window.removeEventListener('unauth:notification-unread-change', handleUnreadChange);
+  }, []);
 
   const openPalette = useCallback(() => setPaletteOpen(true), []);
   const closePalette = useCallback(() => setPaletteOpen(false), []);
@@ -92,10 +92,10 @@ export default function AppHeader({
   return (
     <header
       className={cn(
-        'ua-app-header sticky top-0 z-40 flex h-12 items-center gap-3',
-        'min-w-0 border-b pl-14 pr-4 md:px-4',
+        'ua-app-header sticky top-0 z-40 flex h-[var(--ua-utility-header-height)] items-center gap-2.5',
+        'min-w-0 border-b pl-14 pr-5 md:px-5',
       )}
-      style={{ borderBottomColor: 'var(--ua-border-default)' }}
+      style={{ borderBottomColor: 'var(--ua-border-subtle)' }}
     >
       {/* Sidebar collapse toggle */}
       {onToggleSidebar && (
@@ -164,28 +164,20 @@ export default function AppHeader({
       {/* Context credits — monthly metered usage (renders null on unmetered tiers) */}
       <ContextCreditsBadge />
 
-      {/* MerchantEnvChip - left of search */}
-      {workspaces.length > 1 ? (
-        <WorkspaceSwitcher workspaces={workspaces} activeMerchantId={activeMerchantId ?? null} />
-      ) : (
-        <MerchantEnvChip merchantName={merchantName ?? null} isDemo={isDemo} />
-      )}
-
       {/* ⌘K trigger */}
       <button
         type="button"
         aria-label="Search (⌘K)"
         onClick={openPalette}
         className={cn(
-          'flex h-7 items-center gap-1.5 px-2',
-          'border border-[var(--ua-border-default)]',
-          'text-caption text-[var(--ua-text-tertiary)]',
-          'hover:border-[var(--ua-border-default)] hover:text-[var(--ua-text-primary)]',
+          'flex h-8 items-center gap-2 rounded-[var(--ua-radius-control)] px-2.5',
+          'border border-transparent bg-transparent',
+          'text-caption text-[var(--ua-text-secondary)]',
+          'hover:bg-[var(--ua-surface-hover)] hover:text-[var(--ua-text-primary)]',
           'transition-colors duration-[var(--ua-duration-fast)]',
           'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ua-border-focus)] focus-visible:outline-offset-2',
           'flex-shrink-0',
         )}
-        style={{ background: 'var(--ua-surface-primary)', borderRadius: 'var(--ua-radius-control)' }}
       >
         <Search size={14} aria-hidden="true" />
         <span className="hidden sm:inline">Search</span>
@@ -196,11 +188,10 @@ export default function AppHeader({
         href="/notifications"
         prefetch={false}
         aria-label={resolvedUnreadCount > 0 ? `Notifications, ${resolvedUnreadCount} unread` : 'Notifications'}
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border text-[var(--ua-text-tertiary)] hover:text-[var(--ua-text-primary)]"
-        style={{ borderColor: 'var(--ua-border-default)', background: 'var(--ua-surface-primary)' }}
+        className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--ua-radius-control)] border border-transparent text-[var(--ua-text-secondary)] transition-colors duration-[var(--ua-duration-fast)] hover:bg-[var(--ua-surface-hover)] hover:text-[var(--ua-text-primary)]"
       >
         <Bell size={14} aria-hidden="true" />
-        {resolvedUnreadCount > 0 ? <span className="sr-only">{resolvedUnreadCount} unread</span> : null}
+        {resolvedUnreadCount > 0 ? <><span className="sr-only">{resolvedUnreadCount} unread</span><span aria-hidden="true" className="absolute -right-2 -top-2 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] px-1 text-[length:var(--ua-text-metadata-size)] font-medium tabular-nums text-[var(--ua-text-secondary)]">{resolvedUnreadCount > 99 ? '99+' : resolvedUnreadCount}</span></> : null}
       </Link>
 
       <AvatarMenu name={userName} email={userEmail} />

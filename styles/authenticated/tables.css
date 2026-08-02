@@ -1,3 +1,4 @@
+@layer components {
 /*
  * Table shell/header/row base rules. Relocated verbatim from
  * app/(app)/authenticated.css. The shared table component is
@@ -33,6 +34,14 @@
 .ua-app .ua-data-table {
   width: 100%;
   overflow-x: auto;
+  /* Bound the body so a long registry gets a sticky header and an internal
+   * scrollbar instead of growing the document indefinitely (§7.3). */
+  overflow-y: auto;
+  max-height: min(72vh, 860px);
+  /* Keep the table's intentional horizontal scroll from expanding the
+   * authenticated document viewport. Row menus are portalled above this
+   * region, so paint containment cannot hide an overlay. */
+  contain: paint;
   border: 1px solid var(--ua-border-default);
   border-radius: var(--ua-radius-surface);
   background: var(--ua-surface-primary);
@@ -47,14 +56,35 @@
   font-size: var(--ua-text-dense-size);
 }
 
+/*
+ * Work is intentionally a five-column decision table. Fixed geometry prevents
+ * the primary task title from collapsing into one-character lines while the
+ * region retains contained horizontal overflow at genuinely narrow widths.
+ */
+.ua-app .ua-work-queue-table .ua-data-table__table {
+  min-width: 720px;
+  table-layout: fixed;
+}
+
+.ua-app .ua-work-queue-table .ua-data-table__cell:first-child,
+.ua-app .ua-work-queue-table .ua-data-table__header-cell:first-child {
+  padding-right: var(--ua-space-2);
+}
+
 .ua-app .ua-data-table__head-row {
   background: var(--ua-surface-secondary);
-  border-bottom: 1px solid var(--ua-border-default);
 }
 
 .ua-app .ua-data-table__header-cell {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   height: var(--ua-table-header-height);
   padding-inline: var(--ua-space-4);
+  /* A sticky th's border-bottom does not paint reliably during scroll in
+   * every engine; an inset shadow on the cell itself always does. */
+  box-shadow: inset 0 -1px 0 var(--ua-border-hairline);
+  background: var(--ua-surface-secondary);
   color: var(--ua-text-tertiary);
   font-size: var(--ua-text-metadata-size);
   font-weight: 600;
@@ -78,6 +108,11 @@
   text-align: center;
 }
 
+.ua-app .ua-data-table__header-cell--numeric,
+.ua-app .ua-data-table__cell--numeric {
+  font-variant-numeric: tabular-nums;
+}
+
 .ua-app .ua-data-table__sort-icon {
   display: inline-block;
   width: var(--ua-space-3);
@@ -91,23 +126,32 @@
 }
 
 .ua-app .ua-data-table__row {
-  height: var(--ua-data-row-height);
-  border-bottom: 1px solid var(--ua-border-subtle);
+  /* min-height, not height: a density sets the row floor, but a row carrying
+   * genuinely row-distinct second-line content (§5.1 W1) is allowed to grow
+   * past it rather than every row paying the tallest tier's cost. */
+  min-height: var(--ua-data-row-height);
   background: var(--ua-surface-primary);
   transition: background-color var(--ua-duration-fast) var(--ua-ease-standard),
     box-shadow var(--ua-duration-fast) var(--ua-ease-standard);
 }
 
 .ua-app .ua-data-table__row--selected {
-  background: var(--ua-surface-hover);
-  box-shadow: inset 2px 0 0 var(--ua-action-primary);
+  background: var(--ua-surface-selected);
 }
 
 .ua-app .ua-data-table__cell {
-  padding: 0 var(--ua-space-4);
+  padding: var(--ua-space-1-5) var(--ua-space-4);
   vertical-align: middle;
   color: var(--ua-text-primary);
   text-align: left;
+}
+
+.ua-app .ua-data-table__row:not(:last-child) .ua-data-table__cell {
+  border-bottom: 1px solid var(--ua-border-subtle);
+}
+
+.ua-app .ua-data-table__row--selected .ua-data-table__cell:first-child {
+  box-shadow: inset 2px 0 0 var(--ua-action-primary);
 }
 
 .ua-app .ua-data-table__actions-cell {
@@ -120,41 +164,256 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 200px;
+  min-height: 320px;
   color: var(--ua-text-secondary);
   font-size: var(--ua-text-dense-size);
 }
 
 .ua-app .ua-data-table__skeleton-row {
+  /* Match the real row height so the skeleton doesn't jump ~100px taller
+   * once data lands (§7.3). */
+  height: var(--ua-data-row-height);
   border-bottom: 1px solid var(--ua-border-subtle);
 }
 
 .ua-app .ua-data-table__skeleton-cell {
-  padding: var(--ua-space-2) var(--ua-space-4);
+  padding-inline: var(--ua-space-4);
+  vertical-align: middle;
 }
 
 .ua-app .ua-data-table__skeleton-bar {
-  width: 50%;
+  /* Fallback for columns past the specified widths below. */
+  width: 24%;
   height: var(--ua-space-3);
   border-radius: var(--ua-radius-control);
 }
 
-.ua-app .ua-data-table__skeleton-bar--primary {
-  width: 60%;
-}
-
-.ua-app .ua-data-table__skeleton-bar--secondary {
-  width: 80%;
-}
-
-.ua-app .ua-data-table--density-compact {
-  --ua-data-row-height: 40px;
+/* One row-density contract (§7.3), replacing the three that shipped
+ * simultaneously (this file's old 40/44/52, tokens.css's dead 44/56 pair, and
+ * Work's own hardcoded 64px override). */
+.ua-app .ua-data-table--density-metadata {
+  --ua-data-row-height: var(--ua-table-row-height-metadata);
 }
 
 .ua-app .ua-data-table--density-default {
-  --ua-data-row-height: 44px;
+  --ua-data-row-height: var(--ua-table-row-height-default);
 }
 
-.ua-app .ua-data-table--density-relaxed {
-  --ua-data-row-height: 52px;
+.ua-app .ua-data-table--density-rich {
+  --ua-data-row-height: var(--ua-table-row-height-rich);
+}
+
+.ua-app .ua-data-table--density-two-line {
+  --ua-data-row-height: var(--ua-table-row-height-two-line);
+}
+
+/* Flush variant (§8.3): the table is the body of a RegistrySurface, so the
+ * surface owns the single frame — the table drops its own border/radius/fill
+ * but keeps bounded horizontal overflow. Compound selector so it wins over the
+ * base `.ua-data-table` frame regardless of source order. */
+.ua-app .ua-data-table.ua-data-table--flush {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+/*
+ * Registry surface (§8.3, LP-CMP-04). One working surface whose interior is
+ * split by dividers: a toolbar row (filters/bulk actions + result count), the
+ * table body (a flush DataTable or a geometry-aware state), and a pagination
+ * footer. `overflow: hidden` keeps a flush table's horizontal scroll and the
+ * dividers inside the rounded working card.
+ */
+.ua-app .ua-registry-surface {
+  overflow: hidden;
+}
+
+.ua-app .ua-registry-surface__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ua-space-3);
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--ua-border-subtle);
+  background: var(--ua-surface-primary);
+}
+
+.ua-app .ua-registry-surface__toolbar-lead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ua-space-2);
+  min-width: 0;
+}
+
+.ua-app .ua-registry-surface__result-count {
+  margin: 0;
+  color: var(--ua-text-tertiary);
+  font-size: var(--ua-text-metadata-size);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.ua-app .ua-registry-surface__pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ua-space-3);
+  padding: var(--ua-space-3) var(--ua-space-4);
+  border-top: 1px solid var(--ua-border-default);
+  color: var(--ua-text-secondary);
+  font-size: var(--ua-text-metadata-size);
+}
+
+/* Flagship case registry: search/sort and workflow views are two readable
+ * control bands inside the one registry toolbar, instead of one undifferentiated
+ * run of search, eight filters, sort, and page-size controls. */
+.ua-app .ua-case-registry-tools {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+}
+
+.ua-app .ua-case-registry .ua-registry-surface__toolbar-lead {
+  width: 100%;
+}
+
+.ua-app .ua-case-registry-tools__primary,
+.ua-app .ua-case-registry-tools__filters {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ua-space-2);
+}
+
+.ua-app .ua-case-registry-tools__primary {
+  justify-content: space-between;
+}
+
+.ua-app .ua-case-registry-tools__search {
+  display: flex;
+  min-width: min(100%, 320px);
+  flex: 1 1 420px;
+  align-items: center;
+  gap: var(--ua-space-2);
+}
+
+.ua-app .ua-case-registry-tools__sort {
+  display: flex;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ua-space-2);
+}
+
+.ua-app .ua-case-registry-tools__filters {
+  padding-top: 8px;
+  border-top: 1px solid var(--ua-border-subtle);
+}
+
+.ua-app .ua-case-registry-tools__label {
+  flex: 0 0 auto;
+  margin-right: var(--ua-space-1);
+  color: var(--ua-text-tertiary);
+  font-size: var(--ua-text-metadata-size);
+  font-weight: 600;
+}
+
+/* Master-detail case queue. The registry owns the outer perimeter; the list
+ * and preview use selection, spacing, and dividers instead of nested cards.
+ * display/flex-direction are declared here, not as Tailwind utilities on the
+ * element (`flex flex-col lg:flex-row`) — a utility class sits in
+ * `@layer utilities`, which cascades after this file's `@layer components`,
+ * so it silently won over this rule's own `display: grid` below at every
+ * width, and the split never rendered. One layer owns this property. */
+.ua-app .ua-case-queue {
+  display: flex;
+  flex-direction: column;
+  min-height: 640px;
+  background: var(--ua-surface-primary);
+}
+
+.ua-app .ua-case-queue__list {
+  width: 100%;
+  max-height: 420px;
+  border-color: var(--ua-border-subtle);
+  background: var(--ua-surface-primary);
+}
+
+.ua-app .ua-case-queue__item {
+  padding: 12px 16px;
+  border-color: var(--ua-border-subtle);
+  border-left: 2px solid transparent;
+  background: transparent;
+}
+
+.ua-app .ua-case-queue__item:hover {
+  background: var(--ua-surface-hover);
+}
+
+.ua-app .ua-case-queue__item[data-selected="true"] {
+  border-left-color: var(--ua-accent-500);
+  background: var(--ua-surface-selected);
+}
+
+.ua-app .ua-case-queue__preview {
+  background: var(--ua-surface-primary);
+}
+
+.ua-app .ua-case-preview__identity,
+.ua-app .ua-case-preview__priority,
+.ua-app .ua-case-preview__section {
+  padding: var(--ua-space-5);
+}
+
+.ua-app .ua-case-preview__identity {
+  border-bottom: 1px solid var(--ua-border-subtle);
+  background: var(--ua-surface-primary);
+}
+
+/* Plain, not accent-tinted (C4): the list already carries the one violet
+ * selection treatment (border-left + surface-selected on the active item);
+ * a second violet wash on the detail pane's top section read as a second,
+ * competing selection state right beside it. */
+.ua-app .ua-case-preview__priority {
+  border-bottom: 1px solid var(--ua-border-subtle);
+  background: var(--ua-surface-primary);
+}
+
+.ua-app .ua-case-preview__section {
+  border-bottom: 1px solid var(--ua-border-subtle);
+}
+
+.ua-app .ua-case-preview__section:last-child {
+  border-bottom: 0;
+}
+
+@media (min-width: 1024px) {
+  /* Neither pane owned its own overflow below this breakpoint: the list grew
+   * to its full content height and the preview pane stretched to match,
+   * leaving a large void of empty canvas beneath a short preview. Bound the
+   * queue to the viewport and let each pane scroll independently instead. */
+  .ua-app .ua-case-queue {
+    display: grid;
+    grid-template-columns: 360px minmax(0, 1fr);
+    height: calc(100dvh - var(--ua-utility-header-height) - 96px);
+    min-height: 560px;
+  }
+
+  .ua-app .ua-case-queue__list,
+  .ua-app .ua-case-queue__preview {
+    height: 100%;
+    max-height: none;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .ua-app .ua-case-queue__list {
+    width: auto;
+  }
+}
 }

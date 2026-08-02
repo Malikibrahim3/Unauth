@@ -34,7 +34,7 @@ export function ConnectionPromptStrip({ connection, hasExistingProfiles }: Conne
 
   return (
     <div
-      className="flex items-center justify-between gap-4 px-4 py-2.5 border-b text-sm"
+      className="ua-text-body flex items-center justify-between gap-4 px-4 py-2.5 border-b"
       style={{
         background: 'color-mix(in srgb, var(--ua-warning) 8%, var(--ua-surface-primary))',
         borderColor: 'color-mix(in srgb, var(--ua-warning) 20%, transparent)',
@@ -52,7 +52,7 @@ export function ConnectionPromptStrip({ connection, hasExistingProfiles }: Conne
       </div>
       <Link
         href="/integrations"
-        className="shrink-0 text-sm font-semibold whitespace-nowrap hover:opacity-80 transition-opacity"
+        className="ua-text-working-title shrink-0 whitespace-nowrap hover:opacity-80 transition-opacity"
         style={{ color: 'var(--ua-action-primary)' }}
       >
         Complete setup

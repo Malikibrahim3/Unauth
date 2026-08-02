@@ -31,6 +31,7 @@ import {
  * re-exported here so callers have a single import for display copy.
  */
 import { CLAIM_TYPE_LABELS } from '@/lib/claims/claimTypes';
+import { PAYOUT_CASE_NEXT_ACTION_LABELS } from '@/lib/payouts/types';
 
 export { CLAIM_TYPE_LABELS };
 export {
@@ -114,6 +115,12 @@ const requestedAction: Record<string, string> = {
   unknown: 'Not yet known',
 };
 
+const nextAction: Record<string, string> = {
+  ...PAYOUT_CASE_NEXT_ACTION_LABELS,
+  // Legacy case rows can still contain this pre-v2 action value.
+  request_evidence: 'Request evidence',
+};
+
 const recoverability: Record<string, string> = {
   recoverable: 'Recoverable',
   possibly_recoverable: 'Possibly recoverable',
@@ -123,6 +130,7 @@ const recoverability: Record<string, string> = {
 };
 
 const recoveryStatus: Record<string, string> = {
+  open: 'Open',
   no_recovery_needed: 'No recovery needed',
   recovery_possible: 'Recovery possible',
   recovery_opened: 'Recovery opened',
@@ -203,6 +211,10 @@ const lossCategory: Record<string, string> = {
 
 // attribution and recoveryRoute share one vocabulary.
 const attribution: Record<string, string> = {
+  customer: 'Customer',
+  carrier: 'Carrier',
+  warehouse: 'Warehouse',
+  payment_processor: 'Payment processor',
   customer_claim: 'Customer claim',
   carrier_loss: 'Carrier loss',
   carrier_damage: 'Carrier damage',
@@ -341,6 +353,10 @@ const workflowStatus: Record<string, string> = {
   verification_unavailable: 'Verification unavailable',
   attention_required: 'Attention required',
   sync_failed: 'Sync failed',
+  source_verified: 'Source verified',
+  evidence_due: 'Evidence due',
+  inspected: 'Inspected',
+  ready_for_decision: 'Ready for decision',
   // Provider lifecycle-capability evidence levels (lib/integrations/types.ts),
   // rendered on the integration detail page.
   implemented: 'Implementation located',
@@ -388,6 +404,12 @@ const confidence: Record<string, string> = {
   unmatched: 'Unmatched',
 };
 
+const sourceConfidence: Record<string, string> = {
+  source_verified: 'Source verified',
+  partial_source_verified: 'Partially source verified',
+  insufficient_source_data: 'Insufficient source data',
+};
+
 const assessmentState: Record<string, string> = {
   known: 'Known',
   likely: 'Likely',
@@ -403,10 +425,24 @@ const inviteStatus: Record<string, string> = {
   revoked: 'Revoked',
 };
 
+/**
+ * `record_match_candidates.subject_entity_type` — an internal identity-
+ * resolution type name (`MerchantEntityType` in
+ * lib/identity/merchantCustomerResolver.ts), never a merchant-facing word.
+ * Raised match-review copy must go through this map, not the raw column
+ * value ("Ambiguous source_order match").
+ */
+const matchSubjectEntity: Record<string, string> = {
+  source_customer: 'customer',
+  source_order: 'order',
+  source_ticket: 'support ticket',
+};
+
 const MAPS = {
   caseStatus,
   inviteStatus,
   requestedAction,
+  nextAction,
   recoverability,
   recoveryStatus,
   ownerType,
@@ -420,7 +456,9 @@ const MAPS = {
   workflowStatus,
   evidenceStrength,
   confidence,
+  sourceConfidence,
   assessmentState,
+  matchSubjectEntity,
   claimType: CLAIM_TYPE_LABELS as Record<string, string>,
 } as const;
 

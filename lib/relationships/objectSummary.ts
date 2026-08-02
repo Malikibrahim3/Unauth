@@ -76,6 +76,14 @@ export type ObjectTimelineEvent = {
   detail: string | null;
   at: string | null;
 };
+export type ObjectItem = {
+  id: string;
+  title: string;
+  sku: string | null;
+  quantity: number | null;
+  amount: number | null;
+  currency: string | null;
+};
 export type ObjectEvidence = {
   id: string;
   title: string;
@@ -85,6 +93,15 @@ export type ObjectEvidence = {
   confidence: string;
   occurredAt: string | null;
   reference: string | null;
+};
+export type ObjectConversationEntry = {
+  id: string;
+  kind: "message" | "activity";
+  title: string;
+  summary: string | null;
+  actor: string | null;
+  visibility: string | null;
+  at: string | null;
 };
 export type ObjectProvenance = {
   sourceSystem: string;
@@ -112,7 +129,9 @@ export type ObjectSummary = {
   customer: ObjectLink | null;
   connected: ObjectLink[];
   facts: ObjectFact[];
+  items: ObjectItem[];
   timeline: ObjectTimelineEvent[];
+  conversation: ObjectConversationEntry[];
   evidence: ObjectEvidence[];
   payoutCases: ObjectLink[];
   provenance: ObjectProvenance | null;
@@ -143,6 +162,71 @@ function event(
 }
 function compactFacts(values: ObjectFact[]) {
   return values.filter((item) => item.value !== null && item.value !== "");
+}
+
+function textList(row: Record<string, unknown>, key: string): string[] {
+  const value = row[key];
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+    : [];
+}
+
+function isCommerceObject(
+  type: ConnectedObjectType,
+): type is "order" | "shipment" | "refund" | "return" {
+  return type === "order" || type === "shipment" || type === "refund" || type === "return";
+}
+
+function lineAmount(row: Record<string, unknown>): number | null {
+  const minor = numberValue(row, "total_minor");
+  return minor === null ? null : minor / 100;
+}
+
+async function loadItems(
+  client: Client,
+  merchantId: string,
+  type: ConnectedObjectType,
+  id: string,
+  orderId: string | null,
+): Promise<ObjectItem[]> {
+  if (!isCommerceObject(type)) return [];
+
+  if (type === "shipment") {
+    const result = await client
+      .from(TABLES.SOURCE_SHIPMENT_LINES)
+      .select("id,external_product_ref,sku,quantity_recorded")
+      .eq("merchant_id", merchantId)
+      .eq("source_shipment_id", id)
+      .limit(50);
+    if (result.error)
+      throw new Error(`connected_object_shipment_items_failed:${result.error.message}`);
+    return ((result.data as Record<string, unknown>[] | null) ?? []).map((item) => ({
+      id: text(item, "id")!,
+      title: text(item, "external_product_ref") ?? text(item, "sku") ?? "Shipment item",
+      sku: text(item, "sku"),
+      quantity: numberValue(item, "quantity_recorded"),
+      amount: null,
+      currency: null,
+    }));
+  }
+
+  if (!orderId) return [];
+  const result = await client
+    .from(TABLES.SOURCE_ORDER_LINES)
+    .select("id,title,sku,quantity,total_minor,currency")
+    .eq("merchant_id", merchantId)
+    .eq("source_order_id", orderId)
+    .limit(50);
+  if (result.error)
+    throw new Error(`connected_object_items_failed:${result.error.message}`);
+  return ((result.data as Record<string, unknown>[] | null) ?? []).map((item) => ({
+    id: text(item, "id")!,
+    title: text(item, "title") ?? text(item, "sku") ?? "Order item",
+    sku: text(item, "sku"),
+    quantity: numberValue(item, "quantity"),
+    amount: lineAmount(item),
+    currency: text(item, "currency"),
+  }));
 }
 
 async function loadSourceRecord(
@@ -530,6 +614,65 @@ export async function getObjectSummary(
   }
   if (customer) connected.unshift(customer);
 
+  // Tickets retain provider order references as source facts. Read those links
+  // into the existing connected-record spine rather than presenting identifiers
+  // or requiring a second support-specific record model.
+  if (type === "ticket") {
+    const orderExternalIds = textList(row, "linked_order_external_ids").slice(0, 20);
+    if (orderExternalIds.length) {
+      const orderResult = await client
+        .from(TABLES.SOURCE_ORDERS)
+        .select("id,external_id,order_number,source,connection_id,source_account_id")
+        .eq("merchant_id", merchantId)
+        .in("external_id", orderExternalIds)
+        .limit(20);
+      if (orderResult.error)
+        throw new Error(`connected_object_ticket_orders_failed:${orderResult.error.message}`);
+      const ticketOrders = (orderResult.data as Record<string, unknown>[] | null) ?? [];
+      for (const ticketOrder of ticketOrders) {
+        const ticketOrderId = text(ticketOrder, "id");
+        if (!ticketOrderId || connected.some((item) => item.type === "order" && item.id === ticketOrderId)) continue;
+        const ticketOrderLink = deriveSourceLink({
+          context: sourceLinkContext,
+          entityType: "order",
+          row: ticketOrder,
+        });
+        connected.push({
+          type: "order",
+          id: ticketOrderId,
+          reference: text(ticketOrder, "order_number") ?? text(ticketOrder, "external_id") ?? "Connected order",
+          href: `/orders/${ticketOrderId}`,
+          externalId: text(ticketOrder, "external_id"),
+          externalHref: ticketOrderLink?.sourceUrl ?? null,
+          externalSource: ticketOrderLink?.sourceSystem ?? null,
+        });
+      }
+
+      const ticketOrderIds = ticketOrders.map((item) => text(item, "id")).filter((item): item is string => Boolean(item));
+      if (ticketOrderIds.length) {
+        const refundResult = await client
+          .from(TABLES.SOURCE_REFUNDS)
+          .select("id,external_id,source_order_id")
+          .eq("merchant_id", merchantId)
+          .in("source_order_id", ticketOrderIds)
+          .limit(20);
+        if (refundResult.error)
+          throw new Error(`connected_object_ticket_refunds_failed:${refundResult.error.message}`);
+        for (const refund of (refundResult.data as Record<string, unknown>[] | null) ?? []) {
+          const refundId = text(refund, "id");
+          if (!refundId) continue;
+          connected.push({
+            type: "refund",
+            id: refundId,
+            reference: text(refund, "external_id") ?? "Connected refund",
+            href: `/refunds/${refundId}`,
+            externalId: text(refund, "external_id"),
+          });
+        }
+      }
+    }
+  }
+
   let caseQuery = client
     .from(TABLES.MERCHANT_CLAIMS)
     .select("id,status,claim_type,updated_at")
@@ -585,6 +728,84 @@ export async function getObjectSummary(
   }
 
   const sourceRecord = await loadSourceRecord(client, merchantId, type, id, row);
+  let timeline = timelineFor(type, row);
+  if (type === "shipment") {
+    const trackingResult = await client
+      .from(TABLES.SOURCE_TRACKING_EVENTS)
+      .select("id,status,source_status,location_text,event_at,source_event_at")
+      .eq("merchant_id", merchantId)
+      .eq("source_shipment_id", id)
+      .order("source_event_at", { ascending: true })
+      .limit(50);
+    if (trackingResult.error)
+      throw new Error(
+        `connected_object_tracking_events_failed:${trackingResult.error.message}`,
+      );
+    const trackingEvents = (
+      (trackingResult.data as Record<string, unknown>[] | null) ?? []
+    ).map((tracking) =>
+      event(
+        "Carrier update",
+        text(tracking, "source_event_at") ?? text(tracking, "event_at"),
+        [
+          text(tracking, "source_status") ?? text(tracking, "status"),
+          text(tracking, "location_text"),
+        ]
+          .filter(Boolean)
+          .join(" · ") || null,
+      ),
+    );
+    timeline = [...timeline, ...trackingEvents]
+      .filter((item) => item.at)
+      .sort((left, right) => Date.parse(left.at!) - Date.parse(right.at!));
+  }
+  let conversation: ObjectConversationEntry[] = [];
+  if (type === "ticket") {
+    const [messagesResult, activityResult] = await Promise.all([
+      client
+        .from(TABLES.SOURCE_MESSAGES)
+        .select("id,actor_type,channel,visibility,summary,sent_at,source_sent_at,created_at")
+        .eq("merchant_id", merchantId)
+        .eq("source_ticket_id", id)
+        .order("source_sent_at", { ascending: true })
+        .limit(100),
+      client
+        .from(TABLES.SUPPORT_CASE_EVENTS)
+        .select("id,event_type,actor_type,summary,occurred_at,created_at")
+        .eq("merchant_id", merchantId)
+        .eq("source_ticket_id", id)
+        .order("occurred_at", { ascending: true })
+        .limit(100),
+    ]);
+    if (messagesResult.error)
+      throw new Error(`connected_object_ticket_messages_failed:${messagesResult.error.message}`);
+    if (activityResult.error)
+      throw new Error(`connected_object_ticket_activity_failed:${activityResult.error.message}`);
+    const messages = ((messagesResult.data as Record<string, unknown>[] | null) ?? []).map((message) => ({
+      id: text(message, "id")!,
+      kind: "message" as const,
+      title: "Message",
+      summary: text(message, "summary"),
+      actor: text(message, "actor_type"),
+      visibility: text(message, "visibility"),
+      at: text(message, "source_sent_at") ?? text(message, "sent_at") ?? text(message, "created_at"),
+    }));
+    const activity = ((activityResult.data as Record<string, unknown>[] | null) ?? []).map((item) => ({
+      id: text(item, "id")!,
+      kind: "activity" as const,
+      title: text(item, "event_type") ?? "Ticket activity",
+      summary: text(item, "summary"),
+      actor: text(item, "actor_type"),
+      visibility: null,
+      at: text(item, "occurred_at") ?? text(item, "created_at"),
+    }));
+    conversation = [...messages, ...activity].sort((left, right) => {
+      if (!left.at) return 1;
+      if (!right.at) return -1;
+      return Date.parse(left.at) - Date.parse(right.at);
+    });
+  }
+  const items = await loadItems(client, merchantId, type, id, orderId);
   const firstShipment = connected.find((item) => item.type === "shipment");
   const mainSourceLink = deriveSourceLink({
     context: sourceLinkContext,
@@ -647,7 +868,9 @@ export async function getObjectSummary(
     customer,
     connected,
     facts: factsFor(type, row),
-    timeline: timelineFor(type, row),
+    items,
+    timeline,
+    conversation,
     evidence,
     payoutCases,
     provenance,

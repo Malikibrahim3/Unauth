@@ -1,20 +1,12 @@
+/* §7.1 — composes the one canonical panel anatomy (styles/authenticated/
+ * surfaces.css) instead of a second hand-tuned inset/border-weight pair. */
 .panel {
-  overflow: hidden;
-  border: 1px solid var(--ua-border-default);
-  border-radius: var(--ua-radius-surface);
-  background: var(--ua-surface-primary);
-  box-shadow: var(--ua-shadow-none);
+  composes: ua-working-surface from global;
 }
 
 .panelHeader {
-  display: flex;
-  min-height: 54px;
-  flex-wrap: wrap;
+  composes: ua-working-surface__header from global;
   align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 15px 10px;
-  border-bottom: 1px solid var(--ua-border-subtle);
 }
 
 .panelHeading { min-width: 0; }
@@ -60,10 +52,14 @@
 .legendList li { display: inline-flex; align-items: center; gap: 5px; }
 .legendList i { width: 6px; height: 6px; border-radius: 50%; }
 .plot { min-height: 170px; padding: 15px; }
-.compactPlot { min-height: 132px; padding: 13px 15px; }
+/* No height floor (§6 Reports): a 132px minimum left a single ranked row —
+ * or the one-line singleRank layout — sitting above ~100px of empty card
+ * before the "View chart data" footer. Compact content collapses to its own
+ * height instead of padding out to a size only a multi-row chart needs. */
+.compactPlot { padding: 13px 15px; }
 
 /*
- * Series slots are named by role (Living Precision §6.2), never by hue, so a recolour can
+ * Series slots are named by role (Instrument Grade), never by hue, so a recolour can
  * never invalidate the meaning a chart is carrying. `primary`/`secondary`/
  * `neutral` are analytical roles and read the accent/neutral chart ramp;
  * `positive`/`attention`/`negative` exist only for values that genuinely
@@ -75,6 +71,7 @@
 .attention { background: var(--ua-warning); color: var(--ua-warning); }
 .negative { background: var(--ua-critical); color: var(--ua-critical); }
 .neutral { background: var(--ua-chart-neutral-700); color: var(--ua-chart-neutral-700); }
+.neutralSoft { background: var(--ua-chart-neutral-500); color: var(--ua-chart-neutral-500); }
 .comparison {
   width: 12px !important;
   height: 0 !important;
@@ -131,11 +128,61 @@
   display: grid;
   min-height: 110px;
   place-content: center;
+  justify-items: center;
   gap: 4px;
+  padding: 16px;
   text-align: center;
 }
 .chartState strong { color: var(--ua-text-primary); font-size: var(--ua-text-dense-size); }
 .chartState span { max-width: 440px; color: var(--ua-text-tertiary); font-size: var(--ua-text-caption-size); line-height: 1.45; }
+/*
+ * §6.6: the state *label/metadata* carries the tone, never the series. Stale
+ * and partial read as caution; a data-integrity block (error, mixed currency)
+ * reads as critical; every other state stays neutral so a background refresh or
+ * an empty filter never shouts.
+ */
+.chartState[data-kind='stale'] strong,
+.chartState[data-kind='partial'] strong { color: var(--ua-warning); }
+.chartState[data-kind='error'] strong,
+.chartState[data-kind='mixed-currency'] strong { color: var(--ua-critical); }
+.stateAction { margin-top: 8px; }
+
+/* §6.4 header right column — an optional metric/range control or headline value. */
+.headerControl { display: flex; align-items: center; gap: 8px; }
+/* §6.4 item 3 — unit and scope, sitting just under the supporting sentence. */
+.scope {
+  margin-top: 3px !important;
+  color: var(--ua-text-tertiary);
+  font-size: var(--ua-text-caption-size);
+  font-variant-numeric: tabular-nums;
+}
+
+/* §6.4 items 7–8 — source/freshness metadata and the "View records" drill-down. */
+.frameFooter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 14px;
+  padding: 9px 15px;
+  border-top: 1px solid var(--ua-border-subtle);
+}
+.frameFreshness { color: var(--ua-text-tertiary); font-size: var(--ua-text-caption-size); }
+.recordsLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--ua-text-link);
+  font-size: var(--ua-text-dense-size);
+  font-weight: 600;
+}
+.recordsLink:hover { text-decoration: underline; text-underline-offset: 2px; }
+.recordsLink:focus-visible { outline: none; box-shadow: var(--ua-shadow-focus); border-radius: var(--ua-radius-control); }
+
+/* Accessible-table refinements — a caption naming the table and right-aligned
+ * numeric columns (LP-VIZ-06). */
+.tableCaption { padding: 7px 15px 0; color: var(--ua-text-tertiary); font-size: var(--ua-text-caption-size); text-align: left; }
+.dataTableWrap th.numericCol, .dataTableWrap td.numericCol { text-align: right; font-variant-numeric: tabular-nums; }
 
 .dataDetails {
   border-top: 1px solid var(--ua-border-subtle);
@@ -143,11 +190,31 @@
   font-size: var(--ua-text-caption-size);
 }
 .dataDetails summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   width: max-content;
   margin: 0;
   padding: 8px 15px;
   cursor: pointer;
   font-weight: 600;
+  list-style: none;
+}
+/* Suppress the raw browser triangle in every engine and draw one tokenised
+ * chevron instead, rotated open/closed. */
+.dataDetails summary::-webkit-details-marker { display: none; }
+.dataDetails summary::before {
+  content: '';
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-right: 1.5px solid var(--ua-text-tertiary);
+  border-bottom: 1.5px solid var(--ua-text-tertiary);
+  transform: rotate(-45deg);
+  transition: transform var(--ua-duration-fast) var(--ua-ease-standard);
+}
+.dataDetails[open] summary::before {
+  transform: rotate(45deg);
 }
 .dataDetails summary:focus-visible { outline: none; box-shadow: inset var(--ua-shadow-focus); }
 .dataTableWrap { overflow-x: auto; border-top: 1px solid var(--ua-border-subtle); }

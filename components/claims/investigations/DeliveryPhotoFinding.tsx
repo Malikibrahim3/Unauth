@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Button, Modal, Select } from '@/components/ui';
+import { Button, Modal, Select, Textarea } from '@/components/ui';
 import {
   mutateInvestigation,
   newInvestigationIdempotencyKey,
@@ -76,10 +76,10 @@ export function DeliveryPhotoFinding({
       <div className="mt-3 rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-3">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="text-xs font-semibold text-[var(--ua-text-primary)]">
+            <p className="ua-text-label text-[var(--ua-text-primary)]">
               Human photo finding
             </p>
-            <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">
+            <p className="ua-text-caption-role mt-1">
               {finding ? FINDING_LABELS[finding] : 'The delivery photo has not been interpreted yet.'}
               {recordedAt ? ` · ${formatDateTime(recordedAt)}` : ''}
             </p>
@@ -91,7 +91,7 @@ export function DeliveryPhotoFinding({
           ) : null}
         </div>
         {rationale ? (
-          <p className="mt-2 text-xs leading-relaxed text-[var(--ua-text-secondary)]">
+          <p className="ua-text-caption-role mt-2 leading-relaxed">
             {rationale}
           </p>
         ) : null}
@@ -125,11 +125,11 @@ export function DeliveryPhotoFinding({
         >
           <div className="space-y-4">
             {error ? (
-              <p role="alert" className="rounded-md border border-[var(--ua-risk-critical-border)] bg-[var(--ua-risk-critical-bg)] p-3 text-sm text-[var(--ua-risk-critical)]">
+              <p role="alert" className="ua-text-body rounded-md border border-[var(--ua-risk-critical-border)] bg-[var(--ua-risk-critical-bg)] p-3 text-[var(--ua-risk-critical)]">
                 {error}
               </p>
             ) : null}
-            <label className="block text-sm font-medium">
+            <label className="ua-text-body block font-medium">
               Finding
               <Select
                 className="mt-1"
@@ -141,10 +141,10 @@ export function DeliveryPhotoFinding({
                 ))}
               </Select>
             </label>
-            <label className="block text-sm font-medium">
+            <label className="ua-text-body block font-medium">
               Rationale
-              <textarea
-                className="mt-1 min-h-28 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] p-2 text-sm"
+              <Textarea
+                className="mt-1 min-h-28"
                 maxLength={2000}
                 value={draftRationale}
                 onChange={(event) => setDraftRationale(event.target.value)}

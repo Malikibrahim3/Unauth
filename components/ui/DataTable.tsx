@@ -8,14 +8,17 @@ import { RowActionsMenu, type RowAction } from "@/components/ui/RowActionsMenu";
 
 export interface DataTableColumn<T> {
   key: string;
-  header: string;
+  header: ReactNode;
+  /** Text alternative used when an interactive/custom header is sortable. */
+  headerLabel?: string;
   align?: "left" | "right" | "center";
+  kind?: "text" | "numeric" | "currency" | "date" | "status" | "action";
   sortable?: boolean;
   render: (row: T) => ReactNode;
   width?: string;
 }
 
-type TableDensity = "default" | "compact" | "relaxed";
+type TableDensity = "metadata" | "default" | "rich" | "two-line";
 
 interface DataTableProps<T> {
   columns: DataTableColumn<T>[];
@@ -30,7 +33,13 @@ interface DataTableProps<T> {
   density?: TableDensity;
   selectedKey?: string;
   className?: string;
-  emptyState?: ReactNode;
+  /**
+   * Render as the body of a `RegistrySurface`: drops the table's own border,
+   * radius, and background so the surface owns the single frame (§8.3 "one
+   * surface"). Horizontal overflow still stays inside this region.
+   */
+  flush?: boolean;
+  emptyState: ReactNode;
   /** Applied to each body row when `onRowClick` is set (e.g. Playwright `customer-row`). */
   rowTestId?: string;
   /** Per-row action menu (WS4.2). Renders a hover/focus-revealed `⋯` menu in a trailing column. */
@@ -43,10 +52,20 @@ interface DataTableProps<T> {
   'aria-label'?: string;
 }
 
-function skeletonBarClass(colIndex: number): string {
-  if (colIndex === 0) return "ua-data-table__skeleton-bar--primary";
-  if (colIndex === 1) return "ua-data-table__skeleton-bar--secondary";
-  return "";
+/* Widest at the primary column, narrowing toward trailing metadata (§7.3) —
+ * the previous two-tone scheme had the first column narrower than the
+ * second, the reverse of how a real row reads. */
+const SKELETON_BAR_WIDTHS = [68, 44, 32, 32, 24];
+
+function skeletonBarWidth(colIndex: number): number {
+  return SKELETON_BAR_WIDTHS[colIndex] ?? SKELETON_BAR_WIDTHS[SKELETON_BAR_WIDTHS.length - 1];
+}
+
+function columnAlign<T>(column: DataTableColumn<T>): "left" | "right" | "center" {
+  if (column.align) return column.align;
+  if (column.kind === "numeric" || column.kind === "currency" || column.kind === "date") return "right";
+  if (column.kind === "status" || column.kind === "action") return "center";
+  return "left";
 }
 
 function SkeletonRows({ count = 6, cols }: { count?: number; cols: number }) {
@@ -61,7 +80,8 @@ function SkeletonRows({ count = 6, cols }: { count?: number; cols: number }) {
               aria-hidden="true"
             >
               <div
-                className={cn("skeleton ua-data-table__skeleton-bar", skeletonBarClass(j))}
+                className="skeleton ua-data-table__skeleton-bar"
+                style={{ width: `${skeletonBarWidth(j)}%` }}
                 aria-hidden="true"
               />
             </td>
@@ -101,6 +121,7 @@ export function DataTable<T>({
   density = "default",
   selectedKey,
   className,
+  flush = false,
   emptyState,
   rowTestId,
   rowActions,
@@ -116,6 +137,7 @@ export function DataTable<T>({
       className={cn(
         "ua-data-table",
         `ua-data-table--density-${density}`,
+        flush && "ua-data-table--flush",
         className,
       )}
       role="region"
@@ -132,8 +154,9 @@ export function DataTable<T>({
                 scope="col"
                 className={cn(
                   "ua-data-table__header-cell",
-                  col.align === "right" && "ua-data-table__header-cell--right",
-                  col.align === "center" && "ua-data-table__header-cell--center",
+                  columnAlign(col) === "right" && "ua-data-table__header-cell--right",
+                  columnAlign(col) === "center" && "ua-data-table__header-cell--center",
+                  (col.kind === "numeric" || col.kind === "currency") && "ua-data-table__header-cell--numeric",
                   col.sortable && onSort && "ua-data-table__header-cell--sortable",
                 )}
                 style={col.width ? { width: col.width } : undefined}
@@ -143,7 +166,7 @@ export function DataTable<T>({
                     type="button"
                     className="inline-flex items-center rounded-sm text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ua-border-focus)]"
                     onClick={() => onSort(col.key)}
-                    aria-label={`Sort by ${col.header}${sortKey === col.key ? `, currently ${sortDir === "asc" ? "ascending" : "descending"}` : ""}`}
+                    aria-label={`Sort by ${col.headerLabel ?? (typeof col.header === "string" ? col.header : col.key)}${sortKey === col.key ? `, currently ${sortDir === "asc" ? "ascending" : "descending"}` : ""}`}
                   >
                     {col.header}
                     <SortIcon
@@ -169,13 +192,7 @@ export function DataTable<T>({
           ) : rows.length === 0 ? (
             <tr>
               <td colSpan={totalCols}>
-                {emptyState ?? (
-                  <div
-                    className="ua-data-table__empty"
-                  >
-                    No matching records
-                  </div>
-                )}
+                {emptyState}
               </td>
             </tr>
           ) : (
@@ -198,8 +215,9 @@ export function DataTable<T>({
                       key={col.key}
                       className={cn(
                         "ua-data-table__cell",
-                        col.align === "right" && "ua-data-table__cell--right",
-                        col.align === "center" && "ua-data-table__cell--center",
+                        columnAlign(col) === "right" && "ua-data-table__cell--right",
+                        columnAlign(col) === "center" && "ua-data-table__cell--center",
+                        (col.kind === "numeric" || col.kind === "currency") && "ua-data-table__cell--numeric",
                       )}
                     >
                       {getRowHref && col.key === (primaryColumnKey ?? columns[0]?.key) ? (

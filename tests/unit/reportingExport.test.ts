@@ -48,7 +48,17 @@ function reportFixture(): IntelligenceReport {
     operations: [],
     recoveries: [],
     coverage: [],
-    reconciliation: { ok: true, issues: [] },
+    reconciliation: {
+      ok: true,
+      issues: [],
+      confidence: {
+        state: 'complete',
+        issueCount: 0,
+        affectedCurrencies: [],
+        affectedMetrics: [],
+        excludedRecordCount: 0,
+      },
+    },
     recordCount: 4,
   };
 }
@@ -84,5 +94,17 @@ describe('report export reconciliation', () => {
     expect(row[index.value]).toBe('£7.00');
     expect(row[index.record_count]).toBe(1);
     expect(row[index.record_ids]).toBe('#CASE1');
+  });
+
+  it('keeps a selected chart or records export on its exact metric or category scope', () => {
+    const metricRows = buildReportExportRows(reportFixture(), 'metrics', { metric: 'exposed' });
+    const metricHeader = metricRows[0] as string[];
+    const metricIndex = Object.fromEntries(metricHeader.map((key, position) => [key, position]));
+    expect(metricRows).toHaveLength(3);
+    expect((metricRows.slice(1) as unknown[][]).every((row) => row[metricIndex.metric_or_category] === 'Maximum exposure')).toBe(true);
+
+    const categoryRows = buildReportExportRows(reportFixture(), 'outcomes', { category: 'delivery_loss' });
+    expect(categoryRows).toHaveLength(2);
+    expect((categoryRows[1] as unknown[])[metricIndex.metric_or_category]).toBe('Delivery loss');
   });
 });

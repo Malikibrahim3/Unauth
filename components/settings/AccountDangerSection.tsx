@@ -20,10 +20,11 @@ export default function AccountDangerSection({
 }: Props) {
   return (
     <SectionCard
+      joined
       title="Account"
       description="Destructive actions"
       style={{
-        borderColor: "color-mix(in srgb, var(--ua-success) 30%, var(--ua-border-default))",
+        borderColor: "var(--ua-critical-border)",
       }}
     >
       <div className="space-y-4">
@@ -33,7 +34,7 @@ export default function AccountDangerSection({
             style={{ color: "var(--ua-risk-critical)" }}
           />
           <h2
-            className="text-sm font-semibold"
+            className="ua-text-working-title"
             style={{ color: "var(--ua-risk-critical)" }}
           >
             Danger zone
@@ -41,11 +42,11 @@ export default function AccountDangerSection({
         </div>
 
         <div>
-          <p className="text-sm font-medium" style={{ color: "var(--ua-text-primary)" }}>
+          <p className="ua-text-working-title" style={{ color: "var(--ua-text-primary)" }}>
             Delete your account
           </p>
           <p
-            className="text-xs mt-0.5"
+            className="ua-text-caption-role mt-0.5"
             style={{ color: "var(--ua-text-secondary)" }}
           >
             This permanently deletes your imported history, customer records,
@@ -56,7 +57,7 @@ export default function AccountDangerSection({
         <div>
           <label
             htmlFor="account-delete-confirm"
-            className="block text-xs mb-1.5"
+            className="ua-text-label block mb-1.5"
             style={{ color: "var(--ua-text-secondary)" }}
           >
             Type{" "}
@@ -80,7 +81,7 @@ export default function AccountDangerSection({
                 })
               }
               placeholder="DELETE"
-              className="w-full rounded-md px-3 py-2 text-sm focus:outline-none sm:w-40"
+              className="ua-text-body w-full rounded-md px-3 py-2 focus:outline-none sm:w-40"
               style={{
                 background: "var(--ua-surface-secondary)",
                 border: "1px solid var(--ua-border-default)",
@@ -100,7 +101,7 @@ export default function AccountDangerSection({
           {state.deleteError ? (
             <p
               role="alert"
-              className="mt-2 text-xs text-[var(--ua-risk-critical)]"
+              className="ua-text-caption-role mt-2 text-[var(--ua-risk-critical)]"
             >
               {state.deleteError}
             </p>

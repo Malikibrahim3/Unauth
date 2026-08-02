@@ -1,51 +1,71 @@
 'use client';
 
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { SettingsNav, type SettingsNavGroup } from '@/components/settings/SettingsNav';
 
-const TABS = [
-  { href: '/settings/account', label: 'Workspace & account' },
-  { href: '/settings/billing', label: 'Billing' },
-  { href: '/settings/team', label: 'Team' },
-  { href: '/settings/platform', label: 'Defaults' },
-  { href: '/integrations', label: 'Connections' },
-  { href: '/settings/agreements', label: 'Agreements' },
-  { href: '/settings/api-integrations', label: 'API access' },
-  { href: '/settings/notifications', label: 'Notifications' },
-  { href: '/settings/data-privacy', label: 'Data & privacy' },
-  { href: '/settings/audit-trail', label: 'Audit trail' },
-] as const;
+// Same ten destinations and labels as before, grouped into always-visible
+// sections (§8.1) instead of a single horizontal-scroll strip. "Connections"
+// still points at /integrations (outside the settings tree) by design.
+const GROUPS: SettingsNavGroup[] = [
+  {
+    label: 'Workspace',
+    items: [
+      { href: '/settings/account', label: 'Workspace & account' },
+      { href: '/settings/team', label: 'Team' },
+      { href: '/settings/platform', label: 'Defaults' },
+    ],
+  },
+  {
+    label: 'Data & access',
+    items: [
+      { href: '/settings/api-integrations', label: 'API access' },
+      { href: '/integrations', label: 'Connected apps' },
+      { href: '/settings/data-privacy', label: 'Data & privacy' },
+    ],
+  },
+  {
+    label: 'Operations',
+    items: [
+      { href: '/settings/notifications', label: 'Notifications' },
+      { href: '/settings/audit-trail', label: 'Audit trail' },
+    ],
+  },
+  {
+    label: 'Commercial',
+    items: [
+      { href: '/settings/billing', label: 'Billing' },
+      { href: '/settings/agreements', label: 'Agreements' },
+    ],
+  },
+];
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
-    <div className="min-h-full">
-      <div className="border-b border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-3 py-2 md:px-5">
-        <nav className="flex items-center gap-1.5 overflow-x-auto" aria-label="Settings">
-          <span className="mr-1 shrink-0 text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-tertiary)]">Settings</span>
-          {TABS.map((tab) => {
-            const active = pathname === tab.href || pathname.startsWith(`${tab.href}/`);
-            return (
-              <Link
-                key={tab.href}
-                href={tab.href}
-                aria-current={active ? 'page' : undefined}
-                className="inline-flex h-7 shrink-0 items-center whitespace-nowrap rounded-[var(--ua-radius-control)] border px-2.5 text-[length:var(--ua-text-metadata-size)] font-medium transition-colors"
-                style={{
-                  borderColor: active ? 'var(--ua-border-default)' : 'transparent',
-                  background: active ? 'var(--ua-surface-primary)' : 'transparent',
-                  color: active ? 'var(--ua-text-primary)' : 'var(--ua-text-secondary)',
-                  fontWeight: active ? 600 : 500,
-                }}
-              >
-                {tab.label}
-              </Link>
-            );
-          })}
-        </nav>
+    <div className="ua-settings-workspace min-h-full">
+      <aside className="ua-settings-local-rail" aria-label="Settings navigation">
+        <div className="ua-settings-local-rail__inner">
+          <div className="ua-settings-local-rail__heading">
+            <p>Settings</p>
+            <span>Workspace controls</span>
+          </div>
+          <SettingsNav
+            groups={GROUPS}
+            currentPath={pathname}
+            orientation="vertical"
+            aria-label="Settings sections"
+          />
+        </div>
+      </aside>
+      <div className="ua-settings-mobile-nav">
+        <SettingsNav
+          groups={GROUPS}
+          currentPath={pathname}
+          aria-label="Settings sections"
+        />
       </div>
-      <div className="min-w-0">{children}</div>
+      <div className="ua-settings-content min-w-0">{children}</div>
     </div>
   );
 }

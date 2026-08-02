@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { AlertTriangle, Plus } from 'lucide-react';
-import { Button, Drawer, Input, Card } from '@/components/ui';
+import { Button, Drawer, Input, Card, Textarea } from '@/components/ui';
 import type { ConditionOperator, MerchantRule, RuleAction, RuleCondition } from '@/lib/rules-engine';
 import { RULE_FIELDS } from '@/lib/rules/fields';
 import { ACTION_LABELS, summarizeConditions } from '@/lib/rules/summary';
@@ -139,27 +139,24 @@ export function RuleBuilderDrawer({
 
         {/* Description */}
         <Field label="Description" hint="Optional — explains when this claim review rule should hold a case.">
-          <textarea
+          <Textarea
             value={description}
             placeholder="e.g. Item-not-received over £75 with no proof of delivery should go to manual review before a reship."
             onChange={(e) => setDescription(e.target.value)}
             rows={2}
-            className="w-full resize-none px-3 py-2 text-sm focus:outline-none"
-            style={{
-              background: 'var(--ua-surface-muted)',
-              border: '1px solid var(--ua-border-default)',
-              borderRadius: 'var(--ua-radius-control)',
-              color: 'var(--ua-text-primary)',
-            }}
+            className="resize-none"
           />
         </Field>
 
-        {/* Conditions */}
+        {/* Causal rule anatomy: a case reaches the rule, conditions decide a match, then Unauth recommends. */}
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <span className="text-body-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>
-              When these conditions match
-            </span>
+            <div>
+              <span className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>If</span>
+              <p className="mt-0.5 text-caption" style={{ color: 'var(--ua-text-tertiary)' }}>
+                When a case reaches this rule, check these conditions.
+              </p>
+            </div>
             {conditions.length > 1 && (
               <div
                 className="inline-flex overflow-hidden rounded-[var(--ua-radius-control)]"
@@ -207,7 +204,7 @@ export function RuleBuilderDrawer({
         </div>
 
         {/* Recommended action */}
-        <Field label="Recommended action" hint="What Unauth recommends to the agent when this rule matches.">
+        <Field label="Recommend" hint="What Unauth recommends when this rule matches. An authorised merchant user still decides the case.">
           <div className="grid grid-cols-3 gap-2">
             {ACTIONS.map((a) => {
               const active = action === a;
@@ -229,14 +226,14 @@ export function RuleBuilderDrawer({
 
         {/* Live preview */}
         <Card unstyled variant="muted" className="p-4">
-          <span className="text-caption font-semibold" style={{ color: 'var(--ua-text-tertiary)' }}>
-            Preview
+          <span className="ua-text-metadata" style={{ color: 'var(--ua-text-tertiary)' }}>
+            When → If → Recommend
           </span>
           <p className="mt-2 text-body-sm" style={{ color: 'var(--ua-text-primary)' }}>
             If {preview}
           </p>
-          <p className="mt-3 text-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>
-            Recommended: {ACTION_LABELS[action]}
+          <p className="ua-text-working-title mt-3" style={{ color: 'var(--ua-text-primary)' }}>
+            Recommend: {ACTION_LABELS[action]}
           </p>
         </Card>
       </div>
@@ -258,7 +255,7 @@ function Field({
 }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-body-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>
+      <span className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>
         {label}
         {required && <span style={{ color: 'var(--ua-risk-high)' }}> *</span>}
       </span>

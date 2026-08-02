@@ -19,9 +19,28 @@ for (const pattern of forbidden) check(!pattern.test(allText), `Forbidden visibl
 const emails = [...allText.matchAll(/[A-Z0-9._%+-]+@([A-Z0-9.-]+\.[A-Z]{2,})/gi)].map((match) => match[0]);
 check(emails.every((email) => email.endsWith('.invalid')), 'Every fixture email must use the non-routable .invalid namespace');
 check(tables.merchants[0].name === MARKETING_STORY.merchant.name, 'Merchant identity differs from the story manifest');
+check(
+  tables.merchants.some((merchant) =>
+    merchant.id === MARKETING_STORY.onboarding.merchant.id
+    && merchant.settings?.setup_complete === false),
+  'Incomplete onboarding merchant is missing',
+);
+check(
+  tables.merchant_users.some((membership) =>
+    membership.merchant_id === MARKETING_STORY.onboarding.merchant.id
+    && membership.user_id === MARKETING_STORY.onboarding.operator.id
+    && membership.role === 'owner'),
+  'Incomplete onboarding merchant lacks its owner membership',
+);
 check(tables.store_connections[0].store_key === MARKETING_STORY.merchant.storeDomain, 'Commerce account differs from the story manifest');
 check(tables.helpdesk_connections.length === 1 && tables.helpdesk_connections[0].provider === 'gorgias', 'Exactly one Gorgias helpdesk must be configured');
 check(tables.work_saved_views.length > 0 && tables.work_saved_views.some((view) => view.id === MARKETING_STORY.capture.workView), 'Marketing Work fixture must include its stable saved view');
+check(
+  tables.pending_provider_account_selections.some((selection) =>
+    selection.id === MARKETING_STORY.capture.shipbobSelection
+    && selection.accounts.length >= 2),
+  'ShipBob selection route lacks a populated capture handoff',
+);
 
 const connected = tables.merchant_integrations.filter((row) => row.status === 'connected');
 const attention = tables.merchant_integrations.filter((row) => row.status === 'degraded');
@@ -45,6 +64,9 @@ check(tables.identity_members.some((member) => member.identity_id === heroIdenti
 check(tables.identity_notes.some((row) => row.identity_id === heroIdentityId), 'Hero customer lacks a merchant note');
 check(tables.source_orders.every((row) => customerIds.has(row.merchant_customer_id)), 'Order is orphaned from its customer');
 check(tables.source_order_lines.every((row) => orderIds.has(row.source_order_id)), 'Order line is orphaned');
+check(tables.source_disputes.every((row) => !row.source_order_id || orderIds.has(row.source_order_id)), 'Dispute is orphaned');
+check(tables.source_refunds.every((row) => orderIds.has(row.source_order_id)), 'Refund is orphaned');
+check(tables.source_returns.every((row) => !row.source_order_id || orderIds.has(row.source_order_id)), 'Return is orphaned');
 check(tables.support_payout_cases.every((row) => orderIds.has(row.source_order_id) && customerIds.has(row.merchant_customer_id)), 'Case is orphaned');
 check(tables.case_claimed_items.every((row) => caseIds.has(row.support_payout_case_id) && orderLineIds.has(row.source_order_line_id)), 'Claimed item is orphaned');
 check(tables.evidence_items.every((row) => caseIds.has(row.claim_id)), 'Evidence item is orphaned');
@@ -92,6 +114,14 @@ check(tables.merchant_rules.some((row) => row.is_active === false), 'Rules need 
 check(new Set(tables.merchant_rule_versions.map((row) => row.version)).size >= 3, 'Rules need version variation');
 check(tables.workflow_definitions.filter((row) => row.active).length >= 2, 'At least two flows must be active');
 check(tables.workflow_definitions.some((row) => row.status === 'draft'), 'One flow must be a draft');
+check(
+  tables.workflow_definitions.every((row) =>
+    row.conditions.every((condition) =>
+      ['eq', 'neq', 'in', 'exists'].includes(condition.operator))
+    && row.outputs.every((output) =>
+      ['create_task', 'request_evidence', 'set_deadline', 'request_notification'].includes(output.type))),
+  'Flows must use the production editor condition and action schema',
+);
 check(tables.workflow_runs.some((row) => row.status === 'completed'), 'Flows need an inspectable successful run');
 
 const ownerIds = new Set(tables.work_tasks.map((row) => row.owner_user_id).filter(Boolean));
@@ -124,7 +154,7 @@ const resolvableNotificationTargets = new Set([
 ]);
 check(tables.notifications.every((row) => resolvableNotificationTargets.has(row.target_href)), 'A notification deep link does not resolve to its source object');
 
-const futureAllowed = new Set(['deadline_at', 'claim_deadline_at', 'next_chase_at', 'due_at']);
+const futureAllowed = new Set(['deadline_at', 'claim_deadline_at', 'next_chase_at', 'due_at', 'expires_at']);
 for (const [table, rows] of Object.entries(tables)) {
   for (const row of rows) {
     for (const [field, value] of Object.entries(row)) {
@@ -172,13 +202,14 @@ check(Object.values(MARKETING_STORY.capture).every(Boolean), 'Stable capture key
 let local;
 try {
   local = resolveLocalDatabase();
+  const fixtureMerchantIds = fixture.tables.merchants.map((merchant) => quoteSql(merchant.id)).join(',');
   const rowCounts = Object.fromEntries(
     Object.entries(tables).map(([table, rows]) => {
       const count = runSql(local.container, table === 'identities'
         ? `select count(*) from public.identities where id in (${rows.map((row) => quoteSql(row.id)).join(',')})`
         : table === 'identity_members'
           ? `select count(*) from public.identity_members where identity_id in (${fixture.tables.identities.map((row) => quoteSql(row.id)).join(',')})`
-          : `select count(*) from public.${table} where ${table === 'merchants' ? 'id' : 'merchant_id'} = ${quoteSql(MARKETING_STORY.merchant.id)}`);
+          : `select count(*) from public.${table} where ${table === 'merchants' ? 'id' : 'merchant_id'} in (${fixtureMerchantIds})`);
       return [table, Number(count)];
     }),
   );

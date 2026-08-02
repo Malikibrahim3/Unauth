@@ -24,9 +24,13 @@ import {
   formatMinorCurrencyNullable,
   formatNumber,
 } from "@/lib/utils/format";
-import { AuthenticatedPageHeader } from "@/components/authenticated/AuthenticatedPageHeader";
-import { AuthenticatedPanel } from "@/components/authenticated/AuthenticatedPanel";
-import pageStyles from "@/components/authenticated/AuthenticatedPageChrome.module.css";
+import ExportMenu from "@/components/reports/ExportMenu";
+import {
+  DataTableServer,
+  OperationalState,
+  PageFrame,
+  RegistrySurface,
+} from "@/components/ui";
 export const dynamic = "force-dynamic";
 
 type ReportRecordRow = {
@@ -150,7 +154,7 @@ export default async function ReportRecords({
       recordType:
         typeof row.recovery_type === "string"
           ? row.recovery_type
-          : typeof row.reason_normalized === "string"
+          : dimension === "reason" && typeof row.reason_normalized === "string"
             ? row.reason_normalized
             : typeof row.claim_type === "string"
               ? row.claim_type
@@ -188,105 +192,158 @@ export default async function ReportRecords({
         ? entityLabel("recovery")
         : label("caseStatus", value);
   const recordTitle = `${titleValue.replaceAll("_", " ")} records`;
+  const reportHref = `/reports?${new URLSearchParams({
+    range,
+    timezone,
+  }).toString()}`;
+  const currentParams = new URLSearchParams();
+  for (const [key, parameterValue] of Object.entries(sp)) {
+    if (parameterValue) currentParams.set(key, parameterValue);
+  }
+  const recordsHref = (targetPage: number) => {
+    const params = new URLSearchParams(currentParams);
+    params.set("page", String(targetPage));
+    return `/reports/records?${params.toString()}`;
+  };
+  const recordHref = (row: ReportRecordRow) =>
+    kind === "recovery" ? `/recoveries/${row.id}` : `/claims/${row.id}`;
+  const scopedExport = dimension === "financial" || dimension === "category" ? (
+    <ExportMenu
+      range={range}
+      timezone={timezone}
+      currency={sp.currency?.toUpperCase() ?? null}
+      metric={dimension === "financial" ? metric : null}
+      category={dimension === "category" ? value : null}
+    />
+  ) : null;
+
   return (
-    <div>
-      <AuthenticatedPageHeader
-        title={recordTitle}
-        subtitle={
-          <>
-          {formatNumber(total)} exact matching records ·{" "}
-          {TIME_RANGE_LABELS[range]}{" "}
-          {sp.currency ? `· ${sp.currency.toUpperCase()}` : ""} · {timezone}
-          </>
+    <PageFrame
+      title={recordTitle}
+      subtitle={
+        <>
+          {TIME_RANGE_LABELS[range]} · {sp.currency ? sp.currency.toUpperCase() : "all currencies"} · {timezone}
+        </>
+      }
+      actions={scopedExport}
+      breadcrumbs={[
+        { label: "Reports", href: reportHref },
+        { label: recordTitle },
+      ]}
+      toolbar={
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-[length:var(--ua-text-metadata-size)]">
+          <Link className="ua-text-metadata text-[var(--ua-action-primary)]" href={reportHref}>
+            Back to report
+          </Link>
+          <span className="text-[var(--ua-text-secondary)]">
+            {dimension === "financial" ? "Financial metric" : dimension === "category" ? "Loss category" : "Workflow state"}: {titleValue}
+          </span>
+        </div>
+      }
+    >
+      <RegistrySurface
+        aria-label="Matching report records"
+        resultCount={loadFailed ? "Records unavailable" : `${formatNumber(total)} matching records`}
+        pagination={
+          !loadFailed ? (
+            <nav aria-label="Matching records pages" className="flex min-h-10 items-center justify-between gap-3">
+              {page > 1 ? (
+                <Link
+                  className="ua-text-label rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2.5 py-1.5 hover:bg-[var(--ua-surface-hover)]"
+                  href={recordsHref(page - 1)}
+                >
+                  Previous
+                </Link>
+              ) : <span />}
+              {from + rows.length < total ? (
+                <Link
+                  className="ua-text-label rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2.5 py-1.5 hover:bg-[var(--ua-surface-hover)]"
+                  href={recordsHref(page + 1)}
+                >
+                  Next
+                </Link>
+              ) : null}
+            </nav>
+          ) : undefined
         }
-        breadcrumbs={[
-          { label: "Reports", href: `/reports?range=${range}&timezone=${encodeURIComponent(timezone)}` },
-          { label: recordTitle },
-        ]}
-      />
-      <div className={pageStyles.pageBody}>
-        <AuthenticatedPanel
-          title="Matching records"
-          description="Canonical records behind this report slice."
-          capabilityId="reports.records.table"
-        >
-          {loadFailed ? (
-            <div role="alert" className="border-b border-[var(--ua-critical)] px-4 py-3 text-sm">
-              These report records could not be loaded. Retry the page; the summary value has not been changed.
-            </div>
-          ) : null}
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[650px] text-[length:var(--ua-text-metadata-size)]">
-          <thead>
-            <tr className="border-b border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] text-[var(--ua-text-tertiary)]">
-              <th className="px-4 py-2.5 text-left font-medium">Record</th>
-              <th className="px-3 py-2.5 text-left font-medium">Type</th>
-              <th className="px-3 py-2.5 text-left font-medium">State</th>
-              <th className="px-3 py-2.5 text-right font-medium">Amount</th>
-              <th className="px-4 py-2.5 text-right font-medium">Updated</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.id} className="border-b border-[var(--ua-border-subtle)] last:border-b-0 hover:bg-[var(--ua-surface-hover)]">
-                <td className="px-4 py-3">
-                  <Link
-                    className="font-mono font-semibold text-[var(--ua-text-primary)] hover:text-[var(--ua-action-primary)]"
-                    href={
-                      kind === "recovery"
-                        ? `/recoveries/${r.id}`
-                        : `/claims/${r.id}`
-                    }
-                  >
-                    {kind === "recovery" ? `Recovery ${hashId(r.id)}` : shortRef(null, r.id)}
-                  </Link>
-                </td>
-                <td className="px-3 py-3 text-[var(--ua-text-secondary)]">
-                  {kind === "recovery"
-                    ? label("recoveryStatus", r.recordType)
-                    : label("claimType", r.recordType)}
-                </td>
-                <td className="px-3 py-3">{label("workflowStatus", r.status)}</td>
-                <td className="px-3 py-3 text-right tabular-nums">
-                  {r.amountMinor != null
-                    ? formatMinorCurrencyNullable(r.amountMinor, r.currency)
-                    : r.amountMajor != null
-                      ? formatCurrencyNullable(r.amountMajor, r.currency)
-                      : "Unavailable"}
-                </td>
-                <td className="px-4 py-3 text-right text-[var(--ua-text-secondary)]">
-                  {r.updatedAt ? formatDateTime(r.updatedAt) : "Unavailable"}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-          </div>
-          {!loadFailed && !rows.length ? (
-            <p className="px-4 py-10 text-center text-xs text-[var(--ua-text-secondary)]">No records match this report slice.</p>
-          ) : null}
-          <nav className="flex min-h-12 items-center justify-between border-t border-[var(--ua-border-subtle)] px-4 text-[length:var(--ua-text-metadata-size)] font-semibold">
-        {page > 1 ? (
-          <Link
-            className="rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2.5 py-1.5 hover:bg-[var(--ua-surface-hover)]"
-            href={`?${new URLSearchParams({ ...sp, page: String(page - 1) } as Record<string, string>)}`}
-          >
-            Previous
-          </Link>
+      >
+        {loadFailed ? (
+          <OperationalState
+            kind="error"
+            title="These report records could not be loaded"
+            description="The summary value has not been changed. Retry this same report scope."
+            action={
+              <Link className="ua-text-label text-[var(--ua-action-primary)]" href={recordsHref(page)}>
+                Retry records
+              </Link>
+            }
+          />
         ) : (
-          <span />
+          <DataTableServer<ReportRecordRow>
+            flush
+            density="metadata"
+            aria-label="Matching report records"
+            rows={rows}
+            getRowKey={(row) => row.id}
+            emptyState={
+              <OperationalState
+                kind="filtered-empty"
+                title="No records match this report slice"
+                description="Choose another report range or return to the report to inspect a different metric."
+                action={<Link className="ua-text-label text-[var(--ua-action-primary)]" href={reportHref}>Back to report</Link>}
+              />
+            }
+            columns={[
+              {
+                key: "record",
+                header: "Record",
+                render: (row) => (
+                  <Link
+                    className="ua-text-working-title font-mono text-[var(--ua-text-primary)] hover:text-[var(--ua-action-primary)]"
+                    href={recordHref(row)}
+                  >
+                    {kind === "recovery" ? `Recovery ${hashId(row.id)}` : shortRef(null, row.id)}
+                  </Link>
+                ),
+              },
+              {
+                key: "type",
+                header: "Type",
+                render: (row) => (
+                  <span className="text-[var(--ua-text-secondary)]">
+                    {kind === "recovery"
+                      ? label("attribution", row.recordType)
+                      : dimension === "reason"
+                        ? row.recordType
+                        : label("claimType", row.recordType)}
+                  </span>
+                ),
+              },
+              {
+                key: "state",
+                header: "State",
+                render: (row) => label(kind === "recovery" ? "recoveryStatus" : "caseStatus", row.status),
+              },
+              {
+                key: "amount",
+                header: "Amount",
+                kind: "currency",
+                render: (row) => row.amountMinor != null
+                  ? formatMinorCurrencyNullable(row.amountMinor, row.currency)
+                  : row.amountMajor != null
+                    ? formatCurrencyNullable(row.amountMajor, row.currency)
+                    : "Unavailable",
+              },
+              {
+                key: "updated",
+                header: "Updated",
+                kind: "date",
+                render: (row) => row.updatedAt ? formatDateTime(row.updatedAt) : "Unavailable",
+              },
+            ]}
+          />
         )}
-        {from + rows.length < total ? (
-          <Link
-            className="rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2.5 py-1.5 hover:bg-[var(--ua-surface-hover)]"
-            href={`?${new URLSearchParams({ ...sp, page: String(page + 1) } as Record<string, string>)}`}
-          >
-            Next
-          </Link>
-        ) : null}
-          </nav>
-        </AuthenticatedPanel>
-      </div>
-    </div>
+      </RegistrySurface>
+    </PageFrame>
   );
 }

@@ -14,8 +14,7 @@ import {
   RulesIndexClient,
   type RuleIndexRecord,
 } from "@/components/rules/RulesIndexClient";
-import { WorkbenchPage, KeyInsightCallout, SummaryRail } from "@/components/ui";
-import { ShieldCheck } from "lucide-react";
+import { PageFrame } from "@/components/ui";
 import { formatNumber } from '@/lib/utils/format';
 
 export const dynamic = "force-dynamic";
@@ -81,44 +80,14 @@ export default async function RulesPage() {
     },
   );
   const draftRules = rules.filter((rule) => rule.hasDraft).length;
-  const publishedRules = rules.filter((rule) => !rule.hasDraft && rule.publishedVersion != null).length;
-  const disabledRules = Math.max(0, rules.length - draftRules - publishedRules);
   const publishedCoverage = rules.filter((rule) => rule.publishedVersion != null).length;
 
   return (
-    <WorkbenchPage
+    <PageFrame
       title="Rules"
-      subtitle="Set the policy that guides recommendations. You remain in control of every case decision."
-      kpiItems={[
-        { label: 'Rules', value: formatNumber(rules.length), hint: 'Configured policies' },
-        { label: 'Published', value: formatNumber(publishedCoverage), hint: 'Ready to guide recommendations' },
-        { label: 'Draft changes', value: formatNumber(draftRules), hint: 'Awaiting review or publish' },
-      ]}
-      primaryVisual={
-        <KeyInsightCallout
-          tone={draftRules > 0 ? 'warning' : publishedCoverage > 0 ? 'success' : 'neutral'}
-          icon={<ShieldCheck size={16} />}
-        >
-          <strong>{formatNumber(publishedCoverage)}</strong> of <strong>{formatNumber(rules.length)}</strong> rules published
-          {draftRules > 0 ? <> · <strong>{formatNumber(draftRules)}</strong> with draft changes awaiting review</> : null}.
-        </KeyInsightCallout>
-      }
-      rail={
-        <SummaryRail
-          sections={[
-            {
-              title: 'Rule lifecycle',
-              rows: [
-                { label: 'Published current', value: formatNumber(publishedRules), tone: 'success', bar: rules.length ? publishedRules / rules.length : 0 },
-                { label: 'Draft change', value: formatNumber(draftRules), tone: 'warning', bar: rules.length ? draftRules / rules.length : 0 },
-                { label: 'Disabled', value: formatNumber(disabledRules), tone: 'neutral', bar: rules.length ? disabledRules / rules.length : 0 },
-              ],
-              footnote: 'One row per rule family. Draft families may retain an earlier published version.',
-            },
-          ]}
-        />
-      }
-      main={<RulesIndexClient rules={rules} canManage={canManage} />}
-    />
+      subtitle={`Set the policy that guides recommendations · ${formatNumber(rules.length)} rules · ${formatNumber(publishedCoverage)} published · ${formatNumber(draftRules)} drafts`}
+    >
+      <RulesIndexClient rules={rules} canManage={canManage} />
+    </PageFrame>
   );
 }

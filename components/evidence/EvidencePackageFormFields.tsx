@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { Spinner } from "@/components/ui/Spinner";
+import { Select, Textarea } from "@/components/ui";
 import type {
   OrderOption,
   PackageIncludeItem,
@@ -41,13 +43,7 @@ function PriorMatchPreviewBanner({
           border: "1px solid var(--ua-border-subtle)",
         }}
       >
-        <div
-          className="h-3 w-3 animate-spin rounded-full border border-t-transparent"
-          style={{
-            borderColor: "var(--ua-border-default)",
-            borderTopColor: "var(--ua-action-primary)",
-          }}
-        />
+        <Spinner size="sm" delayMs={0} label="Checking for prior identity matches" />
         <p className="text-caption" style={{ color: "var(--ua-text-secondary)" }}>
           Checking for prior identity matches…
         </p>
@@ -66,7 +62,7 @@ function PriorMatchPreviewBanner({
       >
         <span style={{ color: "var(--ua-success)" }}>✓</span>
         <div>
-          <p className="text-sm font-semibold" style={{ color: "var(--ua-text-primary)" }}>
+          <p className="ua-text-working-title" style={{ color: "var(--ua-text-primary)" }}>
             Prior matching transactions found
           </p>
           <p
@@ -92,7 +88,7 @@ function PriorMatchPreviewBanner({
       >
         <span style={{ color: "var(--ua-warning)" }}>⚠</span>
         <div>
-          <p className="text-sm font-semibold" style={{ color: "var(--ua-text-primary)" }}>
+          <p className="ua-text-working-title" style={{ color: "var(--ua-text-primary)" }}>
             No prior matching transactions detected
           </p>
           <p
@@ -130,7 +126,7 @@ export function EvidencePackageFormFields({
     <button
       type="button"
       onClick={onCancel}
-      className="text-xs hover:underline"
+      className="ua-text-label hover:underline"
       style={{ color: "var(--ua-text-secondary)" }}
     >
       Cancel
@@ -138,7 +134,7 @@ export function EvidencePackageFormFields({
   ) : (
     <Link
       href={`/customers/${profileId}`}
-      className="text-xs hover:underline"
+      className="ua-text-label hover:underline"
       style={{ color: "var(--ua-text-secondary)" }}
     >
       Cancel
@@ -149,23 +145,17 @@ export function EvidencePackageFormFields({
     <form onSubmit={onSubmit} className="space-y-6">
       <div>
         <label
-          className="mb-2 block text-xs font-semibold"
+          className="ua-text-label mb-2 block"
           style={{ color: "var(--ua-text-secondary)" }}
           htmlFor="order-select"
         >
           Disputed order *
         </label>
-        <select
+        <Select
           id="order-select"
           data-testid="disputed-order-select"
           value={selectedOrderId}
           onChange={(e) => onOrderChange(e.target.value)}
-          className="w-full rounded-md px-3 py-2 text-sm"
-          style={{
-            background: "var(--ua-surface-secondary)",
-            border: "1px solid var(--ua-border-default)",
-            color: "var(--ua-text-primary)",
-          }}
           required
         >
           <option value="">Select an order to defend…</option>
@@ -176,7 +166,7 @@ export function EvidencePackageFormFields({
               {o.refund_claimed ? " ★ refund claimed" : ""}
             </option>
           ))}
-        </select>
+        </Select>
         {!selectedOrderId ? (
           <p
             className="text-caption mt-1.5"
@@ -206,7 +196,7 @@ export function EvidencePackageFormFields({
           }}
         >
           <p
-            className="mb-3 text-xs font-semibold"
+            className="ua-text-label mb-3"
             style={{ color: "var(--ua-text-secondary)" }}
           >
             This package will include
@@ -257,7 +247,7 @@ export function EvidencePackageFormFields({
 
       <div>
         <label
-          className="mb-2 block text-xs font-semibold"
+          className="ua-text-label mb-2 block"
           style={{ color: "var(--ua-text-secondary)" }}
           htmlFor="notes"
         >
@@ -269,18 +259,13 @@ export function EvidencePackageFormFields({
             (optional · appears in the package · max 500 characters)
           </span>
         </label>
-        <textarea
+        <Textarea
           id="notes"
           value={notes}
           onChange={(e) => onNotesChange(e.target.value.slice(0, 500))}
           rows={3}
           placeholder="Any additional context to include in the evidence package…"
-          className="w-full resize-none rounded-md px-3 py-2 text-sm"
-          style={{
-            background: "var(--ua-surface-secondary)",
-            border: "1px solid var(--ua-border-default)",
-            color: "var(--ua-text-primary)",
-          }}
+          className="resize-none"
         />
         <p
           className="text-caption mt-1 text-right"
@@ -292,7 +277,7 @@ export function EvidencePackageFormFields({
 
       {error ? (
         <div
-          className="rounded-md border p-3 text-sm"
+          className="ua-text-body rounded-md border p-3"
           style={{
             background: "var(--ua-risk-critical-bg)",
             borderColor: "var(--ua-risk-critical-border)",
@@ -309,13 +294,13 @@ export function EvidencePackageFormFields({
           <button
             type="submit"
             disabled={!canSubmit}
-            className="rounded-md px-5 py-2.5 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+            className="ua-text-working-title rounded-md px-5 py-2.5 transition-colors disabled:cursor-not-allowed disabled:opacity-40"
             style={{ background: "var(--ua-action-primary)", color: "var(--ua-text-inverse)" }}
           >
             {loading ? "Building…" : "Build evidence package"}
           </button>
           {!selectedOrderId ? (
-            <p className="text-xs" style={{ color: "var(--ua-text-tertiary)" }}>
+            <p className="ua-text-metadata" style={{ color: "var(--ua-text-tertiary)" }}>
               Select an order above to continue
             </p>
           ) : null}

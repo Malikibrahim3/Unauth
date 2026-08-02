@@ -1,2 +1,12 @@
 import { OperationalRouteSkeleton } from '@/components/states/OperationalRouteSkeleton';
-export default function Loading() { return <OperationalRouteSkeleton title="Loading the loss ledger" rows={7} kpiCount={5} showInsight showRail />; }
+
+export default function Loading() {
+  return (
+    <OperationalRouteSkeleton
+      title="Loading loss trend and ledger"
+      rows={7}
+      kpiCount={4}
+      visualVariant="combo"
+    />
+  );
+}

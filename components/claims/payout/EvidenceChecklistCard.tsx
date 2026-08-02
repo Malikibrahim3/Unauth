@@ -40,14 +40,14 @@ export function EvidenceChecklistCard({
   return (
     <Card unstyled as="section" variant="panel" className="p-4">
       <div className="flex items-center justify-between mb-3">
-        <p className="text-caption font-semibold" style={{ color: 'var(--ua-text-secondary)' }}>
+        <p className="ua-text-label" style={{ color: 'var(--ua-text-secondary)' }}>
           Evidence on file
         </p>
         <StatusBadge family="evidenceStrength" value={evidence.strength} />
       </div>
 
       {evidence.items.length === 0 ? (
-        <p className="text-sm" style={{ color: 'var(--ua-text-secondary)' }}>
+        <p className="ua-text-body" style={{ color: 'var(--ua-text-secondary)' }}>
           No supporting evidence on file yet.
         </p>
       ) : (
@@ -59,26 +59,26 @@ export function EvidenceChecklistCard({
             const mark = isPresent ? '✓' : isMissing ? '○' : isUnavailable ? '–' : '–';
             const markColor = isPresent ? 'var(--ua-success)' : 'var(--ua-text-tertiary)';
             return (
-              <li key={item.key} className="flex items-start gap-2 text-sm">
+              <li key={item.key} className="ua-text-dense flex items-start gap-2">
                 <span aria-hidden style={{ color: markColor, lineHeight: '1.4' }}>
                   {mark}
                 </span>
                 <span style={{ color: isPresent ? 'var(--ua-text-primary)' : 'var(--ua-text-secondary)' }}>
                   {item.label}
                   {item.state === 'not_tracked' && (
-                    <span className="text-xs" style={{ color: 'var(--ua-text-tertiary)' }}>
+                    <span className="ua-text-metadata" style={{ color: 'var(--ua-text-tertiary)' }}>
                       {' '}
                       · not tracked
                     </span>
                   )}
                   {item.state === 'unavailable' && (
-                    <span className="text-xs" style={{ color: 'var(--ua-text-tertiary)' }}>
+                    <span className="ua-text-metadata" style={{ color: 'var(--ua-text-tertiary)' }}>
                       {' '}
                       · unavailable from provider
                     </span>
                   )}
                   {item.state === 'missing' && item.reason !== 'Not on file' && (
-                    <span className="text-xs" style={{ color: 'var(--ua-text-tertiary)' }}>
+                    <span className="ua-text-metadata" style={{ color: 'var(--ua-text-tertiary)' }}>
                       {' '}
                       · {item.reason}
                     </span>
@@ -94,7 +94,7 @@ export function EvidenceChecklistCard({
       {showDeliveryGap ? (
         <Card unstyled
           variant="muted"
-          className="mt-3 flex items-start gap-2 px-3 py-2.5 text-xs"
+          className="ua-text-caption-role mt-3 flex items-start gap-2 px-3 py-2.5"
           style={{
             borderColor: 'color-mix(in srgb, var(--ua-warning) 25%, var(--ua-border-default))',
             background: 'color-mix(in srgb, var(--ua-warning) 6%, var(--ua-surface-primary))',
@@ -120,7 +120,7 @@ export function EvidenceChecklistCard({
       ) : null}
 
       {hasMissing && !showDeliveryGap && (
-        <p className="mt-3 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
+        <p className="ua-text-caption-role mt-3">
           Missing items weaken the case — request evidence from the customer or carrier before paying out.
         </p>
       )}

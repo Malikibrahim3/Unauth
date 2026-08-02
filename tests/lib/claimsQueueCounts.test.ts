@@ -86,7 +86,7 @@ describe('claim queue count semantics', () => {
   it('aggregates active, unread, overdue, snoozed, and history from rows', () => {
     const counts = computeClaimQueueCounts(
       [
-        { status: 'open', first_viewed_at: null, snoozed_until: null, submitted_at: '2026-05-20T12:00:00.000Z' },
+        { status: 'open', first_viewed_at: null, snoozed_until: null, submitted_at: '2026-05-18T12:00:00.000Z' },
         { status: 'open', first_viewed_at: '2026-05-26T11:00:00.000Z', snoozed_until: null, submitted_at: '2026-05-26T12:00:00.000Z' },
         { status: 'open', first_viewed_at: null, snoozed_until: '2026-05-30T12:00:00.000Z', submitted_at: '2026-05-26T12:00:00.000Z' },
         { status: 'resolved_refunded', first_viewed_at: null, snoozed_until: null, submitted_at: '2026-05-20T12:00:00.000Z' },
@@ -140,9 +140,9 @@ describe('claims queue UI helpers', () => {
 
   it('formats result text for unread and active views', () => {
     expect(formatClaimsResultText({ showing: 25, totalMatching: 55, view: { kind: 'active' } }))
-      .toBe('Showing 25 of 55 claim evidence reviews');
+      .toBe('Showing 25 of 55 case reviews');
     expect(formatClaimsResultText({ showing: 12, totalMatching: 54, view: { kind: 'unread' } }))
-      .toBe('Showing 12 of 54 claims with new evidence');
+      .toBe('Showing 12 of 54 cases with new evidence');
   });
 
   it('resolves list view from query params', () => {

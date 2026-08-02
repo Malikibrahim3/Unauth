@@ -43,10 +43,10 @@ export function GorgiasSupportSyncCreateForm({
             className="h-9 w-9 rounded-[var(--ua-radius-control)] border border-[var(--ua-border-subtle)] object-contain p-1"
           />
           <div>
-            <p className="text-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>
+            <p className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>
               Connect Gorgias
             </p>
-            <p className="text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
+            <p className="ua-text-caption-role" style={{ color: 'var(--ua-text-secondary)' }}>
               Registers the sidebar widget and ticket webhook automatically.
             </p>
           </div>
@@ -58,7 +58,7 @@ export function GorgiasSupportSyncCreateForm({
         <div>
           <label
             htmlFor="gorgias-account-domain"
-            className="block text-xs font-medium mb-1.5"
+            className="ua-text-label block mb-1.5"
             style={{ color: 'var(--ua-text-primary)' }}
           >
             Gorgias account domain
@@ -74,7 +74,7 @@ export function GorgiasSupportSyncCreateForm({
             disabled={!canManage || state.busy}
           />
           {isCreate ? (
-            <p className="mt-1.5 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
+            <p className="ua-text-caption-role mt-1.5" style={{ color: 'var(--ua-text-secondary)' }}>
               Your Gorgias subdomain — if your URL is <code>acme.gorgias.com</code>, enter <code>acme</code>.
             </p>
           ) : null}
@@ -85,7 +85,7 @@ export function GorgiasSupportSyncCreateForm({
           <div>
             <label
               htmlFor="gorgias-display-name"
-              className="block text-xs font-medium mb-1.5"
+              className="ua-text-label block mb-1.5"
               style={{ color: 'var(--ua-text-primary)' }}
             >
               Display name <span style={{ color: 'var(--ua-text-secondary)' }}>(optional)</span>
@@ -118,13 +118,13 @@ export function GorgiasSupportSyncCreateForm({
           <button
             type="submit"
             disabled={(!canManage && isCreate) || state.busy}
-            className="inline-flex h-8 items-center rounded-[var(--ua-radius-control)] px-3 text-[length:var(--ua-text-metadata-size)] font-semibold disabled:opacity-50"
+            className="ua-text-working-title inline-flex h-8 items-center rounded-[var(--ua-radius-control)] px-3 disabled:opacity-50"
             style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)' }}
           >
             {state.busy ? 'Connecting…' : submitLabel}
           </button>
           {isCreate && !canManage ? (
-            <p className="text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
+            <p className="ua-text-caption-role" style={{ color: 'var(--ua-text-secondary)' }}>
               Manage settings permission required.
             </p>
           ) : null}

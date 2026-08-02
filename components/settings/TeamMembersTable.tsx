@@ -46,7 +46,7 @@ export function TeamMembersTable({
 }: TeamMembersTableProps) {
   return (
     <DataTable
-      density="compact"
+      density="metadata"
       loading={loading}
       rows={members}
       getRowKey={(member) => member.id}

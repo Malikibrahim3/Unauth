@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button, Card, SectionCard } from "@/components/ui";
+import { Bone, Button, Checkbox, SectionCard, Select, Surface } from "@/components/ui";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import {
   DEFAULT_PLATFORM_SETTINGS,
@@ -30,7 +30,7 @@ function Field({
     <label className="block text-[length:var(--ua-text-caption-size)] font-medium text-[var(--ua-text-primary)]">
       {label}
       {children}
-      <span className="mt-1 block text-xs font-normal leading-relaxed text-[var(--ua-text-tertiary)]">
+      <span className="mt-1 block ua-text-metadata font-normal leading-relaxed">
         {help}
       </span>
     </label>
@@ -176,34 +176,28 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
     </Field>
   );
 
+  if (loading) {
+    return <PlatformSettingsSkeleton />;
+  }
+
   return (
-    <form onSubmit={save} className="space-y-3">
+    <form onSubmit={save}>
+      <Surface structure="working" className="overflow-hidden">
       {!canManage ? (
-        <Card unstyled
-          variant="muted"
-          className="flex items-center justify-between gap-3 p-4"
-        >
+        <Surface structure="joined" className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-semibold">Read-only access</p>
-            <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">
+            <p className="ua-text-working-title">Read-only access</p>
+            <p className="mt-1 ua-text-caption-role">
               An owner or admin with Manage settings permission can change these
               defaults.
             </p>
           </div>
           <StatusBadge family="workflowStatus" value="view_only" size="sm" />
-        </Card>
-      ) : null}
-      {loading ? (
-        <Card unstyled
-          variant="muted"
-          className="p-4 text-sm text-[var(--ua-text-secondary)]"
-          role="status"
-        >
-          Loading workspace defaults…
-        </Card>
+        </Surface>
       ) : null}
 
       <SectionCard
+        joined
         title="Reporting and retention"
         description="Display and lifecycle defaults used across reports, exports, and stored source records."
       >
@@ -246,6 +240,7 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
       </SectionCard>
 
       <SectionCard
+        joined
         title="Decision and financial policy"
         description="Defaults guide operators; they never replace case evidence or silently execute a payout."
       >
@@ -254,7 +249,7 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
             label="Matching policy"
             help="Controls whether ambiguous links are blocked, balanced, or queued for review."
           >
-            <select
+            <Select
               disabled={!canManage || loading || state === "saving"}
               value={settings.matchingPolicy}
               onChange={(event) =>
@@ -263,7 +258,7 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
                   event.target.value as PlatformSettings["matchingPolicy"],
                 )
               }
-              className={INPUT_CLASS}
+              className="mt-1.5"
             >
               <option value="strict">Strict — block ambiguous matches</option>
               <option value="balanced">
@@ -272,13 +267,13 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
               <option value="review_ambiguous">
                 Review ambiguous — queue uncertain links
               </option>
-            </select>
+            </Select>
           </Field>
           <Field
             label="Cost basis"
             help="Basis used when estimating merchant loss where an actual unit cost is unavailable."
           >
-            <select
+            <Select
               disabled={!canManage || loading || state === "saving"}
               value={settings.costBasis}
               onChange={(event) =>
@@ -287,12 +282,12 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
                   event.target.value as PlatformSettings["costBasis"],
                 )
               }
-              className={INPUT_CLASS}
+              className="mt-1.5"
             >
               <option value="actual">Actual cost</option>
               <option value="average">Average cost</option>
               <option value="standard">Standard cost</option>
-            </select>
+            </Select>
           </Field>
           {numberField(
             "defaultDeadlineHours",
@@ -334,14 +329,14 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
       </SectionCard>
 
       <SectionCard
+        joined
         title="Connector controls"
         description="Write access and health notifications remain explicit workspace choices."
       >
         <div className="space-y-3">
           <label className="flex items-start gap-3 rounded-md border border-[var(--ua-border-subtle)] p-3">
-            <input
-              type="checkbox"
-              className="mt-0.5 h-4 w-4 accent-[var(--ua-action-primary)]"
+            <Checkbox
+              className="mt-0.5"
               disabled={!canManage || loading || state === "saving"}
               checked={settings.connectorWritebackEnabled}
               onChange={(event) =>
@@ -349,19 +344,18 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
               }
             />
             <span>
-              <span className="block text-sm font-medium">
+              <span className="block ua-text-body font-medium">
                 Allow controlled connector write-back
               </span>
-              <span className="mt-0.5 block text-xs text-[var(--ua-text-tertiary)]">
+              <span className="mt-0.5 block ua-text-metadata">
                 Only provider capabilities explicitly marked write-supported can
                 use this permission.
               </span>
             </span>
           </label>
           <label className="flex items-start gap-3 rounded-md border border-[var(--ua-border-subtle)] p-3">
-            <input
-              type="checkbox"
-              className="mt-0.5 h-4 w-4 accent-[var(--ua-action-primary)]"
+            <Checkbox
+              className="mt-0.5"
               disabled={!canManage || loading || state === "saving"}
               checked={settings.webhookHealthAlerts}
               onChange={(event) =>
@@ -369,10 +363,10 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
               }
             />
             <span>
-              <span className="block text-sm font-medium">
+              <span className="block ua-text-body font-medium">
                 Alert on webhook health failures
               </span>
-              <span className="mt-0.5 block text-xs text-[var(--ua-text-tertiary)]">
+              <span className="mt-0.5 block ua-text-metadata">
                 Create in-app notifications for failed, stale, or repeatedly
                 retried ingestion.
               </span>
@@ -381,7 +375,7 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
         </div>
       </SectionCard>
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3 border-t border-[var(--ua-border-subtle)] px-4 py-3">
         {canManage ? (
           <Button
             type="submit"
@@ -394,12 +388,46 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
         {message ? (
           <p
             role={state === "error" ? "alert" : "status"}
-            className={`text-sm ${state === "error" ? "text-[var(--ua-risk-critical)]" : "text-[var(--ua-success)]"}`}
+            className={`ua-text-body ${state === "error" ? "text-[var(--ua-risk-critical)]" : "text-[var(--ua-success)]"}`}
           >
             {message}
           </p>
         ) : null}
       </div>
+      </Surface>
     </form>
+  );
+}
+
+function PlatformSettingsSkeleton() {
+  return (
+    <Surface
+      structure="working"
+      className="overflow-hidden"
+      role="status"
+      aria-busy="true"
+      aria-label="Loading workspace defaults"
+    >
+      {[3, 4, 2].map((fieldCount, sectionIndex) => (
+        <div
+          key={sectionIndex}
+          className="border-t border-[var(--ua-border-subtle)] px-4 py-4 first:border-t-0"
+        >
+          <Bone className="h-4 w-44" />
+          <Bone className="mt-2 h-3 w-80 max-w-full" />
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            {Array.from({ length: fieldCount }, (_, fieldIndex) => (
+              <div key={fieldIndex} className="space-y-2">
+                <Bone className="h-3 w-28" />
+                <Bone className="h-8 w-full" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+      <div className="border-t border-[var(--ua-border-subtle)] px-4 py-3">
+        <Bone className="h-8 w-28" />
+      </div>
+    </Surface>
   );
 }

@@ -209,7 +209,11 @@ export function getSlaVisual(claim: ClaimRecord | null) {
   const ageMs = filed ? Date.now() - new Date(filed).getTime() : 0;
   const status = String(claim?.status ?? '').toLowerCase();
   const notResolved = status !== 'resolved';
-  if (base.state === 'overdue') return { label: 'Ageing', tone: 'red' as const, icon: 'clock' as const };
+  // §6.3 attention scale: overdue fires on most rows in this domain (carrier/
+  // 3PL/supplier waits routinely run a week), so it stays a warning tone, not
+  // the hard-breach red the severity ladder used to paint it — matching
+  // STATUS_TONES.overdue, which is 'warning' for the same reason.
+  if (base.state === 'overdue') return { label: 'Ageing', tone: 'amber' as const, icon: 'clock' as const };
   if (base.state === 'approaching' || (notResolved && ageMs > 24 * 60 * 60 * 1000)) {
     return { label: 'Approaching threshold', tone: 'amber' as const, icon: 'warning' as const };
   }

@@ -4,6 +4,7 @@ import { getRequestUser } from '@/lib/auth/requestContext';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import GorgiasSetupClient from '@/components/settings/GorgiasSetupClient';
 import GorgiasSupportSyncClient from '@/components/settings/GorgiasSupportSyncClient';
+import { ConnectorSetupShell } from '@/components/settings/ConnectorSetupShell';
 import { SettingsPageShell } from '@/components/ui';
 import Link from 'next/link';
 
@@ -29,12 +30,16 @@ export default async function GorgiasIntegrationPage({
       title="Gorgias"
       subtitle="Show case context, evidence gaps, and recommendations on support tickets."
     >
-      <div className="space-y-3">
+      <ConnectorSetupShell
+        provider="Gorgias"
+        providerMark="/integrations/gorgias.png"
+        requirements="Use a Gorgias account, an API user email and key, plus permission to create the HTTP integration used for ticket updates."
+      >
         {returnTo && (
           <div className="flex justify-end">
             <Link
               href={returnTo}
-              className="inline-flex h-8 items-center rounded-[var(--ua-radius-control)] border px-3 text-[length:var(--ua-text-metadata-size)] font-semibold"
+              className="ua-text-label inline-flex h-8 items-center rounded-[var(--ua-radius-control)] border px-3"
               style={{ borderColor: 'var(--ua-border-default)', color: 'var(--ua-text-primary)' }}
             >
               Return to onboarding
@@ -43,7 +48,7 @@ export default async function GorgiasIntegrationPage({
         )}
         <GorgiasSupportSyncClient canManage={canManageGorgias} />
         <GorgiasSetupClient />
-      </div>
+      </ConnectorSetupShell>
     </SettingsPageShell>
   );
 }

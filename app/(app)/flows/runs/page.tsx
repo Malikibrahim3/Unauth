@@ -5,11 +5,19 @@ import { getRequestUser } from "@/lib/auth/requestContext";
 import { PERMISSIONS, requirePermission } from "@/lib/permissions";
 import { TABLES } from "@/lib/supabase/tables";
 import { formatDateTime } from "@/lib/utils/format";
-import { AuthenticatedPageHeader } from "@/components/authenticated/AuthenticatedPageHeader";
-import { AuthenticatedPanel } from "@/components/authenticated/AuthenticatedPanel";
-import pageStyles from "@/components/authenticated/AuthenticatedPageChrome.module.css";
+import { DataTableServer, PageFrame, RegistrySurface } from "@/components/ui";
+import { StatusBadge } from "@/components/ui/StatusBadge";
 import { hashId } from "@/lib/ui/displayRef";
-import { label } from "@/lib/ui/labels";
+
+type WorkflowRunRow = {
+  id: string;
+  workflow_definition_id: string;
+  status: string;
+  error: string | null;
+  started_at: string;
+  completed_at: string | null;
+};
+
 export default async function Runs({
   searchParams,
 }: {
@@ -25,40 +33,78 @@ export default async function Runs({
   );
   if (denied) redirect("/dashboard");
   const sp = await searchParams;
-  let q = svc
+  let query = svc
     .from(TABLES.WORKFLOW_RUNS)
-    .select("*")
+    .select("id,workflow_definition_id,status,error,started_at,completed_at")
     .eq("merchant_id", ctx.merchantId)
     .order("started_at", { ascending: false })
     .limit(100);
-  if (sp.workflow) q = q.eq("workflow_definition_id", sp.workflow);
-  const runs = (await q).data ?? [];
+  if (sp.workflow) query = query.eq("workflow_definition_id", sp.workflow);
+  const runs = ((await query).data ?? []) as WorkflowRunRow[];
+  const scopeLabel = sp.workflow ? "for this flow" : "across all flows";
+
   return (
-    <div>
-      <AuthenticatedPageHeader
-        title="Flow runs"
-        subtitle="Execution history and operator-visible outcomes."
-        breadcrumbs={[{ label: "Flows", href: "/flows" }, { label: "Run history" }]}
-      />
-      <div className={pageStyles.pageBody}>
-        <AuthenticatedPanel title="Recent runs" description="Up to 100 executions in this scope.">
-          <div className="divide-y divide-[var(--ua-border-subtle)]">
-        {runs.map((r: any) => (
+    <PageFrame
+      title="Flow runs"
+      subtitle="Execution history and operator-visible outcomes."
+      breadcrumbs={[{ label: "Flows", href: "/flows" }, { label: "Run history" }]}
+    >
+      <RegistrySurface
+        aria-label="Flow run history"
+        toolbar={
           <Link
-            key={r.id}
-            href={`/flows/runs/${r.id}`}
-            className="grid min-h-12 items-center gap-2 px-4 py-2.5 text-[length:var(--ua-text-metadata-size)] hover:bg-[var(--ua-surface-hover)] sm:grid-cols-4"
+            href="/flows"
+            className="ua-text-label inline-flex h-7 items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2.5 text-[var(--ua-text-primary)] hover:bg-[var(--ua-surface-hover)] focus-visible:outline-none focus-visible:shadow-[inset_var(--ua-shadow-focus)]"
           >
-            <span className="font-mono text-xs">Run {hashId(r.id)}</span>
-            <span>{label("workflowStatus", String(r.status ?? "unknown"))}</span>
-            <span className="text-[var(--ua-text-secondary)]">{formatDateTime(r.started_at)}</span>
-            <span className="text-right font-semibold text-[var(--ua-text-secondary)]">{r.error ? "Failed — inspect" : "Inspect"}</span>
+            All flows
           </Link>
-        ))}
-          </div>
-          {!runs.length ? <p className="px-4 py-10 text-center text-xs text-[var(--ua-text-secondary)]">No flow runs found for this scope.</p> : null}
-        </AuthenticatedPanel>
-      </div>
-    </div>
+        }
+        resultCount={`${runs.length} ${runs.length === 1 ? "run" : "runs"} ${scopeLabel}`}
+      >
+        <DataTableServer
+          aria-label="Flow run history"
+          rows={runs}
+          getRowKey={(run) => run.id}
+          density="metadata"
+          flush
+          emptyState={<div className="px-4 py-12 text-center">
+            <h2 className="ua-text-working-title">No flow runs in this scope</h2>
+            <p className="ua-text-caption-role mt-1">Runs appear here when a published flow receives a matching trigger event.</p>
+          </div>}
+          columns={[
+            {
+              key: "run",
+              header: "Run",
+              render: (run) => <span className="ua-text-dense font-mono">Run {hashId(run.id)}</span>,
+            },
+            {
+              key: "outcome",
+              header: "Outcome",
+              render: (run) => <StatusBadge family="workflowStatus" value={run.error ? "failed" : run.status} size="sm" />,
+            },
+            {
+              key: "started",
+              header: "Started",
+              render: (run) => <span className="ua-text-dense text-[var(--ua-text-secondary)]">{formatDateTime(run.started_at)}</span>,
+            },
+            {
+              key: "completed",
+              header: "Completed",
+              render: (run) => <span className="ua-text-dense text-[var(--ua-text-secondary)]">{run.completed_at ? formatDateTime(run.completed_at) : "In progress"}</span>,
+            },
+            {
+              key: "open",
+              header: "Open run",
+              kind: "action",
+              render: (run) => (
+                <Link href={`/flows/runs/${run.id}`} className="ua-text-label text-[var(--ua-action-primary)] focus-visible:outline-none focus-visible:shadow-[inset_var(--ua-shadow-focus)]">
+                  Inspect<span className="sr-only"> run {hashId(run.id)}</span>
+                </Link>
+              ),
+            },
+          ]}
+        />
+      </RegistrySurface>
+    </PageFrame>
   );
 }

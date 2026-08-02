@@ -7,9 +7,8 @@ import type { ConnectorFreshness } from "@/lib/connections/freshness";
 import type { ConnectorCatalogueItem } from "@/lib/connectors/catalogue";
 import { ConnectorRow, type CatalogueRowItem } from "@/components/integrations/ConnectorRow";
 import { ConnectionHealthHeader, ConnectionHealthGrid } from "@/components/integrations/ConnectionHealthPanel";
-import { AuthenticatedPageHeader } from "@/components/authenticated/AuthenticatedPageHeader";
+import { PageFrame } from "@/components/ui/PageFrame";
 import { AuthenticatedPanel } from "@/components/authenticated/AuthenticatedPanel";
-import pageStyles from "@/components/authenticated/AuthenticatedPageChrome.module.css";
 
 export const dynamic = "force-dynamic";
 
@@ -103,44 +102,39 @@ export default async function IntegrationHealthDevPreviewPage() {
   };
 
   return (
-    <div>
-      <AuthenticatedPageHeader
-        title="Integration health states"
-        subtitle="Real integration components rendered against guarded, in-memory provider states. This route is unavailable in production."
-        breadcrumbs={[{ label: "Integrations", href: "/integrations" }, { label: "Status preview" }]}
-      />
-      <div className={pageStyles.pageBody}>
-        <div className={pageStyles.workbenchStack}>
-          <AuthenticatedPanel bodyClassName="px-4 py-3 text-[length:var(--ua-text-metadata-size)] leading-5 text-[var(--ua-text-secondary)]">
-            <strong className="text-[var(--ua-text-primary)]">Dev-only preview.</strong>{" "}
-            These states use the real status resolver and presentation components without writing to any connection table.
-          </AuthenticatedPanel>
+    <PageFrame
+      title="Integration health states"
+      subtitle="Real integration components rendered against guarded, in-memory provider states. This route is unavailable in production."
+      breadcrumbs={[{ label: "Integrations", href: "/integrations" }, { label: "Status preview" }]}
+    >
+      <AuthenticatedPanel bodyClassName="px-4 py-3 text-[length:var(--ua-text-metadata-size)] leading-5 text-[var(--ua-text-secondary)]">
+        <strong className="text-[var(--ua-text-primary)]">Dev-only preview.</strong>{" "}
+        These states use the real status resolver and presentation components without writing to any connection table.
+      </AuthenticatedPanel>
 
-          <AuthenticatedPanel
-            title="Connection verified"
-            description="On-demand provider with a conclusive credential check."
-            bodyClassName="grid gap-3 p-3"
-          >
-            <div className="overflow-x-auto rounded-[var(--ua-radius-control)] border border-[var(--ua-border-subtle)]">
-              <ConnectorRow item={connectionVerifiedItem} />
-            </div>
-            <ConnectionHealthHeader item={connectionVerifiedItem} />
-            <ConnectionHealthGrid item={connectionVerifiedItem} />
-          </AuthenticatedPanel>
+      <AuthenticatedPanel
+        title="Connection verified"
+        description="On-demand provider with a conclusive credential check."
+        bodyClassName="grid gap-3 p-3"
+      >
+        <ul className="m-0 list-none overflow-x-auto rounded-[var(--ua-radius-control)] border border-[var(--ua-border-subtle)] p-0">
+          <ConnectorRow item={connectionVerifiedItem} />
+        </ul>
+        <ConnectionHealthHeader item={connectionVerifiedItem} />
+        <ConnectionHealthGrid item={connectionVerifiedItem} />
+      </AuthenticatedPanel>
 
-          <AuthenticatedPanel
-            title="Verification unavailable"
-            description="On-demand provider with an inconclusive network-level check."
-            bodyClassName="grid gap-3 p-3"
-          >
-            <div className="overflow-x-auto rounded-[var(--ua-radius-control)] border border-[var(--ua-border-subtle)]">
-              <ConnectorRow item={verificationUnavailableItem} />
-            </div>
-            <ConnectionHealthHeader item={verificationUnavailableItem} />
-            <ConnectionHealthGrid item={verificationUnavailableItem} />
-          </AuthenticatedPanel>
-        </div>
-      </div>
-    </div>
+      <AuthenticatedPanel
+        title="Verification unavailable"
+        description="On-demand provider with an inconclusive network-level check."
+        bodyClassName="grid gap-3 p-3"
+      >
+        <ul className="m-0 list-none overflow-x-auto rounded-[var(--ua-radius-control)] border border-[var(--ua-border-subtle)] p-0">
+          <ConnectorRow item={verificationUnavailableItem} />
+        </ul>
+        <ConnectionHealthHeader item={verificationUnavailableItem} />
+        <ConnectionHealthGrid item={verificationUnavailableItem} />
+      </AuthenticatedPanel>
+    </PageFrame>
   );
 }

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Spinner } from '@/components/ui/Spinner';
 
 type EvidencePackageFormIntroProps = {
   showIntro: boolean;
@@ -46,10 +47,7 @@ export function EvidencePackageFormLoadingState({ loadingOrders }: EvidencePacka
       className="rounded-[var(--ua-radius-control)] p-5 text-center"
       style={{ background: 'var(--ua-surface-secondary)', border: '1px solid var(--ua-border-subtle)' }}
     >
-      <div
-        className="mb-3 inline-block h-6 w-6 animate-spin rounded-full border-2 border-t-transparent"
-        style={{ borderColor: 'var(--ua-border-default)', borderTopColor: 'var(--ua-action-primary)' }}
-      />
+      <Spinner size="lg" delayMs={0} label="Loading order history" className="mb-3" />
       <p className="text-body-sm" style={{ color: 'var(--ua-text-secondary)' }}>
         Loading order history…
       </p>
@@ -84,11 +82,11 @@ export function EvidencePackageFormEmptyOrders({
         This customer has no order history in the current dataset. Evidence packages require at least one order.
       </p>
       {onCancel ? (
-        <button type="button" onClick={onCancel} className="text-sm hover:underline" style={{ color: 'var(--ua-action-primary)' }}>
+        <button type="button" onClick={onCancel} className="ua-text-label hover:underline" style={{ color: 'var(--ua-action-primary)' }}>
           Close
         </button>
       ) : (
-        <Link href={`/customers/${profileId}`} className="text-sm hover:underline" style={{ color: 'var(--ua-action-primary)' }}>
+        <Link href={`/customers/${profileId}`} className="ua-text-label hover:underline" style={{ color: 'var(--ua-action-primary)' }}>
           Return to profile
         </Link>
       )}
@@ -116,7 +114,7 @@ export function EvidencePackageFormNoClaimsBanner({
     >
       <span style={{ color: 'var(--ua-warning)' }}>⚠</span>
       <div>
-        <p className="text-sm font-semibold mb-0.5" style={{ color: 'var(--ua-text-primary)' }}>
+        <p className="ua-text-working-title mb-0.5" style={{ color: 'var(--ua-text-primary)' }}>
           No refund claims or chargebacks on record
         </p>
         <p className="text-caption" style={{ color: 'var(--ua-text-secondary)' }}>

@@ -1,5 +1,6 @@
+@layer components {
 /*
- * Living Precision authenticated design tokens.
+ * Instrument Grade authenticated product tokens.
  * ------------------------------------------------------------------
  * `--ua-*` is the ONLY authenticated visual token namespace, and every token
  * below carries a literal value. There is no alias layer: no `--accent`,
@@ -11,30 +12,47 @@
  * Semantic, risk, and severity tokens live in status.css; type-role tokens live
  * in typography.css. Both follow the same literal-value rule.
  *
- * Values are the target tables in docs/IMPL_living_precision_product_ui.md §3,
- * §6.2, and §7.1. That document supersedes the Quiet Precision clause that
- * forbade a product accent: violet is now the single product accent, and
- * near-black survives only as the high-stakes *commit* action.
+ * `.ua-app` and `.ua-auth-surface` share one visual geometry. The scoped
+ * overrides at the end refine the product shell without creating an
+ * auth-adjacent radius dialect.
  */
+:root {
+  --ua-document-canvas: #f6f7f9;
+}
+
+:root[data-theme="dark"] {
+  --ua-document-canvas: #101114;
+}
+
 .ua-desktop-boundary {
   /* The unsupported-width notice sits outside `.ua-app`, so it needs the
    * small neutral subset below before the authenticated subtree mounts. */
-  --ua-canvas: #f7f7f8;
+  --ua-canvas: #f6f7f9;
   --ua-surface-primary: #ffffff;
   --ua-border-default: #d8d8dc;
-  --ua-radius-surface: 10px;
+  --ua-radius-surface: 12px;
   --ua-space-2: 8px;
   --ua-space-6: 24px;
   --ua-text-primary: #18181b;
   --ua-text-secondary: #52525b;
-  --ua-text-tertiary: #71717a;
+  --ua-text-tertiary: #6b6b75;
   --ua-text-page-title-size: 20px;
-  --ua-text-page-title-leading: 28px;
-  --ua-text-metadata-size: 11px;
-  --ua-text-metadata-leading: 15px;
+  --ua-text-page-title-leading: 26px;
+  --ua-text-metadata-size: 12px;
+  --ua-text-metadata-leading: 16px;
   --ua-text-body-size: 14px;
   --ua-text-body-leading: 20px;
   --ua-font-sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+:root[data-theme="dark"] .ua-desktop-boundary {
+  color-scheme: dark;
+  --ua-canvas: #111113;
+  --ua-surface-primary: #1b1b1e;
+  --ua-border-default: #37373e;
+  --ua-text-primary: #f5f5f6;
+  --ua-text-secondary: #b8b8c0;
+  --ua-text-tertiary: #92929b;
 }
 
 .ua-app,
@@ -54,20 +72,26 @@
    * by the accent wash plus a 2px accent marker (§4.2), not by a white-on-white
    * lift.
    */
-  --ua-canvas: #f7f7f8;
-  --ua-shell: #ffffff;
+  --ua-canvas: #eef0f4;
+  --ua-shell: #e7eaf0;
   --ua-surface-primary: #ffffff;
-  --ua-surface-secondary: #f4f4f5;
-  --ua-surface-muted: #eeeef0;
-  --ua-surface-hover: #f1f1f3;
-  --ua-surface-selected: #ececee;
+  --ua-surface-raised: #ffffff;
+  --ua-surface-overlay: #ffffff;
+  --ua-surface-secondary: #f5f6f9;
+  /* #EAECF1 as specified drops --ua-text-tertiary (#6b6b75, gate-locked) to
+   * 4.45:1 on this surface (AppearanceSettings' unselected segmented-control
+   * label) — just under WCAG AA. Lightened to hold >=4.5:1 without touching
+   * the protected text token; clarity wins over the exact prescribed hex. */
+  --ua-surface-muted: #edeef2;
+  --ua-surface-hover: #f1f3f7;
+  --ua-surface-selected: #eae8ff;
   --ua-surface-inverse: #18181b;
   --ua-backdrop: rgb(24 24 27 / 18%);
 
   /* ── Ink (§3.1) ───────────────────────────────────────────────────── */
   --ua-text-primary: #18181b;
   --ua-text-secondary: #52525b;
-  --ua-text-tertiary: #71717a;
+  --ua-text-tertiary: #6b6b75;
   --ua-text-disabled: #a1a1aa;
   --ua-text-inverse: #ffffff;
   --ua-text-link: #3c3c96;
@@ -75,9 +99,11 @@
   --ua-icon-secondary: #71717a;
 
   /* ── Lines (§3.1) ─────────────────────────────────────────────────── */
-  --ua-border-subtle: #e7e7ea;
-  --ua-border-default: #d8d8dc;
-  --ua-border-strong: #a5a5ae;
+  --ua-border-hairline: rgb(24 26 42 / 6%);
+  --ua-border-subtle: rgb(24 26 42 / 10%);
+  --ua-border-default: rgb(24 26 42 / 15%);
+  --ua-border-strong: rgb(24 26 42 / 28%);
+  --ua-border-control: rgb(24 26 42 / 36%);
   --ua-border-focus: #5b5bd6;
 
   /*
@@ -87,11 +113,9 @@
    * success, warning, failure, risk, or freshness meaning — those are the
    * status.css triplets.
    */
-  --ua-accent-50: #f5f4ff;
-  --ua-accent-100: #f0efff;
-  --ua-accent-200: #dedcff;
-  --ua-accent-300: #c2beff;
-  --ua-accent-400: #8784e1;
+  --ua-accent-50: #f2f1ff;
+  --ua-accent-100: #e6e4ff;
+  --ua-accent-200: #c9c6fa;
   --ua-accent-500: #5b5bd6;
   --ua-accent-600: #4949b8;
   --ua-accent-700: #3c3c96;
@@ -113,6 +137,10 @@
   --ua-action-commit-hover: #09090b;
   --ua-action-commit-pressed: #000000;
   --ua-action-commit-fg: #ffffff;
+  /* §7.4: the danger button's state matrix reads as real colour steps, not
+   * a hover:opacity-90 fade over a fixed fill. */
+  --ua-action-danger-hover: #9c3a3a;
+  --ua-action-danger-pressed: #7e2f2f;
 
   /*
    * ── Data visualisation (§6.2) ────────────────────────────────────────
@@ -143,9 +171,9 @@
   /* ── Geometry (§3.6) ──────────────────────────────────────────────── */
   --ua-radius-none: 0px;
   --ua-radius-xs: 4px;
-  --ua-radius-control: 6px;
-  --ua-radius-surface: 10px;
-  --ua-radius-overlay: 14px;
+  --ua-radius-control: 8px;
+  --ua-radius-surface: 12px;
+  --ua-radius-overlay: 16px;
   --ua-radius-round: 9999px;
 
   /* ── Depth (§3.8). Inline surfaces are flat; only floating layers lift. */
@@ -154,7 +182,18 @@
   --ua-shadow-float: 0 4px 14px rgb(24 24 27 / 8%);
   --ua-shadow-menu: 0 8px 24px rgb(24 24 27 / 12%);
   --ua-shadow-overlay: 0 24px 64px rgb(24 24 27 / 18%);
-  --ua-shadow-focus: 0 0 0 2px var(--ua-surface-primary), 0 0 0 4px var(--ua-border-focus);
+  --ua-shadow-focus: 0 0 0 2px var(--ua-border-focus);
+
+  /* Elevation ladder (§6.1 amendment). Exactly one elevated surface per
+   * view — the dominant working object. --ua-elev-1 replaces the perimeter
+   * border; never both. Static only, no hover elevation. */
+  --ua-elev-0: none;
+  --ua-elev-1:
+    0 0 0 1px rgb(23 23 27 / 6%),
+    0 1px 2px rgb(23 23 27 / 5%),
+    0 4px 8px -4px rgb(23 23 27 / 4%);
+  --ua-elev-2: 0 12px 32px rgb(23 23 27 / 12%);
+  --ua-elev-3: 0 28px 72px rgb(23 23 27 / 18%);
 
   /* ── Control dimensions (§3.6) ────────────────────────────────────── */
   --ua-control-height-sm: 30px;
@@ -164,7 +203,11 @@
   --ua-control-height-icon: 32px;
   --ua-table-header-height: 36px;
   --ua-table-row-height: 44px;
+  /* Registry row-density contract (§7.3): one class per registry type. */
+  --ua-table-row-height-metadata: 40px;
+  --ua-table-row-height-default: 48px;
   --ua-table-row-height-rich: 56px;
+  --ua-table-row-height-two-line: 64px;
   --ua-utility-header-height: 48px;
   --ua-sidebar-width: 200px;
   --ua-sidebar-width-collapsed: 52px;
@@ -225,6 +268,33 @@
   --ua-z-modal: 400;
   --ua-z-toast: 500;
   --ua-z-tooltip: 600;
+
+  /*
+   * ── Legacy-name bridge (M3, execution ledger §4) ────────────────────
+   * app/globals.css:root defines --radius-md/--shadow-md/etc for the
+   * public/marketing tree under three historical, partially-overridden
+   * blocks. Tailwind's rounded-md/shadow-md utilities read those names, not
+   * --ua-radius-control/--ua-shadow-*, so a `rounded-md` element inside
+   * .ua-app silently rendered the public tree's geometry instead of the
+   * authenticated design system's. This redeclares the same names, scoped to
+   * .ua-app/.ua-auth-surface only — public pages are untouched, and any
+   * authenticated call site still spelling `rounded-md` instead of the
+   * documented `rounded-[var(--ua-radius-control)]` now at least resolves to
+   * the correct token instead of a legacy public value.
+   */
+  --radius-xs: var(--ua-radius-xs);
+  --radius-sm: var(--ua-radius-control);
+  --radius-md: var(--ua-radius-control);
+  --radius-lg: var(--ua-radius-surface);
+  --radius-xl: var(--ua-radius-overlay);
+  --radius-full: var(--ua-radius-round);
+  --radius: var(--ua-radius-control);
+
+  --shadow-xs: var(--ua-shadow-none);
+  --shadow-sm: var(--ua-shadow-raised);
+  --shadow-md: var(--ua-shadow-float);
+  --shadow-lg: var(--ua-shadow-menu);
+  --shadow-xl: var(--ua-shadow-overlay);
 }
 
 /*
@@ -235,12 +305,14 @@
 :root[data-theme="dark"] .ua-auth-surface {
   color-scheme: dark;
 
-  --ua-canvas: #111113;
-  --ua-shell: #151517;
-  --ua-surface-primary: #1b1b1e;
-  --ua-surface-secondary: #222226;
+  --ua-canvas: #0b0c0f;
+  --ua-shell: #111318;
+  --ua-surface-primary: #181a20;
+  --ua-surface-raised: #1f222a;
+  --ua-surface-overlay: #22252e;
+  --ua-surface-secondary: #202329;
   --ua-surface-muted: #29292e;
-  --ua-surface-hover: #26262b;
+  --ua-surface-hover: #22252c;
   --ua-surface-selected: #2d2d33;
   --ua-surface-inverse: #f5f5f6;
   --ua-backdrop: rgb(0 0 0 / 46%);
@@ -254,16 +326,16 @@
   --ua-icon-primary: #e4e4e7;
   --ua-icon-secondary: #a1a1aa;
 
-  --ua-border-subtle: #29292e;
-  --ua-border-default: #37373e;
-  --ua-border-strong: #585864;
+  --ua-border-hairline: rgb(255 255 255 / 7%);
+  --ua-border-subtle: rgb(255 255 255 / 12%);
+  --ua-border-default: rgb(255 255 255 / 18%);
+  --ua-border-strong: rgb(255 255 255 / 24%);
+  --ua-border-control: #6a6f7c;
   --ua-border-focus: #9b99ff;
 
   --ua-accent-50: #201f35;
   --ua-accent-100: #29284d;
   --ua-accent-200: #474477;
-  --ua-accent-300: #5d5a93;
-  --ua-accent-400: #7674cc;
   --ua-accent-500: #9b99ff;
   --ua-accent-600: #b2b0ff;
   --ua-accent-700: #8f8cf2;
@@ -278,6 +350,8 @@
   --ua-action-commit-hover: #ffffff;
   --ua-action-commit-pressed: #d4d4d8;
   --ua-action-commit-fg: #151517;
+  --ua-action-danger-hover: #f5adad;
+  --ua-action-danger-pressed: #f8c1c1;
 
   --ua-chart-primary: #9b99ff;
   --ua-chart-primary-soft: #7674cc;
@@ -301,4 +375,61 @@
   --ua-shadow-float: 0 4px 14px rgb(0 0 0 / 40%);
   --ua-shadow-menu: 0 8px 24px rgb(0 0 0 / 50%);
   --ua-shadow-overlay: 0 24px 64px rgb(0 0 0 / 60%);
+
+  /* Light is the elevation currency in dark mode, not shadow depth — a dark
+   * shadow barely registers against an already-near-black canvas. */
+  --ua-elev-1: 0 0 0 1px rgb(255 255 255 / 7%), inset 0 1px 0 rgb(255 255 255 / 5%);
+  --ua-elev-2: 0 12px 32px rgb(0 0 0 / 40%);
+  --ua-elev-3: 0 28px 72px rgb(0 0 0 / 55%);
+}
+
+/*
+ * Current authenticated product direction.
+ * ------------------------------------------------------------------
+ * This is a scoped evolution of the shared token vocabulary, not a second
+ * theme. The auth-adjacent `.ua-auth-surface` consumers above are deliberately
+ * untouched while the desktop product receives its own calm hierarchy.
+ */
+.ua-app {
+  --ua-toolbar: #ffffff;
+
+  --ua-text-primary: #17171b;
+  --ua-text-secondary: #52515b;
+  --ua-text-tertiary: #6b6b75;
+  --ua-text-disabled: #aaa9b3;
+  --ua-text-link: #4949b8;
+  --ua-icon-primary: #424149;
+  --ua-icon-secondary: #74737d;
+
+  --ua-chart-grid: rgb(24 26 42 / 10%);
+  --ua-chart-track: #f1f3f7;
+
+  --ua-radius-control: 8px;
+  --ua-radius-surface: 12px;
+  --ua-radius-overlay: 16px;
+
+  --ua-shadow-raised: 0 1px 2px rgb(23 23 27 / 6%);
+  --ua-shadow-float: 0 8px 24px rgb(23 23 27 / 9%);
+  --ua-shadow-menu: 0 12px 32px rgb(23 23 27 / 12%);
+  --ua-shadow-overlay: 0 28px 72px rgb(23 23 27 / 18%);
+
+  --ua-utility-header-height: 52px;
+  --ua-sidebar-width: 200px;
+  --ua-sidebar-width-collapsed: 56px;
+}
+
+:root[data-theme="dark"] .ua-app {
+  --ua-toolbar: #17181c;
+
+  --ua-text-primary: #f4f4f6;
+  --ua-text-secondary: #c2c1c8;
+  --ua-text-tertiary: #9897a0;
+  --ua-text-disabled: #60616b;
+  --ua-text-link: #b2b0ff;
+  --ua-icon-primary: #e6e5e9;
+  --ua-icon-secondary: #a7a6af;
+
+  --ua-chart-grid: rgb(255 255 255 / 12%);
+  --ua-chart-track: #22252c;
+}
 }

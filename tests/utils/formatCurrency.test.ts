@@ -9,10 +9,8 @@ describe('formatCurrencyNullable', () => {
     expect(formatCurrencyNullable(123.45, 'GBP')).toBe('£123.45');
   });
 
-  // WS0.1: the merchant display locale is en-GB, which prefixes non-GBP
-  // currencies (USD -> "US$"). GBP still renders "£". This is intentional.
-  it('defaults to USD (en-GB renders US$)', () => {
-    expect(formatCurrencyNullable(1234)).toBe('US$1,234.00');
+  it('keeps a missing currency unavailable instead of guessing USD', () => {
+    expect(formatCurrencyNullable(1234, null)).toBe('—');
   });
 });
 

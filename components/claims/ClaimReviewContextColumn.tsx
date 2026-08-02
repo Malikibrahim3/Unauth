@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card } from "@/components/ui";
+import { EvidenceThread, RecordedOutcome } from "@/components/ui";
 import { claimEventLabel, claimEventSummary } from "@/lib/claims/events";
 import SupportCaseContextList from "@/components/support/SupportCaseContextList";
 import {
@@ -19,6 +19,7 @@ import type { ClaimDecisionContext } from "@/lib/claims/decision/types";
 import type { Decision, Outcome } from "@/components/claims/claimReviewTypes";
 import type { EvidencePack } from "@/lib/integrations/types";
 import type { SupportPayoutCase } from "@/lib/payouts/types";
+import { PAYOUT_CASE_NEXT_ACTION_LABELS } from "@/lib/payouts/types";
 import type { RecoveryCase } from "@/lib/recoveries/types";
 import {
   CaseFinancialHistoryCard,
@@ -29,10 +30,10 @@ import { ResponsibilityAssessmentCard } from "@/components/claims/payout/Respons
 import { ReconciliationSummaryCard } from "@/components/claims/payout/ReconciliationSummaryCard";
 
 const SECTION_LINKS = [
-  { id: "customer-action", label: "Customer action" },
+  { id: "evidence", label: "Evidence & recommendations" },
   { id: "responsibility", label: "Responsibility" },
   { id: "recovery", label: "Recovery" },
-  { id: "timeline", label: "Timeline" },
+  { id: "activity", label: "Activity" },
 ] as const;
 
 function eventSourceLabel(event: { metadata?: unknown }): string {
@@ -64,10 +65,14 @@ export function ClaimReviewContextColumn({
     setClaimId,
     decisionData,
     decisionLoading,
+    decisionError,
+    decisionStale,
     refreshRecommendation,
   } = wb;
   const payoutCase =
     (decisionData?.payoutCase as SupportPayoutCase | undefined) ?? null;
+  const requiredContextReady =
+    Boolean(decisionData) && !decisionLoading && !decisionError;
   const recoveryCase =
     (decisionData?.recoveryCase as RecoveryCase | null | undefined) ?? null;
   const evidencePack =
@@ -77,21 +82,6 @@ export function ClaimReviewContextColumn({
       | { delivery?: ClaimDecisionContext["delivery"] }
       | undefined
   )?.delivery ?? null;
-  const [activeSection, setActiveSection] = useState<string>("customer-action");
-
-  useEffect(() => {
-    function syncFromHash() {
-      const hash = window.location.hash.replace(/^#case-/, "");
-      if (SECTION_LINKS.some((section) => section.id === hash)) {
-        setActiveSection(hash);
-      }
-      if (hash === "evidence") setActiveSection("recovery");
-    }
-    syncFromHash();
-    window.addEventListener("hashchange", syncFromHash);
-    return () => window.removeEventListener("hashchange", syncFromHash);
-  }, []);
-
   const timelineEvents = [...selectedClaimEvents].sort((left, right) => {
     const leftTime = left.created_at ? Date.parse(left.created_at) : 0;
     const rightTime = right.created_at ? Date.parse(right.created_at) : 0;
@@ -99,52 +89,102 @@ export function ClaimReviewContextColumn({
   });
   const previousCases = history.filter((item) => item.id !== selectedClaim?.id);
 
-  function selectSection(section: string) {
-    setActiveSection(section);
-  }
+  /*
+   * The section nav had no active state at all (C12) — every link rendered
+   * identically regardless of scroll position. Track whichever section sits
+   * in the band just below the sticky nav; the observer band, not raw
+   * visibility, is what keeps one section "current" instead of several at
+   * once while the page is between sections.
+   */
+  const [activeSection, setActiveSection] = useState<(typeof SECTION_LINKS)[number]["id"]>(
+    SECTION_LINKS[0].id,
+  );
+  useEffect(() => {
+    const elements = SECTION_LINKS
+      .map((section) => document.getElementById(`case-${section.id}`))
+      .filter((el): el is HTMLElement => el != null);
+    if (!elements.length) return;
+    // The trigger line, not per-element intersection ratio, decides "current":
+    // the active section is the last one whose top has crossed above the line
+    // sitting just below the sticky nav — the standard scroll-spy rule. Using
+    // an IO entry's own intersection state instead picks whichever section is
+    // about to exit (still barely overlapping) rather than the one filling
+    // the reading area.
+    const TRIGGER_LINE = 112;
+    function recompute() {
+      let current = elements[0];
+      for (const el of elements) {
+        if (el.getBoundingClientRect().top <= TRIGGER_LINE) current = el;
+      }
+      const id = current.getAttribute("data-section-id");
+      if (id) setActiveSection(id as (typeof SECTION_LINKS)[number]["id"]);
+    }
+    const observer = new IntersectionObserver(recompute, { rootMargin: `-${TRIGGER_LINE}px 0px -70% 0px`, threshold: 0 });
+    elements.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
 
   return (
-    <div className="order-2 min-w-0 space-y-4 min-[1100px]:col-start-1 min-[1100px]:row-start-1">
+    <div className="min-w-0 space-y-6">
       <nav
         aria-label="Case sections"
-        className="sticky top-[4.25rem] z-10 flex max-w-full gap-1 overflow-x-auto rounded-lg border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-primary)] p-1"
+        className="sticky top-[var(--ua-utility-header-height)] z-10 flex max-w-full gap-7 overflow-x-auto border-b border-[var(--ua-border-subtle)] bg-[var(--ua-canvas)]"
       >
-        {SECTION_LINKS.map((section) => (
-          <a
-            key={section.id}
-            href={`#case-${section.id}`}
-            onClick={() => selectSection(section.id)}
-            aria-current={activeSection === section.id ? "page" : undefined}
-            className="shrink-0 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors"
-            style={{
-              background: activeSection === section.id ? "var(--ua-action-primary)" : "transparent",
-              color: activeSection === section.id ? "var(--ua-action-primary-fg)" : "var(--ua-text-secondary)",
-            }}
-          >
-            {section.label}
-          </a>
-        ))}
+        {SECTION_LINKS.map((section) => {
+          const active = section.id === activeSection;
+          return (
+            <a
+              key={section.id}
+              href={`#case-${section.id}`}
+              aria-current={active ? "page" : undefined}
+              className={`ua-text-label shrink-0 border-b-2 px-0.5 py-2.5 focus-visible:shadow-[var(--ua-shadow-focus)] ${
+                active
+                  ? "border-[var(--ua-accent-500)] text-[var(--ua-text-primary)]"
+                  : "border-transparent text-[var(--ua-text-secondary)] hover:border-[var(--ua-border-strong)] hover:text-[var(--ua-text-primary)]"
+              }`}
+            >
+              {section.label}
+            </a>
+          );
+        })}
       </nav>
 
-      <section id="case-customer-action" className="scroll-mt-20 space-y-3" aria-labelledby="case-customer-action-title">
+      <section id="case-evidence" data-section-id="evidence" className="scroll-mt-20 space-y-4" aria-labelledby="case-evidence-title">
+        <span id="case-customer-action" className="block scroll-mt-20" aria-hidden="true" />
         <div>
-          <h2 id="case-customer-action-title" className="text-base font-semibold text-[var(--ua-text-primary)]">Customer action</h2>
-          <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">What to do for the customer, based on the matched item and source evidence.</p>
+          <h2 id="case-evidence-title" className="ua-text-section-title text-[var(--ua-text-primary)]">Evidence & recommendations</h2>
+          <p className="mt-1.5 text-[length:var(--ua-text-caption-size)] text-[var(--ua-text-secondary)]">Source facts, merchant findings, and system inferences remain distinct while the three recommendation axes stay advisory.</p>
         </div>
+        {decisionLoading && decisionData ? (
+          <p role="status" className="ua-text-caption-role">
+            Updating evidence context; the last loaded result remains visible.
+          </p>
+        ) : null}
+        {decisionStale && !decisionLoading ? (
+          <p role="status" className="ua-text-caption-role text-[var(--ua-warning)]">
+            Case facts changed after this recommendation was evaluated. Review the evidence before acting.
+          </p>
+        ) : null}
         {selectedClaim ? (
           <ReconciliationSummaryCard
             caseId={selectedClaim.id}
             currency={selectedClaim.currency}
             canManage={canManage}
+            requiredContextReady={requiredContextReady}
+            evidenceStrength={payoutCase?.evidence.strength}
+            nextAction={payoutCase
+              ? PAYOUT_CASE_NEXT_ACTION_LABELS[payoutCase.nextAction]
+              : undefined}
+            nextActionReason={payoutCase?.nextActionReason}
             onRefresh={refreshRecommendation}
           />
         ) : null}
       </section>
 
-      <section id="case-responsibility" className="scroll-mt-20 space-y-3" aria-labelledby="case-responsibility-title">
+      <section id="case-responsibility" data-section-id="responsibility" className="scroll-mt-20 space-y-4" aria-labelledby="case-responsibility-title">
         <div>
-          <h2 id="case-responsibility-title" className="text-base font-semibold text-[var(--ua-text-primary)]">Responsibility</h2>
-          <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">Why the recommendation is supported, what remains uncertain, and who owns the next investigation.</p>
+          <h2 id="case-responsibility-title" className="ua-text-section-title text-[var(--ua-text-primary)]">Responsibility</h2>
+          <p className="ua-text-caption-role mt-1">Why the recommendation is supported, what remains uncertain, and who owns the next investigation.</p>
         </div>
         {payoutCase ? <EvidenceChecklistCard evidence={payoutCase.evidence} delivery={delivery} /> : null}
         {selectedClaim ? (
@@ -159,11 +199,10 @@ export function ClaimReviewContextColumn({
         ) : null}
       </section>
 
-      <section id="case-recovery" className="scroll-mt-20 space-y-3" aria-labelledby="case-recovery-title">
-        <span id="case-evidence" className="block scroll-mt-20" aria-hidden="true" />
+      <section id="case-recovery" data-section-id="recovery" className="scroll-mt-20 space-y-4" aria-labelledby="case-recovery-title">
         <div>
-          <h2 id="case-recovery-title" className="text-base font-semibold text-[var(--ua-text-primary)]">Recovery</h2>
-          <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">Financial stages and supported recovery work remain separate from the customer decision.</p>
+          <h2 id="case-recovery-title" className="ua-text-section-title text-[var(--ua-text-primary)]">Recovery</h2>
+          <p className="ua-text-caption-role mt-1">Financial stages and supported recovery work remain separate from the customer decision.</p>
         </div>
         <CaseFinancialHistoryCard summaries={financialSummaries} />
         <IntegrationEvidenceSourcePanel evidencePack={evidencePack} />
@@ -179,43 +218,34 @@ export function ClaimReviewContextColumn({
         ) : null}
       </section>
 
-      <section id="case-timeline" className="scroll-mt-20 space-y-3" aria-labelledby="case-timeline-title">
+      <section id="case-activity" data-section-id="activity" className="scroll-mt-20 space-y-4" aria-labelledby="case-activity-title">
+        <span id="case-timeline" className="block scroll-mt-20" aria-hidden="true" />
         <div>
-          <h2 id="case-timeline-title" className="text-base font-semibold text-[var(--ua-text-primary)]">Timeline</h2>
-          <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">Current case activity is ordered from the earliest recorded event to the latest.</p>
+          <h2 id="case-activity-title" className="ua-text-section-title text-[var(--ua-text-primary)]">Activity</h2>
+          <p className="ua-text-caption-role mt-1">Current case activity is ordered from the earliest recorded event to the latest.</p>
         </div>
 
         {previousCases.length > 0 ? (
-          <p className="text-xs text-[var(--ua-text-secondary)]">
+          <p className="ua-text-caption-role">
             Previous cases for this customer: {previousCases.length}.{" "}
-            <a href={`${wb.customerProfileHref}#cases`} className="font-semibold text-[var(--ua-action-primary)] underline underline-offset-2">View case history</a>
+            <a href={`${wb.customerProfileHref}#cases`} className="ua-text-working-title text-[var(--ua-action-primary)] underline underline-offset-2">View case history</a>
           </p>
         ) : null}
 
         {selectedClaim && latestOutcome ? (
-          <Card unstyled as="section" variant="panel" className="p-4">
-            <p className="text-caption font-semibold text-[var(--ua-text-secondary)]">Recorded merchant outcome</p>
-            <div className="mt-3 grid grid-cols-1 gap-3 text-sm md:grid-cols-3">
-              <div>
-                <p className="text-xs text-[var(--ua-text-secondary)]">Decision</p>
-                <p className="mt-0.5 font-semibold text-[var(--ua-text-primary)]">{DECISION_LABELS[latestOutcome.decision as Decision] ?? latestOutcome.decision}</p>
-                {latestOutcome.actor_user_id ? <p className="text-xs text-[var(--ua-text-secondary)]">{actorLabel(latestOutcome.actor_user_id)}</p> : null}
-              </div>
-              <div>
-                <p className="text-xs text-[var(--ua-text-secondary)]">Outcome</p>
-                <p className="mt-0.5 font-semibold text-[var(--ua-text-primary)]">{OUTCOME_LABELS[latestOutcome.outcome as Outcome] ?? latestOutcome.outcome}</p>
-                {latestOutcome.updated_at ? <p className="text-xs text-[var(--ua-text-secondary)]">{formatDateTime(latestOutcome.updated_at)}</p> : null}
-              </div>
-              {previousOutcome ? (
-                <div>
-                  <p className="text-xs text-[var(--ua-text-secondary)]">Previous outcome</p>
-                  <p className="mt-0.5 font-semibold text-[var(--ua-text-primary)]">
-                    {DECISION_LABELS[previousOutcome.decision as Decision] ?? previousOutcome.decision} / {OUTCOME_LABELS[previousOutcome.outcome as Outcome] ?? previousOutcome.outcome}
-                  </p>
-                </div>
-              ) : null}
-            </div>
-          </Card>
+          <RecordedOutcome
+            meta={latestOutcome.updated_at ? formatDateTime(latestOutcome.updated_at) : undefined}
+          >
+            <strong>{DECISION_LABELS[latestOutcome.decision as Decision] ?? latestOutcome.decision}</strong>
+            {' · '}
+            {OUTCOME_LABELS[latestOutcome.outcome as Outcome] ?? latestOutcome.outcome}
+            {latestOutcome.actor_user_id ? ` · ${actorLabel(latestOutcome.actor_user_id)}` : ''}
+            {previousOutcome ? (
+              <span className="ml-2 text-[var(--ua-text-tertiary)]">
+                Previously {DECISION_LABELS[previousOutcome.decision as Decision] ?? previousOutcome.decision} / {OUTCOME_LABELS[previousOutcome.outcome as Outcome] ?? previousOutcome.outcome}
+              </span>
+            ) : null}
+          </RecordedOutcome>
         ) : null}
 
         <SupportCaseContextList
@@ -226,28 +256,30 @@ export function ClaimReviewContextColumn({
         />
 
         {timelineEvents.length === 0 ? (
-          <p className="text-sm text-[var(--ua-text-secondary)]">No case activity recorded yet.</p>
+          <p className="ua-text-body text-[var(--ua-text-secondary)]">No case activity recorded yet.</p>
         ) : (
-          <ol className="divide-y border-y border-[var(--ua-border-subtle)]">
-            {timelineEvents.map((event) => (
-              <li key={event.id} className="flex flex-wrap items-start justify-between gap-3 py-3">
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-[var(--ua-text-primary)]">{claimEventLabel(event.event_type)}</p>
-                  <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">{claimEventSummary(event)}</p>
-                  <p className="mt-1 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">Source: {eventSourceLabel(event)}</p>
-                </div>
-                <div className="text-right text-xs text-[var(--ua-text-secondary)]">
-                  <p>{event.created_at ? formatDateTime(event.created_at) : "—"}</p>
-                  {event.actor_user_id ? <p>{actorLabel(event.actor_user_id)}</p> : null}
-                </div>
-              </li>
-            ))}
-          </ol>
+          <EvidenceThread
+            label="Case evidence and decision history"
+            items={timelineEvents.map((event) => ({
+              key: event.id,
+              authority: 'source' as const,
+              label: claimEventLabel(event.event_type),
+              value: claimEventSummary(event),
+              meta: (
+                <>
+                  <span>{eventSourceLabel(event)}</span>
+                  <span>{event.created_at ? formatDateTime(event.created_at) : 'Time unavailable'}</span>
+                  {event.actor_user_id ? <span>{actorLabel(event.actor_user_id)}</span> : null}
+                </>
+              ),
+              state: 'recorded' as const,
+            }))}
+          />
         )}
 
         {previousCases.length > 0 ? (
           <div className="border-t border-[var(--ua-border-subtle)] pt-3">
-            <p className="mb-2 text-xs font-semibold text-[var(--ua-text-secondary)]">Previous cases</p>
+            <p className="ua-text-label mb-2">Previous cases</p>
             <ClaimReviewHistoryTable history={previousCases} onSelectClaim={setClaimId} />
           </div>
         ) : null}

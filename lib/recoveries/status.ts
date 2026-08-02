@@ -6,14 +6,10 @@ import type { RecoveryCaseEventType, RecoveryCaseStatus } from '@/lib/recoveries
  * than one status (e.g. submitted + waiting_response live together).
  */
 export const RECOVERY_BOARD_COLUMNS: Array<{ key: string; label: string; statuses: RecoveryCaseStatus[] }> = [
-  { key: 'collecting_evidence', label: 'Collecting evidence', statuses: ['draft', 'evidence_needed'] },
-  { key: 'pack_ready', label: 'Pack ready', statuses: ['ready_to_submit'] },
-  { key: 'submitted_or_waiting', label: 'Submitted / waiting', statuses: ['submitted', 'waiting_response'] },
-  { key: 'needs_correspondence', label: 'Needs correspondence', statuses: ['chase_due'] },
-  { key: 'source_approved', label: 'Source approved', statuses: ['approved', 'partially_approved'] },
-  { key: 'source_denied', label: 'Source denied', statuses: ['rejected', 'appealed'] },
-  { key: 'recovered', label: 'Recovered', statuses: ['paid'] },
-  { key: 'closed', label: 'Closed unrecoverable', statuses: ['closed_unrecoverable'] },
+  { key: 'prepare', label: 'Prepare', statuses: ['draft', 'evidence_needed', 'ready_to_submit'] },
+  { key: 'external', label: 'Submitted / follow up', statuses: ['submitted', 'waiting_response', 'chase_due'] },
+  { key: 'outcome', label: 'Source outcome', statuses: ['approved', 'partially_approved', 'rejected', 'appealed'] },
+  { key: 'reconciled', label: 'Reconciled', statuses: ['paid', 'closed_unrecoverable'] },
 ];
 
 export function eventTypeForStatus(status: RecoveryCaseStatus): RecoveryCaseEventType {

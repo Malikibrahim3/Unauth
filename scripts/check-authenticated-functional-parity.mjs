@@ -61,7 +61,12 @@ function extractNavigation(source) {
   // Template literals: consume balanced ${...} groups rather than stopping at
   // the first space.
   const template = /`((?:\/|https?:\/\/|mailto:)(?:[^`$]|\$\{(?:[^{}]|\{[^{}]*\})*\})*)`/g;
-  while ((match = template.exec(source))) signatures.add(normaliseSignature(match[1]));
+  while ((match = template.exec(source))) {
+    const signature = normaliseSignature(match[1]);
+    // Whitespace inside ${...} has already collapsed. Any whitespace left is
+    // prose/code in a documentation template literal, not a navigation URL.
+    if (!/\s/.test(signature)) signatures.add(signature);
+  }
 
   return signatures;
 }
@@ -124,6 +129,25 @@ const documentedReplacements = new Set([
   '/recoveries?stage=ready',
   '/recoveries?stage=chase',
   '/recoveries?stage=closed',
+  /*
+   * Phase 19/20 replaced the unused legacy connected-object fallback shell.
+   * These collection paths never had page modules; the shipping detail shell
+   * now returns to a validated task/customer path and uses concrete connected
+   * record hrefs. Keeping the literals would make broken destinations look
+   * like parity.
+   */
+  '/partners',
+  '/orders',
+  '/tickets',
+  '/shipments',
+  '/refunds',
+  '/returns',
+  '/disputes',
+  /*
+   * Authenticated chrome no longer points at the public root. `/` remains a
+   * verified public redirect, outside this authenticated-source inventory.
+   */
+  '/',
 ]);
 
 /*
@@ -173,8 +197,18 @@ const missingNavigation = [...baselineNavigation].filter(
 
 const baselineInteractions = interactionCounts(baselineSource);
 const currentInteractions = interactionCounts(currentSource);
+const documentedInteractionReductions = {
+  // WorkQueue's faux-interactive row key handler became a native button in
+  // DataTable, so Enter/Space semantics no longer need a page-local handler.
+  'onKeyDown=': 1,
+  // Two ClaimReviewHeader imperative pushes became the canonical
+  // DetailPageShell back/next links.
+  'router.push(': 2,
+};
 const missingInteractions = Object.entries(baselineInteractions)
-  .filter(([token, count]) => currentInteractions[token] < count)
+  .filter(([token, count]) =>
+    currentInteractions[token] < count - (documentedInteractionReductions[token] ?? 0),
+  )
   .map(([token, count]) => `${token} ${count} -> ${currentInteractions[token]}`);
 
 if (missingNavigation.length || missingInteractions.length) {

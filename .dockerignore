@@ -1,0 +1,9 @@
+node_modules
+.next
+artifacts
+test-results
+tests/reports
+.git
+.env*
+*.log
+.DS_Store

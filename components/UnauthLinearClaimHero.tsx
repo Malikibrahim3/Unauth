@@ -4,7 +4,7 @@ import { ArrowRight } from 'lucide-react';
 import MobileCollapse from '@/app/(public)/landing/_components/foundation/MobileCollapse';
 import foundationStyles from '@/app/(public)/landing/_components/foundation/foundation.module.css';
 import { type KanbanColumnItem, type ThreadPanelMessage } from '@/components/ui/LandingPrimitives';
-import { KanbanBoard, SectionBody, SectionEyebrow, SectionHeadline, ThreadPanel } from '@/components/ui/LandingPrimitives';
+import { KanbanBoard, SectionBody, SectionHeadline, ThreadPanel } from '@/components/ui/LandingPrimitives';
 
 const claimThreadMessages: ThreadPanelMessage[] = [
   {
@@ -150,9 +150,6 @@ export default function UnauthLinearClaimHero() {
       <main className="relative z-10 mx-auto hidden max-w-[1536px] px-5 pb-20 pt-16 sm:px-8 lg:px-10 lg:pt-12 min-[769px]:block">
         <div className="mb-[42px] grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_auto] lg:items-end">
           <div className="max-w-[690px]">
-            <SectionEyebrow className={foundationStyles.landingSectionEyebrow}>
-              CASE INTELLIGENCE
-            </SectionEyebrow>
             <SectionHeadline className={foundationStyles.landingSectionTitle}>
               Your best customers don&apos;t open four cases a quarter.
             </SectionHeadline>
@@ -181,9 +178,6 @@ export default function UnauthLinearClaimHero() {
       {/* Mobile (≤768px) — Stripe-style collapse: title + artifact, tap to reveal copy */}
       <main className="relative z-10 px-4 pb-16 pt-14 min-[769px]:hidden">
         <MobileCollapse collapsedLabel="See the case flow">
-          <SectionEyebrow className={foundationStyles.landingSectionEyebrow}>
-            CASE INTELLIGENCE
-          </SectionEyebrow>
           <SectionHeadline className={`${foundationStyles.landingSectionTitle} mt-3 pr-14`}>
             Your best customers don&apos;t open four cases a quarter.
           </SectionHeadline>

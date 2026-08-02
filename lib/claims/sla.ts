@@ -26,6 +26,11 @@ export type ClaimAgeInput = {
 const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
 
+// §6.3 attention scale: raised from 72h/48h — carrier/3PL/supplier response
+// times routinely run a week, so a 3-day threshold fired on nearly every row.
+const OVERDUE_THRESHOLD_HOURS = 168;
+const APPROACHING_THRESHOLD_HOURS = 120;
+
 export function isActiveClaimStatus(status: string | null | undefined): boolean {
   return (ACTIVE_CLAIM_STATUSES as readonly string[]).includes(status ?? '');
 }
@@ -71,9 +76,12 @@ export function getClaimSlaState(claim: ClaimAgeInput, now = new Date()): {
   const age = claimAgeMs(claim, now);
   if (age === null) return { state: 'normal', label: 'SLA unknown', detail: 'Filed date unavailable' };
 
+  // §6.3 attention scale: a state firing on most visible rows may not use a
+  // tinted fill. Claims routinely wait a week on a carrier/3PL/supplier
+  // response, so the threshold is a week, not three days.
   const hours = age / HOUR_MS;
-  if (hours > 72) return { state: 'overdue', label: 'Overdue', detail: formatClaimAge(claim, now) };
-  if (hours >= 48) return { state: 'approaching', label: 'Approaching SLA', detail: formatClaimAge(claim, now) };
+  if (hours > OVERDUE_THRESHOLD_HOURS) return { state: 'overdue', label: 'Overdue', detail: formatClaimAge(claim, now) };
+  if (hours >= APPROACHING_THRESHOLD_HOURS) return { state: 'approaching', label: 'Approaching SLA', detail: formatClaimAge(claim, now) };
   return { state: 'normal', label: 'Normal', detail: formatClaimAge(claim, now) };
 }
 

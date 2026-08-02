@@ -1,7 +1,9 @@
 do $test$
 declare
   v_case public.support_payout_cases;
-  v_actor uuid;
+  v_actor uuid := '91000000-0000-4000-8000-000000000001';
+  v_merchant_id uuid := '91000000-0000-4000-8000-000000000010';
+  v_case_id uuid := '91000000-0000-4000-8000-000000000011';
   v_created jsonb;
   v_sent jsonb;
   v_replayed jsonb;
@@ -16,35 +18,74 @@ declare
   v_investigation_id uuid;
   v_case_version bigint;
 begin
+  insert into auth.users (
+    id,
+    aud,
+    role,
+    email,
+    email_confirmed_at,
+    created_at,
+    updated_at,
+    is_sso_user,
+    is_anonymous
+  ) values (
+    v_actor,
+    'authenticated',
+    'authenticated',
+    'runtime-investigation-actor@example.test',
+    now(),
+    now(),
+    now(),
+    false,
+    false
+  );
+
+  insert into public.merchants (id, name, is_demo, is_internal)
+  values (v_merchant_id, 'Runtime investigation merchant', true, true);
+
+  insert into public.merchant_users (
+    merchant_id,
+    user_id,
+    invited_email,
+    role,
+    invite_status,
+    accepted_at
+  ) values (
+    v_merchant_id,
+    v_actor,
+    'runtime-investigation-actor@example.test',
+    'owner',
+    'active',
+    now()
+  );
+
+  insert into public.support_payout_cases (
+    id,
+    merchant_id,
+    claim_type,
+    status,
+    detection_method,
+    reason_raw,
+    currency,
+    manual_reference,
+    submitted_at
+  ) values (
+    v_case_id,
+    v_merchant_id,
+    'item_not_received',
+    'ready_for_decision',
+    'manual',
+    'Runtime investigation fixture',
+    'USD',
+    'runtime-investigation-case',
+    now()
+  );
+
   select payout_case.*
     into v_case
   from public.support_payout_cases payout_case
-  where exists (
-    select 1
-    from public.merchant_users member
-    where member.merchant_id = payout_case.merchant_id
-      and member.user_id is not null
-  )
-    and payout_case.status::text not in (
-    'closed', 'resolved_refunded', 'resolved_won', 'resolved_lost',
-    'resolved_denied', 'resolved_exchanged', 'voided'
-  )
-  order by
-    case when payout_case.status::text = 'ready_for_decision' then 0 else 1 end,
-    payout_case.created_at desc
-  limit 1;
-
-  select member.user_id
-    into v_actor
-  from public.merchant_users member
-  where member.merchant_id = v_case.merchant_id
-    and member.user_id is not null
-  order by member.created_at
-  limit 1;
-
-  if v_case.id is null or v_actor is null then
-    raise exception 'investigation_runtime_fixture_missing';
-  end if;
+  where payout_case.id = v_case_id
+    and payout_case.merchant_id = v_merchant_id;
 
   v_created := public.create_case_investigation(
     v_case.merchant_id,

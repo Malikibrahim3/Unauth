@@ -1,11 +1,11 @@
 import { redirect } from 'next/navigation';
-import { Suspense } from 'react';
 import { createServiceClient } from '@/lib/supabase/server';
 import { getRequestUser } from '@/lib/auth/requestContext';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import ShopifyIntegrationBanner from '@/components/shopify/ShopifyIntegrationBanner';
 import SyncStatusCard from '@/components/shopify/SyncStatusCard';
 import ShopifyDisconnectClient from '@/components/shopify/ShopifyDisconnectClient';
+import { ConnectorSetupShell } from '@/components/settings/ConnectorSetupShell';
 import { SettingsPageShell } from '@/components/ui';
 
 export default async function ShopifyIntegrationPage() {
@@ -24,13 +24,15 @@ export default async function ShopifyIntegrationPage() {
       title="Shopify"
       subtitle="Sync orders, customers, refunds, and fulfillment events in real time."
     >
-      <div className="space-y-3">
-        <Suspense fallback={null}>
-          <ShopifyIntegrationBanner />
-        </Suspense>
+      <ConnectorSetupShell
+        provider="Shopify"
+        providerMark="/integrations/shopify.svg"
+        requirements="Sign in to the Shopify store as an administrator. Authorization requests read-only commerce and fulfilment access."
+      >
+        <ShopifyIntegrationBanner />
         <SyncStatusCard />
         {canManage && <ShopifyDisconnectClient />}
-      </div>
+      </ConnectorSetupShell>
     </SettingsPageShell>
   );
 }

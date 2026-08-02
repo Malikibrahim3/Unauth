@@ -25,7 +25,7 @@ async function ensureUsers() {
     apikey: local.serviceRoleKey,
     Authorization: `Bearer ${local.serviceRoleKey}`,
   };
-  for (const member of MARKETING_STORY.team) {
+  for (const member of [...MARKETING_STORY.team, MARKETING_STORY.onboarding.operator]) {
     const existing = await fetch(`${local.apiUrl}/auth/v1/admin/users/${member.id}`, { headers });
     if (existing.ok) continue;
     const created = await fetch(`${local.apiUrl}/auth/v1/admin/users`, {
@@ -47,6 +47,7 @@ const TABLE_ORDER = [
   'identities',
   'identity_members',
   'merchant_users',
+  'pending_provider_account_selections',
   'store_connections',
   'helpdesk_connections',
   'merchant_integrations',
@@ -58,6 +59,9 @@ const TABLE_ORDER = [
   'identity_notes',
   'source_orders',
   'source_order_lines',
+  'source_disputes',
+  'source_refunds',
+  'source_returns',
   'merchant_rules',
   'merchant_rule_versions',
   'workflow_definitions',
@@ -94,20 +98,22 @@ try {
   if (migrationReady !== '1') {
     throw new Error('Required migration 20260727130000_recovery_source_freshness.sql has not been applied.');
   }
+  const merchantIds = fixture.tables.merchants.map((merchant) => merchant.id);
+  const quotedMerchantIds = merchantIds.map((id) => quoteSql(id)).join(',');
   const cleanupSql = [...TABLE_ORDER].reverse()
     .filter((table) => table !== 'merchants')
     .map((table) => table === 'identities'
       ? `delete from public.identities where id in (${fixture.tables.identities.map((row) => quoteSql(row.id)).join(',')});`
       : table === 'identity_members'
         ? `delete from public.identity_members where identity_id in (${fixture.tables.identities.map((row) => quoteSql(row.id)).join(',')});`
-      : `delete from public.${table} where merchant_id = ${quoteSql(MARKETING_STORY.merchant.id)};`)
+      : `delete from public.${table} where merchant_id in (${quotedMerchantIds});`)
     .join('\n');
   const tableSql = TABLE_ORDER.map((table) => insertSql(table, fixture.tables[table])).join('\n');
   runSql(local.container, `
     begin;
     set local session_replication_role = replica;
     ${cleanupSql}
-    delete from public.merchants where id = ${quoteSql(MARKETING_STORY.merchant.id)};
+    delete from public.merchants where id in (${quotedMerchantIds});
     ${tableSql}
     set local session_replication_role = origin;
     commit;

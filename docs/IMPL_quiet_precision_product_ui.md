@@ -1,13 +1,22 @@
-# IMPL — Quiet Precision product UI
+# HISTORICAL — Quiet Precision product UI
 
-- **Status:** Approved replacement specification; product-wide implementation complete
+- **Status:** Historical and non-authoritative. Superseded by [`IMPL_living_precision_product_ui.md`](IMPL_living_precision_product_ui.md); do not implement from this document.
 - **Date:** 2026-07-25
 - **Scope:** Product application UI, entry flows, embedded product surfaces, every component and every state
 - **Reference set:** `IMG_9611.jpg`, `IMG_9612.jpg`, and `IMG_9613.jpg` supplied with the design request
-- **Binding rules:** [`../styles/authenticated/README.md`](../styles/authenticated/README.md)
-- **Supersedes:** every earlier authenticated visual direction, palette, chart treatment, component appearance, and migration-era compatibility rule
+- **Current authority:** [`IMPL_living_precision_product_ui.md`](IMPL_living_precision_product_ui.md)
+- **Current rule loader:** [`../styles/authenticated/README.md`](../styles/authenticated/README.md)
 
-This document specifies the complete target state. It does not authorise a partial visual blend. Product logic, permissions, data truth, source provenance, financial calculations, audit history, routes, keyboard paths, and responsive access remain unchanged unless a separate product specification explicitly changes them.
+> [!WARNING]
+> This is implementation history only. Its phase labels, completion claim,
+> near-black ordinary-primary rule, chart palette, motion contract, and any
+> conflicting composition guidance are superseded. Only the numbered phases in
+> §12 of the Living Precision document may be executed.
+
+The text below records the target state approved on 25 July 2026. It no longer
+authorises implementation. Product logic, permissions, data truth, source
+provenance, financial calculations, audit history, routes, keyboard paths, and
+responsive access remain governed by the maintained product contracts.
 
 ---
 

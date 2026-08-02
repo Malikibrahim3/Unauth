@@ -1581,8 +1581,8 @@ describe("dashboard/page.tsx — fail-closed and no silent zero", () => {
       ),
       "utf-8",
     );
-    expect(content).toContain("Missing ledger data is not reported as zero");
-    expect(content).toContain("No canonical financial entries were found");
+    expect(content).toContain("Unavailable is not zero");
+    expect(content).toContain("No financial history is available for cases in this period");
   });
 
   it("handles permission denial — does NOT ignore the resolved permission result", () => {

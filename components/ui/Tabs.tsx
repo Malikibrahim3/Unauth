@@ -54,7 +54,7 @@ export function Tabs({ items, value, onValueChange, 'aria-label': ariaLabel, pan
     <div id={id} role="tablist" aria-label={ariaLabel} className={cn(tabContract.root, className)}>
       {items.map((item, index) => {
         const active = item.value === value;
-        const classes = cn(tabContract.item, active && tabContract.active, item.disabled && 'cursor-not-allowed opacity-50');
+        const classes = cn(tabContract.item, active && tabContract.active, item.disabled && 'cursor-not-allowed text-[var(--ua-text-disabled)]');
         return (
           <button
             key={item.value}
@@ -79,7 +79,7 @@ export function Tabs({ items, value, onValueChange, 'aria-label': ariaLabel, pan
     <div id={id} role="group" aria-label={ariaLabel} className={cn(tabContract.root, className)}>
       {items.map((item) => {
         const active = item.value === value;
-        const classes = cn(tabContract.item, active && tabContract.active, item.disabled && 'cursor-not-allowed opacity-50');
+        const classes = cn(tabContract.item, active && tabContract.active, item.disabled && 'cursor-not-allowed text-[var(--ua-text-disabled)]');
         return (
           <button
             key={item.value}
@@ -98,7 +98,7 @@ export function Tabs({ items, value, onValueChange, 'aria-label': ariaLabel, pan
     <nav id={id} aria-label={ariaLabel} className={cn(tabContract.root, className)}>
       {items.map((item) => {
         const active = item.value === value;
-        const classes = cn(tabContract.item, active && tabContract.active, item.disabled && 'cursor-not-allowed opacity-50');
+        const classes = cn(tabContract.item, active && tabContract.active, item.disabled && 'cursor-not-allowed text-[var(--ua-text-disabled)]');
         return (
           <Link
             key={item.value}

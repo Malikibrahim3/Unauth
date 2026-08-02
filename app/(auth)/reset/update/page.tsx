@@ -16,6 +16,12 @@ function mapUpdateError(message: string): string {
   return 'We could not update your password. Please try the reset link again.';
 }
 
+function passwordRequirement(password: string): string {
+  if (!password) return 'Use at least 8 characters.';
+  if (password.length < 8) return `${8 - password.length} more character${password.length === 7 ? '' : 's'} needed.`;
+  return 'Password length is valid.';
+}
+
 export default function UpdatePasswordPage() {
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -56,7 +62,7 @@ export default function UpdatePasswordPage() {
     <Panel as="section" variant="panel" className="p-6">
       <h1 className="text-[length:var(--ua-text-page-title-size)] font-semibold leading-6 tracking-normal text-[var(--ua-text-primary)]">Set new password</h1>
 
-      <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
+      <form className="mt-8 space-y-5" noValidate onSubmit={handleSubmit}>
         <div>
           <label htmlFor="reset-update-password" className="mb-2 block text-sm font-medium text-[var(--ua-text-secondary)]">
             New password
@@ -67,13 +73,20 @@ export default function UpdatePasswordPage() {
             type="password"
             autoComplete="new-password"
             value={password}
-            onChange={(event) => setPassword(event.target.value)}
+            onChange={(event) => {
+              setPassword(event.target.value);
+              setFieldErrors((current) => ({ ...current, password: undefined }));
+            }}
             required
             minLength={8}
-            aria-describedby={fieldErrors.password ? 'reset-update-password-error' : undefined}
+            aria-invalid={Boolean(fieldErrors.password)}
+            aria-describedby="reset-update-password-requirement reset-update-password-error"
             className={authInputClassName}
             placeholder="At least 8 characters"
           />
+          <p id="reset-update-password-requirement" className="mt-2 min-h-5 text-sm leading-5 text-[var(--ua-text-tertiary)]" aria-live="polite">
+            {passwordRequirement(password)}
+          </p>
           <AuthError id="reset-update-password-error">{fieldErrors.password}</AuthError>
         </div>
 
@@ -87,9 +100,13 @@ export default function UpdatePasswordPage() {
             type="password"
             autoComplete="new-password"
             value={confirm}
-            onChange={(event) => setConfirm(event.target.value)}
+            onChange={(event) => {
+              setConfirm(event.target.value);
+              setFieldErrors((current) => ({ ...current, confirm: undefined }));
+            }}
             required
             minLength={8}
+            aria-invalid={Boolean(fieldErrors.confirm)}
             aria-describedby={fieldErrors.confirm ? 'reset-update-confirm-error' : undefined}
             className={authInputClassName}
             placeholder="Confirm password"

@@ -46,11 +46,17 @@ if (!SUPABASE_URL || !SERVICE_ROLE) {
 
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
 
-const MERCHANT_ID = 'af070af9-df1a-46ba-89f8-29409926ef61'; // Simeon Murray Store
-const SEED_TAG = 'simeon-big-merchant';
+const MERCHANT_ID = process.env.SEED_MERCHANT_ID ?? 'af070af9-df1a-46ba-89f8-29409926ef61'; // Simeon Murray Store
+const SEED_TAG = process.env.SEED_TAG ?? 'simeon-big-merchant';
 const SEED_NOTE = `[seed:${SEED_TAG}]`;
-const SEED_PREFIX = 'seed-simeon-big';
+const SEED_PREFIX = process.env.SEED_PREFIX ?? 'seed-simeon-big';
 const RESET_ONLY = process.argv.includes('--reset');
+const CUSTOMER_EMAIL_DOMAIN = process.env.SEED_CUSTOMER_EMAIL_DOMAIN ?? 'simeon-demo.test';
+const ORDER_NUMBER_PREFIX = process.env.SEED_ORDER_NUMBER_PREFIX ?? 'SMS';
+const SOURCE_SYSTEM = process.env.SEED_SOURCE_SYSTEM ?? 'manual';
+const SOURCE_NAME = process.env.SEED_SOURCE_NAME ?? 'sample_demo';
+const SOURCE_LABEL = process.env.SEED_SOURCE_LABEL ?? 'seed-simeon-big-merchant';
+const RECIPIENT_USER_ID = process.env.SEED_RECIPIENT_USER_ID ?? '31635553-bf6f-410d-8202-4bfd5019caeb';
 
 const ANCHOR = new Date();
 ANCHOR.setUTCMinutes(0, 0, 0);
@@ -137,7 +143,11 @@ const LAST_NAMES = [
   'Fenwick', 'Adeyemi', 'Carrick', 'Nakamura', 'Blake', 'Sutherland', 'Ibrahim', 'Vance', 'Delacroix', 'Mensah',
 ];
 
-const CUSTOMER_COUNT = 56;
+const configuredCustomerCount = Number(process.env.SEED_CUSTOMER_COUNT ?? '56');
+if (!Number.isInteger(configuredCustomerCount) || configuredCustomerCount < 1 || configuredCustomerCount > 10_000) {
+  throw new Error('SEED_CUSTOMER_COUNT must be an integer between 1 and 10000.');
+}
+const CUSTOMER_COUNT = configuredCustomerCount;
 const CUSTOMERS = Array.from({ length: CUSTOMER_COUNT }, (_, i) => {
   const first = FIRST_NAMES[i % FIRST_NAMES.length];
   // Offset by a coprime-ish stride so last names don't cycle in lockstep with first names.
@@ -147,7 +157,7 @@ const CUSTOMERS = Array.from({ length: CUSTOMER_COUNT }, (_, i) => {
     key,
     first,
     last,
-    email: `${first.toLowerCase()}.${last.toLowerCase()}${i}@simeon-demo.test`,
+    email: `${first.toLowerCase()}.${last.toLowerCase()}${i}@${CUSTOMER_EMAIL_DOMAIN}`,
     phone: `+4477${String(10000000 + Math.floor(rand() * 89999999)).slice(0, 8)}`,
     accountAgeDays: 30 + Math.floor(rand() * 700),
   };
@@ -179,14 +189,15 @@ const PARTNER_RULES = [
 
 // Existing (kept, non-seeded) merchant_rules for this merchant — used to tie
 // recommended_rule_id/name to a real rule where the archetype clearly matches.
+const USE_GENERATED_RULE_IDS = process.env.SEED_USE_GENERATED_RULE_IDS === '1';
 const EXISTING_RULES = {
-  chargeback: { id: 'bdc46bf3-7af5-42d7-9e02-df756fd533e9', name: 'Chargeback-related case' },
-  recoverablePartnerLoss: { id: '94080c1a-e7d0-4ed2-84ad-b5dcd34e3d39', name: 'Recoverable partner loss' },
-  lowValue: { id: 'c5404060-942f-4567-b435-5c3afd09dfbe', name: 'Low-value request' },
-  deliveredProof: { id: '70961609-6945-46bb-a39b-a8cb4b37eb31', name: 'Delivered with proof of delivery' },
-  missingDeliveryEvidence: { id: 'a0d8dbd7-fa08-4a22-b07e-0f63a1f04ab6', name: 'Missing delivery evidence' },
-  damagedNoEvidence: { id: '7f256822-5a52-4e30-a572-1a3cc4d9c567', name: 'Damaged item missing customer evidence' },
-  highValue: { id: 'e75e5fc5-d371-4312-83fa-dfc2eb98a2b0', name: 'High-value payout requires manual review' },
+  chargeback: { id: USE_GENERATED_RULE_IDS ? uuid('rule:chargeback') : 'bdc46bf3-7af5-42d7-9e02-df756fd533e9', name: 'Chargeback-related case' },
+  recoverablePartnerLoss: { id: USE_GENERATED_RULE_IDS ? uuid('rule:recoverablePartnerLoss') : '94080c1a-e7d0-4ed2-84ad-b5dcd34e3d39', name: 'Recoverable partner loss' },
+  lowValue: { id: USE_GENERATED_RULE_IDS ? uuid('rule:lowValue') : 'c5404060-942f-4567-b435-5c3afd09dfbe', name: 'Low-value request' },
+  deliveredProof: { id: USE_GENERATED_RULE_IDS ? uuid('rule:deliveredProof') : '70961609-6945-46bb-a39b-a8cb4b37eb31', name: 'Delivered with proof of delivery' },
+  missingDeliveryEvidence: { id: USE_GENERATED_RULE_IDS ? uuid('rule:missingDeliveryEvidence') : 'a0d8dbd7-fa08-4a22-b07e-0f63a1f04ab6', name: 'Missing delivery evidence' },
+  damagedNoEvidence: { id: USE_GENERATED_RULE_IDS ? uuid('rule:damagedNoEvidence') : '7f256822-5a52-4e30-a572-1a3cc4d9c567', name: 'Damaged item missing customer evidence' },
+  highValue: { id: USE_GENERATED_RULE_IDS ? uuid('rule:highValue') : 'e75e5fc5-d371-4312-83fa-dfc2eb98a2b0', name: 'High-value payout requires manual review' },
 };
 
 // Archetypes: each generates `repeat` case instances, cycling through the
@@ -370,7 +381,7 @@ function buildCustomerRows() {
     return {
       id: uuid(`customer:${customer.key}`),
       merchant_id: MERCHANT_ID,
-      source: 'manual',
+      source: SOURCE_SYSTEM,
       external_id: `${SEED_PREFIX}-customer-${customer.key}`,
       email: customer.email,
       phone: customer.phone,
@@ -395,10 +406,10 @@ function buildOrderRows() {
     return {
       id: uuid(`order:${c.key}`),
       merchant_id: MERCHANT_ID,
-      source: 'manual',
+      source: SOURCE_SYSTEM,
       connection_id: null,
       external_id: `${SEED_PREFIX}-order-${c.key}`,
-      order_number: `SMS-${String(48000 + index).padStart(6, '0')}`,
+      order_number: `${ORDER_NUMBER_PREFIX}-${String(48000 + index).padStart(6, '0')}`,
       source_customer_id: uuid(`customer:${customer.key}`),
       email: customer.email,
       phone: customer.phone,
@@ -416,7 +427,7 @@ function buildOrderRows() {
       accept_language: 'en-GB',
       landing_site: null,
       referring_site: null,
-      source_name: 'sample_demo',
+      source_name: SOURCE_NAME,
       shipping_address_id: null,
       billing_address_id: null,
       line_items_count: 1 + (index % 4),
@@ -435,7 +446,7 @@ function buildOrderRows() {
 function buildTicketRows() {
   return CASE_PLANS.map((c, index) => {
     const customer = customerByKey(c.customer);
-    const orderNumber = `SMS-${String(48000 + index).padStart(6, '0')}`;
+    const orderNumber = `${ORDER_NUMBER_PREFIX}-${String(48000 + index).padStart(6, '0')}`;
     const resolved = c.status.startsWith('resolved_');
     return {
       id: uuid(`ticket:${c.key}`),
@@ -496,7 +507,7 @@ function buildCaseRows() {
       claim_type: c.claimType,
       status: c.status,
       detection_method: index % 3 === 0 ? 'tag' : 'manual',
-      detection_detail: { seed: SEED_TAG, sample_data: true, source: 'seed-simeon-big-merchant', archetype: c.archetypeKey },
+      detection_detail: { seed: SEED_TAG, sample_data: true, source: SOURCE_LABEL, archetype: c.archetypeKey },
       reason_raw: c.reason,
       reason_normalized: c.reason,
       amount_at_risk: c.amount,
@@ -676,7 +687,7 @@ function buildFinancialEntryRows() {
         metadata: {
           seed: SEED_TAG,
           sample_data: true,
-          source: 'seed-simeon-big-merchant',
+          source: SOURCE_LABEL,
           archetype: c.archetypeKey,
           financial_state: state,
           component_type: c.requestedAction,
@@ -775,7 +786,7 @@ function buildNotificationRows() {
     rows.push({
       id: uuid(`notif:overdue:${c.key}`),
       merchant_id: MERCHANT_ID,
-      recipient_user_id: '31635553-bf6f-410d-8202-4bfd5019caeb',
+      recipient_user_id: RECIPIENT_USER_ID,
       kind: 'approaching_deadline',
       title: 'Overdue: Review payout case',
       body: `${c.subject} needs a decision.`,
@@ -791,7 +802,7 @@ function buildNotificationRows() {
     rows.push({
       id: uuid(`notif:highvalue:${c.key}`),
       merchant_id: MERCHANT_ID,
-      recipient_user_id: '31635553-bf6f-410d-8202-4bfd5019caeb',
+      recipient_user_id: RECIPIENT_USER_ID,
       kind: 'high_value_case_alert',
       title: `High-value payout case · £${c.amount.toFixed(2)}`,
       body: `${c.subject} has payout exposure of £${c.amount.toFixed(2)}.`,
@@ -807,7 +818,7 @@ function buildNotificationRows() {
     rows.push({
       id: uuid(`notif:evidence:${c.key}`),
       merchant_id: MERCHANT_ID,
-      recipient_user_id: '31635553-bf6f-410d-8202-4bfd5019caeb',
+      recipient_user_id: RECIPIENT_USER_ID,
       kind: 'evidence_update',
       title: 'Recovery evidence is incomplete',
       body: `${c.subject} is missing evidence needed to submit the recovery claim.`,
@@ -821,7 +832,7 @@ function buildNotificationRows() {
   rows.push({
     id: uuid('notif:sync-failure'),
     merchant_id: MERCHANT_ID,
-    recipient_user_id: '31635553-bf6f-410d-8202-4bfd5019caeb',
+    recipient_user_id: RECIPIENT_USER_ID,
     kind: 'sync_failure',
     title: 'shopify connection needs attention',
     body: 'The Shopify connection has not synced recently. Reconnect to keep orders up to date.',
@@ -834,7 +845,7 @@ function buildNotificationRows() {
   rows.push({
     id: uuid('notif:daily-summary'),
     merchant_id: MERCHANT_ID,
-    recipient_user_id: '31635553-bf6f-410d-8202-4bfd5019caeb',
+    recipient_user_id: RECIPIENT_USER_ID,
     kind: 'daily_work_summary',
     title: 'Your daily work summary is ready',
     body: 'Review new payout cases, evidence deadlines, and recovery updates from the last 24 hours.',

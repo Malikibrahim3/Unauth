@@ -1,6 +1,7 @@
 'use client';
 
 import { Check, Clock, Trash2 } from 'lucide-react';
+import { Select } from '@/components/ui';
 import {
   formatTeamDate,
   STATUS_LABELS,
@@ -45,18 +46,18 @@ export function TeamMemberRow({
     <div className="grid gap-4 px-5 py-4 md:grid-cols-[1fr_170px_auto] md:items-center">
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <p className="truncate text-sm font-medium" style={{ color: 'var(--ua-text-primary)' }}>{member.invited_email}</p>
+          <p className="ua-text-working-title truncate" style={{ color: 'var(--ua-text-primary)' }}>{member.invited_email}</p>
           {member.invite_status === 'pending' ? (
-            <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs" style={{ background: 'var(--ua-surface-secondary)', color: 'var(--ua-text-secondary)' }}>
+            <span className="ua-text-metadata inline-flex items-center gap-1 rounded-full px-2 py-0.5" style={{ background: 'var(--ua-surface-secondary)', color: 'var(--ua-text-secondary)' }}>
               <Clock className="h-3 w-3" /> Pending
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs" style={{ background: 'var(--ua-success-bg)', color: 'var(--ua-text-primary)' }}>
+            <span className="ua-text-metadata inline-flex items-center gap-1 rounded-full px-2 py-0.5" style={{ background: 'var(--ua-success-bg)', color: 'var(--ua-text-primary)' }}>
               <Check className="h-3 w-3" /> {STATUS_LABELS[member.invite_status]}
             </span>
           )}
         </div>
-        <p className="mt-1 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
+        <p className="ua-text-caption-role mt-1">
           {member.is_account_owner
             ? 'Account owner'
             : member.invite_status === 'pending'
@@ -65,13 +66,11 @@ export function TeamMemberRow({
         </p>
       </div>
 
-      <select
+      <Select
         value={uiRoleForMember(member.role)}
         onChange={(event) => onChangeRole(member, event.target.value as TeamRole)}
         disabled={roleDisabled}
         aria-label={`Role for ${member.invited_email}`}
-        className="rounded-md px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 disabled:opacity-50"
-        style={{ background: 'var(--ua-surface-secondary)', border: '1px solid var(--ua-border-default)', color: 'var(--ua-text-primary)', outlineColor: 'var(--ua-action-primary)' }}
       >
         {UI_ASSIGNABLE_ROLES.map((roleOption) => (
           <option
@@ -82,15 +81,15 @@ export function TeamMemberRow({
             {roleOption === 'owner' ? 'Owner' : 'Analyst'}
           </option>
         ))}
-      </select>
+      </Select>
 
       {confirmingId === member.id ? (
-        <div className="flex items-center gap-1.5 text-xs">
+        <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={() => onRemove(member)}
             disabled={busyMemberId === member.id}
-            className="inline-flex items-center rounded-md px-2.5 py-1.5 font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 disabled:opacity-50"
+            className="ua-text-label inline-flex items-center rounded-md px-2.5 py-1.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 disabled:opacity-50"
             style={{ background: 'var(--ua-risk-critical)', color: 'var(--ua-text-inverse)', outlineColor: 'var(--ua-risk-critical)' }}
           >
             {busyMemberId === member.id ? 'Removing…' : 'Remove'}
@@ -98,7 +97,7 @@ export function TeamMemberRow({
           <button
             type="button"
             onClick={onCancelRemove}
-            className="inline-flex items-center rounded-md border px-2.5 py-1.5 font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
+            className="ua-text-label inline-flex items-center rounded-md border px-2.5 py-1.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
             style={{ borderColor: 'var(--ua-border-subtle)', color: 'var(--ua-text-secondary)', outlineColor: 'var(--ua-action-primary)' }}
           >
             Cancel

@@ -11,6 +11,16 @@ import { createClient } from '@/lib/supabase/client';
 
 type SignupErrors = Partial<Record<'email' | 'password' | 'confirm', string>>;
 
+function validateSignup(email: string, password: string, confirm: string): SignupErrors {
+  const fieldErrors: SignupErrors = {};
+  if (!email.trim()) fieldErrors.email = 'Enter your email address.';
+  else if (!/^\S+@\S+\.\S+$/.test(email.trim())) fieldErrors.email = 'Enter a valid email address.';
+  if (password.length < 8) fieldErrors.password = 'Password must be at least 8 characters.';
+  if (!confirm) fieldErrors.confirm = 'Confirm your password.';
+  else if (password !== confirm) fieldErrors.confirm = 'Passwords do not match.';
+  return fieldErrors;
+}
+
 function mapSignupError(message: string): SignupErrors {
   const lower = message.toLowerCase();
   if (lower.includes('user already registered')) return { email: 'An account with this email already exists' };
@@ -31,14 +41,9 @@ export default function SignupPage() {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
-    if (password.length < 8) {
-      setFieldErrors({ password: 'Password must be at least 8 characters' });
-      return;
-    }
-
-    if (password !== confirm) {
-      setFieldErrors({ confirm: 'Passwords do not match' });
+    const validationErrors = validateSignup(email, password, confirm);
+    if (Object.keys(validationErrors).length > 0) {
+      setFieldErrors(validationErrors);
       return;
     }
 
@@ -91,11 +96,11 @@ export default function SignupPage() {
   return (
     <AuthShell>
       <Panel as="section" variant="panel" className="p-6">
-        <h1 className="text-[18px] font-semibold leading-6 tracking-normal text-[var(--text-primary)]">Create your account</h1>
+        <h1 className="text-[length:var(--ua-text-page-title-size)] font-semibold leading-6 tracking-normal text-[var(--ua-text-primary)]">Create your account</h1>
 
-        <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
+        <form className="mt-8 space-y-5" noValidate onSubmit={handleSubmit}>
           <div>
-            <label htmlFor="signup-email" className="mb-2 block text-sm font-medium text-[var(--text-secondary)]">
+            <label htmlFor="signup-email" className="mb-2 block text-sm font-medium text-[var(--ua-text-secondary)]">
               Email
             </label>
             <Input
@@ -104,8 +109,12 @@ export default function SignupPage() {
               type="email"
               autoComplete="email"
               value={email}
-              onChange={(event) => setEmail(event.target.value)}
+              onChange={(event) => {
+                setEmail(event.target.value);
+                setFieldErrors((current) => ({ ...current, email: undefined }));
+              }}
               required
+              aria-invalid={Boolean(fieldErrors.email)}
               aria-describedby={fieldErrors.email ? 'signup-email-error' : undefined}
               className={authInputClassName}
               placeholder="you@company.com"
@@ -114,7 +123,7 @@ export default function SignupPage() {
           </div>
 
           <div>
-            <label htmlFor="signup-password" className="mb-2 block text-sm font-medium text-[var(--text-secondary)]">
+            <label htmlFor="signup-password" className="mb-2 block text-sm font-medium text-[var(--ua-text-secondary)]">
               Password
             </label>
             <Input
@@ -123,9 +132,13 @@ export default function SignupPage() {
               type="password"
               autoComplete="new-password"
               value={password}
-              onChange={(event) => setPassword(event.target.value)}
+              onChange={(event) => {
+                setPassword(event.target.value);
+                setFieldErrors((current) => ({ ...current, password: undefined }));
+              }}
               required
               minLength={8}
+              aria-invalid={Boolean(fieldErrors.password)}
               aria-describedby={fieldErrors.password ? 'signup-password-error' : undefined}
               className={authInputClassName}
               placeholder="At least 8 characters"
@@ -134,7 +147,7 @@ export default function SignupPage() {
           </div>
 
           <div>
-            <label htmlFor="signup-confirm" className="mb-2 block text-sm font-medium text-[var(--text-secondary)]">
+            <label htmlFor="signup-confirm" className="mb-2 block text-sm font-medium text-[var(--ua-text-secondary)]">
               Confirm password
             </label>
             <Input
@@ -143,9 +156,13 @@ export default function SignupPage() {
               type="password"
               autoComplete="new-password"
               value={confirm}
-              onChange={(event) => setConfirm(event.target.value)}
+              onChange={(event) => {
+                setConfirm(event.target.value);
+                setFieldErrors((current) => ({ ...current, confirm: undefined }));
+              }}
               required
               minLength={8}
+              aria-invalid={Boolean(fieldErrors.confirm)}
               aria-describedby={fieldErrors.confirm ? 'signup-confirm-error' : undefined}
               className={authInputClassName}
               placeholder="Confirm password"
@@ -165,9 +182,9 @@ export default function SignupPage() {
           </Button>
         </form>
 
-        <p className="mt-5 text-sm text-[var(--text-secondary)]">
+        <p className="mt-5 text-sm text-[var(--ua-text-secondary)]">
           Already have an account?{' '}
-          <Link href="/login" className="font-medium text-[var(--accent)] underline-offset-4 hover:underline">
+          <Link href="/login" className="font-medium text-[var(--ua-action-primary)] underline-offset-4 hover:underline">
             Sign in
           </Link>
         </p>

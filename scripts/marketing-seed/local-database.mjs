@@ -80,6 +80,7 @@ const JSON_ARRAY_COLUMNS = new Set([
   'evidence_packages.ce3_prior_transactions',
   'recovery_cases.excluded_costs',
   'identity_members.matched_via',
+  'pending_provider_account_selections.accounts',
 ]);
 
 const UUID_ARRAY_COLUMNS = new Set([

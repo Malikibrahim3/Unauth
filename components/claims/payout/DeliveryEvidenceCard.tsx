@@ -28,15 +28,15 @@ export function DeliveryEvidenceCard({
       }}
     >
       <p
-        className="text-caption font-semibold mb-3"
+        className="ua-text-label mb-3"
         style={{ color: "var(--ua-text-secondary)" }}
       >
         Delivery evidence
       </p>
-      <p className="text-sm font-medium" style={{ color: "var(--ua-text-primary)" }}>
+      <p className="ua-text-working-title" style={{ color: "var(--ua-text-primary)" }}>
         {line}
       </p>
-      <dl className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
+      <dl className="ua-text-metadata mt-3 grid gap-2 sm:grid-cols-2">
         <Detail label="Carrier" value={delivery.carrier ?? "—"} />
         <Detail
           label="Tracking number"

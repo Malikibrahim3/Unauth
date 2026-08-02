@@ -35,7 +35,7 @@ export function FreshdeskSupportSyncCreateForm({
         {isCreate ? (
           <label
             htmlFor="freshdesk-domain"
-            className="block text-xs font-medium mb-1"
+            className="ua-text-label block mb-1"
             style={{ color: 'var(--ua-text-secondary)' }}
           >
             Freshdesk domain
@@ -45,7 +45,7 @@ export function FreshdeskSupportSyncCreateForm({
           id={isCreate ? 'freshdesk-domain' : undefined}
           required
           aria-label="Freshdesk domain"
-          className="w-full rounded-md px-3 py-2 text-sm"
+          className="ua-text-body w-full rounded-md px-3 py-2"
           style={INPUT_STYLE}
           placeholder={isCreate ? 'acme or acme.freshdesk.com' : 'Domain'}
           value={state.domain}
@@ -53,7 +53,7 @@ export function FreshdeskSupportSyncCreateForm({
           disabled={!canManage || state.busy}
         />
         {isCreate ? (
-          <p className="mt-2 text-xs" style={{ color: 'var(--ua-text-secondary)' }}>
+          <p className="ua-text-caption-role mt-2" style={{ color: 'var(--ua-text-secondary)' }}>
             Your Freshdesk subdomain. If you log in at <code>acme.freshdesk.com</code>, enter{' '}
             <code>acme</code> or the full host.
           </p>
@@ -64,14 +64,14 @@ export function FreshdeskSupportSyncCreateForm({
         <div>
           <label
             htmlFor="freshdesk-display-name"
-            className="block text-xs font-medium mb-1"
+            className="ua-text-label block mb-1"
             style={{ color: 'var(--ua-text-secondary)' }}
           >
             Display name (optional)
           </label>
           <input
             id="freshdesk-display-name"
-            className="w-full rounded-md px-3 py-2 text-sm"
+            className="ua-text-body w-full rounded-md px-3 py-2"
             style={INPUT_STYLE}
             placeholder="Support team"
             value={state.displayName}
@@ -94,7 +94,7 @@ export function FreshdeskSupportSyncCreateForm({
       <button
         type="submit"
         disabled={!canManage || state.busy}
-        className="rounded-md px-4 py-2 text-sm font-semibold disabled:opacity-60"
+        className="ua-text-working-title rounded-md px-4 py-2 disabled:opacity-60"
         style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)' }}
       >
         {state.busy ? 'Saving…' : submitLabel}

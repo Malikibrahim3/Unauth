@@ -62,12 +62,12 @@ export function CaseFinancialHistoryCard({
     <Card unstyled as="section" variant="panel" className="p-4" aria-labelledby="case-financial-history-title">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <h2 id="case-financial-history-title" className="text-sm font-semibold">Financial history</h2>
-          <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">
+          <h2 id="case-financial-history-title" className="ua-text-working-title">Financial history</h2>
+          <p className="ua-text-caption-role mt-1">
             Recorded merchant and provider stages stay separate; approval is not recovered cash.
           </p>
         </div>
-        <Link href="/reports?range=all" className="text-xs font-semibold text-[var(--ua-action-primary)]">
+        <Link href="/reports?range=all" className="ua-text-label text-[var(--ua-action-primary)]">
           View reconciled reports
         </Link>
       </div>
@@ -76,7 +76,7 @@ export function CaseFinancialHistoryCard({
         <div className="mt-3 space-y-4">
           {bridges.map((bridge) => (
             <div key={bridge.currency}>
-              <h3 className="text-xs font-semibold">{bridge.currency}</h3>
+              <h3 className="ua-text-label">{bridge.currency}</h3>
               <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3 lg:grid-cols-4">
                 {FINANCIAL_REPORT_METRICS.map((metric) => {
                   const known = financialMetricIsKnown(bridge, metric);
@@ -84,7 +84,7 @@ export function CaseFinancialHistoryCard({
                   return (
                     <div key={metric}>
                       <dt className="text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-secondary)]">{LABELS[metric]}</dt>
-                      <dd className="text-xs font-semibold tabular-nums">
+                      <dd className="ua-text-label tabular-nums">
                         {known && value != null
                           ? formatMinorCurrencyNullable(value, bridge.currency)
                           : 'Unavailable'}
@@ -100,7 +100,7 @@ export function CaseFinancialHistoryCard({
           ) : null}
         </div>
       ) : (
-        <p className="mt-3 text-xs text-[var(--ua-text-secondary)]">
+        <p className="ua-text-body mt-3 text-[var(--ua-text-secondary)]">
           No financial stages have been recorded for this case yet. Missing values remain unavailable rather than showing as zero.
         </p>
       )}

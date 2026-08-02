@@ -24,13 +24,13 @@ export const FL_ROUTES = {
 
 export const FL_NAV = {
   links: [
-    { label: 'What you recover', href: '/landing#what-you-recover' },
-    { label: 'The gate', href: '/landing#how-it-works' },
+    { label: 'Product demo', href: '/demo' },
+    { label: 'Product proof', href: '/landing#what-you-recover' },
+    { label: 'How it works', href: '/landing#how-it-works' },
     { label: 'Integrations', href: '/landing#integrations' },
-    { label: 'FAQ', href: '/landing#faq' },
   ],
   signIn: 'Sign in',
-  cta: 'Request access',
+  cta: 'Create workspace',
 } as const;
 
 /* ── Hero ──────────────────────────────────────────────────────────────── */
@@ -38,16 +38,17 @@ export const FL_NAV = {
 export const FL_HERO = {
   eyebrow: '',
   headlineLines: [
-    'Decide post-purchase payouts',
-    'with the full evidence in front of you.',
+    'Decide every payout with the full evidence in view.',
   ],
   subtitle:
     'Unauth brings order, delivery, support, and financial context into one merchant-controlled case, applies your rules, and keeps loss ownership and recovery work in the same auditable timeline.',
   body: '',
-  primaryCta: 'Request access',
+  primaryCta: 'Create workspace',
   secondaryCta: 'Walk through a case',
-  pinnedCta: 'Request access',
-  contactCta: 'Request access',
+  assurance:
+    'Recommendations stay explainable. Final customer and recovery actions stay with your team.',
+  pinnedCta: 'Create workspace',
+  contactCta: 'Create workspace',
   orderHistoryCard: {
     title: '01 Merchant-owned rules',
     status: 'Your policy logic — not an automated decision.',
@@ -70,6 +71,43 @@ export const FL_HERO = {
     meta: 'Works before chargeback',
   },
 } as const;
+
+export const FL_PRODUCT_PROOF = {
+  eyebrow: 'Real product proof',
+  headline: 'Evidence, recommendation, and recovery context stay in one case.',
+  lead:
+    'These images are captured from the shipping public demo route with the same product tokens, status grammar, and working-surface primitives used in the authenticated product.',
+  steps: [
+    {
+      title: 'Keep source facts distinct',
+      body: 'Commerce, support, fulfilment, and carrier records retain their source and timestamp.',
+    },
+    {
+      title: 'Explain the recommendation',
+      body: 'The matched rule, evidence gap, and confidence remain visible before the team decides.',
+    },
+    {
+      title: 'Record the merchant outcome',
+      body: 'The merchant-owned decision and any recovery handoff stay on the same auditable timeline.',
+    },
+  ],
+  integrations: ['Shopify', 'BigCommerce', 'WooCommerce', 'Gorgias', 'Zendesk', 'Freshdesk', 'ShipBob'],
+} as const;
+
+export const FL_PRODUCT_TRUTHS = [
+  {
+    title: 'Recommendations',
+    body: 'Unauth applies merchant-owned rules and explains the evidence behind each recommendation.',
+  },
+  {
+    title: 'Decisions',
+    body: 'Your team makes and records the final customer, payout, responsibility, and recovery decision.',
+  },
+  {
+    title: 'Recovery',
+    body: 'Possible recovery routes remain visible with their evidence requirements and deadlines.',
+  },
+] as const;
 
 export const FL_HERO_FLOATING_CARDS = {
   orderHistory: {
@@ -420,7 +458,7 @@ export const FL_FIGURES = {
   ],
   disclaimer:
     'Illustrative monthly breakdown. Actual results depend on your volumes, rules, and evidence coverage.',
-  cta: 'Request access',
+  cta: 'Create workspace',
 } as const;
 
 /* ── Programs (§ programs) ─────────────────────────────────────────────── */
@@ -479,10 +517,9 @@ export const FL_PRICING = {
   lead:
     'Every plan includes the widget, store context, evidence checklist, merchant rules, and recovery workflow. Usage is controlled by monthly context credits — raw customer data stays merchant-scoped.',
   featuredTierKey: 'pro' as const,
-  ctaDefault: 'Start free',
-  ctaTrial: 'Start free trial',
+  ctaDefault: 'Create workspace',
+  ctaPro: 'Choose Pro',
   ctaCustom: 'Talk to us',
-  trialNote: '7-day trial on Pro · no card required',
   credits: {
       heading: 'How credits work',
     intro:
@@ -493,7 +530,7 @@ export const FL_PRICING = {
       ['Evidence summary + deeper review', '3 credits'],
     ] as const,
     footer:
-      'Credits reset monthly. Unused credits do not roll over. Pro and Growth teams can purchase top-up packs if they exceed their allowance before the next cycle.',
+      'Credits reset monthly. Unused credits do not roll over. Paid workspaces can purchase a 200-credit top-up for $15 when self-serve top-ups are enabled.',
   },
   integration: {
     prefix: 'Using Gorgias or Zendesk?',
@@ -531,9 +568,9 @@ export const FL_PRICING_FAQ = {
 /* ── Final CTA + footer ────────────────────────────────────────────────── */
 
 export const FL_FINAL = {
-  headlineLines: ['SEE WHERE THE MONEY', 'SHOULD COME BACK FROM.'],
+  headlineLines: ['KEEP THE EVIDENCE', 'BESIDE THE DECISION.'],
   body: 'Connect your store and helpdesk. Unauth puts every case in front of your team with the evidence, loss ownership, and recovery next step while the window is still open.',
-  cta: 'Request access',
+  cta: 'Create workspace',
 } as const;
 
 export const FL_FAQ = {
@@ -574,7 +611,7 @@ export const FL_FOOTER = {
       links: [
         { label: 'The gate', href: '/landing#how-it-works' },
         { label: 'What you recover', href: '/landing#what-you-recover' },
-        { label: 'Request access', href: FL_ROUTES.audit },
+        { label: 'Create workspace', href: FL_ROUTES.audit },
       ],
     },
     {
@@ -589,7 +626,7 @@ export const FL_FOOTER = {
       heading: 'Company',
       links: [
         { label: 'Sign in', href: FL_ROUTES.login },
-        { label: 'Request access', href: FL_ROUTES.audit },
+        { label: 'Create workspace', href: FL_ROUTES.audit },
         { label: 'Pilot terms', href: FL_ROUTES.pilotTerms },
       ],
     },

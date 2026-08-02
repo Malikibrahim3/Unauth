@@ -22,13 +22,13 @@ export function FreshdeskCredentialFields({
   return (
     <>
       <div>
-        <p className="mb-2 text-xs leading-relaxed" style={{ color: 'var(--ua-text-secondary)' }}>
+        <p className="ua-text-caption-role mb-2 leading-relaxed" style={{ color: 'var(--ua-text-secondary)' }}>
           Your API key is stored encrypted and used only to validate your account and fetch ticket
           details when needed.
         </p>
         <label
           htmlFor="freshdesk-api-key"
-          className="block text-xs font-medium mb-1"
+          className="ua-text-label block mb-1"
           style={{ color: 'var(--ua-text-secondary)' }}
         >
           Freshdesk API key
@@ -37,7 +37,7 @@ export function FreshdeskCredentialFields({
           id="freshdesk-api-key"
           required={required}
           type="password"
-          className="w-full rounded-md px-3 py-2 text-sm font-mono"
+          className="ua-text-body w-full rounded-md px-3 py-2 font-mono"
           style={{
             background: 'var(--ua-surface-secondary)',
             border: '1px solid var(--ua-border-default)',
@@ -54,13 +54,13 @@ export function FreshdeskCredentialFields({
         <button
           type="button"
           onClick={onToggleCredHelp}
-          className="text-xs underline"
+          className="ua-text-label underline"
           style={{ color: 'var(--ua-action-primary)' }}
         >
           Where do I find this?
         </button>
         {showCredHelp && (
-          <p className="mt-2 text-xs leading-relaxed" style={{ color: 'var(--ua-text-secondary)' }}>
+          <p className="ua-text-caption-role mt-2 leading-relaxed" style={{ color: 'var(--ua-text-secondary)' }}>
             In Freshdesk, open <strong>Profile Settings</strong> (avatar), then <strong>View profile</strong>{' '}
            , then your API key is listed on the right. You need an admin or agent profile with API access.
           </p>

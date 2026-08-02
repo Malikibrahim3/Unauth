@@ -47,13 +47,13 @@ export function track(
     return
   }
   const root = document.querySelector<HTMLElement>('.ua-app')
-  const rolloutProperties = root
+  const surfaceProperties = root
     ? {
-        ui_version: root.dataset.uiVersion ?? 'legacy',
-        ui_cohort: root.dataset.uiCohort ?? 'unknown',
+        ui_version: root.dataset.uiVersion ?? 'decision-ledger-instrument-grade',
+        ui_surface_family: root.dataset.uiSurfaceFamily ?? 'unknown',
       }
     : {}
-  amplitude.track(event, { ...rolloutProperties, ...properties })
+  amplitude.track(event, { ...surfaceProperties, ...properties })
 }
 
 export type AnalyticsEvent =

@@ -28,15 +28,15 @@ describe('CaseFinancialHistoryCard', () => {
   it('shows proven zero separately from unavailable stages', () => {
     render(<CaseFinancialHistoryCard summaries={[summary]} />);
     expect(screen.getByRole('heading', { name: 'Financial history' })).toBeInTheDocument();
-    expect(screen.getByText('Requested').nextElementSibling).toHaveTextContent('10.00');
-    expect(screen.getByText('Exposed').nextElementSibling).toHaveTextContent('0.00');
-    expect(screen.getByText('Approved').nextElementSibling).toHaveTextContent('5.00');
-    expect(screen.getByText('Paid').nextElementSibling).toHaveTextContent('Unavailable');
-    expect(screen.getByText('Recovered').nextElementSibling).toHaveTextContent('Unavailable');
+    expect(screen.getByText('Requested value').nextElementSibling).toHaveTextContent('10.00');
+    expect(screen.getByText('Maximum exposure').nextElementSibling).toHaveTextContent('0.00');
+    expect(screen.getByText('Merchant decision').nextElementSibling).toHaveTextContent('5.00');
+    expect(screen.getByText('Observed payout').nextElementSibling).toHaveTextContent('Unavailable');
+    expect(screen.getByText('Recovered cash').nextElementSibling).toHaveTextContent('Unavailable');
   });
 
   it('does not fabricate zero when no canonical ledger summary exists', () => {
     render(<CaseFinancialHistoryCard summaries={[]} />);
-    expect(screen.getByText(/Missing values are not reported as zero/i)).toBeInTheDocument();
+    expect(screen.getByText(/Missing values remain unavailable rather than showing as zero/i)).toBeInTheDocument();
   });
 });

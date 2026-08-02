@@ -2,6 +2,7 @@ export type DemoCaseStep = 'incoming' | 'evidence' | 'recommendation' | 'decisio
 
 export const MERCHANT_CASE_V1 = {
   version: 'merchant-case-v1',
+  merchant: 'Northstar Outfitters',
   caseReference: 'CASE-DEMO-1048',
   title: 'Missing item reported after delivery scan',
   summary: 'A customer says one item was missing from a delivered order. The case has enough context to review, but the evidence is not complete enough to decide automatically.',
@@ -37,6 +38,8 @@ export const MERCHANT_CASE_V1 = {
     handoff: 'Prepare a recovery handoff when the missing evidence confirms responsibility',
     deadline: '14-day partner evidence window (simulated)',
   },
+  privacy:
+    'Deterministic fictional merchant and customer. No production account, provider identifier, or personal data is used.',
 } as const;
 
 export const DEMO_CASE_STEPS: Array<{ id: DemoCaseStep; label: string; title: string }> = [
@@ -46,3 +49,7 @@ export const DEMO_CASE_STEPS: Array<{ id: DemoCaseStep; label: string; title: st
   { id: 'decision', label: 'Merchant decision', title: 'Choose the action your team owns' },
   { id: 'recovery', label: 'Loss and recovery', title: 'Keep the next handoff in the same timeline' },
 ];
+
+export function isDemoCaseStep(value: string | undefined): value is DemoCaseStep {
+  return DEMO_CASE_STEPS.some((step) => step.id === value);
+}

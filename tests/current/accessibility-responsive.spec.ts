@@ -116,6 +116,18 @@ test.describe("release accessibility and responsive gates", () => {
       await gotoReadySurface(page, route);
       for (const viewport of VIEWPORTS) {
         await page.setViewportSize(viewport);
+        if (viewport.width < 1024) {
+          // The current shell reflows at narrow widths; the old blocking
+          // desktop-required boundary is retained only as a compatibility
+          // selector and must not gate the product.
+          await expect(page.locator(".ua-desktop-required")).toHaveCount(0);
+          await expect(page.locator(".ua-desktop-product")).toBeVisible();
+          await expect(page.locator("main")).toBeVisible();
+        } else {
+          await expect(page.locator(".ua-desktop-required")).toBeHidden();
+          await expect(page.locator(".ua-desktop-product")).toBeVisible();
+          await expect(page.locator("main")).toBeVisible();
+        }
         const layout = await page.evaluate(() => {
           const main = document.querySelector("main");
           const uncontainedOffenders = [...(main?.querySelectorAll("*") ?? [])]

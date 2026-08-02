@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 
 /*
- * Living Precision §6.2: charts are drawn from the accent plus a neutral ramp.
+ * Instrument Grade: charts are drawn from the accent plus a neutral ramp.
  * The semantic triplets are listed too, but only because a series may *encode*
  * success, warning, or critical — they are never categorical series colours.
  * The old numbered chart slots are deleted; do not reintroduce a positional

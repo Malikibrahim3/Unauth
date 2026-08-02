@@ -36,13 +36,7 @@ export default async function RecoveryRulesPage() {
   return (
     <WorkbenchPage
       title="Recovery rules"
-      subtitle="Define the carriers, 3PLs, warehouses, suppliers, and internal teams that can own recovery routes."
-      kpiItems={[
-        { label: 'Partners', value: formatNumber(partners.length), hint: 'Configured owners' },
-        { label: 'Active rules', value: formatNumber(rules.filter((rule) => rule.active).length), hint: 'Used for recovery estimates' },
-        { label: 'Default rules', value: formatNumber(rules.filter((rule) => !rule.partner_id).length), hint: 'Apply without a specific partner' },
-        { label: 'Evidence routes', value: formatNumber(new Set(rules.flatMap((rule) => rule.required_evidence)).size), hint: 'Unique required evidence items' },
-      ]}
+      subtitle={`Define who can own recovery routes · ${formatNumber(partners.length)} partners · ${formatNumber(rules.filter((rule) => rule.active).length)} active rules · ${formatNumber(new Set(rules.flatMap((rule) => rule.required_evidence)).size)} evidence routes`}
       main={(
         <RecoveryRulebookClient
           partners={partners}

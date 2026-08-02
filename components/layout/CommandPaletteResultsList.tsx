@@ -70,17 +70,17 @@ export function CommandPaletteResultsList({
             <Search size={14} aria-hidden="true" />
           </span>
           <div className="min-w-0">
-            <p className="text-sm font-medium" style={{ color: 'var(--ua-text-primary)' }}>
+            <p className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>
               Search customers for &ldquo;{state.query}&rdquo;
             </p>
-            <p className="text-xs" style={{ color: 'var(--ua-text-secondary)' }}>Browse all matching profiles</p>
+            <p className="ua-text-caption-role" style={{ color: 'var(--ua-text-secondary)' }}>Browse all matching profiles</p>
           </div>
         </button>
       ) : null}
 
       {state.customerResults.length > 0 ? (
         <>
-          <p className="px-4 pt-2 pb-1 text-[length:var(--ua-text-metadata-size)] font-semibold" style={{ color: 'var(--ua-text-tertiary)' }}>
+          <p className="ua-text-metadata px-4 pt-2 pb-1">
             Customers
           </p>
           {state.customerResults.map((c, i) => (
@@ -93,14 +93,14 @@ export function CommandPaletteResultsList({
               onClick={() => onCustomerSelect(c)}
             >
               <span
-                className="flex h-7 w-7 items-center justify-center rounded-full shrink-0 text-xs font-bold"
+                className="ua-text-working-title flex h-7 w-7 items-center justify-center rounded-full shrink-0"
                 style={{ background: 'var(--ua-surface-secondary)', color: 'var(--ua-text-secondary)' }}
               >
                 {(c.name?.[0] ?? '?').toUpperCase()}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium truncate" style={{ color: 'var(--ua-text-primary)' }}>{c.name}</p>
-                {c.email ? <p className="text-xs truncate" style={{ color: 'var(--ua-text-secondary)' }}>{c.email}</p> : null}
+                <p className="ua-text-working-title truncate" style={{ color: 'var(--ua-text-primary)' }}>{c.name}</p>
+                {c.email ? <p className="ua-text-caption-role truncate" style={{ color: 'var(--ua-text-secondary)' }}>{c.email}</p> : null}
               </div>
             </button>
           ))}
@@ -118,7 +118,7 @@ export function CommandPaletteResultsList({
             const Icon = type === 'order' ? Hash : FileText;
             return (
               <div key={type}>
-                <p className="px-4 pt-2 pb-1 text-[length:var(--ua-text-metadata-size)] font-semibold" style={{ color: 'var(--ua-text-tertiary)' }}>
+                <p className="ua-text-metadata px-4 pt-2 pb-1">
                   {label}
                 </p>
                 {group.map((item, i) => (
@@ -134,14 +134,14 @@ export function CommandPaletteResultsList({
                     }}
                   >
                     <span
-                      className="flex h-7 w-7 items-center justify-center rounded-md shrink-0 text-xs"
+                      className="ua-text-metadata flex h-7 w-7 items-center justify-center rounded-md shrink-0"
                       style={{ background: 'var(--ua-surface-secondary)', color: 'var(--ua-icon-secondary)' }}
                     >
                       <Icon size={13} aria-hidden="true" />
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium truncate" style={{ color: 'var(--ua-text-primary)' }}>{item.label}</p>
-                      {item.sublabel ? <p className="text-xs" style={{ color: 'var(--ua-text-secondary)' }}>{item.sublabel}</p> : null}
+                      <p className="ua-text-working-title truncate" style={{ color: 'var(--ua-text-primary)' }}>{item.label}</p>
+                      {item.sublabel ? <p className="ua-text-caption-role" style={{ color: 'var(--ua-text-secondary)' }}>{item.sublabel}</p> : null}
                     </div>
                   </button>
                 ))}
@@ -152,13 +152,13 @@ export function CommandPaletteResultsList({
       ) : null}
 
       {state.searchError ? (
-        <p role="alert" className="px-4 py-2 text-xs" style={{ color: 'var(--ua-critical)' }}>{state.searchError}</p>
+        <p role="alert" className="ua-text-caption-role px-4 py-2" style={{ color: 'var(--ua-critical)' }}>{state.searchError}</p>
       ) : null}
 
       {filteredNav.length > 0 || !state.query.trim() ? (
         <>
           {state.customerResults.length > 0 || state.query.trim() ? (
-            <p className="px-4 pt-2 pb-1 text-[length:var(--ua-text-metadata-size)] font-semibold" style={{ color: 'var(--ua-text-tertiary)' }}>
+            <p className="ua-text-metadata px-4 pt-2 pb-1">
               Navigate
             </p>
           ) : null}
@@ -178,8 +178,8 @@ export function CommandPaletteResultsList({
                 {item.icon}
               </span>
               <div className="min-w-0">
-                <p className="text-sm font-medium" style={{ color: 'var(--ua-text-primary)' }}>{item.label}</p>
-                <p className="text-xs" style={{ color: 'var(--ua-text-secondary)' }}>{item.description}</p>
+                <p className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>{item.label}</p>
+                <p className="ua-text-caption-role" style={{ color: 'var(--ua-text-secondary)' }}>{item.description}</p>
               </div>
             </button>
           ))}
@@ -187,7 +187,7 @@ export function CommandPaletteResultsList({
       ) : null}
 
       {filteredNav.length === 0 && state.customerResults.length === 0 && state.query.trim() && !state.searchingCustomers ? (
-        <p className="px-4 py-6 text-center text-sm" style={{ color: 'var(--ua-text-secondary)' }}>
+        <p className="ua-text-body px-4 py-6 text-center" style={{ color: 'var(--ua-text-secondary)' }}>
           No results for &ldquo;{state.query}&rdquo;
         </p>
       ) : null}

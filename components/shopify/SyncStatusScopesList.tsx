@@ -8,7 +8,7 @@ export function SyncStatusScopesList({ scopes, label }: SyncStatusScopesListProp
 
   return (
     <div>
-      <p className="text-xs font-semibold mb-2" style={{ color: 'var(--ua-text-secondary)' }}>
+      <p className="ua-text-label mb-2" style={{ color: 'var(--ua-text-secondary)' }}>
         {label}
       </p>
       <div className="flex flex-wrap gap-1.5">

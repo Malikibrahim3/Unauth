@@ -1,5 +1,7 @@
 "use client";
 
+import { Clock3, TriangleAlert } from "lucide-react";
+
 import {
   CLAIM_TYPE_LABELS,
   DECISION_LABELS,
@@ -14,6 +16,7 @@ import {
   slaToneStyle,
 } from "@/components/claims/claimReviewStyles";
 import { StatusPill } from "@/components/claims/claimReviewPrimitives";
+import { DataTable, type DataTableColumn } from "@/components/ui/DataTable";
 import type {
   ClaimRecord,
   ClaimType,
@@ -30,103 +33,116 @@ export function ClaimReviewHistoryTable({
 }) {
   if (history.length === 0) {
     return (
-      <p className="text-sm" style={{ color: "var(--ua-text-secondary)" }}>
+      <p className="ua-text-body" style={{ color: "var(--ua-text-secondary)" }}>
         No cases recorded for this customer yet.
       </p>
     );
   }
 
+  const slaLabels = history.map((claim) => getSlaVisual(claim).label);
+  const uniformSlaLabel = slaLabels.length > 1 && slaLabels.every((l) => l === slaLabels[0]);
+
+  const columns: DataTableColumn<ClaimRecord>[] = [
+    {
+      key: "order",
+      header: "Order ref",
+      render: (claim) => (
+        <span className="ua-text-working-title font-mono underline underline-offset-2">
+          {shortRef(claim.order_ref ?? claim.shopify_order_id, claim.id)}
+        </span>
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (claim) => <StatusPill status={claim.status} />,
+    },
+    {
+      key: "type",
+      header: "Type",
+      render: (claim) =>
+        CLAIM_TYPE_LABELS[claim.claim_type as ClaimType] ?? claim.claim_type,
+    },
+    {
+      key: "decision",
+      header: "Decision / Outcome",
+      render: (claim) =>
+        claim.latest_outcome
+          ? `${DECISION_LABELS[claim.latest_outcome.decision as Decision] ?? claim.latest_outcome.decision} / ${OUTCOME_LABELS[claim.latest_outcome.outcome as Outcome] ?? claim.latest_outcome.outcome}`
+          : "—",
+    },
+    {
+      key: "filed",
+      header: "Filed",
+      render: (claim) => (
+        <span className="ua-text-dense text-[var(--ua-text-secondary)]">
+          <span>{formatFiledDate(claim)}</span>
+          <span className="block">{formatClaimAge(claim)}</span>
+        </span>
+      ),
+    },
+    {
+      key: "age",
+      header: "Age",
+      render: (claim) => {
+        const sla = getSlaVisual(claim);
+        /*
+         * A pill is reserved for an exceptional value. "Within threshold" is
+         * the ordinary case, and any tone that is true of every row in this
+         * customer's history (§3.1 T4) carries no signal — both render as
+         * plain dense text instead.
+         */
+        if (sla.tone === "gray" || uniformSlaLabel) {
+          return <span className="ua-text-dense text-[var(--ua-text-secondary)]">{sla.label}</span>;
+        }
+        const tone = slaToneStyle(sla.tone);
+        return (
+          <span
+            className="ua-text-label inline-flex items-center gap-1 rounded-full px-2 py-0.5"
+            style={{ background: tone.bg, color: tone.text }}
+          >
+            {sla.icon === "clock" ? <Clock3 className="h-3.5 w-3.5" aria-hidden="true" /> : null}
+            {sla.icon === "warning" ? <TriangleAlert className="h-3.5 w-3.5" aria-hidden="true" /> : null}
+            {sla.label}
+          </span>
+        );
+      },
+    },
+    {
+      key: "risk",
+      header: "At risk",
+      kind: "currency",
+      render: (claim) =>
+        claim.amount_at_risk != null
+          ? formatClaimMoney(claim.amount_at_risk, claim.currency)
+          : "—",
+    },
+    {
+      key: "updated",
+      header: "Updated",
+      kind: "date",
+      render: (claim) => (
+        <span className="ua-text-dense font-sans tabular-nums text-[var(--ua-text-secondary)]">
+          {claim.updated_at
+            ? formatDateAbsolute(new Date(claim.updated_at))
+            : "—"}
+        </span>
+      ),
+    },
+  ];
+
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr style={{ color: "var(--ua-text-secondary)" }}>
-            <th className="text-left py-2 pr-3 text-xs font-semibold">
-              Order ref
-            </th>
-            <th className="text-left py-2 pr-3 text-xs font-semibold">
-              Status
-            </th>
-            <th className="text-left py-2 pr-3 text-xs font-semibold">Type</th>
-            <th className="text-left py-2 pr-3 text-xs font-semibold">
-              Decision / Outcome
-            </th>
-            <th className="text-left py-2 pr-3 text-xs font-semibold">Filed</th>
-            <th className="text-left py-2 pr-3 text-xs font-semibold">Age</th>
-            <th className="text-left py-2 pr-3 text-xs font-semibold">
-              At risk
-            </th>
-            <th className="text-left py-2 text-xs font-semibold">Updated</th>
-          </tr>
-        </thead>
-        <tbody>
-          {history.map((h) => {
-            const sla = getSlaVisual(h);
-            const tone = slaToneStyle(sla.tone);
-            return (
-              <tr
-                key={h.id}
-                className="border-t hover:bg-[var(--ua-surface-secondary)]"
-                style={{ borderColor: "var(--ua-border-subtle)" }}
-              >
-                <td className="py-2 pr-3 font-mono text-xs">
-                  <button
-                    type="button"
-                    onClick={() => onSelectClaim(h.id)}
-                    className="font-mono text-xs font-semibold underline underline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ua-border-focus)]"
-                    aria-label={`Open case ${h.shopify_order_id ?? h.order_ref ?? shortRef(null, h.id)}`}
-                  >
-                    {h.shopify_order_id ?? h.order_ref ?? shortRef(null, h.id)}
-                  </button>
-                </td>
-                <td className="py-2 pr-3">
-                  <StatusPill status={h.status} />
-                </td>
-                <td className="py-2 pr-3">
-                  {CLAIM_TYPE_LABELS[h.claim_type as ClaimType] ?? h.claim_type}
-                </td>
-                <td className="py-2 pr-3">
-                  {h.latest_outcome
-                    ? `${DECISION_LABELS[h.latest_outcome.decision as Decision] ?? h.latest_outcome.decision} / ${OUTCOME_LABELS[h.latest_outcome.outcome as Outcome] ?? h.latest_outcome.outcome}`
-                    : "-"}
-                </td>
-                <td
-                  className="py-2 pr-3 text-xs"
-                  style={{ color: "var(--ua-text-secondary)" }}
-                >
-                  <span>{formatFiledDate(h)}</span>
-                  <span className="block">{formatClaimAge(h)}</span>
-                </td>
-                <td className="py-2 pr-3">
-                  <span
-                    className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
-                    style={{ background: tone.bg, color: tone.text }}
-                  >
-                    {sla.icon === "clock" ? (
-                      <span aria-hidden="true">🕐</span>
-                    ) : null}
-                    {sla.icon === "warning" ? (
-                      <span aria-hidden="true">⚠</span>
-                    ) : null}
-                    {sla.label}
-                  </span>
-                </td>
-                <td className="py-2 pr-3">
-                  {h.amount_at_risk != null
-                    ? formatClaimMoney(h.amount_at_risk, h.currency)
-                    : "-"}
-                </td>
-                <td
-                  className="py-2 text-xs font-sans tabular-nums"
-                  style={{ color: "var(--ua-text-secondary)" }}
-                >
-                  {h.updated_at ? formatDateAbsolute(new Date(h.updated_at)) : "—"}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+    <DataTable
+      aria-label="Customer case history"
+      columns={columns}
+      rows={history}
+      emptyState={<p className="ua-text-body p-4 text-[var(--ua-text-secondary)]">No other cases are recorded for this customer.</p>}
+      getRowKey={(claim) => claim.id}
+      density="metadata"
+      onRowClick={(claim) => onSelectClaim(claim.id)}
+      primaryActionLabel={(claim) =>
+        `Open case ${shortRef(claim.order_ref ?? claim.shopify_order_id, claim.id)}`
+      }
+    />
   );
 }

@@ -1,8 +1,11 @@
 import { PageConnectionGate } from '@/components/connections/PageConnectionGate';
-import { CustomerProfilePageHero } from '@/app/(app)/customers/[id]/CustomerProfilePageHero';
+import {
+  CustomerProfileMetrics,
+  buildCustomerProfileHeroHeader,
+} from '@/app/(app)/customers/[id]/CustomerProfilePageHero';
 import { CustomerProfilePageMainColumn } from '@/app/(app)/customers/[id]/CustomerProfilePageMainColumn';
-import pageStyles from '@/components/authenticated/AuthenticatedPageChrome.module.css';
-import { AuthenticatedPageHeader } from '@/components/authenticated/AuthenticatedPageHeader';
+import { PageFrame } from '@/components/ui/PageFrame';
+import { SetBreadcrumbLabel } from '@/components/layout/SetBreadcrumbLabel';
 import { AuthenticatedPanel } from '@/components/authenticated/AuthenticatedPanel';
 import type {
   CustomerProfileBlockedReason,
@@ -12,17 +15,15 @@ import type {
 export function CustomerProfileBlockedView({ reason }: { reason: CustomerProfileBlockedReason }) {
   if (reason === 'access_denied') {
     return (
-      <div>
-        <AuthenticatedPageHeader eyebrow="Customer record" title="Access denied" subtitle="You do not have permission to view this customer profile." />
-        <div className={pageStyles.pageBody}><AuthenticatedPanel bodyClassName="p-4 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-secondary)]">Your current workspace role does not include this record.</AuthenticatedPanel></div>
-      </div>
+      <PageFrame eyebrow="Customer record" title="Access denied" subtitle="You do not have permission to view this customer profile.">
+        <AuthenticatedPanel bodyClassName="p-4 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-secondary)]">Your current workspace role does not include this record.</AuthenticatedPanel>
+      </PageFrame>
     );
   }
   return (
-    <div>
-      <AuthenticatedPageHeader eyebrow="Customer record" title="Link expired" subtitle="This link has expired. Ask your team for a new one from Unauth." />
-      <div className={pageStyles.pageBody}><AuthenticatedPanel bodyClassName="p-4"><a href="https://unauth.co" className="text-[length:var(--ua-text-metadata-size)] font-semibold underline" style={{ color: 'var(--ua-text-primary)' }}>Go to unauth.co</a></AuthenticatedPanel></div>
-    </div>
+    <PageFrame eyebrow="Customer record" title="Link expired" subtitle="This link has expired. Ask your team for a new one from Unauth.">
+      <AuthenticatedPanel bodyClassName="p-4"><a href="https://unauth.co" className="ua-text-label underline" style={{ color: 'var(--ua-text-primary)' }}>Go to unauth.co</a></AuthenticatedPanel>
+    </PageFrame>
   );
 }
 
@@ -69,50 +70,50 @@ export function CustomerProfilePageView(props: CustomerProfilePageViewProps) {
     possibleMatches,
     latestClaim,
   } = props;
+  void auditRunId;
+  void primaryIdentifier;
+  void density;
+  void merchantsSeen;
+  void profileWideOrders;
+  void localOrderSharePct;
+  void networkChargebackRatePct;
+  void thisStoreMerchantSharePct;
+  void evidenceDisplay;
+
+  const header = buildCustomerProfileHeroHeader({
+    displayName,
+    profile,
+    hasCleanRecord,
+    merchantClaimCount,
+    viewToken,
+    openClaimCount,
+    isEligibleForEvidence,
+    gorgiasSource,
+    gorgiasTicketId,
+  });
 
   return (
     <PageConnectionGate requires="both" connection={connectionState} pageName="Customer case history" pageDescription="This profile shows customer order history and linked cases from merchant-owned sources. An incomplete profile can be misleading — you may see orders with no case history when helpdesk data is not syncing yet." hasData={true}>
-    <div>
-      <CustomerProfilePageHero
-        auditRunId={auditRunId}
-        displayName={displayName}
-        profile={profile}
-        profileGrade={profileGrade}
-        hasCleanRecord={hasCleanRecord}
-        merchantClaimCount={merchantClaimCount}
-        merchantChargebackCount={merchantChargebackCount}
-        merchantOrderCount={merchantOrderCount}
-        localClaimRatePct={localClaimRatePct}
-        viewToken={viewToken}
-        openClaimCount={openClaimCount}
-        isEligibleForEvidence={isEligibleForEvidence}
-        totalOrderValue={totalOrderValue}
-        totalRefundedValue={totalRefundedValue}
-        displayCurrency={displayCurrency}
-        merchantsSeen={merchantsSeen}
-        profileWideOrders={profileWideOrders}
-        localOrderSharePct={localOrderSharePct}
-        networkChargebackRatePct={networkChargebackRatePct}
-        thisStoreMerchantSharePct={thisStoreMerchantSharePct}
-        density={density}
-        primaryIdentifier={primaryIdentifier}
-        identitySignalRows={identitySignalRows}
-        merchantNarrative={merchantNarrative}
-        gorgiasSource={gorgiasSource}
-        gorgiasTicketId={gorgiasTicketId}
-        evidenceDisplay={evidenceDisplay}
-      />
-
-      {/*
-        LAYOUT RULES (enforced here):
-        1. No column may be empty below the fold — both columns carry content to scroll depth.
-        2. Sidebar = sticky contextual metadata only (Record stats, Dispute context). Max ~500px before sticking.
-        3. Long-scrolling content (lists, tables, history) goes in the main column.
-        4. Sidebar is position:sticky below nav height; overflows independently via overflow-y:auto.
-        5. Grid is [1fr 380px] — main content gets majority width.
-        6. Section order: summary → context → detail → action.
-      */}
-      <div className={pageStyles.pageBody}>
+      <SetBreadcrumbLabel label={displayName} />
+      <PageFrame
+        title={header.title}
+        subtitle={header.subtitle}
+        breadcrumbs={header.breadcrumbs}
+        actions={header.actions}
+        meta={header.meta}
+        metrics={
+          <CustomerProfileMetrics
+            merchantOrderCount={merchantOrderCount}
+            merchantClaimCount={merchantClaimCount}
+            merchantChargebackCount={merchantChargebackCount}
+            totalOrderValue={totalOrderValue}
+            totalRefundedValue={totalRefundedValue}
+            localClaimRatePct={localClaimRatePct}
+            displayCurrency={displayCurrency}
+            merchantNarrative={merchantNarrative}
+          />
+        }
+      >
         <div className="grid grid-cols-1 gap-3">
           <CustomerProfilePageMainColumn
             profile={profile}
@@ -133,8 +134,7 @@ export function CustomerProfilePageView(props: CustomerProfilePageViewProps) {
             openClaimCount={openClaimCount}
           />
         </div>
-      </div>
-    </div>
+      </PageFrame>
     </PageConnectionGate>
   );
 }

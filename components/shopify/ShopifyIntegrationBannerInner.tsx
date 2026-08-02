@@ -31,9 +31,9 @@ const BANNER_VARIANT_STYLES = {
     border: 'var(--ua-warning-border)',
   },
   error: {
-    background: 'var(--ua-severity-definite-bg)',
-    color: 'var(--ua-success)',
-    border: 'color-mix(in srgb, var(--ua-success) 35%, var(--ua-border-default))',
+    background: 'var(--ua-critical-bg)',
+    color: 'var(--ua-critical)',
+    border: 'var(--ua-critical-border)',
   },
 } as const;
 
@@ -88,6 +88,7 @@ export function ShopifyIntegrationBannerInner({ search }: { search: string }) {
       className="block rounded-md border px-4 py-3 text-sm mb-4"
       style={BANNER_VARIANT_STYLES[banner.variant]}
       data-testid="shopify-integration-banner"
+      role={banner.variant === 'error' ? 'alert' : 'status'}
     >
       {banner.message}
     </output>

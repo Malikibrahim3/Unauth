@@ -16,7 +16,7 @@ Before release, inspect the migration diff and exercise rollback at the applicat
 
 ## Release gate
 
-Run `npm run release:readiness` for the deterministic local gate described in [`TESTING.md`](TESTING.md), then exercise the affected integration against an isolated staging merchant. Confirm webhook verification, retries, idempotency, tenant-isolation, financial totals, and audit history.
+Run `npm run release:readiness -- --allow-destructive-local-reset` for the deterministic local gate described in [`TESTING.md`](TESTING.md), and only against an approved disposable local database. The unflagged command refuses to reset or replay the existing local database. Then exercise the affected integration against an isolated staging merchant. Confirm webhook verification, retries, idempotency, tenant-isolation, financial totals, and audit history.
 
 Remote migration comparison is deliberately excluded from the default gate, and `release:readiness` rejects `--remote-migrations`. Remote metadata/history reconciliation is allowed only through the target-checked, backup-gated sequence in [`audits/unauth-mvp-plus/13-production-rollout-approval-packet.md`](audits/unauth-mvp-plus/13-production-rollout-approval-packet.md) after explicit approval.
 

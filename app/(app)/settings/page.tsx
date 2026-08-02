@@ -1,5 +1,13 @@
 import { redirect } from 'next/navigation';
+import {
+  preservedRedirectTarget,
+  type RedirectSearchParams,
+} from '@/lib/navigation/preservedRedirect';
 
-export default function SettingsPage() {
-  redirect('/settings/account');
+type SettingsPageProps = {
+  searchParams?: Promise<RedirectSearchParams>;
+};
+
+export default async function SettingsPage({ searchParams }: SettingsPageProps) {
+  redirect(preservedRedirectTarget('/settings/account', await searchParams));
 }

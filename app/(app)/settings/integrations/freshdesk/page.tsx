@@ -3,6 +3,7 @@ import { createServiceClient } from '@/lib/supabase/server';
 import { getRequestUser } from '@/lib/auth/requestContext';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import FreshdeskSupportSyncClient from '@/components/settings/FreshdeskSupportSyncClient';
+import { ConnectorSetupShell } from '@/components/settings/ConnectorSetupShell';
 import { SettingsPageShell } from '@/components/ui';
 
 export default async function FreshdeskIntegrationPage() {
@@ -21,9 +22,13 @@ export default async function FreshdeskIntegrationPage() {
       title="Freshdesk"
       subtitle="Ingest support tickets for claim detection and dispute context."
     >
-      <div className="space-y-3">
+      <ConnectorSetupShell
+        provider="Freshdesk"
+        providerMark="/integrations/freshdesk.png"
+        requirements="You need a Freshdesk domain, an API key with ticket access, and permission to add the provider webhook."
+      >
         <FreshdeskSupportSyncClient canManage={canManageFreshdesk} />
-      </div>
+      </ConnectorSetupShell>
     </SettingsPageShell>
   );
 }

@@ -7,7 +7,7 @@ export default function GorgiasSetupClient() {
   return (
     <div className="space-y-3">
       <div>
-        <h2 className="text-sm font-semibold" style={{ color: 'var(--ua-text-primary)' }}>
+        <h2 className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>
           Gorgias sidebar widget
         </h2>
         <p className="mt-1 text-[length:var(--ua-text-caption-size)] leading-5" style={{ color: 'var(--ua-text-secondary)' }}>

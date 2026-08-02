@@ -1,5 +1,4 @@
 import { type HTMLAttributes, type ReactNode } from 'react';
-import { SparkTrend } from '@/components/charts/authenticated/micro/SparkTrend';
 import { MetricGroup } from '@/components/ui/MetricGroup';
 
 export interface WorkbenchKpiItem {
@@ -21,12 +20,7 @@ export function WorkbenchKpiStrip({ items }: WorkbenchKpiStripProps) {
   return <MetricGroup
     items={items.map((item) => ({
       label: item.label,
-      value: item.trend && item.trend.length >= 2 ? (
-        <span className="flex items-center justify-between gap-2">
-          <span className="min-w-0 overflow-hidden text-ellipsis">{item.value}</span>
-          <SparkTrend values={item.trend} colourVar={item.trendColourVar} />
-        </span>
-      ) : item.value,
+      value: item.value,
       description: item.hint,
     }))}
     desktopColumns={items.length}

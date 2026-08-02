@@ -55,7 +55,7 @@ export function RelatedRecordsPanel({ records }: { records: RelatedRecord[] }) {
           const inner = (
             <div className="flex items-center gap-3 px-4 py-3">
               <div className="min-w-0">
-                <p className="truncate text-[length:var(--ua-text-dense-size)] font-semibold text-[var(--ua-text-primary)]">
+                <p className="ua-text-working-title truncate text-[var(--ua-text-primary)]">
                   {label}
                 </p>
                 <p className="mt-0.5 text-[length:var(--ua-text-metadata-size)] text-[var(--ua-text-tertiary)]">

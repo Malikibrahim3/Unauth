@@ -12,6 +12,10 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
+  BuilderSequence,
+  BuilderShell,
+  BuilderStep,
+  BuilderValidationSummary,
   Button,
   Modal,
   Card,
@@ -55,12 +59,14 @@ function setPath(
 
 function actionSummary(output: FlowOutputDraft) {
   if (output.type === "create_task")
-    return `Create ${output.priority ?? "medium"} task “${output.title}”${output.dueInHours ? ` due in ${output.dueInHours}h` : ""}`;
+    return `Create ${output.priority ?? "medium"} task “${output.title || "Untitled"}”${output.dueInHours ? ` due in ${output.dueInHours}h` : ""}`;
   if (output.type === "request_evidence")
-    return `Request ${output.evidenceType.replaceAll("_", " ")}`;
+    return `Request ${(output.evidenceType || "evidence").replaceAll("_", " ")}`;
   if (output.type === "set_deadline")
     return `Set deadline to ${output.dueInHours}h`;
-  return `Request ${output.kind.replaceAll("_", " ")} notification “${output.title}”`;
+  if (output.type === "request_notification")
+    return `Request ${(output.kind || "team").replaceAll("_", " ")} notification “${output.title || "Untitled"}”`;
+  return "Review workflow action";
 }
 
 const OPERATOR_COPY: Record<FlowConditionDraft["operator"], string> = {
@@ -330,7 +336,7 @@ export function FlowVersionWorkbench({
       {message ? (
         <p
           role="status"
-          className="rounded-md border px-3 py-2 text-sm"
+          className="ua-text-body rounded-md border px-3 py-2"
           style={{
             borderColor:
               message.tone === "error" ? "var(--ua-critical)" : "var(--ua-success)",
@@ -343,170 +349,112 @@ export function FlowVersionWorkbench({
           {message.text}
         </p>
       ) : null}
-      {!publicationEnabled ? (
-        <p
-          role="status"
-          className="rounded-md border border-[var(--ua-warning)] bg-[var(--ua-surface-muted)] px-3 py-2 text-sm text-[var(--ua-text-primary)]"
-        >
-          <strong>Publishing unavailable:</strong> drafts and tests remain
-          available, but activation and live execution are disabled.
-        </p>
-      ) : null}
-      <Card unstyled variant="panel" className="p-4">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <StatusBadge family="workflowStatus" value={display.status === "published" && !display.active ? "paused" : display.status} />
-              <span className="font-sans text-xs tabular-nums text-[var(--ua-text-tertiary)]">
-                v{display.version}
-              </span>
-              {draft && published ? (
-                <span className="text-xs text-[var(--ua-text-secondary)]">
-                  Published v{published.version} remains{" "}
-                  {published.active ? "active" : "paused"}
-                </span>
-              ) : null}
-            </div>
-            <p className="mt-2 text-sm text-[var(--ua-text-secondary)]">
-              Trigger{" "}
-              <strong className="font-mono text-[var(--ua-text-primary)]">
-                {display.trigger_event_type}
-              </strong>{" "}
-              · {display.conditions.length} condition
-              {display.conditions.length === 1 ? "" : "s"} ·{" "}
-              {display.outputs.length} bounded action
-              {display.outputs.length === 1 ? "" : "s"}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="secondary"
-              leadingIcon={<FlaskConical className="h-4 w-4" />}
-              onClick={() => setTestOpen(true)}
-            >
+      <BuilderShell
+        statusBadge={<StatusBadge family="workflowStatus" value={display.status === "published" && !display.active ? "paused" : display.status} />}
+        title={<h1 className="m-0 text-inherit font-inherit">{display.name}</h1>}
+        meta={
+          <>
+            <span className="ua-text-metadata font-mono">v{display.version}</span>
+            <span> · {display.description || "No operator-facing description yet."}</span>
+          </>
+        }
+        actions={
+          <>
+            <Button variant="secondary" leadingIcon={<FlaskConical className="h-4 w-4" />} onClick={() => setTestOpen(true)}>
               Test event
             </Button>
             {canManage ? (
-              <Button
-                variant="secondary"
-                leadingIcon={<Pencil className="h-4 w-4" />}
-                onClick={() => setEditing(true)}
-              >
+              <Button variant="secondary" leadingIcon={<Pencil className="h-4 w-4" />} onClick={() => setEditing(true)}>
                 {draft ? "Edit draft" : "Create draft"}
               </Button>
             ) : null}
             {canManage && draft ? (
-              <Button
-                variant="primary"
-                leadingIcon={<Send className="h-4 w-4" />}
-                loading={busy === "preview"}
-                onClick={previewPublish}
-              >
+              <Button variant="primary" leadingIcon={<Send className="h-4 w-4" />} loading={busy === "preview"} onClick={previewPublish}>
                 {publicationEnabled ? "Review publish" : "Review preview"}
               </Button>
             ) : null}
             {canManage && published ? (
               <Button
                 variant="ghost"
-                leadingIcon={
-                  published.active ? (
-                    <Pause className="h-4 w-4" />
-                  ) : (
-                    <Play className="h-4 w-4" />
-                  )
-                }
+                leadingIcon={published.active ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                 loading={busy === (published.active ? "pause" : "resume")}
                 disabled={!published.active && !publicationEnabled}
-                onClick={() =>
-                  changeState(published.active ? "pause" : "resume")
-                }
+                onClick={() => changeState(published.active ? "pause" : "resume")}
               >
                 {published.active ? "Pause" : "Resume"}
               </Button>
             ) : null}
-          </div>
-        </div>
-      </Card>
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <Card unstyled as="section" variant="panel" className="p-4">
-          <h2 className="text-sm font-semibold">Structured flow</h2>
-          <ol className="mt-4 space-y-3">
-            <li className="rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-3">
-              <strong className="text-sm">1. Trigger</strong>
-              <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">
-                {display.trigger_event_type.replaceAll("_", " ")}
-              </p>
-            </li>
-            <li className="rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-3">
-              <strong className="text-sm">2. Match all conditions</strong>
+          </>
+        }
+        validation={
+          <BuilderValidationSummary
+            tone={publicationEnabled ? "ready" : "neutral"}
+            title={
+              publicationEnabled
+                ? "Test the draft, review its effect, then publish explicitly."
+                : "Drafts and tests are available; publishing and live execution are disabled."
+            }
+            items={
+              draft && published
+                ? [<>Published v{published.version} remains {published.active ? "active" : "paused"} until you explicitly publish this draft.</>]
+                : display.conditions.length === 0
+                  ? [<>This flow has no conditions, so every {display.trigger_event_type} event matches its bounded actions.</>]
+                  : undefined
+            }
+          />
+        }
+        preview={
+          draft && published && changes.length > 0 ? (
+            <Card unstyled as="section" variant="panel" className="p-4" aria-labelledby="flow-draft-changes-title">
+              <h2 id="flow-draft-changes-title" className="ua-text-working-title">Draft changes</h2>
+              <dl className="mt-3 space-y-3">
+                {changes.map(([label, before, after]) => (
+                  <div key={label}>
+                    <dt className="ua-text-metadata">{label}</dt>
+                    <dd className="ua-text-metadata mt-1">
+                      <span className="line-through text-[var(--ua-text-tertiary)]">{before}</span>
+                      <span className="mx-1 text-[var(--ua-text-tertiary)]">to</span>
+                      <strong>{after}</strong>
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </Card>
+          ) : undefined
+        }
+      >
+        <Card unstyled as="section" variant="panel" className="p-4" aria-labelledby="flow-sequence-title">
+          <h2 id="flow-sequence-title" className="ua-text-working-title">Flow sequence</h2>
+          <BuilderSequence className="mt-4" aria-label="Flow execution sequence">
+            <BuilderStep label="Trigger" detail={display.trigger_event_type.replaceAll("_", " ")} />
+            <BuilderStep label="Conditions" detail="All conditions must match before the flow plans an action.">
               {display.conditions.length ? (
-                <ul className="mt-2 space-y-1 text-xs text-[var(--ua-text-secondary)]">
-                  {withOccurrenceKeys(
-                    display.conditions,
-                    (condition) =>
-                      `${condition.field}:${condition.operator}:${JSON.stringify(condition.value)}`,
-                  ).map(({ item: condition, key }) => (
-                    <li key={key}>{readableCondition(condition)}</li>
+                <ul className="mt-3 space-y-2">
+                  {withOccurrenceKeys(display.conditions, (condition) => `${condition.field}:${condition.operator}:${JSON.stringify(condition.value)}`).map(({ item: condition, key }) => (
+                    <li key={key} className="ua-text-dense rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] px-3 py-2.5">
+                      {readableCondition(condition)}
+                    </li>
                   ))}
                 </ul>
               ) : (
-                <p className="mt-1 text-xs text-[var(--ua-warning)]">
-                  No conditions — every trigger event matches.
-                </p>
+                <p className="ua-text-body mt-3 text-[var(--ua-warning)]">No conditions — every trigger event matches.</p>
               )}
-            </li>
-            {withOccurrenceKeys(display.outputs, (output) =>
-              JSON.stringify(output),
-            ).map(({ item: output, key }, index) => (
-              <li
-                key={key}
-                className="rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-3"
-              >
-                <strong className="text-sm">
-                  {index + 3}. {actionSummary(output)}
-                </strong>
-              </li>
-            ))}
-          </ol>
+            </BuilderStep>
+            <BuilderStep label="Bounded action" detail="These actions route work and never make or issue payout decisions.">
+              <ol className="mt-3 space-y-2">
+                {withOccurrenceKeys(display.outputs, (output) => JSON.stringify(output)).map(({ item: output, key }) => (
+                  <li key={key} className="ua-text-dense rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] px-3 py-2.5">
+                    {actionSummary(output)}
+                  </li>
+                ))}
+              </ol>
+            </BuilderStep>
+          </BuilderSequence>
         </Card>
-        <Card unstyled as="section" variant="panel" className="p-4">
-          <h2 className="text-sm font-semibold">Draft impact</h2>
-          {!draft ? (
-            <p className="mt-3 text-sm text-[var(--ua-text-secondary)]">
-              No draft. Published v{published?.version ?? "—"} is the configured
-              definition.
-            </p>
-          ) : !published ? (
-            <p className="mt-3 text-sm text-[var(--ua-text-secondary)]">
-              First version: test it before publication.
-            </p>
-          ) : changes.length ? (
-            <dl className="mt-3 space-y-3">
-              {changes.map(([label, before, after]) => (
-                <div key={label}>
-                  <dt className="text-xs font-semibold text-[var(--ua-text-tertiary)]">
-                    {label}
-                  </dt>
-                  <dd className="mt-1 text-xs">
-                    <span className="line-through text-[var(--ua-text-tertiary)]">
-                      {before}
-                    </span>
-                    <span className="mx-1 text-[var(--ua-text-tertiary)]">to</span>
-                    <strong>{after}</strong>
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          ) : (
-            <p className="mt-3 text-sm text-[var(--ua-text-secondary)]">
-              Draft and published definitions are identical.
-            </p>
-          )}
-        </Card>
-      </div>
+      </BuilderShell>
       <Card unstyled as="section" variant="panel" className="overflow-hidden p-0">
         <div className="border-b border-[var(--ua-border-subtle)] px-4 py-3">
-          <h2 className="text-sm font-semibold">
+          <h2 className="ua-text-working-title">
             Version history and rollback
           </h2>
         </div>
@@ -516,11 +464,11 @@ export function FlowVersionWorkbench({
               key={version.id}
               className="grid gap-2 px-4 py-3 sm:grid-cols-[7rem_8rem_1fr_auto] sm:items-center"
             >
-              <strong className="font-mono text-sm">
+              <strong className="ua-text-working-title font-mono">
                 Version {version.version}
               </strong>
               <StatusBadge family="workflowStatus" value={version.status === "published" && !version.active ? "paused" : version.status} size="sm" />
-              <span className="text-xs text-[var(--ua-text-secondary)]">
+              <span className="ua-text-caption-role">
                 {version.published_at
                   ? `Published ${formatDateTime(version.published_at)}`
                   : `Created ${formatDateTime(version.created_at)}`}
@@ -574,11 +522,11 @@ export function FlowVersionWorkbench({
             {display.conditions.map((condition) => (
               <label
                 key={condition.field}
-                className="text-xs font-semibold text-[var(--ua-text-secondary)]"
+                className="ua-text-label"
               >
                 <span>{FIELD_LABELS[condition.field] ?? condition.field.replaceAll("_", " ")}</span>
                 <input
-                  className="mt-1 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-3 py-2 text-sm"
+                  className="ua-text-body mt-1 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-3 py-2"
                   value={sampleValues[condition.field] ?? ""}
                   onChange={(event) =>
                     setSampleValues((currentValues) => ({
@@ -591,18 +539,18 @@ export function FlowVersionWorkbench({
             ))}
           </div>
         ) : (
-          <p className="text-sm text-[var(--ua-warning)]">
+          <p className="ua-text-body text-[var(--ua-warning)]">
             This flow has no conditions, so every event with the configured
             trigger will match.
           </p>
         )}
         {testResult ? (
           <div className="mt-4 rounded-md border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-3">
-            <p className="flex items-center gap-2 text-sm font-semibold">
+            <p className="ua-text-working-title flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-[var(--ua-success)]" />
               {testResult.matched ? "Event matched" : "Event did not match"}
             </p>
-            <p className="mt-1 text-xs text-[var(--ua-text-secondary)]">
+            <p className="ua-text-caption-role mt-1">
               {testResult.matched
                 ? `${testResult.plannedActions.length} actions planned`
                 : "No actions planned"}{" "}
@@ -635,7 +583,7 @@ export function FlowVersionWorkbench({
         }
       >
         {publishPreview ? (
-          <div className="space-y-3 text-sm">
+          <div className="ua-text-body space-y-3">
             <p>
               <strong>Trigger:</strong>{" "}
               <span className="font-mono">
@@ -652,7 +600,7 @@ export function FlowVersionWorkbench({
                 .map((action) => action.replaceAll("_", " "))
                 .join(", ")}
             </p>
-            <p className="text-xs text-[var(--ua-text-secondary)]">
+            <p className="ua-text-caption-role">
               {publishPreview.notice}
             </p>
           </div>

@@ -16,11 +16,11 @@ export function GateRecommendationPanel({ recommendation }: { recommendation: Ga
   if (!recommendation) {
     return (
       <Card unstyled as="section" variant="panel" className="p-4">
-        <h3 className="text-body font-semibold" style={{ color: 'var(--ua-text-primary)' }}>Recommendation</h3>
-        <p className="mt-1 text-sm" style={{ color: 'var(--ua-text-secondary)' }}>
+        <h3 className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>Recommendation</h3>
+        <p className="ua-text-body mt-1" style={{ color: 'var(--ua-text-secondary)' }}>
           No rule applies. Standard review remains the default recommendation source.
         </p>
-        <Link href="/rules" className="mt-2 inline-block text-xs font-semibold underline underline-offset-2" style={{ color: 'var(--ua-text-primary)' }}>
+        <Link href="/rules" className="ua-text-label mt-2 inline-block underline underline-offset-2" style={{ color: 'var(--ua-text-primary)' }}>
           Review rules
         </Link>
       </Card>
@@ -34,7 +34,7 @@ export function GateRecommendationPanel({ recommendation }: { recommendation: Ga
   return (
     <Card unstyled as="section" variant="panel" className="space-y-3 p-4">
       <div className="flex items-center justify-between gap-2">
-        <h3 className="text-body font-semibold" style={{ color: 'var(--ua-text-primary)' }}>
+        <h3 className="ua-text-working-title" style={{ color: 'var(--ua-text-primary)' }}>
           Review gate
         </h3>
         <StatusBadge family="workflowStatus" value={held ? 'hold' : 'proceed'} />

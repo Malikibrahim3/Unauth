@@ -1,8 +1,12 @@
 import { redirect } from 'next/navigation';
+import {
+  preservedRedirectTarget,
+  type RedirectSearchParams,
+} from '@/lib/navigation/preservedRedirect';
 
 interface Props {
   params: Promise<{ id: string }>;
-  searchParams?: Promise<{ claimId?: string }>;
+  searchParams?: Promise<RedirectSearchParams & { claimId?: string }>;
 }
 
 export default async function CustomerClaimReviewPage({ params, searchParams }: Props) {
@@ -11,7 +15,11 @@ export default async function CustomerClaimReviewPage({ params, searchParams }: 
   const claimId = sp.claimId ?? null;
 
   if (claimId) {
-    redirect(`/claims/${claimId}`);
+    redirect(
+      preservedRedirectTarget(`/claims/${claimId}`, sp, {
+        consume: ['claimId'],
+      }),
+    );
   }
-  redirect(`/customers/${id}#cases`);
+  redirect(preservedRedirectTarget(`/customers/${id}`, sp, { hash: 'cases' }));
 }

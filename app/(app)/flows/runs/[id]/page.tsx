@@ -1,14 +1,45 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getRequestUser } from "@/lib/auth/requestContext";
 import { PERMISSIONS, requirePermission } from "@/lib/permissions";
 import { TABLES } from "@/lib/supabase/tables";
 import { formatDateTime } from "@/lib/utils/format";
-import { AuthenticatedPageHeader } from "@/components/authenticated/AuthenticatedPageHeader";
-import { AuthenticatedPanel } from "@/components/authenticated/AuthenticatedPanel";
-import pageStyles from "@/components/authenticated/AuthenticatedPageChrome.module.css";
+import { Disclosure, PageFrame, Surface } from "@/components/ui";
+import { StatusBadge } from "@/components/ui/StatusBadge";
 import { hashId } from "@/lib/ui/displayRef";
-import { label } from "@/lib/ui/labels";
+
+type WorkflowRun = {
+  id: string;
+  domain_event_id: string;
+  status: string;
+  error: string | null;
+  started_at: string;
+  completed_at: string | null;
+};
+
+type WorkflowStepRun = {
+  id: string;
+  step_index: number;
+  output_type: string;
+  status: string;
+  result: unknown;
+  error: string | null;
+  completed_at: string | null;
+};
+
+function readableAction(value: string) {
+  return value.replaceAll("_", " ");
+}
+
+function payloadText(payload: unknown) {
+  try {
+    return JSON.stringify(payload ?? {}, null, 2);
+  } catch {
+    return "Payload could not be displayed.";
+  }
+}
+
 export default async function Run({
   params,
 }: {
@@ -27,61 +58,104 @@ export default async function Run({
   const run = (
     await svc
       .from(TABLES.WORKFLOW_RUNS)
-      .select("*")
+      .select("id,domain_event_id,status,error,started_at,completed_at")
       .eq("merchant_id", ctx.merchantId)
       .eq("id", id)
       .maybeSingle()
-  ).data as any;
+  ).data as WorkflowRun | null;
   if (!run) notFound();
-  const steps =
-    (
-      await svc
-        .from(TABLES.WORKFLOW_STEP_RUNS)
-        .select("*")
-        .eq("merchant_id", ctx.merchantId)
-        .eq("workflow_run_id", id)
-        .order("step_index")
-    ).data ?? [];
+  const steps = ((
+    await svc
+      .from(TABLES.WORKFLOW_STEP_RUNS)
+      .select("id,step_index,output_type,status,result,error,completed_at")
+      .eq("merchant_id", ctx.merchantId)
+      .eq("workflow_run_id", id)
+      .order("step_index")
+  ).data ?? []) as WorkflowStepRun[];
+
   return (
-    <div>
-      <AuthenticatedPageHeader
-        title="Flow run"
-        subtitle={`Started ${formatDateTime(run.started_at)}`}
-        breadcrumbs={[{ label: "Flows", href: "/flows" }, { label: "Run history", href: "/flows/runs" }, { label: `Run ${hashId(id)}` }]}
-      />
-      <div className={pageStyles.pageBody}>
-        <div className="grid gap-3">
-          <AuthenticatedPanel title="Run summary">
-            <dl className="grid sm:grid-cols-3">
-              {[
-                ["Status", label("workflowStatus", String(run.status ?? "unknown"))],
-                ["Event", run.domain_event_id ? `Event ${hashId(run.domain_event_id)}` : "Unavailable"],
-                ["Started", formatDateTime(run.started_at)],
-              ].map(([label, value], index) => (
-                <div key={label} className={`min-w-0 p-4 ${index ? "border-t border-[var(--ua-border-subtle)] sm:border-l sm:border-t-0" : ""}`}>
-                  <dt className="text-[length:var(--ua-text-metadata-size)] font-medium text-[var(--ua-text-tertiary)]">{label}</dt>
-                  <dd className="mt-1 break-all text-xs font-semibold">{value}</dd>
-                </div>
-              ))}
-            </dl>
-          </AuthenticatedPanel>
-          {run.error ? <p role="alert" className="rounded-[var(--ua-radius-surface)] border border-[var(--ua-critical)] bg-[var(--ua-critical-bg)] p-3 text-xs">{run.error}</p> : null}
-          <AuthenticatedPanel title="Execution steps" description={`${steps.length} recorded ${steps.length === 1 ? "step" : "steps"}.`}>
+    <PageFrame
+      title={`Run ${hashId(run.id)}`}
+      subtitle={`Started ${formatDateTime(run.started_at)}`}
+      breadcrumbs={[
+        { label: "Flows", href: "/flows" },
+        { label: "Run history", href: "/flows/runs" },
+        { label: `Run ${hashId(run.id)}` },
+      ]}
+      actions={
+        <Link
+          href="/flows/runs"
+          className="ua-text-label inline-flex h-7 items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2.5 text-[var(--ua-text-primary)] hover:bg-[var(--ua-surface-hover)] focus-visible:outline-none focus-visible:shadow-[inset_var(--ua-shadow-focus)]"
+        >
+          Run history
+        </Link>
+      }
+    >
+      <div className="space-y-4">
+        <Surface structure="working" as="section" aria-labelledby="run-summary-title">
+          <div className="border-b border-[var(--ua-border-subtle)] px-4 py-3">
+            <h2 id="run-summary-title" className="ua-text-working-title">Run summary</h2>
+          </div>
+          <dl className="grid sm:grid-cols-4">
+            <div className="min-w-0 p-4">
+              <dt className="text-[length:var(--ua-text-metadata-size)] font-medium text-[var(--ua-text-tertiary)]">Outcome</dt>
+              <dd className="mt-2"><StatusBadge family="workflowStatus" value={run.error ? "failed" : run.status} size="sm" /></dd>
+            </div>
+            <div className="min-w-0 border-t border-[var(--ua-border-subtle)] p-4 sm:border-l sm:border-t-0">
+              <dt className="text-[length:var(--ua-text-metadata-size)] font-medium text-[var(--ua-text-tertiary)]">Trigger event</dt>
+              <dd className="mt-1 font-mono ua-text-metadata">Event {hashId(run.domain_event_id)}</dd>
+            </div>
+            <div className="min-w-0 border-t border-[var(--ua-border-subtle)] p-4 sm:border-l sm:border-t-0">
+              <dt className="text-[length:var(--ua-text-metadata-size)] font-medium text-[var(--ua-text-tertiary)]">Started</dt>
+              <dd className="mt-1 ua-text-metadata">{formatDateTime(run.started_at)}</dd>
+            </div>
+            <div className="min-w-0 border-t border-[var(--ua-border-subtle)] p-4 sm:border-l sm:border-t-0">
+              <dt className="text-[length:var(--ua-text-metadata-size)] font-medium text-[var(--ua-text-tertiary)]">Completed</dt>
+              <dd className="mt-1 ua-text-metadata">{run.completed_at ? formatDateTime(run.completed_at) : "In progress"}</dd>
+            </div>
+          </dl>
+        </Surface>
+
+        {run.error ? (
+          <div role="alert" className="border border-[var(--ua-risk-critical-border)] bg-[var(--ua-risk-critical-bg)] px-4 py-3 ua-text-body text-[var(--ua-risk-critical)]">
+            <strong>Run failed:</strong> {run.error}
+          </div>
+        ) : null}
+
+        <Surface structure="working" as="section" aria-labelledby="execution-steps-title">
+          <div className="border-b border-[var(--ua-border-subtle)] px-4 py-3">
+            <h2 id="execution-steps-title" className="ua-text-working-title">Execution steps</h2>
+            <p className="mt-1 ua-text-caption-role">{steps.length} recorded {steps.length === 1 ? "step" : "steps"} in execution order.</p>
+          </div>
+          {steps.length ? (
             <ol className="divide-y divide-[var(--ua-border-subtle)]">
-              {steps.map((s: any) => (
-                <li key={s.id} className="p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <strong className="text-xs">Step {s.step_index + 1}: {label("workflowStatus", String(s.output_type ?? "action"))}</strong>
-                    <span className="text-[length:var(--ua-text-metadata-size)] font-semibold text-[var(--ua-text-tertiary)]">{label("workflowStatus", String(s.status ?? "unknown"))}</span>
+              {steps.map((step) => (
+                <li key={step.id} className="px-4 py-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="ua-text-working-title">{step.step_index + 1}. {readableAction(step.output_type)}</p>
+                      <p className="mt-1 ua-text-caption-role">
+                        {step.completed_at ? `Recorded ${formatDateTime(step.completed_at)}` : "Awaiting completion"}
+                      </p>
+                    </div>
+                    <StatusBadge family="workflowStatus" value={step.error ? "failed" : step.status} size="sm" />
                   </div>
-                  {s.error ? <p role="alert" className="mt-2 text-xs text-[var(--ua-critical)]">{s.error}</p> : null}
-                  <pre className="mt-3 max-h-64 overflow-auto rounded-[var(--ua-radius-control)] border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-3 text-[length:var(--ua-text-metadata-size)] leading-4">{JSON.stringify(s.result, null, 2)}</pre>
+                  {step.error ? <p role="alert" className="mt-3 ua-text-body text-[var(--ua-risk-critical)]">{step.error}</p> : null}
+                  <Disclosure
+                    className="mt-3"
+                    summaryClassName="ua-text-label focus-visible:outline-none focus-visible:shadow-[inset_var(--ua-shadow-focus)]"
+                    summary="Raw step result"
+                  >
+                    <pre className="mt-2 max-h-64 overflow-auto rounded-[var(--ua-radius-control)] border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-3 text-xs leading-5 text-[var(--ua-text-secondary)]">{payloadText(step.result)}</pre>
+                  </Disclosure>
                 </li>
               ))}
             </ol>
-          </AuthenticatedPanel>
-        </div>
+          ) : (
+            <p className="px-4 py-10 text-center ua-text-body text-[var(--ua-text-secondary)]">This run did not record any action steps.</p>
+          )}
+        </Surface>
       </div>
-    </div>
+    </PageFrame>
   );
 }
