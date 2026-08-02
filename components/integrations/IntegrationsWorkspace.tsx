@@ -178,7 +178,11 @@ function ConnectionSummary({
       <div className={styles.summaryCopy}>
         <span><strong>{formatNumber(connectedCount)}</strong> connected</span>
         <span><strong>{coveredLayers} of {SEQUENCED_GROUPS.length}</strong> evidence layers covered</span>
-        {attentionCount > 0 ? <span><strong>{formatNumber(attentionCount)}</strong> need attention</span> : <span>No active issues</span>}
+        {/* When something needs attention, the banner directly below states
+         * the same count with its own action link (T11) — restating it here
+         * too made "4 need attention" the same fact in two adjacent regions.
+         * The positive state has no banner, so it still says so here. */}
+        {attentionCount === 0 ? <span>No active issues</span> : null}
         <span><strong>{formatNumber(importedRecords)}</strong> records indexed</span>
       </div>
       <span className={styles.summaryMeta}>Last successful sync is shown for each account</span>
