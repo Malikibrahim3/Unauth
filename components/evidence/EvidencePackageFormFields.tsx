@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Spinner } from "@/components/ui/Spinner";
+import { Select, Textarea } from "@/components/ui";
 import type {
   OrderOption,
   PackageIncludeItem,
@@ -150,17 +151,11 @@ export function EvidencePackageFormFields({
         >
           Disputed order *
         </label>
-        <select
+        <Select
           id="order-select"
           data-testid="disputed-order-select"
           value={selectedOrderId}
           onChange={(e) => onOrderChange(e.target.value)}
-          className="ua-text-body w-full rounded-md px-3 py-2"
-          style={{
-            background: "var(--ua-surface-secondary)",
-            border: "1px solid var(--ua-border-default)",
-            color: "var(--ua-text-primary)",
-          }}
           required
         >
           <option value="">Select an order to defend…</option>
@@ -171,7 +166,7 @@ export function EvidencePackageFormFields({
               {o.refund_claimed ? " ★ refund claimed" : ""}
             </option>
           ))}
-        </select>
+        </Select>
         {!selectedOrderId ? (
           <p
             className="text-caption mt-1.5"
@@ -264,18 +259,13 @@ export function EvidencePackageFormFields({
             (optional · appears in the package · max 500 characters)
           </span>
         </label>
-        <textarea
+        <Textarea
           id="notes"
           value={notes}
           onChange={(e) => onNotesChange(e.target.value.slice(0, 500))}
           rows={3}
           placeholder="Any additional context to include in the evidence package…"
-          className="ua-text-body w-full resize-none rounded-md px-3 py-2"
-          style={{
-            background: "var(--ua-surface-secondary)",
-            border: "1px solid var(--ua-border-default)",
-            color: "var(--ua-text-primary)",
-          }}
+          className="resize-none"
         />
         <p
           className="text-caption mt-1 text-right"

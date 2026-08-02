@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { Inbox } from "lucide-react";
 import { StatusBadge, PriorityChip } from "@/components/ui/StatusBadge";
-import { DataTable, EmptyState, Input, Modal, Pagination } from "@/components/ui";
+import { Checkbox, DataTable, EmptyState, Input, Modal, Pagination } from "@/components/ui";
 import { SourceMark } from "@/components/identity/ProviderLogo";
 import { RowActionsMenu, type RowAction } from "@/components/ui/RowActionsMenu";
 import { formatDateAbsolute, formatNumber } from "@/lib/utils/format";
@@ -607,9 +607,7 @@ export function WorkQueue({
                   key: "select",
                   width: "36px",
                   header: (
-                    <input
-                      type="checkbox"
-                      className="ua-checkbox"
+                    <Checkbox
                       aria-label="Select all tasks on this page"
                       checked={
                         selectableIds.length > 0 &&
@@ -631,9 +629,7 @@ export function WorkQueue({
                     />
                   ),
                   render: (item) => item.kind === "task" ? (
-                    <input
-                      type="checkbox"
-                      className="ua-checkbox"
+                    <Checkbox
                       aria-label={`Select ${item.title}`}
                       checked={selected.has(item.id)}
                       onChange={() => toggle(item.id)}
@@ -744,9 +740,8 @@ export function WorkQueue({
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-start gap-3">
                       {item.kind === "task" ? (
-                        <input
-                          type="checkbox"
-                          className="ua-checkbox mt-1"
+                        <Checkbox
+                          className="mt-1"
                           aria-label={`Select ${item.title}`}
                           checked={selected.has(item.id)}
                           onChange={() => toggle(item.id)}
@@ -832,7 +827,7 @@ export function WorkQueue({
           <Input value={saveName} onChange={(event) => setSaveName(event.target.value)} className="mt-1" maxLength={80} placeholder="e.g. Partner deadlines" autoFocus />
         </label>
         <label className="ua-text-body mt-4 flex items-start gap-2 text-[var(--ua-text-secondary)]">
-          <input type="checkbox" checked={shareView} onChange={(event) => setShareView(event.target.checked)} className="mt-0.5" />
+          <Checkbox checked={shareView} onChange={(event) => setShareView(event.target.checked)} className="mt-0.5" />
           Share with the workspace (admin permission required)
         </label>
       </Modal>

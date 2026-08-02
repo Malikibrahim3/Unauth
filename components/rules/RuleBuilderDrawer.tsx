@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { AlertTriangle, Plus } from 'lucide-react';
-import { Button, Drawer, Input, Card } from '@/components/ui';
+import { Button, Drawer, Input, Card, Textarea } from '@/components/ui';
 import type { ConditionOperator, MerchantRule, RuleAction, RuleCondition } from '@/lib/rules-engine';
 import { RULE_FIELDS } from '@/lib/rules/fields';
 import { ACTION_LABELS, summarizeConditions } from '@/lib/rules/summary';
@@ -139,18 +139,12 @@ export function RuleBuilderDrawer({
 
         {/* Description */}
         <Field label="Description" hint="Optional — explains when this claim review rule should hold a case.">
-          <textarea
+          <Textarea
             value={description}
             placeholder="e.g. Item-not-received over £75 with no proof of delivery should go to manual review before a reship."
             onChange={(e) => setDescription(e.target.value)}
             rows={2}
-            className="ua-text-body w-full resize-none px-3 py-2 focus:outline-none"
-            style={{
-              background: 'var(--ua-surface-muted)',
-              border: '1px solid var(--ua-border-default)',
-              borderRadius: 'var(--ua-radius-control)',
-              color: 'var(--ua-text-primary)',
-            }}
+            className="resize-none"
           />
         </Field>
 

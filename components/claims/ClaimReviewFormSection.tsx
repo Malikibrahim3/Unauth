@@ -1,6 +1,6 @@
 'use client';
 
-import { Card } from '@/components/ui';
+import { Card, Select, Textarea } from '@/components/ui';
 import { CLAIM_TYPE_LABELS } from '@/components/claims/claimReviewLabels';
 import { formatOrderOption } from '@/components/claims/claimReviewLogic';
 import { inputStyle } from '@/components/claims/claimReviewStyles';
@@ -46,19 +46,19 @@ export function ClaimReviewFormSection({ wb }: { wb: ClaimReviewWorkbench }) {
                 {shops.length <= 1 ? (
                   <input id="connected-shop" aria-label="Connected shop" className="ua-text-body w-full px-2 py-1.5 rounded-md" style={inputStyle()} value={shopDomain} readOnly />
                 ) : (
-                  <select id="connected-shop" aria-label="Connected shop" className="ua-text-body w-full px-2 py-1.5 rounded-md" style={inputStyle()} value={shopDomain} onChange={(e) => patch({ shopDomain: e.target.value })}>
+                  <Select id="connected-shop" aria-label="Connected shop" style={inputStyle()} value={shopDomain} onChange={(e) => patch({ shopDomain: e.target.value })}>
                     {shops.map((s) => <option key={s} value={s}>{s}</option>)}
-                  </select>
+                  </Select>
                 )}
               </div>
             )}
             <div className={shops.length > 0 ? '' : 'sm:col-span-2'}>
               <FieldLabel htmlFor="claim-order">Order</FieldLabel>
               {orderOptions.length > 0 ? (
-                <select id="claim-order" aria-label="Order" className="ua-text-body w-full px-2 py-1.5 rounded-md" style={inputStyle()} value={state.selectedOrderId} onChange={(e) => patch({ selectedOrderId: e.target.value })}>
+                <Select id="claim-order" aria-label="Order" style={inputStyle()} value={state.selectedOrderId} onChange={(e) => patch({ selectedOrderId: e.target.value })}>
                   {orderOptions.length > 1 && <option value="">Select a source order...</option>}
                   {orderOptions.map((o) => <option key={o.id} value={o.id}>{formatOrderOption(o)}</option>)}
-                </select>
+                </Select>
               ) : (
                 <Card unstyled id="claim-order" variant="muted" className="ua-text-caption-role px-2 py-1.5" style={{ color: 'var(--ua-text-secondary)' }}>
                   No connected order record is available for this context.
@@ -67,9 +67,9 @@ export function ClaimReviewFormSection({ wb }: { wb: ClaimReviewWorkbench }) {
             </div>
             <div>
               <FieldLabel htmlFor="claim-type">Case type</FieldLabel>
-              <select id="claim-type" aria-label="Case type" className="ua-text-body w-full px-2 py-1.5 rounded-md" style={inputStyle()} value={state.claimType} onChange={(e) => patch({ claimType: e.target.value as ClaimType })} disabled>
+              <Select id="claim-type" aria-label="Case type" style={inputStyle()} value={state.claimType} onChange={(e) => patch({ claimType: e.target.value as ClaimType })} disabled>
                 {(Object.entries(CLAIM_TYPE_LABELS) as [ClaimType, string][]).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-              </select>
+              </Select>
             </div>
             <div>
               <FieldLabel htmlFor="order-value">Order value</FieldLabel>
@@ -77,11 +77,11 @@ export function ClaimReviewFormSection({ wb }: { wb: ClaimReviewWorkbench }) {
             </div>
             <div className="sm:col-span-2">
               <FieldLabel htmlFor="customer-reason">Customer reason</FieldLabel>
-              <textarea id="customer-reason" aria-label="Customer reason" className="ua-text-body w-full px-2 py-1.5 rounded-md resize-none" style={inputStyle()} rows={2} value={state.customerReason} readOnly />
+              <Textarea id="customer-reason" aria-label="Customer reason" className="resize-none" style={inputStyle()} rows={2} value={state.customerReason} readOnly />
             </div>
             <div className="sm:col-span-2">
               <FieldLabel htmlFor="internal-notes">Source notes</FieldLabel>
-              <textarea id="internal-notes" aria-label="Source notes" className="ua-text-body w-full px-2 py-1.5 rounded-md resize-none" style={inputStyle()} rows={2} value={state.notes} readOnly />
+              <Textarea id="internal-notes" aria-label="Source notes" className="resize-none" style={inputStyle()} rows={2} value={state.notes} readOnly />
             </div>
           </div>
         </div>

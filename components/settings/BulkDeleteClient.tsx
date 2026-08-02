@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Checkbox, Select } from "@/components/ui";
 
 const OPTIONS = [
   { value: "customer_notes", label: "Customer notes" },
@@ -55,24 +56,21 @@ export default function BulkDeleteClient() {
         >
           Removal scope
         </label>
-        <select
+        <Select
           id="privacy-removal-scope"
           value={entity}
           onChange={(e) => setEntity(e.target.value)}
-          className="rounded px-2 py-1 border"
-          style={{ background: "var(--ua-surface-primary)" }}
         >
           {OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>
               {o.label}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
 
       <label className="inline-flex items-center gap-2">
-        <input
-          type="checkbox"
+        <Checkbox
           checked={confirmChecked}
           onChange={(e) => setConfirmChecked(e.target.checked)}
         />

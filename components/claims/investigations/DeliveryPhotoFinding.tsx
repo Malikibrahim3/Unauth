@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Button, Modal, Select } from '@/components/ui';
+import { Button, Modal, Select, Textarea } from '@/components/ui';
 import {
   mutateInvestigation,
   newInvestigationIdempotencyKey,
@@ -143,8 +143,8 @@ export function DeliveryPhotoFinding({
             </label>
             <label className="ua-text-body block font-medium">
               Rationale
-              <textarea
-                className="ua-text-body mt-1 min-h-28 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] p-2"
+              <Textarea
+                className="mt-1 min-h-28"
                 maxLength={2000}
                 value={draftRationale}
                 onChange={(event) => setDraftRationale(event.target.value)}

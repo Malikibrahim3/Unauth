@@ -8,7 +8,7 @@ import {
   auditActionLabel,
   auditResourceSummary,
 } from "@/lib/audit/actionLabels";
-import { DataTable, RegistrySurface } from "@/components/ui";
+import { DataTable, RegistrySurface, Select } from "@/components/ui";
 import { useFetchJson } from "@/lib/react/useFetchJson";
 import { formatDateTime } from "@/lib/utils/format";
 import { hashId } from "@/lib/ui/displayRef";
@@ -151,7 +151,7 @@ export default function AuditTrailClient({
   return (
     <RegistrySurface
       aria-label="Activity log"
-      toolbar={<><div><h2 className="ua-text-working-title" style={{ color: "var(--ua-text-primary)" }}>Activity log</h2><p className="ua-text-caption-role mt-1" style={{ color: "var(--ua-text-secondary)" }}>Filterable record of case activity and sensitive account actions.</p></div><div className="flex flex-wrap items-center gap-2"><Filter className="h-4 w-4" style={{ color: "var(--ua-text-tertiary)" }} aria-hidden="true" /><label className="sr-only" htmlFor="audit-resource-filter">Filter by resource</label><select id="audit-resource-filter" value={resourceType} onChange={(event) => setResourceType(event.target.value)} className="ua-text-label rounded-md px-3 py-1.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1" style={{ background: "var(--ua-surface-muted)", border: "1px solid var(--ua-border-default)", color: "var(--ua-text-primary)", outlineColor: "var(--ua-action-primary)" }}>{RESOURCE_FILTERS.map((option) => <option key={option.value || "all"} value={option.value}>{option.label}</option>)}</select></div></>}
+      toolbar={<><div><h2 className="ua-text-working-title" style={{ color: "var(--ua-text-primary)" }}>Activity log</h2><p className="ua-text-caption-role mt-1" style={{ color: "var(--ua-text-secondary)" }}>Filterable record of case activity and sensitive account actions.</p></div><div className="flex flex-wrap items-center gap-2"><Filter className="h-4 w-4" style={{ color: "var(--ua-text-tertiary)" }} aria-hidden="true" /><label className="sr-only" htmlFor="audit-resource-filter">Filter by resource</label><Select id="audit-resource-filter" value={resourceType} onChange={(event) => setResourceType(event.target.value)} className="w-auto">{RESOURCE_FILTERS.map((option) => <option key={option.value || "all"} value={option.value}>{option.label}</option>)}</Select></div></>}
       resultCount={loading ? 'Loading activity…' : error ? 'Activity unavailable' : `${rows.length} recent events`}
       pagination={
         <div className="flex flex-wrap items-center justify-between gap-3">

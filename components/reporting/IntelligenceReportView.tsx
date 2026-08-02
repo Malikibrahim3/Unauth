@@ -17,6 +17,7 @@ import { TIME_RANGE_LABELS } from "@/lib/ui/merchantCopy";
 import { DashboardCharts } from "@/components/reporting/DashboardCharts";
 import { RankedContributionChart } from "@/components/charts/authenticated/RankedContributionChart";
 import { FinancialEquation } from "@/components/ui/FinancialEquation";
+import { Disclosure } from "@/components/ui";
 import { activeWorkflowOperations } from "@/components/dashboard/dashboardModel";
 
 function money(minor: number, currency: string) {
@@ -192,16 +193,18 @@ export function IntelligenceReportView({
           </p>
           <div className="mt-2">
             {report.bridges.map((bridge) => (
-              <details key={bridge.currency} className="border-b border-[var(--ua-border-subtle)] py-2">
-                <summary className="cursor-pointer py-2 text-[length:var(--ua-text-dense-size)] font-medium text-[var(--ua-text-secondary)]">
-                  All {STEPS.length} financial stages for {bridge.currency}
-                </summary>
+              <Disclosure
+                key={bridge.currency}
+                className="border-b border-[var(--ua-border-subtle)] py-2"
+                summaryClassName="py-2 text-[length:var(--ua-text-dense-size)] font-medium text-[var(--ua-text-secondary)]"
+                summary={`All ${STEPS.length} financial stages for ${bridge.currency}`}
+              >
                 <dl className="mt-1 grid overflow-hidden sm:grid-cols-2 lg:grid-cols-4">
                   {SUPPORTING_STEPS.map((step, index) => (
                     <StageCell key={step.key} step={step} bridge={bridge} report={report} index={index} dense />
                   ))}
                 </dl>
-              </details>
+              </Disclosure>
             ))}
           </div>
         </section>
@@ -264,10 +267,12 @@ export function IntelligenceReportView({
           <h2 className="ua-text-section-title">Report definitions</h2>
           <div className="mt-3 divide-y divide-[var(--ua-border-subtle)] border-y border-[var(--ua-border-subtle)]">
             {REPORT_DEFINITIONS.map((d) => (
-              <details key={d.id} className="py-3">
-                <summary className="cursor-pointer font-medium">
-                  {d.name}
-                </summary>
+              <Disclosure
+                key={d.id}
+                className="py-3"
+                summaryClassName="font-medium"
+                summary={d.name}
+              >
                 <dl className="ua-text-dense mt-3 grid gap-2 sm:grid-cols-2">
                   <div>
                     <dt className="text-[var(--ua-text-secondary)]">Definition</dt>
@@ -288,7 +293,7 @@ export function IntelligenceReportView({
                     <dd>{d.timeBasis}</dd>
                   </div>
                 </dl>
-              </details>
+              </Disclosure>
             ))}
           </div>
         </section>

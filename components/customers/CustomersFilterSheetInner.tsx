@@ -4,7 +4,7 @@ import { useRouter, type ReadonlyURLSearchParams } from 'next/navigation';
 import { useCallback, useTransition, useRef } from 'react';
 import { X } from 'lucide-react';
 import { labelFor } from '@/lib/copy/labels';
-import { Button } from '@/components/ui';
+import { Button, Select } from '@/components/ui';
 
 function buildCustomersHref(
   searchParams: URLSearchParams,
@@ -82,17 +82,15 @@ export function CustomersFilterSheetInner({
         onBlur={(e) => { e.target.style.borderColor = 'var(--ua-border-default)'; e.target.style.outline = 'none'; }}
       />
 
-      <select
+      <Select
         aria-label="Sort customers"
         value={sortValue}
         onChange={(e) => updateParam('sort', e.target.value)}
-        className="h-9 rounded-md px-3 text-[length:var(--ua-text-dense-size)] focus:outline-none"
-        style={{ background: 'var(--ua-surface-primary)', border: '1px solid var(--ua-border-default)', color: 'var(--ua-text-primary)' }}
       >
         {SORT_OPTIONS.map(({ value, label }) => (
           <option key={value} value={value}>{label}</option>
         ))}
-      </select>
+      </Select>
 
       {hasAnyFilter && (
         <Button onClick={handleClearAll} variant="secondary" size="md" className="gap-1">

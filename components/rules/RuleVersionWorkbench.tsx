@@ -22,6 +22,7 @@ import {
   BuilderValidationSummary,
 } from "@/components/ui/BuilderShell";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { Select } from "@/components/ui";
 import {
   RuleBuilderDrawer,
   type RuleDraftPayload,
@@ -624,7 +625,7 @@ export function RuleVersionWorkbench({
                 return (
                   <label key={condition.field} className="ua-text-label">
                     {label}
-                    <select
+                    <Select
                       value={value}
                       onChange={(event) =>
                         setSignals((current) => ({
@@ -632,19 +633,19 @@ export function RuleVersionWorkbench({
                           [condition.field]: event.target.value,
                         }))
                       }
-                      className="ua-text-body mt-1 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-3 py-2"
+                      className="mt-1"
                     >
                       <option value="true">Yes</option>
                       <option value="false">No</option>
                       <option value={UNAVAILABLE}>Unavailable</option>
-                    </select>
+                    </Select>
                   </label>
                 );
               if (def?.type === "enum")
                 return (
                   <label key={condition.field} className="ua-text-label">
                     {label}
-                    <select
+                    <Select
                       value={value}
                       onChange={(event) =>
                         setSignals((current) => ({
@@ -652,7 +653,7 @@ export function RuleVersionWorkbench({
                           [condition.field]: event.target.value,
                         }))
                       }
-                      className="ua-text-body mt-1 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-3 py-2"
+                      className="mt-1"
                     >
                       {def.options?.map((option) => (
                         <option key={option.value} value={option.value}>
@@ -660,7 +661,7 @@ export function RuleVersionWorkbench({
                         </option>
                       ))}
                       <option value={UNAVAILABLE}>Unavailable</option>
-                    </select>
+                    </Select>
                   </label>
                 );
               return (

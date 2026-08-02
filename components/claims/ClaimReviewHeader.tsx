@@ -8,6 +8,7 @@ import {
 } from '@/components/claims/claimReviewLabels';
 import { formatClaimMoney } from '@/components/claims/claimReviewStyles';
 import { StatusPill } from '@/components/claims/claimReviewPrimitives';
+import { Select } from '@/components/ui';
 import type { ClaimReviewWorkbench } from '@/components/claims/claimReviewWorkbench';
 import { caseDisplay } from '@/lib/ui/displayRef';
 import { label } from '@/lib/ui/labels';
@@ -80,9 +81,9 @@ export function ClaimReviewHeader({
       {history.length > 1 ? (
         <label className="ua-text-label block max-w-sm text-[var(--ua-text-secondary)]">
           Switch case
-          <select
+          <Select
             aria-label="Switch case"
-            className="ua-text-body mt-1 h-9 w-full rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2 text-[var(--ua-text-primary)]"
+            className="mt-1"
             value={claimId}
             onChange={(event) => wb.setClaimId(event.target.value)}
           >
@@ -95,7 +96,7 @@ export function ClaimReviewHeader({
                 })} · {STATUS_LABELS[item.status] ?? item.status}
               </option>
             ))}
-          </select>
+          </Select>
         </label>
       ) : null}
       {children}

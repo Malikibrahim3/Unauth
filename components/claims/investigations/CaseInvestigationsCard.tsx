@@ -13,7 +13,7 @@ import {
   Send,
 } from 'lucide-react';
 import { useRef, useState } from 'react';
-import { Bone, Button, Card, Input, Modal, Select, StatusBadge } from '@/components/ui';
+import { Bone, Button, Card, Input, Modal, Select, StatusBadge, Textarea } from '@/components/ui';
 import {
   InvestigationRequestDialog,
   type InvestigationPartnerOption,
@@ -298,8 +298,8 @@ function InvestigationActionDialog({
                 : kind === 'close'
                   ? 'Closure rationale'
                   : 'Send note (optional)'}
-            <textarea
-              className="ua-text-body mt-1 min-h-24 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] p-2"
+            <Textarea
+              className="mt-1 min-h-24"
               value={note}
               onChange={(event) => setNote(event.target.value)}
               required={noteRequired}

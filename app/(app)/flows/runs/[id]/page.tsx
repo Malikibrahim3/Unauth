@@ -5,7 +5,7 @@ import { getRequestUser } from "@/lib/auth/requestContext";
 import { PERMISSIONS, requirePermission } from "@/lib/permissions";
 import { TABLES } from "@/lib/supabase/tables";
 import { formatDateTime } from "@/lib/utils/format";
-import { PageFrame, Surface } from "@/components/ui";
+import { Disclosure, PageFrame, Surface } from "@/components/ui";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { hashId } from "@/lib/ui/displayRef";
 
@@ -141,10 +141,13 @@ export default async function Run({
                     <StatusBadge family="workflowStatus" value={step.error ? "failed" : step.status} size="sm" />
                   </div>
                   {step.error ? <p role="alert" className="mt-3 ua-text-body text-[var(--ua-risk-critical)]">{step.error}</p> : null}
-                  <details className="mt-3">
-                    <summary className="cursor-pointer ua-text-label focus-visible:outline-none focus-visible:shadow-[inset_var(--ua-shadow-focus)]">Raw step result</summary>
+                  <Disclosure
+                    className="mt-3"
+                    summaryClassName="ua-text-label focus-visible:outline-none focus-visible:shadow-[inset_var(--ua-shadow-focus)]"
+                    summary="Raw step result"
+                  >
                     <pre className="mt-2 max-h-64 overflow-auto rounded-[var(--ua-radius-control)] border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] p-3 text-xs leading-5 text-[var(--ua-text-secondary)]">{payloadText(step.result)}</pre>
-                  </details>
+                  </Disclosure>
                 </li>
               ))}
             </ol>

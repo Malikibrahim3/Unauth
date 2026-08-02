@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Select } from '@/components/ui';
 
 export type WorkspaceOption = { id: string; name: string; role: string };
 
@@ -12,11 +13,12 @@ export function WorkspaceSwitcher({ workspaces, activeMerchantId }: { workspaces
   return (
     <label className="hidden min-w-0 items-center gap-2 sm:flex">
       <span className="sr-only">Active workspace</span>
-      <select
+      <Select
         value={activeMerchantId ?? ''}
         disabled={pending}
         aria-label="Active workspace"
-        className="h-9 w-full max-w-full rounded-[var(--ua-radius-control)] border border-transparent bg-[var(--ua-surface-hover)] px-2.5 text-[length:var(--ua-text-dense-size)] font-medium text-[var(--ua-text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ua-border-focus)]"
+        className="ua-text-dense w-full max-w-full font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ua-border-focus)]"
+        style={{ border: '1px solid transparent', background: 'var(--ua-surface-hover)' }}
         onChange={async (event) => {
           setPending(true);
           const response = await fetch('/api/workspace', {
@@ -34,7 +36,7 @@ export function WorkspaceSwitcher({ workspaces, activeMerchantId }: { workspaces
         {workspaces.map((workspace) => (
           <option key={workspace.id} value={workspace.id}>{workspace.name} · {workspace.role}</option>
         ))}
-      </select>
+      </Select>
     </label>
   );
 }

@@ -16,6 +16,7 @@ export type { TabItem } from './Tabs';
 export { MetadataChip } from './MetadataChip';
 export { Input } from './Input';
 export { Select } from './Select';
+export { Disclosure } from './Disclosure';
 export {
   FormField,
   Textarea,

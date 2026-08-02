@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useRef, useState } from 'react';
-import { Button, Input, Modal, Select } from '@/components/ui';
+import { Button, Input, Modal, Select, Textarea } from '@/components/ui';
 import {
   mutateInvestigation,
   newInvestigationIdempotencyKey,
@@ -277,8 +277,8 @@ export function InvestigationRequestDialog({
         </div>
         <label className="ua-text-body block font-medium">
           Material evidence gap
-          <textarea
-            className="ua-text-body mt-1 min-h-20 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] p-2"
+          <Textarea
+            className="mt-1 min-h-20"
             value={evidenceGap}
             onChange={(event) => setEvidenceGap(event.target.value)}
             required
@@ -327,8 +327,8 @@ export function InvestigationRequestDialog({
         </div>
         <label className="ua-text-body block font-medium">
           Request body
-          <textarea
-            className="mt-1 min-h-56 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] p-2 font-mono text-xs leading-relaxed"
+          <Textarea
+            className="mt-1 min-h-56 font-mono text-xs leading-relaxed"
             value={body}
             onChange={(event) => setBody(event.target.value)}
             required
@@ -337,8 +337,8 @@ export function InvestigationRequestDialog({
         {overridesRecommendation ? (
           <label className="ua-text-body block font-medium">
             Override rationale
-            <textarea
-              className="ua-text-body mt-1 min-h-20 w-full rounded-md border border-[var(--ua-warning-border)] bg-[var(--ua-warning-bg)] p-2"
+            <Textarea
+              className="mt-1 min-h-20 border-[var(--ua-warning-border)] bg-[var(--ua-warning-bg)]"
               value={overrideRationale}
               onChange={(event) => setOverrideRationale(event.target.value)}
               placeholder="Explain why this target or question is more appropriate."

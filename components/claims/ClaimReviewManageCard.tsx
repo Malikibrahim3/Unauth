@@ -10,6 +10,7 @@ import type { ClaimReviewWorkbench } from '@/components/claims/claimReviewWorkbe
 import { Modal } from '@/components/ui/Modal';
 import { ActionDock } from '@/components/authenticated/ActionDock';
 import { Button } from '@/components/ui/Button';
+import { Disclosure, Select, Textarea } from '@/components/ui';
 import { decisionRequiresRationale, merchantDecisionSchema, type MerchantDecision } from '@/lib/claims/decision/merchantDecision';
 import { formatMinorCurrencyNullable } from '@/lib/utils/format';
 import { parseMajorUnitInput } from '@/lib/ui/merchantCopy';
@@ -107,7 +108,7 @@ export function ClaimReviewManageCard({
         {/* Record decision + outcome */}
         <div className="order-1 space-y-1.5">
           <FieldLabel htmlFor="manage-decision">Merchant decision</FieldLabel>
-            <select id="manage-decision" className="ua-text-dense w-full px-2 py-1.5 rounded-md" style={inputStyle()}
+            <Select id="manage-decision" style={inputStyle()}
             value={state.decision} onChange={(e) => {
               setDecisionTouched(true);
               const decision = e.target.value as Decision;
@@ -115,7 +116,7 @@ export function ClaimReviewManageCard({
             }} aria-label="Decision" aria-describedby="manage-decision-requirement">
             <option value="">Choose a decision…</option>
             {DECISION_OPTIONS.map((d) => <option key={d} value={d}>{DECISION_VERB[d] ?? d}</option>)}
-          </select>
+          </Select>
           {monetaryDecision ? (
             <>
               <div className="grid grid-cols-[1fr_auto] gap-1.5">
@@ -141,7 +142,7 @@ export function ClaimReviewManageCard({
               </p>
             </>
           ) : null}
-          <textarea className="ua-text-dense min-h-20 w-full px-2 py-1.5 rounded-md" style={inputStyle()}
+          <Textarea style={inputStyle()}
             placeholder={decisionRequiresRationale(state.decision as MerchantDecision) ? 'Rationale (required)' : 'Decision rationale (optional)'} value={state.notes}
             onChange={(e) => patch({ notes: e.target.value })} onBlur={() => setDecisionTouched(true)} aria-label="Decision rationale" />
           <span id="manage-decision-requirement" className="sr-only">
@@ -176,20 +177,23 @@ export function ClaimReviewManageCard({
           />
         </div>
 
-        <details className="order-3 rounded-md border border-[var(--ua-border-subtle)] p-3">
-          <summary className="ua-text-label cursor-pointer">Manage evidence and lifecycle</summary>
+        <Disclosure
+          className="order-3 rounded-md border border-[var(--ua-border-subtle)] p-3"
+          summaryClassName="ua-text-label"
+          summary="Manage evidence and lifecycle"
+        >
           <div className="mt-3 space-y-4">
         {/* Add evidence */}
         <div className="space-y-1.5">
           <FieldLabel htmlFor="manage-evidence-type">Add evidence</FieldLabel>
-          <select id="manage-evidence-type" className="ua-text-dense w-full px-2 py-1.5 rounded-md" style={inputStyle()}
+          <Select id="manage-evidence-type" style={inputStyle()}
             value={state.evidenceType} onChange={(e) => patch({ evidenceType: e.target.value as EvidenceType })} aria-label="Evidence type">
             {EVIDENCE_TYPE_OPTIONS.map((t) => <option key={t} value={t}>{EVIDENCE_TYPE_LABELS[t]}</option>)}
-          </select>
-          <select className="ua-text-dense w-full px-2 py-1.5 rounded-md" style={inputStyle()}
+          </Select>
+          <Select style={inputStyle()}
             value={state.source} onChange={(e) => patch({ source: e.target.value as EvidenceSource })} aria-label="Evidence source">
             {EVIDENCE_SOURCE_OPTIONS.map((s) => <option key={s} value={s}>{EVIDENCE_SOURCE_LABELS[s]}</option>)}
-          </select>
+          </Select>
           <input type="text" className="ua-text-dense w-full px-2 py-1.5 rounded-md" style={inputStyle()}
             placeholder="Evidence URL (optional)" value={state.evidenceUrl} onChange={(e) => patch({ evidenceUrl: e.target.value })} aria-label="Evidence URL" />
           <button type="button" disabled={disabled} onClick={() => void onEvidence()}
@@ -239,10 +243,10 @@ export function ClaimReviewManageCard({
         {hasOutcome ? (
           <div className="space-y-1.5">
             <FieldLabel htmlFor="manage-reverse-note">Reverse decision</FieldLabel>
-            <select id="manage-reverse-note" className="ua-text-dense w-full px-2 py-1.5 rounded-md" style={inputStyle()}
+            <Select id="manage-reverse-note" style={inputStyle()}
               value={state.reverseDecision} onChange={(e) => patch({ reverseDecision: e.target.value as Decision })} aria-label="Reversal decision">
               {DECISION_OPTIONS.map((d) => <option key={d} value={d}>{DECISION_VERB[d] ?? d}</option>)}
-            </select>
+            </Select>
             <input type="text" className="ua-text-dense w-full px-2 py-1.5 rounded-md" style={inputStyle()}
               placeholder="Reason for reversal (required)" value={state.reverseNote} onChange={(e) => patch({ reverseNote: e.target.value })} aria-label="Reversal reason" />
             <button type="button" disabled={disabled || !state.reverseNote.trim()}
@@ -260,7 +264,7 @@ export function ClaimReviewManageCard({
           </Link>
         ) : null}
           </div>
-        </details>
+        </Disclosure>
         <a href="#source-case-details" className="ua-text-working-title order-4 text-[var(--ua-action-primary)]">View source data</a>
       </div>
       <Modal

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
-import { Button, Input, Card } from "@/components/ui";
+import { Button, Input, Card, Select, Textarea } from "@/components/ui";
 
 export type FlowConditionDraft = {
   field: string;
@@ -183,8 +183,8 @@ export function FlowEditor({
           </label>
           <label className="ua-text-label">
             Trigger
-            <select
-              className="ua-text-body mt-1 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-3 py-2 text-[var(--ua-text-primary)]"
+            <Select
+              className="mt-1"
               value={trigger}
               onChange={(event) => setTrigger(event.target.value)}
             >
@@ -193,13 +193,13 @@ export function FlowEditor({
                   {label}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
         </div>
         <label className="ua-text-label mt-4 block">
           Description (shown to your team)
-          <textarea
-            className="ua-text-body mt-1 min-h-20 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-3 py-2 text-[var(--ua-text-primary)]"
+          <Textarea
+            className="mt-1"
             value={description}
             onChange={(event) => setDescription(event.target.value)}
             placeholder="What work does this route, and why?"
@@ -257,9 +257,8 @@ export function FlowEditor({
                   }
                   placeholder="case.status"
                 />
-                <select
+                <Select
                   aria-label={`Condition ${index + 1} operator`}
-                  className="ua-text-body rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-3 py-2"
                   value={condition.operator}
                   onChange={(event) =>
                     setConditions((current) =>
@@ -279,7 +278,7 @@ export function FlowEditor({
                   <option value="neq">does not equal</option>
                   <option value="in">is one of</option>
                   <option value="exists">is present</option>
-                </select>
+                </Select>
                 {condition.operator !== "exists" ? (
                   <Input
                     aria-label={`Condition ${index + 1} value`}
@@ -460,8 +459,8 @@ function ActionEditor({
       <div className="flex items-center justify-between gap-3">
         <label className="ua-text-label">
           Action {index + 1}
-          <select
-            className="ua-text-body ml-2 rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2 py-1.5 text-[var(--ua-text-primary)]"
+          <Select
+            className="ml-2"
             value={output.type}
             onChange={(event) =>
               changeType(event.target.value as FlowOutputDraft["type"])
@@ -471,7 +470,7 @@ function ActionEditor({
             <option value="request_evidence">Request evidence</option>
             <option value="set_deadline">Set deadline</option>
             <option value="request_notification">Notify team member</option>
-          </select>
+          </Select>
         </label>
         <Button
           type="button"
@@ -493,9 +492,8 @@ function ActionEditor({
             }
             placeholder="Task title"
           />
-          <select
+          <Select
             aria-label={`Action ${index + 1} priority`}
-            className="ua-text-body rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2"
             value={output.priority}
             onChange={(event) =>
               update({
@@ -508,7 +506,7 @@ function ActionEditor({
             <option value="medium">Medium</option>
             <option value="high">High</option>
             <option value="urgent">Urgent</option>
-          </select>
+          </Select>
           <label className="ua-text-label">
             Due in (hours)
             <Input
@@ -573,9 +571,8 @@ function ActionEditor({
             }
             placeholder="Team member UUID"
           />
-          <select
+          <Select
             aria-label={`Action ${index + 1} notification kind`}
-            className="ua-text-body rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2"
             value={output.kind}
             onChange={(event) =>
               update({
@@ -590,7 +587,7 @@ function ActionEditor({
             <option value="decision_request">Decision request</option>
             <option value="recovery_outcome">Recovery outcome</option>
             <option value="sync_failure">Sync failure</option>
-          </select>
+          </Select>
           <Input
             aria-label={`Action ${index + 1} notification title`}
             value={output.title}

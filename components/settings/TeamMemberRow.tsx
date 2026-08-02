@@ -1,6 +1,7 @@
 'use client';
 
 import { Check, Clock, Trash2 } from 'lucide-react';
+import { Select } from '@/components/ui';
 import {
   formatTeamDate,
   STATUS_LABELS,
@@ -65,13 +66,11 @@ export function TeamMemberRow({
         </p>
       </div>
 
-      <select
+      <Select
         value={uiRoleForMember(member.role)}
         onChange={(event) => onChangeRole(member, event.target.value as TeamRole)}
         disabled={roleDisabled}
         aria-label={`Role for ${member.invited_email}`}
-        className="ua-text-body rounded-md px-3 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 disabled:opacity-50"
-        style={{ background: 'var(--ua-surface-secondary)', border: '1px solid var(--ua-border-default)', color: 'var(--ua-text-primary)', outlineColor: 'var(--ua-action-primary)' }}
       >
         {UI_ASSIGNABLE_ROLES.map((roleOption) => (
           <option
@@ -82,7 +81,7 @@ export function TeamMemberRow({
             {roleOption === 'owner' ? 'Owner' : 'Analyst'}
           </option>
         ))}
-      </select>
+      </Select>
 
       {confirmingId === member.id ? (
         <div className="flex items-center gap-1.5">

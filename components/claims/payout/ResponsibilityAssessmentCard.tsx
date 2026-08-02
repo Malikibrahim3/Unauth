@@ -2,7 +2,7 @@
 
 import { CheckCircle2, Scale, ShieldAlert } from 'lucide-react';
 import { useRef, useState } from 'react';
-import { Bone, Button, Card, Modal, Select, StatusBadge } from '@/components/ui';
+import { Bone, Button, Card, Modal, Select, StatusBadge, Textarea } from '@/components/ui';
 import {
   mutateInvestigation,
   newInvestigationIdempotencyKey,
@@ -241,10 +241,8 @@ function ResponsibilityDialog({
 
         <label className="ua-text-body block font-medium">
           {correction ? 'Correction rationale' : 'Confirmation note (optional)'}
-          <textarea
-            className={`ua-text-body mt-1 min-h-24 w-full rounded-md border bg-[var(--ua-surface-muted)] p-2 ${
-              correction ? 'border-[var(--ua-warning-border)]' : 'border-[var(--ua-border-default)]'
-            }`}
+          <Textarea
+            className={`mt-1 min-h-24 ${correction ? 'border-[var(--ua-warning-border)]' : ''}`}
             value={rationale}
             onChange={(event) => setRationale(event.target.value)}
             required={correction}

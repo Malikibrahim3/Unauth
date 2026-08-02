@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Pencil, Plus } from 'lucide-react';
-import { Button, Input, Modal, Select } from '@/components/ui';
+import { Button, Checkbox, Input, Modal, Select, Textarea } from '@/components/ui';
 import {
   PARTNER_RULE_CLAIM_TYPES,
   PARTNER_TYPE_LABELS,
@@ -284,9 +284,8 @@ export function RecoveryRulebookClient({
               />
             </label>
             <label className="ua-text-body flex items-start gap-2" style={{ color: 'var(--ua-text-secondary)' }}>
-              <input
-                className="mt-0.5 h-4 w-4 accent-[var(--ua-action-primary)]"
-                type="checkbox"
+              <Checkbox
+                className="mt-0.5"
                 disabled={
                   !canManage
                   || busy
@@ -385,8 +384,7 @@ export function RecoveryRulebookClient({
             </div>
             <label className="ua-text-body grid gap-1 font-medium" style={{ color: 'var(--ua-text-secondary)' }}>
               Contact instructions
-              <textarea
-                className="ua-text-body min-h-24 rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] p-2 text-[var(--ua-text-primary)]"
+              <Textarea
                 maxLength={4000}
                 placeholder="Reference format, portal steps, or escalation contact."
                 value={partnerInstructions}

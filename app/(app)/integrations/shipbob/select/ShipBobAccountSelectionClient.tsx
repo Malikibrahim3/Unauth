@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { AuthenticatedPageHeader } from '@/components/authenticated/AuthenticatedPageHeader';
 import { AuthenticatedPanel } from '@/components/authenticated/AuthenticatedPanel';
-import { Button } from '@/components/ui';
+import { Button, Select } from '@/components/ui';
 import { useFetchJson } from '@/lib/react/useFetchJson';
 import pageStyles from '@/components/authenticated/AuthenticatedPageChrome.module.css';
 
@@ -98,14 +98,13 @@ export default function ShipBobAccountSelectionClient({ selectionId }: { selecti
           {accounts.length > 0 ? (
             <label className="ua-text-label grid gap-1.5 text-[var(--ua-text-primary)]">
               Channel
-              <select
+              <Select
                 value={effectiveSelected}
                 onChange={(event) => setSelected(event.target.value)}
                 disabled={status !== 'ready'}
-                className="h-8 rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2.5 text-[length:var(--ua-text-caption-size)] font-normal outline-none focus-visible:ring-2 focus-visible:ring-[var(--ua-border-focus)]"
               >
                 {accounts.map((account) => <option key={account.id} value={account.id}>{account.name ?? account.id}</option>)}
-              </select>
+              </Select>
             </label>
           ) : null}
           {message ? <p role={status === 'error' ? 'alert' : 'status'} className="rounded-[var(--ua-radius-control)] border border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] px-3 py-2.5 text-[length:var(--ua-text-metadata-size)] leading-5 text-[var(--ua-text-secondary)]">{message}</p> : null}

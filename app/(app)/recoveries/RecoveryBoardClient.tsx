@@ -9,6 +9,7 @@ import {
   EmptyState,
   Modal,
   Panel,
+  Textarea,
 } from "@/components/ui";
 import { PackageSearch } from "lucide-react";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -487,10 +488,10 @@ export function RecoveryBoardClient({ recoveries, canManage }: Props) {
         {pending?.option.requiresNote ? (
           <label className="ua-text-label mt-4 block">
             Reason
-            <textarea
+            <Textarea
               value={pending.note}
               onChange={(event) => setPending({ ...pending, note: event.target.value })}
-              className="ua-text-body mt-1 min-h-20 w-full rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2 py-1.5 text-[var(--ua-text-primary)] focus-visible:shadow-[var(--ua-shadow-focus)]"
+              className="mt-1 min-h-20"
               placeholder="Record the source reference or reason"
             />
           </label>

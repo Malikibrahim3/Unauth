@@ -8,6 +8,9 @@ import {
   Button,
   Card,
   DataTable,
+  Disclosure,
+  Select,
+  Textarea,
 } from "@/components/ui";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import styles from "./CanonicalCsvImportClient.module.css";
@@ -218,8 +221,8 @@ export function CanonicalCsvImportClient({
         <div className="mt-3 grid gap-4 sm:grid-cols-2">
           <label className="ua-text-label">
             Dataset
-            <select
-              className="ua-text-body mt-1 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-3 py-2 capitalize"
+            <Select
+              className="mt-1 capitalize"
               value={dataset}
               onChange={(event) => changeDataset(event.target.value as Dataset)}
             >
@@ -228,7 +231,7 @@ export function CanonicalCsvImportClient({
                   {value}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
           <label className="ua-text-label">
             Import name
@@ -256,18 +259,19 @@ export function CanonicalCsvImportClient({
             onChange={(event) => void loadFile(event.target.files?.[0] ?? null)}
           />
         </label>
-        <details className="mt-3">
-          <summary className="ua-text-label cursor-pointer text-[var(--ua-action-primary)]">
-            Paste CSV text instead
-          </summary>
-          <textarea
-            className="mt-2 h-36 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] p-3 font-mono text-xs"
+        <Disclosure
+          className="mt-3"
+          summaryClassName="ua-text-label text-[var(--ua-action-primary)]"
+          summary="Paste CSV text instead"
+        >
+          <Textarea
+            className="mt-2 h-36 font-mono text-xs"
             value={csv}
             placeholder="Order ID,Currency,Order total (integer)&#10;ORDER-1,GBP,8400"
             onChange={(event) => handleCsvTextChange(event.currentTarget.value)}
             onInput={(event) => handleCsvTextChange(event.currentTarget.value)}
           />
-        </details>
+        </Disclosure>
       </Card>
 
       {headers.length > 0 ? (
@@ -296,9 +300,9 @@ export function CanonicalCsvImportClient({
                   {header}
                 </span>
                 <span className="sr-only">maps to</span>
-                <select
+                <Select
                   aria-label={`Map ${header}`}
-                  className="min-w-0 rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2 py-1.5"
+                  className="min-w-0"
                   value={mapping[header] ?? ""}
                   onChange={(event) => {
                     setMapping((current) => ({
@@ -315,7 +319,7 @@ export function CanonicalCsvImportClient({
                       {field.label}
                     </option>
                   ))}
-                </select>
+                </Select>
               </label>
             ))}
           </div>

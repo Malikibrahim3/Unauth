@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { getClaimSlaState } from '@/lib/claims/sla';
-import { Card } from '@/components/ui';
+import { Card, Select, Textarea } from '@/components/ui';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import {
   EVIDENCE_SOURCE_LABELS,
@@ -123,9 +123,9 @@ export function ClaimLifecycleStatusBar({
     return (
       <div className="space-y-2">
         <p className="ua-text-caption-role">Case archived. Reopen to continue evidence review.</p>
-        <textarea
+        <Textarea
           id="claim-reopen-note"
-          className="ua-text-body w-full px-2 py-1.5 rounded-md resize-none"
+          className="resize-none"
           style={inputStyle()}
           rows={2}
           placeholder="Reason for reopening"
@@ -150,9 +150,8 @@ export function ClaimLifecycleStatusBar({
     <div className="space-y-2">
       <label className="block">
         <FieldLabel htmlFor="claim-lifecycle-status">Review status</FieldLabel>
-        <select
+        <Select
           id="claim-lifecycle-status"
-          className="ua-text-body w-full px-2 py-1.5 rounded-md"
           style={inputStyle()}
           value={statusToSet}
           onChange={(e) => setStatusToSet(e.target.value as ClaimStatus)}
@@ -161,7 +160,7 @@ export function ClaimLifecycleStatusBar({
           {operatorLifecycleOptions(currentStatus).map(({ value, label }) => (
             <option key={value} value={value}>{label}</option>
           ))}
-        </select>
+        </Select>
       </label>
       <label className="block">
         <FieldLabel htmlFor="claim-status-note">Status note (required)</FieldLabel>

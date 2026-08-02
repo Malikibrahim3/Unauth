@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { MentionPicker, type MentionMember } from '@/components/collaboration/MentionPicker';
+import { Textarea } from '@/components/ui';
 import { formatDateTime } from '@/lib/utils/format';
 
 type Comment = { id: string; author_user_id: string | null; body: string; deleted_at: string | null; created_at: string };
@@ -57,7 +58,7 @@ export function CaseComments({ caseId, canComment }: { caseId: string; canCommen
       </article>) : <p className="ua-text-body" style={{ color: 'var(--ua-text-tertiary)' }}>No comments yet.</p>}
     </div>
     {canComment ? <form onSubmit={submit} className="mt-4 space-y-3">
-      <textarea aria-label="Add a comment" rows={3} maxLength={10000} value={body} onChange={(event) => setBody(event.target.value)} className="ua-text-body w-full resize-y rounded-md border p-2" placeholder="Add context for your team…" />
+      <Textarea aria-label="Add a comment" rows={3} maxLength={10000} value={body} onChange={(event) => setBody(event.target.value)} className="resize-y" placeholder="Add context for your team…" />
       <MentionPicker members={members} selected={mentions} onChange={setMentions} />
       <button type="submit" disabled={saving || !body.trim()} className="ua-text-working-title rounded-md px-3 py-1.5" style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-action-primary-fg)' }}>{saving ? 'Posting…' : 'Post comment'}</button>
     </form> : null}

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button, Modal } from '@/components/ui';
+import { Button, Modal, Textarea } from '@/components/ui';
 
 export function LossActions({
   lossId,
@@ -95,10 +95,10 @@ export function LossActions({
         </p>
         <label className="ua-text-body mt-4 block font-medium">
           Reason <span aria-hidden="true">*</span>
-          <textarea
+          <Textarea
             value={rationale}
             onChange={(event) => setRationale(event.target.value)}
-            className="mt-1 min-h-24 w-full rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] p-2"
+            className="mt-1 min-h-24"
             required
           />
         </label>

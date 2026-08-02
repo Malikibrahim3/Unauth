@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Button, Input, Modal, Select } from '@/components/ui';
+import { Button, Input, Modal, Select, Textarea } from '@/components/ui';
 import {
   mutateInvestigation,
   newInvestigationIdempotencyKey,
@@ -199,8 +199,8 @@ export function InvestigationResponseDialog({
         ) : null}
         <label className="ua-text-body block font-medium">
           Response summary
-          <textarea
-            className="ua-text-body mt-1 min-h-24 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] p-2"
+          <Textarea
+            className="mt-1 min-h-24"
             value={summary}
             onChange={(event) => setSummary(event.target.value)}
             required
@@ -208,8 +208,8 @@ export function InvestigationResponseDialog({
         </label>
         <label className="ua-text-body block font-medium">
           Full response (optional)
-          <textarea
-            className="ua-text-body mt-1 min-h-40 w-full rounded-md border border-[var(--ua-border-default)] bg-[var(--ua-surface-muted)] p-2"
+          <Textarea
+            className="mt-1 min-h-40"
             value={body}
             onChange={(event) => setBody(event.target.value)}
           />

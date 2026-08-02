@@ -1,6 +1,7 @@
 'use client';
 
 import { MailPlus } from 'lucide-react';
+import { Select } from '@/components/ui';
 import type { FormEvent } from 'react';
 import { INVITE_ROLES, type TeamRole } from '@/components/settings/teamManagementTypes';
 
@@ -58,17 +59,15 @@ export function TeamInviteForm({
 
         <label className="space-y-1">
           <span className="ua-text-label block" style={{ color: 'var(--ua-text-primary)' }}>Role</span>
-          <select
+          <Select
             value={role}
             onChange={(event) => onRoleChange(event.target.value as Exclude<TeamRole, 'owner'>)}
             disabled={!canManageTeam || submitting}
-            className="h-8 w-full rounded-[var(--ua-radius-control)] px-3 text-[length:var(--ua-text-caption-size)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 disabled:opacity-50"
-            style={{ background: 'var(--ua-surface-secondary)', border: '1px solid var(--ua-border-default)', color: 'var(--ua-text-primary)', outlineColor: 'var(--ua-action-primary)' }}
           >
             {INVITE_ROLES.map((option) => (
               <option key={option.value} value={option.value}>{option.label}</option>
             ))}
-          </select>
+          </Select>
         </label>
 
         <button

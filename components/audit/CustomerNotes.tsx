@@ -1,6 +1,7 @@
 'use client';
 
 import { useReducer } from 'react';
+import { Checkbox, Textarea } from '@/components/ui';
 import { useFetchJson } from '@/lib/react/useFetchJson';
 import {
   customerNotesReducer,
@@ -127,8 +128,7 @@ export default function CustomerNotes({ customerProfileId }: CustomerNotesProps)
         return (
           <div key={note.id} className="ua-text-dense flex items-start justify-between gap-2 pb-2" style={{ borderBottom: '1px solid var(--ua-border-subtle)' }}>
             <label className="flex items-start gap-2 min-w-0">
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={checked}
                 onChange={(e) => {
                   dispatch({ type: 'toggleSelected', id: note.id, checked: e.target.checked });
@@ -154,14 +154,13 @@ export default function CustomerNotes({ customerProfileId }: CustomerNotesProps)
       })}
 
       <div className="space-y-2">
-        <textarea
+        <Textarea
           value={draft}
           onChange={(e) => dispatch({ type: 'patch', patch: { draft: e.target.value } })}
           aria-label="Add a note"
           placeholder="Add a note…"
           rows={2}
-          className="ua-text-body w-full rounded px-3 py-2 focus:outline-none resize-none"
-          style={{ border: '1px solid var(--ua-border-default)', background: 'var(--ua-surface-secondary)', color: 'var(--ua-text-primary)' }}
+          className="resize-none"
         />
         <div className="flex items-center gap-3">
           <button

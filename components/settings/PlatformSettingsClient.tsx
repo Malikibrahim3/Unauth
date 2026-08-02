@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bone, Button, SectionCard, Surface } from "@/components/ui";
+import { Bone, Button, Checkbox, SectionCard, Select, Surface } from "@/components/ui";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import {
   DEFAULT_PLATFORM_SETTINGS,
@@ -249,7 +249,7 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
             label="Matching policy"
             help="Controls whether ambiguous links are blocked, balanced, or queued for review."
           >
-            <select
+            <Select
               disabled={!canManage || loading || state === "saving"}
               value={settings.matchingPolicy}
               onChange={(event) =>
@@ -258,7 +258,7 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
                   event.target.value as PlatformSettings["matchingPolicy"],
                 )
               }
-              className={INPUT_CLASS}
+              className="mt-1.5"
             >
               <option value="strict">Strict — block ambiguous matches</option>
               <option value="balanced">
@@ -267,13 +267,13 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
               <option value="review_ambiguous">
                 Review ambiguous — queue uncertain links
               </option>
-            </select>
+            </Select>
           </Field>
           <Field
             label="Cost basis"
             help="Basis used when estimating merchant loss where an actual unit cost is unavailable."
           >
-            <select
+            <Select
               disabled={!canManage || loading || state === "saving"}
               value={settings.costBasis}
               onChange={(event) =>
@@ -282,12 +282,12 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
                   event.target.value as PlatformSettings["costBasis"],
                 )
               }
-              className={INPUT_CLASS}
+              className="mt-1.5"
             >
               <option value="actual">Actual cost</option>
               <option value="average">Average cost</option>
               <option value="standard">Standard cost</option>
-            </select>
+            </Select>
           </Field>
           {numberField(
             "defaultDeadlineHours",
@@ -335,9 +335,8 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
       >
         <div className="space-y-3">
           <label className="flex items-start gap-3 rounded-md border border-[var(--ua-border-subtle)] p-3">
-            <input
-              type="checkbox"
-              className="mt-0.5 h-4 w-4 accent-[var(--ua-action-primary)]"
+            <Checkbox
+              className="mt-0.5"
               disabled={!canManage || loading || state === "saving"}
               checked={settings.connectorWritebackEnabled}
               onChange={(event) =>
@@ -355,9 +354,8 @@ export function PlatformSettingsClient({ canManage }: { canManage: boolean }) {
             </span>
           </label>
           <label className="flex items-start gap-3 rounded-md border border-[var(--ua-border-subtle)] p-3">
-            <input
-              type="checkbox"
-              className="mt-0.5 h-4 w-4 accent-[var(--ua-action-primary)]"
+            <Checkbox
+              className="mt-0.5"
               disabled={!canManage || loading || state === "saving"}
               checked={settings.webhookHealthAlerts}
               onChange={(event) =>
