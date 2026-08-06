@@ -1,0 +1,22 @@
+{
+  "label": "PROVISIONAL — NOT CERTIFICATION EVIDENCE",
+  "phase": "P01",
+  "base_revision": "c9aecf461471f5d9e7abefe12e1089374cbb0a02",
+  "included_paths": [
+    "docs/unauth/implementation/p01/**",
+    "docs/unauth/implementation/visual-first-product-ui-plan.md",
+    "docs/unauth/implementation/spec-lock.yaml",
+    "docs/unauth/implementation/historical/P01-v1.1-blocked.yaml",
+    "scripts/p01-capture-references.mjs",
+    "scripts/p01-generate-evidence.mjs",
+    "tests/p01/referenceContract.test.ts",
+    "docs/unauth/implementation/evidence/P01/manifest.json",
+    "docs/unauth/implementation/certificates/P01.yaml"
+  ],
+  "reference_png_count": 181,
+  "required_state_condition_frames": 180,
+  "production_paths_created_or_modified_by_p01": [],
+  "later_phase_paths_created_or_modified_by_p01": [],
+  "unrelated_dirty_worktree_policy": "Pre-existing user changes remain outside this phase diff and were not modified by P01.",
+  "scope_leakage": false
+}

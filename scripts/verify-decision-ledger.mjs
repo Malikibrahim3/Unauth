@@ -38,25 +38,28 @@ function routeFromPageFile(file) {
 }
 
 const expectedIds = Array.from(
-  { length: 65 },
+  { length: DECISION_LEDGER_ROUTES.length },
   (_, index) => 'R' + String(index + 1).padStart(2, '0'),
 );
-expect(DECISION_LEDGER_ROUTES.length === 65, 'route manifest has 65 entries');
-expect(
-  DECISION_LEDGER_ROUTES.every(
-    (route, index) => route.id === expectedIds[index],
-  ),
-  'R01–R65 identifiers are complete and ordered',
-);
-expect(
-  new Set(DECISION_LEDGER_ROUTES.map((route) => route.file)).size === 65,
-  'route page modules are unique',
-);
-
 const actualPageFiles = globSync('app/**/page.tsx', {
   cwd: root,
   nodir: true,
 }).sort();
+expect(
+  DECISION_LEDGER_ROUTES.length === actualPageFiles.length,
+  `route manifest has ${DECISION_LEDGER_ROUTES.length} entries`,
+);
+expect(
+  DECISION_LEDGER_ROUTES.every(
+    (route, index) => route.id === expectedIds[index],
+  ),
+  `R01–R${String(DECISION_LEDGER_ROUTES.length).padStart(2, '0')} identifiers are complete and ordered`,
+);
+expect(
+  new Set(DECISION_LEDGER_ROUTES.map((route) => route.file)).size === DECISION_LEDGER_ROUTES.length,
+  'route page modules are unique',
+);
+
 const manifestPageFiles = DECISION_LEDGER_ROUTES.map((route) =>
   route.file,
 ).sort();

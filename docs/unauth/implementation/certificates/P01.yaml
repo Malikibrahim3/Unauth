@@ -1,0 +1,38 @@
+certificate_format: phase-acceptance-report.v1
+report: |
+  # Phase P01 Acceptance Report
+
+  Status: PASS
+  Specification version/hash: 1.2 / 3acc6ae06192edde91a2ea549f6e676a4cdbe64639eefe9342f7691dbe0a17da
+  Candidate revision/tree hash: c9aecf461471f5d9e7abefe12e1089374cbb0a02 / b8f80c4b11e45995c186083352c600cdccc203047e3a4c7d8574607dbb4b5d8d
+  Candidate evidence class/freeze: P01_ACCEPTANCE / P01 CANDIDATE FREEZE; 198 scoped files; deterministic content manifest stable across consecutive generations
+  Authorised principal and instruction evidence: Project Sponsor (requesting user) / requesting_repository_controller / explicit “Implement Phase P01 only” instruction plus “do what you think is best to be able to move on” authorisation for the v1.2 blocker resolution
+  Governance state: PROVISIONAL_IMPLEMENTATION
+  Certification lock: ON
+  Governance registry path/hash: docs/unauth/implementation/p00/owners-approvals.yaml / be1f64de855907aae879d520dc1bb2c1208ecc117c84ccae522d6a89ee3c7045
+  Accountable phase seat (role / holder / status): Design / requesting_repository_controller / PROVISIONAL
+  Accountable owner approval/evidence: SPEC_AUTHORISED_PROVISIONAL_CONTINUATION; objective P01 exit evidence; not a human signature and not certification evidence
+  Provisional seats / vacant seats: inherited P00 registry; 11 provisional role seats / 11 vacant backup seats
+  Multi-seat conflicts and mitigations: GOV-CONFLICT-001 inherited; certification lock ON, no self-verification claim, independent read-only craft review, and ratified re-review before P12
+  Ratification obligations and deadline: Product, Design, Finance/Model Risk, Accessibility and Engineering ratified re-review BEFORE_P12_ENTRY; P02 impact review at P02 exit; P12 shared-data detail before P12/P14 proof
+  AI/tool contribution disclosure: Codex created standalone non-production references, tests, captures, manifests and provisional governance records. It performed no financial arithmetic, live-data read, mutation, deployment, external publication, ownership, signature or certification.
+  No-invented-identity / no-AI-owner attestation: PASS — no person was invented; no AI/tool occupies, approves or signs a seat
+  Phase diff manifest: docs/unauth/implementation/p01/phase-diff.json / af449ef3460ae2626d118cc052ffba5a9f947b0af54090350c6ee108f11e1126; only the binding v1.2 clarification, historical v1.1 report, standalone P01 reference/evidence and scoped scripts/tests are included; no production or later-phase path
+  Entry dependency evidence: P00 PASS certificate d26ab8ddb68781dc451696794ba70977bfa97c424f71372762e8cdf1a77dc390 remains valid under v1.2; frozen P00 fixture 21ab3b0bfc310a6356158f394cdd6f2cd638ad3c7b7586b3aaf2195e6e86ea13; supplement docs/unauth/implementation/p01/display-supplement.json is non-computing and v1.2-authorised
+  Routes/surfaces completed: Five standalone reference surfaces — Hero Overview, Cases workbench, Recovery portfolio, Reconciliation command centre and Rule impact proof — across normal, partial, stale, unavailable, permission and error states; no product route created. P14-locked V02 values render verbatim and P12-owned detail is structurally Unavailable rather than invented.
+  Tests executed: P01 Jest 1/1 suite and 4/4 tests PASS; JavaScript syntax checks PASS; capture contract PASS with 180/180 frames, 0 horizontal-overflow frames and 30 corrected 400% layout-reflow rows
+  Evidence-pack links: docs/unauth/implementation/evidence/P01/manifest.json / 8d53746293ec21a370053382c0576922b90e7e8b524c84c5a472e53016521823; docs/unauth/implementation/p01/references/reference-manifest.json; docs/unauth/implementation/p01/references/contact-sheet.png; docs/unauth/implementation/p01/review.md; docs/unauth/implementation/p01/blockers.yaml
+  Independent reviewers/sign-offs: impeccable-finish-reviewer found no material visual-craft defect; Product, Design, Finance/Model Risk, Accessibility and Engineering carry SPEC_AUTHORISED_PROVISIONAL_CONTINUATION for non-production continuation only; ratified human re-review remains required before P12
+  Open defects: 0
+  Scope leakage check: PASS
+  Candidate immutability check: PASS — deterministic scoped content hash b8f80c4b11e45995c186083352c600cdccc203047e3a4c7d8574607dbb4b5d8d
+  Next phase started: NO
+
+  ## Blockers
+
+  None. P01-BLOCK-001 is resolved by specification v1.2 and the hashed non-computing supplement. P01-DEFER-001 through P01-DEFER-003 remain later-gate obligations and do not block P02 entry.
+status: PASS
+phase: P01
+candidate_sha256: b8f80c4b11e45995c186083352c600cdccc203047e3a4c7d8574607dbb4b5d8d
+evidence_manifest_sha256: 8d53746293ec21a370053382c0576922b90e7e8b524c84c5a472e53016521823
+next_phase_started: false

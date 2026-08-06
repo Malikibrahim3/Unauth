@@ -1,0 +1,49 @@
+{
+  "generatedAt": "2026-07-31T15:32:15.491Z",
+  "baseUrl": "http://127.0.0.1:3000",
+  "outputDirectory": "/Users/malikibrahim/Downloads/Unauth/.impeccable/after-case-detail",
+  "captures": [
+    {
+      "route": "case-detail",
+      "requestedPath": "/claims/aa100000-0000-4000-8000-000000000012?capture=1",
+      "viewport": "1440x900",
+      "file": "case-detail-1440x900.png",
+      "httpStatus": 200,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "diagnostics": {
+        "path": "/claims/aa100000-0000-4000-8000-000000000012?capture=1",
+        "title": "Unauth — Post-Purchase Payout Control",
+        "routeReady": "true",
+        "routeState": "degraded",
+        "overflow": 0,
+        "viewportWidth": 1440,
+        "compactDesktop": false,
+        "sidebarCollapsed": "false",
+        "sidebarWidth": 200,
+        "bodyText": "A&\nAlder & Ash\nSources connected\nOverview\nOverview\nWork\nWork\nCases\n9\nLosses\nRecovery\nCustomers\nConfigure\nRules\nFlows\nReports and setup\nReports\nIntegrations\nSettings\nMorgan Ellis\nHelp\nSign out\nPrivacy\nData handling\nDPA\nCases\nSearch\n⌘K\n4 unre"
+      }
+    },
+    {
+      "route": "case-detail",
+      "requestedPath": "/claims/aa100000-0000-4000-8000-000000000012?capture=1",
+      "viewport": "1024x900",
+      "file": "case-detail-1024x900.png",
+      "httpStatus": 200,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "diagnostics": {
+        "path": "/claims/aa100000-0000-4000-8000-000000000012?capture=1",
+        "title": "Unauth — Post-Purchase Payout Control",
+        "routeReady": "true",
+        "routeState": "degraded",
+        "overflow": 0,
+        "viewportWidth": 1024,
+        "compactDesktop": true,
+        "sidebarCollapsed": "true",
+        "sidebarWidth": 56,
+        "bodyText": "A&\nCases\nSearch\n⌘K\n4 unread\n4\nME\nBack to cases\n\nDamaged\n\nSofia Novak · #86000\n\nRequested action: Replacement\n\nRecovery opened\nCustomer profile\nValue at issue\n£68.00\nOwner\nAssigned\nOpened\n18 Jun 2026\nUpdated\n26 Jul, 11:00\nEvidence & recommen"
+      }
+    }
+  ]
+}

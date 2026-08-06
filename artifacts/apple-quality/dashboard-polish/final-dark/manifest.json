@@ -1,0 +1,58 @@
+{
+  "generatedAt": "2026-07-30T19:53:53.933Z",
+  "baseUrl": "http://127.0.0.1:3011",
+  "outputDirectory": "/Users/malikibrahim/Downloads/Unauth/artifacts/apple-quality/dashboard-polish/final-dark",
+  "captures": [
+    {
+      "route": "overview",
+      "requestedPath": "/dashboard?capture=1",
+      "viewport": "1440x900",
+      "file": "overview-1440x900.png",
+      "httpStatus": 200,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "diagnostics": {
+        "path": "/dashboard?capture=1",
+        "title": "Unauth — Post-Purchase Payout Control",
+        "routeReady": null,
+        "routeState": null,
+        "overflow": 0,
+        "bodyText": "SM\nSimeon Murray Store\n1 source needs attention\nOverview\nOverview\nWork\nWork\nCases\nLosses\nRecovery\nCustomers\nConfigure\nRules\nFlows\nReports and setup\nReports\nIntegrations\nSettings\nWorkspace operator\nHelp\nSign out\nPrivacy\nData handling\nDPA\nSea"
+      }
+    },
+    {
+      "route": "overview",
+      "requestedPath": "/dashboard?capture=1",
+      "viewport": "1280x800",
+      "file": "overview-1280x800.png",
+      "httpStatus": 200,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "diagnostics": {
+        "path": "/dashboard?capture=1",
+        "title": "Unauth — Post-Purchase Payout Control",
+        "routeReady": null,
+        "routeState": null,
+        "overflow": 0,
+        "bodyText": "SM\nSimeon Murray Store\n1 source needs attention\nOverview\nOverview\nWork\nWork\nCases\nLosses\nRecovery\nCustomers\nConfigure\nRules\nFlows\nReports and setup\nReports\nIntegrations\nSettings\nWorkspace operator\nHelp\nSign out\nPrivacy\nData handling\nDPA\nSea"
+      }
+    },
+    {
+      "route": "overview",
+      "requestedPath": "/dashboard?capture=1",
+      "viewport": "1024x900",
+      "file": "overview-1024x900.png",
+      "httpStatus": 200,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "diagnostics": {
+        "path": "/dashboard?capture=1",
+        "title": "Unauth — Post-Purchase Payout Control",
+        "routeReady": "true",
+        "routeState": "ready",
+        "overflow": 0,
+        "bodyText": "SM\nSimeon Murray Store\n1 source needs attention\nOverview\nOverview\nWork\nWork\nCases\n99+\nLosses\nRecovery\nCustomers\nConfigure\nRules\nFlows\nReports and setup\nReports\nIntegrations\nSettings\nWorkspace operator\nHelp\nSign out\nPrivacy\nData handling\nDPA"
+      }
+    }
+  ]
+}

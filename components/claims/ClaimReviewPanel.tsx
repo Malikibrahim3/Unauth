@@ -17,6 +17,7 @@ export default function ClaimReviewPanel({
   initialClaim,
   canManage = false,
   financialSummaries = [],
+  caseBasePath = '/claims',
 }: {
   profileId: string;
   sourceCustomerId: string | null;
@@ -24,13 +25,14 @@ export default function ClaimReviewPanel({
   initialClaim?: ClaimRecord | null;
   canManage?: boolean;
   financialSummaries?: CaseFinancialSummary[];
+  caseBasePath?: '/claims' | '/cases';
 }) {
   const wb = useClaimReviewWorkbench(profileId, sourceCustomerId, initialClaimId, initialClaim);
 
   return (
     <>
       <ClaimReviewToast wb={wb} />
-      <ClaimReviewHeader wb={wb}>
+      <ClaimReviewHeader wb={wb} caseBasePath={caseBasePath}>
         <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-start">
           <div className="min-w-0 space-y-5">
             <ClaimReviewContextColumn

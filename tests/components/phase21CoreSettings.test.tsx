@@ -105,7 +105,7 @@ describe('Phase 21 core settings anatomy', () => {
   it('redirects the settings root directly to the account form', async () => {
     await SettingsRedirectPage({ searchParams: Promise.resolve({}) });
 
-    expect(mockRedirect).toHaveBeenCalledWith('/settings/account');
+    expect(mockRedirect).toHaveBeenCalledWith('/settings/workspace/account');
   });
 
   it('acknowledges a plan action at the initiating control', async () => {

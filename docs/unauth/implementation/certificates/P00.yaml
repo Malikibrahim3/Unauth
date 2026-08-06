@@ -1,0 +1,38 @@
+certificate_format: phase-acceptance-report.v1
+report: |
+  # Phase P00 Acceptance Report
+
+  Status: PASS
+  Specification version/hash: 1.1 / ae768408a6fde250c57f4a1e7f2f3daf96fc10ac31f046f118fddff3e86768a2
+  Candidate revision/tree hash: c9aecf461471f5d9e7abefe12e1089374cbb0a02 / 4ad5c49c45e77f699a9ba2da39baf4979279e718e142c1d9c97ea0552b96d3ef
+  Candidate evidence class/freeze: P00_ACCEPTANCE / P00 CANDIDATE FREEZE; 3,166 Git-tracked or non-ignored untracked files; stable across three consecutive generations and post-freeze checks
+  Authorised principal and instruction evidence: Project Sponsor (requesting user) / requesting_repository_controller / codex-session:2026-08-03:p00-rerun-instruction@2026-08-03T19:37:44+01:00; exact version 1.0 supersession and P00 rerun instruction plus specification v1.1 bootstrap authority
+  Governance state: PROVISIONAL_IMPLEMENTATION
+  Certification lock: ON
+  Governance registry path/hash: docs/unauth/implementation/p00/owners-approvals.yaml / be1f64de855907aae879d520dc1bb2c1208ecc117c84ccae522d6a89ee3c7045
+  Accountable phase seat (role / holder / status): Engineering / requesting_repository_controller / PROVISIONAL
+  Accountable owner approval/evidence: SPEC_AUTHORISED_PROVISIONAL_CONTINUATION; objective P00 exit evidence; not a human signature and not certification evidence
+  Provisional seats / vacant seats: 11 role seats provisionally held by requesting_repository_controller / 11 backup seats VACANT
+  Multi-seat conflicts and mitigations: GOV-CONFLICT-001; one provisional principal holds all implementation seats; mitigated by certification lock ON, prohibited self-verification, no G00-G15 claims, and ratified independent re-review before P12
+  Ratification obligations and deadline: P00-DEFER-001 registry identities/competence/independence/backups/signatures, P00-DEFER-002 READY_CERTIFICATION fixed lab, P00-DEFER-003 production secret-manager authority; exact deadlines in blockers.yaml, all no later than BEFORE_P12_ENTRY and none blocks P01/P02
+  AI/tool contribution disclosure: Codex inspected the repository, drafted provisional governance/ADRs/inventories/fixtures, implemented the test-only P00 slice, ran diagnostics and generated hashes. It did not occupy a seat, approve its own work, access secrets, deploy, mutate production, communicate externally or issue certification.
+  No-invented-identity / no-AI-owner attestation: PASS — human_full_name remains UNRATIFIED; no AI/tool is an owner, signer or verifier
+  Phase diff manifest: docs/unauth/implementation/p00/phase-diff.json / 1ed2dfec77a1665b8e04e176cb2958917ff0227d7836055e777fcd4d66f6017d; aggregate lists only P00 artifacts and reports zero unrelated files modified by P00
+  Entry dependency evidence: ROOT_PHASE — NO PREDECESSOR; readable v1.1 spec; explicit instruction; writable Git root; base revision and 645-row pre-existing dirty manifest at docs/unauth/implementation/p00/observed-base-manifest.json / 7a8b82fd73ee4e4ec799f8b77255ea733c5764577e8ef7e41b2859f6c7f2cc68
+  Routes/surfaces completed: No product route created or redesigned. Deterministic inventory covers 100 filesystem page routes and 221 API handlers. P00 completed the test-only technical slice and fixture inventory for all five planned P01 surfaces with normal, partial, stale, unavailable, permission and error states.
+  Tests executed: Post-final-freeze P00 Jest 2/2 suites, 4/4 tests and 1/1 DOM snapshot PASS; scoped ESLint and both generator syntax checks PASS. Candidate type-check PASS; full lint PASS; production build PASS with 94 static pages; targeted route/environment regressions 10/10 PASS. Full repository run: 375 suites/2,844 tests PASS, 4 suites/7 tests FAIL and 1 suite/3 tests skipped from OBSERVED_BASE-only implementation/test drift or unavailable Docker; none touches the P00 slice or P00 exit rows and no unrelated fix was attempted.
+  Evidence-pack links: docs/unauth/implementation/evidence/P00/manifest.json / 9d147e768a5740b85db934c76d29c0e4f47023abf6ae8cb1b16a6ca44acf456c; docs/unauth/implementation/p00/routes.json; docs/unauth/implementation/p00/reference-fixture.schema.json / fc9dd410b72aea3555ab6469395dbcc1aae856a3f97e7e3ac8c8cc92bb533209; docs/unauth/implementation/p00/reference-fixture.normal.json / 21ab3b0bfc310a6356158f394cdd6f2cd638ad3c7b7586b3aaf2195e6e86ea13; docs/unauth/implementation/p00/performance-lab.yaml; docs/unauth/implementation/adrs/P00-architecture-decisions.md
+  Independent reviewers/sign-offs: No ratified independent reviewer or human signature claimed. Product, Finance/Model Risk, Design, Engineering, Accessibility, QA and Release carry SPEC_AUTHORISED_PROVISIONAL_CONTINUATION for non-production P01/P02 entry only and ratified re-review before P12.
+  Open defects: 0 P00 defects. Four observed-base regression suites remain outside the P00 diff and are recorded in the evidence manifest; they do not contradict a P00 exit requirement.
+  Scope leakage check: PASS
+  Candidate immutability check: PASS — final source-content hash remained 4ad5c49c45e77f699a9ba2da39baf4979279e718e142c1d9c97ea0552b96d3ef after post-freeze checks
+  Next phase started: NO
+
+  ## Blockers
+
+  None. P00-DEFER-001 through P00-DEFER-003 are genuinely external later-boundary obligations, consolidated once in docs/unauth/implementation/p00/blockers.yaml; they do not prevent the minimal slice or safe P01/P02 entry. P01 or P02 still requires a separate explicit phase instruction.
+status: PASS
+phase: P00
+candidate_sha256: 4ad5c49c45e77f699a9ba2da39baf4979279e718e142c1d9c97ea0552b96d3ef
+evidence_manifest_sha256: 9d147e768a5740b85db934c76d29c0e4f47023abf6ae8cb1b16a6ca44acf456c
+next_phase_started: false

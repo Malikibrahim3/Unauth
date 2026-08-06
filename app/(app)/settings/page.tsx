@@ -9,5 +9,7 @@ type SettingsPageProps = {
 };
 
 export default async function SettingsPage({ searchParams }: SettingsPageProps) {
-  redirect(preservedRedirectTarget('/settings/account', await searchParams));
+  // Direct /settings requests are canonicalized by proxy.ts. This fallback
+  // keeps the existing route-level redirect contract for server-side callers.
+  redirect(preservedRedirectTarget('/settings/workspace/account', await searchParams));
 }

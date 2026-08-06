@@ -1,0 +1,17 @@
+phase: P00
+specification:
+  title: Unauth Visual-First UI Rebuild Plan
+  version: "2.1"
+  path: docs/unauth/implementation/visual-first-product-ui-plan.md
+  sha256: 367ec96a15553973a0c74a3249ec2a303ae3307f916d34fdb1464698044c60df
+  status: BINDING
+supersedes:
+  version: "1.2"
+  specification_sha256: 3acc6ae06192edde91a2ea549f6e676a4cdbe64639eefe9342f7691dbe0a17da
+  prior_phase_state: HISTORICAL_EVIDENCE_ONLY
+migration:
+  instruction: Start with version 2.1 P00, reuse valid existing evidence, close only real gaps, and do not ask the user questions.
+  old_certificates_are_dependencies: false
+  old_phase_names_are_valid: false
+scope_lock: P00_ONLY
+next_phase_started: false

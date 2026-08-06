@@ -3,38 +3,37 @@
 import { usePathname } from 'next/navigation';
 import { SettingsNav, type SettingsNavGroup } from '@/components/settings/SettingsNav';
 
-// Same ten destinations and labels as before, grouped into always-visible
-// sections (§8.1) instead of a single horizontal-scroll strip. "Connections"
-// still points at /integrations (outside the settings tree) by design.
+// Canonical settings takeover rail. The route hierarchy stays explicit so the
+// utility shell, local settings navigation, and deep links agree on one URL.
 const GROUPS: SettingsNavGroup[] = [
   {
     label: 'Workspace',
     items: [
-      { href: '/settings/account', label: 'Workspace & account' },
-      { href: '/settings/team', label: 'Team' },
-      { href: '/settings/platform', label: 'Defaults' },
+      { href: '/settings/workspace/account', label: 'Workspace & account' },
+      { href: '/settings/workspace/team', label: 'Team' },
+      { href: '/settings/product/platform', label: 'Defaults' },
     ],
   },
   {
     label: 'Data & access',
     items: [
-      { href: '/settings/api-integrations', label: 'API access' },
-      { href: '/integrations', label: 'Connected apps' },
-      { href: '/settings/data-privacy', label: 'Data & privacy' },
+      { href: '/settings/developers/api-access', label: 'API access' },
+      { href: '/sources/connected', label: 'Connected sources' },
+      { href: '/settings/legal/data-privacy', label: 'Data & privacy' },
     ],
   },
   {
     label: 'Operations',
     items: [
-      { href: '/settings/notifications', label: 'Notifications' },
-      { href: '/settings/audit-trail', label: 'Audit trail' },
+      { href: '/settings/product/notifications', label: 'Notifications' },
+      { href: '/settings/governance/audit-trail', label: 'Audit trail' },
     ],
   },
   {
     label: 'Commercial',
     items: [
       { href: '/settings/billing', label: 'Billing' },
-      { href: '/settings/agreements', label: 'Agreements' },
+      { href: '/settings/legal/agreements', label: 'Agreements' },
     ],
   },
 ];

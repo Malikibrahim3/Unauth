@@ -1,0 +1,28 @@
+{
+  "generatedAt": "2026-07-31T16:50:29.467Z",
+  "baseUrl": "http://127.0.0.1:3000",
+  "outputDirectory": "/Users/malikibrahim/Downloads/Unauth/.impeccable/final-work-strict",
+  "captures": [
+    {
+      "route": "work",
+      "requestedPath": "/work?capture=1",
+      "viewport": "1440x900",
+      "file": "work-1440x900.png",
+      "httpStatus": 200,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "diagnostics": {
+        "path": "/work?capture=1",
+        "title": "Unauth — Post-Purchase Payout Control",
+        "routeReady": "true",
+        "routeState": "ready",
+        "overflow": 0,
+        "viewportWidth": 1440,
+        "compactDesktop": false,
+        "sidebarCollapsed": "false",
+        "sidebarWidth": 200,
+        "bodyText": "A&\nAlder & Ash\nSources connected\nOverview\nOverview\nWork\nWork\nCases\n9\nLosses\nRecovery\nCustomers\nConfigure\nRules\nFlows\nReports and setup\nReports\nIntegrations\nSettings\nMorgan Ellis\nHelp\nSign out\nPrivacy\nData handling\nDPA\nSearch\n⌘K\n4 unread\n4\nM"
+      }
+    }
+  ]
+}

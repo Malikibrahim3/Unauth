@@ -1,0 +1,43 @@
+{
+  "generatedAt": "2026-07-30T18:21:52.382Z",
+  "baseUrl": "http://127.0.0.1:3000",
+  "outputDirectory": "/Users/malikibrahim/Downloads/Unauth/artifacts/apple-quality/final/flagships-dark",
+  "captures": [
+    {
+      "route": "overview",
+      "requestedPath": "/dashboard?capture=1",
+      "viewport": "1440x900",
+      "file": "overview-1440x900.png",
+      "httpStatus": 200,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "diagnostics": {
+        "path": "/dashboard?capture=1",
+        "title": "Unauth — Post-Purchase Payout Control",
+        "routeReady": "true",
+        "routeState": "ready",
+        "overflow": 0,
+        "bodyText": "SM\nSimeon Murray Store\n1 source needs attention\nOverview\nOverview\nWork\nWork\nCases\n99+\nLosses\nRecovery\nCustomers\nConfigure\nRules\nFlows\nReports and setup\nReports\nIntegrations\nSettings\nWorkspace operator\nHelp\nSign out\nPrivacy\nData handling\nDPA"
+      }
+    },
+    {
+      "route": "case-detail",
+      "requestedPath": "/claims/1667ec3b-236c-48ad-bf69-f4f408a67cd1?capture=1",
+      "viewport": "1440x900",
+      "file": "case-detail-1440x900.png",
+      "httpStatus": 200,
+      "consoleErrors": [
+        "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <SegmentViewNode type=\"page\" pagePath=\"(app)/clai...\">\n      <SegmentTrieNode>\n      <SupportPayoutCasePage>\n        <ClaimReviewPanel profileId=\"\" sourceCustomerId=\"4bea4982-1...\" initialClaimId=\"1667ec3b-2...\" ...>\n          <ClaimReviewToast>\n          <ClaimReviewHeader wb={{profileId:\"\", ...}}>\n            <DetailPageShell backHref=\"/claims\" backLabel=\"Back to cases\" eyebrow=\"Item not r...\" title=\"Maya Chen ...\" ...>\n              <div className=\"\">\n                <SetBreadcrumbLabel>\n                <div>\n                <AuthenticatedPageHeader>\n                <div className=\"Authentica...\">\n                  <div className=\"Authentica...\">\n                    <div className=\"min-w-0\">\n                      <div className=\"grid min-w...\">\n                        <div className=\"min-w-0 sp...\">\n                          <ClaimReviewContextColumn>\n                          <ClaimReviewFormSection>\n                          <CaseComments caseId=\"1667ec3b-2...\" canComment={true}>\n                            <section className=\"order-4 mi...\" aria-label=\"Case comments\">\n                              <h2>\n                              <div>\n                              <form onSubmit={function submit} className=\"mt-4 space...\">\n                                <textarea\n                                  aria-label=\"Add a comment\"\n                                  rows={3}\n                                  maxLength={10000}\n                                  value=\"\"\n                                  onChange={function onChange}\n                                  className=\"w-full resize-y rounded-md border p-2 text-sm\"\n                                  placeholder=\"Add context for your team…\"\n-                                 style={{caret-color:\"transparent\"}}\n                                >\n                                ...\n                        ...\n    ...\n"
+      ],
+      "pageErrors": [],
+      "diagnostics": {
+        "path": "/claims/1667ec3b-236c-48ad-bf69-f4f408a67cd1?capture=1",
+        "title": "Unauth — Post-Purchase Payout Control",
+        "routeReady": null,
+        "routeState": null,
+        "overflow": 0,
+        "bodyText": "SM\nSimeon Murray Store\n1 source needs attention\nOverview\nOverview\nWork\nWork\nCases\nLosses\nRecovery\nCustomers\nConfigure\nRules\nFlows\nReports and setup\nReports\nIntegrations\nSettings\nWorkspace operator\nHelp\nSign out\nPrivacy\nData handling\nDPA\nCas"
+      }
+    }
+  ]
+}

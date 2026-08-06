@@ -1,0 +1,91 @@
+{
+  "generatedAt": "2026-07-31T15:24:17.489Z",
+  "baseUrl": "http://127.0.0.1:3000",
+  "outputDirectory": "/Users/malikibrahim/Downloads/Unauth/.impeccable/after-auth-compact-final",
+  "captures": [
+    {
+      "route": "overview",
+      "requestedPath": "/dashboard?capture=1",
+      "viewport": "1024x900",
+      "file": "overview-1024x900.png",
+      "httpStatus": 200,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "diagnostics": {
+        "path": "/dashboard?capture=1",
+        "title": "Unauth — Post-Purchase Payout Control",
+        "routeReady": "true",
+        "routeState": "ready",
+        "overflow": 0,
+        "viewportWidth": 1024,
+        "compactDesktop": true,
+        "sidebarCollapsed": "true",
+        "sidebarWidth": 56,
+        "bodyText": "A&\nSearch\n⌘K\n4 unread\n4\nME\nOverview\n2 cases are ready for decision; connected source data needs attention.\nDate range\nLast 7 days\nLast 30 days\nLast 90 days\nAll time\nCompare\nComparison period\nPrevious period\nOff\nCurrency\nGBP\nReports\nPayout p"
+      }
+    },
+    {
+      "route": "work",
+      "requestedPath": "/work?capture=1",
+      "viewport": "1024x900",
+      "file": "work-1024x900.png",
+      "httpStatus": 200,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "diagnostics": {
+        "path": "/work?capture=1",
+        "title": "Unauth — Post-Purchase Payout Control",
+        "routeReady": "true",
+        "routeState": "ready",
+        "overflow": 0,
+        "viewportWidth": 1024,
+        "compactDesktop": true,
+        "sidebarCollapsed": "true",
+        "sidebarWidth": 56,
+        "bodyText": "A&\nSearch\n⌘K\n4 unread\n4\nME\nWork\n\n9 open work · 2 overdue or due today\n\nWork queue\nWhen will the queue become risky?\n\n2 of 9 active items are overdue or due today · item count by deadline\n\nOverdue\n2\nDue today\n0\nIn 1–3 days\n5\nIn 4–7 days\n2\nLa"
+      }
+    },
+    {
+      "route": "cases",
+      "requestedPath": "/claims?capture=1",
+      "viewport": "1024x900",
+      "file": "cases-1024x900.png",
+      "httpStatus": 200,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "diagnostics": {
+        "path": "/claims?capture=1",
+        "title": "Unauth — Post-Purchase Payout Control",
+        "routeReady": "true",
+        "routeState": "ready",
+        "overflow": 0,
+        "viewportWidth": 1024,
+        "compactDesktop": true,
+        "sidebarCollapsed": "true",
+        "sidebarWidth": 56,
+        "bodyText": "A&\nSearch\n⌘K\n4 unread\n4\nME\nCases\n\n9 active · 9 with new evidence · 2 ready for decision · £876.00 at issue\n\nSearch customer, order, ticket or case reference\nSearch\nUpdated\nOldest\nAgeing first\nHighest value\nRows per page\n25\n50\n100\nWorkflow\nA"
+      }
+    },
+    {
+      "route": "reports",
+      "requestedPath": "/reports?capture=1",
+      "viewport": "1024x900",
+      "file": "reports-1024x900.png",
+      "httpStatus": 200,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "diagnostics": {
+        "path": "/reports?capture=1",
+        "title": "Unauth — Post-Purchase Payout Control",
+        "routeReady": "true",
+        "routeState": "ready",
+        "overflow": 0,
+        "viewportWidth": 1024,
+        "compactDesktop": true,
+        "sidebarCollapsed": "true",
+        "sidebarWidth": 56,
+        "bodyText": "A&\nSearch\n⌘K\n4 unread\n4\nME\nReports\n\nCustomer concessions, economic loss, and recovery reconciliation.\n\nDate range\nLast 7 days\nLast 30 days\nLast 90 days\nAll time\nExport\nValue this period\n\nLast 30 days\n\nGBP\n8 cases with recorded exposure\nMaxi"
+      }
+    }
+  ]
+}

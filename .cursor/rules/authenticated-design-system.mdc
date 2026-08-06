@@ -1,5 +1,5 @@
 ---
-description: Decision Ledger product workspace — scoped authority for .ua-app and app/(app)
+description: Unauth visual-first rebuild — active authority for product UI
 globs:
   - "app/(app)/**"
   - "app/onboarding/**"
@@ -12,21 +12,19 @@ alwaysApply: true
 
 This rule is a loader, not an independent visual contract.
 
-Read `PRODUCT.md` and `CLAUDE.md`, then use the authority for the surface:
-
-- `.ua-app` authenticated surfaces: `docs/IMPL_authenticated_execution_ledger.md`
-  (type ramp is 20px/600, not 28px/650; elevation is permitted on exactly one
-  focal object per view per its §7 amendment A1).
-- public, entry/onboarding, and embedded surfaces (out of the ledger's
-  scope): `docs/IMPL_decision_ledger_instrument_grade_final_iteration.md`.
+Read `PRODUCT.md`, `CLAUDE.md` and
+`docs/unauth/implementation/visual-first-product-ui-plan.md`. The latter is
+the active authority for visual direction, phase sequencing and UI acceptance
+on every route it names. Older visual ledgers and version 1.x phase artifacts
+are historical implementation context only where they do not conflict with
+the active plan.
 
 No surface has two active visual authorities. Shared components must satisfy
 their scoped consumers or split at a meaningful product-surface boundary.
 
-For `.ua-app`, execute §4–§8 of the authenticated execution ledger and verify
-with `node scripts/verify-visual-adoption.mjs`. For public, entry/onboarding,
-and embedded surfaces, `IG-00` through `IG-16` are the current executable
-phases. The direction is an evidence-to-decision system:
+Execute only the phase named by the user from the active plan. Do not infer
+phase status from the older ledgers or certificates. The direction is an
+evidence-to-decision system:
 one dominant object, explicit scope, traceable sources, readable consequence,
 and a clear next action or recorded outcome.
 
@@ -34,15 +32,16 @@ and a clear next action or recorded outcome.
   provenance, financial truth, audit history, keyboard paths, and
   accessibility reflow.
 - `--ua-*` is the sole product token namespace.
-- Inter and Lucide remain the product foundations; do not copy Apple assets.
+- Use the active plan's typography and Lucide; do not copy Apple assets or add
+  a bundled SF font.
 - Do not add iOS navigation, bottom sheets, fake system chrome, decorative
   glass, gradients, glow, card soup, tiny metadata, visual cohorts, or
   screenshot-only routes.
 - Use canonical frames, surfaces, controls, registries, tables, overlays,
   charts, and geometry-aware states.
 - Keep inline content flat and reserve elevation for floating layers.
-- Update `/dev/design-system`, affected states, phase evidence, and the active
-  design verifier when a shared contract changes.
+- Update shared documentation or behavioural tests only when a real shared
+  contract changes; visual-only work does not require ceremonial evidence.
 
 `CONNECTION_HEALTH_V2_ENABLED`, `WORK_COCKPIT_V2_ENABLED`, and
 `CASE_WORKSPACE_V2_ENABLED` remain functional rollout controls, never visual

@@ -23,39 +23,39 @@
     --ua-font-mono: var(--font-dm-mono), "Roboto Mono", Consolas, monospace;
 
     /* Hero financial value — one exceptional total per product, not per page */
-    --ua-text-hero-value-size: 32px;
+    --ua-text-hero-value-size: 28px;
     --ua-text-hero-value-weight: 600;
-    --ua-text-hero-value-leading: 38px;
-    --ua-text-hero-value-tracking: -0.022em;
+    --ua-text-hero-value-leading: 34px;
+    --ua-text-hero-value-tracking: -0.02em;
 
     /* KPI value — tabular numerals, no display face */
-    --ua-text-kpi-size: 24px;
+    --ua-text-kpi-size: 28px;
     --ua-text-kpi-weight: 600;
-    --ua-text-kpi-leading: 30px;
-    --ua-text-kpi-tracking: -0.018em;
+    --ua-text-kpi-leading: 34px;
+    --ua-text-kpi-tracking: -0.02em;
 
     /* Page title — one per page (§3.5) */
-    --ua-text-page-title-size: 20px;
+    --ua-text-page-title-size: 24px;
     --ua-text-page-title-weight: 600;
-    --ua-text-page-title-leading: 26px;
-    --ua-text-page-title-tracking: -0.012em;
+    --ua-text-page-title-leading: 32px;
+    --ua-text-page-title-tracking: -0.02em;
 
     /* Detail identity — the record/customer a detail route is about */
-    --ua-text-detail-identity-size: 20px;
+    --ua-text-detail-identity-size: 24px;
     --ua-text-detail-identity-weight: 600;
-    --ua-text-detail-identity-leading: 26px;
-    --ua-text-detail-identity-tracking: -0.012em;
+    --ua-text-detail-identity-leading: 32px;
+    --ua-text-detail-identity-tracking: -0.02em;
 
     /* Section title — panels and major groups */
-    --ua-text-section-title-size: 16px;
+    --ua-text-section-title-size: 18px;
     --ua-text-section-title-weight: 600;
-    --ua-text-section-title-leading: 22px;
-    --ua-text-section-title-tracking: -0.006em;
+    --ua-text-section-title-leading: 26px;
+    --ua-text-section-title-tracking: -0.01em;
 
     /* Working title — row titles, chart titles, dialog titles */
-    --ua-text-working-title-size: 14px;
+    --ua-text-working-title-size: 15px;
     --ua-text-working-title-weight: 600;
-    --ua-text-working-title-leading: 20px;
+    --ua-text-working-title-leading: 22px;
     --ua-text-working-title-tracking: 0;
 
     /* Dialog title and chart/card title both render the working-title role */
@@ -87,13 +87,13 @@
     /* Caption — supporting copy */
     --ua-text-caption-size: 12px;
     --ua-text-caption-weight: 400;
-    --ua-text-caption-leading: 16px;
+    --ua-text-caption-leading: 18px;
     --ua-text-caption-tracking: 0;
 
     /* Metadata — tertiary information, never the sole carrier of meaning */
     --ua-text-metadata-size: 12px;
     --ua-text-metadata-weight: 500;
-    --ua-text-metadata-leading: 16px;
+    --ua-text-metadata-leading: 18px;
     --ua-text-metadata-tracking: 0;
   }
 

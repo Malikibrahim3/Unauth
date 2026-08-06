@@ -1,0 +1,36 @@
+label: "PROVISIONAL — NOT CERTIFICATION EVIDENCE"
+phase: P00
+objective: Repository truth and implementation lock
+entry:
+  specification: PRESENT
+  explicit_instruction: PRESENT
+  repository_tree: PRESENT
+  base_revision: c9aecf461471f5d9e7abefe12e1089374cbb0a02
+  vcs_root: /Users/malikibrahim/Downloads/Unauth
+  evidence_root: docs/unauth/implementation/evidence/P00
+  predecessor: "ROOT_PHASE — NO PREDECESSOR"
+permitted:
+  - read_only_repository_and_environment_discovery
+  - repository_local_p00_governance_and_evidence_artifacts
+  - deterministic_non_live_display_fixtures
+  - test_only_generated_contract_vertical_slice
+  - non_destructive_local_diagnostics
+routes: []
+components:
+  - lib/p00/bootstrapSlice.tsx
+contracts:
+  - lib/p00/generated/bootstrapContract.ts
+fixtures:
+  - docs/unauth/implementation/p00/reference-fixture.normal.json
+tests:
+  - tests/p00/minimalVerticalSlice.test.tsx
+explicit_exclusions:
+  - production_route_redesign
+  - P01_reference_frames
+  - P02_financial_contract_implementation
+  - deployment_or_production_mutation
+  - live_merchant_or_customer_data
+  - secrets_access
+  - external_communication_or_paid_resources
+  - certification_or_marketing_claims
+scope_leakage_rule: Any change outside the listed P00 artifacts and technical slice fails P00.

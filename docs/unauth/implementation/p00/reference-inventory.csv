@@ -1,0 +1,6 @@
+surface,required_states,p00_status,fixture_path,approval,marketing_or_production_use
+Hero Overview,"normal|partial|stale|unavailable|permission|error",PLANNED_P01,reference-fixture.normal.json,SPEC_AUTHORISED_PROVISIONAL_CONTINUATION,PROHIBITED
+Cases workbench,"normal|partial|stale|unavailable|permission|error",PLANNED_P01,reference-fixture.normal.json,SPEC_AUTHORISED_PROVISIONAL_CONTINUATION,PROHIBITED
+Recovery portfolio,"normal|partial|stale|unavailable|permission|error",PLANNED_P01,reference-fixture.normal.json,SPEC_AUTHORISED_PROVISIONAL_CONTINUATION,PROHIBITED
+Reconciliation command centre,"normal|partial|stale|unavailable|permission|error",PLANNED_P01,reference-fixture.normal.json,SPEC_AUTHORISED_PROVISIONAL_CONTINUATION,PROHIBITED
+Rule impact proof,"normal|partial|stale|unavailable|permission|error",PLANNED_P01,reference-fixture.normal.json,SPEC_AUTHORISED_PROVISIONAL_CONTINUATION,PROHIBITED

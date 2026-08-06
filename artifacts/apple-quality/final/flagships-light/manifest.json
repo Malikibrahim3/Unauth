@@ -1,0 +1,219 @@
+{
+  "generatedAt": "2026-07-30T18:11:36.961Z",
+  "baseUrl": "http://127.0.0.1:3000",
+  "outputDirectory": "/Users/malikibrahim/Downloads/Unauth/artifacts/apple-quality/final/flagships-light",
+  "captures": [
+    {
+      "route": "overview",
+      "requestedPath": "/dashboard?capture=1",
+      "viewport": "1440x900",
+      "file": "overview-1440x900.png",
+      "httpStatus": 200,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "diagnostics": {
+        "path": "/dashboard?capture=1",
+        "title": "Unauth — Post-Purchase Payout Control",
+        "routeReady": null,
+        "routeState": null,
+        "overflow": 0,
+        "bodyText": "SM\nSimeon Murray Store\n1 source needs attention\nOverview\nOverview\nWork\nWork\nCases\nLosses\nRecovery\nCustomers\nConfigure\nRules\nFlows\nReports and setup\nReports\nIntegrations\nSettings\nWorkspace operator\nHelp\nSign out\nPrivacy\nData handling\nDPA\nSea"
+      }
+    },
+    {
+      "route": "work",
+      "requestedPath": "/work?capture=1",
+      "viewport": "1440x900",
+      "file": "work-1440x900.png",
+      "httpStatus": 200,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "diagnostics": {
+        "path": "/work?capture=1",
+        "title": "Unauth — Post-Purchase Payout Control",
+        "routeReady": "true",
+        "routeState": "ready",
+        "overflow": 0,
+        "bodyText": "SM\nSimeon Murray Store\n1 source needs attention\nOverview\nOverview\nWork\nWork\nCases\n99+\nLosses\nRecovery\nCustomers\nConfigure\nRules\nFlows\nReports and setup\nReports\nIntegrations\nSettings\nWorkspace operator\nHelp\nSign out\nPrivacy\nData handling\nDPA"
+      }
+    },
+    {
+      "route": "cases",
+      "requestedPath": "/claims?capture=1",
+      "viewport": "1440x900",
+      "file": "cases-1440x900.png",
+      "httpStatus": 200,
+      "consoleErrors": [
+        "%c%s%c Claims investigation summary query failed background: #e6e6e6;background: light-dark(rgba(0,0,0,0.1), rgba(255,255,255,0.25));color: #000000;color: light-dark(#000000, #ffffff);border-radius: 2px  Server   {code: 42703, details: null, hint: null, message: column case_clarification_requests.partner_id does not exist}"
+      ],
+      "pageErrors": [],
+      "diagnostics": {
+        "path": "/claims?capture=1",
+        "title": "Unauth — Post-Purchase Payout Control",
+        "routeReady": null,
+        "routeState": null,
+        "overflow": 0,
+        "bodyText": "SM\nSimeon Murray Store\n1 source needs attention\nOverview\nOverview\nWork\nWork\nCases\nLosses\nRecovery\nCustomers\nConfigure\nRules\nFlows\nReports and setup\nReports\nIntegrations\nSettings\nWorkspace operator\nHelp\nSign out\nPrivacy\nData handling\nDPA\nSea"
+      }
+    },
+    {
+      "route": "case-detail",
+      "requestedPath": "/claims/1667ec3b-236c-48ad-bf69-f4f408a67cd1?capture=1",
+      "viewport": "1440x900",
+      "file": "case-detail-1440x900.png",
+      "httpStatus": 200,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "diagnostics": {
+        "path": "/claims/1667ec3b-236c-48ad-bf69-f4f408a67cd1?capture=1",
+        "title": "Unauth — Post-Purchase Payout Control",
+        "routeReady": null,
+        "routeState": null,
+        "overflow": 0,
+        "bodyText": "SM\nSimeon Murray Store\n1 source needs attention\nOverview\nOverview\nWork\nWork\nCases\n99+\nLosses\nRecovery\nCustomers\nConfigure\nRules\nFlows\nReports and setup\nReports\nIntegrations\nSettings\nWorkspace operator\nHelp\nSign out\nPrivacy\nData handling\nDPA"
+      }
+    },
+    {
+      "route": "overview",
+      "requestedPath": "/dashboard?capture=1",
+      "viewport": "1280x800",
+      "file": "overview-1280x800.png",
+      "httpStatus": 200,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "diagnostics": {
+        "path": "/dashboard?capture=1",
+        "title": "Unauth — Post-Purchase Payout Control",
+        "routeReady": "true",
+        "routeState": "ready",
+        "overflow": 0,
+        "bodyText": "SM\nSimeon Murray Store\n1 source needs attention\nOverview\nOverview\nWork\nWork\nCases\n99+\nLosses\nRecovery\nCustomers\nConfigure\nRules\nFlows\nReports and setup\nReports\nIntegrations\nSettings\nWorkspace operator\nHelp\nSign out\nPrivacy\nData handling\nDPA"
+      }
+    },
+    {
+      "route": "work",
+      "requestedPath": "/work?capture=1",
+      "viewport": "1280x800",
+      "file": "work-1280x800.png",
+      "httpStatus": 200,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "diagnostics": {
+        "path": "/work?capture=1",
+        "title": "Unauth — Post-Purchase Payout Control",
+        "routeReady": "true",
+        "routeState": "ready",
+        "overflow": 0,
+        "bodyText": "SM\nSimeon Murray Store\n1 source needs attention\nOverview\nOverview\nWork\nWork\nCases\n99+\nLosses\nRecovery\nCustomers\nConfigure\nRules\nFlows\nReports and setup\nReports\nIntegrations\nSettings\nWorkspace operator\nHelp\nSign out\nPrivacy\nData handling\nDPA"
+      }
+    },
+    {
+      "route": "cases",
+      "requestedPath": "/claims?capture=1",
+      "viewport": "1280x800",
+      "file": "cases-1280x800.png",
+      "httpStatus": 200,
+      "consoleErrors": [
+        "%c%s%c Claims investigation summary query failed background: #e6e6e6;background: light-dark(rgba(0,0,0,0.1), rgba(255,255,255,0.25));color: #000000;color: light-dark(#000000, #ffffff);border-radius: 2px  Server   {code: 42703, details: null, hint: null, message: column case_clarification_requests.partner_id does not exist}"
+      ],
+      "pageErrors": [],
+      "diagnostics": {
+        "path": "/claims?capture=1",
+        "title": "Unauth — Post-Purchase Payout Control",
+        "routeReady": "true",
+        "routeState": "ready",
+        "overflow": 0,
+        "bodyText": "SM\nSimeon Murray Store\n1 source needs attention\nOverview\nOverview\nWork\nWork\nCases\n99+\nLosses\nRecovery\nCustomers\nConfigure\nRules\nFlows\nReports and setup\nReports\nIntegrations\nSettings\nWorkspace operator\nHelp\nSign out\nPrivacy\nData handling\nDPA"
+      }
+    },
+    {
+      "route": "case-detail",
+      "requestedPath": "/claims/1667ec3b-236c-48ad-bf69-f4f408a67cd1?capture=1",
+      "viewport": "1280x800",
+      "file": "case-detail-1280x800.png",
+      "httpStatus": 200,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "diagnostics": {
+        "path": "/claims/1667ec3b-236c-48ad-bf69-f4f408a67cd1?capture=1",
+        "title": "Unauth — Post-Purchase Payout Control",
+        "routeReady": null,
+        "routeState": null,
+        "overflow": 0,
+        "bodyText": "SM\nSimeon Murray Store\n1 source needs attention\nOverview\nOverview\nWork\nWork\nCases\nLosses\nRecovery\nCustomers\nConfigure\nRules\nFlows\nReports and setup\nReports\nIntegrations\nSettings\nWorkspace operator\nHelp\nSign out\nPrivacy\nData handling\nDPA\nCas"
+      }
+    },
+    {
+      "route": "overview",
+      "requestedPath": "/dashboard?capture=1",
+      "viewport": "1024x900",
+      "file": "overview-1024x900.png",
+      "httpStatus": 200,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "diagnostics": {
+        "path": "/dashboard?capture=1",
+        "title": "Unauth — Post-Purchase Payout Control",
+        "routeReady": "true",
+        "routeState": "ready",
+        "overflow": 0,
+        "bodyText": "SM\nSimeon Murray Store\n1 source needs attention\nOverview\nOverview\nWork\nWork\nCases\n99+\nLosses\nRecovery\nCustomers\nConfigure\nRules\nFlows\nReports and setup\nReports\nIntegrations\nSettings\nWorkspace operator\nHelp\nSign out\nPrivacy\nData handling\nDPA"
+      }
+    },
+    {
+      "route": "work",
+      "requestedPath": "/work?capture=1",
+      "viewport": "1024x900",
+      "file": "work-1024x900.png",
+      "httpStatus": 200,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "diagnostics": {
+        "path": "/work?capture=1",
+        "title": "Unauth — Post-Purchase Payout Control",
+        "routeReady": null,
+        "routeState": null,
+        "overflow": 0,
+        "bodyText": "SM\nSimeon Murray Store\n1 source needs attention\nOverview\nOverview\nWork\nWork\nCases\nLosses\nRecovery\nCustomers\nConfigure\nRules\nFlows\nReports and setup\nReports\nIntegrations\nSettings\nWorkspace operator\nHelp\nSign out\nPrivacy\nData handling\nDPA\nSea"
+      }
+    },
+    {
+      "route": "cases",
+      "requestedPath": "/claims?capture=1",
+      "viewport": "1024x900",
+      "file": "cases-1024x900.png",
+      "httpStatus": 200,
+      "consoleErrors": [
+        "%c%s%c Claims investigation summary query failed background: #e6e6e6;background: light-dark(rgba(0,0,0,0.1), rgba(255,255,255,0.25));color: #000000;color: light-dark(#000000, #ffffff);border-radius: 2px  Server   {code: 42703, details: null, hint: null, message: column case_clarification_requests.partner_id does not exist}"
+      ],
+      "pageErrors": [],
+      "diagnostics": {
+        "path": "/claims?capture=1",
+        "title": "Unauth — Post-Purchase Payout Control",
+        "routeReady": "true",
+        "routeState": "ready",
+        "overflow": 0,
+        "bodyText": "SM\nSimeon Murray Store\n1 source needs attention\nOverview\nOverview\nWork\nWork\nCases\n99+\nLosses\nRecovery\nCustomers\nConfigure\nRules\nFlows\nReports and setup\nReports\nIntegrations\nSettings\nWorkspace operator\nHelp\nSign out\nPrivacy\nData handling\nDPA"
+      }
+    },
+    {
+      "route": "case-detail",
+      "requestedPath": "/claims/1667ec3b-236c-48ad-bf69-f4f408a67cd1?capture=1",
+      "viewport": "1024x900",
+      "file": "case-detail-1024x900.png",
+      "httpStatus": 200,
+      "consoleErrors": [
+        "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+      ],
+      "pageErrors": [],
+      "diagnostics": {
+        "path": "/claims/1667ec3b-236c-48ad-bf69-f4f408a67cd1?capture=1",
+        "title": "Unauth — Post-Purchase Payout Control",
+        "routeReady": null,
+        "routeState": null,
+        "overflow": 0,
+        "bodyText": "SM\nSimeon Murray Store\n1 source needs attention\nOverview\nOverview\nWork\nWork\nCases\n99+\nLosses\nRecovery\nCustomers\nConfigure\nRules\nFlows\nReports and setup\nReports\nIntegrations\nSettings\nWorkspace operator\nHelp\nSign out\nPrivacy\nData handling\nDPA"
+      }
+    }
+  ]
+}

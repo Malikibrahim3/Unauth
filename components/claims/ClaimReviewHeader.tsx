@@ -18,9 +18,11 @@ import { DetailPageShell } from '@/components/workbench/DetailPageShell';
 export function ClaimReviewHeader({
   wb,
   children,
+  caseBasePath = '/claims',
 }: {
   wb: ClaimReviewWorkbench;
   children: ReactNode;
+  caseBasePath?: '/claims' | '/cases';
 }) {
   const { selectedClaim, history, claimId, customerName, customerProfileHref } = wb;
   const identity = selectedClaim
@@ -35,12 +37,12 @@ export function ClaimReviewHeader({
     : 'Case';
   const openedAt = selectedClaim?.created_at ?? selectedClaim?.submitted_at ?? null;
   const recordNav = wb.state.nextClaimHref
-    ? { nextHref: wb.state.nextClaimHref, nextLabel: 'Next review' }
+    ? { nextHref: wb.state.nextClaimHref.replace('/claims/', `${caseBasePath}/`), nextLabel: 'Next review' }
     : undefined;
 
   return (
     <DetailPageShell
-      backHref="/claims"
+      backHref={caseBasePath}
       backLabel="Back to cases"
       eyebrow={caseType}
       title={identity}

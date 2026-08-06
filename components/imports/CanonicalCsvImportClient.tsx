@@ -263,6 +263,7 @@ export function CanonicalCsvImportClient({
           className="mt-3"
           summaryClassName="ua-text-label text-[var(--ua-action-primary)]"
           summary="Paste CSV text instead"
+          defaultOpen
         >
           <Textarea
             className="mt-2 h-36 font-mono text-xs"

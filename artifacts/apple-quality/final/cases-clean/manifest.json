@@ -1,0 +1,41 @@
+{
+  "generatedAt": "2026-07-30T18:28:10.092Z",
+  "baseUrl": "http://127.0.0.1:3000",
+  "outputDirectory": "/Users/malikibrahim/Downloads/Unauth/artifacts/apple-quality/final/cases-clean",
+  "captures": [
+    {
+      "route": "cases",
+      "requestedPath": "/claims?capture=1",
+      "viewport": "1440x900",
+      "file": "cases-1440x900.png",
+      "httpStatus": 200,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "diagnostics": {
+        "path": "/claims?capture=1",
+        "title": "Unauth — Post-Purchase Payout Control",
+        "routeReady": "true",
+        "routeState": "ready",
+        "overflow": 0,
+        "bodyText": "SM\nSimeon Murray Store\n1 source needs attention\nOverview\nOverview\nWork\nWork\nCases\n99+\nLosses\nRecovery\nCustomers\nConfigure\nRules\nFlows\nReports and setup\nReports\nIntegrations\nSettings\nWorkspace operator\nHelp\nSign out\nPrivacy\nData handling\nDPA"
+      }
+    },
+    {
+      "route": "case-detail",
+      "requestedPath": "/claims/1667ec3b-236c-48ad-bf69-f4f408a67cd1?capture=1",
+      "viewport": "1440x900",
+      "file": "case-detail-1440x900.png",
+      "httpStatus": 200,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "diagnostics": {
+        "path": "/claims/1667ec3b-236c-48ad-bf69-f4f408a67cd1?capture=1",
+        "title": "Unauth — Post-Purchase Payout Control",
+        "routeReady": null,
+        "routeState": null,
+        "overflow": 0,
+        "bodyText": "SM\nSimeon Murray Store\n1 source needs attention\nOverview\nOverview\nWork\nWork\nCases\n99+\nLosses\nRecovery\nCustomers\nConfigure\nRules\nFlows\nReports and setup\nReports\nIntegrations\nSettings\nWorkspace operator\nHelp\nSign out\nPrivacy\nData handling\nDPA"
+      }
+    }
+  ]
+}

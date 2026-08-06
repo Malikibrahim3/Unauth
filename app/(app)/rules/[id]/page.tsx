@@ -27,7 +27,7 @@ export default async function RuleDetail({
   if (!user) redirect("/login");
   const service = getRequestServiceClient();
   const ctx = await requirePagePermission(PERMISSIONS.VIEW_SETTINGS);
-  if (!ctx) redirect("/dashboard");
+  if (!ctx) redirect("/overview");
   const { id } = await params;
   const [ruleResult, versionsResult] = await Promise.all([
     service

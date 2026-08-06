@@ -1,0 +1,37 @@
+historical_status: "SUPERSEDED — P01 fixture-coverage rule clarified"
+preserved_at: "2026-08-04T13:40:00+01:00"
+original_certificate_sha256: 1ff9070f52600bba11c64004097cc980f39ac37813c9d738aa840550aae25929
+original_evidence_manifest_sha256: 31e3c23fed58d856bd1af3047cfcc0178cfe515a0bd4f8b5da6180109e309a80
+original_candidate_sha256: 3a4f0ce58766f5fe114e6c746a272c7b1d8f83be62e1f07f267d6a92a89db918
+report: |
+  # Phase P01 Acceptance Report
+
+  Status: BLOCKED
+  Specification version/hash: 1.1 / ae768408a6fde250c57f4a1e7f2f3daf96fc10ac31f046f118fddff3e86768a2
+  Candidate revision/tree hash: c9aecf461471f5d9e7abefe12e1089374cbb0a02 / 3a4f0ce58766f5fe114e6c746a272c7b1d8f83be62e1f07f267d6a92a89db918
+  Candidate evidence class/freeze: P01_BLOCKED_SAFE_ARTIFACTS / P01 BLOCKED CANDIDATE FREEZE; 194 scoped files; deterministic content manifest
+  Authorised principal and instruction evidence: Project Sponsor (requesting user) / requesting_repository_controller / explicit “Implement Phase P01 only” instruction at 2026-08-04T13:09:00+01:00
+  Governance state: PROVISIONAL_IMPLEMENTATION
+  Certification lock: ON
+  Governance registry path/hash: docs/unauth/implementation/p00/owners-approvals.yaml / be1f64de855907aae879d520dc1bb2c1208ecc117c84ccae522d6a89ee3c7045
+  Accountable phase seat (role / holder / status): Design / requesting_repository_controller / PROVISIONAL
+  Accountable owner approval/evidence: WITHHELD_PENDING_P01_BLOCK_001; no human signature and no provisional exit approval claimed
+  Provisional seats / vacant seats: inherited P00 registry; 11 provisional role seats / 11 vacant backup seats
+  Multi-seat conflicts and mitigations: GOV-CONFLICT-001 inherited; certification lock ON, no self-verification claim, independent read-only craft review, and ratified re-review before P12
+  Ratification obligations and deadline: Product, Design, Finance/Model Risk, Accessibility and Engineering ratified re-review BEFORE_P12_ENTRY; P02 impact review at P02 exit
+  AI/tool contribution disclosure: Codex created standalone non-production references, tests, captures, manifests and provisional governance records. It performed no financial arithmetic, live-data read, mutation, deployment, external publication, ownership, signature or certification.
+  No-invented-identity / no-AI-owner attestation: PASS — no person was invented; no AI/tool occupies, approves or signs a seat
+  Phase diff manifest: docs/unauth/implementation/p01/phase-diff.json; no production or later-phase path in the P01 diff
+  Entry dependency evidence: P00 PASS certificate d26ab8ddb68781dc451696794ba70977bfa97c424f71372762e8cdf1a77dc390; frozen fixture 21ab3b0bfc310a6356158f394cdd6f2cd638ad3c7b7586b3aaf2195e6e86ea13
+  Routes/surfaces completed: Five standalone reference surfaces completed with safe fixture content; no product route created. Required absent normal-state detail was visibly unavailable rather than invented.
+  Tests executed: P01 Jest 1/1 suite and 3/3 tests PASS; JavaScript syntax checks PASS; capture contract PASS with 180/180 frames, 0 horizontal-overflow frames and 30 corrected 400% layout-reflow rows
+  Evidence-pack links: original evidence manifest hash 31e3c23fed58d856bd1af3047cfcc0178cfe515a0bd4f8b5da6180109e309a80
+  Independent reviewers/sign-offs: impeccable-finish-reviewer found no material visual-craft defect; no ratified human sign-off or provisional exit approval claimed
+  Open defects: 1 — P01-BLOCK-001
+  Scope leakage check: PASS
+  Candidate immutability check: PASS
+  Next phase started: NO
+
+  ## Blockers
+
+  P01-BLOCK-001 (R5): The frozen P00 fixture omitted required V02 series, V07 ageing buckets, recovery/reconciliation member records, candidate comparison records, and rule affected-case/fixture-result membership. Version 1.2 supersedes this blocker by defining the P01-only supplement and structural Unavailable rule; the underlying P12 data obligation remains.

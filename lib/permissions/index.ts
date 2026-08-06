@@ -325,10 +325,10 @@ export async function resolvePermissions(
 }
 
 const DEFAULT_APP_DESTINATIONS: Array<{ permission: Permission; href: string }> = [
-  { permission: PERMISSIONS.VIEW_DASHBOARD, href: '/dashboard' },
-  { permission: PERMISSIONS.VIEW_INBOX, href: '/claims' },
+  { permission: PERMISSIONS.VIEW_DASHBOARD, href: '/overview' },
+  { permission: PERMISSIONS.VIEW_INBOX, href: '/cases' },
   { permission: PERMISSIONS.VIEW_CUSTOMERS, href: '/customers' },
-  { permission: PERMISSIONS.VIEW_SETTINGS, href: '/settings' },
+  { permission: PERMISSIONS.VIEW_SETTINGS, href: '/settings/workspace/account' },
 ];
 
 /**

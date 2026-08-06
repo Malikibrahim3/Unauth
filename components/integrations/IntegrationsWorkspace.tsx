@@ -328,11 +328,11 @@ function CatalogueCard({ item }: { item: CatalogueRowItem }) {
         {item.runtimeVerificationPending && !planned ? <MetadataChip>Runtime verification pending</MetadataChip> : null}
       </div>
       <div className={styles.catalogueFooter}>
-        <Link href={`/integrations/${item.id}`} className={styles.catalogueSecondary}>View details <ArrowUpRight size={12} className="ml-0.5 inline" aria-hidden="true" /></Link>
+        <Link href={`/sources/${item.id}`} className={styles.catalogueSecondary}>View details <ArrowUpRight size={12} className="ml-0.5 inline" aria-hidden="true" /></Link>
         {planned ? (
           <span className="ua-text-metadata">Not available yet</span>
         ) : item.connectEnabled ? (
-          <ButtonLink href={`/integrations/${item.id}`} size="sm">Connect</ButtonLink>
+          <ButtonLink href={`/sources/setup/${item.id}`} size="sm">Connect</ButtonLink>
         ) : (
           <span className="ua-text-metadata">Setup coming soon</span>
         )}
@@ -395,7 +395,7 @@ function BrowseView({ items, allItems }: { items: CatalogueRowItem[]; allItems: 
               <h2 className={styles.importCalloutTitle} id="custom-sources-title">Files, documents and custom sources</h2>
               <p className={styles.importCalloutText}>Import CSV records, upload merchant-approved agreements, or configure API access when a connected system cannot provide the evidence.</p>
             </div>
-            <ButtonLink href="/integrations/imports" variant="secondary" size="sm">Open imports &amp; API</ButtonLink>
+          <ButtonLink href="/sources/imports" variant="secondary" size="sm">Open imports</ButtonLink>
           </div>
         </section>
       </div>

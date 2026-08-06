@@ -48,6 +48,7 @@ type Props = {
   customersRecord: Record<string, CustomerProfileSummary>;
   currentUserId: string;
   initialFocusClaimId?: string | null;
+  basePath?: '/claims' | '/cases';
 };
 
 function customerDisplayName(
@@ -109,6 +110,7 @@ export function ClaimsQueueClient({
   customersRecord,
   currentUserId,
   initialFocusClaimId,
+  basePath = '/claims',
 }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(() =>
     resolveInitialSelection(claims, initialFocusClaimId),
@@ -261,6 +263,7 @@ export function ClaimsQueueClient({
             outcome={selectedOutcome}
             evidence={selectedEvidence}
             customer={selectedCustomer}
+            basePath={basePath}
           />
         ) : (
           <div className="flex h-full items-center justify-center px-8 py-16 text-center">
@@ -281,6 +284,69 @@ export function ClaimsQueueClient({
           </div>
         )}
       </div>
+
+      <aside className="ua-case-queue__decision-rail" aria-label="Decision rail">
+        {selected && selectedOps ? (
+          <CaseDecisionRail
+            claim={selected}
+            ops={selectedOps}
+            outcome={selectedOutcome}
+            evidence={selectedEvidence}
+            basePath={basePath}
+          />
+        ) : (
+          <p className="ua-text-caption-role p-5">Select a case to inspect its evidence and available decision.</p>
+        )}
+      </aside>
+    </div>
+  );
+}
+
+function CaseDecisionRail({
+  claim,
+  ops,
+  outcome,
+  evidence,
+  basePath,
+}: {
+  claim: ClaimRow;
+  ops: ReturnType<typeof claimNextAction>;
+  outcome: Outcome | null;
+  evidence: EvidencePackageRow | null;
+  basePath: '/claims' | '/cases';
+}) {
+  const action = casePreviewPrimaryAction(claim);
+  const hasRecordedDecision = Boolean(outcome || claim.status === 'decision_recorded');
+
+  return (
+    <div className="p-5">
+      <p className="ua-text-metadata">Decision rail</p>
+      <h2 className="ua-text-section-title mt-2">Merchant action</h2>
+      <p className="ua-text-caption-role mt-2">
+        Recommendations are advisory. A merchant decision is recorded separately with its evidence and audit receipt.
+      </p>
+
+      <div className="mt-5 space-y-4">
+        <section className="border-b border-[var(--ua-border-subtle)] pb-4">
+          <p className="ua-text-metadata">Evidence</p>
+          <p className="ua-text-working-title mt-1">{evidence ? 'Package generated' : ops.evidenceStatus}</p>
+          <p className="ua-text-caption-role mt-1">{evidence ? `Reference ${evidence.reference_number}` : 'Review source records before recording an outcome.'}</p>
+        </section>
+        <section className="border-b border-[var(--ua-border-subtle)] pb-4">
+          <p className="ua-text-metadata">Recommendation</p>
+          <p className="ua-text-working-title mt-1">{ops.nextActionLabel}</p>
+          <p className="ua-text-caption-role mt-1">{ops.reviewState}</p>
+        </section>
+        <section>
+          <p className="ua-text-metadata">Merchant decision</p>
+          <p className="ua-text-working-title mt-1">{hasRecordedDecision ? (outcome ? (DECISION_LABELS[outcome.decision] ?? outcome.decision) : 'Recorded') : 'Not yet recorded'}</p>
+          <p className="ua-text-caption-role mt-1">Open the review workbench to confirm, re-authenticate if required, and retain the receipt.</p>
+        </section>
+      </div>
+
+      <ButtonLink href={`${basePath}/${claim.id}#${action.hash}`} size="sm" className="mt-5 w-full justify-center">
+        {hasRecordedDecision ? 'Review receipt' : 'Review merchant decision'}
+      </ButtonLink>
     </div>
   );
 }
@@ -291,12 +357,14 @@ function ClaimDetailPanel({
   outcome,
   evidence,
   customer,
+  basePath,
 }: {
   claim: ClaimRow;
   ops: ReturnType<typeof claimNextAction>;
   outcome: Outcome | null;
   evidence: EvidencePackageRow | null;
   customer: CustomerProfileSummary | null;
+  basePath: '/claims' | '/cases';
 }) {
   const orderRef = shortRef(claim.order_ref ?? claim.shopify_order_id, claim.id);
   const primaryAction = casePreviewPrimaryAction(claim);
@@ -388,7 +456,7 @@ function ClaimDetailPanel({
             <StatusBadge family="recoveryStatus" value={claim.recovery_state} tone="neutral" size="sm" />
           )}
         </div>
-        <ButtonLink href={`/claims/${claim.id}#${primaryAction.hash}`} size="sm" className="mt-2.5 self-start">
+        <ButtonLink href={`${basePath}/${claim.id}#${primaryAction.hash}`} size="sm" className="mt-2.5 self-start">
           {primaryAction.label} <ArrowRight className="h-3 w-3" aria-hidden="true" />
         </ButtonLink>
       </section>
@@ -433,7 +501,7 @@ function ClaimDetailPanel({
             </p>
           ) : null}
           <Link
-            href={`/claims/${claim.id}#case-responsibility`}
+            href={`${basePath}/${claim.id}#case-responsibility`}
             className="ua-text-working-title mt-2.5 inline-flex items-center gap-1.5 text-[var(--ua-text-primary)] underline underline-offset-2"
           >
             Open investigation <ArrowRight className="h-3 w-3" />
@@ -556,7 +624,7 @@ function ClaimDetailPanel({
                 />
               </div>
               <ButtonLink
-                href={`/claims/${claim.id}#case-evidence`}
+                href={`${basePath}/${claim.id}#case-evidence`}
                 size="sm"
                 variant="secondary"
                 className="shrink-0"
@@ -574,7 +642,7 @@ function ClaimDetailPanel({
                 {missingEvidenceCopy(claim)}
               </p>
               <Link
-                href={`/claims/${claim.id}#case-evidence`}
+                href={`${basePath}/${claim.id}#case-evidence`}
                 className="ua-text-working-title shrink-0 hover:underline"
                 style={{ color: "var(--ua-action-primary)" }}
               >

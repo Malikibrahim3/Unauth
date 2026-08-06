@@ -183,7 +183,7 @@ export function FlowVersionWorkbench({
       if (!response.ok)
         throw new Error(body.error ?? "Flow draft could not be saved");
       setEditing(false);
-      router.push(`/flows/${body.workflow.id}`);
+      router.push(`/controls/flows/${body.workflow.id}`);
       router.refresh();
       setMessage({ tone: "success", text: body.notice });
       return true;
@@ -272,7 +272,7 @@ export function FlowVersionWorkbench({
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? "Publish failed");
       setPublishPreview(null);
-      router.push(`/flows/${body.workflow.id}`);
+      router.push(`/controls/flows/${body.workflow.id}`);
       router.refresh();
       setMessage({
         tone: "success",
@@ -317,7 +317,7 @@ export function FlowVersionWorkbench({
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? "Rollback draft failed");
-      router.push(`/flows/${body.workflow.id}`);
+      router.push(`/controls/flows/${body.workflow.id}`);
       router.refresh();
       setMessage({ tone: "success", text: body.notice });
     } catch (reason) {

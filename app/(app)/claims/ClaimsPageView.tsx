@@ -64,6 +64,7 @@ export type ClaimsPageViewProps = {
   }>;
   page: number;
   totalPages: number;
+  basePath: '/claims' | '/cases';
 };
 
 export function ClaimsPageView({
@@ -89,6 +90,7 @@ export function ClaimsPageView({
   recoveryMetricRows,
   page,
   totalPages,
+  basePath,
 }: ClaimsPageViewProps) {
   // Display currency for aggregate KPIs: the most common case currency on record.
   const displayCurrency = dominantCurrency(recoveryMetricRows.length > 0 ? recoveryMetricRows : claims);
@@ -143,7 +145,7 @@ export function ClaimsPageView({
           <EmptyState
             title="No cases yet"
             description="Connect a support source to create cases from customer conversations."
-            action={<ButtonLink href="/settings/integrations" size="md">Connect support source</ButtonLink>}
+            action={<ButtonLink href="/sources/connected" size="md">Connect support source</ButtonLink>}
           />
       ) : (
           <RegistrySurface
@@ -152,7 +154,7 @@ export function ClaimsPageView({
             toolbar={
               <div className="ua-case-registry-tools">
                 <div className="ua-case-registry-tools__primary">
-                  <form method="get" action="/claims" role="search" aria-label="Search cases" className="ua-case-registry-tools__search">
+                  <form method="get" action={basePath} role="search" aria-label="Search cases" className="ua-case-registry-tools__search">
                     {Object.entries(sp)
                       .filter(([key, value]) => key !== 'search' && key !== 'page' && key !== 'focus' && value)
                       .map(([key, value]) => (
@@ -174,7 +176,7 @@ export function ClaimsPageView({
                       Search
                     </button>
                     {searchTerm ? (
-                      <Link href={`/claims${buildClaimsQueryString(sp, { search: undefined, page: '1', focus: undefined })}`} className="ua-text-label shrink-0 text-[var(--ua-text-secondary)] underline underline-offset-2">
+                      <Link href={`${basePath}${buildClaimsQueryString(sp, { search: undefined, page: '1', focus: undefined })}`} className="ua-text-label shrink-0 text-[var(--ua-text-secondary)] underline underline-offset-2">
                         Clear
                       </Link>
                     ) : null}
@@ -184,10 +186,10 @@ export function ClaimsPageView({
                       aria-label="Sort cases"
                       value={slaFilter === 'overdue' ? 'ageing' : sort === 'age' ? 'oldest' : sort === 'value' ? 'value' : 'updated'}
                       items={[
-                        { value: 'updated', label: 'Updated', href: `/claims${buildClaimsQueryString(sp, { sort: undefined, sla: undefined, page: '1' })}` },
-                        { value: 'oldest', label: 'Oldest', href: `/claims${buildClaimsQueryString(sp, { sort: 'age', sla: undefined, page: '1' })}` },
-                        { value: 'ageing', label: 'Ageing first', href: `/claims${buildClaimsQueryString(sp, { sla: 'overdue', sort: 'age', page: '1' })}` },
-                        { value: 'value', label: 'Highest value', href: `/claims${buildClaimsQueryString(sp, { sort: 'value', sla: undefined, page: '1' })}` },
+                        { value: 'updated', label: 'Updated', href: `${basePath}${buildClaimsQueryString(sp, { sort: undefined, sla: undefined, page: '1' })}` },
+                        { value: 'oldest', label: 'Oldest', href: `${basePath}${buildClaimsQueryString(sp, { sort: 'age', sla: undefined, page: '1' })}` },
+                        { value: 'ageing', label: 'Ageing first', href: `${basePath}${buildClaimsQueryString(sp, { sla: 'overdue', sort: 'age', page: '1' })}` },
+                        { value: 'value', label: 'Highest value', href: `${basePath}${buildClaimsQueryString(sp, { sort: 'value', sla: undefined, page: '1' })}` },
                       ]}
                     />
                   </div>
@@ -221,17 +223,17 @@ export function ClaimsPageView({
               <>
                 {/* Page size lives with the rest of pagination (C2), not beside sort. */}
                 <Suspense fallback={<span className="ua-text-caption-role">Rows…</span>}>
-                  <PageSizeSelect pathname="/claims" pageSize={pageSize} />
+                  <PageSizeSelect pathname={basePath} pageSize={pageSize} />
                 </Suspense>
                 {totalPages > 1 ? (
                   <div className="flex items-center gap-3">
                     <span>Page {page} of {totalPages}</span>
                     <div className="flex items-center gap-2">
                       {page > 1 && (
-                        <ButtonLink href={`/claims${buildClaimsQueryString(sp, { page: String(page - 1) })}`} variant="secondary" size="sm">Previous</ButtonLink>
+                        <ButtonLink href={`${basePath}${buildClaimsQueryString(sp, { page: String(page - 1) })}`} variant="secondary" size="sm">Previous</ButtonLink>
                       )}
                       {page < totalPages && (
-                        <ButtonLink href={`/claims${buildClaimsQueryString(sp, { page: String(page + 1) })}`} variant="secondary" size="sm">Next</ButtonLink>
+                        <ButtonLink href={`${basePath}${buildClaimsQueryString(sp, { page: String(page + 1) })}`} variant="secondary" size="sm">Next</ButtonLink>
                       )}
                     </div>
                   </div>
@@ -248,7 +250,7 @@ export function ClaimsPageView({
                   : 'Return to active work to review cases that still need attention.'}
                 action={queueFilter === 'active' ? (
                   <Link
-                    href="/claims?queue=history"
+                    href={`${basePath}?queue=history`}
                     className="ua-text-label mt-2 inline-block hover:underline"
                     style={{ color: 'var(--ua-action-primary)' }}
                   >
@@ -256,7 +258,7 @@ export function ClaimsPageView({
                   </Link>
                 ) : (
                   <Link
-                    href="/claims?queue=active"
+                    href={`${basePath}?queue=active`}
                     className="ua-text-label mt-2 inline-block hover:underline"
                     style={{ color: 'var(--ua-action-primary)' }}
                   >
@@ -272,6 +274,7 @@ export function ClaimsPageView({
                 customersRecord={Object.fromEntries(customerById)}
                 currentUserId={currentUserId}
                 initialFocusClaimId={initialFocusClaimId}
+                basePath={basePath}
               />
             )}
           </RegistrySurface>

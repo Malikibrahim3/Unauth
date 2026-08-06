@@ -36,14 +36,24 @@ export function WorkQueuePulse({
   bands,
   view,
   query = '',
+  blocked,
+  unassigned,
 }: {
   bands: Record<WorkDueBandKey, number>;
   view: string;
   /** Retains the operator's current client-side search when drilling into a due band. */
   query?: string;
+  blocked: number;
+  unassigned: number;
 }) {
-  const rows = BAND_ORDER.map((band) => ({ ...band, count: bands[band.key] ?? 0 }));
-  const total = rows.reduce((sum, row) => sum + row.count, 0);
+  const deadlineRows = BAND_ORDER.map((band) => ({ ...band, count: bands[band.key] ?? 0 }));
+  const rows = [
+    { key: 'overdue', label: 'Overdue', count: bands.overdue ?? 0 },
+    { key: 'due-today', label: 'Due today', count: bands['due-today'] ?? 0 },
+    { key: 'blocked', label: 'Blocked', count: blocked },
+    { key: 'unassigned', label: 'Unassigned', count: unassigned },
+  ];
+  const total = deadlineRows.reduce((sum, row) => sum + row.count, 0);
 
   if (total === 0) {
     return (
@@ -74,7 +84,7 @@ export function WorkQueuePulse({
           </h2>
           <p className={styles.subtitle}>
             {formatNumber(atRisk)} of {formatNumber(total)} active items are overdue or due today ·
-            item count by deadline
+            current operational pressure
           </p>
         </div>
       </header>
@@ -85,7 +95,7 @@ export function WorkQueuePulse({
             <Link
               href={workHref(row.key)}
               className={styles.band}
-              data-band={row.key}
+              data-band={row.key === 'blocked' || row.key === 'unassigned' ? undefined : row.key}
               aria-current={view === row.key ? 'page' : undefined}
             >
               <span className={styles.bandKey} data-band={row.key} aria-hidden="true" />

@@ -1,0 +1,43 @@
+{
+  "generatedAt": "2026-07-31T16:51:14.503Z",
+  "baseUrl": "http://127.0.0.1:3000",
+  "outputDirectory": "/Users/malikibrahim/Downloads/Unauth/.impeccable/final-case-detail-strict",
+  "captures": [
+    {
+      "route": "case-detail",
+      "requestedPath": "/claims/aa100000-0000-4000-8000-000000000012?capture=1",
+      "viewport": "1440x900",
+      "file": null,
+      "httpStatus": null,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "diagnostics": {
+        "path": null,
+        "title": null,
+        "routeReady": null,
+        "routeState": "capture-failed",
+        "overflow": 0,
+        "bodyText": null
+      },
+      "captureError": "locator.waitFor: Timeout 120000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('html[data-route-state=\"ready\"]') to be visible\u001b[22m\n"
+    },
+    {
+      "route": "case-detail",
+      "requestedPath": "/claims/aa100000-0000-4000-8000-000000000012?capture=1",
+      "viewport": "1024x900",
+      "file": null,
+      "httpStatus": null,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "diagnostics": {
+        "path": null,
+        "title": null,
+        "routeReady": null,
+        "routeState": "capture-failed",
+        "overflow": 0,
+        "bodyText": null
+      },
+      "captureError": "locator.waitFor: Timeout 120000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('html[data-route-state=\"ready\"]') to be visible\u001b[22m\n"
+    }
+  ]
+}

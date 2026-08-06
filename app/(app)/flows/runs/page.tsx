@@ -53,7 +53,7 @@ export default async function Runs({
         aria-label="Flow run history"
         toolbar={
           <Link
-            href="/flows"
+            href="/controls/flows"
             className="ua-text-label inline-flex h-7 items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2.5 text-[var(--ua-text-primary)] hover:bg-[var(--ua-surface-hover)] focus-visible:outline-none focus-visible:shadow-[inset_var(--ua-shadow-focus)]"
           >
             All flows
@@ -97,7 +97,7 @@ export default async function Runs({
               header: "Open run",
               kind: "action",
               render: (run) => (
-                <Link href={`/flows/runs/${run.id}`} className="ua-text-label text-[var(--ua-action-primary)] focus-visible:outline-none focus-visible:shadow-[inset_var(--ua-shadow-focus)]">
+                <Link href={`/controls/flows/runs/${run.id}`} className="ua-text-label text-[var(--ua-action-primary)] focus-visible:outline-none focus-visible:shadow-[inset_var(--ua-shadow-focus)]">
                   Inspect<span className="sr-only"> run {hashId(run.id)}</span>
                 </Link>
               ),

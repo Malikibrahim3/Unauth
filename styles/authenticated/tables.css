@@ -364,6 +364,13 @@
   background: var(--ua-surface-primary);
 }
 
+.ua-app .ua-case-queue__decision-rail {
+  display: none;
+  border-left: 1px solid var(--ua-border-subtle);
+  background: var(--ua-surface-muted);
+  overflow-y: auto;
+}
+
 .ua-app .ua-case-preview__identity,
 .ua-app .ua-case-preview__priority,
 .ua-app .ua-case-preview__section {
@@ -399,7 +406,7 @@
    * queue to the viewport and let each pane scroll independently instead. */
   .ua-app .ua-case-queue {
     display: grid;
-    grid-template-columns: 360px minmax(0, 1fr);
+    grid-template-columns: 420px minmax(0, 1fr);
     height: calc(100dvh - var(--ua-utility-header-height) - 96px);
     min-height: 560px;
   }
@@ -414,6 +421,16 @@
 
   .ua-app .ua-case-queue__list {
     width: auto;
+  }
+}
+
+@media (min-width: 1280px) {
+  .ua-app .ua-case-queue {
+    grid-template-columns: 420px minmax(0, 1fr) 320px;
+  }
+
+  .ua-app .ua-case-queue__decision-rail {
+    display: block;
   }
 }
 }

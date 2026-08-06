@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getRequestUser } from "@/lib/auth/requestContext";
-import { PERMISSIONS, requirePermission } from "@/lib/permissions";
+import { PERMISSIONS, hasPermission, requirePermission } from "@/lib/permissions";
 import { TABLES } from "@/lib/supabase/tables";
-import { WorkbenchPage } from "@/components/ui";
+import { ButtonLink, WorkbenchPage } from "@/components/ui";
 import { WorkQueue, type WorkQueueItem, type WorkViewCounts } from "@/components/work/WorkQueue";
 import { WorkQueuePulse } from "@/components/work/WorkQueuePulse";
 import {
@@ -141,6 +141,7 @@ export default async function WorkPage({
     ownerDirectory,
     taskDueBands,
     exceptionDueBands,
+    canAssign,
   ] =
     await Promise.all([
       view === "integration-exceptions"
@@ -157,6 +158,7 @@ export default async function WorkPage({
       loadWorkOwnerDirectory(serviceClient, ctx.merchantId),
       countWorkDueBands(serviceClient, ctx.merchantId, asOf),
       countOpenExceptionDueBands(serviceClient, ctx.merchantId, asOf),
+      hasPermission(serviceClient, ctx, PERMISSIONS.SUBMIT_PAYOUT_DECISIONS),
     ]);
   const openExceptionCount = Object.values(exceptionDueBands).reduce((sum, count) => sum + count, 0);
   const exceptionViewCounts: Record<string, number> = {
@@ -194,14 +196,14 @@ export default async function WorkPage({
       createdAt: row.created_at,
       supportPayoutCaseId: row.support_payout_case_id,
       objectHref: row.recovery_case_id
-        ? `/recoveries/${row.recovery_case_id}`
+        ? `/financials/recovery/${row.recovery_case_id}`
         : row.loss_case_id
-          ? `/losses/${row.loss_case_id}`
+          ? `/financials/losses/${row.loss_case_id}`
           : row.support_payout_case_id
             ? (
                 typeof row.source_metadata?.investigation_id === "string"
-                  ? `/claims/${row.support_payout_case_id}#investigation-${encodeURIComponent(row.source_metadata.investigation_id)}`
-                  : `/claims/${row.support_payout_case_id}`
+                  ? `/cases/${row.support_payout_case_id}#investigation-${encodeURIComponent(row.source_metadata.investigation_id)}`
+                  : `/cases/${row.support_payout_case_id}`
               )
             : null,
       objectLabel: row.recovery_case_id
@@ -244,7 +246,7 @@ export default async function WorkPage({
     createdAt: row.created_at,
     supportPayoutCaseId: row.support_payout_case_id,
     objectHref: row.support_payout_case_id
-      ? `/claims/${row.support_payout_case_id}`
+      ? `/cases/${row.support_payout_case_id}`
       : null,
     objectLabel: row.support_payout_case_id
       ? shortRef(null, row.support_payout_case_id)
@@ -276,8 +278,10 @@ export default async function WorkPage({
   const deadlineRisk = dueBands.overdue + dueBands["due-today"];
   return (
     <WorkbenchPage
+      eyebrow="Operations"
       title="Work"
       subtitle={`${formatNumber(matchingWork)} ${viewLabel.toLowerCase()} · ${formatNumber(deadlineRisk)} overdue or due today`}
+      actions={canAssign ? <ButtonLink href="/work?view=unassigned" size="sm">Assign next safe item</ButtonLink> : null}
       main={
         <WorkQueue
           items={items}
@@ -288,7 +292,7 @@ export default async function WorkPage({
           pageSize={pageSize}
           asOf={asOf.toISOString()}
           initialQuery={searchQuery}
-          forecast={<WorkQueuePulse bands={dueBands} view={view} query={searchQuery} />}
+          forecast={<WorkQueuePulse bands={dueBands} view={view} query={searchQuery} blocked={viewCounts.blocked} unassigned={viewCounts.unassigned} />}
         />
       }
       mainSurface="open"

@@ -116,9 +116,32 @@ export async function proxy(request: NextRequest) {
   if (pathname === '/') {
     aliasUrl = request.nextUrl.clone();
     aliasUrl.pathname = '/landing';
-  } else if (user && pathname === '/settings') {
+  } else if (user && [
+    '/dashboard',
+    '/claims',
+    '/inbox',
+    '/losses',
+    '/recoveries',
+    '/reports',
+    '/integrations',
+    '/rules',
+    '/flows',
+    '/settings',
+  ].includes(pathname)) {
+    const canonicalByAlias: Record<string, string> = {
+      '/dashboard': '/overview',
+      '/claims': '/cases',
+      '/inbox': '/cases',
+      '/losses': '/financials/losses',
+      '/recoveries': '/financials/recovery',
+      '/reports': '/financials/reports',
+      '/integrations': '/sources/connected',
+      '/rules': '/controls/rules',
+      '/flows': '/controls/flows',
+      '/settings': '/settings/workspace/account',
+    };
     aliasUrl = request.nextUrl.clone();
-    aliasUrl.pathname = '/settings/account';
+    aliasUrl.pathname = canonicalByAlias[pathname];
   } else if (user && pathname === '/exceptions') {
     aliasUrl = request.nextUrl.clone();
     aliasUrl.pathname = '/work';

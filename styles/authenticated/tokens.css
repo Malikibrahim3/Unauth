@@ -391,31 +391,74 @@
  * untouched while the desktop product receives its own calm hierarchy.
  */
 .ua-app {
+  /* Implementation specification §5.1 / T23–T25: the authenticated
+   * workspace uses one cool-neutral instrument palette. These values are
+   * deliberately declared at the product surface boundary so public pages
+   * keep their own visual contract. */
   --ua-toolbar: #ffffff;
+  --ua-canvas: #f7f8fa;
+  --ua-shell: #f7f8fa;
+  --ua-surface-primary: #ffffff;
+  --ua-surface-raised: #ffffff;
+  --ua-surface-overlay: #ffffff;
+  --ua-surface-secondary: #f2f4f7;
+  --ua-surface-muted: #f2f4f7;
+  --ua-surface-hover: #f9fafb;
+  --ua-surface-selected: #eef2ff;
 
-  --ua-text-primary: #17171b;
-  --ua-text-secondary: #52515b;
-  --ua-text-tertiary: #6b6b75;
-  --ua-text-disabled: #aaa9b3;
-  --ua-text-link: #4949b8;
-  --ua-icon-primary: #424149;
-  --ua-icon-secondary: #74737d;
+  --ua-text-primary: #101828;
+  --ua-text-secondary: #1d2939;
+  --ua-text-tertiary: #475467;
+  --ua-text-disabled: #98a2b3;
+  --ua-text-link: #4338ca;
+  --ua-icon-primary: #1d2939;
+  --ua-icon-secondary: #475467;
 
-  --ua-chart-grid: rgb(24 26 42 / 10%);
-  --ua-chart-track: #f1f3f7;
+  --ua-border-hairline: #e4e7ec;
+  --ua-border-subtle: #e4e7ec;
+  --ua-border-default: #d0d5dd;
+  --ua-border-strong: #98a2b3;
+  --ua-border-control: #98a2b3;
+  --ua-border-focus: #6366f1;
+
+  --ua-accent-50: #f5f3ff;
+  --ua-accent-100: #eef2ff;
+  --ua-accent-200: #c7d2fe;
+  --ua-accent-500: #4338ca;
+  --ua-accent-600: #3730a3;
+  --ua-accent-700: #312e81;
+  --ua-accent-800: #272465;
+  --ua-accent-fg: #ffffff;
+  --ua-action-primary: #4338ca;
+  --ua-action-primary-hover: #3730a3;
+  --ua-action-primary-pressed: #312e81;
+  --ua-action-primary-fg: #ffffff;
+
+  --ua-chart-primary: #4338ca;
+  --ua-chart-primary-soft: #818cf8;
+  --ua-chart-grid: #e4e7ec;
+  --ua-chart-track: #f2f4f7;
 
   --ua-radius-control: 8px;
-  --ua-radius-surface: 12px;
-  --ua-radius-overlay: 16px;
+  --ua-radius-surface: 8px;
+  --ua-radius-overlay: 12px;
 
-  --ua-shadow-raised: 0 1px 2px rgb(23 23 27 / 6%);
-  --ua-shadow-float: 0 8px 24px rgb(23 23 27 / 9%);
-  --ua-shadow-menu: 0 12px 32px rgb(23 23 27 / 12%);
-  --ua-shadow-overlay: 0 28px 72px rgb(23 23 27 / 18%);
+  --ua-shadow-raised: 0 1px 2px rgb(16 24 40 / 8%);
+  --ua-shadow-float: 0 4px 12px rgb(16 24 40 / 10%);
+  --ua-shadow-menu: 0 8px 24px rgb(16 24 40 / 12%);
+  --ua-shadow-overlay: 0 12px 32px rgb(16 24 40 / 16%);
 
-  --ua-utility-header-height: 52px;
-  --ua-sidebar-width: 200px;
-  --ua-sidebar-width-collapsed: 56px;
+  --ua-utility-header-height: 48px;
+  --ua-sidebar-width: 224px;
+  --ua-sidebar-width-collapsed: 64px;
+  --ua-control-height-md: 40px;
+  --ua-control-height-input: 40px;
+  --ua-control-height-lg: 40px;
+  --ua-table-header-height: 40px;
+  --ua-table-row-height-default: 48px;
+  --ua-table-row-height-metadata: 40px;
+  --ua-table-row-height-rich: 56px;
+  --ua-table-row-height-two-line: 64px;
 }
 
 :root[data-theme="dark"] .ua-app {

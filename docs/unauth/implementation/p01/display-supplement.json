@@ -1,0 +1,37 @@
+{
+  "label": "PROVISIONAL — NOT CERTIFICATION EVIDENCE",
+  "supplement_id": "p01-v1.2-display-supplement",
+  "supplement_version": "1.0",
+  "non_computing": true,
+  "synthetic_only": true,
+  "authority": "Unauth Visual-First Product UI Implementation Plan v1.2 P01 supplement rule and P14 locked outputs",
+  "source_specification_version": "1.2",
+  "actual_money_over_time": {
+    "definition_id": "p01.overview.v02.locked",
+    "selector_lane": "reconciledActual",
+    "measure_kind": "period_flow",
+    "currency": "GBP",
+    "timezone": "Europe/London",
+    "period": "2026-01-01 inclusive to 2026-07-01 exclusive",
+    "series_order": ["Realised loss", "Recovered applied", "Net loss"],
+    "buckets": [
+      { "bucket_start": "2026-01-01", "label": "Jan", "realised_loss": "£24,000.00", "recovered_applied": "£14,000.00", "net_loss": "£10,000.00" },
+      { "bucket_start": "2026-02-01", "label": "Feb", "realised_loss": "£28,500.00", "recovered_applied": "£18,000.00", "net_loss": "£10,500.00" },
+      { "bucket_start": "2026-03-01", "label": "Mar", "realised_loss": "£30,000.00", "recovered_applied": "£20,000.00", "net_loss": "£10,000.00" },
+      { "bucket_start": "2026-04-01", "label": "Apr", "realised_loss": "£27,300.00", "recovered_applied": "£21,400.00", "net_loss": "£5,900.00" },
+      { "bucket_start": "2026-05-01", "label": "May", "realised_loss": "£25,000.00", "recovered_applied": "£20,000.00", "net_loss": "£5,000.00" },
+      { "bucket_start": "2026-06-01", "label": "Jun", "realised_loss": "£30,000.00", "recovered_applied": "£25,000.00", "net_loss": "£5,000.00" }
+    ],
+    "provenance": "Verbatim P14 locked V02 outputs; no P01 arithmetic"
+  },
+  "p12_owned_structures": [
+    { "id": "recovery.cumulative_recovered_v02", "display": "Unavailable", "qualifier": "Cumulative ledger-confirmed series is not locked before P12", "required_structure": "V02 chart" },
+    { "id": "recovery.outstanding_age_v07", "display": "Unavailable", "qualifier": "approved_at bucket amounts and distinct recovery counts are assigned to P12", "required_structure": "V07 chart" },
+    { "id": "recovery.portfolio_rows", "display": "Unavailable", "qualifier": "Identical-query recovery membership is assigned to P12", "required_structure": "portfolio table" },
+    { "id": "reconciliation.exception_rows", "display": "Unavailable", "qualifier": "Four active member records are not locked before P12", "required_structure": "exception queue" },
+    { "id": "reconciliation.candidate_comparison", "display": "Unavailable", "qualifier": "Source and ledger candidate records are assigned to P12", "required_structure": "comparison workspace" },
+    { "id": "reconciliation.unresolved_age_v07", "display": "Unavailable", "qualifier": "first_unresolved_at buckets and distinct exception counts are assigned to P12", "required_structure": "V07 chart" },
+    { "id": "rule.affected_case_rows", "display": "Unavailable", "qualifier": "Exact changed-case membership is assigned to P12", "required_structure": "affected-case table" },
+    { "id": "rule.fixture_result_rows", "display": "Unavailable", "qualifier": "Exact fixture-case membership is assigned to P12; category totals remain locked", "required_structure": "fixture-result table" }
+  ]
+}

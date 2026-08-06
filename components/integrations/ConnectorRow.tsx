@@ -59,7 +59,7 @@ export function ConnectorRow({ item }: { item: CatalogueRowItem }) {
       <div className={styles.providerCell}>
         <ProviderLogo provider={item.id} name={item.name} />
         <div className={styles.providerIdentity}>
-          <Link href={`/integrations/${item.id}`} className={styles.providerLink}>{item.name}</Link>
+          <Link href={`/sources/${item.id}`} className={styles.providerLink}>{item.name}</Link>
           <span className={styles.providerMeta}>{accountLabel(item)}</span>
         </div>
       </div>
@@ -81,7 +81,7 @@ export function ConnectorRow({ item }: { item: CatalogueRowItem }) {
         {activityLabel(item)}
       </div>
       <div className={styles.actionCell}>
-        <Link href={`/integrations/${item.id}`} className={styles.actionLink}>Manage</Link>
+        <Link href={`/sources/${item.id}`} className={styles.actionLink}>Manage</Link>
       </div>
     </li>
   );

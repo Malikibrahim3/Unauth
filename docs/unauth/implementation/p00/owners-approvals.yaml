@@ -1,0 +1,156 @@
+label: "PROVISIONAL — NOT CERTIFICATION EVIDENCE"
+registry_version: p00-governance.v1
+governance_state: PROVISIONAL_IMPLEMENTATION
+certification_lock: ON
+created_at: "2026-08-03T19:37:44+01:00"
+ratification_deadline: BEFORE_P12_ENTRY
+principal:
+  id: requesting_repository_controller
+  display_label: "Project Sponsor (requesting user)"
+  kind: actual_human_principal
+  status: PROVISIONAL
+  human_full_name: UNRATIFIED
+  identity_reference: "codex-session:2026-08-03:p00-rerun-instruction@2026-08-03T19:37:44+01:00"
+  relationship_to_company: REQUESTING_REPOSITORY_CONTROLLER_UNRATIFIED
+  authority_source: Exact user P00 rerun instruction plus specification v1.1 bootstrap authority
+  accepted_at: "2026-08-03T19:37:44+01:00"
+  expiry: BEFORE_P12_ENTRY
+  signature_artifact: SPEC_AUTHORISED_PROVISIONAL_CONTINUATION
+seat_defaults: &seat_defaults
+  status: PROVISIONAL
+  governance_state: PROVISIONAL_IMPLEMENTATION
+  holder: requesting_repository_controller
+  human_full_name: UNRATIFIED
+  identity_reference: "codex-session:2026-08-03:p00-rerun-instruction@2026-08-03T19:37:44+01:00"
+  relationship_to_company: REQUESTING_REPOSITORY_CONTROLLER_UNRATIFIED
+  authority_source: Specification v1.1 Governance Bootstrap
+  competence_evidence: PENDING_RATIFICATION
+  independence_status: CONFLICTED_MULTI_SEAT_PROVISIONAL
+  conflicts: [same_principal_holds_multiple_implementation_seats, no_independent_verifier]
+  mitigations: [certification_lock_ON, ratified_re_review_before_P12, no_self_certification]
+  permitted_actions: [repository_local_P00_to_P11_implementation_continuation]
+  prohibited_actions: [certification, production_enablement, external_communication, marketing_publication, self_verification]
+  backup_human: VACANT
+  accepted_at: "2026-08-03T19:37:44+01:00"
+  expiry: BEFORE_P12_ENTRY
+  signature_artifact: SPEC_AUTHORISED_PROVISIONAL_CONTINUATION
+  p12_eligibility: INELIGIBLE
+  p12_ineligibility_reason: Unratified identity/competence/independence; vacant backup
+seats:
+  - <<: *seat_defaults
+    seat_id: ROLE_PRODUCT
+    role: Product
+    phases: [P05, P06, P09, P11, P14]
+    gates: [G00, G11, G15]
+    exact_candidate_contribution: Product scope and authority-boundary review
+  - <<: *seat_defaults
+    seat_id: ROLE_DESIGN
+    role: Design
+    phases: [P01]
+    gates: [G05, G12]
+    exact_candidate_contribution: Visual reference and craft review
+  - <<: *seat_defaults
+    seat_id: ROLE_ENGINEERING
+    role: Engineering
+    phases: [P00]
+    gates: []
+    exact_candidate_contribution: P00 repository truth, artifacts and minimal slice
+  - <<: *seat_defaults
+    seat_id: ROLE_FRONTEND
+    role: Frontend
+    phases: [P03, P04]
+    gates: []
+    exact_candidate_contribution: Frontend feasibility and implementation review
+  - <<: *seat_defaults
+    seat_id: ROLE_BACKEND_DATA
+    role: Backend/Data
+    phases: []
+    gates: [G09]
+    exact_candidate_contribution: Data, migration and backend contract review
+  - <<: *seat_defaults
+    seat_id: ROLE_QA
+    role: QA
+    phases: []
+    gates: [G04, G10]
+    exact_candidate_contribution: Functional, state, browser and responsive verification
+  - <<: *seat_defaults
+    seat_id: ROLE_ACCESSIBILITY
+    role: Accessibility
+    phases: []
+    gates: [G06]
+    exact_candidate_contribution: Accessibility verification
+  - <<: *seat_defaults
+    seat_id: ROLE_FINANCE_MODEL_RISK
+    role: Finance/Model Risk
+    phases: [P02, P07, P08]
+    gates: [G01, G02]
+    exact_candidate_contribution: Non-computing fixture semantic review; future financial authority
+  - <<: *seat_defaults
+    seat_id: ROLE_SECURITY_PRIVACY
+    role: Security/Privacy
+    phases: []
+    gates: [G03, G08]
+    exact_candidate_contribution: Authority, privacy and security review
+  - <<: *seat_defaults
+    seat_id: ROLE_PLATFORM_SRE
+    role: Platform/SRE
+    phases: [P10]
+    gates: [G07, G13]
+    exact_candidate_contribution: Environment, performance-lab and operations review
+  - <<: *seat_defaults
+    seat_id: ROLE_RELEASE
+    role: Release
+    phases: [P12, P13]
+    gates: [G14]
+    exact_candidate_contribution: Release evidence issuance; prohibited while provisional
+phase_accountability:
+  P00: ROLE_ENGINEERING
+  P01: ROLE_DESIGN
+  P02: ROLE_FINANCE_MODEL_RISK
+  P03: ROLE_FRONTEND
+  P04: ROLE_FRONTEND
+  P05: ROLE_PRODUCT
+  P06: ROLE_PRODUCT
+  P07: ROLE_FINANCE_MODEL_RISK
+  P08: ROLE_FINANCE_MODEL_RISK
+  P09: ROLE_PRODUCT
+  P10: ROLE_PLATFORM_SRE
+  P11: ROLE_PRODUCT
+  P12: ROLE_RELEASE
+  P13: ROLE_RELEASE
+  P14: ROLE_PRODUCT
+gate_accountability:
+  G00: ROLE_PRODUCT
+  G01: ROLE_FINANCE_MODEL_RISK
+  G02: ROLE_FINANCE_MODEL_RISK
+  G03: ROLE_SECURITY_PRIVACY
+  G04: ROLE_QA
+  G05: ROLE_DESIGN
+  G06: ROLE_ACCESSIBILITY
+  G07: ROLE_PLATFORM_SRE
+  G08: ROLE_SECURITY_PRIVACY
+  G09: ROLE_BACKEND_DATA
+  G10: ROLE_QA
+  G11: ROLE_PRODUCT
+  G12: ROLE_DESIGN
+  G13: ROLE_PLATFORM_SRE
+  G14: ROLE_RELEASE
+  G15: ROLE_PRODUCT
+provisional_continuation_approvals:
+  - roles: [Product, Finance/Model Risk, Design, Engineering, Accessibility, QA, Release]
+    record: SPEC_AUTHORISED_PROVISIONAL_CONTINUATION
+    basis: Exact P00 instruction plus objective P00 exit evidence
+    permits: Safe phase-by-phase entry to P01 and P02 only after separate explicit instructions
+    does_not_permit: [human_signature_claim, G00-G15, P12-P14, production, certification, landing_page_capture]
+vacant_seats:
+  backups: 11
+  continuity_risk: One provisional principal and no ratified backups
+  deadline: BEFORE_P12_ENTRY
+multi_seat_conflicts:
+  - id: GOV-CONFLICT-001
+    seats: [ROLE_PRODUCT, ROLE_DESIGN, ROLE_ENGINEERING, ROLE_FRONTEND, ROLE_BACKEND_DATA, ROLE_QA, ROLE_ACCESSIBILITY, ROLE_FINANCE_MODEL_RISK, ROLE_SECURITY_PRIVACY, ROLE_PLATFORM_SRE, ROLE_RELEASE]
+    mitigation: Certification lock ON; no self-verification; ratified re-review and distinct backups required before P12
+attestations:
+  no_invented_identity: true
+  no_ai_owner_or_signer: true
+  ai_approved_own_work: false

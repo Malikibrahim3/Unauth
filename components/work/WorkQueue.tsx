@@ -600,7 +600,7 @@ export function WorkQueue({
               ? 'Connect a source to create work.'
               : 'Choose another saved view or return when new work arrives. New cases and integration exceptions will appear here automatically.'}
             action={view === 'open' && total === 0
-              ? <Link href="/integrations" className="ua-text-working-title inline-flex h-9 items-center rounded-[var(--ua-radius-control)] bg-[var(--ua-action-primary)] px-3 text-[var(--ua-action-primary-fg)]">Review integrations</Link>
+              ? <Link href="/sources/connected" className="ua-text-working-title inline-flex h-9 items-center rounded-[var(--ua-radius-control)] bg-[var(--ua-action-primary)] px-3 text-[var(--ua-action-primary-fg)]">Review sources</Link>
               : <Link href="/work?view=open" className="ua-text-working-title text-[var(--ua-action-primary)] hover:underline">Return to open work</Link>}
           />
         </div>

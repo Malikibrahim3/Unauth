@@ -23,7 +23,7 @@ export default async function ImportsPage() {
     user.id,
     PERMISSIONS.MANAGE_SETTINGS,
   );
-  if (denied || !ctx) redirect("/integrations");
+  if (denied || !ctx) redirect("/sources/connected");
   const [{ data, error }, catalogue] = await Promise.all([
     service
     .from(TABLES.PROCESSING_JOBS)
@@ -39,9 +39,9 @@ export default async function ImportsPage() {
   if (error) throw new Error(`import_history_failed: ${error.message}`);
   return (
     <PageFrame
-      title="Import records"
+      title="Imports"
       subtitle="Validate and map orders, refunds or customers before any write. Valid rows import independently; invalid rows remain visible and every persisted record carries CSV provenance."
-      breadcrumbs={[{ label: "Integrations", href: "/integrations" }, { label: "Import records" }]}
+      breadcrumbs={[{ label: "Sources", href: "/sources/connected" }, { label: "Imports" }]}
       tabs={
         <IntegrationsTabs
           active="imports"

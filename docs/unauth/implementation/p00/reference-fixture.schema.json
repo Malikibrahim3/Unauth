@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://unauth.local/schemas/p00-reference-fixture.v1.json",
+  "title": "Unauth P00 non-computing display fixture",
+  "description": "Display strings and semantic labels only. Arithmetic and live data are prohibited.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["fixture_id", "fixture_version", "non_computing", "synthetic_only", "timezone", "currency", "period", "as_of", "surfaces"],
+  "properties": {
+    "fixture_id": { "const": "unauth-demo-v1-display" },
+    "fixture_version": { "const": "p00.1" },
+    "non_computing": { "const": true },
+    "synthetic_only": { "const": true },
+    "timezone": { "const": "Europe/London" },
+    "currency": { "const": "GBP" },
+    "period": { "const": "2026-01-01 inclusive to 2026-07-01 exclusive" },
+    "as_of": { "const": "2026-06-30T11:00:00Z" },
+    "surfaces": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": { "$ref": "#/$defs/surface" }
+    }
+  },
+  "$defs": {
+    "surface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["surface_id", "order", "normal", "alternate_states"],
+      "properties": {
+        "surface_id": { "enum": ["hero_overview", "cases_workbench", "recovery_portfolio", "reconciliation_command_centre", "rule_impact_proof"] },
+        "order": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "normal": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/displayRecord" } },
+        "alternate_states": {
+          "type": "array",
+          "minItems": 5,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["state", "fixture_id", "display", "qualifier", "permission_label"],
+            "properties": {
+              "state": { "enum": ["partial", "stale", "unavailable", "permission", "error"] },
+              "fixture_id": { "type": "string", "minLength": 1 },
+              "display": { "type": "string", "minLength": 1 },
+              "qualifier": { "type": "string", "minLength": 1 },
+              "permission_label": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
+    "displayRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "order", "label", "display", "definition_kind", "definition_id", "value_kind", "selector_lane", "unit", "currency", "bounds", "qualifiers", "provenance", "scope", "period_or_as_of", "permission_label"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "order": { "type": "integer", "minimum": 1 },
+        "label": { "type": "string", "minLength": 1 },
+        "display": { "type": "string", "minLength": 1 },
+        "definition_kind": { "enum": ["semantic", "metric", "chart_measure", "authority", "record"] },
+        "definition_id": { "type": "string", "minLength": 1 },
+        "value_kind": { "enum": ["known_atomic", "known_derived", "unavailable_atomic", "unavailable_derived", "label_only"] },
+        "selector_lane": { "enum": ["qualifiedActual", "reconciledActual", "decisionSafe", "estimatedActual", "counterfactualModelled", "knownSubtotal", "pendingSettlement", "reconciliationEvidence", "evaluation", "not_applicable"] },
+        "unit": { "enum": ["currency", "count", "status", "text"] },
+        "currency": { "type": ["string", "null"] },
+        "bounds": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["lower_display", "point_display", "upper_display"],
+              "properties": {
+                "lower_display": { "type": "string" },
+                "point_display": { "type": "string" },
+                "upper_display": { "type": "string" }
+              }
+            }
+          ]
+        },
+        "qualifiers": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "provenance": { "type": "string", "minLength": 1 },
+        "scope": { "type": "string", "minLength": 1 },
+        "period_or_as_of": { "type": "string", "minLength": 1 },
+        "permission_label": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

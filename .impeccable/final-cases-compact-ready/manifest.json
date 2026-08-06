@@ -1,0 +1,28 @@
+{
+  "generatedAt": "2026-07-31T16:43:09.497Z",
+  "baseUrl": "http://127.0.0.1:3000",
+  "outputDirectory": "/Users/malikibrahim/Downloads/Unauth/.impeccable/final-cases-compact-ready",
+  "captures": [
+    {
+      "route": "cases",
+      "requestedPath": "/claims?capture=1",
+      "viewport": "1024x900",
+      "file": "cases-1024x900.png",
+      "httpStatus": 200,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "diagnostics": {
+        "path": "/claims?capture=1",
+        "title": "Unauth — Post-Purchase Payout Control",
+        "routeReady": "true",
+        "routeState": "ready",
+        "overflow": 0,
+        "viewportWidth": 1024,
+        "compactDesktop": true,
+        "sidebarCollapsed": "true",
+        "sidebarWidth": 56,
+        "bodyText": "A&\nSearch\n⌘K\n4 unread\n4\nME\nCases\n\n9 active · 9 with new evidence · 2 ready for decision · £876.00 at issue\n\nSearch customer, order, ticket or case reference\nSearch\nUpdated\nOldest\nAgeing first\nHighest value\nRows per page\n25\n50\n100\nWorkflow\nA"
+      }
+    }
+  ]
+}

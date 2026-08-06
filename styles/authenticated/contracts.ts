@@ -18,10 +18,8 @@
 /**
  * FilterChip is the canonical interactive filter primitive.
  *
- * M8: one selected-state vocabulary product-wide — an accent-500 border
- * edge plus primary ink, never a background fill. This is the same recipe
- * as `tabContract.active`, just applied to a bordered pill instead of an
- * underline. Segmented control below shares it for the same reason.
+ * Selected filters use the action tint for quick recognition while keeping
+ * semantic state tones reserved for operational statuses.
  */
 export const filterChipContract = {
   base: 'inline-flex h-7 items-center gap-1.5 rounded-[var(--ua-radius-control)] border px-2.5 text-[length:var(--ua-text-metadata-size)] font-medium transition-colors',
@@ -29,8 +27,7 @@ export const filterChipContract = {
     'border-[var(--ua-border-control)] bg-[var(--ua-surface-primary)] text-[var(--ua-text-secondary)]',
   hover: 'hover:bg-[var(--ua-surface-hover)]',
   focus: 'focus-visible:outline-none focus-visible:shadow-[var(--ua-shadow-focus)]',
-  selected:
-    'border-[var(--ua-accent-500)] bg-[var(--ua-surface-primary)] text-[var(--ua-text-primary)] shadow-[var(--ua-shadow-none)]',
+  selected: 'border-[var(--ua-accent-200)] bg-[var(--ua-accent-100)] text-[var(--ua-accent-800)]',
   disabled:
     'pointer-events-none cursor-not-allowed border-[var(--ua-border-subtle)] bg-[var(--ua-surface-muted)] text-[var(--ua-text-disabled)]',
 } as const;
@@ -40,8 +37,7 @@ export const segmentedControlContract = {
   root: 'inline-flex items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-control)] bg-[var(--ua-surface-secondary)] p-0.5',
   item: 'inline-flex items-center justify-center rounded-[var(--ua-radius-control)] border border-transparent px-2.5 text-[length:var(--ua-text-metadata-size)] font-medium text-[var(--ua-text-secondary)] transition-colors',
   itemHeight: 'h-[var(--ua-control-height-sm)]',
-  // Same accent-border-edge language as a selected filter chip (M8).
-  selectedItem: 'border-[var(--ua-accent-500)] bg-[var(--ua-surface-primary)] text-[var(--ua-text-primary)] shadow-[var(--ua-shadow-none)]',
+  selectedItem: 'border-[var(--ua-accent-200)] bg-[var(--ua-accent-100)] text-[var(--ua-accent-800)]',
 } as const;
 
 export const tabContract = {

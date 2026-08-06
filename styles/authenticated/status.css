@@ -22,31 +22,36 @@
 .ua-app,
 .ua-auth-surface {
   /* ── Semantic triplets (§3.3) ─────────────────────────────────────── */
-  --ua-info: #326b9b;
-  --ua-info-bg: #edf5fc;
-  --ua-info-border: #c7ddee;
-  --ua-info-line: #6c9cc4;
+  --ua-info: #175cd3;
+  --ua-info-bg: #eff8ff;
+  --ua-info-border: #b2ddff;
+  --ua-info-line: #175cd3;
 
-  --ua-success: #217a5b;
-  --ua-success-bg: #ebf7f1;
-  --ua-success-border: #bfe3d2;
-  --ua-success-line: #4e9e7e;
+  /* Green is reserved for ledger-confirmed Recovered. Generic completion,
+   * connection and validation use the neutral information treatment. */
+  --ua-success: #344054;
+  --ua-success-bg: #f2f4f7;
+  --ua-success-border: #d0d5dd;
+  --ua-success-line: #344054;
+  --ua-ledger-confirmed: #067647;
+  --ua-ledger-confirmed-bg: #ecfdf3;
+  --ua-ledger-confirmed-border: #a6f4c5;
 
-  --ua-warning: #8a6116;
-  --ua-warning-bg: #fff7df;
-  --ua-warning-border: #ead89b;
-  --ua-warning-line: #c09a3e;
+  --ua-warning: #b54708;
+  --ua-warning-bg: #fffaeb;
+  --ua-warning-border: #fedf89;
+  --ua-warning-line: #b54708;
 
-  --ua-critical: #b04444;
-  --ua-critical-bg: #fff0f0;
-  --ua-critical-border: #e8c2c2;
-  --ua-critical-line: #c97a7a;
+  --ua-critical: #b42318;
+  --ua-critical-bg: #fef3f2;
+  --ua-critical-border: #fecdca;
+  --ua-critical-line: #b42318;
 
   /* Unknown / unavailable is neutral — never warning, never critical. */
-  --ua-neutral: #62626b;
-  --ua-neutral-bg: #f1f1f3;
-  --ua-neutral-border: #d8d8dc;
-  --ua-neutral-line: #9a9aa3;
+  --ua-neutral: #344054;
+  --ua-neutral-bg: #f2f4f7;
+  --ua-neutral-border: #d0d5dd;
+  --ua-neutral-line: #667085;
 
   /* ── Risk ladder — critical/high map to Critical, medium to Warning,
    *    low to Success (§3.8). ───────────────────────────────────────── */

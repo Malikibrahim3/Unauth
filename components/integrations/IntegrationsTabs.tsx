@@ -13,23 +13,23 @@ export function IntegrationsTabs({
 }) {
   return (
     <Tabs
-      aria-label="Integration views"
+      aria-label="Source views"
       value={active}
       items={[
         {
           value: "connected",
           label: <>Connected <span className="ml-1 tabular-nums text-[var(--ua-text-tertiary)]">{connectedCount}</span></>,
-          href: "/integrations?view=connected",
+          href: "/sources/connected?view=connected",
         },
         {
           value: "browse",
-          label: <>Browse integrations <span className="ml-1 tabular-nums text-[var(--ua-text-tertiary)]">{catalogueCount}</span></>,
-          href: "/integrations?view=browse",
+          label: <>Browse sources <span className="ml-1 tabular-nums text-[var(--ua-text-tertiary)]">{catalogueCount}</span></>,
+          href: "/sources/browse",
         },
         {
           value: "imports",
-          label: "Imports & API",
-          href: "/integrations/imports",
+          label: "Imports",
+          href: "/sources/imports",
         },
       ]}
     />

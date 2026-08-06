@@ -54,7 +54,7 @@ export function FlowsIndexClient({
       const body = await response.json();
       if (!response.ok)
         throw new Error(body.error ?? "Flow draft could not be created");
-      router.push(`/flows/${body.workflow.id}`);
+      router.push(`/controls/flows/${body.workflow.id}`);
       router.refresh();
       return true;
     } catch (reason) {
@@ -72,7 +72,7 @@ export function FlowsIndexClient({
         aria-label="Flow registry"
         toolbar={
           <>
-            <ButtonLink href="/flows/runs" variant="secondary" size="sm">
+            <ButtonLink href="/controls/flows/runs" variant="secondary" size="sm">
               Run history
             </ButtonLink>
             {canManage ? (
@@ -99,7 +99,7 @@ export function FlowsIndexClient({
             {flows.map((flow) => (
               <li key={flow.name}>
                 <Link
-                  href={`/flows/${flow.hrefId}`}
+                  href={`/controls/flows/${flow.hrefId}`}
                   className="grid gap-3 px-4 py-3 transition-colors hover:bg-[var(--ua-surface-hover)] focus-visible:outline-none focus-visible:shadow-[inset_var(--ua-shadow-focus)] sm:grid-cols-[minmax(0,1fr)_10rem_6rem_auto] sm:items-center"
                 >
                   <div className="min-w-0">

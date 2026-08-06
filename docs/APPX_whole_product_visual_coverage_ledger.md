@@ -98,6 +98,41 @@ when an entry points to a deleted file, or when its phase is invalid.
 - [x] `app/(app)/shipments/[id]/page.tsx` — `VR-05`
 - [x] `app/(app)/tickets/[id]/page.tsx` — `VR-05`
 - [x] `app/(app)/work/page.tsx` — `VR-03`
+- [x] `app/(app)/cases/[caseId]/page.tsx` — `VR-03`
+- [x] `app/(app)/cases/page.tsx` — `VR-03`
+- [x] `app/(app)/controls/flows/[flowId]/page.tsx` — `VR-06`
+- [x] `app/(app)/controls/flows/page.tsx` — `VR-06`
+- [x] `app/(app)/controls/flows/runs/[runId]/page.tsx` — `VR-06`
+- [x] `app/(app)/controls/flows/runs/page.tsx` — `VR-06`
+- [x] `app/(app)/controls/page.tsx` — `VR-06`
+- [x] `app/(app)/controls/rules/[ruleId]/page.tsx` — `VR-06`
+- [x] `app/(app)/controls/rules/page.tsx` — `VR-06`
+- [x] `app/(app)/financials/losses/[lossId]/page.tsx` — `VR-04`
+- [x] `app/(app)/financials/losses/page.tsx` — `VR-04`
+- [x] `app/(app)/financials/page.tsx` — `VR-04`
+- [x] `app/(app)/financials/reconciliation/page.tsx` — `VR-04`
+- [x] `app/(app)/financials/recovery/[recoveryId]/page.tsx` — `VR-04`
+- [x] `app/(app)/financials/recovery/page.tsx` — `VR-04`
+- [x] `app/(app)/financials/reports/[reportId]/page.tsx` — `VR-07`
+- [x] `app/(app)/financials/reports/page.tsx` — `VR-07`
+- [x] `app/(app)/help/[articleSlug]/page.tsx` — `VR-09`
+- [x] `app/(app)/overview/page.tsx` — `VR-03`
+- [x] `app/(app)/search/page.tsx` — `VR-09`
+- [x] `app/(app)/settings/developers/api-access/page.tsx` — `VR-08`
+- [x] `app/(app)/settings/governance/audit-trail/page.tsx` — `VR-08`
+- [x] `app/(app)/settings/legal/agreements/page.tsx` — `VR-08`
+- [x] `app/(app)/settings/legal/data-privacy/page.tsx` — `VR-08`
+- [x] `app/(app)/settings/product/notifications/page.tsx` — `VR-08`
+- [x] `app/(app)/settings/product/platform/page.tsx` — `VR-08`
+- [x] `app/(app)/settings/workspace/account/page.tsx` — `VR-08`
+- [x] `app/(app)/settings/workspace/team/page.tsx` — `VR-08`
+- [x] `app/(app)/sources/[sourceId]/page.tsx` — `VR-08`
+- [x] `app/(app)/sources/browse/page.tsx` — `VR-08`
+- [x] `app/(app)/sources/connected/page.tsx` — `VR-08`
+- [x] `app/(app)/sources/imports/[jobId]/page.tsx` — `VR-08`
+- [x] `app/(app)/sources/imports/page.tsx` — `VR-08`
+- [x] `app/(app)/sources/page.tsx` — `VR-08`
+- [x] `app/(app)/sources/setup/[providerId]/page.tsx` — `VR-08`
 - [x] `app/(auth)/login/page.tsx` — `VR-10`
 - [x] `app/(auth)/reset/page.tsx` — `VR-10`
 - [x] `app/(auth)/reset/update/page.tsx` — `VR-10`
@@ -314,6 +349,8 @@ be completed by styling only the default branch.
 - [x] `components/claims/investigations/CaseInvestigationsCard.tsx` — `VR-03` — draft, sent, waiting, response, close and cancel views
 - [x] `components/claims/payout/ResponsibilityAssessmentCard.tsx` — `VR-03` — advisory, confirmed, corrected and dialog views
 - [x] `components/layout/CommandPalette.tsx` — `VR-02` — recent, searching, grouped results, empty and error views
+- [x] `components/layout/DataHealthDrawer.tsx` — `IG-02` — source coverage, freshness, reconciliation and decision-safe scope
+- [x] `components/canonical/OverviewSurface.tsx` — `IG-03` — ledger-confirmed actuals, modelled counterfactual, trust band and five-lane attention queue
 - [x] `extensions/chrome/popup/PopupApp.tsx` — `VR-12` — bootstrap, setup, lookup, loading, results, settings and error routing
 
 ---

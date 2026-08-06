@@ -1,18 +1,14 @@
-# Decision Ledger authenticated workspace rules
+# Unauth visual-first workspace rules
 
 This file is a loader, not a second specification.
 
 ## Authority by surface
 
-Before changing product UI, read `PRODUCT.md`, `CLAUDE.md`, and the
-authority for the surface being changed:
-
-- `.ua-app` authenticated surfaces:
-  `docs/IMPL_authenticated_execution_ledger.md` (type ramp is 20px/600, not
-  28px/650; elevation is permitted on exactly one focal object per view per
-  its §7 amendment A1).
-- public, entry/onboarding, and embedded surfaces (out of the ledger's
-  scope): `docs/IMPL_decision_ledger_instrument_grade_final_iteration.md`.
+Before changing product UI, read `PRODUCT.md`, `CLAUDE.md`, and
+`docs/unauth/implementation/visual-first-product-ui-plan.md`. The plan is the
+active authority for visual direction, phase sequencing and UI acceptance on
+every route it names. Older visual ledgers and version 1.x phase artifacts are
+historical context only where they do not conflict with the active plan.
 
 No surface may have two active visual authorities. Shared components must
 satisfy each scoped consumer or split at a meaningful surface boundary; never
@@ -23,12 +19,9 @@ mutation, export, and merchant-control invariants always win.
 
 ## Programme execution
 
-For `.ua-app`, the current executable items are §4–§8 of the authenticated
-execution ledger, verified with `node scripts/verify-visual-adoption.mjs`.
-For public, entry/onboarding, and embedded surfaces, `IG-00` through `IG-16`
-in the instrument-grade document remain the current executable visual
-phases. Earlier visual documents are historical records, not competing
-authorities.
+Execute only the phase named by the user from the active plan. Do not infer
+current status or the next phase from older ledgers, certificates or matching
+phase IDs.
 
 Functional rollout controls remain independent:
 
@@ -53,8 +46,8 @@ select an appearance.
 - `--ua-*` remains the sole product token namespace. Static literals, duplicate
   aliases, route palettes, public-token dependencies, and visual feature flags
   are prohibited.
-- Inter remains the UI face; Lucide remains the icon system. Do not add SF Pro,
-  SF Symbols, fake window chrome, bottom navigation, bottom sheets, decorative
+- Use the active plan's typography and Lucide. Do not bundle SF Pro or use SF
+  Symbols, fake window chrome, bottom navigation, bottom sheets, decorative
   glass, gradients, glow, texture, or theatrical motion.
 - Use one violet product accent for ordinary primary action, focus, selection,
   and primary data. Semantic colour communicates meaning only.
@@ -67,7 +60,8 @@ select an appearance.
   operable accessibility-reflow mode for browser zoom and text scaling.
 - Preserve all product behaviour and truthful unavailable, partial, stale,
   mixed-currency, and permission states.
-- WCAG 2.2 AA, keyboard access, 200% zoom, forced colours, reduced motion,
-  dark mode, and deterministic capture readiness are mandatory.
-- Update `/dev/design-system`, matching route states, the affected phase report,
-  and design verification whenever a canonical contract changes.
+- WCAG 2.2 AA, keyboard access, 200% zoom, forced colours, reduced motion and
+  deterministic capture readiness are mandatory. Preserve an existing dark
+  mode, but do not create a new theme solely for this rebuild.
+- Update shared documentation or behavioural tests only when a real canonical
+  contract changes; visual-only work does not require ceremonial evidence.

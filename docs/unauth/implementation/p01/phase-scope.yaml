@@ -1,0 +1,37 @@
+label: "PROVISIONAL — NOT CERTIFICATION EVIDENCE"
+phase: P01
+objective: Signed visual North Star references
+specification_version: "1.2"
+specification_sha256: 3acc6ae06192edde91a2ea549f6e676a4cdbe64639eefe9342f7691dbe0a17da
+entry:
+  p00_certificate: docs/unauth/implementation/certificates/P00.yaml
+  p00_certificate_sha256: d26ab8ddb68781dc451696794ba70977bfa97c424f71372762e8cdf1a77dc390
+  p00_status: PASS
+  fixture: docs/unauth/implementation/p00/reference-fixture.normal.json
+  fixture_sha256: 21ab3b0bfc310a6356158f394cdd6f2cd638ad3c7b7586b3aaf2195e6e86ea13
+  fixture_schema_sha256: fc9dd410b72aea3555ab6469395dbcc1aae856a3f97e7e3ac8c8cc92bb533209
+  p01_display_supplement: docs/unauth/implementation/p01/display-supplement.json
+  supplement_authority: specification_v1.2_P01_fixture_coverage_clarification
+  explicit_instruction_at: "2026-08-04T13:09:00+01:00"
+permitted:
+  - docs_local_non_production_reference_html_css_js
+  - deterministic_capture_and_validation_scripts
+  - rendered_reference_images_and_manifests
+  - non_computing_v1_2_display_supplement
+  - P01_tests_and_evidence
+surfaces:
+  - hero_overview
+  - cases_workbench
+  - recovery_portfolio
+  - reconciliation_command_centre
+  - rule_impact_proof
+states: [normal, partial, stale, unavailable, permission, error]
+viewports: [1440x900, 1280x800, 1024x768, 320x640, text200, zoom400]
+explicit_exclusions:
+  - production_components
+  - product_routes
+  - reusable_product_css
+  - financial_arithmetic_or_contract_promotion
+  - P02_or_later_phase_work
+  - landing_page_or_marketing_use
+  - deployment_or_external_publication

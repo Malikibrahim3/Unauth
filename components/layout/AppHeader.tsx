@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
-import { Bell, ChevronRight, Menu, Search } from 'lucide-react';
+import { Bell, ChevronRight, CircleHelp, Menu, Search, Settings2, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import CommandPalette from './CommandPalette';
 import { useBreadcrumbOverride } from './BreadcrumbOverrideContext';
@@ -11,6 +11,8 @@ import { AvatarMenu } from './AvatarMenu';
 import { ContextCreditsBadge } from './ContextCreditsBadge';
 import type { Permission } from '@/lib/permissions';
 import { useFetchJson } from '@/lib/react/useFetchJson';
+import type { ConnectionState } from '@/lib/connections/getConnectionState';
+import DataHealthDrawer from './DataHealthDrawer';
 
 export interface BreadcrumbSegment {
   label: string;
@@ -29,6 +31,7 @@ interface AppHeaderProps {
   userEmail?: string | null;
   unreadCount?: number;
   permissions?: Permission[];
+  connectionState?: ConnectionState | null;
 }
 
 /**
@@ -45,9 +48,11 @@ export default function AppHeader({
   userEmail,
   unreadCount = 0,
   permissions = [],
+  connectionState = null,
 }: AppHeaderProps) {
   const pathname = usePathname();
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [healthOpen, setHealthOpen] = useState(false);
   const [liveUnreadCount, setLiveUnreadCount] = useState<number | null>(null);
   const { data: notificationSummary } = useFetchJson<{ unreadCount?: number }>(
     '/api/notifications/unread-count',
@@ -184,6 +189,44 @@ export default function AppHeader({
         <kbd className="hidden sm:inline font-mono text-xs opacity-60">⌘K</kbd>
       </button>
 
+      <button
+        type="button"
+        aria-label="Data health"
+        aria-expanded={healthOpen}
+        onClick={() => setHealthOpen(true)}
+        className={cn(
+          'flex h-8 items-center gap-1.5 rounded-[var(--ua-radius-control)] px-2',
+          'border border-transparent bg-transparent text-caption text-[var(--ua-text-secondary)]',
+          'hover:bg-[var(--ua-surface-hover)] hover:text-[var(--ua-text-primary)]',
+          'transition-colors duration-[var(--ua-duration-fast)]',
+          'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ua-border-focus)] focus-visible:outline-offset-2',
+          'flex-shrink-0',
+        )}
+      >
+        <ShieldCheck size={14} aria-hidden="true" />
+        <span className="hidden lg:inline">Data health</span>
+      </button>
+
+      <Link
+        href="/settings/workspace/account"
+        prefetch={false}
+        aria-label="Settings"
+        className="flex h-8 items-center gap-1.5 rounded-[var(--ua-radius-control)] border border-transparent px-2 text-caption text-[var(--ua-text-secondary)] transition-colors duration-[var(--ua-duration-fast)] hover:bg-[var(--ua-surface-hover)] hover:text-[var(--ua-text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ua-border-focus)] focus-visible:outline-offset-2"
+      >
+        <Settings2 size={14} aria-hidden="true" />
+        <span className="hidden lg:inline">Settings</span>
+      </Link>
+
+      <Link
+        href="/help"
+        prefetch={false}
+        aria-label="Help"
+        className="flex h-8 items-center gap-1.5 rounded-[var(--ua-radius-control)] border border-transparent px-2 text-caption text-[var(--ua-text-secondary)] transition-colors duration-[var(--ua-duration-fast)] hover:bg-[var(--ua-surface-hover)] hover:text-[var(--ua-text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ua-border-focus)] focus-visible:outline-offset-2"
+      >
+        <CircleHelp size={14} aria-hidden="true" />
+        <span className="hidden lg:inline">Help</span>
+      </Link>
+
       <Link
         href="/notifications"
         prefetch={false}
@@ -197,6 +240,11 @@ export default function AppHeader({
       <AvatarMenu name={userName} email={userEmail} />
 
       <CommandPalette isOpen={paletteOpen} onClose={closePalette} permissions={permissions} />
+      <DataHealthDrawer
+        open={healthOpen}
+        onClose={() => setHealthOpen(false)}
+        connectionState={connectionState}
+      />
     </header>
   );
 }
@@ -208,8 +256,13 @@ export default function AppHeader({
 function deriveFromPathname(pathname: string): BreadcrumbSegment[] {
   const segmentMap: Record<string, string> = {
     dashboard:   'Overview',
+    overview:    'Overview',
     customers:   'Customers',
     claims:      'Cases',
+    cases:       'Cases',
+    financials:  'Financials',
+    sources:     'Sources',
+    controls:    'Controls',
     watchlist:   'Customer context',
     inbox:       'Cases',
     store:       'Dashboard',
@@ -227,8 +280,21 @@ function deriveFromPathname(pathname: string): BreadcrumbSegment[] {
   const pathMap: Record<string, string> = {
     'settings/audit-trail': 'Audit trail',
     'settings/data-privacy': 'Data & privacy',
+    'settings/workspace': 'Workspace',
+    'settings/product': 'Product',
+    'settings/developers': 'Developers',
+    'settings/legal': 'Legal',
+    'settings/governance': 'Governance',
     chargebacks: 'Cases',
     'evidence-packages': 'Cases',
+  };
+  const breadcrumbHrefMap: Record<string, string> = {
+    settings: '/settings/workspace/account',
+    'settings/workspace': '/settings/workspace/account',
+    'settings/product': '/settings/product/platform',
+    'settings/developers': '/settings/developers/api-access',
+    'settings/legal': '/settings/legal/agreements',
+    'settings/governance': '/settings/governance/audit-trail',
   };
 
   const parts = pathname.split('/').filter(Boolean);
@@ -242,7 +308,7 @@ function deriveFromPathname(pathname: string): BreadcrumbSegment[] {
     const label = pathMap[pathKey]
       ?? segmentMap[part]
       ?? (isDynamicId(part) ? singularEntityLabel(parts[i - 1]) : humanize(part));
-    const href = '/' + pathKey;
+    const href = breadcrumbHrefMap[pathKey] ?? '/' + pathKey;
     return { label, href };
   });
 }

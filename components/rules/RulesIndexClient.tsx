@@ -48,7 +48,7 @@ export function RulesIndexClient({
       if (!response.ok)
         throw new Error(body.error ?? "Rule draft could not be created");
       toast({ title: "Rule saved as draft", description: "Opening it so you can add conditions.", tone: "success" });
-      router.push(`/rules/${body.rule.id}`);
+      router.push(`/controls/rules/${body.rule.id}`);
       router.refresh();
       return true;
     } catch (reason) {
@@ -98,7 +98,7 @@ export function RulesIndexClient({
           {rules.map((rule) => (
             <li key={rule.id}>
               <Link
-                href={`/rules/${rule.id}`}
+                href={`/controls/rules/${rule.id}`}
                 className="grid gap-3 px-4 py-3 transition-colors hover:bg-[var(--ua-surface-hover)] focus-visible:outline-none focus-visible:shadow-[inset_var(--ua-shadow-focus)] sm:grid-cols-[minmax(0,1fr)_7rem_7rem_auto] sm:items-center"
               >
                 <div className="min-w-0">

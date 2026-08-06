@@ -28,7 +28,7 @@ export default async function FlowDetail({
   if (!user) redirect("/login");
   const service = getRequestServiceClient();
   const ctx = await requirePagePermission(PERMISSIONS.VIEW_SETTINGS);
-  if (!ctx) redirect("/dashboard");
+  if (!ctx) redirect("/overview");
   const { id } = await params;
   const current = (
     await service

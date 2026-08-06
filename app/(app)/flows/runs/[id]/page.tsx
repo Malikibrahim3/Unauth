@@ -84,7 +84,7 @@ export default async function Run({
       ]}
       actions={
         <Link
-          href="/flows/runs"
+          href="/controls/flows/runs"
           className="ua-text-label inline-flex h-7 items-center rounded-[var(--ua-radius-control)] border border-[var(--ua-border-default)] bg-[var(--ua-surface-primary)] px-2.5 text-[var(--ua-text-primary)] hover:bg-[var(--ua-surface-hover)] focus-visible:outline-none focus-visible:shadow-[inset_var(--ua-shadow-focus)]"
         >
           Run history

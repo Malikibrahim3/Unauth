@@ -100,6 +100,8 @@ type ClaimsSearchParams = {
   owner?: string;
   viewed?: string;
   focus?: string;
+  /** Internal route context injected by the canonical /cases entry point. */
+  surface?: 'cases';
 };
 
 type SearchIdRow = { id: string };
@@ -262,7 +264,7 @@ export default async function ClaimsPage({
 
   const serviceClient = getRequestServiceClient();
   const ctx = await requirePagePermission(PERMISSIONS.VIEW_INBOX);
-  if (!ctx) redirect('/dashboard');
+  if (!ctx) redirect('/overview');
   const [hasQueueEntitlement, connectionState, resolvedParams] = await Promise.all([
     merchantHasEntitlement(serviceClient, ctx.merchantId, 'CLAIM_REVIEW_QUEUE'),
     getCachedConnectionState(ctx.merchantId),
@@ -272,6 +274,8 @@ export default async function ClaimsPage({
     redirect('/settings/billing?required=CLAIM_REVIEW_QUEUE');
   }
   const sp: Record<string, string | undefined> = { ...(resolvedParams ?? {}) };
+  const basePath = resolvedParams.surface === 'cases' ? '/cases' : '/claims';
+  delete sp.surface;
   const searchTerm = resolvedParams.search?.trim().slice(0, 80) ?? '';
   const searchedCaseIds = searchTerm
     ? await resolveCaseSearchIds(serviceClient, ctx.merchantId, searchTerm)
@@ -714,49 +718,49 @@ export default async function ClaimsPage({
     {
       label: 'All',
       count: queueCounts.active,
-      href: `/claims${buildClaimsQueryString(sp, { workflow: undefined, queue: undefined, viewed: undefined, owner: undefined, status: undefined, sla: undefined, page: '1' })}`,
+      href: `${basePath}${buildClaimsQueryString(sp, { workflow: undefined, queue: undefined, viewed: undefined, owner: undefined, status: undefined, sla: undefined, page: '1' })}`,
       active: listView.kind === 'active',
     },
     {
       label: 'Needs evidence',
       count: queueCounts.awaitingEvidence,
-      href: `/claims${buildClaimsQueryString(sp, { workflow: 'needs_evidence', viewed: undefined, owner: undefined, queue: undefined, status: undefined, sla: undefined, page: '1' })}`,
+      href: `${basePath}${buildClaimsQueryString(sp, { workflow: 'needs_evidence', viewed: undefined, owner: undefined, queue: undefined, status: undefined, sla: undefined, page: '1' })}`,
       active: listView.kind === 'workflow' && listView.workflow === 'needs_evidence',
     },
     {
       label: 'Awaiting carrier',
       count: queueCounts.awaitingCarrier,
-      href: `/claims${buildClaimsQueryString(sp, { workflow: 'awaiting_carrier', viewed: undefined, owner: undefined, queue: undefined, status: undefined, sla: undefined, page: '1' })}`,
+      href: `${basePath}${buildClaimsQueryString(sp, { workflow: 'awaiting_carrier', viewed: undefined, owner: undefined, queue: undefined, status: undefined, sla: undefined, page: '1' })}`,
       active: listView.kind === 'workflow' && listView.workflow === 'awaiting_carrier',
     },
     {
       label: 'Awaiting 3PL',
       count: queueCounts.awaiting3pl,
-      href: `/claims${buildClaimsQueryString(sp, { workflow: 'awaiting_3pl', viewed: undefined, owner: undefined, queue: undefined, status: undefined, sla: undefined, page: '1' })}`,
+      href: `${basePath}${buildClaimsQueryString(sp, { workflow: 'awaiting_3pl', viewed: undefined, owner: undefined, queue: undefined, status: undefined, sla: undefined, page: '1' })}`,
       active: listView.kind === 'workflow' && listView.workflow === 'awaiting_3pl',
     },
     {
       label: 'Awaiting supplier',
       count: queueCounts.awaitingSupplier,
-      href: `/claims${buildClaimsQueryString(sp, { workflow: 'awaiting_supplier', viewed: undefined, owner: undefined, queue: undefined, status: undefined, sla: undefined, page: '1' })}`,
+      href: `${basePath}${buildClaimsQueryString(sp, { workflow: 'awaiting_supplier', viewed: undefined, owner: undefined, queue: undefined, status: undefined, sla: undefined, page: '1' })}`,
       active: listView.kind === 'workflow' && listView.workflow === 'awaiting_supplier',
     },
     {
       label: 'Ready for decision',
       count: queueCounts.readyForDecision,
-      href: `/claims${buildClaimsQueryString(sp, { workflow: 'ready_for_decision', viewed: undefined, owner: undefined, queue: undefined, status: undefined, sla: undefined, page: '1' })}`,
+      href: `${basePath}${buildClaimsQueryString(sp, { workflow: 'ready_for_decision', viewed: undefined, owner: undefined, queue: undefined, status: undefined, sla: undefined, page: '1' })}`,
       active: listView.kind === 'workflow' && listView.workflow === 'ready_for_decision',
     },
     {
       label: 'Manual review',
       count: queueCounts.manualReview,
-      href: `/claims${buildClaimsQueryString(sp, { workflow: 'manual_review', viewed: undefined, owner: undefined, queue: undefined, status: undefined, sla: undefined, page: '1' })}`,
+      href: `${basePath}${buildClaimsQueryString(sp, { workflow: 'manual_review', viewed: undefined, owner: undefined, queue: undefined, status: undefined, sla: undefined, page: '1' })}`,
       active: listView.kind === 'workflow' && listView.workflow === 'manual_review',
     },
     {
       label: 'Closed',
       count: queueCounts.closed,
-      href: `/claims${buildClaimsQueryString(sp, { workflow: 'closed', queue: undefined, viewed: undefined, owner: undefined, status: undefined, sla: undefined, page: '1' })}`,
+      href: `${basePath}${buildClaimsQueryString(sp, { workflow: 'closed', queue: undefined, viewed: undefined, owner: undefined, status: undefined, sla: undefined, page: '1' })}`,
       active: listView.kind === 'workflow' && listView.workflow === 'closed',
     },
   ];
@@ -794,6 +798,7 @@ export default async function ClaimsPage({
       }>}
       page={page}
       totalPages={totalPages}
+      basePath={basePath}
     />
   );
 }

@@ -157,7 +157,7 @@ export default async function ConnectionPage({
     <PageFrame
       title={item.name}
       subtitle={item.description}
-      breadcrumbs={[{ label: "Integrations", href: "/integrations" }, { label: item.name }]}
+      breadcrumbs={[{ label: "Sources", href: "/sources/connected" }, { label: item.name }]}
       actions={<StatusBadge family="workflowStatus" value={badge} />}
     >
         <div className={pageStyles.detailStack}>
@@ -261,7 +261,7 @@ export default async function ConnectionPage({
               Import history
             </h2>
             <Link
-              href="/integrations/imports"
+              href="/sources/imports"
               className="ua-text-working-title text-[var(--ua-action-primary)]"
             >
               Import records

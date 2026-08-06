@@ -1,0 +1,88 @@
+{
+  "generatedAt": "2026-07-31T16:44:32.796Z",
+  "baseUrl": "http://127.0.0.1:3000",
+  "outputDirectory": "/Users/malikibrahim/Downloads/Unauth/.impeccable/final-auth-strict",
+  "captures": [
+    {
+      "route": "overview",
+      "requestedPath": "/dashboard?capture=1",
+      "viewport": "1440x900",
+      "file": "overview-1440x900.png",
+      "httpStatus": 200,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "diagnostics": {
+        "path": "/dashboard?capture=1",
+        "title": "Unauth — Post-Purchase Payout Control",
+        "routeReady": "true",
+        "routeState": "ready",
+        "overflow": 0,
+        "viewportWidth": 1440,
+        "compactDesktop": false,
+        "sidebarCollapsed": "false",
+        "sidebarWidth": 200,
+        "bodyText": "A&\nAlder & Ash\nSources connected\nOverview\nOverview\nWork\nWork\nCases\n9\nLosses\nRecovery\nCustomers\nConfigure\nRules\nFlows\nReports and setup\nReports\nIntegrations\nSettings\nMorgan Ellis\nHelp\nSign out\nPrivacy\nData handling\nDPA\nSearch\n⌘K\n4 unread\n4\nM"
+      }
+    },
+    {
+      "route": "work",
+      "requestedPath": "/work?capture=1",
+      "viewport": "1440x900",
+      "file": null,
+      "httpStatus": null,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "diagnostics": {
+        "path": null,
+        "title": null,
+        "routeReady": null,
+        "routeState": "capture-failed",
+        "overflow": 0,
+        "bodyText": null
+      },
+      "captureError": "page.goto: Timeout 120000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:3000/work?capture=1\", waiting until \"domcontentloaded\"\u001b[22m\n"
+    },
+    {
+      "route": "cases",
+      "requestedPath": "/claims?capture=1",
+      "viewport": "1440x900",
+      "file": "cases-1440x900.png",
+      "httpStatus": 200,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "diagnostics": {
+        "path": "/claims?capture=1",
+        "title": "Unauth — Post-Purchase Payout Control",
+        "routeReady": "true",
+        "routeState": "ready",
+        "overflow": 0,
+        "viewportWidth": 1440,
+        "compactDesktop": false,
+        "sidebarCollapsed": "false",
+        "sidebarWidth": 200,
+        "bodyText": "A&\nAlder & Ash\nSources connected\nOverview\nOverview\nWork\nWork\nCases\n9\nLosses\nRecovery\nCustomers\nConfigure\nRules\nFlows\nReports and setup\nReports\nIntegrations\nSettings\nMorgan Ellis\nHelp\nSign out\nPrivacy\nData handling\nDPA\nSearch\n⌘K\n4 unread\n4\nM"
+      }
+    },
+    {
+      "route": "reports",
+      "requestedPath": "/reports?capture=1",
+      "viewport": "1440x900",
+      "file": "reports-1440x900.png",
+      "httpStatus": 200,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "diagnostics": {
+        "path": "/reports?capture=1",
+        "title": "Unauth — Post-Purchase Payout Control",
+        "routeReady": "true",
+        "routeState": "ready",
+        "overflow": 0,
+        "viewportWidth": 1440,
+        "compactDesktop": false,
+        "sidebarCollapsed": "false",
+        "sidebarWidth": 200,
+        "bodyText": "A&\nAlder & Ash\nSources connected\nOverview\nOverview\nWork\nWork\nCases\n9\nLosses\nRecovery\nCustomers\nConfigure\nRules\nFlows\nReports and setup\nReports\nIntegrations\nSettings\nMorgan Ellis\nHelp\nSign out\nPrivacy\nData handling\nDPA\nSearch\n⌘K\n4 unread\n4\nM"
+      }
+    }
+  ]
+}

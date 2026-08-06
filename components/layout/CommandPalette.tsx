@@ -23,9 +23,18 @@ import CommandPaletteSurface from "@/components/layout/CommandPaletteSurface";
 
 const PALETTE_ICONS: Record<string, React.ReactNode> = {
   "/dashboard": <LayoutGrid size={14} aria-hidden="true" />,
+  "/overview": <LayoutGrid size={14} aria-hidden="true" />,
   "/customers": <Users size={14} aria-hidden="true" />,
   "/claims": <Clipboard size={14} aria-hidden="true" />,
+  "/cases": <Clipboard size={14} aria-hidden="true" />,
+  "/financials/losses": <LayoutGrid size={14} aria-hidden="true" />,
+  "/financials/recovery": <LayoutGrid size={14} aria-hidden="true" />,
+  "/financials/reports": <LayoutGrid size={14} aria-hidden="true" />,
+  "/sources/connected": <LayoutGrid size={14} aria-hidden="true" />,
+  "/controls/rules": <LayoutGrid size={14} aria-hidden="true" />,
+  "/controls/flows": <LayoutGrid size={14} aria-hidden="true" />,
   "/settings": <Settings size={14} aria-hidden="true" />,
+  "/settings/workspace/account": <Settings size={14} aria-hidden="true" />,
   filter_high_risk: <Star size={14} aria-hidden="true" />,
   filter_new: <AlertCircle size={14} aria-hidden="true" />,
 };

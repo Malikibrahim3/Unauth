@@ -77,19 +77,19 @@ export default async function IntegrationsPage({
       <ShipBobIntegrationBanner />
       <DeferredLiveConnectionVerification />
       <PageFrame
-        title="Integrations"
-        subtitle="Manage the tools that feed evidence into Unauth, or add a new source to your stack."
+        title="Sources"
+        subtitle="Manage the systems that feed evidence into Unauth, or add a new source to your stack."
         actions={
           view === "browse" ? (
-            <ButtonLink href="/integrations?view=connected" variant="secondary" size="sm">View connections</ButtonLink>
+            <ButtonLink href="/sources/connected?view=connected" variant="secondary" size="sm">View connections</ButtonLink>
           ) : (
-            <ButtonLink href="/integrations?view=browse" size="sm" leadingIcon={<Plus size={14} />}>Add integration</ButtonLink>
+            <ButtonLink href="/sources/browse" size="sm" leadingIcon={<Plus size={14} />}>Add source</ButtonLink>
           )
         }
         tabs={<IntegrationsTabs active={view} connectedCount={connectedCount} catalogueCount={browseCount} />}
       >
         <IntegrationsWorkspace items={catalogue} initialView={view} />
-        <Link href="/integrations/imports" className="sr-only">Open imports and API workspace</Link>
+        <Link href="/sources/imports" className="sr-only">Open imports workspace</Link>
       </PageFrame>
     </>
   );

@@ -92,7 +92,7 @@ export function AvatarMenu({ name, email, className }: AvatarMenuProps) {
           )}
 
           <Link
-            href="/settings"
+            href="/settings/workspace/account"
             role="menuitem"
             onClick={() => setOpen(false)}
             className={cn(
