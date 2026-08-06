@@ -4,11 +4,29 @@ import { SourceSetupWizard } from '@/components/sources/SourceSetupWizard';
 import { loadConnectorCatalogue } from '@/lib/connectors/catalogue';
 import { getRequestServiceClient, getRequestUser, requirePagePermission } from '@/lib/auth/requestContext';
 import { hasPermission, PERMISSIONS } from '@/lib/permissions';
+import ChromeSetupPage from '@/components/sources/setup/ChromeSetupPage';
+import FreshdeskSetupPage from '@/components/sources/setup/FreshdeskSetupPage';
+import GorgiasSetupPage from '@/components/sources/setup/GorgiasSetupPage';
+import ShopifySetupPage from '@/components/sources/setup/ShopifySetupPage';
+import ZendeskSetupPage from '@/components/sources/setup/ZendeskSetupPage';
 
 export const dynamic = 'force-dynamic';
 
-export default async function SourceSetupPage({ params }: { params: Promise<{ providerId: string }> }) {
+export default async function SourceSetupPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ providerId: string }>;
+  searchParams: Promise<{ returnTo?: string }>;
+}) {
   const { providerId } = await params;
+
+  if (providerId === 'chrome') return <ChromeSetupPage />;
+  if (providerId === 'freshdesk') return <FreshdeskSetupPage />;
+  if (providerId === 'gorgias') return <GorgiasSetupPage searchParams={searchParams} />;
+  if (providerId === 'shopify') return <ShopifySetupPage />;
+  if (providerId === 'zendesk') return <ZendeskSetupPage />;
+
   const user = await getRequestUser();
   if (!user) redirect('/login');
   const service = getRequestServiceClient();

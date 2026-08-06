@@ -46,7 +46,7 @@ describe("CaseContextDrawer", () => {
     );
     expect(
       screen.getByRole("link", { name: /open full case/i }),
-    ).toHaveAttribute("href", "/claims/case-1");
+    ).toHaveAttribute("href", "/cases/case-1");
 
     // The drawer's focus trap moves initial focus to its primary close
     // control (the header "Close" button) so keyboard users can dismiss

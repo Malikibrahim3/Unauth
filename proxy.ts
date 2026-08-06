@@ -16,17 +16,6 @@ export async function proxy(request: NextRequest) {
   });
   const { pathname } = request.nextUrl;
   const isApiRoute = pathname.startsWith('/api');
-  const isDevelopmentHarness =
-    pathname === '/dev/design-system' ||
-    pathname === '/integrations/dev-preview';
-  if (process.env.NODE_ENV === 'production' && isDevelopmentHarness) {
-    const response = new NextResponse('Not found', {
-      status: 404,
-      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-    });
-    response.headers.set(requestIdHeader, requestHeaders.get(requestIdHeader)!);
-    return response;
-  }
   const isAuthRoute =
     pathname.startsWith('/login') ||
     pathname.startsWith('/signup') ||
@@ -99,69 +88,8 @@ export async function proxy(request: NextRequest) {
 
   if (user && pathname === '/login') {
     const url = request.nextUrl.clone();
-    url.pathname = '/dashboard';
+    url.pathname = '/overview';
     const response = NextResponse.redirect(url);
-    response.headers.set(requestIdHeader, requestHeaders.get(requestIdHeader)!);
-    return response;
-  }
-
-  /*
-   * Route aliases must be real HTTP redirects. App Router's streamed
-   * `redirect()` fallback is correct for direct module execution, but a
-   * client-applied redirect drops the source fragment because fragments never
-   * reach the server. A Location header without a fragment lets the browser
-   * carry the original fragment forward per URL redirect semantics.
-   */
-  let aliasUrl: URL | null = null;
-  if (pathname === '/') {
-    aliasUrl = request.nextUrl.clone();
-    aliasUrl.pathname = '/landing';
-  } else if (user && [
-    '/dashboard',
-    '/claims',
-    '/inbox',
-    '/losses',
-    '/recoveries',
-    '/reports',
-    '/integrations',
-    '/rules',
-    '/flows',
-    '/settings',
-  ].includes(pathname)) {
-    const canonicalByAlias: Record<string, string> = {
-      '/dashboard': '/overview',
-      '/claims': '/cases',
-      '/inbox': '/cases',
-      '/losses': '/financials/losses',
-      '/recoveries': '/financials/recovery',
-      '/reports': '/financials/reports',
-      '/integrations': '/sources/connected',
-      '/rules': '/controls/rules',
-      '/flows': '/controls/flows',
-      '/settings': '/settings/workspace/account',
-    };
-    aliasUrl = request.nextUrl.clone();
-    aliasUrl.pathname = canonicalByAlias[pathname];
-  } else if (user && pathname === '/exceptions') {
-    aliasUrl = request.nextUrl.clone();
-    aliasUrl.pathname = '/work';
-    aliasUrl.searchParams.set('view', 'integration-exceptions');
-  } else if (user) {
-    const customerClaims = pathname.match(/^\/customers\/([^/]+)\/claims$/);
-    if (customerClaims) {
-      aliasUrl = request.nextUrl.clone();
-      const claimId = aliasUrl.searchParams.get('claimId');
-      aliasUrl.searchParams.delete('claimId');
-      if (claimId) {
-        aliasUrl.pathname = `/claims/${encodeURIComponent(claimId)}`;
-      } else {
-        aliasUrl.pathname = `/customers/${encodeURIComponent(customerClaims[1])}`;
-        aliasUrl.hash = 'cases';
-      }
-    }
-  }
-  if (aliasUrl) {
-    const response = NextResponse.redirect(aliasUrl);
     response.headers.set(requestIdHeader, requestHeaders.get(requestIdHeader)!);
     return response;
   }

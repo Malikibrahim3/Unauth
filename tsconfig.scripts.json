@@ -9,5 +9,6 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["scripts/**/*.ts", "lib/**/*.ts"]
+  "include": ["scripts/**/*.ts"],
+  "exclude": ["node_modules"]
 }

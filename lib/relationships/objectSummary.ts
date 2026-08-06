@@ -693,7 +693,7 @@ export async function getObjectSummary(
     id: text(claim, "id")!,
     reference: `${(text(claim, "claim_type") ?? "payout").replaceAll("_", " ")} · ${text(claim, "id")!.slice(0, 8)}`,
     state: text(claim, "status"),
-    href: `/claims/${text(claim, "id")}`,
+    href: `/cases/${text(claim, "id")}`,
   }));
   connected.push(...payoutCases);
 

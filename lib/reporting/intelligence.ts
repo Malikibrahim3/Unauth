@@ -256,7 +256,7 @@ export function financialReportRecordsHref(input:{range:ReportRange;currency:str
   });
   if (input.category) params.set('value', input.category);
   if (input.timezone) params.set('timezone', normalizeReportTimezone(input.timezone));
-  return `/reports/records?${params.toString()}`;
+  return `/financials/reports/records?${params.toString()}`;
 }
 
 export function aggregateMoneyBridges(rows:Array<Record<string,unknown>>):MoneyBridge[] {
@@ -589,7 +589,7 @@ export async function loadIntelligenceReport(
       count:0,
       activeCount:0,
       snoozedCount:0,
-      href:`/reports/records?kind=case&dimension=status&value=${encodeURIComponent(key)}&range=${range}&timezone=${encodeURIComponent(normalizedTimezone)}`,
+      href:`/financials/reports/records?kind=case&dimension=status&value=${encodeURIComponent(key)}&range=${range}&timezone=${encodeURIComponent(normalizedTimezone)}`,
       overdueCount:0,
       approachingCount:0,
       readyCount:0,
@@ -675,7 +675,7 @@ export async function loadIntelligenceReport(
       label('recoveryStatus',status),
       Math.round(Number(r.amount_recovered||0)*100),
       currency,
-      `/reports/records?kind=recovery&dimension=status&value=${encodeURIComponent(status)}&range=${range}&currency=${currency}&timezone=${encodeURIComponent(normalizedTimezone)}`,
+        `/financials/reports/records?kind=recovery&dimension=status&value=${encodeURIComponent(status)}&range=${range}&currency=${currency}&timezone=${encodeURIComponent(normalizedTimezone)}`,
       String(r.id),
     );
   }
@@ -683,10 +683,10 @@ export async function loadIntelligenceReport(
   const coverageSpecs=[
     [TABLES.SOURCE_ORDERS,'Orders','/orders','connected-source'],
     [TABLES.SOURCE_TICKETS,'Tickets','/tickets','connected-source'],
-    [TABLES.SOURCE_SHIPMENTS,'Shipments','/integrations','connected-source'],
+    [TABLES.SOURCE_SHIPMENTS,'Shipments','/sources/connected','connected-source'],
     [TABLES.SOURCE_REFUNDS,'Refunds','/refunds','connected-source'],
     [TABLES.SOURCE_RETURNS,'Returns','/returns','connected-source'],
-    [TABLES.MERCHANT_CLAIMS,'Cases','/claims','internal'],
+    [TABLES.MERCHANT_CLAIMS,'Cases','/cases','internal'],
   ] as const;
   const staleBefore=new Date(nowMs()-48*3600000).toISOString();
   const coverage:CoverageRow[]=await Promise.all(

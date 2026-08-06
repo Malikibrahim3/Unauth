@@ -278,7 +278,7 @@ export function getPageTitleForPath(pathname: string): string | undefined {
     }
   }
   if (path in ROUTE_ALIASES) {
-    return getPageTitleForPath(ROUTE_ALIASES[path]);
+    return getPageTitleForPath(ROUTE_ALIASES[path as keyof typeof ROUTE_ALIASES]);
   }
   return undefined;
 }

@@ -17,7 +17,7 @@ export default function ShopifyDisconnectClient() {
       const res = await fetch('/api/shopify/disconnect', { method: 'POST' });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? 'Failed to disconnect');
-      router.push('/integrations');
+      router.push('/sources/connected');
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to disconnect Shopify');

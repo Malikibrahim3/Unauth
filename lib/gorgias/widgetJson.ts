@@ -760,8 +760,8 @@ function baseCta(
 ): Pick<GorgiasWidgetJsonPayload, 'cta_label' | 'cta_url'> {
   const claimId = link?.claimId?.trim();
   const base = claimId
-    ? appUrl(`/claims/${encodeURIComponent(claimId)}`)
-    : appUrl('/claims');
+      ? appUrl(`/cases/${encodeURIComponent(claimId)}`)
+      : appUrl('/cases');
   if (!link) {
     return { cta_label: 'Open case →', cta_url: base };
   }

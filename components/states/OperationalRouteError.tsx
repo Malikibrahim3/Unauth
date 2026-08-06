@@ -9,7 +9,7 @@ export function OperationalRouteError({
   title,
   description,
   reset,
-  fallbackHref = "/dashboard",
+  fallbackHref = "/overview",
   digest,
 }: {
   title: string;

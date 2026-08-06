@@ -1,5 +1,3 @@
-export const IDENTITY_PRODUCT_CONTRACT_PATH = '/Users/malikibrahim/Downloads/Unauth/IDENTITY_RESOLUTION_CORE_IMPLEMENTATION_DOC.md';
-
 export const IDENTITY_PRODUCT_CONTRACT = {
   productType: 'identity-resolution',
   coreQuestion: 'Are these orders/customer records likely the same person, household, or account entity?',

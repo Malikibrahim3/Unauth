@@ -3,7 +3,7 @@ import type { IntegrationProvider } from '@/lib/integrations/types';
 export const selfFulfillmentProvider: IntegrationProvider = {
   id: 'self_fulfillment_pack',
   name: 'Self-fulfillment pack confirmation',
-  logoSrc: '/integrations/self-fulfillment.svg',
+  logoSrc: '/providers/self-fulfillment.svg',
   category: 'warehouse_3pl',
   authMode: 'manual_upload',
   buildStatus: 'live',

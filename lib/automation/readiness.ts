@@ -69,25 +69,25 @@ export function calculateAutomationReadiness(input: ReadinessInputs): ReadinessR
       key: 'caseCreation', label: 'Automatic case creation',
       score: clamp((commerce ? 55 : 0) + (helpdesk ? 35 : 0) + (input.activeRules > 0 ? 10 : 0) - exceptionPenalty),
       explanation: !commerce ? 'Orders are not available yet.' : !helpdesk ? 'Orders are ready, but support conversations are unavailable.' : input.activeRules < 1 ? 'Sources are ready; create a rule to route cases automatically.' : 'Orders and support events can create and update cases.',
-      action: !commerce ? repairAction(input.commerce, 'Shopify', '/settings/integrations/shopify', 55) : !helpdesk ? repairAction(input.helpdesk, 'your helpdesk', '/integrations#connections', 35) : input.activeRules < 1 ? { label: 'Configure your first rule', href: '/rules', impact: 10 } : input.unresolvedExceptions > 0 ? { label: 'Review matching exceptions', href: '/exceptions', impact: exceptionPenalty } : null,
+      action: !commerce ? repairAction(input.commerce, 'Shopify', '/sources/setup/shopify', 55) : !helpdesk ? repairAction(input.helpdesk, 'your helpdesk', '/sources/connected', 35) : input.activeRules < 1 ? { label: 'Configure your first rule', href: '/controls/rules', impact: 10 } : input.unresolvedExceptions > 0 ? { label: 'Review matching exceptions', href: '/work?view=integration-exceptions', impact: exceptionPenalty } : null,
     },
     {
       key: 'evidenceCollection', label: 'Automatic evidence collection',
       score: clamp((commerce ? 35 : 0) + (helpdesk ? 25 : 0) + (tracking ? 25 : 0) + (warehouse ? 15 : 0) - exceptionPenalty),
       explanation: !commerce ? 'Order evidence is not available yet.' : !tracking ? 'Order and support evidence are available; shipment evidence is still missing.' : !warehouse ? 'Core evidence is available; warehouse evidence is still limited.' : 'Order, support, shipment, and warehouse evidence are available.',
-      action: !commerce ? repairAction(input.commerce, 'Shopify', '/settings/integrations/shopify', 35) : !helpdesk ? repairAction(input.helpdesk, 'your helpdesk', '/integrations#connections', 25) : !tracking ? repairAction(input.tracking, 'shipment tracking', '/integrations#connections', 25) : !warehouse ? repairAction(input.warehouse, 'your warehouse', '/integrations#connections', 15) : null,
+      action: !commerce ? repairAction(input.commerce, 'Shopify', '/sources/setup/shopify', 35) : !helpdesk ? repairAction(input.helpdesk, 'your helpdesk', '/sources/connected', 25) : !tracking ? repairAction(input.tracking, 'shipment tracking', '/sources/connected', 25) : !warehouse ? repairAction(input.warehouse, 'your warehouse', '/sources/connected', 15) : null,
     },
     {
       key: 'financialReconciliation', label: 'Automatic financial reconciliation',
       score: clamp((commerce ? 45 : 0) + (payments ? 45 : 0) + (input.activeRules > 0 ? 10 : 0) - financialPenalty),
       explanation: !commerce ? 'Refund and order outcomes are unavailable.' : !payments ? 'Refunds can sync, but payment and dispute outcomes are unavailable.' : 'Refund and payment outcomes can be reconciled automatically.',
-      action: !commerce ? repairAction(input.commerce, 'Shopify', '/settings/integrations/shopify', 45) : !payments ? repairAction(input.payments, 'your payment provider', '/integrations#connections', 45) : input.financialExceptions > 0 ? { label: 'Review financial exceptions', href: '/exceptions', impact: financialPenalty } : null,
+      action: !commerce ? repairAction(input.commerce, 'Shopify', '/sources/setup/shopify', 45) : !payments ? repairAction(input.payments, 'your payment provider', '/sources/connected', 45) : input.financialExceptions > 0 ? { label: 'Review financial exceptions', href: '/work?view=integration-exceptions', impact: financialPenalty } : null,
     },
     {
       key: 'recoveryAutomation', label: 'Recovery automation',
       score: clamp((commerce ? 25 : 0) + (tracking ? 25 : 0) + (warehouse ? 35 : 0) + (input.activeRules > 0 ? 15 : 0) - recoveryPenalty),
       explanation: !warehouse ? 'Recovery work cannot be fully tracked without a warehouse or 3PL source.' : !tracking ? 'Warehouse data is ready, but shipment events are unavailable.' : input.activeRules < 1 ? 'Recovery sources are ready; routing rules still need configuration.' : 'Recovery work can be identified, routed, and tracked.',
-      action: !warehouse ? repairAction(input.warehouse, 'or confirm your warehouse', '/integrations#connections', 35) : !tracking ? repairAction(input.tracking, 'shipment tracking', '/integrations#connections', 25) : input.activeRules < 1 ? { label: 'Configure recovery routing', href: '/rules', impact: 15 } : null,
+      action: !warehouse ? repairAction(input.warehouse, 'or confirm your warehouse', '/sources/connected', 35) : !tracking ? repairAction(input.tracking, 'shipment tracking', '/sources/connected', 25) : input.activeRules < 1 ? { label: 'Configure recovery routing', href: '/controls/rules', impact: 15 } : null,
     },
   ];
 

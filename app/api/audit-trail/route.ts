@@ -139,7 +139,7 @@ async function GETHandler(request: NextRequest) {
       .eq("merchant_id", ctx.merchantId)
       .in("id", claimIds);
     for (const claim of (claimRows ?? []) as Array<{ id: string }>) {
-      claimHrefById.set(claim.id, `/claims/${claim.id}`);
+      claimHrefById.set(claim.id, `/cases/${claim.id}`);
     }
   }
 
@@ -150,7 +150,7 @@ async function GETHandler(request: NextRequest) {
     action: event.event_type,
     resource_type: "claim",
     resource_id: event.claim_id,
-    resource_href: claimHrefById.get(event.claim_id) ?? "/claims",
+    resource_href: claimHrefById.get(event.claim_id) ?? "/cases",
     metadata: {
       note: event.note,
       ...(event.metadata ?? {}),

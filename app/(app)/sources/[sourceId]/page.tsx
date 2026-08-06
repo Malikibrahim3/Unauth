@@ -1,4 +1,4 @@
-import LegacyConnectionPage from '@/app/(app)/integrations/[provider]/page';
+import SourceDetailPageContent from './SourceDetailPage';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,5 +8,5 @@ export default async function SourceDetailPage({
   params: Promise<{ sourceId: string }>;
 }) {
   const { sourceId } = await params;
-  return LegacyConnectionPage({ params: Promise.resolve({ provider: sourceId }) });
+  return SourceDetailPageContent({ params: Promise.resolve({ provider: sourceId }) });
 }

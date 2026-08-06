@@ -82,7 +82,7 @@ export function FreshdeskSupportSyncConnectionDetails({
       {/* Status header */}
       <div className="flex items-start gap-3">
         <Image
-          src="/integrations/freshdesk.svg"
+          src="/providers/freshdesk.png"
           alt="Freshdesk"
           width={40}
           height={40}

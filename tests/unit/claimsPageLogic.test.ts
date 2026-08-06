@@ -1,5 +1,5 @@
-import { claimNextAction } from '@/app/(app)/claims/claimsPageLogic';
-import type { ClaimRow } from '@/app/(app)/claims/claimsPageData';
+import { claimNextAction } from '@/app/(app)/cases/claimsPageLogic';
+import type { ClaimRow } from '@/app/(app)/cases/claimsPageData';
 
 const claim = (status: ClaimRow['status']): ClaimRow => ({
   id: `claim-${status}`,

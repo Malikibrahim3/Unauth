@@ -384,7 +384,7 @@ export default function OnboardingClient({
                 <div className="rounded-[var(--ua-radius-surface)] border p-4 space-y-3" style={{ background: 'var(--ua-surface-muted)', borderColor: 'var(--ua-border-default)' }}>
                   <p className="text-body-sm" style={{ color: 'var(--ua-text-secondary)' }}>
                     Enter your Shopify store domain to connect. You can also connect from{' '}
-                    <Link href="/settings/integrations" className="underline underline-offset-2" style={{ color: 'var(--ua-action-primary)' }}>
+                    <Link href="/sources/connected" className="underline underline-offset-2" style={{ color: 'var(--ua-action-primary)' }}>
                       Settings → Integrations
                     </Link>
                     {' '}at any time.
@@ -446,7 +446,7 @@ export default function OnboardingClient({
                     You can also add Zendesk or Freshdesk later from the same page.
                   </p>
                   <Link
-                    href="/settings/integrations/gorgias?returnTo=%2Fonboarding"
+                    href="/sources/setup/gorgias?returnTo=%2Fonboarding"
                     className="inline-flex h-9 items-center gap-2 rounded-[var(--ua-radius-control)] px-3 text-xs font-semibold"
                     style={{ background: 'var(--ua-action-primary)', borderColor: 'var(--ua-action-primary)', border: '1px solid', color: 'var(--ua-text-inverse)' }}
                   >
@@ -454,7 +454,7 @@ export default function OnboardingClient({
                     Set up Gorgias integration
                   </Link>
                   <Link
-                    href="/integrations"
+                    href="/sources/connected"
                     className="inline-flex h-9 items-center gap-2 rounded-[var(--ua-radius-control)] border px-3 text-xs font-semibold"
                     style={{ borderColor: 'var(--ua-border-default)', color: 'var(--ua-text-primary)' }}
                   >
@@ -483,11 +483,11 @@ export default function OnboardingClient({
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <ButtonLink href="/dashboard" size="md">
+                <ButtonLink href="/overview" size="md">
                   Go to claim overview
                   <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </ButtonLink>
-                <Link href="/settings/integrations" className="text-xs leading-4 hover:underline" style={{ color: 'var(--ua-text-tertiary)' }}>
+                <Link href="/sources/connected" className="text-xs leading-4 hover:underline" style={{ color: 'var(--ua-text-tertiary)' }}>
                   Manage integrations
                 </Link>
               </div>

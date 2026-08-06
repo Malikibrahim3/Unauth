@@ -14,7 +14,7 @@ function event() {
       kind: "assignment",
       title: "Case assigned",
       body: "Review the evidence.",
-      target_href: "/claims/case-1",
+      target_href: "/cases/case-1",
       deduplication_key: "assignment:case-1:user-1",
     },
   } as const;

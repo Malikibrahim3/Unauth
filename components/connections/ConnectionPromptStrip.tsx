@@ -51,7 +51,7 @@ export function ConnectionPromptStrip({ connection, hasExistingProfiles }: Conne
         <span className="leading-snug" style={{ color: 'var(--ua-text-primary)' }}>{message}</span>
       </div>
       <Link
-        href="/integrations"
+        href="/sources/connected"
         className="ua-text-working-title shrink-0 whitespace-nowrap hover:opacity-80 transition-opacity"
         style={{ color: 'var(--ua-action-primary)' }}
       >

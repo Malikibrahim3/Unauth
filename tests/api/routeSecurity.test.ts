@@ -697,7 +697,7 @@ describe("fetchMerchantReviewQueueRows — null match_status regression", () => 
 describe("Claims page — auth and permission guards", () => {
   it("claims page owns auth and VIEW_INBOX permission enforcement", () => {
     const content = fs.readFileSync(
-      path.join(process.cwd(), "app/(app)/claims/page.tsx"),
+      path.join(process.cwd(), "app/(app)/cases/ClaimsPage.tsx"),
       "utf-8",
     );
     expect(content).toContain("PERMISSIONS.VIEW_INBOX");
@@ -1161,7 +1161,7 @@ describe("countReviewWorthyTransactions — behavioral tests", () => {
 describe("dashboard/page.tsx — review queue correctness", () => {
   it('does NOT use .neq("dismissed_by_merchant", true) (excludes NULLs bug)', () => {
     const content = fs.readFileSync(
-      path.join(process.cwd(), "app/(app)/dashboard/page.tsx"),
+      path.join(process.cwd(), "app/(app)/overview/page.tsx"),
       "utf-8",
     );
     expect(content).not.toContain(".neq('dismissed_by_merchant', true)");
@@ -1170,7 +1170,7 @@ describe("dashboard/page.tsx — review queue correctness", () => {
 
   it("delegates dashboard metrics to the canonical intelligence read model", () => {
     const content = fs.readFileSync(
-      path.join(process.cwd(), "app/(app)/dashboard/page.tsx"),
+      path.join(process.cwd(), "app/(app)/overview/page.tsx"),
       "utf-8",
     );
     expect(content).toContain("loadIntelligenceReport");
@@ -1193,7 +1193,7 @@ describe("dashboard/page.tsx — review queue correctness", () => {
 
   it("does NOT query unpaginated large audit_transactions selects (no unbounded .select without count)", () => {
     const content = fs.readFileSync(
-      path.join(process.cwd(), "app/(app)/dashboard/page.tsx"),
+      path.join(process.cwd(), "app/(app)/overview/page.tsx"),
       "utf-8",
     );
     // Dashboard must not have a bare audit_transactions select('*').
@@ -1212,7 +1212,7 @@ describe("dashboard/page.tsx — review queue correctness", () => {
     expect(helperContent).toContain("match_status");
     // Dashboard must delegate and not have its own risk_level filter.
     const dashContent = fs.readFileSync(
-      path.join(process.cwd(), "app/(app)/dashboard/page.tsx"),
+      path.join(process.cwd(), "app/(app)/overview/page.tsx"),
       "utf-8",
     );
     expect(dashContent).not.toMatch(/in\s*\(\s*['"]risk_level['"]/);
@@ -1558,7 +1558,7 @@ describe("getMerchantOwnedJobIds — pagination", () => {
 describe("dashboard/page.tsx — fail-closed and no silent zero", () => {
   it("does NOT set reviewQueue = 0 in the catch block", () => {
     const content = fs.readFileSync(
-      path.join(process.cwd(), "app/(app)/dashboard/page.tsx"),
+      path.join(process.cwd(), "app/(app)/overview/page.tsx"),
       "utf-8",
     );
     // The catch block must not reset reviewQueue to 0.
@@ -1567,7 +1567,7 @@ describe("dashboard/page.tsx — fail-closed and no silent zero", () => {
 
   it("does not retain the retired reviewQueue projection", () => {
     const content = fs.readFileSync(
-      path.join(process.cwd(), "app/(app)/dashboard/page.tsx"),
+      path.join(process.cwd(), "app/(app)/overview/page.tsx"),
       "utf-8",
     );
     expect(content).not.toContain("reviewQueue");
@@ -1587,7 +1587,7 @@ describe("dashboard/page.tsx — fail-closed and no silent zero", () => {
 
   it("handles permission denial — does NOT ignore the resolved permission result", () => {
     const content = fs.readFileSync(
-      path.join(process.cwd(), "app/(app)/dashboard/page.tsx"),
+      path.join(process.cwd(), "app/(app)/overview/page.tsx"),
       "utf-8",
     );
     // Security invariant (not tied to the historical `denied` symbol):
@@ -1616,7 +1616,7 @@ describe("dashboard/page.tsx — fail-closed and no silent zero", () => {
 
   it("redirects unauthenticated users to /login", () => {
     const content = fs.readFileSync(
-      path.join(process.cwd(), "app/(app)/dashboard/page.tsx"),
+      path.join(process.cwd(), "app/(app)/overview/page.tsx"),
       "utf-8",
     );
     expect(content).toMatch(/redirect\(["']\/login["']\)/);

@@ -77,6 +77,7 @@ describe('ClaimReviewManageCard', () => {
   it('surfaces the management actions when the user can manage', () => {
     const { wb } = makeWorkbench();
     render(<ClaimReviewManageCard wb={wb} canManage />);
+    fireEvent.click(screen.getByText('Manage evidence and lifecycle'));
     expect(screen.getByRole('button', { name: /Assign to me/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Review decision$/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Add evidence/i })).toBeInTheDocument();
@@ -137,6 +138,7 @@ describe('ClaimReviewManageCard', () => {
   it('offers reversal only once a decision is on record', () => {
     const withOutcome = makeWorkbench({ latestOutcome: { decision: 'approved', outcome: 'loss' } });
     render(<ClaimReviewManageCard wb={withOutcome.wb} canManage />);
+    fireEvent.click(screen.getByText('Manage evidence and lifecycle'));
     expect(screen.getByRole('button', { name: /Reverse decision/i })).toBeInTheDocument();
   });
 });

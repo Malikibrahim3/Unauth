@@ -1,4 +1,4 @@
-const FALLBACK_PATH = "/dashboard";
+const FALLBACK_PATH = "/overview";
 
 /** Accept only same-origin application paths for post-auth navigation. */
 export function safeRedirectPath(candidate: string | null | undefined): string {

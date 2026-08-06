@@ -41,9 +41,9 @@ const KIND_META: Record<string, { label: string; icon: typeof Bell }> = {
 };
 
 function destinationLabel(href: string) {
-  if (href.startsWith('/claims/')) return 'Open case';
-  if (href.startsWith('/recoveries/')) return 'Open recovery';
-  if (href.startsWith('/integrations/')) return 'Open connection';
+  if (href.startsWith('/cases/')) return 'Open case';
+  if (href.startsWith('/financials/recovery/')) return 'Open recovery';
+  if (href.startsWith('/sources/')) return 'Open connection';
   if (href.startsWith('/work')) return 'Open work queue';
   return 'Open record';
 }
@@ -170,7 +170,7 @@ export function NotificationCentre({ initialNotifications }: { initialNotificati
           <p className="ua-text-caption-role mt-0.5">Newest notifications first. Opening one marks it as read.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Link href="/settings/notifications" className="ua-text-label text-[var(--ua-text-link)] hover:underline focus-visible:outline-none focus-visible:shadow-[var(--ua-shadow-focus)]">Preferences</Link>
+          <Link href="/settings/product/notifications" className="ua-text-label text-[var(--ua-text-link)] hover:underline focus-visible:outline-none focus-visible:shadow-[var(--ua-shadow-focus)]">Preferences</Link>
           {unread > 0 ? <Button variant="secondary" size="sm" leadingIcon={<CheckCheck />} loading={busy === 'all'} onClick={markAllRead}>Mark all read</Button> : null}
         </div>
       </div>
@@ -209,7 +209,7 @@ export function NotificationCentre({ initialNotifications }: { initialNotificati
         <Bell className="mx-auto h-6 w-6 text-[var(--ua-icon-secondary)]" aria-hidden="true" />
         <h2 className="ua-text-working-title mt-3 text-[var(--ua-text-primary)]">{filter === 'unread' ? 'You are caught up' : 'No notifications yet'}</h2>
         <p className="ua-text-body mx-auto mt-1 max-w-lg text-[var(--ua-text-secondary)]">{filter === 'unread' ? 'New assignments, evidence, decisions, deadlines, recovery outcomes, and connection issues will appear here.' : 'Nothing needs your attention yet. We will notify you when a case does.'}</p>
-        {filter === 'unread' ? <Button className="mt-4" variant="secondary" size="sm" onClick={() => setFilter('all')}>View all</Button> : <Link className="ua-text-label mt-4 inline-flex items-center gap-1 text-[var(--ua-text-link)] hover:underline" href="/settings/notifications"><RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />Review preferences</Link>}
+        {filter === 'unread' ? <Button className="mt-4" variant="secondary" size="sm" onClick={() => setFilter('all')}>View all</Button> : <Link className="ua-text-label mt-4 inline-flex items-center gap-1 text-[var(--ua-text-link)] hover:underline" href="/settings/product/notifications"><RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />Review preferences</Link>}
       </div>}
     </Surface>
   );

@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 
+const { LEGACY_UI_REDIRECTS } = require('./lib/navigation/aliases.js');
+
 // SECURITY: Resolve the project-specific Supabase storage hostname at build
 // time from NEXT_PUBLIC_SUPABASE_URL.  Wildcards (*.supabase.co) are not
 // permitted — they would allow any Supabase project to supply images and
@@ -29,10 +31,6 @@ const remotePatterns = supabaseHostname
   : [];
 
 const nextConfig = {
-  // Phase 28 runs production and development-harness proof servers together.
-  // A distinct dev dist dir prevents the development compiler from mutating
-  // the production build while both are under capture.
-  distDir: process.env.NEXT_DIST_DIR ?? '.next',
   serverExternalPackages: ['papaparse'],
   devIndicators: false,
   allowedDevOrigins: ['127.0.0.1'],
@@ -82,38 +80,7 @@ const nextConfig = {
     // externally. Keep this as the only legacy-route source of truth. Remove an
     // entry after production access logs show no requests for 90 days; the web
     // platform owner owns that review.
-    return [
-      { source: '/inbox', destination: '/cases', permanent: false },
-      { source: '/catches/:path*', destination: '/cases', permanent: false },
-      { source: '/chargebacks/:path*', destination: '/cases', permanent: false },
-      { source: '/evidence', destination: '/cases', permanent: false },
-      { source: '/evidence-packages', destination: '/cases', permanent: false },
-      { source: '/store/:path*', destination: '/overview', permanent: false },
-      { source: '/lookup/:path*', destination: '/customers', permanent: false },
-      { source: '/global/:path*', destination: '/customers', permanent: false },
-      { source: '/graph/:path*', destination: '/customers', permanent: false },
-      { source: '/clusters/:path*', destination: '/customers', permanent: false },
-      { source: '/watchlist/:path*', destination: '/customers', permanent: false },
-      { source: '/audit/:path*', destination: '/financials/reports', permanent: false },
-      { source: '/report/:path*', destination: '/financials/reports', permanent: false },
-      { source: '/audits/:path*', destination: '/financials/reports', permanent: false },
-      { source: '/audit-history', destination: '/financials/reports', permanent: false },
-      { source: '/history/:path*', destination: '/financials/reports', permanent: false },
-      { source: '/saved/:path*', destination: '/financials/reports', permanent: false },
-      { source: '/new-audit', destination: '/sources/imports', permanent: false },
-      { source: '/upload/:path*', destination: '/sources/imports', permanent: false },
-      { source: '/settings/integrations', destination: '/sources/connected', permanent: false },
-      { source: '/settings/integrations/bigcommerce', destination: '/sources/bigcommerce', permanent: false },
-      { source: '/settings/integrations/woocommerce', destination: '/sources/woocommerce', permanent: false },
-      { source: '/network-metrics/:path*', destination: '/overview', permanent: false },
-      { source: '/eval/:path*', destination: '/overview', permanent: false },
-      { source: '/help/identity-matching', destination: '/help', permanent: false },
-      { source: '/help/confidence-grades', destination: '/help', permanent: false },
-      { source: '/help/how-it-works', destination: '/help', permanent: false },
-      { source: '/help/integrations/siena', destination: '/help', permanent: false },
-      { source: '/help/integrations/yuma', destination: '/help', permanent: false },
-      { source: '/partners', destination: '/controls/rules', permanent: false },
-    ];
+    return [...LEGACY_UI_REDIRECTS];
   },
   // SECURITY: Explicit image optimizer allowlist — mitigates GHSA-9g9p-9gw9-jx7f.
   // Uses the exact Supabase project hostname derived from NEXT_PUBLIC_SUPABASE_URL.

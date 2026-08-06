@@ -56,8 +56,8 @@ async function caseHrefResolver(
     .eq('merchant_id', merchantId)
     .or(orFilters.join(','));
   for (const row of (data as Array<{ id: string; source_order_id: string | null; source_ticket_id: string | null }> ?? [])) {
-    if (row.source_order_id && !byOrder.has(row.source_order_id)) byOrder.set(row.source_order_id, `/claims/${row.id}`);
-    if (row.source_ticket_id && !byTicket.has(row.source_ticket_id)) byTicket.set(row.source_ticket_id, `/claims/${row.id}`);
+    if (row.source_order_id && !byOrder.has(row.source_order_id)) byOrder.set(row.source_order_id, `/cases/${row.id}`);
+    if (row.source_ticket_id && !byTicket.has(row.source_ticket_id)) byTicket.set(row.source_ticket_id, `/cases/${row.id}`);
   }
   return { byOrder, byTicket };
 }
@@ -247,7 +247,7 @@ export async function GET(req: NextRequest) {
           id: c.id,
           label: `Payout case · ${(c.claim_type ?? 'claim').replace(/_/g, ' ')}`,
           sublabel: c.amount_at_risk != null ? formatCurrency(c.amount_at_risk, c.currency ?? undefined) : c.status ?? undefined,
-          href: `/claims/${c.id}`,
+          href: `/cases/${c.id}`,
         });
       }
     } catch (error) {
@@ -323,7 +323,7 @@ export async function GET(req: NextRequest) {
           id: t.id,
           label: resultLabel('transaction', t.external_id ?? t.provider_reference, t.id),
           sublabel: [t.transaction_type, t.amount_minor != null ? formatCurrency(t.amount_minor / 100, t.currency ?? undefined) : null].filter(Boolean).join(' · ') || undefined,
-          href: '/claims',
+          href: '/cases',
           _orderId: t.source_order_id ?? undefined,
         });
       }
@@ -347,7 +347,7 @@ export async function GET(req: NextRequest) {
   if (requested.includes('losses') && isUuid(q)) {
     try {
       const { data } = await serviceClient.from(TABLES.LOSS_CASES).select('id,status').eq('merchant_id', merchantId).eq('id', q).limit(limit);
-      for (const row of (data as Array<Record<string, any>> ?? [])) results.push({ type: 'loss', id: row.id, label: resultLabel('loss', null, row.id), sublabel: row.status, href: `/losses/${row.id}` });
+      for (const row of (data as Array<Record<string, any>> ?? [])) results.push({ type: 'loss', id: row.id, label: resultLabel('loss', null, row.id), sublabel: row.status, href: `/financials/losses/${row.id}` });
     } catch (error) { console.error('Search losses failed', error); }
   }
 
@@ -388,7 +388,7 @@ export async function GET(req: NextRequest) {
             id: r.id,
             label: `Recovery · ${(r.recovery_type ?? 'case').replace(/_/g, ' ')}`,
             sublabel: r.merchant_loss_amount != null ? formatCurrency(r.merchant_loss_amount, r.currency ?? undefined) : r.status ?? undefined,
-            href: `/recoveries/${r.id}`,
+            href: `/financials/recovery/${r.id}`,
           });
         }
       }

@@ -1,19 +1,18 @@
 import { expect, test, type Page } from "@playwright/test";
 
 const CURRENT_ROUTES = [
-  { path: "/dashboard", heading: "Overview" },
+  { path: "/overview", heading: "Overview" },
   { path: "/work", heading: "Work" },
-  { path: "/exceptions", heading: "Work" },
-  { path: "/claims", heading: "Cases" },
-  { path: "/losses", heading: "Losses" },
-  { path: "/recoveries", heading: "Recovery board" },
+  { path: "/cases", heading: "Cases" },
+  { path: "/financials/losses", heading: "Losses" },
+  { path: "/financials/recovery", heading: "Recovery board" },
   { path: "/customers", heading: "Customers" },
-  { path: "/rules", heading: "Rules" },
-  { path: "/flows", heading: "Flows" },
-  { path: "/reports", heading: "Reports" },
-  { path: "/integrations", heading: "Integrations" },
+  { path: "/controls/rules", heading: "Rules" },
+  { path: "/controls/flows", heading: "Flows" },
+  { path: "/financials/reports", heading: "Reports" },
+  { path: "/sources/connected", heading: "Sources" },
   { path: "/notifications", heading: "Notifications" },
-  { path: "/settings/team", heading: "Team" },
+  { path: "/settings/workspace/team", heading: "Team" },
 ] as const;
 
 async function expectNoDocumentOverflow(page: Page) {
@@ -57,7 +56,7 @@ test.describe("current merchant experience", () => {
     const caseActions = page.getByRole("button", { name: /^Open Case / });
     await expect(caseActions).not.toHaveCount(0, { timeout: 20_000 });
     await caseActions.nth(0).click();
-    await expect(page).toHaveURL(/\/claims\//, { timeout: 30_000 });
+    await expect(page).toHaveURL(/\/cases\//, { timeout: 30_000 });
     await expect(
       page.getByText("Evidence on file", { exact: true }),
     ).toBeVisible({ timeout: 30_000 });
@@ -75,7 +74,7 @@ test.describe("current merchant experience", () => {
   test("command search opens and returns current navigation results", async ({
     page,
   }) => {
-    await page.goto("/dashboard");
+    await page.goto("/overview");
     await page.getByRole("button", { name: "Search (⌘K)" }).click();
     const dialog = page.getByRole("dialog", { name: "Command palette" });
     await expect(dialog).toBeVisible();
@@ -95,9 +94,9 @@ test.describe("current merchant experience", () => {
   test("current CSV intake validates a canonical row without committing it", async ({
     page,
   }) => {
-    await page.goto("/integrations/imports");
+    await page.goto("/sources/imports");
     await expect(
-      page.getByRole("heading", { level: 1, name: "Import records" }),
+      page.getByRole("heading", { level: 1, name: "Imports" }),
     ).toBeVisible();
     await page.getByText("Paste CSV text instead", { exact: true }).click();
     await page
@@ -119,30 +118,27 @@ test.describe("current merchant experience", () => {
     page,
   }) => {
     test.setTimeout(90_000);
-    await page.goto("/integrations");
+    await page.goto("/sources/browse");
     await expect(
-      page.getByText(/\d+ connected/).first(),
+      page.getByText(/\d+ of \d+ layers connected/).first(),
     ).toBeVisible({ timeout: 20_000 });
     await expect(
-      page.getByText(/\d+ records indexed/).first(),
+      page.getByText(/\d+ integrations across \d+ categories/).first(),
     ).toBeVisible();
     await expect(
-      page.getByText(/\d+ of \d+ evidence layers covered/).first(),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("link", { name: "Imports & API" }),
+      page.getByText("Runtime verification pending", { exact: true }).first(),
     ).toBeVisible();
     const connectorLink = page
-      .locator('a[href^="/integrations/"]')
-      .filter({ hasText: "Manage" })
+      .locator('a[href^="/sources/"]')
+      .filter({ hasText: "View details" })
       .first();
     await expect(connectorLink).toBeVisible();
     await connectorLink.click();
-    await expect(page).toHaveURL(/\/integrations\/[^/?]+(?:\?|$)/, {
+    await expect(page).toHaveURL(/\/sources\/[^/?]+(?:\?|$)/, {
       timeout: 60_000,
     });
     await expect(
-      page.getByRole("heading", { level: 2, name: "Connection health" }),
+      page.getByRole("heading", { level: 2, name: "Setup coverage" }),
     ).toBeVisible({ timeout: 60_000 });
     await expect(
       page.getByRole("heading", { level: 2, name: "Data available to Unauth" }),
@@ -159,7 +155,7 @@ test.describe("current merchant experience", () => {
   test("reports expose operational metrics and underlying-record navigation", async ({
     page,
   }) => {
-    await page.goto("/reports");
+    await page.goto("/financials/reports");
     await expect(
       page.getByRole("heading", { level: 1, name: "Reports" }),
     ).toBeVisible();

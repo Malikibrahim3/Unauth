@@ -92,7 +92,7 @@ describe('GET /api/search (v2 unified search)', () => {
     const res = await GET(req('case-1', '&types=cases'));
     const body = await res.json();
     expect(body.results).toEqual(expect.arrayContaining([
-      expect.objectContaining({ type: 'case', id: 'case-1', href: '/claims/case-1' }),
+      expect.objectContaining({ type: 'case', id: 'case-1', href: '/cases/case-1' }),
     ]));
   });
 
@@ -137,7 +137,7 @@ describe('GET /api/search (v2 unified search)', () => {
     const res = await GET(req(uuid, '&types=recoveries'));
     const body = await res.json();
     expect(body.results).toEqual(expect.arrayContaining([
-      expect.objectContaining({ type: 'recovery', id: uuid, href: `/recoveries/${uuid}` }),
+      expect.objectContaining({ type: 'recovery', id: uuid, href: `/financials/recovery/${uuid}` }),
     ]));
   });
 

@@ -1,3 +1,3 @@
 export const dynamic = 'force-dynamic';
 
-export { default } from '@/app/(app)/flows/runs/page';
+export { default } from './FlowRunsPage';

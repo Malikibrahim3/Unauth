@@ -185,11 +185,11 @@ describe('planned providers cannot expose a functional Connect action', () => {
 
   it('the provider detail and list pages gate planned connections', () => {
     const detailPage = fs.readFileSync(
-      path.join(process.cwd(), 'app/(app)/integrations/[provider]/page.tsx'),
+      path.join(process.cwd(), 'app/(app)/sources/[sourceId]/SourceDetailPage.tsx'),
       'utf-8',
     );
     const listPage = fs.readFileSync(
-      path.join(process.cwd(), 'app/(app)/integrations/page.tsx'),
+      path.join(process.cwd(), 'app/(app)/sources/SourceConnectionsPage.tsx'),
       'utf-8',
     );
     expect(detailPage).toMatch(/item\.stage === ["']planned["']\s*\?/);
@@ -211,7 +211,7 @@ describe('capability rendering matches the evidence model', () => {
 
   it('the detail page names pending runtime verification and renders every evidence field', () => {
     const detailPage = fs.readFileSync(
-      path.join(process.cwd(), 'app/(app)/integrations/[provider]/page.tsx'),
+      path.join(process.cwd(), 'app/(app)/sources/[sourceId]/SourceDetailPage.tsx'),
       'utf-8',
     );
     expect(detailPage).toContain('Runtime verification pending');

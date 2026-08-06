@@ -88,7 +88,7 @@ async function investigationNotificationRequest(
       body: dueAt
         ? `A response is due ${new Date(dueAt).toLocaleString('en-GB')}. Work will track the deadline separately from the customer decision.`
         : 'The request was accepted and is now waiting for a response.',
-      target_href: `/claims/${caseId}#investigation-${investigationId}`,
+      target_href: `/cases/${caseId}#investigation-${investigationId}`,
       deduplication_key: `investigation-sent:${investigationId}:${event.id}`,
     });
   }
@@ -98,7 +98,7 @@ async function investigationNotificationRequest(
       kind: 'sync_failure',
       title: `Investigation email failed · ${target}`,
       body: 'The request remains a draft. Retry with the same logical send key or use copy/manual send.',
-      target_href: `/claims/${caseId}#investigation-${investigationId}`,
+      target_href: `/cases/${caseId}#investigation-${investigationId}`,
       deduplication_key: `investigation-send-failed:${investigationId}:${event.id}`,
     });
   }
@@ -107,7 +107,7 @@ async function investigationNotificationRequest(
     kind: 'evidence_update',
     title: `Investigation response ready · ${target}`,
     body: 'Review the structured response, evidence provenance, and refreshed responsibility recommendation.',
-    target_href: `/claims/${caseId}#investigation-${investigationId}`,
+    target_href: `/cases/${caseId}#investigation-${investigationId}`,
     deduplication_key: `investigation-response:${investigationId}:${event.id}`,
   });
 }

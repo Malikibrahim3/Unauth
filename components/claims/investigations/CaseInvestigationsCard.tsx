@@ -393,7 +393,7 @@ export function CaseInvestigationsCard({
       ) : null}
 
       {loading && !data ? (
-        <div className="mt-4 space-y-2" aria-label="Loading investigations">
+        <div role="status" className="mt-4 space-y-2" aria-label="Loading investigations">
           <Bone className="h-16" />
           <Bone className="h-16" />
         </div>

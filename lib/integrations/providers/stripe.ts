@@ -3,7 +3,7 @@ import type { IntegrationProvider } from '@/lib/integrations/types';
 export const stripeProvider: IntegrationProvider = {
   id: 'stripe',
   name: 'Stripe',
-  logoSrc: '/integrations/stripe.svg',
+  logoSrc: '/providers/stripe.svg',
   category: 'payments_disputes',
   authMode: 'oauth',
   buildStatus: 'slot_only',

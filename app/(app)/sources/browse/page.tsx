@@ -1,7 +1,7 @@
-import LegacyIntegrationsPage from '@/app/(app)/integrations/page';
+import SourceConnectionsPage from '../SourceConnectionsPage';
 
 export const dynamic = 'force-dynamic';
 
 export default function BrowseSourcesPage() {
-  return LegacyIntegrationsPage({ searchParams: Promise.resolve({ view: 'browse' }) });
+  return SourceConnectionsPage({ searchParams: Promise.resolve({ view: 'browse' }) });
 }

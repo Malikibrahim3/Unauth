@@ -16,7 +16,7 @@ import { formatMinorCurrencyNullable } from '@/lib/utils/format';
 import { parseMajorUnitInput } from '@/lib/ui/merchantCopy';
 
 // Merchant-selectable decisions/outcomes are an explicit neutral allowlist —
-// accusation vocabulary is deliberately excluded (see docs/PRODUCT.md).
+// Accusation vocabulary is deliberately excluded from merchant decisions.
 const DECISION_OPTIONS: Decision[] = [
   'approved', 'denied', 'escalated', 'partial_refund', 'full_refund', 'chargeback_disputed', 'internal_watch', 'no_action',
 ];
@@ -259,7 +259,7 @@ export function ClaimReviewManageCard({
 
         {/* Recovery */}
         {recoveryCase?.id ? (
-          <Link href={`/recoveries/${recoveryCase.id}`} className="ua-text-label block w-full text-center px-3 py-1.5 rounded-md no-underline" style={btnStyle('secondary')}>
+          <Link href={`/financials/recovery/${recoveryCase.id}`} className="ua-text-label block w-full text-center px-3 py-1.5 rounded-md no-underline" style={btnStyle('secondary')}>
             Open recovery case
           </Link>
         ) : null}

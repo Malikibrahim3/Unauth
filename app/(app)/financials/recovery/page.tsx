@@ -1,3 +1,3 @@
 export const dynamic = 'force-dynamic';
 
-export { default } from '@/app/(app)/recoveries/page';
+export { default } from './RecoveryPage';

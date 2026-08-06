@@ -17,7 +17,7 @@ export default function ClaimReviewPanel({
   initialClaim,
   canManage = false,
   financialSummaries = [],
-  caseBasePath = '/claims',
+  caseBasePath = '/cases',
 }: {
   profileId: string;
   sourceCustomerId: string | null;
@@ -25,7 +25,7 @@ export default function ClaimReviewPanel({
   initialClaim?: ClaimRecord | null;
   canManage?: boolean;
   financialSummaries?: CaseFinancialSummary[];
-  caseBasePath?: '/claims' | '/cases';
+  caseBasePath?: '/cases';
 }) {
   const wb = useClaimReviewWorkbench(profileId, sourceCustomerId, initialClaimId, initialClaim);
 

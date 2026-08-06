@@ -126,7 +126,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           merchantId: ctx.merchantId,
           ticketId: ticket.external_id,
           decision: outcome.decision,
-          caseUrl: `${getAppUrl()}/claims?focus=${encodeURIComponent(claimId)}`,
+          caseUrl: `${getAppUrl()}/cases?focus=${encodeURIComponent(claimId)}`,
         });
       }
     }

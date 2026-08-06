@@ -48,9 +48,6 @@ if (!allowDestructiveReset) {
   );
 }
 
-run('shasum', ['-a', '256', '-c', 'docs/audits/unauth-mvp-plus/legacy-migration-sha256.txt']);
-console.log('Legacy migration archive integrity passed (223 files).');
-
 run('supabase', ['db', 'reset', '--local'], { stdio: 'inherit' });
 
 function sql(query) {

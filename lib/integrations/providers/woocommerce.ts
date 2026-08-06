@@ -3,7 +3,7 @@ import type { IntegrationProvider } from '@/lib/integrations/types';
 export const woocommerceProvider: IntegrationProvider = {
   id: 'woocommerce',
   name: 'WooCommerce',
-  logoSrc: '/integrations/woocommerce.svg',
+  logoSrc: '/providers/woocommerce.svg',
   category: 'commerce',
   authMode: 'api_key',
   buildStatus: 'partial',

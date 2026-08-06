@@ -1,4 +1,4 @@
-import LegacyRuleDetailPage from '@/app/(app)/rules/[id]/page';
+import RuleDetailPageContent from './RuleDetailPage';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,5 +8,5 @@ export default async function RuleDetailPage({
   params: Promise<{ ruleId: string }>;
 }) {
   const { ruleId } = await params;
-  return LegacyRuleDetailPage({ params: Promise.resolve({ id: ruleId }) });
+  return RuleDetailPageContent({ params: Promise.resolve({ id: ruleId }) });
 }

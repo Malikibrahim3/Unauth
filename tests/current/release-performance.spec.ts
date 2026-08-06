@@ -1,14 +1,14 @@
 import { expect, test, type Page } from '@playwright/test';
 
 const ROUTES = [
-  '/dashboard',
+  '/overview',
   '/work',
-  '/claims',
-  '/losses',
-  '/recoveries',
+  '/cases',
+  '/financials/losses',
+  '/financials/recovery',
   '/customers',
-  '/reports',
-  '/integrations',
+  '/financials/reports',
+  '/sources/connected',
 ] as const;
 
 function percentile(values: number[], fraction: number) {

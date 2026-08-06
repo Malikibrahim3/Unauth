@@ -20,7 +20,7 @@ test.describe('release merchant workflow and states', () => {
   }) => {
     test.setTimeout(120_000);
     await blockAutomaticPrefetch(page);
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
+    await page.goto('/overview', { waitUntil: 'domcontentloaded' });
     await expect(
       page.getByText(
         "You're viewing demo data. Connect your store to see real data.",
@@ -36,19 +36,19 @@ test.describe('release merchant workflow and states', () => {
     ).toBeVisible();
     await expect(page.getByRole('link', { name: 'Clear all filters' })).toBeVisible();
 
-    await page.goto('/integrations/imports', { waitUntil: 'domcontentloaded' });
+    await page.goto('/sources/imports', { waitUntil: 'domcontentloaded' });
     await expect(
       page.getByText('No CSV import jobs recorded yet.', { exact: true }),
     ).toBeVisible();
 
-    await page.goto('/integrations', { waitUntil: 'domcontentloaded' });
-    const partialProvider = page.locator('a[href="/integrations/csv_import"]');
+    await page.goto('/sources/connected', { waitUntil: 'domcontentloaded' });
+    const partialProvider = page.locator('a[href="/sources/csv_import"]');
     await expect(partialProvider).toContainText('Not connected');
     await expect(page.getByText('Live', { exact: true })).toHaveCount(0);
-    await page.goto('/integrations/csv_import', {
+    await page.goto('/sources/csv_import', {
       waitUntil: 'domcontentloaded',
     });
-    await expect(page).toHaveURL(/\/integrations\/csv_import$/);
+    await expect(page).toHaveURL(/\/sources\/csv_import$/);
     await expect(page.getByText('Commerce · Partial', { exact: true })).toBeVisible({ timeout: 20_000 });
 
     await page.getByRole('button', { name: 'Search (⌘K)' }).click();
@@ -64,8 +64,8 @@ test.describe('release merchant workflow and states', () => {
   }) => {
     test.setTimeout(120_000);
     await blockAutomaticPrefetch(page);
-    await page.goto('/claims', { waitUntil: 'domcontentloaded' });
-    const caseLink = page.locator('main a[href^="/claims/"]').first();
+    await page.goto('/cases', { waitUntil: 'domcontentloaded' });
+    const caseLink = page.locator('main a[href^="/cases/"]').first();
     await expect(caseLink).toBeVisible();
     const caseHref = await caseLink.getAttribute('href');
     expect(caseHref).toBeTruthy();
@@ -90,22 +90,22 @@ test.describe('release merchant workflow and states', () => {
     await expect(page).toHaveURL(/\/customers\//);
     await expect(page.locator('main h1').first()).toBeVisible();
 
-    await page.goto('/recoveries', { waitUntil: 'domcontentloaded' });
-    const recoveryLink = page.locator('main a[href^="/recoveries/"]').first();
+    await page.goto('/financials/recovery', { waitUntil: 'domcontentloaded' });
+    const recoveryLink = page.locator('main a[href^="/financials/recovery/"]').first();
     await expect(recoveryLink).toBeVisible();
     const recoveryHref = await recoveryLink.getAttribute('href');
     expect(recoveryHref).toBeTruthy();
     await page.goto(recoveryHref!, { waitUntil: 'domcontentloaded' });
-    await expect(page).toHaveURL(/\/recoveries\//, { timeout: 30_000 });
+    await expect(page).toHaveURL(/\/financials\/recovery\//, { timeout: 30_000 });
     await expect(page.locator('main h1').first()).toBeVisible();
 
-    await page.goto('/losses', { waitUntil: 'domcontentloaded' });
+    await page.goto('/financials/losses', { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { level: 1, name: 'Losses' })).toBeVisible();
     await expect(page.getByText('£0.00', { exact: true }).first()).toBeVisible();
     await expect(page.locator('main')).not.toContainText(/\b[a-z]+_[a-z_]+\b/);
 
-    await page.goto('/reports', { waitUntil: 'domcontentloaded' });
+    await page.goto('/financials/reports', { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { level: 1, name: 'Reports' })).toBeVisible();
-    await expect(page.locator('main a[href^="/reports/records"]').first()).toBeVisible();
+    await expect(page.locator('main a[href^="/financials/reports/records"]').first()).toBeVisible();
   });
 });

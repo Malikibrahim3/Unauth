@@ -34,18 +34,16 @@ export const ACTIVE_MIGRATION_VERSIONS = Object.freeze(
   ACTIVE_MIGRATIONS.map((file) => file.slice(0, 14)),
 );
 
-// The repair migration is a no-op on a clean replay because the original
-// Release 1 migration already creates these objects. The canonical schema
-// hash therefore remains stable while drifted environments can be repaired.
+// Canonical hash of a clean replay of the active migration set.
 export const EXPECTED_SCHEMA_HASH =
-  'f42c76ae8370f5332d18183ce85d18b3245679e73f556f7bf55120f11c4e62e5';
+  '217dc180c6b1282d7f36e4079b6504fd63cb7fcaa7e33612315ececfa259a27c';
 
 export const EXPECTED_CANONICAL_COUNTS = Object.freeze({
   tables: '143',
   views: '2',
   sequences: '2',
   enums: '45',
-  columns: '2089',
+  columns: '2090',
   not_null_columns: '1177',
   constraints: '789',
   indexes: '536',

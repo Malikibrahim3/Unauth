@@ -3,7 +3,7 @@ import { getAppUrl } from '@/lib/utils/appUrl';
 export const SHOPIFY_OAUTH_RETURN_COOKIE = 'shopify_oauth_return_to';
 
 export function normalizeShopifyOAuthReturnPath(value: string | null | undefined): string {
-  return value === '/onboarding' ? '/onboarding' : '/integrations';
+  return value === '/onboarding' ? '/onboarding' : '/sources/connected';
 }
 
 export function shopifyOAuthCookieOptions(maxAge: number) {

@@ -24,7 +24,7 @@ export default function NotFound() {
         action={
           <div className="flex flex-wrap items-center justify-center gap-3">
             <Link
-              href="/dashboard"
+              href="/overview"
               className="inline-flex h-[var(--ua-control-height-md)] items-center rounded-[var(--ua-radius-control)] px-4 text-[length:var(--ua-text-dense-size)] font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
               style={{
                 background: 'var(--ua-action-primary)',

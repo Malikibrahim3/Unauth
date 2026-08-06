@@ -194,7 +194,7 @@ export function RecoveryCaseCard({
             </div>
           ) : null}
           <Link
-            href="/recoveries"
+            href="/financials/recovery"
             className="ua-text-working-title mt-4 inline-flex items-center gap-1.5 hover:underline"
             style={{ color: "var(--ua-action-primary)" }}
           >

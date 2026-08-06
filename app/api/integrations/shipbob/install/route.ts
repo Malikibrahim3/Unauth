@@ -21,7 +21,7 @@ import { shipBobOAuthCookie, shipBobOAuthCookieOptions } from '@/lib/integration
 import { requestedShipBobEnvironment } from '@/lib/integrations/providers/shipbobEnvironment';
 import { recordShipBobAudit } from '@/lib/integrations/providers/shipbobAudit';
 
-const REDIRECT_PATH = '/integrations';
+const REDIRECT_PATH = '/sources/connected';
 
 function redirect(request: NextRequest, key: string): NextResponse {
   return NextResponse.redirect(new URL(`${REDIRECT_PATH}?${key}=1`, request.url));

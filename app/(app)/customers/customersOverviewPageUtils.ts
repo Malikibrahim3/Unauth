@@ -1,7 +1,7 @@
 import type { ConnectionState } from '@/lib/connections/getConnectionState';
 import type { MerchantSetupState } from '@/lib/connections/getMerchantSetupState';
 
-const INTEGRATIONS_HREF = '/integrations';
+const INTEGRATIONS_HREF = '/sources/connected';
 
 export function resolveCustomerActions(
   setupState: MerchantSetupState,
@@ -9,7 +9,7 @@ export function resolveCustomerActions(
 ): { primary: { label: string; href: string }; subtitle: string } {
   if (connection.bothConnected) {
     return {
-      primary: { label: 'Open cases', href: '/claims' },
+      primary: { label: 'Open cases', href: '/cases' },
       subtitle: 'Merchant-owned customer context for loss decisions — order history, case history, prior outcomes, and evidence patterns.',
     };
   }

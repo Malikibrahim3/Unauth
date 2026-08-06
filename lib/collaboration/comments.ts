@@ -84,7 +84,7 @@ export async function createCaseComment(client: SupabaseClient, input: {
         kind: 'mention',
         title: 'You were mentioned in a payout case',
         body: parsed.body.slice(0, 240),
-        target_href: `/claims/${input.caseId}`,
+        target_href: `/cases/${input.caseId}`,
         deduplication_key: `comment-mention:${comment.id}:${userId}`,
       })));
       if (notificationError) throw new Error(`comment_notifications_create_failed: ${notificationError.message}`);

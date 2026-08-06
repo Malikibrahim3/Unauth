@@ -62,7 +62,7 @@ export async function refreshGorgiasSidebarWidgetIntegrationUrl(input: {
   const apiBaseUrl = gorgiasApiBaseUrl(input.providerBaseUrl);
   const current = await gorgiasApiRequest<{ http?: { url?: string | null } }>(
     apiBaseUrl,
-    `/integrations/${input.integrationId}`,
+    `/sources/${input.integrationId}`,
     input.credentials,
     { method: 'GET' }
   );
@@ -87,7 +87,7 @@ export async function refreshGorgiasSidebarWidgetIntegrationUrl(input: {
 
   await gorgiasApiRequest<GorgiasIntegrationResponse>(
     apiBaseUrl,
-    `/integrations/${input.integrationId}`,
+    `/sources/${input.integrationId}`,
     input.credentials,
     {
       method: 'PUT',

@@ -1,34 +1,34 @@
 import { expect, test, type Page } from "@playwright/test";
 
 const CORE_ROUTES = [
-  "/dashboard",
+  "/overview",
   "/work",
-  "/claims",
-  "/losses",
-  "/recoveries",
+  "/cases",
+  "/financials/losses",
+  "/financials/recovery",
   "/customers",
-  "/rules",
-  "/flows",
-  "/integrations",
-  "/reports",
+  "/controls/rules",
+  "/controls/flows",
+  "/sources/connected",
+  "/financials/reports",
   "/notifications",
-  "/settings/account",
-  "/integrations/imports",
-  "/flows/runs",
-  "/rules/recovery",
+  "/settings/workspace/account",
+  "/sources/imports",
+  "/controls/flows/runs",
+  "/controls/rules/recovery",
   "/settings/billing",
-  "/settings/team",
-  "/settings/platform",
-  "/settings/agreements",
-  "/settings/api-integrations",
-  "/settings/notifications",
-  "/settings/data-privacy",
-  "/settings/audit-trail",
-  "/settings/integrations/shopify",
-  "/settings/integrations/gorgias",
-  "/settings/integrations/zendesk",
-  "/settings/integrations/freshdesk",
-  "/settings/integrations/chrome",
+  "/settings/workspace/team",
+  "/settings/product/platform",
+  "/settings/legal/agreements",
+  "/settings/developers/api-access",
+  "/settings/product/notifications",
+  "/settings/legal/data-privacy",
+  "/settings/governance/audit-trail",
+  "/sources/setup/shopify",
+  "/sources/setup/gorgias",
+  "/sources/setup/zendesk",
+  "/sources/setup/freshdesk",
+  "/sources/setup/chrome",
   "/help",
 ] as const;
 const VIEWPORTS = [
@@ -180,7 +180,7 @@ test.describe("release accessibility and responsive gates", () => {
   test("command palette and dialogs preserve keyboard escape behavior", async ({
     page,
   }) => {
-    await page.goto("/dashboard");
+    await page.goto("/overview");
     await page.getByRole("button", { name: "Search (⌘K)" }).click();
     await expect(
       page.getByRole("dialog", { name: "Command palette" }),

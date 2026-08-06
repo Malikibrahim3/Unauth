@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const secret = searchParams.get('secret');
   const merchantId = searchParams.get('merchant_id');
-  const redirectTo = searchParams.get('redirect') ?? '/claims';
+  const redirectTo = searchParams.get('redirect') ?? '/cases';
 
   if (!merchantId || !validateE2eAuthRequest({ secret, merchantId })) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });

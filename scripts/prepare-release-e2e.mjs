@@ -132,7 +132,7 @@ const { error: notificationError } = await supabase.from('notifications').upsert
     kind: 'approaching_deadline',
     title: 'Review payout case evidence',
     body: 'Synthetic release fixture notification for the connected merchant workflow.',
-    target_href: `/claims/${primaryCase.id}`,
+    target_href: `/cases/${primaryCase.id}`,
     deduplication_key: 'release-e2e:workflow-notification',
     read_at: null,
   },

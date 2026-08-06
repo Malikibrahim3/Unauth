@@ -307,7 +307,7 @@ export async function GET(
       attention: openCases
         .map((claim) => ({
           text: `Open ${label('claimType', String(claim.claim_type || 'other'))} case`,
-          href: `/claims/${claim.id}`,
+          href: `/cases/${claim.id}`,
         })),
       openCases: openCases.map((claim) => ({
         id: String(claim.id),
@@ -315,7 +315,7 @@ export async function GET(
         state: String(claim.status),
         amount: claim.amount_at_risk == null ? null : Number(claim.amount_at_risk),
         currency: normaliseCurrencyOrNull(claim.currency),
-        href: `/claims/${claim.id}`,
+        href: `/cases/${claim.id}`,
       })),
       recent: orderRows.slice(0, 6).map((order) => {
         const orderCases = claimsByOrder.get(String(order.id)) ?? [];

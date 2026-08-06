@@ -25,7 +25,7 @@ const ARTICLES: HelpArticle[] = [
       'Review source facts and evidence readiness before considering the recommendation.',
       'Record the merchant decision, then use the case timeline to follow resulting customer and recovery work.',
     ],
-    action: { href: '/claims', label: 'Open cases' },
+    action: { href: '/cases', label: 'Open cases' },
   },
   {
     id: 'configure-rules',
@@ -37,7 +37,7 @@ const ARTICLES: HelpArticle[] = [
       'Review the draft and its explanation before publishing a new version.',
       'A published rule can guide a recommendation; it never makes the final customer or financial decision for you.',
     ],
-    action: { href: '/rules', label: 'Open rules' },
+    action: { href: '/controls/rules', label: 'Open rules' },
   },
   {
     id: 'follow-a-recovery',
@@ -49,7 +49,7 @@ const ARTICLES: HelpArticle[] = [
       'Use the recovery board to find the current owner, deadline, and next action.',
       'Only a reconciled provider credit reduces net unrecovered loss; keep external correspondence in the record timeline.',
     ],
-    action: { href: '/recoveries', label: 'Open recovery board' },
+    action: { href: '/financials/recovery', label: 'Open recovery board' },
   },
   {
     id: 'connect-sources',
@@ -61,7 +61,7 @@ const ARTICLES: HelpArticle[] = [
       'Choose the provider setup task that matches the source you need to connect or repair.',
       'A disconnected source can make records incomplete; it does not prove that a missing value is zero.',
     ],
-    action: { href: '/integrations', label: 'Open integrations' },
+    action: { href: '/sources/connected', label: 'Open integrations' },
   },
 ];
 

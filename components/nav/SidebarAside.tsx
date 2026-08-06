@@ -126,7 +126,7 @@ export function SidebarAside({
 
         {!isCollapsed ? (
           <Link
-            href="/integrations"
+            href="/sources/connected"
             prefetch={false}
             onClick={onCloseMobile}
             className="flex min-h-7 w-full items-center gap-2 rounded-[var(--ua-radius-control)] px-2.5 py-1 text-[length:var(--ua-text-metadata-size)] font-medium leading-tight text-[var(--ua-text-secondary)] transition-colors duration-[var(--ua-duration-fast)] hover:bg-[var(--ua-surface-hover)] hover:text-[var(--ua-text-primary)]"
@@ -152,7 +152,7 @@ export function SidebarAside({
 
         {isCollapsed && merchantName ? (
           <Link
-            href="/integrations"
+            href="/sources/connected"
             prefetch={false}
             onClick={onCloseMobile}
             className="relative flex h-[22px] w-[22px] items-center justify-center rounded-md bg-[var(--ua-surface-selected)] text-[length:var(--ua-text-metadata-size)] font-bold leading-none text-[var(--ua-text-primary)]"

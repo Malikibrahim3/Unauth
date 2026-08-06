@@ -53,8 +53,10 @@ type Counts = {
   events: number;
 };
 
+type SmokeSupabaseClient = ReturnType<typeof createClient<any>>;
+
 async function countSmokeRows(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SmokeSupabaseClient,
   merchantId: string,
   supportCaseId: string | null
 ): Promise<Counts> {
@@ -96,7 +98,7 @@ async function countSmokeRows(
 }
 
 async function assertStoredCasePrivacy(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SmokeSupabaseClient,
   merchantId: string,
   expectedEmailHash: string
 ): Promise<void> {
@@ -126,7 +128,7 @@ async function assertStoredCasePrivacy(
 }
 
 async function runSmokePass(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SmokeSupabaseClient,
   merchantId: string,
   supportCaseId: string | null
 ): Promise<{ connectionId: string; caseId: string; eventId: string; supportCaseId: string }> {
@@ -167,7 +169,7 @@ async function runSmokePass(
   const expectedEmailHash = hashSupportEmail('smoke-customer@unauth-smoke.example');
   await assertStoredCasePrivacy(supabase, merchantId, expectedEmailHash);
 
-  const event = await appendSupportCaseEvent(supabase, {
+  const event = await appendSupportCaseEvent(supabase as never, {
     merchant_id: merchantId,
     support_case_id: caseId,
     provider: SMOKE_PROVIDER,

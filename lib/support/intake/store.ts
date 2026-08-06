@@ -235,7 +235,7 @@ type SupabaseInsertClient = {
   from: (table: string) => {
     insert: (payload: Record<string, unknown>) => {
       select: (columns?: string) => {
-        single: () => Promise<{
+        single: () => PromiseLike<{
           data: Record<string, unknown> | null;
           error: { message: string; code?: string } | null;
         }>;
@@ -244,7 +244,7 @@ type SupabaseInsertClient = {
     // Used to return the existing event on an idempotent replay (23505).
     select: (columns?: string) => {
       eq: (column: string, value: string) => {
-        maybeSingle: () => Promise<{ data: Record<string, unknown> | null; error: { message: string } | null }>;
+        maybeSingle: () => PromiseLike<{ data: Record<string, unknown> | null; error: { message: string } | null }>;
       };
     };
   };
@@ -410,6 +410,7 @@ export async function appendSupportCaseEvent(
     }
     throw new Error(`insert ${TABLES.SUPPORT_CASE_EVENTS} failed: ${error.message}`);
   }
+  if (!data) throw new Error(`insert ${TABLES.SUPPORT_CASE_EVENTS} returned no row`);
   return data;
 }
 

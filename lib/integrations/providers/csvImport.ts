@@ -3,12 +3,12 @@ import type { IntegrationProvider } from '@/lib/integrations/types';
 export const csvImportProvider: IntegrationProvider = {
   id: 'csv_import',
   name: 'CSV / manual import',
-  logoSrc: '/integrations/document-upload.svg',
+  logoSrc: '/providers/document-upload.svg',
   category: 'commerce',
   authMode: 'manual_upload',
   buildStatus: 'live',
   description: 'Merchant-uploaded customers, orders, refunds, and fulfillment records.',
-  setupHref: '/integrations/imports',
+  setupHref: '/sources/imports',
   evidenceCapabilities: [
     'order_value',
     'line_items',

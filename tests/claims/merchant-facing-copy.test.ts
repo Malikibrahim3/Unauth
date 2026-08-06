@@ -1,5 +1,5 @@
 import { humanizeEvidenceKey } from '@/components/claims/payout/payoutCopy';
-import { sanitizeMerchantText } from '@/app/(app)/claims/claimsPageData';
+import { sanitizeMerchantText } from '@/app/(app)/cases/claimsPageData';
 import { formatPayoutRecommendationRuleLine } from '@/lib/payouts/recommendation';
 
 const RAW_ENUM = /[a-z]+_[a-z]+/;

@@ -63,7 +63,7 @@ function CompactTransactionList({
         variant="compact"
         title="No orders in dataset"
         description="No merchant-owned order history is available for this customer yet."
-        action={<Link href="/integrations" className="ua-text-working-title text-[var(--ua-action-primary)] hover:underline">Review connected sources</Link>}
+        action={<Link href="/sources/connected" className="ua-text-working-title text-[var(--ua-action-primary)] hover:underline">Review connected sources</Link>}
       />
     );
   }

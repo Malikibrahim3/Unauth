@@ -5,7 +5,7 @@ import {
   buildRecoveryMetrics,
   buildRequestedActionBreakdown,
   payoutExposureForClaim,
-} from "@/app/(app)/reports/reportsPageUtils";
+} from "@/app/(app)/financials/reports/reportsPageUtils";
 import type { RecoveryCase } from "@/lib/recoveries/types";
 
 function read(rel: string): string {
@@ -14,7 +14,7 @@ function read(rel: string): string {
 
 describe("payout-control reports contract", () => {
   it("uses payout and recovery labels instead of store/network intelligence copy", () => {
-    const page = read("app/(app)/reports/page.tsx");
+    const page = read("app/(app)/financials/reports/ReportsPage.tsx");
     const view = read("components/reporting/IntelligenceReportView.tsx");
     const model = read("lib/reporting/intelligence.ts");
     const copy = read("lib/ui/merchantCopy.ts");
@@ -66,7 +66,7 @@ describe("payout-control reports contract", () => {
   it("uses one reconciliation notice and keeps the records table and export visibly scoped", () => {
     const view = read("components/reporting/IntelligenceReportView.tsx");
     const charts = read("components/reporting/DashboardCharts.tsx");
-    const records = read("app/(app)/reports/records/page.tsx");
+    const records = read("app/(app)/financials/reports/records/page.tsx");
 
     expect(`${view}\n${charts}`.match(/Ledger reconciliation needs attention/g)).toHaveLength(1);
     expect(records).toContain("RegistrySurface");

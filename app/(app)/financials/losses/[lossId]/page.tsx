@@ -1,4 +1,4 @@
-import LegacyLossDetailPage from '@/app/(app)/losses/[id]/page';
+import LossDetailPageContent from './LossDetailPage';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,5 +8,5 @@ export default async function LossDetailPage({
   params: Promise<{ lossId: string }>;
 }) {
   const { lossId } = await params;
-  return LegacyLossDetailPage({ params: Promise.resolve({ id: lossId }) });
+  return LossDetailPageContent({ params: Promise.resolve({ id: lossId }) });
 }

@@ -3,7 +3,7 @@ import type { IntegrationProvider } from '@/lib/integrations/types';
 export const freshdeskProvider: IntegrationProvider = {
   id: 'freshdesk',
   name: 'Freshdesk',
-  logoSrc: '/integrations/freshdesk.png',
+  logoSrc: '/providers/freshdesk.png',
   category: 'helpdesk',
   authMode: 'api_key',
   // Not 'live': no executable adapter, no verify-install route at all, no
@@ -12,7 +12,7 @@ export const freshdeskProvider: IntegrationProvider = {
   // docs/audits/unauth-mvp-plus/08-provider-proof-matrix.md.
   buildStatus: 'partial',
   description: 'Ticket messages, attachments, and payout-case context from Freshdesk.',
-  setupHref: '/settings/integrations/freshdesk',
+  setupHref: '/sources/setup/freshdesk',
   evidenceCapabilities: [
     'ticket_messages',
     'ticket_attachments',

@@ -119,7 +119,7 @@ export default function GlobalError({
                 Try again
               </button>
               <a
-                href="/dashboard"
+                href="/overview"
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',

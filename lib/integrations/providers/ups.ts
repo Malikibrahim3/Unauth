@@ -3,7 +3,7 @@ import type { IntegrationProvider, IntegrationCredentialPayload } from '@/lib/in
 export const upsProvider: IntegrationProvider = {
   id: 'ups',
   name: 'UPS',
-  logoSrc: '/integrations/ups.svg',
+  logoSrc: '/providers/ups.svg',
   category: 'carrier',
   authMode: 'oauth',
   // Matches the executable adapter's own verificationStatus: 'partial'

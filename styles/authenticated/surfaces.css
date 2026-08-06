@@ -352,18 +352,6 @@
   }
 }
 
-/* Capture mode is opt-in so screenshot tooling can wait on the real product
- * without inheriting incidental entrance/hover motion. */
-:root[data-capture-mode="true"] .ua-app *,
-:root[data-capture-mode="true"] .ua-app *::before,
-:root[data-capture-mode="true"] .ua-app *::after,
-:root[data-capture-mode="true"] .ua-auth-surface *,
-:root[data-capture-mode="true"] .ua-auth-surface *::before,
-:root[data-capture-mode="true"] .ua-auth-surface *::after {
-  animation: none !important;
-  transition: none !important;
-}
-
 /* Canonical grouped metrics. A two-column narrow layout keeps dividers correct
  * for odd counts; at supported desktop widths each item gets one vertical
  * divider and no orphaned horizontal rule. */

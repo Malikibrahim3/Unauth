@@ -20,7 +20,7 @@ export function GateRecommendationPanel({ recommendation }: { recommendation: Ga
         <p className="ua-text-body mt-1" style={{ color: 'var(--ua-text-secondary)' }}>
           No rule applies. Standard review remains the default recommendation source.
         </p>
-        <Link href="/rules" className="ua-text-label mt-2 inline-block underline underline-offset-2" style={{ color: 'var(--ua-text-primary)' }}>
+        <Link href="/controls/rules" className="ua-text-label mt-2 inline-block underline underline-offset-2" style={{ color: 'var(--ua-text-primary)' }}>
           Review rules
         </Link>
       </Card>

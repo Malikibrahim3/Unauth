@@ -109,7 +109,7 @@ export function EvidenceChecklistCard({
             </span>{' '}
             {gapMessage}{' '}
             <Link
-              href="/integrations"
+              href="/sources/connected"
               className="font-medium underline underline-offset-2"
               style={{ color: 'var(--ua-warning)' }}
             >

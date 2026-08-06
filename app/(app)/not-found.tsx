@@ -12,14 +12,14 @@ export default function AppNotFound() {
         <p className="text-[length:var(--ua-text-metadata-size)] leading-5 text-[var(--ua-text-secondary)]">No record or workflow state was changed.</p>
         <div className="flex flex-wrap items-center gap-2">
             <Link
-              href="/dashboard"
+              href="/overview"
               className="ua-text-label inline-flex h-8 items-center rounded-[var(--ua-radius-control)] px-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
               style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)', outlineColor: 'var(--ua-action-primary)' }}
             >
               Go to Overview
             </Link>
             <Link
-              href="/claims"
+              href="/cases"
               className="ua-text-label inline-flex h-8 items-center rounded-[var(--ua-radius-control)] border px-3 hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
               style={{ borderColor: 'var(--ua-border-subtle)', color: 'var(--ua-text-primary)', outlineColor: 'var(--ua-action-primary)' }}
             >

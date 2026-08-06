@@ -87,7 +87,7 @@ export function GorgiasSupportSyncConnectionDetails({
       {/* Status header */}
       <div className="flex items-start gap-3">
         <Image
-          src="/integrations/gorgias.png"
+          src="/providers/gorgias.png"
           alt="Gorgias"
           width={40}
           height={40}

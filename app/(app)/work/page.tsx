@@ -48,7 +48,7 @@ export default async function WorkPage({
     user.id,
     PERMISSIONS.VIEW_INBOX,
   );
-  if (denied) redirect("/dashboard");
+  if (denied) redirect("/overview");
   const params = await searchParams;
   const view = params.view ?? "open";
   const searchQuery = params.q?.slice(0, 160) ?? "";

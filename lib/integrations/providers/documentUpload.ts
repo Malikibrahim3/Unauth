@@ -3,12 +3,12 @@ import type { DocumentType, IntegrationProvider } from '@/lib/integrations/types
 export const documentUploadProvider: IntegrationProvider = {
   id: 'document_upload',
   name: 'Document Upload',
-  logoSrc: '/integrations/document-upload.svg',
+  logoSrc: '/providers/document-upload.svg',
   category: 'documents',
   authMode: 'manual_upload',
   buildStatus: 'live',
   description: 'Merchant-approved carrier, 3PL, supplier, and insurance terms.',
-  setupHref: '/settings/agreements',
+  setupHref: '/settings/legal/agreements',
   evidenceCapabilities: ['contract_terms', 'recovery_deadline'],
   capabilities: { readAttachments: true },
   // No isolated DB/storage-backed workflow or automated route test is recorded

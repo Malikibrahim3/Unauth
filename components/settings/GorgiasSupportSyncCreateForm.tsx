@@ -36,7 +36,7 @@ export function GorgiasSupportSyncCreateForm({
       {isCreate ? (
         <div className="flex items-center gap-3">
           <Image
-            src="/integrations/gorgias.png"
+            src="/providers/gorgias.png"
             alt="Gorgias"
             width={40}
             height={40}

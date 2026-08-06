@@ -3,7 +3,7 @@ import type { IntegrationProvider } from '@/lib/integrations/types';
 export const shipbobProvider: IntegrationProvider = {
   id: 'shipbob',
   name: 'ShipBob',
-  logoSrc: '/integrations/shipbob.svg',
+  logoSrc: '/providers/shipbob.svg',
   category: 'warehouse_3pl',
   authMode: 'oauth',
   buildStatus: 'partial',

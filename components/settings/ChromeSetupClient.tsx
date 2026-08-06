@@ -51,7 +51,7 @@ export default function ChromeSetupClient({ hasApiKeys, keyPrefixes }: Props) {
           Create a key in API &amp; Integrations, then return here to install the extension.
         </p>
         <Link
-          href="/settings/integrations"
+          href="/sources/connected"
           className="ua-text-working-title mt-3 inline-flex h-8 items-center rounded-[var(--ua-radius-control)] px-3"
           style={{ background: 'var(--ua-action-primary)', color: 'var(--ua-text-inverse)' }}
         >

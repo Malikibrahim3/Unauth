@@ -3,7 +3,7 @@ import type { IntegrationProvider, IntegrationCredentialPayload } from '@/lib/in
 export const fedexProvider: IntegrationProvider = {
   id: 'fedex',
   name: 'FedEx',
-  logoSrc: '/integrations/fedex.svg',
+  logoSrc: '/providers/fedex.svg',
   category: 'carrier',
   authMode: 'oauth',
   // Matches the executable adapter's own verificationStatus: 'partial'

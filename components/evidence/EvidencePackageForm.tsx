@@ -96,7 +96,7 @@ export function EvidencePackageForm({
       if (onSuccess) {
         onSuccess(packageId);
       } else {
-        router.push("/claims");
+        router.push("/cases");
       }
     } catch {
       setError("Failed to compile signal data. Please try again.");

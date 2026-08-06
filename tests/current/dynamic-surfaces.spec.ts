@@ -1,12 +1,12 @@
 import { expect, test, type Page } from "@playwright/test";
 
 const LIST_DETAILS = [
-  { list: "/claims", pattern: "/claims/" },
-  { list: "/losses", pattern: "/losses/" },
-  { list: "/recoveries", pattern: "/recoveries/" },
-  { list: "/rules", pattern: "/rules/" },
-  { list: "/flows", pattern: "/flows/" },
-  { list: "/integrations", pattern: "/integrations/" },
+  { list: "/cases", pattern: "/cases/" },
+  { list: "/financials/losses", pattern: "/financials/losses/" },
+  { list: "/financials/recovery", pattern: "/financials/recovery/" },
+  { list: "/controls/rules", pattern: "/controls/rules/" },
+  { list: "/controls/flows", pattern: "/controls/flows/" },
+  { list: "/sources/connected", pattern: "/sources/" },
 ] as const;
 
 async function seriousAxeViolations(page: Page) {

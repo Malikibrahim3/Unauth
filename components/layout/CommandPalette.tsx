@@ -22,10 +22,8 @@ import {
 import CommandPaletteSurface from "@/components/layout/CommandPaletteSurface";
 
 const PALETTE_ICONS: Record<string, React.ReactNode> = {
-  "/dashboard": <LayoutGrid size={14} aria-hidden="true" />,
   "/overview": <LayoutGrid size={14} aria-hidden="true" />,
   "/customers": <Users size={14} aria-hidden="true" />,
-  "/claims": <Clipboard size={14} aria-hidden="true" />,
   "/cases": <Clipboard size={14} aria-hidden="true" />,
   "/financials/losses": <LayoutGrid size={14} aria-hidden="true" />,
   "/financials/recovery": <LayoutGrid size={14} aria-hidden="true" />,
@@ -39,7 +37,7 @@ const PALETTE_ICONS: Record<string, React.ReactNode> = {
   filter_new: <AlertCircle size={14} aria-hidden="true" />,
 };
 
-const DEFAULT_PALETTE_ICON = PALETTE_ICONS["/dashboard"];
+const DEFAULT_PALETTE_ICON = PALETTE_ICONS["/overview"];
 
 function buildCommandPaletteNavItems(permissions: Permission[]): NavItem[] {
   const permissionSet = new Set(permissions);

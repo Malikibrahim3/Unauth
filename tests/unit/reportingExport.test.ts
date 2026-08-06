@@ -41,7 +41,7 @@ function reportFixture(): IntelligenceReport {
         count: 1,
         amountMinor: 700,
         currency: 'GBP',
-        href: '/reports/records?kind=case',
+        href: '/financials/reports/records?kind=case',
         recordIds: ['case-1'],
       },
     ],

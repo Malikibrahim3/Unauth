@@ -120,7 +120,7 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
       {/* Status header */}
       <div className="flex items-start gap-3">
         <Image
-          src="/integrations/zendesk.svg"
+          src="/providers/zendesk.svg"
           alt="Zendesk"
           width={40}
           height={40}
@@ -185,7 +185,7 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
                   <p className="ua-text-caption-role mt-0.5" style={{ color: 'var(--ua-text-secondary)' }}>
                     When prompted, paste a key from{' '}
                     <Link
-                      href="/integrations"
+                      href="/sources/connected"
                       className="underline"
                       style={{ color: 'var(--ua-action-primary)' }}
                     >

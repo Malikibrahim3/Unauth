@@ -4,12 +4,12 @@ import { SHOPIFY_GRAPHQL_API_VERSION } from '@/lib/shopify/apiVersion';
 export const shopifyProvider: IntegrationProvider = {
   id: 'shopify',
   name: 'Shopify',
-  logoSrc: '/integrations/shopify.svg',
+  logoSrc: '/providers/shopify.svg',
   category: 'commerce',
   authMode: 'oauth',
   buildStatus: 'live',
   description: 'Orders, refunds, fulfillments, and Shopify Payments disputes.',
-  setupHref: '/settings/integrations/shopify',
+  setupHref: '/sources/setup/shopify',
   evidenceCapabilities: [
     'order_value',
     'line_items',

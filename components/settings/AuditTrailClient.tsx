@@ -230,7 +230,7 @@ export default function AuditTrailClient({
               header: "Object",
               render: (row) => {
                 const claimHref = row.resource_type === "claim" && row.resource_id
-                  ? (row.resource_href ?? "/claims")
+                  ? (row.resource_href ?? "/cases")
                   : null;
                 return claimHref ? (
                   <Link

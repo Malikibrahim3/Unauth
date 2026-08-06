@@ -1,4 +1,4 @@
-import LegacyRunDetailPage from '@/app/(app)/flows/runs/[id]/page';
+import FlowRunDetailPageContent from './FlowRunDetailPage';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,5 +8,5 @@ export default async function FlowRunDetailPage({
   params: Promise<{ runId: string }>;
 }) {
   const { runId } = await params;
-  return LegacyRunDetailPage({ params: Promise.resolve({ id: runId }) });
+  return FlowRunDetailPageContent({ params: Promise.resolve({ id: runId }) });
 }

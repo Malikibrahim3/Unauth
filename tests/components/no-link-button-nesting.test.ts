@@ -2,11 +2,11 @@ import fs from 'fs';
 import path from 'path';
 
 const TARGET_FILES = [
-  'app/(app)/claims/page.tsx',
+  'app/(app)/cases/ClaimsPage.tsx',
   'app/(app)/customers/page.tsx',
   'app/(app)/work/page.tsx',
-  'app/(app)/losses/page.tsx',
-  'app/(app)/recoveries/page.tsx',
+  'app/(app)/financials/losses/LossesPage.tsx',
+  'app/(app)/financials/recovery/RecoveryPage.tsx',
 ];
 
 describe('link/button composition', () => {

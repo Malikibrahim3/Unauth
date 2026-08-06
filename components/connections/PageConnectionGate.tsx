@@ -92,7 +92,7 @@ function GatePanel({ missing, pageName, pageDescription }: {
           </p>
         </div>
 
-        <ButtonLink href={isDangerous ? '/integrations' : '/settings/integrations'} size="sm" className="shrink-0">
+        <ButtonLink href={isDangerous ? '/sources/connected' : '/sources/browse'} size="sm" className="shrink-0">
           {isDangerous ? 'Connect support source' : 'Set up source connections'}
         </ButtonLink>
       </div>

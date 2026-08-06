@@ -169,14 +169,14 @@ export function LossLedger({
         rows={visible}
         getRowKey={(row) => row.id}
         primaryColumnKey="category"
-        getRowHref={(row) => row.detailHref ?? `/losses/${row.id}`}
+        getRowHref={(row) => row.detailHref ?? `/financials/losses/${row.id}`}
         emptyState={
           rows.length === 0 ? (
             <OperationalState
               kind="zero"
               title="No loss records yet"
               description="Loss records appear after a case has a confirmed or estimated loss. Connect a source to keep the ledger current."
-              action={<Link href="/integrations" className="ua-text-working-title text-[var(--ua-action-primary)] underline underline-offset-2">Review integrations</Link>}
+              action={<Link href="/sources/connected" className="ua-text-working-title text-[var(--ua-action-primary)] underline underline-offset-2">Review integrations</Link>}
             />
           ) : (
             <OperationalState

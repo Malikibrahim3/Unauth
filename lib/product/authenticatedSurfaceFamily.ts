@@ -22,21 +22,20 @@ export type AuthenticatedSurfaceFamily =
 export function getAuthenticatedSurfaceFamily(
   pathname: string,
 ): AuthenticatedSurfaceFamily {
-  const path = pathname.split('?')[0] || '/dashboard';
-  if (path === '/dashboard' || path.startsWith('/reports')) return 'reports';
+  const path = pathname.split('?')[0] || '/overview';
+  if (path === '/overview' || path.startsWith('/financials/reports')) return 'reports';
   if (
     path === '/work' ||
-    path === '/exceptions' ||
-    path.startsWith('/claims') ||
+    path.startsWith('/cases') ||
     path.startsWith('/notifications')
   ) {
     return 'workPayout';
   }
   if (
-    path.startsWith('/losses') ||
-    path.startsWith('/recoveries') ||
+    path.startsWith('/financials/losses') ||
+    path.startsWith('/financials/recovery') ||
     path.startsWith('/partners') ||
-    path.startsWith('/settings/agreements')
+    path.startsWith('/settings/legal/agreements')
   ) {
     return 'lossRecovery';
   }
@@ -46,10 +45,10 @@ export function getAuthenticatedSurfaceFamily(
   ) {
     return 'customersObjects';
   }
-  if (path.startsWith('/rules') || path.startsWith('/flows')) {
+  if (path.startsWith('/controls/rules') || path.startsWith('/controls/flows')) {
     return 'rulesFlows';
   }
-  if (path.startsWith('/integrations') || path.startsWith('/settings')) {
+  if (path.startsWith('/sources') || path.startsWith('/settings')) {
     return 'integrationsSettings';
   }
   return 'setupSupportCompatibility';

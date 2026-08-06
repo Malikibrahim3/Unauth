@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
       channel: { id: account.id, ...(account.name ? { name: account.name } : {}) },
       sandbox: pending.environment === 'sandbox',
     });
-    const redirect = new URL('/integrations', request.url);
+    const redirect = new URL('/sources/connected', request.url);
     redirect.searchParams.set('shipbob_connected', '1');
     if (!completed.subscriptionHealthy) redirect.searchParams.set('shipbob_warning', 'webhook_subscription_failed');
     return NextResponse.json({ ok: true, redirect: `${redirect.pathname}${redirect.search}` });

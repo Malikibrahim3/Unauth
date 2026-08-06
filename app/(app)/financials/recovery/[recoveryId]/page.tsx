@@ -1,4 +1,4 @@
-import LegacyRecoveryDetailPage from '@/app/(app)/recoveries/[id]/page';
+import RecoveryDetailPageContent from './RecoveryDetailPage';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,5 +8,5 @@ export default async function RecoveryDetailPage({
   params: Promise<{ recoveryId: string }>;
 }) {
   const { recoveryId } = await params;
-  return LegacyRecoveryDetailPage({ params: Promise.resolve({ id: recoveryId }) });
+  return RecoveryDetailPageContent({ params: Promise.resolve({ id: recoveryId }) });
 }

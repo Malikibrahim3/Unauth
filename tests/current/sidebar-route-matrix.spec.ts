@@ -2,30 +2,26 @@ import { test, expect } from '@playwright/test';
 
 /** Keep in sync with lib/navigation/appRoutes.ts sidebar registry. */
 const SIDEBAR_ROUTES = [
-  { href: '/dashboard', heading: 'Overview' },
+  { href: '/overview', heading: 'Overview' },
   { href: '/work', heading: 'Work' },
-  { href: '/claims', heading: 'Cases' },
-  { href: '/losses', heading: 'Losses' },
-  { href: '/recoveries', heading: 'Recovery' },
+  { href: '/cases', heading: 'Cases' },
+  { href: '/financials/losses', heading: 'Losses' },
   { href: '/customers', heading: 'Customers' },
-  { href: '/rules', heading: 'Rules' },
-  { href: '/flows', heading: 'Flows' },
-  { href: '/reports', heading: 'Reports' },
-  { href: '/integrations', heading: 'Integrations' },
-  { href: '/settings', heading: 'Account' },
+  { href: '/controls/rules', heading: 'Rules' },
+  { href: '/sources/connected', heading: 'Sources' },
 ] as const;
 
 test.describe('Sidebar route matrix', () => {
   test.describe.configure({ timeout: 90_000 });
 
   test.beforeEach(async ({ page }) => {
-    await page.goto('/dashboard');
+    await page.goto('/overview');
     await page.waitForSelector('main h1', { timeout: 60_000 });
   });
 
   for (const route of SIDEBAR_ROUTES) {
     test(`navigates to ${route.href}`, async ({ page }) => {
-      if (route.href === '/dashboard') {
+      if (route.href === '/overview') {
         await page.goto('/work', { waitUntil: 'domcontentloaded' });
         await expect(page.locator('main h1').first()).toContainText('Work', { timeout: 30_000 });
       }
@@ -51,8 +47,8 @@ test.describe('Sidebar route matrix', () => {
   }
 
   test('claims sidebar link does not land on customers', async ({ page }) => {
-    await page.locator('nav[aria-label="Main navigation"] a[href="/claims"]').first().click();
-    await page.waitForURL('**/claims**', { timeout: 30_000 });
+    await page.locator('nav[aria-label="Main navigation"] a[href="/cases"]').first().click();
+    await page.waitForURL('**/cases**', { timeout: 30_000 });
     expect(page.url()).not.toMatch(/\/customers\/?$/);
     await expect(page.locator('main h1').first()).toContainText('Cases', { timeout: 60_000 });
   });

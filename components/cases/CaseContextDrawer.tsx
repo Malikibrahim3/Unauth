@@ -66,7 +66,7 @@ export function CaseContextDrawer({
       footer={
         <div className="p-4">
           <Link
-            href={`/claims/${caseId}`}
+            href={`/cases/${caseId}`}
             className="ua-text-working-title inline-flex min-h-10 items-center rounded-md bg-[var(--ua-action-primary)] px-4 py-2 text-[var(--ua-action-primary-fg)]"
           >
             Open full case

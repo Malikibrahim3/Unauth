@@ -29,7 +29,7 @@ export interface LabelledDataset {
  */
 export function loadLabelledCsv(filePath: string): LabelledDataset {
   if (!fs.existsSync(filePath)) {
-    throw new Error(`Labelled dataset not found at ${filePath} — regenerate it per FRAUD_RINGS_BREAKDOWN.md`);
+    throw new Error(`Labelled dataset not found at ${filePath} — run the dataset generator first`);
   }
 
   const content = fs.readFileSync(filePath, 'utf-8');

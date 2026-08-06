@@ -48,7 +48,7 @@ function compactCauseSet(data: LossTrendPoint[]): { causes: LossTrendCause[]; po
   const visible = ranked.slice(0, 5);
   const visibleKeys = new Set(visible.map((cause) => cause.key));
   const hasOther = ranked.length > visible.length;
-  const otherHref = '/losses?attribution=__other';
+  const otherHref = '/financials/losses?attribution=__other';
   const causes = hasOther
     ? [...visible, { key: '__other', label: 'Other', valueMinor: ranked.slice(5).reduce((sum, cause) => sum + cause.valueMinor, 0), href: otherHref }]
     : visible;
@@ -104,7 +104,7 @@ function trendTable(currency: string | null, causes: LossTrendCause[], points: L
 export function LossTrendChart({
   data,
   currency,
-  recordsHref = '/losses',
+  recordsHref = '/financials/losses',
   mixedCurrencyCount = 0,
 }: {
   data: LossTrendPoint[];

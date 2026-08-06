@@ -516,7 +516,7 @@ export function useClaimReviewWorkbench(
         .catch(() => null);
       const nextClaim = next?.claims?.[0];
       if (nextClaim?.id) {
-        patch({ nextClaimHref: `/claims/${nextClaim.id}`, noMoreClaims: false });
+        patch({ nextClaimHref: `/cases/${nextClaim.id}`, noMoreClaims: false });
       } else {
         patch({ nextClaimHref: null, noMoreClaims: true });
       }

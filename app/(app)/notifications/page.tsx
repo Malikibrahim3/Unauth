@@ -22,7 +22,7 @@ export default async function NotificationsPage() {
     user.id,
     PERMISSIONS.VIEW_INBOX,
   );
-  if (denied || !ctx) redirect("/dashboard");
+  if (denied || !ctx) redirect("/overview");
 
   const notifications = (await listNotifications(
     serviceClient,

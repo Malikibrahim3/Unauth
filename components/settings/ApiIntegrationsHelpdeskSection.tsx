@@ -14,8 +14,8 @@ const HELPDESK_OPTIONS: (HelpdeskOption & { recommended?: boolean })[] = [
     name: 'Gorgias',
     description: 'Add case context to every support ticket. Agents see order history, prior cases, and trust indicators without leaving Gorgias.',
     statusKey: 'gorgias',
-    href: '/settings/integrations/gorgias',
-    logo: '/integrations/gorgias.png',
+    href: '/sources/setup/gorgias',
+    logo: '/providers/gorgias.png',
     recommended: true,
   },
   {
@@ -23,16 +23,16 @@ const HELPDESK_OPTIONS: (HelpdeskOption & { recommended?: boolean })[] = [
     name: 'Zendesk',
     description: 'Case context in the Zendesk sidebar. For teams on Zendesk instead of Gorgias.',
     statusKey: 'zendesk',
-    href: '/settings/integrations/zendesk',
-    logo: '/integrations/zendesk.svg',
+    href: '/sources/setup/zendesk',
+    logo: '/providers/zendesk.svg',
   },
   {
     id: 'freshdesk',
     name: 'Freshdesk',
     description: 'Sync support tickets for case detection. For teams on Freshdesk.',
     statusKey: 'freshdesk',
-    href: '/settings/integrations/freshdesk',
-    logo: '/integrations/freshdesk.svg',
+    href: '/sources/setup/freshdesk',
+    logo: '/providers/freshdesk.png',
   },
 ];
 

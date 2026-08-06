@@ -1,4 +1,4 @@
-import { CaseDetailRoute } from '@/app/(app)/claims/CaseDetailRoute';
+import { CaseDetailRoute } from '../CaseDetailRoute';
 
 export const dynamic = 'force-dynamic';
 

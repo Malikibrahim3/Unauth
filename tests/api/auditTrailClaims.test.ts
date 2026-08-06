@@ -109,7 +109,7 @@ describe("audit trail claim events", () => {
           action: "claim_reopened",
           resource_type: "claim",
           resource_id: "claim-1",
-          resource_href: "/claims/claim-1",
+          resource_href: "/cases/claim-1",
           actor_user_id: "user-1",
           metadata: expect.objectContaining({
             previous_status: "resolved",

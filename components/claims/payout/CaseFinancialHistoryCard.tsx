@@ -67,7 +67,7 @@ export function CaseFinancialHistoryCard({
             Recorded merchant and provider stages stay separate; approval is not recovered cash.
           </p>
         </div>
-        <Link href="/reports?range=all" className="ua-text-label text-[var(--ua-action-primary)]">
+        <Link href="/financials/reports?range=all" className="ua-text-label text-[var(--ua-action-primary)]">
           View reconciled reports
         </Link>
       </div>

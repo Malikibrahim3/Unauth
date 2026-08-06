@@ -16,7 +16,7 @@ export default async function CustomerClaimReviewPage({ params, searchParams }: 
 
   if (claimId) {
     redirect(
-      preservedRedirectTarget(`/claims/${claimId}`, sp, {
+      preservedRedirectTarget(`/cases/${claimId}`, sp, {
         consume: ['claimId'],
       }),
     );

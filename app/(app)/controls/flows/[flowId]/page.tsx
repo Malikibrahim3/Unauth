@@ -1,4 +1,4 @@
-import LegacyFlowDetailPage from '@/app/(app)/flows/[id]/page';
+import FlowDetailPageContent from './FlowDetailPage';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,5 +8,5 @@ export default async function FlowDetailPage({
   params: Promise<{ flowId: string }>;
 }) {
   const { flowId } = await params;
-  return LegacyFlowDetailPage({ params: Promise.resolve({ id: flowId }) });
+  return FlowDetailPageContent({ params: Promise.resolve({ id: flowId }) });
 }
