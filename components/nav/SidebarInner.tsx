@@ -123,14 +123,7 @@ function SidebarInnerContent({
   }));
 
   const isActive = (href: string) => {
-    const path = pathname.split('?')[0] ?? pathname;
-    const familyPrefix: Record<string, string> = {
-      '/financials/losses': '/financials',
-      '/controls/rules': '/controls',
-      '/sources/connected': '/sources',
-    };
-    const prefix = familyPrefix[href] ?? href;
-    return path === prefix || path.startsWith(`${prefix}/`);
+    return pathname === href || pathname.startsWith(`${href}/`);
   };
 
   const desktopCompact = collapsed || compactDesktop;

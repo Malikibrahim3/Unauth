@@ -66,10 +66,14 @@ describe("app route registry", () => {
   "Overview",
   "Work",
   "Cases",
-  "Financials",
+  "Losses",
+  "Recovery",
   "Customers",
-  "Controls",
-  "Sources",
+  "Rules",
+  "Flows",
+  "Reports",
+  "Integrations",
+  "Settings",
 ]
 `);
   });

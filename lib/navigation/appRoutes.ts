@@ -114,13 +114,13 @@ export const APP_ROUTES = {
   losses: {
     key: 'losses',
     href: '/financials/losses',
-    label: 'Financials',
-    pageTitle: 'Financials',
-    sectionPrefix: '/financials',
+    label: 'Losses',
+    pageTitle: 'Losses',
+    sectionPrefix: '/financials/losses',
     permission: PERMISSIONS.VIEW_INBOX,
     aliases: ['/losses'],
     tier: 'pro',
-    tierLabel: 'Financials',
+    tierLabel: 'Losses',
     icon: TrendingDown,
     sidebar: true,
     commandPalette: true,
@@ -156,8 +156,8 @@ export const APP_ROUTES = {
   integrations: {
     key: 'integrations',
     href: '/sources/connected',
-    label: 'Sources',
-    pageTitle: 'Sources',
+    label: 'Integrations',
+    pageTitle: 'Integrations',
     sectionPrefix: '/sources',
     permission: PERMISSIONS.VIEW_SETTINGS,
     aliases: ['/integrations', '/settings/integrations'],
@@ -175,7 +175,7 @@ export const APP_ROUTES = {
     permission: PERMISSIONS.VIEW_SETTINGS,
     aliases: ['/settings'],
     icon: Settings,
-    sidebar: false,
+    sidebar: true,
     commandPalette: true,
     commandDescription: 'Account and team settings',
   },
@@ -189,13 +189,13 @@ export const APP_ROUTES = {
   rules: {
     key: 'rules',
     href: '/controls/rules',
-    label: 'Controls',
-    pageTitle: 'Controls',
-    sectionPrefix: '/controls',
+    label: 'Rules',
+    pageTitle: 'Rules',
+    sectionPrefix: '/controls/rules',
     permission: PERMISSIONS.VIEW_SETTINGS,
     aliases: ['/rules'],
     tier: 'pro',
-    tierLabel: 'Controls',
+    tierLabel: 'Rules',
     icon: SlidersHorizontal,
     sidebar: true,
     commandPalette: true,
@@ -233,10 +233,10 @@ export const COMMAND_PALETTE_FILTERS = [
 ] as const;
 
 export const SIDEBAR_NAV_GROUPS: Array<{ label: string; routeKeys: AppRouteKey[] }> = [
-  // The implementation specification fixes seven primary destinations. Deep
-  // financial/control/source surfaces remain reachable through their parent,
-  // breadcrumbs and command search; they are not promoted into a second nav.
-  { label: 'Workspace', routeKeys: ['dashboard', 'work', 'claims', 'losses', 'customers', 'rules', 'integrations'] },
+  { label: 'Overview', routeKeys: ['dashboard'] },
+  { label: 'Work', routeKeys: ['work', 'claims', 'losses', 'recoveries', 'customers'] },
+  { label: 'Configure', routeKeys: ['rules', 'flows'] },
+  { label: 'Reports and setup', routeKeys: ['reports', 'integrations', 'settings'] },
 ];
 
 export function getSidebarNavItems(permissions?: ReadonlySet<Permission>): Array<{ label: string; items: AppRoute[] }> {

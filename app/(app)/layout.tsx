@@ -186,7 +186,6 @@ export default async function AppLayout({
                     userEmail={user.email ?? null}
                     unreadCount={0}
                     permissions={permissions}
-                    connectionState={connectionState}
                   />
 
                   {allDemo && (

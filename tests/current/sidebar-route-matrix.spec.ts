@@ -6,9 +6,13 @@ const SIDEBAR_ROUTES = [
   { href: '/work', heading: 'Work' },
   { href: '/cases', heading: 'Cases' },
   { href: '/financials/losses', heading: 'Losses' },
+  { href: '/financials/recovery', heading: 'Recovery board' },
   { href: '/customers', heading: 'Customers' },
   { href: '/controls/rules', heading: 'Rules' },
+  { href: '/controls/flows', heading: 'Flows' },
+  { href: '/financials/reports', heading: 'Reports' },
   { href: '/sources/connected', heading: 'Sources' },
+  { href: '/settings/workspace/account', heading: 'Account' },
 ] as const;
 
 test.describe('Sidebar route matrix', () => {
