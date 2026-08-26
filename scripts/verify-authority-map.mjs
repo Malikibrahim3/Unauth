@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process';
 
 const root = resolve(process.cwd());
 const errors = [];
+const retiredProductName = ['Parcel', 'Claim'].join('');
 
 const requiredOwners = [
   'ARCHITECTURE.md',
@@ -112,7 +113,6 @@ function walk(directory) {
       continue;
     }
     if (!textExtensions.has(entry.name.slice(entry.name.lastIndexOf('.')))) continue;
-    if (rel === 'scripts/verify-authority-map.mjs') continue;
     let source;
     try {
       if (statSync(full).size > 2_000_000) continue;
@@ -121,7 +121,7 @@ function walk(directory) {
       continue;
     }
     if (/ARCHITECTURE\.md\s+§/.test(source)) errors.push(`${rel} contains a stale ARCHITECTURE.md section reference.`);
-    if (/ParcelClaim/i.test(source)) errors.push(`${rel} contains the retired ParcelClaim name.`);
+    if (source.toLowerCase().includes(retiredProductName.toLowerCase())) errors.push(`${rel} contains the retired product name.`);
   }
 }
 walk(root);

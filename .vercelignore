@@ -1,0 +1,17 @@
+# Vercel build context excludes local state, evidence, and private material.
+.codex/
+.impeccable/
+private/
+artifacts/
+references/
+tests/reports/
+test-results/
+.next/
+.next-*/
+*.tsbuildinfo
+.env.local
+*.trace.zip
+*.har
+
+# Do not add extensions/chrome/dist here: the runtime download route requires
+# that committed distribution to be available in the deployment.

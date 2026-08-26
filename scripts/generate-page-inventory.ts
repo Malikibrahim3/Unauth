@@ -5,6 +5,7 @@ import { surfaceManifest } from '../lib/surfaces/manifest';
 const START = '<!-- active-renderer-inventory:start -->';
 const END = '<!-- active-renderer-inventory:end -->';
 const target = resolve(__dirname, '../docs/page-inventory.md');
+const checkOnly = process.argv.includes('--check');
 
 function activeRendererInventory() {
   const rows = surfaceManifest.map((entry) =>
@@ -14,7 +15,7 @@ function activeRendererInventory() {
     START,
     '## Current executable page ownership',
     '',
-    'Generated from `lib/surfaces/manifest.ts` on 24 August 2026. The verifier confirms that each named owner is reachable from the active page import graph and that the first-named owner is rendered, invoked, or directly re-exported by its page module. This ledger supersedes owner/component claims in older audits and completion reports.',
+    'Generated from `lib/surfaces/manifest.ts`; do not edit this block by hand. The verifier confirms that each named owner is reachable from the active page import graph and that the first-named owner is rendered, invoked, or directly re-exported by its page module. This ledger supersedes owner/component claims in archived audits and completion reports.',
     '',
     '| Route | Page module | Active renderer | Maturity |',
     '|---|---|---|---|',
@@ -28,4 +29,13 @@ const block = activeRendererInventory();
 const next = current.includes(START) && current.includes(END)
   ? current.replace(new RegExp(`${START}[\\s\\S]*?${END}`), block)
   : current.replace(/^# Frontend page and surface inventory\n/, `# Frontend page and surface inventory\n\n${block}\n`);
-writeFileSync(target, next);
+if (checkOnly) {
+  if (current !== next) {
+    console.error('Page inventory is stale. Run `npm run generate:page-inventory` and commit the generated projection.');
+    process.exit(1);
+  }
+  console.log('PASS generated page inventory is current.');
+} else {
+  writeFileSync(target, next);
+  console.log('Generated docs/page-inventory.md from lib/surfaces/manifest.ts.');
+}

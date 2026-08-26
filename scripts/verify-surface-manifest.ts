@@ -33,18 +33,16 @@ const repositoryRoot = resolve(__dirname, '..');
 const errors: string[] = [];
 
 if (
+  specificationAuthorities.architectureIndex !== 'ARCHITECTURE.md' ||
   specificationAuthorities.productTruth !== 'PRODUCT.md' ||
   specificationAuthorities.executableSurfaceMap !== 'lib/surfaces/manifest.ts' ||
   specificationAuthorities.canonicalNavigation !== 'lib/navigation/appRoutes.ts' ||
   specificationAuthorities.legacyRedirects !== 'lib/navigation/aliases.js' ||
   specificationAuthorities.redirectConsumer !== 'next.config.js' ||
   specificationAuthorities.visualSystem !== 'DESIGN.md' ||
-  specificationAuthorities.implementationGuide !== 'design-system.md' ||
-  specificationAuthorities.historicalRouteContracts !==
-    'docs/unauth-ui/frontend-design-system-and-surface-build-specification.md' ||
   specificationAuthorities.humanReadableInventory !== 'docs/page-inventory.md'
 ) {
-  errors.push('The P00 specification authority order no longer matches design-system.md section 0.');
+  errors.push('The executable authority registry no longer matches ARCHITECTURE.md.');
 }
 
 const supersededPresentationPaths = [

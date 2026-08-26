@@ -40,5 +40,19 @@ supabase/.temp/
 
 .vercel
 
+# Local agent/design tooling and evidence are never deployment inputs.
+.codex/
+.impeccable/
+private/
+artifacts/
+references/
+
+# Generated browser/build receipts and alternate Next output directories.
+*.trace.zip
+*.har
+
+# Preserve the committed Chrome extension distribution: the runtime download
+# route serves extensions/chrome/dist and it must remain tracked.
+
 # Local backup archives
 backup-*.tar.gz

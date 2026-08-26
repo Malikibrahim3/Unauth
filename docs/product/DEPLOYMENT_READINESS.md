@@ -26,6 +26,20 @@ approval remain outside this task.
   vulnerabilities. Moderate or development-only findings require a bounded
   rationale; `npm audit fix --force` is prohibited.
 
+## Opt-in Jest suites
+
+The two suites reported as skipped by the default offline Jest run are
+intentional environment gates, not untracked coverage:
+
+- `tests/integration/customerAggregates.test.ts` runs only with
+  `RUN_DB_INTEGRATION=1` against the identified disposable Supabase fixture.
+- `tests/security/sourceAgnosticRls.test.ts` runs only with `RUN_LIVE_DB=1`
+  and explicit Supabase URL/anon/service credentials; it is never pointed at
+  staging or production by the default command.
+
+The default receipt records these as opt-in skips. A disposable local run must
+enable them and record its database/build identity separately.
+
 ## External blockers retained
 
 MR1 controlled provider lifecycle and source-runtime proof remain unpassed.
