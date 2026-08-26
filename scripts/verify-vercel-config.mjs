@@ -35,6 +35,19 @@ for (const cron of crons) {
   if (!/status\s*:\s*401|status:\s*401|Unauthorized/.test(source)) errors.push(`${path} has no explicit unauthorized response.`);
 }
 
+const e2eAuthHelper = readFileSync(resolve(root, 'lib/e2e/testAuth.ts'), 'utf8');
+const e2eAuthRoute = readFileSync(resolve(root, 'app/api/test/e2e-auth/route.ts'), 'utf8');
+if (!e2eAuthHelper.includes("vercelEnv === 'production'") || !e2eAuthHelper.includes("vercelEnv === 'preview'")) {
+  errors.push('E2E authentication helper does not explicitly disable production and preview environments.');
+}
+if (!e2eAuthRoute.includes('isE2eTestAuthEnabled')) {
+  errors.push('E2E authentication route bypasses the local-only guard.');
+}
+const envSource = readFileSync(resolve(root, 'lib/utils/env.ts'), 'utf8');
+for (const serverOnlyKey of ['SUPABASE_SERVICE_ROLE_KEY', 'INTERNAL_HMAC_SECRET', 'CRON_SECRET']) {
+  if (!envSource.includes(`${serverOnlyKey}:`)) errors.push(`Required server-only environment key is absent from lib/utils/env.ts: ${serverOnlyKey}`);
+}
+
 if (errors.length) {
   console.error(`Vercel verification failed (${errors.length} issue${errors.length === 1 ? '' : 's'}):`);
   for (const error of errors) console.error(`- ${error}`);
