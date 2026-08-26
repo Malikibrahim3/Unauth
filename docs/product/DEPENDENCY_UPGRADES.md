@@ -25,3 +25,19 @@ live `npm audit` all pass with zero vulnerabilities. The Vite config’s existin
 multi-entry popup/background/content build and asset-copy plugin remain intact;
 the generated `extensions/chrome/dist` output is still committed because the
 runtime download route serves it.
+
+## Root security follow-up
+
+The clean-install audit initially found production-transitive advisories in
+`brace-expansion` and `fast-uri`. Compatible lockfile updates now resolve them
+to patched releases (`brace-expansion` 5.0.9 on the Sentry glob path and
+`fast-uri` 3.1.6). The development-only `js-yaml` advisory is likewise
+resolved to 3.15.2.
+
+The root `sharp` development dependency required the 0.35 major line because
+the advisory is inherited from libvips and has no patched 0.34 release. It is
+isolated in its own commit, with the existing image-verification scripts as
+the compatibility surface. A clean install, image-script checks, production
+build, and full audit are required before accepting that commit. The final
+root audit must report zero high or critical findings in both full and
+`--omit=dev` modes.
