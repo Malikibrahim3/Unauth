@@ -6,7 +6,7 @@
  * Application-level validators keep the graph honest: the database columns are
  * free text, so every write must pass through these guards.
  *
- * See ARCHITECTURE.md §2.3 and §8.
+ * See ARCHITECTURE.md for the canonical relationship and product-truth owners.
  */
 
 /** Entity types that may appear on either end of a relationship. */

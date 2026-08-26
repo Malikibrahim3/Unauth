@@ -6,7 +6,7 @@
  * minimum. The merchant is NEVER taken from the body — it is derived from the
  * authenticated credential (see auth.ts).
  *
- * See ARCHITECTURE.md §7.1.
+ * See ARCHITECTURE.md for the canonical API and product-truth owners.
  */
 import { z } from 'zod';
 

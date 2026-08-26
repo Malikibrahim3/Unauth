@@ -6,7 +6,7 @@
  * Sort order: `occurredAt`, then `recordedAt`, then `id`. Provider occurrence
  * time is never overwritten with ingestion time.
  *
- * See ARCHITECTURE.md §6.
+ * See ARCHITECTURE.md for the canonical case-state owner.
  */
 
 export type TimelineActor = { type: string; id?: string; label?: string };

@@ -9,7 +9,7 @@
  * any axis; the status axis delegates to the canonical claim status machine so
  * there is a single source of truth for status transitions.
  *
- * See ARCHITECTURE.md §6.
+ * See ARCHITECTURE.md for the canonical case-state owner.
  */
 import { canTransitionClaimStatus } from '@/lib/claims/statusMachine';
 import {

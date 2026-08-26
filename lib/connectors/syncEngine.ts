@@ -12,7 +12,7 @@
  * The state-transition helpers are pure so the retry/backoff/DLQ/cursor rules
  * are unit-tested without a database. Persistence is injected.
  *
- * See ARCHITECTURE.md §5 (Sync engine behavior).
+ * See ARCHITECTURE.md for the executable adapter owner and sync boundary.
  */
 import type {
   ConnectorAdapter,

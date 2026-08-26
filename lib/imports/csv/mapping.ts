@@ -4,7 +4,7 @@
  * for the dataset. Applies the map to a raw CSV row to produce a canonical-keyed
  * row.
  *
- * See ARCHITECTURE.md §7.3.
+ * See ARCHITECTURE.md for the canonical import and product-truth owners.
  */
 import type { DatasetConfig, RowValue } from '@/lib/imports/csv/entitySchemas';
 

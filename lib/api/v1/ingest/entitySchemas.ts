@@ -3,7 +3,7 @@
  * shared canonical order normalization so an order upserted through the API has
  * the same normalized shape as one from a connector or canonical webhook.
  *
- * See ARCHITECTURE.md §7.2.
+ * See ARCHITECTURE.md for the canonical API and product-truth owners.
  */
 import { z } from 'zod';
 import { mapCanonicalOrder } from '@/lib/canonical/entities';

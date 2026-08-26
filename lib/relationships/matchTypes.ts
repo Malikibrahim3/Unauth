@@ -11,7 +11,7 @@
  *   - unmatched:  no candidate. Retain the source record; surface it in health
  *                 / work queues.
  *
- * See ARCHITECTURE.md §8.
+ * See ARCHITECTURE.md for the canonical relationship and product-truth owners.
  */
 
 export const MATCH_STATUSES = ['confirmed', 'probable', 'ambiguous', 'unmatched'] as const;

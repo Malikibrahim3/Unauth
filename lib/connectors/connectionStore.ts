@@ -3,7 +3,7 @@
  * finish by writing canonical `merchant_integrations` + `source_accounts` rows
  * through here, so the connection model has one writer regardless of provider.
  *
- * See ARCHITECTURE.md §5.
+ * See ARCHITECTURE.md for the executable adapter owner.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/lib/supabase/tables';

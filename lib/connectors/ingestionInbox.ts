@@ -10,7 +10,7 @@
  *
  * Reads are service-role only (raw payloads are never merchant-readable).
  *
- * See ARCHITECTURE.md §2.1 / §7.1.
+ * See ARCHITECTURE.md for the canonical connector and ingestion owners.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createHash } from 'crypto';

@@ -6,7 +6,7 @@
  * Provider identity and shared display metadata come from
  * `lib/integrations/registry.ts`; this registry owns executable adapters only.
  *
- * See ARCHITECTURE.md §5.
+ * See ARCHITECTURE.md for the executable adapter owner.
  */
 import type { ConnectorAdapter } from '@/lib/connectors/types';
 import { connectorNotRegistered } from '@/lib/connectors/errors';

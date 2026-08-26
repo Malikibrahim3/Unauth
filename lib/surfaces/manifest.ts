@@ -1,9 +1,9 @@
 /**
  * Executable implementation map for the Unauth frontend.
  *
- * Current implementation authority: design-system.md
- * Historical route-contract lookup:
- * docs/unauth-ui/frontend-design-system-and-surface-build-specification.md
+ * Current implementation authority: DESIGN.md
+ * The authority index is ARCHITECTURE.md. Historical plans and captures live
+ * outside the deployment tree and are never runtime input.
  *
  * This file records ownership and phase boundaries. It is not a navigation
  * registry and must not be used to create duplicate links for compatibility
@@ -57,16 +57,15 @@ export type ScenarioContract = {
   readiness: 'visual-ready' | 'redirect-complete';
 };
 
-/** P00 authority order recorded from design-system.md section 0. */
+/** Canonical authority registry recorded in ARCHITECTURE.md. */
 export const specificationAuthorities = {
+  architectureIndex: 'ARCHITECTURE.md',
   productTruth: 'PRODUCT.md',
   executableSurfaceMap: 'lib/surfaces/manifest.ts',
   canonicalNavigation: 'lib/navigation/appRoutes.ts',
   legacyRedirects: 'lib/navigation/aliases.js',
   redirectConsumer: 'next.config.js',
   visualSystem: 'DESIGN.md',
-  implementationGuide: 'design-system.md',
-  historicalRouteContracts: 'docs/unauth-ui/frontend-design-system-and-surface-build-specification.md',
   humanReadableInventory: 'docs/page-inventory.md',
 } as const;
 

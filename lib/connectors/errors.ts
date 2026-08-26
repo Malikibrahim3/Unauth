@@ -3,7 +3,7 @@
  * one of these codes so routes/health records can render safe, stable messages
  * instead of leaking raw provider errors.
  *
- * See ARCHITECTURE.md §5.
+ * See ARCHITECTURE.md for the executable adapter owner.
  */
 
 export type ConnectorErrorCode =

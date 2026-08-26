@@ -48,7 +48,7 @@ function tierSettings(tier) {
   const settings = {
     1: {
       name: "low_maturity",
-      merchantName: "ParcelClaim Low Maturity Merchant",
+      merchantName: "Unauth Low Maturity Merchant",
       missingOptional: 0.48,
       enrich: 0.24,
       typoRate: 0.13,
@@ -60,7 +60,7 @@ function tierSettings(tier) {
     },
     2: {
       name: "medium_maturity",
-      merchantName: "ParcelClaim Medium Maturity Merchant",
+      merchantName: "Unauth Medium Maturity Merchant",
       missingOptional: 0.22,
       enrich: 0.58,
       typoRate: 0.07,
@@ -72,7 +72,7 @@ function tierSettings(tier) {
     },
     3: {
       name: "high_maturity",
-      merchantName: "ParcelClaim High Maturity Merchant",
+      merchantName: "Unauth High Maturity Merchant",
       missingOptional: 0.08,
       enrich: 0.86,
       typoRate: 0.03,

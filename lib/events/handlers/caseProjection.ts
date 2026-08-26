@@ -6,7 +6,7 @@
  *
  * Idempotent by construction — it performs no mutation yet.
  *
- * See ARCHITECTURE.md §6.
+ * See ARCHITECTURE.md for the canonical case-state owner.
  */
 import type { DomainEventHandler } from '@/lib/events/handlers/types';
 
