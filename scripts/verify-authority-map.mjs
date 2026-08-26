@@ -70,6 +70,7 @@ const currentDocs = [
   'docs/product/UX9_STATUS.md',
   'docs/product/DEPLOYMENT_READINESS.md',
   'docs/product/DEPENDENCY_UPGRADES.md',
+  'docs/product/DEAD_CODE_CANDIDATES.md',
 ];
 
 for (const doc of currentDocs) {
