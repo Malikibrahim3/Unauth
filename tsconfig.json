@@ -42,7 +42,11 @@
     ".next-lcp-before/types/**/*.ts",
     ".next-lcp-before/dev/types/**/*.ts",
     ".next-capture/types/**/*.ts",
-    ".next-capture/dev/types/**/*.ts"
+    ".next-capture/dev/types/**/*.ts",
+    ".next-ci/types/**/*.ts",
+    ".next-ci/dev/types/**/*.ts",
+    ".next-candidate/types/**/*.ts",
+    ".next-candidate/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
