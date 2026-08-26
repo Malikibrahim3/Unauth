@@ -183,7 +183,13 @@ const envSchema = z.object({
 });
 
 function validateEnv() {
-  const result = envSchema.safeParse(process.env);
+  // Dotenv files commonly leave optional settings present but empty. Treat an
+  // empty value as unset so optional keys remain optional while required keys
+  // still fail closed through their schema constraints.
+  const input = Object.fromEntries(
+    Object.entries(process.env).map(([key, value]) => [key, value === '' ? undefined : value]),
+  );
+  const result = envSchema.safeParse(input);
   if (!result.success) {
     const missing = result.error.issues.map((i) => i.path.join('.')).join(', ');
     throw new Error(`Missing or invalid environment variables: ${missing}`);
