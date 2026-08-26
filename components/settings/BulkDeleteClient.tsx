@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Button, Input, Modal } from '@/components/ui';
 import styles from '@/components/settings/OperationsSettings.module.css';
 
 export default function BulkDeleteClient({ workspaceName }: { workspaceName: string }) {
+  const router = useRouter();
   const [confirmation, setConfirmation] = useState('');
   const [reviewOpen, setReviewOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -55,7 +57,7 @@ export default function BulkDeleteClient({ workspaceName }: { workspaceName: str
       if (body.jobId) rememberJob({ jobId: body.jobId, idempotencyKey, stage: body.stage, status: body.status });
       if (!response.ok) throw new Error(body.error ?? 'Workspace deletion failed.');
       window.localStorage.removeItem(storageKey);
-      window.location.assign(`/onboarding?workspaceDeleted=1&receipt=${encodeURIComponent(body.receiptId ?? '')}`);
+      router.push(`/onboarding?workspaceDeleted=1&receipt=${encodeURIComponent(body.receiptId ?? '')}`);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Workspace deletion failed.');
       setLoading(false);

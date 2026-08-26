@@ -14,6 +14,8 @@ export function SyncStatusConnectModal({ initialValue, onClose }: { initialValue
     if (result.error === "empty") return setInputError("Enter the Shopify Admin URL.");
     if (result.error === "public_domain") return setInputError("Use the Shopify Admin URL, not the public storefront address.");
     if (result.error === "invalid") return setInputError("Use admin.shopify.com/store/your-store or your-store.myshopify.com.");
+    // This endpoint starts an external Shopify OAuth navigation, so it must be a top-level browser navigation.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
     window.location.assign(`/api/shopify/install?shop=${encodeURIComponent(result.domain as string)}`);
   }
 
