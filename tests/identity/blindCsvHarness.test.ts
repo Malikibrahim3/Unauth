@@ -1,6 +1,4 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import { ensureBlindFixtures, expectMerchantReadiness, generatedDir, runBlindDataset } from './blindHarness';
+import { ensureBlindFixtures, expectMerchantReadiness, runBlindDataset } from './blindHarness';
 
 describe('blind merchant CSV harness', () => {
   beforeAll(() => {
@@ -57,12 +55,6 @@ describe('blind merchant CSV harness', () => {
     expect(result.diagnostics.rowsFetched).toBeGreaterThanOrEqual(5000);
     expect(result.diagnostics.rowsFetched).not.toBe(1000);
 
-    fs.writeFileSync(path.join(generatedDir, 'large_merchant_scale_PERFORMANCE.json'), `${JSON.stringify({
-      dataset: 'large_merchant_scale',
-      rows: result.diagnostics.rowsFetched,
-      durationMs,
-      rowsPerSecond: Math.round(result.diagnostics.rowsFetched / Math.max(1, durationMs / 1000)),
-    }, null, 2)}\n`);
     expect(durationMs).toBeLessThan(120_000);
   }, 180_000);
 });

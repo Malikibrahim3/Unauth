@@ -1,11 +1,10 @@
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
 
 const REPO_ROOT = path.resolve(__dirname, '../..');
 const ZENDESK_ROOT = path.join(REPO_ROOT, 'extensions', 'zendesk');
-const ZIP_PATH = path.join(REPO_ROOT, 'public', 'downloads', 'unauth-zendesk-app.zip');
-
 const REQUIRED_IN_ZIP = [
   'manifest.json',
   'translations/en.json',
@@ -15,12 +14,25 @@ const REQUIRED_IN_ZIP = [
 ];
 
 describe('Zendesk app package', () => {
+  let tempDir: string;
+  let zipPath: string;
+
   beforeAll(() => {
-    execSync('node scripts/package-zendesk-app.mjs', { cwd: REPO_ROOT, stdio: 'pipe' });
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'unauth-zendesk-package-'));
+    zipPath = path.join(tempDir, 'unauth-zendesk-app.zip');
+    execSync('node scripts/package-zendesk-app.mjs', {
+      cwd: REPO_ROOT,
+      stdio: 'pipe',
+      env: { ...process.env, ZENDESK_OUTPUT_PATH: zipPath },
+    });
+  });
+
+  afterAll(() => {
+    fs.rmSync(tempDir, { recursive: true, force: true });
   });
 
   it('includes all required files at the zip root', () => {
-    const listing = execSync(`unzip -l "${ZIP_PATH}"`, { encoding: 'utf8' });
+    const listing = execSync(`unzip -l "${zipPath}"`, { encoding: 'utf8' });
     for (const file of REQUIRED_IN_ZIP) {
       expect(listing).toContain(file);
     }
