@@ -16,6 +16,7 @@ const requiredOwners = [
   'docs/product/RELEASE_READINESS.md',
   'docs/product/UX9_STATUS.md',
   'docs/product/DEPLOYMENT_READINESS.md',
+  'docs/product/DEPENDENCY_UPGRADES.md',
   'docs/page-inventory.md',
   'lib/navigation/appRoutes.ts',
   'lib/navigation/aliases.js',
@@ -68,6 +69,7 @@ const currentDocs = [
   'docs/product/RELEASE_READINESS.md',
   'docs/product/UX9_STATUS.md',
   'docs/product/DEPLOYMENT_READINESS.md',
+  'docs/product/DEPENDENCY_UPGRADES.md',
 ];
 
 for (const doc of currentDocs) {
