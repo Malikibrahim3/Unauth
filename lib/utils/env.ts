@@ -94,6 +94,8 @@ const envSchema = z.object({
   GORGIAS_API_TOKEN: z.string().min(1).optional(),
   GORGIAS_API_EMAIL: z.string().email().optional(),
   GORGIAS_BASE_URL: z.string().url().optional(),
+  /** Optional temp destination for Zendesk packaging; never a deployment input. */
+  ZENDESK_OUTPUT_PATH: z.string().optional(),
   E2E_WEBHOOK_URL: z.string().url().optional(),
   E2E_INGEST_URL: z.string().url().optional(),
   E2E_MERCHANT_ID: z.string().uuid().optional(),
